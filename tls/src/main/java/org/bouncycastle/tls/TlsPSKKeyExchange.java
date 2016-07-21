@@ -23,8 +23,7 @@ public class TlsPSKKeyExchange
     protected TlsPSKIdentity pskIdentity;
     protected TlsPSKIdentityManager pskIdentityManager;
     protected TlsDHConfigVerifier dhConfigVerifier;
-
-    protected int[] namedCurves;
+    protected TlsECConfigVerifier ecConfigVerifier;
     protected short[] clientECPointFormats, serverECPointFormats;
 
     protected byte[] psk_identity_hint = null;
@@ -39,23 +38,25 @@ public class TlsPSKKeyExchange
     protected TlsSecret preMasterSecret;
 
     public TlsPSKKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsPSKIdentity pskIdentity,
-        TlsDHConfigVerifier dhConfigVerifier, int[] namedCurves, short[] clientECPointFormats, short[] serverECPointFormats)
+        TlsDHConfigVerifier dhConfigVerifier, TlsECConfigVerifier ecConfigVerifier, short[] clientECPointFormats,
+        short[] serverECPointFormats)
     {
-        this(keyExchange, supportedSignatureAlgorithms, pskIdentity, null, dhConfigVerifier, null, namedCurves,
-            clientECPointFormats, serverECPointFormats);
+        this(keyExchange, supportedSignatureAlgorithms, pskIdentity, null, dhConfigVerifier, null, ecConfigVerifier,
+            null, clientECPointFormats, serverECPointFormats);
     }
 
     public TlsPSKKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsPSKIdentity pskIdentity,
-        TlsPSKIdentityManager pskIdentityManager, TlsDHConfig dhConfig, int[] namedCurves,
-        short[] clientECPointFormats, short[] serverECPointFormats)
+        TlsPSKIdentityManager pskIdentityManager, TlsDHConfig dhConfig, TlsECConfig ecConfig,
+        short[] serverECPointFormats)
     {
-        this(keyExchange, supportedSignatureAlgorithms, pskIdentity, pskIdentityManager, null, dhConfig, namedCurves,
-            clientECPointFormats, serverECPointFormats);
+        this(keyExchange, supportedSignatureAlgorithms, pskIdentity, pskIdentityManager, null, dhConfig, null, ecConfig,
+            null, serverECPointFormats);
     }
 
     private TlsPSKKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsPSKIdentity pskIdentity,
-        TlsPSKIdentityManager pskIdentityManager, TlsDHConfigVerifier dhConfigVerifier, TlsDHConfig dhConfig, int[] namedCurves,
-        short[] clientECPointFormats, short[] serverECPointFormats)
+        TlsPSKIdentityManager pskIdentityManager, TlsDHConfigVerifier dhConfigVerifier, TlsDHConfig dhConfig,
+        TlsECConfigVerifier ecConfigVerifier, TlsECConfig ecConfig, short[] clientECPointFormats,
+        short[] serverECPointFormats)
     {
         super(keyExchange, supportedSignatureAlgorithms);
 
@@ -74,7 +75,8 @@ public class TlsPSKKeyExchange
         this.pskIdentityManager = pskIdentityManager;
         this.dhConfigVerifier = dhConfigVerifier;
         this.dhConfig = dhConfig;
-        this.namedCurves = namedCurves;
+        this.ecConfigVerifier = ecConfigVerifier;
+        this.ecConfig = ecConfig;
         this.clientECPointFormats = clientECPointFormats;
         this.serverECPointFormats = serverECPointFormats;
     }
@@ -135,7 +137,12 @@ public class TlsPSKKeyExchange
         }
         else if (this.keyExchange == KeyExchangeAlgorithm.ECDHE_PSK)
         {
-            this.ecConfig = TlsECCUtils.selectECConfig(namedCurves, clientECPointFormats, buf);
+            if (this.ecConfig == null)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+
+            TlsECCUtils.writeECConfig(ecConfig, buf);
 
             this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
 
@@ -158,7 +165,7 @@ public class TlsPSKKeyExchange
 
         this.serverCertificate = serverCertificate.getCertificateAt(context, 0).useInRole(ConnectionEnd.server, KeyExchangeAlgorithm.RSA_PSK);
 
-        super.processServerCertificate(serverCertificate);
+        checkServerCertSigAlg(serverCertificate);
     }
 
     public boolean requiresServerKeyExchange()
@@ -189,7 +196,7 @@ public class TlsPSKKeyExchange
         }
         else if (this.keyExchange == KeyExchangeAlgorithm.ECDHE_PSK)
         {
-            this.ecConfig = TlsECCUtils.receiveECConfig(namedCurves, serverECPointFormats, input);
+            this.ecConfig = TlsECCUtils.receiveECConfig(ecConfigVerifier, serverECPointFormats, input);
 
             byte[] point = TlsUtils.readOpaque8(input);
 

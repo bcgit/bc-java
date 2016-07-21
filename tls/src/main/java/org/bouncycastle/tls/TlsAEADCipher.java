@@ -13,11 +13,7 @@ public class TlsAEADCipher
     // TODO[draft-zauner-tls-aes-ocb-04] Apply data volume limit described in section 8.4
 
     public static final int NONCE_RFC5288 = 1;
-    
-    /*
-     * draft-zauner-tls-aes-ocb-04 specifies the nonce construction from draft-ietf-tls-chacha20-poly1305-04
-     */
-    static final int NONCE_DRAFT_CHACHA20_POLY1305 = 2;
+    public static final int NONCE_RFC7905 = 2;
 
     protected TlsContext context;
     protected int macSize;
@@ -56,7 +52,7 @@ public class TlsAEADCipher
             fixed_iv_length = 4;
             this.record_iv_length = 8;
             break;
-        case NONCE_DRAFT_CHACHA20_POLY1305:
+        case NONCE_RFC7905:
             fixed_iv_length = 12;
             this.record_iv_length = 0;
             break;
@@ -131,7 +127,7 @@ public class TlsAEADCipher
             // RFC 5288/6655: The nonce_explicit MAY be the 64-bit sequence number.
             TlsUtils.writeUint64(seqNo, nonce, encryptImplicitNonce.length);
             break;
-        case NONCE_DRAFT_CHACHA20_POLY1305:
+        case NONCE_RFC7905:
             TlsUtils.writeUint64(seqNo, nonce, nonce.length - 8);
             for (int i = 0; i < encryptImplicitNonce.length; ++i)
             {
@@ -192,7 +188,7 @@ public class TlsAEADCipher
             System.arraycopy(decryptImplicitNonce, 0, nonce, 0, decryptImplicitNonce.length);
             System.arraycopy(ciphertext, offset, nonce, nonce.length - record_iv_length, record_iv_length);
             break;
-        case NONCE_DRAFT_CHACHA20_POLY1305:
+        case NONCE_RFC7905:
             TlsUtils.writeUint64(seqNo, nonce, nonce.length - 8);
             for (int i = 0; i < decryptImplicitNonce.length; ++i)
             {

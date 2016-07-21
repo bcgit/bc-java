@@ -15,12 +15,6 @@ public class TlsECCUtils
     public static final Integer EXT_elliptic_curves = Integers.valueOf(ExtensionType.elliptic_curves);
     public static final Integer EXT_ec_point_formats = Integers.valueOf(ExtensionType.ec_point_formats);
 
-    private static final String[] CURVE_NAMES = new String[] { "sect163k1", "sect163r1", "sect163r2", "sect193r1",
-        "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1", "sect283r1", "sect409k1", "sect409r1",
-        "sect571k1", "sect571r1", "secp160k1", "secp160r1", "secp160r2", "secp192k1", "secp192r1", "secp224k1",
-        "secp224r1", "secp256k1", "secp256r1", "secp384r1", "secp521r1",
-        "brainpoolP256r1", "brainpoolP384r1", "brainpoolP512r1"};
-
     public static void addSupportedEllipticCurvesExtension(Hashtable extensions, int[] namedCurves) throws IOException
     {
         extensions.put(EXT_elliptic_curves, createSupportedEllipticCurvesExtension(namedCurves));
@@ -123,21 +117,11 @@ public class TlsECCUtils
         return ecPointFormats;
     }
 
-    public static String getNameOfNamedCurve(int namedCurve)
-    {
-        return isSupportedNamedCurve(namedCurve) ? CURVE_NAMES[namedCurve - 1] : null;
-    }
-
-    public static boolean hasAnySupportedNamedCurves()
-    {
-        return CURVE_NAMES.length > 0;
-    }
-
-    public static boolean containsECCCipherSuites(int[] cipherSuites)
+    public static boolean containsECCipherSuites(int[] cipherSuites)
     {
         for (int i = 0; i < cipherSuites.length; ++i)
         {
-            if (isECCCipherSuite(cipherSuites[i]))
+            if (isECCipherSuite(cipherSuites[i]))
             {
                 return true;
             }
@@ -145,131 +129,48 @@ public class TlsECCUtils
         return false;
     }
 
-    public static boolean isECCCipherSuite(int cipherSuite)
+    public static int getMinimumCurveBits(int cipherSuite)
     {
         switch (cipherSuite)
         {
-        /*
-         * RFC 4492
-         */
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_NULL_SHA:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_RC4_128_SHA:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_NULL_SHA:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_RC4_128_SHA:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA:
-        case CipherSuite.TLS_ECDH_RSA_WITH_NULL_SHA:
-        case CipherSuite.TLS_ECDH_RSA_WITH_RC4_128_SHA:
-        case CipherSuite.TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA:
-        case CipherSuite.TLS_ECDH_RSA_WITH_AES_128_CBC_SHA:
-        case CipherSuite.TLS_ECDH_RSA_WITH_AES_256_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_NULL_SHA:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_RC4_128_SHA:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA:
-        case CipherSuite.TLS_ECDH_anon_WITH_NULL_SHA:
-        case CipherSuite.TLS_ECDH_anon_WITH_RC4_128_SHA:
-        case CipherSuite.TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA:
-        case CipherSuite.TLS_ECDH_anon_WITH_AES_128_CBC_SHA:
-        case CipherSuite.TLS_ECDH_anon_WITH_AES_256_CBC_SHA:
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_128_CCM_8_SHA256:
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_128_CCM_SHA256:
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256:
+            return 255;
 
-        /*
-         * RFC 5289
-         */
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384:
-        case CipherSuite.TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384:
-        case CipherSuite.TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256:
-        case CipherSuite.TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384:
-
-        /*
-         * RFC 5489
-         */
-        case CipherSuite.TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA256:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA384:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_RC4_128_SHA:
-
-        /*
-         * RFC 6367
-         */
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_CBC_SHA384:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_CAMELLIA_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_CAMELLIA_256_CBC_SHA384:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384:
-        case CipherSuite.TLS_ECDH_RSA_WITH_CAMELLIA_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDH_RSA_WITH_CAMELLIA_256_CBC_SHA384:
-
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_GCM_SHA256:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_GCM_SHA384:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256:
-        case CipherSuite.TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_128_GCM_SHA256:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_256_GCM_SHA384:
-        case CipherSuite.TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256:
-        case CipherSuite.TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384:
-
-        case CipherSuite.TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256:
-        case CipherSuite.TLS_ECDHE_PSK_WITH_CAMELLIA_256_CBC_SHA384:
-
-        /*
-         * RFC 7251
-         */
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CCM:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8:
-
-        /*
-         * draft-ietf-tls-chacha20-poly1305-04
-         */
-        case CipherSuite.DRAFT_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:
-        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256:
-        case CipherSuite.DRAFT_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
-
-        /*
-         * draft-zauner-tls-aes-ocb-04
-         */
-        case CipherSuite.DRAFT_TLS_ECDHE_RSA_WITH_AES_128_OCB:
-        case CipherSuite.DRAFT_TLS_ECDHE_RSA_WITH_AES_256_OCB:
-        case CipherSuite.DRAFT_TLS_ECDHE_ECDSA_WITH_AES_128_OCB:
-        case CipherSuite.DRAFT_TLS_ECDHE_ECDSA_WITH_AES_256_OCB:
-        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_128_OCB:
-        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_256_OCB:
-
-            return true;
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_256_CCM_8_SHA256:
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_256_CCM_SHA384:
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_256_GCM_SHA384:
+            return 384;
 
         default:
-            return false;
+        {
+            if (!isECCipherSuite(cipherSuite))
+            {
+                return 0;
+            }
+
+            // TODO Is there a de facto rule to require a curve of similar size to the PRF hash?
+            return 1;
+        }
         }
     }
 
-    public static boolean isSupportedNamedCurve(int namedCurve)
+    public static boolean isECCipherSuite(int cipherSuite)
     {
-        return (namedCurve > 0 && namedCurve <= CURVE_NAMES.length);
+        switch (TlsUtils.getKeyExchangeAlgorithm(cipherSuite))
+        {
+        case KeyExchangeAlgorithm.ECDH_anon:
+        case KeyExchangeAlgorithm.ECDH_ECDSA:
+        case KeyExchangeAlgorithm.ECDH_RSA:
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+        case KeyExchangeAlgorithm.ECDHE_PSK:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
+            return true;
+            
+        default:
+            return false;
+        }
     }
 
     public static short getCompressionFormat(int namedCurve) throws IOException
@@ -380,31 +281,20 @@ public class TlsECCUtils
         return result;
     }
 
-    public static TlsECConfig receiveECConfig(int[] namedCurves, short[] peerECPointFormats, InputStream input)
+    public static TlsECConfig receiveECConfig(TlsECConfigVerifier ecConfigVerifier, short[] peerECPointFormats, InputStream input)
         throws IOException
     {
-        TlsECConfig result = readECConfig(peerECPointFormats, input);
-        checkNamedCurve(namedCurves, result.getNamedCurve());
-        return result;
+        TlsECConfig ecConfig = readECConfig(peerECPointFormats, input);
+        if (!ecConfigVerifier.accept(ecConfig))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+        return ecConfig;
     }
 
-    public static TlsECConfig selectECConfig(int[] namedCurves, short[] clientECPointFormats, OutputStream output)
-        throws IOException
+    public static void writeECConfig(TlsECConfig ecConfig, OutputStream output) throws IOException
     {
-        int namedCurve = chooseNamedCurve(namedCurves);
-        if (namedCurve < 0)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        writeNamedECParameters(namedCurve, output);
-
-        boolean compressed = isCompressionPreferred(clientECPointFormats, namedCurve);
-
-        TlsECConfig result = new TlsECConfig();
-        result.setNamedCurve(namedCurve);
-        result.setPointCompression(compressed);
-        return result;
+        writeNamedECParameters(ecConfig.getNamedCurve(), output);
     }
 
     public static void writeNamedECParameters(int namedCurve, OutputStream output) throws IOException
@@ -422,39 +312,5 @@ public class TlsECCUtils
         TlsUtils.writeUint8(ECCurveType.named_curve, output);
         TlsUtils.checkUint16(namedCurve);
         TlsUtils.writeUint16(namedCurve, output);
-    }
-
-    private static void checkNamedCurve(int[] namedCurves, int namedCurve) throws IOException
-    {
-        if (namedCurves != null && !Arrays.contains(namedCurves, namedCurve))
-        {
-            /*
-             * RFC 4492 4. [...] servers MUST NOT negotiate the use of an ECC cipher suite
-             * unless they can complete the handshake while respecting the choice of curves
-             * and compression techniques specified by the client.
-             */
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-    }
-
-    private static int chooseNamedCurve(int[] namedCurves)
-    {
-        /* First we try to find a supported named curve from the client's list. */
-        if (namedCurves == null)
-        {
-            // TODO Let the peer choose the default named curve
-            return NamedCurve.secp256r1;
-        }
-
-        for (int i = 0; i < namedCurves.length; ++i)
-        {
-            int entry = namedCurves[i];
-            if (NamedCurve.isValid(entry) && isSupportedNamedCurve(entry))
-            {
-                return entry;
-            }
-        }
-
-        return -1;
     }
 }

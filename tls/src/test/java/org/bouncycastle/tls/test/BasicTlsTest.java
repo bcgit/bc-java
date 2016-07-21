@@ -10,17 +10,23 @@ import java.security.SecureRandom;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import org.bouncycastle.crypto.prng.RandomGenerator;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.DefaultTlsClient;
+import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsClient;
+import org.bouncycastle.tls.TlsClientContext;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsKeyExchange;
+import org.bouncycastle.tls.TlsSession;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -167,6 +173,7 @@ public class BasicTlsTest
         client.notifySelectedCipherSuite(cipherSuite);
 
         TlsKeyExchange keyExchange = client.getKeyExchange();
+        keyExchange.init(new MyTlsClientContext(client.getCrypto()));
 
         keyExchange
             .processServerCertificate(new Certificate(
@@ -219,6 +226,72 @@ public class BasicTlsTest
             throws IOException
         {
             return authentication;
+        }
+    }
+
+    static class MyTlsClientContext
+        implements TlsClientContext
+    {
+        TlsCrypto crypto;
+
+        MyTlsClientContext(TlsCrypto crypto)
+        {
+            this.crypto = crypto;
+        }
+
+        public TlsCrypto getCrypto()
+        {
+            return crypto;
+        }
+
+        public RandomGenerator getNonceRandomGenerator()
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        public SecureRandom getSecureRandom()
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        public SecurityParameters getSecurityParameters()
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        public boolean isServer()
+        {
+            return false;
+        }
+
+        public ProtocolVersion getClientVersion()
+        {
+            return ProtocolVersion.TLSv12;
+        }
+
+        public ProtocolVersion getServerVersion()
+        {
+            return ProtocolVersion.TLSv12;
+        }
+
+        public TlsSession getResumableSession()
+        {
+            return null;
+        }
+
+        public Object getUserObject()
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        public void setUserObject(Object userObject)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        public byte[] exportKeyingMaterial(String asciiLabel, byte[] context_value, int length)
+        {
+            throw new UnsupportedOperationException();
         }
     }
 }

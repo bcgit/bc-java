@@ -7,9 +7,7 @@ import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.util.Vector;
 
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.util.Arrays;
 
 public class TlsServerProtocol
@@ -503,13 +501,10 @@ public class TlsServerProtocol
                 hash = securityParameters.getSessionHash();
             }
 
-            org.bouncycastle.asn1.x509.Certificate x509Cert = peerCertificate.getCertificateAt(0);
-            SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
-            AsymmetricKeyParameter publicKey = PublicKeyFactory.createKey(keyInfo);
+            TlsVerifier verifier = peerCertificate.getCertificateAt(getContext(), 0)
+                .createVerifier(TlsUtils.getSignatureAlgorithmClient(clientCertificateType));
 
-            TlsSigner tlsSigner = TlsUtils.createTlsSigner(clientCertificateType);
-            tlsSigner.init(getContext());
-            if (!tlsSigner.verifyRawSignature(signatureAlgorithm, clientCertificateVerify.getSignature(), publicKey, hash))
+            if (!verifier.verifySignature(clientCertificateVerify, hash))
             {
                 throw new TlsFatalAlert(AlertDescription.decrypt_error);
             }

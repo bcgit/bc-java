@@ -54,13 +54,6 @@ class MockPSKTlsServer
         }
     }
 
-    protected int[] getCipherSuites()
-    {
-        return new int[]{ CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384,
-            CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA384, CipherSuite.TLS_RSA_PSK_WITH_AES_256_CBC_SHA384,
-            CipherSuite.TLS_PSK_WITH_AES_256_CBC_SHA };
-    }
-
     protected ProtocolVersion getMaximumVersion()
     {
         return ProtocolVersion.TLSv12;

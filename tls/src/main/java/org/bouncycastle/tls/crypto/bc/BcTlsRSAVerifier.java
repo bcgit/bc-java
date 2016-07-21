@@ -1,21 +1,40 @@
-package org.bouncycastle.tls;
+package org.bouncycastle.tls.crypto.bc;
 
-import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.signers.GenericSigner;
 import org.bouncycastle.crypto.signers.RSADigestSigner;
+import org.bouncycastle.tls.DigitallySigned;
+import org.bouncycastle.tls.SignatureAlgorithm;
+import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsVerifier;
 
-public class TlsRSASigner
-    extends AbstractTlsSigner
+public class BcTlsRSAVerifier
+    implements TlsVerifier
 {
-    public byte[] generateRawSignature(SignatureAndHashAlgorithm algorithm, AsymmetricKeyParameter privateKey,
-        byte[] hash) throws CryptoException
+    protected RSAKeyParameters pubKeyRSA;
+
+    public BcTlsRSAVerifier(RSAKeyParameters pubKeyRSA)
     {
+        if (pubKeyRSA == null)
+        {
+            throw new IllegalArgumentException("'pubKeyRSA' cannot be null");
+        }
+        if (pubKeyRSA.isPrivate())
+        {
+            throw new IllegalArgumentException("'pubKeyRSA' must be a public key");
+        }
+
+        this.pubKeyRSA = pubKeyRSA;
+    }
+
+    public boolean verifySignature(DigitallySigned signedParams, byte[] hash)
+    {
+        SignatureAndHashAlgorithm algorithm = signedParams.getAlgorithm();
         Signer signer;
         if (algorithm != null)
         {
@@ -38,8 +57,8 @@ public class TlsRSASigner
              */
             signer = new GenericSigner(new PKCS1Encoding(new RSABlindedEngine()), new NullDigest());
         }
-        signer.init(true, new ParametersWithRandom(privateKey, context.getSecureRandom()));
+        signer.init(false, pubKeyRSA);
         signer.update(hash, 0, hash.length);
-        return signer.generateSignature();
+        return signer.verifySignature(signedParams.getSignature());
     }
 }

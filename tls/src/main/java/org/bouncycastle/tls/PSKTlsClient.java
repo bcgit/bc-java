@@ -25,8 +25,11 @@ public class PSKTlsClient
     {
         return new int[]
         {
+            CipherSuite.TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256,
             CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256,
             CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA,
+            CipherSuite.TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256,
+            CipherSuite.TLS_DHE_PSK_WITH_AES_128_GCM_SHA256,
             CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA256,
             CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA
         };
@@ -39,10 +42,14 @@ public class PSKTlsClient
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DHE_PSK:
+            return createPSKKeyExchange(keyExchangeAlgorithm, dhConfigVerifier, null);
+
         case KeyExchangeAlgorithm.ECDHE_PSK:
+            return createPSKKeyExchange(keyExchangeAlgorithm, null, createECConfigVerifier());
+
         case KeyExchangeAlgorithm.PSK:
         case KeyExchangeAlgorithm.RSA_PSK:
-            return createPSKKeyExchange(keyExchangeAlgorithm);
+            return createPSKKeyExchange(keyExchangeAlgorithm, null, null);
 
         default:
             /*
@@ -63,9 +70,10 @@ public class PSKTlsClient
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    protected TlsKeyExchange createPSKKeyExchange(int keyExchange) throws IOException
+    protected TlsKeyExchange createPSKKeyExchange(int keyExchange, TlsDHConfigVerifier dhConfigVerifier,
+        TlsECConfigVerifier ecConfigVerifier) throws IOException
     {
         return keyExchangeFactory.createPSKKeyExchangeClient(keyExchange, supportedSignatureAlgorithms, pskIdentity,
-            dhConfigVerifier, namedCurves, clientECPointFormats, serverECPointFormats);
+            dhConfigVerifier, ecConfigVerifier, clientECPointFormats, serverECPointFormats);
     }
 }

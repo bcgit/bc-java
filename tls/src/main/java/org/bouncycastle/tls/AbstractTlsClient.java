@@ -59,6 +59,12 @@ public abstract class AbstractTlsClient
         }
     }
 
+    protected TlsECConfigVerifier createECConfigVerifier()
+    {
+        int minimumCurveBits = TlsECCUtils.getMinimumCurveBits(selectedCipherSuite);
+        return new DefaultTlsECConfigVerifier(minimumCurveBits, namedCurves);
+    }
+
     public void init(TlsClientContext context)
     {
         this.context = context;
@@ -118,7 +124,7 @@ public abstract class AbstractTlsClient
             TlsUtils.addSignatureAlgorithmsExtension(clientExtensions, supportedSignatureAlgorithms);
         }
 
-        if (TlsECCUtils.containsECCCipherSuites(getCipherSuites()))
+        if (TlsECCUtils.containsECCipherSuites(getCipherSuites()))
         {
             /*
              * RFC 4492 5.1. A client that proposes ECC cipher suites in its ClientHello message
@@ -193,7 +199,7 @@ public abstract class AbstractTlsClient
 
             checkForUnexpectedServerExtension(serverExtensions, TlsECCUtils.EXT_elliptic_curves);
 
-            if (TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite))
+            if (TlsECCUtils.isECCipherSuite(this.selectedCipherSuite))
             {
                 this.serverECPointFormats = TlsECCUtils.getSupportedPointFormatsExtension(serverExtensions);
             }
@@ -247,6 +253,11 @@ public abstract class AbstractTlsClient
     {
         int encryptionAlgorithm = TlsUtils.getEncryptionAlgorithm(selectedCipherSuite);
         int macAlgorithm = TlsUtils.getMACAlgorithm(selectedCipherSuite);
+
+        if (encryptionAlgorithm < 0 || macAlgorithm < 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
 
         return cipherFactory.createCipher(context, encryptionAlgorithm, macAlgorithm);
     }

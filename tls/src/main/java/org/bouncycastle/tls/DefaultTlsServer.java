@@ -2,10 +2,6 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
-import org.bouncycastle.crypto.agreement.DHStandardGroups;
-import org.bouncycastle.crypto.params.DHParameters;
-import org.bouncycastle.tls.crypto.TlsDHConfig;
-
 public abstract class DefaultTlsServer
     extends AbstractTlsServer
 {
@@ -43,26 +39,18 @@ public abstract class DefaultTlsServer
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    protected DHParameters getDHParameters()
-    {
-        return DHStandardGroups.rfc5114_2048_256;
-    }
-
-    protected TlsDHConfig getDHConfig()
-    {
-        return TlsDHUtils.selectDHConfig(getDHParameters()); 
-    }
-
     protected int[] getCipherSuites()
     {
         return new int[]
         {
+            CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
             CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
             CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
             CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
             CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
             CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
             CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+            CipherSuite.TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
             CipherSuite.TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
             CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
             CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,
@@ -148,23 +136,23 @@ public abstract class DefaultTlsServer
 
     protected TlsKeyExchange createDHKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createDHKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, getDHConfig());
+        return keyExchangeFactory.createDHKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, selectDHConfig());
     }
 
     protected TlsKeyExchange createDHEKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createDHEKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, getDHConfig());
+        return keyExchangeFactory.createDHEKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, selectDHConfig());
     }
 
     protected TlsKeyExchange createECDHKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createECDHKeyExchange(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats,
+        return keyExchangeFactory.createECDHKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, selectECConfig(),
             serverECPointFormats);
     }
 
     protected TlsKeyExchange createECDHEKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createECDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, namedCurves, clientECPointFormats,
+        return keyExchangeFactory.createECDHEKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, selectECConfig(),
             serverECPointFormats);
     }
 

@@ -4,6 +4,10 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.crypto.agreement.DHStandardGroups;
+import org.bouncycastle.crypto.params.DHParameters;
+import org.bouncycastle.tls.crypto.TlsDHConfig;
+import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.util.Arrays;
 
 public abstract class AbstractTlsServer
@@ -24,7 +28,6 @@ public abstract class AbstractTlsServer
     protected short maxFragmentLengthOffered;
     protected boolean truncatedHMacOffered;
     protected Vector supportedSignatureAlgorithms;
-    protected boolean eccCipherSuitesOffered;
     protected int[] namedCurves;
     protected short[] clientECPointFormats, serverECPointFormats;
 
@@ -66,6 +69,11 @@ public abstract class AbstractTlsServer
         return new short[]{CompressionMethod._null};
     }
 
+    protected DHParameters getDHParameters()
+    {
+        return DHStandardGroups.rfc5114_2048_256;
+    }
+
     protected ProtocolVersion getMaximumVersion()
     {
         return ProtocolVersion.TLSv11;
@@ -76,7 +84,7 @@ public abstract class AbstractTlsServer
         return ProtocolVersion.TLSv10;
     }
 
-    protected boolean supportsClientECCCapabilities(int[] namedCurves, short[] ecPointFormats)
+    protected int getMaximumNegotiableCurveBits()
     {
         // NOTE: BC supports all the current set of point formats so we don't check them here
 
@@ -87,21 +95,68 @@ public abstract class AbstractTlsServer
              * extensions. In this case, the server is free to choose any one of the elliptic curves
              * or point formats [...].
              */
-            return TlsECCUtils.hasAnySupportedNamedCurves();
+            return NamedCurve.getMaximumCurveBits();
         }
 
+        int maxBits = 0;
+        for (int i = 0; i < namedCurves.length; ++i)
+        {
+            maxBits = Math.max(maxBits, NamedCurve.getCurveBits(namedCurves[i]));
+        }
+        return maxBits;
+    }
+
+    protected int selectCurve(int minimumCurveBits)
+    {
+        if (namedCurves == null)
+        {
+            return selectDefaultCurve(minimumCurveBits);
+        }
+
+        // Try to find a supported named curve of the required size from the client's list.
         for (int i = 0; i < namedCurves.length; ++i)
         {
             int namedCurve = namedCurves[i];
-            if (NamedCurve.isValid(namedCurve) && TlsECCUtils.isSupportedNamedCurve(namedCurve))
+            if (NamedCurve.getCurveBits(namedCurve) >= minimumCurveBits)
             {
-                return true;
+                return namedCurve;
             }
         }
 
-        return false;
+        return -1;
     }
 
+    protected int selectDefaultCurve(int minimumCurveBits)
+    {
+        return minimumCurveBits <= 256 ? NamedCurve.secp256r1
+            :  minimumCurveBits <= 384 ? NamedCurve.secp384r1
+            :  minimumCurveBits <= 521 ? NamedCurve.secp521r1
+            :  -1;
+    }
+
+    protected TlsDHConfig selectDHConfig()
+    {
+        return TlsDHUtils.selectDHConfig(getDHParameters()); 
+    }
+
+    protected TlsECConfig selectECConfig() throws IOException
+    {
+        int minimumCurveBits = TlsECCUtils.getMinimumCurveBits(selectedCipherSuite);
+
+        int namedCurve = selectCurve(minimumCurveBits);
+        if (namedCurve < 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        boolean compressed = TlsECCUtils.isCompressionPreferred(clientECPointFormats, namedCurve);
+
+        TlsECConfig ecConfig = new TlsECConfig();
+        ecConfig.setNamedCurve(namedCurve);
+        ecConfig.setPointCompression(compressed);
+        return ecConfig;
+    }
+    
     public void init(TlsServerContext context)
     {
         this.context = context;
@@ -131,7 +186,6 @@ public abstract class AbstractTlsServer
         throws IOException
     {
         this.offeredCipherSuites = offeredCipherSuites;
-        this.eccCipherSuitesOffered = TlsECCUtils.containsECCCipherSuites(this.offeredCipherSuites);
     }
 
     public void notifyOfferedCompressionMethods(short[] offeredCompressionMethods)
@@ -223,7 +277,7 @@ public abstract class AbstractTlsServer
          * if the server can successfully complete the handshake while using the curves and point
          * formats supported by the client [...].
          */
-        boolean eccCipherSuitesEnabled = supportsClientECCCapabilities(this.namedCurves, this.clientECPointFormats);
+        int availCurveBits = getMaximumNegotiableCurveBits();
 
         int[] cipherSuites = getCipherSuites();
         for (int i = 0; i < cipherSuites.length; ++i)
@@ -231,8 +285,8 @@ public abstract class AbstractTlsServer
             int cipherSuite = cipherSuites[i];
 
             if (Arrays.contains(this.offeredCipherSuites, cipherSuite)
-                && (eccCipherSuitesEnabled || !TlsECCUtils.isECCCipherSuite(cipherSuite))
-                && TlsUtils.isValidCipherSuiteForVersion(cipherSuite, serverVersion))
+                && TlsUtils.isValidCipherSuiteForVersion(cipherSuite, serverVersion)
+                && availCurveBits >= TlsECCUtils.getMinimumCurveBits(cipherSuite))
             {
                 return this.selectedCipherSuite = cipherSuite;
             }
@@ -282,7 +336,7 @@ public abstract class AbstractTlsServer
             TlsExtensionsUtils.addTruncatedHMacExtension(checkServerExtensions());
         }
 
-        if (this.clientECPointFormats != null && TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite))
+        if (this.clientECPointFormats != null && TlsECCUtils.isECCipherSuite(this.selectedCipherSuite))
         {
             /*
              * RFC 4492 5.2. A server that selects an ECC cipher suite in response to a ClientHello
@@ -353,6 +407,11 @@ public abstract class AbstractTlsServer
     {
         int encryptionAlgorithm = TlsUtils.getEncryptionAlgorithm(selectedCipherSuite);
         int macAlgorithm = TlsUtils.getMACAlgorithm(selectedCipherSuite);
+
+        if (encryptionAlgorithm < 0 || macAlgorithm < 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
 
         return cipherFactory.createCipher(context, encryptionAlgorithm, macAlgorithm);
     }

@@ -275,11 +275,11 @@ public class TlsDHUtils
         }
     }
 
-    public static boolean containsDHECipherSuites(int[] cipherSuites)
+    public static boolean containsDHCipherSuites(int[] cipherSuites)
     {
         for (int i = 0; i < cipherSuites.length; ++i)
         {
-            if (isDHECipherSuite(cipherSuites[i]))
+            if (isDHCipherSuite(cipherSuites[i]))
             {
                 return true;
             }
@@ -287,123 +287,21 @@ public class TlsDHUtils
         return false;
     }
 
-    public static boolean isDHECipherSuite(int cipherSuite)
+    public static boolean isDHCipherSuite(int cipherSuite)
     {
-        switch (cipherSuite)
+        switch (TlsUtils.getKeyExchangeAlgorithm(cipherSuite))
         {
-        /*
-         * RFC 2246
-         */
-        case CipherSuite.TLS_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA:
-        case CipherSuite.TLS_DHE_DSS_WITH_DES_CBC_SHA:
-        case CipherSuite.TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA:
-        case CipherSuite.TLS_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA:
-        case CipherSuite.TLS_DHE_RSA_WITH_DES_CBC_SHA:
-        case CipherSuite.TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA:
-
-        /*
-         * RFC 3268
-         */
-        case CipherSuite.TLS_DHE_DSS_WITH_AES_128_CBC_SHA:
-        case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA:
-        case CipherSuite.TLS_DHE_DSS_WITH_AES_256_CBC_SHA:
-        case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA:
-
-        /*
-         * RFC 5932
-         */
-        case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA:
-        case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA:
-        case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA:
-        case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA:
-        case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA256:
-        case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256:
-        case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA256:
-        case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256:
-
-        /*
-         * RFC 4162
-         */
-        case CipherSuite.TLS_DHE_DSS_WITH_SEED_CBC_SHA:
-        case CipherSuite.TLS_DHE_RSA_WITH_SEED_CBC_SHA:
-
-        /*
-         * RFC 4279
-         */
-        case CipherSuite.TLS_DHE_PSK_WITH_RC4_128_SHA:
-        case CipherSuite.TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA:
-        case CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA:
-        case CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA:
-
-        /*
-         * RFC 4785
-         */
-        case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA:
-
-        /*
-         * RFC 5246
-         */
-        case CipherSuite.TLS_DHE_DSS_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_DHE_DSS_WITH_AES_256_CBC_SHA256:
-        case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA256:
-
-        /*
-         * RFC 5288
-         */
-        case CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256:
-        case CipherSuite.TLS_DHE_RSA_WITH_AES_256_GCM_SHA384:
-        case CipherSuite.TLS_DHE_DSS_WITH_AES_128_GCM_SHA256:
-        case CipherSuite.TLS_DHE_DSS_WITH_AES_256_GCM_SHA384:
-
-        /*
-         * RFC 5487
-         */
-        case CipherSuite.TLS_DHE_PSK_WITH_AES_128_GCM_SHA256:
-        case CipherSuite.TLS_DHE_PSK_WITH_AES_256_GCM_SHA384:
-        case CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA256:
-        case CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA384:
-        case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA256:
-        case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA384:
-
-        /*
-         * RFC 6367
-         */
-        case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_GCM_SHA256:
-        case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_GCM_SHA384:
-        case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_128_GCM_SHA256:
-        case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_256_GCM_SHA384:
-        case CipherSuite.TLS_DHE_PSK_WITH_CAMELLIA_128_GCM_SHA256:
-        case CipherSuite.TLS_DHE_PSK_WITH_CAMELLIA_256_GCM_SHA384:
-        case CipherSuite.TLS_DHE_PSK_WITH_CAMELLIA_128_CBC_SHA256:
-        case CipherSuite.TLS_DHE_PSK_WITH_CAMELLIA_256_CBC_SHA384:
-
-        /*
-         * RFC 6655
-         */
-        case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM:
-        case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM:
-        case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM_8:
-        case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM_8:
-        case CipherSuite.TLS_DHE_PSK_WITH_AES_128_CCM:
-        case CipherSuite.TLS_DHE_PSK_WITH_AES_256_CCM:
-        case CipherSuite.TLS_PSK_DHE_WITH_AES_128_CCM_8:
-        case CipherSuite.TLS_PSK_DHE_WITH_AES_256_CCM_8:
-
-        /*
-         * draft-ietf-tls-chacha20-poly1305-04
-         */
-        case CipherSuite.DRAFT_TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256:
-        case CipherSuite.DRAFT_TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
-
-        /*
-         * draft-zauner-tls-aes-ocb-04
-         */
-        case CipherSuite.DRAFT_TLS_DHE_RSA_WITH_AES_128_OCB:
-        case CipherSuite.DRAFT_TLS_DHE_RSA_WITH_AES_256_OCB:
-        case CipherSuite.DRAFT_TLS_DHE_PSK_WITH_AES_128_OCB:
-        case CipherSuite.DRAFT_TLS_DHE_PSK_WITH_AES_256_OCB:
-
+        case KeyExchangeAlgorithm.DH_anon:
+        case KeyExchangeAlgorithm.DH_anon_EXPORT:
+        case KeyExchangeAlgorithm.DH_DSS:
+        case KeyExchangeAlgorithm.DH_DSS_EXPORT:
+        case KeyExchangeAlgorithm.DH_RSA:
+        case KeyExchangeAlgorithm.DH_RSA_EXPORT:
+        case KeyExchangeAlgorithm.DHE_DSS:
+        case KeyExchangeAlgorithm.DHE_DSS_EXPORT:
+        case KeyExchangeAlgorithm.DHE_PSK:
+        case KeyExchangeAlgorithm.DHE_RSA:
+        case KeyExchangeAlgorithm.DHE_RSA_EXPORT:
             return true;
 
         default:

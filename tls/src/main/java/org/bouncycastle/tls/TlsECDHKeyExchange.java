@@ -18,55 +18,56 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 /**
  * (D)TLS ECDH key exchange (see RFC 4492).
  */
-public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
+public class TlsECDHKeyExchange
+    extends AbstractTlsKeyExchange
 {
-    protected TlsSigner tlsSigner;
-    protected int[] namedCurves;
+    private static int checkKeyExchange(int keyExchange)
+    {
+        switch (keyExchange)
+        {
+        case KeyExchangeAlgorithm.ECDH_anon:
+        case KeyExchangeAlgorithm.ECDH_ECDSA:
+        case KeyExchangeAlgorithm.ECDH_RSA:
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
+            return keyExchange;
+        default:
+            throw new IllegalArgumentException("unsupported key exchange algorithm");
+        }
+    }
+
+    protected TlsECConfigVerifier ecConfigVerifier;
     protected short[] clientECPointFormats, serverECPointFormats;
 
-    protected AsymmetricKeyParameter serverPublicKey;
     protected TlsAgreementCredentials agreementCredentials;
-
     protected ECPublicKeyParameters ecFixedAgreePublicKey;
 
     protected TlsECConfig ecConfig;
     protected TlsAgreement agreement;
 
-    public TlsECDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, int[] namedCurves,
-        short[] clientECPointFormats, short[] serverECPointFormats)
+    public TlsECDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms,
+        TlsECConfigVerifier ecConfigVerifier, short[] clientECPointFormats, short[] serverECPointFormats)
     {
-        super(keyExchange, supportedSignatureAlgorithms);
-
-        switch (keyExchange)
-        {
-        case KeyExchangeAlgorithm.ECDHE_RSA:
-            this.tlsSigner = new TlsRSASigner();
-            break;
-        case KeyExchangeAlgorithm.ECDHE_ECDSA:
-            this.tlsSigner = new TlsECDSASigner();
-            break;
-        case KeyExchangeAlgorithm.ECDH_anon:
-        case KeyExchangeAlgorithm.ECDH_RSA:
-        case KeyExchangeAlgorithm.ECDH_ECDSA:
-            this.tlsSigner = null;
-            break;
-        default:
-            throw new IllegalArgumentException("unsupported key exchange algorithm");
-        }
-
-        this.namedCurves = namedCurves;
-        this.clientECPointFormats = clientECPointFormats;
-        this.serverECPointFormats = serverECPointFormats;
+        this(keyExchange, supportedSignatureAlgorithms, ecConfigVerifier, null, clientECPointFormats,
+            serverECPointFormats);
     }
 
-    public void init(TlsContext context)
+    public TlsECDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsECConfig ecConfig,
+        short[] serverECPointFormats)
     {
-        super.init(context);
+        this(keyExchange, supportedSignatureAlgorithms, null, ecConfig, null, serverECPointFormats);
+    }
 
-        if (this.tlsSigner != null)
-        {
-            this.tlsSigner.init(context);
-        }
+    private TlsECDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms,
+        TlsECConfigVerifier ecConfigVerifier, TlsECConfig ecConfig, short[] clientECPointFormats,
+        short[] serverECPointFormats)
+    {
+        super(checkKeyExchange(keyExchange), supportedSignatureAlgorithms);
+
+        this.ecConfigVerifier = ecConfigVerifier;
+        this.ecConfig = ecConfig;
+        this.clientECPointFormats = clientECPointFormats;
+        this.serverECPointFormats = serverECPointFormats;
     }
 
     public void skipServerCredentials() throws IOException
@@ -91,42 +92,31 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
         org.bouncycastle.asn1.x509.Certificate x509Cert = serverCertificate.getCertificateAt(0);
 
         SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
+        AsymmetricKeyParameter serverPublicKey;
         try
         {
-            this.serverPublicKey = PublicKeyFactory.createKey(keyInfo);
+            serverPublicKey = PublicKeyFactory.createKey(keyInfo);
         }
         catch (RuntimeException e)
         {
             throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
         }
 
-        if (tlsSigner == null)
+        // TODO[tls-ops] Extract TlsECConfig and/or initialize TlsAgreement directly from certificate
+        //this.ecdhPeerCertificate = serverCertificate.getCertificateAt(context, 0).useInRole(ConnectionEnd.server, keyExchange);
+
+        try
         {
-            // TODO[tls-ops] Extract TlsECConfig and/or initialize TlsAgreement directly from certificate
-//          this.ecdhPeerCertificate = serverCertificate.getCertificateAt(context, 0).useInRole(ConnectionEnd.server, keyExchange);
-
-            try
-            {
-                this.ecFixedAgreePublicKey = (ECPublicKeyParameters)this.serverPublicKey;
-            }
-            catch (ClassCastException e)
-            {
-                throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
-            }
-
-            TlsUtils.validateKeyUsage(x509Cert, KeyUsage.keyAgreement);
+            this.ecFixedAgreePublicKey = (ECPublicKeyParameters)serverPublicKey;
         }
-        else
+        catch (ClassCastException e)
         {
-            if (!tlsSigner.isValidPublicKey(this.serverPublicKey))
-            {
-                throw new TlsFatalAlert(AlertDescription.certificate_unknown);
-            }
-
-            TlsUtils.validateKeyUsage(x509Cert, KeyUsage.digitalSignature);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
         }
 
-        super.processServerCertificate(serverCertificate);
+        TlsUtils.validateKeyUsage(x509Cert, KeyUsage.keyAgreement);
+
+        checkServerCertSigAlg(serverCertificate);
     }
 
     public boolean requiresServerKeyExchange()
@@ -142,8 +132,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
         }
     }
 
-    public byte[] generateServerKeyExchange()
-        throws IOException
+    public byte[] generateServerKeyExchange() throws IOException
     {
         if (!requiresServerKeyExchange())
         {
@@ -154,7 +143,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
-        this.ecConfig = TlsECCUtils.selectECConfig(namedCurves, clientECPointFormats, buf);
+        TlsECCUtils.writeECConfig(ecConfig, buf);
 
         this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
 
@@ -163,8 +152,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
         return buf.toByteArray();
     }
 
-    public void processServerKeyExchange(InputStream input)
-        throws IOException
+    public void processServerKeyExchange(InputStream input) throws IOException
     {
         if (!requiresServerKeyExchange())
         {
@@ -173,7 +161,7 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 
         // ECDH_anon is handled here, ECDHE_* in a subclass
 
-        this.ecConfig = TlsECCUtils.receiveECConfig(namedCurves, serverECPointFormats, input);
+        this.ecConfig = TlsECCUtils.receiveECConfig(ecConfigVerifier, serverECPointFormats, input);
 
         byte[] point = TlsUtils.readOpaque8(input);
 
@@ -184,6 +172,11 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 
     public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException
     {
+        if (keyExchange == KeyExchangeAlgorithm.ECDH_anon)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         /*
          * RFC 4492 3. [...] The ECDSA_fixed_ECDH and RSA_fixed_ECDH mechanisms are usable with
          * ECDH_ECDSA and ECDH_RSA. Their use with ECDHE_ECDSA and ECDHE_RSA is prohibited because
@@ -195,11 +188,8 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
         {
             switch (types[i])
             {
-            case ClientCertificateType.rsa_sign:
-            case ClientCertificateType.dss_sign:
-            case ClientCertificateType.ecdsa_sign:
-            case ClientCertificateType.rsa_fixed_ecdh:
             case ClientCertificateType.ecdsa_fixed_ecdh:
+            case ClientCertificateType.rsa_fixed_ecdh:
                 break;
             default:
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
@@ -219,10 +209,6 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
             this.agreementCredentials = (TlsAgreementCredentials)clientCredentials;
 
             // TODO Check that the client certificate's domain parameters match the server's?
-        }
-        else if (clientCredentials instanceof TlsSignerCredentials)
-        {
-            // OK
         }
         else
         {
@@ -246,8 +232,8 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
         }
 
         /*
-         * TODO For non-ephemeral key exchanges, take the public key as ecFixedAgreePublicKey and check
-         * that the domain parameters match the server's.
+         * TODO For non-ephemeral key exchanges, take the public key as ecFixedAgreePublicKey and
+         * check that the domain parameters match the server's.
          */
     }
 

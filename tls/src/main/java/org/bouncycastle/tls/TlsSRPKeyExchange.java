@@ -6,16 +6,13 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.Vector;
 
-import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.agreement.srp.SRP6Client;
 import org.bouncycastle.crypto.agreement.srp.SRP6Server;
 import org.bouncycastle.crypto.agreement.srp.SRP6Util;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
-import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.tls.crypto.TlsSecret;
+import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.io.TeeInputStream;
@@ -23,29 +20,25 @@ import org.bouncycastle.util.io.TeeInputStream;
 /**
  * (D)TLS SRP key exchange (RFC 5054).
  */
-public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
+public class TlsSRPKeyExchange
+    extends AbstractTlsKeyExchange
 {
-    protected static TlsSigner createSigner(int keyExchange)
+    private static int checkKeyExchange(int keyExchange)
     {
         switch (keyExchange)
         {
         case KeyExchangeAlgorithm.SRP:
-            return null;
-        case KeyExchangeAlgorithm.SRP_RSA:
-            return new TlsRSASigner();
         case KeyExchangeAlgorithm.SRP_DSS:
-            return new TlsDSSSigner();
+        case KeyExchangeAlgorithm.SRP_RSA:
+            return keyExchange;
         default:
             throw new IllegalArgumentException("unsupported key exchange algorithm");
         }
     }
-    
-    protected TlsSigner tlsSigner;
+
     protected TlsSRPGroupVerifier groupVerifier;
     protected byte[] identity;
     protected byte[] password;
-
-    protected AsymmetricKeyParameter serverPublicKey = null;
 
     protected SRP6GroupParameters srpGroup = null;
     protected SRP6Client srpClient = null;
@@ -55,13 +48,13 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
     protected byte[] srpSalt = null;
 
     protected TlsSignerCredentials serverCredentials = null;
+    protected TlsVerifier verifier = null;
 
     public TlsSRPKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsSRPGroupVerifier groupVerifier,
         byte[] identity, byte[] password)
     {
-        super(keyExchange, supportedSignatureAlgorithms);
+        super(checkKeyExchange(keyExchange), supportedSignatureAlgorithms);
 
-        this.tlsSigner = createSigner(keyExchange);
         this.groupVerifier = groupVerifier;
         this.identity = identity;
         this.password = password;
@@ -71,9 +64,8 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
     public TlsSRPKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, byte[] identity,
         TlsSRPLoginParameters loginParameters)
     {
-        super(keyExchange, supportedSignatureAlgorithms);
+        super(checkKeyExchange(keyExchange), supportedSignatureAlgorithms);
 
-        this.tlsSigner = createSigner(keyExchange);
         this.identity = identity;
         this.srpServer = new SRP6Server();
         this.srpGroup = loginParameters.getGroup();
@@ -81,19 +73,9 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         this.srpSalt = loginParameters.getSalt();
     }
 
-    public void init(TlsContext context)
-    {
-        super.init(context);
-
-        if (this.tlsSigner != null)
-        {
-            this.tlsSigner.init(context);
-        }
-    }
-
     public void skipServerCredentials() throws IOException
     {
-        if (tlsSigner != null)
+        if (keyExchange != KeyExchangeAlgorithm.SRP)
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
@@ -101,7 +83,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
-        if (tlsSigner == null)
+        if (keyExchange == KeyExchangeAlgorithm.SRP)
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
@@ -110,30 +92,13 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
 
-        org.bouncycastle.asn1.x509.Certificate x509Cert = serverCertificate.getCertificateAt(0);
+        this.verifier = serverCertificate.getCertificateAt(context, 0)
+            .createVerifier(TlsUtils.getSignatureAlgorithm(keyExchange));
 
-        SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
-        try
-        {
-            this.serverPublicKey = PublicKeyFactory.createKey(keyInfo);
-        }
-        catch (RuntimeException e)
-        {
-            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
-        }
-
-        if (!tlsSigner.isValidPublicKey(this.serverPublicKey))
-        {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
-        }
-
-        TlsUtils.validateKeyUsage(x509Cert, KeyUsage.digitalSignature);
-
-        super.processServerCertificate(serverCertificate);
+        checkServerCertSigAlg(serverCertificate);
     }
 
-    public void processServerCredentials(TlsCredentials serverCredentials)
-        throws IOException
+    public void processServerCredentials(TlsCredentials serverCredentials) throws IOException
     {
         if ((keyExchange == KeyExchangeAlgorithm.SRP) || !(serverCredentials instanceof TlsSignerCredentials))
         {
@@ -177,7 +142,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         DigestInputBuffer buf = null;
         InputStream teeIn = input;
 
-        if (tlsSigner != null)
+        if (keyExchange != KeyExchangeAlgorithm.SRP)
         {
             buf = new DigestInputBuffer();
             teeIn = new TeeInputStream(input, buf);
@@ -189,7 +154,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
         {
             DigitallySigned signedParams = parseSignature(input);
 
-            TlsUtils.verifyServerKeyExchangeSignature(context, tlsSigner, serverPublicKey, buf, signedParams);
+            TlsUtils.verifyServerKeyExchangeSignature(context, verifier, buf, signedParams);
         }
 
         this.srpGroup = new SRP6GroupParameters(srpParams.getN(), srpParams.getG());

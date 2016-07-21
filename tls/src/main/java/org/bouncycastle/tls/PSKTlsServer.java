@@ -2,9 +2,8 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
-import org.bouncycastle.crypto.agreement.DHStandardGroups;
-import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
+import org.bouncycastle.tls.crypto.TlsECConfig;
 
 public class PSKTlsServer
     extends AbstractTlsServer
@@ -27,23 +26,21 @@ public class PSKTlsServer
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    protected DHParameters getDHParameters()
-    {
-        return DHStandardGroups.rfc5114_2048_256;
-    }
-
-    protected TlsDHConfig getDHConfig()
-    {
-        return TlsDHUtils.selectDHConfig(getDHParameters()); 
-    }
-
     protected int[] getCipherSuites()
     {
         return new int[]
         {
+            CipherSuite.TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256,
+            CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384,
             CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256,
+            CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA,
             CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA,
+            CipherSuite.TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256,
+            CipherSuite.TLS_DHE_PSK_WITH_AES_256_GCM_SHA384,
+            CipherSuite.TLS_DHE_PSK_WITH_AES_128_GCM_SHA256,
+            CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA384,
             CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA256,
+            CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA,
             CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA
         };
     }
@@ -75,10 +72,14 @@ public class PSKTlsServer
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DHE_PSK:
+            return createPSKKeyExchange(keyExchangeAlgorithm, selectDHConfig(), null);
+
         case KeyExchangeAlgorithm.ECDHE_PSK:
+            return createPSKKeyExchange(keyExchangeAlgorithm, null, selectECConfig());
+
         case KeyExchangeAlgorithm.PSK:
         case KeyExchangeAlgorithm.RSA_PSK:
-            return createPSKKeyExchange(keyExchangeAlgorithm);
+            return createPSKKeyExchange(keyExchangeAlgorithm, null, null);
 
         default:
             /*
@@ -90,9 +91,9 @@ public class PSKTlsServer
         }
     }
 
-    protected TlsKeyExchange createPSKKeyExchange(int keyExchange) throws IOException
+    protected TlsKeyExchange createPSKKeyExchange(int keyExchange, TlsDHConfig dhConfig, TlsECConfig ecConfig) throws IOException
     {
         return keyExchangeFactory.createPSKKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, pskIdentityManager,
-            getDHConfig(), namedCurves, clientECPointFormats, serverECPointFormats);
+            dhConfig, ecConfig, serverECPointFormats);
     }
 }

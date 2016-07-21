@@ -16,10 +16,11 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
+import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsDHUtils;
-import org.bouncycastle.tls.TlsECCUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsVerifier;
 
 public class BcTlsCertificate implements TlsCertificate
 {
@@ -45,127 +46,32 @@ public class BcTlsCertificate implements TlsCertificate
         this.certificate = Certificate.getInstance(encoding);
     }
 
+    public TlsVerifier createVerifier(short signatureAlgorithm) throws IOException
+    {
+        validateKeyUsage(KeyUsage.digitalSignature);
+
+        switch (signatureAlgorithm)
+        {
+        case SignatureAlgorithm.dsa:
+            return new BcTlsDSSVerifier(getPubKeyDSS());
+
+        case SignatureAlgorithm.ecdsa:
+            return new BcTlsECDSAVerifier(getPubKeyEC());
+
+        case SignatureAlgorithm.rsa:
+            return new BcTlsRSAVerifier(getPubKeyRSA());
+
+        default:
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+        }
+    }
+
     public byte[] getEncoded() throws IOException
     {
         return certificate.getEncoded(ASN1Encoding.DER);
     }
 
-    public DHPublicKeyParameters getPubKeyDH() throws IOException
-    {
-        if (pubKeyDH == null)
-        {
-            // Can't use for DH unless the key was previously established by call to 'useInRole'
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        return pubKeyDH;
-    }
-
-    public DSAPublicKeyParameters getPubKeyDSS() throws IOException
-    {
-        if (pubKeyDSS == null)
-        {
-            // Can't use for DSA unless the key was previously established by call to 'useInRole'
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        return pubKeyDSS;
-    }
-
-    public ECPublicKeyParameters getPubKeyEC() throws IOException
-    {
-        if (pubKeyEC == null)
-        {
-            // Can't use for EC unless the key was previously established by call to 'useInRole'
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        return pubKeyEC;
-    }
-
-    public RSAKeyParameters getPubKeyRSA() throws IOException
-    {
-        if (pubKeyRSA == null)
-        {
-            // Can't use for RSA unless the key was previously established by call to 'useInRole'
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        return pubKeyRSA;
-    }
-
-    public TlsCertificate useInRole(int connectionEnd, int keyExchangeAlgorithm) throws IOException
-    {
-        // TODO[tls-ops] A better design might be to return a new (subclass) TlsCertificate instance
-        // TODO[tls-ops] Record the applicable key usage and check it when the public key is used 
-        // TODO[tls-ops] Check all needed combinations are handled
-
-        if (connectionEnd == ConnectionEnd.client)
-        {
-            switch (keyExchangeAlgorithm)
-            {
-            }
-        }
-        else if (connectionEnd == ConnectionEnd.server)
-        {
-            switch (keyExchangeAlgorithm)
-            {
-            // TODO[tls-ops] Check "the algorithm used to sign the certificate"?
-            case KeyExchangeAlgorithm.DH_DSS:
-            case KeyExchangeAlgorithm.DH_RSA:
-            {
-                validateKeyUsage(KeyUsage.keyAgreement);
-                establishPubKeyDH();
-                return this;
-            }
-
-            // TODO[tls-ops] Check "the algorithm used to sign the certificate"?
-            case KeyExchangeAlgorithm.ECDH_ECDSA:
-            case KeyExchangeAlgorithm.ECDH_RSA:
-            {
-                validateKeyUsage(KeyUsage.keyAgreement);
-                establishPubKeyEC();
-                return this;
-            }
-
-            case KeyExchangeAlgorithm.RSA:
-            case KeyExchangeAlgorithm.RSA_PSK:
-            {
-                validateKeyUsage(KeyUsage.keyEncipherment);
-                establishPubKeyRSA();
-                return this;
-            }
-
-            case KeyExchangeAlgorithm.DHE_DSS:
-            case KeyExchangeAlgorithm.SRP_DSS:
-            {
-                validateKeyUsage(KeyUsage.digitalSignature);
-                establishPubKeyDSS();
-                return this;
-            }
-
-            case KeyExchangeAlgorithm.ECDHE_ECDSA:
-            {
-                validateKeyUsage(KeyUsage.digitalSignature);
-                establishPubKeyEC();
-                return this;
-            }
-
-            case KeyExchangeAlgorithm.DHE_RSA:
-            case KeyExchangeAlgorithm.ECDHE_RSA:
-            case KeyExchangeAlgorithm.SRP_RSA:
-            {
-                validateKeyUsage(KeyUsage.digitalSignature);
-                establishPubKeyRSA();
-                return this;
-            }
-            }
-        }
-
-        throw new TlsFatalAlert(AlertDescription.certificate_unknown);
-    }
-
-    protected void establishPubKeyDH() throws IOException
+    protected DHPublicKeyParameters getPubKeyDH() throws IOException
     {
         DHPublicKeyParameters pubKeyDH;
         try
@@ -177,10 +83,10 @@ public class BcTlsCertificate implements TlsCertificate
             throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
         }
 
-        this.pubKeyDH = validatePubKeyDH(pubKeyDH);
+        return validatePubKeyDH(pubKeyDH);
     }
 
-    protected void establishPubKeyDSS() throws IOException
+    public DSAPublicKeyParameters getPubKeyDSS() throws IOException
     {
         DSAPublicKeyParameters pubKeyDSS;
         try
@@ -192,10 +98,10 @@ public class BcTlsCertificate implements TlsCertificate
             throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
         }
 
-        this.pubKeyDSS = validatePubKeyDSS(pubKeyDSS);
+        return validatePubKeyDSS(pubKeyDSS);
     }
 
-    protected void establishPubKeyEC() throws IOException
+    public ECPublicKeyParameters getPubKeyEC() throws IOException
     {
         ECPublicKeyParameters pubKeyEC;
         try
@@ -207,10 +113,10 @@ public class BcTlsCertificate implements TlsCertificate
             throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
         }
 
-        this.pubKeyEC = validatePubKeyEC(pubKeyEC);
+        return validatePubKeyEC(pubKeyEC);
     }
 
-    protected void establishPubKeyRSA() throws IOException
+    public RSAKeyParameters getPubKeyRSA() throws IOException
     {
         RSAKeyParameters pubKeyRSA;
         try
@@ -222,7 +128,32 @@ public class BcTlsCertificate implements TlsCertificate
             throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
         }
 
-        this.pubKeyRSA = validatePubKeyRSA(pubKeyRSA);
+        return validatePubKeyRSA(pubKeyRSA);
+    }
+
+    public TlsCertificate useInRole(int connectionEnd, int keyExchangeAlgorithm) throws IOException
+    {
+        if (connectionEnd == ConnectionEnd.client)
+        {
+            switch (keyExchangeAlgorithm)
+            {
+            }
+        }
+        else if (connectionEnd == ConnectionEnd.server)
+        {
+            switch (keyExchangeAlgorithm)
+            {
+            case KeyExchangeAlgorithm.RSA:
+            case KeyExchangeAlgorithm.RSA_PSK:
+            {
+                validateKeyUsage(KeyUsage.keyEncipherment);
+                this.pubKeyRSA = getPubKeyRSA();
+                return this;
+            }
+            }
+        }
+
+        throw new TlsFatalAlert(AlertDescription.certificate_unknown);
     }
 
     protected AsymmetricKeyParameter getPublicKey() throws IOException

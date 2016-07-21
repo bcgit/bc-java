@@ -56,7 +56,7 @@ public class TlsRSAKeyExchange
 
         this.serverCertificate = serverCertificate.getCertificateAt(context, 0).useInRole(ConnectionEnd.server, KeyExchangeAlgorithm.RSA);
 
-        super.processServerCertificate(serverCertificate);
+        checkServerCertSigAlg(serverCertificate);
     }
 
     public void validateCertificateRequest(CertificateRequest certificateRequest)

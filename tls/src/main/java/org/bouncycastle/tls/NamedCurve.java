@@ -11,6 +11,12 @@ package org.bouncycastle.tls;
  */
 public class NamedCurve
 {
+    private static final String[] CURVE_NAMES = new String[] { "sect163k1", "sect163r1", "sect163r2", "sect193r1",
+        "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1", "sect283r1", "sect409k1", "sect409r1",
+        "sect571k1", "sect571r1", "secp160k1", "secp160r1", "secp160r2", "secp192k1", "secp192r1", "secp224k1",
+        "secp224r1", "secp256k1", "secp256r1", "secp384r1", "secp521r1",
+        "brainpoolP256r1", "brainpoolP384r1", "brainpoolP512r1"};
+
     public static final int sect163k1 = 1;
     public static final int sect163r1 = 2;
     public static final int sect163r2 = 3;
@@ -50,6 +56,104 @@ public class NamedCurve
 
     public static final int arbitrary_explicit_prime_curves = 0xFF01;
     public static final int arbitrary_explicit_char2_curves = 0xFF02;
+
+    public static int getCurveBits(int namedCurve)
+    {
+        switch (namedCurve)
+        {
+        case secp160k1:
+        case secp160r1:
+        case secp160r2:
+            return 160;
+
+        case sect163k1:
+        case sect163r1:
+        case sect163r2:
+            return 163;
+
+        case secp192k1:
+        case secp192r1:
+            return 192;
+
+        case sect193r1:
+        case sect193r2:
+            return 193;
+
+        case secp224k1:
+        case secp224r1:
+            return 224;
+
+        case sect233k1:
+        case sect233r1:
+            return 233;
+
+        case sect239k1:
+            return 239;
+
+        case brainpoolP256r1:
+        case secp256k1:
+        case secp256r1:
+            return 256;
+
+        case sect283k1:
+        case sect283r1:
+            return 283;
+
+        case brainpoolP384r1:
+        case secp384r1:
+            return 384;
+
+        case sect409k1:
+        case sect409r1:
+            return 409;
+
+        case brainpoolP512r1:
+            return 512;
+
+        case secp521r1:
+            return 521;
+
+        case sect571k1:
+        case sect571r1:
+            return 571;
+
+        default:
+            return 0;
+        }
+    }
+
+    public static int getMaximumCurveBits()
+    {
+        return 571;
+    }
+
+    public static String getName(int namedCurve)
+    {
+        if (!isValid(namedCurve))
+        {
+            return null;
+        }
+
+        switch (namedCurve)
+        {
+        case arbitrary_explicit_prime_curves:
+            return "arbitrary_explicit_prime_curves";
+        case arbitrary_explicit_char2_curves:
+            return "arbitrary_explicit_char2_curves";
+        default:
+            return CURVE_NAMES[namedCurve - 1];
+        }
+    }
+
+    public static String getNameOfSpecificCurve(int namedCurve)
+    {
+        if (!refersToASpecificNamedCurve(namedCurve))
+        {
+            return null;
+        }
+
+        return CURVE_NAMES[namedCurve - 1];
+    }
 
     public static boolean isChar2(int namedCurve)
     {
