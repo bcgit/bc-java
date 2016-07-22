@@ -28,7 +28,7 @@ public final class GOST3411_2012_256Digest extends GOST3411_2012Digest {
 
     @Override
     public String getAlgorithmName() {
-        return "GOST3411-2012-265";
+        return "GOST3411-2012-256";
     }
 
     @Override

@@ -98,8 +98,9 @@ public final class BouncyCastleProvider extends Provider
     private static final String DIGEST_PACKAGE = "org.bouncycastle.jcajce.provider.digest.";
     private static final String[] DIGESTS =
     {
-        "GOST3411", "Keccak", "MD2", "MD4", "MD5", "SHA1", "RIPEMD128", "RIPEMD160", "RIPEMD256", "RIPEMD320", "SHA224",
-        "SHA256", "SHA384", "SHA512", "SHA3", "Skein", "SM3", "Tiger", "Whirlpool", "Blake2b"
+        "GOST3411", "GOST3411_2012", "Keccak", "MD2", "MD4", "MD5", "SHA1", "RIPEMD128",
+        "RIPEMD160", "RIPEMD256", "RIPEMD320", "SHA224", "SHA256", "SHA384", "SHA512",
+        "SHA3", "Skein", "SM3", "Tiger", "Whirlpool", "Blake2b"
     };
 
     /*
