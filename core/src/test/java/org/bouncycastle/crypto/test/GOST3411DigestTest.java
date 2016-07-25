@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.generators.PKCS5S1ParametersGenerator;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class GOST3411DigestTest
@@ -55,7 +56,7 @@ public class GOST3411DigestTest
 
         gMac.init(new KeyParameter(PKCS5S1ParametersGenerator.PKCS5PasswordToUTF8Bytes("1".toCharArray())));
 
-        byte[] data = "fred".getBytes();
+        byte[] data = Strings.toByteArray("fred");
 
         gMac.update(data, 0, data.length);
         byte[] mac = new byte[gMac.getMacSize()];
