@@ -73,6 +73,8 @@ public class RegressionTest
         new RIPEMD320DigestTest(),
         new TigerDigestTest(),
         new GOST3411DigestTest(),
+        new GOST3411_2012_256DigestTest(),
+        new GOST3411_2012_512DigestTest(),
         new WhirlpoolDigestTest(),
         new MD5HMacTest(),
         new SHA1HMacTest(),
