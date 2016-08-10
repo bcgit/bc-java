@@ -43,7 +43,7 @@ public class GOST3411_2012_256DigestTest
         messages = new String[strList.size()];
         for (int i = 0; i < strList.size(); i++)
         {
-            messages[i] = strList.get(i);
+            messages[i] = (String)strList.get(i);
         }
     }
 
