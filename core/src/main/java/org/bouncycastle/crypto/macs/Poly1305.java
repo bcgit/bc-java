@@ -234,13 +234,13 @@ public class Poly1305
         long tp3 = mul32x32_64(h0,r3) + mul32x32_64(h1,r2) + mul32x32_64(h2,r1) + mul32x32_64(h3,r0) + mul32x32_64(h4,s4);
         long tp4 = mul32x32_64(h0,r4) + mul32x32_64(h1,r3) + mul32x32_64(h2,r2) + mul32x32_64(h3,r1) + mul32x32_64(h4,r0);
 
-        long b;
-        h0 = (int)tp0 & 0x3ffffff; b = (tp0 >>> 26);
-        tp1 += b; h1 = (int)tp1 & 0x3ffffff; b = ((tp1 >>> 26) & 0xffffffff);
-        tp2 += b; h2 = (int)tp2 & 0x3ffffff; b = ((tp2 >>> 26) & 0xffffffff);
-        tp3 += b; h3 = (int)tp3 & 0x3ffffff; b = (tp3 >>> 26);
-        tp4 += b; h4 = (int)tp4 & 0x3ffffff; b = (tp4 >>> 26);
-        h0 += b * 5;
+        h0 = (int)tp0 & 0x3ffffff; tp1 += (tp0 >>> 26);
+        h1 = (int)tp1 & 0x3ffffff; tp2 += (tp1 >>> 26);
+        h2 = (int)tp2 & 0x3ffffff; tp3 += (tp2 >>> 26);
+        h3 = (int)tp3 & 0x3ffffff; tp4 += (tp3 >>> 26);
+        h4 = (int)tp4 & 0x3ffffff;
+        h0 += (int)(tp4 >>> 26) * 5;
+        h1 += (h0 >>> 26); h0 &= 0x3ffffff;
     }
 
     public int doFinal(final byte[] out, final int outOff)
@@ -258,17 +258,14 @@ public class Poly1305
             processBlock();
         }
 
-        long f0, f1, f2, f3;
+        h1 += (h0 >>> 26); h0 &= 0x3ffffff;
+        h2 += (h1 >>> 26); h1 &= 0x3ffffff;
+        h3 += (h2 >>> 26); h2 &= 0x3ffffff;
+        h4 += (h3 >>> 26); h3 &= 0x3ffffff;
+        h0 += (h4 >>> 26) * 5; h4 &= 0x3ffffff;
+        h1 += (h0 >>> 26); h0 &= 0x3ffffff;
 
-        int b = h0 >>> 26;
-        h0 = h0 & 0x3ffffff;
-        h1 += b; b = h1 >>> 26; h1 = h1 & 0x3ffffff;
-        h2 += b; b = h2 >>> 26; h2 = h2 & 0x3ffffff;
-        h3 += b; b = h3 >>> 26; h3 = h3 & 0x3ffffff;
-        h4 += b; b = h4 >>> 26; h4 = h4 & 0x3ffffff;
-        h0 += b * 5;
-
-        int g0, g1, g2, g3, g4;
+        int g0, g1, g2, g3, g4, b;
         g0 = h0 + 5; b = g0 >>> 26; g0 &= 0x3ffffff;
         g1 = h1 + b; b = g1 >>> 26; g1 &= 0x3ffffff;
         g2 = h2 + b; b = g2 >>> 26; g2 &= 0x3ffffff;
@@ -283,6 +280,7 @@ public class Poly1305
         h3 = (h3 & nb) | (g3 & b);
         h4 = (h4 & nb) | (g4 & b);
 
+        long f0, f1, f2, f3;
         f0 = (((h0       ) | (h1 << 26)) & 0xffffffffl) + (0xffffffffL & k0);
         f1 = (((h1 >>> 6 ) | (h2 << 20)) & 0xffffffffl) + (0xffffffffL & k1);
         f2 = (((h2 >>> 12) | (h3 << 14)) & 0xffffffffl) + (0xffffffffL & k2);
@@ -309,6 +307,6 @@ public class Poly1305
 
     private static final long mul32x32_64(int i1, int i2)
     {
-        return ((long)i1) * i2;
+        return (i1 & 0xFFFFFFFFL) * i2;
     }
 }

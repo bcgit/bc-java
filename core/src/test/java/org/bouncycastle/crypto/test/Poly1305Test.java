@@ -87,6 +87,16 @@ public class Poly1305Test
             null,
             "f05204a74f0f88a7fa1a95b84ec3d8ffb36fcdc7723ea65dfe7cd464e86e0abf6b9d51db3220cfd8496ad6e6d36ebee8d990f9ce0d3bb7f72b7ab5b3ab0a73240d11efe772c857021ae859db4933cdde4387b471d2ce700fef4b81087f8f47c307881fd83017afcd15b8d21edf9b704677f46df97b07e5b83f87c8abd90af9b1d0f9e2710e8ebd0d4d1c6a055abea861f42368bed94d9373e909c1d3715b221c16bc524c55c31ec3eab204850bb2474a84f9917038eff9d921130951391b5c54f09b5e1de833ea2cd7d3b306740abb7096d1e173da83427da2adddd3631eda30b54dbf487f2b082e8646f07d6e0a87e97522ca38d4ace4954bf3db6dd3a93b06fa18eb56856627ed6cffcd7ae26374554ca18ab8905f26331d323fe10e6e70624c7bc07a70f06ecd804b48f8f7e75e910165e1beb554f1f0ec7949c9c8d429a206b4d5c0653102249b6098e6b45fac2a07ff0220b0b8ae8f4c6bcc0c813a7cd141fa8b398b42575fc395747c5a0257ac41d6c1f434cfbf5dfe8349f5347ef6b60e611f5d6c3cbc20ca2555274d1934325824cef4809da293ea13f181929e2af025bbd1c9abdc3af93afd4c50a2854ade3887f4d2c8c225168052c16e74d76d2dd3e9467a2c5b8e15c06ffbffa42b8536384139f07e195a8c9f70f514f31dca4eb2cf262c0dcbde53654b6250a29efe21d54e83c80e005a1cad36d5934ff01c32e4bc5fe06d03064ff4a268517df4a94c759289f323734318cfa5d859d4ce9c16e63d02dff0896976f521607638535d2ee8dd3312e1ddc80a55d34fe829ab954c1ebd54d929954770f1be9d32b4c05003c5c9e97943b6431e2afe820b1e967b19843e5985a131b1100517cdc363799104af91e2cf3f53cb8fd003653a6dd8a31a3f9d566a7124b0ffe9695bcb87c482eb60106f88198f766a40bc0f4873c23653c5f9e7a8e446f770beb8034cf01d21028ba15ccee21a8db918c4829d61c88bfa927bc5def831501796c5b401a60a6b1b433c9fb905c8cd40412fffee81ab",
             "045be28cc52009f506bdbfabedacf0b4"),
+        // Test case from JIRA issue BJA-620
+        new TestCase(
+            "ffffffffffffffffffffffffffffffff" + "ffffffffffffffffffffffffffffffff",
+            null,
+              "ffffffffffffffffffffffffffffffff" + "ffffffffffffffffffffffffffffffff" + "ffffffffffffffffffffffffffffffff" + "ffffffffffffffffffffffffffffffff"
+            + "ffffffffffffffffffffffffffffffff" + "ffffffffffffffffffffffffffffffff" + "ffffffffffffffffffffffffffffffff" + "ffffffffffffffffffffffffffffffff"
+            + "ffffffffffffffffffffffffffffffff" + "ffffffffffffffffffffffffffffffff" + "ffffffffffffffffffffffffffffffff" + "ffffffffffffffffffffffffffffffff"
+            + "ffffffffffffffffffffffffffffffff" + "ffffffffffffffffffffffffffffffff" + "ffffffffffffffffffffffffffffffff" + "ffffffffffffffffffffffffffffff",
+            "c80cb43844f387946e5aa6085bdf67da")
+        
 
     };
 
