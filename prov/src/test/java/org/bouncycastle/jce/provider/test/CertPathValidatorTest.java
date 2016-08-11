@@ -262,6 +262,7 @@ public class CertPathValidatorTest
         CertPathValidator cpv = CertPathValidator.getInstance("PKIX","BC");
         PKIXParameters param = new PKIXParameters(trust);
         param.setRevocationEnabled(false);
+        param.setDate(new Date(0x156445410b4L)); // around 1st August 2016
 
         CertPath cp = cf.generateCertPath(certchain);
 
