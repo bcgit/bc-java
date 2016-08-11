@@ -20,6 +20,7 @@ import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.pem.PemGenerationException;
 import org.bouncycastle.util.io.pem.PemHeader;
@@ -148,6 +149,11 @@ public class MiscPEMGenerator
         {
             type = "CERTIFICATE REQUEST";
             encoding = ((PKCS10CertificationRequest)o).getEncoded();
+        }
+        else if (o instanceof PKCS8EncryptedPrivateKeyInfo)
+        {
+            type = "ENCRYPTED PRIVATE KEY";
+            encoding = ((PKCS8EncryptedPrivateKeyInfo)o).getEncoded();
         }
         else if (o instanceof ContentInfo)
         {

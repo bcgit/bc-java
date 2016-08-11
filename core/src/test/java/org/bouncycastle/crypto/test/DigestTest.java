@@ -36,7 +36,7 @@ public abstract class DigestTest
         for (int i = 0; i < input.length - 1; i++)
         {
             byte[] m = toByteArray(input[i]);
-            
+
             vectorTest(digest, i, resBuf, m, Hex.decode(results[i]));
         }
 

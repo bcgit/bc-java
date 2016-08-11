@@ -1616,9 +1616,9 @@ public class CertTest
 
         isTrue("certs size <cr><nl>", certs1.size() == certs2.size());
 
-        for (Certificate cert : certs1)
+        for (Iterator it = certs1.iterator(); it.hasNext();)
         {
-            certs2.remove(cert);
+            certs2.remove(it.next());
         }
 
         isTrue("collection not empty", certs2.isEmpty());
@@ -1650,9 +1650,9 @@ public class CertTest
 
         isTrue("certs size <nl>", certs1.size() == certs2.size());
 
-        for (Certificate cert : certs1)
+        for (Iterator it = certs1.iterator(); it.hasNext();)
         {
-            certs2.remove(cert);
+            certs2.remove(it.next());
         }
 
         isTrue("collection not empty", certs2.isEmpty());
