@@ -340,12 +340,14 @@ public class BaseBlockCipher
             {
                 throw new IllegalArgumentException("Warning: SIC-Mode can become a twotime-pad if the blocksize of the cipher is too small. Use a cipher with a block size of at least 128 bits (e.g. AES)");
             }
+            fixedIv = false;
             cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
                         new SICBlockCipher(baseEngine)));
         }
         else if (modeName.startsWith("CTR"))
         {
             ivLength = baseEngine.getBlockSize();
+            fixedIv = false;
             cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
                         new SICBlockCipher(baseEngine)));
         }
@@ -510,22 +512,35 @@ public class BaseBlockCipher
 
             if (k instanceof PBEKey && pbeSpec == null)
             {
-                pbeSpec = new PBEParameterSpec(((PBEKey)k).getSalt(), ((PBEKey)k).getIterationCount());
+                PBEKey pbeKey = (PBEKey)k;
+                if (pbeKey.getSalt() == null)
+                {
+                    throw new InvalidAlgorithmParameterException("PBEKey requires parameters to specify salt");
+                }
+                pbeSpec = new PBEParameterSpec(pbeKey.getSalt(), pbeKey.getIterationCount());
             }
 
             if (pbeSpec == null && !(k instanceof PBEKey))
             {
                 throw new InvalidKeyException("Algorithm requires a PBE key");
             }
+
             if (key instanceof BCPBEKey)
             {
-                if (((BCPBEKey)key).getParam() != null)
+                // PKCS#12 sets an IV, if we get a key that doesn't have ParametersWithIV we need to reject it. If the
+                // key has no parameters it means it's an old-school JCE PBE Key - we use getEncoded() on it.
+                CipherParameters pbeKeyParam = ((BCPBEKey)key).getParam();
+                if (pbeKeyParam instanceof ParametersWithIV)
                 {
-                    param = ((BCPBEKey)key).getParam();
+                    param = pbeKeyParam;
+                }
+                else if (pbeKeyParam == null)
+                {
+                    param = PBE.Util.makePBEParameters(k.getEncoded(), PKCS12, digest, keySizeInBits, ivLength * 8, pbeSpec, cipher.getAlgorithmName());
                 }
                 else
                 {
-                    param = PBE.Util.makePBEParameters(k.getEncoded(), PKCS12, digest, keySizeInBits, ivLength * 8, pbeSpec, cipher.getAlgorithmName());
+                    throw new InvalidKeyException("Algorithm requires a PBE key suitable for PKCS12");
                 }
             }
             else
