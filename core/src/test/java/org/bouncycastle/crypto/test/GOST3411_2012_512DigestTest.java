@@ -42,7 +42,7 @@ public class GOST3411_2012_512DigestTest
         messages = new String[strList.size()];
         for (int i = 0; i < strList.size(); i++)
         {
-            messages[i] = strList.get(i);
+            messages[i] = (String)strList.get(i);
         }
     }
 
@@ -77,7 +77,6 @@ public class GOST3411_2012_512DigestTest
         }
     }
 
-    @Override
     protected Digest cloneDigest(Digest digest)
     {
         return new GOST3411_2012_512Digest((GOST3411_2012_512Digest)digest);
