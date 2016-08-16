@@ -143,66 +143,6 @@ public class SP800RandomTest
         }
     }
 
-    private void testDualECRandom()
-    {
-        DRBGTestVector tv = new DRBGTestVector(
-                            new SHA256Digest(),
-                            new SHA256EntropyProvider().get(128),
-                            false,
-                            "2021222324252627",
-                            128,
-                            new String[]
-                                {
-                                    "3AB095CC493A8730D70DE923108B2E4710799044FFC27D0A1156250DDF97E8B05ACE055E49F3E3F5B928CCD18317A3E68FCB0B6F0459ADF9ECF79C87",
-                                    "7B902FC35B0AF50F57F8822936D08A96E41B16967C6B1AA0BC05032F0D53919DC587B664C883E2FE8F3948002FCD8BCBFC4706BCAA2075EF6BF41167"
-                                })
-                        .setPersonalizationString("404142434445464748494A4B4C4D4E4F");
-
-        doDualECTest(1, tv);
-
-        tv = new DRBGTestVector(
-                            new SHA256Digest(),
-                            new SHA256EntropyProvider().get(128),
-                            true,
-                            "2021222324252627",
-                            128,
-                            new String[]
-                                {
-                                    "8C77288EDBEA9A742464F78D55E33593C1BF5F9D8CD8609D6D53BAC4E4B42252A227A99BAD0F2358B05955CD35723B549401C71C9C1F32F8A2018E24",
-                                    "56ECA61C64F69C1C232E992623C71418BD0B96D783118FAAD94A09E3A9DB74D15E805BA7F14625995CA77612B2EF7A05863699ECBABF70D3D422C014"
-                                });
-
-        doDualECTest(2, tv);
-    }
-
-    private void doDualECTest(int index, DRBGTestVector tv)
-    {
-        SP800SecureRandomBuilder rBuild = new SP800SecureRandomBuilder(new SHA256EntropyProvider());
-
-        rBuild.setPersonalizationString(tv.personalizationString());
-        rBuild.setSecurityStrength(tv.securityStrength());
-        rBuild.setEntropyBitsRequired(tv.securityStrength());
-
-        SecureRandom random = rBuild.buildDualEC(tv.getDigest(), tv.nonce(), tv.predictionResistance());
-
-        byte[] expected = tv.expectedValue(0);
-        byte[] produced = new byte[expected.length];
-
-        random.nextBytes(produced);
-        if (!Arrays.areEqual(expected, produced))
-        {
-            fail(index + " SP800 Dual EC SecureRandom produced incorrect result (1)");
-        }
-
-        random.nextBytes(produced);
-        expected = tv.expectedValue(1);
-
-        if (!Arrays.areEqual(expected, produced))
-        {
-            fail(index + " SP800 Dual EC SecureRandom produced incorrect result (2)");
-        }
-    }
-
     private void testCTRRandom()
     {
         DRBGTestVector tv = new DRBGTestVector(
@@ -299,7 +239,6 @@ public class SP800RandomTest
         testHashRandom();
         testHMACRandom();
         testCTRRandom();
-        testDualECRandom();
         testGenerateSeed();
     }
 
