@@ -163,7 +163,7 @@ public class ArmoredOutputStream
     }
 
     /**
-     * Reset the headers to only contain a Version string.
+     * Reset the headers to only contain a Version string (if one is present)
      */
     public void resetHeaders()
     {
