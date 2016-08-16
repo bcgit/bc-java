@@ -43,7 +43,6 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
     private SecureRandom random;
     private JcaPGPKeyConverter keyConverter = new JcaPGPKeyConverter();
-    private JcaPGPDigestCalculatorProviderBuilder digestCalculatorProviderBuilder = new JcaPGPDigestCalculatorProviderBuilder();
 
     /**
      * Create a public key encryption method generator with the method to be based on the passed in key.
