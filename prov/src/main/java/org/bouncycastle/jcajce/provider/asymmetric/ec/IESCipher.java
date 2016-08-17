@@ -163,7 +163,7 @@ public class IESCipher
 
         if (otherKeyParameter == null)
         {
-            len2 = 1 + 2 * (((ECKeyParameters)key).getParameters().getCurve().getFieldSize() + 7) / 8;
+            len2 = 2 * (((ECKeyParameters)key).getParameters().getCurve().getFieldSize() + 7) / 8;
         }
         else
         {
@@ -189,7 +189,7 @@ public class IESCipher
 
         if (state == Cipher.ENCRYPT_MODE || state == Cipher.WRAP_MODE)
         {
-            return buffer.size() + len1 + len2 + len3;
+            return buffer.size() + len1 + 1 + len2 + len3;
         }
         else if (state == Cipher.DECRYPT_MODE || state == Cipher.UNWRAP_MODE)
         {
