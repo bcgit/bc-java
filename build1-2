@@ -233,7 +233,8 @@ then
         echo "compiling"
 
         (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src *.java */*.java )
-        (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src */*/*.java )
+        (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src a*/*/*.java )
+        (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src [bcdefghijklmnopqrstuv]*/*/*.java )
 
         echo "lightweight regression test"
 
@@ -344,7 +345,8 @@ then
     (cd src/org/bouncycastle/jce/cert; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src *.java  )
     (cd src/org/bouncycastle/jcajce/provider; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src [abcis]*/*.java [abcis]*/*/*.java )
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src *.java [abci]*/*.java [abci]*/*/*.java [abci]*/*/*/*.java )
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src [jmoptuvx]*/*.java [jmoptuvx]*/*/*.java [jmoptuvx]*/*/*/*.java [jmoptuvx]*/*/*/*/*.java)
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src [jmop]*/*.java [jmop]*/*/*.java [jmop]*/*/*/*.java [jmop]*/*/*/*/*.java)
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src [tuvx]*/*.java [tuvx]*/*/*.java [tuvx]*/*/*/*.java)
 
     (cd src/javax/crypto; javac -d ../../../classes -classpath ../../../classes:../../../src *.java */*.java)
 
