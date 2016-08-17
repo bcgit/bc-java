@@ -30,11 +30,20 @@ Release: 1.55 <br/>
 <li>The JceAsymmetricValueDecryptor in the CRMF package now attempts to recognise a wider range of parameters for the key wrapping algorithm, rather than relying on a default.</li>
 <li>GCM now fails if an attempt is made to go past 2^32-1 blocks.</li>
 <li>(r, k) ordering for Poly1305 has been modified to be brought into line with RFC 7539.</li>
+<li>An occasional error in Poly1305 due to sign-extension has been fixed.</li>
 <li>TimeStampRequest was always failing to validate if extensions were present. This has been fixed.</li>
 <li>ECIES/IES algorithm parameters encoding failed on default parameters. This has been fixed.</li>
 <li>PGPObjectFactory.iterator() could fail when called on data with multiple stream packets. This has been fixed.</li>
 <li>The McEliece implementation in the BCPQC provider has been revised and now has working key factories associated with it.</li>
 <li>The X.509 UserNotice class can now cope with empty sequences.</li>
+<li>Creation of multiple providers concurrently could cause issues with a non-synchronized Map in the provider. Code is now synchronized.</li>
+<li>If the lightweight OAEP encoder is fed oversized input it will now throw something more informative than an ArrayOutOfBoundsException or simply truncate.</li>
+<li>Attempting to use the PasswordRecipientInfoGenerator without explicitly setting the salt would cause a NullPointerException. This has been fixed.</li>
+<li>The BasicConstraintsValidation in the CertPath API would throw a NullPointerException on an unconstrained path length. This has been fixed.</li>
+<li>A shift error for > 24 bit numbers in TlsUtils has been fixed.</li>
+<li>OAEP encryption for a zero length message would create invalid cipher text. This has been fixed.</li>
+<li>Trying to use of non-default parameters for OAEP in CRMF would resort to the default parameter set. This has been fixed.</li>
+<li>If the BC provider was not registered, creating a CertificateFactory would cause a new provider object to be created. This has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -47,7 +56,10 @@ Release: 1.55 <br/>
 <li>TLS: support for ECDH_anon key exchange.</li>
 <li>Support has been added for HMAC SHA-3. Aliases have been added for NIST OIDs for SHA-3 HMAC as well.</li>
 <li>Support has been added for SHA-3 in DSA, ECDSA, DDSA, and ECDDSA. Aliases have been added for NIST OIDs for DSA and ECDSA as well.</li>
-<li>Support has been added for SHA-3 with RSA PKCS 1.5 and PSS.</li>
+<li>Support has been added for SHA-3 with RSA PKCS 1.5, PSS, and OAEP.</li>
+<li>Support has been added for GOST R 34.11-2012 to the provider and the lightweight API.</li>
+<li>PGP armored output can now be generated without a version string.</li>
+<li>The TimeStampTokenGenerator will now generate timestamps down to a millisecond resolution.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>

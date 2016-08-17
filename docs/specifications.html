@@ -662,6 +662,10 @@ as;
 <li>RSA/NONE/OAEPWithSHA256AndMGF1Padding
 <li>RSA/NONE/OAEPWithSHA384AndMGF1Padding
 <li>RSA/NONE/OAEPWithSHA512AndMGF1Padding
+<li>RSA/NONE/OAEPWithSHA3-224AndMGF1Padding
+<li>RSA/NONE/OAEPWithSHA3-256AndMGF1Padding
+<li>RSA/NONE/OAEPWithSHA3-384AndMGF1Padding
+<li>RSA/NONE/OAEPWithSHA3-512AndMGF1Padding
 <li>RSA/NONE/ISO9796-1Padding
 </ul>
 
@@ -731,6 +735,9 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <tr><td>Any MAC based on a block cipher, CBC (the default) and CFB modes.</td><td>half the cipher's block size (usually 32 bits)</td><td>&nbsp;</td></tr>
 <tr><td>*-GMAC</td><td>32 to 128 bits</td><td>Usable with GCM mode ciphers, defined for AES, NIST SP 800-38D. e.g. AES-GMAC.</td></tr>
 <tr><td>VMPC-MAC</td><td>128</td><td>&nbsp;</td></tr>
+<tr><td>HMac-GOST3411</td><td>256</td><td>&nbsp;</td></tr>
+<tr><td>HMac-GOST3411-2012-256</td><td>256</td><td>&nbsp;</td></tr>
+<tr><td>HMac-GOST3411-2012-512</td><td>512</td><td>&nbsp;</td></tr>
 <tr><td>HMac-KECCAK224</td><td>224</td><td>&nbsp;</td></tr>
 <tr><td>HMac-KECCAK256</td><td>256</td><td>&nbsp;</td></tr>
 <tr><td>HMac-KECCAK288</td><td>288</td><td>&nbsp;</td></tr>
@@ -746,6 +753,10 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <tr><td>HMac-SHA256</td><td>256</td><td>&nbsp;</td></tr>
 <tr><td>HMac-SHA384</td><td>384</td><td>&nbsp;</td></tr>
 <tr><td>HMac-SHA512</td><td>512</td><td>&nbsp;</td></tr>
+<tr><td>HMac-SHA3-224</td><td>224</td><td>&nbsp;</td></tr>
+<tr><td>HMac-SHA3-256</td><td>256</td><td>&nbsp;</td></tr>
+<tr><td>HMac-SHA3-384</td><td>384</td><td>&nbsp;</td></tr>
+<tr><td>HMac-SHA3-512</td><td>512</td><td>&nbsp;</td></tr>
 <tr><td>HMAC-Skein-256-*</td><td>128, 160, 224, 256</td><td>e.g. HMAC-Skein-256-160</td></tr>
 <tr><td>HMAC-Skein-512-*</td><td>128, 160, 224, 256, 384, 512</td><td>e.g. HMAC-Skein-512-256</td></tr>
 <tr><td>HMAC-Skein-1024-*</td><td>384, 512, 1024</td><td>e.g. HMAC-Skein-1024-1024</td></tr>
@@ -796,11 +807,19 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>SHA256withDSA</li>
 <li>SHA384withDSA</li>
 <li>SHA512withDSA</li>
+<li>SHA3-224withDSA</li>
+<li>SHA3-256withDSA</li>
+<li>SHA3-384withDSA</li>
+<li>SHA3-512withDSA</li>
 <li>SHA1withDDSA</li>
 <li>SHA224withDDSA</li>
 <li>SHA256withDDSA</li>
 <li>SHA384withDDSA</li>
 <li>SHA512withDDSA</li>
+<li>SHA3-224withDDSA</li>
+<li>SHA3-256withDDSA</li>
+<li>SHA3-384withDDSA</li>
+<li>SHA3-512withDDSA</li>
 <li>NONEwithDSA</li>
 <li>SHA1withDetECDSA</li>
 <li>SHA224withECDDSA</li>
@@ -813,6 +832,10 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>SHA256withECDSA</li>
 <li>SHA384withECDSA</li>
 <li>SHA512withECDSA</li>
+<li>SHA3-224withECDSA</li>
+<li>SHA3-256withECDSA</li>
+<li>SHA3-384withECDSA</li>
+<li>SHA3-512withECDSA</li>
 <li>SHA1withECNR</li>
 <li>SHA224withECNR</li>
 <li>SHA256withECNR</li>
@@ -824,6 +847,10 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>SHA512withRSA</li>
 <li>SHA512(224)withRSA</li>
 <li>SHA512(256)withRSA</li>
+<li>SHA3-224withRSA</li>
+<li>SHA3-256withRSA</li>
+<li>SHA3-384withRSA</li>
+<li>SHA3-512withRSA</li>
 <li>SHA1withRSAandMGF1</li>
 <li>SHA256withRSAandMGF1</li>
 <li>SHA384withRSAandMGF1</li>
@@ -852,7 +879,7 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>OpenBSDBcyrpt</li>
 <li>SCrypt</li>
 <li>PKCS5S1, any Digest, any symmetric Cipher, ASCII </li>
-<li>PKCS5S2, SHA1/HMac, any symmetric Cipher, ASCII, UTF8</li>
+<li>PKCS5S2, any HMac, any symmetric Cipher, ASCII, UTF8</li>
 <li>PKCS12, any Digest, any symmetric Cipher, Unicode </li>
 </ul>
 
