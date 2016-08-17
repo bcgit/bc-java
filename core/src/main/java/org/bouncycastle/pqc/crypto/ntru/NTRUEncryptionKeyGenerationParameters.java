@@ -195,7 +195,7 @@ public class NTRUEncryptionKeyGenerationParameters
         minCallsMask = dis.readInt();
         hashSeed = dis.readBoolean();
         oid = new byte[3];
-        dis.read(oid);
+        dis.readFully(oid);
         sparse = dis.readBoolean();
         fastFp = dis.readBoolean();
         polyType = dis.read();
