@@ -1,8 +1,7 @@
 package org.bouncycastle.crypto.digests;
 
-import java.util.Arrays;
-
 import org.bouncycastle.crypto.ExtendedDigest;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Memoable;
 
 /**
@@ -101,7 +100,11 @@ public abstract class GOST3411_2012Digest
         int lenM = 64 - bOff;
 
         // At this point it is certain that lenM is smaller than 64
-        Arrays.fill(m, 0, 64 - lenM, (byte)0);
+        for (int i = 0; i != 64 - lenM; i++)
+        {
+            m[i] = 0;
+        }
+
         m[63 - lenM] = 1;
 
         if (bOff != 64)
