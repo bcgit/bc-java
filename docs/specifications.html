@@ -74,23 +74,24 @@ The Bouncy Castle provider can make use of the following two system properties:
 <h2>4.0 Specifications</h2>
 
 <ul>
-<li> clean room implementation of the JCE API 
+<li> clean room implementation of the JCE API </li>
 <li> light-weight cryptographic API consisting of support for
 	<ul>
-		<li>BlockCipher
-		<li>BufferedBlockCipher
-		<li>AsymmetricBlockCipher
-		<li>BufferedAsymmetricBlockCipher
-		<li>StreamCipher
-		<li>BufferedStreamCipher
-        <li>KeyAgreement
-        <li>IESCipher
-		<li>Digest
-		<li>Mac
-		<li>PBE
-		<li>Signers
-	</ul>
-<li> JCE compatible framework for a Bouncy Castle provider
+		<li>BlockCipher</li>
+		<li>BufferedBlockCipher</li>
+		<li>AsymmetricBlockCipher</li>
+		<li>BufferedAsymmetricBlockCipher</li>
+		<li>StreamCipher</li>
+		<li>BufferedStreamCipher</li>
+        <li>KeyAgreement</li>
+        <li>IESCipher</li>
+		<li>Digest</li>
+		<li>Mac</li>
+		<li>PBE</li>
+		<li>Signers</li>
+	</ul></li>
+<li> JCE compatible framework for a Bouncy Castle provider "BC".</li>
+li> JCE compatible framework for a Bouncy Castle post-quantum provider "BCPQC".</li>
 </ul>
 
 <h2>5.0 Light-weight API</h2>
@@ -447,8 +448,7 @@ OutputStream classes are provided as well.
 <h2>6.0 Bouncy Castle Provider</h2>
 
 <p>The Bouncy Castle provider is a JCE compliant provider that
-is a wrapper built on top of the light-weight API.</p>
-
+is a wrapper built on top of the light-weight API. The main provider is referred to with the name "BC", the post quantum provider is indicated by "BCPQC".</p>
 <p>
 The advantage for writing application code that uses the 
 provider interface to cryptographic algorithms is that the
@@ -679,7 +679,7 @@ as;
 
 <p>
 Diffie-Hellman key agreement is supported using the "DH", "ECDH",
-"ECCDH" (EC cofactor DH) and "ECMQV" key agreement instances and their variations.
+"ECCDH" (EC cofactor DH) and "ECMQV" key agreement instances and their variations. Key exchange, which also uses the KeyAgreement API is supported by "NH" (the NewHope algorithm (BCPQC)).
 </p>
 <p>
 Support is provided for the standard SEC algorithm set for EC. Names appear
@@ -869,6 +869,8 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>RIPEMD128withRSA/X9.31</li>
 <li>RIPEMD160withRSA/X9.31</li>
 <li>WHIRLPOOLwithRSA/X9.31</li>
+<li>SHA512withSPHINCS256 (BCPQC)</li>
+<li>SHA3-512withSPHINCS256 (BCPQC)</li>
 </ul>
 
 <h4>Password Hashing and PBE</h4>
