@@ -7,16 +7,20 @@ import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.security.AlgorithmParameterGenerator;
 import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECFieldFp;
 import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
+import java.security.spec.ECPublicKeySpec;
 import java.security.spec.EllipticCurve;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -705,6 +709,7 @@ public class DHTest
     }
 
     private void testExceptions()
+        throws Exception
     {
         try
         {
@@ -719,6 +724,29 @@ public class DHTest
         catch (Exception e)
         {
             fail("Unexpected exception: " + e, e);
+        }
+
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC", "BC");
+
+        keyGen.initialize(256);
+
+        KeyPair kp = keyGen.generateKeyPair();
+        KeyAgreement agreement = KeyAgreement.getInstance("ECDH", "BC");
+
+        agreement.init(kp.getPrivate());
+        try
+        {
+            ECPoint fakePubPoint = new ECPoint(new BigInteger("12345"), new BigInteger("23457"));
+            ECPublicKeySpec fakePubSpec = new ECPublicKeySpec(fakePubPoint, ((ECPublicKey)kp.getPublic()).getParams());
+            KeyFactory kf = KeyFactory.getInstance("EC", "BC");
+            PublicKey fakePub = kf.generatePublic(fakePubSpec);
+            agreement.doPhase(fakePub, true);
+
+            fail("no exception on dud point");
+        }
+        catch (java.security.InvalidKeyException e)
+        {
+            isTrue("wrong message", "calculation failed: Invalid point".equals(e.getMessage()));
         }
     }
 
