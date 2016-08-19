@@ -109,8 +109,6 @@ public class KeyAgreementSpi
                     ECUtil.generatePublicKeyParameter(mqvPubKey.getEphemeralKey());
 
                 pubKey = new MQVPublicParameters(staticKey, ephemKey);
-
-                // TODO Validate that all the keys are using the same parameters?
             }
         }
         else
@@ -122,11 +120,16 @@ public class KeyAgreementSpi
             }
 
             pubKey = ECUtil.generatePublicKeyParameter((PublicKey)key);
-
-            // TODO Validate that all the keys are using the same parameters?
         }
 
-        result = agreement.calculateAgreement(pubKey);
+        try
+        {
+            result = agreement.calculateAgreement(pubKey);
+        }
+        catch (Exception e)
+        {
+            throw new InvalidKeyException("calculation failed: " + e.getMessage(), e);
+        }
 
         return null;
     }
