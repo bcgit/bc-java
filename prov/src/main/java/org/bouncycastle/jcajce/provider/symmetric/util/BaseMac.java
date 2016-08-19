@@ -13,11 +13,13 @@ import javax.crypto.SecretKey;
 import javax.crypto.interfaces.PBEKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEParameterSpec;
+import javax.crypto.spec.RC2ParameterSpec;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.crypto.params.RC2Parameters;
 import org.bouncycastle.crypto.params.SkeinParameters;
 import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jcajce.spec.SkeinParameterSpec;
@@ -125,6 +127,10 @@ public class BaseMac
         {
             param = new ParametersWithIV(new KeyParameter(key.getEncoded()), ((IvParameterSpec)params).getIV());
         }
+        else if (params instanceof RC2ParameterSpec)
+        {
+            param = new ParametersWithIV(new RC2Parameters(key.getEncoded(), ((RC2ParameterSpec)params).getEffectiveKeyBits()), ((RC2ParameterSpec)params).getIV());
+        }
         else if (params instanceof SkeinParameterSpec)
         {
             param = new SkeinParameters.Builder(copyMap(((SkeinParameterSpec)params).getParameters())).setKey(key.getEncoded()).build();
@@ -135,7 +141,7 @@ public class BaseMac
         }
         else
         {
-            throw new InvalidAlgorithmParameterException("unknown parameter type.");
+            throw new InvalidAlgorithmParameterException("unknown parameter type: " + params.getClass().getName());
         }
 
         macEngine.init(param);
