@@ -2,6 +2,7 @@ package org.bouncycastle.cms.test;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyFactory;
@@ -39,9 +40,11 @@ import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.CCMParameters;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedContentInfo;
 import org.bouncycastle.asn1.cms.EnvelopedData;
+import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
@@ -1145,9 +1148,14 @@ public class NewEnvelopedDataTest
         tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES192_GCM, NISTObjectIdentifiers.id_aes192_GCM);
         tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES256_GCM, NISTObjectIdentifiers.id_aes256_GCM);
 
+        byte[] nonce = Hex.decode("0102030405060708090a0b0c");
+        tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES128_GCM, NISTObjectIdentifiers.id_aes128_GCM, new GCMParameters(nonce, 11).getEncoded());
+
         tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES128_CCM, NISTObjectIdentifiers.id_aes128_CCM);
         tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES192_CCM, NISTObjectIdentifiers.id_aes192_CCM);
         tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES256_CCM, NISTObjectIdentifiers.id_aes256_CCM);
+
+        tryKekAlgorithmAEAD(CMSTestUtil.makeAESKey(128), NISTObjectIdentifiers.id_aes128_wrap, CMSAlgorithm.AES128_CCM, NISTObjectIdentifiers.id_aes128_CCM, new CCMParameters(nonce, 13).getEncoded());
     }
 
     public void testAES192KEK()
@@ -1259,9 +1267,60 @@ public class NewEnvelopedDataTest
             fail("no recipient found");
         }
 
-        byte[] edData = ed.getEncoded();
+        checkAlteredMAC(kek, algOid, ed.getEncoded());
+    }
 
-        ContentInfo eContentInfo = ContentInfo.getInstance(edData);
+    private void tryKekAlgorithmAEAD(SecretKey kek, ASN1ObjectIdentifier algOid, ASN1ObjectIdentifier aeadAlgorithm, ASN1ObjectIdentifier baseOID, byte[] encodedParameters)
+        throws NoSuchAlgorithmException, NoSuchProviderException, CMSException, IOException
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        byte[] kekId = new byte[]{1, 2, 3, 4, 5};
+
+        edGen.addRecipientInfoGenerator(new JceKEKRecipientInfoGenerator(kekId, kek).setProvider(BC));
+
+        AlgorithmParameters algParams = AlgorithmParameters.getInstance(aeadAlgorithm.getId(), BC);
+
+        algParams.init(encodedParameters);
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(aeadAlgorithm).setProvider(BC).setAlgorithmParameters(algParams).build());
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+
+        Collection c = recipients.getRecipients();
+        Iterator it = c.iterator();
+
+        assertEquals(ed.getContentEncryptionAlgorithm().getAlgorithm(), baseOID);
+        assertEquals(ed.getContentEncryptionAlgorithm().getParameters(), ASN1Sequence.getInstance(encodedParameters));
+
+        if (it.hasNext())
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+
+            assertEquals(algOid.getId(), recipient.getKeyEncryptionAlgOID());
+
+            byte[] recData = recipient.getContent(new JceKEKEnvelopedRecipient(kek).setKeySizeValidation(true).setProvider(BC));
+
+            assertTrue(Arrays.equals(data, recData));
+        }
+        else
+        {
+            fail("no recipient found");
+        }
+
+        checkAlteredMAC(kek, algOid, ed.getEncoded());
+    }
+
+    private void checkAlteredMAC(SecretKey kek, ASN1ObjectIdentifier algOid, byte[] edData)
+        throws CMSException, IOException
+    {
+        CMSEnvelopedData ed;
+        RecipientInformationStore recipients;
+        Collection c;
+        Iterator it;ContentInfo eContentInfo = ContentInfo.getInstance(edData);
 
         EnvelopedData envD = EnvelopedData.getInstance(eContentInfo.getContent());
 
