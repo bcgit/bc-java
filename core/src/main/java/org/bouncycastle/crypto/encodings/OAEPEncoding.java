@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHA1Digest;
@@ -138,6 +139,11 @@ public class OAEPEncoding
         int     inLen)
         throws InvalidCipherTextException
     {
+        if (inLen > getInputBlockSize())
+        {
+            throw new DataLengthException("input data too long");
+        }
+
         byte[]  block = new byte[getInputBlockSize() + 1 + 2 * defHash.length];
 
         //

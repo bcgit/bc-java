@@ -6,6 +6,7 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.X509Certificate;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -13,8 +14,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SimpleTimeZone;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERUTF8String;
@@ -90,6 +93,10 @@ public class NewTSPTest
         Store certs = new JcaCertStore(certList);
 
         basicTest(origKP.getPrivate(), origCert, certs);
+        resolutionTest(origKP.getPrivate(), origCert, certs, TimeStampTokenGenerator.R_SECONDS, "19700101000009Z");
+        resolutionTest(origKP.getPrivate(), origCert, certs, TimeStampTokenGenerator.R_TENTHS_OF_SECONDS, "19700101000009.9Z");
+        resolutionTest(origKP.getPrivate(), origCert, certs, TimeStampTokenGenerator.R_MICROSECONDS, "19700101000009.99Z");
+        resolutionTest(origKP.getPrivate(), origCert, certs, TimeStampTokenGenerator.R_MILLISECONDS, "19700101000009.999Z");
         basicSha256Test(origKP.getPrivate(), origCert, certs);
         basicTestWithTSA(origKP.getPrivate(), origCert, certs);
         overrideAttrsTest(origKP.getPrivate(), origCert, certs);
@@ -134,6 +141,60 @@ public class NewTSPTest
         AttributeTable table = tsToken.getSignedAttributes();
 
         assertNotNull("no signingCertificate attribute found", table.get(PKCSObjectIdentifiers.id_aa_signingCertificate));
+    }
+
+    private void resolutionTest(
+        PrivateKey privateKey,
+        X509Certificate cert,
+        Store certs,
+        int   resolution,
+        String timeString)
+        throws Exception
+    {
+        TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(
+            new JcaSimpleSignerInfoGeneratorBuilder().build("SHA1withRSA", privateKey, cert), new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2"));
+
+        tsTokenGen.addCertificates(certs);
+
+        tsTokenGen.setResolution(resolution);
+
+        TimeStampRequestGenerator reqGen = new TimeStampRequestGenerator();
+        TimeStampRequest request = reqGen.generate(TSPAlgorithms.SHA1, new byte[20], BigInteger.valueOf(100));
+
+        TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
+
+        TimeStampResponse tsResp = tsRespGen.generate(request, new BigInteger("23"), new Date(9999L));
+
+        tsResp = new TimeStampResponse(tsResp.getEncoded());
+
+        TimeStampToken tsToken = tsResp.getTimeStampToken();
+
+        SimpleDateFormat dateF = new SimpleDateFormat("yyyyMMddHHmmss.SSS'Z'");
+
+        dateF.setTimeZone(new SimpleTimeZone(0, "Z"));
+
+        assertEquals(timeString, tsToken.getTimeStampInfo().toASN1Structure().getGenTime().getTimeString());
+
+        // test zero truncation
+        tsResp = tsRespGen.generate(request, new BigInteger("23"), new Date(9000L));
+        tsToken = tsResp.getTimeStampToken();
+
+        assertEquals("19700101000009Z", tsToken.getTimeStampInfo().toASN1Structure().getGenTime().getTimeString());
+
+        if (resolution > TimeStampTokenGenerator.R_MICROSECONDS)
+        {
+            tsResp = tsRespGen.generate(request, new BigInteger("23"), new Date(9990L));
+            tsToken = tsResp.getTimeStampToken();
+
+            assertEquals("19700101000009.99Z", tsToken.getTimeStampInfo().toASN1Structure().getGenTime().getTimeString());
+        }
+        if (resolution > TimeStampTokenGenerator.R_TENTHS_OF_SECONDS)
+        {
+            tsResp = tsRespGen.generate(request, new BigInteger("23"), new Date(9900L));
+            tsToken = tsResp.getTimeStampToken();
+
+            assertEquals("19700101000009.9Z", tsToken.getTimeStampInfo().toASN1Structure().getGenTime().getTimeString());
+        }
     }
 
     private void basicSha256Test(

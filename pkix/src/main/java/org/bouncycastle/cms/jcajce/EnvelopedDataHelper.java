@@ -423,7 +423,7 @@ public class EnvelopedDataHelper
 
                         CMSUtils.loadParameters(params, sParams);
 
-                        mac.init(sKey, params.getParameterSpec(IvParameterSpec.class));
+                        mac.init(sKey, params.getParameterSpec(AlgorithmParameterSpec.class));
                     }
                     catch (NoSuchAlgorithmException e)
                     {

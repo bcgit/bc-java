@@ -3,7 +3,6 @@ package org.bouncycastle.tsp;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -11,9 +10,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.SimpleTimeZone;
 
 import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -77,29 +74,6 @@ import org.bouncycastle.util.Store;
  */
 public class TimeStampTokenGenerator
 {
-    /**
-     * Create time-stamps with a resolution of 1 second (the default).
-     */
-    public static final int R_SECONDS = 0;
-
-    /**
-     * Create time-stamps with a resolution of 1 tenth of a second.
-     */
-    public static final int R_TENTHS_OF_SECONDS = 1;
-
-    /**
-     * Create time-stamps with a resolution of 1 microsecond.
-     */
-    public static final int R_MICROSECONDS = 2;
-
-    /**
-     * Create time-stamps with a resolution of 1 millisecond.
-     */
-    public static final int R_MILLISECONDS = 3;
-
-    private int resolution = R_SECONDS;
-    private Locale locale = null; // default locale
-
     private int accuracySeconds = -1;
 
     private int accuracyMillis = -1;
@@ -274,27 +248,6 @@ public class TimeStampTokenGenerator
         otherRevoc.put(otherRevocationInfoFormat, otherRevocationInfos.getMatches(null));
     }
 
-    /**
-     * Set the resolution of the time stamp - R_SECONDS (the default), R_TENTH_OF_SECONDS, R_MICROSECONDS, R_MILLISECONDS
-     *
-     * @param resolution resolution of timestamps to be produced.
-     */
-    public void setResolution(int resolution)
-    {
-        this.resolution = resolution;
-    }
-
-    /**
-     * Set a Locale for time creation - you may need to use this if the default locale
-     * doesn't use a Gregorian calender so that the GeneralizedTime produced is compatible with other ASN.1 implementations.
-     *
-     * @param locale a locale to use for converting system time into a GeneralizedTime.
-     */
-    public void setLocale(Locale locale)
-    {
-        this.locale = locale;
-    }
-
     public void setAccuracySeconds(int accuracySeconds)
     {
         this.accuracySeconds = accuracySeconds;
@@ -423,14 +376,8 @@ public class TimeStampTokenGenerator
         }
 
         ASN1GeneralizedTime timeStampTime;
-        if (resolution == R_SECONDS)
-        {
-            timeStampTime = (locale == null) ? new ASN1GeneralizedTime(genTime) : new ASN1GeneralizedTime(genTime, locale);
-        }
-        else
-        {
-            timeStampTime = createGeneralizedTime(genTime);
-        }
+
+            timeStampTime = new ASN1GeneralizedTime(genTime);
 
         TSTInfo tstInfo = new TSTInfo(tsaPolicy,
                 messageImprint, new ASN1Integer(serialNumber),
@@ -476,60 +423,5 @@ public class TimeStampTokenGenerator
         {
             throw new TSPException("Exception encoding info", e);
         }
-    }
-
-    // we need to produce a correct DER encoding GeneralizedTime here as the BC ASN.1 library doesn't handle this properly yet.
-    private ASN1GeneralizedTime createGeneralizedTime(Date time)
-        throws TSPException
-    {
-        String format = "yyyyMMddHHmmss.SSS";
-        SimpleDateFormat dateF = (locale == null) ? new SimpleDateFormat(format) : new SimpleDateFormat(format, locale);
-        dateF.setTimeZone(new SimpleTimeZone(0, "Z"));
-        StringBuilder sBuild = new StringBuilder(dateF.format(time));
-        int dotIndex = sBuild.indexOf(".");
-
-        if (dotIndex < 0)
-        {
-            // came back in seconds only, just return
-            sBuild.append("Z");
-            return new ASN1GeneralizedTime(sBuild.toString());
-        }
-
-        // trim to resolution
-        switch (resolution)
-        {
-        case R_TENTHS_OF_SECONDS:
-            if (sBuild.length() > dotIndex + 2)
-            {
-                sBuild.delete(dotIndex + 2, sBuild.length());
-            }
-            break;
-        case R_MICROSECONDS:
-            if (sBuild.length() > dotIndex + 3)
-            {
-                sBuild.delete(dotIndex + 3, sBuild.length());
-            }
-            break;
-        case R_MILLISECONDS:
-            // do nothing
-            break;
-        default:
-            throw new TSPException("unknown time-stamp resolution: " + resolution);
-        }
-
-        // remove trailing zeros
-        while (sBuild.charAt(sBuild.length() - 1) == '0')
-        {
-            sBuild.deleteCharAt(sBuild.length() - 1);
-        }
-
-        if (sBuild.length() - 1 == dotIndex)
-        {
-            sBuild.deleteCharAt(sBuild.length() - 1);
-        }
-
-        sBuild.append("Z");
-
-        return new ASN1GeneralizedTime(sBuild.toString());
     }
 }

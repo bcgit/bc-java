@@ -485,10 +485,14 @@ public class TimeStampTokenGenerator
         String format = "yyyyMMddHHmmss.SSS";
         SimpleDateFormat dateF = (locale == null) ? new SimpleDateFormat(format) : new SimpleDateFormat(format, locale);
         dateF.setTimeZone(new SimpleTimeZone(0, "Z"));
-        StringBuilder sBuild = new StringBuilder(dateF.format(time));
-        int dotIndex = sBuild.indexOf(".");
+        StringBuffer sBuild = new StringBuffer(dateF.format(time));
+        int dotIndex = 9;
+        while (dotIndex != sBuild.length() && sBuild.charAt(dotIndex) != '.')
+	{
+            dotIndex++;
+	}
 
-        if (dotIndex < 0)
+        if (dotIndex == sBuild.length())
         {
             // came back in seconds only, just return
             sBuild.append("Z");

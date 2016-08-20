@@ -345,7 +345,7 @@ public final class RC2
             Class paramSpec)
             throws InvalidParameterSpecException
         {
-            if (paramSpec == RC2ParameterSpec.class)
+            if (paramSpec == RC2ParameterSpec.class || paramSpec == AlgorithmParameterSpec.class)
             {
                 if (parameterVersion != -1)
                 {
@@ -360,7 +360,7 @@ public final class RC2
                 }
             }
 
-            if (paramSpec == IvParameterSpec.class)
+            if (paramSpec == IvParameterSpec.class || paramSpec == AlgorithmParameterSpec.class)
             {
                 return new IvParameterSpec(iv);
             }

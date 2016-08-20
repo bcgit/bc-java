@@ -20,6 +20,7 @@ import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Class to hold a single master secret key and its subkeys.
@@ -166,6 +167,34 @@ public class PGPSecretKeyRing
     }
 
     /**
+     * Return the public key with the passed in fingerprint if it
+     * is present.
+     *
+     * @param fingerprint the full fingerprint of the key of interest.
+     * @return PGPPublicKey with the matching fingerprint, null if it is not present.
+     */
+    public PGPPublicKey getPublicKey(byte[] fingerprint)
+    {
+        PGPSecretKey key = getSecretKey(fingerprint);
+        if (key != null)
+        {
+            return key.getPublicKey();
+        }
+
+        for (int i = 0; i != extraPubKeys.size(); i++)
+        {
+            PGPPublicKey    k = (PGPPublicKey)keys.get(i);
+
+            if (Arrays.areEqual(fingerprint, k.getFingerprint()))
+            {
+                return k;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Return an iterator containing all the public keys.
      *
      * @return Iterator
@@ -221,6 +250,28 @@ public class PGPSecretKeyRing
     }
 
     /**
+     * Return the secret key associated with the passed in fingerprint if it
+     * is present.
+     *
+     * @param fingerprint the full fingerprint of the key of interest.
+     * @return PGPSecretKey with the matching fingerprint, null if it is not present.
+     */
+    public PGPSecretKey getSecretKey(byte[] fingerprint)
+    {
+        for (int i = 0; i != keys.size(); i++)
+        {
+            PGPSecretKey    k = (PGPSecretKey)keys.get(i);
+
+            if (Arrays.areEqual(fingerprint, k.getPublicKey().getFingerprint()))
+            {
+                return k;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Return an iterator of the public keys in the secret key ring that
      * have no matching private key. At the moment only personal certificate data
      * appears in this fashion.
@@ -230,6 +281,31 @@ public class PGPSecretKeyRing
     public Iterator getExtraPublicKeys()
     {
         return extraPubKeys.iterator();
+    }
+
+    /**
+     * Return any keys carrying a signature issued by the key represented by keyID.
+     *
+     * @param keyID the key id to be matched against.
+     * @return an iterator (possibly empty) of PGPPublicKey objects carrying signatures from keyID.
+     */
+    public Iterator getKeysWithSignaturesBy(long keyID)
+    {
+        List keysWithSigs = new ArrayList();
+
+        for (Iterator keyIt = getPublicKeys(); keyIt.hasNext();)
+        {
+            PGPPublicKey    k = (PGPPublicKey)keyIt.next();
+
+            Iterator sigIt = k.getSignaturesForKeyID(keyID);
+
+            if (sigIt.hasNext())
+            {
+                keysWithSigs.add(k);
+            }
+        }
+
+        return keysWithSigs.iterator();
     }
 
     public byte[] getEncoded() 

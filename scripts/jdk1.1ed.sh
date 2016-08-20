@@ -122,3 +122,35 @@ w
 q
 %
 
+ed org/bouncycastle/asn1/dvcs/DVCSTime.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/x509/UserNotice.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+for i in mceliece/McElieceCCA2Parameters.java sphincs/HashFunctions.java 
+do
+ed org/bouncycastle/pqc/crypto/$i <<%
+g/private final .*;/s/final//
+w
+q
+%
+done
+
+ed org/bouncycastle/cert/dane/TruncatingDigestCalculator.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/signers/RSADigestSigner.java <<%
+g/private final .*;/s/final//
+w
+q
+%

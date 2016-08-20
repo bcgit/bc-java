@@ -431,6 +431,30 @@ public class PGPPublicKey
         
         return null;
     }
+
+    /**
+     * Return any signatures associated with the passed in key identifier keyID.
+     *
+     * @param keyID the key id to be matched.
+     * @return an iterator of PGPSignature objects issued by the key with keyID.
+     */
+    public Iterator getSignaturesForKeyID(
+        long   keyID)
+    {
+        List sigs = new ArrayList();
+
+        for (Iterator it = getSignatures(); it.hasNext();)
+        {
+            PGPSignature sig = (PGPSignature)it.next();
+
+            if (sig.getKeyID() == keyID)
+            {
+                sigs.add(sig);
+            }
+        }
+
+        return sigs.iterator();
+    }
     
     /**
      * Return an iterator of signatures associated with the passed in user attributes.

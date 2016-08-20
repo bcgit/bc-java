@@ -437,6 +437,7 @@ public final class AES
             SecureRandom random)
             throws InvalidAlgorithmParameterException
         {
+            // TODO: add support for GCMParameterSpec as a template.
             throw new InvalidAlgorithmParameterException("No supported AlgorithmParameterSpec for AES parameter generation.");
         }
 
@@ -475,6 +476,7 @@ public final class AES
             SecureRandom random)
             throws InvalidAlgorithmParameterException
         {
+            // TODO: add support for GCMParameterSpec as a template.
             throw new InvalidAlgorithmParameterException("No supported AlgorithmParameterSpec for AES parameter generation.");
         }
 
@@ -494,7 +496,7 @@ public final class AES
             try
             {
                 params = createParametersInstance("GCM");
-                params.init(new GCMParameters(nonce, 12).getEncoded());
+                params.init(new GCMParameters(nonce, 16).getEncoded());
             }
             catch (Exception e)
             {

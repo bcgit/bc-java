@@ -30,6 +30,8 @@ import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.V1TBSCertificateGenerator;
 import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 
@@ -39,6 +41,8 @@ import org.bouncycastle.jce.provider.X509CertificateObject;
  */
 public class X509V1CertificateGenerator
 {
+    private final JcaJceHelper bcHelper = new BCJcaJceHelper(); // needed to force provider loading
+
     private V1TBSCertificateGenerator   tbsGen;
     private ASN1ObjectIdentifier         sigOID;
     private AlgorithmIdentifier         sigAlgId;

@@ -13,6 +13,8 @@ import org.bouncycastle.util.Strings;
 public class ArmoredOutputStream
     extends OutputStream
 {
+    public static final String VERSION_HDR = "Version";
+
     private static final byte[] encodingTable =
         {
             (byte)'A', (byte)'B', (byte)'C', (byte)'D', (byte)'E', (byte)'F', (byte)'G',
@@ -114,7 +116,7 @@ public class ArmoredOutputStream
             nl = "\r\n";
         }
 
-        resetHeaders();
+        headers.put(VERSION_HDR, version);
     }
 
     /**
@@ -141,7 +143,7 @@ public class ArmoredOutputStream
     }
 
     /**
-     * Set an additional header entry.
+     * Set an additional header entry. A null value will clear the entry for name.
      *
      * @param name the name of the header entry.
      * @param value the value of the header entry.
@@ -150,16 +152,29 @@ public class ArmoredOutputStream
         String name,
         String value)
     {
-        this.headers.put(name, value);
+        if (value == null)
+        {
+            this.headers.remove(name);
+        }
+        else
+        {
+            this.headers.put(name, value);
+        }
     }
 
     /**
-     * Reset the headers to only contain a Version string.
+     * Reset the headers to only contain a Version string (if one is present)
      */
     public void resetHeaders()
     {
+        String version = (String)headers.get(VERSION_HDR);
+
         headers.clear();
-        headers.put("Version", version);
+
+        if (version != null)
+        {
+            headers.put(VERSION_HDR, version);
+        }
     }
 
     /**
@@ -323,14 +338,17 @@ public class ArmoredOutputStream
                 out.write(nl.charAt(i));
             }
 
-            writeHeaderEntry("Version", (String)headers.get("Version"));
+            if (headers.containsKey(VERSION_HDR))
+            {
+                writeHeaderEntry(VERSION_HDR, (String)headers.get("Version"));
+            }
 
             Enumeration e = headers.keys();
             while (e.hasMoreElements())
             {
                 String  key = (String)e.nextElement();
 
-                if (!key.equals("Version"))
+                if (!key.equals(VERSION_HDR))
                 {
                     writeHeaderEntry(key, (String)headers.get(key));
                 }

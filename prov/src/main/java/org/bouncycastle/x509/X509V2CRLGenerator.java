@@ -36,6 +36,8 @@ import org.bouncycastle.asn1.x509.V2TBSCertListGenerator;
 import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.asn1.x509.X509ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.provider.X509CRLObject;
 
@@ -45,6 +47,8 @@ import org.bouncycastle.jce.provider.X509CRLObject;
  */
 public class X509V2CRLGenerator
 {
+    private final JcaJceHelper bcHelper = new BCJcaJceHelper(); // needed to force provider loading
+
     private V2TBSCertListGenerator      tbsGen;
     private ASN1ObjectIdentifier         sigOID;
     private AlgorithmIdentifier         sigAlgId;
