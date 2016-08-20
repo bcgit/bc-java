@@ -7,6 +7,7 @@ public class SecurityParameters
     int entity = -1;
     int cipherSuite = -1;
     short compressionAlgorithm = CompressionMethod._null;
+    short maxFragmentLength = -1;
     int prfAlgorithm = -1;
     int verifyDataLength = -1;
     byte[] masterSecret = null;
@@ -15,12 +16,9 @@ public class SecurityParameters
     byte[] sessionHash = null;
     byte[] pskIdentity = null;
     byte[] srpIdentity = null;
-
-    // TODO Keep these internal, since it's maybe not the ideal place for them
-    short maxFragmentLength = -1;
-    boolean truncatedHMac = false;
     boolean encryptThenMAC = false;
     boolean extendedMasterSecret = false;
+    boolean truncatedHMac = false;
 
     void clear()
     {
@@ -53,6 +51,14 @@ public class SecurityParameters
     public short getCompressionAlgorithm()
     {
         return compressionAlgorithm;
+    }
+
+    /**
+     * @return {@link MaxFragmentLength}, or -1 if none
+     */
+    public short getMaxFragmentLength()
+    {
+        return maxFragmentLength;
     }
 
     /**
@@ -104,5 +110,20 @@ public class SecurityParameters
     public byte[] getSRPIdentity()
     {
         return srpIdentity;
+    }
+
+    public boolean isEncryptThenMAC()
+    {
+        return encryptThenMAC;
+    }
+
+    public boolean isExtendedMasterSecret()
+    {
+        return extendedMasterSecret;
+    }
+
+    public boolean isTruncatedHMac()
+    {
+        return truncatedHMac;
     }
 }

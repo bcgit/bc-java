@@ -13,12 +13,12 @@ public class SRPTlsServer
 
     public SRPTlsServer(TlsSRPIdentityManager srpIdentityManager)
     {
-        this(new DefaultTlsCipherFactory(), new DefaultTlsKeyExchangeFactory(), srpIdentityManager);
+        this(new DefaultTlsKeyExchangeFactory(), srpIdentityManager);
     }
 
-    public SRPTlsServer(TlsCipherFactory cipherFactory, TlsKeyExchangeFactory keyExchangeFactory, TlsSRPIdentityManager srpIdentityManager)
+    public SRPTlsServer(TlsKeyExchangeFactory keyExchangeFactory, TlsSRPIdentityManager srpIdentityManager)
     {
-        super(cipherFactory, keyExchangeFactory);
+        super(keyExchangeFactory);
         this.srpIdentityManager = srpIdentityManager;
     }
 

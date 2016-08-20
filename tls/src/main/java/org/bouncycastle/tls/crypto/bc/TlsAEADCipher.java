@@ -1,10 +1,15 @@
-package org.bouncycastle.tls;
+package org.bouncycastle.tls.crypto.bc;
 
 import java.io.IOException;
 
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.TlsContext;
+import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.util.Arrays;
 
 public class TlsAEADCipher
