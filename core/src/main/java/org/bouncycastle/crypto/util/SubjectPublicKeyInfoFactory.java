@@ -28,11 +28,16 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
  */
 public class SubjectPublicKeyInfoFactory
 {
+    private SubjectPublicKeyInfoFactory()
+    {
+
+    }
+
     /**
      * Create a SubjectPublicKeyInfo public key.
      *
-     * @param publicKey the SubjectPublicKeyInfo encoding
-     * @return the appropriate key parameter
+     * @param publicKey the key to be encoded into the info object.
+     * @return a SubjectPublicKeyInfo representing the key.
      * @throws java.io.IOException on an error encoding the key
      */
     public static SubjectPublicKeyInfo createSubjectPublicKeyInfo(AsymmetricKeyParameter publicKey) throws IOException
