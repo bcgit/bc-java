@@ -76,7 +76,6 @@ public class KeyPairGeneratorSpi
         DSAPublicKeyParameters pub = (DSAPublicKeyParameters)pair.getPublic();
         DSAPrivateKeyParameters priv = (DSAPrivateKeyParameters)pair.getPrivate();
 
-        return new KeyPair(new BCDSAPublicKey(pub),
-            new BCDSAPrivateKey(priv));
+        return new KeyPair(new BCDSAPublicKey(pub), new BCDSAPrivateKey(priv));
     }
 }

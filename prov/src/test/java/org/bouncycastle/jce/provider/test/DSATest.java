@@ -38,6 +38,8 @@ import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.params.DSAParameters;
@@ -156,6 +158,66 @@ public class DSATest
         sKey = f.generatePrivate(pkcs8);
 
         checkPrivateKey(k2, sKey);
+    }
+
+    private void testNullParameters()
+        throws Exception
+    {
+        KeyFactory f = KeyFactory.getInstance("DSA", "BC");
+        X509EncodedKeySpec x509s = new X509EncodedKeySpec(new SubjectPublicKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_dsa), new ASN1Integer(10001)).getEncoded());
+
+        DSAPublicKey key1 = (DSAPublicKey)f.generatePublic(x509s);
+        DSAPublicKey key2 = (DSAPublicKey)f.generatePublic(x509s);
+
+        isTrue("parameters not absent", key1.getParams() == null && key2.getParams() == null);
+        isTrue("hashCode mismatch", key1.hashCode() == key2.hashCode());
+        isTrue("not equal", key1.equals(key2));
+        isTrue("encoding mismatch", Arrays.areEqual(x509s.getEncoded(), key1.getEncoded()));
+    }
+
+    private void testValidate()
+        throws Exception
+    {
+        DSAParameterSpec dsaParams = new DSAParameterSpec(
+            new BigInteger(
+                        "F56C2A7D366E3EBDEAA1891FD2A0D099" +
+                        "436438A673FED4D75F594959CFFEBCA7BE0FC72E4FE67D91" +
+                        "D801CBA0693AC4ED9E411B41D19E2FD1699C4390AD27D94C" +
+                        "69C0B143F1DC88932CFE2310C886412047BD9B1C7A67F8A2" +
+                        "5909132627F51A0C866877E672E555342BDF9355347DBD43" +
+                        "B47156B2C20BAD9D2B071BC2FDCF9757F75C168C5D9FC431" +
+                        "31BE162A0756D1BDEC2CA0EB0E3B018A8B38D3EF2487782A" +
+                        "EB9FBF99D8B30499C55E4F61E5C7DCEE2A2BB55BD7F75FCD" +
+                        "F00E48F2E8356BDB59D86114028F67B8E07B127744778AFF" +
+                        "1CF1399A4D679D92FDE7D941C5C85C5D7BFF91BA69F9489D" +
+                        "531D1EBFA727CFDA651390F8021719FA9F7216CEB177BD75", 16),
+            new BigInteger("C24ED361870B61E0D367F008F99F8A1F75525889C89DB1B673C45AF5867CB467", 16),
+            new BigInteger(
+                        "8DC6CC814CAE4A1C05A3E186A6FE27EA" +
+                        "BA8CDB133FDCE14A963A92E809790CBA096EAA26140550C1" +
+                        "29FA2B98C16E84236AA33BF919CD6F587E048C52666576DB" +
+                        "6E925C6CBE9B9EC5C16020F9A44C9F1C8F7A8E611C1F6EC2" +
+                        "513EA6AA0B8D0F72FED73CA37DF240DB57BBB27431D61869" +
+                        "7B9E771B0B301D5DF05955425061A30DC6D33BB6D2A32BD0" +
+                        "A75A0A71D2184F506372ABF84A56AEEEA8EB693BF29A6403" +
+                        "45FA1298A16E85421B2208D00068A5A42915F82CF0B858C8" +
+                        "FA39D43D704B6927E0B2F916304E86FB6A1B487F07D8139E" +
+                        "428BB096C6D67A76EC0B8D4EF274B8A2CF556D279AD267CC" +
+                        "EF5AF477AFED029F485B5597739F5D0240F67C2D948A6279", 16)
+        );
+
+        KeyFactory f = KeyFactory.getInstance("DSA", "BC");
+
+        try
+        {
+            f.generatePublic(new DSAPublicKeySpec(BigInteger.valueOf(1), dsaParams.getP(), dsaParams.getG(), dsaParams.getQ()));
+
+            fail("no exception");
+        }
+        catch (Exception e)
+        {
+            isTrue("mismatch", "invalid KeySpec: y value does not appear to be in correct group".equals(e.getMessage()));
+        }
     }
 
     private void testNONEwithDSA()
@@ -1157,6 +1219,8 @@ public class DSATest
         testGeneration();
         testParameters();
         testDSA2Parameters();
+        testNullParameters();
+        testValidate();
     }
 
     protected BigInteger[] derDecode(
