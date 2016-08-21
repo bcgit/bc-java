@@ -20,9 +20,10 @@ public class ASN1ObjectIdentifier
 
     /**
      * return an OID from the passed in object
+     *
      * @param obj an ASN1ObjectIdentifier or an object that can be converted into one.
-     * @throws IllegalArgumentException if the object cannot be converted.
      * @return an ASN1ObjectIdentifier instance, or null.
+     * @throws IllegalArgumentException if the object cannot be converted.
      */
     public static ASN1ObjectIdentifier getInstance(
         Object obj)
@@ -59,9 +60,9 @@ public class ASN1ObjectIdentifier
      * @param obj      the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
      *                 tagged false otherwise.
+     * @return an ASN1ObjectIdentifier instance, or null.
      * @throws IllegalArgumentException if the tagged object cannot
      * be converted.
-     * @return an ASN1ObjectIdentifier instance, or null.
      */
     public static ASN1ObjectIdentifier getInstance(
         ASN1TaggedObject obj,
@@ -178,12 +179,12 @@ public class ASN1ObjectIdentifier
         this.identifier = identifier;
     }
 
-     /**
-      * Create an OID that creates a branch under the current one.
-      *
-      * @param branchID node numbers for the new branch.
-      * @return the OID for the new created branch.
-      */
+    /**
+     * Create an OID that creates a branch under the current one.
+     *
+     * @param branchID node numbers for the new branch.
+     * @return the OID for the new created branch.
+     */
     ASN1ObjectIdentifier(ASN1ObjectIdentifier oid, String branchID)
     {
         if (!isValidBranchID(branchID, 0))
@@ -416,6 +417,7 @@ public class ASN1ObjectIdentifier
      * The pool is also used by the ASN.1 parsers to limit the number of duplicated OID
      * objects in circulation.
      * </p>
+     *
      * @return a reference to the identifier in the pool.
      */
     public ASN1ObjectIdentifier intern()
@@ -425,9 +427,9 @@ public class ASN1ObjectIdentifier
         if (oid == null)
         {
             oid = pool.putIfAbsent(hdl, this);
-            if (oid == null) 
+            if (oid == null)
             {
-            	oid = this;
+                oid = this;
             }
         }
         return oid;
@@ -466,14 +468,14 @@ public class ASN1ObjectIdentifier
     {
         final OidHandle hdl = new OidHandle(enc);
         ASN1ObjectIdentifier oid = pool.get(hdl);
-        if ( oid == null )
+        if (oid == null)
         {
-        	final ASN1ObjectIdentifier oid2 = new ASN1ObjectIdentifier(enc);
-        	oid = pool.putIfAbsent(hdl, oid2);
-        	if ( oid == null )
-        	{
-        		oid = oid2;
-        	}
+            final ASN1ObjectIdentifier oid2 = new ASN1ObjectIdentifier(enc);
+            oid = pool.putIfAbsent(hdl, oid2);
+            if (oid == null)
+            {
+                oid = oid2;
+            }
         }
         return oid;
     }
