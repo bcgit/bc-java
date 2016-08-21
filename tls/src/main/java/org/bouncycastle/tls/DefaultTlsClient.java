@@ -9,12 +9,12 @@ public abstract class DefaultTlsClient
 
     public DefaultTlsClient()
     {
-        this(new DefaultTlsCipherFactory(), new DefaultTlsKeyExchangeFactory(), new DefaultTlsDHConfigVerifier());
+        this(new DefaultTlsKeyExchangeFactory(), new DefaultTlsDHConfigVerifier());
     }
 
-    public DefaultTlsClient(TlsCipherFactory cipherFactory, TlsKeyExchangeFactory keyExchangeFactory, TlsDHConfigVerifier dhConfigVerifier)
+    public DefaultTlsClient(TlsKeyExchangeFactory keyExchangeFactory, TlsDHConfigVerifier dhConfigVerifier)
     {
-        super(cipherFactory, keyExchangeFactory);
+        super(keyExchangeFactory);
         this.dhConfigVerifier = dhConfigVerifier;
     }
 

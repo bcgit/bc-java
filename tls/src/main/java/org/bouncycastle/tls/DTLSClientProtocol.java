@@ -132,7 +132,7 @@ public class DTLSClientProtocol
 
         handshake.notifyHelloComplete();
 
-        applyMaxFragmentLengthExtension(recordLayer, securityParameters.maxFragmentLength);
+        applyMaxFragmentLengthExtension(recordLayer, securityParameters.getMaxFragmentLength());
 
         if (state.resumedSession)
         {

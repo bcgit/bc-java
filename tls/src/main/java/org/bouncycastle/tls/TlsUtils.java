@@ -1033,7 +1033,7 @@ public class TlsUtils
         }
     }
 
-    static byte[] calculateKeyBlock(TlsContext context, int length)
+    public static byte[] calculateKeyBlock(TlsContext context, int length)
     {
         SecurityParameters securityParameters = context.getSecurityParameters();
         byte[] master_secret = securityParameters.getMasterSecret();
@@ -1052,7 +1052,7 @@ public class TlsUtils
         SecurityParameters securityParameters = context.getSecurityParameters();
 
         byte[] seed;
-        if (securityParameters.extendedMasterSecret)
+        if (securityParameters.isExtendedMasterSecret())
         {
             seed = securityParameters.getSessionHash();
         }
@@ -1066,7 +1066,7 @@ public class TlsUtils
             return preMasterSecret.deriveSSLMasterSecret(seed).extract();
         }
 
-        String asciiLabel = securityParameters.extendedMasterSecret
+        String asciiLabel = securityParameters.isExtendedMasterSecret()
             ?   ExporterLabel.extended_master_secret
             :   ExporterLabel.master_secret;
 

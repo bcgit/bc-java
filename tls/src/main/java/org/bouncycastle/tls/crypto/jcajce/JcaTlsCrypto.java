@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.bouncycastle.tls.crypto.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
@@ -21,7 +22,12 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
     {
         throw new UnsupportedOperationException();
     }
-    
+
+    public TlsCipher createCipher(int encryptionAlgorithm, int macAlgorithm) throws IOException
+    {
+        throw new UnsupportedOperationException();
+    }
+
     public TlsDHDomain createDHDomain(TlsDHConfig dhConfig)
     {
         throw new UnsupportedOperationException();

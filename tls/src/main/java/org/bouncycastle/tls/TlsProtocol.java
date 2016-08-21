@@ -134,14 +134,15 @@ public abstract class TlsProtocol
     protected void applyMaxFragmentLengthExtension()
         throws IOException
     {
-        if (securityParameters.maxFragmentLength >= 0)
+        short maxFragmentLength = securityParameters.getMaxFragmentLength();
+        if (maxFragmentLength >= 0)
         {
-            if (!MaxFragmentLength.isValid(securityParameters.maxFragmentLength))
+            if (!MaxFragmentLength.isValid(maxFragmentLength))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error); 
             }
-    
-            int plainTextLimit = 1 << (8 + securityParameters.maxFragmentLength);
+
+            int plainTextLimit = 1 << (8 + maxFragmentLength);
             recordStream.setPlaintextLimit(plainTextLimit);
         }
     }

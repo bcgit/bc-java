@@ -1,4 +1,4 @@
-package org.bouncycastle.tls;
+package org.bouncycastle.tls.crypto.bc;
 
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -8,6 +8,13 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.TlsContext;
+import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsMac;
+import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -46,7 +53,7 @@ public class TlsBlockCipher
         context.getNonceRandomGenerator().nextBytes(randomData);
 
         this.useExplicitIV = TlsUtils.isTLSv11(context);
-        this.encryptThenMAC = context.getSecurityParameters().encryptThenMAC;
+        this.encryptThenMAC = context.getSecurityParameters().isEncryptThenMAC();
 
         int key_block_size = (2 * cipherKeySize) + clientWriteDigest.getDigestSize()
             + serverWriteDigest.getDigestSize();

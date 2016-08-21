@@ -12,12 +12,12 @@ public class PSKTlsServer
 
     public PSKTlsServer(TlsPSKIdentityManager pskIdentityManager)
     {
-        this(new DefaultTlsCipherFactory(), new DefaultTlsKeyExchangeFactory(), pskIdentityManager);
+        this(new DefaultTlsKeyExchangeFactory(), pskIdentityManager);
     }
 
-    public PSKTlsServer(TlsCipherFactory cipherFactory, TlsKeyExchangeFactory keyExchangeFactory, TlsPSKIdentityManager pskIdentityManager)
+    public PSKTlsServer(TlsKeyExchangeFactory keyExchangeFactory, TlsPSKIdentityManager pskIdentityManager)
     {
-        super(cipherFactory, keyExchangeFactory);
+        super(keyExchangeFactory);
         this.pskIdentityManager = pskIdentityManager;
     }
 

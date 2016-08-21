@@ -6,6 +6,7 @@ import java.util.Vector;
 
 import org.bouncycastle.crypto.agreement.DHStandardGroups;
 import org.bouncycastle.crypto.params.DHParameters;
+import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.util.Arrays;
@@ -14,7 +15,6 @@ public abstract class AbstractTlsServer
     extends AbstractTlsPeer
     implements TlsServer
 {
-    protected TlsCipherFactory cipherFactory;
     protected TlsKeyExchangeFactory keyExchangeFactory;
 
     protected TlsServerContext context;
@@ -38,12 +38,11 @@ public abstract class AbstractTlsServer
 
     public AbstractTlsServer()
     {
-        this(new DefaultTlsCipherFactory(), new DefaultTlsKeyExchangeFactory());
+        this(new DefaultTlsKeyExchangeFactory());
     }
 
-    public AbstractTlsServer(TlsCipherFactory cipherFactory, TlsKeyExchangeFactory keyExchangeFactory)
+    public AbstractTlsServer(TlsKeyExchangeFactory keyExchangeFactory)
     {
-        this.cipherFactory = cipherFactory;
         this.keyExchangeFactory = keyExchangeFactory;
     }
 
@@ -413,7 +412,7 @@ public abstract class AbstractTlsServer
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        return cipherFactory.createCipher(context, encryptionAlgorithm, macAlgorithm);
+        return context.getCrypto().createCipher(encryptionAlgorithm, macAlgorithm);
     }
 
     public NewSessionTicket getNewSessionTicket()

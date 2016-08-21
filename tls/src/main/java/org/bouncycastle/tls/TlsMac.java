@@ -72,7 +72,7 @@ public class TlsMac
         this.mac.init(keyParameter);
 
         this.macLength = mac.getMacSize();
-        if (context.getSecurityParameters().truncatedHMac)
+        if (context.getSecurityParameters().isTruncatedHMac())
         {
             this.macLength = Math.min(this.macLength, 10);
         }

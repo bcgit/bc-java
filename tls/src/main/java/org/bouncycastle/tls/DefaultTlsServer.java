@@ -10,9 +10,9 @@ public abstract class DefaultTlsServer
         super();
     }
 
-    public DefaultTlsServer(TlsCipherFactory cipherFactory, TlsKeyExchangeFactory keyExchangeFactory)
+    public DefaultTlsServer(TlsKeyExchangeFactory keyExchangeFactory)
     {
-        super(cipherFactory, keyExchangeFactory);
+        super(keyExchangeFactory);
     }
 
     protected TlsSignerCredentials getDSASignerCredentials()

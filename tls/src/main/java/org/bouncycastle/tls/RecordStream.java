@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.bouncycastle.tls.crypto.TlsCipher;
+import org.bouncycastle.tls.crypto.TlsNullNullCipher;
+
 /**
  * An implementation of the TLS 1.0/1.1/1.2 record layer, allowing downgrade to SSLv3.
  */
@@ -42,7 +45,7 @@ class RecordStream
 
     void init(TlsContext context)
     {
-        this.readCipher = new TlsNullCipher(context);
+        this.readCipher = new TlsNullNullCipher();
         this.writeCipher = this.readCipher;
         this.handshakeHash = new DeferredHash();
         this.handshakeHash.init(context);

@@ -2,6 +2,9 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
+import org.bouncycastle.tls.crypto.TlsCipher;
+import org.bouncycastle.tls.crypto.TlsNullNullCipher;
+
 class DTLSRecordLayer
     implements DatagramTransport
 {
@@ -36,7 +39,7 @@ class DTLSRecordLayer
 
         this.inHandshake = true;
 
-        this.currentEpoch = new DTLSEpoch(0, new TlsNullCipher(context));
+        this.currentEpoch = new DTLSEpoch(0, new TlsNullNullCipher());
         this.pendingEpoch = null;
         this.readEpoch = currentEpoch;
         this.writeEpoch = currentEpoch;

@@ -4,11 +4,12 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsCipher;
+
 public abstract class AbstractTlsClient
     extends AbstractTlsPeer
     implements TlsClient
 {
-    protected TlsCipherFactory cipherFactory;
     protected TlsKeyExchangeFactory keyExchangeFactory;
 
     protected TlsClientContext context;
@@ -22,12 +23,11 @@ public abstract class AbstractTlsClient
 
     public AbstractTlsClient()
     {
-        this(new DefaultTlsCipherFactory(), new DefaultTlsKeyExchangeFactory());
+        this(new DefaultTlsKeyExchangeFactory());
     }
 
-    public AbstractTlsClient(TlsCipherFactory cipherFactory, TlsKeyExchangeFactory keyExchangeFactory)
+    public AbstractTlsClient(TlsKeyExchangeFactory keyExchangeFactory)
     {
-        this.cipherFactory = cipherFactory;
         this.keyExchangeFactory = keyExchangeFactory;
     }
 
@@ -259,7 +259,7 @@ public abstract class AbstractTlsClient
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        return cipherFactory.createCipher(context, encryptionAlgorithm, macAlgorithm);
+        return context.getCrypto().createCipher(encryptionAlgorithm, macAlgorithm);
     }
 
     public void notifyNewSessionTicket(NewSessionTicket newSessionTicket)

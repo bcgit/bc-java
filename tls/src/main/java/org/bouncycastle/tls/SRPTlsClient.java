@@ -15,13 +15,13 @@ public class SRPTlsClient
 
     public SRPTlsClient(byte[] identity, byte[] password)
     {
-        this(new DefaultTlsCipherFactory(), new DefaultTlsKeyExchangeFactory(), new DefaultTlsSRPGroupVerifier(), identity, password);
+        this(new DefaultTlsKeyExchangeFactory(), new DefaultTlsSRPGroupVerifier(), identity, password);
     }
 
-    public SRPTlsClient(TlsCipherFactory cipherFactory, TlsKeyExchangeFactory keyExchangeFactory, TlsSRPGroupVerifier groupVerifier,
+    public SRPTlsClient(TlsKeyExchangeFactory keyExchangeFactory, TlsSRPGroupVerifier groupVerifier,
         byte[] identity, byte[] password)
     {
-        super(cipherFactory, keyExchangeFactory);
+        super(keyExchangeFactory);
         this.groupVerifier = groupVerifier;
         this.identity = Arrays.clone(identity);
         this.password = Arrays.clone(password);

@@ -782,7 +782,7 @@ public class TlsServerProtocol
             }
         }
 
-        if (securityParameters.extendedMasterSecret)
+        if (securityParameters.isExtendedMasterSecret())
         {
             this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(serverExtensions);
             TlsExtensionsUtils.addExtendedMasterSecretExtension(serverExtensions);

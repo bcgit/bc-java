@@ -102,7 +102,7 @@ public class DTLSServerProtocol
         {
             byte[] serverHelloBody = generateServerHello(state);
 
-            applyMaxFragmentLengthExtension(recordLayer, securityParameters.maxFragmentLength);
+            applyMaxFragmentLengthExtension(recordLayer, securityParameters.getMaxFragmentLength());
 
             ProtocolVersion recordLayerVersion = state.serverContext.getServerVersion();
             recordLayer.setReadVersion(recordLayerVersion);
@@ -382,7 +382,7 @@ public class DTLSServerProtocol
             }
         }
 
-        if (securityParameters.extendedMasterSecret)
+        if (securityParameters.isExtendedMasterSecret())
         {
             state.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(state.serverExtensions);
             TlsExtensionsUtils.addExtendedMasterSecretExtension(state.serverExtensions);

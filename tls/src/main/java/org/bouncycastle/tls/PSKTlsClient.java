@@ -10,13 +10,13 @@ public class PSKTlsClient
 
     public PSKTlsClient(TlsPSKIdentity pskIdentity)
     {
-        this(new DefaultTlsCipherFactory(), new DefaultTlsKeyExchangeFactory(), new DefaultTlsDHConfigVerifier(), pskIdentity);
+        this(new DefaultTlsKeyExchangeFactory(), new DefaultTlsDHConfigVerifier(), pskIdentity);
     }
 
-    public PSKTlsClient(TlsCipherFactory cipherFactory, TlsKeyExchangeFactory keyExchangeFactory,
-        TlsDHConfigVerifier dhConfigVerifier, TlsPSKIdentity pskIdentity)
+    public PSKTlsClient(TlsKeyExchangeFactory keyExchangeFactory, TlsDHConfigVerifier dhConfigVerifier,
+        TlsPSKIdentity pskIdentity)
     {
-        super(cipherFactory, keyExchangeFactory);
+        super(keyExchangeFactory);
         this.dhConfigVerifier = dhConfigVerifier;
         this.pskIdentity = pskIdentity;
     }
