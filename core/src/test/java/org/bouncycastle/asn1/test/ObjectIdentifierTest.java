@@ -21,34 +21,34 @@ public class ObjectIdentifierTest
             for (int j = 0; j < 1024; j++)
             {
                 final ASN1ObjectIdentifier oid1 = new ASN1ObjectIdentifier("1.1." + i + "." + j);
-				final byte[] encoded1 = oid1.getEncoded();
+                final byte[] encoded1 = oid1.getEncoded();
                 final ASN1ObjectIdentifier oid2 = ASN1ObjectIdentifier.getInstance(encoded1);
-                if ( oid1 == oid2 )
+                if (oid1 == oid2)
                 {
-                	fail("Shouldn't be the same: " + oid1 + " " + oid2);
+                    fail("Shouldn't be the same: " + oid1 + " " + oid2);
                 }
-                if ( ! oid1.equals(oid2) )
+                if (!oid1.equals(oid2))
                 {
-                	fail("Should be equal: " + oid1 + " " + oid2 );
+                    fail("Should be equal: " + oid1 + " " + oid2);
                 }
                 final ASN1ObjectIdentifier oid3 = oid2.intern();
-                if ( oid2 != oid3 )
+                if (oid2 != oid3)
                 {
-                	fail("Should be the same: " + oid2 + " " + oid3);
+                    fail("Should be the same: " + oid2 + " " + oid3);
                 }
-                if ( ! oid2.equals(oid3) )
+                if (!oid2.equals(oid3))
                 {
-                	fail("Should be equal: " + oid2 + " " + oid3 );
+                    fail("Should be equal: " + oid2 + " " + oid3);
                 }
                 final byte[] encoded2 = oid3.getEncoded();
                 final ASN1ObjectIdentifier oid4 = ASN1ObjectIdentifier.getInstance(encoded2);
-                if ( oid3 != oid4 )
+                if (oid3 != oid4)
                 {
-                	fail("Should be taken from cache: " + oid3 + " " + oid4);
+                    fail("Should be taken from cache: " + oid3 + " " + oid4);
                 }
-                if ( ! oid3.equals(oid4) )
+                if (!oid3.equals(oid4))
                 {
-                	fail("Should be equal: " + oid3 + " " + oid4 );
+                    fail("Should be equal: " + oid3 + " " + oid4);
                 }
             }
         }
@@ -57,7 +57,7 @@ public class ObjectIdentifierTest
     public static void main(
         String[] args)
     {
-        ObjectIdentifierTest    test = new ObjectIdentifierTest();
+        ObjectIdentifierTest test = new ObjectIdentifierTest();
         TestResult result = test.perform();
 
         System.out.println(result);
