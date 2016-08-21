@@ -8,6 +8,7 @@ import java.math.BigInteger;
 import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -220,61 +221,35 @@ public class BCECPrivateKey
      */
     public byte[] getEncoded()
     {
-        ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-        DEROutputStream         dOut = new DEROutputStream(bOut);
-        X962Parameters          params = null;
+        X962Parameters  params = ECUtils.getDomainParametersFromName(ecSpec, withCompression);
 
-        if (ecSpec instanceof ECNamedCurveParameterSpec)
+        int orderBitLength;
+        if (ecSpec == null)
         {
-            ASN1ObjectIdentifier curveOid = ECUtil.getNamedCurveOid(((ECNamedCurveParameterSpec)ecSpec).getName());
-            
-            params = new X962Parameters(curveOid);
-        }
-        else if (ecSpec == null)
-        {
-            params = new X962Parameters(DERNull.INSTANCE);
+            orderBitLength = ECUtil.getOrderBitLength(configuration, null, this.getD());
         }
         else
         {
-            ECParameterSpec p = (ECParameterSpec)ecSpec;
-
-            ECPoint pG = p.getG().normalize();
-            ECPoint g = pG.getCurve().createPoint(pG.getAffineXCoord().toBigInteger(), pG.getAffineYCoord().toBigInteger());
-
-            X9ECParameters ecP = new X9ECParameters(
-                  p.getCurve(),
-                  g,
-                  p.getN(),
-                  p.getH(),
-                  p.getSeed());
-
-            params = new X962Parameters(ecP);
+            orderBitLength = ECUtil.getOrderBitLength(configuration, ecSpec.getN(), this.getD());
         }
 
-        PrivateKeyInfo        info;
-        ECPrivateKeyStructure keyStructure;
+        PrivateKeyInfo          info;
+        org.bouncycastle.asn1.sec.ECPrivateKey            keyStructure;
 
         if (publicKey != null)
         {
-            keyStructure = new ECPrivateKeyStructure(this.getD(), publicKey, params);
+            keyStructure = new org.bouncycastle.asn1.sec.ECPrivateKey(orderBitLength, this.getD(), publicKey, params);
         }
         else
         {
-            keyStructure = new ECPrivateKeyStructure(this.getD(), params);
+            keyStructure = new org.bouncycastle.asn1.sec.ECPrivateKey(orderBitLength, this.getD(), params);
         }
 
         try
         {
-            if (algorithm.equals("ECGOST3410"))
-            {
-                info = new PrivateKeyInfo(new AlgorithmIdentifier(CryptoProObjectIdentifiers.gostR3410_2001, params), keyStructure);
-            }
-            else
-            {
-                info = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), keyStructure);
-            }
+            info = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), keyStructure);
 
-            return KeyUtil.getEncodedPrivateKeyInfo(info);
+            return info.getEncoded(ASN1Encoding.DER);
         }
         catch (IOException e)
         {

@@ -744,6 +744,10 @@ public class DHTest
 
             fail("no exception on dud point");
         }
+        catch (java.security.spec.InvalidKeySpecException e)
+        {
+            isTrue("wrong message", "invalid KeySpec: point not on curve".equals(e.getMessage()));
+        }
         catch (java.security.InvalidKeyException e)
         {
             isTrue("wrong message", "calculation failed: Invalid point".equals(e.getMessage()));

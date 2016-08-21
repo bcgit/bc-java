@@ -46,34 +46,7 @@ public class SignatureSpi
     protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
     {
-        CipherParameters param;
-
-        if (publicKey instanceof ECPublicKey)
-        {
-            param = ECUtil.generatePublicKeyParameter(publicKey);
-        }
-        else
-        {
-            try
-            {
-                byte[] bytes = publicKey.getEncoded();
-
-                publicKey = BouncyCastleProvider.getPublicKey(SubjectPublicKeyInfo.getInstance(bytes));
-
-                if (publicKey instanceof ECPublicKey)
-                {
-                    param = ECUtil.generatePublicKeyParameter(publicKey);
-                }
-                else
-                {
-                    throw new InvalidKeyException("can't recognise key type in ECDSA based signer");
-                }
-            }
-            catch (Exception e)
-            {
-                throw new InvalidKeyException("can't recognise key type in ECDSA based signer");
-            }
-        }
+        CipherParameters param = ECUtils.generatePublicKeyParameter(publicKey);
 
         digest.reset();
 
