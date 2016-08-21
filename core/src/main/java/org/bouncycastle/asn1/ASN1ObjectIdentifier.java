@@ -3,8 +3,8 @@ package org.bouncycastle.asn1;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.bouncycastle.util.Arrays;
 
@@ -420,28 +420,24 @@ public class ASN1ObjectIdentifier
      */
     public ASN1ObjectIdentifier intern()
     {
-        synchronized (pool)
+        final OidHandle hdl = new OidHandle(getBody());
+        ASN1ObjectIdentifier oid = pool.get(hdl);
+        if (oid == null)
         {
-            OidHandle hdl = new OidHandle(getBody());
-            ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)pool.get(hdl);
-
-            if (oid != null)
+            oid = pool.putIfAbsent(hdl, this);
+            if (oid == null) 
             {
-                return oid;
-            }
-            else
-            {
-                pool.put(hdl, this);
-                return this;
+            	oid = this;
             }
         }
+        return oid;
     }
 
-    private static final Map pool = new HashMap();
+    private static final ConcurrentMap<OidHandle, ASN1ObjectIdentifier> pool = new ConcurrentHashMap<OidHandle, ASN1ObjectIdentifier>();
 
     private static class OidHandle
     {
-        private int key;
+        private final int key;
         private final byte[] enc;
 
         OidHandle(byte[] enc)
@@ -468,17 +464,17 @@ public class ASN1ObjectIdentifier
 
     static ASN1ObjectIdentifier fromOctetString(byte[] enc)
     {
-        OidHandle hdl = new OidHandle(enc);
-
-        synchronized (pool)
+        final OidHandle hdl = new OidHandle(enc);
+        ASN1ObjectIdentifier oid = pool.get(hdl);
+        if ( oid == null )
         {
-            ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)pool.get(hdl);
-            if (oid != null)
-            {
-                return oid;
-            }
+        	final ASN1ObjectIdentifier oid2 = new ASN1ObjectIdentifier(enc);
+        	oid = pool.putIfAbsent(hdl, oid2);
+        	if ( oid == null )
+        	{
+        		oid = oid2;
+        	}
         }
-
-        return new ASN1ObjectIdentifier(enc);
+        return oid;
     }
 }
