@@ -16,6 +16,8 @@ import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
@@ -70,6 +72,26 @@ public class EC5Util
         }
 
         return curve;
+    }
+
+    public static ECDomainParameters getDomainParameters(
+        ProviderConfiguration configuration,
+        java.security.spec.ECParameterSpec params)
+    {
+        ECDomainParameters domainParameters;
+
+        if (params == null)
+        {
+            org.bouncycastle.jce.spec.ECParameterSpec iSpec = configuration.getEcImplicitlyCa();
+
+            domainParameters = new ECDomainParameters(iSpec.getCurve(), iSpec.getG(), iSpec.getN(), iSpec.getH(), iSpec.getSeed());
+        }
+        else
+        {
+            domainParameters = ECUtil.getDomainParameters(configuration, convertSpec(params, false));
+        }
+
+        return domainParameters;
     }
 
     public static ECParameterSpec convertToSpec(

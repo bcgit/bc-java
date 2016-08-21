@@ -106,9 +106,16 @@ public class KeyFactorySpi
         KeySpec keySpec)
         throws InvalidKeySpecException
     {
-        if (keySpec instanceof ECPublicKeySpec)
+        try
         {
-            return new BCECPublicKey(algorithm, (ECPublicKeySpec)keySpec, configuration);
+            if (keySpec instanceof ECPublicKeySpec)
+            {
+                return new BCECPublicKey(algorithm, (ECPublicKeySpec)keySpec, configuration);
+            }
+        }
+        catch (Exception e)
+        {
+            throw new InvalidKeySpecException("invalid KeySpec: " + e.getMessage());
         }
 
         return super.engineGeneratePublic(keySpec);

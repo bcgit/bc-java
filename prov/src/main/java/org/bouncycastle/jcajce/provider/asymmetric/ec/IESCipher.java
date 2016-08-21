@@ -163,7 +163,7 @@ public class IESCipher
 
         if (otherKeyParameter == null)
         {
-            len2 = 1 + 2 * (((ECKeyParameters)key).getParameters().getCurve().getFieldSize() + 7) / 8;
+            len2 = 2 * (((ECKeyParameters)key).getParameters().getCurve().getFieldSize() + 7) / 8;
         }
         else
         {
@@ -189,7 +189,7 @@ public class IESCipher
 
         if (state == Cipher.ENCRYPT_MODE || state == Cipher.WRAP_MODE)
         {
-            return buffer.size() + len1 + len2 + len3;
+            return buffer.size() + len1 + 1 + len2 + len3;
         }
         else if (state == Cipher.DECRYPT_MODE || state == Cipher.UNWRAP_MODE)
         {
@@ -294,13 +294,13 @@ public class IESCipher
         {
             if (key instanceof PublicKey)
             {
-                this.key = ECUtil.generatePublicKeyParameter((PublicKey)key);
+                this.key = ECUtils.generatePublicKeyParameter((PublicKey)key);
             }
             else if (key instanceof IESKey)
             {
                 IESKey ieKey = (IESKey)key;
 
-                this.key = ECUtil.generatePublicKeyParameter(ieKey.getPublic());
+                this.key = ECUtils.generatePublicKeyParameter(ieKey.getPublic());
                 this.otherKeyParameter = ECUtil.generatePrivateKeyParameter(ieKey.getPrivate());
             }
             else
@@ -318,7 +318,7 @@ public class IESCipher
             {
                 IESKey ieKey = (IESKey)key;
 
-                this.otherKeyParameter = ECUtil.generatePublicKeyParameter(ieKey.getPublic());
+                this.otherKeyParameter = ECUtils.generatePublicKeyParameter(ieKey.getPublic());
                 this.key = ECUtil.generatePrivateKeyParameter(ieKey.getPrivate());
             }
             else

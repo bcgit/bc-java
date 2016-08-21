@@ -485,10 +485,14 @@ public class TimeStampTokenGenerator
         String format = "yyyyMMddHHmmss.SSS";
         SimpleDateFormat dateF = (locale == null) ? new SimpleDateFormat(format) : new SimpleDateFormat(format, locale);
         dateF.setTimeZone(new SimpleTimeZone(0, "Z"));
-        StringBuilder sBuild = new StringBuilder(dateF.format(time));
-        int dotIndex = sBuild.indexOf(".");
+        StringBuffer sBuild = new StringBuffer(dateF.format(time));
+        int dotIndex = 9;
+        while (dotIndex != sBuild.length() && sBuild.charAt(dotIndex) != '.')
+	{
+            dotIndex++;
+	}
 
-        if (dotIndex < 0)
+        if (dotIndex == sBuild.length())
         {
             // came back in seconds only, just return
             sBuild.append("Z");
@@ -501,13 +505,13 @@ public class TimeStampTokenGenerator
         case R_TENTHS_OF_SECONDS:
             if (sBuild.length() > dotIndex + 2)
             {
-                sBuild.delete(dotIndex + 2, sBuild.length());
+                sBuild = new StringBuffer(sBuild.toString().substring(0, dotIndex + 2));
             }
             break;
         case R_MICROSECONDS:
             if (sBuild.length() > dotIndex + 3)
             {
-                sBuild.delete(dotIndex + 3, sBuild.length());
+                sBuild = new StringBuffer(sBuild.toString().substring(0, dotIndex + 3));
             }
             break;
         case R_MILLISECONDS:
@@ -520,12 +524,12 @@ public class TimeStampTokenGenerator
         // remove trailing zeros
         while (sBuild.charAt(sBuild.length() - 1) == '0')
         {
-            sBuild.deleteCharAt(sBuild.length() - 1);
+            sBuild = new StringBuffer(sBuild.toString().substring(0, sBuild.length() - 1));
         }
 
         if (sBuild.length() - 1 == dotIndex)
         {
-            sBuild.deleteCharAt(sBuild.length() - 1);
+            sBuild = new StringBuffer(sBuild.toString().substring(0, sBuild.length() - 1));
         }
 
         sBuild.append("Z");

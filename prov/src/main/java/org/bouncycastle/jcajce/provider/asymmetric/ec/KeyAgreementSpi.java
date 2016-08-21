@@ -94,9 +94,9 @@ public class KeyAgreementSpi
             if (!(key instanceof MQVPublicKey))
             {
                 ECPublicKeyParameters staticKey = (ECPublicKeyParameters)
-                    ECUtil.generatePublicKeyParameter((PublicKey)key);
+                    ECUtils.generatePublicKeyParameter((PublicKey)key);
                 ECPublicKeyParameters ephemKey = (ECPublicKeyParameters)
-                    ECUtil.generatePublicKeyParameter(mqvParameters.getOtherPartyEphemeralKey());
+                    ECUtils.generatePublicKeyParameter(mqvParameters.getOtherPartyEphemeralKey());
 
                 pubKey = new MQVPublicParameters(staticKey, ephemKey);
             }
@@ -104,13 +104,11 @@ public class KeyAgreementSpi
             {
                 MQVPublicKey mqvPubKey = (MQVPublicKey)key;
                 ECPublicKeyParameters staticKey = (ECPublicKeyParameters)
-                    ECUtil.generatePublicKeyParameter(mqvPubKey.getStaticKey());
+                    ECUtils.generatePublicKeyParameter(mqvPubKey.getStaticKey());
                 ECPublicKeyParameters ephemKey = (ECPublicKeyParameters)
-                    ECUtil.generatePublicKeyParameter(mqvPubKey.getEphemeralKey());
+                    ECUtils.generatePublicKeyParameter(mqvPubKey.getEphemeralKey());
 
                 pubKey = new MQVPublicParameters(staticKey, ephemKey);
-
-                // TODO Validate that all the keys are using the same parameters?
             }
         }
         else
@@ -121,12 +119,23 @@ public class KeyAgreementSpi
                     + getSimpleName(ECPublicKey.class) + " for doPhase");
             }
 
-            pubKey = ECUtil.generatePublicKeyParameter((PublicKey)key);
-
-            // TODO Validate that all the keys are using the same parameters?
+            pubKey = ECUtils.generatePublicKeyParameter((PublicKey)key);
         }
 
-        result = agreement.calculateAgreement(pubKey);
+        try
+        {
+            result = agreement.calculateAgreement(pubKey);
+        }
+        catch (final Exception e)
+        {
+            throw new InvalidKeyException("calculation failed: " + e.getMessage())
+            {
+                public Throwable getCause()
+                            {
+                                return e;
+                            }
+            };
+        }
 
         return null;
     }
@@ -180,7 +189,7 @@ public class KeyAgreementSpi
                 if (mqvPrivKey.getEphemeralPublicKey() != null)
                 {
                     ephemPubKey = (ECPublicKeyParameters)
-                        ECUtil.generatePublicKeyParameter(mqvPrivKey.getEphemeralPublicKey());
+                        ECUtils.generatePublicKeyParameter(mqvPrivKey.getEphemeralPublicKey());
                 }
             }
             else
@@ -196,7 +205,7 @@ public class KeyAgreementSpi
                 if (mqvParameterSpec.getEphemeralPublicKey() != null)
                 {
                     ephemPubKey = (ECPublicKeyParameters)
-                        ECUtil.generatePublicKeyParameter(mqvParameterSpec.getEphemeralPublicKey());
+                        ECUtils.generatePublicKeyParameter(mqvParameterSpec.getEphemeralPublicKey());
                 }
                 mqvParameters = mqvParameterSpec;
                 ukmParameters = mqvParameterSpec.getUserKeyingMaterial();

@@ -9,6 +9,7 @@ import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.SignatureSpi;
 import java.security.interfaces.DSAKey;
+import java.security.interfaces.DSAPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -52,34 +53,7 @@ public class DSASigner
         PublicKey   publicKey)
         throws InvalidKeyException
     {
-        CipherParameters    param;
-
-        if (publicKey instanceof DSAKey)
-        {
-            param = DSAUtil.generatePublicKeyParameter(publicKey);
-        }
-        else
-        {
-            try
-            {
-                byte[]  bytes = publicKey.getEncoded();
-
-                publicKey = new BCDSAPublicKey(SubjectPublicKeyInfo.getInstance(bytes));
-
-                if (publicKey instanceof DSAKey)
-                {
-                    param = DSAUtil.generatePublicKeyParameter(publicKey);
-                }
-                else
-                {
-                    throw new InvalidKeyException("can't recognise key type in DSA based signer");
-                }
-            }
-            catch (Exception e)
-            {
-                throw new InvalidKeyException("can't recognise key type in DSA based signer");
-            }
-        }
+        CipherParameters    param = DSAUtil.generatePublicKeyParameter(publicKey);
 
         digest.reset();
         signer.init(false, param);
@@ -98,9 +72,7 @@ public class DSASigner
         PrivateKey  privateKey)
         throws InvalidKeyException
     {
-        CipherParameters    param;
-
-        param = DSAUtil.generatePrivateKeyParameter(privateKey);
+        CipherParameters    param = DSAUtil.generatePrivateKeyParameter(privateKey);
 
         if (random != null)
         {
