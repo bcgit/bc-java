@@ -294,13 +294,13 @@ public class IESCipher
         {
             if (key instanceof PublicKey)
             {
-                this.key = ECUtil.generatePublicKeyParameter((PublicKey)key);
+                this.key = ECUtils.generatePublicKeyParameter((PublicKey)key);
             }
             else if (key instanceof IESKey)
             {
                 IESKey ieKey = (IESKey)key;
 
-                this.key = ECUtil.generatePublicKeyParameter(ieKey.getPublic());
+                this.key = ECUtils.generatePublicKeyParameter(ieKey.getPublic());
                 this.otherKeyParameter = ECUtil.generatePrivateKeyParameter(ieKey.getPrivate());
             }
             else
@@ -318,7 +318,7 @@ public class IESCipher
             {
                 IESKey ieKey = (IESKey)key;
 
-                this.otherKeyParameter = ECUtil.generatePublicKeyParameter(ieKey.getPublic());
+                this.otherKeyParameter = ECUtils.generatePublicKeyParameter(ieKey.getPublic());
                 this.key = ECUtil.generatePrivateKeyParameter(ieKey.getPrivate());
             }
             else
