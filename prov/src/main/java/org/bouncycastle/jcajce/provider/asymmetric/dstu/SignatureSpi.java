@@ -54,31 +54,13 @@ public class SignatureSpi
     {
         CipherParameters param;
 
-        if (publicKey instanceof ECPublicKey)
+        if (publicKey instanceof BCDSTU4145PublicKey)
         {
-            param = ECUtil.generatePublicKeyParameter(publicKey);
+            param = ((BCDSTU4145PublicKey)publicKey).engineGetKeyParameters();
         }
         else
         {
-            try
-            {
-                byte[] bytes = publicKey.getEncoded();
-
-                publicKey = BouncyCastleProvider.getPublicKey(SubjectPublicKeyInfo.getInstance(bytes));
-
-                if (publicKey instanceof ECPublicKey)
-                {
-                    param = ECUtil.generatePublicKeyParameter(publicKey);
-                }
-                else
-                {
-                    throw new InvalidKeyException("can't recognise key type in DSA based signer");
-                }
-            }
-            catch (Exception e)
-            {
-                throw new InvalidKeyException("can't recognise key type in DSA based signer");
-            }
+            param = ECUtil.generatePublicKeyParameter(publicKey);
         }
 
         digest = new GOST3411Digest(expandSbox(((BCDSTU4145PublicKey)publicKey).getSbox()));
