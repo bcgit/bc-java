@@ -471,6 +471,7 @@ public class ASN1ObjectIdentifier
         if (oid == null)
         {
             final ASN1ObjectIdentifier oid2 = new ASN1ObjectIdentifier(enc);
+            // only intern enters value into the table.
             oid = pool.get(hdl);
             if (oid == null)
             {
