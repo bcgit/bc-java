@@ -59,12 +59,13 @@ public class Certificate
         try
         {
             encoding = certificateList[index].getEncoded(ASN1Encoding.DER);
+
+            return context.getCrypto().createCertificate(encoding);
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
         }
-        return context.getCrypto().createCertificate(encoding);
     }
 
     public int getLength()

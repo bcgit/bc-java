@@ -82,10 +82,10 @@ public class JcaTlsCertificate
         switch (signatureAlgorithm)
         {
         case SignatureAlgorithm.dsa:
-            return null; // TODO: new BcTlsDSSVerifier(getPubKeyDSS());
+            return new JcaTlsDSAVerifier(getPubKeyDSS(), helper);
 
         case SignatureAlgorithm.ecdsa:
-            return null; // TODO: new BcTlsECDSAVerifier(getPubKeyEC());
+            return new JcaTlsECDSAVerifier(getPubKeyEC(), helper);
 
         case SignatureAlgorithm.rsa:
             return null; // TODO: new BcTlsRSAVerifier(getPubKeyRSA());
@@ -181,11 +181,11 @@ public class JcaTlsCertificate
             {
             case KeyExchangeAlgorithm.RSA:
             case KeyExchangeAlgorithm.RSA_PSK:
-            {
-                validateKeyUsage(KeyUsage.keyEncipherment);
-                this.pubKeyRSA = getPubKeyRSA();
-                return this;
-            }
+                {
+                    validateKeyUsage(KeyUsage.keyEncipherment);
+                    this.pubKeyRSA = getPubKeyRSA();
+                    return this;
+                }
             }
         }
 

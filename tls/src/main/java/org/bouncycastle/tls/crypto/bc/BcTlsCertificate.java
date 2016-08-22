@@ -42,8 +42,16 @@ public class BcTlsCertificate implements TlsCertificate
     protected RSAKeyParameters pubKeyRSA = null;
 
     public BcTlsCertificate(byte[] encoding)
+        throws IOException
     {
-        this.certificate = Certificate.getInstance(encoding);
+        try
+        {
+            this.certificate = Certificate.getInstance(encoding);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new IOException("unable to decode certificate: " + e.getMessage(), e);
+        }
     }
 
     public TlsVerifier createVerifier(short signatureAlgorithm) throws IOException

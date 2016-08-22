@@ -59,6 +59,7 @@ public class BcTlsCrypto
     }
 
     public TlsCertificate createCertificate(byte[] encoding)
+        throws IOException
     {
         return new BcTlsCertificate(encoding);
     }

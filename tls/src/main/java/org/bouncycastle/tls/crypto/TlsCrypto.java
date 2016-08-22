@@ -16,7 +16,7 @@ public interface TlsCrypto
      */
     byte[] calculateDigest(short hashAlgorithm, byte[] buf, int off, int len) throws IOException;
 
-    TlsCertificate createCertificate(byte[] encoding);
+    TlsCertificate createCertificate(byte[] encoding) throws IOException;
 
     /**
      * See enumeration classes {@link EncryptionAlgorithm}, {@link MACAlgorithm} for appropriate argument values
