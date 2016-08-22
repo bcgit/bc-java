@@ -29,11 +29,12 @@ Release: 1.56 <br/>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
-<li>Support for the explicit setting AlgorithmParameters has been added to the JceCMSContentEncryptorBuilder and the JceCMSMacCaculatorBuilder classes to allow configuration of the session cipher/MAC used.</li>
-<li>EC Public keys are now validated on construction in the JCA/JCE and the light weight API.</li>
+<li>Support for the explicit setting of AlgorithmParameters has been added to the JceCMSContentEncryptorBuilder and the JceCMSMacCaculatorBuilder classes to allow configuration of the session cipher/MAC used.</li>
+<li>EC, ECGOST3410, and DSTU4145 Public keys are now validated on construction in the JCA/JCE and the light weight API.</li>
 <li>DSA Public keys are now validated on construction in the JCA/JCE and the light weight API.</li>
 <li>Diffie-Hellman public keys are now validated where parameters allow it.<li>
 <li>Some validations are now applied to RSA modulii and public exponents.<li>
+<li>The ASN.1 Object Identifier cache now uses a Concurrent HashMap for additional speed.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
