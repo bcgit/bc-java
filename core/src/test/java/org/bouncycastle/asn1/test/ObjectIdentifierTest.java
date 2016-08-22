@@ -52,6 +52,26 @@ public class ObjectIdentifierTest
                 }
             }
         }
+
+        // make sure we're not leaking memory
+        for (int i = 0; i < 100; i++)
+        {
+            for (int j = 0; j < 100; j++)
+            {
+                final ASN1ObjectIdentifier oid1 = new ASN1ObjectIdentifier("1.1.2." + i + "." + j);
+                final byte[] encoded1 = oid1.getEncoded();
+                final ASN1ObjectIdentifier oid2 = ASN1ObjectIdentifier.getInstance(encoded1);
+                final ASN1ObjectIdentifier oid3 = ASN1ObjectIdentifier.getInstance(encoded1);
+                if (oid1 == oid2)
+                {
+                    fail("Shouldn't be the same: " + oid1 + " " + oid2);
+                }
+                if (oid2 == oid3)
+                {
+                    fail("Shouldn't be the same: " + oid2 + " " + oid3);
+                }
+            }
+        }
     }
 
     public static void main(

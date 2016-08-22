@@ -470,13 +470,7 @@ public class ASN1ObjectIdentifier
         ASN1ObjectIdentifier oid = pool.get(hdl);
         if (oid == null)
         {
-            final ASN1ObjectIdentifier oid2 = new ASN1ObjectIdentifier(enc);
-            // only intern enters value into the table.
-            oid = pool.get(hdl);
-            if (oid == null)
-            {
-                oid = oid2;
-            }
+            return new ASN1ObjectIdentifier(enc);
         }
         return oid;
     }
