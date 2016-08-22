@@ -28,6 +28,7 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KeyUtil;
+import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jce.ECGOST3410NamedCurveTable;
 import org.bouncycastle.jce.interfaces.ECPointEncoder;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
@@ -45,7 +46,7 @@ public class BCECGOST3410PublicKey
     private String                  algorithm = "ECGOST3410";
     private boolean                 withCompression;
 
-    private transient org.bouncycastle.math.ec.ECPoint q;
+    private transient ECPublicKeyParameters   ecPublicKey;
     private transient ECParameterSpec         ecSpec;
     private transient GOST3410PublicKeyAlgParameters       gostParams;
 
@@ -54,30 +55,29 @@ public class BCECGOST3410PublicKey
         BCECGOST3410PublicKey      key)
     {
         this.algorithm = algorithm;
-        this.q = key.q;
+        this.ecPublicKey = key.ecPublicKey;
         this.ecSpec = key.ecSpec;
         this.withCompression = key.withCompression;
         this.gostParams = key.gostParams;
     }
 
     public BCECGOST3410PublicKey(
-        ECPublicKeySpec     spec)
+        ECPublicKeySpec     spec,
+        ProviderConfiguration configuration)
     {
-        this.q = spec.getQ();
-
         if (spec.getParams() != null)
         {
             this.ecSpec = spec.getParams();
+            this.ecPublicKey = new ECPublicKeyParameters(spec.getQ(), ECUtil.getDomainParameters(configuration, spec.getParams()));
+
         }
         else
         {
-            if (q.getCurve() == null)
-            {
-                org.bouncycastle.jce.spec.ECParameterSpec s = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
-
-                q = s.getCurve().createPoint(q.getX().toBigInteger(), q.getY().toBigInteger(), false);
-            }
             this.ecSpec = null;
+
+            org.bouncycastle.jce.spec.ECParameterSpec s = configuration.getEcImplicitlyCa();
+
+            this.ecPublicKey = new ECPublicKeyParameters(s.getCurve().createPoint(spec.getQ().getAffineXCoord().toBigInteger(), spec.getQ().getAffineYCoord().toBigInteger()), ECUtil.getDomainParameters(configuration, (ECParameterSpec)null));
         }
     }
 
@@ -89,7 +89,7 @@ public class BCECGOST3410PublicKey
         ECDomainParameters      dp = params.getParameters();
 
         this.algorithm = algorithm;
-        this.q = params.getQ();
+        this.ecPublicKey = params;
 
         if (spec == null)
         {
@@ -111,14 +111,14 @@ public class BCECGOST3410PublicKey
         ECPublicKeyParameters   params)
     {
         this.algorithm = algorithm;
-        this.q = params.getQ();
+        this.ecPublicKey = params;
         this.ecSpec = null;
     }
 
     BCECGOST3410PublicKey(
         ECPublicKey     key)
     {
-        this.q = key.getQ();
+        this.ecPublicKey = new ECPublicKeyParameters(key.getQ(), ECUtil.getDomainParameters(BouncyCastleProvider.CONFIGURATION, key.getParameters()));
         this.algorithm = key.getAlgorithm();
         this.ecSpec = key.getParameters();
     }
@@ -129,7 +129,7 @@ public class BCECGOST3410PublicKey
         ECParameterSpec   ecSpec)
     {
         this.algorithm = algorithm;
-        this.q = q;
+        this.ecPublicKey = new ECPublicKeyParameters(q, ECUtil.getDomainParameters(BouncyCastleProvider.CONFIGURATION, ecSpec));
         this.ecSpec = ecSpec;
     }
 
@@ -176,7 +176,9 @@ public class BCECGOST3410PublicKey
 
             ecSpec = spec;
 
-            this.q = spec.getCurve().createPoint(new BigInteger(1, x), new BigInteger(1, y), false);
+            ECPoint q = spec.getCurve().createPoint(new BigInteger(1, x), new BigInteger(1, y), false);
+
+            this.ecPublicKey = new ECPublicKeyParameters(q, ECUtil.getDomainParameters(BouncyCastleProvider.CONFIGURATION, ecSpec));
         }
         else
         {
@@ -241,7 +243,9 @@ public class BCECGOST3410PublicKey
 
             X9ECPoint derQ = new X9ECPoint(curve, key);
 
-            this.q = derQ.getPoint();
+            ECPoint q = derQ.getPoint();
+
+            this.ecPublicKey = new ECPublicKeyParameters(q, ECUtil.getDomainParameters(BouncyCastleProvider.CONFIGURATION, ecSpec));
         }
     }
 
@@ -289,8 +293,8 @@ public class BCECGOST3410PublicKey
             ECPoint point = qq.getCurve().createPoint(qq.getX().toBigInteger(), qq.getY().toBigInteger(), false);
             ASN1OctetString p = ASN1OctetString.getInstance(new X9ECPoint(point));
 
-            BigInteger      bX = this.q.getX().toBigInteger();
-            BigInteger      bY = this.q.getY().toBigInteger();
+            BigInteger      bX = getQ().getX().toBigInteger();
+            BigInteger      bY = getQ().getY().toBigInteger();
             byte[]          encKey = new byte[64];
             
             byte[] val = bX.toByteArray();
@@ -346,7 +350,7 @@ public class BCECGOST3410PublicKey
                 params = new X962Parameters(ecP);
             }
 
-            ECCurve curve = this.engineGetQ().getCurve();
+            ECCurve curve = this.ecPublicKey.getParameters().getCurve();
             ECPoint point = curve.createPoint(this.getQ().getX().toBigInteger(), this.getQ().getY().toBigInteger(), withCompression);
             ASN1OctetString p = ASN1OctetString.getInstance(new X9ECPoint(point));
 
@@ -368,6 +372,8 @@ public class BCECGOST3410PublicKey
     
     public org.bouncycastle.math.ec.ECPoint getQ()
     {
+        ECPoint q = ecPublicKey.getQ();
+
         if (ecSpec == null)
         {
             if (q instanceof org.bouncycastle.math.ec.ECPoint.Fp)
@@ -383,9 +389,9 @@ public class BCECGOST3410PublicKey
         return q;
     }
 
-    public org.bouncycastle.math.ec.ECPoint engineGetQ()
+    ECPublicKeyParameters engineGetKeyParameters()
     {
-        return q;
+        return ecPublicKey;
     }
 
     public String toString()

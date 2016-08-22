@@ -124,7 +124,7 @@ public class KeyFactorySpi
     {
         if (keySpec instanceof ECPublicKeySpec)
         {
-            return new BCDSTU4145PublicKey((ECPublicKeySpec)keySpec);
+            return new BCDSTU4145PublicKey((ECPublicKeySpec)keySpec, BouncyCastleProvider.CONFIGURATION);
         }
         else if (keySpec instanceof java.security.spec.ECPublicKeySpec)
         {

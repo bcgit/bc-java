@@ -90,7 +90,7 @@ public class KeyFactorySpi
     {
         if (keySpec instanceof ECPublicKeySpec)
         {
-            return new BCECGOST3410PublicKey((ECPublicKeySpec)keySpec);
+            return new BCECGOST3410PublicKey((ECPublicKeySpec)keySpec, BouncyCastleProvider.CONFIGURATION);
         }
 
         return super.engineGeneratePublic(keySpec);
