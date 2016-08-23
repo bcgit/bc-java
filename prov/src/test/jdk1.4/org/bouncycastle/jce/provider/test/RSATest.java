@@ -387,6 +387,37 @@ public class RSATest
         {
             fail("key generation test failed on decrypt expected " + new String(Hex.encode(input)) + " got " + new String(Hex.encode(out)));
         }
+
+        testGetExceptionsPKCS1();
+    }
+
+    public void testGetExceptionsPKCS1()
+        throws Exception
+    {
+        KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA", "BC");
+        keygen.initialize(1024);
+        KeyPair keypair = keygen.genKeyPair();
+        SecureRandom rand = new SecureRandom();
+        Cipher c = Cipher.getInstance("RSA/ECB/PKCS1Padding", "BC");
+        byte[] ciphertext = new byte[1024 / 8];
+        HashSet<String> exceptions = new HashSet<String>();
+        final int SAMPLES = 1000;
+        for (int i = 0; i < SAMPLES; i++)
+        {
+            rand.nextBytes(ciphertext);
+            ciphertext[0] = (byte)0;
+            try
+            {
+                c.init(Cipher.DECRYPT_MODE, keypair.getPrivate());
+                c.doFinal(ciphertext);
+            }
+            catch (Exception ex)
+            {
+                String message = ex.toString();
+                exceptions.add(message);
+            }
+        }
+        isTrue("exception count wrong", 1 == exceptions.size());
     }
 
     public String getName()
