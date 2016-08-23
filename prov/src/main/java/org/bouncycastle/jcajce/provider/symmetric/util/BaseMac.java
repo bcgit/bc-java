@@ -1,5 +1,6 @@
 package org.bouncycastle.jcajce.provider.symmetric.util;
 
+import java.lang.reflect.Method;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -17,6 +18,7 @@ import javax.crypto.spec.RC2ParameterSpec;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Mac;
+import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.RC2Parameters;
@@ -27,6 +29,8 @@ import org.bouncycastle.jcajce.spec.SkeinParameterSpec;
 public class BaseMac
     extends MacSpi implements PBE
 {
+    private static final Class gcmSpecClass = lookup("javax.crypto.spec.GCMParameterSpec");
+
     private Mac macEngine;
 
     private int scheme = PKCS12;
@@ -135,6 +139,22 @@ public class BaseMac
         {
             param = new SkeinParameters.Builder(copyMap(((SkeinParameterSpec)params).getParameters())).setKey(key.getEncoded()).build();
         }
+        else if (gcmSpecClass != null && gcmSpecClass.isAssignableFrom(params.getClass()))
+        {
+            try
+            {
+                Method tLen = gcmSpecClass.getDeclaredMethod("getTLen", new Class[0]);
+                Method iv= gcmSpecClass.getDeclaredMethod("getIV", new Class[0]);
+
+                KeyParameter keyParam = new KeyParameter(key.getEncoded());
+
+                param = new AEADParameters(keyParam, ((Integer)tLen.invoke(params, new Object[0])).intValue(), (byte[])iv.invoke(params, new Object[0]));
+            }
+            catch (Exception e)
+            {
+                throw new InvalidAlgorithmParameterException("Cannot process GCMParameterSpec.");
+            }
+        }
         else if (params == null)
         {
             param = new KeyParameter(key.getEncoded());
@@ -192,5 +212,19 @@ public class BaseMac
         }
 
         return newTable;
+    }
+
+    private static Class lookup(String className)
+    {
+        try
+        {
+            Class def = BaseBlockCipher.class.getClassLoader().loadClass(className);
+
+            return def;
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
     }
 }
