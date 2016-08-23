@@ -16,6 +16,10 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.engines.AESWrapEngine;
 import org.bouncycastle.crypto.engines.RFC3211WrapEngine;
@@ -122,6 +126,71 @@ public final class AES
         public AESGMAC()
         {
             super(new GMac(new GCMBlockCipher(new AESFastEngine())));
+        }
+    }
+
+    public static class AESCCMMAC
+        extends BaseMac
+    {
+        public AESCCMMAC()
+        {
+            super(new CCMMac());
+        }
+
+        private static class CCMMac
+            implements Mac
+        {
+            private final CCMBlockCipher ccm = new CCMBlockCipher(new AESFastEngine());
+
+            private int macLength = 8;
+
+            public void init(CipherParameters params)
+                throws IllegalArgumentException
+            {
+                ccm.init(true, params);
+
+                this.macLength = ccm.getMac().length;
+            }
+
+            public String getAlgorithmName()
+            {
+                return ccm.getAlgorithmName() + "Mac";
+            }
+
+            public int getMacSize()
+            {
+                return macLength;
+            }
+
+            public void update(byte in)
+                throws IllegalStateException
+            {
+                ccm.processAADByte(in);
+            }
+
+            public void update(byte[] in, int inOff, int len)
+                throws DataLengthException, IllegalStateException
+            {
+                ccm.processAADBytes(in, inOff, len);
+            }
+
+            public int doFinal(byte[] out, int outOff)
+                throws DataLengthException, IllegalStateException
+            {
+                try
+                {
+                    return ccm.doFinal(out, 0);
+                }
+                catch (InvalidCipherTextException e)
+                {
+                    throw new IllegalStateException("exception on doFinal()", e);
+                }
+            }
+
+            public void reset()
+            {
+                ccm.reset();
+            }
         }
     }
 
@@ -789,7 +858,12 @@ public final class AES
             provider.addAlgorithm("KeyGenerator", NISTObjectIdentifiers.id_aes256_CCM, PREFIX + "$KeyGen256");
 
             provider.addAlgorithm("Mac.AESCMAC", PREFIX + "$AESCMAC");
-            
+
+            provider.addAlgorithm("Mac.AESCCMMAC", PREFIX + "$AESCCMMAC");
+            provider.addAlgorithm("Alg.Alias.Mac." + NISTObjectIdentifiers.id_aes128_CCM.getId(), "AESCCMMAC");
+            provider.addAlgorithm("Alg.Alias.Mac." + NISTObjectIdentifiers.id_aes192_CCM.getId(), "AESCCMMAC");
+            provider.addAlgorithm("Alg.Alias.Mac." + NISTObjectIdentifiers.id_aes256_CCM.getId(), "AESCCMMAC");
+
             provider.addAlgorithm("Alg.Alias.Cipher", BCObjectIdentifiers.bc_pbe_sha1_pkcs12_aes128_cbc, "PBEWITHSHAAND128BITAES-CBC-BC");
             provider.addAlgorithm("Alg.Alias.Cipher", BCObjectIdentifiers.bc_pbe_sha1_pkcs12_aes192_cbc, "PBEWITHSHAAND192BITAES-CBC-BC");
             provider.addAlgorithm("Alg.Alias.Cipher", BCObjectIdentifiers.bc_pbe_sha1_pkcs12_aes256_cbc, "PBEWITHSHAAND256BITAES-CBC-BC");
