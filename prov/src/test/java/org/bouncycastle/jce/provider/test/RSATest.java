@@ -26,6 +26,7 @@ import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.HashSet;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -705,6 +706,7 @@ public class RSATest
 
         out = c.update(new byte[40]);
 
+        testGetExceptionsPKCS1();
         zeroMessageTest();
 
         oaepDigestCheck("SHA3-224", NISTObjectIdentifiers.id_sha3_224, pub2048Key, priv2048Key, rand, Hex.decode("2aa7812d4f7b7766f8625feb58481ef5b5fa6dfafbea543e4bbba89d6708f4900fc9fd55d5c2b83fefefc67e2ba7a4222217efaa9b9d31920bdcd78733319aca910dfd118aae5e901a6d27a56e37b1a6f86e7404f82da248e77845e58b789f10a1af8a1208f77dda384692609339346c4ea57928b890042e7d70b1d5817f8978dcbc9cd2fcdde37a0a41a52dbef701ddc859a5d58efd10aa5bd8d205c10154db906540bf20dedcff721df11a456df201cb9cbbd092a89a1eb3f11e7e34003d7070e02c8db54e5498e7ee262fb9178f5eb85d1db66baafe0a66e8283df9c41bded218e5d906d28f08803deb3cbd1a92777d55fe56ff022a47f673cac2ca145973"));
@@ -756,6 +758,35 @@ public class RSATest
         isTrue("MGF alg mismatch", OAEPParameterSpec.DEFAULT.getMGFAlgorithm().equals(spec.getMGFAlgorithm()));
         isTrue("MGF Digest mismatch", digest.equals(((MGF1ParameterSpec)spec.getMGFParameters()).getDigestAlgorithm()));
 
+    }
+
+    public void testGetExceptionsPKCS1()
+        throws Exception
+    {
+        KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA", "BC");
+        keygen.initialize(1024);
+        KeyPair keypair = keygen.genKeyPair();
+        SecureRandom rand = new SecureRandom();
+        Cipher c = Cipher.getInstance("RSA/ECB/PKCS1Padding", "BC");
+        byte[] ciphertext = new byte[1024 / 8];
+        HashSet<String> exceptions = new HashSet<String>();
+        final int SAMPLES = 1000;
+        for (int i = 0; i < SAMPLES; i++)
+        {
+            rand.nextBytes(ciphertext);
+            ciphertext[0] = (byte)0;
+            try
+            {
+                c.init(Cipher.DECRYPT_MODE, keypair.getPrivate());
+                c.doFinal(ciphertext);
+            }
+            catch (Exception ex)
+            {
+                String message = ex.toString();
+                exceptions.add(message);
+            }
+        }
+        isTrue("exception count wrong", 1 == exceptions.size());
     }
 
     public void zeroMessageTest()

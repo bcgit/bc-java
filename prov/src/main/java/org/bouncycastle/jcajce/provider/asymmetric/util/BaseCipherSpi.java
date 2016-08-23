@@ -152,9 +152,15 @@ public abstract class BaseCipherSpi
         {
             throw new InvalidKeyException(e.getMessage());
         }
-        catch (BadPaddingException e)
+        catch (final BadPaddingException e)
         {
-            throw new InvalidKeyException(e.getMessage());
+            throw new InvalidKeyException("unable to unwrap")
+            {
+                public synchronized Throwable getCause()
+                {
+                    return e;
+                }
+            };
         }
         catch (IllegalBlockSizeException e2)
         {
