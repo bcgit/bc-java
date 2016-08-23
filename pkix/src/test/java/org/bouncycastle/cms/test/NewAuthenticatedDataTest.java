@@ -294,7 +294,6 @@ public class NewAuthenticatedDataTest
     public void testAES256CCM()
         throws Exception
     {
-        Security.addProvider(new BouncyCastleProvider());
         byte[] data = "Eric H. Echidna".getBytes();
         ASN1ObjectIdentifier macAlg = CMSAlgorithm.AES256_CCM;
         AlgorithmParameters algParams = AlgorithmParameters.getInstance("CCM", BC);

@@ -139,6 +139,10 @@ public class BaseMac
         {
             param = new SkeinParameters.Builder(copyMap(((SkeinParameterSpec)params).getParameters())).setKey(key.getEncoded()).build();
         }
+        else if (params == null)
+        {
+            param = new KeyParameter(key.getEncoded());
+        }
         else if (gcmSpecClass != null && gcmSpecClass.isAssignableFrom(params.getClass()))
         {
             try
@@ -154,10 +158,6 @@ public class BaseMac
             {
                 throw new InvalidAlgorithmParameterException("Cannot process GCMParameterSpec.");
             }
-        }
-        else if (params == null)
-        {
-            param = new KeyParameter(key.getEncoded());
         }
         else
         {
