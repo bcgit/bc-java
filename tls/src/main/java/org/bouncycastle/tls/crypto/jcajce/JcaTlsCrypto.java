@@ -5,24 +5,10 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.Provider;
-import java.util.HashMap;
-import java.util.Map;
 
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.MD5Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.digests.SHA224Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA384Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.tls.HashAlgorithm;
+import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.crypto.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
@@ -31,6 +17,7 @@ import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsSecret;
+import org.bouncycastle.tls.crypto.bc.BcTlsSecret;
 
 public class JcaTlsCrypto extends AbstractTlsCrypto
 {
@@ -57,6 +44,11 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
         }
     }
 
+    public JceTlsSecret adoptSecret(byte[] data)
+    {
+        return new JceTlsSecret(this, data);
+    }
+
     public TlsCertificate createCertificate(byte[] encoding)
         throws IOException
     {
@@ -70,12 +62,12 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
 
     public TlsDHDomain createDHDomain(TlsDHConfig dhConfig)
     {
-        throw new UnsupportedOperationException();
+        return new JceTlsDHDomain(this, dhConfig);
     }
 
     public TlsECDomain createECDomain(TlsECConfig ecConfig)
     {
-        throw new UnsupportedOperationException();
+        return new JcaTlsECDomain(this, ecConfig);
     }
 
     public TlsSecret createSecret(byte[] data)
@@ -86,6 +78,16 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
     public TlsSecret generateRandomSecret(int length)
     {
         throw new UnsupportedOperationException();
+    }
+
+    public TlsContext getContext()
+        {
+            return context;
+        }
+
+    JcaJceHelper getHelper()
+    {
+        return helper;
     }
 
     MessageDigest createHash(short hashAlgorithm)

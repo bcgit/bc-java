@@ -12,6 +12,8 @@ import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 
+import javax.crypto.interfaces.DHPublicKey;
+
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
@@ -19,7 +21,6 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.TBSCertificate;
-import org.bouncycastle.asn1.x9.DHPublicKey;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
@@ -88,7 +89,7 @@ public class JcaTlsCertificate
             return new JcaTlsECDSAVerifier(getPubKeyEC(), helper);
 
         case SignatureAlgorithm.rsa:
-            return null; // TODO: new BcTlsRSAVerifier(getPubKeyRSA());
+            return new JcaTlsRSAVerifier(getPubKeyRSA(), helper);
 
         default:
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);
@@ -99,7 +100,7 @@ public class JcaTlsCertificate
     {
         try
         {
-            return certificate.getEncoded();    // TODO: do we need to insist on DER here?
+            return certificate.getEncoded();
         }
         catch (CertificateEncodingException e)
         {

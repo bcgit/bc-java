@@ -1,0 +1,79 @@
+package org.bouncycastle.tls.crypto.jcajce;
+
+import java.security.GeneralSecurityException;
+import java.security.Signature;
+import java.security.interfaces.RSAPublicKey;
+
+import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.DigestInfo;
+import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.digests.NullDigest;
+import org.bouncycastle.crypto.encodings.PKCS1Encoding;
+import org.bouncycastle.crypto.engines.RSABlindedEngine;
+import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.crypto.signers.GenericSigner;
+import org.bouncycastle.crypto.signers.RSADigestSigner;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.tls.DigitallySigned;
+import org.bouncycastle.tls.SignatureAlgorithm;
+import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsVerifier;
+
+public class JcaTlsRSAVerifier
+    implements TlsVerifier
+{
+    private final JcaJceHelper helper;
+    protected RSAPublicKey pubKeyRSA;
+
+    public JcaTlsRSAVerifier(RSAPublicKey pubKeyRSA, JcaJceHelper helper)
+    {
+        if (pubKeyRSA == null)
+        {
+            throw new IllegalArgumentException("'pubKeyRSA' cannot be null");
+        }
+
+        this.pubKeyRSA = pubKeyRSA;
+        this.helper = helper;
+    }
+
+    public boolean verifySignature(DigitallySigned signedParams, byte[] hash)
+    {
+        SignatureAndHashAlgorithm algorithm = signedParams.getAlgorithm();
+
+        try
+        {
+            Signature signer = helper.createSignature("NoneWithRSA");
+            signer.initVerify(pubKeyRSA);
+            if (algorithm != null)
+            {
+                if (algorithm.getSignature() != SignatureAlgorithm.rsa)
+                {
+                    throw new IllegalStateException();
+                }
+
+            /*
+             * RFC 5246 4.7. In RSA signing, the opaque vector contains the signature generated
+             * using the RSASSA-PKCS1-v1_5 signature scheme defined in [PKCS1].
+             */
+                new DigestInfo(new AlgorithmIdentifier(TlsUtils.getOIDForHashAlgorithm(algorithm.getHash()), DERNull.INSTANCE), hash);
+
+            }
+            else
+            {
+            /*
+             * RFC 5246 4.7. Note that earlier versions of TLS used a different RSA signature scheme
+             * that did not include a DigestInfo encoding.
+             */
+                signer.update(hash, 0, hash.length);
+            }
+
+            return signer.verify(signedParams.getSignature());
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new IllegalStateException("unable to process signature: " + e.getMessage(), e);
+        }
+    }
+}
