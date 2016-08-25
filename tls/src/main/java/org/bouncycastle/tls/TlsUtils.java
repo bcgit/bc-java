@@ -1174,15 +1174,16 @@ public class TlsUtils
 
     static byte[] calculateSignatureHash(TlsContext context, SignatureAndHashAlgorithm algorithm, DigestInputBuffer buf)
     {
-        Digest d = TlsUtils.createHash(algorithm);
+        TlsHash h = context.getCrypto().createHash(algorithm);
+        Digest d = TlsUtils.createHash(algorithm);   // TODO: add size to TlsHash
 
         SecurityParameters securityParameters = context.getSecurityParameters();
-        d.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);
-        d.update(securityParameters.serverRandom, 0, securityParameters.serverRandom.length);
-        buf.updateDigest(d);
+        h.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);
+        h.update(securityParameters.serverRandom, 0, securityParameters.serverRandom.length);
+        buf.updateDigest(h);
 
         byte[] hash = new byte[d.getDigestSize()];
-        d.doFinal(hash, 0);
+        h.doFinal(hash, 0);
         return hash;
     }
 

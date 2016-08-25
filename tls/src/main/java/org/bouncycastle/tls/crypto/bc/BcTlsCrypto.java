@@ -30,6 +30,7 @@ import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsHash;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCertificate;
@@ -195,9 +196,24 @@ public class BcTlsCrypto
         }
     }
 
-    public Digest createHash(SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+    public TlsHash createHash(SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
-        return signatureAndHashAlgorithm == null ? new CombinedHash() : createHash(signatureAndHashAlgorithm.getHash());
+        final Digest d = signatureAndHashAlgorithm == null ? new CombinedHash() : createHash(signatureAndHashAlgorithm.getHash());
+
+        return new TlsHash()
+        {
+            @Override
+            public void update(byte[] data, int offSet, int length)
+            {
+               d.update(data, offSet, length);
+            }
+
+            @Override
+            public int doFinal(byte[] out, int offSet)
+            {
+                return d.doFinal(out, offSet);
+            }
+        };
     }
 
     public Digest cloneHash(short hashAlgorithm, Digest hash)

@@ -6,9 +6,13 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.tls.CombinedHash;
 import org.bouncycastle.tls.HashAlgorithm;
+import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
+import org.bouncycastle.tls.TlsHash;
 import org.bouncycastle.tls.crypto.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
@@ -38,7 +42,7 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
 
             return d.digest();
         }
-        catch (GeneralSecurityException e)
+        catch (IllegalArgumentException e)
         {
             throw new IOException("unable to calculate digest: " + e.getMessage(), e);
         }
@@ -90,8 +94,32 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
         return helper;
     }
 
+
+    public TlsHash createHash(SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+    {
+        final MessageDigest d = signatureAndHashAlgorithm == null ? new CombinedHash() : createHash(signatureAndHashAlgorithm.getHash());
+
+        return new TlsHash()
+        {
+            @Override
+            public void update(byte[] data, int offSet, int length)
+            {
+               d.update(data, offSet, length);
+            }
+
+            @Override
+            public int doFinal(byte[] out, int offSet)
+            {
+                byte[] res = d.digest();
+
+                System.arraycopy(res, 0, out, offSet, res.length);
+
+                return res.length;
+            }
+        };
+    }
+
     MessageDigest createHash(short hashAlgorithm)
-        throws NoSuchProviderException, NoSuchAlgorithmException
     {
         String digestName;
 
@@ -119,6 +147,47 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
             throw new IllegalArgumentException("unknown HashAlgorithm");
         }
 
-        return helper.createDigest(digestName);
+        try
+        {
+            return helper.createDigest(digestName);
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new IllegalArgumentException("unable to create message digest:" + e.getMessage(), e);
+        }
+    }
+
+    private class CombinedHash
+        extends MessageDigest
+    {
+
+        protected CombinedHash()
+        {
+            super("MD5andSHA1");
+        }
+
+        @Override
+        protected void engineUpdate(byte b)
+        {
+
+        }
+
+        @Override
+        protected void engineUpdate(byte[] bytes, int i, int i1)
+        {
+
+        }
+
+        @Override
+        protected byte[] engineDigest()
+        {
+            return new byte[0];
+        }
+
+        @Override
+        protected void engineReset()
+        {
+
+        }
     }
 }
