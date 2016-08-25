@@ -24,15 +24,17 @@ import org.bouncycastle.tls.crypto.TlsVerifier;
 
 public class BcTlsCertificate implements TlsCertificate
 {
-    public static BcTlsCertificate convert(TlsCertificate certificate) throws IOException
+    public static BcTlsCertificate convert(BcTlsCrypto crypto, TlsCertificate certificate) throws IOException
     {
         if (certificate instanceof BcTlsCertificate)
         {
             return (BcTlsCertificate)certificate;
         }
 
-        return new BcTlsCertificate(certificate.getEncoded());
+        return new BcTlsCertificate(crypto, certificate.getEncoded());
     }
+
+    private final BcTlsCrypto crypto;
 
     protected final Certificate certificate;
 
@@ -41,9 +43,10 @@ public class BcTlsCertificate implements TlsCertificate
     protected ECPublicKeyParameters pubKeyEC = null;
     protected RSAKeyParameters pubKeyRSA = null;
 
-    public BcTlsCertificate(byte[] encoding)
+    public BcTlsCertificate(BcTlsCrypto crypto, byte[] encoding)
         throws IOException
     {
+        this.crypto = crypto;
         try
         {
             this.certificate = Certificate.getInstance(encoding);
@@ -61,10 +64,10 @@ public class BcTlsCertificate implements TlsCertificate
         switch (signatureAlgorithm)
         {
         case SignatureAlgorithm.dsa:
-            return new BcTlsDSSVerifier(getPubKeyDSS());
+            return new BcTlsDSSVerifier(this.crypto, getPubKeyDSS());
 
         case SignatureAlgorithm.ecdsa:
-            return new BcTlsECDSAVerifier(getPubKeyEC());
+            return new BcTlsECDSAVerifier(this.crypto, getPubKeyEC());
 
         case SignatureAlgorithm.rsa:
             return new BcTlsRSAVerifier(getPubKeyRSA());

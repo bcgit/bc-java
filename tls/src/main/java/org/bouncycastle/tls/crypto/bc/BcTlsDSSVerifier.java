@@ -5,19 +5,18 @@ import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.signers.DSASigner;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.tls.SignatureAlgorithm;
-import org.bouncycastle.tls.TlsUtils;
 
 public class BcTlsDSSVerifier
     extends BcTlsDSAVerifier
 {
-    public BcTlsDSSVerifier(DSAPublicKeyParameters pubKeyDSA)
+    public BcTlsDSSVerifier(BcTlsCrypto crypto, DSAPublicKeyParameters pubKeyDSA)
     {
-        super(pubKeyDSA);
+        super(crypto, pubKeyDSA);
     }
 
     protected DSA createDSAImpl(short hashAlgorithm)
     {
-        return new DSASigner(new HMacDSAKCalculator(TlsUtils.createHash(hashAlgorithm)));
+        return new DSASigner(new HMacDSAKCalculator(crypto.createHash(hashAlgorithm)));
     }
 
     protected short getSignatureAlgorithm()

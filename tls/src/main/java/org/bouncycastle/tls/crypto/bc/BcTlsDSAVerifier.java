@@ -13,9 +13,10 @@ import org.bouncycastle.tls.crypto.TlsVerifier;
 public abstract class BcTlsDSAVerifier
     implements TlsVerifier
 {
-    protected AsymmetricKeyParameter pubKey;
+    protected final AsymmetricKeyParameter pubKey;
+    protected final BcTlsCrypto crypto;
 
-    protected BcTlsDSAVerifier(AsymmetricKeyParameter pubKey)
+    protected BcTlsDSAVerifier(BcTlsCrypto crypto, AsymmetricKeyParameter pubKey)
     {
         if (pubKey == null)
         {
@@ -26,6 +27,7 @@ public abstract class BcTlsDSAVerifier
             throw new IllegalArgumentException("'pubKey' must be a public key");
         }
 
+        this.crypto = crypto;
         this.pubKey = pubKey;
     }
 

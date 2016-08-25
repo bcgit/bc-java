@@ -61,7 +61,7 @@ public class BcTlsCrypto
     public TlsCertificate createCertificate(byte[] encoding)
         throws IOException
     {
-        return new BcTlsCertificate(encoding);
+        return new BcTlsCertificate(this, encoding);
     }
 
     public TlsCipher createCipher(int encryptionAlgorithm, int macAlgorithm) throws IOException
@@ -360,15 +360,15 @@ public class BcTlsCrypto
         case MACAlgorithm._null:
             return null;
         case MACAlgorithm.hmac_md5:
-            return TlsUtils.createHash(HashAlgorithm.md5);
+            return createHash(HashAlgorithm.md5);
         case MACAlgorithm.hmac_sha1:
-            return TlsUtils.createHash(HashAlgorithm.sha1);
+            return createHash(HashAlgorithm.sha1);
         case MACAlgorithm.hmac_sha256:
-            return TlsUtils.createHash(HashAlgorithm.sha256);
+            return createHash(HashAlgorithm.sha256);
         case MACAlgorithm.hmac_sha384:
-            return TlsUtils.createHash(HashAlgorithm.sha384);
+            return createHash(HashAlgorithm.sha384);
         case MACAlgorithm.hmac_sha512:
-            return TlsUtils.createHash(HashAlgorithm.sha512);
+            return createHash(HashAlgorithm.sha512);
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }

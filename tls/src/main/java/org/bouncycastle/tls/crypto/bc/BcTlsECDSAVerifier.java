@@ -10,14 +10,14 @@ import org.bouncycastle.tls.TlsUtils;
 public class BcTlsECDSAVerifier
     extends BcTlsDSAVerifier
 {
-    public BcTlsECDSAVerifier(ECPublicKeyParameters pubKeyEC)
+    public BcTlsECDSAVerifier(BcTlsCrypto crypto, ECPublicKeyParameters pubKeyEC)
     {
-        super(pubKeyEC);
+        super(crypto, pubKeyEC);
     }
 
     protected DSA createDSAImpl(short hashAlgorithm)
     {
-        return new ECDSASigner(new HMacDSAKCalculator(TlsUtils.createHash(hashAlgorithm)));
+        return new ECDSASigner(new HMacDSAKCalculator(crypto.createHash(hashAlgorithm)));
     }
 
     protected short getSignatureAlgorithm()

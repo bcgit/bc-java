@@ -44,7 +44,7 @@ public class BcTlsDH implements TlsAgreement
     {
         // TODO[tls-ops] Check the domains match (although the agreement implementation enforces it anyway)
         // TODO[tls-ops] Is there a use-case where the TlsDHDomain is determined from the certificate?
-        this.peerPublicKey = BcTlsCertificate.convert(certificate).getPubKeyDH();
+        this.peerPublicKey = BcTlsCertificate.convert(domain.getCrypto(), certificate).getPubKeyDH();
     }
 
     public TlsSecret calculateSecret() throws IOException

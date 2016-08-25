@@ -81,7 +81,7 @@ public class BcTlsSecret implements TlsSecret
         checkAlive();
 
         // TODO[tls-ops] Need to validateKeyUsage(KeyUsage.keyEncipherment) here
-        RSAKeyParameters pubKeyRSA = BcTlsCertificate.convert(certificate).getPubKeyRSA();
+        RSAKeyParameters pubKeyRSA = BcTlsCertificate.convert(crypto, certificate).getPubKeyRSA();
 
         PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine());
         encoding.init(true, new ParametersWithRandom(pubKeyRSA, crypto.getContext().getSecureRandom()));
