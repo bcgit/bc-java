@@ -16,9 +16,9 @@ public class ObjectIdentifierTest
         throws Exception
     {
         // exercise the object cache
-        for (int i = 0; i < 1024; i++)
+        for (int i = 0; i < 100; i++)
         {
-            for (int j = 0; j < 1024; j++)
+            for (int j = 0; j < 100; j++)
             {
                 final ASN1ObjectIdentifier oid1 = new ASN1ObjectIdentifier("1.1." + i + "." + j);
                 final byte[] encoded1 = oid1.getEncoded();

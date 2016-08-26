@@ -14,6 +14,7 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.HashSet;
 
 import javax.crypto.Cipher;
 import javax.crypto.interfaces.DHPrivateKey;
@@ -471,6 +472,36 @@ public class ElGamalTest
         }
     }
 
+    public void testGetExceptionsPKCS1()
+        throws Exception
+    {
+        SecureRandom rand = new SecureRandom();
+        KeyPairGenerator keygen = KeyPairGenerator.getInstance("ELGAMAL", "BC");
+        keygen.initialize(new DHParameterSpec(p1024, g1024), rand);
+        KeyPair keypair = keygen.genKeyPair();
+
+        Cipher c = Cipher.getInstance("ELGAMAL/ECB/PKCS1Padding", "BC");
+        byte[] ciphertext = new byte[1024 / 8];
+        HashSet<String> exceptions = new HashSet<String>();
+        final int SAMPLES = 1000;
+        for (int i = 0; i < SAMPLES; i++)
+        {
+            rand.nextBytes(ciphertext);
+            ciphertext[0] = (byte)0;
+            try
+            {
+                c.init(Cipher.DECRYPT_MODE, keypair.getPrivate());
+                c.doFinal(ciphertext);
+            }
+            catch (Exception ex)
+            {
+                String message = ex.toString();
+                exceptions.add(message);
+            }
+        }
+        isTrue("exception count wrong", 1 == exceptions.size());
+    }
+
     public void performTest()
         throws Exception
     {
@@ -485,6 +516,7 @@ public class ElGamalTest
         testGP(1024, 256, g1024, p1024);
 
         testRandom(256);
+        testGetExceptionsPKCS1();
     }
 
     public static void main(

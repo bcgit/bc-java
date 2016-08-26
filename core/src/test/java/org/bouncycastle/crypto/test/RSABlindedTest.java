@@ -102,22 +102,22 @@ public class RSABlindedTest
 
     private void testTruncatedPKCS1Block(RSAKeyParameters pubParameters, RSAKeyParameters privParameters)
     {
-        checkForPKCS1Exception(pubParameters, privParameters, truncatedDataBlock, "block truncated");
+        checkForPKCS1Exception(pubParameters, privParameters, truncatedDataBlock, "block incorrect");
     }
 
     private void testDudPKCS1Block(RSAKeyParameters pubParameters, RSAKeyParameters privParameters)
     {
-        checkForPKCS1Exception(pubParameters, privParameters, dudBlock, "unknown block type");
+        checkForPKCS1Exception(pubParameters, privParameters, dudBlock, "block incorrect");
     }
 
     private void testWrongPaddingPKCS1Block(RSAKeyParameters pubParameters, RSAKeyParameters privParameters)
     {
-        checkForPKCS1Exception(pubParameters, privParameters, incorrectPadding, "block padding incorrect");
+        checkForPKCS1Exception(pubParameters, privParameters, incorrectPadding, "block incorrect");
     }
 
     private void testMissingDataPKCS1Block(RSAKeyParameters pubParameters, RSAKeyParameters privParameters)
     {
-        checkForPKCS1Exception(pubParameters, privParameters, missingDataBlock, "no data in block");
+        checkForPKCS1Exception(pubParameters, privParameters, missingDataBlock, "block incorrect");
     }
 
     private void checkForPKCS1Exception(RSAKeyParameters pubParameters, RSAKeyParameters privParameters, byte[] inputData, String expectedMessage)

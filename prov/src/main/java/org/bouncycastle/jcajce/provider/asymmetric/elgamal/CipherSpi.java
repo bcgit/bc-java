@@ -277,14 +277,8 @@ public class CipherSpi
         throws IllegalBlockSizeException, BadPaddingException
     {
         cipher.processBytes(input, inputOffset, inputLen);
-        try
-        {
-            return cipher.doFinal();
-        }
-        catch (InvalidCipherTextException e)
-        {
-            throw new BadPaddingException(e.getMessage());
-        }
+
+        return getOutput();
     }
 
     protected int engineDoFinal(
@@ -295,18 +289,9 @@ public class CipherSpi
         int     outputOffset) 
         throws IllegalBlockSizeException, BadPaddingException
     {
-        byte[]  out;
-
         cipher.processBytes(input, inputOffset, inputLen);
 
-        try
-        {
-            out = cipher.doFinal();
-        }
-        catch (InvalidCipherTextException e)
-        {
-            throw new BadPaddingException(e.getMessage());
-        }
+        byte[]  out = getOutput();
 
         for (int i = 0; i != out.length; i++)
         {
@@ -314,6 +299,25 @@ public class CipherSpi
         }
 
         return out.length;
+    }
+
+    private byte[] getOutput()
+        throws BadPaddingException
+    {
+        try
+        {
+            return cipher.doFinal();
+        }
+        catch (final InvalidCipherTextException e)
+        {
+            throw new BadPaddingException("unable to decrypt block")
+            {
+                public synchronized Throwable getCause()
+                {
+                    return e;
+                }
+            };
+        }
     }
 
     /**
