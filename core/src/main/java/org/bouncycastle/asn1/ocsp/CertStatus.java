@@ -54,6 +54,7 @@ public class CertStatus
             break;
         case 2:
             value = DERNull.INSTANCE;
+            break;
         default:
             throw new IllegalArgumentException("Unknown tag encountered: " + choice.getTagNo());
         }
