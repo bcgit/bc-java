@@ -43,6 +43,7 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.parsers.ECIESPublicKeyParser;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.IESUtil;
+import org.bouncycastle.jcajce.provider.util.BadBlockException;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.ECKey;
@@ -430,7 +431,7 @@ public class IESCipher
             }
             catch (Exception e)
             {
-                throw new BadPaddingException(e.getMessage());
+                throw new BadBlockException("unable to process block", e);
             }
         }
 
@@ -456,11 +457,10 @@ public class IESCipher
 
                 return engine.processBlock(in, 0, in.length);
             }
-            catch (Exception e)
+            catch (final Exception e)
             {
-                throw new BadPaddingException(e.getMessage());
+                throw new BadBlockException("unable to process block", e);
             }
-
         }
         else if (state == Cipher.DECRYPT_MODE || state == Cipher.UNWRAP_MODE)
         {
@@ -473,7 +473,7 @@ public class IESCipher
             }
             catch (InvalidCipherTextException e)
             {
-                throw new BadPaddingException(e.getMessage());
+                throw new BadBlockException("unable to process block", e);
             }
         }
         else

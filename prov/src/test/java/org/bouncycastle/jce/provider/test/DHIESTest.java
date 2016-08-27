@@ -7,6 +7,7 @@ import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.Security;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.interfaces.DHPrivateKey;
 import javax.crypto.interfaces.DHPublicKey;
@@ -222,6 +223,27 @@ public class DHIESTest
         out2 = c2.doFinal(out1, 0, out1.length);
         if (!areEqual(out2, message))
             fail(testname + " test failed with non-null parameters, DHAES mode true.");
+
+        //
+        // corrupted data test
+        //
+        byte[] tmp = new byte[out1.length];
+        for (int i = 0; i != out1.length; i++)
+        {
+            System.arraycopy(out1, 0, tmp, 0, tmp.length);
+            tmp[i] = (byte)~tmp[i];
+
+            try
+            {
+                c2.doFinal(tmp, 0, tmp.length);
+
+                fail("decrypted corrupted data");
+            }
+            catch (BadPaddingException e)
+            {
+                isTrue("wrong message: " + e.getMessage(), "unable to process block".equals(e.getMessage()));
+            }
+        }
     }
 
     public static void main(
