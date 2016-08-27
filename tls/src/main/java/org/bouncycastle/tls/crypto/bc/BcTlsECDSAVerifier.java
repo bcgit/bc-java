@@ -5,7 +5,6 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.tls.SignatureAlgorithm;
-import org.bouncycastle.tls.TlsUtils;
 
 public class BcTlsECDSAVerifier
     extends BcTlsDSAVerifier

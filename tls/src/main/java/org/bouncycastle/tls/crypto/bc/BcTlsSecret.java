@@ -14,8 +14,6 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.TlsHandshakeHash;
-import org.bouncycastle.tls.TlsHash;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;

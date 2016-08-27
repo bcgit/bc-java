@@ -136,13 +136,11 @@ class DeferredHash
         }
     }
 
-    @Override
     public byte[] calculateHash()
     {
         throw new IllegalStateException("Use fork() to get a definite Digest");
     }
 
-    @Override
     public TlsHash cloneHash()
     {
         return null;

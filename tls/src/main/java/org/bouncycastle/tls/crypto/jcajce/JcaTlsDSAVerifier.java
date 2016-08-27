@@ -4,14 +4,8 @@ import java.security.GeneralSecurityException;
 import java.security.Signature;
 import java.security.interfaces.DSAPublicKey;
 
-import org.bouncycastle.crypto.DSA;
-import org.bouncycastle.crypto.Signer;
-import org.bouncycastle.crypto.digests.NullDigest;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.DigitallySigned;
-import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.crypto.TlsVerifier;

@@ -3,10 +3,8 @@ package org.bouncycastle.tls.crypto.jcajce;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.ECPublicKey;
@@ -14,31 +12,17 @@ import java.security.interfaces.RSAPublicKey;
 
 import javax.crypto.interfaces.DHPublicKey;
 
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.x509.Certificate;
-import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.TBSCertificate;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.DHPublicKeyParameters;
-import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.crypto.params.RSAKeyParameters;
-import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
-import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsVerifier;
-import org.bouncycastle.tls.crypto.bc.BcTlsDSSVerifier;
-import org.bouncycastle.tls.crypto.bc.BcTlsECDSAVerifier;
-import org.bouncycastle.tls.crypto.bc.BcTlsRSAVerifier;
 
 public class JcaTlsCertificate
     implements TlsCertificate

@@ -8,17 +8,12 @@ import java.security.KeyPair;
 import javax.crypto.interfaces.DHPrivateKey;
 import javax.crypto.interfaces.DHPublicKey;
 
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSecret;
-import org.bouncycastle.tls.crypto.bc.BcTlsCertificate;
-import org.bouncycastle.tls.crypto.bc.BcTlsDHDomain;
 
 public class JceTlsDH
     implements TlsAgreement

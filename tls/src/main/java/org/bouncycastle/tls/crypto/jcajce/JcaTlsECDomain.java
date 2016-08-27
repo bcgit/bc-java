@@ -1,7 +1,6 @@
 package org.bouncycastle.tls.crypto.jcajce;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
@@ -17,9 +16,7 @@ import javax.crypto.KeyAgreement;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
@@ -30,7 +27,6 @@ import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsSignature;
-import org.bouncycastle.util.BigIntegers;
 
 public class JcaTlsECDomain
     implements TlsECDomain

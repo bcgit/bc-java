@@ -270,24 +270,21 @@ public class JceTlsSecret
             this.sha1 = crypto.createMessageDigest(HashAlgorithm.sha1);
         }
 
-        @Override
         protected void engineUpdate(byte b)
         {
             md5.update(b);
             sha1.update(b);
         }
 
-        @Override
         protected void engineUpdate(byte[] bytes, int off, int len)
         {
             md5.update(bytes, off, len);
             sha1.update(bytes, off, len);
         }
 
-        @Override
         protected byte[] engineDigest()
         {
-            // TODO:
+            // TODO[tls-ops]
 //            if (context != null && TlsUtils.isSSL(context))
 //            {
 //                ssl3Complete(md5, SSL3Mac.IPAD, SSL3Mac.OPAD, 48);
@@ -297,10 +294,9 @@ public class JceTlsSecret
             return Arrays.concatenate(md5.digest(), sha1.digest());
         }
 
-        @Override
         protected void engineReset()
         {
-
+            throw new UnsupportedOperationException();
         }
     }
 }

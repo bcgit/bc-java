@@ -1,5 +1,6 @@
 package org.bouncycastle.tls;
 
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -9,21 +10,29 @@ public class CombinedHash
     implements TlsHandshakeHash
 {
     protected TlsContext context;
+    protected TlsCrypto crypto;
     protected TlsHash md5;
     protected TlsHash sha1;
 
     public CombinedHash(TlsContext context)
     {
+        this(context.getCrypto());
         this.context = context;
-        this.md5 = context.getCrypto().createHash(HashAlgorithm.md5);
-        this.sha1 = context.getCrypto().createHash(HashAlgorithm.sha1);
+    }
+
+    public CombinedHash(TlsCrypto crypto)
+    {
+        this.crypto = crypto;
+        this.md5 = crypto.createHash(HashAlgorithm.md5);
+        this.sha1 = crypto.createHash(HashAlgorithm.sha1);
     }
 
     public CombinedHash(CombinedHash t)
     {
         this.context = t.context;
-        this.md5 = md5.cloneHash();
-        this.sha1 = sha1.cloneHash();
+        this.crypto = t.crypto;
+        this.md5 = t.md5.cloneHash();
+        this.sha1 = t.sha1.cloneHash();
     }
 
     public TlsHandshakeHash notifyPRFDetermined()

@@ -80,16 +80,14 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
         throw new UnsupportedOperationException();
     }
 
-    @Override
     public TlsHash createHash(SignatureAndHashAlgorithm sidAlgorithm)
     {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
-    @Override
     public TlsHash createHash(short algorithm)
     {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public TlsContext getContext()
@@ -109,25 +107,21 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
 
         return new TlsHash()
         {
-            @Override
             public void update(byte[] data, int offSet, int length)
             {
                d.update(data, offSet, length);
             }
 
-            @Override
             public byte[] calculateHash()
             {
                 return d.digest();
             }
 
-            @Override
             public TlsHash cloneHash()
             {
-                return null;
+                throw new UnsupportedOperationException();
             }
 
-            @Override
             public void reset()
             {
                 d.reset();
@@ -135,10 +129,9 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
         };
     }
 
-    @Override
     public NonceRandomGenerator createNonceRandomGenerator()
     {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     MessageDigest createMessageDigest(short hashAlgorithm)
@@ -182,34 +175,29 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
     private class CombinedHash
         extends MessageDigest
     {
-
         protected CombinedHash()
         {
             super("MD5andSHA1");
         }
 
-        @Override
         protected void engineUpdate(byte b)
         {
-
+            throw new UnsupportedOperationException();
         }
 
-        @Override
         protected void engineUpdate(byte[] bytes, int i, int i1)
         {
-
+            throw new UnsupportedOperationException();
         }
 
-        @Override
         protected byte[] engineDigest()
         {
-            return new byte[0];
+            throw new UnsupportedOperationException();
         }
 
-        @Override
         protected void engineReset()
         {
-
+            throw new UnsupportedOperationException();
         }
     }
 }

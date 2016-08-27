@@ -29,7 +29,6 @@ import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.PRFAlgorithm;
-import org.bouncycastle.tls.SSL3Mac;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
@@ -179,6 +178,7 @@ public class BcTlsCrypto
 //        return PRF(context, master_secret, ExporterLabel.key_expansion, seed, length);
 //    }
 
+    // TODO[tls-ops] Shouldn't be static, need to pass BcTlsCrypto instance to callers
     static Digest createDigest(short hashAlgorithm)
     {
         switch (hashAlgorithm)
@@ -204,13 +204,12 @@ public class BcTlsCrypto
     {
         if (signatureAndHashAlgorithm == null)
         {
-            return new CombinedHash((TlsContext)null);
+            return new CombinedHash(getContext().getCrypto());
         }
 
         return new BcTlsHash(signatureAndHashAlgorithm.getHash(), createDigest(signatureAndHashAlgorithm.getHash()));
     }
 
-    @Override
     public TlsHash createHash(short algorithm)
     {
         return new BcTlsHash(algorithm, createDigest(algorithm));
@@ -228,13 +227,11 @@ public class BcTlsCrypto
             this.digest = digest;
         }
 
-        @Override
         public void update(byte[] data, int offSet, int length)
         {
             digest.update(data, offSet, length);
         }
 
-        @Override
         public byte[] calculateHash()
         {
             byte[] rv = new byte[digest.getDigestSize()];
@@ -244,13 +241,11 @@ public class BcTlsCrypto
             return rv;
         }
 
-        @Override
         public TlsHash cloneHash()
         {
             return new BcTlsHash(hashAlgorithm, cloneDigest(hashAlgorithm, digest));
         }
 
-        @Override
         public void reset()
         {
             digest.reset();
@@ -277,7 +272,6 @@ public class BcTlsCrypto
         }
     }
 
-    @Override
     public NonceRandomGenerator createNonceRandomGenerator()
     {
         final Digest d = createDigest(HashAlgorithm.sha256);
@@ -285,19 +279,16 @@ public class BcTlsCrypto
 
         return new NonceRandomGenerator()
         {
-            @Override
             public void addSeedMaterial(byte[] seed)
             {
                 gen.addSeedMaterial(seed);
             }
 
-            @Override
             public void addSeedMaterial(long seed)
             {
                 gen.addSeedMaterial(seed);
             }
 
-            @Override
             public void addSeedMaterial(SecureRandom seedSource)
             {
 
@@ -306,13 +297,11 @@ public class BcTlsCrypto
                 addSeedMaterial(seed);
             }
 
-            @Override
             public void nextBytes(byte[] bytes)
             {
                 gen.nextBytes(bytes);
             }
 
-            @Override
             public void nextBytes(byte[] bytes, int start, int len)
             {
                 gen.nextBytes(bytes, start, len);
