@@ -8,21 +8,21 @@ import org.bouncycastle.util.Arrays;
 public class SRPTlsClient
     extends AbstractTlsClient
 {
-    protected TlsSRPGroupVerifier groupVerifier;
+    protected TlsSRPConfigVerifier srpConfigVerifier;
 
     protected byte[] identity;
     protected byte[] password;
 
     public SRPTlsClient(byte[] identity, byte[] password)
     {
-        this(new DefaultTlsKeyExchangeFactory(), new DefaultTlsSRPGroupVerifier(), identity, password);
+        this(new DefaultTlsKeyExchangeFactory(), new DefaultTlsSRPConfigVerifier(), identity, password);
     }
 
-    public SRPTlsClient(TlsKeyExchangeFactory keyExchangeFactory, TlsSRPGroupVerifier groupVerifier,
+    public SRPTlsClient(TlsKeyExchangeFactory keyExchangeFactory, TlsSRPConfigVerifier srpConfigVerifier,
         byte[] identity, byte[] password)
     {
         super(keyExchangeFactory);
-        this.groupVerifier = groupVerifier;
+        this.srpConfigVerifier = srpConfigVerifier;
         this.identity = Arrays.clone(identity);
         this.password = Arrays.clone(password);
     }
@@ -97,6 +97,7 @@ public class SRPTlsClient
 
     protected TlsKeyExchange createSRPKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createSRPKeyExchangeClient(keyExchange, supportedSignatureAlgorithms, groupVerifier, identity, password);
+        return keyExchangeFactory.createSRPKeyExchangeClient(keyExchange, supportedSignatureAlgorithms,
+            srpConfigVerifier, identity, password);
     }
 }

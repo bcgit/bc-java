@@ -45,7 +45,7 @@ public interface TlsKeyExchangeFactory
     TlsKeyExchange createRSAKeyExchange(Vector supportedSignatureAlgorithms) throws IOException;
 
     TlsKeyExchange createSRPKeyExchangeClient(int keyExchange, Vector supportedSignatureAlgorithms,
-        TlsSRPGroupVerifier groupVerifier, byte[] identity, byte[] password) throws IOException;
+        TlsSRPConfigVerifier srpConfigVerifier, byte[] identity, byte[] password) throws IOException;
 
     TlsKeyExchange createSRPKeyExchangeServer(int keyExchange, Vector supportedSignatureAlgorithms, byte[] identity,
         TlsSRPLoginParameters loginParameters) throws IOException;

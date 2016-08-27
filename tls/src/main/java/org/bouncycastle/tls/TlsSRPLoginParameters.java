@@ -2,24 +2,24 @@ package org.bouncycastle.tls;
 
 import java.math.BigInteger;
 
-import org.bouncycastle.crypto.params.SRP6GroupParameters;
+import org.bouncycastle.tls.crypto.TlsSRPConfig;
 
 public class TlsSRPLoginParameters
 {
-    protected SRP6GroupParameters group;
+    protected TlsSRPConfig srpConfig;
     protected BigInteger verifier;
     protected byte[] salt;
 
-    public TlsSRPLoginParameters(SRP6GroupParameters group, BigInteger verifier, byte[] salt)
+    public TlsSRPLoginParameters(TlsSRPConfig srpConfig, BigInteger verifier, byte[] salt)
     {
-        this.group = group;
+        this.srpConfig = srpConfig;
         this.verifier = verifier;
         this.salt = salt;
     }
 
-    public SRP6GroupParameters getGroup()
+    public TlsSRPConfig getConfig()
     {
-        return group;
+        return srpConfig;
     }
 
     public byte[] getSalt()

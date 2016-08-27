@@ -10,7 +10,6 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
-import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SRPTlsServer;
 import org.bouncycastle.tls.SignatureAlgorithm;
@@ -18,7 +17,7 @@ import org.bouncycastle.tls.SimulatedTlsSRPIdentityManager;
 import org.bouncycastle.tls.TlsSRPIdentityManager;
 import org.bouncycastle.tls.TlsSRPLoginParameters;
 import org.bouncycastle.tls.TlsSignerCredentials;
-import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
@@ -116,7 +115,10 @@ class MockSRPTlsServer
 
                 BigInteger verifier = verifierGenerator.generateVerifier(TEST_SALT, identity, TEST_PASSWORD);
 
-                return new TlsSRPLoginParameters(TEST_GROUP, verifier, TEST_SALT);
+                TlsSRPConfig srpConfig = new TlsSRPConfig();
+                srpConfig.setExplicitNG(new BigInteger[]{ TEST_GROUP.getN(), TEST_GROUP.getG() });
+
+                return new TlsSRPLoginParameters(srpConfig, verifier, TEST_SALT);
             }
 
             return unknownIdentityManager.getLoginParameters(identity);

@@ -12,6 +12,7 @@ import org.bouncycastle.crypto.agreement.srp.SRP6Server;
 import org.bouncycastle.crypto.agreement.srp.SRP6Util;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
+import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.util.Arrays;
@@ -37,11 +38,11 @@ public class TlsSRPKeyExchange
         }
     }
 
-    protected TlsSRPGroupVerifier groupVerifier;
+    protected TlsSRPConfigVerifier srpConfigVerifier;
     protected byte[] identity;
     protected byte[] password;
 
-    protected SRP6GroupParameters srpGroup = null;
+    protected TlsSRPConfig srpConfig = null;
     protected SRP6Client srpClient = null;
     protected SRP6Server srpServer = null;
     protected BigInteger srpPeerCredentials = null;
@@ -51,12 +52,12 @@ public class TlsSRPKeyExchange
     protected TlsSignerCredentials serverCredentials = null;
     protected TlsVerifier verifier = null;
 
-    public TlsSRPKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsSRPGroupVerifier groupVerifier,
+    public TlsSRPKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsSRPConfigVerifier srpConfigVerifier,
         byte[] identity, byte[] password)
     {
         super(checkKeyExchange(keyExchange), supportedSignatureAlgorithms);
 
-        this.groupVerifier = groupVerifier;
+        this.srpConfigVerifier = srpConfigVerifier;
         this.identity = identity;
         this.password = password;
         this.srpClient = new SRP6Client();
@@ -69,7 +70,7 @@ public class TlsSRPKeyExchange
 
         this.identity = identity;
         this.srpServer = new SRP6Server();
-        this.srpGroup = loginParameters.getGroup();
+        this.srpConfig = loginParameters.getConfig();
         this.srpVerifier = loginParameters.getVerifier();
         this.srpSalt = loginParameters.getSalt();
     }
@@ -119,6 +120,10 @@ public class TlsSRPKeyExchange
 
     public byte[] generateServerKeyExchange() throws IOException
     {
+        // TODO[tls-ops] Need SRP support in TlsCrypto
+        SRP6GroupParameters srpGroup = getGroupParameters();
+        
+        // TODO[tls-ops] Construct digest via TlsCrypto
         srpServer.init(srpGroup, srpVerifier, new SHA1Digest(), context.getSecureRandom());
         BigInteger B = srpServer.generateServerCredentials();
 
@@ -158,9 +163,10 @@ public class TlsSRPKeyExchange
             TlsUtils.verifyServerKeyExchangeSignature(context, verifier, buf, signedParams);
         }
 
-        this.srpGroup = new SRP6GroupParameters(srpParams.getN(), srpParams.getG());
+        this.srpConfig = new TlsSRPConfig();
+        srpConfig.setExplicitNG(new BigInteger[]{ srpParams.getN(), srpParams.getG() });
 
-        if (!groupVerifier.accept(srpGroup))
+        if (!srpConfigVerifier.accept(srpConfig))
         {
             throw new TlsFatalAlert(AlertDescription.insufficient_security);
         }
@@ -173,13 +179,15 @@ public class TlsSRPKeyExchange
          */
         try
         {
-            this.srpPeerCredentials = SRP6Util.validatePublicValue(srpGroup.getN(), srpParams.getB());
+            this.srpPeerCredentials = SRP6Util.validatePublicValue(srpParams.getN(), srpParams.getB());
         }
         catch (CryptoException e)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
         }
 
+        // TODO[tls-ops] Need SRP support in TlsCrypto
+        SRP6GroupParameters srpGroup = getGroupParameters();
         this.srpClient.init(srpGroup, new SHA1Digest(), context.getSecureRandom());
     }
 
@@ -209,7 +217,7 @@ public class TlsSRPKeyExchange
          */
         try
         {
-            this.srpPeerCredentials = SRP6Util.validatePublicValue(srpGroup.getN(), TlsSRPUtils.readSRPParameter(input));
+            this.srpPeerCredentials = SRP6Util.validatePublicValue(srpConfig.getExplicitNG()[0], TlsSRPUtils.readSRPParameter(input));
         }
         catch (CryptoException e)
         {
@@ -234,5 +242,12 @@ public class TlsSRPKeyExchange
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
         }
+    }
+
+    // TODO[tls-ops] Need SRP support in TlsCrypto
+    protected SRP6GroupParameters getGroupParameters()
+    {
+        BigInteger[] ng = srpConfig.getExplicitNG();
+        return new SRP6GroupParameters(ng[0], ng[1]);
     }
 }

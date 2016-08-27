@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
+import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -65,6 +66,9 @@ public class SimulatedTlsSRPIdentityManager
 
         BigInteger verifier = verifierGenerator.generateVerifier(salt, identity, password);
 
-        return new TlsSRPLoginParameters(group, verifier, salt);
+        TlsSRPConfig srpConfig = new TlsSRPConfig();
+        srpConfig.setExplicitNG(new BigInteger[]{ group.getN(), group.getG() });
+
+        return new TlsSRPLoginParameters(srpConfig, verifier, salt);
     }
 }

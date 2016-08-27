@@ -5,9 +5,10 @@ import java.util.Vector;
 
 import org.bouncycastle.crypto.agreement.srp.SRP6StandardGroups;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
+import org.bouncycastle.tls.crypto.TlsSRPConfig;
 
-public class DefaultTlsSRPGroupVerifier
-    implements TlsSRPGroupVerifier
+public class DefaultTlsSRPConfigVerifier
+    implements TlsSRPConfigVerifier
 {
     protected static final Vector DEFAULT_GROUPS = new Vector();
 
@@ -28,7 +29,7 @@ public class DefaultTlsSRPGroupVerifier
     /**
      * Accept only the group parameters specified in RFC 5054 Appendix A.
      */
-    public DefaultTlsSRPGroupVerifier()
+    public DefaultTlsSRPConfigVerifier()
     {
         this(DEFAULT_GROUPS);
     }
@@ -38,16 +39,16 @@ public class DefaultTlsSRPGroupVerifier
      * 
      * @param groups a {@link Vector} of acceptable {@link SRP6GroupParameters}
      */
-    public DefaultTlsSRPGroupVerifier(Vector groups)
+    public DefaultTlsSRPConfigVerifier(Vector groups)
     {
         this.groups = groups;
     }
 
-    public boolean accept(SRP6GroupParameters group)
+    public boolean accept(TlsSRPConfig srpConfig)
     {
         for (int i = 0; i < groups.size(); ++i)
         {
-            if (areGroupsEqual(group, (SRP6GroupParameters)groups.elementAt(i)))
+            if (areGroupsEqual(srpConfig, (SRP6GroupParameters)groups.elementAt(i)))
             {
                 return true;
             }
@@ -55,11 +56,12 @@ public class DefaultTlsSRPGroupVerifier
         return false;
     }
 
-    protected boolean areGroupsEqual(SRP6GroupParameters a, SRP6GroupParameters b)
+    protected boolean areGroupsEqual(TlsSRPConfig a, SRP6GroupParameters b)
     {
-        return a == b || (areParametersEqual(a.getN(), b.getN()) && areParametersEqual(a.getG(), b.getG()));
+        BigInteger[] ng = a.getExplicitNG();
+        return (areParametersEqual(ng[0], b.getN()) && areParametersEqual(ng[1], b.getG()));
     }
-    
+
     protected boolean areParametersEqual(BigInteger a, BigInteger b)
     {
         return a == b || a.equals(b);

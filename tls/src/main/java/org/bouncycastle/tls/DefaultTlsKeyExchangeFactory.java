@@ -83,9 +83,9 @@ public class DefaultTlsKeyExchangeFactory
     }
 
     public TlsKeyExchange createSRPKeyExchangeClient(int keyExchange, Vector supportedSignatureAlgorithms,
-        TlsSRPGroupVerifier groupVerifier, byte[] identity, byte[] password) throws IOException
+        TlsSRPConfigVerifier srpConfigVerifier, byte[] identity, byte[] password) throws IOException
     {
-        return new TlsSRPKeyExchange(keyExchange, supportedSignatureAlgorithms, groupVerifier, identity, password);
+        return new TlsSRPKeyExchange(keyExchange, supportedSignatureAlgorithms, srpConfigVerifier, identity, password);
     }
 
     public TlsKeyExchange createSRPKeyExchangeServer(int keyExchange, Vector supportedSignatureAlgorithms,

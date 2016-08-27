@@ -79,7 +79,7 @@ public class AbstractTlsKeyExchangeFactory
     }
 
     public TlsKeyExchange createSRPKeyExchangeClient(int keyExchange, Vector supportedSignatureAlgorithms,
-        TlsSRPGroupVerifier groupVerifier, byte[] identity, byte[] password) throws IOException
+        TlsSRPConfigVerifier srpConfigVerifier, byte[] identity, byte[] password) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
