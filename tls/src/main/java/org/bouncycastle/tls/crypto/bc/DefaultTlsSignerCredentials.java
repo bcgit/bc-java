@@ -1,4 +1,4 @@
-package org.bouncycastle.tls;
+package org.bouncycastle.tls.crypto.bc;
 
 import java.io.IOException;
 
@@ -7,30 +7,29 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
-import org.bouncycastle.tls.crypto.bc.BcTlsDSSSigner;
-import org.bouncycastle.tls.crypto.bc.BcTlsECDSASigner;
+import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.Certificate;
+import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsSignerCredentials;
+import org.bouncycastle.tls.TlsUtils;
 
 public class DefaultTlsSignerCredentials
-    extends AbstractTlsSignerCredentials
+    implements TlsSignerCredentials
 {
-    protected TlsContext context;
+    protected BcTlsCrypto crypto;
     protected Certificate certificate;
     protected AsymmetricKeyParameter privateKey;
     protected SignatureAndHashAlgorithm signatureAndHashAlgorithm;
 
     protected TlsSigner signer;
 
-    public DefaultTlsSignerCredentials(TlsContext context, Certificate certificate, AsymmetricKeyParameter privateKey)
-    {
-        this(context, certificate, privateKey, null);
-    }
-
-    public DefaultTlsSignerCredentials(TlsContext context, Certificate certificate, AsymmetricKeyParameter privateKey,
+    public DefaultTlsSignerCredentials(BcTlsCrypto crypto, Certificate certificate, AsymmetricKeyParameter privateKey,
         SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
-        if (context == null)
+        if (crypto == null)
         {
-            throw new IllegalArgumentException("'context' cannot be null");
+            throw new IllegalArgumentException("'crypto' cannot be null");
         }
         if (certificate == null)
         {
@@ -47,10 +46,6 @@ public class DefaultTlsSignerCredentials
         if (!privateKey.isPrivate())
         {
             throw new IllegalArgumentException("'privateKey' must be private");
-        }
-        if (TlsUtils.isTLSv12(context) && signatureAndHashAlgorithm == null)
-        {
-            throw new IllegalArgumentException("'signatureAndHashAlgorithm' cannot be null for (D)TLS 1.2+");
         }
 
         if (privateKey instanceof RSAKeyParameters)
@@ -70,9 +65,9 @@ public class DefaultTlsSignerCredentials
             throw new IllegalArgumentException("'privateKey' type not supported: " + privateKey.getClass().getName());
         }
 
-        this.signer.init(context);
+        this.signer.init(crypto.getContext());
 
-        this.context = context;
+        this.crypto = crypto;
         this.certificate = certificate;
         this.privateKey = privateKey;
         this.signatureAndHashAlgorithm = signatureAndHashAlgorithm;
@@ -88,7 +83,15 @@ public class DefaultTlsSignerCredentials
     {
         try
         {
-            SignatureAndHashAlgorithm algorithm = TlsUtils.isTLSv12(context) ? getSignatureAndHashAlgorithm() : null;
+            SignatureAndHashAlgorithm algorithm = null;
+            if (TlsUtils.isTLSv12(crypto.getContext()))
+            {
+                algorithm = getSignatureAndHashAlgorithm();
+                if (algorithm == null)
+                {
+                    throw new IllegalStateException("'signatureAndHashAlgorithm' cannot be null for (D)TLS 1.2+");
+                }
+            }
 
             return signer.generateRawSignature(algorithm, privateKey, hash);
         }

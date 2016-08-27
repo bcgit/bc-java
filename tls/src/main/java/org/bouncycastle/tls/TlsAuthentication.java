@@ -2,8 +2,9 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
-import org.bouncycastle.tls.crypto.TlsAgreementCredentials;
 import org.bouncycastle.tls.crypto.bc.DefaultTlsAgreementCredentials;
+import org.bouncycastle.tls.crypto.bc.DefaultTlsEncryptionCredentials;
+import org.bouncycastle.tls.crypto.bc.DefaultTlsSignerCredentials;
 
 public interface TlsAuthentication
 {

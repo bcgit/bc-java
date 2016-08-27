@@ -10,7 +10,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.tls.Certificate;
-import org.bouncycastle.tls.crypto.TlsAgreementCredentials;
+import org.bouncycastle.tls.TlsAgreementCredentials;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.BigIntegers;

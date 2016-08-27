@@ -11,15 +11,15 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.tls.Certificate;
-import org.bouncycastle.tls.DefaultTlsEncryptionCredentials;
-import org.bouncycastle.tls.DefaultTlsSignerCredentials;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.TlsAgreementCredentials;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsEncryptionCredentials;
 import org.bouncycastle.tls.TlsSignerCredentials;
-import org.bouncycastle.tls.crypto.TlsAgreementCredentials;
 import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
 import org.bouncycastle.tls.crypto.bc.DefaultTlsAgreementCredentials;
+import org.bouncycastle.tls.crypto.bc.DefaultTlsEncryptionCredentials;
+import org.bouncycastle.tls.crypto.bc.DefaultTlsSignerCredentials;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.pem.PemObject;
@@ -84,7 +84,7 @@ public class TlsTestUtils
         Certificate certificate = loadCertificateChain(certResources);
         AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
 
-        // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the cert/key (as raw data)
+        // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key (as raw data)
         return new DefaultTlsAgreementCredentials((BcTlsCrypto)context.getCrypto(), certificate, privateKey);
     }
 
@@ -95,7 +95,8 @@ public class TlsTestUtils
         Certificate certificate = loadCertificateChain(certResources);
         AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
 
-        return new DefaultTlsEncryptionCredentials(context, certificate, privateKey);
+        // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key (as raw data)
+        return new DefaultTlsEncryptionCredentials((BcTlsCrypto)context.getCrypto(), certificate, privateKey);
     }
 
     static TlsSignerCredentials loadSignerCredentials(TlsContext context, String[] certResources,
@@ -105,7 +106,8 @@ public class TlsTestUtils
         Certificate certificate = loadCertificateChain(certResources);
         AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
 
-        return new DefaultTlsSignerCredentials(context, certificate, privateKey, signatureAndHashAlgorithm);
+        // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key (as raw data)
+        return new DefaultTlsSignerCredentials((BcTlsCrypto)context.getCrypto(), certificate, privateKey, signatureAndHashAlgorithm);
     }
 
     static TlsSignerCredentials loadSignerCredentials(TlsContext context, Vector supportedSignatureAlgorithms,

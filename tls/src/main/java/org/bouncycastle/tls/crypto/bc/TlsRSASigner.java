@@ -1,4 +1,4 @@
-package org.bouncycastle.tls;
+package org.bouncycastle.tls.crypto.bc;
 
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Signer;
@@ -9,6 +9,9 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.GenericSigner;
 import org.bouncycastle.crypto.signers.RSADigestSigner;
+import org.bouncycastle.tls.SignatureAlgorithm;
+import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.TlsUtils;
 
 public class TlsRSASigner
     extends AbstractTlsSigner

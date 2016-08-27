@@ -4,8 +4,9 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.tls.crypto.TlsAgreementCredentials;
 import org.bouncycastle.tls.crypto.bc.DefaultTlsAgreementCredentials;
+import org.bouncycastle.tls.crypto.bc.DefaultTlsEncryptionCredentials;
+import org.bouncycastle.tls.crypto.bc.DefaultTlsSignerCredentials;
 
 public interface TlsServer
     extends TlsPeer
