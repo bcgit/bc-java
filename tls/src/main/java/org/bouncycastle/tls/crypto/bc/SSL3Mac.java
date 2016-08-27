@@ -1,4 +1,4 @@
-package org.bouncycastle.tls;
+package org.bouncycastle.tls.crypto.bc;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
@@ -16,11 +16,11 @@ import org.bouncycastle.util.Arrays;
 public class SSL3Mac
     implements Mac
 {
-    private final static byte IPAD_BYTE = (byte)0x36;
-    private final static byte OPAD_BYTE = (byte)0x5C;
+    private static final byte IPAD_BYTE = (byte)0x36;
+    private static final byte OPAD_BYTE = (byte)0x5C;
 
-    static final byte[] IPAD = genPad(IPAD_BYTE, 48);
-    static final byte[] OPAD = genPad(OPAD_BYTE, 48);
+    private static final byte[] IPAD = genPad(IPAD_BYTE, 48);
+    private static final byte[] OPAD = genPad(OPAD_BYTE, 48);
 
     private Digest digest;
     private int padLength;

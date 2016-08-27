@@ -6,7 +6,6 @@ import org.bouncycastle.crypto.digests.LongDigest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.tls.ProtocolVersion;
-import org.bouncycastle.tls.SSL3Mac;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.util.Arrays;

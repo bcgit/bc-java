@@ -74,8 +74,11 @@ public class CombinedHash
     {
         if (context != null && TlsUtils.isSSL(context))
         {
-            ssl3Complete(md5, SSL3Mac.IPAD, SSL3Mac.OPAD, 48);
-            ssl3Complete(sha1, SSL3Mac.IPAD, SSL3Mac.OPAD, 40);
+            byte[] ipad = SSL3Constants.getInputPad();
+            byte[] opad = SSL3Constants.getOutputPad();
+
+            ssl3Complete(md5, ipad, opad, 48);
+            ssl3Complete(sha1, ipad, opad, 40);
         }
 
         return Arrays.concatenate(md5.calculateHash(), sha1.calculateHash());
