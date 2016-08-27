@@ -1,12 +1,8 @@
 package org.bouncycastle.tls;
 
-import org.bouncycastle.crypto.Digest;
-
 public interface TlsHandshakeHash
-    extends Digest
+    extends TlsHash
 {
-    void init(TlsContext context);
-
     TlsHandshakeHash notifyPRFDetermined();
 
     void trackHashAlgorithm(short hashAlgorithm);
@@ -15,7 +11,7 @@ public interface TlsHandshakeHash
 
     TlsHandshakeHash stopTracking();
 
-    Digest forkPRFHash();
+    TlsHash forkPRFHash();
 
     byte[] getFinalHash(short hashAlgorithm);
 }

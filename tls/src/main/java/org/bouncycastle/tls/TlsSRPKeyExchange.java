@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.agreement.srp.SRP6Client;
 import org.bouncycastle.crypto.agreement.srp.SRP6Server;
 import org.bouncycastle.crypto.agreement.srp.SRP6Util;
+import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsVerifier;
@@ -118,7 +119,7 @@ public class TlsSRPKeyExchange
 
     public byte[] generateServerKeyExchange() throws IOException
     {
-        srpServer.init(srpGroup, srpVerifier, TlsUtils.createHash(HashAlgorithm.sha1), context.getSecureRandom());
+        srpServer.init(srpGroup, srpVerifier, new SHA1Digest(), context.getSecureRandom());
         BigInteger B = srpServer.generateServerCredentials();
 
         ServerSRPParams srpParams = new ServerSRPParams(srpGroup.getN(), srpGroup.getG(), srpSalt, B);
@@ -179,7 +180,7 @@ public class TlsSRPKeyExchange
             throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
         }
 
-        this.srpClient.init(srpGroup, TlsUtils.createHash(HashAlgorithm.sha1), context.getSecureRandom());
+        this.srpClient.init(srpGroup, new SHA1Digest(), context.getSecureRandom());
     }
 
     public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException

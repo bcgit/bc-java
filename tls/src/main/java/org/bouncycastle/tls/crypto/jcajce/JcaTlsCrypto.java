@@ -3,17 +3,14 @@ package org.bouncycastle.tls.crypto.jcajce;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.tls.CombinedHash;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsHash;
 import org.bouncycastle.tls.crypto.AbstractTlsCrypto;
+import org.bouncycastle.tls.crypto.NonceRandomGenerator;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
@@ -21,7 +18,6 @@ import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsSecret;
-import org.bouncycastle.tls.crypto.bc.BcTlsSecret;
 
 public class JcaTlsCrypto extends AbstractTlsCrypto
 {
@@ -36,7 +32,7 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
     {
         try
         {
-            MessageDigest d = createHash(hashAlgorithm);
+            MessageDigest d = createMessageDigest(hashAlgorithm);
 
             d.update(buf, off, len);
 
@@ -84,6 +80,18 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public TlsHash createHash(SignatureAndHashAlgorithm sidAlgorithm)
+    {
+        return null;
+    }
+
+    @Override
+    public TlsHash createHash(short algorithm)
+    {
+        return null;
+    }
+
     public TlsContext getContext()
         {
             return context;
@@ -95,9 +103,9 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
     }
 
 
-    public TlsHash createHash(SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+    public TlsHash createMessageDigest(SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
-        final MessageDigest d = signatureAndHashAlgorithm == null ? new CombinedHash() : createHash(signatureAndHashAlgorithm.getHash());
+        final MessageDigest d = signatureAndHashAlgorithm == null ? new CombinedHash() : createMessageDigest(signatureAndHashAlgorithm.getHash());
 
         return new TlsHash()
         {
@@ -108,18 +116,32 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
             }
 
             @Override
-            public int doFinal(byte[] out, int offSet)
+            public byte[] calculateHash()
             {
-                byte[] res = d.digest();
+                return d.digest();
+            }
 
-                System.arraycopy(res, 0, out, offSet, res.length);
+            @Override
+            public TlsHash cloneHash()
+            {
+                return null;
+            }
 
-                return res.length;
+            @Override
+            public void reset()
+            {
+                d.reset();
             }
         };
     }
 
-    MessageDigest createHash(short hashAlgorithm)
+    @Override
+    public NonceRandomGenerator createNonceRandomGenerator()
+    {
+        return null;
+    }
+
+    MessageDigest createMessageDigest(short hashAlgorithm)
     {
         String digestName;
 

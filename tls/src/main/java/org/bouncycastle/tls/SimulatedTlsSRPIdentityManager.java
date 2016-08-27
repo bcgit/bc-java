@@ -4,6 +4,7 @@ import java.math.BigInteger;
 
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
+import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
@@ -29,9 +30,9 @@ public class SimulatedTlsSRPIdentityManager
     public static SimulatedTlsSRPIdentityManager getRFC5054Default(SRP6GroupParameters group, byte[] seedKey)
     {
         SRP6VerifierGenerator verifierGenerator = new SRP6VerifierGenerator();
-        verifierGenerator.init(group, TlsUtils.createHash(HashAlgorithm.sha1));
+        verifierGenerator.init(group, new SHA1Digest());
 
-        HMac mac = new HMac(TlsUtils.createHash(HashAlgorithm.sha1));
+        HMac mac = new HMac(new SHA1Digest());
         mac.init(new KeyParameter(seedKey));
 
         return new SimulatedTlsSRPIdentityManager(group, verifierGenerator, mac);

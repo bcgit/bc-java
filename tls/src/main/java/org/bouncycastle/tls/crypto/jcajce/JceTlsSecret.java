@@ -11,25 +11,14 @@ import javax.crypto.Cipher;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.RuntimeCryptoException;
-import org.bouncycastle.crypto.encodings.PKCS1Encoding;
-import org.bouncycastle.crypto.engines.RSABlindedEngine;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.CombinedHash;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.PRFAlgorithm;
-import org.bouncycastle.tls.SSL3Mac;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSecret;
-import org.bouncycastle.tls.crypto.bc.BcTlsCertificate;
-import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
 
 public class JceTlsSecret
@@ -163,7 +152,7 @@ public class JceTlsSecret
         case PRFAlgorithm.tls_prf_legacy:
             return new CombinedHash(crypto);
         default:
-            return crypto.createHash(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
+            return crypto.createMessageDigest(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
         }
     }
 
@@ -210,8 +199,8 @@ public class JceTlsSecret
     protected byte[] prf_SSL(byte[] seed, int md5Count)
         throws GeneralSecurityException
     {
-        MessageDigest md5 = crypto.createHash(HashAlgorithm.md5);
-        MessageDigest sha1 = crypto.createHash(HashAlgorithm.sha1);
+        MessageDigest md5 = crypto.createMessageDigest(HashAlgorithm.md5);
+        MessageDigest sha1 = crypto.createMessageDigest(HashAlgorithm.sha1);
 
         int md5Size = md5.getDigestLength();
         byte[] md5Buf = new byte[md5Size * md5Count];
@@ -249,8 +238,8 @@ public class JceTlsSecret
 
         byte[] b1 = new byte[length];
         byte[] b2 = new byte[length];
-        hmacHash(crypto.createHash(HashAlgorithm.md5), s1, labelSeed, b1);
-        hmacHash(crypto.createHash(HashAlgorithm.sha1), s2, labelSeed, b2);
+        hmacHash(crypto.createMessageDigest(HashAlgorithm.md5), s1, labelSeed, b1);
+        hmacHash(crypto.createMessageDigest(HashAlgorithm.sha1), s2, labelSeed, b2);
         for (int i = 0; i < length; i++)
         {
             b1[i] ^= b2[i];
@@ -277,8 +266,8 @@ public class JceTlsSecret
         {
             super("MD5andSHA1");
 
-            this.md5 = crypto.createHash(HashAlgorithm.md5);
-            this.sha1 = crypto.createHash(HashAlgorithm.sha1);
+            this.md5 = crypto.createMessageDigest(HashAlgorithm.md5);
+            this.sha1 = crypto.createMessageDigest(HashAlgorithm.sha1);
         }
 
         @Override

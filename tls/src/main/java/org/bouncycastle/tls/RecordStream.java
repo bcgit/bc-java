@@ -47,8 +47,7 @@ class RecordStream
     {
         this.readCipher = new TlsNullNullCipher();
         this.writeCipher = this.readCipher;
-        this.handshakeHash = new DeferredHash();
-        this.handshakeHash.init(context);
+        this.handshakeHash = new DeferredHash(context);
 
         setPlaintextLimit(DEFAULT_PLAINTEXT_LIMIT);
     }

@@ -17,7 +17,7 @@ public class BcTlsECDSAVerifier
 
     protected DSA createDSAImpl(short hashAlgorithm)
     {
-        return new ECDSASigner(new HMacDSAKCalculator(crypto.createHash(hashAlgorithm)));
+        return new ECDSASigner(new HMacDSAKCalculator(crypto.createDigest(hashAlgorithm)));
     }
 
     protected short getSignatureAlgorithm()

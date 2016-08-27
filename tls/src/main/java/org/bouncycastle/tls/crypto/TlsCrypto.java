@@ -33,5 +33,9 @@ public interface TlsCrypto
 
     TlsSecret generateRandomSecret(int length);
 
-    TlsHash createHash(SignatureAndHashAlgorithm algorithm);
+    TlsHash createHash(SignatureAndHashAlgorithm sidAlgorithm);
+
+    TlsHash createHash(short algorithm);
+
+    NonceRandomGenerator createNonceRandomGenerator();
 }

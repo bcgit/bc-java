@@ -19,13 +19,6 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.MD5Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.digests.SHA224Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA384Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
@@ -1087,55 +1080,6 @@ public class TlsUtils
         return PRF(context, master_secret, asciiLabel, handshakeHash, verify_data_length);
     }
 
-    public static Digest createHash(short hashAlgorithm)
-    {
-        switch (hashAlgorithm)
-        {
-        case HashAlgorithm.md5:
-            return new MD5Digest();
-        case HashAlgorithm.sha1:
-            return new SHA1Digest();
-        case HashAlgorithm.sha224:
-            return new SHA224Digest();
-        case HashAlgorithm.sha256:
-            return new SHA256Digest();
-        case HashAlgorithm.sha384:
-            return new SHA384Digest();
-        case HashAlgorithm.sha512:
-            return new SHA512Digest();
-        default:
-            throw new IllegalArgumentException("unknown HashAlgorithm");
-        }
-    }
-
-    public static Digest createHash(SignatureAndHashAlgorithm signatureAndHashAlgorithm)
-    {
-        return signatureAndHashAlgorithm == null
-            ?   new CombinedHash()
-            :   createHash(signatureAndHashAlgorithm.getHash());
-    }
-
-    public static Digest cloneHash(short hashAlgorithm, Digest hash)
-    {
-        switch (hashAlgorithm)
-        {
-        case HashAlgorithm.md5:
-            return new MD5Digest((MD5Digest)hash);
-        case HashAlgorithm.sha1:
-            return new SHA1Digest((SHA1Digest)hash);
-        case HashAlgorithm.sha224:
-            return new SHA224Digest((SHA224Digest)hash);
-        case HashAlgorithm.sha256:
-            return new SHA256Digest((SHA256Digest)hash);
-        case HashAlgorithm.sha384:
-            return new SHA384Digest((SHA384Digest)hash);
-        case HashAlgorithm.sha512:
-            return new SHA512Digest((SHA512Digest)hash);
-        default:
-            throw new IllegalArgumentException("unknown HashAlgorithm");
-        }
-    }
-
     public static short getHashAlgorithmForPRFAlgorithm(int prfAlgorithm)
     {
         switch (prfAlgorithm)
@@ -1175,16 +1119,13 @@ public class TlsUtils
     static byte[] calculateSignatureHash(TlsContext context, SignatureAndHashAlgorithm algorithm, DigestInputBuffer buf)
     {
         TlsHash h = context.getCrypto().createHash(algorithm);
-        Digest d = TlsUtils.createHash(algorithm);   // TODO: add size to TlsHash
 
         SecurityParameters securityParameters = context.getSecurityParameters();
         h.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);
         h.update(securityParameters.serverRandom, 0, securityParameters.serverRandom.length);
         buf.updateDigest(h);
 
-        byte[] hash = new byte[d.getDigestSize()];
-        h.doFinal(hash, 0);
-        return hash;
+        return h.calculateHash();
     }
 
     static DigitallySigned generateServerKeyExchangeSignature(TlsContext context, TlsSignerCredentials credentials,

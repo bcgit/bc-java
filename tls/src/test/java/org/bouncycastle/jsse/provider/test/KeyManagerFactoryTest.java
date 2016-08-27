@@ -72,6 +72,40 @@ public class KeyManagerFactoryTest
         assertNotNull(manager.getPrivateKey(alias));
     }
 
+    public void testBasicEC()
+        throws Exception
+    {
+        KeyManagerFactory fact = KeyManagerFactory.getInstance("PKIX", "BCTLS");
+
+        KeyStore ks = getEcKeyStore();
+
+        fact.init(ks, PASSWORD);
+
+        KeyManager[] managers = fact.getKeyManagers();
+
+        X509ExtendedKeyManager manager = (X509ExtendedKeyManager)managers[0];
+
+        String alias = manager.chooseServerAlias("EC", null, null);
+
+        assertNotNull(alias);
+
+        assertNotNull(manager.getCertificateChain(alias));
+
+        assertNotNull(manager.getPrivateKey(alias));
+
+        alias = manager.chooseServerAlias("EC", new Principal[] { new X500Principal("CN=TLS Test") }, null);
+
+        assertNull(alias);
+
+        alias = manager.chooseServerAlias("EC", new Principal[] { new X500Principal("CN=TLS Test CA") }, null);
+
+        assertNotNull(alias);
+
+        assertNotNull(manager.getCertificateChain(alias));
+
+        assertNotNull(manager.getPrivateKey(alias));
+    }
+
     private KeyStore getRsaKeyStore()
         throws Exception
     {
@@ -80,6 +114,28 @@ public class KeyManagerFactoryTest
         KeyPair rPair = TestUtils.generateRSAKeyPair();
         KeyPair iPair = TestUtils.generateRSAKeyPair();
         KeyPair ePair = TestUtils.generateRSAKeyPair();
+
+        X509Certificate rCert = TestUtils.generateRootCert(rPair);
+        X509Certificate iCert = TestUtils.generateIntermediateCert(iPair.getPublic(), new X500Name("CN=TLS Test CA"), rPair.getPrivate(), rCert);
+        X509Certificate eCert = TestUtils.generateEndEntityCert(ePair.getPublic(), new X500Name("CN=TLS Test"), iPair.getPrivate(), iCert);
+
+        ks.load(null, PASSWORD);
+
+        ks.setKeyEntry("test", ePair.getPrivate(), PASSWORD, new Certificate[] { eCert, iCert });
+
+        ks.setCertificateEntry("root", rCert);
+
+        return ks;
+    }
+
+    private KeyStore getEcKeyStore()
+        throws Exception
+    {
+        KeyStore ks = KeyStore.getInstance("JKS");
+
+        KeyPair rPair = TestUtils.generateECKeyPair();
+        KeyPair iPair = TestUtils.generateECKeyPair();
+        KeyPair ePair = TestUtils.generateECKeyPair();
 
         X509Certificate rCert = TestUtils.generateRootCert(rPair);
         X509Certificate iCert = TestUtils.generateIntermediateCert(iPair.getPublic(), new X500Name("CN=TLS Test CA"), rPair.getPrivate(), rCert);

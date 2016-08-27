@@ -16,7 +16,7 @@ public class BcTlsDSSVerifier
 
     protected DSA createDSAImpl(short hashAlgorithm)
     {
-        return new DSASigner(new HMacDSAKCalculator(crypto.createHash(hashAlgorithm)));
+        return new DSASigner(new HMacDSAKCalculator(crypto.createDigest(hashAlgorithm)));
     }
 
     protected short getSignatureAlgorithm()

@@ -1,6 +1,7 @@
 package org.bouncycastle.tls.crypto.bc;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Digest;
@@ -21,18 +22,21 @@ import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.modes.OCBBlockCipher;
+import org.bouncycastle.crypto.prng.DigestRandomGenerator;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.CombinedHash;
 import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.PRFAlgorithm;
+import org.bouncycastle.tls.SSL3Mac;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsHash;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.AbstractTlsCrypto;
+import org.bouncycastle.tls.crypto.NonceRandomGenerator;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
@@ -50,13 +54,12 @@ public class BcTlsCrypto
         return new BcTlsSecret(this, data);
     }
 
-    public byte[] calculateDigest(short hashAlgorithm, byte[] buf, int off, int len) throws IOException
+    public byte[] calculateDigest(short hashAlgorithm, byte[] buf, int off, int len)
+        throws IOException
     {
-        Digest d = createHash(hashAlgorithm);
+        TlsHash d = createHash(hashAlgorithm);
         d.update(buf, off, len);
-        byte[] result = new byte[d.getDigestSize()];
-        d.doFinal(result, 0);
-        return result;
+        return d.calculateHash();
     }
 
     public TlsCertificate createCertificate(byte[] encoding)
@@ -65,7 +68,8 @@ public class BcTlsCrypto
         return new BcTlsCertificate(this, encoding);
     }
 
-    public TlsCipher createCipher(int encryptionAlgorithm, int macAlgorithm) throws IOException
+    public TlsCipher createCipher(int encryptionAlgorithm, int macAlgorithm)
+        throws IOException
     {
         switch (encryptionAlgorithm)
         {
@@ -175,7 +179,7 @@ public class BcTlsCrypto
 //        return PRF(context, master_secret, ExporterLabel.key_expansion, seed, length);
 //    }
 
-    public Digest createHash(short hashAlgorithm)
+    static Digest createDigest(short hashAlgorithm)
     {
         switch (hashAlgorithm)
         {
@@ -196,22 +200,122 @@ public class BcTlsCrypto
         }
     }
 
-    public TlsHash createHash(SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+    public TlsHash createHash(final SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
-        final Digest d = signatureAndHashAlgorithm == null ? new CombinedHash() : createHash(signatureAndHashAlgorithm.getHash());
+        if (signatureAndHashAlgorithm == null)
+        {
+            return new CombinedHash((TlsContext)null);
+        }
 
-        return new TlsHash()
+        return new BcTlsHash(signatureAndHashAlgorithm.getHash(), createDigest(signatureAndHashAlgorithm.getHash()));
+    }
+
+    @Override
+    public TlsHash createHash(short algorithm)
+    {
+        return new BcTlsHash(algorithm, createDigest(algorithm));
+    }
+
+    private static class BcTlsHash
+        implements TlsHash
+    {
+        private final short hashAlgorithm;
+        private final Digest digest;
+
+        BcTlsHash(short hashAlgorithm, Digest digest)
+        {
+            this.hashAlgorithm = hashAlgorithm;
+            this.digest = digest;
+        }
+
+        @Override
+        public void update(byte[] data, int offSet, int length)
+        {
+            digest.update(data, offSet, length);
+        }
+
+        @Override
+        public byte[] calculateHash()
+        {
+            byte[] rv = new byte[digest.getDigestSize()];
+
+            digest.doFinal(rv, 0);
+
+            return rv;
+        }
+
+        @Override
+        public TlsHash cloneHash()
+        {
+            return new BcTlsHash(hashAlgorithm, cloneDigest(hashAlgorithm, digest));
+        }
+
+        @Override
+        public void reset()
+        {
+            digest.reset();
+        }
+    }
+    public static Digest cloneDigest(short hashAlgorithm, Digest hash)
+    {
+        switch (hashAlgorithm)
+        {
+        case HashAlgorithm.md5:
+            return new MD5Digest((MD5Digest)hash);
+        case HashAlgorithm.sha1:
+            return new SHA1Digest((SHA1Digest)hash);
+        case HashAlgorithm.sha224:
+            return new SHA224Digest((SHA224Digest)hash);
+        case HashAlgorithm.sha256:
+            return new SHA256Digest((SHA256Digest)hash);
+        case HashAlgorithm.sha384:
+            return new SHA384Digest((SHA384Digest)hash);
+        case HashAlgorithm.sha512:
+            return new SHA512Digest((SHA512Digest)hash);
+        default:
+            throw new IllegalArgumentException("unknown HashAlgorithm");
+        }
+    }
+
+    @Override
+    public NonceRandomGenerator createNonceRandomGenerator()
+    {
+        final Digest d = createDigest(HashAlgorithm.sha256);
+        final DigestRandomGenerator gen = new DigestRandomGenerator(d);
+
+        return new NonceRandomGenerator()
         {
             @Override
-            public void update(byte[] data, int offSet, int length)
+            public void addSeedMaterial(byte[] seed)
             {
-               d.update(data, offSet, length);
+                gen.addSeedMaterial(seed);
             }
 
             @Override
-            public int doFinal(byte[] out, int offSet)
+            public void addSeedMaterial(long seed)
             {
-                return d.doFinal(out, offSet);
+                gen.addSeedMaterial(seed);
+            }
+
+            @Override
+            public void addSeedMaterial(SecureRandom seedSource)
+            {
+
+                byte[] seed = new byte[d.getDigestSize()];
+                seedSource.nextBytes(seed);
+                addSeedMaterial(seed);
+            }
+
+            @Override
+            public void nextBytes(byte[] bytes)
+            {
+                gen.nextBytes(bytes);
+            }
+
+            @Override
+            public void nextBytes(byte[] bytes, int start, int len)
+            {
+                gen.nextBytes(bytes, start, len);
             }
         };
     }
@@ -242,71 +346,82 @@ public class BcTlsCrypto
         switch (prfAlgorithm)
         {
         case PRFAlgorithm.tls_prf_legacy:
-            return new CombinedHash();
+            return new CombinedPRF();
         default:
-            return createHash(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
+            return createDigest(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
         }
     }
 
-    protected TlsBlockCipher createAESCipher(int cipherKeySize, int macAlgorithm) throws IOException
+    protected TlsBlockCipher createAESCipher(int cipherKeySize, int macAlgorithm)
+        throws IOException
     {
         return new TlsBlockCipher(context, createAESBlockCipher(), createAESBlockCipher(),
             createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize);
     }
 
-    protected TlsBlockCipher createCamelliaCipher(int cipherKeySize, int macAlgorithm) throws IOException
+    protected TlsBlockCipher createCamelliaCipher(int cipherKeySize, int macAlgorithm)
+        throws IOException
     {
         return new TlsBlockCipher(context, createCamelliaBlockCipher(), createCamelliaBlockCipher(),
             createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize);
     }
 
-    protected TlsCipher createChaCha20Poly1305() throws IOException
+    protected TlsCipher createChaCha20Poly1305()
+        throws IOException
     {
         return new Chacha20Poly1305(context);
     }
 
-    protected TlsAEADCipher createCipher_AES_CCM(int cipherKeySize, int macSize) throws IOException
+    protected TlsAEADCipher createCipher_AES_CCM(int cipherKeySize, int macSize)
+        throws IOException
     {
         return new TlsAEADCipher(context, createAEADBlockCipher_AES_CCM(), createAEADBlockCipher_AES_CCM(),
             cipherKeySize, macSize);
     }
 
-    protected TlsAEADCipher createCipher_AES_GCM(int cipherKeySize, int macSize) throws IOException
+    protected TlsAEADCipher createCipher_AES_GCM(int cipherKeySize, int macSize)
+        throws IOException
     {
         return new TlsAEADCipher(context, createAEADBlockCipher_AES_GCM(), createAEADBlockCipher_AES_GCM(),
             cipherKeySize, macSize);
     }
 
-    protected TlsAEADCipher createCipher_AES_OCB(int cipherKeySize, int macSize) throws IOException
+    protected TlsAEADCipher createCipher_AES_OCB(int cipherKeySize, int macSize)
+        throws IOException
     {
         return new TlsAEADCipher(context, createAEADBlockCipher_AES_OCB(), createAEADBlockCipher_AES_OCB(),
             cipherKeySize, macSize, TlsAEADCipher.NONCE_RFC7905);
     }
 
-    protected TlsAEADCipher createCipher_Camellia_GCM(int cipherKeySize, int macSize) throws IOException
+    protected TlsAEADCipher createCipher_Camellia_GCM(int cipherKeySize, int macSize)
+        throws IOException
     {
         return new TlsAEADCipher(context, createAEADBlockCipher_Camellia_GCM(), createAEADBlockCipher_Camellia_GCM(),
             cipherKeySize, macSize);
     }
 
-    protected TlsBlockCipher createDESedeCipher(int macAlgorithm) throws IOException
+    protected TlsBlockCipher createDESedeCipher(int macAlgorithm)
+        throws IOException
     {
         return new TlsBlockCipher(context, createDESedeBlockCipher(), createDESedeBlockCipher(),
             createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), 24);
     }
 
-    protected TlsNullCipher createNullCipher(int macAlgorithm) throws IOException
+    protected TlsNullCipher createNullCipher(int macAlgorithm)
+        throws IOException
     {
         return new TlsNullCipher(context, createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm));
     }
 
-    protected TlsStreamCipher createRC4Cipher(int cipherKeySize, int macAlgorithm) throws IOException
+    protected TlsStreamCipher createRC4Cipher(int cipherKeySize, int macAlgorithm)
+        throws IOException
     {
         return new TlsStreamCipher(context, createRC4StreamCipher(), createRC4StreamCipher(),
             createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize, false);
     }
 
-    protected TlsBlockCipher createSEEDCipher(int macAlgorithm) throws IOException
+    protected TlsBlockCipher createSEEDCipher(int macAlgorithm)
+        throws IOException
     {
         return new TlsBlockCipher(context, createSEEDBlockCipher(), createSEEDBlockCipher(),
             createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), 16);
@@ -369,24 +484,91 @@ public class BcTlsCrypto
         return new CBCBlockCipher(new SEEDEngine());
     }
 
-    protected Digest createHMACDigest(int macAlgorithm) throws IOException
+    protected Digest createHMACDigest(int macAlgorithm)
+        throws IOException
     {
         switch (macAlgorithm)
         {
         case MACAlgorithm._null:
             return null;
         case MACAlgorithm.hmac_md5:
-            return createHash(HashAlgorithm.md5);
+            return createDigest(HashAlgorithm.md5);
         case MACAlgorithm.hmac_sha1:
-            return createHash(HashAlgorithm.sha1);
+            return createDigest(HashAlgorithm.sha1);
         case MACAlgorithm.hmac_sha256:
-            return createHash(HashAlgorithm.sha256);
+            return createDigest(HashAlgorithm.sha256);
         case MACAlgorithm.hmac_sha384:
-            return createHash(HashAlgorithm.sha384);
+            return createDigest(HashAlgorithm.sha384);
         case MACAlgorithm.hmac_sha512:
-            return createHash(HashAlgorithm.sha512);
+            return createDigest(HashAlgorithm.sha512);
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
+    public class CombinedPRF
+        implements Digest
+    {
+        private final MD5Digest md5;
+        private final SHA1Digest sha1;
+
+        CombinedPRF()
+        {
+            this.md5 = new MD5Digest();
+            this.sha1 = new SHA1Digest();
+        }
+
+        /**
+         * @see org.bouncycastle.crypto.Digest#getAlgorithmName()
+         */
+        public String getAlgorithmName()
+        {
+            return md5.getAlgorithmName() + " and " + sha1.getAlgorithmName();
+        }
+
+        /**
+         * @see org.bouncycastle.crypto.Digest#getDigestSize()
+         */
+        public int getDigestSize()
+        {
+            return md5.getDigestSize() + sha1.getDigestSize();
+        }
+
+        /**
+         * @see org.bouncycastle.crypto.Digest#update(byte)
+         */
+        public void update(byte input)
+        {
+            md5.update(input);
+            sha1.update(input);
+        }
+
+        /**
+         * @see org.bouncycastle.crypto.Digest#update(byte[], int, int)
+         */
+        public void update(byte[] input, int inOff, int len)
+        {
+            md5.update(input, inOff, len);
+            sha1.update(input, inOff, len);
+        }
+
+        /**
+         * @see org.bouncycastle.crypto.Digest#doFinal(byte[], int)
+         */
+        public int doFinal(byte[] output, int outOff)
+        {
+            int i1 = md5.doFinal(output, outOff);
+            int i2 = sha1.doFinal(output, outOff + i1);
+            return i1 + i2;
+        }
+
+        /**
+         * @see org.bouncycastle.crypto.Digest#reset()
+         */
+        public void reset()
+        {
+            md5.reset();
+            sha1.reset();
         }
     }
 }

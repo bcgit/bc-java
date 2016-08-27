@@ -1,4 +1,4 @@
-package org.bouncycastle.tls;
+package org.bouncycastle.tls.crypto.bc;
 
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.DSA;
@@ -7,8 +7,11 @@ import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.DSADigestSigner;
+import org.bouncycastle.tls.AbstractTlsSigner;
+import org.bouncycastle.tls.HashAlgorithm;
+import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 
-public abstract class TlsDSASigner
+public abstract class BcTlsDSASigner
     extends AbstractTlsSigner
 {
     protected abstract DSA createDSAImpl(short hashAlgorithm);
@@ -16,7 +19,7 @@ public abstract class TlsDSASigner
     protected abstract short getSignatureAlgorithm();
 
     public byte[] generateRawSignature(SignatureAndHashAlgorithm algorithm, AsymmetricKeyParameter privateKey,
-        byte[] hash) throws CryptoException
+                                       byte[] hash) throws CryptoException
     {
         if (algorithm != null && algorithm.getSignature() != getSignatureAlgorithm())
         {

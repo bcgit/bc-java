@@ -6,6 +6,7 @@ import java.math.BigInteger;
 
 import org.bouncycastle.crypto.agreement.srp.SRP6StandardGroups;
 import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
+import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
@@ -111,7 +112,7 @@ class MockSRPTlsServer
             if (Arrays.areEqual(TEST_IDENTITY, identity))
             {
                 SRP6VerifierGenerator verifierGenerator = new SRP6VerifierGenerator();
-                verifierGenerator.init(TEST_GROUP, TlsUtils.createHash(HashAlgorithm.sha1));
+                verifierGenerator.init(TEST_GROUP, new SHA1Digest());
 
                 BigInteger verifier = verifierGenerator.generateVerifier(TEST_SALT, identity, TEST_PASSWORD);
 

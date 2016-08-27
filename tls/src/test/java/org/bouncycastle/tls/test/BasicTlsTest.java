@@ -26,6 +26,7 @@ import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsKeyExchange;
 import org.bouncycastle.tls.TlsSession;
+import org.bouncycastle.tls.crypto.NonceRandomGenerator;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -244,7 +245,7 @@ public class BasicTlsTest
             return crypto;
         }
 
-        public RandomGenerator getNonceRandomGenerator()
+        public NonceRandomGenerator getNonceRandomGenerator()
         {
             throw new UnsupportedOperationException();
         }

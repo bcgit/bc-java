@@ -2,9 +2,7 @@ package org.bouncycastle.tls;
 
 import java.security.SecureRandom;
 
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.prng.DigestRandomGenerator;
-import org.bouncycastle.crypto.prng.RandomGenerator;
+import org.bouncycastle.tls.crypto.NonceRandomGenerator;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.util.Times;
 
@@ -19,7 +17,7 @@ abstract class AbstractTlsContext
     }
 
     private TlsCrypto crypto;
-    private RandomGenerator nonceRandom;
+    private NonceRandomGenerator nonceRandom;
     private SecureRandom secureRandom;
     private SecurityParameters securityParameters;
 
@@ -33,14 +31,10 @@ abstract class AbstractTlsContext
         this.crypto = crypto;
         this.crypto.init(this);
 
-        Digest d = TlsUtils.createHash(HashAlgorithm.sha256);
-        byte[] seed = new byte[d.getDigestSize()];
-        secureRandom.nextBytes(seed);
-
-        this.nonceRandom = new DigestRandomGenerator(d);
-        nonceRandom.addSeedMaterial(nextCounterValue());
-        nonceRandom.addSeedMaterial(Times.nanoTime());
-        nonceRandom.addSeedMaterial(seed);
+        this.nonceRandom = crypto.createNonceRandomGenerator();
+        this.nonceRandom.addSeedMaterial(nextCounterValue());
+        this.nonceRandom.addSeedMaterial(Times.nanoTime());
+        this.nonceRandom.addSeedMaterial(secureRandom);
 
         this.secureRandom = secureRandom;
         this.securityParameters = securityParameters;
@@ -51,7 +45,7 @@ abstract class AbstractTlsContext
         return crypto;
     }
 
-    public RandomGenerator getNonceRandomGenerator()
+    public NonceRandomGenerator getNonceRandomGenerator()
     {
         return nonceRandom;
     }

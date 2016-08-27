@@ -7,6 +7,8 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.tls.crypto.bc.BcTlsDSSSigner;
+import org.bouncycastle.tls.crypto.bc.BcTlsECDSASigner;
 
 public class DefaultTlsSignerCredentials
     extends AbstractTlsSignerCredentials
@@ -57,11 +59,11 @@ public class DefaultTlsSignerCredentials
         }
         else if (privateKey instanceof DSAPrivateKeyParameters)
         {
-            this.signer = new TlsDSSSigner();
+            this.signer = new BcTlsDSSSigner();
         }
         else if (privateKey instanceof ECPrivateKeyParameters)
         {
-            this.signer = new TlsECDSASigner();
+            this.signer = new BcTlsECDSASigner();
         }
         else
         {

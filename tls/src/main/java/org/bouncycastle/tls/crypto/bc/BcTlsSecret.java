@@ -14,6 +14,8 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsHandshakeHash;
+import org.bouncycastle.tls.TlsHash;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
@@ -160,8 +162,8 @@ public class BcTlsSecret implements TlsSecret
 
     protected byte[] prf_SSL(byte[] seed, int md5Count)
     {
-        Digest md5 = crypto.createHash(HashAlgorithm.md5);
-        Digest sha1 = crypto.createHash(HashAlgorithm.sha1);
+        Digest md5 = crypto.createDigest(HashAlgorithm.md5);
+        Digest sha1 = crypto.createDigest(HashAlgorithm.sha1);
 
         int md5Size = md5.getDigestSize();
         byte[] md5Buf = new byte[md5Size * md5Count];
@@ -198,8 +200,8 @@ public class BcTlsSecret implements TlsSecret
 
         byte[] b1 = new byte[length];
         byte[] b2 = new byte[length];
-        hmacHash(crypto.createHash(HashAlgorithm.md5), s1, labelSeed, b1);
-        hmacHash(crypto.createHash(HashAlgorithm.sha1), s2, labelSeed, b2);
+        hmacHash(crypto.createDigest(HashAlgorithm.md5), s1, labelSeed, b1);
+        hmacHash(crypto.createDigest(HashAlgorithm.sha1), s2, labelSeed, b2);
         for (int i = 0; i < length; i++)
         {
             b1[i] ^= b2[i];

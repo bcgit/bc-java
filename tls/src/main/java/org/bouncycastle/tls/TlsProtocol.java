@@ -11,8 +11,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.prng.RandomGenerator;
+import org.bouncycastle.tls.crypto.NonceRandomGenerator;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
@@ -1116,7 +1115,7 @@ public abstract class TlsProtocol
         }
     }
 
-    protected static byte[] createRandomBlock(boolean useGMTUnixTime, RandomGenerator randomGenerator)
+    protected static byte[] createRandomBlock(boolean useGMTUnixTime, NonceRandomGenerator randomGenerator)
     {
         byte[] result = new byte[32];
         randomGenerator.nextBytes(result);
@@ -1163,16 +1162,14 @@ public abstract class TlsProtocol
      */
     protected static byte[] getCurrentPRFHash(TlsContext context, TlsHandshakeHash handshakeHash, byte[] sslSender)
     {
-        Digest d = handshakeHash.forkPRFHash();
+        TlsHash d = handshakeHash.forkPRFHash();
 
         if (sslSender != null && TlsUtils.isSSL(context))
         {
             d.update(sslSender, 0, sslSender.length);
         }
 
-        byte[] bs = new byte[d.getDigestSize()];
-        d.doFinal(bs, 0);
-        return bs;
+        return d.calculateHash();
     }
 
     protected static Hashtable readExtensions(ByteArrayInputStream input)

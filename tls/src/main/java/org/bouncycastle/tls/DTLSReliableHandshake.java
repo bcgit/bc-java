@@ -29,8 +29,7 @@ class DTLSReliableHandshake
     DTLSReliableHandshake(TlsContext context, DTLSRecordLayer transport)
     {
         this.recordLayer = transport;
-        this.handshakeHash = new DeferredHash();
-        this.handshakeHash.init(context);
+        this.handshakeHash = new DeferredHash(context);
     }
 
     void notifyHelloComplete()

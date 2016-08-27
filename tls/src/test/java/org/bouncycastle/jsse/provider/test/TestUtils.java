@@ -35,6 +35,7 @@ import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -68,7 +69,7 @@ class TestUtils
         algIds.put("GOST3411withGOST3410", new AlgorithmIdentifier(CryptoProObjectIdentifiers.gostR3411_94_with_gostR3410_94));
         algIds.put("SHA1withRSA", new AlgorithmIdentifier(PKCSObjectIdentifiers.sha1WithRSAEncryption, DERNull.INSTANCE));
         algIds.put("SHA256withRSA", new AlgorithmIdentifier(PKCSObjectIdentifiers.sha256WithRSAEncryption, DERNull.INSTANCE));
-        algIds.put("ECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.id_dsa_with_sha1));
+        algIds.put("SHA256withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA256));
     }
 
     public static X509Certificate createSelfSignedCert(String dn, String sigName, KeyPair keyPair)
@@ -161,10 +162,27 @@ class TestUtils
         return kpGen.generateKeyPair();
     }
 
+    public static KeyPair generateECKeyPair()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", "BC");
+
+        kpGen.initialize(256, new SecureRandom());
+
+        return kpGen.generateKeyPair();
+    }
+
     public static X509Certificate generateRootCert(KeyPair pair)
         throws Exception
     {
-        return createSelfSignedCert("CN=Test CA Certificate", "SHA256withRSA", pair);
+        if (pair.getPublic().getAlgorithm().equals("RSA"))
+        {
+            return createSelfSignedCert("CN=Test CA Certificate", "SHA256withRSA", pair);
+        }
+        else
+        {
+            return createSelfSignedCert("CN=Test CA Certificate", "SHA256withECDSA", pair);
+        }
     }
 
     public static X509Certificate generateRootCert(KeyPair pair, X500Name dn)
@@ -194,9 +212,18 @@ class TestUtils
         extGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
         extGen.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign | KeyUsage.cRLSign));
 
-        return createCert(
-            caCertLw.getSubject(),
-            caKey, subject, "SHA256withRSA", extGen.generate(), intKey);
+        if (intKey.getAlgorithm().equals("RSA"))
+        {
+            return createCert(
+                caCertLw.getSubject(),
+                caKey, subject, "SHA256withRSA", extGen.generate(), intKey);
+        }
+        else
+        {
+            return createCert(
+                caCertLw.getSubject(),
+                caKey, subject, "SHA256withECDSA", extGen.generate(), intKey);
+        }
     }
 
     public static X509Certificate generateEndEntityCert(PublicKey intKey, PrivateKey caKey, X509Certificate caCert)
@@ -220,9 +247,18 @@ class TestUtils
         extGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
         extGen.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign | KeyUsage.cRLSign));
 
-        return createCert(
-            caCertLw.getSubject(),
-            caKey, subject, "SHA256withRSA", extGen.generate(), entityKey);
+        if (entityKey.getAlgorithm().equals("RSA"))
+        {
+            return createCert(
+                caCertLw.getSubject(),
+                caKey, subject, "SHA256withRSA", extGen.generate(), entityKey);
+        }
+        else
+        {
+            return createCert(
+                caCertLw.getSubject(),
+                caKey, subject, "SHA256withECDSA", extGen.generate(), entityKey);
+        }
     }
 
     public static X509Certificate createExceptionCertificate(boolean exceptionOnEncode)
