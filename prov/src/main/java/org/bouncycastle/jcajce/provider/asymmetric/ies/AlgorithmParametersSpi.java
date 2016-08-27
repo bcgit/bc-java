@@ -57,7 +57,15 @@ public class AlgorithmParametersSpi
                 v.add(new DERTaggedObject(false, 1, new DEROctetString(currentSpec.getEncodingV())));
             }
             v.add(new ASN1Integer(currentSpec.getMacKeySize()));
+            if (currentSpec.getNonce() != null)
+            {
+                ASN1EncodableVector cV = new ASN1EncodableVector();
 
+                cV.add(new ASN1Integer(currentSpec.getCipherKeySize()));
+                cV.add(new ASN1Integer(currentSpec.getNonce()));
+
+                v.add(new DERSequence(cV));
+            }
             return new DERSequence(v).getEncoded(ASN1Encoding.DER);
         }
         catch (IOException e)
@@ -126,12 +134,22 @@ public class AlgorithmParametersSpi
                     this.currentSpec = new IESParameterSpec(null, ASN1OctetString.getInstance(tagged, false).getOctets(), ASN1Integer.getInstance(s.getObjectAt(1)).getValue().intValue());
                 }
             }
-            else
+            else if (s.size() == 3)
             {
                 ASN1TaggedObject tagged1 = ASN1TaggedObject.getInstance(s.getObjectAt(0));
                 ASN1TaggedObject tagged2 = ASN1TaggedObject.getInstance(s.getObjectAt(1));
 
                 this.currentSpec = new IESParameterSpec(ASN1OctetString.getInstance(tagged1, false).getOctets(), ASN1OctetString.getInstance(tagged2, false).getOctets(), ASN1Integer.getInstance(s.getObjectAt(2)).getValue().intValue());
+            }
+            else if (s.size() == 4)
+            {
+                ASN1TaggedObject tagged1 = ASN1TaggedObject.getInstance(s.getObjectAt(0));
+                ASN1TaggedObject tagged2 = ASN1TaggedObject.getInstance(s.getObjectAt(1));
+                ASN1Sequence     cipherDet = ASN1Sequence.getInstance(s.getObjectAt(3));
+
+                this.currentSpec = new IESParameterSpec(ASN1OctetString.getInstance(tagged1, false).getOctets(), ASN1OctetString.getInstance(tagged2, false).getOctets(), ASN1Integer.getInstance(s.getObjectAt(2)).getValue().intValue(),
+                    ASN1Integer.getInstance(cipherDet.getObjectAt(0)).getValue().intValue(),
+                    ASN1OctetString.getInstance(cipherDet.getObjectAt(1)).getOctets());
             }
         }
         catch (ClassCastException e)
