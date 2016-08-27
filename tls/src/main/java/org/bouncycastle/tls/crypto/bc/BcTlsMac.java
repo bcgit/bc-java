@@ -1,16 +1,20 @@
-package org.bouncycastle.tls;
+package org.bouncycastle.tls.crypto.bc;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.digests.LongDigest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.SSL3Mac;
+import org.bouncycastle.tls.TlsContext;
+import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.util.Arrays;
 
 /**
  * A generic TLS MAC implementation, acting as an HMAC based on some underlying Digest.
  */
-public class TlsMac
+public class BcTlsMac
 {
     protected TlsContext context;
     protected byte[] secret;
@@ -28,7 +32,7 @@ public class TlsMac
      * @param keyOff  The number of bytes to skip, before the key starts in the buffer.
      * @param keyLen  The length of the key.
      */
-    public TlsMac(TlsContext context, Digest digest, byte[] key, int keyOff, int keyLen)
+    public BcTlsMac(TlsContext context, Digest digest, byte[] key, int keyOff, int keyLen)
     {
         this.context = context;
 

@@ -12,7 +12,6 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.TlsMac;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.util.Arrays;
@@ -31,15 +30,15 @@ public class TlsBlockCipher
     protected BlockCipher encryptCipher;
     protected BlockCipher decryptCipher;
 
-    protected TlsMac writeMac;
-    protected TlsMac readMac;
+    protected BcTlsMac writeMac;
+    protected BcTlsMac readMac;
 
-    public TlsMac getWriteMac()
+    public BcTlsMac getWriteMac()
     {
         return writeMac;
     }
 
-    public TlsMac getReadMac()
+    public BcTlsMac getReadMac()
     {
         return readMac;
     }
@@ -68,10 +67,10 @@ public class TlsBlockCipher
 
         int offset = 0;
 
-        TlsMac clientWriteMac = new TlsMac(context, clientWriteDigest, key_block, offset,
+        BcTlsMac clientWriteMac = new BcTlsMac(context, clientWriteDigest, key_block, offset,
             clientWriteDigest.getDigestSize());
         offset += clientWriteDigest.getDigestSize();
-        TlsMac serverWriteMac = new TlsMac(context, serverWriteDigest, key_block, offset,
+        BcTlsMac serverWriteMac = new BcTlsMac(context, serverWriteDigest, key_block, offset,
             serverWriteDigest.getDigestSize());
         offset += serverWriteDigest.getDigestSize();
 

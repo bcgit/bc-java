@@ -6,7 +6,6 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.TlsMac;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.util.Arrays;
@@ -16,15 +15,15 @@ public class TlsNullCipher
 {
     protected TlsContext context;
 
-    protected TlsMac writeMac;
-    protected TlsMac readMac;
+    protected BcTlsMac writeMac;
+    protected BcTlsMac readMac;
 
     public TlsNullCipher(TlsContext context, Digest clientWriteDigest, Digest serverWriteDigest)
         throws IOException
     {
         this.context = context;
 
-        TlsMac clientWriteMac = null, serverWriteMac = null;
+        BcTlsMac clientWriteMac = null, serverWriteMac = null;
 
         int key_block_size = clientWriteDigest.getDigestSize()
             + serverWriteDigest.getDigestSize();
@@ -32,11 +31,11 @@ public class TlsNullCipher
 
         int offset = 0;
 
-        clientWriteMac = new TlsMac(context, clientWriteDigest, key_block, offset,
+        clientWriteMac = new BcTlsMac(context, clientWriteDigest, key_block, offset,
             clientWriteDigest.getDigestSize());
         offset += clientWriteDigest.getDigestSize();
 
-        serverWriteMac = new TlsMac(context, serverWriteDigest, key_block, offset,
+        serverWriteMac = new BcTlsMac(context, serverWriteDigest, key_block, offset,
             serverWriteDigest.getDigestSize());
         offset += serverWriteDigest.getDigestSize();
 

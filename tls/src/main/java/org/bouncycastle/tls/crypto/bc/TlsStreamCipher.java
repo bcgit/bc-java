@@ -10,7 +10,6 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.TlsMac;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.util.Arrays;
@@ -23,8 +22,8 @@ public class TlsStreamCipher
     protected StreamCipher encryptCipher;
     protected StreamCipher decryptCipher;
 
-    protected TlsMac writeMac;
-    protected TlsMac readMac;
+    protected BcTlsMac writeMac;
+    protected BcTlsMac readMac;
 
     protected boolean usesNonce;
 
@@ -48,10 +47,10 @@ public class TlsStreamCipher
         int offset = 0;
 
         // Init MACs
-        TlsMac clientWriteMac = new TlsMac(context, clientWriteDigest, key_block, offset,
+        BcTlsMac clientWriteMac = new BcTlsMac(context, clientWriteDigest, key_block, offset,
             clientWriteDigest.getDigestSize());
         offset += clientWriteDigest.getDigestSize();
-        TlsMac serverWriteMac = new TlsMac(context, serverWriteDigest, key_block, offset,
+        BcTlsMac serverWriteMac = new BcTlsMac(context, serverWriteDigest, key_block, offset,
             serverWriteDigest.getDigestSize());
         offset += serverWriteDigest.getDigestSize();
 
