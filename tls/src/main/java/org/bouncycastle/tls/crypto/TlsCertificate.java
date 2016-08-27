@@ -28,5 +28,6 @@ public interface TlsCertificate
      * @param keyExchange
      *            {@link KeyExchangeAlgorithm}
      */
+    // TODO[tls-ops] This is expected to be only transitional and eventually redundant
     TlsCertificate useInRole(int connectionEnd, int keyExchangeAlgorithm) throws IOException;
 }

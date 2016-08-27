@@ -6,12 +6,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Vector;
 
-import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.DHPublicKeyParameters;
-import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.tls.crypto.TlsAgreement;
+import org.bouncycastle.tls.crypto.TlsAgreementCredentials;
+import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
@@ -26,8 +23,8 @@ public class TlsDHKeyExchange
         switch (keyExchange)
         {
         case KeyExchangeAlgorithm.DH_anon:
-        case KeyExchangeAlgorithm.DH_RSA:
         case KeyExchangeAlgorithm.DH_DSS:
+        case KeyExchangeAlgorithm.DH_RSA:
         case KeyExchangeAlgorithm.DHE_DSS:
         case KeyExchangeAlgorithm.DHE_RSA:
             return keyExchange;
@@ -39,7 +36,7 @@ public class TlsDHKeyExchange
     protected TlsDHConfigVerifier dhConfigVerifier;
 
     protected TlsAgreementCredentials agreementCredentials;
-    protected DHPublicKeyParameters dhFixedAgreePublicKey;
+    protected TlsCertificate dhPeerCertificate;
 
     protected TlsDHConfig dhConfig;
     protected TlsAgreement agreement;
@@ -67,8 +64,22 @@ public class TlsDHKeyExchange
     {
         if (keyExchange != KeyExchangeAlgorithm.DH_anon)
         {
-            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
+    }
+
+    public void processServerCredentials(TlsCredentials serverCredentials) throws IOException
+    {
+        if (keyExchange == KeyExchangeAlgorithm.DH_anon)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+        if (!(serverCredentials instanceof TlsAgreementCredentials))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        this.agreementCredentials = (TlsAgreementCredentials)serverCredentials;
     }
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
@@ -77,40 +88,10 @@ public class TlsDHKeyExchange
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
-        if (serverCertificate.isEmpty())
-        {
-            throw new TlsFatalAlert(AlertDescription.bad_certificate);
-        }
-
-        org.bouncycastle.asn1.x509.Certificate x509Cert = serverCertificate.getCertificateAt(0);
-
-        SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
-        AsymmetricKeyParameter serverPublicKey;
-        try
-        {
-            serverPublicKey = PublicKeyFactory.createKey(keyInfo);
-        }
-        catch (RuntimeException e)
-        {
-            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
-        }
-
-        // TODO[tls-ops] Extract TlsDHConfig and/or initialize TlsAgreement directly from certificate
-        //this.dhPeerCertificate = serverCertificate.getCertificateAt(context, 0).useInRole(ConnectionEnd.server, keyExchange);
-
-        try
-        {
-            this.dhFixedAgreePublicKey = TlsDHUtils.validateDHPublicKey((DHPublicKeyParameters)serverPublicKey);
-            this.dhConfig = TlsDHUtils.selectDHConfig(dhFixedAgreePublicKey.getParameters());
-        }
-        catch (ClassCastException e)
-        {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
-        }
-
-        TlsUtils.validateKeyUsage(x509Cert, KeyUsage.keyAgreement);
 
         checkServerCertSigAlg(serverCertificate);
+
+        this.dhPeerCertificate = validatePeerCertificate(ConnectionEnd.server, serverCertificate);
     }
 
     public boolean requiresServerKeyExchange()
@@ -224,15 +205,16 @@ public class TlsDHKeyExchange
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        /*
-         * TODO For non-ephemeral key exchanges, take the public key as dhFixedAgreePublicKey and
-         * check that the domain parameters match the server's.
-         */
+        if (agreementCredentials != null)
+        {
+            // TODO[tls-ops] Where to check that the domain parameters match the server's?
+            this.dhPeerCertificate = validatePeerCertificate(ConnectionEnd.client, clientCertificate);
+        }
     }
 
     public void processClientKeyExchange(InputStream input) throws IOException
     {
-        if (dhFixedAgreePublicKey != null)
+        if (dhPeerCertificate != null)
         {
             // For dss_fixed_dh and rsa_fixed_dh, the key arrived in the client certificate
             return;
@@ -247,7 +229,7 @@ public class TlsDHKeyExchange
     {
         if (agreementCredentials != null)
         {
-            return agreementCredentials.generateAgreement(dhFixedAgreePublicKey);
+            return agreementCredentials.generateAgreement(dhPeerCertificate);
         }
 
         if (agreement != null)
@@ -267,5 +249,15 @@ public class TlsDHKeyExchange
     protected void processEphemeral(byte[] y) throws IOException
     {
         this.agreement.receivePeerValue(y);
+    }
+
+    protected TlsCertificate validatePeerCertificate(int connectionEnd, Certificate peerCertificate) throws IOException
+    {
+        if (peerCertificate.isEmpty())
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_certificate);
+        }
+
+        return peerCertificate.getCertificateAt(context, 0).useInRole(connectionEnd, keyExchange);
     }
 }

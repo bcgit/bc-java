@@ -11,6 +11,7 @@ import org.bouncycastle.tls.TlsHash;
 
 public interface TlsCrypto
 {
+    // TODO[tls-ops] We should review how feasible it is to not TlsContext within TlsCrypto
     void init(TlsContext context);
 
     /**

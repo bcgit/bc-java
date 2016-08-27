@@ -9,16 +9,17 @@ import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
+import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.tls.Certificate;
-import org.bouncycastle.tls.DefaultTlsAgreementCredentials;
 import org.bouncycastle.tls.DefaultTlsEncryptionCredentials;
 import org.bouncycastle.tls.DefaultTlsSignerCredentials;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.TlsAgreementCredentials;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsEncryptionCredentials;
 import org.bouncycastle.tls.TlsSignerCredentials;
-import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.tls.crypto.TlsAgreementCredentials;
+import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
+import org.bouncycastle.tls.crypto.bc.DefaultTlsAgreementCredentials;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.pem.PemObject;
@@ -83,7 +84,8 @@ public class TlsTestUtils
         Certificate certificate = loadCertificateChain(certResources);
         AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
 
-        return new DefaultTlsAgreementCredentials(context, certificate, privateKey);
+        // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the cert/key (as raw data)
+        return new DefaultTlsAgreementCredentials((BcTlsCrypto)context.getCrypto(), certificate, privateKey);
     }
 
     static TlsEncryptionCredentials loadEncryptionCredentials(TlsContext context,

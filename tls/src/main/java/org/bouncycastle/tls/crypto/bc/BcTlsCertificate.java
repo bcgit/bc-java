@@ -212,6 +212,25 @@ public class BcTlsCertificate implements TlsCertificate
 
     public TlsCertificate useInRole(int connectionEnd, int keyExchangeAlgorithm) throws IOException
     {
+        switch (keyExchangeAlgorithm)
+        {
+        case KeyExchangeAlgorithm.DH_DSS:
+        case KeyExchangeAlgorithm.DH_RSA:
+        {
+            validateKeyUsage(KeyUsage.keyAgreement);
+            this.pubKeyDH = getPubKeyDH();
+            return this;
+        }
+
+        case KeyExchangeAlgorithm.ECDH_ECDSA:
+        case KeyExchangeAlgorithm.ECDH_RSA:
+        {
+            validateKeyUsage(KeyUsage.keyAgreement);
+            this.pubKeyEC = getPubKeyEC();
+            return this;
+        }
+        }
+
         if (connectionEnd == ConnectionEnd.client)
         {
             switch (keyExchangeAlgorithm)

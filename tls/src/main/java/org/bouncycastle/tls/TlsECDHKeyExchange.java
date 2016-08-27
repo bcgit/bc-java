@@ -6,12 +6,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Vector;
 
-import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.tls.crypto.TlsAgreement;
+import org.bouncycastle.tls.crypto.TlsAgreementCredentials;
+import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
@@ -40,7 +37,7 @@ public class TlsECDHKeyExchange
     protected short[] clientECPointFormats, serverECPointFormats;
 
     protected TlsAgreementCredentials agreementCredentials;
-    protected ECPublicKeyParameters ecFixedAgreePublicKey;
+    protected TlsCertificate ecdhPeerCertificate;
 
     protected TlsECConfig ecConfig;
     protected TlsAgreement agreement;
@@ -74,8 +71,22 @@ public class TlsECDHKeyExchange
     {
         if (keyExchange != KeyExchangeAlgorithm.ECDH_anon)
         {
-            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
+    }
+
+    public void processServerCredentials(TlsCredentials serverCredentials) throws IOException
+    {
+        if (keyExchange == KeyExchangeAlgorithm.ECDH_anon)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+        if (!(serverCredentials instanceof TlsAgreementCredentials))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        this.agreementCredentials = (TlsAgreementCredentials)serverCredentials;
     }
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
@@ -84,39 +95,10 @@ public class TlsECDHKeyExchange
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
-        if (serverCertificate.isEmpty())
-        {
-            throw new TlsFatalAlert(AlertDescription.bad_certificate);
-        }
-
-        org.bouncycastle.asn1.x509.Certificate x509Cert = serverCertificate.getCertificateAt(0);
-
-        SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
-        AsymmetricKeyParameter serverPublicKey;
-        try
-        {
-            serverPublicKey = PublicKeyFactory.createKey(keyInfo);
-        }
-        catch (RuntimeException e)
-        {
-            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
-        }
-
-        // TODO[tls-ops] Extract TlsECConfig and/or initialize TlsAgreement directly from certificate
-        //this.ecdhPeerCertificate = serverCertificate.getCertificateAt(context, 0).useInRole(ConnectionEnd.server, keyExchange);
-
-        try
-        {
-            this.ecFixedAgreePublicKey = (ECPublicKeyParameters)serverPublicKey;
-        }
-        catch (ClassCastException e)
-        {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
-        }
-
-        TlsUtils.validateKeyUsage(x509Cert, KeyUsage.keyAgreement);
 
         checkServerCertSigAlg(serverCertificate);
+
+        this.ecdhPeerCertificate = validatePeerCertificate(ConnectionEnd.server, serverCertificate);
     }
 
     public boolean requiresServerKeyExchange()
@@ -231,15 +213,16 @@ public class TlsECDHKeyExchange
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        /*
-         * TODO For non-ephemeral key exchanges, take the public key as ecFixedAgreePublicKey and
-         * check that the domain parameters match the server's.
-         */
+        if (agreementCredentials != null)
+        {
+            // TODO[tls-ops] Where to check that the domain parameters match the server's?
+            this.ecdhPeerCertificate = validatePeerCertificate(ConnectionEnd.client, clientCertificate);
+        }
     }
 
     public void processClientKeyExchange(InputStream input) throws IOException
     {
-        if (ecFixedAgreePublicKey != null)
+        if (ecdhPeerCertificate != null)
         {
             // For ecdsa_fixed_ecdh and rsa_fixed_ecdh, the key arrived in the client certificate
             return;
@@ -254,7 +237,7 @@ public class TlsECDHKeyExchange
     {
         if (agreementCredentials != null)
         {
-            return agreementCredentials.generateAgreement(ecFixedAgreePublicKey);
+            return agreementCredentials.generateAgreement(ecdhPeerCertificate);
         }
 
         if (agreement != null)
@@ -276,5 +259,15 @@ public class TlsECDHKeyExchange
         TlsECCUtils.checkPointEncoding(localECPointFormats, ecConfig.getNamedCurve(), point);
 
         this.agreement.receivePeerValue(point);
+    }
+
+    protected TlsCertificate validatePeerCertificate(int connectionEnd, Certificate peerCertificate) throws IOException
+    {
+        if (peerCertificate.isEmpty())
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_certificate);
+        }
+
+        return peerCertificate.getCertificateAt(context, 0).useInRole(connectionEnd, keyExchange);
     }
 }

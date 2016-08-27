@@ -12,6 +12,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.NonceRandomGenerator;
+import org.bouncycastle.tls.crypto.TlsAgreementCredentials;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;

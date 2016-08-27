@@ -85,21 +85,39 @@ public class TlsPSKKeyExchange
     {
         if (keyExchange == KeyExchangeAlgorithm.RSA_PSK)
         {
-            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
 
     public void processServerCredentials(TlsCredentials serverCredentials) throws IOException
     {
+        if (keyExchange != KeyExchangeAlgorithm.RSA_PSK)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
         if (!(serverCredentials instanceof TlsEncryptionCredentials))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        // TODO[tls-ops] Process the server certificate differently on the server side 
-        processServerCertificate(serverCredentials.getCertificate());
-
         this.serverCredentials = (TlsEncryptionCredentials)serverCredentials;
+    }
+
+    public void processServerCertificate(Certificate serverCertificate) throws IOException
+    {
+        if (keyExchange != KeyExchangeAlgorithm.RSA_PSK)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+        if (serverCertificate.isEmpty())
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_certificate);
+        }
+
+        checkServerCertSigAlg(serverCertificate);
+
+        this.serverCertificate = serverCertificate.getCertificateAt(context, 0).useInRole(ConnectionEnd.server,
+            KeyExchangeAlgorithm.RSA_PSK);
     }
 
     public byte[] generateServerKeyExchange() throws IOException
@@ -150,22 +168,6 @@ public class TlsPSKKeyExchange
         }
 
         return buf.toByteArray();
-    }
-
-    public void processServerCertificate(Certificate serverCertificate) throws IOException
-    {
-        if (keyExchange != KeyExchangeAlgorithm.RSA_PSK)
-        {
-            throw new TlsFatalAlert(AlertDescription.unexpected_message);
-        }
-        if (serverCertificate.isEmpty())
-        {
-            throw new TlsFatalAlert(AlertDescription.bad_certificate);
-        }
-
-        this.serverCertificate = serverCertificate.getCertificateAt(context, 0).useInRole(ConnectionEnd.server, KeyExchangeAlgorithm.RSA_PSK);
-
-        checkServerCertSigAlg(serverCertificate);
     }
 
     public boolean requiresServerKeyExchange()

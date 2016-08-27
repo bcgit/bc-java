@@ -29,7 +29,7 @@ public class TlsRSAKeyExchange
     public void skipServerCredentials()
         throws IOException
     {
-        throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     public void processServerCredentials(TlsCredentials serverCredentials)
@@ -39,9 +39,6 @@ public class TlsRSAKeyExchange
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
-
-        // TODO[tls-ops] Process the server certificate differently on the server side 
-        processServerCertificate(serverCredentials.getCertificate());
 
         this.serverCredentials = (TlsEncryptionCredentials)serverCredentials;
     }
@@ -54,9 +51,10 @@ public class TlsRSAKeyExchange
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
 
-        this.serverCertificate = serverCertificate.getCertificateAt(context, 0).useInRole(ConnectionEnd.server, KeyExchangeAlgorithm.RSA);
-
         checkServerCertSigAlg(serverCertificate);
+
+        this.serverCertificate = serverCertificate.getCertificateAt(context, 0).useInRole(ConnectionEnd.server,
+            KeyExchangeAlgorithm.RSA);
     }
 
     public void validateCertificateRequest(CertificateRequest certificateRequest)

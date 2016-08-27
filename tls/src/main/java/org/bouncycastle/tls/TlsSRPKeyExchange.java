@@ -79,38 +79,39 @@ public class TlsSRPKeyExchange
     {
         if (keyExchange != KeyExchangeAlgorithm.SRP)
         {
-            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
+    }
+
+    public void processServerCredentials(TlsCredentials serverCredentials) throws IOException
+    {
+        if (keyExchange == KeyExchangeAlgorithm.SRP)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+        if (!(serverCredentials instanceof TlsSignerCredentials))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        this.serverCredentials = (TlsSignerCredentials)serverCredentials;
     }
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
         if (keyExchange == KeyExchangeAlgorithm.SRP)
         {
-            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
         if (serverCertificate.isEmpty())
         {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
 
+        checkServerCertSigAlg(serverCertificate);
+
         this.verifier = serverCertificate.getCertificateAt(context, 0)
             .createVerifier(TlsUtils.getSignatureAlgorithm(keyExchange));
-
-        checkServerCertSigAlg(serverCertificate);
-    }
-
-    public void processServerCredentials(TlsCredentials serverCredentials) throws IOException
-    {
-        if ((keyExchange == KeyExchangeAlgorithm.SRP) || !(serverCredentials instanceof TlsSignerCredentials))
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        // TODO[tls-ops] Process the server certificate differently on the server side 
-        processServerCertificate(serverCredentials.getCertificate());
-
-        this.serverCredentials = (TlsSignerCredentials)serverCredentials;
     }
 
     public boolean requiresServerKeyExchange()
