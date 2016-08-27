@@ -117,13 +117,14 @@ public class ECIESVectorTest
         doTestWithParams("ECIES with P-256 KP1 P11", keyPair, "ECIES", p256_1_eph, new IESParameterSpec(derivation2, encoding2, 128), p256_1_with_params22);
         doTestWithParams("ECIES with P-256 KP1 P11", keyPair, "ECIES", p256_1_eph, new IESParameterSpec(derivation2, encoding3, 128), p256_1_with_params23);
 
-        doTestNoParams("ECIES with P-256 None", keyPair, "OldECIES", p256_1_eph, old_p256_1_no_params);
-        doTestWithParams("ECIES with P-256 KP1 P11", keyPair, "OldECIES", p256_1_eph, new IESParameterSpec(derivation1, encoding1, 128), old_p256_1_with_params11);
-        doTestWithParams("ECIES with P-256 KP1 P11", keyPair, "OldECIES", p256_1_eph, new IESParameterSpec(derivation1, encoding2, 128), old_p256_1_with_params12);
-        doTestWithParams("ECIES with P-256 KP1 P11", keyPair, "OldECIES", p256_1_eph, new IESParameterSpec(derivation1, encoding3, 128), old_p256_1_with_params13);
-        doTestWithParams("ECIES with P-256 KP1 P11", keyPair, "OldECIES", p256_1_eph, new IESParameterSpec(derivation2, encoding1, 128), old_p256_1_with_params21);
-        doTestWithParams("ECIES with P-256 KP1 P11", keyPair, "OldECIES", p256_1_eph, new IESParameterSpec(derivation2, encoding2, 128), old_p256_1_with_params22);
-        doTestWithParams("ECIES with P-256 KP1 P11", keyPair, "OldECIES", p256_1_eph, new IESParameterSpec(derivation2, encoding3, 128), old_p256_1_with_params23);
+        // no longer supported
+//        doTestNoParams("ECIES with P-256 None", keyPair, "OldECIES", p256_1_eph, old_p256_1_no_params);
+//        doTestWithParams("ECIES with P-256 KP1 P11", keyPair, "OldECIES", p256_1_eph, new IESParameterSpec(derivation1, encoding1, 128), old_p256_1_with_params11);
+//        doTestWithParams("ECIES with P-256 KP1 P11", keyPair, "OldECIES", p256_1_eph, new IESParameterSpec(derivation1, encoding2, 128), old_p256_1_with_params12);
+//        doTestWithParams("ECIES with P-256 KP1 P11", keyPair, "OldECIES", p256_1_eph, new IESParameterSpec(derivation1, encoding3, 128), old_p256_1_with_params13);
+//        doTestWithParams("ECIES with P-256 KP1 P11", keyPair, "OldECIES", p256_1_eph, new IESParameterSpec(derivation2, encoding1, 128), old_p256_1_with_params21);
+//        doTestWithParams("ECIES with P-256 KP1 P11", keyPair, "OldECIES", p256_1_eph, new IESParameterSpec(derivation2, encoding2, 128), old_p256_1_with_params22);
+//        doTestWithParams("ECIES with P-256 KP1 P11", keyPair, "OldECIES", p256_1_eph, new IESParameterSpec(derivation2, encoding3, 128), old_p256_1_with_params23);
 
         keyPair = new KeyPair(ecFact.generatePublic(new X509EncodedKeySpec(p256_2_pub)), ecFact.generatePrivate(new PKCS8EncodedKeySpec(p256_2_pri)));
 

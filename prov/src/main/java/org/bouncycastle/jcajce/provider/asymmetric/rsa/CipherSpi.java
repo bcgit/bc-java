@@ -32,6 +32,7 @@ import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseCipherSpi;
+import org.bouncycastle.jcajce.provider.util.BadBlockException;
 import org.bouncycastle.jcajce.provider.util.DigestFactory;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -528,15 +529,9 @@ public class CipherSpi
 
             return cipher.processBlock(bytes, 0, bytes.length);
         }
-        catch (final InvalidCipherTextException e)
+        catch (InvalidCipherTextException e)
         {
-            throw new BadPaddingException("unable to decrypt block")
-            {
-                public synchronized Throwable getCause()
-                {
-                    return e;
-                }
-            };
+            throw new BadBlockException("unable to decrypt block", e);
         }
         finally
         {

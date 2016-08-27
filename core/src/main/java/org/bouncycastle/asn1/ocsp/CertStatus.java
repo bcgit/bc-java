@@ -13,7 +13,7 @@ public class CertStatus
     implements ASN1Choice
 {
     private int             tagNo;
-    private ASN1Encodable    value;
+    private ASN1Encodable   value;
 
     /**
      * create a CertStatus object with a tag of zero.
@@ -54,6 +54,7 @@ public class CertStatus
             break;
         case 2:
             value = DERNull.INSTANCE;
+            break;
         default:
             throw new IllegalArgumentException("Unknown tag encountered: " + choice.getTagNo());
         }

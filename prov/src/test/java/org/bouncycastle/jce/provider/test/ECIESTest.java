@@ -7,6 +7,7 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.ECGenParameterSpec;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.SealedObject;
 
@@ -22,6 +23,7 @@ import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.IESParameterSpec;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -75,19 +77,10 @@ public class ECIESTest
                 new HMac(new SHA1Digest()),
                 new PaddedBufferedBlockCipher(new DESEngine())));  
     
-        params = new IESParameterSpec(derivation, encoding, 128, 128);
+        params = new IESParameterSpec(derivation, encoding, 128, 128, Hex.decode("0001020304050607"));
       
         // Testing ECIES with default curve using DES
         g = KeyPairGenerator.getInstance("EC", "BC");
-        doTest("default", g, "ECIESwithDESEDE", params);
-        
-        // Testing ECIES with 192-bit curve using DES
-        g.initialize(192, new SecureRandom());
-        doTest("192-bit", g, "ECIESwithDESEDE", params);
-        
-        // Testing ECIES with 256-bit curve using DES
-        g.initialize(256, new SecureRandom());
-        doTest("256-bit", g, "ECIESwithDESEDE", params);
 
         // Testing ECIES with 256-bit curve using DES-CBC
         g.initialize(256, new SecureRandom());
@@ -112,21 +105,9 @@ public class ECIESTest
             }
         }
 
-        c1 = new org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher.ECIESwithAES();
-        c2 = new org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher.ECIESwithAES();
-        params = new IESParameterSpec(derivation, encoding, 128, 128);
-        
-        // Testing ECIES with default curve using AES 
-        g = KeyPairGenerator.getInstance("EC", "BC");
-        doTest("default", g, "ECIESwithAES", params);
-        
-        // Testing ECIES with 192-bit curve using AES
-        g.initialize(192, new SecureRandom());
-        doTest("192-bit", g, "ECIESwithAES", params);
-        
-        // Testing ECIES with 256-bit curve using AES
-        g.initialize(256, new SecureRandom());
-        doTest("256-bit", g, "ECIESwithAES", params);
+        c1 = new org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher.ECIESwithAESCBC();
+        c2 = new org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher.ECIESwithAESCBC();
+        params = new IESParameterSpec(derivation, encoding, 128, 128, Hex.decode("000102030405060708090a0b0c0d0e0f"));
 
         // Testing ECIES with 256-bit curve using AES-CBC
         g.initialize(256, new SecureRandom());
@@ -149,6 +130,45 @@ public class ECIESTest
             {
                 fail("AES wrong message!");
             }
+        }
+
+        KeyPair       keyPair = g.generateKeyPair();
+        ECPublicKey pub = (ECPublicKey)keyPair.getPublic();
+        ECPrivateKey priv = (ECPrivateKey)keyPair.getPrivate();
+
+        Cipher c = Cipher.getInstance("ECIESwithAES-CBC", "BC");
+
+        try
+        {
+            c.init(Cipher.ENCRYPT_MODE, pub, new IESParameterSpec(derivation, encoding, 128, 128, null));
+
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isTrue("message ", "NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
+        }
+
+        try
+        {
+            c.init(Cipher.DECRYPT_MODE, priv);
+
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("message ", "cannot handle supplied parameter spec: NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
+        }
+
+        try
+        {
+            c.init(Cipher.DECRYPT_MODE, priv, new IESParameterSpec(derivation, encoding, 128, 128, null));
+
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isTrue("message ", "NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
         }
 
         sealedObjectTest();
@@ -204,7 +224,10 @@ public class ECIESTest
 
         // Testing with null parameters and DHAES mode off
         c1.init(Cipher.ENCRYPT_MODE, Pub, new SecureRandom());
-        c2.init(Cipher.DECRYPT_MODE, Priv, new SecureRandom());
+        c2.init(Cipher.DECRYPT_MODE, Priv, c1.getParameters());
+
+        isTrue("nonce mismatch", Arrays.areEqual(c1.getIV(), c2.getIV()));
+
         out1 = c1.doFinal(message, 0, message.length);
         out2 = c2.doFinal(out1, 0, out1.length);
         if (!areEqual(out2, message))
@@ -213,13 +236,33 @@ public class ECIESTest
         
         // Testing with given parameters and DHAES mode off
         c1.init(Cipher.ENCRYPT_MODE, Pub, p, new SecureRandom());
-        c2.init(Cipher.DECRYPT_MODE, Priv, p, new SecureRandom());
+        c2.init(Cipher.DECRYPT_MODE, Priv, p);
         out1 = c1.doFinal(message, 0, message.length);
         out2 = c2.doFinal(out1, 0, out1.length);
         if (!areEqual(out2, message))
             fail(testname + " test failed with non-null parameters, DHAES mode false.");
         
+        //
+        // corrupted data test
+        //
+        int offset = out1.length - (message.length + 8);
+        byte[] tmp = new byte[out1.length];
+        for (int i = offset; i != out1.length; i++)
+        {
+            System.arraycopy(out1, 0, tmp, 0, tmp.length);
+            tmp[i] = (byte)~tmp[i];
 
+            try
+            {
+                c2.doFinal(tmp, 0, tmp.length);
+
+                fail("decrypted corrupted data");
+            }
+            catch (BadPaddingException e)
+            {
+                isTrue("wrong message: " + e.getMessage(), "unable to process block".equals(e.getMessage()));
+            }
+        }
 // TODO: DHAES mode is not currently implemented, perhaps it shouldn't be...
 //        c1 = Cipher.getInstance(cipher + "/DHAES/PKCS7Padding","BC");
 //        c2 = Cipher.getInstance(cipher + "/DHAES/PKCS7Padding","BC");

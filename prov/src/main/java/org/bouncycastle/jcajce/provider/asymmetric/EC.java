@@ -134,24 +134,11 @@ public class EC
             provider.addAlgorithm("KeyPairGenerator.ECIES", PREFIX + "KeyPairGeneratorSpi$ECDH");
 
             provider.addAlgorithm("Cipher.ECIES", PREFIX + "IESCipher$ECIES");
-            provider.addAlgorithm("Cipher.ECIESwithAES", PREFIX + "IESCipher$ECIESwithAES");
-            provider.addAlgorithm("Cipher.ECIESWITHAES", PREFIX + "IESCipher$ECIESwithAES");
-            provider.addAlgorithm("Cipher.ECIESwithDESEDE", PREFIX + "IESCipher$ECIESwithDESede");
-            provider.addAlgorithm("Cipher.ECIESWITHDESEDE", PREFIX + "IESCipher$ECIESwithDESede");
+
             provider.addAlgorithm("Cipher.ECIESwithAES-CBC", PREFIX + "IESCipher$ECIESwithAESCBC");
             provider.addAlgorithm("Cipher.ECIESWITHAES-CBC", PREFIX + "IESCipher$ECIESwithAESCBC");
             provider.addAlgorithm("Cipher.ECIESwithDESEDE-CBC", PREFIX + "IESCipher$ECIESwithDESedeCBC");
             provider.addAlgorithm("Cipher.ECIESWITHDESEDE-CBC", PREFIX + "IESCipher$ECIESwithDESedeCBC");
-
-            provider.addAlgorithm("Cipher.OldECIES", PREFIX + "IESCipher$OldECIES");
-            provider.addAlgorithm("Cipher.OldECIESwithAES", PREFIX + "IESCipher$OldECIESwithAES");
-            provider.addAlgorithm("Cipher.OldECIESWITHAES", PREFIX + "IESCipher$OldECIESwithAES");
-            provider.addAlgorithm("Cipher.OldECIESwithDESEDE", PREFIX + "IESCipher$OldECIESwithDESede");
-            provider.addAlgorithm("Cipher.OldECIESWITHDESEDE", PREFIX + "IESCipher$OldECIESwithDESede");
-            provider.addAlgorithm("Cipher.OldECIESwithAES-CBC", PREFIX + "IESCipher$OldECIESwithAESCBC");
-            provider.addAlgorithm("Cipher.OldECIESWITHAES-CBC", PREFIX + "IESCipher$OldECIESwithAESCBC");
-            provider.addAlgorithm("Cipher.OldECIESwithDESEDE-CBC", PREFIX + "IESCipher$OldECIESwithDESedeCBC");
-            provider.addAlgorithm("Cipher.OldECIESWITHDESEDE-CBC", PREFIX + "IESCipher$OldECIESwithDESedeCBC");
 
             provider.addAlgorithm("Signature.ECDSA", PREFIX + "SignatureSpi$ecDSA");
             provider.addAlgorithm("Signature.NONEwithECDSA", PREFIX + "SignatureSpi$ecDSAnone");
