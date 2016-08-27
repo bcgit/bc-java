@@ -17,13 +17,7 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.crypto.params.RSAKeyParameters;
-import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.util.Arrays;
@@ -1151,7 +1145,7 @@ public class TlsUtils
         }
     }
 
-    static short getClientCertificateType(Certificate clientCertificate, Certificate serverCertificate)
+    static short getClientCertificateType(TlsContext context, Certificate clientCertificate, Certificate serverCertificate)
         throws IOException
     {
         if (clientCertificate.isEmpty())
@@ -1159,67 +1153,7 @@ public class TlsUtils
             return -1;
         }
 
-        org.bouncycastle.asn1.x509.Certificate x509Cert = clientCertificate.getCertificateAt(0);
-        SubjectPublicKeyInfo keyInfo = x509Cert.getSubjectPublicKeyInfo();
-        try
-        {
-            AsymmetricKeyParameter publicKey = PublicKeyFactory.createKey(keyInfo);
-            if (publicKey.isPrivate())
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-
-            /*
-             * TODO RFC 5246 7.4.6. The certificates MUST be signed using an acceptable hash/
-             * signature algorithm pair, as described in Section 7.4.4. Note that this relaxes the
-             * constraints on certificate-signing algorithms found in prior versions of TLS.
-             */
-
-            /*
-             * RFC 5246 7.4.6. Client Certificate
-             */
-
-            /*
-             * RSA public key; the certificate MUST allow the key to be used for signing with the
-             * signature scheme and hash algorithm that will be employed in the certificate verify
-             * message.
-             */
-            if (publicKey instanceof RSAKeyParameters)
-            {
-                validateKeyUsage(x509Cert, KeyUsage.digitalSignature);
-                return ClientCertificateType.rsa_sign;
-            }
-
-            /*
-             * DSA public key; the certificate MUST allow the key to be used for signing with the
-             * hash algorithm that will be employed in the certificate verify message.
-             */
-            if (publicKey instanceof DSAPublicKeyParameters)
-            {
-                validateKeyUsage(x509Cert, KeyUsage.digitalSignature);
-                return ClientCertificateType.dss_sign;
-            }
-
-            /*
-             * ECDSA-capable public key; the certificate MUST allow the key to be used for signing
-             * with the hash algorithm that will be employed in the certificate verify message; the
-             * public key MUST use a curve and point format supported by the server.
-             */
-            if (publicKey instanceof ECPublicKeyParameters)
-            {
-                validateKeyUsage(x509Cert, KeyUsage.digitalSignature);
-                // TODO Check the curve and point format
-                return ClientCertificateType.ecdsa_sign;
-            }
-
-            // TODO Add support for ClientCertificateType.*_fixed_*
-
-            throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
-        }
-        catch (Exception e)
-        {
-            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
-        }
+        return clientCertificate.getCertificateAt(context, 0).getClientCertificateType();
     }
 
     static void trackHashAlgorithms(TlsHandshakeHash handshakeHash, Vector supportedSignatureAlgorithms)

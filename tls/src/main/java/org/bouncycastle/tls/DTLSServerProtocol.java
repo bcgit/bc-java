@@ -458,7 +458,7 @@ public class DTLSServerProtocol
              * issued by one of the listed CAs.
              */
 
-            state.clientCertificateType = TlsUtils.getClientCertificateType(clientCertificate,
+            state.clientCertificateType = TlsUtils.getClientCertificateType(state.serverContext, clientCertificate,
                 state.serverCredentials.getCertificate());
 
             state.keyExchange.processClientCertificate(clientCertificate);

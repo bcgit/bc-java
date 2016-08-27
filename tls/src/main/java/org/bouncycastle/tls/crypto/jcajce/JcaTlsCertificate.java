@@ -80,6 +80,11 @@ public class JcaTlsCertificate
         }
     }
 
+    public short getClientCertificateType() throws IOException
+    {
+        throw new UnsupportedOperationException();
+    }
+
     public byte[] getEncoded() throws IOException
     {
         try

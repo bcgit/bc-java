@@ -446,7 +446,7 @@ public class TlsServerProtocol
              * issued by one of the listed CAs.
              */
 
-            this.clientCertificateType = TlsUtils.getClientCertificateType(clientCertificate,
+            this.clientCertificateType = TlsUtils.getClientCertificateType(getContext(), clientCertificate,
                 this.serverCredentials.getCertificate());
 
             this.keyExchange.processClientCertificate(clientCertificate);
