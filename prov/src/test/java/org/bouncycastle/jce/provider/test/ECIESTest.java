@@ -7,6 +7,7 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.ECGenParameterSpec;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.SealedObject;
 
@@ -241,7 +242,27 @@ public class ECIESTest
         if (!areEqual(out2, message))
             fail(testname + " test failed with non-null parameters, DHAES mode false.");
         
+        //
+        // corrupted data test
+        //
+        int offset = out1.length - (message.length + 8);
+        byte[] tmp = new byte[out1.length];
+        for (int i = offset; i != out1.length; i++)
+        {
+            System.arraycopy(out1, 0, tmp, 0, tmp.length);
+            tmp[i] = (byte)~tmp[i];
 
+            try
+            {
+                c2.doFinal(tmp, 0, tmp.length);
+
+                fail("decrypted corrupted data");
+            }
+            catch (BadPaddingException e)
+            {
+                isTrue("wrong message: " + e.getMessage(), "unable to process block".equals(e.getMessage()));
+            }
+        }
 // TODO: DHAES mode is not currently implemented, perhaps it shouldn't be...
 //        c1 = Cipher.getInstance(cipher + "/DHAES/PKCS7Padding","BC");
 //        c2 = Cipher.getInstance(cipher + "/DHAES/PKCS7Padding","BC");
