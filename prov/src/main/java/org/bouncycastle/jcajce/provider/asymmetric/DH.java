@@ -38,19 +38,14 @@ public class DH
             provider.addAlgorithm("AlgorithmParameterGenerator.DH", PREFIX + "AlgorithmParameterGeneratorSpi");
 
             provider.addAlgorithm("Cipher.IES", PREFIX + "IESCipher$IES");
-            provider.addAlgorithm("Cipher.IESwithAES", PREFIX + "IESCipher$IESwithAES");
-            provider.addAlgorithm("Cipher.IESWITHAES", PREFIX + "IESCipher$IESwithAES");
-            provider.addAlgorithm("Cipher.IESWITHDESEDE", PREFIX + "IESCipher$IESwithDESede");
+            provider.addAlgorithm("Cipher.IESwithAES-CBC", PREFIX + "IESCipher$IESwithAESCBC");
+            provider.addAlgorithm("Cipher.IESWITHAES-CBC", PREFIX + "IESCipher$IESwithAESCBC");
+            provider.addAlgorithm("Cipher.IESWITHDESEDE-CBC", PREFIX + "IESCipher$IESwithDESedeCBC");
 
             provider.addAlgorithm("Cipher.DHIES", PREFIX + "IESCipher$IES");
-            provider.addAlgorithm("Cipher.DHIESwithAES", PREFIX + "IESCipher$IESwithAES");
-            provider.addAlgorithm("Cipher.DHIESWITHAES", PREFIX + "IESCipher$IESwithAES");
-            provider.addAlgorithm("Cipher.DHIESWITHDESEDE", PREFIX + "IESCipher$IESwithDESede");
-
-            provider.addAlgorithm("Cipher.OLDDHIES", PREFIX + "IESCipher$OldIES");
-            provider.addAlgorithm("Cipher.OLDDHIESwithAES", PREFIX + "IESCipher$OldIESwithAES");
-            provider.addAlgorithm("Cipher.OLDDHIESWITHAES", PREFIX + "IESCipher$OldIESwithAES");
-            provider.addAlgorithm("Cipher.OLDDHIESWITHDESEDE", PREFIX + "IESCipher$OldIESwithDESede");
+            provider.addAlgorithm("Cipher.DHIESwithAES-CBC", PREFIX + "IESCipher$IESwithAESCBC");
+            provider.addAlgorithm("Cipher.DHIESWITHAES-CBC", PREFIX + "IESCipher$IESwithAESCBC");
+            provider.addAlgorithm("Cipher.DHIESWITHDESEDE-CBC", PREFIX + "IESCipher$IESwithDESedeCBC");
 
             registerOid(provider, PKCSObjectIdentifiers.dhKeyAgreement, "DH", new KeyFactorySpi());
             registerOid(provider, X9ObjectIdentifiers.dhpublicnumber, "DH", new KeyFactorySpi());
