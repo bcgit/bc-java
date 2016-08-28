@@ -3,11 +3,14 @@ package org.bouncycastle.tls.crypto.jcajce;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
 
 import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.StreamCipher;
+import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
@@ -15,6 +18,7 @@ import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.modes.OCBBlockCipher;
+import org.bouncycastle.crypto.prng.DigestRandomGenerator;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.CombinedHash;
@@ -341,7 +345,40 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
 
     public NonceRandomGenerator createNonceRandomGenerator()
     {
-        throw new UnsupportedOperationException();
+        // TODO: really need to find out the story on this one.
+        final Digest d = new SHA256Digest();
+        final DigestRandomGenerator gen = new DigestRandomGenerator(d);
+
+        return new NonceRandomGenerator()
+        {
+            public void addSeedMaterial(byte[] seed)
+            {
+                gen.addSeedMaterial(seed);
+            }
+
+            public void addSeedMaterial(long seed)
+            {
+                gen.addSeedMaterial(seed);
+            }
+
+            public void addSeedMaterial(SecureRandom seedSource)
+            {
+
+                byte[] seed = new byte[d.getDigestSize()];
+                seedSource.nextBytes(seed);
+                addSeedMaterial(seed);
+            }
+
+            public void nextBytes(byte[] bytes)
+            {
+                gen.nextBytes(bytes);
+            }
+
+            public void nextBytes(byte[] bytes, int start, int len)
+            {
+                gen.nextBytes(bytes, start, len);
+            }
+        };
     }
 
     MessageDigest createMessageDigest(short hashAlgorithm)
