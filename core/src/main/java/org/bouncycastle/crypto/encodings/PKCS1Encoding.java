@@ -150,6 +150,11 @@ public class PKCS1Encoding
         this.forPrivateKey = kParam.isPrivate();
         this.forEncryption = forEncryption;
         this.blockBuffer = new byte[engine.getOutputBlockSize()];
+
+        if (pLen > 0 && fallback == null && random == null)
+        {
+           throw new IllegalArgumentException("encoder requires random");
+        }
     }
 
     public int getInputBlockSize()
@@ -321,8 +326,7 @@ public class PKCS1Encoding
             random = fallback;
         }
 
-        System.arraycopy(block, 0, blockBuffer, blockBuffer.length - block.length, block.length);
-        byte[] data = (useStrictLength) ? block : blockBuffer;
+        byte[] data = (useStrictLength & (block.length != engine.getOutputBlockSize())) ? blockBuffer : block;
 
 		/*
 		 * Check the padding.
@@ -340,7 +344,6 @@ public class PKCS1Encoding
         }
 
         Arrays.fill(data, (byte)0);
-        Arrays.fill(blockBuffer, (byte)0);
 
         return result;
     }
