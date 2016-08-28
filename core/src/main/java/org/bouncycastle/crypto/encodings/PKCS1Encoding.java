@@ -149,7 +149,7 @@ public class PKCS1Encoding
 
         this.forPrivateKey = kParam.isPrivate();
         this.forEncryption = forEncryption;
-        this.blockBuffer = new byte[getOutputBlockSize()];
+        this.blockBuffer = new byte[engine.getOutputBlockSize()];
     }
 
     public int getInputBlockSize()
@@ -340,6 +340,7 @@ public class PKCS1Encoding
         }
 
         Arrays.fill(data, (byte)0);
+        Arrays.fill(blockBuffer, (byte)0);
 
         return result;
     }
