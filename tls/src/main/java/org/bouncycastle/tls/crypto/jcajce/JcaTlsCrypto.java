@@ -30,22 +30,6 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
         this.helper = helper;
     }
 
-    public byte[] calculateDigest(short hashAlgorithm, byte[] buf, int off, int len) throws IOException
-    {
-        try
-        {
-            MessageDigest d = createMessageDigest(hashAlgorithm);
-
-            d.update(buf, off, len);
-
-            return d.digest();
-        }
-        catch (IllegalArgumentException e)
-        {
-            throw new IOException("unable to calculate digest: " + e.getMessage(), e);
-        }
-    }
-
     public JceTlsSecret adoptSecret(byte[] data)
     {
         return new JceTlsSecret(this, data);

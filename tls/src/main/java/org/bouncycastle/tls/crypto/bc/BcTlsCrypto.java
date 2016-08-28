@@ -53,14 +53,6 @@ public class BcTlsCrypto
         return new BcTlsSecret(this, data);
     }
 
-    public byte[] calculateDigest(short hashAlgorithm, byte[] buf, int off, int len)
-        throws IOException
-    {
-        TlsHash d = createHash(hashAlgorithm);
-        d.update(buf, off, len);
-        return d.calculateHash();
-    }
-
     public TlsCertificate createCertificate(byte[] encoding)
         throws IOException
     {

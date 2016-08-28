@@ -13,11 +13,6 @@ public interface TlsCrypto
     // TODO[tls-ops] We should review how feasible it is to not TlsContext within TlsCrypto
     void init(TlsContext context);
 
-    /**
-     * See enumeration class {@link HashAlgorithm} for appropriate argument values
-     */
-    byte[] calculateDigest(short hashAlgorithm, byte[] buf, int off, int len) throws IOException;
-
     TlsCertificate createCertificate(byte[] encoding) throws IOException;
 
     /**
