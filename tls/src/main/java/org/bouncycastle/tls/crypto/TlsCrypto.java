@@ -7,7 +7,6 @@ import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
-import org.bouncycastle.tls.TlsHash;
 
 public interface TlsCrypto
 {

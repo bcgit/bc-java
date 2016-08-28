@@ -3,8 +3,6 @@ package org.bouncycastle.tls.crypto.jcajce;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.interfaces.RSAPublicKey;
 
 import javax.crypto.Cipher;
@@ -134,25 +132,13 @@ public class JceTlsSecret
         {
             byte[] result = (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
                 ? prf_1_0(data, labelSeed, length)
-                : prf_1_2(createPRFHash(prfAlgorithm), data, labelSeed, length);
+                : prf_1_2(crypto.createMessageDigest(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm)), data, labelSeed, length);
 
             return crypto.adoptSecret(result);
         }
         catch (GeneralSecurityException e)
         {
             throw new RuntimeCryptoException(); // TODO
-        }
-    }
-
-    private MessageDigest createPRFHash(int prfAlgorithm)
-        throws NoSuchProviderException, NoSuchAlgorithmException
-    {
-        switch (prfAlgorithm)
-        {
-        case PRFAlgorithm.tls_prf_legacy:
-            return new CombinedHash(crypto);
-        default:
-            return crypto.createMessageDigest(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
         }
     }
 
@@ -253,50 +239,5 @@ public class JceTlsSecret
         byte[] result = new byte[length];
         hmacHash(prfDigest, secret, labelSeed, result);
         return result;
-    }
-
-    private static class CombinedHash
-        extends MessageDigest
-    {
-        private final MessageDigest md5;
-        private final MessageDigest sha1;
-
-        CombinedHash(JcaTlsCrypto crypto)
-            throws NoSuchProviderException, NoSuchAlgorithmException
-        {
-            super("MD5andSHA1");
-
-            this.md5 = crypto.createMessageDigest(HashAlgorithm.md5);
-            this.sha1 = crypto.createMessageDigest(HashAlgorithm.sha1);
-        }
-
-        protected void engineUpdate(byte b)
-        {
-            md5.update(b);
-            sha1.update(b);
-        }
-
-        protected void engineUpdate(byte[] bytes, int off, int len)
-        {
-            md5.update(bytes, off, len);
-            sha1.update(bytes, off, len);
-        }
-
-        protected byte[] engineDigest()
-        {
-            // TODO[tls-ops]
-//            if (context != null && TlsUtils.isSSL(context))
-//            {
-//                ssl3Complete(md5, SSL3Mac.IPAD, SSL3Mac.OPAD, 48);
-//                ssl3Complete(sha1, SSL3Mac.IPAD, SSL3Mac.OPAD, 40);
-//            }
-
-            return Arrays.concatenate(md5.digest(), sha1.digest());
-        }
-
-        protected void engineReset()
-        {
-            throw new UnsupportedOperationException();
-        }
     }
 }

@@ -3,9 +3,9 @@ package org.bouncycastle.tls;
 import java.math.BigInteger;
 import java.util.Vector;
 
-import org.bouncycastle.crypto.agreement.DHStandardGroups;
-import org.bouncycastle.crypto.params.DHParameters;
+import org.bouncycastle.tls.crypto.DHStandardGroups;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
+import org.bouncycastle.tls.crypto.TlsDHParameters;
 
 public class DefaultTlsDHConfigVerifier
     implements TlsDHConfigVerifier
@@ -14,7 +14,7 @@ public class DefaultTlsDHConfigVerifier
 
     protected static final Vector DEFAULT_GROUPS = new Vector();
 
-    private static void addDefaultGroup(DHParameters dhParameters)
+    private static void addDefaultGroup(TlsDHParameters dhParameters)
     {
         DEFAULT_GROUPS.addElement(TlsDHUtils.selectDHConfig(dhParameters));
     }

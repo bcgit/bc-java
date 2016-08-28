@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.crypto.agreement.DHStandardGroups;
-import org.bouncycastle.crypto.params.DHParameters;
+import org.bouncycastle.tls.crypto.DHStandardGroups;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
+import org.bouncycastle.tls.crypto.TlsDHParameters;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.util.Arrays;
 
@@ -68,7 +68,7 @@ public abstract class AbstractTlsServer
         return new short[]{CompressionMethod._null};
     }
 
-    protected DHParameters getDHParameters()
+    protected TlsDHParameters getDHParameters()
     {
         return DHStandardGroups.rfc5114_2048_256;
     }

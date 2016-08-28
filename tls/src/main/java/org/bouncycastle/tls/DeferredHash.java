@@ -3,6 +3,7 @@ package org.bouncycastle.tls;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
+import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.util.Shorts;
 
 /**

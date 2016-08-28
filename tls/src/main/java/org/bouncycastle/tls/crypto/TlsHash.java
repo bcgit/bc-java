@@ -1,4 +1,4 @@
-package org.bouncycastle.tls;
+package org.bouncycastle.tls.crypto;
 
 public interface TlsHash
 {

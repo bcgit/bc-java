@@ -37,7 +37,11 @@ public class BcTlsDH implements TlsAgreement
 
     public void receivePeerValue(byte[] peerValue) throws IOException
     {
-        this.peerPublicKey = TlsDHUtils.validateDHPublicKey(domain.decodePublicKey(peerValue));
+        DHPublicKeyParameters dhKey = domain.decodePublicKey(peerValue);
+
+        TlsDHUtils.validateDHPublicValues(dhKey.getY(), dhKey.getParameters().getP());
+
+        this.peerPublicKey = dhKey;
     }
 
     public void usePeerCertificate(TlsCertificate certificate) throws IOException

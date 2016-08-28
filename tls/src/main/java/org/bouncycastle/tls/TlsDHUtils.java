@@ -7,9 +7,8 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.Hashtable;
 
-import org.bouncycastle.crypto.params.DHParameters;
-import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
+import org.bouncycastle.tls.crypto.TlsDHParameters;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.encoders.Hex;
@@ -28,10 +27,10 @@ public class TlsDHUtils
         return new BigInteger(1, Hex.decode(hex));
     }
 
-    private static DHParameters fromSafeP(String hexP)
+    private static TlsDHParameters fromSafeP(String hexP)
     {
         BigInteger p = fromHex(hexP), q = p.shiftRight(1);
-        return new DHParameters(p, TWO, q);
+        return new TlsDHParameters(p, TWO, q);
     }
 
     private static final String draft_ffdhe2432_p =
@@ -48,7 +47,7 @@ public class TlsDHUtils
         + "886B4238611FCFDCDE355B3B6519035BBC34F4DEF99C0238"
         + "61B46FC9D6E6C9077AD91D2691F7F7EE598CB0FAC186D91C"
         + "AEFE13098533C8B3FFFFFFFFFFFFFFFF";
-    static final DHParameters draft_ffdhe2432 = fromSafeP(draft_ffdhe2432_p);
+    static final TlsDHParameters draft_ffdhe2432 = fromSafeP(draft_ffdhe2432_p);
 
     private static final String draft_ffdhe3072_p =
           "FFFFFFFFFFFFFFFFADF85458A2BB4A9AAFDC5620273D3CF1"
@@ -67,7 +66,7 @@ public class TlsDHUtils
         + "64F2E21E71F54BFF5CAE82AB9C9DF69EE86D2BC522363A0D"
         + "ABC521979B0DEADA1DBF9A42D5C4484E0ABCD06BFA53DDEF"
         + "3C1B20EE3FD59D7C25E41D2B66C62E37FFFFFFFFFFFFFFFF";
-    static final DHParameters draft_ffdhe3072 = fromSafeP(draft_ffdhe3072_p);
+    static final TlsDHParameters draft_ffdhe3072 = fromSafeP(draft_ffdhe3072_p);
 
     private static final String draft_ffdhe4096_p =
           "FFFFFFFFFFFFFFFFADF85458A2BB4A9AAFDC5620273D3CF1"
@@ -92,7 +91,7 @@ public class TlsDHUtils
         + "1A1DB93D7140003C2A4ECEA9F98D0ACC0A8291CDCEC97DCF"
         + "8EC9B55A7F88A46B4DB5A851F44182E1C68A007E5E655F6A"
         + "FFFFFFFFFFFFFFFF";
-    static final DHParameters draft_ffdhe4096 = fromSafeP(draft_ffdhe4096_p);
+    static final TlsDHParameters draft_ffdhe4096 = fromSafeP(draft_ffdhe4096_p);
 
     private static final String draft_ffdhe6144_p =
           "FFFFFFFFFFFFFFFFADF85458A2BB4A9AAFDC5620273D3CF1"
@@ -127,7 +126,7 @@ public class TlsDHUtils
         + "E49F5235C95B91178CCF2DD5CACEF403EC9D1810C6272B04"
         + "5B3B71F9DC6B80D63FDD4A8E9ADB1E6962A69526D43161C1"
         + "A41D570D7938DAD4A40E329CD0E40E65FFFFFFFFFFFFFFFF";
-    static final DHParameters draft_ffdhe6144 = fromSafeP(draft_ffdhe6144_p);
+    static final TlsDHParameters draft_ffdhe6144 = fromSafeP(draft_ffdhe6144_p);
 
     private static final String draft_ffdhe8192_p =
           "FFFFFFFFFFFFFFFFADF85458A2BB4A9AAFDC5620273D3CF1"
@@ -173,7 +172,7 @@ public class TlsDHUtils
         + "FAFABE1C5D71A87E2F741EF8C1FE86FEA6BBFDE530677F0D"
         + "97D11D49F7A8443D0822E506A9F4614E011E2A94838FF88C"
         + "D68C8BB7C5C6424CFFFFFFFFFFFFFFFF";
-    static final DHParameters draft_ffdhe8192 = fromSafeP(draft_ffdhe8192_p);
+    static final TlsDHParameters draft_ffdhe8192 = fromSafeP(draft_ffdhe8192_p);
 
     
     public static void addNegotiatedDHEGroupsClientExtension(Hashtable extensions, short[] dheGroups)
@@ -256,7 +255,7 @@ public class TlsDHUtils
         return TlsUtils.readUint8(extensionData, 0);
     }
 
-    public static DHParameters getParametersForDHEGroup(short dheGroup)
+    public static TlsDHParameters getParametersForDHEGroup(short dheGroup)
     {
         switch (dheGroup)
         {
@@ -309,12 +308,6 @@ public class TlsDHUtils
         }
     }
 
-    public static boolean areCompatibleParameters(DHParameters a, DHParameters b)
-    {
-        return a.getP().equals(b.getP()) && a.getG().equals(b.getG())
-            && (a.getQ() == null || b.getQ() == null || a.getQ().equals(b.getQ()));
-    }
-
     public static TlsDHConfig readDHConfig(InputStream input) throws IOException
     {
         BigInteger p = readDHParameter(input);
@@ -340,26 +333,21 @@ public class TlsDHUtils
         return new BigInteger(1, TlsUtils.readOpaque16(input));
     }
 
-    public static TlsDHConfig selectDHConfig(DHParameters dhParameters)
+    public static TlsDHConfig selectDHConfig(TlsDHParameters TlsDHParameters)
     {
         TlsDHConfig result = new TlsDHConfig();
-        result.setExplicitPG(new BigInteger[]{ dhParameters.getP(), dhParameters.getG() });
+        result.setExplicitPG(new BigInteger[]{ TlsDHParameters.getP(), TlsDHParameters.getG() });
         return result;
     }
 
-    public static DHPublicKeyParameters validateDHPublicKey(DHPublicKeyParameters key) throws IOException
+    public static void validateDHPublicValues(BigInteger y, BigInteger p) throws IOException
     {
-        BigInteger Y = key.getY();
-        BigInteger p = key.getParameters().getP();
-
-        if (Y.compareTo(TWO) < 0 || Y.compareTo(p.subtract(TWO)) > 0)
+        if (y.compareTo(TWO) < 0 || y.compareTo(p.subtract(TWO)) > 0)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         // TODO See RFC 2631 for more discussion of Diffie-Hellman validation
-
-        return key;
     }
 
     public static void writeDHConfig(TlsDHConfig dhConfig, OutputStream output)

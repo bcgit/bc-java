@@ -1,5 +1,7 @@
 package org.bouncycastle.tls;
 
+import org.bouncycastle.tls.crypto.TlsHash;
+
 public interface TlsHandshakeHash
     extends TlsHash
 {

@@ -287,7 +287,9 @@ public class BcTlsCertificate implements TlsCertificate
 
     protected DHPublicKeyParameters validatePubKeyDH(DHPublicKeyParameters pubKeyDH) throws IOException
     {
-        return TlsDHUtils.validateDHPublicKey(pubKeyDH);
+        TlsDHUtils.validateDHPublicValues(pubKeyDH.getY(), pubKeyDH.getParameters().getP());
+
+        return pubKeyDH;
     }
 
     protected DSAPublicKeyParameters validatePubKeyDSS(DSAPublicKeyParameters pubKeyDSS) throws IOException

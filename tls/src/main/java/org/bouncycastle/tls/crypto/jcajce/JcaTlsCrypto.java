@@ -1,14 +1,16 @@
 package org.bouncycastle.tls.crypto.jcajce;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.tls.CombinedHash;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
-import org.bouncycastle.tls.TlsHash;
+import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.NonceRandomGenerator;
 import org.bouncycastle.tls.crypto.TlsCertificate;
@@ -80,11 +82,6 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
         throw new UnsupportedOperationException();
     }
 
-    public TlsHash createHash(SignatureAndHashAlgorithm sidAlgorithm)
-    {
-        throw new UnsupportedOperationException();
-    }
-
     public TlsHash createHash(short algorithm)
     {
         throw new UnsupportedOperationException();
@@ -101,32 +98,14 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
     }
 
 
-    public TlsHash createMessageDigest(SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+    public TlsHash createHash(final SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
-        final MessageDigest d = signatureAndHashAlgorithm == null ? new CombinedHash() : createMessageDigest(signatureAndHashAlgorithm.getHash());
-
-        return new TlsHash()
+        if (signatureAndHashAlgorithm == null)
         {
-            public void update(byte[] data, int offSet, int length)
-            {
-               d.update(data, offSet, length);
-            }
+            return new CombinedHash(getContext().getCrypto());
+        }
 
-            public byte[] calculateHash()
-            {
-                return d.digest();
-            }
-
-            public TlsHash cloneHash()
-            {
-                throw new UnsupportedOperationException();
-            }
-
-            public void reset()
-            {
-                d.reset();
-            }
-        };
+        return new JcaTlsHash(createMessageDigest(signatureAndHashAlgorithm.getHash()));
     }
 
     public NonceRandomGenerator createNonceRandomGenerator()
@@ -172,32 +151,45 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
         }
     }
 
-    private class CombinedHash
-        extends MessageDigest
+    private class JcaTlsHash
+        implements TlsHash
     {
-        protected CombinedHash()
+        private final MessageDigest digest;
+
+        JcaTlsHash(MessageDigest digest)
         {
-            super("MD5andSHA1");
+            this.digest = digest;
         }
 
-        protected void engineUpdate(byte b)
+        @Override
+        public void update(byte[] data, int offSet, int length)
         {
-            throw new UnsupportedOperationException();
+            digest.update(data, offSet, length);
         }
 
-        protected void engineUpdate(byte[] bytes, int i, int i1)
+        @Override
+        public byte[] calculateHash()
         {
-            throw new UnsupportedOperationException();
+            return digest.digest();
         }
 
-        protected byte[] engineDigest()
+        @Override
+        public TlsHash cloneHash()
         {
-            throw new UnsupportedOperationException();
+            try
+            {
+                return new JcaTlsHash((MessageDigest)digest.clone());
+            }
+            catch (CloneNotSupportedException e)
+            {
+                throw new UnsupportedOperationException("unable to clone digest");
+            }
         }
 
-        protected void engineReset()
+        @Override
+        public void reset()
         {
-            throw new UnsupportedOperationException();
+            digest.reset();
         }
     }
 }
