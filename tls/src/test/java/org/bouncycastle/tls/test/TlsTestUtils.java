@@ -16,10 +16,10 @@ import org.bouncycastle.tls.TlsAgreementCredentials;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsEncryptionCredentials;
 import org.bouncycastle.tls.TlsSignerCredentials;
+import org.bouncycastle.tls.crypto.bc.BcDefaultTlsSignerCredentials;
 import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
 import org.bouncycastle.tls.crypto.bc.DefaultTlsAgreementCredentials;
 import org.bouncycastle.tls.crypto.bc.DefaultTlsEncryptionCredentials;
-import org.bouncycastle.tls.crypto.bc.DefaultTlsSignerCredentials;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.pem.PemObject;
@@ -107,7 +107,8 @@ public class TlsTestUtils
         AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
 
         // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key (as raw data)
-        return new DefaultTlsSignerCredentials((BcTlsCrypto)context.getCrypto(), certificate, privateKey, signatureAndHashAlgorithm);
+
+        return new BcDefaultTlsSignerCredentials(context, privateKey, certificate, signatureAndHashAlgorithm);
     }
 
     static TlsSignerCredentials loadSignerCredentials(TlsContext context, Vector supportedSignatureAlgorithms,

@@ -2,44 +2,44 @@ package org.bouncycastle.tls.crypto.jcajce;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.PrivateKey;
 import java.security.Signature;
-import java.security.interfaces.RSAPublicKey;
 
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DigestInfo;
-import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.tls.DigitallySigned;
+import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.TlsContext;
+import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsVerifier;
+import org.bouncycastle.tls.crypto.AbstractTlsSigner;
 
-public class JcaTlsRSAVerifier
-    implements TlsVerifier
+public class JcaTlsRSASigner
+    extends AbstractTlsSigner
 {
-    private final JcaJceHelper helper;
-    protected RSAPublicKey pubKeyRSA;
+    private final PrivateKey privateKey;
 
-    public JcaTlsRSAVerifier(RSAPublicKey pubKeyRSA, JcaJceHelper helper)
+    public JcaTlsRSASigner(TlsContext context, PrivateKey privateKey)
     {
-        if (pubKeyRSA == null)
+        super(context);
+
+        if (privateKey == null)
         {
-            throw new IllegalArgumentException("'pubKeyRSA' cannot be null");
+            throw new IllegalArgumentException("'privateKey' cannot be null");
         }
 
-        this.pubKeyRSA = pubKeyRSA;
-        this.helper = helper;
+        this.privateKey = privateKey;
     }
 
-    public boolean verifySignature(DigitallySigned signedParams, byte[] hash)
+    public byte[] generateRawSignature(SignatureAndHashAlgorithm algorithm,
+                                       byte[] hash) throws IOException
     {
-        SignatureAndHashAlgorithm algorithm = signedParams.getAlgorithm();
-
         try
         {
-            Signature signer = helper.createSignature("NoneWithRSA");
-            signer.initVerify(pubKeyRSA);
+            Signature signer = ((JcaTlsCrypto)context.getCrypto()).getHelper().createSignature("NoneWithRSA");
+            signer.initSign(privateKey, context.getSecureRandom());
             if (algorithm != null)
             {
                 if (algorithm.getSignature() != SignatureAlgorithm.rsa)
@@ -51,7 +51,6 @@ public class JcaTlsRSAVerifier
              * RFC 5246 4.7. In RSA signing, the opaque vector contains the signature generated
              * using the RSASSA-PKCS1-v1_5 signature scheme defined in [PKCS1].
              */
-
                 try
                 {
                     byte[] digInfo = new DigestInfo(new AlgorithmIdentifier(TlsUtils.getOIDForHashAlgorithm(algorithm.getHash()), DERNull.INSTANCE), hash).getEncoded();
@@ -71,11 +70,11 @@ public class JcaTlsRSAVerifier
                 signer.update(hash, 0, hash.length);
             }
 
-            return signer.verify(signedParams.getSignature());
+            return signer.sign();
         }
         catch (GeneralSecurityException e)
         {
-            throw new IllegalStateException("unable to process signature: " + e.getMessage(), e);
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
     }
 }
