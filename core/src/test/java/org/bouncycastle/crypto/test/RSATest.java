@@ -58,10 +58,11 @@ public class RSATest
         eng.init(true, privParameters);
 
         byte[] data = null;
+        byte[] overSized = null;
 
         try
         {
-            data = eng.processBlock(oversizedSig, 0, oversizedSig.length);
+            overSized = data = eng.processBlock(oversizedSig, 0, oversizedSig.length);
         }
         catch (Exception e)
         {
@@ -74,7 +75,7 @@ public class RSATest
 
         try
         {
-            data = eng.processBlock(data, 0, data.length);
+            data = eng.processBlock(overSized, 0, overSized.length);
 
             fail("oversized signature block not recognised");
         }
@@ -86,23 +87,36 @@ public class RSATest
             }
         }
 
-        //System.setProperty(PKCS1Encoding.STRICT_LENGTH_ENABLED_PROPERTY, "false");
-
-        System.getProperties().put(PKCS1Encoding.STRICT_LENGTH_ENABLED_PROPERTY, "false");
-        eng = new PKCS1Encoding(new RSAEngine());
-
-        eng.init(false, pubParameters);
+        eng = new PKCS1Encoding(new RSAEngine(), Hex.decode("feedbeeffeedbeeffeedbeef"));
+        eng.init(false, new ParametersWithRandom(privParameters, new SecureRandom()));
 
         try
         {
-            data = eng.processBlock(data, 0, data.length);
+            data = eng.processBlock(overSized, 0, overSized.length);
+            isTrue("not fallback", Arrays.areEqual(Hex.decode("feedbeeffeedbeeffeedbeef"), data));
         }
         catch (InvalidCipherTextException e)
         {
             fail("RSA: failed - exception " + e.toString(), e);
         }
 
-        System.getProperties().remove(PKCS1Encoding.STRICT_LENGTH_ENABLED_PROPERTY);
+        //System.setProperty(PKCS1Encoding.STRICT_LENGTH_ENABLED_PROPERTY, "false");
+
+        System.getProperties().put(PKCS1Encoding.NOT_STRICT_LENGTH_ENABLED_PROPERTY, "true");
+        eng = new PKCS1Encoding(new RSAEngine());
+
+        eng.init(false, pubParameters);
+
+        try
+        {
+            data = eng.processBlock(overSized, 0, overSized.length);
+        }
+        catch (InvalidCipherTextException e)
+        {
+            fail("RSA: failed - exception " + e.toString(), e);
+        }
+
+        System.getProperties().remove(PKCS1Encoding.NOT_STRICT_LENGTH_ENABLED_PROPERTY);
     }
 
     private void testTruncatedPKCS1Block(RSAKeyParameters pubParameters, RSAKeyParameters privParameters)
@@ -349,19 +363,54 @@ public class RSATest
 
         eng.init(false, privParameters);
 
+        byte[] plainData = null;
         try
         {
-            data = eng.processBlock(data, 0, data.length);
+            plainData = eng.processBlock(data, 0, data.length);
         }
         catch (Exception e)
         {
             fail("failed - exception " + e.toString(), e);
         }
 
-        if (!input.equals(new String(Hex.encode(data))))
+        if (!input.equals(Hex.toHexString(plainData)))
         {
             fail("failed PKCS1 public/private Test");
         }
+
+        PKCS1Encoding fEng = new PKCS1Encoding(new RSAEngine(), input.length() / 2);
+        fEng.init(false, new ParametersWithRandom(privParameters, new SecureRandom()));
+        try
+        {
+            plainData = fEng.processBlock(data, 0, data.length);
+        }
+        catch (Exception e)
+        {
+            fail("failed - exception " + e.toString(), e);
+        }
+
+        if (!input.equals(Hex.toHexString(plainData)))
+        {
+            fail("failed PKCS1 public/private fixed Test");
+        }
+
+        fEng = new PKCS1Encoding(new RSAEngine(), input.length());
+        fEng.init(false, new ParametersWithRandom(privParameters, new SecureRandom()));
+        try
+        {
+            data = fEng.processBlock(data, 0, data.length);
+        }
+        catch (Exception e)
+        {
+            fail("failed - exception " + e.toString(), e);
+        }
+
+        if (input.equals(Hex.toHexString(data)))
+        {
+            fail("failed to recognise incorrect plaint text length");
+        }
+
+        data = plainData;
 
         //
         // PKCS1 - private encrypt, public decrypt
@@ -372,7 +421,7 @@ public class RSATest
 
         try
         {
-            data = eng.processBlock(data, 0, data.length);
+            data = eng.processBlock(plainData, 0, plainData.length);
         }
         catch (Exception e)
         {
@@ -390,7 +439,7 @@ public class RSATest
             fail("failed - exception " + e.toString(), e);
         }
 
-        if (!input.equals(new String(Hex.encode(data))))
+        if (!input.equals(Hex.toHexString(data)))
         {
             fail("failed PKCS1 private/public Test");
         }
