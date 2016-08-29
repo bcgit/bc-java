@@ -1,44 +1,38 @@
-package org.bouncycastle.tls.crypto.jcajce;
+package org.bouncycastle.tls.crypto;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.util.Arrays;
 
-public class JceTlsNullCipher
+public class TlsNullCipher
     implements TlsCipher
 {
     protected TlsContext context;
 
-    protected JceTlsMac writeMac;
-    protected JceTlsMac readMac;
+    protected TlsMac writeMac;
+    protected TlsMac readMac;
 
-    public JceTlsNullCipher(TlsContext context, MessageDigest clientWriteDigest, MessageDigest serverWriteDigest)
-        throws IOException, GeneralSecurityException
+    public TlsNullCipher(TlsContext context, TlsMac clientMac, TlsMac serverMac, int macKeyLength)
+        throws IOException
     {
         this.context = context;
 
-        JceTlsMac clientWriteMac = null, serverWriteMac = null;
-
-        int key_block_size = clientWriteDigest.getDigestLength()
-            + serverWriteDigest.getDigestLength();
+        int key_block_size = macKeyLength + macKeyLength;
         byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
 
         int offset = 0;
 
-        clientWriteMac = new JceTlsMac(context, clientWriteDigest, key_block, offset,
-            clientWriteDigest.getDigestLength());
-        offset += clientWriteDigest.getDigestLength();
+        byte[] clientMacKey = Arrays.copyOfRange(key_block, offset, offset + macKeyLength);
+        offset += macKeyLength;
+        byte[] serverMacKey = Arrays.copyOfRange(key_block, offset, offset + macKeyLength);
+        offset += macKeyLength;
 
-        serverWriteMac = new JceTlsMac(context, serverWriteDigest, key_block, offset,
-            serverWriteDigest.getDigestLength());
-        offset += serverWriteDigest.getDigestLength();
+        clientMac.setKey(clientMacKey);
+        serverMac.setKey(serverMacKey);
 
         if (offset != key_block_size)
         {
@@ -47,13 +41,13 @@ public class JceTlsNullCipher
 
         if (context.isServer())
         {
-            writeMac = serverWriteMac;
-            readMac = clientWriteMac;
+            writeMac = serverMac;
+            readMac = clientMac;
         }
         else
         {
-            writeMac = clientWriteMac;
-            readMac = serverWriteMac;
+            writeMac = clientMac;
+            readMac = serverMac;
         }
     }
 

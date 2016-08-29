@@ -30,7 +30,7 @@ public class JceTlsStreamCipher
 
     public JceTlsStreamCipher(TlsContext context, StreamCipher clientWriteCipher,
                               StreamCipher serverWriteCipher, MessageDigest clientWriteDigest, MessageDigest serverWriteDigest,
-                              int cipherKeySize, boolean usesNonce)
+                              int cipherKeySize, int macKeySize, boolean usesNonce)
         throws IOException, GeneralSecurityException
     {
         boolean isServer = context.isServer();
@@ -49,12 +49,15 @@ public class JceTlsStreamCipher
         int offset = 0;
 
         // Init MACs
-        JceTlsMac clientWriteMac = new JceTlsMac(context, clientWriteDigest, key_block, offset,
-            clientWriteDigest.getDigestLength());
-        offset += clientWriteDigest.getDigestLength();
-        JceTlsMac serverWriteMac = new JceTlsMac(context, serverWriteDigest, key_block, offset,
-            serverWriteDigest.getDigestLength());
-        offset += serverWriteDigest.getDigestLength();
+        byte[] clientMacKey = Arrays.copyOfRange(key_block, offset, offset + macKeySize);
+        offset += macKeySize;
+        byte[] serverMacKey = Arrays.copyOfRange(key_block, offset, offset + macKeySize);
+        offset += macKeySize;
+
+        JceTlsMac clientWriteMac = new JceTlsMac(context, clientWriteDigest);
+        clientWriteMac.setKey(clientMacKey);
+        JceTlsMac serverWriteMac = new JceTlsMac(context, serverWriteDigest);
+        serverWriteMac.setKey(serverMacKey);
 
         // Build keys
         KeyParameter clientWriteKey = new KeyParameter(key_block, offset, cipherKeySize);

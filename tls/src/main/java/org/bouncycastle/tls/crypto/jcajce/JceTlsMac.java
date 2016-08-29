@@ -1,21 +1,27 @@
 package org.bouncycastle.tls.crypto.jcajce;
 
+import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsContext;
+import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsMac;
 import org.bouncycastle.util.Arrays;
 
 /**
  * A generic TLS MAC implementation, acting as an HMAC based on some underlying Digest.
  */
 public class JceTlsMac
+    implements TlsMac
 {
     protected TlsContext context;
     protected byte[] secret;
@@ -29,18 +35,11 @@ public class JceTlsMac
      *
      * @param context the TLS client context
      * @param digest  The digest to use.
-     * @param key     A byte-array where the key for this MAC is located.
-     * @param keyOff  The number of bytes to skip, before the key starts in the buffer.
-     * @param keyLen  The length of the key.
      */
-    public JceTlsMac(TlsContext context, MessageDigest digest, byte[] key, int keyOff, int keyLen)
+    public JceTlsMac(TlsContext context, MessageDigest digest)
         throws GeneralSecurityException
     {
         this.context = context;
-
-        SecretKey keyParameter = new SecretKeySpec(key, keyOff, keyLen, "Hmac" + digest.getAlgorithm());
-
-        this.secret = Arrays.clone(keyParameter.getEncoded());
 
         // TODO This should check the actual algorithm, not rely on the engine type
         if (digest.getAlgorithm().endsWith("384") || digest.getAlgorithm().contains("512"))
@@ -64,8 +63,23 @@ public class JceTlsMac
 
             // NOTE: The input pad for HMAC is always a full digest block
         }
+    }
 
-        this.mac.init(keyParameter);
+    public void setKey(byte[] key)
+        throws IOException
+    {
+        this.secret = Arrays.clone(key);
+
+        SecretKey keyParameter = new SecretKeySpec(key, mac.getAlgorithm());
+
+        try
+        {
+            this.mac.init(keyParameter);
+        }
+        catch (InvalidKeyException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure, e);
+        }
 
         this.macLength = mac.getMacLength();
         if (context.getSecurityParameters().isTruncatedHMac())

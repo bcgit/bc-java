@@ -1,8 +1,6 @@
-package org.bouncycastle.tls.crypto.jcajce;
+package org.bouncycastle.tls.crypto;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
 import java.security.SecureRandom;
 
 import org.bouncycastle.tls.AlertDescription;
@@ -10,14 +8,12 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsBlockOperator;
-import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.util.Arrays;
 
 /**
  * A generic TLS 1.0-1.2 / SSLv3 block cipher. This can be used for AES or 3DES for example.
  */
-public class JceTlsBlockCipher
+public class TlsBlockCipher
     implements TlsCipher
 {
     protected TlsContext context;
@@ -28,22 +24,12 @@ public class JceTlsBlockCipher
     protected TlsBlockOperator encryptCipher;
     protected TlsBlockOperator decryptCipher;
 
-    protected JceTlsMac writeMac;
-    protected JceTlsMac readMac;
+    protected TlsMac writeMac;
+    protected TlsMac readMac;
 
-    public JceTlsMac getWriteMac()
-    {
-        return writeMac;
-    }
-
-    public JceTlsMac getReadMac()
-    {
-        return readMac;
-    }
-
-    public JceTlsBlockCipher(TlsContext context, TlsBlockOperator encryptCipher, TlsBlockOperator decryptCipher,
-                             MessageDigest clientWriteDigest, MessageDigest serverWriteDigest, int cipherKeySize)
-        throws IOException, GeneralSecurityException
+    public TlsBlockCipher(TlsContext context, TlsBlockOperator encryptCipher, TlsBlockOperator decryptCipher,
+                          TlsMac writeMac, TlsMac readMac, int cipherKeySize, int macKeySize)
+        throws IOException
     {
         this.context = context;
 
@@ -53,8 +39,8 @@ public class JceTlsBlockCipher
         this.useExplicitIV = TlsUtils.isTLSv11(context);
         this.encryptThenMAC = context.getSecurityParameters().isEncryptThenMAC();
 
-        int key_block_size = (2 * cipherKeySize) + clientWriteDigest.getDigestLength()
-            + serverWriteDigest.getDigestLength();
+        int key_block_size = (2 * cipherKeySize) + macKeySize
+            + macKeySize;
 
         // From TLS 1.1 onwards, block ciphers don't need client_write_IV
         if (!useExplicitIV)
@@ -66,12 +52,10 @@ public class JceTlsBlockCipher
 
         int offset = 0;
 
-        JceTlsMac clientWriteMac = new JceTlsMac(context, clientWriteDigest, key_block, offset,
-            clientWriteDigest.getDigestLength());
-        offset += clientWriteDigest.getDigestLength();
-        JceTlsMac serverWriteMac = new JceTlsMac(context, serverWriteDigest, key_block, offset,
-            serverWriteDigest.getDigestLength());
-        offset += serverWriteDigest.getDigestLength();
+        byte[] clientMacKey = Arrays.copyOfRange(key_block, offset, offset + macKeySize);
+        offset += macKeySize;
+        byte[] serverMacKey = Arrays.copyOfRange(key_block, offset, offset + macKeySize);
+        offset += macKeySize;
 
         byte[] client_write_key = Arrays.copyOfRange(key_block, offset, offset + cipherKeySize);
         offset += cipherKeySize;
@@ -108,6 +92,8 @@ public class JceTlsBlockCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
+        this.readMac = readMac;
+        this.writeMac = writeMac;
         this.encryptCipher = encryptCipher;
         this.decryptCipher = decryptCipher;
         this.encryptCipher.init(encryptor_IV);
@@ -115,16 +101,16 @@ public class JceTlsBlockCipher
 
         if (context.isServer())
         {
-            this.writeMac = serverWriteMac;
-            this.readMac = clientWriteMac;
+            this.writeMac.setKey(serverMacKey);
+            this.readMac.setKey(clientMacKey);
 
             this.encryptCipher.setKey(server_write_key);
             this.decryptCipher.setKey(client_write_key);
         }
         else
         {
-            this.writeMac = clientWriteMac;
-            this.readMac = serverWriteMac;
+            this.writeMac.setKey(clientMacKey);
+            this.readMac.setKey(serverMacKey);
 
             this.encryptCipher.setKey(client_write_key);
             this.decryptCipher.setKey(server_write_key);
