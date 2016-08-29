@@ -1,48 +1,39 @@
-package org.bouncycastle.tls.crypto.jcajce;
+package org.bouncycastle.tls.crypto;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
 
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.StreamCipher;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.util.Arrays;
 
-public class JceTlsStreamCipher
+public class TlsStreamCipher
     implements TlsCipher
 {
-    protected TlsContext context;
+    protected TlsStreamOperator encryptCipher;
+    protected TlsStreamOperator decryptCipher;
 
-    protected StreamCipher encryptCipher;
-    protected StreamCipher decryptCipher;
-
-    protected JceTlsMac writeMac;
-    protected JceTlsMac readMac;
+    protected TlsMac writeMac;
+    protected TlsMac readMac;
 
     protected boolean usesNonce;
 
-    public JceTlsStreamCipher(TlsContext context, StreamCipher clientWriteCipher,
-                              StreamCipher serverWriteCipher, MessageDigest clientWriteDigest, MessageDigest serverWriteDigest,
-                              int cipherKeySize, int macKeySize, boolean usesNonce)
-        throws IOException, GeneralSecurityException
+    public TlsStreamCipher(TlsContext context,
+                           TlsStreamOperator encryptCipher, TlsStreamOperator decryptCipher,
+                           TlsMac clientWriteMac, TlsMac serverWriteMac,
+                           int cipherKeySize, int macKeySize, boolean usesNonce)
+        throws IOException
     {
         boolean isServer = context.isServer();
 
-        this.context = context;
         this.usesNonce = usesNonce;
 
-        this.encryptCipher = clientWriteCipher;
-        this.decryptCipher = serverWriteCipher;
+        this.encryptCipher = encryptCipher;
+        this.decryptCipher = decryptCipher;
 
-        int key_block_size = (2 * cipherKeySize) + clientWriteDigest.getDigestLength()
-            + serverWriteDigest.getDigestLength();
+        int key_block_size = (2 * cipherKeySize) + macKeySize
+            + macKeySize;
 
         byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
 
@@ -54,15 +45,13 @@ public class JceTlsStreamCipher
         byte[] serverMacKey = Arrays.copyOfRange(key_block, offset, offset + macKeySize);
         offset += macKeySize;
 
-        JceTlsMac clientWriteMac = new JceTlsMac(context, clientWriteDigest);
         clientWriteMac.setKey(clientMacKey);
-        JceTlsMac serverWriteMac = new JceTlsMac(context, serverWriteDigest);
         serverWriteMac.setKey(serverMacKey);
 
         // Build keys
-        KeyParameter clientWriteKey = new KeyParameter(key_block, offset, cipherKeySize);
+        byte[] clientWriteKey = Arrays.copyOfRange(key_block, offset, offset + cipherKeySize);
         offset += cipherKeySize;
-        KeyParameter serverWriteKey = new KeyParameter(key_block, offset, cipherKeySize);
+        byte[] serverWriteKey = Arrays.copyOfRange(key_block, offset, offset + cipherKeySize);
         offset += cipherKeySize;
 
         if (offset != key_block_size)
@@ -70,35 +59,27 @@ public class JceTlsStreamCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        CipherParameters encryptParams, decryptParams;
         if (isServer)
         {
             this.writeMac = serverWriteMac;
             this.readMac = clientWriteMac;
-            this.encryptCipher = serverWriteCipher;
-            this.decryptCipher = clientWriteCipher;
-            encryptParams = serverWriteKey;
-            decryptParams = clientWriteKey;
+            this.encryptCipher.setKey(serverWriteKey);
+            this.decryptCipher.setKey(clientWriteKey);
         }
         else
         {
             this.writeMac = clientWriteMac;
             this.readMac = serverWriteMac;
-            this.encryptCipher = clientWriteCipher;
-            this.decryptCipher = serverWriteCipher;
-            encryptParams = clientWriteKey;
-            decryptParams = serverWriteKey;
+            this.encryptCipher.setKey(clientWriteKey);
+            this.decryptCipher.setKey(serverWriteKey);
         }
 
         if (usesNonce)
         {
             byte[] dummyNonce = new byte[8];
-            encryptParams = new ParametersWithIV(encryptParams, dummyNonce);
-            decryptParams = new ParametersWithIV(decryptParams, dummyNonce);
+            this.encryptCipher.init(dummyNonce);
+            this.encryptCipher.init(dummyNonce);
         }
-
-        this.encryptCipher.init(true, encryptParams);
-        this.decryptCipher.init(false, decryptParams);
     }
 
     public int getPlaintextLimit(int ciphertextLimit)
@@ -107,18 +88,20 @@ public class JceTlsStreamCipher
     }
 
     public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
+        throws IOException
     {
         if (usesNonce)
         {
-            updateIV(encryptCipher, true, seqNo);
+            updateIV(encryptCipher, seqNo);
         }
 
         byte[] outBuf = new byte[len + writeMac.getSize()];
-
-        encryptCipher.processBytes(plaintext, offset, len, outBuf, 0);
-
         byte[] mac = writeMac.calculateMac(seqNo, type, plaintext, offset, len);
-        encryptCipher.processBytes(mac, 0, mac.length, outBuf, len);
+
+        System.arraycopy(plaintext, offset, outBuf, 0, len);
+        System.arraycopy(mac, 0, outBuf, len, mac.length);
+
+        encryptCipher.doFinal(outBuf, 0, len, outBuf, 0);
 
         return outBuf;
     }
@@ -128,7 +111,7 @@ public class JceTlsStreamCipher
     {
         if (usesNonce)
         {
-            updateIV(decryptCipher, false, seqNo);
+            updateIV(decryptCipher, seqNo);
         }
 
         int macSize = readMac.getSize();
@@ -140,7 +123,7 @@ public class JceTlsStreamCipher
         int plaintextLength = len - macSize;
 
         byte[] deciphered = new byte[len];
-        decryptCipher.processBytes(ciphertext, offset, len, deciphered, 0);
+        decryptCipher.doFinal(ciphertext, offset, len, deciphered, 0);
         checkMAC(seqNo, type, deciphered, plaintextLength, len, deciphered, 0, plaintextLength);
         return Arrays.copyOfRange(deciphered, 0, plaintextLength);
     }
@@ -157,10 +140,11 @@ public class JceTlsStreamCipher
         }
     }
 
-    protected void updateIV(StreamCipher cipher, boolean forEncryption, long seqNo)
+    protected void updateIV(TlsStreamOperator cipher, long seqNo)
+        throws IOException
     {
         byte[] nonce = new byte[8];
         TlsUtils.writeUint64(seqNo, nonce, 0);
-        cipher.init(forEncryption, new ParametersWithIV(null, nonce));
+        cipher.init(nonce);
     }
 }

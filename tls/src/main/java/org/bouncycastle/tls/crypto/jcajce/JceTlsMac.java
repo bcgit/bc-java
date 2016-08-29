@@ -20,7 +20,7 @@ import org.bouncycastle.util.Arrays;
 /**
  * A generic TLS MAC implementation, acting as an HMAC based on some underlying Digest.
  */
-public class JceTlsMac
+class JceTlsMac
     implements TlsMac
 {
     protected TlsContext context;

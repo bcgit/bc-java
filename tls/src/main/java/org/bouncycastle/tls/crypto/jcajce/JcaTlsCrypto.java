@@ -11,9 +11,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.engines.RC4Engine;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -40,6 +38,8 @@ import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsNullCipher;
 import org.bouncycastle.tls.crypto.TlsSecret;
+import org.bouncycastle.tls.crypto.TlsStreamCipher;
+import org.bouncycastle.tls.crypto.TlsStreamOperator;
 import org.bouncycastle.tls.crypto.bc.Chacha20Poly1305;
 import org.bouncycastle.util.Arrays;
 
@@ -191,11 +191,11 @@ public class JcaTlsCrypto
         return new TlsNullCipher(context, new JceTlsMac(context, createHMACDigest(macAlgorithm)), new JceTlsMac(context, createHMACDigest(macAlgorithm)), createHMACDigest(macAlgorithm).getDigestLength());
     }
 
-    protected JceTlsStreamCipher createRC4Cipher(int cipherKeySize, int macAlgorithm)
+    protected TlsStreamCipher createRC4Cipher(int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new JceTlsStreamCipher(context, createRC4StreamCipher(), createRC4StreamCipher(),
-            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize,  createHMACDigest(macAlgorithm).getDigestLength(), false);
+        return new TlsStreamCipher(context, new StreamCipher("RC4", "RC4", true), new StreamCipher("RC4", "RC4", false),
+            new JceTlsMac(context, createHMACDigest(macAlgorithm)), new JceTlsMac(context, createHMACDigest(macAlgorithm)), cipherKeySize, createHMACDigest(macAlgorithm).getDigestLength(), false);
     }
 
     protected TlsBlockCipher createSEEDCipher(int macAlgorithm)
@@ -203,11 +203,6 @@ public class JcaTlsCrypto
     {
         return new TlsBlockCipher(context, new BlockCipher("SEED", "SEED/CBC/NoPadding", true), new BlockCipher("SEED", "SEED/CBC/NoPadding", false),
             new JceTlsMac(context, createHMACDigest(macAlgorithm)), new JceTlsMac(context, createHMACDigest(macAlgorithm)), 16, createHMACDigest(macAlgorithm).getDigestLength());
-    }
-
-    protected StreamCipher createRC4StreamCipher()
-    {
-        return new RC4Engine();
     }
 
     protected MessageDigest createHMACDigest(int macAlgorithm)
@@ -377,19 +372,16 @@ public class JcaTlsCrypto
             this.digest = digest;
         }
 
-        @Override
         public void update(byte[] data, int offSet, int length)
         {
             digest.update(data, offSet, length);
         }
 
-        @Override
         public byte[] calculateHash()
         {
             return digest.digest();
         }
 
-        @Override
         public TlsHash cloneHash()
         {
             try
@@ -402,7 +394,6 @@ public class JcaTlsCrypto
             }
         }
 
-        @Override
         public void reset()
         {
             digest.reset();
@@ -426,13 +417,11 @@ public class JcaTlsCrypto
             this.cipherMode = (isEncrypting) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
         }
 
-        @Override
         public void setKey(byte[] key)
         {
             this.key = new SecretKeySpec(key, baseAlgorithm);
         }
 
-        @Override
         public void init(byte[] iv)
         {
             try
@@ -445,7 +434,6 @@ public class JcaTlsCrypto
             }
         }
 
-        @Override
         public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
         {
             try
@@ -458,10 +446,56 @@ public class JcaTlsCrypto
             }
         }
 
-        @Override
         public int getBlockSize()
         {
             return cipher.getBlockSize();
+        }
+    }
+
+    private class StreamCipher
+        implements TlsStreamOperator
+    {
+        private final int cipherMode;
+        private final Cipher cipher;
+        private final String baseAlgorithm;
+
+        private SecretKey key;
+
+        StreamCipher(String baseAlgorithm, String cipherName, boolean isEncrypting)
+            throws GeneralSecurityException
+        {
+            this.cipher = helper.createCipher(cipherName);
+            this.baseAlgorithm = baseAlgorithm;
+            this.cipherMode = (isEncrypting) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
+        }
+
+        public void setKey(byte[] key)
+        {
+            this.key = new SecretKeySpec(key, baseAlgorithm);
+        }
+
+        public void init(byte[] iv)
+        {
+            try
+            {
+                cipher.init(cipherMode, key, new IvParameterSpec(iv));
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
+        {
+            try
+            {
+                return cipher.doFinal(input, inputOffset, inputLength, output, outputOffset);
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new IllegalStateException(e);
+            }
         }
     }
 
@@ -482,13 +516,11 @@ public class JcaTlsCrypto
             this.cipherMode = (isEncrypting) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
         }
 
-        @Override
         public void setKey(byte[] key)
         {
             this.key = new SecretKeySpec(key, baseAlgorithm);
         }
 
-        @Override
         public void init(byte[] nonce, int macSize, byte[] additionalData)
         {
             try
@@ -501,13 +533,11 @@ public class JcaTlsCrypto
             }
         }
 
-        @Override
         public int getOutputSize(int inputLength)
         {
             return cipher.getOutputSize(inputLength);
         }
 
-        @Override
         public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
         {
             try

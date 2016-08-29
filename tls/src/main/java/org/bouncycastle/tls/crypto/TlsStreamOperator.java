@@ -2,19 +2,17 @@ package org.bouncycastle.tls.crypto;
 
 import java.io.IOException;
 
-public interface TlsBlockOperator
+public interface TlsStreamOperator
 {
     void setKey(byte[] key) throws IOException;
 
     /**
-     * Initialise the parameters for operator.
+     * Initialise the parameters for stream cipher.
      *
-     * @param iv the initialization vector.
+     * @param nonce the nonce for the stream cipher.
      * @throws IOException if the parameters are inappropriate.
      */
-    void init(byte[] iv) throws IOException;
+    void init(byte[] nonce) throws IOException;
 
     int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset) throws IOException;
-
-    int getBlockSize();
 }
