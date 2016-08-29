@@ -8,7 +8,7 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 
 public class TlsTestConfig
 {
-    public static final boolean DEBUG = true;
+    public static final boolean DEBUG = false;
 
     /**
      * Client does not authenticate, ignores any certificate request
