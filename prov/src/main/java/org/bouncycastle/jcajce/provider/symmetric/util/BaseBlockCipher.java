@@ -63,6 +63,7 @@ import org.bouncycastle.jcajce.PBKDF1Key;
 import org.bouncycastle.jcajce.PBKDF1KeyWithParameters;
 import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
+import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
 import org.bouncycastle.jcajce.spec.RepeatedSecretKeySpec;
 import org.bouncycastle.util.Strings;
@@ -632,7 +633,27 @@ public class BaseBlockCipher
             param = null;
         }
 
-        if (params instanceof IvParameterSpec)
+        if (params instanceof AEADParameterSpec)
+        {
+            if (!isAEADModeName(modeName) && !(cipher instanceof AEADGenericBlockCipher))
+            {
+                throw new InvalidAlgorithmParameterException("AEADParameterSpec can only be used with AEAD modes.");
+            }
+
+            AEADParameterSpec aeadSpec = (AEADParameterSpec)params;
+
+            KeyParameter keyParam;
+            if (param instanceof ParametersWithIV)
+            {
+                keyParam = (KeyParameter)((ParametersWithIV)param).getParameters();
+            }
+            else
+            {
+                keyParam = (KeyParameter)param;
+            }
+            param = aeadParams = new AEADParameters(keyParam, aeadSpec.getMacSizeInBits(), aeadSpec.getNonce(), aeadSpec.getAssociatedData());
+        }
+        else if (params instanceof IvParameterSpec)
         {
             if (ivLength != 0)
             {
