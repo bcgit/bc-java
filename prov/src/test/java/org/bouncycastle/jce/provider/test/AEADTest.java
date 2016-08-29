@@ -18,7 +18,9 @@ import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import junit.framework.TestCase;
 import org.bouncycastle.asn1.cms.GCMParameters;
+import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.spec.RepeatedSecretKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
@@ -57,6 +59,7 @@ public class AEADTest extends SimpleTest
         catch (ClassNotFoundException e)
         {
         }
+        testAEADParameterSpec(K2, N2, A2, P2, C2);
         if (aeadAvailable)
         {
             checkCipherWithAD(K2, N2, A2, P2, C2_short);
@@ -136,6 +139,74 @@ public class AEADTest extends SimpleTest
         if (!areEqual(P, p))
         {
             fail("JCE decrypt with additional data failed.");
+        }
+    }
+
+    private void testAEADParameterSpec(byte[] K,
+                                       byte[] N,
+                                       byte[] A,
+                                       byte[] P,
+                                       byte[] C)
+        throws Exception
+    {
+        Cipher eax = Cipher.getInstance("AES/EAX/NoPadding", "BC");
+        SecretKeySpec key = new SecretKeySpec(K, "AES");
+
+        AEADParameterSpec spec = new AEADParameterSpec(N, 128, A);
+        eax.init(Cipher.ENCRYPT_MODE, key, spec);
+
+        byte[] c = eax.doFinal(P);
+
+        if (!Arrays.areEqual(C, c))
+        {
+            TestCase.fail("JCE encrypt with additional data and AEADParameterSpec failed.");
+        }
+
+        // doFinal test
+        c = eax.doFinal(P);
+
+        if (!Arrays.areEqual(C, c))
+        {
+            TestCase.fail("JCE encrypt with additional data and AEADParameterSpec failed after do final");
+        }
+
+        eax.init(Cipher.DECRYPT_MODE, key, spec);
+
+        byte[] p = eax.doFinal(C);
+
+        if (!Arrays.areEqual(P, p))
+        {
+            TestCase.fail("JCE decrypt with additional data and AEADParameterSpec failed.");
+        }
+
+        AlgorithmParameters algParams = eax.getParameters();
+
+        byte[] encParams = algParams.getEncoded();
+
+        GCMParameters gcmParameters = GCMParameters.getInstance(encParams);
+
+        if (!Arrays.areEqual(spec.getIV(), gcmParameters.getNonce()) || spec.getMacSizeInBits() != gcmParameters.getIcvLen() * 8)
+        {
+            TestCase.fail("parameters mismatch");
+        }
+
+        // note: associated data is not preserved
+        AEADParameterSpec cSpec = algParams.getParameterSpec(AEADParameterSpec.class);
+        if (!Arrays.areEqual(spec.getIV(), cSpec.getNonce()) || spec.getMacSizeInBits() != cSpec.getMacSizeInBits()
+            || cSpec.getAssociatedData() != null)
+        {
+            TestCase.fail("parameters mismatch");
+        }
+
+        AlgorithmParameters aeadParams = AlgorithmParameters.getInstance("GCM", "BC");
+
+        aeadParams.init(spec);
+
+        cSpec = aeadParams.getParameterSpec(AEADParameterSpec.class);
+        if (!Arrays.areEqual(spec.getIV(), cSpec.getNonce()) || spec.getMacSizeInBits() != cSpec.getMacSizeInBits()
+            || cSpec.getAssociatedData() != null)
+        {
+            TestCase.fail("parameters mismatch");
         }
     }
 
