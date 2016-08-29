@@ -26,7 +26,6 @@ public class JcaTlsDSSSigner
         this.algorithmName = algorithmName;
     }
 
-    @Override
     public byte[] generateRawSignature(SignatureAndHashAlgorithm algorithm, byte[] hash)
         throws IOException
     {
