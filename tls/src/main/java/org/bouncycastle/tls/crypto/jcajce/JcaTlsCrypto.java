@@ -392,19 +392,16 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
             this.digest = digest;
         }
 
-        @Override
         public void update(byte[] data, int offSet, int length)
         {
             digest.update(data, offSet, length);
         }
 
-        @Override
         public byte[] calculateHash()
         {
             return digest.digest();
         }
 
-        @Override
         public TlsHash cloneHash()
         {
             try
@@ -417,7 +414,6 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
             }
         }
 
-        @Override
         public void reset()
         {
             digest.reset();
