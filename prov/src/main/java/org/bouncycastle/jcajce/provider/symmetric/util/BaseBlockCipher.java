@@ -481,7 +481,7 @@ public class BaseBlockCipher
         //
         if (!(key instanceof SecretKey))
         {
-            throw new InvalidKeyException("Key for algorithm " + key.getAlgorithm() + " not suitable for symmetric enryption.");
+            throw new InvalidKeyException("Key for algorithm " + ((key != null) ? key.getAlgorithm() : null) + " not suitable for symmetric enryption.");
         }
 
         //
