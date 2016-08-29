@@ -8,7 +8,7 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 
 public class TlsTestConfig
 {
-    public static final boolean DEBUG = false;
+    public static final boolean DEBUG = true;
 
     /**
      * Client does not authenticate, ignores any certificate request
@@ -29,6 +29,10 @@ public class TlsTestConfig
      * Client will authenticate if it receives a certificate request, with an invalid CertificateVerify signature
      */
     public static final int CLIENT_AUTH_INVALID_VERIFY = 3;
+
+    public static final int CRYPTO_BC = 0;
+
+    public static final int CRYPTO_JCA = 1;
 
     /**
      * Server will not request a client certificate
@@ -61,6 +65,8 @@ public class TlsTestConfig
      * be _claimed_ in the CertificateVerify (if one is sent), independently of what was actually used.
      */
     public SignatureAndHashAlgorithm clientAuthSigAlgClaimed = null;
+
+    public int clientCrypto = CRYPTO_BC;
 
     /**
      * Configures the minimum protocol version the client will accept. If null, uses the library's default.
@@ -98,6 +104,8 @@ public class TlsTestConfig
      * CertificateRequest (if one is sent). If null, uses a default set.
      */
     public Vector serverCertReqSigAlgs = null;
+
+    public int serverCrypto = CRYPTO_BC;
 
     /**
      * Configures the maximum protocol version the server will accept. If null, uses the library's default.

@@ -17,6 +17,9 @@ import org.bouncycastle.tls.TlsEncryptionCredentials;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsSignerCredentials;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
+import org.bouncycastle.tls.crypto.jcajce.JcaTlsCryptoBuilder;
 
 class TlsTestServerImpl
     extends DefaultTlsServer
@@ -39,6 +42,17 @@ class TlsTestServerImpl
     short getFirstFatalAlertDescription()
     {
         return firstFatalAlertDescription;
+    }
+
+    public TlsCrypto getCrypto()
+    {
+        switch (config.serverCrypto)
+        {
+        case TlsTestConfig.CRYPTO_JCA:
+            return new JcaTlsCryptoBuilder().build();
+        default:
+            return new BcTlsCrypto();
+        }
     }
 
     protected ProtocolVersion getMaximumVersion()
