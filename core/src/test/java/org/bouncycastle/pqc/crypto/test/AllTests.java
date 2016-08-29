@@ -26,6 +26,7 @@ public class AllTests
         suite.addTestSuite(NTRUSignatureKeyTest.class);
         suite.addTestSuite(NTRUSignerTest.class);
         suite.addTestSuite(NTRUSigningParametersTest.class);
+        suite.addTestSuite(AllTests.SimpleTestTest.class);
 
         return new BCTestSetup(suite);
     }
