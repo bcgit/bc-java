@@ -7,7 +7,6 @@ import java.security.KeyPair;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsAgreement;
@@ -34,7 +33,7 @@ public class JceTlsECDH
     public byte[] generateEphemeral() throws IOException
     {
         this.localKeyPair = domain.generateKeyPair();
-        return domain.encodePublicKey((ECPublicKeyParameters)localKeyPair.getPublic());
+        return domain.encodePublicKey((ECPublicKey)localKeyPair.getPublic());
     }
 
     public void receivePeerValue(byte[] peerValue) throws IOException

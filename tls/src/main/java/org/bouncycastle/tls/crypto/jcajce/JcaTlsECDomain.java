@@ -1,6 +1,7 @@
 package org.bouncycastle.tls.crypto.jcajce;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
@@ -8,16 +9,19 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECField;
+import java.security.spec.ECFieldF2m;
+import java.security.spec.ECFieldFp;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPublicKeySpec;
+import java.security.spec.EllipticCurve;
 
 import javax.crypto.KeyAgreement;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.tls.AlertDescription;
@@ -102,9 +106,11 @@ public class JcaTlsECDomain
         return point.getEncoded(ecConfig.getPointCompression());
     }
 
-    public byte[] encodePublicKey(ECPublicKeyParameters publicKey) throws IOException
+    public byte[] encodePublicKey(ECPublicKey publicKey) throws IOException
     {
-        return encodePoint(publicKey.getQ());
+        java.security.spec.ECPoint w = publicKey.getW();
+
+        return encodePoint(convertCurve(publicKey.getParams().getCurve()).createPoint(w.getAffineX(), w.getAffineY()));
     }
 
     public KeyPair generateKeyPair()
@@ -160,4 +166,90 @@ public class JcaTlsECDomain
             throw new IllegalStateException("unable to create key pair: " + e.getMessage(), e);
         }
     }
+
+    private static ECCurve convertCurve(
+        EllipticCurve ec)
+    {
+        ECField field = ec.getField();
+        BigInteger a = ec.getA();
+        BigInteger b = ec.getB();
+
+        if (field instanceof ECFieldFp)
+        {
+            ECCurve.Fp curve = new ECCurve.Fp(((ECFieldFp)field).getP(), a, b);
+
+            return curve;
+        }
+        else
+        {
+            ECFieldF2m fieldF2m = (ECFieldF2m)field;
+            int m = fieldF2m.getM();
+            int ks[] = convertMidTerms(fieldF2m.getMidTermsOfReductionPolynomial());
+            return new ECCurve.F2m(m, ks[0], ks[1], ks[2], a, b);
+        }
+    }
+
+    private static int[] convertMidTerms(
+        int[] k)
+    {
+        int[] res = new int[3];
+
+        if (k.length == 1)
+        {
+            res[0] = k[0];
+        }
+        else
+        {
+            if (k.length != 3)
+            {
+                throw new IllegalArgumentException("Only Trinomials and pentanomials supported");
+            }
+
+            if (k[0] < k[1] && k[0] < k[2])
+            {
+                res[0] = k[0];
+                if (k[1] < k[2])
+                {
+                    res[1] = k[1];
+                    res[2] = k[2];
+                }
+                else
+                {
+                    res[1] = k[2];
+                    res[2] = k[1];
+                }
+            }
+            else if (k[1] < k[2])
+            {
+                res[0] = k[1];
+                if (k[0] < k[2])
+                {
+                    res[1] = k[0];
+                    res[2] = k[2];
+                }
+                else
+                {
+                    res[1] = k[2];
+                    res[2] = k[0];
+                }
+            }
+            else
+            {
+                res[0] = k[2];
+                if (k[0] < k[1])
+                {
+                    res[1] = k[0];
+                    res[2] = k[1];
+                }
+                else
+                {
+                    res[1] = k[1];
+                    res[2] = k[0];
+                }
+            }
+        }
+
+        return res;
+    }
+
 }

@@ -96,8 +96,6 @@ public class TlsBlockCipher
         this.writeMac = writeMac;
         this.encryptCipher = encryptCipher;
         this.decryptCipher = decryptCipher;
-        this.encryptCipher.init(encryptor_IV);
-        this.decryptCipher.init(decryptor_IV);
 
         if (context.isServer())
         {
@@ -115,6 +113,9 @@ public class TlsBlockCipher
             this.encryptCipher.setKey(client_write_key);
             this.decryptCipher.setKey(server_write_key);
         }
+
+        this.encryptCipher.init(encryptor_IV);
+        this.decryptCipher.init(decryptor_IV);
     }
 
     public int getPlaintextLimit(int ciphertextLimit)
@@ -210,8 +211,7 @@ public class TlsBlockCipher
             outBuf[outOff++] = (byte)padding_length;
         }
 
-        encryptCipher.doFinal(outBuf, blocks_start, outBuf.length, outBuf, blocks_start);
-
+        encryptCipher.doFinal(outBuf, blocks_start, outOff - blocks_start, outBuf, blocks_start);
 
         if (encryptThenMAC)
         {
@@ -291,7 +291,7 @@ public class TlsBlockCipher
             blocks_length -= blockSize;
         }
 
-        decryptCipher.doFinal(ciphertext, offset, ciphertext.length - offset, ciphertext, offset);
+        decryptCipher.doFinal(ciphertext, offset, blocks_length, ciphertext, offset);
 
         // If there's anything wrong with the padding, this will return zero
         int totalPad = checkPaddingConstantTime(ciphertext, offset, blocks_length, blockSize, encryptThenMAC ? 0 : macSize);

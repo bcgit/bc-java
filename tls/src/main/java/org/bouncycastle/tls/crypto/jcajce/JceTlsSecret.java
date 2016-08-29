@@ -19,7 +19,7 @@ import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
-public class JceTlsSecret
+class JceTlsSecret
     implements TlsSecret
 {
     protected static final int MD5_SIZE = 16;
@@ -138,6 +138,7 @@ public class JceTlsSecret
         }
         catch (GeneralSecurityException e)
         {
+            e.printStackTrace();
             throw new RuntimeCryptoException(); // TODO
         }
     }
@@ -163,8 +164,9 @@ public class JceTlsSecret
     protected void hmacHash(MessageDigest digest, byte[] secret, byte[] seed, byte[] output)
         throws GeneralSecurityException
     {
-        Mac mac = Mac.getInstance("Hmac" + digest.getAlgorithm());
-        mac.init(new SecretKeySpec(secret, "Hmac" + digest.getAlgorithm()));
+        String macName = "Hmac" + digest.getAlgorithm().replace("-", "");
+        Mac mac = crypto.getHelper().createMac(macName);
+        mac.init(new SecretKeySpec(secret, macName));
         byte[] a = seed;
         int size = digest.getDigestLength();
         int iterations = (output.length + size - 1) / size;

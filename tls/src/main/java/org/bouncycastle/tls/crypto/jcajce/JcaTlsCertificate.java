@@ -17,6 +17,7 @@ import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
@@ -82,7 +83,65 @@ public class JcaTlsCertificate
 
     public short getClientCertificateType() throws IOException
     {
-        throw new UnsupportedOperationException();
+         PublicKey publicKey = getPublicKey();
+
+         try
+         {
+             /*
+              * TODO RFC 5246 7.4.6. The certificates MUST be signed using an acceptable hash/
+              * signature algorithm pair, as described in Section 7.4.4. Note that this relaxes the
+              * constraints on certificate-signing algorithms found in prior versions of TLS.
+              */
+
+             /*
+              * RFC 5246 7.4.6. Client Certificate
+              */
+
+             /*
+              * RSA public key; the certificate MUST allow the key to be used for signing with the
+              * signature scheme and hash algorithm that will be employed in the certificate verify
+              * message.
+              */
+             if (publicKey instanceof RSAPublicKey)
+             {
+                 validateKeyUsage(KeyUsage.digitalSignature);
+                 return ClientCertificateType.rsa_sign;
+             }
+
+             /*
+              * DSA public key; the certificate MUST allow the key to be used for signing with the
+              * hash algorithm that will be employed in the certificate verify message.
+              */
+             if (publicKey instanceof DSAPublicKey)
+             {
+                 validateKeyUsage(KeyUsage.digitalSignature);
+                 return ClientCertificateType.dss_sign;
+             }
+
+             /*
+              * ECDSA-capable public key; the certificate MUST allow the key to be used for signing
+              * with the hash algorithm that will be employed in the certificate verify message; the
+              * public key MUST use a curve and point format supported by the server.
+              */
+             if (publicKey instanceof ECPublicKey)
+             {
+                 validateKeyUsage(KeyUsage.digitalSignature);
+                 // TODO Check the curve and point format
+                 return ClientCertificateType.ecdsa_sign;
+             }
+
+             // TODO Add support for ClientCertificateType.*_fixed_*
+         }
+         catch (IOException e)
+         {
+             throw e;
+         }
+         catch (Exception e)
+         {
+             throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
+         }
+
+         throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
     }
 
     public byte[] getEncoded() throws IOException

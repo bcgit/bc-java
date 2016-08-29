@@ -3,6 +3,10 @@ package org.bouncycastle.tls.test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.spec.RSAPrivateCrtKeySpec;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
@@ -10,6 +14,7 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAgreementCredentials;
@@ -20,6 +25,7 @@ import org.bouncycastle.tls.crypto.bc.BcDefaultTlsSignerCredentials;
 import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
 import org.bouncycastle.tls.crypto.bc.DefaultTlsAgreementCredentials;
 import org.bouncycastle.tls.crypto.bc.DefaultTlsEncryptionCredentials;
+import org.bouncycastle.tls.crypto.jcajce.JcaDefaultTlsSignerCredentials;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.pem.PemObject;
@@ -104,11 +110,20 @@ public class TlsTestUtils
         throws IOException
     {
         Certificate certificate = loadCertificateChain(certResources);
-        AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
+       // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key (as raw data)
 
-        // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key (as raw data)
+        if (context.getCrypto() instanceof BcTlsCrypto)
+        {
+            AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
 
-        return new BcDefaultTlsSignerCredentials(context, privateKey, certificate, signatureAndHashAlgorithm);
+            return new BcDefaultTlsSignerCredentials(context, privateKey, certificate, signatureAndHashAlgorithm);
+        }
+        else
+        {
+            PrivateKey privateKey = loadJcaPrivateKeyResource(keyResource);
+
+            return new JcaDefaultTlsSignerCredentials(context, privateKey, certificate, signatureAndHashAlgorithm);
+        }
     }
 
     static TlsSignerCredentials loadSignerCredentials(TlsContext context, Vector supportedSignatureAlgorithms,
@@ -119,7 +134,6 @@ public class TlsTestUtils
          * TODO Note that this code fails to provide default value for the client supported
          * algorithms if it wasn't sent.
          */
-     
         SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
         if (supportedSignatureAlgorithms != null)
         {
@@ -180,6 +194,32 @@ public class TlsTestUtils
         if (pem.getType().endsWith("PRIVATE KEY"))
         {
             return PrivateKeyFactory.createKey(pem.getContent());
+        }
+        throw new IllegalArgumentException("'resource' doesn't specify a valid private key");
+    }
+
+    static PrivateKey loadJcaPrivateKeyResource(String resource)
+        throws IOException
+    {
+        PemObject pem = loadPemResource(resource);
+        if (pem.getType().endsWith("RSA PRIVATE KEY"))
+        {
+            RSAPrivateKey rsa = RSAPrivateKey.getInstance(pem.getContent());
+            try
+            {
+                KeyFactory keyFact = KeyFactory.getInstance("RSA", new BouncyCastleProvider());
+                return keyFact.generatePrivate(new RSAPrivateCrtKeySpec(rsa.getModulus(), rsa.getPublicExponent(),
+                    rsa.getPrivateExponent(), rsa.getPrime1(), rsa.getPrime2(), rsa.getExponent1(),
+                    rsa.getExponent2(), rsa.getCoefficient()));
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new IllegalArgumentException("'resource' doesn't specify a valid private key", e);
+            }
+        }
+        if (pem.getType().endsWith("PRIVATE KEY"))
+        {
+            return null; // TODO:
         }
         throw new IllegalArgumentException("'resource' doesn't specify a valid private key");
     }

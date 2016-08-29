@@ -59,7 +59,7 @@ class JceTlsMac
         }
         else
         {
-            this.mac = ((JcaTlsCrypto)context.getCrypto()).getHelper().createMac("Hmac" + digest.getAlgorithm());
+            this.mac = ((JcaTlsCrypto)context.getCrypto()).getHelper().createMac("Hmac" + digest.getAlgorithm().replace("-", ""));
 
             // NOTE: The input pad for HMAC is always a full digest block
         }
