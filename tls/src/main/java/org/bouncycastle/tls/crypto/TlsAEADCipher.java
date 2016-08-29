@@ -1,18 +1,14 @@
-package org.bouncycastle.tls.crypto.jcajce;
+package org.bouncycastle.tls.crypto;
 
 import java.io.IOException;
 
-import org.bouncycastle.crypto.modes.AEADBlockCipher;
-import org.bouncycastle.crypto.params.AEADParameters;
-import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.util.Arrays;
 
-public class JceTlsAEADCipher
+public class TlsAEADCipher
     implements TlsCipher
 {
     // TODO[draft-zauner-tls-aes-ocb-04] Apply data volume limit described in section 8.4
@@ -25,21 +21,21 @@ public class JceTlsAEADCipher
     // TODO SecurityParameters.record_iv_length
     protected int record_iv_length;
 
-    protected AEADBlockCipher encryptCipher;
-    protected AEADBlockCipher decryptCipher;
+    protected TlsAEADOperator encryptor;
+    protected TlsAEADOperator decryptor;
 
     protected byte[] encryptImplicitNonce, decryptImplicitNonce;
 
     protected int nonceMode;
 
-    public JceTlsAEADCipher(TlsContext context, AEADBlockCipher clientWriteCipher, AEADBlockCipher serverWriteCipher,
-                            int cipherKeySize, int macSize) throws IOException
+    public TlsAEADCipher(TlsContext context, TlsAEADOperator encryptor, TlsAEADOperator decryptor,
+                         int cipherKeySize, int macSize) throws IOException
     {
-        this(context, clientWriteCipher, serverWriteCipher, cipherKeySize, macSize, NONCE_RFC5288);
+        this(context, encryptor, decryptor, cipherKeySize, macSize, NONCE_RFC5288);
     }
 
-    JceTlsAEADCipher(TlsContext context, AEADBlockCipher clientWriteCipher, AEADBlockCipher serverWriteCipher,
-                     int cipherKeySize, int macSize, int nonceMode) throws IOException
+    public TlsAEADCipher(TlsContext context, TlsAEADOperator encryptor, TlsAEADOperator decryptor,
+                  int cipherKeySize, int macSize, int nonceMode) throws IOException
     {
         if (!TlsUtils.isTLSv12(context))
         {
@@ -74,9 +70,9 @@ public class JceTlsAEADCipher
 
         int offset = 0;
 
-        KeyParameter client_write_key = new KeyParameter(key_block, offset, cipherKeySize);
+        byte[] client_write_key = Arrays.copyOfRange(key_block, offset, offset + cipherKeySize);
         offset += cipherKeySize;
-        KeyParameter server_write_key = new KeyParameter(key_block, offset, cipherKeySize);
+        byte[] server_write_key = Arrays.copyOfRange(key_block, offset, offset + cipherKeySize);
         offset += cipherKeySize;
         byte[] client_write_IV = Arrays.copyOfRange(key_block, offset, offset + fixed_iv_length);
         offset += fixed_iv_length;
@@ -88,30 +84,27 @@ public class JceTlsAEADCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        KeyParameter encryptKey, decryptKey;
+        this.encryptor = encryptor;
+        this.decryptor = decryptor;
         if (context.isServer())
         {
-            this.encryptCipher = serverWriteCipher;
-            this.decryptCipher = clientWriteCipher;
             this.encryptImplicitNonce = server_write_IV;
             this.decryptImplicitNonce = client_write_IV;
-            encryptKey = server_write_key;
-            decryptKey = client_write_key;
+            encryptor.setKey(server_write_key);
+            decryptor.setKey(client_write_key);
         }
         else
         {
-            this.encryptCipher = clientWriteCipher;
-            this.decryptCipher = serverWriteCipher;
             this.encryptImplicitNonce = client_write_IV;
             this.decryptImplicitNonce = server_write_IV;
-            encryptKey = client_write_key;
-            decryptKey = server_write_key;
+            encryptor.setKey(client_write_key);
+            decryptor.setKey(server_write_key);
         }
 
         byte[] dummyNonce = new byte[fixed_iv_length + record_iv_length];
 
-        this.encryptCipher.init(true, new AEADParameters(encryptKey, 8 * macSize, dummyNonce));
-        this.decryptCipher.init(false, new AEADParameters(decryptKey, 8 * macSize, dummyNonce));
+        this.encryptor.init(dummyNonce, macSize, null);
+        this.decryptor.init(dummyNonce, macSize, null);
     }
 
     public int getPlaintextLimit(int ciphertextLimit)
@@ -145,7 +138,7 @@ public class JceTlsAEADCipher
 
         int plaintextOffset = offset;
         int plaintextLength = len;
-        int ciphertextLength = encryptCipher.getOutputSize(plaintextLength);
+        int ciphertextLength = encryptor.getOutputSize(plaintextLength);
 
         byte[] output = new byte[record_iv_length + ciphertextLength];
         if (record_iv_length != 0)
@@ -155,13 +148,11 @@ public class JceTlsAEADCipher
         int outputPos = record_iv_length;
 
         byte[] additionalData = getAdditionalData(seqNo, type, plaintextLength);
-        AEADParameters parameters = new AEADParameters(null, 8 * macSize, nonce, additionalData);
 
         try
         {
-            encryptCipher.init(true, parameters);
-            outputPos += encryptCipher.processBytes(plaintext, plaintextOffset, plaintextLength, output, outputPos);
-            outputPos += encryptCipher.doFinal(output, outputPos);
+            encryptor.init(nonce, macSize, additionalData);
+            outputPos += encryptor.doFinal(plaintext, plaintextOffset, plaintextLength, output, outputPos);
         }
         catch (Exception e)
         {
@@ -206,19 +197,17 @@ public class JceTlsAEADCipher
 
         int ciphertextOffset = offset + record_iv_length;
         int ciphertextLength = len - record_iv_length;
-        int plaintextLength = decryptCipher.getOutputSize(ciphertextLength);
+        int plaintextLength = decryptor.getOutputSize(ciphertextLength);
 
         byte[] output = new byte[plaintextLength];
         int outputPos = 0;
 
         byte[] additionalData = getAdditionalData(seqNo, type, plaintextLength);
-        AEADParameters parameters = new AEADParameters(null, 8 * macSize, nonce, additionalData);
 
         try
         {
-            decryptCipher.init(false, parameters);
-            outputPos += decryptCipher.processBytes(ciphertext, ciphertextOffset, ciphertextLength, output, outputPos);
-            outputPos += decryptCipher.doFinal(output, outputPos);
+            decryptor.init(nonce, 8 * macSize, additionalData);
+            outputPos += decryptor.doFinal(ciphertext, ciphertextOffset, ciphertextLength, output, outputPos);
         }
         catch (Exception e)
         {

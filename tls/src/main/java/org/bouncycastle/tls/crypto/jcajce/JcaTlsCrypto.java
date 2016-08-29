@@ -6,19 +6,16 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
-import org.bouncycastle.crypto.modes.AEADBlockCipher;
-import org.bouncycastle.crypto.modes.CCMBlockCipher;
-import org.bouncycastle.crypto.modes.GCMBlockCipher;
-import org.bouncycastle.crypto.modes.OCBBlockCipher;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
+import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.CombinedHash;
@@ -30,6 +27,9 @@ import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.NonceRandomGenerator;
+import org.bouncycastle.tls.crypto.TlsAEADCipher;
+import org.bouncycastle.tls.crypto.TlsAEADOperator;
+import org.bouncycastle.tls.crypto.TlsBlockOperator;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
@@ -41,7 +41,8 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.bc.Chacha20Poly1305;
 import org.bouncycastle.util.Arrays;
 
-public class JcaTlsCrypto extends AbstractTlsCrypto
+public class JcaTlsCrypto
+    extends AbstractTlsCrypto
 {
     private final JcaJceHelper helper;
 
@@ -61,7 +62,8 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
         return new JcaTlsCertificate(encoding, helper);
     }
 
-    public TlsCipher createCipher(int encryptionAlgorithm, int macAlgorithm) throws IOException
+    public TlsCipher createCipher(int encryptionAlgorithm, int macAlgorithm)
+        throws IOException
     {
         try
         {
@@ -129,14 +131,14 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
     protected JceTlsBlockCipher createAESCipher(int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new JceTlsBlockCipher(context, "AES", createAESBlockCipher(), createAESBlockCipher(),
+        return new JceTlsBlockCipher(context, new BlockCipher("AES", "AES/CBC/NoPadding", true), new BlockCipher("AES", "AES/CBC/NoPadding", false),
             createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize);
     }
 
     protected JceTlsBlockCipher createCamelliaCipher(int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new JceTlsBlockCipher(context, "Camellia", createCamelliaBlockCipher(), createCamelliaBlockCipher(),
+        return new JceTlsBlockCipher(context, new BlockCipher("Camellia", "Camellia/CBC/NoPadding", true), new BlockCipher("Camellia", "Camellia/CBC/NoPadding", false),
             createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize);
     }
 
@@ -146,38 +148,38 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
         return new Chacha20Poly1305(context);
     }
 
-    protected JceTlsAEADCipher createCipher_AES_CCM(int cipherKeySize, int macSize)
-        throws IOException
+    protected TlsAEADCipher createCipher_AES_CCM(int cipherKeySize, int macSize)
+        throws IOException, GeneralSecurityException
     {
-        return new JceTlsAEADCipher(context, createAEADBlockCipher_AES_CCM(), createAEADBlockCipher_AES_CCM(),
+        return new TlsAEADCipher(context, new AEADCipher("AES", "AES/CCM/NoPadding", true), new AEADCipher("AES", "AES/CCM/NoPadding", false),
             cipherKeySize, macSize);
     }
 
-    protected JceTlsAEADCipher createCipher_AES_GCM(int cipherKeySize, int macSize)
-        throws IOException
+    protected TlsAEADCipher createCipher_AES_GCM(int cipherKeySize, int macSize)
+        throws IOException, GeneralSecurityException
     {
-        return new JceTlsAEADCipher(context, createAEADBlockCipher_AES_GCM(), createAEADBlockCipher_AES_GCM(),
+        return new TlsAEADCipher(context, new AEADCipher("AES", "AES/GCM/NoPadding", true), new AEADCipher("AES", "AES/GCM/NoPadding", false),
             cipherKeySize, macSize);
     }
 
-    protected JceTlsAEADCipher createCipher_AES_OCB(int cipherKeySize, int macSize)
-        throws IOException
+    protected TlsAEADCipher createCipher_AES_OCB(int cipherKeySize, int macSize)
+        throws IOException, GeneralSecurityException
     {
-        return new JceTlsAEADCipher(context, createAEADBlockCipher_AES_OCB(), createAEADBlockCipher_AES_OCB(),
-            cipherKeySize, macSize, JceTlsAEADCipher.NONCE_RFC7905);
+        return new TlsAEADCipher(context, new AEADCipher("AES", "AES/OCB/NoPadding", true), new AEADCipher("AES", "AES/OCB/NoPadding", false),
+            cipherKeySize, macSize, TlsAEADCipher.NONCE_RFC7905);
     }
 
-    protected JceTlsAEADCipher createCipher_Camellia_GCM(int cipherKeySize, int macSize)
-        throws IOException
+    protected TlsAEADCipher createCipher_Camellia_GCM(int cipherKeySize, int macSize)
+        throws IOException, GeneralSecurityException
     {
-        return new JceTlsAEADCipher(context, createAEADBlockCipher_Camellia_GCM(), createAEADBlockCipher_Camellia_GCM(),
+        return new TlsAEADCipher(context, new AEADCipher("Camellia", "Camellia/GCM/NoPadding", true), new AEADCipher("Camellia", "Camellia/GCM/NoPadding", false),
             cipherKeySize, macSize);
     }
 
     protected JceTlsBlockCipher createDESedeCipher(int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new JceTlsBlockCipher(context, "DESede", createDESedeBlockCipher(), createDESedeBlockCipher(),
+        return new JceTlsBlockCipher(context, new BlockCipher("DESede", "DESede/CBC/NoPadding", true), new BlockCipher("DESede", "DESede/CBC/NoPadding", false),
             createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), 24);
     }
 
@@ -197,25 +199,15 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
     protected JceTlsBlockCipher createSEEDCipher(int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new JceTlsBlockCipher(context, "SEED", createSEEDBlockCipher(), createSEEDBlockCipher(),
+        return new JceTlsBlockCipher(context, new BlockCipher("SEED", "SEED/CBC/NoPadding", true), new BlockCipher("SEED", "SEED/CBC/NoPadding", false),
             createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), 16);
     }
 
-    protected BlockCipher createAESEngine()
-     {
-         return new AESEngine();
-     }
-
-     protected BlockCipher createCamelliaEngine()
-     {
-         return new CamelliaEngine();
-     }
-
-     protected Cipher createAESBlockCipher()
-         throws GeneralSecurityException
-     {
-         return this.getHelper().createCipher("AES/CBC/NoPadding");
-     }
+    protected Cipher createAESBlockCipher()
+        throws GeneralSecurityException
+    {
+        return this.getHelper().createCipher("AES/CBC/NoPadding");
+    }
 
     protected Cipher createCamelliaBlockCipher()
         throws GeneralSecurityException
@@ -223,44 +215,10 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
         return this.getHelper().createCipher("Camellia/CBC/NoPadding");
     }
 
-    protected Cipher createDESedeBlockCipher()
-        throws GeneralSecurityException
+    protected StreamCipher createRC4StreamCipher()
     {
-        return this.getHelper().createCipher("DESede/CBC/NoPadding");
+        return new RC4Engine();
     }
-
-    protected Cipher createSEEDBlockCipher()
-        throws GeneralSecurityException
-    {
-        return this.getHelper().createCipher("SEED/CBC/NoPadding");
-    }
-
-     protected AEADBlockCipher createAEADBlockCipher_AES_CCM()
-     {
-         return new CCMBlockCipher(createAESEngine());
-     }
-
-     protected AEADBlockCipher createAEADBlockCipher_AES_GCM()
-     {
-         // TODO Consider allowing custom configuration of multiplier
-         return new GCMBlockCipher(createAESEngine());
-     }
-
-     protected AEADBlockCipher createAEADBlockCipher_AES_OCB()
-     {
-         return new OCBBlockCipher(createAESEngine(), createAESEngine());
-     }
-
-     protected AEADBlockCipher createAEADBlockCipher_Camellia_GCM()
-     {
-         // TODO Consider allowing custom configuration of multiplier
-         return new GCMBlockCipher(createCamelliaEngine());
-     }
-
-     protected StreamCipher createRC4StreamCipher()
-     {
-         return new RC4Engine();
-     }
 
     protected MessageDigest createHMACDigest(int macAlgorithm)
         throws IOException
@@ -323,9 +281,9 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
     }
 
     public TlsContext getContext()
-        {
-            return context;
-        }
+    {
+        return context;
+    }
 
     JcaJceHelper getHelper()
     {
@@ -458,6 +416,118 @@ public class JcaTlsCrypto extends AbstractTlsCrypto
         public void reset()
         {
             digest.reset();
+        }
+    }
+
+    private class BlockCipher
+        implements TlsBlockOperator
+    {
+        private final int cipherMode;
+        private final Cipher cipher;
+        private final String baseAlgorithm;
+
+        private SecretKey key;
+
+        BlockCipher(String baseAlgorithm, String cipherName, boolean isEncrypting)
+            throws GeneralSecurityException
+        {
+            this.cipher = helper.createCipher(cipherName);
+            this.baseAlgorithm = baseAlgorithm;
+            this.cipherMode = (isEncrypting) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
+        }
+
+        @Override
+        public void setKey(byte[] key)
+        {
+            this.key = new SecretKeySpec(key, baseAlgorithm);
+        }
+
+        @Override
+        public void init(byte[] iv)
+        {
+            try
+            {
+                cipher.init(cipherMode, key, new IvParameterSpec(iv));
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        @Override
+        public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
+        {
+            try
+            {
+                return cipher.doFinal(input, inputOffset, inputLength, output, outputOffset);
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        @Override
+        public int getBlockSize()
+        {
+            return cipher.getBlockSize();
+        }
+    }
+
+    private class AEADCipher
+        implements TlsAEADOperator
+    {
+        private final int cipherMode;
+        private final Cipher cipher;
+        private final String baseAlgorithm;
+
+        private SecretKey key;
+
+        AEADCipher(String baseAlgorithm, String cipherName, boolean isEncrypting)
+            throws GeneralSecurityException
+        {
+            this.cipher = helper.createCipher(cipherName);
+            this.baseAlgorithm = baseAlgorithm;
+            this.cipherMode = (isEncrypting) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
+        }
+
+        @Override
+        public void setKey(byte[] key)
+        {
+            this.key = new SecretKeySpec(key, baseAlgorithm);
+        }
+
+        @Override
+        public void init(byte[] nonce, int macSize, byte[] additionalData)
+        {
+            try
+            {
+                cipher.init(cipherMode, key, new AEADParameterSpec(nonce, macSize * 8, additionalData));
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        @Override
+        public int getOutputSize(int inputLength)
+        {
+            return cipher.getOutputSize(inputLength);
+        }
+
+        @Override
+        public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
+        {
+            try
+            {
+                return cipher.doFinal(input, inputOffset, inputLength, output, outputOffset);
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new IllegalStateException(e);
+            }
         }
     }
 }
