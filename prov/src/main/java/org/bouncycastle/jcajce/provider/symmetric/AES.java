@@ -42,6 +42,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseWrapCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
 import org.bouncycastle.jcajce.provider.symmetric.util.PBESecretKeyFactory;
+import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 
 public final class AES
 {
@@ -597,6 +598,10 @@ public final class AES
             {
                 gcmParams = GcmSpecUtil.extractGcmParameters(paramSpec);
             }
+            else if (paramSpec instanceof AEADParameterSpec)
+            {
+                gcmParams = new GCMParameters(((AEADParameterSpec)paramSpec).getNonce(), ((AEADParameterSpec)paramSpec).getMacSizeInBits() / 8);
+            }
             else
             {
                 throw new InvalidParameterSpecException("AlgorithmParameterSpec class not recognized: " + paramSpec.getClass().getName());
@@ -651,7 +656,11 @@ public final class AES
                 {
                     return GcmSpecUtil.extractGcmSpec(gcmParams.toASN1Primitive());
                 }
-                return new IvParameterSpec(gcmParams.getNonce());
+                return new AEADParameterSpec(gcmParams.getNonce(), gcmParams.getIcvLen() * 8);
+            }
+            if (paramSpec == AEADParameterSpec.class)
+            {
+                return new AEADParameterSpec(gcmParams.getNonce(), gcmParams.getIcvLen() * 8);
             }
             if (paramSpec == IvParameterSpec.class)
             {
@@ -673,6 +682,10 @@ public final class AES
             if (GcmSpecUtil.isGcmSpec(paramSpec))
             {
                 ccmParams = CCMParameters.getInstance(GcmSpecUtil.extractGcmParameters(paramSpec));
+            }
+            else if (paramSpec instanceof AEADParameterSpec)
+            {
+                ccmParams = new CCMParameters(((AEADParameterSpec)paramSpec).getNonce(), ((AEADParameterSpec)paramSpec).getMacSizeInBits() / 8);
             }
             else
             {
@@ -728,7 +741,11 @@ public final class AES
                 {
                     return GcmSpecUtil.extractGcmSpec(ccmParams.toASN1Primitive());
                 }
-                return new IvParameterSpec(ccmParams.getNonce());
+                return new AEADParameterSpec(ccmParams.getNonce(), ccmParams.getIcvLen() * 8);
+            }
+            if (paramSpec == AEADParameterSpec.class)
+            {
+                return new AEADParameterSpec(ccmParams.getNonce(), ccmParams.getIcvLen() * 8);
             }
             if (paramSpec == IvParameterSpec.class)
             {

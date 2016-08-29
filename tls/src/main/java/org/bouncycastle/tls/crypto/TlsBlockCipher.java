@@ -1,27 +1,19 @@
-package org.bouncycastle.tls.crypto.jcajce;
+package org.bouncycastle.tls.crypto;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
 import java.security.SecureRandom;
-
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.util.Arrays;
 
 /**
  * A generic TLS 1.0-1.2 / SSLv3 block cipher. This can be used for AES or 3DES for example.
  */
-public class JceTlsBlockCipher
+public class TlsBlockCipher
     implements TlsCipher
 {
     protected TlsContext context;
@@ -29,27 +21,15 @@ public class JceTlsBlockCipher
     protected boolean useExplicitIV;
     protected boolean encryptThenMAC;
 
-    protected Cipher encryptCipher;
-    protected Cipher decryptCipher;
-    protected SecretKey encryptKey;
-    protected SecretKey decryptKey;
+    protected TlsBlockOperator encryptCipher;
+    protected TlsBlockOperator decryptCipher;
 
-    protected JceTlsMac writeMac;
-    protected JceTlsMac readMac;
+    protected TlsMac writeMac;
+    protected TlsMac readMac;
 
-    public JceTlsMac getWriteMac()
-    {
-        return writeMac;
-    }
-
-    public JceTlsMac getReadMac()
-    {
-        return readMac;
-    }
-
-    public JceTlsBlockCipher(TlsContext context, String algorithm, Cipher clientWriteCipher, Cipher serverWriteCipher,
-                             MessageDigest clientWriteDigest, MessageDigest serverWriteDigest, int cipherKeySize)
-        throws IOException, GeneralSecurityException
+    public TlsBlockCipher(TlsContext context, TlsBlockOperator encryptCipher, TlsBlockOperator decryptCipher,
+                          TlsMac writeMac, TlsMac readMac, int cipherKeySize, int macKeySize)
+        throws IOException
     {
         this.context = context;
 
@@ -59,43 +39,52 @@ public class JceTlsBlockCipher
         this.useExplicitIV = TlsUtils.isTLSv11(context);
         this.encryptThenMAC = context.getSecurityParameters().isEncryptThenMAC();
 
-        int key_block_size = (2 * cipherKeySize) + clientWriteDigest.getDigestLength()
-            + serverWriteDigest.getDigestLength();
+        int key_block_size = (2 * cipherKeySize) + macKeySize
+            + macKeySize;
 
         // From TLS 1.1 onwards, block ciphers don't need client_write_IV
         if (!useExplicitIV)
         {
-            key_block_size += clientWriteCipher.getBlockSize() + serverWriteCipher.getBlockSize();
+            key_block_size += encryptCipher.getBlockSize() + decryptCipher.getBlockSize();
         }
 
         byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
 
         int offset = 0;
 
-        JceTlsMac clientWriteMac = new JceTlsMac(context, clientWriteDigest, key_block, offset,
-            clientWriteDigest.getDigestLength());
-        offset += clientWriteDigest.getDigestLength();
-        JceTlsMac serverWriteMac = new JceTlsMac(context, serverWriteDigest, key_block, offset,
-            serverWriteDigest.getDigestLength());
-        offset += serverWriteDigest.getDigestLength();
+        byte[] clientMacKey = Arrays.copyOfRange(key_block, offset, offset + macKeySize);
+        offset += macKeySize;
+        byte[] serverMacKey = Arrays.copyOfRange(key_block, offset, offset + macKeySize);
+        offset += macKeySize;
 
-        SecretKeySpec client_write_key = new SecretKeySpec(key_block, offset, cipherKeySize, algorithm);
+        byte[] client_write_key = Arrays.copyOfRange(key_block, offset, offset + cipherKeySize);
         offset += cipherKeySize;
-        SecretKeySpec server_write_key = new SecretKeySpec(key_block, offset, cipherKeySize, algorithm);
+        byte[] server_write_key = Arrays.copyOfRange(key_block, offset, offset + cipherKeySize);
         offset += cipherKeySize;
 
-        byte[] client_write_IV, server_write_IV;
+        byte[] encryptor_IV, decryptor_IV;
+
         if (useExplicitIV)
         {
-            client_write_IV = new byte[clientWriteCipher.getBlockSize()];
-            server_write_IV = new byte[serverWriteCipher.getBlockSize()];
+            encryptor_IV = new byte[encryptCipher.getBlockSize()];
+            decryptor_IV = new byte[decryptCipher.getBlockSize()];
         }
         else
         {
-            client_write_IV = Arrays.copyOfRange(key_block, offset, offset + clientWriteCipher.getBlockSize());
-            offset += clientWriteCipher.getBlockSize();
-            server_write_IV = Arrays.copyOfRange(key_block, offset, offset + serverWriteCipher.getBlockSize());
-            offset += serverWriteCipher.getBlockSize();
+            if (context.isServer())
+            {
+                decryptor_IV = Arrays.copyOfRange(key_block, offset, offset + decryptCipher.getBlockSize());
+                offset += decryptCipher.getBlockSize();
+                encryptor_IV = Arrays.copyOfRange(key_block, offset, offset + encryptCipher.getBlockSize());
+                offset += encryptCipher.getBlockSize();
+            }
+            else
+            {
+                encryptor_IV = Arrays.copyOfRange(key_block, offset, offset + encryptCipher.getBlockSize());
+                offset += encryptCipher.getBlockSize();
+                decryptor_IV = Arrays.copyOfRange(key_block, offset, offset + decryptCipher.getBlockSize());
+                offset += decryptCipher.getBlockSize();
+            }
         }
 
         if (offset != key_block_size)
@@ -103,27 +92,28 @@ public class JceTlsBlockCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
+        this.readMac = readMac;
+        this.writeMac = writeMac;
+        this.encryptCipher = encryptCipher;
+        this.decryptCipher = decryptCipher;
+        this.encryptCipher.init(encryptor_IV);
+        this.decryptCipher.init(decryptor_IV);
+
         if (context.isServer())
         {
-            this.writeMac = serverWriteMac;
-            this.readMac = clientWriteMac;
-            this.encryptCipher = serverWriteCipher;
-            this.decryptCipher = clientWriteCipher;
-            this.encryptKey = server_write_key;
-            this.decryptKey = client_write_key;
-            this.encryptCipher.init(Cipher.ENCRYPT_MODE, server_write_key, new IvParameterSpec(server_write_IV));
-            this.decryptCipher.init(Cipher.DECRYPT_MODE, client_write_key, new IvParameterSpec(client_write_IV));
+            this.writeMac.setKey(serverMacKey);
+            this.readMac.setKey(clientMacKey);
+
+            this.encryptCipher.setKey(server_write_key);
+            this.decryptCipher.setKey(client_write_key);
         }
         else
         {
-            this.writeMac = clientWriteMac;
-            this.readMac = serverWriteMac;
-            this.encryptCipher = clientWriteCipher;
-            this.decryptCipher = serverWriteCipher;
-            this.encryptKey = client_write_key;
-            this.decryptKey = server_write_key;
-            this.encryptCipher.init(Cipher.ENCRYPT_MODE, client_write_key, new IvParameterSpec(client_write_IV));
-            this.decryptCipher.init(Cipher.DECRYPT_MODE, server_write_key, new IvParameterSpec(client_write_IV));
+            this.writeMac.setKey(clientMacKey);
+            this.readMac.setKey(serverMacKey);
+
+            this.encryptCipher.setKey(client_write_key);
+            this.decryptCipher.setKey(server_write_key);
         }
     }
 
@@ -159,6 +149,7 @@ public class JceTlsBlockCipher
     }
 
     public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len)
+        throws IOException
     {
         int blockSize = encryptCipher.getBlockSize();
         int macSize = writeMac.getSize();
@@ -191,42 +182,36 @@ public class JceTlsBlockCipher
         byte[] outBuf = new byte[totalSize];
         int outOff = 0;
 
-        try
+        if (useExplicitIV)
         {
-            if (useExplicitIV)
-            {
-                byte[] explicitIV = new byte[blockSize];
-                context.getNonceRandomGenerator().nextBytes(explicitIV);
+            byte[] explicitIV = new byte[blockSize];
+            context.getNonceRandomGenerator().nextBytes(explicitIV);
 
-                encryptCipher.init(Cipher.ENCRYPT_MODE, encryptKey, new IvParameterSpec(explicitIV));
+            encryptCipher.init(explicitIV);
 
-                System.arraycopy(explicitIV, 0, outBuf, outOff, blockSize);
-                outOff += blockSize;
-            }
-
-            int blocks_start = outOff;
-
-            System.arraycopy(plaintext, offset, outBuf, outOff, len);
-            outOff += len;
-
-            if (!encryptThenMAC)
-            {
-                byte[] mac = writeMac.calculateMac(seqNo, type, plaintext, offset, len);
-                System.arraycopy(mac, 0, outBuf, outOff, mac.length);
-                outOff += mac.length;
-            }
-
-            for (int i = 0; i <= padding_length; i++)
-            {
-                outBuf[outOff++] = (byte)padding_length;
-            }
-
-            encryptCipher.doFinal(outBuf, blocks_start, outBuf.length, outBuf, blocks_start);
+            System.arraycopy(explicitIV, 0, outBuf, outOff, blockSize);
+            outOff += blockSize;
         }
-        catch (GeneralSecurityException e)
+
+        int blocks_start = outOff;
+
+        System.arraycopy(plaintext, offset, outBuf, outOff, len);
+        outOff += len;
+
+        if (!encryptThenMAC)
         {
-            throw new IllegalStateException("issue encrypting: " + e.getMessage(), e);  // TODO: is this right?
+            byte[] mac = writeMac.calculateMac(seqNo, type, plaintext, offset, len);
+            System.arraycopy(mac, 0, outBuf, outOff, mac.length);
+            outOff += mac.length;
         }
+
+        for (int i = 0; i <= padding_length; i++)
+        {
+            outBuf[outOff++] = (byte)padding_length;
+        }
+
+        encryptCipher.doFinal(outBuf, blocks_start, outBuf.length, outBuf, blocks_start);
+
 
         if (encryptThenMAC)
         {
@@ -298,22 +283,15 @@ public class JceTlsBlockCipher
             }
         }
 
-        try
+        if (useExplicitIV)
         {
-            if (useExplicitIV)
-            {
-                decryptCipher.init(Cipher.DECRYPT_MODE, decryptKey, new IvParameterSpec(ciphertext, offset, blockSize));
+            decryptCipher.init(Arrays.copyOfRange(ciphertext, offset, offset + blockSize));
 
-                offset += blockSize;
-                blocks_length -= blockSize;
-            }
+            offset += blockSize;
+            blocks_length -= blockSize;
+        }
 
-            decryptCipher.doFinal(ciphertext, offset, ciphertext.length - offset, ciphertext, offset);
-        }
-        catch (GeneralSecurityException e)
-        {
-            throw new IOException("issue decrypting: " + e.getMessage(), e);
-        }
+        decryptCipher.doFinal(ciphertext, offset, ciphertext.length - offset, ciphertext, offset);
 
         // If there's anything wrong with the padding, this will return zero
         int totalPad = checkPaddingConstantTime(ciphertext, offset, blocks_length, blockSize, encryptThenMAC ? 0 : macSize);

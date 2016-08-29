@@ -58,7 +58,7 @@ public class JcaTlsRSASigner
                 }
                 catch (IOException e)
                 {
-                    e.printStackTrace();  // TODO
+                    throw new TlsFatalAlert(AlertDescription.internal_error, e);
                 }
             }
             else

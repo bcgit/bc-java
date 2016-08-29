@@ -28,6 +28,10 @@ public class NHKeyPairGeneratorSpi
         int strength,
         SecureRandom random)
     {
+        if (strength != 1024)
+        {
+            throw new IllegalArgumentException("strength must be 1024 bits");
+        }
         engine.init(new KeyGenerationParameters(random, 1024));
         initialised = true;
     }
@@ -37,8 +41,7 @@ public class NHKeyPairGeneratorSpi
         SecureRandom random)
         throws InvalidAlgorithmParameterException
     {
-        engine.init(new KeyGenerationParameters(random, 1024));
-        initialised = true;
+        throw new InvalidAlgorithmParameterException("parameter object not recognised");
     }
 
     public KeyPair generateKeyPair()

@@ -92,7 +92,7 @@ public class RainbowSignatureTest
     {
         // generate new signature instance for verification
         //            sigVerify = (Signature) sig.getClass().newInstance();
-        sigVerify = Signature.getInstance("SHA384WITHRainbow");
+        sigVerify = Signature.getInstance("SHA384withRainbow", "BCPQC");
 
         for (int j = 0; j < numPassesKPG; j++)
         {
