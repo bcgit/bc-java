@@ -34,7 +34,7 @@ public class NewHopeTest
         {
             KeyPairGenerator kpGen = KeyPairGenerator.getInstance("NH", "BCPQC");
 
-            kpGen.initialize(2048, aliceRand);
+            kpGen.initialize(1024, aliceRand);
 
             KeyPair aliceKp = kpGen.generateKeyPair();
 
