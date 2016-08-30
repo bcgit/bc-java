@@ -27,21 +27,21 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.NonceRandomGenerator;
 import org.bouncycastle.tls.crypto.TlsAEADCipher;
-import org.bouncycastle.tls.crypto.TlsAEADOperator;
+import org.bouncycastle.tls.crypto.TlsAEADCipherSuite;
 import org.bouncycastle.tls.crypto.TlsBlockCipher;
-import org.bouncycastle.tls.crypto.TlsBlockOperator;
+import org.bouncycastle.tls.crypto.TlsBlockCipherSuite;
 import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.TlsCipher;
+import org.bouncycastle.tls.crypto.TlsCipherSuite;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsMac;
-import org.bouncycastle.tls.crypto.TlsNullCipher;
+import org.bouncycastle.tls.crypto.TlsNullCipherSuite;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamCipher;
-import org.bouncycastle.tls.crypto.TlsStreamOperator;
+import org.bouncycastle.tls.crypto.TlsStreamCipherSuite;
 import org.bouncycastle.tls.crypto.bc.Chacha20Poly1305;
 import org.bouncycastle.util.Arrays;
 
@@ -66,7 +66,7 @@ public class JcaTlsCrypto
         return new JcaTlsCertificate(encoding, helper);
     }
 
-    public TlsCipher createCipher(int encryptionAlgorithm, int macAlgorithm)
+    public TlsCipherSuite createCipher(int encryptionAlgorithm, int macAlgorithm)
         throws IOException
     {
         try
@@ -132,35 +132,35 @@ public class JcaTlsCrypto
         }
     }
 
-    protected TlsBlockCipher createAESCipher(int cipherKeySize, int macAlgorithm)
+    protected TlsBlockCipherSuite createAESCipher(int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipher(context, createBlockOperator("AES", "AES/CBC/NoPadding", true), createBlockOperator("AES", "AES/CBC/NoPadding", false),
+        return new TlsBlockCipherSuite(context, createBlockOperator("AES", "AES/CBC/NoPadding", true), createBlockOperator("AES", "AES/CBC/NoPadding", false),
                 createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize, createHMACDigest(macAlgorithm).getDigestLength());
     }
 
-    protected TlsBlockCipher createCamelliaCipher(int cipherKeySize, int macAlgorithm)
+    protected TlsBlockCipherSuite createCamelliaCipher(int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipher(context, createBlockOperator("Camellia", "Camellia/CBC/NoPadding", true), createBlockOperator("Camellia", "Camellia/CBC/NoPadding", false),
+        return new TlsBlockCipherSuite(context, createBlockOperator("Camellia", "Camellia/CBC/NoPadding", true), createBlockOperator("Camellia", "Camellia/CBC/NoPadding", false),
             createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize, createHMACDigest(macAlgorithm).getDigestLength());
     }
 
-    protected TlsBlockCipher createDESedeCipher(int macAlgorithm)
+    protected TlsBlockCipherSuite createDESedeCipher(int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipher(context, createBlockOperator("DESede", "DESede/CBC/NoPadding", true), createBlockOperator("DESede", "DESede/CBC/NoPadding", false),
+        return new TlsBlockCipherSuite(context, createBlockOperator("DESede", "DESede/CBC/NoPadding", true), createBlockOperator("DESede", "DESede/CBC/NoPadding", false),
             createMac(macAlgorithm), createMac(macAlgorithm), 24, createHMACDigest(macAlgorithm).getDigestLength());
     }
 
-    protected TlsBlockCipher createSEEDCipher(int macAlgorithm)
+    protected TlsBlockCipherSuite createSEEDCipher(int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipher(context, createBlockOperator("SEED", "SEED/CBC/NoPadding", true), createBlockOperator("SEED", "SEED/CBC/NoPadding", false),
+        return new TlsBlockCipherSuite(context, createBlockOperator("SEED", "SEED/CBC/NoPadding", true), createBlockOperator("SEED", "SEED/CBC/NoPadding", false),
             createMac(macAlgorithm), createMac(macAlgorithm), 16, createHMACDigest(macAlgorithm).getDigestLength());
     }
 
-    private TlsBlockOperator createBlockOperator(String algorithm, String cipherName, boolean forEncryption)
+    private TlsBlockCipher createBlockOperator(String algorithm, String cipherName, boolean forEncryption)
         throws GeneralSecurityException
     {
         if (TlsUtils.isTLSv11(context))
@@ -186,50 +186,50 @@ public class JcaTlsCrypto
         }
     }
 
-    protected TlsCipher createChaCha20Poly1305()
+    protected TlsCipherSuite createChaCha20Poly1305()
         throws IOException
     {
         return new Chacha20Poly1305(context);
     }
 
-    protected TlsAEADCipher createCipher_AES_CCM(int cipherKeySize, int macSize)
+    protected TlsAEADCipherSuite createCipher_AES_CCM(int cipherKeySize, int macSize)
         throws IOException, GeneralSecurityException
     {
-        return new TlsAEADCipher(context, new AEADCipher("AES", "AES/CCM/NoPadding", true), new AEADCipher("AES", "AES/CCM/NoPadding", false),
+        return new TlsAEADCipherSuite(context, new AEADCipher("AES", "AES/CCM/NoPadding", true), new AEADCipher("AES", "AES/CCM/NoPadding", false),
             cipherKeySize, macSize);
     }
 
-    protected TlsAEADCipher createCipher_AES_GCM(int cipherKeySize, int macSize)
+    protected TlsAEADCipherSuite createCipher_AES_GCM(int cipherKeySize, int macSize)
         throws IOException, GeneralSecurityException
     {
-        return new TlsAEADCipher(context, new AEADCipher("AES", "AES/GCM/NoPadding", true), new AEADCipher("AES", "AES/GCM/NoPadding", false),
+        return new TlsAEADCipherSuite(context, new AEADCipher("AES", "AES/GCM/NoPadding", true), new AEADCipher("AES", "AES/GCM/NoPadding", false),
             cipherKeySize, macSize);
     }
 
-    protected TlsAEADCipher createCipher_AES_OCB(int cipherKeySize, int macSize)
+    protected TlsAEADCipherSuite createCipher_AES_OCB(int cipherKeySize, int macSize)
         throws IOException, GeneralSecurityException
     {
-        return new TlsAEADCipher(context, new AEADCipher("AES", "AES/OCB/NoPadding", true), new AEADCipher("AES", "AES/OCB/NoPadding", false),
-            cipherKeySize, macSize, TlsAEADCipher.NONCE_RFC7905);
+        return new TlsAEADCipherSuite(context, new AEADCipher("AES", "AES/OCB/NoPadding", true), new AEADCipher("AES", "AES/OCB/NoPadding", false),
+            cipherKeySize, macSize, TlsAEADCipherSuite.NONCE_RFC7905);
     }
 
-    protected TlsAEADCipher createCipher_Camellia_GCM(int cipherKeySize, int macSize)
+    protected TlsAEADCipherSuite createCipher_Camellia_GCM(int cipherKeySize, int macSize)
         throws IOException, GeneralSecurityException
     {
-        return new TlsAEADCipher(context, new AEADCipher("Camellia", "Camellia/GCM/NoPadding", true), new AEADCipher("Camellia", "Camellia/GCM/NoPadding", false),
+        return new TlsAEADCipherSuite(context, new AEADCipher("Camellia", "Camellia/GCM/NoPadding", true), new AEADCipher("Camellia", "Camellia/GCM/NoPadding", false),
             cipherKeySize, macSize);
     }
 
-    protected TlsNullCipher createNullCipher(int macAlgorithm)
+    protected TlsNullCipherSuite createNullCipher(int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsNullCipher(context, createMac(macAlgorithm), createMac(macAlgorithm), createHMACDigest(macAlgorithm).getDigestLength());
+        return new TlsNullCipherSuite(context, createMac(macAlgorithm), createMac(macAlgorithm), createHMACDigest(macAlgorithm).getDigestLength());
     }
 
-    protected TlsStreamCipher createRC4Cipher(int cipherKeySize, int macAlgorithm)
+    protected TlsStreamCipherSuite createRC4Cipher(int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsStreamCipher(context, new StreamCipher("RC4", "RC4", true), new StreamCipher("RC4", "RC4", false),
+        return new TlsStreamCipherSuite(context, new StreamCipher("RC4", "RC4", true), new StreamCipher("RC4", "RC4", false),
             createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize, createHMACDigest(macAlgorithm).getDigestLength(), false);
     }
 
@@ -429,7 +429,7 @@ public class JcaTlsCrypto
     }
 
     private class BlockCipher
-        implements TlsBlockOperator
+        implements TlsBlockCipher
     {
         private final int cipherMode;
         private final Cipher cipher;
@@ -481,7 +481,7 @@ public class JcaTlsCrypto
     }
 
     private class ImplicitIvBlockCipher
-        implements TlsBlockOperator
+        implements TlsBlockCipher
     {
         private final int cipherMode;
         private final Cipher cipher;
@@ -543,7 +543,7 @@ public class JcaTlsCrypto
     }
 
     private class StreamCipher
-        implements TlsStreamOperator
+        implements TlsStreamCipher
     {
         private final int cipherMode;
         private final Cipher cipher;
@@ -592,7 +592,7 @@ public class JcaTlsCrypto
     }
 
     private class AEADCipher
-        implements TlsAEADOperator
+        implements TlsAEADCipher
     {
         private final int cipherMode;
         private final Cipher cipher;

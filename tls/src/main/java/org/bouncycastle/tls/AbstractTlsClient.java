@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.tls.crypto.TlsCipher;
+import org.bouncycastle.tls.crypto.TlsCipherSuite;
 
 public abstract class AbstractTlsClient
     extends AbstractTlsPeer
@@ -248,7 +248,7 @@ public abstract class AbstractTlsClient
         }
     }
 
-    public TlsCipher getCipher()
+    public TlsCipherSuite getCipher()
         throws IOException
     {
         int encryptionAlgorithm = TlsUtils.getEncryptionAlgorithm(selectedCipherSuite);

@@ -12,14 +12,14 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsCipher;
+import org.bouncycastle.tls.crypto.TlsCipherSuite;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**
  * RFC 7905
  */
-public class Chacha20Poly1305 implements TlsCipher
+public class Chacha20Poly1305 implements TlsCipherSuite
 {
     private static final byte[] ZEROES = new byte[15];
 

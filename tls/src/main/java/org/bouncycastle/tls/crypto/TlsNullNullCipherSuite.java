@@ -7,8 +7,8 @@ import org.bouncycastle.util.Arrays;
 /**
  * The cipher for TLS_NULL_WITH_NULL_NULL cipher suite
  */
-public class TlsNullNullCipher
-    implements TlsCipher
+public class TlsNullNullCipherSuite
+    implements TlsCipherSuite
 {
     public int getPlaintextLimit(int ciphertextLimit)
     {

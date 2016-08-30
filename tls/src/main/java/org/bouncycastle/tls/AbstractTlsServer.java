@@ -5,7 +5,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.DHStandardGroups;
-import org.bouncycastle.tls.crypto.TlsCipher;
+import org.bouncycastle.tls.crypto.TlsCipherSuite;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHParameters;
 import org.bouncycastle.tls.crypto.TlsECConfig;
@@ -401,7 +401,7 @@ public abstract class AbstractTlsServer
         }
     }
 
-    public TlsCipher getCipher()
+    public TlsCipherSuite getCipher()
         throws IOException
     {
         int encryptionAlgorithm = TlsUtils.getEncryptionAlgorithm(selectedCipherSuite);

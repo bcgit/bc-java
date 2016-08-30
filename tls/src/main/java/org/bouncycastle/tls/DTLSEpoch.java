@@ -1,17 +1,17 @@
 package org.bouncycastle.tls;
 
-import org.bouncycastle.tls.crypto.TlsCipher;
+import org.bouncycastle.tls.crypto.TlsCipherSuite;
 
 class DTLSEpoch
 {
     private final DTLSReplayWindow replayWindow = new DTLSReplayWindow();
 
     private final int epoch;
-    private final TlsCipher cipher;
+    private final TlsCipherSuite cipher;
 
     private long sequenceNumber = 0;
 
-    DTLSEpoch(int epoch, TlsCipher cipher)
+    DTLSEpoch(int epoch, TlsCipherSuite cipher)
     {
         if (epoch < 0)
         {
@@ -32,7 +32,7 @@ class DTLSEpoch
         return sequenceNumber++;
     }
 
-    TlsCipher getCipher()
+    TlsCipherSuite getCipher()
     {
         return cipher;
     }

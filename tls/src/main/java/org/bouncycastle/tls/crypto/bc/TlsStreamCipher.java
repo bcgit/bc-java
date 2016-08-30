@@ -11,11 +11,11 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsCipher;
+import org.bouncycastle.tls.crypto.TlsCipherSuite;
 import org.bouncycastle.util.Arrays;
 
 public class TlsStreamCipher
-    implements TlsCipher
+    implements TlsCipherSuite
 {
     protected TlsContext context;
 

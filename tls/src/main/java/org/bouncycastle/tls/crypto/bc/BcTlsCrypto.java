@@ -22,6 +22,8 @@ import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.modes.OCBBlockCipher;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.CombinedHash;
@@ -35,14 +37,16 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.NonceRandomGenerator;
+import org.bouncycastle.tls.crypto.TlsBlockCipher;
+import org.bouncycastle.tls.crypto.TlsBlockCipherSuite;
 import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.TlsCipher;
+import org.bouncycastle.tls.crypto.TlsCipherSuite;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHash;
-import org.bouncycastle.tls.crypto.TlsNullCipher;
+import org.bouncycastle.tls.crypto.TlsNullCipherSuite;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
@@ -60,7 +64,7 @@ public class BcTlsCrypto
         return new BcTlsCertificate(this, encoding);
     }
 
-    public TlsCipher createCipher(int encryptionAlgorithm, int macAlgorithm)
+    public TlsCipherSuite createCipher(int encryptionAlgorithm, int macAlgorithm)
         throws IOException
     {
         switch (encryptionAlgorithm)
@@ -334,21 +338,25 @@ public class BcTlsCrypto
         }
     }
 
-    protected TlsBlockCipher createAESCipher(int cipherKeySize, int macAlgorithm)
+    protected TlsCipherSuite createAESCipher(int cipherKeySize, int macAlgorithm)
         throws IOException
     {
-        return new TlsBlockCipher(context, createAESBlockCipher(), createAESBlockCipher(),
-            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize);
+        Digest macDigest = createHMACDigest(macAlgorithm);
+
+        return new TlsBlockCipherSuite(context, new BlockOperator(createAESBlockCipher(), true), new BlockOperator(createAESBlockCipher(), false),
+            new BcTlsMac(context, macDigest), new BcTlsMac(context, createHMACDigest(macAlgorithm)), cipherKeySize, macDigest.getDigestSize());
     }
 
-    protected TlsBlockCipher createCamelliaCipher(int cipherKeySize, int macAlgorithm)
+    protected TlsCipherSuite createCamelliaCipher(int cipherKeySize, int macAlgorithm)
         throws IOException
     {
-        return new TlsBlockCipher(context, createCamelliaBlockCipher(), createCamelliaBlockCipher(),
-            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize);
+        Digest macDigest = createHMACDigest(macAlgorithm);
+
+        return new TlsBlockCipherSuite(context, new BlockOperator(createCamelliaBlockCipher(), true), new BlockOperator(createCamelliaBlockCipher(), false),
+            new BcTlsMac(context, macDigest), new BcTlsMac(context, createHMACDigest(macAlgorithm)), cipherKeySize, macDigest.getDigestSize());
     }
 
-    protected TlsCipher createChaCha20Poly1305()
+    protected TlsCipherSuite createChaCha20Poly1305()
         throws IOException
     {
         return new Chacha20Poly1305(context);
@@ -382,19 +390,21 @@ public class BcTlsCrypto
             cipherKeySize, macSize);
     }
 
-    protected TlsBlockCipher createDESedeCipher(int macAlgorithm)
-        throws IOException
-    {
-        return new TlsBlockCipher(context, createDESedeBlockCipher(), createDESedeBlockCipher(),
-            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), 24);
-    }
-
-    protected TlsNullCipher createNullCipher(int macAlgorithm)
+    protected TlsBlockCipherSuite createDESedeCipher(int macAlgorithm)
         throws IOException
     {
         Digest macDigest = createHMACDigest(macAlgorithm);
 
-        return new TlsNullCipher(context, new BcTlsMac(context, macDigest), new BcTlsMac(context, createHMACDigest(macAlgorithm)), macDigest.getDigestSize());
+        return new TlsBlockCipherSuite(context, new BlockOperator(createDESedeBlockCipher(), true), new BlockOperator(createDESedeBlockCipher(), false),
+            new BcTlsMac(context, macDigest), new BcTlsMac(context, createHMACDigest(macAlgorithm)), 24, macDigest.getDigestSize());
+    }
+
+    protected TlsNullCipherSuite createNullCipher(int macAlgorithm)
+        throws IOException
+    {
+        Digest macDigest = createHMACDigest(macAlgorithm);
+
+        return new TlsNullCipherSuite(context, new BcTlsMac(context, macDigest), new BcTlsMac(context, createHMACDigest(macAlgorithm)), macDigest.getDigestSize());
     }
 
     protected TlsStreamCipher createRC4Cipher(int cipherKeySize, int macAlgorithm)
@@ -404,11 +414,13 @@ public class BcTlsCrypto
             createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize, false);
     }
 
-    protected TlsBlockCipher createSEEDCipher(int macAlgorithm)
+    protected TlsBlockCipherSuite createSEEDCipher(int macAlgorithm)
         throws IOException
     {
-        return new TlsBlockCipher(context, createSEEDBlockCipher(), createSEEDBlockCipher(),
-            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), 16);
+        Digest macDigest = createHMACDigest(macAlgorithm);
+
+        return new TlsBlockCipherSuite(context, new BlockOperator(createSEEDBlockCipher(), true), new BlockOperator(createSEEDBlockCipher(), false),
+            new BcTlsMac(context, macDigest), new BcTlsMac(context, createHMACDigest(macAlgorithm)), 16, macDigest.getDigestSize());
     }
 
     protected BlockCipher createAESEngine()
@@ -555,4 +567,48 @@ public class BcTlsCrypto
             sha1.reset();
         }
     }
+
+    private class BlockOperator
+        implements TlsBlockCipher
+    {
+        private final boolean isEncrypting;
+        private final BlockCipher cipher;
+
+        private KeyParameter key;
+
+        BlockOperator(BlockCipher cipher, boolean isEncrypting)
+        {
+            this.cipher = cipher;
+            this.isEncrypting = isEncrypting;
+        }
+
+        public void setKey(byte[] key)
+        {
+            this.key = new KeyParameter(key);
+            cipher.init(isEncrypting, new ParametersWithIV(this.key, new byte[cipher.getBlockSize()]));
+        }
+
+        public void init(byte[] iv)
+        {
+            cipher.init(isEncrypting, new ParametersWithIV(null, iv));
+        }
+
+        public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
+        {
+            int blockSize = cipher.getBlockSize();
+
+            for (int i = 0; i < inputLength; i += blockSize)
+            {
+                cipher.processBlock(input, inputOffset + i, output, outputOffset + i);
+            }
+
+            return inputLength;
+        }
+
+        public int getBlockSize()
+        {
+            return cipher.getBlockSize();
+        }
+    }
+
 }

@@ -3,7 +3,6 @@ package org.bouncycastle.tls.crypto;
 import java.io.IOException;
 
 import org.bouncycastle.tls.EncryptionAlgorithm;
-import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
@@ -18,7 +17,7 @@ public interface TlsCrypto
     /**
      * See enumeration classes {@link EncryptionAlgorithm}, {@link MACAlgorithm} for appropriate argument values
      */
-    TlsCipher createCipher(int encryptionAlgorithm, int macAlgorithm) throws IOException;
+    TlsCipherSuite createCipher(int encryptionAlgorithm, int macAlgorithm) throws IOException;
 
     TlsECDomain createECDomain(TlsECConfig ecConfig);
 

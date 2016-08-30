@@ -8,15 +8,15 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.util.Arrays;
 
-public class TlsNullCipher
-    implements TlsCipher
+public class TlsNullCipherSuite
+    implements TlsCipherSuite
 {
     protected TlsContext context;
 
     protected TlsMac writeMac;
     protected TlsMac readMac;
 
-    public TlsNullCipher(TlsContext context, TlsMac clientMac, TlsMac serverMac, int macKeyLength)
+    public TlsNullCipherSuite(TlsContext context, TlsMac clientMac, TlsMac serverMac, int macKeyLength)
         throws IOException
     {
         this.context = context;

@@ -2,7 +2,7 @@ package org.bouncycastle.tls.crypto;
 
 import java.io.IOException;
 
-public interface TlsCipher
+public interface TlsCipherSuite
 {
     int getPlaintextLimit(int ciphertextLimit);
 
