@@ -189,7 +189,7 @@ public class JcaTlsCrypto
     {
         if (TlsUtils.isSSL(context))
         {
-            return new JceSSL3Mac(context, createHMACDigest(macAlgorithm));
+            return new JceTlsMac(context, createSSL3HMAC(macAlgorithm));
         }
         else
         {
@@ -283,6 +283,28 @@ public class JcaTlsCrypto
             return new TlsHMac("HmacSHA384", 128);
         case MACAlgorithm.hmac_sha512:
             return new TlsHMac("HmacSHA512", 128);
+        default:
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
+    protected TlsHMAC createSSL3HMAC(int macAlgorithm)
+        throws IOException
+    {
+        switch (macAlgorithm)
+        {
+        case MACAlgorithm._null:
+            return null;
+        case MACAlgorithm.hmac_md5:
+            return new SSL3Mac(createMessageDigest((short)macAlgorithm), 64);
+        case MACAlgorithm.hmac_sha1:
+            return new SSL3Mac(createMessageDigest((short)macAlgorithm), 64);
+        case MACAlgorithm.hmac_sha256:
+            return new SSL3Mac(createMessageDigest((short)macAlgorithm), 64);
+        case MACAlgorithm.hmac_sha384:
+            return new SSL3Mac(createMessageDigest((short)macAlgorithm), 128);
+        case MACAlgorithm.hmac_sha512:
+            return new SSL3Mac(createMessageDigest((short)macAlgorithm), 128);
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }

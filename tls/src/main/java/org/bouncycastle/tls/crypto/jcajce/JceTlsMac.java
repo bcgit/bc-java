@@ -39,14 +39,19 @@ public class JceTlsMac
 
         if (TlsUtils.isSSL(context))
         {
-            throw new UnsupportedOperationException("SSL v3 not supported");
+            // TODO This should check the actual algorithm, not assume based on the digest size
+            if (mac.getMacLength() == 20)
+            {
+                /*
+                 * NOTE: When SHA-1 is used with the SSL 3.0 MAC, the secret + input pad is not
+                 * digest block-aligned.
+                 */
+                this.digestOverhead = 4;
+            }
         }
-        else
-        {
-            this.mac = mac;
 
-            // NOTE: The input pad for HMAC is always a full digest block
-        }
+        // NOTE: The input pad for HMAC is always a full digest block
+        this.mac = mac;
     }
 
     public void setKey(byte[] key)
