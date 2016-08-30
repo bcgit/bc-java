@@ -345,10 +345,8 @@ public class BcTlsCrypto
     protected TlsCipherSuite createCamelliaCipher(int cipherKeySize, int macAlgorithm)
         throws IOException
     {
-        Digest macDigest = createHMACDigest(macAlgorithm);
-
         return new TlsBlockCipherSuite(context, new BlockOperator(createCamelliaBlockCipher(), true), new BlockOperator(createCamelliaBlockCipher(), false),
-            new BcTlsMac(context, macDigest), new BcTlsMac(context, createHMACDigest(macAlgorithm)), cipherKeySize, macDigest.getDigestSize());
+            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize);
     }
 
     protected TlsCipherSuite createChaCha20Poly1305()
@@ -388,10 +386,8 @@ public class BcTlsCrypto
     protected TlsBlockCipherSuite createDESedeCipher(int macAlgorithm)
         throws IOException
     {
-        Digest macDigest = createHMACDigest(macAlgorithm);
-
         return new TlsBlockCipherSuite(context, new BlockOperator(createDESedeBlockCipher(), true), new BlockOperator(createDESedeBlockCipher(), false),
-            new BcTlsMac(context, macDigest), new BcTlsMac(context, createHMACDigest(macAlgorithm)), 24, macDigest.getDigestSize());
+            createMac(macAlgorithm), createMac(macAlgorithm), 24);
     }
 
     protected TlsNullCipherSuite createNullCipher(int macAlgorithm)
@@ -410,10 +406,8 @@ public class BcTlsCrypto
     protected TlsBlockCipherSuite createSEEDCipher(int macAlgorithm)
         throws IOException
     {
-        Digest macDigest = createHMACDigest(macAlgorithm);
-
         return new TlsBlockCipherSuite(context, new BlockOperator(createSEEDBlockCipher(), true), new BlockOperator(createSEEDBlockCipher(), false),
-            new BcTlsMac(context, macDigest), new BcTlsMac(context, createHMACDigest(macAlgorithm)), 16, macDigest.getDigestSize());
+            createMac(macAlgorithm), createMac(macAlgorithm), 16);
     }
 
     protected BlockCipher createAESEngine()

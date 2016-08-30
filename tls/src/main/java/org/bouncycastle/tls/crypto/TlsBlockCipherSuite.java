@@ -31,20 +31,13 @@ public class TlsBlockCipherSuite
                                TlsHMAC writeMac, TlsHMAC readMac, int cipherKeySize)
         throws IOException
     {
-        this(context, encryptCipher, decryptCipher, new TlsMac(context, writeMac), new TlsMac(context, readMac), cipherKeySize, writeMac.getMacLength());
-    }
-
-    public TlsBlockCipherSuite(TlsContext context, TlsBlockCipher encryptCipher, TlsBlockCipher decryptCipher,
-                               OldTlsMac writeMac, OldTlsMac readMac, int cipherKeySize, int macKeySize)
-        throws IOException
-    {
         this.context = context;
         this.randomData = context.getCrypto().createNonce(256);
 
         this.useExplicitIV = TlsUtils.isTLSv11(context);
         this.encryptThenMAC = context.getSecurityParameters().isEncryptThenMAC();
 
-        int key_block_size = (2 * cipherKeySize) + macKeySize + macKeySize;
+        int key_block_size = (2 * cipherKeySize) + writeMac.getMacLength() + readMac.getMacLength();
 
         // From TLS 1.1 onwards, block ciphers don't need client_write_IV
         if (!useExplicitIV)
@@ -56,10 +49,10 @@ public class TlsBlockCipherSuite
 
         int offset = 0;
 
-        byte[] clientMacKey = Arrays.copyOfRange(key_block, offset, offset + macKeySize);
-        offset += macKeySize;
-        byte[] serverMacKey = Arrays.copyOfRange(key_block, offset, offset + macKeySize);
-        offset += macKeySize;
+        byte[] clientMacKey = Arrays.copyOfRange(key_block, offset, offset + writeMac.getMacLength());
+        offset += clientMacKey.length;
+        byte[] serverMacKey = Arrays.copyOfRange(key_block, offset, offset + writeMac.getMacLength());
+        offset += serverMacKey.length;
 
         byte[] client_write_key = Arrays.copyOfRange(key_block, offset, offset + cipherKeySize);
         offset += cipherKeySize;
@@ -86,8 +79,8 @@ public class TlsBlockCipherSuite
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        this.readMac = readMac;
-        this.writeMac = writeMac;
+        this.readMac = new TlsMac(context, readMac);
+        this.writeMac = new TlsMac(context, writeMac);
         this.encryptCipher = encryptCipher;
         this.decryptCipher = decryptCipher;
 
