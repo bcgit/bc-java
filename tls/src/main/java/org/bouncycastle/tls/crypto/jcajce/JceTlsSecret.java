@@ -9,7 +9,6 @@ import javax.crypto.Cipher;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.crypto.RuntimeCryptoException;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.PRFAlgorithm;
@@ -139,7 +138,7 @@ public class JceTlsSecret
         catch (GeneralSecurityException e)
         {
             e.printStackTrace();
-            throw new RuntimeCryptoException(); // TODO
+            throw new IllegalStateException(); // TODO
         }
     }
 

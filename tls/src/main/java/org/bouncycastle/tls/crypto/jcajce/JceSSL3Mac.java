@@ -3,8 +3,6 @@ package org.bouncycastle.tls.crypto.jcajce;
 import java.io.IOException;
 import java.security.MessageDigest;
 
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsUtils;
@@ -140,9 +138,7 @@ public class JceSSL3Mac
     {
         this.secret = Arrays.clone(macKey);
 
-        KeyParameter keyParameter = new KeyParameter(macKey);
-
-        this.mac.init(keyParameter);
+        this.mac.init(secret);
 
         this.macLength = mac.getMacSize();
         if (context.getSecurityParameters().isTruncatedHMac())
@@ -207,9 +203,9 @@ public class JceSSL3Mac
             }
         }
 
-        public void init(CipherParameters params)
+        public void init(byte[] secret)
         {
-            secret = Arrays.clone(((KeyParameter)params).getKey());
+            this.secret = secret;
 
             reset();
         }
