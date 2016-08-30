@@ -101,7 +101,7 @@ public class JceTlsSecret
         {
             Cipher encoding = crypto.getHelper().createCipher("RSA/NONE/PKCS1Padding");
 
-            encoding.init(Cipher.WRAP_MODE, pubKeyRSA, crypto.getContext().getSecureRandom());
+            encoding.init(Cipher.WRAP_MODE, pubKeyRSA, crypto.getSecureRandom());
 
             return encoding.doFinal(data);
         }

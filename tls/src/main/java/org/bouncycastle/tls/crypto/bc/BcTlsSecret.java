@@ -84,7 +84,7 @@ public class BcTlsSecret implements TlsSecret
         RSAKeyParameters pubKeyRSA = BcTlsCertificate.convert(crypto, certificate).getPubKeyRSA();
 
         PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine());
-        encoding.init(true, new ParametersWithRandom(pubKeyRSA, crypto.getContext().getSecureRandom()));
+        encoding.init(true, new ParametersWithRandom(pubKeyRSA, crypto.getSecureRandom()));
 
         try
         {

@@ -1,8 +1,7 @@
 package org.bouncycastle.tls.crypto.jcajce;
 
 import java.security.Provider;
-import java.util.HashMap;
-import java.util.Map;
+import java.security.SecureRandom;
 
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -11,9 +10,16 @@ import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 
 public class JcaTlsCryptoBuilder
 {
+    private final SecureRandom entropySource;
+    private final SecureRandom nonceEntropySource;
+
     private JcaJceHelper helper = new DefaultJcaJceHelper();
 
-    private static final Map algorithms = new HashMap();
+    public JcaTlsCryptoBuilder(SecureRandom entropySource, SecureRandom nonceEntropySource)
+    {
+        this.entropySource = entropySource;
+        this.nonceEntropySource = nonceEntropySource;
+    }
 
     public JcaTlsCryptoBuilder setProvider(Provider provider)
     {
@@ -31,6 +37,6 @@ public class JcaTlsCryptoBuilder
 
     public JcaTlsCrypto build()
     {
-        return new JcaTlsCrypto(helper);
+        return new JcaTlsCrypto(helper, entropySource, nonceEntropySource);
     }
 }

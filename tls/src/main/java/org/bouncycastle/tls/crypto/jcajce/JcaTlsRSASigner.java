@@ -39,7 +39,7 @@ public class JcaTlsRSASigner
         try
         {
             Signature signer = ((JcaTlsCrypto)context.getCrypto()).getHelper().createSignature("NoneWithRSA");
-            signer.initSign(privateKey, context.getSecureRandom());
+            signer.initSign(privateKey, context.getCrypto().getSecureRandom());
             if (algorithm != null)
             {
                 if (algorithm.getSignature() != SignatureAlgorithm.rsa)

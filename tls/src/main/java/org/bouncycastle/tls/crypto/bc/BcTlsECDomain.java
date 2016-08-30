@@ -94,7 +94,7 @@ public class BcTlsECDomain implements TlsECDomain
     public AsymmetricCipherKeyPair generateKeyPair()
     {
         ECKeyPairGenerator keyPairGenerator = new ECKeyPairGenerator();
-        keyPairGenerator.init(new ECKeyGenerationParameters(ecDomain, crypto.getContext().getSecureRandom()));
+        keyPairGenerator.init(new ECKeyGenerationParameters(ecDomain, crypto.getSecureRandom()));
         return keyPairGenerator.generateKeyPair();
     }
 

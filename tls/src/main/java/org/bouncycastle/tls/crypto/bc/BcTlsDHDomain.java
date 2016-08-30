@@ -82,7 +82,7 @@ public class BcTlsDHDomain implements TlsDHDomain
     public AsymmetricCipherKeyPair generateKeyPair()
     {
         DHBasicKeyPairGenerator keyPairGenerator = new DHBasicKeyPairGenerator();
-        keyPairGenerator.init(new DHKeyGenerationParameters(crypto.getContext().getSecureRandom(), dhDomain));
+        keyPairGenerator.init(new DHKeyGenerationParameters(crypto.getSecureRandom(), dhDomain));
         return keyPairGenerator.generateKeyPair();
     }
 

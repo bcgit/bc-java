@@ -10,22 +10,17 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.prng.DigestRandomGenerator;
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.tls.AbstractTlsCrypto;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.CombinedHash;
 import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.AbstractTlsCrypto;
-import org.bouncycastle.tls.crypto.NonceRandomGenerator;
 import org.bouncycastle.tls.crypto.TlsAEADCipher;
 import org.bouncycastle.tls.crypto.TlsAEADCipherSuite;
 import org.bouncycastle.tls.crypto.TlsBlockCipher;
@@ -49,15 +44,28 @@ public class JcaTlsCrypto
     extends AbstractTlsCrypto
 {
     private final JcaJceHelper helper;
+    private final SecureRandom nonceEntropySource;
 
-    JcaTlsCrypto(JcaJceHelper helper)
+    JcaTlsCrypto(JcaJceHelper helper, SecureRandom entropySource, SecureRandom nonceEntropySource)
     {
+        super(entropySource);
+
         this.helper = helper;
+        this.nonceEntropySource = nonceEntropySource;
     }
 
     public JceTlsSecret adoptSecret(byte[] data)
     {
         return new JceTlsSecret(this, data);
+    }
+
+    public byte[] createNonce(int size)
+    {
+        byte[] nonce = new byte[size];
+
+        nonceEntropySource.nextBytes(nonce);
+
+        return nonce;
     }
 
     public TlsCertificate createCertificate(byte[] encoding)
@@ -284,7 +292,7 @@ public class JcaTlsCrypto
     public TlsSecret generateRandomSecret(int length)
     {
         byte[] data = new byte[length];
-        getContext().getSecureRandom().nextBytes(data);
+        getSecureRandom().nextBytes(data);
         return adoptSecret(data);
     }
 
@@ -293,10 +301,6 @@ public class JcaTlsCrypto
         return new JcaTlsHash(createMessageDigest(algorithm));
     }
 
-    public TlsContext getContext()
-    {
-        return context;
-    }
 
     JcaJceHelper getHelper()
     {
@@ -308,48 +312,10 @@ public class JcaTlsCrypto
     {
         if (signatureAndHashAlgorithm == null)
         {
-            return new CombinedHash(getContext().getCrypto());
+            return new CombinedHash(this);
         }
 
         return new JcaTlsHash(createMessageDigest(signatureAndHashAlgorithm.getHash()));
-    }
-
-    public NonceRandomGenerator createNonceRandomGenerator()
-    {
-        // TODO: really need to find out the story on this one.
-        final Digest d = new SHA256Digest();
-        final DigestRandomGenerator gen = new DigestRandomGenerator(d);
-
-        return new NonceRandomGenerator()
-        {
-            public void addSeedMaterial(byte[] seed)
-            {
-                gen.addSeedMaterial(seed);
-            }
-
-            public void addSeedMaterial(long seed)
-            {
-                gen.addSeedMaterial(seed);
-            }
-
-            public void addSeedMaterial(SecureRandom seedSource)
-            {
-
-                byte[] seed = new byte[d.getDigestSize()];
-                seedSource.nextBytes(seed);
-                addSeedMaterial(seed);
-            }
-
-            public void nextBytes(byte[] bytes)
-            {
-                gen.nextBytes(bytes);
-            }
-
-            public void nextBytes(byte[] bytes, int start, int len)
-            {
-                gen.nextBytes(bytes, start, len);
-            }
-        };
     }
 
     MessageDigest createMessageDigest(short hashAlgorithm)

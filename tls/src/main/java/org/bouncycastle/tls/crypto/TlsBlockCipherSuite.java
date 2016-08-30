@@ -32,9 +32,7 @@ public class TlsBlockCipherSuite
         throws IOException
     {
         this.context = context;
-
-        this.randomData = new byte[256];
-        context.getNonceRandomGenerator().nextBytes(randomData);
+        this.randomData = context.getCrypto().createNonce(256);
 
         this.useExplicitIV = TlsUtils.isTLSv11(context);
         this.encryptThenMAC = context.getSecurityParameters().isEncryptThenMAC();
@@ -160,7 +158,7 @@ public class TlsBlockCipherSuite
         {
             // Add a random number of extra blocks worth of padding
             int maxExtraPadBlocks = (255 - padding_length) / blockSize;
-            int actualExtraPadBlocks = chooseExtraPadBlocks(context.getSecureRandom(), maxExtraPadBlocks);
+            int actualExtraPadBlocks = chooseExtraPadBlocks(context.getCrypto().getSecureRandom(), maxExtraPadBlocks);
             padding_length += actualExtraPadBlocks * blockSize;
         }
 
@@ -175,8 +173,7 @@ public class TlsBlockCipherSuite
 
         if (useExplicitIV)
         {
-            byte[] explicitIV = new byte[blockSize];
-            context.getNonceRandomGenerator().nextBytes(explicitIV);
+            byte[] explicitIV = context.getCrypto().createNonce(blockSize);
 
             encryptCipher.init(explicitIV);
 

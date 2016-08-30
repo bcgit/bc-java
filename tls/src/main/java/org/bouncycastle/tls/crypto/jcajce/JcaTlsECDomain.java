@@ -115,7 +115,7 @@ public class JcaTlsECDomain
         try
         {
             KeyPairGenerator keyPairGenerator = crypto.getHelper().createKeyPairGenerator("EC");
-            keyPairGenerator.initialize(ecDomain.getParameterSpec(ECGenParameterSpec.class), crypto.getContext().getSecureRandom());
+            keyPairGenerator.initialize(ecDomain.getParameterSpec(ECGenParameterSpec.class), crypto.getSecureRandom());
             return keyPairGenerator.generateKeyPair();
         }
         catch (GeneralSecurityException e)

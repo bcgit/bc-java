@@ -65,7 +65,7 @@ public class TlsRSASigner
              */
             signer = new GenericSigner(new PKCS1Encoding(new RSABlindedEngine()), new NullDigest());
         }
-        signer.init(true, new ParametersWithRandom(privateKey, context.getSecureRandom()));
+        signer.init(true, new ParametersWithRandom(privateKey, context.getCrypto().getSecureRandom()));
         signer.update(hash, 0, hash.length);
         try
         {

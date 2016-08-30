@@ -52,7 +52,7 @@ public abstract class BcTlsDSSSigner
         short hashAlgorithm = algorithm == null ? HashAlgorithm.sha1 : algorithm.getHash();
         
         Signer s = new DSADigestSigner(createDSAImpl(hashAlgorithm), new NullDigest());
-        s.init(true, new ParametersWithRandom(privateKey, this.context.getSecureRandom()));
+        s.init(true, new ParametersWithRandom(privateKey, this.context.getCrypto().getSecureRandom()));
         Signer signer = s;
         if (algorithm == null)
         {

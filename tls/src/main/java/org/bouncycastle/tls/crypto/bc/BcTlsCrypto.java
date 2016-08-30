@@ -25,6 +25,7 @@ import org.bouncycastle.crypto.modes.OCBBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
+import org.bouncycastle.tls.AbstractTlsCrypto;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.CombinedHash;
 import org.bouncycastle.tls.EncryptionAlgorithm;
@@ -35,8 +36,6 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.AbstractTlsCrypto;
-import org.bouncycastle.tls.crypto.NonceRandomGenerator;
 import org.bouncycastle.tls.crypto.TlsBlockCipher;
 import org.bouncycastle.tls.crypto.TlsBlockCipherSuite;
 import org.bouncycastle.tls.crypto.TlsCertificate;
@@ -49,13 +48,42 @@ import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsNullCipherSuite;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Times;
 
 public class BcTlsCrypto
     extends AbstractTlsCrypto
 {
+    private final DigestRandomGenerator nonceGen;
+
+    public BcTlsCrypto(SecureRandom entropySource)
+    {
+        super(entropySource);
+
+        Digest digest = createDigest(HashAlgorithm.sha256);
+
+        nonceGen = new DigestRandomGenerator(digest);
+
+        nonceGen.addSeedMaterial(nextCounterValue());
+        nonceGen.addSeedMaterial(Times.nanoTime());
+
+        byte[] seed = new byte[digest.getDigestSize()];
+        entropySource.nextBytes(seed);
+
+        nonceGen.addSeedMaterial(seed);
+    }
+
     public BcTlsSecret adoptSecret(byte[] data)
     {
         return new BcTlsSecret(this, data);
+    }
+
+    public byte[] createNonce(int size)
+    {
+        byte[] nonce = new byte[size];
+
+        nonceGen.nextBytes(nonce);
+
+        return nonce;
     }
 
     public TlsCertificate createCertificate(byte[] encoding)
@@ -152,7 +180,7 @@ public class BcTlsCrypto
     public TlsSecret generateRandomSecret(int length)
     {
         byte[] data = new byte[length];
-        getContext().getSecureRandom().nextBytes(data);
+        entropySource.nextBytes(data);
         return adoptSecret(data);
     }
 
@@ -248,6 +276,7 @@ public class BcTlsCrypto
             digest.reset();
         }
     }
+
     public static Digest cloneDigest(short hashAlgorithm, Digest hash)
     {
         switch (hashAlgorithm)
@@ -267,43 +296,6 @@ public class BcTlsCrypto
         default:
             throw new IllegalArgumentException("unknown HashAlgorithm");
         }
-    }
-
-    public NonceRandomGenerator createNonceRandomGenerator()
-    {
-        final Digest d = createDigest(HashAlgorithm.sha256);
-        final DigestRandomGenerator gen = new DigestRandomGenerator(d);
-
-        return new NonceRandomGenerator()
-        {
-            public void addSeedMaterial(byte[] seed)
-            {
-                gen.addSeedMaterial(seed);
-            }
-
-            public void addSeedMaterial(long seed)
-            {
-                gen.addSeedMaterial(seed);
-            }
-
-            public void addSeedMaterial(SecureRandom seedSource)
-            {
-
-                byte[] seed = new byte[d.getDigestSize()];
-                seedSource.nextBytes(seed);
-                addSeedMaterial(seed);
-            }
-
-            public void nextBytes(byte[] bytes)
-            {
-                gen.nextBytes(bytes);
-            }
-
-            public void nextBytes(byte[] bytes, int start, int len)
-            {
-                gen.nextBytes(bytes, start, len);
-            }
-        };
     }
 
     public Digest cloneHash(short hashAlgorithm, Digest hash)
@@ -611,4 +603,10 @@ public class BcTlsCrypto
         }
     }
 
+    private static long counter = Times.nanoTime();
+
+    private synchronized static long nextCounterValue()
+    {
+        return ++counter;
+    }
 }

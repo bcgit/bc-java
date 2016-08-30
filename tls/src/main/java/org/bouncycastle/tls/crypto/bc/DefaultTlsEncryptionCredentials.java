@@ -79,7 +79,7 @@ public class DefaultTlsEncryptionCredentials
         byte[] encryptedPreMasterSecret)
     {
         TlsContext context = crypto.getContext();
-        SecureRandom secureRandom = context.getSecureRandom();
+        SecureRandom secureRandom = crypto.getSecureRandom();
 
         /*
          * RFC 5246 7.4.7.1.
