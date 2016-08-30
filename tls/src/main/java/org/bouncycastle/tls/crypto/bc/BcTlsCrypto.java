@@ -32,7 +32,6 @@ import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.NonceRandomGenerator;
@@ -42,6 +41,8 @@ import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
+import org.bouncycastle.tls.crypto.TlsHash;
+import org.bouncycastle.tls.crypto.TlsNullCipher;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
@@ -391,7 +392,9 @@ public class BcTlsCrypto
     protected TlsNullCipher createNullCipher(int macAlgorithm)
         throws IOException
     {
-        return new TlsNullCipher(context, createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm));
+        Digest macDigest = createHMACDigest(macAlgorithm);
+
+        return new TlsNullCipher(context, new BcTlsMac(context, macDigest), new BcTlsMac(context, createHMACDigest(macAlgorithm)), macDigest.getDigestSize());
     }
 
     protected TlsStreamCipher createRC4Cipher(int cipherKeySize, int macAlgorithm)
