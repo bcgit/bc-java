@@ -502,7 +502,7 @@ public class BcTlsCrypto
         }
     }
 
-    public TlsHMAC createHMAC(short hashAlgorithm)
+    public TlsHMAC createHMAC(int hashAlgorithm)
     {
         switch (hashAlgorithm)
         {

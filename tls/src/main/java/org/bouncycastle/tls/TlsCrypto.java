@@ -9,6 +9,7 @@ import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
+import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
@@ -36,4 +37,7 @@ public interface TlsCrypto
     byte[] createNonce(int size);
 
     SecureRandom getSecureRandom();
+
+    TlsHMAC createHMAC(int macAlgorithm)
+        throws IOException;
 }

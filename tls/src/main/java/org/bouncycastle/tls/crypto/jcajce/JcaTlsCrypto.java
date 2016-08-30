@@ -266,7 +266,7 @@ public class JcaTlsCrypto
         }
     }
 
-    protected TlsHMAC createHMAC(int macAlgorithm)
+    public TlsHMAC createHMAC(int macAlgorithm)
         throws IOException
     {
         switch (macAlgorithm)

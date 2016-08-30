@@ -15,6 +15,7 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SRPTlsServer;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SimulatedTlsSRPIdentityManager;
+import org.bouncycastle.tls.TlsCrypto;
 import org.bouncycastle.tls.TlsSRPIdentityManager;
 import org.bouncycastle.tls.TlsSRPLoginParameters;
 import org.bouncycastle.tls.TlsSignerCredentials;
@@ -33,8 +34,9 @@ class MockSRPTlsServer
     static final byte[] TEST_SEED_KEY = Strings.toUTF8ByteArray("seed_key");
 
     MockSRPTlsServer()
+        throws IOException
     {
-        super(new BcTlsCrypto(new SecureRandom()), new MyIdentityManager());
+        super(new BcTlsCrypto(new SecureRandom()), new MyIdentityManager(new BcTlsCrypto(new SecureRandom())));
     }
 
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
@@ -105,8 +107,13 @@ class MockSRPTlsServer
     static class MyIdentityManager
         implements TlsSRPIdentityManager
     {
-        protected SimulatedTlsSRPIdentityManager unknownIdentityManager = SimulatedTlsSRPIdentityManager.getRFC5054Default(
-            TEST_GROUP, TEST_SEED_KEY);
+        protected SimulatedTlsSRPIdentityManager unknownIdentityManager;
+
+        MyIdentityManager(TlsCrypto crypto)
+            throws IOException
+        {
+            unknownIdentityManager = SimulatedTlsSRPIdentityManager.getRFC5054Default(crypto, TEST_GROUP, TEST_SEED_KEY);
+        }
 
         public TlsSRPLoginParameters getLoginParameters(byte[] identity)
         {
