@@ -2,6 +2,7 @@ package org.bouncycastle.tls.test;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.security.SecureRandom;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.Certificate;
@@ -14,11 +15,11 @@ import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
+import org.bouncycastle.tls.TlsCrypto;
 import org.bouncycastle.tls.TlsEncryptionCredentials;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsSignerCredentials;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
 import org.bouncycastle.tls.crypto.jcajce.JcaTlsCryptoBuilder;
 
@@ -50,9 +51,9 @@ class TlsTestServerImpl
         switch (config.serverCrypto)
         {
         case TlsTestConfig.CRYPTO_JCA:
-            return new JcaTlsCryptoBuilder().setProvider(new BouncyCastleProvider()).build();
+            return new JcaTlsCryptoBuilder(new SecureRandom(), new SecureRandom()).setProvider(new BouncyCastleProvider()).build();
         default:
-            return new BcTlsCrypto();
+            return new BcTlsCrypto(new SecureRandom());
         }
     }
 

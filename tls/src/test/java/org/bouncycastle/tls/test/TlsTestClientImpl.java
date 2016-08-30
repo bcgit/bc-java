@@ -2,6 +2,7 @@ package org.bouncycastle.tls.test;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.security.SecureRandom;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -21,10 +22,10 @@ import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentials;
+import org.bouncycastle.tls.TlsCrypto;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsSignerCredentials;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
 import org.bouncycastle.tls.crypto.jcajce.JcaTlsCryptoBuilder;
 import org.bouncycastle.util.Arrays;
@@ -57,9 +58,9 @@ class TlsTestClientImpl
         switch (config.clientCrypto)
         {
         case TlsTestConfig.CRYPTO_JCA:
-            return new JcaTlsCryptoBuilder().setProvider(new BouncyCastleProvider()).build();
+            return new JcaTlsCryptoBuilder(new SecureRandom(), new SecureRandom()).setProvider(new BouncyCastleProvider()).build();
         default:
-            return new BcTlsCrypto();
+            return new BcTlsCrypto(new SecureRandom());
         }
     }
 
@@ -277,7 +278,7 @@ class TlsTestClientImpl
         bs = Arrays.clone(bs);
 
         // Flip a random bit
-        int bit = context.getSecureRandom().nextInt(bs.length << 3); 
+        int bit = context.getCrypto().getSecureRandom().nextInt(bs.length << 3);
         bs[bit >>> 3] ^= (1 << (bit & 7));
 
         return bs;

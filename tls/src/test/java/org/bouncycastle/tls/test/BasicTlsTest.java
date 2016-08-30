@@ -9,8 +9,6 @@ import java.security.SecureRandom;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-
-import org.bouncycastle.crypto.prng.RandomGenerator;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
@@ -23,11 +21,11 @@ import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsClient;
 import org.bouncycastle.tls.TlsClientContext;
 import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.tls.TlsCrypto;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsKeyExchange;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.crypto.NonceRandomGenerator;
-import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 

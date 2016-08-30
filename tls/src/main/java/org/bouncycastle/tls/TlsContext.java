@@ -1,17 +1,8 @@
 package org.bouncycastle.tls;
 
-import java.security.SecureRandom;
-
-import org.bouncycastle.tls.crypto.NonceRandomGenerator;
-import org.bouncycastle.tls.crypto.TlsCrypto;
-
 public interface TlsContext
 {
     TlsCrypto getCrypto();
-
-    NonceRandomGenerator getNonceRandomGenerator();
-
-    SecureRandom getSecureRandom();
 
     SecurityParameters getSecurityParameters();
 

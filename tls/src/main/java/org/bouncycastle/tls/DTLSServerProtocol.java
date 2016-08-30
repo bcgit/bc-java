@@ -47,10 +47,9 @@ public class DTLSServerProtocol
 
         ServerHandshakeState state = new ServerHandshakeState();
         state.server = server;
-        state.serverContext = new TlsServerContextImpl(server.getCrypto(), secureRandom, securityParameters);
+        state.serverContext = new TlsServerContextImpl((AbstractTlsCrypto)server.getCrypto(), securityParameters);
 
-        securityParameters.serverRandom = TlsProtocol.createRandomBlock(server.shouldUseGMTUnixTime(),
-            state.serverContext.getNonceRandomGenerator());
+        securityParameters.serverRandom = TlsProtocol.createRandomBlock(server.shouldUseGMTUnixTime(), state.serverContext);
 
         server.init(state.serverContext);
 

@@ -125,7 +125,7 @@ public class TlsSRPKeyExchange
         SRP6GroupParameters srpGroup = getGroupParameters();
         
         // TODO[tls-ops] Construct digest via TlsCrypto
-        srpServer.init(srpGroup, srpVerifier, new SHA1Digest(), context.getSecureRandom());
+        srpServer.init(srpGroup, srpVerifier, new SHA1Digest(), context.getCrypto().getSecureRandom());
         BigInteger B = srpServer.generateServerCredentials();
 
         ServerSRPParams srpParams = new ServerSRPParams(srpGroup.getN(), srpGroup.getG(), srpSalt, B);
@@ -189,7 +189,7 @@ public class TlsSRPKeyExchange
 
         // TODO[tls-ops] Need SRP support in TlsCrypto
         SRP6GroupParameters srpGroup = getGroupParameters();
-        this.srpClient.init(srpGroup, new SHA1Digest(), context.getSecureRandom());
+        this.srpClient.init(srpGroup, new SHA1Digest(), context.getCrypto().getSecureRandom());
     }
 
     public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException

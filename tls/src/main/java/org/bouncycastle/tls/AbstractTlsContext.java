@@ -1,24 +1,9 @@
 package org.bouncycastle.tls;
 
-import java.security.SecureRandom;
-
-import org.bouncycastle.tls.crypto.NonceRandomGenerator;
-import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.util.Times;
-
 abstract class AbstractTlsContext
     implements TlsContext
 {
-    private static long counter = Times.nanoTime();
-
-    private synchronized static long nextCounterValue()
-    {
-        return ++counter;
-    }
-
-    private TlsCrypto crypto;
-    private NonceRandomGenerator nonceRandom;
-    private SecureRandom secureRandom;
+    private AbstractTlsCrypto crypto;
     private SecurityParameters securityParameters;
 
     private ProtocolVersion clientVersion = null;
@@ -26,33 +11,17 @@ abstract class AbstractTlsContext
     private TlsSession session = null;
     private Object userObject = null;
 
-    AbstractTlsContext(TlsCrypto crypto, SecureRandom secureRandom, SecurityParameters securityParameters)
+    AbstractTlsContext(AbstractTlsCrypto crypto, SecurityParameters securityParameters)
     {
         this.crypto = crypto;
         this.crypto.init(this);
 
-        this.nonceRandom = crypto.createNonceRandomGenerator();
-        this.nonceRandom.addSeedMaterial(nextCounterValue());
-        this.nonceRandom.addSeedMaterial(Times.nanoTime());
-        this.nonceRandom.addSeedMaterial(secureRandom);
-
-        this.secureRandom = secureRandom;
         this.securityParameters = securityParameters;
     }
 
     public TlsCrypto getCrypto()
     {
         return crypto;
-    }
-
-    public NonceRandomGenerator getNonceRandomGenerator()
-    {
-        return nonceRandom;
-    }
-
-    public SecureRandom getSecureRandom()
-    {
-        return secureRandom;
     }
 
     public SecurityParameters getSecurityParameters()

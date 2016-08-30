@@ -37,7 +37,7 @@ public class TlsServerProtocol
     /**
      * Constructor for non-blocking mode.<br>
      * <br>
-     * When data is received, use {@link #offerInput(java.nio.ByteBuffer)} to
+     * When data is received, use {@link #offerOutput(byte[], int, int)} to
      * provide the received ciphertext, then use
      * {@link #readInput(byte[], int, int)} to read the corresponding cleartext.<br>
      * <br>
@@ -81,10 +81,9 @@ public class TlsServerProtocol
         this.securityParameters = new SecurityParameters();
         this.securityParameters.entity = ConnectionEnd.server;
 
-        this.tlsServerContext = new TlsServerContextImpl(tlsServer.getCrypto(), secureRandom, securityParameters);
+        this.tlsServerContext = new TlsServerContextImpl((AbstractTlsCrypto)tlsServer.getCrypto(), securityParameters);
 
-        this.securityParameters.serverRandom = createRandomBlock(tlsServer.shouldUseGMTUnixTime(),
-            tlsServerContext.getNonceRandomGenerator());
+        this.securityParameters.serverRandom = createRandomBlock(tlsServer.shouldUseGMTUnixTime(), tlsServerContext);
 
         this.tlsServer.init(tlsServerContext);
         this.recordStream.init(tlsServerContext);

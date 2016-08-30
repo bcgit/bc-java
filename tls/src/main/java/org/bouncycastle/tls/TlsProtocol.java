@@ -11,7 +11,6 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.tls.crypto.NonceRandomGenerator;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
@@ -1116,10 +1115,9 @@ public abstract class TlsProtocol
         }
     }
 
-    protected static byte[] createRandomBlock(boolean useGMTUnixTime, NonceRandomGenerator randomGenerator)
+    protected static byte[] createRandomBlock(boolean useGMTUnixTime, TlsContext context)
     {
-        byte[] result = new byte[32];
-        randomGenerator.nextBytes(result);
+        byte[] result = context.getCrypto().createNonce(32);
 
         if (useGMTUnixTime)
         {

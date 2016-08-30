@@ -1,16 +1,12 @@
 package org.bouncycastle.tls;
 
-import java.security.SecureRandom;
-
-import org.bouncycastle.tls.crypto.TlsCrypto;
-
 class TlsServerContextImpl
     extends AbstractTlsContext
     implements TlsServerContext
 {
-    TlsServerContextImpl(TlsCrypto crypto, SecureRandom secureRandom, SecurityParameters securityParameters)
+    TlsServerContextImpl(AbstractTlsCrypto crypto, SecurityParameters securityParameters)
     {
-        super(crypto, secureRandom, securityParameters);
+        super(crypto, securityParameters);
     }
 
     public boolean isServer()

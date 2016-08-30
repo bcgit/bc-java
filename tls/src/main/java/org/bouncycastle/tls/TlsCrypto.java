@@ -1,17 +1,19 @@
-package org.bouncycastle.tls.crypto;
+package org.bouncycastle.tls;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 
-import org.bouncycastle.tls.EncryptionAlgorithm;
-import org.bouncycastle.tls.MACAlgorithm;
-import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.TlsContext;
+import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCipherSuite;
+import org.bouncycastle.tls.crypto.TlsDHConfig;
+import org.bouncycastle.tls.crypto.TlsDHDomain;
+import org.bouncycastle.tls.crypto.TlsECConfig;
+import org.bouncycastle.tls.crypto.TlsECDomain;
+import org.bouncycastle.tls.crypto.TlsHash;
+import org.bouncycastle.tls.crypto.TlsSecret;
 
 public interface TlsCrypto
 {
-    // TODO[tls-ops] We should review how feasible it is to not TlsContext within TlsCrypto
-    void init(TlsContext context);
-
     TlsCertificate createCertificate(byte[] encoding) throws IOException;
 
     /**
@@ -31,5 +33,7 @@ public interface TlsCrypto
 
     TlsHash createHash(short algorithm);
 
-    NonceRandomGenerator createNonceRandomGenerator();
+    byte[] createNonce(int size);
+
+    SecureRandom getSecureRandom();
 }
