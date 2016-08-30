@@ -2,10 +2,12 @@ package org.bouncycastle.tls.crypto.jcajce;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
+import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -31,6 +33,7 @@ import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
+import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsMac;
 import org.bouncycastle.tls.crypto.TlsNullCipherSuite;
@@ -190,7 +193,7 @@ public class JcaTlsCrypto
         }
         else
         {
-            return new JceTlsMac(context, createHMACDigest(macAlgorithm));
+            return new JceTlsMac(context, createHMAC(macAlgorithm));
         }
     }
 
@@ -258,6 +261,28 @@ public class JcaTlsCrypto
             return createMessageDigest(HashAlgorithm.sha384);
         case MACAlgorithm.hmac_sha512:
             return createMessageDigest(HashAlgorithm.sha512);
+        default:
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
+    protected TlsHMAC createHMAC(int macAlgorithm)
+        throws IOException
+    {
+        switch (macAlgorithm)
+        {
+        case MACAlgorithm._null:
+            return null;
+        case MACAlgorithm.hmac_md5:
+            return new TlsHMac("HmacMD5", 64);
+        case MACAlgorithm.hmac_sha1:
+            return new TlsHMac("HmacSHA1", 64);
+        case MACAlgorithm.hmac_sha256:
+            return new TlsHMac("HmacSHA256", 64);
+        case MACAlgorithm.hmac_sha384:
+            return new TlsHMac("HmacSHA384", 128);
+        case MACAlgorithm.hmac_sha512:
+            return new TlsHMac("HmacSHA512", 128);
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -606,6 +631,164 @@ public class JcaTlsCrypto
             {
                 throw new IllegalStateException(e);
             }
+        }
+    }
+
+    private class TlsHMac
+        implements TlsHMAC
+    {
+        private final String algorithm;
+        private final int internalBlockSize;
+
+        private Mac hmac;
+
+        TlsHMac(String algorithm, int internalBlockSize)
+        {
+            this.algorithm = algorithm;
+            this.internalBlockSize = internalBlockSize;
+            try
+            {
+                this.hmac = helper.createMac(algorithm);
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new IllegalStateException("cannot create HMAC: " + e.getMessage(), e);
+            }
+        }
+
+        public void setKey(byte[] key)
+        {
+            try
+            {
+                hmac.init(new SecretKeySpec(key, algorithm));
+            }
+            catch (InvalidKeyException e)
+            {
+                e.printStackTrace();
+            }
+        }
+
+        public void update(byte[] input, int inOff, int length)
+        {
+            hmac.update(input, inOff, length);
+        }
+
+        public byte[] calculateMAC()
+        {
+            return hmac.doFinal();
+        }
+
+        public int getInternalBlockSize()
+        {
+            return internalBlockSize;
+        }
+
+        public int getMacLength()
+        {
+            return hmac.getMacLength();
+        }
+
+        public void reset()
+        {
+            hmac.reset();
+        }
+    }
+
+    /**
+     * HMAC implementation based on original internet draft for HMAC (RFC 2104)
+     * <p>
+     * The difference is that padding is concatenated versus XORed with the key
+     * <p>
+     * H(K + opad, H(K + ipad, text))
+     */
+    private static class SSL3Mac
+        implements TlsHMAC
+    {
+        private static final byte IPAD_BYTE = (byte)0x36;
+        private static final byte OPAD_BYTE = (byte)0x5C;
+
+        private static final byte[] IPAD = genPad(IPAD_BYTE, 48);
+        private static final byte[] OPAD = genPad(OPAD_BYTE, 48);
+
+        private MessageDigest digest;
+        private final int internalBlockSize;
+        private int padLength;
+
+        private byte[] secret;
+
+        /**
+         * Base constructor for one of the standard digest algorithms that the byteLength of
+         * the algorithm is know for. Behaviour is undefined for digests other than MD5 or SHA1.
+         *
+         * @param digest the digest.
+         */
+        public SSL3Mac(MessageDigest digest, int internalBlockSize)
+        {
+            this.digest = digest;
+            this.internalBlockSize = internalBlockSize;
+
+            if (digest.getDigestLength() == 20)
+            {
+                this.padLength = 40;
+            }
+            else
+            {
+                this.padLength = 48;
+            }
+        }
+
+        public void setKey(byte[] key)
+        {
+            this.secret = key;
+
+            reset();
+        }
+
+        public void update(byte[] in, int inOff, int len)
+        {
+            digest.update(in, inOff, len);
+        }
+
+        public byte[] calculateMAC()
+        {
+            byte[] tmp = digest.digest();
+
+            digest.update(secret, 0, secret.length);
+            digest.update(OPAD, 0, padLength);
+            digest.update(tmp, 0, tmp.length);
+
+            byte[] rv = digest.digest();
+
+            reset();
+
+            return rv;
+        }
+
+        public int getInternalBlockSize()
+        {
+            return internalBlockSize;
+        }
+
+        public int getMacLength()
+        {
+            return digest.getDigestLength();
+        }
+
+        /**
+         * Reset the mac generator.
+         */
+        public void reset()
+        {
+            digest.reset();
+            digest.update(secret, 0, secret.length);
+            digest.update(IPAD, 0, padLength);
+        }
+
+        private static byte[] genPad(byte b, int count)
+        {
+            byte[] padding = new byte[count];
+            Arrays.fill(padding, b);
+            return padding;
         }
     }
 }

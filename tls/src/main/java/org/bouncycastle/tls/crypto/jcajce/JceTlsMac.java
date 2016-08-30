@@ -2,18 +2,11 @@ package org.bouncycastle.tls.crypto.jcajce;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
-import java.security.MessageDigest;
 
-import javax.crypto.Mac;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsContext;
-import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsMac;
 import org.bouncycastle.util.Arrays;
 
@@ -25,7 +18,7 @@ public class JceTlsMac
 {
     protected TlsContext context;
     protected byte[] secret;
-    protected Mac mac;
+    protected TlsHMAC mac;
     protected int digestBlockSize;
     protected int digestOverhead;
     protected int macLength;
@@ -34,24 +27,15 @@ public class JceTlsMac
      * Generate a new instance of an TlsMac.
      *
      * @param context the TLS client context
-     * @param digest  The digest to use.
+     * @param mac  The MAC to use.
      */
-    public JceTlsMac(TlsContext context, MessageDigest digest)
+    public JceTlsMac(TlsContext context, TlsHMAC mac)
         throws GeneralSecurityException
     {
         this.context = context;
 
-        // TODO This should check the actual algorithm, not rely on the engine type
-        if (digest.getAlgorithm().endsWith("384") || digest.getAlgorithm().contains("512"))
-        {
-            this.digestBlockSize = 128;
-            this.digestOverhead = 16;
-        }
-        else
-        {
-            this.digestBlockSize = 64;
-            this.digestOverhead = 8;
-        }
+        this.digestBlockSize = mac.getInternalBlockSize();
+        this.digestOverhead = digestBlockSize / 8;
 
         if (TlsUtils.isSSL(context))
         {
@@ -59,7 +43,7 @@ public class JceTlsMac
         }
         else
         {
-            this.mac = ((JcaTlsCrypto)context.getCrypto()).getHelper().createMac("Hmac" + digest.getAlgorithm().replace("-", ""));
+            this.mac = mac;
 
             // NOTE: The input pad for HMAC is always a full digest block
         }
@@ -70,16 +54,7 @@ public class JceTlsMac
     {
         this.secret = Arrays.clone(key);
 
-        SecretKey keyParameter = new SecretKeySpec(key, mac.getAlgorithm());
-
-        try
-        {
-            this.mac.init(keyParameter);
-        }
-        catch (InvalidKeyException e)
-        {
-            throw new TlsFatalAlert(AlertDescription.handshake_failure, e);
-        }
+        this.mac.setKey(secret);
 
         this.macLength = mac.getMacLength();
         if (context.getSecurityParameters().isTruncatedHMac())
@@ -130,7 +105,7 @@ public class JceTlsMac
         mac.update(macHeader, 0, macHeader.length);
         mac.update(message, offset, length);
 
-        return truncate(mac.doFinal());
+        return truncate(mac.calculateMAC());
     }
 
     public byte[] calculateMacConstantTime(long seqNo, short type, byte[] message, int offset, int length,
@@ -156,7 +131,7 @@ public class JceTlsMac
         }
 
         // One more byte in case the implementation is "lazy" about processing blocks
-        mac.update(dummyData[0]);
+        mac.update(dummyData, 0, 1);
         mac.reset();
 
         return result;

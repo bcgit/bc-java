@@ -5,12 +5,13 @@ import java.io.IOException;
 public abstract class AbstractTlsPeer
     implements TlsPeer
 {
-    final AbstractTlsCrypto crypto;
+    private final AbstractTlsCrypto crypto;
 
     AbstractTlsPeer(AbstractTlsCrypto crypto)
     {
         this.crypto = crypto;
     }
+
     public TlsCrypto getCrypto()
     {
         return crypto;
