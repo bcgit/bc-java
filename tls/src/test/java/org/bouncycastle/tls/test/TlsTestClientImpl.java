@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.CertificateRequest;
@@ -56,7 +57,7 @@ class TlsTestClientImpl
         switch (config.clientCrypto)
         {
         case TlsTestConfig.CRYPTO_JCA:
-            return new JcaTlsCryptoBuilder().build();
+            return new JcaTlsCryptoBuilder().setProvider(new BouncyCastleProvider()).build();
         default:
             return new BcTlsCrypto();
         }

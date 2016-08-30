@@ -39,8 +39,7 @@ public class TlsBlockCipher
         this.useExplicitIV = TlsUtils.isTLSv11(context);
         this.encryptThenMAC = context.getSecurityParameters().isEncryptThenMAC();
 
-        int key_block_size = (2 * cipherKeySize) + macKeySize
-            + macKeySize;
+        int key_block_size = (2 * cipherKeySize) + macKeySize + macKeySize;
 
         // From TLS 1.1 onwards, block ciphers don't need client_write_IV
         if (!useExplicitIV)
@@ -62,29 +61,19 @@ public class TlsBlockCipher
         byte[] server_write_key = Arrays.copyOfRange(key_block, offset, offset + cipherKeySize);
         offset += cipherKeySize;
 
-        byte[] encryptor_IV, decryptor_IV;
+        byte[] server_IV, client_IV;
 
         if (useExplicitIV)
         {
-            encryptor_IV = new byte[encryptCipher.getBlockSize()];
-            decryptor_IV = new byte[decryptCipher.getBlockSize()];
+            client_IV = new byte[encryptCipher.getBlockSize()];
+            server_IV = new byte[encryptCipher.getBlockSize()];
         }
         else
         {
-            if (context.isServer())
-            {
-                decryptor_IV = Arrays.copyOfRange(key_block, offset, offset + decryptCipher.getBlockSize());
-                offset += decryptCipher.getBlockSize();
-                encryptor_IV = Arrays.copyOfRange(key_block, offset, offset + encryptCipher.getBlockSize());
-                offset += encryptCipher.getBlockSize();
-            }
-            else
-            {
-                encryptor_IV = Arrays.copyOfRange(key_block, offset, offset + encryptCipher.getBlockSize());
-                offset += encryptCipher.getBlockSize();
-                decryptor_IV = Arrays.copyOfRange(key_block, offset, offset + decryptCipher.getBlockSize());
-                offset += decryptCipher.getBlockSize();
-            }
+            client_IV = Arrays.copyOfRange(key_block, offset, offset + encryptCipher.getBlockSize());
+            offset += encryptCipher.getBlockSize();
+            server_IV = Arrays.copyOfRange(key_block, offset, offset + encryptCipher.getBlockSize());
+            offset += encryptCipher.getBlockSize();
         }
 
         if (offset != key_block_size)
@@ -104,6 +93,8 @@ public class TlsBlockCipher
 
             this.encryptCipher.setKey(server_write_key);
             this.decryptCipher.setKey(client_write_key);
+            this.encryptCipher.init(server_IV);
+            this.decryptCipher.init(client_IV);
         }
         else
         {
@@ -112,10 +103,9 @@ public class TlsBlockCipher
 
             this.encryptCipher.setKey(client_write_key);
             this.decryptCipher.setKey(server_write_key);
+            this.encryptCipher.init(client_IV);
+            this.decryptCipher.init(server_IV);
         }
-
-        this.encryptCipher.init(encryptor_IV);
-        this.decryptCipher.init(decryptor_IV);
     }
 
     public int getPlaintextLimit(int ciphertextLimit)
@@ -221,7 +211,6 @@ public class TlsBlockCipher
         }
 
 //        assert outBuf.length == outOff;
-
         return outBuf;
     }
 
