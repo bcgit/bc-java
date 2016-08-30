@@ -36,13 +36,15 @@ public abstract class AbstractTlsServer
     protected short selectedCompressionMethod;
     protected Hashtable serverExtensions;
 
-    public AbstractTlsServer()
+    public AbstractTlsServer(AbstractTlsCrypto crypto)
     {
-        this(new DefaultTlsKeyExchangeFactory());
+        this(crypto, new DefaultTlsKeyExchangeFactory());
     }
 
-    public AbstractTlsServer(TlsKeyExchangeFactory keyExchangeFactory)
+    public AbstractTlsServer(AbstractTlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory)
     {
+        super(crypto);
+
         this.keyExchangeFactory = keyExchangeFactory;
     }
 

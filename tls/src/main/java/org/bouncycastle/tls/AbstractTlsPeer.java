@@ -1,17 +1,19 @@
 package org.bouncycastle.tls;
 
 import java.io.IOException;
-import java.security.SecureRandom;
-
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.tls.crypto.jcajce.JcaTlsCryptoBuilder;
 
 public abstract class AbstractTlsPeer
     implements TlsPeer
 {
+    final AbstractTlsCrypto crypto;
+
+    AbstractTlsPeer(AbstractTlsCrypto crypto)
+    {
+        this.crypto = crypto;
+    }
     public TlsCrypto getCrypto()
     {
-        return new JcaTlsCryptoBuilder(new SecureRandom(), new SecureRandom()).setProvider(new BouncyCastleProvider()).build();
+        return crypto;
     }
 
     public boolean shouldUseGMTUnixTime()

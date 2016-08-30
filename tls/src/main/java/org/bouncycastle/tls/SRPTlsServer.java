@@ -11,14 +11,14 @@ public class SRPTlsServer
     protected byte[] srpIdentity = null;
     protected TlsSRPLoginParameters loginParameters = null;
 
-    public SRPTlsServer(TlsSRPIdentityManager srpIdentityManager)
+    public SRPTlsServer(AbstractTlsCrypto crypto, TlsSRPIdentityManager srpIdentityManager)
     {
-        this(new DefaultTlsKeyExchangeFactory(), srpIdentityManager);
+        this(crypto, new DefaultTlsKeyExchangeFactory(), srpIdentityManager);
     }
 
-    public SRPTlsServer(TlsKeyExchangeFactory keyExchangeFactory, TlsSRPIdentityManager srpIdentityManager)
+    public SRPTlsServer(AbstractTlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsSRPIdentityManager srpIdentityManager)
     {
-        super(keyExchangeFactory);
+        super(crypto, keyExchangeFactory);
         this.srpIdentityManager = srpIdentityManager;
     }
 

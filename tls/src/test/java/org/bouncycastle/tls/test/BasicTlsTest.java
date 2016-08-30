@@ -26,6 +26,7 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsKeyExchange;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.crypto.NonceRandomGenerator;
+import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -218,6 +219,8 @@ public class BasicTlsTest
 
         MyTlsClient(TlsAuthentication authentication)
         {
+            super(new BcTlsCrypto(new SecureRandom()));
+
             this.authentication = authentication;
         }
 

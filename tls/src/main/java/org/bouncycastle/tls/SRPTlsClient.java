@@ -13,15 +13,15 @@ public class SRPTlsClient
     protected byte[] identity;
     protected byte[] password;
 
-    public SRPTlsClient(byte[] identity, byte[] password)
+    public SRPTlsClient(AbstractTlsCrypto crypto, byte[] identity, byte[] password)
     {
-        this(new DefaultTlsKeyExchangeFactory(), new DefaultTlsSRPConfigVerifier(), identity, password);
+        this(crypto, new DefaultTlsKeyExchangeFactory(), new DefaultTlsSRPConfigVerifier(), identity, password);
     }
 
-    public SRPTlsClient(TlsKeyExchangeFactory keyExchangeFactory, TlsSRPConfigVerifier srpConfigVerifier,
+    public SRPTlsClient(AbstractTlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsSRPConfigVerifier srpConfigVerifier,
         byte[] identity, byte[] password)
     {
-        super(keyExchangeFactory);
+        super(crypto, keyExchangeFactory);
         this.srpConfigVerifier = srpConfigVerifier;
         this.identity = Arrays.clone(identity);
         this.password = Arrays.clone(password);

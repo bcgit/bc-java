@@ -7,14 +7,14 @@ public abstract class DefaultTlsClient
 {
     protected TlsDHConfigVerifier dhConfigVerifier;
 
-    public DefaultTlsClient()
+    public DefaultTlsClient(AbstractTlsCrypto crypto)
     {
-        this(new DefaultTlsKeyExchangeFactory(), new DefaultTlsDHConfigVerifier());
+        this(crypto, new DefaultTlsKeyExchangeFactory(), new DefaultTlsDHConfigVerifier());
     }
 
-    public DefaultTlsClient(TlsKeyExchangeFactory keyExchangeFactory, TlsDHConfigVerifier dhConfigVerifier)
+    public DefaultTlsClient(AbstractTlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsDHConfigVerifier dhConfigVerifier)
     {
-        super(keyExchangeFactory);
+        super(crypto, keyExchangeFactory);
         this.dhConfigVerifier = dhConfigVerifier;
     }
 

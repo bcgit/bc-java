@@ -10,14 +10,14 @@ public class PSKTlsServer
 {
     protected TlsPSKIdentityManager pskIdentityManager;
 
-    public PSKTlsServer(TlsPSKIdentityManager pskIdentityManager)
+    public PSKTlsServer(AbstractTlsCrypto crypto, TlsPSKIdentityManager pskIdentityManager)
     {
-        this(new DefaultTlsKeyExchangeFactory(), pskIdentityManager);
+        this(crypto, new DefaultTlsKeyExchangeFactory(), pskIdentityManager);
     }
 
-    public PSKTlsServer(TlsKeyExchangeFactory keyExchangeFactory, TlsPSKIdentityManager pskIdentityManager)
+    public PSKTlsServer(AbstractTlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsPSKIdentityManager pskIdentityManager)
     {
-        super(keyExchangeFactory);
+        super(crypto, keyExchangeFactory);
         this.pskIdentityManager = pskIdentityManager;
     }
 

@@ -2,6 +2,7 @@ package org.bouncycastle.tls.test;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.security.SecureRandom;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.Certificate;
@@ -15,10 +16,16 @@ import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsEncryptionCredentials;
 import org.bouncycastle.tls.TlsSignerCredentials;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
 
 public class MockDTLSServer
     extends DefaultTlsServer
 {
+    MockDTLSServer()
+    {
+        super(new BcTlsCrypto(new SecureRandom()));
+    }
+
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;

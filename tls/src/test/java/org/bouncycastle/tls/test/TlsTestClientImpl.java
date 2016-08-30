@@ -40,6 +40,8 @@ class TlsTestClientImpl
 
     TlsTestClientImpl(TlsTestConfig config)
     {
+        super(new BcTlsCrypto(new SecureRandom()));
+
         this.config = config;
     }
 

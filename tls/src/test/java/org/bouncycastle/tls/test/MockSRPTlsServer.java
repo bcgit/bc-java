@@ -3,6 +3,7 @@ package org.bouncycastle.tls.test;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
+import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.agreement.srp.SRP6StandardGroups;
 import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
@@ -18,6 +19,7 @@ import org.bouncycastle.tls.TlsSRPIdentityManager;
 import org.bouncycastle.tls.TlsSRPLoginParameters;
 import org.bouncycastle.tls.TlsSignerCredentials;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
+import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
@@ -32,7 +34,7 @@ class MockSRPTlsServer
 
     MockSRPTlsServer()
     {
-        super(new MyIdentityManager());
+        super(new BcTlsCrypto(new SecureRandom()), new MyIdentityManager());
     }
 
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)

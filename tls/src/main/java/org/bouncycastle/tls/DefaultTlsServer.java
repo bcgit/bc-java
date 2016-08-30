@@ -5,14 +5,14 @@ import java.io.IOException;
 public abstract class DefaultTlsServer
     extends AbstractTlsServer
 {
-    public DefaultTlsServer()
+    public DefaultTlsServer(AbstractTlsCrypto crypto)
     {
-        super();
+        super(crypto);
     }
 
-    public DefaultTlsServer(TlsKeyExchangeFactory keyExchangeFactory)
+    public DefaultTlsServer(AbstractTlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory)
     {
-        super(keyExchangeFactory);
+        super(crypto, keyExchangeFactory);
     }
 
     protected TlsSignerCredentials getDSASignerCredentials()

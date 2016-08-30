@@ -2,6 +2,7 @@ package org.bouncycastle.tls.test;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.security.SecureRandom;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
@@ -9,6 +10,7 @@ import org.bouncycastle.tls.PSKTlsServer;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsEncryptionCredentials;
 import org.bouncycastle.tls.TlsPSKIdentityManager;
+import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
 import org.bouncycastle.util.Strings;
 
 class MockPSKTlsServer
@@ -16,7 +18,7 @@ class MockPSKTlsServer
 {
     MockPSKTlsServer()
     {
-        super(new MyIdentityManager());
+        super(new BcTlsCrypto(new SecureRandom()), new MyIdentityManager());
     }
 
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)

@@ -21,13 +21,15 @@ public abstract class AbstractTlsClient
     protected int selectedCipherSuite;
     protected short selectedCompressionMethod;
 
-    public AbstractTlsClient()
+    public AbstractTlsClient(AbstractTlsCrypto crypto)
     {
-        this(new DefaultTlsKeyExchangeFactory());
+        this(crypto, new DefaultTlsKeyExchangeFactory());
     }
 
-    public AbstractTlsClient(TlsKeyExchangeFactory keyExchangeFactory)
+    public AbstractTlsClient(AbstractTlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory)
     {
+        super(crypto);
+
         this.keyExchangeFactory = keyExchangeFactory;
     }
 

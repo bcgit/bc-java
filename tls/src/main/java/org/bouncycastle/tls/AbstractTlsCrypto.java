@@ -7,7 +7,7 @@ public abstract class AbstractTlsCrypto implements TlsCrypto
     protected final SecureRandom entropySource;
     protected TlsContext context;
 
-    public AbstractTlsCrypto(SecureRandom entropySource)
+    protected AbstractTlsCrypto(SecureRandom entropySource)
     {
         this.entropySource = entropySource;
     }

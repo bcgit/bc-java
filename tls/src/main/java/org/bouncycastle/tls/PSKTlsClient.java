@@ -8,15 +8,16 @@ public class PSKTlsClient
     protected TlsDHConfigVerifier dhConfigVerifier;
     protected TlsPSKIdentity pskIdentity;
 
-    public PSKTlsClient(TlsPSKIdentity pskIdentity)
+    public PSKTlsClient(AbstractTlsCrypto crypto, TlsPSKIdentity pskIdentity)
     {
-        this(new DefaultTlsKeyExchangeFactory(), new DefaultTlsDHConfigVerifier(), pskIdentity);
+        this(crypto, new DefaultTlsKeyExchangeFactory(), new DefaultTlsDHConfigVerifier(), pskIdentity);
     }
 
-    public PSKTlsClient(TlsKeyExchangeFactory keyExchangeFactory, TlsDHConfigVerifier dhConfigVerifier,
+    public PSKTlsClient(AbstractTlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsDHConfigVerifier dhConfigVerifier,
         TlsPSKIdentity pskIdentity)
     {
-        super(keyExchangeFactory);
+        super(crypto, keyExchangeFactory);
+
         this.dhConfigVerifier = dhConfigVerifier;
         this.pskIdentity = pskIdentity;
     }
