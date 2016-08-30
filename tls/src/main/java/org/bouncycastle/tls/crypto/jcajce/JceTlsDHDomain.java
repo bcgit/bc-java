@@ -13,7 +13,6 @@ import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
 
-import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsAgreement;
@@ -84,7 +83,7 @@ public class JceTlsDHDomain
         return BigIntegers.asUnsignedByteArray(x);
     }
 
-    public byte[] encodePublicKey(DHPublicKeyParameters publicKey) throws IOException
+    public byte[] encodePublicKey(DHPublicKey publicKey) throws IOException
     {
         return encodeParameter(publicKey.getY());
     }

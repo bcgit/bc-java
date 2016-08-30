@@ -8,7 +8,6 @@ import java.security.KeyPair;
 import javax.crypto.interfaces.DHPrivateKey;
 import javax.crypto.interfaces.DHPublicKey;
 
-import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsAgreement;
@@ -35,7 +34,7 @@ public class JceTlsDH
     public byte[] generateEphemeral() throws IOException
     {
         this.localKeyPair = domain.generateKeyPair();
-        return domain.encodePublicKey((DHPublicKeyParameters)localKeyPair.getPublic());
+        return domain.encodePublicKey((DHPublicKey)localKeyPair.getPublic());
     }
 
     public void receivePeerValue(byte[] peerValue) throws IOException

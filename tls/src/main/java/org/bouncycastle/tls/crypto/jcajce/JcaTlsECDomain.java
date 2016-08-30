@@ -19,9 +19,6 @@ import java.security.spec.EllipticCurve;
 
 import javax.crypto.KeyAgreement;
 
-import org.bouncycastle.asn1.x9.ECNamedCurveTable;
-import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.tls.AlertDescription;
@@ -110,7 +107,7 @@ public class JcaTlsECDomain
     {
         java.security.spec.ECPoint w = publicKey.getW();
 
-        return encodePoint(convertCurve(publicKey.getParams().getCurve()).createPoint(w.getAffineX(), w.getAffineY()));
+        return encodePoint(ecCurve.createPoint(w.getAffineX(), w.getAffineY()));
     }
 
     public KeyPair generateKeyPair()
@@ -143,23 +140,14 @@ public class JcaTlsECDomain
              return;
         }
 
-        X9ECParameters ecP = CustomNamedCurves.getByName(curveName);
-        if (ecP == null)
-        {
-            ecP = ECNamedCurveTable.getByName(curveName);
-            if (ecP == null)
-            {
-                return;
-            }
-        }
-
-        this.ecCurve = ecP.getCurve();
-
         try
         {
             this.ecDomain  = crypto.getHelper().createAlgorithmParameters("EC");
             this.ecDomain .init(new ECGenParameterSpec(curveName));
             // It's a bit inefficient to do this conversion every time
+            ECParameterSpec ecSpec = this.ecDomain.getParameterSpec(ECParameterSpec.class);
+
+            this.ecCurve = convertCurve(ecSpec.getCurve());
         }
         catch (GeneralSecurityException e)
         {
