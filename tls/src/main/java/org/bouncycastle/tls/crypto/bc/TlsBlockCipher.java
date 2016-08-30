@@ -67,11 +67,11 @@ public class TlsBlockCipher
 
         int offset = 0;
 
-        BcTlsMac clientWriteMac = new BcTlsMac(context, clientWriteDigest, key_block, offset,
-            clientWriteDigest.getDigestSize());
+        BcTlsMac clientWriteMac = new BcTlsMac(context, clientWriteDigest);
+        clientWriteMac.setKey(Arrays.copyOfRange(key_block, offset, offset + clientWriteDigest.getDigestSize()));
         offset += clientWriteDigest.getDigestSize();
-        BcTlsMac serverWriteMac = new BcTlsMac(context, serverWriteDigest, key_block, offset,
-            serverWriteDigest.getDigestSize());
+        BcTlsMac serverWriteMac = new BcTlsMac(context, serverWriteDigest);
+        serverWriteMac.setKey(Arrays.copyOfRange(key_block, offset, offset + serverWriteDigest.getDigestSize()));
         offset += serverWriteDigest.getDigestSize();
 
         KeyParameter client_write_key = new KeyParameter(key_block, offset, cipherKeySize);

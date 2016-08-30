@@ -23,20 +23,17 @@ public class TlsNullCipher
     {
         this.context = context;
 
-        BcTlsMac clientWriteMac = null, serverWriteMac = null;
-
         int key_block_size = clientWriteDigest.getDigestSize()
             + serverWriteDigest.getDigestSize();
         byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
 
         int offset = 0;
 
-        clientWriteMac = new BcTlsMac(context, clientWriteDigest, key_block, offset,
-            clientWriteDigest.getDigestSize());
+        BcTlsMac clientWriteMac = new BcTlsMac(context, clientWriteDigest);
+        clientWriteMac.setKey(Arrays.copyOfRange(key_block, offset, offset + clientWriteDigest.getDigestSize()));
         offset += clientWriteDigest.getDigestSize();
-
-        serverWriteMac = new BcTlsMac(context, serverWriteDigest, key_block, offset,
-            serverWriteDigest.getDigestSize());
+        BcTlsMac serverWriteMac = new BcTlsMac(context, serverWriteDigest);
+        serverWriteMac.setKey(Arrays.copyOfRange(key_block, offset, offset + serverWriteDigest.getDigestSize()));
         offset += serverWriteDigest.getDigestSize();
 
         if (offset != key_block_size)

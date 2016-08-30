@@ -186,8 +186,6 @@ public class JcaTlsCrypto
         }
     }
 
-
-
     protected TlsCipher createChaCha20Poly1305()
         throws IOException
     {

@@ -19,7 +19,7 @@ import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
-class JceTlsSecret
+public class JceTlsSecret
     implements TlsSecret
 {
     protected static final int MD5_SIZE = 16;

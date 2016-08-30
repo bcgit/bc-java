@@ -47,11 +47,11 @@ public class TlsStreamCipher
         int offset = 0;
 
         // Init MACs
-        BcTlsMac clientWriteMac = new BcTlsMac(context, clientWriteDigest, key_block, offset,
-            clientWriteDigest.getDigestSize());
+        BcTlsMac clientWriteMac = new BcTlsMac(context, clientWriteDigest);
+        clientWriteMac.setKey(Arrays.copyOfRange(key_block, offset, offset + clientWriteDigest.getDigestSize()));
         offset += clientWriteDigest.getDigestSize();
-        BcTlsMac serverWriteMac = new BcTlsMac(context, serverWriteDigest, key_block, offset,
-            serverWriteDigest.getDigestSize());
+        BcTlsMac serverWriteMac = new BcTlsMac(context, serverWriteDigest);
+        serverWriteMac.setKey(Arrays.copyOfRange(key_block, offset, offset + serverWriteDigest.getDigestSize()));
         offset += serverWriteDigest.getDigestSize();
 
         // Build keys

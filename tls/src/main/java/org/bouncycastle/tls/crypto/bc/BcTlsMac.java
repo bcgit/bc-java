@@ -1,5 +1,7 @@
 package org.bouncycastle.tls.crypto.bc;
 
+import java.io.IOException;
+
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.digests.LongDigest;
@@ -8,12 +10,14 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsMac;
 import org.bouncycastle.util.Arrays;
 
 /**
  * A generic TLS MAC implementation, acting as an HMAC based on some underlying Digest.
  */
 public class BcTlsMac
+    implements TlsMac
 {
     protected TlsContext context;
     protected byte[] secret;
@@ -27,17 +31,10 @@ public class BcTlsMac
      *
      * @param context the TLS client context
      * @param digest  The digest to use.
-     * @param key     A byte-array where the key for this MAC is located.
-     * @param keyOff  The number of bytes to skip, before the key starts in the buffer.
-     * @param keyLen  The length of the key.
      */
-    public BcTlsMac(TlsContext context, Digest digest, byte[] key, int keyOff, int keyLen)
+    public BcTlsMac(TlsContext context, Digest digest)
     {
         this.context = context;
-
-        KeyParameter keyParameter = new KeyParameter(key, keyOff, keyLen);
-
-        this.secret = Arrays.clone(keyParameter.getKey());
 
         // TODO This should check the actual algorithm, not rely on the engine type
         if (digest instanceof LongDigest)
@@ -70,14 +67,6 @@ public class BcTlsMac
             this.mac = new HMac(digest);
 
             // NOTE: The input pad for HMAC is always a full digest block
-        }
-
-        this.mac.init(keyParameter);
-
-        this.macLength = mac.getMacSize();
-        if (context.getSecurityParameters().isTruncatedHMac())
-        {
-            this.macLength = Math.min(this.macLength, 10);
         }
     }
 
@@ -155,6 +144,20 @@ public class BcTlsMac
         mac.reset();
 
         return result;
+    }
+
+    public void setKey(byte[] macKey)
+        throws IOException
+    {
+        this.secret = Arrays.clone(macKey);
+
+        this.mac.init(new KeyParameter(secret));
+
+        this.macLength = mac.getMacSize();
+        if (context.getSecurityParameters().isTruncatedHMac())
+        {
+            this.macLength = Math.min(this.macLength, 10);
+        }
     }
 
     protected int getDigestBlockCount(int inputLength)

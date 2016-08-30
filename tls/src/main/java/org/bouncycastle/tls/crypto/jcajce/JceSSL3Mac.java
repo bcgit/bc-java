@@ -14,7 +14,7 @@ import org.bouncycastle.util.Arrays;
 /**
  * A generic TLS SSl3 MAC implementation.
  */
-class JceSSL3Mac
+public class JceSSL3Mac
     implements TlsMac
 {
     protected TlsContext context;
