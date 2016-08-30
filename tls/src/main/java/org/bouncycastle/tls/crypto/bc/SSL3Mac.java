@@ -2,8 +2,10 @@ package org.bouncycastle.tls.crypto.bc;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -14,7 +16,7 @@ import org.bouncycastle.util.Arrays;
  * H(K + opad, H(K + ipad, text))
  */
 public class SSL3Mac
-    implements Mac
+    implements Mac, TlsHMAC
 {
     private static final byte IPAD_BYTE = (byte)0x36;
     private static final byte OPAD_BYTE = (byte)0x5C;
@@ -74,9 +76,35 @@ public class SSL3Mac
         digest.update(in);
     }
 
+    public void setKey(byte[] key)
+    {
+        secret = Arrays.clone(key);
+
+        reset();
+    }
+
     public void update(byte[] in, int inOff, int len)
     {
         digest.update(in, inOff, len);
+    }
+
+    public byte[] calculateMAC()
+    {
+        byte[] rv = new byte[digest.getDigestSize()];
+
+        doFinal(rv, 0);
+
+        return rv;
+    }
+
+    public int getInternalBlockSize()
+    {
+        return ((ExtendedDigest)digest).getByteLength();
+    }
+
+    public int getMacLength()
+    {
+        return digest.getDigestSize();
     }
 
     public int doFinal(byte[] out, int outOff)

@@ -16,23 +16,20 @@ public class TlsNullCipherSuite
     protected TlsMac writeMac;
     protected TlsMac readMac;
 
-    public TlsNullCipherSuite(TlsContext context, TlsMac clientMac, TlsMac serverMac, int macKeyLength)
+    public TlsNullCipherSuite(TlsContext context, TlsHMAC clientMac, TlsHMAC serverMac)
         throws IOException
     {
         this.context = context;
 
-        int key_block_size = macKeyLength + macKeyLength;
+        int key_block_size = clientMac.getMacLength() + serverMac.getMacLength();
         byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
 
         int offset = 0;
 
-        byte[] clientMacKey = Arrays.copyOfRange(key_block, offset, offset + macKeyLength);
-        offset += macKeyLength;
-        byte[] serverMacKey = Arrays.copyOfRange(key_block, offset, offset + macKeyLength);
-        offset += macKeyLength;
-
-        clientMac.setKey(clientMacKey);
-        serverMac.setKey(serverMacKey);
+        byte[] clientMacKey = Arrays.copyOfRange(key_block, offset, offset + clientMac.getMacLength());
+        offset += clientMacKey.length;
+        byte[] serverMacKey = Arrays.copyOfRange(key_block, offset, offset + serverMac.getMacLength());
+        offset += serverMacKey.length;
 
         if (offset != key_block_size)
         {
@@ -41,13 +38,20 @@ public class TlsNullCipherSuite
 
         if (context.isServer())
         {
-            writeMac = serverMac;
-            readMac = clientMac;
+            writeMac = new TlsMac(context, serverMac);
+            readMac = new TlsMac(context, clientMac);
+
+            writeMac.setKey(serverMacKey);
+            readMac.setKey(clientMacKey);
+
         }
         else
         {
-            writeMac = clientMac;
-            readMac = serverMac;
+            writeMac = new TlsMac(context, clientMac);
+            readMac = new TlsMac(context, serverMac);
+
+            writeMac.setKey(clientMacKey);
+            readMac.setKey(serverMacKey);
         }
     }
 

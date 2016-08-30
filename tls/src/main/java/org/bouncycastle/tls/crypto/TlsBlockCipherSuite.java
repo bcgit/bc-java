@@ -24,11 +24,18 @@ public class TlsBlockCipherSuite
     protected TlsBlockCipher encryptCipher;
     protected TlsBlockCipher decryptCipher;
 
-    protected TlsMac writeMac;
-    protected TlsMac readMac;
+    protected OldTlsMac writeMac;
+    protected OldTlsMac readMac;
 
     public TlsBlockCipherSuite(TlsContext context, TlsBlockCipher encryptCipher, TlsBlockCipher decryptCipher,
-                               TlsMac writeMac, TlsMac readMac, int cipherKeySize, int macKeySize)
+                               TlsHMAC writeMac, TlsHMAC readMac, int cipherKeySize)
+        throws IOException
+    {
+        this(context, encryptCipher, decryptCipher, new TlsMac(context, writeMac), new TlsMac(context, readMac), cipherKeySize, writeMac.getMacLength());
+    }
+
+    public TlsBlockCipherSuite(TlsContext context, TlsBlockCipher encryptCipher, TlsBlockCipher decryptCipher,
+                               OldTlsMac writeMac, OldTlsMac readMac, int cipherKeySize, int macKeySize)
         throws IOException
     {
         this.context = context;

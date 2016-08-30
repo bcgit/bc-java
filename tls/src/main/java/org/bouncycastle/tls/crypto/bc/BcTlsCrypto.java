@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
@@ -17,6 +18,7 @@ import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
 import org.bouncycastle.crypto.engines.SEEDEngine;
+import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
@@ -44,6 +46,7 @@ import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
+import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsNullCipherSuite;
 import org.bouncycastle.tls.crypto.TlsSecret;
@@ -85,6 +88,8 @@ public class BcTlsCrypto
 
         return nonce;
     }
+
+
 
     public TlsCertificate createCertificate(byte[] encoding)
         throws IOException
@@ -333,10 +338,8 @@ public class BcTlsCrypto
     protected TlsCipherSuite createAESCipher(int cipherKeySize, int macAlgorithm)
         throws IOException
     {
-        Digest macDigest = createHMACDigest(macAlgorithm);
-
         return new TlsBlockCipherSuite(context, new BlockOperator(createAESBlockCipher(), true), new BlockOperator(createAESBlockCipher(), false),
-            new BcTlsMac(context, macDigest), new BcTlsMac(context, createHMACDigest(macAlgorithm)), cipherKeySize, macDigest.getDigestSize());
+            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize);
     }
 
     protected TlsCipherSuite createCamelliaCipher(int cipherKeySize, int macAlgorithm)
@@ -394,9 +397,7 @@ public class BcTlsCrypto
     protected TlsNullCipherSuite createNullCipher(int macAlgorithm)
         throws IOException
     {
-        Digest macDigest = createHMACDigest(macAlgorithm);
-
-        return new TlsNullCipherSuite(context, new BcTlsMac(context, macDigest), new BcTlsMac(context, createHMACDigest(macAlgorithm)), macDigest.getDigestSize());
+        return new TlsNullCipherSuite(context, createMac(macAlgorithm), createMac(macAlgorithm));
     }
 
     protected TlsStreamCipher createRC4Cipher(int cipherKeySize, int macAlgorithm)
@@ -472,6 +473,19 @@ public class BcTlsCrypto
         return new CBCBlockCipher(new SEEDEngine());
     }
 
+    private TlsHMAC createMac(int macAlgorithm)
+        throws IOException
+    {
+        if (TlsUtils.isSSL(context))
+        {
+            return createSSl3HMAC((short)macAlgorithm);
+        }
+        else
+        {
+            return createHMAC((short)macAlgorithm);
+        }
+    }
+
     protected Digest createHMACDigest(int macAlgorithm)
         throws IOException
     {
@@ -489,6 +503,47 @@ public class BcTlsCrypto
             return createDigest(HashAlgorithm.sha384);
         case MACAlgorithm.hmac_sha512:
             return createDigest(HashAlgorithm.sha512);
+        default:
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
+    public TlsHMAC createHMAC(short hashAlgorithm)
+    {
+        switch (hashAlgorithm)
+        {
+        case MACAlgorithm.hmac_md5:
+            return new TlsHMac(createDigest(HashAlgorithm.md5));
+        case MACAlgorithm.hmac_sha1:
+            return new TlsHMac(createDigest(HashAlgorithm.sha1));
+        case MACAlgorithm.hmac_sha256:
+            return new TlsHMac(createDigest(HashAlgorithm.sha256));
+        case MACAlgorithm.hmac_sha384:
+            return new TlsHMac(createDigest(HashAlgorithm.sha384));
+        case MACAlgorithm.hmac_sha512:
+            return new TlsHMac(createDigest(HashAlgorithm.sha512));
+        default:
+            throw new IllegalArgumentException("unknown HashAlgorithm");
+        }
+    }
+
+    protected TlsHMAC createSSl3HMAC(int macAlgorithm)
+        throws IOException
+    {
+        switch (macAlgorithm)
+        {
+        case MACAlgorithm._null:
+            return null;
+        case MACAlgorithm.hmac_md5:
+            return new SSL3Mac(createDigest(HashAlgorithm.md5));
+        case MACAlgorithm.hmac_sha1:
+            return new SSL3Mac(createDigest(HashAlgorithm.sha1));
+        case MACAlgorithm.hmac_sha256:
+            return new SSL3Mac(createDigest(HashAlgorithm.sha256));
+        case MACAlgorithm.hmac_sha384:
+            return new SSL3Mac(createDigest(HashAlgorithm.sha384));
+        case MACAlgorithm.hmac_sha512:
+            return new SSL3Mac(createDigest(HashAlgorithm.sha512));
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -600,6 +655,50 @@ public class BcTlsCrypto
         public int getBlockSize()
         {
             return cipher.getBlockSize();
+        }
+    }
+
+    private class TlsHMac implements TlsHMAC
+    {
+        private final HMac hmac;
+
+        TlsHMac(Digest digest)
+        {
+            this.hmac = new HMac(digest);
+        }
+
+        public void setKey(byte[] key)
+        {
+            hmac.init(new KeyParameter(key));
+        }
+
+        public void update(byte[] input, int inOff, int length)
+        {
+            hmac.update(input, inOff, length);
+        }
+
+        public byte[] calculateMAC()
+        {
+            byte[] rv = new byte[hmac.getMacSize()];
+
+            hmac.doFinal(rv, 0);
+
+            return rv;
+        }
+
+        public int getInternalBlockSize()
+        {
+            return ((ExtendedDigest)hmac.getUnderlyingDigest()).getByteLength();
+        }
+
+        public int getMacLength()
+        {
+            return hmac.getMacSize();
+        }
+
+        public void reset()
+        {
+            hmac.reset();
         }
     }
 

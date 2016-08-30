@@ -147,28 +147,28 @@ public class JcaTlsCrypto
         throws IOException, GeneralSecurityException
     {
         return new TlsBlockCipherSuite(context, createBlockOperator("AES", "AES/CBC/NoPadding", true), createBlockOperator("AES", "AES/CBC/NoPadding", false),
-                createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize, createHMACDigest(macAlgorithm).getDigestLength());
+                createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize);
     }
 
     protected TlsBlockCipherSuite createCamelliaCipher(int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
         return new TlsBlockCipherSuite(context, createBlockOperator("Camellia", "Camellia/CBC/NoPadding", true), createBlockOperator("Camellia", "Camellia/CBC/NoPadding", false),
-            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize, createHMACDigest(macAlgorithm).getDigestLength());
+            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize);
     }
 
     protected TlsBlockCipherSuite createDESedeCipher(int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
         return new TlsBlockCipherSuite(context, createBlockOperator("DESede", "DESede/CBC/NoPadding", true), createBlockOperator("DESede", "DESede/CBC/NoPadding", false),
-            createMac(macAlgorithm), createMac(macAlgorithm), 24, createHMACDigest(macAlgorithm).getDigestLength());
+            createMac(macAlgorithm), createMac(macAlgorithm), 24);
     }
 
     protected TlsBlockCipherSuite createSEEDCipher(int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
         return new TlsBlockCipherSuite(context, createBlockOperator("SEED", "SEED/CBC/NoPadding", true), createBlockOperator("SEED", "SEED/CBC/NoPadding", false),
-            createMac(macAlgorithm), createMac(macAlgorithm), 16, createHMACDigest(macAlgorithm).getDigestLength());
+            createMac(macAlgorithm), createMac(macAlgorithm), 16);
     }
 
     private TlsBlockCipher createBlockOperator(String algorithm, String cipherName, boolean forEncryption)
@@ -184,16 +184,16 @@ public class JcaTlsCrypto
         }
     }
 
-    private TlsMac createMac(int macAlgorithm)
+    private TlsHMAC createMac(int macAlgorithm)
         throws GeneralSecurityException, IOException
     {
         if (TlsUtils.isSSL(context))
         {
-            return new JceTlsMac(context, createSSL3HMAC(macAlgorithm));
+            return createSSL3HMAC(macAlgorithm);
         }
         else
         {
-            return new JceTlsMac(context, createHMAC(macAlgorithm));
+            return createHMAC(macAlgorithm);
         }
     }
 
@@ -234,14 +234,14 @@ public class JcaTlsCrypto
     protected TlsNullCipherSuite createNullCipher(int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsNullCipherSuite(context, createMac(macAlgorithm), createMac(macAlgorithm), createHMACDigest(macAlgorithm).getDigestLength());
+        return new TlsNullCipherSuite(context, createMac(macAlgorithm), createMac(macAlgorithm));
     }
 
     protected TlsStreamCipherSuite createRC4Cipher(int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
         return new TlsStreamCipherSuite(context, new StreamCipher("RC4", "RC4", true), new StreamCipher("RC4", "RC4", false),
-            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize, createHMACDigest(macAlgorithm).getDigestLength(), false);
+            new TlsMac(context, createMac(macAlgorithm)), new TlsMac(context, createMac(macAlgorithm)), cipherKeySize, createHMACDigest(macAlgorithm).getDigestLength(), false);
     }
 
     protected MessageDigest createHMACDigest(int macAlgorithm)
@@ -296,15 +296,15 @@ public class JcaTlsCrypto
         case MACAlgorithm._null:
             return null;
         case MACAlgorithm.hmac_md5:
-            return new SSL3Mac(createMessageDigest((short)macAlgorithm), 64);
+            return new SSL3Mac(createMessageDigest(HashAlgorithm.md5), 64);
         case MACAlgorithm.hmac_sha1:
-            return new SSL3Mac(createMessageDigest((short)macAlgorithm), 64);
+            return new SSL3Mac(createMessageDigest(HashAlgorithm.sha1), 64);
         case MACAlgorithm.hmac_sha256:
-            return new SSL3Mac(createMessageDigest((short)macAlgorithm), 64);
+            return new SSL3Mac(createMessageDigest(HashAlgorithm.sha256), 64);
         case MACAlgorithm.hmac_sha384:
-            return new SSL3Mac(createMessageDigest((short)macAlgorithm), 128);
+            return new SSL3Mac(createMessageDigest(HashAlgorithm.sha384), 128);
         case MACAlgorithm.hmac_sha512:
-            return new SSL3Mac(createMessageDigest((short)macAlgorithm), 128);
+            return new SSL3Mac(createMessageDigest(HashAlgorithm.sha512), 128);
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }

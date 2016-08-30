@@ -14,14 +14,14 @@ public class TlsStreamCipherSuite
     protected TlsStreamCipher encryptCipher;
     protected TlsStreamCipher decryptCipher;
 
-    protected TlsMac writeMac;
-    protected TlsMac readMac;
+    protected OldTlsMac writeMac;
+    protected OldTlsMac readMac;
 
     protected boolean usesNonce;
 
     public TlsStreamCipherSuite(TlsContext context,
                                 TlsStreamCipher encryptCipher, TlsStreamCipher decryptCipher,
-                                TlsMac clientWriteMac, TlsMac serverWriteMac,
+                                OldTlsMac clientWriteMac, OldTlsMac serverWriteMac,
                                 int cipherKeySize, int macKeySize, boolean usesNonce)
         throws IOException
     {

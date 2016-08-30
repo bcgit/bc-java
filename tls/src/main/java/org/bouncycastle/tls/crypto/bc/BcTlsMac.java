@@ -10,14 +10,14 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsMac;
+import org.bouncycastle.tls.crypto.OldTlsMac;
 import org.bouncycastle.util.Arrays;
 
 /**
  * A generic TLS MAC implementation, acting as an HMAC based on some underlying Digest.
  */
 public class BcTlsMac
-    implements TlsMac
+    implements OldTlsMac
 {
     protected TlsContext context;
     protected byte[] secret;
