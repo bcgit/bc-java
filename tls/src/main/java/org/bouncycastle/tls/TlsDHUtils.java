@@ -30,7 +30,7 @@ public class TlsDHUtils
     private static TlsDHParameters fromSafeP(String hexP)
     {
         BigInteger p = fromHex(hexP), q = p.shiftRight(1);
-        return new TlsDHParameters(p, TWO, q);
+        return new TlsDHParameters(p, q, TWO);
     }
 
     private static final String draft_ffdhe2432_p =

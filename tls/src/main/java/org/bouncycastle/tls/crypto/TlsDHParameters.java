@@ -10,10 +10,10 @@ public class TlsDHParameters
 
     public TlsDHParameters(BigInteger p, BigInteger g)
     {
-        this(p, g, null);
+        this(p, null, g);
     }
 
-    public TlsDHParameters(BigInteger p, BigInteger g, BigInteger q)
+    public TlsDHParameters(BigInteger p, BigInteger q, BigInteger g)
     {
         this.p = p;
         this.g = g;
