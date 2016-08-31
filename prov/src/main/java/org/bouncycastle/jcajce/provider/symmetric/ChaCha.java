@@ -1,6 +1,7 @@
 package org.bouncycastle.jcajce.provider.symmetric;
 
 import org.bouncycastle.crypto.CipherKeyGenerator;
+import org.bouncycastle.crypto.engines.ChaCha7539Engine;
 import org.bouncycastle.crypto.engines.ChaChaEngine;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
@@ -31,6 +32,24 @@ public final class ChaCha
         }
     }
 
+    public static class Base7539
+        extends BaseStreamCipher
+    {
+        public Base7539()
+        {
+            super(new ChaCha7539Engine(), 12);
+        }
+    }
+
+    public static class KeyGen7539
+        extends BaseKeyGenerator
+    {
+        public KeyGen7539()
+        {
+            super("ChaCha7539", 256, new CipherKeyGenerator());
+        }
+    }
+
     public static class Mappings
         extends AlgorithmProvider
     {
@@ -46,6 +65,8 @@ public final class ChaCha
             provider.addAlgorithm("Cipher.CHACHA", PREFIX + "$Base");
             provider.addAlgorithm("KeyGenerator.CHACHA", PREFIX + "$KeyGen");
 
+            provider.addAlgorithm("Cipher.CHACHA7539", PREFIX + "$Base7539");
+            provider.addAlgorithm("KeyGenerator.CHACHA7539", PREFIX + "$KeyGen7539");
         }
     }
 }
