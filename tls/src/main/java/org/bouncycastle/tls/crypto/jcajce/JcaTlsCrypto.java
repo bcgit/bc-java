@@ -187,7 +187,7 @@ public class JcaTlsCrypto
     protected TlsBlockCipher createBlockCipherWithImplicitIv(String cipherName, String algorithm, int keySize, boolean isEncrypting)
         throws GeneralSecurityException
     {
-        return new JceBlockCipherWithImplictIv(helper.createCipher(cipherName), algorithm, isEncrypting);
+        return new JceBlockCipherWithImplicitIv(helper.createCipher(cipherName), algorithm, isEncrypting);
     }
 
     private TlsBlockCipherSuite createAESCipher(int cipherKeySize, int macAlgorithm)

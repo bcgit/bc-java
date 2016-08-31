@@ -10,7 +10,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.tls.crypto.TlsBlockCipher;
 import org.bouncycastle.util.Arrays;
 
-public class JceBlockCipherWithImplictIv
+public class JceBlockCipherWithImplicitIv
     implements TlsBlockCipher
 {
     private final int cipherMode;
@@ -20,7 +20,7 @@ public class JceBlockCipherWithImplictIv
     private SecretKey key;
     private byte[] nextIV;
 
-    public JceBlockCipherWithImplictIv(Cipher cipher, String algorithm, boolean isEncrypting)
+    public JceBlockCipherWithImplicitIv(Cipher cipher, String algorithm, boolean isEncrypting)
         throws GeneralSecurityException
     {
         this.cipher = cipher;
