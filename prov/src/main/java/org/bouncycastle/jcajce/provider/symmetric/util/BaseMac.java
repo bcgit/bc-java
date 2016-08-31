@@ -164,7 +164,14 @@ public class BaseMac
             throw new InvalidAlgorithmParameterException("unknown parameter type: " + params.getClass().getName());
         }
 
-        macEngine.init(param);
+        try
+        {
+            macEngine.init(param);
+        }
+        catch (Exception e)
+        {
+            throw new InvalidAlgorithmParameterException("cannot initialize MAC: " + e.getMessage());
+        }
     }
 
     protected int engineGetMacLength() 

@@ -64,7 +64,7 @@ public final class BouncyCastleProvider extends Provider
 
     private static final String[] SYMMETRIC_MACS =
     {
-        "SipHash"
+        "SipHash", "Poly1305"
     };
 
     private static final String[] SYMMETRIC_CIPHERS =

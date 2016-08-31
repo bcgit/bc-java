@@ -33,6 +33,7 @@ public class Poly1305Test
     public void performTest()
         throws Exception
     {
+        checkRawPoly1305();
         checkRegistrations();
     }
 
@@ -95,6 +96,38 @@ public class Poly1305Test
         if (missingKeyGens.size() != 0)
         {
             fail("Did not find Poly1305 KeyGenerator registrations for the following macs: " + missingKeyGens);
+        }
+    }
+
+    private void checkRawPoly1305()
+        throws Exception
+    {
+        checkMac("Poly1305", "e8bd1466eaf442dd71598370c1e34392");
+    }
+
+    private void checkMac(String name, String macOutput)
+        throws Exception
+    {
+        KeyGenerator kg = KeyGenerator.getInstance(name);
+        SecretKey key = kg.generateKey();
+
+        try
+        {
+            Poly1305KeyGenerator.checkKey(key.getEncoded());
+        }
+        catch (IllegalArgumentException e)
+        {
+            fail("Generated key for algo " + name + " does not match required Poly1305 format.");
+        }
+
+        Mac mac = Mac.getInstance(name);
+        mac.init(new SecretKeySpec(MASTER_KEY, name));
+        mac.update(new byte[128]);
+        byte[] bytes = mac.doFinal();
+
+        if (!Arrays.areEqual(bytes, Hex.decode(macOutput)))
+        {
+            fail("wrong mac value computed for " + name, macOutput, new String(Hex.encode(bytes)));
         }
     }
 
