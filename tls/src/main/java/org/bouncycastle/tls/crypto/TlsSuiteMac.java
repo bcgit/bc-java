@@ -2,7 +2,7 @@ package org.bouncycastle.tls.crypto;
 
 import java.io.IOException;
 
-public interface OldTlsMac
+public interface TlsSuiteMac
 {
     int getSize();
 

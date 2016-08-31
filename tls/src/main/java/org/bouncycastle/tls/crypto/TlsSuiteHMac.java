@@ -11,7 +11,7 @@ import org.bouncycastle.util.Arrays;
  * A generic TLS MAC implementation, acting as an HMAC based on some underlying Digest.
  */
 class TlsSuiteHMac
-    implements OldTlsMac
+    implements TlsSuiteMac
 {
     protected TlsContext context;
     protected byte[] secret;

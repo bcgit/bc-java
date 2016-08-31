@@ -24,8 +24,8 @@ public class TlsBlockCipherSuite
     protected TlsBlockCipher encryptCipher;
     protected TlsBlockCipher decryptCipher;
 
-    protected OldTlsMac writeMac;
-    protected OldTlsMac readMac;
+    protected TlsSuiteMac writeMac;
+    protected TlsSuiteMac readMac;
 
     public TlsBlockCipherSuite(TlsContext context, TlsBlockCipher encryptCipher, TlsBlockCipher decryptCipher,
                                TlsHMAC writeMac, TlsHMAC readMac, int cipherKeySize)
