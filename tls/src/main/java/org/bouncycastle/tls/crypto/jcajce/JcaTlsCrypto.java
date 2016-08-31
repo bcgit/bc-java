@@ -6,10 +6,7 @@ import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 
-import javax.crypto.Cipher;
 import javax.crypto.Mac;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -190,6 +187,36 @@ public class JcaTlsCrypto
         return new JceBlockCipherWithImplicitIv(helper.createCipher(cipherName), algorithm, isEncrypting);
     }
 
+    /**
+     * If you want to create your own versions of stream ciphers, override this method.
+     *
+     * @param cipherName the full name of the cipher (algorithm/mode/padding)
+     * @param algorithm the base algorithm name
+     * @param keySize keySize (in bytes) for the cipher key.
+     * @param isEncrypting true if the cipher is for encryption, false otherwise.
+     * @return a block cipher.
+     * @throws GeneralSecurityException in case of failure.
+     */
+    protected TlsStreamCipher createStreamCipher(String cipherName, String algorithm, int keySize, boolean isEncrypting)
+        throws GeneralSecurityException
+    {
+        return new JceStreamCipher(helper.createCipher(cipherName), algorithm, isEncrypting);
+    }
+
+    /**
+     * To disable the null cipher suite, override this method with one that throws an IOException.
+     *
+     * @param macAlgorithm the name of the algorithm supporting the MAC.
+     * @return a null cipher suite implementation.
+     * @throws IOException in case of failure.
+     * @throws GeneralSecurityException in case of a specific failure in the JCA/JCE layer.
+     */
+    protected TlsNullCipherSuite createNullCipher(int macAlgorithm)
+        throws IOException, GeneralSecurityException
+    {
+        return new TlsNullCipherSuite(context, createMac(macAlgorithm), createMac(macAlgorithm));
+    }
+
     private TlsBlockCipherSuite createAESCipher(int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
@@ -244,10 +271,11 @@ public class JcaTlsCrypto
         }
     }
 
-    protected TlsCipherSuite createChaCha20Poly1305()
+    private TlsCipherSuite createChaCha20Poly1305()
         throws IOException, GeneralSecurityException
     {
-        return new ChaCha20Poly1305CipherSuite(context, new StreamCipher("ChaCha7539", "ChaCha7539", true), new StreamCipher("ChaCha7539", "ChaCha7539", false),
+        return new ChaCha20Poly1305CipherSuite(context,
+                createStreamCipher("ChaCha7539", "ChaCha7539", 32, true), createStreamCipher("ChaCha7539", "ChaCha7539", 32, false),
                 new TlsMac("Poly1305"), new TlsMac("Poly1305"));
     }
 
@@ -279,20 +307,14 @@ public class JcaTlsCrypto
             cipherKeySize, macSize);
     }
 
-    protected TlsNullCipherSuite createNullCipher(int macAlgorithm)
+    private TlsStreamCipherSuite createRC4Cipher(int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsNullCipherSuite(context, createMac(macAlgorithm), createMac(macAlgorithm));
-    }
-
-    protected TlsStreamCipherSuite createRC4Cipher(int cipherKeySize, int macAlgorithm)
-        throws IOException, GeneralSecurityException
-    {
-        return new TlsStreamCipherSuite(context, new StreamCipher("RC4", "RC4", true), new StreamCipher("RC4", "RC4", false),
+        return new TlsStreamCipherSuite(context, createStreamCipher("RC4", "RC4", 128, true), createStreamCipher("RC4", "RC4", 128, false),
             createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize, false);
     }
 
-    public TlsHMAC createHMAC(int macAlgorithm)
+    public final TlsHMAC createHMAC(int macAlgorithm)
         throws IOException
     {
         switch (macAlgorithm)
@@ -464,55 +486,6 @@ public class JcaTlsCrypto
         public void reset()
         {
             digest.reset();
-        }
-    }
-
-    private class StreamCipher
-        implements TlsStreamCipher
-    {
-        private final int cipherMode;
-        private final Cipher cipher;
-        private final String baseAlgorithm;
-
-        private SecretKey key;
-
-        StreamCipher(String baseAlgorithm, String cipherName, boolean isEncrypting)
-            throws GeneralSecurityException
-        {
-            this.cipher = helper.createCipher(cipherName);
-            this.baseAlgorithm = baseAlgorithm;
-            this.cipherMode = (isEncrypting) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
-        }
-
-        public void setKey(byte[] key)
-        {
-            this.key = new SecretKeySpec(key, baseAlgorithm);
-        }
-
-        public void init(byte[] iv)
-        {
-            try
-            {
-                cipher.init(cipherMode, key, new IvParameterSpec(iv));
-            }
-            catch (GeneralSecurityException e)
-            {
-                throw new IllegalStateException(e);
-            }
-        }
-
-        public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
-        {
-            try
-            {
-                int len = cipher.doFinal(input, inputOffset, inputLength, output, outputOffset);
-
-                return len;
-            }
-            catch (GeneralSecurityException e)
-            {
-                throw new IllegalStateException(e);
-            }
         }
     }
 
