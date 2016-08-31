@@ -1,10 +1,15 @@
 package org.bouncycastle.jce.provider.test;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.Key;
 import java.security.Security;
 
-import javax.crypto.*;
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
 import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.crypto.io.InvalidCipherTextIOException;
@@ -499,6 +504,7 @@ public class CipherStreamTest2
             "SALSA20",
             "XSalsa20",
             "ChaCha",
+            "ChaCha7539",
             "Grainv1",
             "Grain128",
             "HC128",

@@ -63,6 +63,15 @@ public class CipherStreamTest
                                                     + "D44A7A7CDB84929F915420A8A3DC58BF"
                                                     + "0F7ECB4B1F167BB1A5E6153FDAF4493D");
 
+    private static final byte[] CHA7539K = Hex.decode("8000000000000000000000000000000080000000000000000000000000000000");
+    private static final byte[] CHA7539IV = Hex.decode("000000000000000000000000");
+    private static final byte[] CHA7539IN =  Hex.decode(
+                                              "00000000000000000000000000000000"
+                                            + "00000000000000000000000000000000"
+                                            + "00000000000000000000000000000000"
+                                            + "00000000000000000000000000000000");
+    private static final byte[] CHA7539OUT = Hex.decode("aef50e541e12a65dc21e90ebb4c03987971c540f78eb536df692ff89fc47561ed17eb23b63eb714c09d0c50af703e01485926c140e994b3edff9df635a91d268");
+
     private static final byte[] HCIN = new byte[64];
     private static final byte[] HCIV = new byte[32];
 
@@ -259,7 +268,7 @@ public class CipherStreamTest
                     (byte)137, (byte)138, (byte)140, (byte)143 };
 
             byte[] keyBytes;
-            if (name.equals("HC256") || name.equals("XSalsa20"))
+            if (name.equals("HC256") || name.equals("XSalsa20") || name.equals("ChaCha7539"))
             {
                 keyBytes = key256;
             }
@@ -377,6 +386,9 @@ public class CipherStreamTest
         runTest("ChaCha");
         testException("ChaCha");
         testAlgorithm("ChaCha", CHAK, CHAIV, CHAIN, CHAOUT);
+        runTest("ChaCha7539");
+        testException("ChaCha7539");
+        testAlgorithm("ChaCha7539", CHA7539K, CHA7539IV, CHA7539IN, CHA7539OUT);
         runTest("HC128");
         testException("HC128");
         testAlgorithm("HC128", HCK128A, HCIV, HCIN, HC128A);
