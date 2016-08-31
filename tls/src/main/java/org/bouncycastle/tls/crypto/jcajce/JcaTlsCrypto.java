@@ -23,6 +23,7 @@ import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.Chacha20Poly1305CipherSuite;
 import org.bouncycastle.tls.crypto.TlsAEADCipher;
 import org.bouncycastle.tls.crypto.TlsAEADCipherSuite;
 import org.bouncycastle.tls.crypto.TlsBlockCipher;
@@ -35,12 +36,10 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
-import org.bouncycastle.tls.crypto.TlsMac;
 import org.bouncycastle.tls.crypto.TlsNullCipherSuite;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamCipher;
 import org.bouncycastle.tls.crypto.TlsStreamCipherSuite;
-import org.bouncycastle.tls.crypto.bc.Chacha20Poly1305;
 import org.bouncycastle.util.Arrays;
 
 public class JcaTlsCrypto
@@ -198,9 +197,10 @@ public class JcaTlsCrypto
     }
 
     protected TlsCipherSuite createChaCha20Poly1305()
-        throws IOException
+        throws IOException, GeneralSecurityException
     {
-        return new Chacha20Poly1305(context);
+        return new Chacha20Poly1305CipherSuite(context, new StreamCipher("ChaCha7539", "ChaCha7539", true), new StreamCipher("ChaCha7539", "ChaCha7539", false),
+            new TlsHMac("Poly1305", 0), new TlsHMac("Poly1305", 0));
     }
 
     protected TlsAEADCipherSuite createCipher_AES_CCM(int cipherKeySize, int macSize)
@@ -241,29 +241,7 @@ public class JcaTlsCrypto
         throws IOException, GeneralSecurityException
     {
         return new TlsStreamCipherSuite(context, new StreamCipher("RC4", "RC4", true), new StreamCipher("RC4", "RC4", false),
-            new TlsMac(context, createMac(macAlgorithm)), new TlsMac(context, createMac(macAlgorithm)), cipherKeySize, createHMACDigest(macAlgorithm).getDigestLength(), false);
-    }
-
-    protected MessageDigest createHMACDigest(int macAlgorithm)
-        throws IOException
-    {
-        switch (macAlgorithm)
-        {
-        case MACAlgorithm._null:
-            return null;
-        case MACAlgorithm.hmac_md5:
-            return createMessageDigest(HashAlgorithm.md5);
-        case MACAlgorithm.hmac_sha1:
-            return createMessageDigest(HashAlgorithm.sha1);
-        case MACAlgorithm.hmac_sha256:
-            return createMessageDigest(HashAlgorithm.sha256);
-        case MACAlgorithm.hmac_sha384:
-            return createMessageDigest(HashAlgorithm.sha384);
-        case MACAlgorithm.hmac_sha512:
-            return createMessageDigest(HashAlgorithm.sha512);
-        default:
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
+            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize, false);
     }
 
     public TlsHMAC createHMAC(int macAlgorithm)

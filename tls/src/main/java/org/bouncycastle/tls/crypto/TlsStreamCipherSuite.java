@@ -14,15 +14,15 @@ public class TlsStreamCipherSuite
     protected TlsStreamCipher encryptCipher;
     protected TlsStreamCipher decryptCipher;
 
-    protected OldTlsMac writeMac;
-    protected OldTlsMac readMac;
+    protected TlsSuiteHMac writeMac;
+    protected TlsSuiteHMac readMac;
 
     protected boolean usesNonce;
 
     public TlsStreamCipherSuite(TlsContext context,
                                 TlsStreamCipher encryptCipher, TlsStreamCipher decryptCipher,
-                                OldTlsMac clientWriteMac, OldTlsMac serverWriteMac,
-                                int cipherKeySize, int macKeySize, boolean usesNonce)
+                                TlsHMAC clientMac, TlsHMAC serverMac,
+                                int cipherKeySize, boolean usesNonce)
         throws IOException
     {
         boolean isServer = context.isServer();
@@ -31,6 +31,8 @@ public class TlsStreamCipherSuite
 
         this.encryptCipher = encryptCipher;
         this.decryptCipher = decryptCipher;
+
+        int macKeySize = serverMac.getMacLength();
 
         int key_block_size = (2 * cipherKeySize) + macKeySize
             + macKeySize;
@@ -44,6 +46,9 @@ public class TlsStreamCipherSuite
         offset += macKeySize;
         byte[] serverMacKey = Arrays.copyOfRange(key_block, offset, offset + macKeySize);
         offset += macKeySize;
+
+        TlsSuiteHMac clientWriteMac = new TlsSuiteHMac(context, clientMac);
+        TlsSuiteHMac serverWriteMac = new TlsSuiteHMac(context, serverMac);
 
         clientWriteMac.setKey(clientMacKey);
         serverWriteMac.setKey(serverMacKey);

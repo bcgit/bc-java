@@ -79,8 +79,8 @@ public class TlsBlockCipherSuite
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        this.readMac = new TlsMac(context, readMac);
-        this.writeMac = new TlsMac(context, writeMac);
+        this.readMac = new TlsSuiteHMac(context, readMac);
+        this.writeMac = new TlsSuiteHMac(context, writeMac);
         this.encryptCipher = encryptCipher;
         this.decryptCipher = decryptCipher;
 

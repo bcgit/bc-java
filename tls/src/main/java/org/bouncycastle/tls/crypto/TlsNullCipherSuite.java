@@ -13,8 +13,8 @@ public class TlsNullCipherSuite
 {
     protected TlsContext context;
 
-    protected TlsMac writeMac;
-    protected TlsMac readMac;
+    protected TlsSuiteHMac writeMac;
+    protected TlsSuiteHMac readMac;
 
     public TlsNullCipherSuite(TlsContext context, TlsHMAC clientMac, TlsHMAC serverMac)
         throws IOException
@@ -38,8 +38,8 @@ public class TlsNullCipherSuite
 
         if (context.isServer())
         {
-            writeMac = new TlsMac(context, serverMac);
-            readMac = new TlsMac(context, clientMac);
+            writeMac = new TlsSuiteHMac(context, serverMac);
+            readMac = new TlsSuiteHMac(context, clientMac);
 
             writeMac.setKey(serverMacKey);
             readMac.setKey(clientMacKey);
@@ -47,8 +47,8 @@ public class TlsNullCipherSuite
         }
         else
         {
-            writeMac = new TlsMac(context, clientMac);
-            readMac = new TlsMac(context, serverMac);
+            writeMac = new TlsSuiteHMac(context, clientMac);
+            readMac = new TlsSuiteHMac(context, serverMac);
 
             writeMac.setKey(clientMacKey);
             readMac.setKey(serverMacKey);

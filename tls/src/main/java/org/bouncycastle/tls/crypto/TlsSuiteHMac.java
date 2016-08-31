@@ -10,7 +10,7 @@ import org.bouncycastle.util.Arrays;
 /**
  * A generic TLS MAC implementation, acting as an HMAC based on some underlying Digest.
  */
-public class TlsMac
+class TlsSuiteHMac
     implements OldTlsMac
 {
     protected TlsContext context;
@@ -26,7 +26,7 @@ public class TlsMac
      * @param context the TLS client context
      * @param mac  The MAC to use.
      */
-    public TlsMac(TlsContext context, TlsHMAC mac)
+    public TlsSuiteHMac(TlsContext context, TlsHMAC mac)
     {
         this.context = context;
 
