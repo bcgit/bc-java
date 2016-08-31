@@ -12,7 +12,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AbstractTlsCrypto;
 import org.bouncycastle.tls.AlertDescription;
@@ -23,7 +22,7 @@ import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.Chacha20Poly1305CipherSuite;
+import org.bouncycastle.tls.crypto.ChaCha20Poly1305CipherSuite;
 import org.bouncycastle.tls.crypto.TlsAEADCipher;
 import org.bouncycastle.tls.crypto.TlsAEADCipherSuite;
 import org.bouncycastle.tls.crypto.TlsBlockCipher;
@@ -36,6 +35,7 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
+import org.bouncycastle.tls.crypto.TlsMAC;
 import org.bouncycastle.tls.crypto.TlsNullCipherSuite;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamCipher;
@@ -48,7 +48,7 @@ public class JcaTlsCrypto
     private final JcaJceHelper helper;
     private final SecureRandom nonceEntropySource;
 
-    JcaTlsCrypto(JcaJceHelper helper, SecureRandom entropySource, SecureRandom nonceEntropySource)
+    protected JcaTlsCrypto(JcaJceHelper helper, SecureRandom entropySource, SecureRandom nonceEntropySource)
     {
         super(entropySource);
 
@@ -142,44 +142,92 @@ public class JcaTlsCrypto
         }
     }
 
-    protected TlsBlockCipherSuite createAESCipher(int cipherKeySize, int macAlgorithm)
+    /**
+     * If you want to create your own versions of the AEAD ciphers required, override this method.
+     *
+     * @param cipherName the full name of the cipher (algorithm/mode/padding)
+     * @param algorithm the base algorithm name
+     * @param keySize keySize (in bytes) for the cipher key.
+     * @param isEncrypting true if the cipher is for encryption, false otherwise.
+     * @return an AEAD cipher.
+     * @throws GeneralSecurityException in case of failure.
+     */
+    protected TlsAEADCipher createAEADCipher(String cipherName, String algorithm, int keySize, boolean isEncrypting)
+        throws GeneralSecurityException
+    {
+        return new JceAEADCipher(helper.createCipher(cipherName), algorithm, isEncrypting);
+    }
+
+    /**
+     * If you want to create your own versions of the block ciphers required, override this method.
+     *
+     * @param cipherName the full name of the cipher (algorithm/mode/padding)
+     * @param algorithm the base algorithm name
+     * @param keySize keySize (in bytes) for the cipher key.
+     * @param isEncrypting true if the cipher is for encryption, false otherwise.
+     * @return a block cipher.
+     * @throws GeneralSecurityException in case of failure.
+     */
+    protected TlsBlockCipher createBlockCipher(String cipherName, String algorithm, int keySize, boolean isEncrypting)
+        throws GeneralSecurityException
+    {
+        return new JceBlockCipher(helper.createCipher(cipherName), algorithm, isEncrypting);
+    }
+
+    /**
+     * If you want to create your own versions of the block ciphers for < TLS 1.1, override this method.
+     *
+     * @param cipherName the full name of the cipher (algorithm/mode/padding)
+     * @param algorithm the base algorithm name
+     * @param keySize keySize (in bytes) for the cipher key.
+     * @param isEncrypting true if the cipher is for encryption, false otherwise.
+     * @return a block cipher.
+     * @throws GeneralSecurityException in case of failure.
+     */
+    protected TlsBlockCipher createBlockCipherWithImplicitIv(String cipherName, String algorithm, int keySize, boolean isEncrypting)
+        throws GeneralSecurityException
+    {
+        return new JceBlockCipherWithImplictIv(helper.createCipher(cipherName), algorithm, isEncrypting);
+    }
+
+    private TlsBlockCipherSuite createAESCipher(int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipherSuite(context, createBlockOperator("AES", "AES/CBC/NoPadding", true), createBlockOperator("AES", "AES/CBC/NoPadding", false),
+        return new TlsBlockCipherSuite(context, createBlockOperator("AES/CBC/NoPadding", "AES", true, cipherKeySize), createBlockOperator("AES/CBC/NoPadding", "AES", false, cipherKeySize),
                 createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize);
     }
 
-    protected TlsBlockCipherSuite createCamelliaCipher(int cipherKeySize, int macAlgorithm)
+    private TlsBlockCipherSuite createCamelliaCipher(int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipherSuite(context, createBlockOperator("Camellia", "Camellia/CBC/NoPadding", true), createBlockOperator("Camellia", "Camellia/CBC/NoPadding", false),
+        return new TlsBlockCipherSuite(context, createBlockOperator("Camellia/CBC/NoPadding", "Camellia", true, cipherKeySize), createBlockOperator("Camellia/CBC/NoPadding", "Camellia", false, cipherKeySize),
             createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize);
     }
 
-    protected TlsBlockCipherSuite createDESedeCipher(int macAlgorithm)
+    private TlsBlockCipherSuite createDESedeCipher(int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipherSuite(context, createBlockOperator("DESede", "DESede/CBC/NoPadding", true), createBlockOperator("DESede", "DESede/CBC/NoPadding", false),
+        return new TlsBlockCipherSuite(context, createBlockOperator("DESede/CBC/NoPadding", "DESede", true, 24), createBlockOperator("DESede/CBC/NoPadding", "DESede", false, 24),
             createMac(macAlgorithm), createMac(macAlgorithm), 24);
     }
 
-    protected TlsBlockCipherSuite createSEEDCipher(int macAlgorithm)
+    private TlsBlockCipherSuite createSEEDCipher(int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipherSuite(context, createBlockOperator("SEED", "SEED/CBC/NoPadding", true), createBlockOperator("SEED", "SEED/CBC/NoPadding", false),
+        return new TlsBlockCipherSuite(context, createBlockOperator("SEED/CBC/NoPadding", "SEED", true, 16), createBlockOperator("SEED/CBC/NoPadding", "SEED", false, 16),
             createMac(macAlgorithm), createMac(macAlgorithm), 16);
     }
 
-    private TlsBlockCipher createBlockOperator(String algorithm, String cipherName, boolean forEncryption)
+    private TlsBlockCipher createBlockOperator(String cipherName, String algorithm, boolean forEncryption, int keySize)
         throws GeneralSecurityException
     {
         if (TlsUtils.isTLSv11(context))
         {
-            return new BlockCipher(algorithm, cipherName, forEncryption);
+            return createBlockCipher(cipherName, algorithm, keySize, forEncryption);
         }
         else
         {
-            return new ImplicitIvBlockCipher(algorithm, cipherName, forEncryption);
+            return createBlockCipherWithImplicitIv(cipherName, algorithm, keySize, forEncryption);
         }
     }
 
@@ -199,35 +247,35 @@ public class JcaTlsCrypto
     protected TlsCipherSuite createChaCha20Poly1305()
         throws IOException, GeneralSecurityException
     {
-        return new Chacha20Poly1305CipherSuite(context, new StreamCipher("ChaCha7539", "ChaCha7539", true), new StreamCipher("ChaCha7539", "ChaCha7539", false),
-            new TlsHMac("Poly1305", 0), new TlsHMac("Poly1305", 0));
+        return new ChaCha20Poly1305CipherSuite(context, new StreamCipher("ChaCha7539", "ChaCha7539", true), new StreamCipher("ChaCha7539", "ChaCha7539", false),
+                new TlsMac("Poly1305"), new TlsMac("Poly1305"));
     }
 
-    protected TlsAEADCipherSuite createCipher_AES_CCM(int cipherKeySize, int macSize)
+    private TlsAEADCipherSuite createCipher_AES_CCM(int cipherKeySize, int macSize)
         throws IOException, GeneralSecurityException
     {
-        return new TlsAEADCipherSuite(context, new AEADCipher("AES", "AES/CCM/NoPadding", true), new AEADCipher("AES", "AES/CCM/NoPadding", false),
+        return new TlsAEADCipherSuite(context, createAEADCipher("AES/CCM/NoPadding", "AES", cipherKeySize, true), createAEADCipher("AES/CCM/NoPadding", "AES", cipherKeySize, false),
             cipherKeySize, macSize);
     }
 
-    protected TlsAEADCipherSuite createCipher_AES_GCM(int cipherKeySize, int macSize)
+    private TlsAEADCipherSuite createCipher_AES_GCM(int cipherKeySize, int macSize)
         throws IOException, GeneralSecurityException
     {
-        return new TlsAEADCipherSuite(context, new AEADCipher("AES", "AES/GCM/NoPadding", true), new AEADCipher("AES", "AES/GCM/NoPadding", false),
+        return new TlsAEADCipherSuite(context, createAEADCipher("AES/GCM/NoPadding", "AES", cipherKeySize, true), createAEADCipher("AES/GCM/NoPadding", "AES", cipherKeySize, false),
             cipherKeySize, macSize);
     }
 
-    protected TlsAEADCipherSuite createCipher_AES_OCB(int cipherKeySize, int macSize)
+    private TlsAEADCipherSuite createCipher_AES_OCB(int cipherKeySize, int macSize)
         throws IOException, GeneralSecurityException
     {
-        return new TlsAEADCipherSuite(context, new AEADCipher("AES", "AES/OCB/NoPadding", true), new AEADCipher("AES", "AES/OCB/NoPadding", false),
+        return new TlsAEADCipherSuite(context, createAEADCipher("AES/OCB/NoPadding", "AES", cipherKeySize, true), createAEADCipher("AES/OCB/NoPadding", "AES", cipherKeySize, false),
             cipherKeySize, macSize, TlsAEADCipherSuite.NONCE_RFC7905);
     }
 
-    protected TlsAEADCipherSuite createCipher_Camellia_GCM(int cipherKeySize, int macSize)
+    private TlsAEADCipherSuite createCipher_Camellia_GCM(int cipherKeySize, int macSize)
         throws IOException, GeneralSecurityException
     {
-        return new TlsAEADCipherSuite(context, new AEADCipher("Camellia", "Camellia/GCM/NoPadding", true), new AEADCipher("Camellia", "Camellia/GCM/NoPadding", false),
+        return new TlsAEADCipherSuite(context, createAEADCipher("Camellia/GCM/NoPadding", "Camellia", cipherKeySize, true), createAEADCipher("Camellia/GCM/NoPadding", "Camellia", cipherKeySize, false),
             cipherKeySize, macSize);
     }
 
@@ -419,120 +467,6 @@ public class JcaTlsCrypto
         }
     }
 
-    private class BlockCipher
-        implements TlsBlockCipher
-    {
-        private final int cipherMode;
-        private final Cipher cipher;
-        private final String baseAlgorithm;
-
-        private SecretKey key;
-
-        BlockCipher(String baseAlgorithm, String cipherName, boolean isEncrypting)
-            throws GeneralSecurityException
-        {
-            this.cipher = helper.createCipher(cipherName);
-            this.baseAlgorithm = baseAlgorithm;
-            this.cipherMode = (isEncrypting) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
-        }
-
-        public void setKey(byte[] key)
-        {
-            this.key = new SecretKeySpec(key, baseAlgorithm);
-        }
-
-        public void init(byte[] iv)
-        {
-            try
-            {
-                cipher.init(cipherMode, key, new IvParameterSpec(iv));
-            }
-            catch (GeneralSecurityException e)
-            {
-                throw new IllegalStateException(e);
-            }
-        }
-
-        public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
-        {
-            try
-            {
-                return cipher.doFinal(input, inputOffset, inputLength, output, outputOffset);
-            }
-            catch (GeneralSecurityException e)
-            {
-                throw new IllegalStateException(e);
-            }
-        }
-
-        public int getBlockSize()
-        {
-            return cipher.getBlockSize();
-        }
-    }
-
-    private class ImplicitIvBlockCipher
-        implements TlsBlockCipher
-    {
-        private final int cipherMode;
-        private final Cipher cipher;
-        private final String baseAlgorithm;
-
-        private SecretKey key;
-        private byte[] nextIV;
-
-        ImplicitIvBlockCipher(String baseAlgorithm, String cipherName, boolean isEncrypting)
-            throws GeneralSecurityException
-        {
-            this.cipher = helper.createCipher(cipherName);
-            this.baseAlgorithm = baseAlgorithm;
-            this.cipherMode = (isEncrypting) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
-        }
-
-        public void setKey(byte[] key)
-        {
-            this.key = new SecretKeySpec(key, baseAlgorithm);
-        }
-
-        public void init(byte[] iv)
-        {
-            nextIV = iv;
-        }
-
-        public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
-        {
-            try
-            {
-                cipher.init(cipherMode, key, new IvParameterSpec(nextIV));
-
-                if (cipherMode == Cipher.DECRYPT_MODE)
-                {
-                    nextIV = Arrays.copyOfRange(input, inputOffset + inputLength - cipher.getBlockSize(), inputOffset + inputLength);
-                }
-
-                int len = cipher.doFinal(input, inputOffset, inputLength, output, outputOffset);
-
-                if (cipherMode == Cipher.ENCRYPT_MODE)
-                {
-                    nextIV = Arrays.copyOfRange(output, outputOffset + inputLength - cipher.getBlockSize(), outputOffset + inputLength);
-                }
-
-                init(nextIV);
-
-                return len;
-            }
-            catch (GeneralSecurityException e)
-            {
-                throw new IllegalStateException(e);
-            }
-        }
-
-        public int getBlockSize()
-        {
-            return cipher.getBlockSize();
-        }
-    }
-
     private class StreamCipher
         implements TlsStreamCipher
     {
@@ -582,55 +516,56 @@ public class JcaTlsCrypto
         }
     }
 
-    private class AEADCipher
-        implements TlsAEADCipher
+    private class TlsMac
+        implements TlsMAC
     {
-        private final int cipherMode;
-        private final Cipher cipher;
-        private final String baseAlgorithm;
+        private final String algorithm;
 
-        private SecretKey key;
+        private Mac hmac;
 
-        AEADCipher(String baseAlgorithm, String cipherName, boolean isEncrypting)
-            throws GeneralSecurityException
+        TlsMac(String algorithm)
         {
-            this.cipher = helper.createCipher(cipherName);
-            this.baseAlgorithm = baseAlgorithm;
-            this.cipherMode = (isEncrypting) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
+            this.algorithm = algorithm;
+            try
+            {
+                this.hmac = helper.createMac(algorithm);
+            }
+            catch (GeneralSecurityException e)
+            {                     e.printStackTrace(System.err);
+                throw new IllegalStateException("cannot create HMAC: " + e.getMessage(), e);
+            }
         }
 
         public void setKey(byte[] key)
         {
-            this.key = new SecretKeySpec(key, baseAlgorithm);
-        }
-
-        public void init(byte[] nonce, int macSize, byte[] additionalData)
-        {
             try
             {
-                cipher.init(cipherMode, key, new AEADParameterSpec(nonce, macSize * 8, additionalData));
+                hmac.init(new SecretKeySpec(key, algorithm));
             }
-            catch (GeneralSecurityException e)
+            catch (InvalidKeyException e)
             {
-                throw new IllegalStateException(e);
+                e.printStackTrace();
             }
         }
 
-        public int getOutputSize(int inputLength)
+        public void update(byte[] input, int inOff, int length)
         {
-            return cipher.getOutputSize(inputLength);
+            hmac.update(input, inOff, length);
         }
 
-        public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
+        public byte[] calculateMAC()
         {
-            try
-            {
-                return cipher.doFinal(input, inputOffset, inputLength, output, outputOffset);
-            }
-            catch (GeneralSecurityException e)
-            {
-                throw new IllegalStateException(e);
-            }
+            return hmac.doFinal();
+        }
+
+        public int getMacLength()
+        {
+            return hmac.getMacLength();
+        }
+
+        public void reset()
+        {
+            hmac.reset();
         }
     }
 
@@ -651,7 +586,7 @@ public class JcaTlsCrypto
                 this.hmac = helper.createMac(algorithm);
             }
             catch (GeneralSecurityException e)
-            {
+            {                     e.printStackTrace(System.err);
                 throw new IllegalStateException("cannot create HMAC: " + e.getMessage(), e);
             }
         }

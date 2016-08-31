@@ -12,7 +12,7 @@ import org.bouncycastle.util.Pack;
 /**
  * RFC 7905
  */
-public class Chacha20Poly1305CipherSuite
+public class ChaCha20Poly1305CipherSuite
     implements TlsCipherSuite
 {
     private static final byte[] ZEROES = new byte[15];
@@ -22,10 +22,12 @@ public class Chacha20Poly1305CipherSuite
     protected TlsMAC writeMac;
     protected TlsMAC readMac;
 
-    protected TlsStreamCipher encryptCipher, decryptCipher;
+    protected TlsStreamCipher encryptCipher;
+    protected TlsStreamCipher decryptCipher;
+
     protected byte[] encryptIV, decryptIV;
 
-    public Chacha20Poly1305CipherSuite(TlsContext context, TlsStreamCipher encryptCipher, TlsStreamCipher decryptCipher,
+    public ChaCha20Poly1305CipherSuite(TlsContext context, TlsStreamCipher encryptCipher, TlsStreamCipher decryptCipher,
                                        TlsMAC writeMac, TlsMAC readMac)
         throws IOException
     {
@@ -84,7 +86,7 @@ public class Chacha20Poly1305CipherSuite
 
         this.encryptCipher.setKey(encryptKey);
         this.encryptCipher.init(encryptIV);
-        this.encryptCipher.setKey(decryptKey);
+        this.decryptCipher.setKey(decryptKey);
         this.decryptCipher.init(decryptIV);
     }
 
@@ -95,12 +97,21 @@ public class Chacha20Poly1305CipherSuite
 
     public byte[] encodePlaintext(long seqNo, short type, byte[] plaintext, int offset, int len) throws IOException
     {
-        byte[] macKey = initRecord(encryptCipher, seqNo, encryptIV);
+        initRecord(encryptCipher, seqNo, encryptIV);
 
-        writeMac.setKey(macKey);
+        // MAC key is from the zeros at the front.
+        byte[] cipherOut = new byte[64 + len];
+        System.arraycopy(plaintext, offset, cipherOut, 64, len);
+
+        encryptCipher.doFinal(cipherOut, 0, cipherOut.length, cipherOut, 0);
 
         byte[] output = new byte[len + 16];
-        encryptCipher.doFinal(plaintext, offset, len, output, 0);
+        byte[] macKey = Arrays.copyOfRange(cipherOut, 0, 32);
+        System.arraycopy(cipherOut, 64, output, 0, len);
+
+        Arrays.fill(cipherOut, (byte)0);
+
+        writeMac.setKey(macKey);
 
         byte[] additionalData = getAdditionalData(seqNo, type, len);
         byte[] mac = calculateRecordMAC(writeMac, additionalData, output, 0, len);
@@ -116,32 +127,40 @@ public class Chacha20Poly1305CipherSuite
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
 
-        byte[] macKey = initRecord(decryptCipher, seqNo, decryptIV);
-
-        readMac.setKey(macKey);
-
+        initRecord(decryptCipher, seqNo, decryptIV);
         int plaintextLength = len - 16;
+
+        // MAC key is from the zeros at the front.
+        byte[] cipherOut = new byte[64 + plaintextLength];
+        System.arraycopy(ciphertext, offset, cipherOut, 64, plaintextLength);
+
+        decryptCipher.doFinal(cipherOut, 0, cipherOut.length, cipherOut, 0);
+
+        byte[] macKey = Arrays.copyOfRange(cipherOut, 0, 32);
+        readMac.setKey(macKey);
 
         byte[] additionalData = getAdditionalData(seqNo, type, plaintextLength);
         byte[] calculatedMAC = calculateRecordMAC(readMac, additionalData, ciphertext, offset, plaintextLength);
         byte[] receivedMAC = Arrays.copyOfRange(ciphertext, offset + plaintextLength, offset + len);
+        byte[] output = new byte[plaintextLength];
+
+        System.arraycopy(cipherOut, 64, output, 0, plaintextLength);
+
+        Arrays.fill(cipherOut, (byte)0);
 
         if (!Arrays.constantTimeAreEqual(calculatedMAC, receivedMAC))
         {
             throw new TlsFatalAlert(AlertDescription.bad_record_mac);
         }
 
-        byte[] output = new byte[plaintextLength];
-        decryptCipher.doFinal(ciphertext, offset, plaintextLength, output, 0);
         return output;
     }
 
-    protected byte[] initRecord(TlsStreamCipher cipher, long seqNo, byte[] iv)
+    protected void initRecord(TlsStreamCipher cipher, long seqNo, byte[] iv)
         throws IOException
     {
         byte[] nonce = calculateNonce(seqNo, iv);
         cipher.init(nonce);
-        return generateRecordMACKey(cipher);
     }
 
     protected byte[] calculateNonce(long seqNo, byte[] iv)
@@ -155,17 +174,6 @@ public class Chacha20Poly1305CipherSuite
         }
 
         return nonce;
-    }
-
-    protected byte[] generateRecordMACKey(TlsStreamCipher cipher)
-        throws IOException
-    {
-        byte[] firstBlock = new byte[64];
-        cipher.doFinal(firstBlock, 0, firstBlock.length, firstBlock, 0);
-
-        byte[] macKey = Arrays.copyOfRange(firstBlock, 0, 32);
-        Arrays.fill(firstBlock, (byte)0);
-        return macKey;
     }
 
     protected byte[] calculateRecordMAC(TlsMAC mac, byte[] additionalData, byte[] buf, int off, int len)
