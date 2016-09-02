@@ -181,10 +181,10 @@ public class JcaTlsCrypto
      * @return a block cipher.
      * @throws GeneralSecurityException in case of failure.
      */
-    protected TlsBlockCipher createBlockCipherWithImplicitIv(String cipherName, String algorithm, int keySize, boolean isEncrypting)
+    protected TlsBlockCipher createBlockCipherWithImplicitIV(String cipherName, String algorithm, int keySize, boolean isEncrypting)
         throws GeneralSecurityException
     {
-        return new JceBlockCipherWithImplicitIv(helper.createCipher(cipherName), algorithm, isEncrypting);
+        return new JceBlockCipherWithImplicitIV(helper.createCipher(cipherName), algorithm, isEncrypting);
     }
 
     /**
@@ -201,6 +201,19 @@ public class JcaTlsCrypto
         throws GeneralSecurityException
     {
         return new JceStreamCipher(helper.createCipher(cipherName), algorithm, isEncrypting);
+    }
+
+    /**
+     * If you want to create your own versions of stream ciphers, override this method.
+     *
+     * @param hmacName the name of the HMAC required.
+     * @return a HMAC calculator.
+     * @throws GeneralSecurityException in case of failure.
+     */
+    protected TlsHMAC createHMac(String hmacName)
+        throws GeneralSecurityException
+    {
+        return new JceTlsHMAC(helper.createMac(hmacName), hmacName);
     }
 
     /**
@@ -254,7 +267,7 @@ public class JcaTlsCrypto
         }
         else
         {
-            return createBlockCipherWithImplicitIv(cipherName, algorithm, keySize, forEncryption);
+            return createBlockCipherWithImplicitIV(cipherName, algorithm, keySize, forEncryption);
         }
     }
 
@@ -276,7 +289,7 @@ public class JcaTlsCrypto
     {
         return new ChaCha20Poly1305CipherSuite(context,
                 createStreamCipher("ChaCha7539", "ChaCha7539", 32, true), createStreamCipher("ChaCha7539", "ChaCha7539", 32, false),
-                new TlsMac("Poly1305"), new TlsMac("Poly1305"));
+                new TlsMac(helper.createMac("Poly1305"), "Poly1305"), new TlsMac(helper.createMac("Poly1305"), "Poly1305"));
     }
 
     private TlsAEADCipherSuite createCipher_AES_CCM(int cipherKeySize, int macSize)
@@ -317,22 +330,29 @@ public class JcaTlsCrypto
     public final TlsHMAC createHMAC(int macAlgorithm)
         throws IOException
     {
-        switch (macAlgorithm)
+        try
         {
-        case MACAlgorithm._null:
-            return null;
-        case MACAlgorithm.hmac_md5:
-            return new TlsHMac("HmacMD5", 64);
-        case MACAlgorithm.hmac_sha1:
-            return new TlsHMac("HmacSHA1", 64);
-        case MACAlgorithm.hmac_sha256:
-            return new TlsHMac("HmacSHA256", 64);
-        case MACAlgorithm.hmac_sha384:
-            return new TlsHMac("HmacSHA384", 128);
-        case MACAlgorithm.hmac_sha512:
-            return new TlsHMac("HmacSHA512", 128);
-        default:
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            switch (macAlgorithm)
+            {
+            case MACAlgorithm._null:
+                return null;
+            case MACAlgorithm.hmac_md5:
+                return createHMac("HmacMD5");
+            case MACAlgorithm.hmac_sha1:
+                return createHMac("HmacSHA1");
+            case MACAlgorithm.hmac_sha256:
+                return createHMac("HmacSHA256");
+            case MACAlgorithm.hmac_sha384:
+                return createHMac("HmacSHA384");
+            case MACAlgorithm.hmac_sha512:
+                return createHMac("HmacSHA512");
+            default:
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new IOException("cannot create HMAC: " + e.getMessage(), e);
         }
     }
 
@@ -494,26 +514,19 @@ public class JcaTlsCrypto
     {
         private final String algorithm;
 
-        private Mac hmac;
+        private Mac mac;
 
-        TlsMac(String algorithm)
+        TlsMac(Mac mac, String algorithm)
         {
             this.algorithm = algorithm;
-            try
-            {
-                this.hmac = helper.createMac(algorithm);
-            }
-            catch (GeneralSecurityException e)
-            {                     e.printStackTrace(System.err);
-                throw new IllegalStateException("cannot create HMAC: " + e.getMessage(), e);
-            }
+            this.mac = mac;
         }
 
         public void setKey(byte[] key)
         {
             try
             {
-                hmac.init(new SecretKeySpec(key, algorithm));
+                mac.init(new SecretKeySpec(key, algorithm));
             }
             catch (InvalidKeyException e)
             {
@@ -523,82 +536,22 @@ public class JcaTlsCrypto
 
         public void update(byte[] input, int inOff, int length)
         {
-            hmac.update(input, inOff, length);
+            mac.update(input, inOff, length);
         }
 
         public byte[] calculateMAC()
         {
-            return hmac.doFinal();
+            return mac.doFinal();
         }
 
         public int getMacLength()
         {
-            return hmac.getMacLength();
+            return mac.getMacLength();
         }
 
         public void reset()
         {
-            hmac.reset();
-        }
-    }
-
-    private class TlsHMac
-        implements TlsHMAC
-    {
-        private final String algorithm;
-        private final int internalBlockSize;
-
-        private Mac hmac;
-
-        TlsHMac(String algorithm, int internalBlockSize)
-        {
-            this.algorithm = algorithm;
-            this.internalBlockSize = internalBlockSize;
-            try
-            {
-                this.hmac = helper.createMac(algorithm);
-            }
-            catch (GeneralSecurityException e)
-            {                     e.printStackTrace(System.err);
-                throw new IllegalStateException("cannot create HMAC: " + e.getMessage(), e);
-            }
-        }
-
-        public void setKey(byte[] key)
-        {
-            try
-            {
-                hmac.init(new SecretKeySpec(key, algorithm));
-            }
-            catch (InvalidKeyException e)
-            {
-                e.printStackTrace();
-            }
-        }
-
-        public void update(byte[] input, int inOff, int length)
-        {
-            hmac.update(input, inOff, length);
-        }
-
-        public byte[] calculateMAC()
-        {
-            return hmac.doFinal();
-        }
-
-        public int getInternalBlockSize()
-        {
-            return internalBlockSize;
-        }
-
-        public int getMacLength()
-        {
-            return hmac.getMacLength();
-        }
-
-        public void reset()
-        {
-            hmac.reset();
+            mac.reset();
         }
     }
 
