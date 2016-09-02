@@ -33,7 +33,6 @@ public class JceTlsHMAC
         this.hmac = hmac;
         this.algorithm = algorithm;
         this.internalBlockSize = internalBlockSizes.get(algorithm);
-        ;
     }
 
     public void setKey(byte[] key)

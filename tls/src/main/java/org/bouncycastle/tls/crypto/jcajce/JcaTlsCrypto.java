@@ -2,12 +2,7 @@ package org.bouncycastle.tls.crypto.jcajce;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
-import java.security.MessageDigest;
 import java.security.SecureRandom;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AbstractTlsCrypto;
@@ -139,12 +134,101 @@ public class JcaTlsCrypto
         }
     }
 
+    public final TlsHMAC createHMAC(int macAlgorithm)
+        throws IOException
+    {
+        try
+        {
+            switch (macAlgorithm)
+            {
+            case MACAlgorithm._null:
+                return null;
+            case MACAlgorithm.hmac_md5:
+                return createHMAC("HmacMD5");
+            case MACAlgorithm.hmac_sha1:
+                return createHMAC("HmacSHA1");
+            case MACAlgorithm.hmac_sha256:
+                return createHMAC("HmacSHA256");
+            case MACAlgorithm.hmac_sha384:
+                return createHMAC("HmacSHA384");
+            case MACAlgorithm.hmac_sha512:
+                return createHMAC("HmacSHA512");
+            default:
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new IOException("cannot create HMAC: " + e.getMessage(), e);
+        }
+    }
+
+    public TlsSecret generateRandomSecret(int length)
+    {
+        byte[] data = new byte[length];
+        getSecureRandom().nextBytes(data);
+        return adoptSecret(data);
+    }
+
+    public TlsHash createHash(short algorithm)
+    {
+        try
+        {
+            return createHash(getDigestName(algorithm));
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new IllegalArgumentException("unable to create message digest:" + e.getMessage(), e);
+        }
+    }
+
+    public final TlsHash createHash(final SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+    {
+        if (signatureAndHashAlgorithm == null)
+        {
+            return new CombinedHash(this);
+        }
+
+        return createHash(signatureAndHashAlgorithm.getHash());
+    }
+
+    public TlsDHDomain createDHDomain(TlsDHConfig dhConfig)
+    {
+        return new JceTlsDHDomain(this, dhConfig);
+    }
+
+    public TlsECDomain createECDomain(TlsECConfig ecConfig)
+    {
+        return new JcaTlsECDomain(this, ecConfig);
+    }
+
+    public TlsSecret createSecret(byte[] data)
+    {
+        try
+        {
+            return adoptSecret(Arrays.clone(data));
+        }
+        finally
+        {
+            // TODO[tls-ops] Add this after checking all callers
+//            if (data != null)
+//            {
+//                Arrays.fill(data, (byte)0);
+//            }
+        }
+    }
+
+    JcaJceHelper getHelper()
+    {
+        return helper;
+    }
+
     /**
      * If you want to create your own versions of the AEAD ciphers required, override this method.
      *
-     * @param cipherName the full name of the cipher (algorithm/mode/padding)
-     * @param algorithm the base algorithm name
-     * @param keySize keySize (in bytes) for the cipher key.
+     * @param cipherName   the full name of the cipher (algorithm/mode/padding)
+     * @param algorithm    the base algorithm name
+     * @param keySize      keySize (in bytes) for the cipher key.
      * @param isEncrypting true if the cipher is for encryption, false otherwise.
      * @return an AEAD cipher.
      * @throws GeneralSecurityException in case of failure.
@@ -158,9 +242,9 @@ public class JcaTlsCrypto
     /**
      * If you want to create your own versions of the block ciphers required, override this method.
      *
-     * @param cipherName the full name of the cipher (algorithm/mode/padding)
-     * @param algorithm the base algorithm name
-     * @param keySize keySize (in bytes) for the cipher key.
+     * @param cipherName   the full name of the cipher (algorithm/mode/padding)
+     * @param algorithm    the base algorithm name
+     * @param keySize      keySize (in bytes) for the cipher key.
      * @param isEncrypting true if the cipher is for encryption, false otherwise.
      * @return a block cipher.
      * @throws GeneralSecurityException in case of failure.
@@ -174,9 +258,9 @@ public class JcaTlsCrypto
     /**
      * If you want to create your own versions of the block ciphers for < TLS 1.1, override this method.
      *
-     * @param cipherName the full name of the cipher (algorithm/mode/padding)
-     * @param algorithm the base algorithm name
-     * @param keySize keySize (in bytes) for the cipher key.
+     * @param cipherName   the full name of the cipher (algorithm/mode/padding)
+     * @param algorithm    the base algorithm name
+     * @param keySize      keySize (in bytes) for the cipher key.
      * @param isEncrypting true if the cipher is for encryption, false otherwise.
      * @return a block cipher.
      * @throws GeneralSecurityException in case of failure.
@@ -190,9 +274,9 @@ public class JcaTlsCrypto
     /**
      * If you want to create your own versions of stream ciphers, override this method.
      *
-     * @param cipherName the full name of the cipher (algorithm/mode/padding)
-     * @param algorithm the base algorithm name
-     * @param keySize keySize (in bytes) for the cipher key.
+     * @param cipherName   the full name of the cipher (algorithm/mode/padding)
+     * @param algorithm    the base algorithm name
+     * @param keySize      keySize (in bytes) for the cipher key.
      * @param isEncrypting true if the cipher is for encryption, false otherwise.
      * @return a block cipher.
      * @throws GeneralSecurityException in case of failure.
@@ -204,16 +288,42 @@ public class JcaTlsCrypto
     }
 
     /**
-     * If you want to create your own versions of stream ciphers, override this method.
+     * If you want to create your own versions of HMACs, override this method.
      *
      * @param hmacName the name of the HMAC required.
      * @return a HMAC calculator.
      * @throws GeneralSecurityException in case of failure.
      */
-    protected TlsHMAC createHMac(String hmacName)
+    protected TlsHMAC createHMAC(String hmacName)
         throws GeneralSecurityException
     {
         return new JceTlsHMAC(helper.createMac(hmacName), hmacName);
+    }
+
+    /**
+     * If you want to create your own versions of MACs, override this method.
+     *
+     * @param macName the name of the MAC required.
+     * @return a MAC calculator.
+     * @throws GeneralSecurityException in case of failure.
+     */
+    protected TlsMAC createMAC(String macName)
+        throws GeneralSecurityException
+    {
+        return new JceTlsMAC(helper.createMac(macName), macName);
+    }
+
+    /**
+     * If you want to create your own versions of Hash functions, override this method.
+     *
+     * @param digestName the name of the Hash function required.
+     * @return a hash calculator.
+     * @throws GeneralSecurityException in case of failure.
+     */
+    protected TlsHash createHash(String digestName)
+        throws GeneralSecurityException
+    {
+        return new JcaTlsHash(helper.createDigest(digestName));
     }
 
     /**
@@ -227,35 +337,35 @@ public class JcaTlsCrypto
     protected TlsNullCipherSuite createNullCipher(int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsNullCipherSuite(context, createMac(macAlgorithm), createMac(macAlgorithm));
+        return new TlsNullCipherSuite(context, createMAC(macAlgorithm), createMAC(macAlgorithm));
     }
 
     private TlsBlockCipherSuite createAESCipher(int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
         return new TlsBlockCipherSuite(context, createBlockOperator("AES/CBC/NoPadding", "AES", true, cipherKeySize), createBlockOperator("AES/CBC/NoPadding", "AES", false, cipherKeySize),
-                createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize);
+            createMAC(macAlgorithm), createMAC(macAlgorithm), cipherKeySize);
     }
 
     private TlsBlockCipherSuite createCamelliaCipher(int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
         return new TlsBlockCipherSuite(context, createBlockOperator("Camellia/CBC/NoPadding", "Camellia", true, cipherKeySize), createBlockOperator("Camellia/CBC/NoPadding", "Camellia", false, cipherKeySize),
-            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize);
+            createMAC(macAlgorithm), createMAC(macAlgorithm), cipherKeySize);
     }
 
     private TlsBlockCipherSuite createDESedeCipher(int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
         return new TlsBlockCipherSuite(context, createBlockOperator("DESede/CBC/NoPadding", "DESede", true, 24), createBlockOperator("DESede/CBC/NoPadding", "DESede", false, 24),
-            createMac(macAlgorithm), createMac(macAlgorithm), 24);
+            createMAC(macAlgorithm), createMAC(macAlgorithm), 24);
     }
 
     private TlsBlockCipherSuite createSEEDCipher(int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
         return new TlsBlockCipherSuite(context, createBlockOperator("SEED/CBC/NoPadding", "SEED", true, 16), createBlockOperator("SEED/CBC/NoPadding", "SEED", false, 16),
-            createMac(macAlgorithm), createMac(macAlgorithm), 16);
+            createMAC(macAlgorithm), createMAC(macAlgorithm), 16);
     }
 
     private TlsBlockCipher createBlockOperator(String cipherName, String algorithm, boolean forEncryption, int keySize)
@@ -271,7 +381,7 @@ public class JcaTlsCrypto
         }
     }
 
-    private TlsHMAC createMac(int macAlgorithm)
+    private TlsHMAC createMAC(int macAlgorithm)
         throws GeneralSecurityException, IOException
     {
         if (TlsUtils.isSSL(context))
@@ -288,8 +398,8 @@ public class JcaTlsCrypto
         throws IOException, GeneralSecurityException
     {
         return new ChaCha20Poly1305CipherSuite(context,
-                createStreamCipher("ChaCha7539", "ChaCha7539", 32, true), createStreamCipher("ChaCha7539", "ChaCha7539", 32, false),
-                new TlsMac(helper.createMac("Poly1305"), "Poly1305"), new TlsMac(helper.createMac("Poly1305"), "Poly1305"));
+            createStreamCipher("ChaCha7539", "ChaCha7539", 32, true), createStreamCipher("ChaCha7539", "ChaCha7539", 32, false),
+            createMAC("Poly1305"), createMAC("Poly1305"));
     }
 
     private TlsAEADCipherSuite createCipher_AES_CCM(int cipherKeySize, int macSize)
@@ -324,120 +434,35 @@ public class JcaTlsCrypto
         throws IOException, GeneralSecurityException
     {
         return new TlsStreamCipherSuite(context, createStreamCipher("RC4", "RC4", 128, true), createStreamCipher("RC4", "RC4", 128, false),
-            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize, false);
+            createMAC(macAlgorithm), createMAC(macAlgorithm), cipherKeySize, false);
     }
 
-    public final TlsHMAC createHMAC(int macAlgorithm)
-        throws IOException
-    {
-        try
-        {
-            switch (macAlgorithm)
-            {
-            case MACAlgorithm._null:
-                return null;
-            case MACAlgorithm.hmac_md5:
-                return createHMac("HmacMD5");
-            case MACAlgorithm.hmac_sha1:
-                return createHMac("HmacSHA1");
-            case MACAlgorithm.hmac_sha256:
-                return createHMac("HmacSHA256");
-            case MACAlgorithm.hmac_sha384:
-                return createHMac("HmacSHA384");
-            case MACAlgorithm.hmac_sha512:
-                return createHMac("HmacSHA512");
-            default:
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-        }
-        catch (GeneralSecurityException e)
-        {
-            throw new IOException("cannot create HMAC: " + e.getMessage(), e);
-        }
-    }
-
-    protected TlsHMAC createSSL3HMAC(int macAlgorithm)
-        throws IOException
+    private TlsHMAC createSSL3HMAC(int macAlgorithm)
+        throws IOException, GeneralSecurityException
     {
         switch (macAlgorithm)
         {
         case MACAlgorithm._null:
             return null;
         case MACAlgorithm.hmac_md5:
-            return new SSL3Mac(createMessageDigest(HashAlgorithm.md5), 64);
+            return new SSL3Mac(createHash(getDigestName(HashAlgorithm.md5)), 16, 64);
         case MACAlgorithm.hmac_sha1:
-            return new SSL3Mac(createMessageDigest(HashAlgorithm.sha1), 64);
+            return new SSL3Mac(createHash(getDigestName(HashAlgorithm.sha1)), 20, 64);
         case MACAlgorithm.hmac_sha256:
-            return new SSL3Mac(createMessageDigest(HashAlgorithm.sha256), 64);
+            return new SSL3Mac(createHash(getDigestName(HashAlgorithm.sha256)), 32, 64);
         case MACAlgorithm.hmac_sha384:
-            return new SSL3Mac(createMessageDigest(HashAlgorithm.sha384), 128);
+            return new SSL3Mac(createHash(getDigestName(HashAlgorithm.sha384)), 48, 128);
         case MACAlgorithm.hmac_sha512:
-            return new SSL3Mac(createMessageDigest(HashAlgorithm.sha512), 128);
+            return new SSL3Mac(createHash(getDigestName(HashAlgorithm.sha512)), 64, 128);
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
 
-    public TlsDHDomain createDHDomain(TlsDHConfig dhConfig)
-    {
-        return new JceTlsDHDomain(this, dhConfig);
-    }
-
-    public TlsECDomain createECDomain(TlsECConfig ecConfig)
-    {
-        return new JcaTlsECDomain(this, ecConfig);
-    }
-
-    public TlsSecret createSecret(byte[] data)
-    {
-        try
-        {
-            return adoptSecret(Arrays.clone(data));
-        }
-        finally
-        {
-            // TODO[tls-ops] Add this after checking all callers
-//            if (data != null)
-//            {
-//                Arrays.fill(data, (byte)0);
-//            }
-        }
-    }
-
-    public TlsSecret generateRandomSecret(int length)
-    {
-        byte[] data = new byte[length];
-        getSecureRandom().nextBytes(data);
-        return adoptSecret(data);
-    }
-
-    public TlsHash createHash(short algorithm)
-    {
-        return new JcaTlsHash(createMessageDigest(algorithm));
-    }
-
-
-    JcaJceHelper getHelper()
-    {
-        return helper;
-    }
-
-
-    public TlsHash createHash(final SignatureAndHashAlgorithm signatureAndHashAlgorithm)
-    {
-        if (signatureAndHashAlgorithm == null)
-        {
-            return new CombinedHash(this);
-        }
-
-        return new JcaTlsHash(createMessageDigest(signatureAndHashAlgorithm.getHash()));
-    }
-
-    MessageDigest createMessageDigest(short hashAlgorithm)
+    String getDigestName(short algorithm)
     {
         String digestName;
-
-        switch (hashAlgorithm)
+        switch (algorithm)
         {
         case HashAlgorithm.md5:
             digestName = "MD5";
@@ -460,106 +485,14 @@ public class JcaTlsCrypto
         default:
             throw new IllegalArgumentException("unknown HashAlgorithm");
         }
-
-        try
-        {
-            return helper.createDigest(digestName);
-        }
-        catch (GeneralSecurityException e)
-        {
-            throw new IllegalArgumentException("unable to create message digest:" + e.getMessage(), e);
-        }
-    }
-
-    private class JcaTlsHash
-        implements TlsHash
-    {
-        private final MessageDigest digest;
-
-        JcaTlsHash(MessageDigest digest)
-        {
-            this.digest = digest;
-        }
-
-        public void update(byte[] data, int offSet, int length)
-        {
-            digest.update(data, offSet, length);
-        }
-
-        public byte[] calculateHash()
-        {
-            return digest.digest();
-        }
-
-        public TlsHash cloneHash()
-        {
-            try
-            {
-                return new JcaTlsHash((MessageDigest)digest.clone());
-            }
-            catch (CloneNotSupportedException e)
-            {
-                throw new UnsupportedOperationException("unable to clone digest");
-            }
-        }
-
-        public void reset()
-        {
-            digest.reset();
-        }
-    }
-
-    private class TlsMac
-        implements TlsMAC
-    {
-        private final String algorithm;
-
-        private Mac mac;
-
-        TlsMac(Mac mac, String algorithm)
-        {
-            this.algorithm = algorithm;
-            this.mac = mac;
-        }
-
-        public void setKey(byte[] key)
-        {
-            try
-            {
-                mac.init(new SecretKeySpec(key, algorithm));
-            }
-            catch (InvalidKeyException e)
-            {
-                e.printStackTrace();
-            }
-        }
-
-        public void update(byte[] input, int inOff, int length)
-        {
-            mac.update(input, inOff, length);
-        }
-
-        public byte[] calculateMAC()
-        {
-            return mac.doFinal();
-        }
-
-        public int getMacLength()
-        {
-            return mac.getMacLength();
-        }
-
-        public void reset()
-        {
-            mac.reset();
-        }
+        return digestName;
     }
 
     /**
      * HMAC implementation based on original internet draft for HMAC (RFC 2104)
-     * <p>
+     * <p/>
      * The difference is that padding is concatenated versus XORed with the key
-     * <p>
+     * <p/>
      * H(K + opad, H(K + ipad, text))
      */
     private static class SSL3Mac
@@ -571,7 +504,8 @@ public class JcaTlsCrypto
         private static final byte[] IPAD = genPad(IPAD_BYTE, 48);
         private static final byte[] OPAD = genPad(OPAD_BYTE, 48);
 
-        private MessageDigest digest;
+        private TlsHash digest;
+        private final int digestSize;
         private final int internalBlockSize;
         private int padLength;
 
@@ -581,14 +515,17 @@ public class JcaTlsCrypto
          * Base constructor for one of the standard digest algorithms that the byteLength of
          * the algorithm is know for. Behaviour is undefined for digests other than MD5 or SHA1.
          *
-         * @param digest the digest.
+         * @param digest            the digest.
+         * @param digestSize        the digest size.
+         * @param internalBlockSize the digest internal block size.
          */
-        public SSL3Mac(MessageDigest digest, int internalBlockSize)
+        public SSL3Mac(TlsHash digest, int digestSize, int internalBlockSize)
         {
             this.digest = digest;
+            this.digestSize = digestSize;
             this.internalBlockSize = internalBlockSize;
 
-            if (digest.getDigestLength() == 20)
+            if (digestSize == 20)
             {
                 this.padLength = 40;
             }
@@ -612,13 +549,13 @@ public class JcaTlsCrypto
 
         public byte[] calculateMAC()
         {
-            byte[] tmp = digest.digest();
+            byte[] tmp = digest.calculateHash();
 
             digest.update(secret, 0, secret.length);
             digest.update(OPAD, 0, padLength);
             digest.update(tmp, 0, tmp.length);
 
-            byte[] rv = digest.digest();
+            byte[] rv = digest.calculateHash();
 
             reset();
 
@@ -632,7 +569,7 @@ public class JcaTlsCrypto
 
         public int getMacLength()
         {
-            return digest.getDigestLength();
+            return digestSize;
         }
 
         /**

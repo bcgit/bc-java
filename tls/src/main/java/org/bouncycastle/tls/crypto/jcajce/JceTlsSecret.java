@@ -10,7 +10,6 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
@@ -131,7 +130,7 @@ public class JceTlsSecret
         {
             byte[] result = (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
                 ? prf_1_0(data, labelSeed, length)
-                : prf_1_2(crypto.createMessageDigest(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm)), data, labelSeed, length);
+                : prf_1_2(crypto.getDigestName(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm)), data, labelSeed, length);
 
             return crypto.adoptSecret(result);
         }
@@ -160,14 +159,14 @@ public class JceTlsSecret
         }
     }
 
-    protected void hmacHash(MessageDigest digest, byte[] secret, byte[] seed, byte[] output)
+    protected void hmacHash(String digestName, byte[] secret, byte[] seed, byte[] output)
         throws GeneralSecurityException
     {
-        String macName = "Hmac" + digest.getAlgorithm().replace("-", "");
+        String macName = "Hmac" + digestName;
         Mac mac = crypto.getHelper().createMac(macName);
         mac.init(new SecretKeySpec(secret, macName));
         byte[] a = seed;
-        int size = digest.getDigestLength();
+        int size = mac.getMacLength();
         int iterations = (output.length + size - 1) / size;
         byte[] b1 = new byte[mac.getMacLength()];
         byte[] b2 = new byte[mac.getMacLength()];
@@ -186,8 +185,8 @@ public class JceTlsSecret
     protected byte[] prf_SSL(byte[] seed, int md5Count)
         throws GeneralSecurityException
     {
-        MessageDigest md5 = crypto.createMessageDigest(HashAlgorithm.md5);
-        MessageDigest sha1 = crypto.createMessageDigest(HashAlgorithm.sha1);
+        MessageDigest md5 = crypto.getHelper().createDigest("MD5");
+        MessageDigest sha1 = crypto.getHelper().createDigest("SHA-1");
 
         int md5Size = md5.getDigestLength();
         byte[] md5Buf = new byte[md5Size * md5Count];
@@ -225,8 +224,8 @@ public class JceTlsSecret
 
         byte[] b1 = new byte[length];
         byte[] b2 = new byte[length];
-        hmacHash(crypto.createMessageDigest(HashAlgorithm.md5), s1, labelSeed, b1);
-        hmacHash(crypto.createMessageDigest(HashAlgorithm.sha1), s2, labelSeed, b2);
+        hmacHash("MD5", s1, labelSeed, b1);
+        hmacHash("SHA1", s2, labelSeed, b2);
         for (int i = 0; i < length; i++)
         {
             b1[i] ^= b2[i];
@@ -234,11 +233,11 @@ public class JceTlsSecret
         return b1;
     }
 
-    protected byte[] prf_1_2(MessageDigest prfDigest, byte[] secret, byte[] labelSeed, int length)
+    protected byte[] prf_1_2(String prfDigest, byte[] secret, byte[] labelSeed, int length)
         throws GeneralSecurityException
     {
         byte[] result = new byte[length];
-        hmacHash(prfDigest, secret, labelSeed, result);
+        hmacHash(prfDigest.replace("-", ""), secret, labelSeed, result);
         return result;
     }
 }
