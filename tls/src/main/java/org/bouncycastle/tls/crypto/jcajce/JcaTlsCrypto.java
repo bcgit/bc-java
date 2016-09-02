@@ -182,7 +182,7 @@ public class JcaTlsCrypto
         }
     }
 
-    public final TlsHash createHash(final SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+    public TlsHash createHash(final SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
         if (signatureAndHashAlgorithm == null)
         {
@@ -190,16 +190,6 @@ public class JcaTlsCrypto
         }
 
         return createHash(signatureAndHashAlgorithm.getHash());
-    }
-
-    public TlsDHDomain createDHDomain(TlsDHConfig dhConfig)
-    {
-        return new JceTlsDHDomain(this, dhConfig);
-    }
-
-    public TlsECDomain createECDomain(TlsECConfig ecConfig)
-    {
-        return new JcaTlsECDomain(this, ecConfig);
     }
 
     public TlsSecret createSecret(byte[] data)
@@ -221,6 +211,16 @@ public class JcaTlsCrypto
     JcaJceHelper getHelper()
     {
         return helper;
+    }
+
+    public TlsDHDomain createDHDomain(TlsDHConfig dhConfig)
+    {
+        return new JceTlsDHDomain(this, dhConfig);
+    }
+
+    public TlsECDomain createECDomain(TlsECConfig ecConfig)
+    {
+        return new JcaTlsECDomain(this, ecConfig);
     }
 
     /**
