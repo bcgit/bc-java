@@ -20,6 +20,12 @@ import org.bouncycastle.util.Strings;
 public class BouncyCastleJsseProvider
     extends Provider
 {
+    private static String info = "Bouncy Castle JSSE Provider";
+
+    public static final String PROVIDER_NAME = "BCJSSE";
+
+    private static final double version = 0.9;
+    
     private Map<String, BcJsseService> serviceMap = new HashMap<String, BcJsseService>();
     private Map<String, EngineCreator> creatorMap = new HashMap<String, EngineCreator>();
 
@@ -27,7 +33,7 @@ public class BouncyCastleJsseProvider
 
     public BouncyCastleJsseProvider()
     {
-        super("BCTLS", 0.9, "Bouncy Castle JSSE Provider");
+        super(PROVIDER_NAME, version, info);
 
         SecureRandom entropySource = new SecureRandom();
         
@@ -41,7 +47,7 @@ public class BouncyCastleJsseProvider
 
     public BouncyCastleJsseProvider(boolean isInFipsMode, Provider provider)
     {
-        super("BCTLS", 0.9, "Bouncy Castle JSSE Provider");
+        super(PROVIDER_NAME, version, info);
 
         try
         {
@@ -57,7 +63,7 @@ public class BouncyCastleJsseProvider
 
     public BouncyCastleJsseProvider(String config)
     {
-        super("BCTLS", 0.9, "Bouncy Castle JSSE Provider");
+        super(PROVIDER_NAME, version, info);
 
         boolean isFips = false;
 
@@ -84,7 +90,7 @@ public class BouncyCastleJsseProvider
 
     public BouncyCastleJsseProvider(boolean fipsMode, TlsCrypto tlsCrypto)
     {
-        super("BCTLS", 0.9, "Bouncy Castle JSSE Provider");
+        super(PROVIDER_NAME, version, info);
 
         configure(fipsMode, tlsCrypto);
     }
