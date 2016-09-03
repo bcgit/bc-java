@@ -111,6 +111,15 @@ public final class BouncyCastleProvider extends Provider
         "BC", "PKCS12"
     };
 
+    /*
+     * Configurable secure random
+     */
+    private static final String SECURE_RANDOM_PACKAGE = "org.bouncycastle.jcajce.provider.drbg.";
+    private static final String[] SECURE_RANDOMS =
+    {
+        "DRBG"
+    };
+
     /**
      * Construct a new provider.  This should only be required when
      * using runtime registration of the provider using the
@@ -145,6 +154,8 @@ public final class BouncyCastleProvider extends Provider
         loadAlgorithms(ASYMMETRIC_PACKAGE, ASYMMETRIC_CIPHERS);
 
         loadAlgorithms(KEYSTORE_PACKAGE, KEYSTORES);
+
+        loadAlgorithms(SECURE_RANDOM_PACKAGE, SECURE_RANDOMS);
 
         //
         // X509Store
