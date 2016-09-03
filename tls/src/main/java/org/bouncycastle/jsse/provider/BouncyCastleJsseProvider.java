@@ -159,6 +159,7 @@ public class BouncyCastleJsseProvider
     {
         this.isInFipsMode = isInFipsMode;
 
+        // TODO[tls-ops]: should X.509 be an alias.
         addAlgorithmImplementation("KeyManagerFactory.X.509", "org.bouncycastle.jsse.provider.KeyManagerFactory", new EngineCreator()
         {
             public Object createInstance(Object constructorParameter)
