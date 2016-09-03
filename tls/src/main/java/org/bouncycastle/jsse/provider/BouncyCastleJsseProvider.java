@@ -1,7 +1,11 @@
 package org.bouncycastle.jsse.provider;
 
+import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
+import java.security.SecureRandom;
+import java.security.SecureRandomSpi;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.bouncycastle.tls.TlsCrypto;
+import org.bouncycastle.tls.crypto.jcajce.JcaTlsCryptoBuilder;
 import org.bouncycastle.util.Strings;
 
 public class BouncyCastleJsseProvider
@@ -17,16 +23,136 @@ public class BouncyCastleJsseProvider
     private Map<String, BcJsseService> serviceMap = new HashMap<String, BcJsseService>();
     private Map<String, EngineCreator> creatorMap = new HashMap<String, EngineCreator>();
 
+    private boolean isInFipsMode;
+
     public BouncyCastleJsseProvider()
     {
         super("BCTLS", 0.9, "Bouncy Castle JSSE Provider");
 
-        configure(false);
+        SecureRandom entropySource = new SecureRandom();
+        
+        configure(false, new JcaTlsCryptoBuilder(entropySource, entropySource).build());
+    }
+
+    public BouncyCastleJsseProvider(Provider provider)
+    {
+        this(false, provider);
+    }
+
+    public BouncyCastleJsseProvider(boolean isInFipsMode, Provider provider)
+    {
+        super("BCTLS", 0.9, "Bouncy Castle JSSE Provider");
+
+        try
+        {
+            SecureRandom mainEntropy = SecureRandom.getInstance("DEFAULT", provider);
+
+            configure(isInFipsMode, new JcaTlsCryptoBuilder(mainEntropy, SecureRandom.getInstance("NONCEANDIV", provider)).setProvider(provider).build());
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new IllegalArgumentException("unable to set up TlsCrypto: " + e.getMessage(), e);
+        }
+    }
+
+    public BouncyCastleJsseProvider(String config)
+    {
+        super("BCTLS", 0.9, "Bouncy Castle JSSE Provider");
+
+        boolean isFips = false;
+
+        try
+        {
+            if (config.indexOf(':') > 0)
+            {
+                isFips = Boolean.valueOf(config.substring(0, config.indexOf(':')).trim());
+
+                String cryptoName = config.substring(config.indexOf(':') + 1).trim();
+
+                configure(isFips, createCrypto(cryptoName));
+            }
+            else
+            {
+                configure(isFips, createCrypto(config.trim()));
+            }
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new IllegalArgumentException("unable to set up TlsCrypto: " + e.getMessage(), e);
+        }
+    }
+
+    public BouncyCastleJsseProvider(boolean fipsMode, TlsCrypto tlsCrypto)
+    {
+        super("BCTLS", 0.9, "Bouncy Castle JSSE Provider");
+
+        configure(fipsMode, tlsCrypto);
+    }
+    
+    private TlsCrypto createCrypto(String cryptoName)
+        throws GeneralSecurityException
+    {
+        if (cryptoName.equalsIgnoreCase("default"))
+        {        
+            SecureRandom mainEntropy = SecureRandom.getInstance("DEFAULT");
+
+            return new JcaTlsCryptoBuilder(mainEntropy, SecureRandom.getInstance("NONCEANDIV")).build();
+        }
+        else
+        {
+            Provider provider = Security.getProvider(cryptoName);
+
+            
+            if (provider != null)
+            { 
+                SecureRandom mainEntropy = SecureRandom.getInstance("DEFAULT", provider);
+                
+                return new JcaTlsCryptoBuilder(mainEntropy, SecureRandom.getInstance("NONCEANDIV", provider)).build();
+            }
+            else
+            {
+                try
+                {
+                    Class cryptoClass = Class.forName(cryptoName);
+
+                    // the TlsCrypto/Provider class named requires a no-args constructor
+                    Object o = cryptoClass.newInstance();
+                    if (o instanceof TlsCrypto)
+                    {
+                        return (TlsCrypto)o;
+                    }
+                    if (o instanceof Provider)
+                    {
+                        provider = (Provider)o;
+
+                        SecureRandom mainEntropy = SecureRandom.getInstance("DEFAULT", provider);
+
+                        return new JcaTlsCryptoBuilder(mainEntropy, SecureRandom.getInstance("NONCEANDIV", provider)).build();
+                    }
+
+                    throw new IllegalArgumentException("unrecognized class: " + cryptoName);
+                }
+                catch (ClassNotFoundException e)
+                {
+                    throw new IllegalArgumentException("unable to find Provider/TlsCrypto class: " + cryptoName);
+                }
+                catch (InstantiationException e)
+                {
+                    throw new IllegalArgumentException("unable to create Provider/TlsCrypto class '" + cryptoName + "': " + e.getMessage(), e);
+                }
+                catch (IllegalAccessException e)
+                {
+                    throw new IllegalArgumentException("unable to create Provider/TlsCrypto class '" + cryptoName + "': " + e.getMessage(), e);
+                }
+            }
+        }
     }
 
     // TODO: add a real fips mode
-    private void configure(boolean isFipsMode)
+    private void configure(boolean isInFipsMode, TlsCrypto baseCrypto)
     {
+        this.isInFipsMode = isInFipsMode;
+
         addAlgorithmImplementation("KeyManagerFactory.X.509", "org.bouncycastle.jsse.provider.KeyManagerFactory", new EngineCreator()
         {
             public Object createInstance(Object constructorParameter)
@@ -47,7 +173,7 @@ public class BouncyCastleJsseProvider
         addAlias("Alg.Alias.TrustManagerFactory.X.509", "PKIX");
         addAlias("Alg.Alias.TrustManagerFactory.X509", "PKIX");
 
-        if (isFipsMode == false)
+        if (isInFipsMode == false)
         {
             addAlgorithmImplementation("SSLContext.SSL", "org.bouncycastle.jsse.provider.SSLContext.TLS", new EngineCreator()
             {
@@ -195,6 +321,11 @@ public class BouncyCastleJsseProvider
         return attributeMap;
     }
 
+    public boolean isFipsMode()
+    {
+        return isInFipsMode;
+    }
+
     private static class BcJsseService
         extends Provider.Service
     {
@@ -241,6 +372,15 @@ public class BouncyCastleJsseProvider
             {
                 throw new NoSuchAlgorithmException("Unable to invoke creator for " + getAlgorithm() + ": " + e.getMessage(), e);
             }
+        }
+    }
+
+    private class NonceAndIvSecureRandom
+        extends SecureRandom
+    {
+        NonceAndIvSecureRandom(SecureRandomSpi secureRandomSpi)
+        {
+            super(secureRandomSpi, BouncyCastleJsseProvider.this);
         }
     }
 }
