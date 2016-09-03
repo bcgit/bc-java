@@ -149,7 +149,7 @@ public class BouncyCastleJsseProvider
     }
 
     // TODO: add a real fips mode
-    private void configure(boolean isInFipsMode, TlsCrypto baseCrypto)
+    private void configure(boolean isInFipsMode, final TlsCrypto baseCrypto)
     {
         this.isInFipsMode = isInFipsMode;
 
@@ -179,7 +179,7 @@ public class BouncyCastleJsseProvider
             {
                 public Object createInstance(Object constructorParameter)
                 {
-                    return new ProvSSLContext();
+                    return new ProvSSLContext(baseCrypto);
                 }
             });
         }
@@ -188,21 +188,21 @@ public class BouncyCastleJsseProvider
         {
             public Object createInstance(Object constructorParameter)
             {
-                return new ProvSSLContext();
+                return new ProvSSLContext(baseCrypto);
             }
         });
         addAlgorithmImplementation("SSLContext.TLSv1", "org.bouncycastle.jsse.provider.SSLContext.TLS.1", new EngineCreator()
         {
             public Object createInstance(Object constructorParameter)
             {
-                return new ProvSSLContext();
+                return new ProvSSLContext(baseCrypto);
             }
         });
         addAlgorithmImplementation("SSLContext.Default", "org.bouncycastle.jsse.provider.SSLContext.TLS.Default", new EngineCreator()
         {
             public Object createInstance(Object constructorParameter)
             {
-                return new ProvSSLContext();
+                return new ProvSSLContext(baseCrypto);
             }
         });
     }
