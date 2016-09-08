@@ -55,7 +55,7 @@ public class ProofOfPossessionSigningKeyBuilder
         {
             popo = null;
 
-            CRMFUtil.derEncodeToStream(certRequest, signer.getOutputStream());
+            CRMFUtil.derEncodeToStream(certRequest.getCertTemplate(), signer.getOutputStream());
         }
         else if (name != null)
         {
