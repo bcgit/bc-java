@@ -291,7 +291,7 @@ public class CertificateRequestMessage
         }
         else
         {
-            CRMFUtil.derEncodeToStream(certReqMsg.getCertReq().getCertTemplate(), verifier.getOutputStream());
+            CRMFUtil.derEncodeToStream(certReqMsg.getCertReq(), verifier.getOutputStream());
         }
 
         return verifier.verify(popoSign.getSignature().getOctets());
