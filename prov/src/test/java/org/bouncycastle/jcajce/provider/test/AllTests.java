@@ -22,6 +22,7 @@ public class AllTests
 
         suite.addTestSuite(ECAlgorithmParametersTest.class);
         suite.addTestSuite(PrivateConstructorTest.class);
+        suite.addTestSuite(RandomTest.class);
 
         return new BCTestSetup(suite);
     }
