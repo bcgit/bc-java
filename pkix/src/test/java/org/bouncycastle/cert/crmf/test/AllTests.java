@@ -137,7 +137,9 @@ public class AllTests
 
         sig.initVerify(certReqMsg.getPublicKey());
 
-        sig.update(certReqMsg.getCertTemplate().getEncoded(ASN1Encoding.DER));
+        // this is the original approach in RFC 2511 - there's a typo in RFC 4211, the standard contradicts itself
+        // between 4.1. 3 and then a couple of paragraphs later.
+        sig.update(certReqMsg.toASN1Structure().getCertReq().getEncoded(ASN1Encoding.DER));
 
         TestCase.assertTrue(sig.verify(popoSign.getSignature().getOctets()));
 
