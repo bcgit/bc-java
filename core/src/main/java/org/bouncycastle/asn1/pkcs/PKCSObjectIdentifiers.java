@@ -39,6 +39,10 @@ public interface PKCSObjectIdentifiers
     static final ASN1ObjectIdentifier    sha512WithRSAEncryption   = pkcs_1.branch("13");
     /** PKCS#1: 1.2.840.113549.1.1.14 */
     static final ASN1ObjectIdentifier    sha224WithRSAEncryption   = pkcs_1.branch("14");
+    /** PKCS#1: 1.2.840.113549.1.1.15 */
+    ASN1ObjectIdentifier    sha512_224WithRSAEncryption   = pkcs_1.branch("15");
+    /** PKCS#1: 1.2.840.113549.1.1.16 */
+    ASN1ObjectIdentifier    sha512_256WithRSAEncryption   = pkcs_1.branch("16");
 
     //
     // pkcs-3 OBJECT IDENTIFIER ::= {
