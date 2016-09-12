@@ -176,7 +176,7 @@ public abstract class BaseAgreementSpi
     {
         if (algDetails.indexOf('[') > 0)
         {
-            return (Integer.parseInt(algDetails.substring(algDetails.indexOf('[') + 1, algDetails.indexOf(']'))) + 7) / 8;
+            return Integer.parseInt(algDetails.substring(algDetails.indexOf('[') + 1, algDetails.indexOf(']')));
         }
 
         String algKey = Strings.toUpperCase(algDetails);
@@ -300,12 +300,14 @@ public abstract class BaseAgreementSpi
             }
         }
 
-        if (des.containsKey(oidAlgorithm))
+        String algName = getAlgorithm(algorithm);
+
+        if (des.containsKey(algName))
         {
             DESParameters.setOddParity(secret);
         }
 
-        return new SecretKeySpec(secret, getAlgorithm(algorithm));
+        return new SecretKeySpec(secret, algName);
     }
 
     protected abstract byte[] calcSecret();

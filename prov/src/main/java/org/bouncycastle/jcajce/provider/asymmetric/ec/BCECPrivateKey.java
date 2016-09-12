@@ -178,7 +178,14 @@ public class BCECPrivateKey
             this.ecSpec = EC5Util.convertSpec(ellipticCurve, spec);
         }
 
-        publicKey = getPublicKeyDetails(pubKey);
+        try
+        {
+            publicKey = getPublicKeyDetails(pubKey);
+        }
+        catch (Exception e)
+        {
+            publicKey = null; // not all curves are encodable
+        }
     }
 
     public BCECPrivateKey(

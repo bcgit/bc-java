@@ -17,7 +17,6 @@ import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
@@ -45,6 +44,13 @@ public class EC5Util
                 customCurves.put(curveParams.getCurve(), CustomNamedCurves.getByName(name).getCurve());
             }
         }
+
+        X9ECParameters c25519 = CustomNamedCurves.getByName("Curve25519");
+
+        customCurves.put(new ECCurve.Fp(
+            c25519.getCurve().getField().getCharacteristic(),
+            c25519.getCurve().getA().toBigInteger(),
+            c25519.getCurve().getB().toBigInteger()), c25519.getCurve());
     }
 
     public static ECCurve getCurve(
