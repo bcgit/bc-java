@@ -179,7 +179,7 @@ public class BaseMac
                 throw new InvalidAlgorithmParameterException("Cannot process GCMParameterSpec.");
             }
         }
-        else
+        else if (!(params instanceof PBEParameterSpec))
         {
             throw new InvalidAlgorithmParameterException("unknown parameter type: " + params.getClass().getName());
         }
