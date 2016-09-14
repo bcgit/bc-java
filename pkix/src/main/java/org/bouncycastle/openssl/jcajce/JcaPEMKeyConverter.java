@@ -110,6 +110,18 @@ public class JcaPEMKeyConverter
             algName = algorithm.getId();
         }
 
-        return helper.createKeyFactory(algName);
+        try
+        {
+            return helper.createKeyFactory(algName);
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            if (algName.equals("ECDSA"))
+            {
+                return helper.createKeyFactory("EC"); // try a fall back
+            }
+
+            throw e;
+        }
     }
 }
