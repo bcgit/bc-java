@@ -262,7 +262,7 @@ public final class Arrays
         return true;
     }
 
-    public int compareUnsigned(byte[] a, byte[] b)
+    public static int compareUnsigned(byte[] a, byte[] b)
     {
         if (a == b)
         {
