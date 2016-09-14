@@ -1,0 +1,51 @@
+package org.bouncycastle.jsse.provider;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+
+import javax.net.ssl.SSLServerSocketFactory;
+
+class ProvSSLServerSocketFactory
+    extends SSLServerSocketFactory
+{
+    ProvSSLServerSocketFactory()
+    {
+    }
+
+//    @Override
+//    public ServerSocket createServerSocket() throws IOException
+//    {
+//        return super.createServerSocket();
+//    }
+
+    @Override
+    public ServerSocket createServerSocket(int port) throws IOException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ServerSocket createServerSocket(int port, int backlog) throws IOException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ServerSocket createServerSocket(int port, int backlog, InetAddress ifAddress) throws IOException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String[] getDefaultCipherSuites()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String[] getSupportedCipherSuites()
+    {
+        throw new UnsupportedOperationException();
+    }
+}

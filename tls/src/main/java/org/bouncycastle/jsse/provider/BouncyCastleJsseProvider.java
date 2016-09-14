@@ -164,7 +164,7 @@ public class BouncyCastleJsseProvider
         {
             public Object createInstance(Object constructorParameter)
             {
-                return new ProvKeyManagerFactory();
+                return new ProvKeyManagerFactorySpi();
             }
         });
         addAlias("Alg.Alias.KeyManagerFactory.X509", "X.509");
@@ -174,7 +174,7 @@ public class BouncyCastleJsseProvider
         {
             public Object createInstance(Object constructorParameter)
             {
-                return new ProvTrustManagerFactory();
+                return new ProvTrustManagerFactorySpi();
             }
         });
         addAlias("Alg.Alias.TrustManagerFactory.X.509", "PKIX");
@@ -186,7 +186,7 @@ public class BouncyCastleJsseProvider
             {
                 public Object createInstance(Object constructorParameter)
                 {
-                    return new ProvSSLContext(baseCrypto);
+                    return new ProvSSLContextSpi(baseCrypto);
                 }
             });
         }
@@ -195,21 +195,21 @@ public class BouncyCastleJsseProvider
         {
             public Object createInstance(Object constructorParameter)
             {
-                return new ProvSSLContext(baseCrypto);
+                return new ProvSSLContextSpi(baseCrypto);
             }
         });
         addAlgorithmImplementation("SSLContext.TLSv1", "org.bouncycastle.jsse.provider.SSLContext.TLS.1", new EngineCreator()
         {
             public Object createInstance(Object constructorParameter)
             {
-                return new ProvSSLContext(baseCrypto);
+                return new ProvSSLContextSpi(baseCrypto);
             }
         });
         addAlgorithmImplementation("SSLContext.Default", "org.bouncycastle.jsse.provider.SSLContext.TLS.Default", new EngineCreator()
         {
             public Object createInstance(Object constructorParameter)
             {
-                return new ProvSSLContext(baseCrypto);
+                return new ProvSSLContextSpi(baseCrypto);
             }
         });
     }
