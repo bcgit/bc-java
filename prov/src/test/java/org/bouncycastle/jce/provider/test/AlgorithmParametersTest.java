@@ -105,9 +105,9 @@ public class AlgorithmParametersTest
 
         AlgorithmParameters al = AlgorithmParameters.getInstance("EC", "BC");
 
-        al.init(new ECGenParameterSpec(SECObjectIdentifiers.secp224k1.getId()));
+        al.init(new ECGenParameterSpec(SECObjectIdentifiers.secp256r1.getId()));
 
-        if (!Arrays.areEqual(Hex.decode("06052b81040020"), al.getEncoded()))
+        if (!Arrays.areEqual(Hex.decode("06082a8648ce3d030107"), al.getEncoded()))
         {
              fail("EC param test failed");
         }

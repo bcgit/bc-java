@@ -75,7 +75,7 @@ public class KeyPairGeneratorSpi
             ECParameterSpec p = (ECParameterSpec)params;
             this.ecParams = params;
 
-            param = new ECKeyGenerationParameters(new ECDomainParameters(p.getCurve(), p.getG(), p.getN()), random);
+            param = new ECKeyGenerationParameters(new ECDomainParameters(p.getCurve(), p.getG(), p.getN(), p.getH()), random);
 
             engine.init(param);
             initialised = true;
@@ -136,7 +136,7 @@ public class KeyPairGeneratorSpi
             ECParameterSpec p = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
             this.ecParams = params;
 
-            param = new ECKeyGenerationParameters(new ECDomainParameters(p.getCurve(), p.getG(), p.getN()), random);
+            param = new ECKeyGenerationParameters(new ECDomainParameters(p.getCurve(), p.getG(), p.getN(), p.getH()), random);
 
             engine.init(param);
             initialised = true;

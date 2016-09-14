@@ -7,7 +7,6 @@ import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.security.AlgorithmParameterGenerator;
 import java.security.AlgorithmParameters;
-import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -577,7 +576,7 @@ public class DHTest
     private void testECDH(String algorithm, String curveName, String cipher, int keyLen)
         throws Exception
     {
-        ECNamedCurveParameterSpec parameterSpec = ECNamedCurveTable.getParameterSpec("secp521r1");
+        ECNamedCurveParameterSpec parameterSpec = ECNamedCurveTable.getParameterSpec(curveName);
         KeyPairGenerator g = KeyPairGenerator.getInstance(algorithm, "BC");
 
         g.initialize(parameterSpec);
@@ -607,7 +606,7 @@ public class DHTest
         bKeyAgree.doPhase(aKeyPair.getPublic(), true);
 
         SecretKey k1 = aKeyAgree.generateSecret(cipher);
-        SecretKey k2 = bKeyAgree.generateSecret(cipher);
+        SecretKey k2 = bKeyAgree.generateSecret(cipher + "[" + keyLen + "]");  // explicit key-len
 
         if (!k1.equals(k2))
         {

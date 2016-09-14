@@ -9,6 +9,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.Signature;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.MGF1ParameterSpec;
@@ -22,12 +23,14 @@ import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.crmf.CRMFObjectIdentifiers;
 import org.bouncycastle.asn1.crmf.EncKeyWithID;
 import org.bouncycastle.asn1.crmf.EncryptedValue;
+import org.bouncycastle.asn1.crmf.POPOSigningKey;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -108,6 +111,40 @@ public class AllTests
     public void tearDown()
     {
 
+    }
+
+    public void testBasicMessage()
+        throws Exception
+    {
+        KeyPairGenerator kGen = KeyPairGenerator.getInstance("RSA", BC);
+
+        kGen.initialize(512);
+
+        KeyPair kp = kGen.generateKeyPair();
+
+        JcaCertificateRequestMessageBuilder certReqBuild = new JcaCertificateRequestMessageBuilder(BigInteger.ONE);
+
+        certReqBuild.setSubject(new X500Principal("CN=Test"))
+                    .setPublicKey(kp.getPublic())
+                    .setProofOfPossessionSigningKeySigner(new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(kp.getPrivate()));
+
+        JcaCertificateRequestMessage certReqMsg = new JcaCertificateRequestMessage(certReqBuild.build()).setProvider(BC);
+
+
+        POPOSigningKey popoSign = POPOSigningKey.getInstance(certReqMsg.toASN1Structure().getPopo().getObject());
+
+        Signature sig = Signature.getInstance("SHA1withRSA", "BC");
+
+        sig.initVerify(certReqMsg.getPublicKey());
+
+        // this is the original approach in RFC 2511 - there's a typo in RFC 4211, the standard contradicts itself
+        // between 4.1. 3 and then a couple of paragraphs later.
+        sig.update(certReqMsg.toASN1Structure().getCertReq().getEncoded(ASN1Encoding.DER));
+
+        TestCase.assertTrue(sig.verify(popoSign.getSignature().getOctets()));
+
+        TestCase.assertEquals(new X500Principal("CN=Test"), certReqMsg.getSubjectX500Principal());
+        TestCase.assertEquals(kp.getPublic(), certReqMsg.getPublicKey());
     }
 
     public void testBasicMessageWithArchiveControl()

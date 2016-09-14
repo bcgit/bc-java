@@ -237,14 +237,14 @@ public class SigTest
         tryRsaPkcs15Sig("SHA256WithRSA", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha256WithRSAEncryption, NISTObjectIdentifiers.id_sha256);
         tryRsaPkcs15Sig("SHA384WithRSA", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha384WithRSAEncryption, NISTObjectIdentifiers.id_sha384);
         tryRsaPkcs15Sig("SHA512WithRSA", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha512WithRSAEncryption, NISTObjectIdentifiers.id_sha512);
-        trySig("SHA512(224)WithRSA", data, signingKey, verifyKey);
-        trySig("SHA512(256)WithRSA", data, signingKey, verifyKey);
+        tryRsaPkcs15Sig("SHA512(224)WithRSA", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha512_224WithRSAEncryption, NISTObjectIdentifiers.id_sha512_224);
+        tryRsaPkcs15Sig("SHA512(256)WithRSA", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha512_256WithRSAEncryption, NISTObjectIdentifiers.id_sha512_256);
         tryRsaPkcs15Sig("SHA224WithRSAEncryption", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha224WithRSAEncryption, NISTObjectIdentifiers.id_sha224);
         tryRsaPkcs15Sig("SHA256WithRSAEncryption", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha256WithRSAEncryption, NISTObjectIdentifiers.id_sha256);
         tryRsaPkcs15Sig("SHA384WithRSAEncryption", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha384WithRSAEncryption, NISTObjectIdentifiers.id_sha384);
         tryRsaPkcs15Sig("SHA512WithRSAEncryption", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha512WithRSAEncryption, NISTObjectIdentifiers.id_sha512);
-        trySig("SHA512(224)WithRSAEncryption", data, signingKey, verifyKey);
-        trySig("SHA512(256)WithRSAEncryption", data, signingKey, verifyKey);
+        tryRsaPkcs15Sig("SHA512(224)WithRSAEncryption", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha512_224WithRSAEncryption, NISTObjectIdentifiers.id_sha512_224);
+        tryRsaPkcs15Sig("SHA512(256)WithRSAEncryption", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha512_256WithRSAEncryption, NISTObjectIdentifiers.id_sha512_256);
 
         tryRsaPkcs15Sig("SHA3-224WithRSA", data, signingKey, verifyKey, NISTObjectIdentifiers.id_rsassa_pkcs1_v1_5_with_sha3_224, NISTObjectIdentifiers.id_sha3_224);
         tryRsaPkcs15Sig("SHA3-256WithRSA", data, signingKey, verifyKey, NISTObjectIdentifiers.id_rsassa_pkcs1_v1_5_with_sha3_256, NISTObjectIdentifiers.id_sha3_256);
