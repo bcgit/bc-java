@@ -130,6 +130,10 @@ public class BaseMac
         }
         else
         {
+            if (params instanceof PBEParameterSpec)
+            {
+                throw new InvalidAlgorithmParameterException("inappropriate parameter type: " + params.getClass().getName());
+            }
             param = new KeyParameter(key.getEncoded());
         }
 
