@@ -24,6 +24,7 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.RC2Parameters;
 import org.bouncycastle.crypto.params.SkeinParameters;
 import org.bouncycastle.jcajce.PKCS12Key;
+import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.spec.SkeinParameterSpec;
 
 public class BaseMac
@@ -127,17 +128,38 @@ public class BaseMac
                 throw new InvalidAlgorithmParameterException("PBE requires PBE parameters to be set.");
             }
         }
+        else
+        {
+            param = new KeyParameter(key.getEncoded());
+        }
+
+        KeyParameter keyParam;
+        if (param instanceof ParametersWithIV)
+        {
+            keyParam = (KeyParameter)((ParametersWithIV)param).getParameters();
+        }
+        else
+        {
+            keyParam = (KeyParameter)param;
+        }
+
+        if (params instanceof AEADParameterSpec)
+        {
+            AEADParameterSpec aeadSpec = (AEADParameterSpec)params;
+
+            param = new AEADParameters(keyParam, aeadSpec.getMacSizeInBits(), aeadSpec.getNonce(), aeadSpec.getAssociatedData());
+        }
         else if (params instanceof IvParameterSpec)
         {
-            param = new ParametersWithIV(new KeyParameter(key.getEncoded()), ((IvParameterSpec)params).getIV());
+            param = new ParametersWithIV(keyParam, ((IvParameterSpec)params).getIV());
         }
         else if (params instanceof RC2ParameterSpec)
         {
-            param = new ParametersWithIV(new RC2Parameters(key.getEncoded(), ((RC2ParameterSpec)params).getEffectiveKeyBits()), ((RC2ParameterSpec)params).getIV());
+            param = new ParametersWithIV(new RC2Parameters(keyParam.getKey(), ((RC2ParameterSpec)params).getEffectiveKeyBits()), ((RC2ParameterSpec)params).getIV());
         }
         else if (params instanceof SkeinParameterSpec)
         {
-            param = new SkeinParameters.Builder(copyMap(((SkeinParameterSpec)params).getParameters())).setKey(key.getEncoded()).build();
+            param = new SkeinParameters.Builder(copyMap(((SkeinParameterSpec)params).getParameters())).setKey(keyParam.getKey()).build();
         }
         else if (params == null)
         {
@@ -149,8 +171,6 @@ public class BaseMac
             {
                 Method tLen = gcmSpecClass.getDeclaredMethod("getTLen", new Class[0]);
                 Method iv= gcmSpecClass.getDeclaredMethod("getIV", new Class[0]);
-
-                KeyParameter keyParam = new KeyParameter(key.getEncoded());
 
                 param = new AEADParameters(keyParam, ((Integer)tLen.invoke(params, new Object[0])).intValue(), (byte[])iv.invoke(params, new Object[0]));
             }
