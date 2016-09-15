@@ -15,11 +15,11 @@ class ProvSSLEngine
     private boolean useClientMode;
     private boolean enableSessionCreation;
 
-    ProvSSLEngine(ProvSSLContext sslContext)
+    ProvSSLEngine(ProvSSLContextSpi sslContext)
     {
     }
 
-    ProvSSLEngine(ProvSSLContext sslContext, String host, int port)
+    ProvSSLEngine(ProvSSLContextSpi sslContext, String host, int port)
     {
         super(host, port);
     }

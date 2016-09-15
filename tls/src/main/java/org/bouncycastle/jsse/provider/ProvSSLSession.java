@@ -1,122 +1,166 @@
 package org.bouncycastle.jsse.provider;
 
-
 import java.security.Principal;
 import java.security.cert.Certificate;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
+import javax.net.ssl.ExtendedSSLSession;
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSessionBindingEvent;
+import javax.net.ssl.SSLSessionBindingListener;
 import javax.net.ssl.SSLSessionContext;
 import javax.security.cert.X509Certificate;
 
+// TODO[tls-ops] Serializable ?
 class ProvSSLSession
-    implements SSLSession
+    extends ExtendedSSLSession
 {
-    public byte[] getId()
+    protected final Map<String, Object> valueMap = Collections.synchronizedMap(new HashMap<String, Object>());
+
+    protected final ProvSSLSessionContext context;
+
+    ProvSSLSession(ProvSSLSessionContext context)
     {
-        return new byte[0];
+        this.context = context;
     }
-
-    public SSLSessionContext getSessionContext()
+    
+    public int getApplicationBufferSize()
     {
-        return null;
-    }
-
-    public long getCreationTime()
-    {
-        return 0;
-    }
-
-    public long getLastAccessedTime()
-    {
-        return 0;
-    }
-
-    public void invalidate()
-    {
-
-    }
-
-    public boolean isValid()
-    {
-        return false;
-    }
-
-    public void putValue(String s, Object o)
-    {
-
-    }
-
-    public Object getValue(String s)
-    {
-        return null;
-    }
-
-    public void removeValue(String s)
-    {
-
-    }
-
-    public String[] getValueNames()
-    {
-        return new String[0];
-    }
-
-    public Certificate[] getPeerCertificates()
-        throws SSLPeerUnverifiedException
-    {
-        return new Certificate[0];
-    }
-
-    public Certificate[] getLocalCertificates()
-    {
-        return new Certificate[0];
-    }
-
-    public X509Certificate[] getPeerCertificateChain()
-        throws SSLPeerUnverifiedException
-    {
-        return new X509Certificate[0];
-    }
-
-    public Principal getPeerPrincipal()
-        throws SSLPeerUnverifiedException
-    {
-        return null;
-    }
-
-    public Principal getLocalPrincipal()
-    {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public String getCipherSuite()
     {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
-    public String getProtocol()
+    public long getCreationTime()
     {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
-    public String getPeerHost()
+    public byte[] getId()
     {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
-    public int getPeerPort()
+    public long getLastAccessedTime()
     {
-        return 0;
+        throw new UnsupportedOperationException();
+    }
+
+    public Certificate[] getLocalCertificates()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public Principal getLocalPrincipal()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String[] getLocalSupportedSignatureAlgorithms()
+    {
+        throw new UnsupportedOperationException();
     }
 
     public int getPacketBufferSize()
     {
-        return 0;
+        throw new UnsupportedOperationException();
     }
 
-    public int getApplicationBufferSize()
+    public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException
     {
-        return 0;
+        throw new UnsupportedOperationException();
+    }
+
+    public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public String getPeerHost()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public int getPeerPort()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public Principal getPeerPrincipal() throws SSLPeerUnverifiedException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String[] getPeerSupportedSignatureAlgorithms()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public String getProtocol()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+//    @Override
+//    public List<SNIServerName> getRequestedServerNames()
+//    {
+//        return super.getRequestedServerNames();
+//    }
+
+    public SSLSessionContext getSessionContext()
+    {
+        return context;
+    }
+
+    public Object getValue(String name)
+    {
+        return valueMap.get(name);
+    }
+
+    public String[] getValueNames()
+    {
+        synchronized (valueMap)
+        {
+            return valueMap.keySet().toArray(new String[valueMap.size()]);
+        }
+    }
+
+    public void invalidate()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean isValid()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public void putValue(String name, Object value)
+    {
+        valueMap.put(name, value);
+
+        if (value instanceof SSLSessionBindingListener)
+        {
+            new SessionBindingListenerAdapter((SSLSessionBindingListener)value)
+                .valueBound(new SSLSessionBindingEvent(this, name));
+        }
+    }
+
+    public void removeValue(String name)
+    {
+        Object value = valueMap.remove(name);
+
+        if (value instanceof SSLSessionBindingListener)
+        {
+            new SessionBindingListenerAdapter((SSLSessionBindingListener)value)
+                .valueUnbound(new SSLSessionBindingEvent(this, name));
+        }
     }
 }
