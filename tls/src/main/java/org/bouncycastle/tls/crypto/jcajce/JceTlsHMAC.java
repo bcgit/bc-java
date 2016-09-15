@@ -9,6 +9,9 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.tls.crypto.TlsHMAC;
 
+/**
+ * Wrapper class for a JCE MAC based on HMAC to provide the necessary operations for TLS.
+ */
 public class JceTlsHMAC
     implements TlsHMAC
 {
@@ -23,16 +26,43 @@ public class JceTlsHMAC
         internalBlockSizes.put("HmacSHA512", 128);
     }
 
+    private final Mac hmac;
     private final String algorithm;
     private final Integer internalBlockSize;
 
-    private Mac hmac;
-
+    /**
+     * Base constructor.
+     *
+     * @param hmac MAC implementation.
+     * @param algorithm algorithm name to use for keys and to get the internal block size.
+     */
     public JceTlsHMAC(Mac hmac, String algorithm)
+    {
+        this(hmac, algorithm, getInternalBlockSize(algorithm));
+    }
+
+    private static int getInternalBlockSize(String algorithm)
+    {
+        if (!internalBlockSizes.containsKey(algorithm))
+        {
+            throw new IllegalArgumentException("HMAC " + algorithm + " unknown");
+        }
+
+        return internalBlockSizes.get(algorithm);
+    }
+
+    /**
+     * Base constructor specifying the internal block size.
+     *
+     * @param hmac MAC implementation.
+     * @param algorithm algorithm name to use for keys and to get the internal block size.
+     * @param internalBlockSize internal block size of the message digest underlying the HMAC.
+     */
+    public JceTlsHMAC(Mac hmac, String algorithm, int internalBlockSize)
     {
         this.hmac = hmac;
         this.algorithm = algorithm;
-        this.internalBlockSize = internalBlockSizes.get(algorithm);
+        this.internalBlockSize = internalBlockSize;
     }
 
     public void setKey(byte[] key)

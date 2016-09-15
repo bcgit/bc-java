@@ -34,12 +34,26 @@ import org.bouncycastle.tls.crypto.TlsStreamCipher;
 import org.bouncycastle.tls.crypto.TlsStreamCipherSuite;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Class for providing cryptographic services for TLS based on implementations in the JCA/JCE.
+ * <p>
+ *     This class provides default implementations for everything. If you need to customise it, extend the class
+ *     and override the appropriate methods.
+ * </p>
+ */
 public class JcaTlsCrypto
     extends AbstractTlsCrypto
 {
     private final JcaJceHelper helper;
     private final SecureRandom nonceEntropySource;
 
+    /**
+     * Base constructor.
+     *
+     * @param helper a JCA/JCE helper configured for the class's default provider.
+     * @param entropySource primary entropy source, used for key generation.
+     * @param nonceEntropySource secondary entropy source, used for nonce and IV generation.
+     */
     protected JcaTlsCrypto(JcaJceHelper helper, SecureRandom entropySource, SecureRandom nonceEntropySource)
     {
         super(entropySource);
@@ -208,11 +222,6 @@ public class JcaTlsCrypto
         }
     }
 
-    JcaJceHelper getHelper()
-    {
-        return helper;
-    }
-
     public TlsDHDomain createDHDomain(TlsDHConfig dhConfig)
     {
         return new JceTlsDHDomain(this, dhConfig);
@@ -338,6 +347,11 @@ public class JcaTlsCrypto
         throws IOException, GeneralSecurityException
     {
         return new TlsNullCipherSuite(context, createMAC(macAlgorithm), createMAC(macAlgorithm));
+    }
+
+    JcaJceHelper getHelper()
+    {
+        return helper;
     }
 
     private TlsBlockCipherSuite createAESCipher(int cipherKeySize, int macAlgorithm)
