@@ -206,7 +206,7 @@ public class TlsAEADCipherSuite
 
         try
         {
-            decryptor.init(nonce, 8 * macSize, additionalData);
+            decryptor.init(nonce, macSize, additionalData);
             outputPos += decryptor.doFinal(ciphertext, ciphertextOffset, ciphertextLength, output, outputPos);
         }
         catch (Exception e)

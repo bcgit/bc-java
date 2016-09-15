@@ -6,7 +6,9 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.ExtendedDigest;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Mac;
+import org.bouncycastle.crypto.RuntimeCryptoException;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
@@ -27,6 +29,7 @@ import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.modes.OCBBlockCipher;
+import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
@@ -42,6 +45,7 @@ import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.ChaCha20Poly1305CipherSuite;
+import org.bouncycastle.tls.crypto.TlsAEADCipherSuite;
 import org.bouncycastle.tls.crypto.TlsBlockCipher;
 import org.bouncycastle.tls.crypto.TlsBlockCipherSuite;
 import org.bouncycastle.tls.crypto.TlsCertificate;
@@ -359,34 +363,34 @@ public class BcTlsCrypto
     {
         return new ChaCha20Poly1305CipherSuite(context,
                 new StreamOperator(new ChaCha7539Engine(), true), new StreamOperator(new ChaCha7539Engine(), false),
-            new TlsMac(new Poly1305()), new TlsMac(new Poly1305()));
+            new MacOperator(new Poly1305()), new MacOperator(new Poly1305()));
     }
 
-    protected TlsAEADCipher createCipher_AES_CCM(int cipherKeySize, int macSize)
+    protected TlsAEADCipherSuite createCipher_AES_CCM(int cipherKeySize, int macSize)
         throws IOException
     {
-        return new TlsAEADCipher(context, createAEADBlockCipher_AES_CCM(), createAEADBlockCipher_AES_CCM(),
+        return new TlsAEADCipherSuite(context, new AeadOperator(createAEADBlockCipher_AES_CCM(), true), new AeadOperator(createAEADBlockCipher_AES_CCM(), false),
             cipherKeySize, macSize);
     }
 
-    protected TlsAEADCipher createCipher_AES_GCM(int cipherKeySize, int macSize)
+    protected TlsAEADCipherSuite createCipher_AES_GCM(int cipherKeySize, int macSize)
         throws IOException
     {
-        return new TlsAEADCipher(context, createAEADBlockCipher_AES_GCM(), createAEADBlockCipher_AES_GCM(),
+        return new TlsAEADCipherSuite(context, new AeadOperator(createAEADBlockCipher_AES_GCM(), true), new AeadOperator(createAEADBlockCipher_AES_GCM(), false),
             cipherKeySize, macSize);
     }
 
-    protected TlsAEADCipher createCipher_AES_OCB(int cipherKeySize, int macSize)
+    protected TlsAEADCipherSuite createCipher_AES_OCB(int cipherKeySize, int macSize)
         throws IOException
     {
-        return new TlsAEADCipher(context, createAEADBlockCipher_AES_OCB(), createAEADBlockCipher_AES_OCB(),
-            cipherKeySize, macSize, TlsAEADCipher.NONCE_RFC7905);
+        return new TlsAEADCipherSuite(context, new AeadOperator(createAEADBlockCipher_AES_OCB(), true), new AeadOperator(createAEADBlockCipher_AES_OCB(), false),
+            cipherKeySize, macSize, TlsAEADCipherSuite.NONCE_RFC7905);
     }
 
-    protected TlsAEADCipher createCipher_Camellia_GCM(int cipherKeySize, int macSize)
+    protected TlsAEADCipherSuite createCipher_Camellia_GCM(int cipherKeySize, int macSize)
         throws IOException
     {
-        return new TlsAEADCipher(context, createAEADBlockCipher_Camellia_GCM(), createAEADBlockCipher_Camellia_GCM(),
+        return new TlsAEADCipherSuite(context, new AeadOperator(createAEADBlockCipher_Camellia_GCM(), true), new AeadOperator(createAEADBlockCipher_Camellia_GCM(), false),
             cipherKeySize, macSize);
     }
 
@@ -514,15 +518,15 @@ public class BcTlsCrypto
         switch (hashAlgorithm)
         {
         case MACAlgorithm.hmac_md5:
-            return new TlsHMac(createDigest(HashAlgorithm.md5));
+            return new HMacOperator(createDigest(HashAlgorithm.md5));
         case MACAlgorithm.hmac_sha1:
-            return new TlsHMac(createDigest(HashAlgorithm.sha1));
+            return new HMacOperator(createDigest(HashAlgorithm.sha1));
         case MACAlgorithm.hmac_sha256:
-            return new TlsHMac(createDigest(HashAlgorithm.sha256));
+            return new HMacOperator(createDigest(HashAlgorithm.sha256));
         case MACAlgorithm.hmac_sha384:
-            return new TlsHMac(createDigest(HashAlgorithm.sha384));
+            return new HMacOperator(createDigest(HashAlgorithm.sha384));
         case MACAlgorithm.hmac_sha512:
-            return new TlsHMac(createDigest(HashAlgorithm.sha512));
+            return new HMacOperator(createDigest(HashAlgorithm.sha512));
         default:
             throw new IllegalArgumentException("unknown HashAlgorithm");
         }
@@ -689,11 +693,56 @@ public class BcTlsCrypto
         }
     }
 
-    private class TlsMac implements TlsMAC
+    public class AeadOperator
+        implements org.bouncycastle.tls.crypto.TlsAEADCipher
+    {
+        private final boolean isEncrypting;
+        private final AEADBlockCipher cipher;
+
+        private KeyParameter key;
+
+        public AeadOperator(AEADBlockCipher cipher, boolean isEncrypting)
+        {
+            this.cipher = cipher;
+            this.isEncrypting = isEncrypting;
+        }
+
+        public void setKey(byte[] key)
+        {
+            this.key = new KeyParameter(key);
+        }
+
+        public void init(byte[] nonce, int macSize, byte[] additionalData)
+        {
+            cipher.init(isEncrypting, new AEADParameters(key, macSize * 8, nonce, additionalData));
+        }
+
+        public int getOutputSize(int inputLength)
+        {
+            return cipher.getOutputSize(inputLength);
+        }
+
+        public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
+        {
+            int len = cipher.processBytes(input, inputOffset, inputLength, output, outputOffset);
+
+            try
+            {
+                return len + cipher.doFinal(output, outputOffset + len);
+            }
+            catch (InvalidCipherTextException e)
+            {
+                // TODO:
+                e.printStackTrace(); throw new RuntimeCryptoException(e.toString());
+            }
+        }
+    }
+
+    private class MacOperator implements TlsMAC
     {
         private final Mac mac;
 
-        TlsMac(Mac mac)
+        MacOperator(Mac mac)
         {
             this.mac = mac;
         }
@@ -728,11 +777,11 @@ public class BcTlsCrypto
         }
     }
 
-    private class TlsHMac implements TlsHMAC
+    private class HMacOperator implements TlsHMAC
     {
         private final HMac hmac;
 
-        TlsHMac(Digest digest)
+        HMacOperator(Digest digest)
         {
             this.hmac = new HMac(digest);
         }
