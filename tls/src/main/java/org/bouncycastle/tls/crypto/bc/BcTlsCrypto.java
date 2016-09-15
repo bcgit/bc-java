@@ -6,6 +6,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.ExtendedDigest;
+import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
@@ -15,10 +16,12 @@ import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.CamelliaEngine;
+import org.bouncycastle.crypto.engines.ChaCha7539Engine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
 import org.bouncycastle.crypto.engines.SEEDEngine;
 import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.macs.Poly1305;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
@@ -38,6 +41,7 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.ChaCha20Poly1305CipherSuite;
 import org.bouncycastle.tls.crypto.TlsBlockCipher;
 import org.bouncycastle.tls.crypto.TlsBlockCipherSuite;
 import org.bouncycastle.tls.crypto.TlsCertificate;
@@ -48,6 +52,7 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
+import org.bouncycastle.tls.crypto.TlsMAC;
 import org.bouncycastle.tls.crypto.TlsNullCipherSuite;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
@@ -352,7 +357,9 @@ public class BcTlsCrypto
     protected TlsCipherSuite createChaCha20Poly1305()
         throws IOException
     {
-        return new Chacha20Poly1305(context);
+        return new ChaCha20Poly1305CipherSuite(context,
+                new StreamOperator(new ChaCha7539Engine(), true), new StreamOperator(new ChaCha7539Engine(), false),
+            new TlsMac(new Poly1305()), new TlsMac(new Poly1305()));
     }
 
     protected TlsAEADCipher createCipher_AES_CCM(int cipherKeySize, int macSize)
@@ -649,6 +656,75 @@ public class BcTlsCrypto
         public int getBlockSize()
         {
             return cipher.getBlockSize();
+        }
+    }
+
+    private class StreamOperator
+        implements org.bouncycastle.tls.crypto.TlsStreamCipher
+    {
+        private final boolean isEncrypting;
+        private final StreamCipher cipher;
+
+        private KeyParameter key;
+
+        StreamOperator(StreamCipher cipher, boolean isEncrypting)
+        {
+            this.cipher = cipher;
+            this.isEncrypting = isEncrypting;
+        }
+
+        public void setKey(byte[] key)
+        {
+            this.key = new KeyParameter(key);
+        }
+
+        public void init(byte[] iv)
+        {
+            cipher.init(isEncrypting, new ParametersWithIV(this.key, iv));
+        }
+
+        public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
+        {
+            return cipher.processBytes(input, inputOffset, inputLength, output, outputOffset);
+        }
+    }
+
+    private class TlsMac implements TlsMAC
+    {
+        private final Mac mac;
+
+        TlsMac(Mac mac)
+        {
+            this.mac = mac;
+        }
+
+        public void setKey(byte[] key)
+        {
+            mac.init(new KeyParameter(key));
+        }
+
+        public void update(byte[] input, int inOff, int length)
+        {
+            mac.update(input, inOff, length);
+        }
+
+        public byte[] calculateMAC()
+        {
+            byte[] rv = new byte[mac.getMacSize()];
+
+            mac.doFinal(rv, 0);
+
+            return rv;
+        }
+
+        public int getMacLength()
+        {
+            return mac.getMacSize();
+        }
+
+        public void reset()
+        {
+            mac.reset();
         }
     }
 

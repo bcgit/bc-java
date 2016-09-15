@@ -4,7 +4,6 @@ import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.SecureRandom;
-import java.security.SecureRandomSpi;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -379,15 +378,6 @@ public class BouncyCastleJsseProvider
             {
                 throw new NoSuchAlgorithmException("Unable to invoke creator for " + getAlgorithm() + ": " + e.getMessage(), e);
             }
-        }
-    }
-
-    private class NonceAndIvSecureRandom
-        extends SecureRandom
-    {
-        NonceAndIvSecureRandom(SecureRandomSpi secureRandomSpi)
-        {
-            super(secureRandomSpi, BouncyCastleJsseProvider.this);
         }
     }
 }
