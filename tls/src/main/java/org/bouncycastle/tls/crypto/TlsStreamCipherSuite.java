@@ -11,47 +11,42 @@ import org.bouncycastle.util.Arrays;
 public class TlsStreamCipherSuite
     implements TlsCipherSuite
 {
+    protected TlsContext context;
+
     protected TlsStreamCipher encryptCipher;
     protected TlsStreamCipher decryptCipher;
 
-    protected TlsSuiteHMac writeMac;
-    protected TlsSuiteHMac readMac;
+    protected TlsSuiteMac writeMac;
+    protected TlsSuiteMac readMac;
 
     protected boolean usesNonce;
 
-    public TlsStreamCipherSuite(TlsContext context,
-                                TlsStreamCipher encryptCipher, TlsStreamCipher decryptCipher,
-                                TlsHMAC clientMac, TlsHMAC serverMac,
-                                int cipherKeySize, boolean usesNonce)
-        throws IOException
+    public TlsStreamCipherSuite(TlsContext context, TlsStreamCipher encryptCipher,
+                                TlsStreamCipher decryptCipher, TlsHMAC clientWriteDigest, TlsHMAC serverWriteDigest,
+                                int cipherKeySize, boolean usesNonce) throws IOException
     {
         boolean isServer = context.isServer();
 
+        this.context = context;
         this.usesNonce = usesNonce;
 
         this.encryptCipher = encryptCipher;
         this.decryptCipher = decryptCipher;
 
-        int macKeySize = serverMac.getMacLength();
-
-        int key_block_size = (2 * cipherKeySize) + macKeySize
-            + macKeySize;
+        int key_block_size = (2 * cipherKeySize) + clientWriteDigest.getMacLength()
+            + serverWriteDigest.getMacLength();
 
         byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
 
         int offset = 0;
 
         // Init MACs
-        byte[] clientMacKey = Arrays.copyOfRange(key_block, offset, offset + macKeySize);
-        offset += macKeySize;
-        byte[] serverMacKey = Arrays.copyOfRange(key_block, offset, offset + macKeySize);
-        offset += macKeySize;
-
-        TlsSuiteHMac clientWriteMac = new TlsSuiteHMac(context, clientMac);
-        TlsSuiteHMac serverWriteMac = new TlsSuiteHMac(context, serverMac);
-
-        clientWriteMac.setKey(clientMacKey);
-        serverWriteMac.setKey(serverMacKey);
+        TlsSuiteMac clientWriteMac = new TlsSuiteHMac(context, clientWriteDigest);
+        clientWriteMac.setKey(Arrays.copyOfRange(key_block, offset, offset + clientWriteDigest.getMacLength()));
+        offset += clientWriteDigest.getMacLength();
+        TlsSuiteMac serverWriteMac = new TlsSuiteHMac(context, serverWriteDigest);
+        serverWriteMac.setKey(Arrays.copyOfRange(key_block, offset, offset + serverWriteDigest.getMacLength()));
+        offset += serverWriteDigest.getMacLength();
 
         // Build keys
         byte[] clientWriteKey = Arrays.copyOfRange(key_block, offset, offset + cipherKeySize);
@@ -64,26 +59,34 @@ public class TlsStreamCipherSuite
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
+        byte[] encryptParams, decryptParams;
         if (isServer)
         {
             this.writeMac = serverWriteMac;
             this.readMac = clientWriteMac;
-            this.encryptCipher.setKey(serverWriteKey);
-            this.decryptCipher.setKey(clientWriteKey);
+            encryptParams = serverWriteKey;
+            decryptParams = clientWriteKey;
         }
         else
         {
             this.writeMac = clientWriteMac;
             this.readMac = serverWriteMac;
-            this.encryptCipher.setKey(clientWriteKey);
-            this.decryptCipher.setKey(serverWriteKey);
+            encryptParams = clientWriteKey;
+            decryptParams = serverWriteKey;
         }
 
+        this.encryptCipher.setKey(encryptParams);
+        this.decryptCipher.setKey(decryptParams);
         if (usesNonce)
         {
             byte[] dummyNonce = new byte[8];
             this.encryptCipher.init(dummyNonce);
-            this.encryptCipher.init(dummyNonce);
+            this.decryptCipher.init(dummyNonce);
+        }
+        else
+        {
+            this.encryptCipher.init(null);
+            this.decryptCipher.init(null);
         }
     }
 
@@ -97,7 +100,7 @@ public class TlsStreamCipherSuite
     {
         if (usesNonce)
         {
-            updateIV(encryptCipher, seqNo);
+            updateIV(encryptCipher, true, seqNo);
         }
 
         byte[] outBuf = new byte[len + writeMac.getSize()];
@@ -106,7 +109,7 @@ public class TlsStreamCipherSuite
         System.arraycopy(plaintext, offset, outBuf, 0, len);
         System.arraycopy(mac, 0, outBuf, len, mac.length);
 
-        encryptCipher.doFinal(outBuf, 0, len, outBuf, 0);
+        encryptCipher.doFinal(outBuf, 0, outBuf.length, outBuf, 0);
 
         return outBuf;
     }
@@ -116,7 +119,7 @@ public class TlsStreamCipherSuite
     {
         if (usesNonce)
         {
-            updateIV(decryptCipher, seqNo);
+            updateIV(decryptCipher, false, seqNo);
         }
 
         int macSize = readMac.getSize();
@@ -145,7 +148,7 @@ public class TlsStreamCipherSuite
         }
     }
 
-    protected void updateIV(TlsStreamCipher cipher, long seqNo)
+    protected void updateIV(org.bouncycastle.tls.crypto.TlsStreamCipher cipher, boolean forEncryption, long seqNo)
         throws IOException
     {
         byte[] nonce = new byte[8];

@@ -59,6 +59,7 @@ import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsMAC;
 import org.bouncycastle.tls.crypto.TlsNullCipherSuite;
 import org.bouncycastle.tls.crypto.TlsSecret;
+import org.bouncycastle.tls.crypto.TlsStreamCipherSuite;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Times;
 
@@ -407,11 +408,11 @@ public class BcTlsCrypto
         return new TlsNullCipherSuite(context, createMac(macAlgorithm), createMac(macAlgorithm));
     }
 
-    protected TlsStreamCipher createRC4Cipher(int cipherKeySize, int macAlgorithm)
+    protected TlsStreamCipherSuite createRC4Cipher(int cipherKeySize, int macAlgorithm)
         throws IOException
     {
-        return new TlsStreamCipher(context, createRC4StreamCipher(), createRC4StreamCipher(),
-            createHMACDigest(macAlgorithm), createHMACDigest(macAlgorithm), cipherKeySize, false);
+        return new TlsStreamCipherSuite(context, new StreamOperator(createRC4StreamCipher(), true), new StreamOperator(createRC4StreamCipher(), false),
+            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize, false);
     }
 
     protected TlsBlockCipherSuite createSEEDCipher(int macAlgorithm)
@@ -684,7 +685,14 @@ public class BcTlsCrypto
 
         public void init(byte[] iv)
         {
-            cipher.init(isEncrypting, new ParametersWithIV(this.key, iv));
+            if (iv != null)
+            {
+                cipher.init(isEncrypting, new ParametersWithIV(this.key, iv));
+            }
+            else
+            {
+                cipher.init(isEncrypting, this.key);
+            }
         }
 
         public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
