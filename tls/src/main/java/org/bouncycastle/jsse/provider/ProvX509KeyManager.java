@@ -3,7 +3,6 @@ package org.bouncycastle.jsse.provider;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
@@ -161,7 +160,7 @@ class ProvX509KeyManager
     private String findAlias(int index, KeyStore keyStore, KeyStore.Builder storeBuilder, String keyType, Set<X500Name> issuers)
         throws GeneralSecurityException
     {
-        for (Enumeration en = keyStore.aliases(); en.hasMoreElements();)
+        for (Enumeration<String> en = keyStore.aliases(); en.hasMoreElements();)
         {
             String eName = (String)en.nextElement();
 

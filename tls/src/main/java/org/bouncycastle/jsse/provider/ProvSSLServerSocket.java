@@ -4,7 +4,8 @@ import java.io.IOException;
 
 import javax.net.ssl.SSLServerSocket;
 
-class ProvSSLServerSocket extends SSLServerSocket
+class ProvSSLServerSocket
+    extends SSLServerSocket
 {
     ProvSSLServerSocket() throws IOException
     {

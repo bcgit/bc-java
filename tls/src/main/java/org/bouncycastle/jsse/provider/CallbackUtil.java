@@ -1,6 +1,6 @@
 package org.bouncycastle.jsse.provider;
 
-class CallbackUtil
+abstract class CallbackUtil
 {
     static void safeCallback(Runnable r)
     {

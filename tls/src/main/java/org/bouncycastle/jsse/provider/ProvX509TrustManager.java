@@ -43,7 +43,7 @@ class ProvX509TrustManager
         {
             List<X509Certificate> certs = new ArrayList<X509Certificate>(trustStore.size());
 
-            for (Enumeration en = trustStore.aliases(); en.hasMoreElements();)
+            for (Enumeration<String> en = trustStore.aliases(); en.hasMoreElements();)
             {
                 String alias = (String)en.nextElement();
 

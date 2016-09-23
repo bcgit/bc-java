@@ -3,7 +3,8 @@ package org.bouncycastle.jsse.provider;
 import javax.net.ssl.HandshakeCompletedEvent;
 import javax.net.ssl.HandshakeCompletedListener;
 
-class HandshakeCompletedListenerAdapter implements HandshakeCompletedListener
+class HandshakeCompletedListenerAdapter
+    implements HandshakeCompletedListener
 {
     protected final HandshakeCompletedListener listener;
 

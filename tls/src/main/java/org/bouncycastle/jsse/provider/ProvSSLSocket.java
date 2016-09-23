@@ -9,7 +9,8 @@ import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
-class ProvSSLSocket extends SSLSocket
+class ProvSSLSocket
+    extends SSLSocket
 {
     protected final Set<HandshakeCompletedListenerAdapter> listeners = Collections.synchronizedSet(
         new HashSet<HandshakeCompletedListenerAdapter>());

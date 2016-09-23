@@ -3,7 +3,8 @@ package org.bouncycastle.jsse.provider;
 import javax.net.ssl.SSLSessionBindingEvent;
 import javax.net.ssl.SSLSessionBindingListener;
 
-class SessionBindingListenerAdapter implements SSLSessionBindingListener
+class SessionBindingListenerAdapter
+    implements SSLSessionBindingListener
 {
     protected final SSLSessionBindingListener listener;
 
