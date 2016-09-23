@@ -5,34 +5,30 @@ import javax.net.ssl.SSLSessionBindingListener;
 
 class SessionBindingListenerAdapter implements SSLSessionBindingListener
 {
-    protected SSLSessionBindingListener listener;
+    protected final SSLSessionBindingListener listener;
 
     SessionBindingListenerAdapter(SSLSessionBindingListener listener)
     {
         this.listener = listener;
     }
 
-    public void valueBound(SSLSessionBindingEvent event)
+    public void valueBound(final SSLSessionBindingEvent event)
     {
-        try
-        {
-            listener.valueBound(event);
-        }
-        catch (Exception x)
-        {
-            // TODO[tls-ops] Possible logging
-        }
+        CallbackUtil.safeCallback(new Runnable(){
+            public void run()
+            {
+                listener.valueBound(event);
+            }
+        });
     }
 
-    public void valueUnbound(SSLSessionBindingEvent event)
+    public void valueUnbound(final SSLSessionBindingEvent event)
     {
-        try
-        {
-            listener.valueUnbound(event);
-        }
-        catch (Exception x)
-        {
-            // TODO[tls-ops] Possible logging
-        }
+        CallbackUtil.safeCallback(new Runnable(){
+            public void run()
+            {
+                listener.valueUnbound(event);
+            }
+        });
     }
 }

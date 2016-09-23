@@ -1,6 +1,9 @@
 package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLSession;
@@ -8,10 +11,18 @@ import javax.net.ssl.SSLSocket;
 
 class ProvSSLSocket extends SSLSocket
 {
+    protected final Set<HandshakeCompletedListenerAdapter> listeners = Collections.synchronizedSet(
+        new HashSet<HandshakeCompletedListenerAdapter>());
+
     @Override
     public void addHandshakeCompletedListener(HandshakeCompletedListener listener)
     {
-        throw new UnsupportedOperationException();
+        if (listener == null)
+        {
+            throw new IllegalArgumentException("'listener' cannot be null");
+        }
+
+        listeners.add(new HandshakeCompletedListenerAdapter(listener));
     }
 
     @Override
@@ -83,7 +94,14 @@ class ProvSSLSocket extends SSLSocket
     @Override
     public void removeHandshakeCompletedListener(HandshakeCompletedListener listener)
     {
-        throw new UnsupportedOperationException();
+        if (listener == null)
+        {
+            throw new IllegalArgumentException("'listener' cannot be null");
+        }
+        if (!listeners.remove(new HandshakeCompletedListenerAdapter(listener)))
+        {
+            throw new IllegalArgumentException("'listener' is not registered");
+        }
     }
 
     @Override
@@ -132,6 +150,19 @@ class ProvSSLSocket extends SSLSocket
     public void startHandshake() throws IOException
     {
         throw new UnsupportedOperationException();
+
+        // TODO[tls-ops]
+//        if (!listeners.isEmpty())
+//        {
+//            HandshakeCompletedEvent event = new HandshakeCompletedEvent(this, getSession());
+//            synchronized (listeners)
+//            {
+//                for (HandshakeCompletedListener listener : listeners)
+//                {
+//                    listener.handshakeCompleted(event);
+//                }
+//            }
+//        }
     }
 
 //    @Override
