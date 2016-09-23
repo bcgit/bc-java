@@ -11,12 +11,14 @@ public class SRPTlsServer
     protected byte[] srpIdentity = null;
     protected TlsSRPLoginParameters loginParameters = null;
 
-    public SRPTlsServer(AbstractTlsCrypto crypto, TlsSRPIdentityManager srpIdentityManager)
+    // TODO[tls-ops] Need to restore a single-arg constructor here
+
+    public SRPTlsServer(TlsCrypto crypto, TlsSRPIdentityManager srpIdentityManager)
     {
         this(crypto, new DefaultTlsKeyExchangeFactory(), srpIdentityManager);
     }
 
-    public SRPTlsServer(AbstractTlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsSRPIdentityManager srpIdentityManager)
+    public SRPTlsServer(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsSRPIdentityManager srpIdentityManager)
     {
         super(crypto, keyExchangeFactory);
         this.srpIdentityManager = srpIdentityManager;

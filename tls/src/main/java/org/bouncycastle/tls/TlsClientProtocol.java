@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.SecureRandom;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -26,17 +25,6 @@ public class TlsClientProtocol
     protected CertificateRequest certificateRequest = null;
 
     /**
-     * Constructor for blocking mode.
-     * @param input The stream of data from the server
-     * @param output The stream of data to the server
-     * @param secureRandom Random number generator for various cryptographic functions
-     */
-    public TlsClientProtocol(InputStream input, OutputStream output, SecureRandom secureRandom)
-    {
-        super(input, output, secureRandom);
-    }
-
-    /**
      * Constructor for non-blocking mode.<br>
      * <br>
      * When data is received, use {@link #offerInput(java.nio.ByteBuffer)} to
@@ -47,13 +35,20 @@ public class TlsClientProtocol
      * {@link #offerOutput(byte[], int, int)} to provide the cleartext, then use
      * {@link #readOutput(byte[], int, int)} to get the corresponding
      * ciphertext.
-     * 
-     * @param secureRandom
-     *            Random number generator for various cryptographic functions
      */
-    public TlsClientProtocol(SecureRandom secureRandom)
+    public TlsClientProtocol()
     {
-        super(secureRandom);
+        super();
+    }
+
+    /**
+     * Constructor for blocking mode.
+     * @param input The stream of data from the server
+     * @param output The stream of data to the server
+     */
+    public TlsClientProtocol(InputStream input, OutputStream output)
+    {
+        super(input, output);
     }
 
     /**

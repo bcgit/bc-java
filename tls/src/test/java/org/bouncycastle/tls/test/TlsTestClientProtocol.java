@@ -3,7 +3,6 @@ package org.bouncycastle.tls.test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.SecureRandom;
 
 import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.TlsClientProtocol;
@@ -12,9 +11,9 @@ class TlsTestClientProtocol extends TlsClientProtocol
 {
     protected final TlsTestConfig config;
 
-    public TlsTestClientProtocol(InputStream input, OutputStream output, SecureRandom secureRandom, TlsTestConfig config)
+    public TlsTestClientProtocol(InputStream input, OutputStream output, TlsTestConfig config)
     {
-        super(input, output, secureRandom);
+        super(input, output);
 
         this.config = config;
     }

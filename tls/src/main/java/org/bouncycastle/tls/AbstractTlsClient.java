@@ -21,12 +21,12 @@ public abstract class AbstractTlsClient
     protected int selectedCipherSuite;
     protected short selectedCompressionMethod;
 
-    public AbstractTlsClient(AbstractTlsCrypto crypto)
+    public AbstractTlsClient(TlsCrypto crypto)
     {
         this(crypto, new DefaultTlsKeyExchangeFactory());
     }
 
-    public AbstractTlsClient(AbstractTlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory)
+    public AbstractTlsClient(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory)
     {
         super(crypto);
 

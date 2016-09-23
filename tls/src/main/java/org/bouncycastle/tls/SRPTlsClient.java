@@ -13,12 +13,14 @@ public class SRPTlsClient
     protected byte[] identity;
     protected byte[] password;
 
-    public SRPTlsClient(AbstractTlsCrypto crypto, byte[] identity, byte[] password)
+    // TODO[tls-ops] Need to restore a single-arg constructor here
+
+    public SRPTlsClient(TlsCrypto crypto, byte[] identity, byte[] password)
     {
         this(crypto, new DefaultTlsKeyExchangeFactory(), new DefaultTlsSRPConfigVerifier(), identity, password);
     }
 
-    public SRPTlsClient(AbstractTlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsSRPConfigVerifier srpConfigVerifier,
+    public SRPTlsClient(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsSRPConfigVerifier srpConfigVerifier,
         byte[] identity, byte[] password)
     {
         super(crypto, keyExchangeFactory);

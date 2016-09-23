@@ -5,9 +5,9 @@ import java.io.IOException;
 public abstract class AbstractTlsPeer
     implements TlsPeer
 {
-    private final AbstractTlsCrypto crypto;
+    private final TlsCrypto crypto;
 
-    AbstractTlsPeer(AbstractTlsCrypto crypto)
+    protected AbstractTlsPeer(TlsCrypto crypto)
     {
         this.crypto = crypto;
     }

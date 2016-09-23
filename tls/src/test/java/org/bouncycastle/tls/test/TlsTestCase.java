@@ -67,8 +67,8 @@ public class TlsTestCase extends TestCase
         NetworkOutputStream clientNetOut = new NetworkOutputStream(clientWrite);
         NetworkOutputStream serverNetOut = new NetworkOutputStream(serverWrite);
 
-        TlsTestClientProtocol clientProtocol = new TlsTestClientProtocol(clientNetIn, clientNetOut, secureRandom, config);
-        TlsTestServerProtocol serverProtocol = new TlsTestServerProtocol(serverNetIn, serverNetOut, secureRandom, config);
+        TlsTestClientProtocol clientProtocol = new TlsTestClientProtocol(clientNetIn, clientNetOut, config);
+        TlsTestServerProtocol serverProtocol = new TlsTestServerProtocol(serverNetIn, serverNetOut, config);
 
         TlsTestClientImpl clientImpl = new TlsTestClientImpl(config);
         TlsTestServerImpl serverImpl = new TlsTestServerImpl(config);

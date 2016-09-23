@@ -10,12 +10,14 @@ public class PSKTlsServer
 {
     protected TlsPSKIdentityManager pskIdentityManager;
 
-    public PSKTlsServer(AbstractTlsCrypto crypto, TlsPSKIdentityManager pskIdentityManager)
+    // TODO[tls-ops] Need to restore a single-arg constructor here
+
+    public PSKTlsServer(TlsCrypto crypto, TlsPSKIdentityManager pskIdentityManager)
     {
         this(crypto, new DefaultTlsKeyExchangeFactory(), pskIdentityManager);
     }
 
-    public PSKTlsServer(AbstractTlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsPSKIdentityManager pskIdentityManager)
+    public PSKTlsServer(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsPSKIdentityManager pskIdentityManager)
     {
         super(crypto, keyExchangeFactory);
         this.pskIdentityManager = pskIdentityManager;

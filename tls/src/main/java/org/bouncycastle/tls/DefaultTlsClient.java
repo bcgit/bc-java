@@ -7,12 +7,14 @@ public abstract class DefaultTlsClient
 {
     protected TlsDHConfigVerifier dhConfigVerifier;
 
-    public DefaultTlsClient(AbstractTlsCrypto crypto)
+    // TODO[tls-ops] Need to restore a default constructor here
+
+    public DefaultTlsClient(TlsCrypto crypto)
     {
         this(crypto, new DefaultTlsKeyExchangeFactory(), new DefaultTlsDHConfigVerifier());
     }
 
-    public DefaultTlsClient(AbstractTlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsDHConfigVerifier dhConfigVerifier)
+    public DefaultTlsClient(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsDHConfigVerifier dhConfigVerifier)
     {
         super(crypto, keyExchangeFactory);
         this.dhConfigVerifier = dhConfigVerifier;

@@ -13,6 +13,8 @@ import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
+// TODO[tls-ops] Move this back to tls.crypto package where it belongs
+
 public interface TlsCrypto
 {
     TlsCertificate createCertificate(byte[] encoding) throws IOException;

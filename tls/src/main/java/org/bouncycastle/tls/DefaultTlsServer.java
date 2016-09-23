@@ -5,12 +5,14 @@ import java.io.IOException;
 public abstract class DefaultTlsServer
     extends AbstractTlsServer
 {
-    public DefaultTlsServer(AbstractTlsCrypto crypto)
+    // TODO[tls-ops] Need to restore a default constructor here
+
+    public DefaultTlsServer(TlsCrypto crypto)
     {
         super(crypto);
     }
 
-    public DefaultTlsServer(AbstractTlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory)
+    public DefaultTlsServer(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory)
     {
         super(crypto, keyExchangeFactory);
     }

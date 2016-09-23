@@ -7,8 +7,6 @@ import java.io.PrintStream;
 import java.net.Socket;
 import java.security.SecureRandom;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
@@ -29,6 +27,9 @@ import org.bouncycastle.tls.crypto.NonceRandomGenerator;
 import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
+
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 public class BasicTlsTest
     extends TestCase
@@ -98,8 +99,7 @@ public class BasicTlsTest
             throw new IOException("unable to connect");
         }
 
-        TlsClientProtocol protocol = new TlsClientProtocol(s.getInputStream(), s.getOutputStream(),
-            new SecureRandom());
+        TlsClientProtocol protocol = new TlsClientProtocol(s.getInputStream(), s.getOutputStream());
         protocol.connect(new MyTlsClient(new ServerOnlyTlsAuthentication()
         {
             public void notifyServerCertificate(Certificate serverCertificate) throws IOException

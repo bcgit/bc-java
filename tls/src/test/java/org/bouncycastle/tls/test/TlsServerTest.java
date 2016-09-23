@@ -5,7 +5,6 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.SecureRandom;
 
 import org.bouncycastle.tls.TlsServerProtocol;
 import org.bouncycastle.util.io.Streams;
@@ -20,8 +19,6 @@ import org.bouncycastle.util.io.TeeOutputStream;
  */
 public class TlsServerTest
 {
-    private static final SecureRandom secureRandom = new SecureRandom();
-
     public static void main(String[] args)
         throws Exception
     {
@@ -54,7 +51,7 @@ public class TlsServerTest
             try
             {
                 MockTlsServer server = new MockTlsServer();
-                TlsServerProtocol serverProtocol = new TlsServerProtocol(s.getInputStream(), s.getOutputStream(), secureRandom);
+                TlsServerProtocol serverProtocol = new TlsServerProtocol(s.getInputStream(), s.getOutputStream());
                 serverProtocol.accept(server);
                 OutputStream log = new TeeOutputStream(serverProtocol.getOutputStream(), System.out);
                 Streams.pipeAll(serverProtocol.getInputStream(), log);

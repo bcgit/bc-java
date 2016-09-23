@@ -8,12 +8,14 @@ public class PSKTlsClient
     protected TlsDHConfigVerifier dhConfigVerifier;
     protected TlsPSKIdentity pskIdentity;
 
-    public PSKTlsClient(AbstractTlsCrypto crypto, TlsPSKIdentity pskIdentity)
+    // TODO[tls-ops] Need to restore a single-arg constructor here
+
+    public PSKTlsClient(TlsCrypto crypto, TlsPSKIdentity pskIdentity)
     {
         this(crypto, new DefaultTlsKeyExchangeFactory(), new DefaultTlsDHConfigVerifier(), pskIdentity);
     }
 
-    public PSKTlsClient(AbstractTlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsDHConfigVerifier dhConfigVerifier,
+    public PSKTlsClient(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsDHConfigVerifier dhConfigVerifier,
         TlsPSKIdentity pskIdentity)
     {
         super(crypto, keyExchangeFactory);

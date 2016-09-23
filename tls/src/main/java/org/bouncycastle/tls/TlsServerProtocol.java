@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.SecureRandom;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsVerifier;
@@ -24,17 +23,6 @@ public class TlsServerProtocol
     protected TlsHandshakeHash prepareFinishHash = null;
 
     /**
-     * Constructor for blocking mode.
-     * @param input The stream of data from the client
-     * @param output The stream of data to the client
-     * @param secureRandom Random number generator for various cryptographic functions
-     */
-    public TlsServerProtocol(InputStream input, OutputStream output, SecureRandom secureRandom)
-    {
-        super(input, output, secureRandom);
-    }
-
-    /**
      * Constructor for non-blocking mode.<br>
      * <br>
      * When data is received, use {@link #offerOutput(byte[], int, int)} to
@@ -49,9 +37,19 @@ public class TlsServerProtocol
      * @param secureRandom
      *            Random number generator for various cryptographic functions
      */
-    public TlsServerProtocol(SecureRandom secureRandom)
+    public TlsServerProtocol()
     {
-        super(secureRandom);
+        super();
+    }
+
+    /**
+     * Constructor for blocking mode.
+     * @param input The stream of data from the client
+     * @param output The stream of data to the client
+     */
+    public TlsServerProtocol(InputStream input, OutputStream output)
+    {
+        super(input, output);
     }
 
     /**

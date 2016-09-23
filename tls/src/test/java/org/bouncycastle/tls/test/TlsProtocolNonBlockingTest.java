@@ -28,8 +28,8 @@ public class TlsProtocolNonBlockingTest
     {
         SecureRandom secureRandom = new SecureRandom();
 
-        TlsClientProtocol clientProtocol = new TlsClientProtocol(secureRandom);
-        TlsServerProtocol serverProtocol = new TlsServerProtocol(secureRandom);
+        TlsClientProtocol clientProtocol = new TlsClientProtocol();
+        TlsServerProtocol serverProtocol = new TlsServerProtocol();
 
         clientProtocol.connect(new MockTlsClient(null));
         serverProtocol.accept(new MockTlsServer());

@@ -6,7 +6,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.SecureRandom;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -63,7 +62,6 @@ public abstract class TlsProtocol
      * The Record Stream we use
      */
     RecordStream recordStream;
-    protected SecureRandom secureRandom;
 
     private TlsInputStream tlsInputStream = null;
     private TlsOutputStream tlsOutputStream = null;
@@ -95,21 +93,19 @@ public abstract class TlsProtocol
     protected boolean blocking;
     protected ByteQueueInputStream inputBuffers;
     protected ByteQueueOutputStream outputBuffer;
-    
-    public TlsProtocol(InputStream input, OutputStream output, SecureRandom secureRandom)
-    {
-        this.blocking = true;
-        this.recordStream = new RecordStream(this, input, output);
-        this.secureRandom = secureRandom;
-    }
-    
-    public TlsProtocol(SecureRandom secureRandom)
+
+    protected TlsProtocol()
     {
         this.blocking = false;
         this.inputBuffers = new ByteQueueInputStream();
         this.outputBuffer = new ByteQueueOutputStream();
         this.recordStream = new RecordStream(this, inputBuffers, outputBuffer);
-        this.secureRandom = secureRandom;
+    }
+
+    protected TlsProtocol(InputStream input, OutputStream output)
+    {
+        this.blocking = true;
+        this.recordStream = new RecordStream(this, input, output);
     }
 
     protected abstract TlsContext getContext();

@@ -24,8 +24,6 @@ import org.bouncycastle.tls.TlsClientProtocol;
  */
 public class PSKTlsClientTest
 {
-    private static final SecureRandom secureRandom = new SecureRandom();
-
     public static void main(String[] args) throws Exception
     {
         InetAddress address = InetAddress.getLocalHost();
@@ -75,7 +73,7 @@ public class PSKTlsClientTest
     static TlsClientProtocol openTlsConnection(InetAddress address, int port, TlsClient client) throws IOException
     {
         Socket s = new Socket(address, port);
-        TlsClientProtocol protocol = new TlsClientProtocol(s.getInputStream(), s.getOutputStream(), secureRandom);
+        TlsClientProtocol protocol = new TlsClientProtocol(s.getInputStream(), s.getOutputStream());
         protocol.connect(client);
         return protocol;
     }

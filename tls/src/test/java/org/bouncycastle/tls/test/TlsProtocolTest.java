@@ -25,8 +25,8 @@ public class TlsProtocolTest
         PipedOutputStream clientWrite = new PipedOutputStream(serverRead);
         PipedOutputStream serverWrite = new PipedOutputStream(clientRead);
 
-        TlsClientProtocol clientProtocol = new TlsClientProtocol(clientRead, clientWrite, secureRandom);
-        TlsServerProtocol serverProtocol = new TlsServerProtocol(serverRead, serverWrite, secureRandom);
+        TlsClientProtocol clientProtocol = new TlsClientProtocol(clientRead, clientWrite);
+        TlsServerProtocol serverProtocol = new TlsServerProtocol(serverRead, serverWrite);
 
         ServerThread serverThread = new ServerThread(serverProtocol);
         serverThread.start();
