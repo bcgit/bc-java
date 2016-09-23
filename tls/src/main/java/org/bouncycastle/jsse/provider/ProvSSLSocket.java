@@ -199,6 +199,8 @@ class ProvSSLSocket
          * "This method is synchronous for the initial handshake on a connection and returns when the negotiated handshake is complete."
          */
 
+        // TODO[tls-ops] Consider checking Thread.interrupted occasionally and aborting with InterruptedIOException accordingly.
+
         // TODO[tls-ops]
 //        engine.beginHandshake();
 //

@@ -16,8 +16,16 @@ import org.bouncycastle.tls.TlsCrypto;
 class ProvSSLContextSpi
     extends SSLContextSpi
 {
+    protected final TlsCrypto crypto;
+
     ProvSSLContextSpi(TlsCrypto crypto)
     {
+        this.crypto = crypto;
+    }
+
+    TlsCrypto getCrypto()
+    {
+        return crypto;
     }
 
     @Override
