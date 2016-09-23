@@ -144,8 +144,17 @@ class ProvSSLSession
 
     public void putValue(String name, Object value)
     {
-        valueMap.put(name, value);
+        notifyUnbound(name, valueMap.put(name, value));
+        notifyBound(name, value);
+    }
 
+    public void removeValue(String name)
+    {
+        notifyUnbound(name, valueMap.remove(name));
+    }
+
+    protected void notifyBound(String name, Object value)
+    {
         if (value instanceof SSLSessionBindingListener)
         {
             new SessionBindingListenerAdapter((SSLSessionBindingListener)value)
@@ -153,10 +162,8 @@ class ProvSSLSession
         }
     }
 
-    public void removeValue(String name)
+    protected void notifyUnbound(String name, Object value)
     {
-        Object value = valueMap.remove(name);
-
         if (value instanceof SSLSessionBindingListener)
         {
             new SessionBindingListenerAdapter((SSLSessionBindingListener)value)
