@@ -1,11 +1,18 @@
 package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.nio.channels.SocketChannel;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 import javax.net.ssl.HandshakeCompletedListener;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
@@ -14,6 +21,44 @@ class ProvSSLSocket
 {
     protected final Set<HandshakeCompletedListenerAdapter> listeners = Collections.synchronizedSet(
         new HashSet<HandshakeCompletedListenerAdapter>());
+
+    protected final ProvSSLEngine engine;
+
+    ProvSSLSocket(ProvSSLEngine engine)
+    {
+        super();
+
+        this.engine = engine;
+    }
+
+    ProvSSLSocket(ProvSSLEngine engine, InetAddress address, int port) throws IOException
+    {
+        super(address, port);
+
+        this.engine = engine;
+    }
+
+    ProvSSLSocket(ProvSSLEngine engine, InetAddress address, int port, InetAddress clientAddress, int clientPort) throws IOException
+    {
+        super(address, port, clientAddress, clientPort);
+
+        this.engine = engine;
+    }
+
+    ProvSSLSocket(ProvSSLEngine engine, String host, int port) throws IOException, UnknownHostException
+    {
+        super(host, port);
+
+        this.engine = engine;
+    }
+
+    ProvSSLSocket(ProvSSLEngine engine, String host, int port, InetAddress clientAddress, int clientPort)
+        throws IOException, UnknownHostException
+    {
+        super(host, port, clientAddress, clientPort);
+
+        this.engine = engine;
+    }
 
     @Override
     public void addHandshakeCompletedListener(HandshakeCompletedListener listener)
@@ -29,67 +74,67 @@ class ProvSSLSocket
     @Override
     public boolean getEnableSessionCreation()
     {
-        throw new UnsupportedOperationException();
+        return engine.getEnableSessionCreation();
     }
 
     @Override
     public String[] getEnabledCipherSuites()
     {
-        throw new UnsupportedOperationException();
+        return engine.getEnabledCipherSuites();
     }
 
     @Override
     public String[] getEnabledProtocols()
     {
-        throw new UnsupportedOperationException();
+        return engine.getEnabledProtocols();
     }
 
-//    @Override
-//    public SSLSession getHandshakeSession()
-//    {
-//        return super.getHandshakeSession();
-//    }
+    @Override
+    public SSLSession getHandshakeSession()
+    {
+        return engine.getHandshakeSession();
+    }
 
     @Override
     public boolean getNeedClientAuth()
     {
-        throw new UnsupportedOperationException();
+        return engine.getNeedClientAuth();
     }
 
-//    @Override
-//    public SSLParameters getSSLParameters()
-//    {
-//        return super.getSSLParameters();
-//    }
+    @Override
+    public SSLParameters getSSLParameters()
+    {
+        return engine.getSSLParameters();
+    }
 
     @Override
     public SSLSession getSession()
     {
-        throw new UnsupportedOperationException();
+        return engine.getSession();
     }
 
     @Override
     public String[] getSupportedCipherSuites()
     {
-        throw new UnsupportedOperationException();
+        return engine.getSupportedCipherSuites();
     }
 
     @Override
     public String[] getSupportedProtocols()
     {
-        throw new UnsupportedOperationException();
+        return engine.getSupportedProtocols();
     }
 
     @Override
     public boolean getUseClientMode()
     {
-        throw new UnsupportedOperationException();
+        return engine.getUseClientMode();
     }
 
     @Override
     public boolean getWantClientAuth()
     {
-        throw new UnsupportedOperationException();
+        return engine.getWantClientAuth();
     }
 
     @Override
@@ -108,48 +153,71 @@ class ProvSSLSocket
     @Override
     public void setEnableSessionCreation(boolean flag)
     {
-        throw new UnsupportedOperationException();
+        engine.setEnableSessionCreation(flag);
     }
 
     @Override
     public void setEnabledCipherSuites(String[] suites)
     {
-        throw new UnsupportedOperationException();
+        engine.setEnabledCipherSuites(suites);
     }
 
     @Override
     public void setEnabledProtocols(String[] protocols)
     {
-        throw new UnsupportedOperationException();
+        engine.setEnabledProtocols(protocols);
     }
 
     @Override
     public void setNeedClientAuth(boolean need)
     {
-        throw new UnsupportedOperationException();
+        engine.setNeedClientAuth(need);
     }
 
-//    @Override
-//    public void setSSLParameters(SSLParameters params)
-//    {
-//        super.setSSLParameters(params);
-//    }
+    @Override
+    public void setSSLParameters(SSLParameters params)
+    {
+        engine.setSSLParameters(params);
+    }
 
     @Override
     public void setUseClientMode(boolean mode)
     {
-        throw new UnsupportedOperationException();
+        engine.setUseClientMode(mode);
     }
 
     @Override
     public void setWantClientAuth(boolean want)
     {
-        throw new UnsupportedOperationException();
+        engine.setWantClientAuth(want);
     }
 
     @Override
     public void startHandshake() throws IOException
     {
+        /*
+         * "This method is synchronous for the initial handshake on a connection and returns when the negotiated handshake is complete."
+         */
+
+        // TODO[tls-ops]
+//        engine.beginHandshake();
+//
+//        HandshakeStatus status = engine.getHandshakeStatus();
+//        while (status != HandshakeStatus.NOT_HANDSHAKING)
+//        {
+//            switch (status)
+//            {
+//            case FINISHED:
+//                break;
+//            case NEED_TASK:
+//                break;
+//            case NEED_UNWRAP:
+//                break;
+//            case NEED_WRAP:
+//                break;
+//            }
+//        }
+
         throw new UnsupportedOperationException();
 
         // TODO[tls-ops]
@@ -166,249 +234,59 @@ class ProvSSLSocket
 //        }
     }
 
-//    @Override
-//    public void connect(SocketAddress endpoint) throws IOException
-//    {
-//        super.connect(endpoint);
-//    }
-
-//    @Override
-//    public void connect(SocketAddress endpoint, int timeout) throws IOException
-//    {
-//        super.connect(endpoint, timeout);
-//    }
-
-//    @Override
-//    public void bind(SocketAddress bindpoint) throws IOException
-//    {
-//        super.bind(bindpoint);
-//    }
-
-//    @Override
-//    public InetAddress getInetAddress()
-//    {
-//        return super.getInetAddress();
-//    }
-
-//    @Override
-//    public InetAddress getLocalAddress()
-//    {
-//        return super.getLocalAddress();
-//    }
-
-//    @Override
-//    public int getPort()
-//    {
-//        return super.getPort();
-//    }
-
-//    @Override
-//    public int getLocalPort()
-//    {
-//        return super.getLocalPort();
-//    }
-
-//    @Override
-//    public SocketAddress getRemoteSocketAddress()
-//    {
-//        return super.getRemoteSocketAddress();
-//    }
-
-//    @Override
-//    public SocketAddress getLocalSocketAddress()
-//    {
-//        return super.getLocalSocketAddress();
-//    }
-
-//    @Override
-//    public SocketChannel getChannel()
-//    {
+    @Override
+    public SocketChannel getChannel()
+    {
 //        return super.getChannel();
-//    }
+        throw new UnsupportedOperationException();
+    }
 
-//    @Override
-//    public InputStream getInputStream() throws IOException
-//    {
+    @Override
+    public InputStream getInputStream() throws IOException
+    {
 //        return super.getInputStream();
-//    }
+        throw new UnsupportedOperationException();
+    }
 
-//    @Override
-//    public OutputStream getOutputStream() throws IOException
-//    {
+    @Override
+    public OutputStream getOutputStream() throws IOException
+    {
 //        return super.getOutputStream();
-//    }
+        throw new UnsupportedOperationException();
+    }
 
-//    @Override
-//    public void setTcpNoDelay(boolean on) throws SocketException
-//    {
-//        super.setTcpNoDelay(on);
-//    }
+    @Override
+    public void sendUrgentData(int data) throws IOException
+    {
+        throw new UnsupportedOperationException("Urgent data not supported in TLS");
+    }
 
-//    @Override
-//    public boolean getTcpNoDelay() throws SocketException
-//    {
-//        return super.getTcpNoDelay();
-//    }
+    @Override
+    public boolean getOOBInline() throws SocketException
+    {
+        return false;
+    }
 
-//    @Override
-//    public void setSoLinger(boolean on, int linger) throws SocketException
-//    {
-//        super.setSoLinger(on, linger);
-//    }
+    @Override
+    public void setOOBInline(boolean on) throws SocketException
+    {
+        if (on)
+        {
+            throw new UnsupportedOperationException("Urgent data not supported in TLS");
+        }
+    }
 
-//    @Override
-//    public int getSoLinger() throws SocketException
-//    {
-//        return super.getSoLinger();
-//    }
+    @Override
+    public synchronized void close() throws IOException
+    {
+        // TODO[tls-ops] See javadoc for full discussion of SSLEngine closure
 
-//    @Override
-//    public void sendUrgentData(int data) throws IOException
-//    {
-//        super.sendUrgentData(data);
-//    }
+        engine.closeOutbound();
 
-//    @Override
-//    public void setOOBInline(boolean on) throws SocketException
-//    {
-//        super.setOOBInline(on);
-//    }
+        // TODO[tls-ops]
+        // - Flush output by calling engine.wrap while not CLOSED 
+        // - Check under what circumstances need to call engine.closeInbound
 
-//    @Override
-//    public boolean getOOBInline() throws SocketException
-//    {
-//        return super.getOOBInline();
-//    }
-
-//    @Override
-//    public synchronized void setSoTimeout(int timeout) throws SocketException
-//    {
-//        super.setSoTimeout(timeout);
-//    }
-
-//    @Override
-//    public synchronized int getSoTimeout() throws SocketException
-//    {
-//        return super.getSoTimeout();
-//    }
-
-//    @Override
-//    public synchronized void setSendBufferSize(int size) throws SocketException
-//    {
-//        super.setSendBufferSize(size);
-//    }
-
-//    @Override
-//    public synchronized int getSendBufferSize() throws SocketException
-//    {
-//        return super.getSendBufferSize();
-//    }
-
-//    @Override
-//    public synchronized void setReceiveBufferSize(int size) throws SocketException
-//    {
-//        super.setReceiveBufferSize(size);
-//    }
-
-//    @Override
-//    public synchronized int getReceiveBufferSize() throws SocketException
-//    {
-//        return super.getReceiveBufferSize();
-//    }
-
-//    @Override
-//    public void setKeepAlive(boolean on) throws SocketException
-//    {
-//        super.setKeepAlive(on);
-//    }
-
-//    @Override
-//    public boolean getKeepAlive() throws SocketException
-//    {
-//        return super.getKeepAlive();
-//    }
-
-//    @Override
-//    public void setTrafficClass(int tc) throws SocketException
-//    {
-//        super.setTrafficClass(tc);
-//    }
-
-//    @Override
-//    public int getTrafficClass() throws SocketException
-//    {
-//        return super.getTrafficClass();
-//    }
-
-//    @Override
-//    public void setReuseAddress(boolean on) throws SocketException
-//    {
-//        super.setReuseAddress(on);
-//    }
-
-//    @Override
-//    public boolean getReuseAddress() throws SocketException
-//    {
-//        return super.getReuseAddress();
-//    }
-
-//    @Override
-//    public synchronized void close() throws IOException
-//    {
-//        super.close();
-//    }
-
-//    @Override
-//    public void shutdownInput() throws IOException
-//    {
-//        super.shutdownInput();
-//    }
-
-//    @Override
-//    public void shutdownOutput() throws IOException
-//    {
-//        super.shutdownOutput();
-//    }
-
-//    @Override
-//    public String toString()
-//    {
-//        return super.toString();
-//    }
-
-//    @Override
-//    public boolean isConnected()
-//    {
-//        return super.isConnected();
-//    }
-
-//    @Override
-//    public boolean isBound()
-//    {
-//        return super.isBound();
-//    }
-
-//    @Override
-//    public boolean isClosed()
-//    {
-//        return super.isClosed();
-//    }
-
-//    @Override
-//    public boolean isInputShutdown()
-//    {
-//        return super.isInputShutdown();
-//    }
-
-//    @Override
-//    public boolean isOutputShutdown()
-//    {
-//        return super.isOutputShutdown();
-//    }
-
-//    @Override
-//    public void setPerformancePreferences(int connectionTime, int latency, int bandwidth)
-//    {
-//        super.setPerformancePreferences(connectionTime, latency, bandwidth);
-//    }
+        super.close();
+    }
 }

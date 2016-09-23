@@ -15,64 +15,67 @@ class ProvSSLEngine
     protected boolean useClientMode;
     protected boolean enableSessionCreation;
 
-    ProvSSLEngine(ProvSSLContextSpi sslContext)
+    ProvSSLEngine(ProvSSLContextSpi context)
     {
     }
 
-    ProvSSLEngine(ProvSSLContextSpi sslContext, String host, int port)
+    ProvSSLEngine(ProvSSLContextSpi context, String host, int port)
     {
         super(host, port);
-
-        throw new UnsupportedOperationException();
     }
 
     @Override
-    public void beginHandshake()
+    public synchronized void beginHandshake()
         throws SSLException
     {
         throw new UnsupportedOperationException();
     }
 
-    public void closeInbound()
+    @Override
+    public synchronized void closeInbound()
         throws SSLException
     {
         throw new UnsupportedOperationException();
     }
 
-    public void closeOutbound()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    public Runnable getDelegatedTask()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    public String[] getEnabledCipherSuites()
+    @Override
+    public synchronized void closeOutbound()
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String[] getEnabledProtocols()
+    public synchronized Runnable getDelegatedTask()
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public synchronized String[] getEnabledCipherSuites()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public synchronized String[] getEnabledProtocols()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public synchronized boolean getEnableSessionCreation()
     {
         return enableSessionCreation;
     }
 
 //    @Override
-//    public SSLSession getHandshakeSession()
+//    public synchronized SSLSession getHandshakeSession()
 //    {
 //        return super.getHandshakeSession();
 //    }
 
     @Override
-    public SSLEngineResult.HandshakeStatus getHandshakeStatus()
+    public synchronized SSLEngineResult.HandshakeStatus getHandshakeStatus()
     {
         throw new UnsupportedOperationException();
     }
@@ -83,37 +86,20 @@ class ProvSSLEngine
         return needClientAuth;
     }
 
-//    @Override
-//    public String getPeerHost()
-//    {
-//        return super.getPeerHost();
-//    }
-
-//    @Override
-//    public int getPeerPort()
-//    {
-//        return super.getPeerPort();
-//    }
-
     @Override
-    public SSLSession getSession()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-//    @Override
-//    public SSLParameters getSSLParameters()
-//    {
-//        return super.getSSLParameters();
-//    }
-
-    public String[] getSupportedCipherSuites()
+    public synchronized SSLSession getSession()
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String[] getSupportedProtocols()
+    public synchronized String[] getSupportedCipherSuites()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public synchronized String[] getSupportedProtocols()
     {
         throw new UnsupportedOperationException();
     }
@@ -124,33 +110,37 @@ class ProvSSLEngine
         return useClientMode;
     }
 
+    @Override
     public synchronized boolean getWantClientAuth()
     {
         return wantClientAuth;
     }
 
-    public boolean isInboundDone()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    public boolean isOutboundDone()
+    @Override
+    public synchronized boolean isInboundDone()
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void setEnabledCipherSuites(String[] strings)
+    public synchronized boolean isOutboundDone()
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void setEnabledProtocols(String[] strings)
+    public synchronized void setEnabledCipherSuites(String[] strings)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public synchronized void setEnabledProtocols(String[] strings)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public synchronized void setEnableSessionCreation(boolean enableSessionCreation)
     {
         this.enableSessionCreation = enableSessionCreation;
@@ -162,54 +152,27 @@ class ProvSSLEngine
         this.needClientAuth = needClientAuth;
     }
 
-//    @Override
-//    public void setSSLParameters(SSLParameters params)
-//    {
-//        super.setSSLParameters(params);
-//    }
-
     @Override
     public synchronized void setUseClientMode(boolean useClientMode)
     {
         this.useClientMode = useClientMode;
     }
 
+    @Override
     public synchronized void setWantClientAuth(boolean wantClientAuth)
     {
         this.wantClientAuth = wantClientAuth;
     }
 
-//    @Override
-//    public SSLEngineResult unwrap(ByteBuffer src, ByteBuffer dst) throws SSLException
-//    {
-//        return super.unwrap(src, dst);
-//    }
-
-//    @Override
-//    public SSLEngineResult unwrap(ByteBuffer src, ByteBuffer[] dsts) throws SSLException
-//    {
-//        return super.unwrap(src, dsts);
-//    }
-
-    public SSLEngineResult unwrap(ByteBuffer byteBuffer, ByteBuffer[] byteBuffers, int i, int i1)
+    @Override
+    public synchronized SSLEngineResult unwrap(ByteBuffer src, ByteBuffer[] dsts, int offset, int length)
         throws SSLException
     {
         throw new UnsupportedOperationException();
     }
 
-//    @Override
-//    public SSLEngineResult wrap(ByteBuffer src, ByteBuffer dst) throws SSLException
-//    {
-//        return super.wrap(src, dst);
-//    }
-
-//    @Override
-//    public SSLEngineResult wrap(ByteBuffer[] srcs, ByteBuffer dst) throws SSLException
-//    {
-//        return super.wrap(srcs, dst);
-//    }
-
-    public SSLEngineResult wrap(ByteBuffer[] byteBuffers, int i, int i1, ByteBuffer byteBuffer)
+    @Override
+    public synchronized SSLEngineResult wrap(ByteBuffer[] srcs, int offset, int length, ByteBuffer dst)
         throws SSLException
     {
         throw new UnsupportedOperationException();
