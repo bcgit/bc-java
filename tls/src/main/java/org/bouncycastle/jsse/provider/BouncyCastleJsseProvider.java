@@ -35,7 +35,9 @@ public class BouncyCastleJsseProvider
         super(PROVIDER_NAME, version, info);
 
         SecureRandom entropySource = new SecureRandom();
-        
+
+        // TODO[tls-ops] Should still use a separate SecureRandom for nonceEntropySource
+
         configure(false, new JcaTlsCryptoBuilder(entropySource, entropySource).build());
     }
 
@@ -107,7 +109,6 @@ public class BouncyCastleJsseProvider
         {
             Provider provider = Security.getProvider(cryptoName);
 
-            
             if (provider != null)
             { 
                 SecureRandom mainEntropy = SecureRandom.getInstance("DEFAULT", provider);

@@ -9,15 +9,20 @@ import javax.net.ssl.SSLServerSocketFactory;
 class ProvSSLServerSocketFactory
     extends SSLServerSocketFactory
 {
-    ProvSSLServerSocketFactory()
+    protected final ProvSSLContextSpi context;
+
+    ProvSSLServerSocketFactory(ProvSSLContextSpi context)
     {
+        super();
+
+        this.context = context;
     }
 
-//    @Override
-//    public ServerSocket createServerSocket() throws IOException
-//    {
-//        return super.createServerSocket();
-//    }
+    @Override
+    public ServerSocket createServerSocket() throws IOException
+    {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     public ServerSocket createServerSocket(int port) throws IOException

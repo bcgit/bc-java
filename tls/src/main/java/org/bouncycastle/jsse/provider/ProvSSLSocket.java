@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import javax.net.ssl.HandshakeCompletedListener;
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
@@ -22,37 +23,37 @@ class ProvSSLSocket
     protected final Set<HandshakeCompletedListenerAdapter> listeners = Collections.synchronizedSet(
         new HashSet<HandshakeCompletedListenerAdapter>());
 
-    protected final ProvSSLEngine engine;
+    protected final SSLEngine engine;
 
-    ProvSSLSocket(ProvSSLEngine engine)
+    ProvSSLSocket(SSLEngine engine)
     {
         super();
 
         this.engine = engine;
     }
 
-    ProvSSLSocket(ProvSSLEngine engine, InetAddress address, int port) throws IOException
+    ProvSSLSocket(SSLEngine engine, InetAddress address, int port) throws IOException
     {
         super(address, port);
 
         this.engine = engine;
     }
 
-    ProvSSLSocket(ProvSSLEngine engine, InetAddress address, int port, InetAddress clientAddress, int clientPort) throws IOException
+    ProvSSLSocket(SSLEngine engine, InetAddress address, int port, InetAddress clientAddress, int clientPort) throws IOException
     {
         super(address, port, clientAddress, clientPort);
 
         this.engine = engine;
     }
 
-    ProvSSLSocket(ProvSSLEngine engine, String host, int port) throws IOException, UnknownHostException
+    ProvSSLSocket(SSLEngine engine, String host, int port) throws IOException, UnknownHostException
     {
         super(host, port);
 
         this.engine = engine;
     }
 
-    ProvSSLSocket(ProvSSLEngine engine, String host, int port, InetAddress clientAddress, int clientPort)
+    ProvSSLSocket(SSLEngine engine, String host, int port, InetAddress clientAddress, int clientPort)
         throws IOException, UnknownHostException
     {
         super(host, port, clientAddress, clientPort);

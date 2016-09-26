@@ -18,6 +18,8 @@ class ProvSSLContextSpi
 {
     protected final TlsCrypto crypto;
 
+    protected boolean initialized = false;
+
     ProvSSLContextSpi(TlsCrypto crypto)
     {
         this.crypto = crypto;
@@ -28,16 +30,27 @@ class ProvSSLContextSpi
         return crypto;
     }
 
+    protected void checkInitialized()
+    {
+        if (!initialized)
+        {
+            // TODO[tls-ops] If initialization turns out to be optional, create default objects here instead (and set initialized = true)
+            throw new IllegalStateException("SSLContext has not been initialized.");
+        }
+    }
+
     @Override
     protected SSLEngine engineCreateSSLEngine()
     {
-        throw new UnsupportedOperationException();
+        checkInitialized();
+        return new ProvSSLEngine(this);
     }
 
     @Override
     protected SSLEngine engineCreateSSLEngine(String host, int port)
     {
-        throw new UnsupportedOperationException();
+        checkInitialized();
+        return new ProvSSLEngine(this, host, port);
     }
 
     @Override
@@ -61,13 +74,15 @@ class ProvSSLContextSpi
     @Override
     protected SSLServerSocketFactory engineGetServerSocketFactory()
     {
-        throw new UnsupportedOperationException();
+        checkInitialized();
+        return new ProvSSLServerSocketFactory(this);
     }
 
     @Override
     protected SSLSocketFactory engineGetSocketFactory()
     {
-        throw new UnsupportedOperationException();
+        checkInitialized();
+        return new ProvSSLSocketFactory(this);
     }
 
 //  @Override
@@ -79,6 +94,8 @@ class ProvSSLContextSpi
     @Override
     protected void engineInit(KeyManager[] km, TrustManager[] tm, SecureRandom sr) throws KeyManagementException
     {
+        this.initialized = true;
+
         throw new UnsupportedOperationException();
     }
 }

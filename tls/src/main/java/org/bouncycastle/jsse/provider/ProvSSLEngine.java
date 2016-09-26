@@ -14,6 +14,10 @@ import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
 
+/*
+ * TODO[tls-ops] Currently doesn't properly support NIO usage, or conform very well with SSLEngine javadoc
+ * - "The wrap() and unwrap() methods may execute concurrently of each other."
+ */
 class ProvSSLEngine
     extends SSLEngine
 {
@@ -32,6 +36,8 @@ class ProvSSLEngine
 
     ProvSSLEngine(ProvSSLContextSpi context)
     {
+        super();
+
         this.context = context;
     }
 
@@ -100,7 +106,7 @@ class ProvSSLEngine
     @Override
     public synchronized Runnable getDelegatedTask()
     {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
