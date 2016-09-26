@@ -9,6 +9,7 @@ import org.bouncycastle.tls.TlsKeyExchange;
 
 class ProvTlsServer
     extends DefaultTlsServer
+    implements TlsProtocolManager
 {
     protected boolean handshakeComplete = false;
 
@@ -17,7 +18,7 @@ class ProvTlsServer
         super(crypto);
     }
 
-    synchronized boolean isHandshakeComplete()
+    public synchronized boolean isHandshakeComplete()
     {
         return handshakeComplete;
     }
