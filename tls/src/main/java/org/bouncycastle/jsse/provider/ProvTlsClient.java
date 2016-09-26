@@ -5,7 +5,6 @@ import java.io.IOException;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCrypto;
-import org.bouncycastle.tls.TlsKeyExchange;
 
 class ProvTlsClient
     extends DefaultTlsClient
@@ -27,22 +26,20 @@ class ProvTlsClient
     {
         // TODO[tls-ops] If client authentication enabled, locate credentials in configured key stores,
         // suitable for the selected ciphersuite
-
-        throw new UnsupportedOperationException();
+        return null;
     }
 
-    public int[] getCipherSuites()
-    {
-        // TODO[tls-ops] Needs to come from the JSSE enabledCipherSuites
+//    public int[] getCipherSuites()
+//    {
+//        // TODO[tls-ops] Needs to come from the JSSE enabledCipherSuites
+//        throw new UnsupportedOperationException();
+//    }
 
-        throw new UnsupportedOperationException();
-    }
-
-    public TlsKeyExchange getKeyExchange() throws IOException
-    {
-        // TODO[tls-ops] Check that all key exchanges used in JSSE supportedCipherSuites are handled
-        return super.getKeyExchange();
-    }
+//    public TlsKeyExchange getKeyExchange() throws IOException
+//    {
+//        // TODO[tls-ops] Check that all key exchanges used in JSSE supportedCipherSuites are handled
+//        return super.getKeyExchange();
+//    }
 
     @Override
     public synchronized void notifyHandshakeComplete() throws IOException

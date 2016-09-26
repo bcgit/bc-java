@@ -5,10 +5,13 @@ import java.nio.ByteBuffer;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLEngineResult.HandshakeStatus;
+import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
 
 import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.tls.TlsProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
 
 class ProvSSLEngine
@@ -22,6 +25,10 @@ class ProvSSLEngine
     protected boolean wantClientAuth = false;
 
     protected boolean initialHandshakeBegun = false;
+    protected HandshakeStatus handshakeStatus = HandshakeStatus.NOT_HANDSHAKING; 
+
+    protected TlsProtocol protocol = null;
+    protected TlsProtocolManager protocolManager = null;
 
     ProvSSLEngine(ProvSSLContextSpi context)
     {
@@ -50,19 +57,23 @@ class ProvSSLEngine
         {
             if (this.useClientMode)
             {
-                ProvTlsClient client = new ProvTlsClient(context.getCrypto());
                 TlsClientProtocol clientProtocol = new TlsClientProtocol();
-                clientProtocol.connect(client);
+                this.protocol = clientProtocol;
 
-                // TODO[tls-ops] Keep requesting task/unwrap/wrap until client.isHandshakeComplete() or error
+                ProvTlsClient client = new ProvTlsClient(context.getCrypto());
+                this.protocolManager = client;
+
+                clientProtocol.connect(client);
             }
             else
             {
-                ProvTlsServer server = new ProvTlsServer(context.getCrypto());
                 TlsServerProtocol serverProtocol = new TlsServerProtocol();
-                serverProtocol.accept(server);
+                this.protocol = serverProtocol;
 
-                // TODO[tls-ops] Keep requesting task/unwrap/wrap until server.isHandshakeComplete() or error
+                ProvTlsServer server = new ProvTlsServer(context.getCrypto());
+                this.protocolManager = server;
+
+                serverProtocol.accept(server);
             }
         }
         catch (IOException e)
@@ -70,7 +81,7 @@ class ProvSSLEngine
             throw new SSLException(e);
         }
 
-        throw new UnsupportedOperationException();
+        determineHandshakeStatus();
     }
 
     @Override
@@ -119,7 +130,7 @@ class ProvSSLEngine
     @Override
     public synchronized SSLEngineResult.HandshakeStatus getHandshakeStatus()
     {
-        throw new UnsupportedOperationException();
+        return handshakeStatus;
     }
 
     @Override
@@ -215,7 +226,69 @@ class ProvSSLEngine
     public synchronized SSLEngineResult unwrap(ByteBuffer src, ByteBuffer[] dsts, int offset, int length)
         throws SSLException
     {
-        throw new UnsupportedOperationException();
+        // TODO[tls-ops] Argument checks - see javadoc
+
+        if (!initialHandshakeBegun)
+        {
+            beginHandshake();
+        }
+
+        HandshakeStatus prevHandshakeStatus = handshakeStatus;
+        int bytesConsumed = 0, bytesProduced = 0;
+
+        if (!protocol.isClosed())
+        {
+            byte[] buf = new byte[src.remaining()];
+            src.get(buf);
+    
+            try
+            {
+                protocol.offerInput(buf);
+            }
+            catch (IOException e)
+            {
+                // TODO[tls-ops] Throw a subclass of SSLException?
+                throw new SSLException(e);
+            }
+    
+            bytesConsumed += buf.length;
+        }
+
+        int appDataAvailable = protocol.getAvailableInputBytes();
+        for (int dstIndex = 0; dstIndex < length && appDataAvailable > 0; ++dstIndex)
+        {
+            ByteBuffer dst = dsts[dstIndex];
+            int count = Math.min(dst.remaining(), appDataAvailable);
+
+            byte[] input = new byte[count];
+            int numRead = protocol.readInput(input, 0, count);
+            assert numRead == count;
+
+            dst.put(input);
+
+            bytesProduced += count;
+            appDataAvailable -= count;
+        }
+
+        Status returnStatus = Status.OK;
+        if (appDataAvailable > 0)
+        {
+            returnStatus = Status.BUFFER_OVERFLOW;
+        }
+        else if (protocol.isClosed())
+        {
+            returnStatus = Status.CLOSED;
+        }
+
+        determineHandshakeStatus();
+
+        HandshakeStatus returnHandshakeStatus = handshakeStatus;
+        if (handshakeStatus == HandshakeStatus.NOT_HANDSHAKING && prevHandshakeStatus != HandshakeStatus.NOT_HANDSHAKING)
+        {
+            returnHandshakeStatus = HandshakeStatus.FINISHED;
+        }
+
+        return new SSLEngineResult(returnStatus, returnHandshakeStatus, bytesConsumed, bytesProduced);
     }
 
     @Override
@@ -223,5 +296,27 @@ class ProvSSLEngine
         throws SSLException
     {
         throw new UnsupportedOperationException();
+    }
+
+    protected void determineHandshakeStatus()
+    {
+        // NOTE: We currently never delegate tasks (will never have status HandshakeStatus.NEED_TASK)
+
+        if (!initialHandshakeBegun || protocolManager.isHandshakeComplete())
+        {
+            handshakeStatus = HandshakeStatus.NOT_HANDSHAKING;
+        }
+        else if (protocol.getAvailableOutputBytes() > 0)
+        {
+            handshakeStatus = HandshakeStatus.NEED_WRAP;
+        }
+        else if (protocol.isClosed())
+        {
+            handshakeStatus = HandshakeStatus.NOT_HANDSHAKING;
+        }
+        else
+        {
+            handshakeStatus = HandshakeStatus.NEED_UNWRAP;
+        }
     }
 }
