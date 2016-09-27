@@ -8,6 +8,7 @@ import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 
 import org.bouncycastle.tls.TlsClientProtocol;
@@ -21,16 +22,16 @@ import org.bouncycastle.tls.TlsServerProtocol;
 class ProvSSLEngine
     extends SSLEngine
 {
+    // TODO[tls-ops] Might want specific initial values
+    protected final SSLParameters sslParameters = new SSLParameters();
+
     protected final ProvSSLContextSpi context;
 
     protected boolean enableSessionCreation = false;
-    protected boolean needClientAuth = false;
     protected boolean useClientMode = true;
-    protected boolean wantClientAuth = false;
 
     protected boolean initialHandshakeBegun = false;
     protected HandshakeStatus handshakeStatus = HandshakeStatus.NOT_HANDSHAKING; 
-
     protected TlsProtocol protocol = null;
     protected TlsProtocolManager protocolManager = null;
 
@@ -59,14 +60,18 @@ class ProvSSLEngine
 
         this.initialHandshakeBegun = true;
 
+        // TODO[tls-ops] Check for session to re-use and apply to handshake
+
         try
         {
+            SSLParameters protocolParameters = copySSLParameters(sslParameters);
+
             if (this.useClientMode)
             {
                 TlsClientProtocol clientProtocol = new TlsClientProtocol();
                 this.protocol = clientProtocol;
 
-                ProvTlsClient client = new ProvTlsClient(context.getCrypto());
+                ProvTlsClient client = new ProvTlsClient(context.getCrypto(), protocolParameters);
                 this.protocolManager = client;
 
                 clientProtocol.connect(client);
@@ -76,7 +81,7 @@ class ProvSSLEngine
                 TlsServerProtocol serverProtocol = new TlsServerProtocol();
                 this.protocol = serverProtocol;
 
-                ProvTlsServer server = new ProvTlsServer(context.getCrypto());
+                ProvTlsServer server = new ProvTlsServer(context.getCrypto(), protocolParameters);
                 this.protocolManager = server;
 
                 serverProtocol.accept(server);
@@ -142,7 +147,7 @@ class ProvSSLEngine
     @Override
     public synchronized boolean getNeedClientAuth()
     {
-        return needClientAuth;
+        return sslParameters.getNeedClientAuth();
     }
 
     @Override
@@ -172,7 +177,7 @@ class ProvSSLEngine
     @Override
     public synchronized boolean getWantClientAuth()
     {
-        return wantClientAuth;
+        return sslParameters.getWantClientAuth();
     }
 
     @Override
@@ -208,7 +213,7 @@ class ProvSSLEngine
     @Override
     public synchronized void setNeedClientAuth(boolean needClientAuth)
     {
-        this.needClientAuth = needClientAuth;
+        sslParameters.setNeedClientAuth(needClientAuth);
     }
 
     @Override
@@ -225,7 +230,7 @@ class ProvSSLEngine
     @Override
     public synchronized void setWantClientAuth(boolean wantClientAuth)
     {
-        this.wantClientAuth = wantClientAuth;
+        sslParameters.setWantClientAuth(wantClientAuth);
     }
 
     @Override
@@ -302,6 +307,22 @@ class ProvSSLEngine
         throws SSLException
     {
         throw new UnsupportedOperationException();
+    }
+
+    protected SSLParameters copySSLParameters(SSLParameters p)
+    {
+        // NOTE: No deep copies here, this.sslParameters fields must be replaced in configuration methods
+        SSLParameters r = new SSLParameters();
+        r.setAlgorithmConstraints(r.getAlgorithmConstraints());
+        r.setCipherSuites(p.getCipherSuites());
+        r.setEndpointIdentificationAlgorithm(p.getEndpointIdentificationAlgorithm());
+        r.setNeedClientAuth(p.getNeedClientAuth());
+        r.setProtocols(p.getProtocols());
+        r.setServerNames(p.getServerNames());
+        r.setSNIMatchers(p.getSNIMatchers());
+        r.setUseCipherSuitesOrder(p.getUseCipherSuitesOrder());
+        r.setWantClientAuth(p.getWantClientAuth());
+        return r;
     }
 
     protected void determineHandshakeStatus()

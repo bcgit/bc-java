@@ -2,6 +2,8 @@ package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
 
+import javax.net.ssl.SSLParameters;
+
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsCrypto;
@@ -10,11 +12,15 @@ class ProvTlsServer
     extends DefaultTlsServer
     implements TlsProtocolManager
 {
+    protected final SSLParameters sslParameters;
+
     protected boolean handshakeComplete = false;
 
-    ProvTlsServer(TlsCrypto crypto)
+    ProvTlsServer(TlsCrypto crypto, SSLParameters sslParameters)
     {
         super(crypto);
+
+        this.sslParameters = sslParameters;
     }
 
     public synchronized boolean isHandshakeComplete()
