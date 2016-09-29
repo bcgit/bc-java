@@ -59,6 +59,8 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.util.test.TestRandomBigInteger;
+import org.bouncycastle.util.test.TestRandomData;
 
 public class DSATest
     extends SimpleTest
@@ -67,7 +69,7 @@ public class DSATest
     byte[] k2 = Hex.decode("345e8d05c075c3a508df729a1685690e68fcfb8c8117847e89063bca1f85d968fd281540b6e13bd1af989a1fbf17e06462bf511f9d0b140fb48ac1b1baa5bded");
 
     SecureRandom    random = new FixedSecureRandom(new byte[][] { k1, k2 });
-    
+
     private void testCompat()
         throws Exception
     {
@@ -342,7 +344,7 @@ public class DSATest
 
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("700000017569056646655505781757157107570501575775705779575555657156756655"));
 
-        SecureRandom    k = new FixedSecureRandom(kData);
+        SecureRandom    k = new TestRandomBigInteger(kData);
 
         ECCurve curve = new ECCurve.Fp(
                 new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839"), // q
@@ -475,7 +477,7 @@ public class DSATest
     private void doEcDsaTest(String sigName, BigInteger s, KeyFactory ecKeyFact, ECPublicKeySpec pubKey, ECPrivateKeySpec priKey)
         throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, InvalidKeySpecException, SignatureException
     {
-        SecureRandom k = new FixedSecureRandom(BigIntegers.asUnsignedByteArray(new BigInteger("72546832179840998877302529996971396893172522460793442785601695562409154906335")));
+        SecureRandom k = new TestRandomBigInteger(BigIntegers.asUnsignedByteArray(new BigInteger("72546832179840998877302529996971396893172522460793442785601695562409154906335")));
 
         byte[] M = Hex.decode("1BD4ED430B0F384B4E8D458EFF1A8A553286D7AC21CB2F6806172EF5F94A06AD");
 
@@ -579,7 +581,7 @@ public class DSATest
     private void doDsaTest(String sigName, BigInteger s, KeyFactory ecKeyFact, DSAPublicKeySpec pubKey, DSAPrivateKeySpec priKey)
         throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, InvalidKeySpecException, SignatureException
     {
-        SecureRandom k = new FixedSecureRandom(BigIntegers.asUnsignedByteArray(new BigInteger("72546832179840998877302529996971396893172522460793442785601695562409154906335")));
+        SecureRandom k = new TestRandomBigInteger(BigIntegers.asUnsignedByteArray(new BigInteger("72546832179840998877302529996971396893172522460793442785601695562409154906335")));
 
         byte[] M = Hex.decode("1BD4ED430B0F384B4E8D458EFF1A8A553286D7AC21CB2F6806172EF5F94A06AD");
 
@@ -627,7 +629,7 @@ public class DSATest
     {
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("700000017569056646655505781757157107570501575775705779575555657156756655"));
 
-        SecureRandom    k = new FixedSecureRandom(kData);
+        SecureRandom    k = new TestRandomBigInteger(kData);
 
         sgr.initSign(sKey, k);
 
@@ -663,7 +665,7 @@ public class DSATest
     
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("171278725565216523967285789236956265265265235675811949404040041670216363"));
 
-        SecureRandom    k = new FixedSecureRandom(kData);
+        SecureRandom    k = new TestRandomBigInteger(kData);
 
         ECCurve curve = new ECCurve.F2m(
             239, // m
@@ -728,7 +730,7 @@ public class DSATest
     {
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("171278725565216523967285789236956265265265235675811949404040041670216363"));
 
-        SecureRandom    k = new FixedSecureRandom(kData);
+        SecureRandom    k = new TestRandomBigInteger(kData);
 
         ECCurve curve = new ECCurve.F2m(
             239, // m
@@ -1123,7 +1125,7 @@ public class DSATest
         }
 
         KeyPairGenerator    g = KeyPairGenerator.getInstance("DSA", "BC");
-        g.initialize(dsaP, new FixedSecureRandom(Hex.decode("0CAF2EF547EC49C4F3A6FE6DF4223A174D01F2C115D49A6F73437C29A2A8458C")));
+        g.initialize(dsaP, new TestRandomBigInteger(Hex.decode("0CAF2EF547EC49C4F3A6FE6DF4223A174D01F2C115D49A6F73437C29A2A8458C")));
         KeyPair p = g.generateKeyPair();
 
         DSAPrivateKey  sKey = (DSAPrivateKey)p.getPrivate();
@@ -1253,7 +1255,7 @@ public class DSATest
     }
 
     private class DSATestSecureRandom
-        extends FixedSecureRandom
+        extends TestRandomData
     {
         private boolean first = true;
 

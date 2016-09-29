@@ -1,5 +1,8 @@
 package org.bouncycastle.crypto.test;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.GOST3410KeyPairGenerator;
 import org.bouncycastle.crypto.generators.GOST3410ParametersGenerator;
@@ -13,10 +16,8 @@ import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.NumberParsing;
 import org.bouncycastle.util.test.SimpleTestResult;
 import org.bouncycastle.util.test.Test;
+import org.bouncycastle.util.test.TestRandomData;
 import org.bouncycastle.util.test.TestResult;
-
-import java.math.BigInteger;
-import java.security.SecureRandom;
 
 public class GOST3410Test
         implements Test
@@ -38,9 +39,10 @@ public class GOST3410Test
             return "GOST3410-TEST1-512";
         }
 
-        FixedSecureRandom    init_random = new FixedSecureRandom(new byte[][] { Hex.decode("00005EC900007341"), zeroTwo(64) });
-        FixedSecureRandom    random = new FixedSecureRandom(Hex.decode("90F3A564439242F5186EBB224C8E223811B7105C64E4F5390807E6362DF4C72A"));
-        FixedSecureRandom    keyRandom = new FixedSecureRandom(Hex.decode("3036314538303830343630454235324435324234314132373832433138443046"));
+        FixedSecureRandom    init_random = new FixedSecureRandom(
+            new FixedSecureRandom.Source[] { new FixedSecureRandom.Data(Hex.decode("00005EC900007341")), new FixedSecureRandom.Data(zeroTwo(64)) });
+        FixedSecureRandom    random = new TestRandomData(Hex.decode("90F3A564439242F5186EBB224C8E223811B7105C64E4F5390807E6362DF4C72A"));
+        FixedSecureRandom    keyRandom = new TestRandomData(Hex.decode("3036314538303830343630454235324435324234314132373832433138443046"));
 
         BigInteger  pValue = new BigInteger("EE8172AE8996608FB69359B89EB82A69854510E2977A4D63BC97322CE5DC3386EA0A12B343E9190F23177539845839786BB0C345D165976EF2195EC9B1C379E3", 16);
         BigInteger  qValue = new BigInteger("98915E7EC8265EDFCDA31E88F24809DDB064BDC7285DD50D7289F0AC6F49DD2D", 16);
@@ -139,9 +141,10 @@ public class GOST3410Test
             return "GOST3410-TEST2-512";
         }
 
-        FixedSecureRandom    init_random = new FixedSecureRandom(new byte[][] { Hex.decode("000000003DFC46F1000000000000000D"), zeroTwo(64) });
-        FixedSecureRandom    random = new FixedSecureRandom(Hex.decode("90F3A564439242F5186EBB224C8E223811B7105C64E4F5390807E6362DF4C72A"));
-        FixedSecureRandom    keyRandom = new FixedSecureRandom(Hex.decode("3036314538303830343630454235324435324234314132373832433138443046"));
+        FixedSecureRandom init_random = new FixedSecureRandom(
+            new FixedSecureRandom.Source[]{new FixedSecureRandom.Data(Hex.decode("000000003DFC46F1000000000000000D")), new FixedSecureRandom.Data(zeroTwo(64))});
+        FixedSecureRandom random = new TestRandomData(Hex.decode("90F3A564439242F5186EBB224C8E223811B7105C64E4F5390807E6362DF4C72A"));
+        FixedSecureRandom keyRandom = new TestRandomData(Hex.decode("3036314538303830343630454235324435324234314132373832433138443046"));
 
         BigInteger  pValue = new BigInteger("8b08eb135af966aab39df294538580c7da26765d6d38d30cf1c06aae0d1228c3316a0e29198460fad2b19dc381c15c888c6dfd0fc2c565abb0bf1faff9518f85", 16);
         BigInteger  qValue = new BigInteger("931a58fb6f0dcdf2fe7549bc3f19f4724b56898f7f921a076601edb18c93dc75", 16);

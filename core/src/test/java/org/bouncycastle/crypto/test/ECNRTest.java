@@ -12,8 +12,8 @@ import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.util.test.TestRandomBigInteger;
 
 /**
  * ECNR tests.
@@ -29,7 +29,7 @@ public class ECNRTest
 
     byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("700000017569056646655505781757157107570501575775705779575555657156756655"));
 
-    SecureRandom    k = new FixedSecureRandom(true, kData);
+    SecureRandom    k = new TestRandomBigInteger(kData);
 
     private void ecNR239bitPrime()
     {

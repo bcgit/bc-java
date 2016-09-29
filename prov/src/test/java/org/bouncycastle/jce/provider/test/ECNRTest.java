@@ -23,6 +23,7 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.util.test.TestRandomBigInteger;
 
 public class ECNRTest
     extends SimpleTest
@@ -30,8 +31,9 @@ public class ECNRTest
     byte[] k1 = Hex.decode("d5014e4b60ef2ba8b6211b4062ba3224e0427dd3");
     byte[] k2 = Hex.decode("345e8d05c075c3a508df729a1685690e68fcfb8c8117847e89063bca1f85d968fd281540b6e13bd1af989a1fbf17e06462bf511f9d0b140fb48ac1b1baa5bded");
 
-    SecureRandom    random = new FixedSecureRandom(new byte[][] { k1, k2 });
-    
+    SecureRandom random = new FixedSecureRandom(
+        new FixedSecureRandom.Source[] { new FixedSecureRandom.Data(k1), new FixedSecureRandom.Data(k2) });
+
     /**
      * X9.62 - 1998,<br>
      * J.3.2, Page 155, ECDSA over the field Fp<br>
@@ -45,7 +47,7 @@ public class ECNRTest
 
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("700000017569056646655505781757157107570501575775705779575555657156756655"));
         
-        SecureRandom    k = new FixedSecureRandom(kData);
+        SecureRandom    k = new TestRandomBigInteger(kData);
 
         ECCurve curve = new ECCurve.Fp(
             new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839"), // q
@@ -89,7 +91,7 @@ public class ECNRTest
 
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("dcc5d1f1020906df2782360d36b2de7a17ece37d503784af", 16));
         
-        SecureRandom    k = new FixedSecureRandom(kData);
+        SecureRandom    k = new TestRandomBigInteger(kData);
 
         ECCurve.Fp curve = new ECCurve.Fp(
             new BigInteger("6277101735386680763835789423207666416083908700390324961279"), // q (or p)
@@ -133,7 +135,7 @@ public class ECNRTest
 
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("cdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef", 16));
         
-        SecureRandom    k = new FixedSecureRandom(kData);
+        SecureRandom    k = new TestRandomBigInteger(kData);
 
         ECCurve.Fp curve = new ECCurve.Fp(
             new BigInteger("6864797660130609714981900799081393217269435300143305409394463459185543183397656052122559640661454554977296311391480858037121987999716643812574028291115057151"), // q (or p)

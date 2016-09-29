@@ -26,7 +26,8 @@ public class GMSSSignerTest
 {
     byte[] keyData = Hex.decode("b5014e4b60ef2ba8b6211b4062ba3224e0427dd3");
 
-    SecureRandom keyRandom = new FixedSecureRandom(new byte[][]{keyData, keyData});
+    SecureRandom keyRandom = new FixedSecureRandom(
+        new FixedSecureRandom.Source[] { new FixedSecureRandom.Data(keyData), new FixedSecureRandom.Data(keyData) });
 
     public String getName()
     {

@@ -12,8 +12,8 @@ import org.bouncycastle.crypto.signers.DSTU4145Signer;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.util.test.TestRandomData;
 
 public class DSTU4145Test
     extends SimpleTest
@@ -34,7 +34,7 @@ public class DSTU4145Test
     private void test163()
         throws Exception
     {
-        SecureRandom random = new FixedSecureRandom(Hex.decode("01025e40bd97db012b7a1d79de8e12932d247f61c6"));
+        SecureRandom random = new TestRandomData(Hex.decode("01025e40bd97db012b7a1d79de8e12932d247f61c6"));
 
         byte[] hash = Hex.decode("09c9c44277910c9aaee486883a2eb95b7180166ddf73532eeb76edaef52247ff");
         for (int i = 0; i < hash.length / 2; i++)
@@ -82,7 +82,7 @@ public class DSTU4145Test
     private void test173()
         throws Exception
     {
-        SecureRandom random = new FixedSecureRandom(Hex.decode("0000137449348C1249971759D99C252FFE1E14D8B31F"));
+        SecureRandom random = new TestRandomData(Hex.decode("0000137449348C1249971759D99C252FFE1E14D8B31F"));
 
         byte[] hash = Hex.decode("0137187EA862117EF1484289470ECAC802C5A651FDA8");
         for (int i = 0; i < hash.length / 2; i++)
@@ -130,7 +130,7 @@ public class DSTU4145Test
     private void test283()
         throws Exception
     {
-        SecureRandom random = new FixedSecureRandom(Hex.decode("00000000245383CB3AD41BF30F5F7E8FBA858509B2D5558C92D539A6D994BFA98BC6940E"));
+        SecureRandom random = new TestRandomData(Hex.decode("00000000245383CB3AD41BF30F5F7E8FBA858509B2D5558C92D539A6D994BFA98BC6940E"));
 
         byte[] hash = Hex.decode("0137187EA862117EF1484289470ECAC802C5A651FDA8");
         for (int i = 0; i < hash.length / 2; i++)
@@ -178,7 +178,7 @@ public class DSTU4145Test
     private void test431()
         throws Exception
     {
-        SecureRandom random = new FixedSecureRandom(Hex.decode("0000C4224DBBD800988DBAA39DE838294C345CDA5F5929D1174AA8D9340A5E79D10ACADE6B53CF873E7301A3871C2073AD75AB530457"));
+        SecureRandom random = new TestRandomData(Hex.decode("0000C4224DBBD800988DBAA39DE838294C345CDA5F5929D1174AA8D9340A5E79D10ACADE6B53CF873E7301A3871C2073AD75AB530457"));
 
         byte[] hash = Hex.decode("0137187EA862117EF1484289470ECAC802C5A651FDA8");
         for (int i = 0; i < hash.length / 2; i++)
@@ -225,7 +225,7 @@ public class DSTU4145Test
 
     private void testTruncation()
     {
-        SecureRandom random = new FixedSecureRandom(Hex.decode("0000C4224DBBD800988DBAA39DE838294C345CDA5F5929D1174AA8D9340A5E79D10ACADE6B53CF873E7301A3871C2073AD75AB530457"));
+        SecureRandom random = new TestRandomData(Hex.decode("0000C4224DBBD800988DBAA39DE838294C345CDA5F5929D1174AA8D9340A5E79D10ACADE6B53CF873E7301A3871C2073AD75AB530457"));
 
         // use extra long "hash" with set bits...
         byte[] hash = Hex.decode("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");

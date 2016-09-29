@@ -2,20 +2,14 @@ package org.bouncycastle.jce.provider.test;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
-import java.security.interfaces.ECPrivateKey;
-import java.security.interfaces.ECPublicKey;
 
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -25,8 +19,8 @@ import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.util.test.TestRandomBigInteger;
 
 public class DSTU4145Test
     extends SimpleTest
@@ -65,8 +59,8 @@ public class DSTU4145Test
             curve.createPoint(new BigInteger("BE6628EC3E67A91A4E470894FBA72B52C515F8AEE9", 16), new BigInteger("D9DEEDF655CF5412313C11CA566CDC71F4DA57DB45C", 16), false),
             new BigInteger("800000000000000000000189B4E67606E3825BB2831", 16));
         
-        SecureRandom k = new FixedSecureRandom(Hex.decode("00137449348C1249971759D99C252FFE1E14D8B31F00"));
-        SecureRandom keyRand = new FixedSecureRandom(Hex.decode("0000955CD7E344303D1034E66933DC21C8044D42ADB8"));
+        SecureRandom k = new TestRandomBigInteger(Hex.decode("00137449348C1249971759D99C252FFE1E14D8B31F00"));
+        SecureRandom keyRand = new TestRandomBigInteger(Hex.decode("0000955CD7E344303D1034E66933DC21C8044D42ADB8"));
         
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DSTU4145", "BC");
         keyGen.initialize(spec, keyRand);
@@ -114,7 +108,7 @@ public class DSTU4145Test
         throws Exception
     {
 
-        SecureRandom k = new FixedSecureRandom(Hex.decode("00137449348C1249971759D99C252FFE1E14D8B31F00"));
+        SecureRandom k = new TestRandomBigInteger(Hex.decode("00137449348C1249971759D99C252FFE1E14D8B31F00"));
 
         ECCurve.F2m curve = new ECCurve.F2m(173, 1, 2, 10, BigInteger.ZERO, new BigInteger("108576C80499DB2FC16EDDF6853BBB278F6B6FB437D9", 16));
 
