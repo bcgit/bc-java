@@ -58,7 +58,6 @@ class ProvSSLSocketFactory
         return new ProvSSLSocket(engine, host, port, localHost, localPort);
     }
 
-    @Override
     public Socket createSocket(Socket s, InputStream consumed, boolean autoClose) throws IOException
     {
         /*
