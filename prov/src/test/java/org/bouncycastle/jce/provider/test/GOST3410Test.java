@@ -44,8 +44,8 @@ import org.bouncycastle.jce.spec.GOST3410ParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
-import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.util.test.TestRandomBigInteger;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 public class GOST3410Test
@@ -60,7 +60,7 @@ public class GOST3410Test
 
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("53854137677348463731403841147996619241504003434302020712960838528893196233395"));
 
-        SecureRandom    k = new FixedSecureRandom(kData);
+        SecureRandom    k = new TestRandomBigInteger(kData);
 
         BigInteger mod_p = new BigInteger("57896044618658097711785492504343953926634992332820282019728792003956564821041"); //p
 

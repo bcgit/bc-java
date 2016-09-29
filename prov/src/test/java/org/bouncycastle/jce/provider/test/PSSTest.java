@@ -20,8 +20,8 @@ import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.util.test.TestRandomData;
 
 public class PSSTest
     extends SimpleTest
@@ -236,7 +236,7 @@ public class PSSTest
         byte[] fixedRandomBytes = new byte[saltLen];
         random.nextBytes(fixedRandomBytes);
 
-        normalSig.initSign(privKey, new FixedSecureRandom(fixedRandomBytes));
+        normalSig.initSign(privKey, new TestRandomData(fixedRandomBytes));
         normalSig.update(sampleMessage);
         byte[] normalResult = normalSig.sign();
 
@@ -248,7 +248,7 @@ public class PSSTest
         // Need to init the params explicitly to avoid having a 'raw' variety of every PSS algorithm
         rawSig.setParameter(spec);
 
-        rawSig.initSign(privKey, new FixedSecureRandom(fixedRandomBytes));
+        rawSig.initSign(privKey, new TestRandomData(fixedRandomBytes));
         rawSig.update(hash);
         byte[] rawResult = rawSig.sign();
 

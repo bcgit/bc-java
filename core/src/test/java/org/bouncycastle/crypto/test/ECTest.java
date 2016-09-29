@@ -30,8 +30,8 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.util.test.TestRandomBigInteger;
 
 /**
  * ECDSA tests are taken from X9.62.
@@ -51,7 +51,7 @@ public class ECTest
 
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("6140507067065001063065065565667405560006161556565665656654"));
 
-        SecureRandom k = new FixedSecureRandom(kData);
+        SecureRandom k = new TestRandomBigInteger(kData);
 
         BigInteger n = new BigInteger("6277101735386680763835789423176059013767194773182842284081");
 
@@ -144,7 +144,7 @@ public class ECTest
 
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("700000017569056646655505781757157107570501575775705779575555657156756655"));
 
-        SecureRandom k = new FixedSecureRandom(true, kData);
+        SecureRandom k = new TestRandomBigInteger(kData);
 
         BigInteger n = new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307");
 
@@ -210,7 +210,7 @@ public class ECTest
 
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("1542725565216523985789236956265265265235675811949404040041"));
 
-        SecureRandom k = new FixedSecureRandom(kData);
+        SecureRandom k = new TestRandomBigInteger(kData);
 
         BigInteger n = new BigInteger("1569275433846670190958947355803350458831205595451630533029");
         BigInteger h = BigInteger.valueOf(2);
@@ -278,7 +278,7 @@ public class ECTest
 
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("171278725565216523967285789236956265265265235675811949404040041670216363"));
 
-        SecureRandom k = new FixedSecureRandom(kData);
+        SecureRandom k = new TestRandomBigInteger(kData);
 
         BigInteger n = new BigInteger("220855883097298041197912187592864814557886993776713230936715041207411783");
         BigInteger h = BigInteger.valueOf(4);
@@ -341,7 +341,7 @@ public class ECTest
         ECPrivateKeyParameters priKey = new ECPrivateKeyParameters(
             new BigInteger("6081831502424510080126737029209236539191290354021104541805484120491"), // d
             params);
-        SecureRandom k = new FixedSecureRandom(BigIntegers.asUnsignedByteArray(new BigInteger("15456715103636396133226117016818339719732885723579037388121116732601")));
+        SecureRandom k = new TestRandomBigInteger(BigIntegers.asUnsignedByteArray(new BigInteger("15456715103636396133226117016818339719732885723579037388121116732601")));
 
         byte[] M = Hex.decode("8797A3C693CC292441039A4E6BAB7387F3B4F2A63D00ED384B378C79");
 
@@ -387,7 +387,7 @@ public class ECTest
         ECPrivateKeyParameters priKey = new ECPrivateKeyParameters(
             new BigInteger("BE6F6E91FE96840A6518B56F3FE21689903A64FA729057AB872A9F51", 16), // d
             params);
-        SecureRandom k = new FixedSecureRandom(Hex.decode("00c39beac93db21c3266084429eb9b846b787c094f23a4de66447efbb3"));
+        SecureRandom k = new TestRandomBigInteger(Hex.decode("00c39beac93db21c3266084429eb9b846b787c094f23a4de66447efbb3"));
 
         byte[] M = Hex.decode("E5D5A7ADF73C5476FAEE93A2C76CE94DC0557DB04CDC189504779117920B896D");
 
@@ -434,7 +434,7 @@ public class ECTest
         ECPrivateKeyParameters priKey = new ECPrivateKeyParameters(
             new BigInteger("20186677036482506117540275567393538695075300175221296989956723148347484984008"), // d
             params);
-        SecureRandom k = new FixedSecureRandom(BigIntegers.asUnsignedByteArray(new BigInteger("72546832179840998877302529996971396893172522460793442785601695562409154906335")));
+        SecureRandom k = new TestRandomBigInteger(BigIntegers.asUnsignedByteArray(new BigInteger("72546832179840998877302529996971396893172522460793442785601695562409154906335")));
 
         byte[] M = Hex.decode("1BD4ED430B0F384B4E8D458EFF1A8A553286D7AC21CB2F6806172EF5F94A06AD");
 
@@ -480,7 +480,7 @@ public class ECTest
         ECPrivateKeyParameters priKey = new ECPrivateKeyParameters(
             new BigInteger("20186677036482506117540275567393538695075300175221296989956723148347484984008"), // d
             params);
-        SecureRandom k = new FixedSecureRandom(BigIntegers.asUnsignedByteArray(new BigInteger("72546832179840998877302529996971396893172522460793442785601695562409154906335")));
+        SecureRandom k = new TestRandomBigInteger(BigIntegers.asUnsignedByteArray(new BigInteger("72546832179840998877302529996971396893172522460793442785601695562409154906335")));
 
         byte[] M = Hex.decode("1BD4ED430B0F384B4E8D458EFF1A8A553286D7AC21CB2F6806172EF5F94A06AD");
 
@@ -534,7 +534,7 @@ public class ECTest
         ECPrivateKeyParameters priKey = new ECPrivateKeyParameters(
             new BigInteger("6081831502424510080126737029209236539191290354021104541805484120491"), // d
             params);
-        SecureRandom k = new FixedSecureRandom(BigIntegers.asUnsignedByteArray(new BigInteger("15456715103636396133226117016818339719732885723579037388121116732601")));
+        SecureRandom k = new TestRandomBigInteger(BigIntegers.asUnsignedByteArray(new BigInteger("15456715103636396133226117016818339719732885723579037388121116732601")));
 
         byte[] M = Hex.decode("8797A3C693CC292441039A4E6BAB7387F3B4F2A63D00ED384B378C79FF");
 
@@ -581,7 +581,7 @@ public class ECTest
         ECPrivateKeyParameters priKey = new ECPrivateKeyParameters(
             new BigInteger("617573726813476282316253885608633222275541026607493641741273231656161177732180358888434629562647985511298272498852936680947729040673640492310550142822667389"), // d
             params);
-        SecureRandom k = new FixedSecureRandom(BigIntegers.asUnsignedByteArray(new BigInteger("6806532878215503520845109818432174847616958675335397773700324097584974639728725689481598054743894544060040710846048585856076812050552869216017728862957612913")));
+        SecureRandom k = new TestRandomBigInteger(BigIntegers.asUnsignedByteArray(new BigInteger("6806532878215503520845109818432174847616958675335397773700324097584974639728725689481598054743894544060040710846048585856076812050552869216017728862957612913")));
 
         byte[] M = Hex.decode("6893B64BD3A9615C39C3E62DDD269C2BAAF1D85915526083183CE14C2E883B48B193607C1ED871852C9DF9C3147B574DC1526C55DE1FE263A676346A20028A66");
 
@@ -630,7 +630,7 @@ public class ECTest
 
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("171278725565216523967285789236956265265265235675811949404040041670216363"));
 
-        SecureRandom k = new FixedSecureRandom(kData);
+        SecureRandom k = new TestRandomBigInteger(kData);
 
         BigInteger n = new BigInteger("220855883097298041197912187592864814557886993776713230936715041207411783");
         BigInteger h = BigInteger.valueOf(4);
