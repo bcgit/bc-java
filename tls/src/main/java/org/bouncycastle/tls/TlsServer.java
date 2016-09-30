@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.tls.crypto.bc.DefaultTlsAgreementCredentials;
+import org.bouncycastle.tls.crypto.bc.BcDefaultTlsAgreementCredentials;
 import org.bouncycastle.tls.crypto.bc.DefaultTlsEncryptionCredentials;
 
 public interface TlsServer
@@ -48,7 +48,7 @@ public interface TlsServer
      * <em>exactly one</em> of {@link TlsAgreementCredentials}, {@link TlsEncryptionCredentials}, or
      * {@link TlsSignerCredentials}, depending on the key exchange that was negotiated.
      * 
-     * @see {@link DefaultTlsAgreementCredentials}, {@link DefaultTlsEncryptionCredentials},
+     * @see {@link BcDefaultTlsAgreementCredentials}, {@link DefaultTlsEncryptionCredentials},
      *      {@link DefaultTlsSignerCredentials}
      *
      * @param certificateRequest

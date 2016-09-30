@@ -2,7 +2,7 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
-import org.bouncycastle.tls.crypto.bc.DefaultTlsAgreementCredentials;
+import org.bouncycastle.tls.crypto.bc.BcDefaultTlsAgreementCredentials;
 import org.bouncycastle.tls.crypto.bc.DefaultTlsEncryptionCredentials;
 
 public interface TlsAuthentication
@@ -23,7 +23,7 @@ public interface TlsAuthentication
      * {@link TlsEncryptionCredentials}, or {@link TlsSignerCredentials}, depending on the key
      * exchange that was negotiated and the details of the {@link CertificateRequest}.
      * 
-     * @see {@link DefaultTlsAgreementCredentials}, {@link DefaultTlsEncryptionCredentials},
+     * @see {@link BcDefaultTlsAgreementCredentials}, {@link DefaultTlsEncryptionCredentials},
      *      {@link DefaultTlsSignerCredentials}
      *
      * @param certificateRequest
