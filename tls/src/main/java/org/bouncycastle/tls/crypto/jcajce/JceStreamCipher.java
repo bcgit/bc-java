@@ -9,6 +9,9 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.tls.crypto.TlsStreamCipher;
 
+/**
+ * A basic wrapper for a JCE Cipher class to provide the needed stream cipher functionality for TLS.
+ */
 public class JceStreamCipher
     implements TlsStreamCipher
 {

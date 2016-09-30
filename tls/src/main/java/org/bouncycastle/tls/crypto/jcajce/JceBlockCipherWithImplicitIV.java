@@ -10,6 +10,10 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.tls.crypto.TlsBlockCipher;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * A basic wrapper for a JCE Cipher class to provide the needed block cipher functionality for TLS where the
+ * cipher-suite requires the IV to be continued between calls.
+ */
 public class JceBlockCipherWithImplicitIV
     implements TlsBlockCipher
 {
