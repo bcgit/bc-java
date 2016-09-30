@@ -7,6 +7,9 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.tls.crypto.TlsMAC;
 
+/**
+ * A basic wrapper for a JCE Mac class to provide the needed functionality for TLS.
+ */
 public class JceTlsMAC
     implements TlsMAC
 {

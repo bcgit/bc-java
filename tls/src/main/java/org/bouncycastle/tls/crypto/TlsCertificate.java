@@ -25,7 +25,7 @@ public interface TlsCertificate
     /**
      * @param connectionEnd
      *            {@link ConnectionEnd}
-     * @param keyExchange
+     * @param keyExchangeAlgorithm
      *            {@link KeyExchangeAlgorithm}
      */
     // TODO[tls-ops] This is expected to be only transitional and eventually redundant
