@@ -81,7 +81,7 @@ class ProvSSLEngine
                 TlsServerProtocol serverProtocol = new TlsServerProtocol();
                 this.protocol = serverProtocol;
 
-                ProvTlsServer server = new ProvTlsServer(context.getCrypto(), protocolParameters);
+                ProvTlsServer server = new ProvTlsServer(context, protocolParameters);
                 this.protocolManager = server;
 
                 serverProtocol.accept(server);
