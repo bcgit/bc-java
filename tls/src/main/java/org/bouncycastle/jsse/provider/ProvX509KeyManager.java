@@ -8,7 +8,6 @@ import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -46,18 +45,18 @@ class ProvX509KeyManager
     }
 
     public String[] getClientAliases(String keyType, Principal[] issuers)
-    {                System.err.println("EEeeek");
-        return new String[0];
+    {
+        List<String> aliases = findAliases(keyType, principalToIssuers(issuers));
+
+        return aliases.toArray(new String[aliases.size()]);
     }
 
     public String chooseClientAlias(String[] keyTypes, Principal[] issuers, Socket socket)
     {
-        System.err.println(Arrays.asList(keyTypes));
-        System.err.println(Arrays.asList(issuers));
         try
         {
             // TODO
-            List<String> aliases = findAlias(keyTypes[0], principalToIssuers(issuers));
+            List<String> aliases = findAliases(keyTypes[0], principalToIssuers(issuers));
 
             if (aliases.isEmpty())
             {
@@ -74,14 +73,16 @@ class ProvX509KeyManager
 
     public String[] getServerAliases(String keyType, Principal[] issuers)
     {
-        return new String[0];
+        List<String> aliases = findAliases(keyType, principalToIssuers(issuers));
+
+        return aliases.toArray(new String[aliases.size()]);
     }
 
     public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket)
     {
         try
         {
-            List<String> aliases = findAlias(keyType, principalToIssuers(issuers));
+            List<String> aliases = findAliases(keyType, principalToIssuers(issuers));
 
             if (aliases.isEmpty())
             {
@@ -140,26 +141,47 @@ class ProvX509KeyManager
         return issuers;
     }
 
-    private List<String> findAlias(String keyType, Set<X500Name> issuers)
-        throws GeneralSecurityException
+    private List<String> findAliases(String keyType, Set<X500Name> issuers)
     {
+        String algType;
+        String sigType;
+        int dashIndex = keyType.indexOf("_");
+
+        if (dashIndex > 0)
+        {
+            algType = keyType.substring(0, dashIndex);
+            sigType = keyType.substring(dashIndex + 1);
+        }
+        else
+        {
+            algType = keyType;
+            sigType = null;
+        }
+
         List<String> aliases = new ArrayList<String>();
 
         for (int i = 0; i != builders.size(); i++)
         {
             KeyStore.Builder builder = builders.get(i);
 
-            String alias = findAlias(i, builder.getKeyStore(), builder, keyType, issuers);
-
-            aliases.add(alias);
+            try
+            {
+                aliases.addAll(findAliases(i, builder.getKeyStore(), builder, algType, sigType, issuers));
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new IllegalStateException("unable to build key store: " + e.getMessage(), e);
+            }
         }
 
         return aliases;
     }
 
-    private String findAlias(int index, KeyStore keyStore, KeyStore.Builder storeBuilder, String keyType, Set<X500Name> issuers)
+    private List<String> findAliases(int index, KeyStore keyStore, KeyStore.Builder storeBuilder, String algType, String sigType, Set<X500Name> issuers)
         throws GeneralSecurityException
     {
+        List<String> aliases = new ArrayList<String>();
+
         for (Enumeration<String> en = keyStore.aliases(); en.hasMoreElements();)
         {
             String eName = (String)en.nextElement();
@@ -193,7 +215,7 @@ class ProvX509KeyManager
                     continue;
                 }
 
-                if (!x509Cert.getPublicKey().getAlgorithm().equals(keyType))
+                if (!x509Cert.getPublicKey().getAlgorithm().equals(algType))
                 {
                     continue;
                 }
@@ -212,10 +234,10 @@ class ProvX509KeyManager
 
                 keys.put(alias, kEntry);
 
-                return alias;
+                aliases.add(alias);
             }
         }
 
-        return null;
+        return aliases;
     }
 }

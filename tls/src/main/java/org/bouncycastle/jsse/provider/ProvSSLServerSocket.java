@@ -1,15 +1,47 @@
 package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
 
 import javax.net.ssl.SSLServerSocket;
 
 class ProvSSLServerSocket
     extends SSLServerSocket
 {
-    ProvSSLServerSocket() throws IOException
+    private ProvSSLContextSpi context;
+
+    protected ProvSSLServerSocket(ProvSSLContextSpi context)
+        throws IOException
     {
-        super();
+        init(context);
+    }
+
+    protected ProvSSLServerSocket(int port, ProvSSLContextSpi context)
+        throws IOException
+    {
+        super(port);
+        init(context);
+    }
+
+    protected ProvSSLServerSocket(int port, int backlog, ProvSSLContextSpi context)
+        throws IOException
+    {
+        super(port, backlog);
+        init(context);
+    }
+
+    protected ProvSSLServerSocket(int port, int backlog, InetAddress address, ProvSSLContextSpi context)
+        throws IOException
+    {
+        super(port, backlog, address);
+        init(context);
+    }
+
+    private void init(ProvSSLContextSpi context)
+    {
+        this.context = context;
+        // TODO: set up cipher suites list, protocols, etc...
     }
 
     @Override
@@ -138,11 +170,17 @@ class ProvSSLServerSocket
 //        return super.getLocalSocketAddress();
 //    }
 
-//    @Override
-//    public Socket accept() throws IOException
-//    {
-//        return super.accept();
-//    }
+    @Override
+    public Socket accept() throws IOException
+    {
+        ProvSSLSocket s = new ProvSSLSocket(context.engineCreateSSLEngine());
+
+        implAccept(s);
+
+        s.startHandshake();
+
+        return s;
+    }
 
 //    @Override
 //    public void close() throws IOException

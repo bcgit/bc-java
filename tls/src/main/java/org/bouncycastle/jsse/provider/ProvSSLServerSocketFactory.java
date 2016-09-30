@@ -27,7 +27,7 @@ class ProvSSLServerSocketFactory
     @Override
     public ServerSocket createServerSocket(int port) throws IOException
     {
-        throw new UnsupportedOperationException();
+        return new ProvSSLServerSocket(port, context);
     }
 
     @Override

@@ -318,9 +318,10 @@ class ProvSSLEngine
         r.setEndpointIdentificationAlgorithm(p.getEndpointIdentificationAlgorithm());
         r.setNeedClientAuth(p.getNeedClientAuth());
         r.setProtocols(p.getProtocols());
-        r.setServerNames(p.getServerNames());
-        r.setSNIMatchers(p.getSNIMatchers());
-        r.setUseCipherSuitesOrder(p.getUseCipherSuitesOrder());
+        // TODO: JDK 1.8 only
+//        r.setServerNames(p.getServerNames());
+//        r.setSNIMatchers(p.getSNIMatchers());
+//        r.setUseCipherSuitesOrder(p.getUseCipherSuitesOrder());
         r.setWantClientAuth(p.getWantClientAuth());
         return r;
     }
