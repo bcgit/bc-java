@@ -25,35 +25,35 @@ class ProvSSLSocket
 
     protected final SSLEngine engine;
 
-    ProvSSLSocket(SSLEngine engine)
+    protected ProvSSLSocket(SSLEngine engine)
     {
         super();
 
         this.engine = engine;
     }
 
-    ProvSSLSocket(SSLEngine engine, InetAddress address, int port) throws IOException
+    protected ProvSSLSocket(SSLEngine engine, InetAddress address, int port) throws IOException
     {
         super(address, port);
 
         this.engine = engine;
     }
 
-    ProvSSLSocket(SSLEngine engine, InetAddress address, int port, InetAddress clientAddress, int clientPort) throws IOException
+    protected ProvSSLSocket(SSLEngine engine, InetAddress address, int port, InetAddress clientAddress, int clientPort) throws IOException
     {
         super(address, port, clientAddress, clientPort);
 
         this.engine = engine;
     }
 
-    ProvSSLSocket(SSLEngine engine, String host, int port) throws IOException, UnknownHostException
+    protected ProvSSLSocket(SSLEngine engine, String host, int port) throws IOException, UnknownHostException
     {
         super(host, port);
 
         this.engine = engine;
     }
 
-    ProvSSLSocket(SSLEngine engine, String host, int port, InetAddress clientAddress, int clientPort)
+    protected ProvSSLSocket(SSLEngine engine, String host, int port, InetAddress clientAddress, int clientPort)
         throws IOException, UnknownHostException
     {
         super(host, port, clientAddress, clientPort);
@@ -73,9 +73,24 @@ class ProvSSLSocket
     }
 
     @Override
-    public boolean getEnableSessionCreation()
+    public synchronized void close() throws IOException
     {
-        return engine.getEnableSessionCreation();
+        // TODO[tls-ops] See javadoc for full discussion of SSLEngine closure
+
+        engine.closeOutbound();
+
+        // TODO[tls-ops]
+        // - Flush output by calling engine.wrap while not CLOSED 
+        // - Check under what circumstances need to call engine.closeInbound
+
+        super.close();
+    }
+
+    @Override
+    public SocketChannel getChannel()
+    {
+//        return super.getChannel();
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -91,9 +106,22 @@ class ProvSSLSocket
     }
 
     @Override
+    public boolean getEnableSessionCreation()
+    {
+        return engine.getEnableSessionCreation();
+    }
+
+    @Override
     public SSLSession getHandshakeSession()
     {
         return engine.getHandshakeSession();
+    }
+
+    @Override
+    public InputStream getInputStream() throws IOException
+    {
+//        return super.getInputStream();
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -103,15 +131,28 @@ class ProvSSLSocket
     }
 
     @Override
-    public SSLParameters getSSLParameters()
+    public boolean getOOBInline() throws SocketException
     {
-        return engine.getSSLParameters();
+        return false;
+    }
+
+    @Override
+    public OutputStream getOutputStream() throws IOException
+    {
+//        return super.getOutputStream();
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public SSLSession getSession()
     {
         return engine.getSession();
+    }
+
+    @Override
+    public SSLParameters getSSLParameters()
+    {
+        return engine.getSSLParameters();
     }
 
     @Override
@@ -152,9 +193,9 @@ class ProvSSLSocket
     }
 
     @Override
-    public void setEnableSessionCreation(boolean flag)
+    public void sendUrgentData(int data) throws IOException
     {
-        engine.setEnableSessionCreation(flag);
+        throw new UnsupportedOperationException("Urgent data not supported in TLS");
     }
 
     @Override
@@ -170,9 +211,24 @@ class ProvSSLSocket
     }
 
     @Override
+    public void setEnableSessionCreation(boolean flag)
+    {
+        engine.setEnableSessionCreation(flag);
+    }
+
+    @Override
     public void setNeedClientAuth(boolean need)
     {
         engine.setNeedClientAuth(need);
+    }
+
+    @Override
+    public void setOOBInline(boolean on) throws SocketException
+    {
+        if (on)
+        {
+            throw new UnsupportedOperationException("Urgent data not supported in TLS");
+        }
     }
 
     @Override
@@ -235,61 +291,5 @@ class ProvSSLSocket
 //                }
 //            }
 //        }
-    }
-
-    @Override
-    public SocketChannel getChannel()
-    {
-//        return super.getChannel();
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public InputStream getInputStream() throws IOException
-    {
-//        return super.getInputStream();
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public OutputStream getOutputStream() throws IOException
-    {
-//        return super.getOutputStream();
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void sendUrgentData(int data) throws IOException
-    {
-        throw new UnsupportedOperationException("Urgent data not supported in TLS");
-    }
-
-    @Override
-    public boolean getOOBInline() throws SocketException
-    {
-        return false;
-    }
-
-    @Override
-    public void setOOBInline(boolean on) throws SocketException
-    {
-        if (on)
-        {
-            throw new UnsupportedOperationException("Urgent data not supported in TLS");
-        }
-    }
-
-    @Override
-    public synchronized void close() throws IOException
-    {
-        // TODO[tls-ops] See javadoc for full discussion of SSLEngine closure
-
-        engine.closeOutbound();
-
-        // TODO[tls-ops]
-        // - Flush output by calling engine.wrap while not CLOSED 
-        // - Check under what circumstances need to call engine.closeInbound
-
-        super.close();
     }
 }

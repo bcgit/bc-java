@@ -6,6 +6,7 @@ import java.security.SecureRandom;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContextSpi;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -19,6 +20,14 @@ import org.bouncycastle.tls.TlsCrypto;
 class ProvSSLContextSpi
     extends SSLContextSpi
 {
+    protected static SSLSessionContext createSSLSessionContext()
+    {
+        return new ProvSSLSessionContext();
+    }
+
+    protected final SSLSessionContext clientSessionContext = createSSLSessionContext();
+    protected final SSLSessionContext serverSessionContext = createSSLSessionContext();
+
     protected final TlsCrypto crypto;
 
     protected boolean initialized = false;
@@ -34,6 +43,51 @@ class ProvSSLContextSpi
     TlsCrypto getCrypto()
     {
         return crypto;
+    }
+
+    SSLParameters copySSLParameters(SSLParameters p)
+    {
+        SSLParameters r = new SSLParameters();
+        r.setAlgorithmConstraints(r.getAlgorithmConstraints());
+        r.setCipherSuites(p.getCipherSuites());
+        r.setEndpointIdentificationAlgorithm(p.getEndpointIdentificationAlgorithm());
+        r.setNeedClientAuth(p.getNeedClientAuth());
+        r.setProtocols(p.getProtocols());
+        // TODO[tls-ops] JDK 1.8 only
+//        r.setServerNames(p.getServerNames());
+//        r.setSNIMatchers(p.getSNIMatchers());
+//        r.setUseCipherSuitesOrder(p.getUseCipherSuitesOrder());
+        r.setWantClientAuth(p.getWantClientAuth());
+        return r;
+    }
+
+    String[] getDefaultCipherSuites()
+    {
+        // TODO[tls-ops] Flesh out list and get strings by lookup of CipherSuite constants
+        return new String[]{ "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA" };
+    }
+
+    String[] getDefaultProtocols()
+    {
+        // TODO[tls-ops] Consider 
+        return new String[]{ "TLSv1.2" };
+    }
+
+    String[] getSupportedCipherSuites()
+    {
+        // TODO[tls-ops] Add any supported, non-default cipherSuites
+        return getDefaultCipherSuites();
+    }
+
+    String[] getSupportedProtocols()
+    {
+        // TODO[tls-ops] Get string constants by lookup
+        return new String[]{
+//            "SSLv3",
+            "TLSv1",
+            "TLSv1.1",
+            "TLSv1.2",
+        };
     }
 
     protected void checkInitialized()
@@ -62,19 +116,23 @@ class ProvSSLContextSpi
     @Override
     protected SSLSessionContext engineGetClientSessionContext()
     {
-        throw new UnsupportedOperationException();
+        return clientSessionContext;
     }
 
-//  @Override
-//  protected SSLParameters engineGetDefaultSSLParameters()
-//  {
-//      return super.engineGetDefaultSSLParameters();
-//  }
+    @Override
+    protected SSLParameters engineGetDefaultSSLParameters()
+    {
+        // TODO[tls-ops] Review initial values
+        SSLParameters r = new SSLParameters();
+        r.setCipherSuites(getDefaultCipherSuites());
+        r.setProtocols(getDefaultProtocols());
+        return r;
+    }
 
     @Override
     protected SSLSessionContext engineGetServerSessionContext()
     {
-        throw new UnsupportedOperationException();
+        return serverSessionContext;
     }
 
     @Override
@@ -91,11 +149,15 @@ class ProvSSLContextSpi
         return new ProvSSLSocketFactory(this);
     }
 
-//  @Override
-//  protected SSLParameters engineGetSupportedSSLParameters()
-//  {
-//      return super.engineGetSupportedSSLParameters();
-//  }
+    @Override
+    protected SSLParameters engineGetSupportedSSLParameters()
+    {
+        // TODO[tls-ops] Review initial values
+        SSLParameters r = new SSLParameters();
+        r.setCipherSuites(getSupportedCipherSuites());
+        r.setProtocols(getSupportedProtocols());
+        return r;
+    }
 
     @Override
     protected void engineInit(KeyManager[] kms, TrustManager[] tm, SecureRandom sr) throws KeyManagementException

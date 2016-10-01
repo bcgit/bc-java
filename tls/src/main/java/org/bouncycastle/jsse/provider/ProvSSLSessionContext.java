@@ -14,7 +14,7 @@ import org.bouncycastle.tls.SessionID;
 
 /*
  * TODO[tls-ops]
- * - Need to add sessions to the context at handshake completion?
+ * - Need to add sessions to the context at handshake completion
  * - Implement the cache/timeout mechanisms
  */
 class ProvSSLSessionContext
@@ -42,9 +42,10 @@ class ProvSSLSessionContext
 
     public SSLSession getSession(byte[] sessionId)
     {
-        ProvSSLSession session = sessionMap.get(new SessionID(sessionId));
+        SessionID key = new SessionID(sessionId);
+        ProvSSLSession session = sessionMap.get(key);
 
-        // TODO[tls-ops] Should we return a session if it's been invalidated/timed-out? 
+        // TODO[tls-ops] Should we return a session if it's been invalidated/timed-out?
 
         return session;
     }

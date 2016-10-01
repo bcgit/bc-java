@@ -9,21 +9,22 @@ import javax.net.ssl.X509ExtendedKeyManager;
 
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.TlsCredentials;
+import org.bouncycastle.tls.TlsSession;
 
 class ProvTlsServer
     extends DefaultTlsServer
     implements TlsProtocolManager
 {
-    protected final ProvSSLContextSpi context;
+    protected final ProvSSLContextSpi sslContext;
     protected final SSLParameters sslParameters;
 
     protected boolean handshakeComplete = false;
 
-    ProvTlsServer(ProvSSLContextSpi context, SSLParameters sslParameters)
+    ProvTlsServer(ProvSSLContextSpi sslContext, SSLParameters sslParameters)
     {
-        super(context.getCrypto());
-        this.context = context;
+        super(sslContext.getCrypto());
 
+        this.sslContext = sslContext;
         this.sslParameters = sslParameters;
     }
 
@@ -35,7 +36,7 @@ class ProvTlsServer
     public TlsCredentials getCredentials() throws IOException
     {
         // TODO[tls-ops] Locate credentials in configured key stores, suitable for the selected ciphersuite
-        X509ExtendedKeyManager km = context.getKeyManager();
+        X509ExtendedKeyManager km = sslContext.getKeyManager();
 
         String alias = ""; // TODO: km.chooseServerAlias();
 
@@ -61,5 +62,11 @@ class ProvTlsServer
     public synchronized void notifyHandshakeComplete() throws IOException
     {
         this.handshakeComplete = true;
+
+        TlsSession tlsSession = context.getResumableSession();
+        if (tlsSession != null && tlsSession.isResumable())
+        {
+            // TODO[tls-ops] Register the session with the server SSLSessionContext of our SSLContext
+        }
     }
 }

@@ -21,36 +21,36 @@ class ProvSSLServerSocketFactory
     @Override
     public ServerSocket createServerSocket() throws IOException
     {
-        throw new UnsupportedOperationException();
+        return new ProvSSLServerSocket(context);
     }
 
     @Override
     public ServerSocket createServerSocket(int port) throws IOException
     {
-        return new ProvSSLServerSocket(port, context);
+        return new ProvSSLServerSocket(context, port);
     }
 
     @Override
     public ServerSocket createServerSocket(int port, int backlog) throws IOException
     {
-        throw new UnsupportedOperationException();
+        return new ProvSSLServerSocket(context, port, backlog);
     }
 
     @Override
     public ServerSocket createServerSocket(int port, int backlog, InetAddress ifAddress) throws IOException
     {
-        throw new UnsupportedOperationException();
+        return new ProvSSLServerSocket(context, port, backlog, ifAddress);
     }
 
     @Override
     public String[] getDefaultCipherSuites()
     {
-        throw new UnsupportedOperationException();
+        return context.getDefaultCipherSuites();
     }
 
     @Override
     public String[] getSupportedCipherSuites()
     {
-        throw new UnsupportedOperationException();
+        return context.getSupportedCipherSuites();
     }
 }

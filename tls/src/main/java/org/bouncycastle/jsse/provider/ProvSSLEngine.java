@@ -17,16 +17,14 @@ import org.bouncycastle.tls.TlsServerProtocol;
 
 /*
  * TODO[tls-ops] Currently doesn't properly support NIO usage, or conform very well with SSLEngine javadoc
- * - "The wrap() and unwrap() methods may execute concurrently of each other."
+ * - e.g. "The wrap() and unwrap() methods may execute concurrently of each other." is not true yet.
  */
 class ProvSSLEngine
     extends SSLEngine
 {
-    // TODO[tls-ops] Might want specific initial values
-    protected final SSLParameters sslParameters = new SSLParameters();
-
     protected final ProvSSLContextSpi context;
 
+    protected SSLParameters sslParameters;
     protected boolean enableSessionCreation = false;
     protected boolean useClientMode = true;
 
@@ -35,18 +33,30 @@ class ProvSSLEngine
     protected TlsProtocol protocol = null;
     protected TlsProtocolManager protocolManager = null;
 
-    ProvSSLEngine(ProvSSLContextSpi context)
+    protected ProvSSLEngine(ProvSSLContextSpi context)
+    {
+        this(context, context.engineGetDefaultSSLParameters());
+    }
+
+    protected ProvSSLEngine(ProvSSLContextSpi context, String host, int port)
+    {
+        this(context, context.engineGetDefaultSSLParameters(), host, port);
+    }
+
+    protected ProvSSLEngine(ProvSSLContextSpi context, SSLParameters sslParameters)
     {
         super();
 
         this.context = context;
+        this.sslParameters = sslParameters;
     }
 
-    ProvSSLEngine(ProvSSLContextSpi context, String host, int port)
+    protected ProvSSLEngine(ProvSSLContextSpi context, SSLParameters sslParameters, String host, int port)
     {
         super(host, port);
 
         this.context = context;
+        this.sslParameters = sslParameters;
     }
 
     @Override
@@ -64,7 +74,7 @@ class ProvSSLEngine
 
         try
         {
-            SSLParameters protocolParameters = copySSLParameters(sslParameters);
+            SSLParameters protocolParameters = context.copySSLParameters(sslParameters);
 
             if (this.useClientMode)
             {
@@ -117,13 +127,13 @@ class ProvSSLEngine
     @Override
     public synchronized String[] getEnabledCipherSuites()
     {
-        throw new UnsupportedOperationException();
+        return sslParameters.getCipherSuites();
     }
 
     @Override
     public synchronized String[] getEnabledProtocols()
     {
-        throw new UnsupportedOperationException();
+        return sslParameters.getProtocols();
     }
 
     @Override
@@ -132,11 +142,12 @@ class ProvSSLEngine
         return enableSessionCreation;
     }
 
-//    @Override
-//    public synchronized SSLSession getHandshakeSession()
-//    {
+    @Override
+    public synchronized SSLSession getHandshakeSession()
+    {
 //        return super.getHandshakeSession();
-//    }
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     public synchronized SSLEngineResult.HandshakeStatus getHandshakeStatus()
@@ -157,15 +168,21 @@ class ProvSSLEngine
     }
 
     @Override
+    public synchronized SSLParameters getSSLParameters()
+    {
+        return context.copySSLParameters(sslParameters);
+    }
+
+    @Override
     public synchronized String[] getSupportedCipherSuites()
     {
-        throw new UnsupportedOperationException();
+        return context.getSupportedCipherSuites();
     }
 
     @Override
     public synchronized String[] getSupportedProtocols()
     {
-        throw new UnsupportedOperationException();
+        return context.getSupportedProtocols();
     }
 
     @Override
@@ -193,44 +210,50 @@ class ProvSSLEngine
     }
 
     @Override
-    public synchronized void setEnabledCipherSuites(String[] strings)
+    public synchronized void setEnabledCipherSuites(String[] suites)
     {
-        throw new UnsupportedOperationException();
+        sslParameters.setCipherSuites(suites);
     }
 
     @Override
-    public synchronized void setEnabledProtocols(String[] strings)
+    public synchronized void setEnabledProtocols(String[] protocols)
     {
-        throw new UnsupportedOperationException();
+        sslParameters.setProtocols(protocols);
     }
 
     @Override
-    public synchronized void setEnableSessionCreation(boolean enableSessionCreation)
+    public synchronized void setEnableSessionCreation(boolean flag)
     {
-        this.enableSessionCreation = enableSessionCreation;
+        this.enableSessionCreation = flag;
     }
 
     @Override
-    public synchronized void setNeedClientAuth(boolean needClientAuth)
+    public synchronized void setNeedClientAuth(boolean need)
     {
-        sslParameters.setNeedClientAuth(needClientAuth);
+        sslParameters.setNeedClientAuth(need);
     }
 
     @Override
-    public synchronized void setUseClientMode(boolean useClientMode)
+    public synchronized void setSSLParameters(SSLParameters sslParameters)
     {
-        if (initialHandshakeBegun && useClientMode != this.useClientMode)
+        this.sslParameters = context.copySSLParameters(sslParameters);
+    }
+
+    @Override
+    public synchronized void setUseClientMode(boolean mode)
+    {
+        if (initialHandshakeBegun && mode != this.useClientMode)
         {
             throw new IllegalArgumentException("Mode cannot be changed after the initial handshake has begun");
         }
 
-        this.useClientMode = useClientMode;
+        this.useClientMode = mode;
     }
 
     @Override
-    public synchronized void setWantClientAuth(boolean wantClientAuth)
+    public synchronized void setWantClientAuth(boolean want)
     {
-        sslParameters.setWantClientAuth(wantClientAuth);
+        sslParameters.setWantClientAuth(want);
     }
 
     @Override
@@ -307,23 +330,6 @@ class ProvSSLEngine
         throws SSLException
     {
         throw new UnsupportedOperationException();
-    }
-
-    protected SSLParameters copySSLParameters(SSLParameters p)
-    {
-        // NOTE: No deep copies here, this.sslParameters fields must be replaced in configuration methods
-        SSLParameters r = new SSLParameters();
-        r.setAlgorithmConstraints(r.getAlgorithmConstraints());
-        r.setCipherSuites(p.getCipherSuites());
-        r.setEndpointIdentificationAlgorithm(p.getEndpointIdentificationAlgorithm());
-        r.setNeedClientAuth(p.getNeedClientAuth());
-        r.setProtocols(p.getProtocols());
-        // TODO: JDK 1.8 only
-//        r.setServerNames(p.getServerNames());
-//        r.setSNIMatchers(p.getSNIMatchers());
-//        r.setUseCipherSuitesOrder(p.getUseCipherSuitesOrder());
-        r.setWantClientAuth(p.getWantClientAuth());
-        return r;
     }
 
     protected void determineHandshakeStatus()

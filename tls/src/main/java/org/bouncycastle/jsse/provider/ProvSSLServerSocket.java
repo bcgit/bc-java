@@ -3,254 +3,173 @@ package org.bouncycastle.jsse.provider;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.channels.ServerSocketChannel;
 
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLSocket;
 
 class ProvSSLServerSocket
     extends SSLServerSocket
 {
-    private ProvSSLContextSpi context;
+    protected final ProvSSLContextSpi context;
+
+    protected SSLParameters sslParameters;
+    protected boolean enableSessionCreation = false;
+    protected boolean useClientMode = false;
 
     protected ProvSSLServerSocket(ProvSSLContextSpi context)
         throws IOException
     {
-        init(context);
+        super();
+
+        this.context = context;
+        this.sslParameters = context.engineGetDefaultSSLParameters();
     }
 
-    protected ProvSSLServerSocket(int port, ProvSSLContextSpi context)
+    protected ProvSSLServerSocket(ProvSSLContextSpi context, int port)
         throws IOException
     {
         super(port);
-        init(context);
+
+        this.context = context;
+        this.sslParameters = context.engineGetDefaultSSLParameters();
     }
 
-    protected ProvSSLServerSocket(int port, int backlog, ProvSSLContextSpi context)
+    protected ProvSSLServerSocket(ProvSSLContextSpi context, int port, int backlog)
         throws IOException
     {
         super(port, backlog);
-        init(context);
+
+        this.context = context;
+        this.sslParameters = context.engineGetDefaultSSLParameters();
     }
 
-    protected ProvSSLServerSocket(int port, int backlog, InetAddress address, ProvSSLContextSpi context)
+    protected ProvSSLServerSocket(ProvSSLContextSpi context, int port, int backlog, InetAddress address)
         throws IOException
     {
         super(port, backlog, address);
-        init(context);
-    }
 
-    private void init(ProvSSLContextSpi context)
-    {
         this.context = context;
-        // TODO: set up cipher suites list, protocols, etc...
+        this.sslParameters = context.engineGetDefaultSSLParameters();
     }
 
     @Override
-    public boolean getEnableSessionCreation()
+    public synchronized Socket accept() throws IOException
     {
-        throw new UnsupportedOperationException();
+        SSLEngine engine = context.engineCreateSSLEngine(getInetAddress().getHostName(), getLocalPort());
+        SSLSocket socket = new ProvSSLSocket(engine);
+
+        implAccept(socket);
+
+        socket.setSSLParameters(sslParameters);
+        socket.setEnableSessionCreation(enableSessionCreation);
+        socket.setUseClientMode(useClientMode);
+
+        return socket;
     }
 
     @Override
-    public String[] getEnabledCipherSuites()
+    public ServerSocketChannel getChannel()
     {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String[] getEnabledProtocols()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean getNeedClientAuth()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-//    @Override
-//    public SSLParameters getSSLParameters()
-//    {
-//        return super.getSSLParameters();
-//    }
-
-    @Override
-    public String[] getSupportedCipherSuites()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String[] getSupportedProtocols()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean getUseClientMode()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean getWantClientAuth()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setEnableSessionCreation(boolean flag)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setEnabledCipherSuites(String[] suites)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setEnabledProtocols(String[] protocols)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setNeedClientAuth(boolean need)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-//    @Override
-//    public void setSSLParameters(SSLParameters params)
-//    {
-//        super.setSSLParameters(params);
-//    }
-
-    @Override
-    public void setUseClientMode(boolean mode)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setWantClientAuth(boolean want)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-//    @Override
-//    public void bind(SocketAddress endpoint) throws IOException
-//    {
-//        super.bind(endpoint);
-//    }
-
-//    @Override
-//    public void bind(SocketAddress endpoint, int backlog) throws IOException
-//    {
-//        super.bind(endpoint, backlog);
-//    }
-
-//    @Override
-//    public InetAddress getInetAddress()
-//    {
-//        return super.getInetAddress();
-//    }
-
-//    @Override
-//    public int getLocalPort()
-//    {
-//        return super.getLocalPort();
-//    }
-
-//    @Override
-//    public SocketAddress getLocalSocketAddress()
-//    {
-//        return super.getLocalSocketAddress();
-//    }
-
-    @Override
-    public Socket accept() throws IOException
-    {
-        ProvSSLSocket s = new ProvSSLSocket(context.engineCreateSSLEngine());
-
-        implAccept(s);
-
-        s.startHandshake();
-
-        return s;
-    }
-
-//    @Override
-//    public void close() throws IOException
-//    {
-//        super.close();
-//    }
-
-//    @Override
-//    public ServerSocketChannel getChannel()
-//    {
 //        return super.getChannel();
-//    }
+        throw new UnsupportedOperationException();
+    }
 
-//    @Override
-//    public boolean isBound()
-//    {
-//        return super.isBound();
-//    }
+    @Override
+    public synchronized boolean getEnableSessionCreation()
+    {
+        return enableSessionCreation;
+    }
 
-//    @Override
-//    public boolean isClosed()
-//    {
-//        return super.isClosed();
-//    }
+    @Override
+    public synchronized String[] getEnabledCipherSuites()
+    {
+        return sslParameters.getCipherSuites();
+    }
 
-//    @Override
-//    public synchronized void setSoTimeout(int timeout) throws SocketException
-//    {
-//        super.setSoTimeout(timeout);
-//    }
+    @Override
+    public synchronized String[] getEnabledProtocols()
+    {
+        return sslParameters.getProtocols();
+    }
 
-//    @Override
-//    public synchronized int getSoTimeout() throws IOException
-//    {
-//        return super.getSoTimeout();
-//    }
+    @Override
+    public synchronized boolean getNeedClientAuth()
+    {
+        return sslParameters.getNeedClientAuth();
+    }
 
-//    @Override
-//    public void setReuseAddress(boolean on) throws SocketException
-//    {
-//        super.setReuseAddress(on);
-//    }
+    @Override
+    public synchronized SSLParameters getSSLParameters()
+    {
+        return context.copySSLParameters(sslParameters);
+    }
 
-//    @Override
-//    public boolean getReuseAddress() throws SocketException
-//    {
-//        return super.getReuseAddress();
-//    }
+    @Override
+    public synchronized String[] getSupportedCipherSuites()
+    {
+        return context.getSupportedCipherSuites();
+    }
 
-//    @Override
-//    public String toString()
-//    {
-//        return super.toString();
-//    }
+    @Override
+    public synchronized String[] getSupportedProtocols()
+    {
+        return context.getSupportedProtocols();
+    }
 
-//    @Override
-//    public synchronized void setReceiveBufferSize(int size) throws SocketException
-//    {
-//        super.setReceiveBufferSize(size);
-//    }
+    @Override
+    public synchronized boolean getUseClientMode()
+    {
+        return useClientMode;
+    }
 
-//    @Override
-//    public synchronized int getReceiveBufferSize() throws SocketException
-//    {
-//        return super.getReceiveBufferSize();
-//    }
+    @Override
+    public synchronized boolean getWantClientAuth()
+    {
+        return sslParameters.getWantClientAuth();
+    }
 
-//    @Override
-//    public void setPerformancePreferences(int connectionTime, int latency, int bandwidth)
-//    {
-//        super.setPerformancePreferences(connectionTime, latency, bandwidth);
-//    }
+    @Override
+    public synchronized void setEnableSessionCreation(boolean flag)
+    {
+        this.enableSessionCreation = flag;
+    }
+
+    @Override
+    public synchronized void setEnabledCipherSuites(String[] suites)
+    {
+        sslParameters.setCipherSuites(suites);
+    }
+
+    @Override
+    public synchronized void setEnabledProtocols(String[] protocols)
+    {
+        sslParameters.setProtocols(protocols);
+    }
+
+    @Override
+    public synchronized void setNeedClientAuth(boolean need)
+    {
+        sslParameters.setNeedClientAuth(need);
+    }
+
+    @Override
+    public synchronized void setSSLParameters(SSLParameters sslParameters)
+    {
+        this.sslParameters = context.copySSLParameters(sslParameters);
+    }
+
+    @Override
+    public synchronized void setUseClientMode(boolean mode)
+    {
+        this.useClientMode = mode;
+    }
+
+    @Override
+    public synchronized void setWantClientAuth(boolean want)
+    {
+        sslParameters.setWantClientAuth(want);
+    }
 }

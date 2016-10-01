@@ -7,6 +7,7 @@ import javax.net.ssl.SSLParameters;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCrypto;
+import org.bouncycastle.tls.TlsSession;
 
 class ProvTlsClient
     extends DefaultTlsClient
@@ -51,5 +52,11 @@ class ProvTlsClient
     public synchronized void notifyHandshakeComplete() throws IOException
     {
         this.handshakeComplete = true;
+
+        TlsSession tlsSession = context.getResumableSession();
+        if (tlsSession != null && tlsSession.isResumable())
+        {
+            // TODO[tls-ops] Register the session with the client SSLSessionContext of our SSLContext
+        }
     }
 }
