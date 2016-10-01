@@ -5,7 +5,7 @@ import java.math.BigInteger;
 
 import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
 import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.params.SRP6GroupParameters;
+import org.bouncycastle.tls.crypto.SRP6Group;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.util.Strings;
@@ -23,15 +23,15 @@ public class SimulatedTlsSRPIdentityManager
     /**
      * Create a {@link SimulatedTlsSRPIdentityManager} that implements the algorithm from RFC 5054 2.5.1.3
      *
-     * @param group the {@link SRP6GroupParameters} defining the group that SRP is operating in
+     * @param group the {@link SRP6Group} defining the group that SRP is operating in
      * @param seedKey the secret "seed key" referred to in RFC 5054 2.5.1.3
      * @return an instance of {@link SimulatedTlsSRPIdentityManager}
      */
-    public static SimulatedTlsSRPIdentityManager getRFC5054Default(TlsCrypto crypto, SRP6GroupParameters group, byte[] seedKey)
+    public static SimulatedTlsSRPIdentityManager getRFC5054Default(TlsCrypto crypto, SRP6Group group, byte[] seedKey)
         throws IOException
     {
         SRP6VerifierGenerator verifierGenerator = new SRP6VerifierGenerator();
-        verifierGenerator.init(group, new SHA1Digest());
+        verifierGenerator.init(group.getN(), group.getG(), new SHA1Digest());
 
         TlsHMAC mac = crypto.createHMAC(MACAlgorithm.hmac_sha1);
 
@@ -40,11 +40,11 @@ public class SimulatedTlsSRPIdentityManager
         return new SimulatedTlsSRPIdentityManager(group, verifierGenerator, mac);
     }
 
-    protected SRP6GroupParameters group;
+    protected SRP6Group group;
     protected SRP6VerifierGenerator verifierGenerator;
     protected TlsHMAC mac;
 
-    public SimulatedTlsSRPIdentityManager(SRP6GroupParameters group, SRP6VerifierGenerator verifierGenerator, TlsHMAC mac)
+    public SimulatedTlsSRPIdentityManager(SRP6Group group, SRP6VerifierGenerator verifierGenerator, TlsHMAC mac)
     {
         this.group = group;
         this.verifierGenerator = verifierGenerator;

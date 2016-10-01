@@ -5,10 +5,8 @@ import java.io.PrintStream;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-import org.bouncycastle.crypto.agreement.srp.SRP6StandardGroups;
 import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
 import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.params.SRP6GroupParameters;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.ProtocolVersion;
@@ -19,6 +17,8 @@ import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsCrypto;
 import org.bouncycastle.tls.TlsSRPIdentityManager;
 import org.bouncycastle.tls.TlsSRPLoginParameters;
+import org.bouncycastle.tls.crypto.SRP6Group;
+import org.bouncycastle.tls.crypto.SRP6StandardGroups;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
@@ -27,7 +27,7 @@ import org.bouncycastle.util.Strings;
 class MockSRPTlsServer
     extends SRPTlsServer
 {
-    static final SRP6GroupParameters TEST_GROUP = SRP6StandardGroups.rfc5054_1024;
+    static final SRP6Group TEST_GROUP = SRP6StandardGroups.rfc5054_1024;
     static final byte[] TEST_IDENTITY = Strings.toUTF8ByteArray("client");
     static final byte[] TEST_PASSWORD = Strings.toUTF8ByteArray("password");
     static final byte[] TEST_SALT = Strings.toUTF8ByteArray("salt");
@@ -120,7 +120,7 @@ class MockSRPTlsServer
             if (Arrays.areEqual(TEST_IDENTITY, identity))
             {
                 SRP6VerifierGenerator verifierGenerator = new SRP6VerifierGenerator();
-                verifierGenerator.init(TEST_GROUP, new SHA1Digest());
+                verifierGenerator.init(TEST_GROUP.getN(), TEST_GROUP.getG(), new SHA1Digest());
 
                 BigInteger verifier = verifierGenerator.generateVerifier(TEST_SALT, identity, TEST_PASSWORD);
 
