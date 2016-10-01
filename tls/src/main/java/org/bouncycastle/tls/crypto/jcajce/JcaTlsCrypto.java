@@ -32,6 +32,7 @@ import org.bouncycastle.tls.crypto.TlsMAC;
 import org.bouncycastle.tls.crypto.TlsNullCipherSuite;
 import org.bouncycastle.tls.crypto.TlsSRP6Client;
 import org.bouncycastle.tls.crypto.TlsSRP6Server;
+import org.bouncycastle.tls.crypto.TlsSRP6VerifierGenerator;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamCipher;
@@ -187,6 +188,11 @@ public class JcaTlsCrypto
     }
 
     public TlsSRP6Server createSRP6Server(TlsSRPConfig srpConfig, BigInteger srpVerifier)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public TlsSRP6VerifierGenerator createSRP6VerifierGenerator(TlsSRPConfig srpConfig)
     {
         throw new UnsupportedOperationException();
     }

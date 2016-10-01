@@ -3,10 +3,9 @@ package org.bouncycastle.tls;
 import java.io.IOException;
 import java.math.BigInteger;
 
-import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
-import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.tls.crypto.SRP6Group;
 import org.bouncycastle.tls.crypto.TlsHMAC;
+import org.bouncycastle.tls.crypto.TlsSRP6VerifierGenerator;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.util.Strings;
 
@@ -30,21 +29,22 @@ public class SimulatedTlsSRPIdentityManager
     public static SimulatedTlsSRPIdentityManager getRFC5054Default(TlsCrypto crypto, SRP6Group group, byte[] seedKey)
         throws IOException
     {
-        SRP6VerifierGenerator verifierGenerator = new SRP6VerifierGenerator();
-        verifierGenerator.init(group.getN(), group.getG(), new SHA1Digest());
-
         TlsHMAC mac = crypto.createHMAC(MACAlgorithm.hmac_sha1);
 
         mac.setKey(seedKey);
 
-        return new SimulatedTlsSRPIdentityManager(group, verifierGenerator, mac);
+        TlsSRPConfig srpConfig = new TlsSRPConfig();
+
+        srpConfig.setExplicitNG(new BigInteger[] { group.getN(), group.getG() });
+
+        return new SimulatedTlsSRPIdentityManager(group, crypto.createSRP6VerifierGenerator(srpConfig), mac);
     }
 
     protected SRP6Group group;
-    protected SRP6VerifierGenerator verifierGenerator;
+    protected TlsSRP6VerifierGenerator verifierGenerator;
     protected TlsHMAC mac;
 
-    public SimulatedTlsSRPIdentityManager(SRP6Group group, SRP6VerifierGenerator verifierGenerator, TlsHMAC mac)
+    public SimulatedTlsSRPIdentityManager(SRP6Group group, TlsSRP6VerifierGenerator verifierGenerator, TlsHMAC mac)
     {
         this.group = group;
         this.verifierGenerator = verifierGenerator;

@@ -14,6 +14,7 @@ import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsSRP6Client;
 import org.bouncycastle.tls.crypto.TlsSRP6Server;
+import org.bouncycastle.tls.crypto.TlsSRP6VerifierGenerator;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
@@ -74,4 +75,12 @@ public interface TlsCrypto
      * @return an initialised SRP6 server object.
      */
     TlsSRP6Server createSRP6Server(TlsSRPConfig srpConfig, BigInteger srpVerifier);
+
+    /**
+     * Create an SRP-6 verifier generator.
+     *
+     * @param srpConfig generator config.
+     * @return an initialized SRP6 verifier generator,
+     */
+    TlsSRP6VerifierGenerator createSRP6VerifierGenerator(TlsSRPConfig srpConfig);
 }

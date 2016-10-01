@@ -14,6 +14,7 @@ import org.bouncycastle.crypto.RuntimeCryptoException;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.agreement.srp.SRP6Client;
 import org.bouncycastle.crypto.agreement.srp.SRP6Server;
+import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA224Digest;
@@ -65,6 +66,7 @@ import org.bouncycastle.tls.crypto.TlsMAC;
 import org.bouncycastle.tls.crypto.TlsNullCipherSuite;
 import org.bouncycastle.tls.crypto.TlsSRP6Client;
 import org.bouncycastle.tls.crypto.TlsSRP6Server;
+import org.bouncycastle.tls.crypto.TlsSRP6VerifierGenerator;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamCipherSuite;
@@ -595,6 +597,22 @@ public class BcTlsCrypto
                 {
                     throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
                 }
+            }
+        };
+    }
+
+    public TlsSRP6VerifierGenerator createSRP6VerifierGenerator(TlsSRPConfig srpConfig)
+    {
+        BigInteger[] ng = srpConfig.getExplicitNG();
+        final SRP6VerifierGenerator verifierGenerator = new SRP6VerifierGenerator();
+
+        verifierGenerator.init(ng[0], ng[1], new SHA1Digest());
+
+        return new TlsSRP6VerifierGenerator()
+        {
+            public BigInteger generateVerifier(byte[] salt, byte[] identity, byte[] password)
+            {
+                return verifierGenerator.generateVerifier(salt, identity, password);
             }
         };
     }
