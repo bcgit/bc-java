@@ -9,19 +9,19 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.interfaces.DHPrivateKey;
 
 import org.bouncycastle.tls.Certificate;
-import org.bouncycastle.tls.TlsAgreementCredentials;
+import org.bouncycastle.tls.TlsCredentialedAgreement;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
-public class JceDefaultTlsAgreementCredentials
-    implements TlsAgreementCredentials
+public class JceDefaultTlsCredentialedAgreement
+    implements TlsCredentialedAgreement
 {
     private final JcaTlsCrypto crypto;
     private final String algorithm;
     private final Certificate certificate;
     private final PrivateKey privateKey;
 
-    public JceDefaultTlsAgreementCredentials(JcaTlsCrypto crypto, Certificate certificate, PrivateKey privateKey)
+    public JceDefaultTlsCredentialedAgreement(JcaTlsCrypto crypto, Certificate certificate, PrivateKey privateKey)
     {
         if (crypto == null)
         {

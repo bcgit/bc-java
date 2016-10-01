@@ -6,13 +6,13 @@ import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 
 import org.bouncycastle.tls.Certificate;
-import org.bouncycastle.tls.DefaultTlsSignerCredentials;
+import org.bouncycastle.tls.DefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.crypto.TlsSigner;
 
-public class JcaDefaultTlsSignerCredentials
-    extends DefaultTlsSignerCredentials
+public class JcaDefaultTlsCredentialedSigner
+    extends DefaultTlsCredentialedSigner
 {
     private static TlsSigner makeSigner(TlsContext context, PrivateKey privateKey)
     {
@@ -37,7 +37,7 @@ public class JcaDefaultTlsSignerCredentials
         return signer;
     }
 
-    public JcaDefaultTlsSignerCredentials(TlsContext context, PrivateKey privateKey, Certificate certificate, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+    public JcaDefaultTlsCredentialedSigner(TlsContext context, PrivateKey privateKey, Certificate certificate, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
         super(makeSigner(context, privateKey), certificate, signatureAndHashAlgorithm);
     }

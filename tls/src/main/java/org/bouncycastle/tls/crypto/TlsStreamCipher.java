@@ -2,8 +2,16 @@ package org.bouncycastle.tls.crypto;
 
 import java.io.IOException;
 
+/**
+ * Interface for stream cipher services.
+ */
 public interface TlsStreamCipher
 {
+    /**
+     * Set the key to be used by the stream cipher implementation supporting this service.
+     *
+     * @param key the stream cipher key.
+     */
     void setKey(byte[] key) throws IOException;
 
     /**

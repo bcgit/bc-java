@@ -17,25 +17,25 @@ public abstract class DefaultTlsServer
         super(crypto, keyExchangeFactory);
     }
 
-    protected TlsSignerCredentials getDSASignerCredentials()
+    protected TlsCredentialedSigner getDSASignerCredentials()
         throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    protected TlsSignerCredentials getECDSASignerCredentials()
+    protected TlsCredentialedSigner getECDSASignerCredentials()
         throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    protected TlsEncryptionCredentials getRSAEncryptionCredentials()
+    protected TlsCredentialedEncryptor getRSAEncryptionCredentials()
         throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    protected TlsSignerCredentials getRSASignerCredentials()
+    protected TlsCredentialedSigner getRSASignerCredentials()
         throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);

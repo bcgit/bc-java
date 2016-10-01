@@ -4,8 +4,8 @@ import java.io.IOException;
 
 import org.bouncycastle.tls.crypto.TlsSigner;
 
-public class DefaultTlsSignerCredentials
-    implements TlsSignerCredentials
+public class DefaultTlsCredentialedSigner
+    implements TlsCredentialedSigner
 {
     protected TlsContext context;
     protected Certificate certificate;
@@ -13,8 +13,8 @@ public class DefaultTlsSignerCredentials
 
     protected TlsSigner signer;
 
-    public DefaultTlsSignerCredentials(TlsSigner signer, Certificate certificate,
-                                       SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+    public DefaultTlsCredentialedSigner(TlsSigner signer, Certificate certificate,
+                                        SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
         if (certificate == null)
         {

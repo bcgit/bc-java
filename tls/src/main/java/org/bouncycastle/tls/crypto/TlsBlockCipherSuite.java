@@ -11,7 +11,7 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.util.Arrays;
 
 /**
- * A generic TLS 1.0-1.2 / SSLv3 block cipher. This can be used for AES or 3DES for example.
+ * A generic TLS 1.0-1.2 / SSLv3 block cipher suite. This can be used for AES or 3DES for example.
  */
 public class TlsBlockCipherSuite
     implements TlsCipherSuite

@@ -5,13 +5,13 @@ import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.tls.Certificate;
-import org.bouncycastle.tls.DefaultTlsSignerCredentials;
+import org.bouncycastle.tls.DefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.crypto.TlsSigner;
 
-public class BcDefaultTlsSignerCredentials
-    extends DefaultTlsSignerCredentials
+public class BcDefaultTlsCredentialedSigner
+    extends DefaultTlsCredentialedSigner
 {
     private static TlsSigner makeSigner(TlsContext context, AsymmetricKeyParameter privateKey)
     {
@@ -36,7 +36,7 @@ public class BcDefaultTlsSignerCredentials
         return signer;
     }
 
-    public BcDefaultTlsSignerCredentials(TlsContext context, AsymmetricKeyParameter privateKey, Certificate certificate, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+    public BcDefaultTlsCredentialedSigner(TlsContext context, AsymmetricKeyParameter privateKey, Certificate certificate, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
         super(makeSigner(context, privateKey), certificate, signatureAndHashAlgorithm);
     }

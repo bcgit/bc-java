@@ -34,7 +34,7 @@ public class TlsPSKKeyExchange
     protected TlsAgreement agreement;
 
     protected TlsCertificate serverCertificate = null;
-    protected TlsEncryptionCredentials serverCredentials = null;
+    protected TlsCredentialedEncryptor serverCredentials = null;
     protected TlsSecret preMasterSecret;
 
     public TlsPSKKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsPSKIdentity pskIdentity,
@@ -95,12 +95,12 @@ public class TlsPSKKeyExchange
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
-        if (!(serverCredentials instanceof TlsEncryptionCredentials))
+        if (!(serverCredentials instanceof TlsCredentialedEncryptor))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        this.serverCredentials = (TlsEncryptionCredentials)serverCredentials;
+        this.serverCredentials = (TlsCredentialedEncryptor)serverCredentials;
     }
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException

@@ -35,7 +35,7 @@ public class TlsECDHKeyExchange
     protected TlsECConfigVerifier ecConfigVerifier;
     protected short[] clientECPointFormats, serverECPointFormats;
 
-    protected TlsAgreementCredentials agreementCredentials;
+    protected TlsCredentialedAgreement agreementCredentials;
     protected TlsCertificate ecdhPeerCertificate;
 
     protected TlsECConfig ecConfig;
@@ -80,12 +80,12 @@ public class TlsECDHKeyExchange
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
-        if (!(serverCredentials instanceof TlsAgreementCredentials))
+        if (!(serverCredentials instanceof TlsCredentialedAgreement))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        this.agreementCredentials = (TlsAgreementCredentials)serverCredentials;
+        this.agreementCredentials = (TlsCredentialedAgreement)serverCredentials;
     }
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
@@ -185,9 +185,9 @@ public class TlsECDHKeyExchange
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        if (clientCredentials instanceof TlsAgreementCredentials)
+        if (clientCredentials instanceof TlsCredentialedAgreement)
         {
-            this.agreementCredentials = (TlsAgreementCredentials)clientCredentials;
+            this.agreementCredentials = (TlsCredentialedAgreement)clientCredentials;
 
             // TODO Check that the client certificate's domain parameters match the server's?
         }

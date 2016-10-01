@@ -26,7 +26,7 @@ public class TlsECDHEKeyExchange
         }
     }
 
-    protected TlsSignerCredentials serverCredentials = null;
+    protected TlsCredentialedSigner serverCredentials = null;
     protected TlsVerifier verifier = null;
 
     public TlsECDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms,
@@ -44,12 +44,12 @@ public class TlsECDHEKeyExchange
 
     public void processServerCredentials(TlsCredentials serverCredentials) throws IOException
     {
-        if (!(serverCredentials instanceof TlsSignerCredentials))
+        if (!(serverCredentials instanceof TlsCredentialedSigner))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        this.serverCredentials = (TlsSignerCredentials)serverCredentials;
+        this.serverCredentials = (TlsCredentialedSigner)serverCredentials;
     }
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
@@ -125,7 +125,7 @@ public class TlsECDHEKeyExchange
 
     public void processClientCredentials(TlsCredentials clientCredentials) throws IOException
     {
-        if (clientCredentials instanceof TlsSignerCredentials)
+        if (clientCredentials instanceof TlsCredentialedSigner)
         {
             // OK
         }

@@ -728,7 +728,7 @@ public class TlsUtils
     }
 
     public static SignatureAndHashAlgorithm getSignatureAndHashAlgorithm(TlsContext context,
-        TlsSignerCredentials signerCredentials)
+        TlsCredentialedSigner signerCredentials)
         throws IOException
     {
         SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
@@ -1123,7 +1123,7 @@ public class TlsUtils
         return h.calculateHash();
     }
 
-    static DigitallySigned generateServerKeyExchangeSignature(TlsContext context, TlsSignerCredentials credentials,
+    static DigitallySigned generateServerKeyExchangeSignature(TlsContext context, TlsCredentialedSigner credentials,
         DigestInputBuffer buf) throws IOException
     {
         /*

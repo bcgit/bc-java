@@ -2,8 +2,16 @@ package org.bouncycastle.tls.crypto;
 
 import java.io.IOException;
 
+/**
+ * Interface for block cipher services.
+ */
 public interface TlsBlockCipher
 {
+    /**
+     * Set the key to be used by the block cipher implementation supporting this service.
+     *
+     * @param key the block cipher key.
+     */
     void setKey(byte[] key) throws IOException;
 
     /**

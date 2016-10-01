@@ -34,7 +34,7 @@ public class TlsDHKeyExchange
 
     protected TlsDHConfigVerifier dhConfigVerifier;
 
-    protected TlsAgreementCredentials agreementCredentials;
+    protected TlsCredentialedAgreement agreementCredentials;
     protected TlsCertificate dhPeerCertificate;
 
     protected TlsDHConfig dhConfig;
@@ -73,12 +73,12 @@ public class TlsDHKeyExchange
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
-        if (!(serverCredentials instanceof TlsAgreementCredentials))
+        if (!(serverCredentials instanceof TlsCredentialedAgreement))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        this.agreementCredentials = (TlsAgreementCredentials)serverCredentials;
+        this.agreementCredentials = (TlsCredentialedAgreement)serverCredentials;
     }
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
@@ -172,9 +172,9 @@ public class TlsDHKeyExchange
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        if (clientCredentials instanceof TlsAgreementCredentials)
+        if (clientCredentials instanceof TlsCredentialedAgreement)
         {
-            this.agreementCredentials = (TlsAgreementCredentials)clientCredentials;
+            this.agreementCredentials = (TlsCredentialedAgreement)clientCredentials;
 
             // TODO Check that the client certificate's domain parameters match the server's?
         }

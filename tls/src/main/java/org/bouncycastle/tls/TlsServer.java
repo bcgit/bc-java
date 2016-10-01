@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.tls.crypto.bc.BcDefaultTlsAgreementCredentials;
-import org.bouncycastle.tls.crypto.bc.DefaultTlsEncryptionCredentials;
+import org.bouncycastle.tls.crypto.bc.BcDefaultTlsCredentialedAgreement;
+import org.bouncycastle.tls.crypto.bc.DefaultTlsCredentialedEncryptor;
 
 public interface TlsServer
     extends TlsPeer
@@ -45,14 +45,11 @@ public interface TlsServer
 
     /**
      * Return server credentials to use. The returned value may be null, or else it MUST implement
-     * <em>exactly one</em> of {@link TlsAgreementCredentials}, {@link TlsEncryptionCredentials}, or
-     * {@link TlsSignerCredentials}, depending on the key exchange that was negotiated.
+     * <em>exactly one</em> of {@link TlsCredentialedAgreement}, {@link TlsCredentialedEncryptor}, or
+     * {@link TlsCredentialedSigner}, depending on the key exchange that was negotiated.
      * 
-     * @see {@link BcDefaultTlsAgreementCredentials}, {@link DefaultTlsEncryptionCredentials},
-     *      {@link DefaultTlsSignerCredentials}
-     *
-     * @param certificateRequest
-     *            details of the certificate request
+     * @see {@link BcDefaultTlsCredentialedAgreement}, {@link DefaultTlsCredentialedEncryptor},
+     *      {@link DefaultTlsCredentialedSigner}
      * @return a TlsCredentials object or null for anonymous key exchanges
      * @throws IOException
      */

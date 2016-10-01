@@ -2,7 +2,7 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
-public interface TlsSignerCredentials
+public interface TlsCredentialedSigner
     extends TlsCredentials
 {
     byte[] generateRawSignature(byte[] hash)

@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import org.bouncycastle.tls.crypto.TlsSecret;
 
-public interface TlsEncryptionCredentials
+public interface TlsCredentialedEncryptor
     extends TlsCredentials
 {
     TlsSecret decrypt(byte[] ciphertext) throws IOException;

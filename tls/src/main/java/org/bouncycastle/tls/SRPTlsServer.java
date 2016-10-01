@@ -24,13 +24,13 @@ public class SRPTlsServer
         this.srpIdentityManager = srpIdentityManager;
     }
 
-    protected TlsSignerCredentials getDSASignerCredentials()
+    protected TlsCredentialedSigner getDSASignerCredentials()
         throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    protected TlsSignerCredentials getRSASignerCredentials()
+    protected TlsCredentialedSigner getRSASignerCredentials()
         throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);

@@ -49,7 +49,7 @@ public class TlsSRPKeyExchange
     protected BigInteger srpVerifier = null;
     protected byte[] srpSalt = null;
 
-    protected TlsSignerCredentials serverCredentials = null;
+    protected TlsCredentialedSigner serverCredentials = null;
     protected TlsVerifier verifier = null;
 
     public TlsSRPKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsSRPConfigVerifier srpConfigVerifier,
@@ -89,12 +89,12 @@ public class TlsSRPKeyExchange
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
-        if (!(serverCredentials instanceof TlsSignerCredentials))
+        if (!(serverCredentials instanceof TlsCredentialedSigner))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        this.serverCredentials = (TlsSignerCredentials)serverCredentials;
+        this.serverCredentials = (TlsCredentialedSigner)serverCredentials;
     }
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException

@@ -10,17 +10,17 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.tls.Certificate;
-import org.bouncycastle.tls.TlsAgreementCredentials;
+import org.bouncycastle.tls.TlsCredentialedAgreement;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.BigIntegers;
 
-public class BcDefaultTlsAgreementCredentials
-    implements TlsAgreementCredentials
+public class BcDefaultTlsCredentialedAgreement
+    implements TlsCredentialedAgreement
 {
-    protected TlsAgreementCredentials agreementCredentials;
+    protected TlsCredentialedAgreement agreementCredentials;
 
-    public BcDefaultTlsAgreementCredentials(BcTlsCrypto crypto, Certificate certificate, AsymmetricKeyParameter privateKey)
+    public BcDefaultTlsCredentialedAgreement(BcTlsCrypto crypto, Certificate certificate, AsymmetricKeyParameter privateKey)
     {
         if (crypto == null)
         {
@@ -45,11 +45,11 @@ public class BcDefaultTlsAgreementCredentials
 
         if (privateKey instanceof DHPrivateKeyParameters)
         {
-            agreementCredentials = new DHAgreement(crypto, privateKey, certificate);
+            agreementCredentials = new DHCredentialedAgreement(crypto, privateKey, certificate);
         }
         else if (privateKey instanceof ECPrivateKeyParameters)
         {
-            agreementCredentials = new ECAgreement(crypto, privateKey, certificate);
+            agreementCredentials = new ECCredentialedAgreement(crypto, privateKey, certificate);
         }
         else
         {
@@ -69,8 +69,8 @@ public class BcDefaultTlsAgreementCredentials
         return agreementCredentials.generateAgreement(peerCertificate);
     }
 
-    private class DHAgreement
-        implements TlsAgreementCredentials
+    private class DHCredentialedAgreement
+        implements TlsCredentialedAgreement
     {
         private final Certificate certificate;
         private final BcTlsCrypto crypto;
@@ -78,7 +78,7 @@ public class BcDefaultTlsAgreementCredentials
 
         protected BasicAgreement basicAgreement = new DHBasicAgreement();
 
-        public DHAgreement(BcTlsCrypto crypto, AsymmetricKeyParameter privateKey, Certificate certificate)
+        public DHCredentialedAgreement(BcTlsCrypto crypto, AsymmetricKeyParameter privateKey, Certificate certificate)
         {
             this.crypto = crypto;
             this.privateKey = privateKey;
@@ -101,8 +101,8 @@ public class BcDefaultTlsAgreementCredentials
         }
     }
 
-    private class ECAgreement
-        implements TlsAgreementCredentials
+    private class ECCredentialedAgreement
+        implements TlsCredentialedAgreement
     {
         private final Certificate certificate;
         private final BcTlsCrypto crypto;
@@ -110,7 +110,7 @@ public class BcDefaultTlsAgreementCredentials
 
         protected BasicAgreement basicAgreement = new ECDHBasicAgreement();
 
-        public ECAgreement(BcTlsCrypto crypto, AsymmetricKeyParameter privateKey, Certificate certificate)
+        public ECCredentialedAgreement(BcTlsCrypto crypto, AsymmetricKeyParameter privateKey, Certificate certificate)
         {
             this.crypto = crypto;
             this.privateKey = privateKey;

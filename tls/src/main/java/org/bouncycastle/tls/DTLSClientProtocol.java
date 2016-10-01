@@ -301,9 +301,9 @@ public class DTLSClientProtocol
         TlsProtocol.establishMasterSecret(state.clientContext, state.keyExchange);
         recordLayer.initPendingEpoch(state.client.getCipher());
 
-        if (state.clientCredentials != null && state.clientCredentials instanceof TlsSignerCredentials)
+        if (state.clientCredentials != null && state.clientCredentials instanceof TlsCredentialedSigner)
         {
-            TlsSignerCredentials signerCredentials = (TlsSignerCredentials)state.clientCredentials;
+            TlsCredentialedSigner signerCredentials = (TlsCredentialedSigner)state.clientCredentials;
 
             /*
              * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2

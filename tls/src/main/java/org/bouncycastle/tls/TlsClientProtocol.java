@@ -395,9 +395,9 @@ public class TlsClientProtocol
 
                 recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 
-                if (clientCreds != null && clientCreds instanceof TlsSignerCredentials)
+                if (clientCreds != null && clientCreds instanceof TlsCredentialedSigner)
                 {
-                    TlsSignerCredentials signerCredentials = (TlsSignerCredentials)clientCreds;
+                    TlsCredentialedSigner signerCredentials = (TlsCredentialedSigner)clientCreds;
 
                     /*
                      * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
