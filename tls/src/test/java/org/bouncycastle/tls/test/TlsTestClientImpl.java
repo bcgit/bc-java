@@ -21,10 +21,10 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
+import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsCrypto;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.TlsSignerCredentials;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
 import org.bouncycastle.tls.crypto.jcajce.JcaTlsCryptoBuilder;
@@ -210,7 +210,7 @@ class TlsTestClientImpl
                     supportedSigAlgs.addElement(config.clientAuthSigAlg);
                 }
 
-                final TlsSignerCredentials signerCredentials = TlsTestUtils.loadSignerCredentials(context,
+                final TlsCredentialedSigner signerCredentials = TlsTestUtils.loadSignerCredentials(context,
                     supportedSigAlgs, SignatureAlgorithm.rsa, "x509-client.pem", "x509-client-key.pem");
 
                 if (config.clientAuth == TlsTestConfig.CLIENT_AUTH_VALID)
@@ -218,7 +218,7 @@ class TlsTestClientImpl
                     return signerCredentials;
                 }
 
-                return new TlsSignerCredentials()
+                return new TlsCredentialedSigner()
                 {
                     public byte[] generateRawSignature(byte[] hash) throws IOException
                     {

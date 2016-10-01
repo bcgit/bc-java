@@ -17,15 +17,15 @@ import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.TlsAgreementCredentials;
 import org.bouncycastle.tls.TlsContext;
-import org.bouncycastle.tls.TlsEncryptionCredentials;
-import org.bouncycastle.tls.TlsSignerCredentials;
-import org.bouncycastle.tls.crypto.bc.BcDefaultTlsAgreementCredentials;
-import org.bouncycastle.tls.crypto.bc.BcDefaultTlsSignerCredentials;
+import org.bouncycastle.tls.TlsCredentialedAgreement;
+import org.bouncycastle.tls.TlsCredentialedEncryptor;
+import org.bouncycastle.tls.TlsCredentialedSigner;
+import org.bouncycastle.tls.crypto.bc.BcDefaultTlsCredentialedAgreement;
+import org.bouncycastle.tls.crypto.bc.BcDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
-import org.bouncycastle.tls.crypto.bc.DefaultTlsEncryptionCredentials;
-import org.bouncycastle.tls.crypto.jcajce.JcaDefaultTlsSignerCredentials;
+import org.bouncycastle.tls.crypto.bc.DefaultTlsCredentialedEncryptor;
+import org.bouncycastle.tls.crypto.jcajce.JcaDefaultTlsCredentialedSigner;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.pem.PemObject;
@@ -83,30 +83,30 @@ public class TlsTestUtils
         return result;
     }
 
-    static TlsAgreementCredentials loadAgreementCredentials(TlsContext context,
-        String[] certResources, String keyResource)
+    static TlsCredentialedAgreement loadAgreementCredentials(TlsContext context,
+                                                             String[] certResources, String keyResource)
         throws IOException
     {
         Certificate certificate = loadCertificateChain(certResources);
         AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
 
         // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key (as raw data)
-        return new BcDefaultTlsAgreementCredentials((BcTlsCrypto)context.getCrypto(), certificate, privateKey);
+        return new BcDefaultTlsCredentialedAgreement((BcTlsCrypto)context.getCrypto(), certificate, privateKey);
     }
 
-    static TlsEncryptionCredentials loadEncryptionCredentials(TlsContext context,
-        String[] certResources, String keyResource)
+    static TlsCredentialedEncryptor loadEncryptionCredentials(TlsContext context,
+                                                              String[] certResources, String keyResource)
         throws IOException
     {
         Certificate certificate = loadCertificateChain(certResources);
         AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
 
         // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key (as raw data)
-        return new DefaultTlsEncryptionCredentials((BcTlsCrypto)context.getCrypto(), certificate, privateKey);
+        return new DefaultTlsCredentialedEncryptor((BcTlsCrypto)context.getCrypto(), certificate, privateKey);
     }
 
-    static TlsSignerCredentials loadSignerCredentials(TlsContext context, String[] certResources,
-        String keyResource, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+    static TlsCredentialedSigner loadSignerCredentials(TlsContext context, String[] certResources,
+                                                       String keyResource, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
         throws IOException
     {
         Certificate certificate = loadCertificateChain(certResources);
@@ -116,18 +116,18 @@ public class TlsTestUtils
         {
             AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
 
-            return new BcDefaultTlsSignerCredentials(context, privateKey, certificate, signatureAndHashAlgorithm);
+            return new BcDefaultTlsCredentialedSigner(context, privateKey, certificate, signatureAndHashAlgorithm);
         }
         else
         {
             PrivateKey privateKey = loadJcaPrivateKeyResource(keyResource);
 
-            return new JcaDefaultTlsSignerCredentials(context, privateKey, certificate, signatureAndHashAlgorithm);
+            return new JcaDefaultTlsCredentialedSigner(context, privateKey, certificate, signatureAndHashAlgorithm);
         }
     }
 
-    static TlsSignerCredentials loadSignerCredentials(TlsContext context, Vector supportedSignatureAlgorithms,
-        short signatureAlgorithm, String certResource, String keyResource)
+    static TlsCredentialedSigner loadSignerCredentials(TlsContext context, Vector supportedSignatureAlgorithms,
+                                                       short signatureAlgorithm, String certResource, String keyResource)
         throws IOException
     {
         /*

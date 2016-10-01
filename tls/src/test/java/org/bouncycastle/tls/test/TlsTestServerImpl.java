@@ -15,10 +15,10 @@ import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
+import org.bouncycastle.tls.TlsCredentialedEncryptor;
+import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsCrypto;
-import org.bouncycastle.tls.TlsEncryptionCredentials;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.TlsSignerCredentials;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
 import org.bouncycastle.tls.crypto.jcajce.JcaTlsCryptoBuilder;
@@ -206,25 +206,25 @@ class TlsTestServerImpl
         return supportedSignatureAlgorithms;
     }
 
-    protected TlsSignerCredentials getDSASignerCredentials() throws IOException
+    protected TlsCredentialedSigner getDSASignerCredentials() throws IOException
     {
         return TlsTestUtils.loadSignerCredentials(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.dsa,
             "x509-server-dsa.pem", "x509-server-key-dsa.pem");
     }
 
-    protected TlsSignerCredentials getECDSASignerCredentials() throws IOException
+    protected TlsCredentialedSigner getECDSASignerCredentials() throws IOException
     {
         return TlsTestUtils.loadSignerCredentials(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.ecdsa,
             "x509-server-ecdsa.pem", "x509-server-key-ecdsa.pem");
     }
 
-    protected TlsEncryptionCredentials getRSAEncryptionCredentials() throws IOException
+    protected TlsCredentialedEncryptor getRSAEncryptionCredentials() throws IOException
     {
         return TlsTestUtils.loadEncryptionCredentials(context, new String[]{ "x509-server.pem", "x509-ca.pem" },
             "x509-server-key.pem");
     }
 
-    protected TlsSignerCredentials getRSASignerCredentials() throws IOException
+    protected TlsCredentialedSigner getRSASignerCredentials() throws IOException
     {
         return TlsTestUtils.loadSignerCredentials(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.rsa,
             "x509-server.pem", "x509-server-key.pem");

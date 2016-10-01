@@ -13,8 +13,8 @@ import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
-import org.bouncycastle.tls.TlsEncryptionCredentials;
-import org.bouncycastle.tls.TlsSignerCredentials;
+import org.bouncycastle.tls.TlsCredentialedEncryptor;
+import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
 
@@ -89,14 +89,14 @@ public class MockDTLSServer
         return ProtocolVersion.DTLSv10;
     }
 
-    protected TlsEncryptionCredentials getRSAEncryptionCredentials()
+    protected TlsCredentialedEncryptor getRSAEncryptionCredentials()
         throws IOException
     {
         return TlsTestUtils.loadEncryptionCredentials(context, new String[]{"x509-server.pem", "x509-ca.pem"},
             "x509-server-key.pem");
     }
 
-    protected TlsSignerCredentials getRSASignerCredentials() throws IOException
+    protected TlsCredentialedSigner getRSASignerCredentials() throws IOException
     {
         return TlsTestUtils.loadSignerCredentials(context, supportedSignatureAlgorithms, SignatureAlgorithm.rsa,
             "x509-server.pem", "x509-server-key.pem");

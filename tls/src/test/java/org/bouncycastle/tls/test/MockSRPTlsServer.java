@@ -15,10 +15,10 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SRPTlsServer;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SimulatedTlsSRPIdentityManager;
+import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsCrypto;
 import org.bouncycastle.tls.TlsSRPIdentityManager;
 import org.bouncycastle.tls.TlsSRPLoginParameters;
-import org.bouncycastle.tls.TlsSignerCredentials;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
@@ -92,13 +92,13 @@ class MockSRPTlsServer
         return serverVersion;
     }
 
-    protected TlsSignerCredentials getDSASignerCredentials() throws IOException
+    protected TlsCredentialedSigner getDSASignerCredentials() throws IOException
     {
         return TlsTestUtils.loadSignerCredentials(context, supportedSignatureAlgorithms, SignatureAlgorithm.dsa,
             "x509-server-dsa.pem", "x509-server-key-dsa.pem");
     }
 
-    protected TlsSignerCredentials getRSASignerCredentials() throws IOException
+    protected TlsCredentialedSigner getRSASignerCredentials() throws IOException
     {
         return TlsTestUtils.loadSignerCredentials(context, supportedSignatureAlgorithms, SignatureAlgorithm.rsa,
             "x509-server.pem", "x509-server-key.pem");

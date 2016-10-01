@@ -1,15 +1,19 @@
 package org.bouncycastle.tls.crypto.bc;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.RuntimeCryptoException;
 import org.bouncycastle.crypto.StreamCipher;
+import org.bouncycastle.crypto.agreement.srp.SRP6Client;
+import org.bouncycastle.crypto.agreement.srp.SRP6Server;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA224Digest;
@@ -32,6 +36,7 @@ import org.bouncycastle.crypto.modes.OCBBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.crypto.params.SRP6GroupParameters;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
 import org.bouncycastle.tls.AbstractTlsCrypto;
 import org.bouncycastle.tls.AlertDescription;
@@ -58,6 +63,9 @@ import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsMAC;
 import org.bouncycastle.tls.crypto.TlsNullCipherSuite;
+import org.bouncycastle.tls.crypto.TlsSRP6Client;
+import org.bouncycastle.tls.crypto.TlsSRP6Server;
+import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamCipherSuite;
 import org.bouncycastle.util.Arrays;
@@ -531,6 +539,64 @@ public class BcTlsCrypto
         default:
             throw new IllegalArgumentException("unknown HashAlgorithm");
         }
+    }
+
+    public TlsSRP6Client createSRP6Client(TlsSRPConfig srpConfig)
+    {
+        final SRP6Client srpClient = new SRP6Client();
+
+        BigInteger[] ng = srpConfig.getExplicitNG();
+        SRP6GroupParameters srpGroup= new SRP6GroupParameters(ng[0], ng[1]);
+        srpClient.init(srpGroup, new SHA1Digest(), context.getCrypto().getSecureRandom());
+
+        return new TlsSRP6Client()
+        {
+            public BigInteger calculateSecret(BigInteger serverB)
+                throws TlsFatalAlert
+            {
+                try
+                {
+                    return srpClient.calculateSecret(serverB);
+                }
+                catch (CryptoException e)
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
+                }
+            }
+
+            public BigInteger generateClientCredentials(byte[] srpSalt, byte[] identity, byte[] password)
+            {
+                return srpClient.generateClientCredentials(srpSalt, identity, password);
+            }
+        };
+    }
+
+    public TlsSRP6Server createSRP6Server(TlsSRPConfig srpConfig, BigInteger srpVerifier)
+    {
+        final SRP6Server srpServer = new SRP6Server();
+        BigInteger[] ng = srpConfig.getExplicitNG();
+        SRP6GroupParameters srpGroup= new SRP6GroupParameters(ng[0], ng[1]);
+        srpServer.init(srpGroup, srpVerifier, new SHA1Digest(), context.getCrypto().getSecureRandom());
+        return new TlsSRP6Server()
+        {
+            public BigInteger generateServerCredentials()
+            {
+                return srpServer.generateServerCredentials();
+            }
+
+            public BigInteger calculateSecret(BigInteger clientA)
+                throws IOException
+            {
+                try
+                {
+                    return srpServer.calculateSecret(clientA);
+                }
+                catch (CryptoException e)
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
+                }
+            }
+        };
     }
 
     protected TlsHMAC createSSl3HMAC(int macAlgorithm)

@@ -1,6 +1,7 @@
 package org.bouncycastle.tls.crypto.jcajce;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 
@@ -29,6 +30,9 @@ import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsMAC;
 import org.bouncycastle.tls.crypto.TlsNullCipherSuite;
+import org.bouncycastle.tls.crypto.TlsSRP6Client;
+import org.bouncycastle.tls.crypto.TlsSRP6Server;
+import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamCipher;
 import org.bouncycastle.tls.crypto.TlsStreamCipherSuite;
@@ -175,6 +179,16 @@ public class JcaTlsCrypto
         {
             throw new IOException("cannot create HMAC: " + e.getMessage(), e);
         }
+    }
+
+    public TlsSRP6Client createSRP6Client(TlsSRPConfig srpConfig)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public TlsSRP6Server createSRP6Server(TlsSRPConfig srpConfig, BigInteger srpVerifier)
+    {
+        throw new UnsupportedOperationException();
     }
 
     public TlsSecret generateRandomSecret(int length)

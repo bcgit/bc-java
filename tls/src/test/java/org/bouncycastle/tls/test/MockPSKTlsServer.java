@@ -8,7 +8,7 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.PSKTlsServer;
 import org.bouncycastle.tls.ProtocolVersion;
-import org.bouncycastle.tls.TlsEncryptionCredentials;
+import org.bouncycastle.tls.TlsCredentialedEncryptor;
 import org.bouncycastle.tls.TlsPSKIdentityManager;
 import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
 import org.bouncycastle.util.Strings;
@@ -74,7 +74,7 @@ class MockPSKTlsServer
         return serverVersion;
     }
 
-    protected TlsEncryptionCredentials getRSAEncryptionCredentials() throws IOException
+    protected TlsCredentialedEncryptor getRSAEncryptionCredentials() throws IOException
     {
         return TlsTestUtils.loadEncryptionCredentials(context, new String[]{ "x509-server.pem", "x509-ca.pem" },
             "x509-server-key.pem");
