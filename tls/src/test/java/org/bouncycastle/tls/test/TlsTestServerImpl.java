@@ -17,9 +17,9 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsCredentialedEncryptor;
 import org.bouncycastle.tls.TlsCredentialedSigner;
-import org.bouncycastle.tls.TlsCrypto;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
 import org.bouncycastle.tls.crypto.jcajce.JcaTlsCryptoBuilder;
 

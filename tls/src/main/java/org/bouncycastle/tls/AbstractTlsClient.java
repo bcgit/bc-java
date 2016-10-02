@@ -5,6 +5,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsCipherSuite;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 
 public abstract class AbstractTlsClient
     extends AbstractTlsPeer
@@ -261,7 +262,7 @@ public abstract class AbstractTlsClient
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        return context.getCrypto().createCipher(encryptionAlgorithm, macAlgorithm);
+        return context.getCrypto().createCipherSuite(encryptionAlgorithm, macAlgorithm);
     }
 
     public void notifyNewSessionTicket(NewSessionTicket newSessionTicket)

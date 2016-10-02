@@ -87,7 +87,7 @@ public class JcaTlsCrypto
         return new JcaTlsCertificate(encoding, helper);
     }
 
-    public TlsCipherSuite createCipher(int encryptionAlgorithm, int macAlgorithm)
+    public TlsCipherSuite createCipherSuite(int encryptionAlgorithm, int macAlgorithm)
         throws IOException
     {
         try

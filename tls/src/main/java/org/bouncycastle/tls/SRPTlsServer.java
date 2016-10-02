@@ -3,6 +3,8 @@ package org.bouncycastle.tls;
 import java.io.IOException;
 import java.util.Hashtable;
 
+import org.bouncycastle.tls.crypto.TlsCrypto;
+
 public class SRPTlsServer
     extends AbstractTlsServer
 {

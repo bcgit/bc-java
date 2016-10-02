@@ -110,14 +110,13 @@ public class BcTlsCrypto
     }
 
 
-
     public TlsCertificate createCertificate(byte[] encoding)
         throws IOException
     {
         return new BcTlsCertificate(this, encoding);
     }
 
-    public TlsCipherSuite createCipher(int encryptionAlgorithm, int macAlgorithm)
+    public TlsCipherSuite createCipherSuite(int encryptionAlgorithm, int macAlgorithm)
         throws IOException
     {
         switch (encryptionAlgorithm)

@@ -2,6 +2,8 @@ package org.bouncycastle.tls;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.tls.crypto.TlsCrypto;
+
 public abstract class AbstractTlsCrypto implements TlsCrypto
 {
     protected final SecureRandom entropySource;

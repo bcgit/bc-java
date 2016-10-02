@@ -2,6 +2,8 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
+import org.bouncycastle.tls.crypto.TlsCrypto;
+
 public class PSKTlsClient
     extends AbstractTlsClient
 {

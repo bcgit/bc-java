@@ -3,6 +3,7 @@ package org.bouncycastle.tls;
 import java.io.IOException;
 import java.util.Hashtable;
 
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.util.Arrays;
 
 public class SRPTlsClient

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 import org.bouncycastle.tls.crypto.SRP6Group;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsSRP6VerifierGenerator;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
