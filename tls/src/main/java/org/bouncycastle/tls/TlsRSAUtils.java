@@ -34,7 +34,7 @@ class TlsRSAUtils
 
         TlsEncryptor encryptor = context.getCrypto().createEncryptor(rsaServerCert);
 
-        byte[] encryptedPreMasterSecret = preMasterSecret.extract(encryptor);
+        byte[] encryptedPreMasterSecret = preMasterSecret.copy(encryptor);
 
         if (TlsUtils.isSSL(context))
         {

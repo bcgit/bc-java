@@ -69,10 +69,9 @@ public class BcTlsSecret implements TlsSecret
         }
     }
 
-    public synchronized byte[] extract(TlsEncryptor encryptor) throws IOException
+    public synchronized byte[] copy(TlsEncryptor encryptor) throws IOException
     {
-        checkAlive();      System.err.println("Here!!!!") ;
-
+        checkAlive();
         return encryptor.encrypt(data, 0, data.length);
     }
 

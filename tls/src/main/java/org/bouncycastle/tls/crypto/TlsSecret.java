@@ -23,7 +23,7 @@ public interface TlsSecret
      * @param encryptor the encryptor to use for protecting the internal data.
      * @return an encrypted copy of secret's internal data.
      */
-    byte[] extract(TlsEncryptor encryptor) throws IOException;
+    byte[] copy(TlsEncryptor encryptor) throws IOException;
 
     /**
      * Destroy the internal state of the secret.

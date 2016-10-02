@@ -94,7 +94,7 @@ public class JceTlsSecret
         return result;
     }
 
-    public synchronized byte[] extract(TlsEncryptor encryptor) throws IOException
+    public synchronized byte[] copy(TlsEncryptor encryptor) throws IOException
     {
         checkAlive();
 
