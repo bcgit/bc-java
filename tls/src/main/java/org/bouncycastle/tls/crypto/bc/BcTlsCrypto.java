@@ -21,11 +21,13 @@ import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.engines.ChaCha7539Engine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
+import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.engines.SEEDEngine;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.macs.Poly1305;
@@ -37,6 +39,8 @@ import org.bouncycastle.crypto.modes.OCBBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
 import org.bouncycastle.tls.AbstractTlsCrypto;
@@ -60,6 +64,7 @@ import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
+import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsMAC;
@@ -183,6 +188,36 @@ public class BcTlsCrypto
     public TlsECDomain createECDomain(TlsECConfig ecConfig)
     {
         return new BcTlsECDomain(this, ecConfig);
+    }
+
+    public TlsEncryptor createEncryptor(TlsCertificate certificate)
+        throws IOException
+    {
+        // TODO[tls-ops] Need to validateKeyUsage(KeyUsage.keyEncipherment) here
+        RSAKeyParameters pubKeyRSA = BcTlsCertificate.convert(this, certificate).getPubKeyRSA();
+
+        final PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine());
+
+        encoding.init(true, new ParametersWithRandom(pubKeyRSA, this.getSecureRandom()));
+
+        return new TlsEncryptor()
+        {
+            public byte[] encrypt(byte[] input, int inOff, int length)
+                throws IOException
+            {
+                try
+                {
+                    return encoding.processBlock(input, inOff, length);
+                }
+                catch (InvalidCipherTextException e)
+                {
+                    /*
+                     * This should never happen, only during decryption.
+                     */
+                    throw new TlsFatalAlert(AlertDescription.internal_error, e);
+                }
+            }
+        };
     }
 
     public TlsSecret createSecret(byte[] data)

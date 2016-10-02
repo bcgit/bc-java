@@ -44,6 +44,14 @@ public interface TlsCrypto
     TlsCipherSuite createCipherSuite(int encryptionAlgorithm, int macAlgorithm) throws IOException;
 
     /**
+     * Create an domain object supporting the domain parameters described in dhConfig.
+     *
+     * @param dhConfig the config describing the DH parameters to use.
+     * @return a TlsECDomain supporting the parameters in ecConfig.
+     */
+    TlsDHDomain createDHDomain(TlsDHConfig dhConfig);
+
+    /**
      * Create an domain object supporting the domain parameters described in ecConfig.
      *
      * @param ecConfig the config describing the EC parameters to use.
@@ -52,12 +60,13 @@ public interface TlsCrypto
     TlsECDomain createECDomain(TlsECConfig ecConfig);
 
     /**
-     * Create an domain object supporting the domain parameters described in dhConfig.
+     * Return an encryptor based on the public key in certificate.
      *
-     * @param dhConfig the config describing the DH parameters to use.
-     * @return a TlsECDomain supporting the parameters in ecConfig.
+     * @param certificate the certificate carrying the public key.
+     * @return a TlsEncryptor based on the certificate's public key.
      */
-    TlsDHDomain createDHDomain(TlsDHConfig dhConfig);
+    TlsEncryptor createEncryptor(TlsCertificate certificate)
+        throws IOException;
 
     /**
      * Create a TlsSecret object based provided data.

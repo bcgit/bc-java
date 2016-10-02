@@ -8,13 +8,25 @@ public interface TlsSecret
 
     TlsSecret deriveSSLMasterSecret(byte[] seed);
 
-    void destroy();
-
-    byte[] encryptRSA(TlsCertificate certificate) throws IOException;
-
-    byte[] extract();
-
     TlsSecret prf(int prfAlgorithm, byte[] labelSeed, int length);
 
-    void replace(int pos, byte[] buf, int bufPos, int bufLen);
+    /**
+     * Return the a copy of the data this secret is based on.
+     *
+     * @return the secret's internal data.
+     */
+    byte[] extract();
+
+    /**
+     * Return the an encrypted copy of the data this secret is based on.
+     *
+     * @param encryptor the encryptor to use for protecting the internal data.
+     * @return an encrypted copy of secret's internal data.
+     */
+    byte[] extract(TlsEncryptor encryptor) throws IOException;
+
+    /**
+     * Destroy the internal state of the secret.
+     */
+    void destroy();
 }

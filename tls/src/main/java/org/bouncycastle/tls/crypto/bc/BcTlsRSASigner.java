@@ -19,12 +19,12 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.AbstractTlsSigner;
 
-public class TlsRSASigner
+public class BcTlsRSASigner
     extends AbstractTlsSigner
 {
     private final AsymmetricKeyParameter privateKey;
 
-    public TlsRSASigner(TlsContext context, AsymmetricKeyParameter privateKey)
+    public BcTlsRSASigner(TlsContext context, AsymmetricKeyParameter privateKey)
     {
         super(context);
 

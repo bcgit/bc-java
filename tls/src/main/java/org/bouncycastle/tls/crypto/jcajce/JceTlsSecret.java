@@ -3,17 +3,13 @@ package org.bouncycastle.tls.crypto.jcajce;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
-import java.security.interfaces.RSAPublicKey;
 
-import javax.crypto.Cipher;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.PRFAlgorithm;
-import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
@@ -89,30 +85,6 @@ public class JceTlsSecret
         }
     }
 
-    public synchronized byte[] encryptRSA(TlsCertificate certificate) throws IOException
-    {
-        checkAlive();
-
-        // TODO[tls-ops] Need to validateKeyUsage(KeyUsage.keyEncipherment) here
-        RSAPublicKey pubKeyRSA = JcaTlsCertificate.convert(certificate, crypto.getHelper()).getPubKeyRSA();
-
-        try
-        {
-            Cipher encoding = crypto.getHelper().createCipher("RSA/NONE/PKCS1Padding");
-
-            encoding.init(Cipher.WRAP_MODE, pubKeyRSA, crypto.getSecureRandom());
-
-            return encoding.doFinal(data);
-        }
-        catch (GeneralSecurityException e)
-        {
-            /*
-             * This should never happen, only during decryption.
-             */
-            throw new TlsFatalAlert(AlertDescription.internal_error, e);
-        }
-    }
-
     public synchronized byte[] extract()
     {
         checkAlive();
@@ -120,6 +92,13 @@ public class JceTlsSecret
         byte[] result = data;
         this.data = null;
         return result;
+    }
+
+    public synchronized byte[] extract(TlsEncryptor encryptor) throws IOException
+    {
+        checkAlive();
+
+        return encryptor.encrypt(data, 0, data.length);
     }
 
     public synchronized TlsSecret prf(int prfAlgorithm, byte[] labelSeed, int length)
@@ -138,16 +117,6 @@ public class JceTlsSecret
         {
             e.printStackTrace();
             throw new IllegalStateException(); // TODO
-        }
-    }
-
-    public synchronized void replace(int pos, byte[] buf, int bufPos, int bufLen)
-    {
-        checkAlive();
-
-        for (int i = 0; i < bufLen; ++i)
-        {
-            data[pos + i] = buf[bufPos + i];
         }
     }
 

@@ -18,7 +18,7 @@ public class BcDefaultTlsCredentialedSigner
         TlsSigner signer;
         if (privateKey instanceof RSAKeyParameters)
         {
-            signer = new TlsRSASigner(context, privateKey);
+            signer = new BcTlsRSASigner(context, privateKey);
         }
         else if (privateKey instanceof DSAPrivateKeyParameters)
         {

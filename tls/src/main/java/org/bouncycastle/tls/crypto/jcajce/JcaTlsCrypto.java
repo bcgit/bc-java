@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
+import java.security.interfaces.RSAPublicKey;
+
+import javax.crypto.Cipher;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AbstractTlsCrypto;
@@ -26,6 +29,7 @@ import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
+import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsMAC;
@@ -250,6 +254,46 @@ public class JcaTlsCrypto
     public TlsECDomain createECDomain(TlsECConfig ecConfig)
     {
         return new JcaTlsECDomain(this, ecConfig);
+    }
+
+    public TlsEncryptor createEncryptor(TlsCertificate certificate)
+        throws IOException
+    {
+        // TODO[tls-ops] Need to validateKeyUsage(KeyUsage.keyEncipherment) here
+        RSAPublicKey pubKeyRSA = JcaTlsCertificate.convert(certificate, this.getHelper()).getPubKeyRSA();
+
+        try
+        {
+        final Cipher encoding = getHelper().createCipher("RSA/NONE/PKCS1Padding");
+
+        encoding.init(Cipher.WRAP_MODE, pubKeyRSA, getSecureRandom());
+
+            return new TlsEncryptor()
+            {
+                public byte[] encrypt(byte[] input, int inOff, int length)
+                    throws IOException
+                {
+                    try
+                    {
+                        return encoding.doFinal(input, inOff, length);
+                    }
+                    catch (GeneralSecurityException e)
+                    {
+                        /*
+                         * This should never happen, only during decryption.
+                         */
+                        throw new TlsFatalAlert(AlertDescription.internal_error, e);
+                    }
+                }
+            };
+        }
+        catch (GeneralSecurityException e)
+        {
+            /*
+             * This should never happen, only during decryption.
+             */
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
+        }
     }
 
     /**
