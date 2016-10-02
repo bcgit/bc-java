@@ -6,8 +6,8 @@ import javax.net.ssl.SSLParameters;
 
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.TlsAuthentication;
-import org.bouncycastle.tls.TlsCrypto;
 import org.bouncycastle.tls.TlsSession;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 
 class ProvTlsClient
     extends DefaultTlsClient

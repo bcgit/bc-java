@@ -15,7 +15,7 @@ import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509ExtendedTrustManager;
 import javax.net.ssl.X509KeyManager;
 
-import org.bouncycastle.tls.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 
 class ProvSSLContextSpi
     extends SSLContextSpi

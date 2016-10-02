@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.bouncycastle.tls.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.jcajce.JcaTlsCryptoBuilder;
 import org.bouncycastle.util.Strings;
 
