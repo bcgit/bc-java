@@ -934,8 +934,9 @@
             <docElements>
                 <package name="org.bouncycastle.tls.*" />
                 <package name="org.bouncycastle.jsse.*" />
-                <group title="TLS/DTLS Packages" packages="org.bouncycastle.tls*" />
-                <group title="JSSE Provider Packages" packages="org.bouncycastle.jsse*" />
+                <group title="TLS/DTLS Packages" packages="org.bouncycastle.tls,org.bouncycastle.tls.crypto*" />
+                <group title="JSSE Provider Packages" packages="org.bouncycastle.jsse.provider" />
+                <group title="TLS/DTLS/JSSE Provider Test and Example Packages" packages="org.bouncycastle.jsse.provider.test*,org.bouncycastle.tls.test*" />
             </docElements>
         </compile-doc>
 
