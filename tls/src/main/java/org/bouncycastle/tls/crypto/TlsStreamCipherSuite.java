@@ -8,6 +8,9 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * A generic TLS 1.0-1.2 / SSLv3 stream cipher suite.
+ */
 public class TlsStreamCipherSuite
     implements TlsCipherSuite
 {

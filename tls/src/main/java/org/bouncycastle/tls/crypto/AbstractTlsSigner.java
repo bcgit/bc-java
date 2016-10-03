@@ -2,6 +2,9 @@ package org.bouncycastle.tls.crypto;
 
 import org.bouncycastle.tls.TlsContext;
 
+/**
+ * Base class for a signing service for use with TLS.
+ */
 public abstract class AbstractTlsSigner
     implements TlsSigner
 {

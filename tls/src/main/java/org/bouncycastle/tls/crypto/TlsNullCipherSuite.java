@@ -8,6 +8,9 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * The cipher suite for the NULL cipher.
+ */
 public class TlsNullCipherSuite
     implements TlsCipherSuite
 {

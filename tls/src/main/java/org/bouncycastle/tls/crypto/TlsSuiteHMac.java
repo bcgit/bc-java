@@ -110,7 +110,7 @@ class TlsSuiteHMac
     }
 
     public byte[] calculateMacConstantTime(long seqNo, short type, byte[] message, int offset, int length,
-        int fullLength, byte[] dummyData)
+                                           int expectedLength, byte[] dummyData)
     {
         /*
          * Actual MAC only calculated on 'length' bytes...
@@ -124,7 +124,7 @@ class TlsSuiteHMac
         int headerLength = TlsUtils.isSSL(context) ? 11 : 13;
 
         // How many extra full blocks do we need to calculate?
-        int extra = getDigestBlockCount(headerLength + fullLength) - getDigestBlockCount(headerLength + length);
+        int extra = getDigestBlockCount(headerLength + expectedLength) - getDigestBlockCount(headerLength + length);
 
         while (--extra >= 0)
         {

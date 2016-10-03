@@ -10,7 +10,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**
- * RFC 7905
+ * Cipher suite specified in RFC 7905 using ChaCha20 and Poly1305.
  */
 public class ChaCha20Poly1305CipherSuite
     implements TlsCipherSuite

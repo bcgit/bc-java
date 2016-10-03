@@ -20,7 +20,6 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
-import org.bouncycastle.tls.crypto.TlsSignature;
 import org.bouncycastle.util.BigIntegers;
 
 public class BcTlsECDomain implements TlsECDomain
@@ -53,11 +52,6 @@ public class BcTlsECDomain implements TlsECDomain
     public TlsAgreement createECDH()
     {
         return new BcTlsECDH(this);
-    }
-
-    public TlsSignature createECDSA()
-    {
-        return new BcTlsECDSA(this);
     }
 
     public ECPoint decodePoint(byte[] encoding) throws IOException

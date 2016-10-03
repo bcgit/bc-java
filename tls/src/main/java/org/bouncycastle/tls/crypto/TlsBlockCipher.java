@@ -37,5 +37,10 @@ public interface TlsBlockCipher
      */
     int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset) throws IOException;
 
+    /**
+     * Return the blocksize (in bytes) of the underlying block cipher.
+     *
+     * @return the cipher's blocksize.
+     */
     int getBlockSize();
 }

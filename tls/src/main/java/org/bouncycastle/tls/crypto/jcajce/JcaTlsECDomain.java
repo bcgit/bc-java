@@ -27,7 +27,6 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
-import org.bouncycastle.tls.crypto.TlsSignature;
 
 public class JcaTlsECDomain
     implements TlsECDomain
@@ -67,11 +66,6 @@ public class JcaTlsECDomain
     public TlsAgreement createECDH()
     {
         return new JceTlsECDH(this);
-    }
-
-    public TlsSignature createECDSA()
-    {
-        return new JcaTlsECDSA(this);
     }
 
     public ECPoint decodePoint(byte[] encoding) throws IOException

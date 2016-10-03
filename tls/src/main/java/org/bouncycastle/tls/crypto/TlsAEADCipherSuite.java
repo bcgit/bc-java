@@ -8,6 +8,9 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Base cipher suite for use with AEAD ciphers.
+ */
 public class TlsAEADCipherSuite
     implements TlsCipherSuite
 {

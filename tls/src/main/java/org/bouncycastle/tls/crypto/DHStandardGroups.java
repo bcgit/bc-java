@@ -14,14 +14,14 @@ public class DHStandardGroups
         return new BigInteger(1, Hex.decode(hex));
     }
 
-    private static TlsDHParameters fromPG(String hexP, String hexG)
+    private static DHGroup fromPG(String hexP, String hexG)
     {
-        return new TlsDHParameters(fromHex(hexP), fromHex(hexG));
+        return new DHGroup(fromHex(hexP), fromHex(hexG));
     }
 
-    private static TlsDHParameters fromPQG(String hexP, String hexQ, String hexG)
+    private static DHGroup fromPQG(String hexP, String hexQ, String hexG)
     {
-        return new TlsDHParameters(fromHex(hexP), fromHex(hexQ), fromHex(hexG));
+        return new DHGroup(fromHex(hexP), fromHex(hexQ), fromHex(hexG));
     }
 
     /*
@@ -31,14 +31,14 @@ public class DHStandardGroups
         + "29024E088A67CC74020BBEA63B139B22514A08798E3404DD" + "EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245"
         + "E485B576625E7EC6F44C42E9A63A3620FFFFFFFFFFFFFFFF";
     private static final String rfc2409_768_g = "02";
-    public static final TlsDHParameters rfc2409_768 = fromPG(rfc2409_768_p, rfc2409_768_g);
+    public static final DHGroup rfc2409_768 = fromPG(rfc2409_768_p, rfc2409_768_g);
 
     private static final String rfc2409_1024_p = "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1"
         + "29024E088A67CC74020BBEA63B139B22514A08798E3404DD" + "EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245"
         + "E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7ED" + "EE386BFB5A899FA5AE9F24117C4B1FE649286651ECE65381"
         + "FFFFFFFFFFFFFFFF";
     private static final String rfc2409_1024_g = "02";
-    public static final TlsDHParameters rfc2409_1024 = fromPG(rfc2409_1024_p, rfc2409_1024_g);
+    public static final DHGroup rfc2409_1024 = fromPG(rfc2409_1024_p, rfc2409_1024_g);
 
     /*
      * RFC 3526
@@ -49,7 +49,7 @@ public class DHStandardGroups
         + "C2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F" + "83655D23DCA3AD961C62F356208552BB9ED529077096966D"
         + "670C354E4ABC9804F1746C08CA237327FFFFFFFFFFFFFFFF";
     private static final String rfc3526_1536_g = "02";
-    public static final TlsDHParameters rfc3526_1536 = fromPG(rfc3526_1536_p, rfc3526_1536_g);
+    public static final DHGroup rfc3526_1536 = fromPG(rfc3526_1536_p, rfc3526_1536_g);
 
     private static final String rfc3526_2048_p = "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1"
         + "29024E088A67CC74020BBEA63B139B22514A08798E3404DD" + "EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245"
@@ -58,7 +58,7 @@ public class DHStandardGroups
         + "670C354E4ABC9804F1746C08CA18217C32905E462E36CE3B" + "E39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9"
         + "DE2BCBF6955817183995497CEA956AE515D2261898FA0510" + "15728E5A8AACAA68FFFFFFFFFFFFFFFF";
     private static final String rfc3526_2048_g = "02";
-    public static final TlsDHParameters rfc3526_2048 = fromPG(rfc3526_2048_p, rfc3526_2048_g);
+    public static final DHGroup rfc3526_2048 = fromPG(rfc3526_2048_p, rfc3526_2048_g);
 
     private static final String rfc3526_3072_p = "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1"
         + "29024E088A67CC74020BBEA63B139B22514A08798E3404DD" + "EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245"
@@ -70,7 +70,7 @@ public class DHStandardGroups
         + "F12FFA06D98A0864D87602733EC86A64521F2B18177B200C" + "BBE117577A615D6C770988C0BAD946E208E24FA074E5AB31"
         + "43DB5BFCE0FD108E4B82D120A93AD2CAFFFFFFFFFFFFFFFF";
     private static final String rfc3526_3072_g = "02";
-    public static final TlsDHParameters rfc3526_3072 = fromPG(rfc3526_3072_p, rfc3526_3072_g);
+    public static final DHGroup rfc3526_3072 = fromPG(rfc3526_3072_p, rfc3526_3072_g);
 
     private static final String rfc3526_4096_p = "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1"
         + "29024E088A67CC74020BBEA63B139B22514A08798E3404DD" + "EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245"
@@ -85,7 +85,7 @@ public class DHStandardGroups
         + "1F612970CEE2D7AFB81BDD762170481CD0069127D5B05AA9" + "93B4EA988D8FDDC186FFB7DC90A6C08F4DF435C934063199"
         + "FFFFFFFFFFFFFFFF";
     private static final String rfc3526_4096_g = "02";
-    public static final TlsDHParameters rfc3526_4096 = fromPG(rfc3526_4096_p, rfc3526_4096_g);
+    public static final DHGroup rfc3526_4096 = fromPG(rfc3526_4096_p, rfc3526_4096_g);
 
     private static final String rfc3526_6144_p = "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E08"
         + "8A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B"
@@ -116,7 +116,7 @@ public class DHStandardGroups
         + "387FE8D76E3C0468043E8F663F4860EE12BF2D5B0B7474D6E694F91E"
         + "6DCC4024FFFFFFFFFFFFFFFF";
     private static final String rfc3526_6144_g = "02";
-    public static final TlsDHParameters rfc3526_6144 = fromPG(rfc3526_6144_p, rfc3526_6144_g);
+    public static final DHGroup rfc3526_6144 = fromPG(rfc3526_6144_p, rfc3526_6144_g);
 
     private static final String rfc3526_8192_p = "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1"
         + "29024E088A67CC74020BBEA63B139B22514A08798E3404DD" + "EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245"
@@ -141,13 +141,13 @@ public class DHStandardGroups
         + "B1D510BD7EE74D73FAF36BC31ECFA268359046F4EB879F92" + "4009438B481C6CD7889A002ED5EE382BC9190DA6FC026E47"
         + "9558E4475677E9AA9E3050E2765694DFC81F56E880B96E71" + "60C980DD98EDD3DFFFFFFFFFFFFFFFFF";
     private static final String rfc3526_8192_g = "02";
-    public static final TlsDHParameters rfc3526_8192 = fromPG(rfc3526_8192_p, rfc3526_8192_g);
+    public static final DHGroup rfc3526_8192 = fromPG(rfc3526_8192_p, rfc3526_8192_g);
 
     /*
      * RFC 4306
      */
-    public static final TlsDHParameters rfc4306_768 = rfc2409_768;
-    public static final TlsDHParameters rfc4306_1024 = rfc2409_1024;
+    public static final DHGroup rfc4306_768 = rfc2409_768;
+    public static final DHGroup rfc4306_1024 = rfc2409_1024;
 
     /*
      * RFC 5114
@@ -161,7 +161,7 @@ public class DHStandardGroups
         + "909D0D2263F80A76A6A24C087A091F531DBF0A0169B6A28A" + "D662A4D18E73AFA32D779D5918D08BC8858F4DCEF97C2A24"
         + "855E6EEB22B3B2E5";
     private static final String rfc5114_1024_160_q = "F518AA8781A8DF278ABA4E7D64B7CB9D49462353";
-    public static final TlsDHParameters rfc5114_1024_160 = fromPQG(rfc5114_1024_160_p, rfc5114_1024_160_q, rfc5114_1024_160_g
+    public static final DHGroup rfc5114_1024_160 = fromPQG(rfc5114_1024_160_p, rfc5114_1024_160_q, rfc5114_1024_160_g
     );
 
     private static final String rfc5114_2048_224_p = "AD107E1E9123A9D0D660FAA79559C51FA20D64E5683B9FD1"
@@ -177,7 +177,7 @@ public class DHStandardGroups
         + "10E183EDD19963DDD9E263E4770589EF6AA21E7F5F2FF381" + "B539CCE3409D13CD566AFBB48D6C019181E1BCFE94B30269"
         + "EDFE72FE9B6AA4BD7B5A0F1C71CFFF4C19C418E1F6EC0179" + "81BC087F2A7065B384B890D3191F2BFA";
     private static final String rfc5114_2048_224_q = "801C0D34C58D93FE997177101F80535A4738CEBCBF389A99B36371EB";
-    public static final TlsDHParameters rfc5114_2048_224 = fromPQG(rfc5114_2048_224_p, rfc5114_2048_224_q, rfc5114_2048_224_g
+    public static final DHGroup rfc5114_2048_224 = fromPQG(rfc5114_2048_224_p, rfc5114_2048_224_q, rfc5114_2048_224_g
     );
 
     private static final String rfc5114_2048_256_p = "87A8E61DB4B6663CFFBBD19C651959998CEEF608660DD0F2"
@@ -194,12 +194,12 @@ public class DHStandardGroups
         + "184B523D1DB246C32F63078490F00EF8D647D148D4795451" + "5E2327CFEF98C582664B4C0F6CC41659";
     private static final String rfc5114_2048_256_q = "8CF83642A709A097B447997640129DA299B1A47D1EB3750B"
         + "A308B0FE64F5FBD3";
-    public static final TlsDHParameters rfc5114_2048_256 = fromPQG(rfc5114_2048_256_p, rfc5114_2048_256_q, rfc5114_2048_256_g
+    public static final DHGroup rfc5114_2048_256 = fromPQG(rfc5114_2048_256_p, rfc5114_2048_256_q, rfc5114_2048_256_g
     );
 
     /*
      * RFC 5996
      */
-    public static final TlsDHParameters rfc5996_768 = rfc4306_768;
-    public static final TlsDHParameters rfc5996_1024 = rfc4306_1024;
+    public static final DHGroup rfc5996_768 = rfc4306_768;
+    public static final DHGroup rfc5996_1024 = rfc4306_1024;
 }

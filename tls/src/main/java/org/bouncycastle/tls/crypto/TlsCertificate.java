@@ -7,6 +7,9 @@ import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 
+/**
+ * Interface providing the functional representation of a single X.509 certificate.
+ */
 public interface TlsCertificate
 {
     /**

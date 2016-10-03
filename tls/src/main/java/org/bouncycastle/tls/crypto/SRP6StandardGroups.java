@@ -4,6 +4,9 @@ import java.math.BigInteger;
 
 import org.bouncycastle.util.encoders.Hex;
 
+/**
+ * A selection of standard groups for SRP-6.
+ */
 public class SRP6StandardGroups
 {
     private static BigInteger fromHex(String hex)
