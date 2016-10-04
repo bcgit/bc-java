@@ -15,8 +15,6 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.x509.Extensions;
-import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsSecret;
@@ -996,24 +994,6 @@ public class TlsUtils
         System.arraycopy(a, 0, c, 0, a.length);
         System.arraycopy(b, 0, c, a.length, b.length);
         return c;
-    }
-
-    static void validateKeyUsage(org.bouncycastle.asn1.x509.Certificate c, int keyUsageBits)
-        throws IOException
-    {
-        Extensions exts = c.getTBSCertificate().getExtensions();
-        if (exts != null)
-        {
-            KeyUsage ku = KeyUsage.fromExtensions(exts);
-            if (ku != null)
-            {
-                int bits = ku.getBytes()[0] & 0xff;
-                if ((bits & keyUsageBits) != keyUsageBits)
-                {
-                    throw new TlsFatalAlert(AlertDescription.certificate_unknown);
-                }
-            }
-        }
     }
 
     public static byte[] calculateKeyBlock(TlsContext context, int length)
