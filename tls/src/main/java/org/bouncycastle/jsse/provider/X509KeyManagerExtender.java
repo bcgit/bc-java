@@ -5,6 +5,7 @@ import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509KeyManager;
 
@@ -15,12 +16,9 @@ class X509KeyManagerExtender
 
     X509KeyManagerExtender(X509KeyManager baseMgr)
     {
-        this.baseMgr = baseMgr;
-    }
+        super();
 
-    public String[] getClientAliases(String keyType, Principal[] principals)
-    {
-        return baseMgr.getClientAliases(keyType, principals);
+        this.baseMgr = baseMgr;
     }
 
     public String chooseClientAlias(String[] keyTypes, Principal[] principals, Socket socket)
@@ -28,9 +26,16 @@ class X509KeyManagerExtender
         return baseMgr.chooseClientAlias(keyTypes, principals, socket);
     }
 
-    public String[] getServerAliases(String keyType, Principal[] principals)
+    @Override
+    public String chooseEngineClientAlias(String[] keyType, Principal[] issuers, SSLEngine engine)
     {
-        return baseMgr.getServerAliases(keyType, principals);
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine)
+    {
+        throw new UnsupportedOperationException();
     }
 
     public String chooseServerAlias(String keyType, Principal[] principals, Socket socket)
@@ -43,8 +48,18 @@ class X509KeyManagerExtender
         return baseMgr.getCertificateChain(alias);
     }
 
+    public String[] getClientAliases(String keyType, Principal[] principals)
+    {
+        return baseMgr.getClientAliases(keyType, principals);
+    }
+
     public PrivateKey getPrivateKey(String alias)
     {
         return baseMgr.getPrivateKey(alias);
+    }
+
+    public String[] getServerAliases(String keyType, Principal[] principals)
+    {
+        return baseMgr.getServerAliases(keyType, principals);
     }
 }
