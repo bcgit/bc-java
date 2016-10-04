@@ -24,7 +24,7 @@ public class PSKTlsServer
         this.pskIdentityManager = pskIdentityManager;
     }
 
-    protected TlsCredentialedEncryptor getRSAEncryptionCredentials() throws IOException
+    protected TlsCredentialedDecryptor getRSAEncryptionCredentials() throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }

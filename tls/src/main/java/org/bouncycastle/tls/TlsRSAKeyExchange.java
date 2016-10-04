@@ -17,7 +17,7 @@ public class TlsRSAKeyExchange
 {
     protected TlsEncryptor encryptor = null;
 
-    protected TlsCredentialedEncryptor serverCredentials = null;
+    protected TlsCredentialedDecryptor serverCredentials = null;
 
     protected TlsSecret preMasterSecret;
 
@@ -35,12 +35,12 @@ public class TlsRSAKeyExchange
     public void processServerCredentials(TlsCredentials serverCredentials)
         throws IOException
     {
-        if (!(serverCredentials instanceof TlsCredentialedEncryptor))
+        if (!(serverCredentials instanceof TlsCredentialedDecryptor))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        this.serverCredentials = (TlsCredentialedEncryptor)serverCredentials;
+        this.serverCredentials = (TlsCredentialedDecryptor)serverCredentials;
     }
 
     public void processServerCertificate(Certificate serverCertificate)

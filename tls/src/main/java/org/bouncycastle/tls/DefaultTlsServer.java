@@ -31,7 +31,7 @@ public abstract class DefaultTlsServer
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    protected TlsCredentialedEncryptor getRSAEncryptionCredentials()
+    protected TlsCredentialedDecryptor getRSAEncryptionCredentials()
         throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);

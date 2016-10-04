@@ -19,14 +19,14 @@ import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsCredentialedAgreement;
-import org.bouncycastle.tls.TlsCredentialedEncryptor;
+import org.bouncycastle.tls.TlsCredentialedDecryptor;
 import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedAgreement;
 import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
-import org.bouncycastle.tls.crypto.impl.bc.DefaultTlsCredentialedEncryptor;
+import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedDecryptor;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedAgreement;
@@ -109,7 +109,7 @@ public class TlsTestUtils
         }
     }
 
-    static TlsCredentialedEncryptor loadEncryptionCredentials(TlsContext context, String[] certResources,
+    static TlsCredentialedDecryptor loadEncryptionCredentials(TlsContext context, String[] certResources,
         String keyResource) throws IOException
     {
         TlsCrypto crypto = context.getCrypto();
@@ -120,7 +120,7 @@ public class TlsTestUtils
         {
             AsymmetricKeyParameter privateKey = loadBcPrivateKeyResource(keyResource);
 
-            return new DefaultTlsCredentialedEncryptor((BcTlsCrypto)crypto, certificate, privateKey);
+            return new BcDefaultTlsCredentialedDecryptor((BcTlsCrypto)crypto, certificate, privateKey);
         }
         else
         {

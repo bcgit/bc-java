@@ -11,18 +11,18 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsContext;
-import org.bouncycastle.tls.TlsCredentialedEncryptor;
+import org.bouncycastle.tls.TlsCredentialedDecryptor;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
-public class DefaultTlsCredentialedEncryptor
-    implements TlsCredentialedEncryptor
+public class BcDefaultTlsCredentialedDecryptor
+    implements TlsCredentialedDecryptor
 {
     protected BcTlsCrypto crypto;
     protected Certificate certificate;
     protected AsymmetricKeyParameter privateKey;
 
-    public DefaultTlsCredentialedEncryptor(BcTlsCrypto crypto, Certificate certificate,
+    public BcDefaultTlsCredentialedDecryptor(BcTlsCrypto crypto, Certificate certificate,
                                            AsymmetricKeyParameter privateKey)
     {
         if (crypto == null)

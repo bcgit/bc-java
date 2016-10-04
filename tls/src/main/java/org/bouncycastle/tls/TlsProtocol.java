@@ -1231,7 +1231,7 @@ public abstract class TlsProtocol
         {
             int count = 0;
             count += (credentials instanceof TlsCredentialedAgreement) ? 1 : 0;
-            count += (credentials instanceof TlsCredentialedEncryptor) ? 1 : 0;
+            count += (credentials instanceof TlsCredentialedDecryptor) ? 1 : 0;
             count += (credentials instanceof TlsCredentialedSigner) ? 1 : 0;
             if (count != 1)
             {

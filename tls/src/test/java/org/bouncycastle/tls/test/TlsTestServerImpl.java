@@ -15,7 +15,7 @@ import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
-import org.bouncycastle.tls.TlsCredentialedEncryptor;
+import org.bouncycastle.tls.TlsCredentialedDecryptor;
 import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
@@ -217,7 +217,7 @@ class TlsTestServerImpl
             "x509-server-ecdsa.pem", "x509-server-key-ecdsa.pem");
     }
 
-    protected TlsCredentialedEncryptor getRSAEncryptionCredentials() throws IOException
+    protected TlsCredentialedDecryptor getRSAEncryptionCredentials() throws IOException
     {
         return TlsTestUtils.loadEncryptionCredentials(context, new String[]{ "x509-server.pem", "x509-ca.pem" },
             "x509-server-key.pem");

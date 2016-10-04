@@ -3,7 +3,7 @@ package org.bouncycastle.tls;
 import java.io.IOException;
 
 import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedAgreement;
-import org.bouncycastle.tls.crypto.impl.bc.DefaultTlsCredentialedEncryptor;
+import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedDecryptor;
 
 public interface TlsAuthentication
 {
@@ -20,11 +20,11 @@ public interface TlsAuthentication
     /**
      * Return client credentials in response to server's certificate request. The returned value may
      * be null, or else it MUST implement <em>exactly one</em> of {@link TlsCredentialedAgreement},
-     * {@link TlsCredentialedEncryptor}, or {@link TlsCredentialedSigner}, depending on the key
+     * {@link TlsCredentialedDecryptor}, or {@link TlsCredentialedSigner}, depending on the key
      * exchange that was negotiated and the details of the {@link CertificateRequest}.
      * 
-     * @see {@link BcDefaultTlsCredentialedAgreement}, {@link DefaultTlsCredentialedEncryptor},
-     *      {@link DefaultTlsCredentialedSigner}
+     * @see {@link BcDefaultTlsCredentialedAgreement}, {@link BcDefaultTlsCredentialedDecryptor},
+     *      {@link BcDefaultTlsCredentialedSigner}
      *
      * @param certificateRequest
      *            details of the certificate request
