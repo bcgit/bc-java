@@ -1,7 +1,7 @@
 package org.bouncycastle.tls.crypto;
 
 /**
- * Interface for MAC services based on HMAC
+ * Interface for MAC services based on HMAC.
  */
 public interface TlsHMAC
     extends TlsMAC

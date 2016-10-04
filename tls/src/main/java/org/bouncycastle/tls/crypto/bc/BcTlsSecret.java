@@ -84,7 +84,7 @@ public class BcTlsSecret implements TlsSecret
         return result;
     }
 
-    public synchronized TlsSecret prf(int prfAlgorithm, byte[] labelSeed, int length)
+    public synchronized TlsSecret deriveUsingPRF(int prfAlgorithm, byte[] labelSeed, int length)
     {
         checkAlive();
 

@@ -987,7 +987,7 @@ public class TlsUtils
 
         int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
 
-        return secret.prf(prfAlgorithm, labelSeed, length);
+        return secret.deriveUsingPRF(prfAlgorithm, labelSeed, length);
     }
 
     public static byte[] PRF(TlsContext context, byte[] secret, String asciiLabel, byte[] seed, int length)

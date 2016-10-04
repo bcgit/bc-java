@@ -101,7 +101,7 @@ public class JceTlsSecret
         return encryptor.encrypt(data, 0, data.length);
     }
 
-    public synchronized TlsSecret prf(int prfAlgorithm, byte[] labelSeed, int length)
+    public synchronized TlsSecret deriveUsingPRF(int prfAlgorithm, byte[] labelSeed, int length)
     {
         checkAlive();
 
