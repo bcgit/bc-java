@@ -153,6 +153,7 @@ public class JcaTlsCertificate
     {
         try
         {
+            // TODO[tls-ops] A DER encoding is required here - check this will be the case for any/all providers.
             return certificate.getEncoded();
         }
         catch (CertificateEncodingException e)

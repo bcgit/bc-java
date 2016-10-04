@@ -19,6 +19,7 @@ import org.bouncycastle.tls.TlsCredentialedEncryptor;
 import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoBuilder;
@@ -152,7 +153,7 @@ class TlsTestServerImpl
         }
 
         Vector certificateAuthorities = new Vector();
-        certificateAuthorities.addElement(TlsTestUtils.loadCertificateResource("x509-ca.pem").getSubject());
+        certificateAuthorities.addElement(TlsTestUtils.loadBcCertificateResource("x509-ca.pem").getSubject());
 
         return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
     }
@@ -171,12 +172,10 @@ class TlsTestServerImpl
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
 
-        Certificate[] chain = clientCertificate.getCertificateList();
+        TlsCertificate[] chain = clientCertificate.getCertificateList();
 
-        // TODO Cache test resources?
-        if (!isEmpty && !(chain[0].equals(TlsTestUtils.loadCertificateResource("x509-client.pem"))
-            || chain[0].equals(TlsTestUtils.loadCertificateResource("x509-client-dsa.pem"))
-            || chain[0].equals(TlsTestUtils.loadCertificateResource("x509-client-ecdsa.pem"))))
+        if (!isEmpty && !TlsTestUtils.isCertificateOneOf(context.getCrypto(), chain[0],
+            new String[]{ "x509-client.pem", "x509-client-dsa.pem", "x509-client-ecdsa.pem"}))
         {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
@@ -186,7 +185,7 @@ class TlsTestServerImpl
             System.out.println("TLS server received client certificate chain of length " + chain.length);
             for (int i = 0; i != chain.length; i++)
             {
-                Certificate entry = chain[i];
+                Certificate entry = Certificate.getInstance(chain[i].getEncoded());
                 // TODO Create fingerprint based on certificate signature algorithm digest
                 System.out.println("    fingerprint:SHA-256 " + TlsTestUtils.fingerprint(entry) + " ("
                     + entry.getSubject() + ")");

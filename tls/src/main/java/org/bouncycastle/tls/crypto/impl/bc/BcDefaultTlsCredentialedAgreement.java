@@ -88,7 +88,7 @@ public class BcDefaultTlsCredentialedAgreement
         public TlsSecret generateAgreement(TlsCertificate peerCertificate)
             throws IOException
         {
-            TlsCertificate localCert = certificate.getCertificateAt(crypto, 0);
+            TlsCertificate localCert = certificate.getCertificateAt(0);
             AsymmetricKeyParameter peerPublicKey = BcTlsCertificate.convert(crypto, localCert).getPublicKey();
             basicAgreement.init(privateKey);
             BigInteger agreementValue = basicAgreement.calculateAgreement(peerPublicKey);
@@ -120,7 +120,7 @@ public class BcDefaultTlsCredentialedAgreement
         public TlsSecret generateAgreement(TlsCertificate peerCertificate)
             throws IOException
         {
-            TlsCertificate localCert = certificate.getCertificateAt(crypto, 0);
+            TlsCertificate localCert = certificate.getCertificateAt(0);
             AsymmetricKeyParameter peerPublicKey = BcTlsCertificate.convert(crypto, localCert).getPublicKey();
             basicAgreement.init(privateKey);
             BigInteger agreementValue = basicAgreement.calculateAgreement(peerPublicKey);

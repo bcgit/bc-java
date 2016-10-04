@@ -267,6 +267,6 @@ public class TlsECDHKeyExchange
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
 
-        return peerCertificate.getCertificateAt(context, 0).useInRole(connectionEnd, keyExchange);
+        return peerCertificate.getCertificateAt(0).useInRole(connectionEnd, keyExchange);
     }
 }

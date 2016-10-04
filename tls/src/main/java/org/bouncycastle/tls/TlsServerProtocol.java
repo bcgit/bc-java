@@ -463,7 +463,7 @@ public class TlsServerProtocol
     protected void receiveCertificateMessage(ByteArrayInputStream buf)
         throws IOException
     {
-        Certificate clientCertificate = Certificate.parse(buf);
+        Certificate clientCertificate = Certificate.parse(getContext(), buf);
 
         assertEmpty(buf);
 
@@ -498,7 +498,7 @@ public class TlsServerProtocol
                 hash = securityParameters.getSessionHash();
             }
 
-            TlsVerifier verifier = peerCertificate.getCertificateAt(getContext(), 0)
+            TlsVerifier verifier = peerCertificate.getCertificateAt(0)
                 .createVerifier(TlsUtils.getSignatureAlgorithmClient(clientCertificateType));
 
             if (!verifier.verifySignature(clientCertificateVerify, hash))

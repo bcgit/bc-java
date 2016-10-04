@@ -592,7 +592,7 @@ public class DTLSClientProtocol
     {
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
-        Certificate serverCertificate = Certificate.parse(buf);
+        Certificate serverCertificate = Certificate.parse(state.clientContext, buf);
 
         TlsProtocol.assertEmpty(buf);
 

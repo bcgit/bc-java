@@ -6,10 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Vector;
 
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.TlsCrypto;
 
 /**
  * Parsing and encoding of a <i>Certificate</i> struct from RFC 4346.
@@ -25,12 +22,11 @@ import org.bouncycastle.tls.crypto.TlsCrypto;
  */
 public class Certificate
 {
-    public static final Certificate EMPTY_CHAIN = new Certificate(
-        new org.bouncycastle.asn1.x509.Certificate[0]);
+    public static final Certificate EMPTY_CHAIN = new Certificate(new TlsCertificate[0]);
 
-    protected org.bouncycastle.asn1.x509.Certificate[] certificateList;
+    protected TlsCertificate[] certificateList;
 
-    public Certificate(org.bouncycastle.asn1.x509.Certificate[] certificateList)
+    public Certificate(TlsCertificate[] certificateList)
     {
         if (certificateList == null)
         {
@@ -44,34 +40,14 @@ public class Certificate
      * @return an array of {@link org.bouncycastle.asn1.x509.Certificate} representing a certificate
      *         chain.
      */
-    public org.bouncycastle.asn1.x509.Certificate[] getCertificateList()
+    public TlsCertificate[] getCertificateList()
     {
         return cloneCertificateList();
     }
 
-    public org.bouncycastle.asn1.x509.Certificate getCertificateAt(int index)
+    public TlsCertificate getCertificateAt(int index)
     {
         return certificateList[index];
-    }
-
-    public TlsCertificate getCertificateAt(TlsContext context, int index)
-    {
-        return getCertificateAt(context.getCrypto(), index);
-    }
-
-    public TlsCertificate getCertificateAt(TlsCrypto crypto, int index)
-    {
-        byte[] encoding;
-        try
-        {
-            encoding = certificateList[index].getEncoded(ASN1Encoding.DER);
-
-            return crypto.createCertificate(encoding);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
     }
 
     public int getLength()
@@ -102,7 +78,7 @@ public class Certificate
         int totalLength = 0;
         for (int i = 0; i < this.certificateList.length; ++i)
         {
-            byte[] derEncoding = certificateList[i].getEncoded(ASN1Encoding.DER);
+            byte[] derEncoding = certificateList[i].getEncoded();
             derEncodings.addElement(derEncoding);
             totalLength += derEncoding.length + 3;
         }
@@ -124,7 +100,7 @@ public class Certificate
      * @return a {@link Certificate} object.
      * @throws IOException
      */
-    public static Certificate parse(InputStream input)
+    public static Certificate parse(TlsContext context, InputStream input)
         throws IOException
     {
         int totalLength = TlsUtils.readUint24(input);
@@ -141,21 +117,20 @@ public class Certificate
         while (buf.available() > 0)
         {
             byte[] derEncoding = TlsUtils.readOpaque24(buf);
-            ASN1Primitive asn1Cert = TlsUtils.readDERObject(derEncoding);
-            certificate_list.addElement(org.bouncycastle.asn1.x509.Certificate.getInstance(asn1Cert));
+            certificate_list.addElement(context.getCrypto().createCertificate(derEncoding));
         }
 
-        org.bouncycastle.asn1.x509.Certificate[] certificateList = new org.bouncycastle.asn1.x509.Certificate[certificate_list.size()];
+        TlsCertificate[] certificateList = new TlsCertificate[certificate_list.size()];
         for (int i = 0; i < certificate_list.size(); i++)
         {
-            certificateList[i] = (org.bouncycastle.asn1.x509.Certificate)certificate_list.elementAt(i);
+            certificateList[i] = (TlsCertificate)certificate_list.elementAt(i);
         }
         return new Certificate(certificateList);
     }
 
-    protected org.bouncycastle.asn1.x509.Certificate[] cloneCertificateList()
+    protected TlsCertificate[] cloneCertificateList()
     {
-        org.bouncycastle.asn1.x509.Certificate[] result = new org.bouncycastle.asn1.x509.Certificate[certificateList.length];
+        TlsCertificate[] result = new TlsCertificate[certificateList.length];
         System.arraycopy(certificateList, 0, result, 0, result.length);
         return result;
     }

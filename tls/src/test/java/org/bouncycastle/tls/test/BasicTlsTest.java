@@ -7,8 +7,6 @@ import java.io.PrintStream;
 import java.net.Socket;
 import java.security.SecureRandom;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
@@ -24,10 +22,14 @@ import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsKeyExchange;
 import org.bouncycastle.tls.TlsSession;
+import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
+
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 public class BasicTlsTest
     extends TestCase
@@ -168,15 +170,16 @@ public class BasicTlsTest
     private void checkConnectionClient(TlsClient client, int cipherSuite, byte[] encCert)
         throws Exception
     {
+        TlsCrypto crypto = client.getCrypto();
+
         client.notifySelectedCipherSuite(cipherSuite);
 
         TlsKeyExchange keyExchange = client.getKeyExchange();
-        keyExchange.init(new MyTlsClientContext(client.getCrypto()));
+        keyExchange.init(new MyTlsClientContext(crypto));
 
         keyExchange
             .processServerCertificate(new Certificate(
-                new org.bouncycastle.asn1.x509.Certificate[]{org.bouncycastle.asn1.x509.Certificate
-                    .getInstance(encCert)}));
+                new TlsCertificate[]{ crypto.createCertificate(encCert) }));
     }
 
     public static TestSuite suite()

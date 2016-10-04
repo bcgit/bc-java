@@ -16,6 +16,7 @@ import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsPSKIdentity;
 import org.bouncycastle.tls.TlsSession;
+import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -113,11 +114,11 @@ class MockPSKTlsClient
             public void notifyServerCertificate(org.bouncycastle.tls.Certificate serverCertificate)
                 throws IOException
             {
-                Certificate[] chain = serverCertificate.getCertificateList();
+                TlsCertificate[] chain = serverCertificate.getCertificateList();
                 System.out.println("TLS-PSK client received server certificate chain of length " + chain.length);
                 for (int i = 0; i != chain.length; i++)
                 {
-                    Certificate entry = chain[i];
+                    Certificate entry = Certificate.getInstance(chain[i].getEncoded());
                     // TODO Create fingerprint based on certificate signature algorithm digest
                     System.out.println("    fingerprint:SHA-256 " + TlsTestUtils.fingerprint(entry) + " ("
                         + entry.getSubject() + ")");

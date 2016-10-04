@@ -483,7 +483,7 @@ public class DTLSServerProtocol
     {
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
-        Certificate clientCertificate = Certificate.parse(buf);
+        Certificate clientCertificate = Certificate.parse(state.serverContext, buf);
 
         TlsProtocol.assertEmpty(buf);
 
@@ -521,7 +521,7 @@ public class DTLSServerProtocol
                 hash = context.getSecurityParameters().getSessionHash();
             }
 
-            TlsVerifier verifier = state.clientCertificate.getCertificateAt(state.serverContext, 0)
+            TlsVerifier verifier = state.clientCertificate.getCertificateAt(0)
                 .createVerifier(TlsUtils.getSignatureAlgorithmClient(state.clientCertificateType));
 
             if (!verifier.verifySignature(clientCertificateVerify, hash))

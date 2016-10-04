@@ -165,7 +165,7 @@ public class TlsClientProtocol
             {
                 // Parse the Certificate message and send to cipher suite
 
-                this.peerCertificate = Certificate.parse(buf);
+                this.peerCertificate = Certificate.parse(getContext(), buf);
 
                 assertEmpty(buf);
 

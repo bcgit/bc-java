@@ -1149,7 +1149,7 @@ public class TlsUtils
             return -1;
         }
 
-        return clientCertificate.getCertificateAt(context, 0).getClientCertificateType();
+        return clientCertificate.getCertificateAt(0).getClientCertificateType();
     }
 
     static void trackHashAlgorithms(TlsHandshakeHash handshakeHash, Vector supportedSignatureAlgorithms)

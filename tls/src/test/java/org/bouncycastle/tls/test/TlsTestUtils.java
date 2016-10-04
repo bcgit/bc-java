@@ -21,11 +21,16 @@ import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsCredentialedAgreement;
 import org.bouncycastle.tls.TlsCredentialedEncryptor;
 import org.bouncycastle.tls.TlsCredentialedSigner;
+import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedAgreement;
 import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.bc.DefaultTlsCredentialedEncryptor;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaDefaultTlsCredentialedSigner;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
+import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedAgreement;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.pem.PemObject;
@@ -83,38 +88,59 @@ public class TlsTestUtils
         return result;
     }
 
-    static TlsCredentialedAgreement loadAgreementCredentials(TlsContext context,
-                                                             String[] certResources, String keyResource)
-        throws IOException
+    static TlsCredentialedAgreement loadAgreementCredentials(TlsContext context, String[] certResources,
+        String keyResource) throws IOException
     {
-        Certificate certificate = loadCertificateChain(certResources);
-        AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
+        TlsCrypto crypto = context.getCrypto();
+        Certificate certificate = loadCertificateChain(crypto, certResources);
 
         // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key (as raw data)
-        return new BcDefaultTlsCredentialedAgreement((BcTlsCrypto)context.getCrypto(), certificate, privateKey);
-    }
-
-    static TlsCredentialedEncryptor loadEncryptionCredentials(TlsContext context,
-                                                              String[] certResources, String keyResource)
-        throws IOException
-    {
-        Certificate certificate = loadCertificateChain(certResources);
-        AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
-
-        // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key (as raw data)
-        return new DefaultTlsCredentialedEncryptor((BcTlsCrypto)context.getCrypto(), certificate, privateKey);
-    }
-
-    static TlsCredentialedSigner loadSignerCredentials(TlsContext context, String[] certResources,
-                                                       String keyResource, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
-        throws IOException
-    {
-        Certificate certificate = loadCertificateChain(certResources);
-       // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key (as raw data)
-
-        if (context.getCrypto() instanceof BcTlsCrypto)
+        if (crypto instanceof BcTlsCrypto)
         {
-            AsymmetricKeyParameter privateKey = loadPrivateKeyResource(keyResource);
+            AsymmetricKeyParameter privateKey = loadBcPrivateKeyResource(keyResource);
+
+            return new BcDefaultTlsCredentialedAgreement((BcTlsCrypto)crypto, certificate, privateKey);
+        }
+        else
+        {
+            PrivateKey privateKey = loadJcaPrivateKeyResource(keyResource);
+
+            return new JceDefaultTlsCredentialedAgreement((JcaTlsCrypto)crypto, certificate, privateKey);
+        }
+    }
+
+    static TlsCredentialedEncryptor loadEncryptionCredentials(TlsContext context, String[] certResources,
+        String keyResource) throws IOException
+    {
+        TlsCrypto crypto = context.getCrypto();
+        Certificate certificate = loadCertificateChain(crypto, certResources);
+
+        // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key (as raw data)
+        if (crypto instanceof BcTlsCrypto)
+        {
+            AsymmetricKeyParameter privateKey = loadBcPrivateKeyResource(keyResource);
+
+            return new DefaultTlsCredentialedEncryptor((BcTlsCrypto)crypto, certificate, privateKey);
+        }
+        else
+        {
+            PrivateKey privateKey = loadJcaPrivateKeyResource(keyResource);
+
+            // TODO[tls-ops] Missing JceDefaultTlsCredentialedEncryptor?
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    static TlsCredentialedSigner loadSignerCredentials(TlsContext context, String[] certResources, String keyResource,
+        SignatureAndHashAlgorithm signatureAndHashAlgorithm) throws IOException
+    {
+        TlsCrypto crypto = context.getCrypto();
+        Certificate certificate = loadCertificateChain(crypto, certResources);
+
+        // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key (as raw data)
+        if (crypto instanceof BcTlsCrypto)
+        {
+            AsymmetricKeyParameter privateKey = loadBcPrivateKeyResource(keyResource);
 
             return new BcDefaultTlsCredentialedSigner(context, privateKey, certificate, signatureAndHashAlgorithm);
         }
@@ -127,8 +153,7 @@ public class TlsTestUtils
     }
 
     static TlsCredentialedSigner loadSignerCredentials(TlsContext context, Vector supportedSignatureAlgorithms,
-                                                       short signatureAlgorithm, String certResource, String keyResource)
-        throws IOException
+        short signatureAlgorithm, String certResource, String keyResource) throws IOException
     {
         /*
          * TODO Note that this code fails to provide default value for the client supported
@@ -158,18 +183,18 @@ public class TlsTestUtils
             keyResource, signatureAndHashAlgorithm);
     }
 
-    static Certificate loadCertificateChain(String[] resources)
+    static Certificate loadCertificateChain(TlsCrypto crypto, String[] resources)
         throws IOException
     {
-        org.bouncycastle.asn1.x509.Certificate[] chain = new org.bouncycastle.asn1.x509.Certificate[resources.length];
+        TlsCertificate[] chain = new TlsCertificate[resources.length];
         for (int i = 0; i < resources.length; ++i)
         {
-            chain[i] = loadCertificateResource(resources[i]);
+            chain[i] = loadCertificateResource(crypto, resources[i]);
         }
         return new Certificate(chain);
     }
 
-    static org.bouncycastle.asn1.x509.Certificate loadCertificateResource(String resource)
+    static org.bouncycastle.asn1.x509.Certificate loadBcCertificateResource(String resource)
         throws IOException
     {
         PemObject pem = loadPemResource(resource);
@@ -180,7 +205,18 @@ public class TlsTestUtils
         throw new IllegalArgumentException("'resource' doesn't specify a valid certificate");
     }
 
-    static AsymmetricKeyParameter loadPrivateKeyResource(String resource)
+    static TlsCertificate loadCertificateResource(TlsCrypto crypto, String resource)
+        throws IOException
+    {
+        PemObject pem = loadPemResource(resource);
+        if (pem.getType().endsWith("CERTIFICATE"))
+        {
+            return crypto.createCertificate(pem.getContent());
+        }
+        throw new IllegalArgumentException("'resource' doesn't specify a valid certificate");
+    }
+
+    static AsymmetricKeyParameter loadBcPrivateKeyResource(String resource)
         throws IOException
     {
         PemObject pem = loadPemResource(resource);
@@ -232,5 +268,29 @@ public class TlsTestUtils
         PemObject o = p.readPemObject();
         p.close();
         return o;
+    }
+
+    static boolean areSameCertificate(TlsCrypto crypto, TlsCertificate cert, String resource) throws IOException
+    {
+        // TODO Cache test resources?
+        return areSameCertificate(cert, loadCertificateResource(crypto, resource));
+    }
+
+    static boolean areSameCertificate(TlsCertificate a, TlsCertificate b) throws IOException
+    {
+        // TODO[tls-ops] Support equals on TlsCertificate?
+        return Arrays.areEqual(a.getEncoded(), b.getEncoded());
+    }
+
+    static boolean isCertificateOneOf(TlsCrypto crypto, TlsCertificate cert, String[] resources) throws IOException
+    {
+        for (int i = 0; i < resources.length; ++i)
+        {
+            if (areSameCertificate(crypto, cert, resources[i]))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -7,6 +7,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.Certificate;
@@ -25,6 +26,7 @@ import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoBuilder;
@@ -162,12 +164,10 @@ class TlsTestClientImpl
             {
                 boolean isEmpty = serverCertificate == null || serverCertificate.isEmpty();
 
-                Certificate[] chain = serverCertificate.getCertificateList();
+                TlsCertificate[] chain = serverCertificate.getCertificateList();
 
-                // TODO Cache test resources?
-                if (isEmpty || !(chain[0].equals(TlsTestUtils.loadCertificateResource("x509-server.pem"))
-                    || chain[0].equals(TlsTestUtils.loadCertificateResource("x509-server-dsa.pem"))
-                    || chain[0].equals(TlsTestUtils.loadCertificateResource("x509-server-ecdsa.pem"))))
+                if (isEmpty || !TlsTestUtils.isCertificateOneOf(context.getCrypto(), chain[0],
+                    new String[]{ "x509-server.pem", "x509-server-dsa.pem", "x509-server-ecdsa.pem"}))
                 {
                     throw new TlsFatalAlert(AlertDescription.bad_certificate);
                 }
@@ -177,7 +177,7 @@ class TlsTestClientImpl
                     System.out.println("TLS client received server certificate chain of length " + chain.length);
                     for (int i = 0; i != chain.length; i++)
                     {
-                        Certificate entry = chain[i];
+                        Certificate entry = Certificate.getInstance(chain[i].getEncoded());
                         // TODO Create fingerprint based on certificate signature algorithm digest
                         System.out.println("    fingerprint:SHA-256 " + TlsTestUtils.fingerprint(entry) + " ("
                             + entry.getSubject() + ")");
@@ -238,7 +238,7 @@ class TlsTestClientImpl
 
                         if (config.clientAuth == TlsTestConfig.CLIENT_AUTH_INVALID_CERT)
                         {
-                            cert = corruptCertificate(cert);
+                            cert = corruptCertificate(context.getCrypto(), cert);
                         }
 
                         return cert;
@@ -253,21 +253,30 @@ class TlsTestClientImpl
         };
     }
 
-    protected org.bouncycastle.tls.Certificate corruptCertificate(org.bouncycastle.tls.Certificate cert)
+    protected org.bouncycastle.tls.Certificate corruptCertificate(TlsCrypto crypto, org.bouncycastle.tls.Certificate cert)
     {
-        Certificate[] certList = cert.getCertificateList();
-        certList[0] = corruptCertificateSignature(certList[0]);
+        TlsCertificate[] certList = cert.getCertificateList();
+        try
+        {
+            certList[0] = corruptCertificateSignature(crypto, certList[0]);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
         return new org.bouncycastle.tls.Certificate(certList);
     }
 
-    protected Certificate corruptCertificateSignature(Certificate cert)
+    protected TlsCertificate corruptCertificateSignature(TlsCrypto crypto, TlsCertificate tlsCertificate) throws IOException
     {
+        Certificate cert = Certificate.getInstance(tlsCertificate.getEncoded());
+
         ASN1EncodableVector v = new ASN1EncodableVector();
         v.add(cert.getTBSCertificate());
         v.add(cert.getSignatureAlgorithm());
         v.add(corruptSignature(cert.getSignature()));
 
-        return Certificate.getInstance(new DERSequence(v));
+        return crypto.createCertificate(Certificate.getInstance(new DERSequence(v)).getEncoded(ASN1Encoding.DER));
     }
 
     protected DERBitString corruptSignature(DERBitString bs)

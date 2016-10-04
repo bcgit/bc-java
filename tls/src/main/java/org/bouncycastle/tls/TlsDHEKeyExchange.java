@@ -55,7 +55,7 @@ public class TlsDHEKeyExchange
 
         checkServerCertSigAlg(serverCertificate);
 
-        this.verifier = serverCertificate.getCertificateAt(context, 0)
+        this.verifier = serverCertificate.getCertificateAt(0)
             .createVerifier(TlsUtils.getSignatureAlgorithm(keyExchange));
     }
 
