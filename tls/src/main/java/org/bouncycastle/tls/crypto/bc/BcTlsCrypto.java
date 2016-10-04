@@ -194,11 +194,7 @@ public class BcTlsCrypto
         throws IOException
     {
         // TODO[tls-ops] Need to validateKeyUsage(KeyUsage.keyEncipherment) here
-        RSAKeyParameters pubKeyRSA = BcTlsCertificate.convert(this, certificate).getPubKeyRSA();
-
-        final PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine());
-
-        encoding.init(true, new ParametersWithRandom(pubKeyRSA, this.getSecureRandom()));
+        final RSAKeyParameters pubKeyRSA = BcTlsCertificate.convert(this, certificate).getPubKeyRSA();
 
         return new TlsEncryptor()
         {
@@ -207,6 +203,8 @@ public class BcTlsCrypto
             {
                 try
                 {
+                    PKCS1Encoding encoding = new PKCS1Encoding(new RSABlindedEngine());
+                    encoding.init(true, new ParametersWithRandom(pubKeyRSA, getSecureRandom()));
                     return encoding.processBlock(input, inOff, length);
                 }
                 catch (InvalidCipherTextException e)

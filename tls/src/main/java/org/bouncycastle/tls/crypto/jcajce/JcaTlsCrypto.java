@@ -260,40 +260,28 @@ public class JcaTlsCrypto
         throws IOException
     {
         // TODO[tls-ops] Need to validateKeyUsage(KeyUsage.keyEncipherment) here
-        RSAPublicKey pubKeyRSA = JcaTlsCertificate.convert(certificate, this.getHelper()).getPubKeyRSA();
+        final RSAPublicKey pubKeyRSA = JcaTlsCertificate.convert(certificate, this.getHelper()).getPubKeyRSA();
 
-        try
+        return new TlsEncryptor()
         {
-        final Cipher encoding = getHelper().createCipher("RSA/NONE/PKCS1Padding");
-
-        encoding.init(Cipher.WRAP_MODE, pubKeyRSA, getSecureRandom());
-
-            return new TlsEncryptor()
+            public byte[] encrypt(byte[] input, int inOff, int length)
+                throws IOException
             {
-                public byte[] encrypt(byte[] input, int inOff, int length)
-                    throws IOException
+                try
                 {
-                    try
-                    {
-                        return encoding.doFinal(input, inOff, length);
-                    }
-                    catch (GeneralSecurityException e)
-                    {
-                        /*
-                         * This should never happen, only during decryption.
-                         */
-                        throw new TlsFatalAlert(AlertDescription.internal_error, e);
-                    }
+                    Cipher encoding = getHelper().createCipher("RSA/NONE/PKCS1Padding");
+                    encoding.init(Cipher.WRAP_MODE, pubKeyRSA, getSecureRandom());
+                    return encoding.doFinal(input, inOff, length);
                 }
-            };
-        }
-        catch (GeneralSecurityException e)
-        {
-            /*
-             * This should never happen, only during decryption.
-             */
-            throw new TlsFatalAlert(AlertDescription.internal_error, e);
-        }
+                catch (GeneralSecurityException e)
+                {
+                    /*
+                     * This should never happen, only during decryption.
+                     */
+                    throw new TlsFatalAlert(AlertDescription.internal_error, e);
+                }
+            }
+        };
     }
 
     /**
