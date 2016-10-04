@@ -35,7 +35,9 @@ public interface TlsSecret
     TlsSecret deriveUsingPRF(int prfAlgorithm, byte[] labelSeed, int length);
 
     /**
-     * Return the a copy of the data this secret is based on.
+     * Return the internal data from this secret. The {@link TlsSecret} does not keep a copy of the
+     * data. After this call, any attempt to use the {@link TlsSecret} will result in an
+     * {@link IllegalStateException} being thrown.
      *
      * @return the secret's internal data.
      */
@@ -50,7 +52,8 @@ public interface TlsSecret
     byte[] copy(TlsEncryptor encryptor) throws IOException;
 
     /**
-     * Destroy the internal state of the secret.
+     * Destroy the internal state of the secret. After this call, any attempt to use the
+     * {@link TlsSecret} will result in an {@link IllegalStateException} being thrown.
      */
     void destroy();
 }
