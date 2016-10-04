@@ -4,9 +4,13 @@ import java.io.IOException;
 
 import javax.net.ssl.SSLParameters;
 
+import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.DefaultTlsClient;
+import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
+import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsSession;
+import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 
 class ProvTlsClient
@@ -57,6 +61,27 @@ class ProvTlsClient
         if (tlsSession != null && tlsSession.isResumable())
         {
             // TODO[tls-ops] Register the session with the client SSLSessionContext of our SSLContext
+        }
+    }
+
+    // TODO[tls-ops] Maybe this should live in a utility method in the TLS API.
+    protected String getAuthType() throws IOException
+    {
+        // TODO[tls-ops] Support for full range of key exchange algorithms
+        switch (TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite))
+        {
+        case KeyExchangeAlgorithm.DH_RSA:
+            return "DH_RSA";
+        case KeyExchangeAlgorithm.DHE_RSA:
+            return "DHE_RSA";
+        case KeyExchangeAlgorithm.ECDH_RSA:
+            return "ECDH_RSA";
+        case KeyExchangeAlgorithm.ECDHE_RSA:
+            return "ECDHE_RSA";
+        case KeyExchangeAlgorithm.RSA:
+            return "RSA";
+        default:
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
 }
