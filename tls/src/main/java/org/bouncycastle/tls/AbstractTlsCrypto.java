@@ -4,6 +4,9 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
 
+/**
+ * Base implementation of TlsCrypto which carries the context as well.
+ */
 public abstract class AbstractTlsCrypto implements TlsCrypto
 {
     protected final SecureRandom entropySource;
