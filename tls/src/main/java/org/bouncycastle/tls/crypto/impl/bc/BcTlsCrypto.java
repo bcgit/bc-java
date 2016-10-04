@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Digest;
@@ -199,8 +200,10 @@ public class BcTlsCrypto
     public TlsEncryptor createEncryptor(TlsCertificate certificate)
         throws IOException
     {
-        // TODO[tls-ops] Need to validateKeyUsage(KeyUsage.keyEncipherment) here
-        final RSAKeyParameters pubKeyRSA = BcTlsCertificate.convert(this, certificate).getPubKeyRSA();
+        BcTlsCertificate bcCert = BcTlsCertificate.convert(this, certificate);
+        bcCert.validateKeyUsage(KeyUsage.keyEncipherment);
+
+        final RSAKeyParameters pubKeyRSA = bcCert.getPubKeyRSA();
 
         return new TlsEncryptor()
         {

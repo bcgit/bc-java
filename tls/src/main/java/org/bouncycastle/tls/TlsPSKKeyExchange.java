@@ -7,9 +7,9 @@ import java.io.OutputStream;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsAgreement;
-import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
+import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
@@ -33,7 +33,7 @@ public class TlsPSKKeyExchange
     protected TlsECConfig ecConfig;
     protected TlsAgreement agreement;
 
-    protected TlsCertificate serverCertificate = null;
+    protected TlsEncryptor encryptor = null;
     protected TlsCredentialedEncryptor serverCredentials = null;
     protected TlsSecret preMasterSecret;
 
@@ -116,8 +116,7 @@ public class TlsPSKKeyExchange
 
         checkServerCertSigAlg(serverCertificate);
 
-        this.serverCertificate = serverCertificate.getCertificateAt(0).useInRole(ConnectionEnd.server,
-            KeyExchangeAlgorithm.RSA_PSK);
+        this.encryptor = context.getCrypto().createEncryptor(serverCertificate.getCertificateAt(0));
     }
 
     public byte[] generateServerKeyExchange() throws IOException
@@ -255,7 +254,7 @@ public class TlsPSKKeyExchange
         }
         else if (this.keyExchange == KeyExchangeAlgorithm.RSA_PSK)
         {
-            this.preMasterSecret = TlsRSAUtils.generateEncryptedPreMasterSecret(context, serverCertificate, output);
+            this.preMasterSecret = TlsRSAUtils.generateEncryptedPreMasterSecret(context, encryptor, output);
         }
     }
 

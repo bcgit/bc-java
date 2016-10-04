@@ -8,6 +8,7 @@ import java.security.interfaces.RSAPublicKey;
 
 import javax.crypto.Cipher;
 
+import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.CombinedHash;
@@ -42,6 +43,7 @@ import org.bouncycastle.tls.crypto.impl.TlsBlockCipherSuite;
 import org.bouncycastle.tls.crypto.impl.TlsNullCipherSuite;
 import org.bouncycastle.tls.crypto.impl.TlsStreamCipher;
 import org.bouncycastle.tls.crypto.impl.TlsStreamCipherSuite;
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsCertificate;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -265,8 +267,10 @@ public class JcaTlsCrypto
     public TlsEncryptor createEncryptor(TlsCertificate certificate)
         throws IOException
     {
-        // TODO[tls-ops] Need to validateKeyUsage(KeyUsage.keyEncipherment) here
-        final RSAPublicKey pubKeyRSA = JcaTlsCertificate.convert(certificate, this.getHelper()).getPubKeyRSA();
+        JcaTlsCertificate jcaCert = JcaTlsCertificate.convert(certificate, this.getHelper());
+        jcaCert.validateKeyUsage(KeyUsage.keyEncipherment);
+
+        final RSAPublicKey pubKeyRSA = jcaCert.getPubKeyRSA();
 
         return new TlsEncryptor()
         {

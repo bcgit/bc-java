@@ -18,7 +18,6 @@ import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ClientCertificateType;
-import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
@@ -43,9 +42,7 @@ public class JcaTlsCertificate
     protected final X509Certificate certificate;
 
     protected DHPublicKey pubKeyDH = null;
-    protected DSAPublicKey pubKeyDSS = null;
     protected ECPublicKey pubKeyEC = null;
-    protected RSAPublicKey pubKeyRSA = null;
 
     public JcaTlsCertificate(byte[] encoding, JcaJceHelper helper)
         throws IOException
@@ -224,24 +221,23 @@ public class JcaTlsCertificate
 
     public TlsCertificate useInRole(int connectionEnd, int keyExchangeAlgorithm) throws IOException
     {
-        if (connectionEnd == ConnectionEnd.client)
+        switch (keyExchangeAlgorithm)
         {
-            switch (keyExchangeAlgorithm)
-            {
-            }
+        case KeyExchangeAlgorithm.DH_DSS:
+        case KeyExchangeAlgorithm.DH_RSA:
+        {
+            validateKeyUsage(KeyUsage.keyAgreement);
+            this.pubKeyDH = getPubKeyDH();
+            return this;
         }
-        else if (connectionEnd == ConnectionEnd.server)
+
+        case KeyExchangeAlgorithm.ECDH_ECDSA:
+        case KeyExchangeAlgorithm.ECDH_RSA:
         {
-            switch (keyExchangeAlgorithm)
-            {
-            case KeyExchangeAlgorithm.RSA:
-            case KeyExchangeAlgorithm.RSA_PSK:
-                {
-                    validateKeyUsage(KeyUsage.keyEncipherment);
-                    this.pubKeyRSA = getPubKeyRSA();
-                    return this;
-                }
-            }
+            validateKeyUsage(KeyUsage.keyAgreement);
+            this.pubKeyEC = getPubKeyEC();
+            return this;
+        }
         }
 
         throw new TlsFatalAlert(AlertDescription.certificate_unknown);
