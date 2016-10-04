@@ -1,4 +1,4 @@
-package org.bouncycastle.tls.crypto;
+package org.bouncycastle.tls.crypto.impl;
 
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -8,6 +8,8 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsCipherSuite;
+import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.util.Arrays;
 
 /**

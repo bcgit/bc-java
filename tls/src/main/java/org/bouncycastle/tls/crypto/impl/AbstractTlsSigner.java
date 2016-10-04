@@ -1,6 +1,7 @@
-package org.bouncycastle.tls.crypto;
+package org.bouncycastle.tls.crypto.impl;
 
 import org.bouncycastle.tls.TlsContext;
+import org.bouncycastle.tls.crypto.TlsSigner;
 
 /**
  * Base class for a signing service for use with TLS.

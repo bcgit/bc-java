@@ -1,26 +1,26 @@
-package org.bouncycastle.tls.crypto;
+package org.bouncycastle.tls.crypto.impl;
 
 import java.io.IOException;
 
 /**
- * Interface for block cipher services.
+ * Interface for stream cipher services.
  */
-public interface TlsBlockCipher
+public interface TlsStreamCipher
 {
     /**
-     * Set the key to be used by the block cipher implementation supporting this service.
+     * Set the key to be used by the stream cipher implementation supporting this service.
      *
-     * @param key the block cipher key.
+     * @param key the stream cipher key.
      */
     void setKey(byte[] key) throws IOException;
 
     /**
-     * Initialise the parameters for operator.
+     * Initialise the parameters for stream cipher.
      *
-     * @param iv the initialization vector.
+     * @param nonce the nonce for the stream cipher.
      * @throws IOException if the parameters are inappropriate.
      */
-    void init(byte[] iv) throws IOException;
+    void init(byte[] nonce) throws IOException;
 
     /**
      * Perform the cipher encryption/decryption returning the output in output.
@@ -36,11 +36,4 @@ public interface TlsBlockCipher
      * @throws IOException in case of failure.
      */
     int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset) throws IOException;
-
-    /**
-     * Return the blocksize (in bytes) of the underlying block cipher.
-     *
-     * @return the cipher's blocksize.
-     */
-    int getBlockSize();
 }

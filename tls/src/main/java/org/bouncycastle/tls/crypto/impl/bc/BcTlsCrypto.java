@@ -54,10 +54,6 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.ChaCha20Poly1305CipherSuite;
-import org.bouncycastle.tls.crypto.TlsAEADCipherSuite;
-import org.bouncycastle.tls.crypto.TlsBlockCipher;
-import org.bouncycastle.tls.crypto.TlsBlockCipherSuite;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipherSuite;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
@@ -68,13 +64,17 @@ import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsMAC;
-import org.bouncycastle.tls.crypto.TlsNullCipherSuite;
 import org.bouncycastle.tls.crypto.TlsSRP6Client;
 import org.bouncycastle.tls.crypto.TlsSRP6Server;
 import org.bouncycastle.tls.crypto.TlsSRP6VerifierGenerator;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
-import org.bouncycastle.tls.crypto.TlsStreamCipherSuite;
+import org.bouncycastle.tls.crypto.impl.ChaCha20Poly1305CipherSuite;
+import org.bouncycastle.tls.crypto.impl.TlsAEADCipherSuite;
+import org.bouncycastle.tls.crypto.impl.TlsBlockCipher;
+import org.bouncycastle.tls.crypto.impl.TlsBlockCipherSuite;
+import org.bouncycastle.tls.crypto.impl.TlsNullCipherSuite;
+import org.bouncycastle.tls.crypto.impl.TlsStreamCipherSuite;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Times;
 
@@ -781,7 +781,7 @@ public class BcTlsCrypto
     }
 
     private class StreamOperator
-        implements org.bouncycastle.tls.crypto.TlsStreamCipher
+        implements org.bouncycastle.tls.crypto.impl.TlsStreamCipher
     {
         private final boolean isEncrypting;
         private final StreamCipher cipher;
@@ -818,7 +818,7 @@ public class BcTlsCrypto
     }
 
     public class AeadOperator
-        implements org.bouncycastle.tls.crypto.TlsAEADCipher
+        implements org.bouncycastle.tls.crypto.impl.TlsAEADCipher
     {
         private final boolean isEncrypting;
         private final AEADBlockCipher cipher;

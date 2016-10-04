@@ -1,4 +1,4 @@
-package org.bouncycastle.tls.crypto;
+package org.bouncycastle.tls.crypto.impl;
 
 import java.io.IOException;
 
@@ -6,6 +6,8 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsCipherSuite;
+import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -151,7 +153,7 @@ public class TlsStreamCipherSuite
         }
     }
 
-    protected void updateIV(org.bouncycastle.tls.crypto.TlsStreamCipher cipher, boolean forEncryption, long seqNo)
+    protected void updateIV(org.bouncycastle.tls.crypto.impl.TlsStreamCipher cipher, boolean forEncryption, long seqNo)
         throws IOException
     {
         byte[] nonce = new byte[8];

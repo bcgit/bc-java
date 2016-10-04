@@ -9,7 +9,7 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.crypto.AbstractTlsSigner;
+import org.bouncycastle.tls.crypto.impl.AbstractTlsSigner;
 
 public class JcaTlsDSSSigner
     extends AbstractTlsSigner

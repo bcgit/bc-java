@@ -7,7 +7,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.tls.crypto.TlsStreamCipher;
+import org.bouncycastle.tls.crypto.impl.TlsStreamCipher;
 
 /**
  * A basic wrapper for a JCE Cipher class to provide the needed stream cipher functionality for TLS.

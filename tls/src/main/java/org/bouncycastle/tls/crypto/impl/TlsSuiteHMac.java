@@ -1,10 +1,11 @@
-package org.bouncycastle.tls.crypto;
+package org.bouncycastle.tls.crypto.impl;
 
 import java.io.IOException;
 
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.util.Arrays;
 
 /**

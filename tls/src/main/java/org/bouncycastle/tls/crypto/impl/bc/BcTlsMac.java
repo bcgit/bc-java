@@ -10,7 +10,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsSuiteMac;
+import org.bouncycastle.tls.crypto.impl.TlsSuiteMac;
 import org.bouncycastle.util.Arrays;
 
 /**

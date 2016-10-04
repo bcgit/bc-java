@@ -7,7 +7,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
-import org.bouncycastle.tls.crypto.TlsAEADCipher;
+import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
 
 /**
  * A basic wrapper for a JCE Cipher class to provide the needed AEAD cipher functionality for TLS.
