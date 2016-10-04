@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.tls.crypto.jcajce.JcaTlsCryptoBuilder;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoBuilder;
 import org.bouncycastle.util.Strings;
 
 public class BouncyCastleJsseProvider

@@ -1,7 +1,6 @@
 package org.bouncycastle.tls;
 
 import org.bouncycastle.tls.crypto.TlsSecret;
-import org.bouncycastle.util.Arrays;
 
 public class SecurityParameters
 {

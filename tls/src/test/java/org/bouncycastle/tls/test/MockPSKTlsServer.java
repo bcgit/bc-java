@@ -10,7 +10,7 @@ import org.bouncycastle.tls.PSKTlsServer;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsCredentialedEncryptor;
 import org.bouncycastle.tls.TlsPSKIdentityManager;
-import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Strings;
 
 class MockPSKTlsServer

@@ -2,8 +2,8 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
-import org.bouncycastle.tls.crypto.bc.BcDefaultTlsCredentialedAgreement;
-import org.bouncycastle.tls.crypto.bc.DefaultTlsCredentialedEncryptor;
+import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedAgreement;
+import org.bouncycastle.tls.crypto.impl.bc.DefaultTlsCredentialedEncryptor;
 
 public interface TlsAuthentication
 {

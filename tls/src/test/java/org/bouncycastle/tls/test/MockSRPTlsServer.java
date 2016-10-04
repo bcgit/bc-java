@@ -20,7 +20,7 @@ import org.bouncycastle.tls.crypto.SRP6Group;
 import org.bouncycastle.tls.crypto.SRP6StandardGroups;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
-import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 

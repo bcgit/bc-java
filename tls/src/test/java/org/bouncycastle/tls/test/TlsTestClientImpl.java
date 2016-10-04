@@ -26,8 +26,8 @@ import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
-import org.bouncycastle.tls.crypto.jcajce.JcaTlsCryptoBuilder;
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoBuilder;
 import org.bouncycastle.util.Arrays;
 
 class TlsTestClientImpl

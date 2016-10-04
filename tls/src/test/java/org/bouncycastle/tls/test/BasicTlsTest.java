@@ -25,7 +25,7 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsKeyExchange;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 

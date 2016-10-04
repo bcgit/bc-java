@@ -16,7 +16,7 @@ import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsCredentialedEncryptor;
 import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 
 class MockTlsServer
     extends DefaultTlsServer

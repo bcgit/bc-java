@@ -18,7 +18,7 @@ import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsSession;
-import org.bouncycastle.tls.crypto.bc.BcTlsCrypto;
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
