@@ -6,6 +6,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
+import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 
@@ -84,6 +85,14 @@ public interface TlsCrypto
      * @return a TlsSecret based on random data.
      */
     TlsSecret generateRandomSecret(int length);
+
+    /**
+     * Create a TlsSecret object containing a randomly-generated RSA PreMasterSecret
+     *
+     * @param clientVersion the client version to place in the first 2 bytes
+     * @return a TlsSecret containing the PreMasterSecret.
+     */
+    TlsSecret generateRSAPreMasterSecret(ProtocolVersion clientVersion);
 
     /**
      * Create a suitable hash for the signature algorithm identifier passed in.

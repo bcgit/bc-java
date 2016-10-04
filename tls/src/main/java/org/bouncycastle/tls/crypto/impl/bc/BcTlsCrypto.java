@@ -50,6 +50,7 @@ import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.PRFAlgorithm;
+import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
@@ -247,6 +248,14 @@ public class BcTlsCrypto
     {
         byte[] data = new byte[length];
         entropySource.nextBytes(data);
+        return adoptSecret(data);
+    }
+
+    public TlsSecret generateRSAPreMasterSecret(ProtocolVersion version)
+    {
+        byte[] data = new byte[48];
+        entropySource.nextBytes(data);
+        TlsUtils.writeVersion(version, data, 0);
         return adoptSecret(data);
     }
 

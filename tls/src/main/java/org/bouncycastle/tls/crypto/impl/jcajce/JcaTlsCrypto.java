@@ -15,6 +15,7 @@ import org.bouncycastle.tls.CombinedHash;
 import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
+import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
@@ -43,7 +44,6 @@ import org.bouncycastle.tls.crypto.impl.TlsBlockCipherSuite;
 import org.bouncycastle.tls.crypto.impl.TlsNullCipherSuite;
 import org.bouncycastle.tls.crypto.impl.TlsStreamCipher;
 import org.bouncycastle.tls.crypto.impl.TlsStreamCipherSuite;
-import org.bouncycastle.tls.crypto.impl.bc.BcTlsCertificate;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -213,6 +213,14 @@ public class JcaTlsCrypto
     {
         byte[] data = new byte[length];
         getSecureRandom().nextBytes(data);
+        return adoptSecret(data);
+    }
+
+    public TlsSecret generateRSAPreMasterSecret(ProtocolVersion version)
+    {
+        byte[] data = new byte[48];
+        getSecureRandom().nextBytes(data);
+        TlsUtils.writeVersion(version, data, 0);
         return adoptSecret(data);
     }
 
