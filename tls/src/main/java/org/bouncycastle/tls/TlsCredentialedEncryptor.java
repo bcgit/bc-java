@@ -7,5 +7,5 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 public interface TlsCredentialedEncryptor
     extends TlsCredentials
 {
-    TlsSecret decrypt(byte[] ciphertext) throws IOException;
+    TlsSecret decrypt(TlsContext context, byte[] ciphertext) throws IOException;
 }

@@ -65,20 +65,19 @@ public class DefaultTlsCredentialedEncryptor
         return certificate;
     }
 
-    public TlsSecret decrypt(byte[] ciphertext) throws IOException
+    public TlsSecret decrypt(TlsContext context, byte[] ciphertext) throws IOException
     {
         // TODO Keep only the decryption itself here - move error handling outside 
-        return safeDecryptPreMasterSecret((RSAKeyParameters)privateKey, ciphertext);
+        return safeDecryptPreMasterSecret(context, (RSAKeyParameters)privateKey, ciphertext);
     }
 
     /*
      * TODO[tls-ops] Probably need to make RSA encryption/decryption into TlsCrypto functions so
      * that users can implement "generic" encryption credentials externally
      */
-    protected TlsSecret safeDecryptPreMasterSecret(RSAKeyParameters rsaServerPrivateKey,
+    protected TlsSecret safeDecryptPreMasterSecret(TlsContext context, RSAKeyParameters rsaServerPrivateKey,
         byte[] encryptedPreMasterSecret)
     {
-        TlsContext context = crypto.getContext();
         SecureRandom secureRandom = crypto.getSecureRandom();
 
         /*

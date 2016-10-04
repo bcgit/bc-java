@@ -1,10 +1,12 @@
 package org.bouncycastle.tls;
 
+import org.bouncycastle.tls.crypto.TlsCrypto;
+
 class TlsClientContextImpl
     extends AbstractTlsContext
     implements TlsClientContext
 {
-    TlsClientContextImpl(AbstractTlsCrypto crypto, SecurityParameters securityParameters)
+    TlsClientContextImpl(TlsCrypto crypto, SecurityParameters securityParameters)
     {
         super(crypto, securityParameters);
     }

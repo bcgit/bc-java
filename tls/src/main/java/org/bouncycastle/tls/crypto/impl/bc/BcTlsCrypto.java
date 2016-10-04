@@ -43,7 +43,6 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
-import org.bouncycastle.tls.AbstractTlsCrypto;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.CombinedHash;
 import org.bouncycastle.tls.EncryptionAlgorithm;
@@ -56,6 +55,7 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipherSuite;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
@@ -79,13 +79,14 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Times;
 
 public class BcTlsCrypto
-    extends AbstractTlsCrypto
+    implements TlsCrypto
 {
     private final DigestRandomGenerator nonceGen;
+    private final SecureRandom entropySource;
 
     public BcTlsCrypto(SecureRandom entropySource)
     {
-        super(entropySource);
+        this.entropySource = entropySource;
 
         Digest digest = createDigest(HashAlgorithm.sha256);
 
@@ -115,66 +116,71 @@ public class BcTlsCrypto
     }
 
 
+    public SecureRandom getSecureRandom()
+    {
+        return entropySource;
+    }
+
     public TlsCertificate createCertificate(byte[] encoding)
         throws IOException
     {
         return new BcTlsCertificate(this, encoding);
     }
 
-    public TlsCipherSuite createCipherSuite(int encryptionAlgorithm, int macAlgorithm)
+    public TlsCipherSuite createCipherSuite(TlsContext context, int encryptionAlgorithm, int macAlgorithm)
         throws IOException
     {
         switch (encryptionAlgorithm)
         {
         case EncryptionAlgorithm._3DES_EDE_CBC:
-            return createDESedeCipher(macAlgorithm);
+            return createDESedeCipher(context, macAlgorithm);
         case EncryptionAlgorithm.AES_128_CBC:
-            return createAESCipher(16, macAlgorithm);
+            return createAESCipher(context, 16, macAlgorithm);
         case EncryptionAlgorithm.AES_128_CCM:
             // NOTE: Ignores macAlgorithm
-            return createCipher_AES_CCM(16, 16);
+            return createCipher_AES_CCM(context, 16, 16);
         case EncryptionAlgorithm.AES_128_CCM_8:
             // NOTE: Ignores macAlgorithm
-            return createCipher_AES_CCM(16, 8);
+            return createCipher_AES_CCM(context, 16, 8);
         case EncryptionAlgorithm.AES_128_GCM:
             // NOTE: Ignores macAlgorithm
-            return createCipher_AES_GCM(16, 16);
+            return createCipher_AES_GCM(context, 16, 16);
         case EncryptionAlgorithm.AES_128_OCB_TAGLEN96:
             // NOTE: Ignores macAlgorithm
-            return createCipher_AES_OCB(16, 12);
+            return createCipher_AES_OCB(context, 16, 12);
         case EncryptionAlgorithm.AES_256_CBC:
-            return createAESCipher(32, macAlgorithm);
+            return createAESCipher(context, 32, macAlgorithm);
         case EncryptionAlgorithm.AES_256_CCM:
             // NOTE: Ignores macAlgorithm
-            return createCipher_AES_CCM(32, 16);
+            return createCipher_AES_CCM(context, 32, 16);
         case EncryptionAlgorithm.AES_256_CCM_8:
             // NOTE: Ignores macAlgorithm
-            return createCipher_AES_CCM(32, 8);
+            return createCipher_AES_CCM(context, 32, 8);
         case EncryptionAlgorithm.AES_256_GCM:
             // NOTE: Ignores macAlgorithm
-            return createCipher_AES_GCM(32, 16);
+            return createCipher_AES_GCM(context, 32, 16);
         case EncryptionAlgorithm.AES_256_OCB_TAGLEN96:
             // NOTE: Ignores macAlgorithm
-            return createCipher_AES_OCB(32, 12);
+            return createCipher_AES_OCB(context, 32, 12);
         case EncryptionAlgorithm.CAMELLIA_128_CBC:
-            return createCamelliaCipher(16, macAlgorithm);
+            return createCamelliaCipher(context, 16, macAlgorithm);
         case EncryptionAlgorithm.CAMELLIA_128_GCM:
             // NOTE: Ignores macAlgorithm
-            return createCipher_Camellia_GCM(16, 16);
+            return createCipher_Camellia_GCM(context, 16, 16);
         case EncryptionAlgorithm.CAMELLIA_256_CBC:
-            return createCamelliaCipher(32, macAlgorithm);
+            return createCamelliaCipher(context, 32, macAlgorithm);
         case EncryptionAlgorithm.CAMELLIA_256_GCM:
             // NOTE: Ignores macAlgorithm
-            return createCipher_Camellia_GCM(32, 16);
+            return createCipher_Camellia_GCM(context, 32, 16);
         case EncryptionAlgorithm.CHACHA20_POLY1305:
             // NOTE: Ignores macAlgorithm
-            return createChaCha20Poly1305();
+            return createChaCha20Poly1305(context);
         case EncryptionAlgorithm.NULL:
-            return createNullCipher(macAlgorithm);
+            return createNullCipher(context, macAlgorithm);
         case EncryptionAlgorithm.RC4_128:
-            return createRC4Cipher(16, macAlgorithm);
+            return createRC4Cipher(context, 16, macAlgorithm);
         case EncryptionAlgorithm.SEED_CBC:
-            return createSEEDCipher(macAlgorithm);
+            return createSEEDCipher(context, macAlgorithm);
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -241,11 +247,6 @@ public class BcTlsCrypto
         return adoptSecret(data);
     }
 
-    public TlsContext getContext()
-    {
-        return context;
-    }
-
 //    public byte[] calculateKeyBlock(TlsContext context, int length)
 //    {
 //        SecurityParameters securityParameters = context.getSecurityParameters();
@@ -286,7 +287,7 @@ public class BcTlsCrypto
     {
         if (signatureAndHashAlgorithm == null)
         {
-            return new CombinedHash(getContext().getCrypto());
+            return new CombinedHash(this);
         }
 
         return new BcTlsHash(signatureAndHashAlgorithm.getHash(), createDigest(signatureAndHashAlgorithm.getHash()));
@@ -387,21 +388,21 @@ public class BcTlsCrypto
         }
     }
 
-    protected TlsCipherSuite createAESCipher(int cipherKeySize, int macAlgorithm)
+    protected TlsCipherSuite createAESCipher(TlsContext context, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
         return new TlsBlockCipherSuite(context, new BlockOperator(createAESBlockCipher(), true), new BlockOperator(createAESBlockCipher(), false),
-            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize);
+            createMac(context, macAlgorithm), createMac(context, macAlgorithm), cipherKeySize);
     }
 
-    protected TlsCipherSuite createCamelliaCipher(int cipherKeySize, int macAlgorithm)
+    protected TlsCipherSuite createCamelliaCipher(TlsContext context, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
         return new TlsBlockCipherSuite(context, new BlockOperator(createCamelliaBlockCipher(), true), new BlockOperator(createCamelliaBlockCipher(), false),
-            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize);
+            createMac(context, macAlgorithm), createMac(context, macAlgorithm), cipherKeySize);
     }
 
-    protected TlsCipherSuite createChaCha20Poly1305()
+    protected TlsCipherSuite createChaCha20Poly1305(TlsContext context)
         throws IOException
     {
         return new ChaCha20Poly1305CipherSuite(context,
@@ -409,59 +410,59 @@ public class BcTlsCrypto
             new MacOperator(new Poly1305()), new MacOperator(new Poly1305()));
     }
 
-    protected TlsAEADCipherSuite createCipher_AES_CCM(int cipherKeySize, int macSize)
+    protected TlsAEADCipherSuite createCipher_AES_CCM(TlsContext context, int cipherKeySize, int macSize)
         throws IOException
     {
         return new TlsAEADCipherSuite(context, new AeadOperator(createAEADBlockCipher_AES_CCM(), true), new AeadOperator(createAEADBlockCipher_AES_CCM(), false),
             cipherKeySize, macSize);
     }
 
-    protected TlsAEADCipherSuite createCipher_AES_GCM(int cipherKeySize, int macSize)
+    protected TlsAEADCipherSuite createCipher_AES_GCM(TlsContext context, int cipherKeySize, int macSize)
         throws IOException
     {
         return new TlsAEADCipherSuite(context, new AeadOperator(createAEADBlockCipher_AES_GCM(), true), new AeadOperator(createAEADBlockCipher_AES_GCM(), false),
             cipherKeySize, macSize);
     }
 
-    protected TlsAEADCipherSuite createCipher_AES_OCB(int cipherKeySize, int macSize)
+    protected TlsAEADCipherSuite createCipher_AES_OCB(TlsContext context, int cipherKeySize, int macSize)
         throws IOException
     {
         return new TlsAEADCipherSuite(context, new AeadOperator(createAEADBlockCipher_AES_OCB(), true), new AeadOperator(createAEADBlockCipher_AES_OCB(), false),
             cipherKeySize, macSize, TlsAEADCipherSuite.NONCE_RFC7905);
     }
 
-    protected TlsAEADCipherSuite createCipher_Camellia_GCM(int cipherKeySize, int macSize)
+    protected TlsAEADCipherSuite createCipher_Camellia_GCM(TlsContext context, int cipherKeySize, int macSize)
         throws IOException
     {
         return new TlsAEADCipherSuite(context, new AeadOperator(createAEADBlockCipher_Camellia_GCM(), true), new AeadOperator(createAEADBlockCipher_Camellia_GCM(), false),
             cipherKeySize, macSize);
     }
 
-    protected TlsBlockCipherSuite createDESedeCipher(int macAlgorithm)
+    protected TlsBlockCipherSuite createDESedeCipher(TlsContext context, int macAlgorithm)
         throws IOException
     {
         return new TlsBlockCipherSuite(context, new BlockOperator(createDESedeBlockCipher(), true), new BlockOperator(createDESedeBlockCipher(), false),
-            createMac(macAlgorithm), createMac(macAlgorithm), 24);
+            createMac(context, macAlgorithm), createMac(context, macAlgorithm), 24);
     }
 
-    protected TlsNullCipherSuite createNullCipher(int macAlgorithm)
+    protected TlsNullCipherSuite createNullCipher(TlsContext context, int macAlgorithm)
         throws IOException
     {
-        return new TlsNullCipherSuite(context, createMac(macAlgorithm), createMac(macAlgorithm));
+        return new TlsNullCipherSuite(context, createMac(context, macAlgorithm), createMac(context, macAlgorithm));
     }
 
-    protected TlsStreamCipherSuite createRC4Cipher(int cipherKeySize, int macAlgorithm)
+    protected TlsStreamCipherSuite createRC4Cipher(TlsContext context, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
         return new TlsStreamCipherSuite(context, new StreamOperator(createRC4StreamCipher(), true), new StreamOperator(createRC4StreamCipher(), false),
-            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize, false);
+            createMac(context, macAlgorithm), createMac(context, macAlgorithm), cipherKeySize, false);
     }
 
-    protected TlsBlockCipherSuite createSEEDCipher(int macAlgorithm)
+    protected TlsBlockCipherSuite createSEEDCipher(TlsContext context, int macAlgorithm)
         throws IOException
     {
         return new TlsBlockCipherSuite(context, new BlockOperator(createSEEDBlockCipher(), true), new BlockOperator(createSEEDBlockCipher(), false),
-            createMac(macAlgorithm), createMac(macAlgorithm), 16);
+            createMac(context, macAlgorithm), createMac(context, macAlgorithm), 16);
     }
 
     protected BlockCipher createAESEngine()
@@ -521,7 +522,7 @@ public class BcTlsCrypto
         return new CBCBlockCipher(new SEEDEngine());
     }
 
-    private TlsHMAC createMac(int macAlgorithm)
+    private TlsHMAC createMac(TlsContext context, int macAlgorithm)
         throws IOException
     {
         if (TlsUtils.isSSL(context))
@@ -581,7 +582,7 @@ public class BcTlsCrypto
 
         BigInteger[] ng = srpConfig.getExplicitNG();
         SRP6GroupParameters srpGroup= new SRP6GroupParameters(ng[0], ng[1]);
-        srpClient.init(srpGroup, new SHA1Digest(), context.getCrypto().getSecureRandom());
+        srpClient.init(srpGroup, new SHA1Digest(), this.getSecureRandom());
 
         return new TlsSRP6Client()
         {
@@ -610,7 +611,7 @@ public class BcTlsCrypto
         final SRP6Server srpServer = new SRP6Server();
         BigInteger[] ng = srpConfig.getExplicitNG();
         SRP6GroupParameters srpGroup= new SRP6GroupParameters(ng[0], ng[1]);
-        srpServer.init(srpGroup, srpVerifier, new SHA1Digest(), context.getCrypto().getSecureRandom());
+        srpServer.init(srpGroup, srpVerifier, new SHA1Digest(), this.getSecureRandom());
         return new TlsSRP6Server()
         {
             public BigInteger generateServerCredentials()

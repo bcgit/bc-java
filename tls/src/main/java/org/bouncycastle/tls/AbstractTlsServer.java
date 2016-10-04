@@ -415,7 +415,7 @@ public abstract class AbstractTlsServer
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        return context.getCrypto().createCipherSuite(encryptionAlgorithm, macAlgorithm);
+        return context.getCrypto().createCipherSuite(context, encryptionAlgorithm, macAlgorithm);
     }
 
     public NewSessionTicket getNewSessionTicket()

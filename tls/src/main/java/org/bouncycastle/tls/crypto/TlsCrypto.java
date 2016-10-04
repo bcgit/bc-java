@@ -7,6 +7,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.TlsContext;
 
 /**
  * Service and object creation interface for the primitive types and services that are associated
@@ -41,7 +42,7 @@ public interface TlsCrypto
      * @return a TlsCipherSuite supporting the encryption and mac algorithm.
      * @throws IOException
      */
-    TlsCipherSuite createCipherSuite(int encryptionAlgorithm, int macAlgorithm) throws IOException;
+    TlsCipherSuite createCipherSuite(TlsContext context, int encryptionAlgorithm, int macAlgorithm) throws IOException;
 
     /**
      * Create an domain object supporting the domain parameters described in dhConfig.

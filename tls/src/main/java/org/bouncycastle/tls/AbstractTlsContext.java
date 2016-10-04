@@ -5,7 +5,7 @@ import org.bouncycastle.tls.crypto.TlsCrypto;
 abstract class AbstractTlsContext
     implements TlsContext
 {
-    private AbstractTlsCrypto crypto;
+    private TlsCrypto crypto;
     private SecurityParameters securityParameters;
 
     private ProtocolVersion clientVersion = null;
@@ -13,11 +13,9 @@ abstract class AbstractTlsContext
     private TlsSession session = null;
     private Object userObject = null;
 
-    AbstractTlsContext(AbstractTlsCrypto crypto, SecurityParameters securityParameters)
+    AbstractTlsContext(TlsCrypto crypto, SecurityParameters securityParameters)
     {
         this.crypto = crypto;
-        this.crypto.init(this);
-
         this.securityParameters = securityParameters;
     }
 
