@@ -88,6 +88,9 @@ public class BcTlsSecret implements TlsSecret
     public synchronized byte[] encrypt(TlsEncryptor encryptor) throws IOException
     {
         checkAlive();
+        
+        // TODO [tls-ops] Maybe we need to encrypt to a TlsCertificate after all (which we can easily 'convert'),
+        // since this potentially sends the secret outside this crypto module.
         return encryptor.encrypt(data, 0, data.length);
     }
 
