@@ -52,7 +52,12 @@ public class JcaTlsCertificate
     {
         try
         {
-            this.certificate = (X509Certificate)helper.createCertificateFactory("X.509").generateCertificate(new ByteArrayInputStream(encoding));
+            ByteArrayInputStream input = new ByteArrayInputStream(encoding);
+            this.certificate = (X509Certificate)helper.createCertificateFactory("X.509").generateCertificate(input);
+            if (input.available() != 0)
+            {
+                throw new IOException("Extra data detected in stream");
+            }
         }
         catch (GeneralSecurityException e)
         {
