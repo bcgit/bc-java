@@ -72,7 +72,7 @@ public class BouncyCastleJsseProvider
         {
             if (config.indexOf(':') > 0)
             {
-                isFips = Boolean.valueOf(config.substring(0, config.indexOf(':')).trim());
+                isFips = config.substring(0, config.indexOf(':')).trim().equalsIgnoreCase("fips");
 
                 String cryptoName = config.substring(config.indexOf(':') + 1).trim();
 
