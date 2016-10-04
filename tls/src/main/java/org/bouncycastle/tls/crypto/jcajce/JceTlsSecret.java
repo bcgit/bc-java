@@ -34,13 +34,19 @@ public class JceTlsSecret
         return arr;
     }
 
-    protected JcaTlsCrypto crypto;
+    protected final JcaTlsCrypto crypto;
     protected byte[] data;
 
     public JceTlsSecret(JcaTlsCrypto crypto, byte[] data)
     {
         this.crypto = crypto;
         this.data = data;
+    }
+
+    public synchronized byte[] copy()
+    {
+        checkAlive();
+        return Arrays.clone(data);
     }
 
     public synchronized TlsSecret deriveSSLKeyBlock(byte[] seed, int length)
@@ -94,10 +100,9 @@ public class JceTlsSecret
         return result;
     }
 
-    public synchronized byte[] copy(TlsEncryptor encryptor) throws IOException
+    public synchronized byte[] encrypt(TlsEncryptor encryptor) throws IOException
     {
         checkAlive();
-
         return encryptor.encrypt(data, 0, data.length);
     }
 

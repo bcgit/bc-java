@@ -265,7 +265,7 @@ public class TlsClientProtocol
 
                 if (this.resumedSession)
                 {
-                    this.securityParameters.masterSecret = Arrays.clone(this.sessionParameters.getMasterSecret());
+                    this.securityParameters.masterSecret = getContext().getCrypto().createSecret(sessionParameters.getMasterSecret());
                     this.recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 
                     sendChangeCipherSpecMessage();

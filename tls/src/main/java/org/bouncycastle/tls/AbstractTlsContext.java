@@ -116,6 +116,6 @@ abstract class AbstractTlsContext
             throw new IllegalStateException("error in calculation of seed for export");
         }
 
-        return TlsUtils.PRF(this, sp.getMasterSecret(), asciiLabel, seed, length);
+        return TlsUtils.PRF(this, sp.getMasterSecret(), asciiLabel, seed, length).extract();
     }
 }

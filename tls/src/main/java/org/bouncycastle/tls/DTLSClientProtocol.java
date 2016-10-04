@@ -73,6 +73,10 @@ public class DTLSClientProtocol
             recordLayer.fail(AlertDescription.internal_error);
             throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
+        finally
+        {
+            securityParameters.clear();
+        }
     }
 
     protected DTLSTransport clientHandshake(ClientHandshakeState state, DTLSRecordLayer recordLayer)
@@ -135,7 +139,7 @@ public class DTLSClientProtocol
 
         if (state.resumedSession)
         {
-            securityParameters.masterSecret = Arrays.clone(state.sessionParameters.getMasterSecret());
+            securityParameters.masterSecret = state.clientContext.getCrypto().createSecret(state.sessionParameters.getMasterSecret());
             recordLayer.initPendingEpoch(state.client.getCipher());
 
             // NOTE: Calculated exclusive of the actual Finished message from the server
@@ -357,7 +361,7 @@ public class DTLSClientProtocol
             state.sessionParameters = new SessionParameters.Builder()
                 .setCipherSuite(securityParameters.getCipherSuite())
                 .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
-                .setMasterSecret(securityParameters.getMasterSecret())
+                .setMasterSecret(securityParameters.getMasterSecret().copy())
                 .setPeerCertificate(serverCertificate)
                 .setPSKIdentity(securityParameters.getPSKIdentity())
                 .setSRPIdentity(securityParameters.getSRPIdentity())

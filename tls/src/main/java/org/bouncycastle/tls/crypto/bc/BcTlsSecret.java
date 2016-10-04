@@ -31,13 +31,19 @@ public class BcTlsSecret implements TlsSecret
         return arr;
     }
 
-    protected BcTlsCrypto crypto;
+    protected final BcTlsCrypto crypto;
     protected byte[] data;
 
     public BcTlsSecret(BcTlsCrypto crypto, byte[] data)
     {
         this.crypto = crypto;
         this.data = data;
+    }
+
+    public synchronized byte[] copy()
+    {
+        checkAlive();
+        return Arrays.clone(data);
     }
 
     public synchronized TlsSecret deriveSSLKeyBlock(byte[] seed, int length)
@@ -55,8 +61,18 @@ public class BcTlsSecret implements TlsSecret
     public synchronized TlsSecret deriveSSLMasterSecret(byte[] seed)
     {
         checkAlive();
-
         return crypto.adoptSecret(prf_SSL(seed, 3));
+    }
+
+    public synchronized TlsSecret deriveUsingPRF(int prfAlgorithm, byte[] labelSeed, int length)
+    {
+        checkAlive();
+
+        byte[] result = (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
+            ?   prf_1_0(data, labelSeed, length)
+            :   prf_1_2(crypto.createPRFHash(prfAlgorithm), data, labelSeed, length);
+
+        return crypto.adoptSecret(result);
     }
 
     public synchronized void destroy()
@@ -69,7 +85,7 @@ public class BcTlsSecret implements TlsSecret
         }
     }
 
-    public synchronized byte[] copy(TlsEncryptor encryptor) throws IOException
+    public synchronized byte[] encrypt(TlsEncryptor encryptor) throws IOException
     {
         checkAlive();
         return encryptor.encrypt(data, 0, data.length);
@@ -82,17 +98,6 @@ public class BcTlsSecret implements TlsSecret
         byte[] result = data;
         this.data = null;
         return result;
-    }
-
-    public synchronized TlsSecret deriveUsingPRF(int prfAlgorithm, byte[] labelSeed, int length)
-    {
-        checkAlive();
-
-        byte[] result = (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
-            ?   prf_1_0(data, labelSeed, length)
-            :   prf_1_2(crypto.createPRFHash(prfAlgorithm), data, labelSeed, length);
-
-        return crypto.adoptSecret(result);
     }
 
     protected void checkAlive()

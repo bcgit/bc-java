@@ -71,6 +71,7 @@ public abstract class TlsProtocol
     private volatile boolean appDataReady = false;
     private volatile boolean appDataSplitEnabled = true;
     private volatile int appDataSplitMode = ADS_MODE_1_Nsub1;
+    // TODO[tls-ops] Investigate whether we can handle (expected/actual) verify data using TlsSecret
     private byte[] expected_verify_data = null;
 
     protected TlsSession tlsSession = null;
@@ -220,7 +221,7 @@ public abstract class TlsProtocol
                     this.sessionParameters = new SessionParameters.Builder()
                         .setCipherSuite(this.securityParameters.getCipherSuite())
                         .setCompressionAlgorithm(this.securityParameters.getCompressionAlgorithm())
-                        .setMasterSecret(this.securityParameters.getMasterSecret())
+                        .setMasterSecret(this.securityParameters.getMasterSecret().copy())
                         .setPeerCertificate(this.peerCertificate)
                         .setPSKIdentity(this.securityParameters.getPSKIdentity())
                         .setSRPIdentity(this.securityParameters.getSRPIdentity())

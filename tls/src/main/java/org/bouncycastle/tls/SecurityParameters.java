@@ -1,5 +1,6 @@
 package org.bouncycastle.tls;
 
+import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
 public class SecurityParameters
@@ -10,7 +11,7 @@ public class SecurityParameters
     short maxFragmentLength = -1;
     int prfAlgorithm = -1;
     int verifyDataLength = -1;
-    byte[] masterSecret = null;
+    TlsSecret masterSecret = null;
     byte[] clientRandom = null;
     byte[] serverRandom = null;
     byte[] sessionHash = null;
@@ -24,7 +25,7 @@ public class SecurityParameters
     {
         if (this.masterSecret != null)
         {
-            Arrays.fill(this.masterSecret, (byte)0);
+            this.masterSecret.destroy();
             this.masterSecret = null;
         }
     }
@@ -74,7 +75,7 @@ public class SecurityParameters
         return verifyDataLength;
     }
 
-    public byte[] getMasterSecret()
+    public TlsSecret getMasterSecret()
     {
         return masterSecret;
     }

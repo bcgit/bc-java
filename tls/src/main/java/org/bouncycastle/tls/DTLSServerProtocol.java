@@ -76,6 +76,10 @@ public class DTLSServerProtocol
             recordLayer.fail(AlertDescription.internal_error);
             throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
+        finally
+        {
+            securityParameters.clear();
+        }
     }
 
     protected DTLSTransport serverHandshake(ServerHandshakeState state, DTLSRecordLayer recordLayer)

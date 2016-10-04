@@ -35,13 +35,20 @@ public interface TlsSecret
     TlsSecret deriveUsingPRF(int prfAlgorithm, byte[] labelSeed, int length);
 
     /**
-     * Return the internal data from this secret. The {@link TlsSecret} does not keep a copy of the
-     * data. After this call, any attempt to use the {@link TlsSecret} will result in an
-     * {@link IllegalStateException} being thrown.
+     * Return a copy of the data this secret is based on.
      *
-     * @return the secret's internal data.
+     * @deprecated Only remaining use-case is session data 
+     *
+     * @param encryptor the encryptor to use for protecting the internal data.
+     * @return an encrypted copy of secret's internal data.
      */
-    byte[] extract();
+    byte[] copy();
+
+    /**
+     * Destroy the internal state of the secret. After this call, any attempt to use the
+     * {@link TlsSecret} will result in an {@link IllegalStateException} being thrown.
+     */
+    void destroy();
 
     /**
      * Return the an encrypted copy of the data this secret is based on.
@@ -49,11 +56,14 @@ public interface TlsSecret
      * @param encryptor the encryptor to use for protecting the internal data.
      * @return an encrypted copy of secret's internal data.
      */
-    byte[] copy(TlsEncryptor encryptor) throws IOException;
+    byte[] encrypt(TlsEncryptor encryptor) throws IOException;
 
     /**
-     * Destroy the internal state of the secret. After this call, any attempt to use the
-     * {@link TlsSecret} will result in an {@link IllegalStateException} being thrown.
+     * Return the internal data from this secret. The {@link TlsSecret} does not keep a copy of the
+     * data. After this call, any attempt to use the {@link TlsSecret} will result in an
+     * {@link IllegalStateException} being thrown.
+     *
+     * @return the secret's internal data.
      */
-    void destroy();
+    byte[] extract();
 }
