@@ -100,13 +100,13 @@ public class TlsTestUtils
         {
             AsymmetricKeyParameter privateKey = loadBcPrivateKeyResource(keyResource);
 
-            return new BcDefaultTlsCredentialedAgreement(context, certificate, privateKey);
+            return new BcDefaultTlsCredentialedAgreement((BcTlsCrypto)context.getCrypto(), certificate, privateKey);
         }
         else
         {
             PrivateKey privateKey = loadJcaPrivateKeyResource(keyResource);
 
-            return new JceDefaultTlsCredentialedAgreement(context, certificate, privateKey);
+            return new JceDefaultTlsCredentialedAgreement((JcaTlsCrypto)context.getCrypto(), certificate, privateKey);
         }
     }
 

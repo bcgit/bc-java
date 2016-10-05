@@ -10,8 +10,8 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.ProtocolVersion;
-import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
@@ -65,25 +65,25 @@ public class BcDefaultTlsCredentialedDecryptor
         return certificate;
     }
 
-    public TlsSecret decrypt(TlsContext context, byte[] ciphertext) throws IOException
+    public TlsSecret decrypt(TlsCryptoParameters cryptoParams, byte[] ciphertext) throws IOException
     {
         // TODO Keep only the decryption itself here - move error handling outside 
-        return safeDecryptPreMasterSecret(context, (RSAKeyParameters)privateKey, ciphertext);
+        return safeDecryptPreMasterSecret(cryptoParams, (RSAKeyParameters)privateKey, ciphertext);
     }
 
     /*
      * TODO[tls-ops] Probably need to make RSA encryption/decryption into TlsCrypto functions so
      * that users can implement "generic" encryption credentials externally
      */
-    protected TlsSecret safeDecryptPreMasterSecret(TlsContext context, RSAKeyParameters rsaServerPrivateKey,
-        byte[] encryptedPreMasterSecret)
+    protected TlsSecret safeDecryptPreMasterSecret(TlsCryptoParameters cryptoParams, RSAKeyParameters rsaServerPrivateKey,
+                                                   byte[] encryptedPreMasterSecret)
     {
         SecureRandom secureRandom = crypto.getSecureRandom();
 
         /*
          * RFC 5246 7.4.7.1.
          */
-        ProtocolVersion clientVersion = context.getClientVersion();
+        ProtocolVersion clientVersion = cryptoParams.getClientVersion();
 
         // TODO Provide as configuration option?
         boolean versionNumberCheckDisabled = false;

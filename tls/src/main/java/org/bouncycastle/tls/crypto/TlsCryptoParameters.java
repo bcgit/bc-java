@@ -26,6 +26,11 @@ public class TlsCryptoParameters
         return context.getSecurityParameters();
     }
 
+    public ProtocolVersion getClientVersion()
+    {
+        return context.getClientVersion();
+    }
+
     public ProtocolVersion getServerVersion()
     {
         return context.getServerVersion();

@@ -9,7 +9,6 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.interfaces.DHPrivateKey;
 
 import org.bouncycastle.tls.Certificate;
-import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsCredentialedAgreement;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSecret;
@@ -21,13 +20,12 @@ public class JceDefaultTlsCredentialedAgreement
     private final String algorithm;
     private final Certificate certificate;
     private final PrivateKey privateKey;
-    private final TlsContext context;
 
-    public JceDefaultTlsCredentialedAgreement(TlsContext context, Certificate certificate, PrivateKey privateKey)
+    public JceDefaultTlsCredentialedAgreement(JcaTlsCrypto crypto, Certificate certificate, PrivateKey privateKey)
     {
-        if (context == null)
+        if (crypto == null)
         {
-            throw new IllegalArgumentException("'context' cannot be null");
+            throw new IllegalArgumentException("'crypto' cannot be null");
         }
         if (certificate == null)
         {
@@ -42,8 +40,7 @@ public class JceDefaultTlsCredentialedAgreement
             throw new IllegalArgumentException("'privateKey' cannot be null");
         }
 
-        this.context = context;
-        this.crypto = (JcaTlsCrypto)context.getCrypto();
+        this.crypto = crypto;
         this.certificate = certificate;
         this.privateKey = privateKey;
 

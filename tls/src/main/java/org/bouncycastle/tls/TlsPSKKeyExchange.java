@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsAgreement;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsEncryptor;
@@ -295,7 +296,7 @@ public class TlsPSKKeyExchange
                 encryptedPreMasterSecret = TlsUtils.readOpaque16(input);
             }
 
-            this.preMasterSecret = serverCredentials.decrypt(context, encryptedPreMasterSecret);
+            this.preMasterSecret = serverCredentials.decrypt(new TlsCryptoParameters(context), encryptedPreMasterSecret);
         }
     }
 
