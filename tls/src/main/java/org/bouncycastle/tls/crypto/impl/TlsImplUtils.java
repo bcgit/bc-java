@@ -8,11 +8,14 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
+/**
+ * Useful utility methods.
+ */
 public class TlsImplUtils
 {
-    public static boolean isSSL(TlsCryptoParameters context)
+    public static boolean isSSL(TlsCryptoParameters cryptoParams)
     {
-        return context.getServerVersion().isSSL();
+        return cryptoParams.getServerVersion().isSSL();
     }
 
     public static boolean isTLSv11(ProtocolVersion version)
@@ -20,9 +23,9 @@ public class TlsImplUtils
         return ProtocolVersion.TLSv11.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion());
     }
 
-    public static boolean isTLSv11(TlsCryptoParameters context)
+    public static boolean isTLSv11(TlsCryptoParameters cryptoParams)
     {
-        return isTLSv11(context.getServerVersion());
+        return isTLSv11(cryptoParams.getServerVersion());
     }
 
     public static boolean isTLSv12(ProtocolVersion version)
@@ -30,28 +33,28 @@ public class TlsImplUtils
         return ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion());
     }
 
-    public static boolean isTLSv12(TlsCryptoParameters context)
+    public static boolean isTLSv12(TlsCryptoParameters cryptoParams)
     {
-        return isTLSv12(context.getServerVersion());
+        return isTLSv12(cryptoParams.getServerVersion());
     }
 
-    public static byte[] calculateKeyBlock(TlsCryptoParameters context, int length)
+    public static byte[] calculateKeyBlock(TlsCryptoParameters cryptoParams, int length)
     {
-        SecurityParameters securityParameters = context.getSecurityParameters();
+        SecurityParameters securityParameters = cryptoParams.getSecurityParameters();
         TlsSecret master_secret = securityParameters.getMasterSecret();
         byte[] seed = Arrays.concatenate(securityParameters.getServerRandom(), securityParameters.getClientRandom());
 
-        if (isSSL(context))
+        if (isSSL(cryptoParams))
         {
             return master_secret.deriveSSLKeyBlock(seed, length).extract();
         }
 
-        return PRF(context, master_secret, ExporterLabel.key_expansion, seed, length).extract();
+        return PRF(cryptoParams, master_secret, ExporterLabel.key_expansion, seed, length).extract();
     }
 
-    public static TlsSecret PRF(TlsCryptoParameters context, TlsSecret secret, String asciiLabel, byte[] seed, int length)
+    public static TlsSecret PRF(TlsCryptoParameters cryptoParams, TlsSecret secret, String asciiLabel, byte[] seed, int length)
     {
-        ProtocolVersion version = context.getServerVersion();
+        ProtocolVersion version = cryptoParams.getServerVersion();
 
         if (version.isSSL())
         {
@@ -61,7 +64,7 @@ public class TlsImplUtils
         byte[] label = Strings.toByteArray(asciiLabel);
         byte[] labelSeed = Arrays.concatenate(label, seed);
 
-        int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
+        int prfAlgorithm = cryptoParams.getSecurityParameters().getPrfAlgorithm();
 
         return secret.deriveUsingPRF(prfAlgorithm, labelSeed, length);
     }
