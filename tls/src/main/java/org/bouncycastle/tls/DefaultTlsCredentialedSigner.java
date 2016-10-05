@@ -2,18 +2,20 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSigner;
+import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
 
 public class DefaultTlsCredentialedSigner
     implements TlsCredentialedSigner
 {
-    protected TlsContext context;
+    protected TlsCryptoParameters cryptoParams;
     protected Certificate certificate;
     protected SignatureAndHashAlgorithm signatureAndHashAlgorithm;
 
     protected TlsSigner signer;
 
-    public DefaultTlsCredentialedSigner(TlsSigner signer, Certificate certificate,
+    public DefaultTlsCredentialedSigner(TlsCryptoParameters cryptoParams, TlsSigner signer, Certificate certificate,
                                         SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
         if (certificate == null)
@@ -31,7 +33,7 @@ public class DefaultTlsCredentialedSigner
 
         this.signer = signer;
 
-        this.context = signer.getContext();
+        this.cryptoParams = cryptoParams;
         this.certificate = certificate;
         this.signatureAndHashAlgorithm = signatureAndHashAlgorithm;
     }
@@ -45,7 +47,7 @@ public class DefaultTlsCredentialedSigner
         throws IOException
     {
         SignatureAndHashAlgorithm algorithm = null;
-        if (TlsUtils.isTLSv12(context))
+        if (TlsImplUtils.isTLSv12(cryptoParams))
         {
             algorithm = getSignatureAndHashAlgorithm();
             if (algorithm == null)

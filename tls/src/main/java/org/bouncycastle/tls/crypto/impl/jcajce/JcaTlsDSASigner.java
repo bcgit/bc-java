@@ -3,13 +3,12 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 import java.security.PrivateKey;
 
 import org.bouncycastle.tls.SignatureAlgorithm;
-import org.bouncycastle.tls.TlsContext;
 
 public class JcaTlsDSASigner
     extends JcaTlsDSSSigner
 {
-    public JcaTlsDSASigner(TlsContext context, PrivateKey privateKey)
+    public JcaTlsDSASigner(JcaTlsCrypto crypto, PrivateKey privateKey)
     {
-        super(context, privateKey, SignatureAlgorithm.dsa, "NoneWithDSA");
+        super(crypto, privateKey, SignatureAlgorithm.dsa, "NoneWithDSA");
     }
 }

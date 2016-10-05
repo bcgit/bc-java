@@ -5,10 +5,10 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ProtocolVersion;
-import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipherSuite;
+import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.util.Arrays;
 
@@ -18,7 +18,8 @@ import org.bouncycastle.util.Arrays;
 public class TlsBlockCipherSuite
     implements TlsCipherSuite
 {
-    protected TlsContext context;
+    protected TlsCryptoParameters cryptoParams;
+    private final TlsCrypto crypto;
     protected byte[] randomData;
     protected boolean useExplicitIV;
     protected boolean encryptThenMAC;
@@ -29,15 +30,16 @@ public class TlsBlockCipherSuite
     protected TlsSuiteMac writeMac;
     protected TlsSuiteMac readMac;
 
-    public TlsBlockCipherSuite(TlsContext context, TlsBlockCipher encryptCipher, TlsBlockCipher decryptCipher,
+    public TlsBlockCipherSuite(TlsCrypto crypto, TlsCryptoParameters cryptoParams, TlsBlockCipher encryptCipher, TlsBlockCipher decryptCipher,
                                TlsHMAC writeMac, TlsHMAC readMac, int cipherKeySize)
         throws IOException
     {
-        this.context = context;
-        this.randomData = context.getCrypto().createNonce(256);
+        this.cryptoParams = cryptoParams;
+        this.crypto = crypto;
+        this.randomData = crypto.createNonce(256);
 
-        this.useExplicitIV = TlsUtils.isTLSv11(context);
-        this.encryptThenMAC = context.getSecurityParameters().isEncryptThenMAC();
+        this.useExplicitIV = TlsImplUtils.isTLSv11(cryptoParams);
+        this.encryptThenMAC = cryptoParams.getSecurityParameters().isEncryptThenMAC();
 
         int key_block_size = (2 * cipherKeySize) + writeMac.getMacLength() + readMac.getMacLength();
 
@@ -47,7 +49,7 @@ public class TlsBlockCipherSuite
             key_block_size += encryptCipher.getBlockSize() + decryptCipher.getBlockSize();
         }
 
-        byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
+        byte[] key_block = TlsImplUtils.calculateKeyBlock(cryptoParams, key_block_size);
 
         int offset = 0;
 
@@ -81,12 +83,12 @@ public class TlsBlockCipherSuite
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        this.readMac = new TlsSuiteHMac(context, readMac);
-        this.writeMac = new TlsSuiteHMac(context, writeMac);
+        this.readMac = new TlsSuiteHMac(cryptoParams, readMac);
+        this.writeMac = new TlsSuiteHMac(cryptoParams, writeMac);
         this.encryptCipher = encryptCipher;
         this.decryptCipher = decryptCipher;
 
-        if (context.isServer())
+        if (cryptoParams.isServer())
         {
             this.writeMac.setKey(serverMacKey);
             this.readMac.setKey(clientMacKey);
@@ -145,7 +147,7 @@ public class TlsBlockCipherSuite
         int blockSize = encryptCipher.getBlockSize();
         int macSize = writeMac.getSize();
 
-        ProtocolVersion version = context.getServerVersion();
+        ProtocolVersion version = cryptoParams.getServerVersion();
 
         int enc_input_length = len;
         if (!encryptThenMAC)
@@ -160,7 +162,7 @@ public class TlsBlockCipherSuite
         {
             // Add a random number of extra blocks worth of padding
             int maxExtraPadBlocks = (255 - padding_length) / blockSize;
-            int actualExtraPadBlocks = chooseExtraPadBlocks(context.getCrypto().getSecureRandom(), maxExtraPadBlocks);
+            int actualExtraPadBlocks = chooseExtraPadBlocks(crypto.getSecureRandom(), maxExtraPadBlocks);
             padding_length += actualExtraPadBlocks * blockSize;
         }
 
@@ -175,7 +177,7 @@ public class TlsBlockCipherSuite
 
         if (useExplicitIV)
         {
-            byte[] explicitIV = context.getCrypto().createNonce(blockSize);
+            byte[] explicitIV = crypto.createNonce(blockSize);
 
             encryptCipher.init(explicitIV);
 
@@ -317,7 +319,7 @@ public class TlsBlockCipherSuite
         int dummyIndex = 0;
         byte padDiff = 0;
 
-        if ((TlsUtils.isSSL(context) && totalPad > blockSize) || (macSize + totalPad > len))
+        if ((TlsImplUtils.isSSL(cryptoParams) && totalPad > blockSize) || (macSize + totalPad > len))
         {
             totalPad = 0;
         }

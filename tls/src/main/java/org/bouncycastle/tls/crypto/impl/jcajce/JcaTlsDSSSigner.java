@@ -7,20 +7,20 @@ import java.security.Signature;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.crypto.impl.AbstractTlsSigner;
+import org.bouncycastle.tls.crypto.TlsSigner;
 
 public class JcaTlsDSSSigner
-    extends AbstractTlsSigner
+    implements TlsSigner
 {
+    private final JcaTlsCrypto crypto;
     private final PrivateKey privateKey;
     private final short algorithmType;
     private final String algorithmName;
 
-    public JcaTlsDSSSigner(TlsContext context, PrivateKey privateKey, short algorithmType, String algorithmName)
+    public JcaTlsDSSSigner(JcaTlsCrypto crypto, PrivateKey privateKey, short algorithmType, String algorithmName)
     {
-        super(context);
+        this.crypto = crypto;
         this.privateKey = privateKey;
         this.algorithmType = algorithmType;
         this.algorithmName = algorithmName;
@@ -36,7 +36,7 @@ public class JcaTlsDSSSigner
 
         try
         {
-            Signature signer = ((JcaTlsCrypto)context.getCrypto()).getHelper().createSignature(algorithmName);
+            Signature signer = crypto.getHelper().createSignature(algorithmName);
 
             signer.initSign(privateKey);
             if (algorithm == null)

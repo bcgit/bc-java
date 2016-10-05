@@ -6,6 +6,7 @@ import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsCipherSuite;
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 
 public abstract class AbstractTlsClient
     extends AbstractTlsPeer
@@ -39,7 +40,7 @@ public abstract class AbstractTlsClient
     {
         switch (extensionType.intValue())
         {
-        case ExtensionType.elliptic_curves:
+        case ExtensionType.supported_groups:
             /*
              * Exception added based on field reports that some servers do send this, although the
              * Supported Elliptic Curves Extension is clearly intended to be client-only. If
@@ -262,7 +263,7 @@ public abstract class AbstractTlsClient
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        return context.getCrypto().createCipherSuite(context, encryptionAlgorithm, macAlgorithm);
+        return context.getSecurityParameters().getMasterSecret().createCipherSuite(new TlsCryptoParameters(context), encryptionAlgorithm, macAlgorithm);
     }
 
     public void notifyNewSessionTicket(NewSessionTicket newSessionTicket)

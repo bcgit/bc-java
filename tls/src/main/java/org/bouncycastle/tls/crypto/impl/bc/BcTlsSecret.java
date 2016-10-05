@@ -7,11 +7,14 @@ import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.PRFAlgorithm;
+import org.bouncycastle.tls.crypto.TlsCipherSuite;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
-public class BcTlsSecret implements TlsSecret
+public class BcTlsSecret
+    implements TlsSecret
 {
     protected static final int MD5_SIZE = 16;
 
@@ -40,12 +43,6 @@ public class BcTlsSecret implements TlsSecret
         this.data = data;
     }
 
-    public synchronized byte[] copy()
-    {
-        checkAlive();
-        return Arrays.clone(data);
-    }
-
     public synchronized TlsSecret deriveSSLKeyBlock(byte[] seed, int length)
     {
         checkAlive();
@@ -53,7 +50,7 @@ public class BcTlsSecret implements TlsSecret
         int md5Count = (length + MD5_SIZE - 1) / MD5_SIZE;
         byte[] md5Buf = prf_SSL(seed, md5Count);
 
-        TlsSecret result = crypto.adoptSecret(Arrays.copyOfRange(md5Buf, 0, length));
+        TlsSecret result = crypto.adoptLocalSecret(Arrays.copyOfRange(md5Buf, 0, length));
         Arrays.fill(md5Buf, (byte)0);
         return result;
     }
@@ -61,7 +58,7 @@ public class BcTlsSecret implements TlsSecret
     public synchronized TlsSecret deriveSSLMasterSecret(byte[] seed)
     {
         checkAlive();
-        return crypto.adoptSecret(prf_SSL(seed, 3));
+        return crypto.adoptLocalSecret(prf_SSL(seed, 3));
     }
 
     public synchronized TlsSecret deriveUsingPRF(int prfAlgorithm, byte[] labelSeed, int length)
@@ -72,7 +69,13 @@ public class BcTlsSecret implements TlsSecret
             ?   prf_1_0(data, labelSeed, length)
             :   prf_1_2(crypto.createPRFHash(prfAlgorithm), data, labelSeed, length);
 
-        return crypto.adoptSecret(result);
+        return crypto.adoptLocalSecret(result);
+    }
+
+    public TlsCipherSuite createCipherSuite(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
+        throws IOException
+    {
+        return crypto.createCipherSuite(cryptoParams, encryptionAlgorithm, macAlgorithm);
     }
 
     public synchronized void destroy()

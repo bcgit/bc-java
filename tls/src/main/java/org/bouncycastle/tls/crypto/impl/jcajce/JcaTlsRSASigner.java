@@ -11,19 +11,19 @@ import org.bouncycastle.asn1.x509.DigestInfo;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.impl.AbstractTlsSigner;
+import org.bouncycastle.tls.crypto.TlsSigner;
 
 public class JcaTlsRSASigner
-    extends AbstractTlsSigner
+    implements TlsSigner
 {
     private final PrivateKey privateKey;
+    private final JcaTlsCrypto crypto;
 
-    public JcaTlsRSASigner(TlsContext context, PrivateKey privateKey)
+    public JcaTlsRSASigner(JcaTlsCrypto crypto, PrivateKey privateKey)
     {
-        super(context);
+        this.crypto = crypto;
 
         if (privateKey == null)
         {
@@ -38,8 +38,8 @@ public class JcaTlsRSASigner
     {
         try
         {
-            Signature signer = ((JcaTlsCrypto)context.getCrypto()).getHelper().createSignature("NoneWithRSA");
-            signer.initSign(privateKey, context.getCrypto().getSecureRandom());
+            Signature signer = crypto.getHelper().createSignature("NoneWithRSA");
+            signer.initSign(privateKey, crypto.getSecureRandom());
             if (algorithm != null)
             {
                 if (algorithm.getSignature() != SignatureAlgorithm.rsa)

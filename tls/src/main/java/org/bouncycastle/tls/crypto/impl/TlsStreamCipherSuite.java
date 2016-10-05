@@ -3,10 +3,10 @@ package org.bouncycastle.tls.crypto.impl;
 import java.io.IOException;
 
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipherSuite;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.util.Arrays;
 
@@ -16,7 +16,7 @@ import org.bouncycastle.util.Arrays;
 public class TlsStreamCipherSuite
     implements TlsCipherSuite
 {
-    protected TlsContext context;
+    protected TlsCryptoParameters cryptoParams;
 
     protected TlsStreamCipher encryptCipher;
     protected TlsStreamCipher decryptCipher;
@@ -26,13 +26,13 @@ public class TlsStreamCipherSuite
 
     protected boolean usesNonce;
 
-    public TlsStreamCipherSuite(TlsContext context, TlsStreamCipher encryptCipher,
+    public TlsStreamCipherSuite(TlsCryptoParameters cryptoParams, TlsStreamCipher encryptCipher,
                                 TlsStreamCipher decryptCipher, TlsHMAC clientWriteDigest, TlsHMAC serverWriteDigest,
                                 int cipherKeySize, boolean usesNonce) throws IOException
     {
-        boolean isServer = context.isServer();
+        boolean isServer = cryptoParams.isServer();
 
-        this.context = context;
+        this.cryptoParams = cryptoParams;
         this.usesNonce = usesNonce;
 
         this.encryptCipher = encryptCipher;
@@ -41,15 +41,15 @@ public class TlsStreamCipherSuite
         int key_block_size = (2 * cipherKeySize) + clientWriteDigest.getMacLength()
             + serverWriteDigest.getMacLength();
 
-        byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
+        byte[] key_block = TlsImplUtils.calculateKeyBlock(cryptoParams, key_block_size);
 
         int offset = 0;
 
         // Init MACs
-        TlsSuiteMac clientWriteMac = new TlsSuiteHMac(context, clientWriteDigest);
+        TlsSuiteMac clientWriteMac = new TlsSuiteHMac(cryptoParams, clientWriteDigest);
         clientWriteMac.setKey(Arrays.copyOfRange(key_block, offset, offset + clientWriteDigest.getMacLength()));
         offset += clientWriteDigest.getMacLength();
-        TlsSuiteMac serverWriteMac = new TlsSuiteHMac(context, serverWriteDigest);
+        TlsSuiteMac serverWriteMac = new TlsSuiteHMac(cryptoParams, serverWriteDigest);
         serverWriteMac.setKey(Arrays.copyOfRange(key_block, offset, offset + serverWriteDigest.getMacLength()));
         offset += serverWriteDigest.getMacLength();
 

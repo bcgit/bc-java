@@ -7,26 +7,26 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.DefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.TlsContext;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSigner;
 
 public class BcDefaultTlsCredentialedSigner
     extends DefaultTlsCredentialedSigner
 {
-    private static TlsSigner makeSigner(TlsContext context, AsymmetricKeyParameter privateKey)
+    private static TlsSigner makeSigner(BcTlsCrypto crypto, AsymmetricKeyParameter privateKey)
     {
         TlsSigner signer;
         if (privateKey instanceof RSAKeyParameters)
         {
-            signer = new BcTlsRSASigner(context, privateKey);
+            signer = new BcTlsRSASigner(crypto, privateKey);
         }
         else if (privateKey instanceof DSAPrivateKeyParameters)
         {
-            signer = new BcTlsDSASigner(context, privateKey);
+            signer = new BcTlsDSASigner(crypto, privateKey);
         }
         else if (privateKey instanceof ECPrivateKeyParameters)
         {
-            signer = new BcTlsECDSASigner(context, privateKey);
+            signer = new BcTlsECDSASigner(crypto, privateKey);
         }
         else
         {
@@ -36,8 +36,8 @@ public class BcDefaultTlsCredentialedSigner
         return signer;
     }
 
-    public BcDefaultTlsCredentialedSigner(TlsContext context, AsymmetricKeyParameter privateKey, Certificate certificate, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+    public BcDefaultTlsCredentialedSigner(TlsCryptoParameters cryptoParams, BcTlsCrypto crypto, AsymmetricKeyParameter privateKey, Certificate certificate, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
-        super(makeSigner(context, privateKey), certificate, signatureAndHashAlgorithm);
+        super(cryptoParams, makeSigner(crypto, privateKey), certificate, signatureAndHashAlgorithm);
     }
 }

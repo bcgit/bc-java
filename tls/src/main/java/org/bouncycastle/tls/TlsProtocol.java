@@ -221,7 +221,7 @@ public abstract class TlsProtocol
                     this.sessionParameters = new SessionParameters.Builder()
                         .setCipherSuite(this.securityParameters.getCipherSuite())
                         .setCompressionAlgorithm(this.securityParameters.getCompressionAlgorithm())
-                        .setMasterSecret(this.securityParameters.getMasterSecret().copy())
+                        .setMasterSecret(this.securityParameters.getMasterSecret())
                         .setPeerCertificate(this.peerCertificate)
                         .setPSKIdentity(this.securityParameters.getPSKIdentity())
                         .setSRPIdentity(this.securityParameters.getSRPIdentity())

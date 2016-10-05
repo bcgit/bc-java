@@ -98,7 +98,7 @@ public class CombinedHash
 
     protected void ssl3Complete(TlsHash d, byte[] ipad, byte[] opad, int padLength)
     {
-        byte[] master_secret = context.getSecurityParameters().getMasterSecret().copy();
+        byte[] master_secret = crypto.adoptSecret(context.getSecurityParameters().getMasterSecret()).extract();
 
         d.update(master_secret, 0, master_secret.length);
         d.update(ipad, 0, padLength);

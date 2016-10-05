@@ -38,6 +38,6 @@ public class BcTlsDH implements TlsAgreement
     public TlsSecret calculateSecret() throws IOException
     {
         byte[] data = domain.calculateDHAgreement(peerPublicKey, (DHPrivateKeyParameters)localKeyPair.getPrivate());
-        return domain.getCrypto().adoptSecret(data);
+        return domain.getCrypto().adoptLocalSecret(data);
     }
 }

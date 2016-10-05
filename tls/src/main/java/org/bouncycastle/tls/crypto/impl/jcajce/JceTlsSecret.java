@@ -9,6 +9,8 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsCipherSuite;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
@@ -34,19 +36,14 @@ public class JceTlsSecret
         return arr;
     }
 
-    protected final JcaTlsCrypto crypto;
+    private final JcaTlsCrypto crypto;
+
     protected byte[] data;
 
     public JceTlsSecret(JcaTlsCrypto crypto, byte[] data)
     {
         this.crypto = crypto;
         this.data = data;
-    }
-
-    public synchronized byte[] copy()
-    {
-        checkAlive();
-        return Arrays.clone(data);
     }
 
     public synchronized TlsSecret deriveSSLKeyBlock(byte[] seed, int length)
@@ -58,7 +55,7 @@ public class JceTlsSecret
             int md5Count = (length + MD5_SIZE - 1) / MD5_SIZE;
             byte[] md5Buf = prf_SSL(seed, md5Count);
 
-            TlsSecret result = crypto.adoptSecret(Arrays.copyOfRange(md5Buf, 0, length));
+            TlsSecret result = crypto.adoptLocalSecret(Arrays.copyOfRange(md5Buf, 0, length));
             Arrays.fill(md5Buf, (byte)0);
             return result;
         }
@@ -73,7 +70,7 @@ public class JceTlsSecret
         checkAlive();
         try
         {
-            return crypto.adoptSecret(prf_SSL(seed, 3));
+            return crypto.adoptLocalSecret(prf_SSL(seed, 3));
         }
         catch (GeneralSecurityException e)
         {
@@ -116,13 +113,19 @@ public class JceTlsSecret
                 ? prf_1_0(data, labelSeed, length)
                 : prf_1_2(crypto.getDigestName(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm)), data, labelSeed, length);
 
-            return crypto.adoptSecret(result);
+            return crypto.adoptLocalSecret(result);
         }
         catch (GeneralSecurityException e)
         {
             e.printStackTrace();
             throw new IllegalStateException(); // TODO
         }
+    }
+
+    public TlsCipherSuite createCipherSuite(TlsCryptoParameters contextParams, int encryptionAlgorithm, int macAlgorithm)
+        throws IOException
+    {
+        return crypto.createCipherSuite(contextParams, encryptionAlgorithm, macAlgorithm);
     }
 
     protected void checkAlive()

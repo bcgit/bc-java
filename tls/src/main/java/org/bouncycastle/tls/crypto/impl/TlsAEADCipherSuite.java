@@ -3,10 +3,10 @@ package org.bouncycastle.tls.crypto.impl;
 import java.io.IOException;
 
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipherSuite;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -20,7 +20,7 @@ public class TlsAEADCipherSuite
     public static final int NONCE_RFC5288 = 1;
     public static final int NONCE_RFC7905 = 2;
 
-    protected TlsContext context;
+    protected TlsCryptoParameters context;
     protected int macSize;
     // TODO SecurityParameters.record_iv_length
     protected int record_iv_length;
@@ -32,16 +32,16 @@ public class TlsAEADCipherSuite
 
     protected int nonceMode;
 
-    public TlsAEADCipherSuite(TlsContext context, TlsAEADCipher encryptor, TlsAEADCipher decryptor,
+    public TlsAEADCipherSuite(TlsCryptoParameters context, TlsAEADCipher encryptor, TlsAEADCipher decryptor,
                               int cipherKeySize, int macSize) throws IOException
     {
         this(context, encryptor, decryptor, cipherKeySize, macSize, NONCE_RFC5288);
     }
 
-    public TlsAEADCipherSuite(TlsContext context, TlsAEADCipher encryptor, TlsAEADCipher decryptor,
+    public TlsAEADCipherSuite(TlsCryptoParameters context, TlsAEADCipher encryptor, TlsAEADCipher decryptor,
                               int cipherKeySize, int macSize, int nonceMode) throws IOException
     {
-        if (!TlsUtils.isTLSv12(context))
+        if (!TlsImplUtils.isTLSv12(context))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -70,7 +70,7 @@ public class TlsAEADCipherSuite
 
         int key_block_size = (2 * cipherKeySize) + (2 * fixed_iv_length);
 
-        byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
+        byte[] key_block = TlsImplUtils.calculateKeyBlock(context, key_block_size);
 
         int offset = 0;
 

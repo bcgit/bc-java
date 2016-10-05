@@ -23,10 +23,11 @@ import org.bouncycastle.tls.TlsCredentialedDecryptor;
 import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedAgreement;
+import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedDecryptor;
 import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
-import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedDecryptor;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedAgreement;
@@ -99,13 +100,13 @@ public class TlsTestUtils
         {
             AsymmetricKeyParameter privateKey = loadBcPrivateKeyResource(keyResource);
 
-            return new BcDefaultTlsCredentialedAgreement((BcTlsCrypto)crypto, certificate, privateKey);
+            return new BcDefaultTlsCredentialedAgreement(context, certificate, privateKey);
         }
         else
         {
             PrivateKey privateKey = loadJcaPrivateKeyResource(keyResource);
 
-            return new JceDefaultTlsCredentialedAgreement((JcaTlsCrypto)crypto, certificate, privateKey);
+            return new JceDefaultTlsCredentialedAgreement(context, certificate, privateKey);
         }
     }
 
@@ -142,13 +143,13 @@ public class TlsTestUtils
         {
             AsymmetricKeyParameter privateKey = loadBcPrivateKeyResource(keyResource);
 
-            return new BcDefaultTlsCredentialedSigner(context, privateKey, certificate, signatureAndHashAlgorithm);
+            return new BcDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), (BcTlsCrypto)crypto, privateKey, certificate, signatureAndHashAlgorithm);
         }
         else
         {
             PrivateKey privateKey = loadJcaPrivateKeyResource(keyResource);
 
-            return new JcaDefaultTlsCredentialedSigner(context, privateKey, certificate, signatureAndHashAlgorithm);
+            return new JcaDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), (JcaTlsCrypto)crypto, privateKey, certificate, signatureAndHashAlgorithm);
         }
     }
 

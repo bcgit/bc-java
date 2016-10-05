@@ -8,26 +8,26 @@ import java.security.interfaces.RSAPrivateKey;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.DefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.TlsContext;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSigner;
 
 public class JcaDefaultTlsCredentialedSigner
     extends DefaultTlsCredentialedSigner
 {
-    private static TlsSigner makeSigner(TlsContext context, PrivateKey privateKey)
+    private static TlsSigner makeSigner(JcaTlsCrypto crypto, PrivateKey privateKey)
     {
         TlsSigner signer;
         if (privateKey instanceof RSAPrivateKey)
         {
-            signer = new JcaTlsRSASigner(context, (RSAPrivateKey)privateKey);
+            signer = new JcaTlsRSASigner(crypto, (RSAPrivateKey)privateKey);
         }
         else if (privateKey instanceof DSAPrivateKey)
         {
-            signer = new JcaTlsDSASigner(context, (DSAPrivateKey)privateKey);
+            signer = new JcaTlsDSASigner(crypto, (DSAPrivateKey)privateKey);
         }
         else if (privateKey instanceof ECPrivateKey)
         {
-            signer = new JcaTlsECDSASigner(context, (ECPrivateKey)privateKey);
+            signer = new JcaTlsECDSASigner(crypto, (ECPrivateKey)privateKey);
         }
         else
         {
@@ -37,8 +37,8 @@ public class JcaDefaultTlsCredentialedSigner
         return signer;
     }
 
-    public JcaDefaultTlsCredentialedSigner(TlsContext context, PrivateKey privateKey, Certificate certificate, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+    public JcaDefaultTlsCredentialedSigner(TlsCryptoParameters cryptoParams, JcaTlsCrypto crypto, PrivateKey privateKey, Certificate certificate, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
-        super(makeSigner(context, privateKey), certificate, signatureAndHashAlgorithm);
+        super(cryptoParams, makeSigner(crypto, privateKey), certificate, signatureAndHashAlgorithm);
     }
 }

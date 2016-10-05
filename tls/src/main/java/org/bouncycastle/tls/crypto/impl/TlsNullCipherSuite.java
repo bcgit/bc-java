@@ -3,10 +3,9 @@ package org.bouncycastle.tls.crypto.impl;
 import java.io.IOException;
 
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipherSuite;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.util.Arrays;
 
@@ -16,18 +15,18 @@ import org.bouncycastle.util.Arrays;
 public class TlsNullCipherSuite
     implements TlsCipherSuite
 {
-    protected TlsContext context;
+    protected TlsCryptoParameters cryptoParameters;
 
     protected TlsSuiteHMac writeMac;
     protected TlsSuiteHMac readMac;
 
-    public TlsNullCipherSuite(TlsContext context, TlsHMAC clientMac, TlsHMAC serverMac)
+    public TlsNullCipherSuite(TlsCryptoParameters cryptoParameters, TlsHMAC clientMac, TlsHMAC serverMac)
         throws IOException
     {
-        this.context = context;
+        this.cryptoParameters = cryptoParameters;
 
         int key_block_size = clientMac.getMacLength() + serverMac.getMacLength();
-        byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
+        byte[] key_block = TlsImplUtils.calculateKeyBlock(cryptoParameters, key_block_size);
 
         int offset = 0;
 
@@ -41,10 +40,10 @@ public class TlsNullCipherSuite
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        if (context.isServer())
+        if (cryptoParameters.isServer())
         {
-            writeMac = new TlsSuiteHMac(context, serverMac);
-            readMac = new TlsSuiteHMac(context, clientMac);
+            writeMac = new TlsSuiteHMac(cryptoParameters, serverMac);
+            readMac = new TlsSuiteHMac(cryptoParameters, clientMac);
 
             writeMac.setKey(serverMacKey);
             readMac.setKey(clientMacKey);
@@ -52,8 +51,8 @@ public class TlsNullCipherSuite
         }
         else
         {
-            writeMac = new TlsSuiteHMac(context, clientMac);
-            readMac = new TlsSuiteHMac(context, serverMac);
+            writeMac = new TlsSuiteHMac(cryptoParameters, clientMac);
+            readMac = new TlsSuiteHMac(cryptoParameters, serverMac);
 
             writeMac.setKey(clientMacKey);
             readMac.setKey(serverMacKey);

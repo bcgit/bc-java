@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.tls.Certificate;
+import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsCredentialedAgreement;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSecret;
@@ -18,11 +19,13 @@ import org.bouncycastle.util.BigIntegers;
 public class BcDefaultTlsCredentialedAgreement
     implements TlsCredentialedAgreement
 {
+    private final TlsContext context;
+
     protected TlsCredentialedAgreement agreementCredentials;
 
-    public BcDefaultTlsCredentialedAgreement(BcTlsCrypto crypto, Certificate certificate, AsymmetricKeyParameter privateKey)
+    public BcDefaultTlsCredentialedAgreement(TlsContext context, Certificate certificate, AsymmetricKeyParameter privateKey)
     {
-        if (crypto == null)
+        if (context == null)
         {
             throw new IllegalArgumentException("'crypto' cannot be null");
         }
@@ -42,6 +45,10 @@ public class BcDefaultTlsCredentialedAgreement
         {
             throw new IllegalArgumentException("'privateKey' must be private");
         }
+
+        this.context = context;
+
+        BcTlsCrypto crypto = (BcTlsCrypto)context.getCrypto();
 
         if (privateKey instanceof DHPrivateKeyParameters)
         {
@@ -92,7 +99,7 @@ public class BcDefaultTlsCredentialedAgreement
             AsymmetricKeyParameter peerPublicKey = BcTlsCertificate.convert(crypto, localCert).getPublicKey();
             basicAgreement.init(privateKey);
             BigInteger agreementValue = basicAgreement.calculateAgreement(peerPublicKey);
-            return crypto.adoptSecret(BigIntegers.asUnsignedByteArray(agreementValue));
+            return crypto.adoptLocalSecret(BigIntegers.asUnsignedByteArray(agreementValue));
         }
 
         public Certificate getCertificate()
@@ -124,7 +131,7 @@ public class BcDefaultTlsCredentialedAgreement
             AsymmetricKeyParameter peerPublicKey = BcTlsCertificate.convert(crypto, localCert).getPublicKey();
             basicAgreement.init(privateKey);
             BigInteger agreementValue = basicAgreement.calculateAgreement(peerPublicKey);
-            return crypto.adoptSecret(BigIntegers.asUnsignedByteArray(basicAgreement.getFieldSize(), agreementValue));
+            return crypto.adoptLocalSecret(BigIntegers.asUnsignedByteArray(basicAgreement.getFieldSize(), agreementValue));
         }
 
         public Certificate getCertificate()

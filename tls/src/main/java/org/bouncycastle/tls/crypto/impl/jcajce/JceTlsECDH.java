@@ -37,7 +37,7 @@ public class JceTlsECDH
         try
         {
             byte[] data = domain.calculateECDHAgreement(peerPublicKey, (ECPrivateKey)localKeyPair.getPrivate());
-            return domain.getCrypto().adoptSecret(data);
+            return domain.getCrypto().adoptLocalSecret(data);
         }
         catch (GeneralSecurityException e)
         {

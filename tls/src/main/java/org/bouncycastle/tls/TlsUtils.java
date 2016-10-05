@@ -25,7 +25,7 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
 
 /**
- * Some helper functions for MicroTLS.
+ * Some helper functions for the TLS API.
  */
 public class TlsUtils
 {
@@ -994,20 +994,6 @@ public class TlsUtils
         System.arraycopy(a, 0, c, 0, a.length);
         System.arraycopy(b, 0, c, a.length, b.length);
         return c;
-    }
-
-    public static byte[] calculateKeyBlock(TlsContext context, int length)
-    {
-        SecurityParameters securityParameters = context.getSecurityParameters();
-        TlsSecret master_secret = securityParameters.getMasterSecret();
-        byte[] seed = concat(securityParameters.getServerRandom(), securityParameters.getClientRandom());
-
-        if (isSSL(context))
-        {
-            return master_secret.deriveSSLKeyBlock(seed, length).extract();
-        }
-
-        return PRF(context, master_secret, ExporterLabel.key_expansion, seed, length).extract();
     }
 
     static TlsSecret calculateMasterSecret(TlsContext context, TlsSecret preMasterSecret)

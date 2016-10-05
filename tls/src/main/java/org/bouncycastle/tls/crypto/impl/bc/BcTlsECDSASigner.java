@@ -5,14 +5,13 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.tls.SignatureAlgorithm;
-import org.bouncycastle.tls.TlsContext;
 
 public class BcTlsECDSASigner
     extends BcTlsDSSSigner
 {
-    public BcTlsECDSASigner(TlsContext context, AsymmetricKeyParameter privateKey)
+    public BcTlsECDSASigner(BcTlsCrypto crypto, AsymmetricKeyParameter privateKey)
     {
-        super(context, privateKey);
+        super(crypto, privateKey);
     }
 
     protected DSA createDSAImpl(short hashAlgorithm)

@@ -3,8 +3,8 @@ package org.bouncycastle.tls.crypto.impl;
 import java.io.IOException;
 
 import org.bouncycastle.tls.ProtocolVersion;
-import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.util.Arrays;
 
@@ -14,7 +14,7 @@ import org.bouncycastle.util.Arrays;
 class TlsSuiteHMac
     implements TlsSuiteMac
 {
-    protected TlsContext context;
+    protected TlsCryptoParameters cryptoParams;
     protected byte[] secret;
     protected TlsHMAC mac;
     protected int digestBlockSize;
@@ -24,17 +24,17 @@ class TlsSuiteHMac
     /**
      * Generate a new instance of an TlsMac.
      *
-     * @param context the TLS client context
+     * @param cryptoParams the TLS client context specific crypto parameters.
      * @param mac  The MAC to use.
      */
-    public TlsSuiteHMac(TlsContext context, TlsHMAC mac)
+    public TlsSuiteHMac(TlsCryptoParameters cryptoParams, TlsHMAC mac)
     {
-        this.context = context;
+        this.cryptoParams = cryptoParams;
 
         this.digestBlockSize = mac.getInternalBlockSize();
         this.digestOverhead = digestBlockSize / 8;
 
-        if (TlsUtils.isSSL(context))
+        if (TlsImplUtils.isSSL(cryptoParams))
         {
             // TODO This should check the actual algorithm, not assume based on the digest size
             if (mac.getMacLength() == 20)
@@ -59,7 +59,7 @@ class TlsSuiteHMac
         this.mac.setKey(secret);
 
         this.macLength = mac.getMacLength();
-        if (context.getSecurityParameters().isTruncatedHMac())
+        if (cryptoParams.getSecurityParameters().isTruncatedHMac())
         {
             this.macLength = Math.min(this.macLength, 10);
         }
@@ -92,7 +92,7 @@ class TlsSuiteHMac
      */
     public byte[] calculateMac(long seqNo, short type, byte[] message, int offset, int length)
     {
-        ProtocolVersion serverVersion = context.getServerVersion();
+        ProtocolVersion serverVersion = cryptoParams.getServerVersion();
         boolean isSSL = serverVersion.isSSL();
 
         byte[] macHeader = new byte[isSSL ? 11 : 13];
@@ -122,7 +122,7 @@ class TlsSuiteHMac
          * ...but ensure a constant number of complete digest blocks are processed (as many as would
          * be needed for 'fullLength' bytes of input).
          */
-        int headerLength = TlsUtils.isSSL(context) ? 11 : 13;
+        int headerLength = TlsImplUtils.isSSL(cryptoParams) ? 11 : 13;
 
         // How many extra full blocks do we need to calculate?
         int extra = getDigestBlockCount(headerLength + expectedLength) - getDigestBlockCount(headerLength + length);

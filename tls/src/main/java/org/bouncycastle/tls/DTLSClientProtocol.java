@@ -139,7 +139,7 @@ public class DTLSClientProtocol
 
         if (state.resumedSession)
         {
-            securityParameters.masterSecret = state.clientContext.getCrypto().createSecret(state.sessionParameters.getMasterSecret());
+            securityParameters.masterSecret = state.clientContext.getCrypto().adoptSecret(state.sessionParameters.getMasterSecret());
             recordLayer.initPendingEpoch(state.client.getCipher());
 
             // NOTE: Calculated exclusive of the actual Finished message from the server
@@ -361,7 +361,7 @@ public class DTLSClientProtocol
             state.sessionParameters = new SessionParameters.Builder()
                 .setCipherSuite(securityParameters.getCipherSuite())
                 .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
-                .setMasterSecret(securityParameters.getMasterSecret().copy())
+                .setMasterSecret(securityParameters.getMasterSecret())
                 .setPeerCertificate(serverCertificate)
                 .setPSKIdentity(securityParameters.getPSKIdentity())
                 .setSRPIdentity(securityParameters.getSRPIdentity())

@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Hashtable;
 
+import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
 public final class SessionParameters
@@ -13,7 +14,7 @@ public final class SessionParameters
     {
         private int cipherSuite = -1;
         private short compressionAlgorithm = -1;
-        private byte[] masterSecret = null;
+        private TlsSecret masterSecret = null;
         private Certificate peerCertificate = null;
         private byte[] pskIdentity = null;
         private byte[] srpIdentity = null;
@@ -44,7 +45,7 @@ public final class SessionParameters
             return this;
         }
 
-        public Builder setMasterSecret(byte[] masterSecret)
+        public Builder setMasterSecret(TlsSecret masterSecret)
         {
             this.masterSecret = masterSecret;
             return this;
@@ -103,18 +104,18 @@ public final class SessionParameters
 
     private int cipherSuite;
     private short compressionAlgorithm;
-    private byte[] masterSecret;
+    private TlsSecret masterSecret;
     private Certificate peerCertificate;
     private byte[] pskIdentity = null;
     private byte[] srpIdentity = null;
     private byte[] encodedServerExtensions;
 
-    private SessionParameters(int cipherSuite, short compressionAlgorithm, byte[] masterSecret,
+    private SessionParameters(int cipherSuite, short compressionAlgorithm, TlsSecret masterSecret,
         Certificate peerCertificate, byte[] pskIdentity, byte[] srpIdentity, byte[] encodedServerExtensions)
     {
         this.cipherSuite = cipherSuite;
         this.compressionAlgorithm = compressionAlgorithm;
-        this.masterSecret = Arrays.clone(masterSecret);
+        this.masterSecret = masterSecret;
         this.peerCertificate = peerCertificate;
         this.pskIdentity = Arrays.clone(pskIdentity);
         this.srpIdentity = Arrays.clone(srpIdentity);
@@ -125,7 +126,7 @@ public final class SessionParameters
     {
         if (this.masterSecret != null)
         {
-            Arrays.fill(this.masterSecret, (byte)0);
+            this.masterSecret.destroy();
         }
     }
 
@@ -145,7 +146,7 @@ public final class SessionParameters
         return compressionAlgorithm;
     }
 
-    public byte[] getMasterSecret()
+    public TlsSecret getMasterSecret()
     {
         return masterSecret;
     }

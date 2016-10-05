@@ -12,18 +12,18 @@ import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.crypto.impl.AbstractTlsSigner;
+import org.bouncycastle.tls.crypto.TlsSigner;
 
 public abstract class BcTlsDSSSigner
-    extends AbstractTlsSigner
+    implements TlsSigner
 {
     private final AsymmetricKeyParameter privateKey;
+    private final BcTlsCrypto crypto;
 
-    protected BcTlsDSSSigner(TlsContext context, AsymmetricKeyParameter privateKey)
+    protected BcTlsDSSSigner(BcTlsCrypto crypto, AsymmetricKeyParameter privateKey)
     {
-        super(context);
+        this.crypto = crypto;
 
         if (privateKey == null)
         {
@@ -52,7 +52,7 @@ public abstract class BcTlsDSSSigner
         short hashAlgorithm = algorithm == null ? HashAlgorithm.sha1 : algorithm.getHash();
         
         Signer s = new DSADigestSigner(createDSAImpl(hashAlgorithm), new NullDigest());
-        s.init(true, new ParametersWithRandom(privateKey, this.context.getCrypto().getSecureRandom()));
+        s.init(true, new ParametersWithRandom(privateKey, crypto.getSecureRandom()));
         Signer signer = s;
         if (algorithm == null)
         {

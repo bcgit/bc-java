@@ -3,10 +3,10 @@ package org.bouncycastle.tls.crypto.impl;
 import java.io.IOException;
 
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipherSuite;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsMAC;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
@@ -19,7 +19,7 @@ public class ChaCha20Poly1305CipherSuite
 {
     private static final byte[] ZEROES = new byte[15];
 
-    protected TlsContext context;
+    protected TlsCryptoParameters context;
 
     protected TlsMAC writeMac;
     protected TlsMAC readMac;
@@ -29,11 +29,11 @@ public class ChaCha20Poly1305CipherSuite
 
     protected byte[] encryptIV, decryptIV;
 
-    public ChaCha20Poly1305CipherSuite(TlsContext context, TlsStreamCipher encryptCipher, TlsStreamCipher decryptCipher,
+    public ChaCha20Poly1305CipherSuite(TlsCryptoParameters context, TlsStreamCipher encryptCipher, TlsStreamCipher decryptCipher,
                                        TlsMAC writeMac, TlsMAC readMac)
         throws IOException
     {
-        if (!TlsUtils.isTLSv12(context))
+        if (!TlsImplUtils.isTLSv12(context))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -47,7 +47,7 @@ public class ChaCha20Poly1305CipherSuite
 
         int key_block_size = (2 * cipherKeySize) + (2 * fixed_iv_length);
 
-        byte[] key_block = TlsUtils.calculateKeyBlock(context, key_block_size);
+        byte[] key_block = TlsImplUtils.calculateKeyBlock(context, key_block_size);
 
         int offset = 0;
 

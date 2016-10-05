@@ -14,20 +14,19 @@ import org.bouncycastle.crypto.signers.RSADigestSigner;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.impl.AbstractTlsSigner;
+import org.bouncycastle.tls.crypto.TlsSigner;
 
 public class BcTlsRSASigner
-    extends AbstractTlsSigner
+    implements TlsSigner
 {
     private final AsymmetricKeyParameter privateKey;
+    private final BcTlsCrypto crypto;
 
-    public BcTlsRSASigner(TlsContext context, AsymmetricKeyParameter privateKey)
+    public BcTlsRSASigner(BcTlsCrypto crypto, AsymmetricKeyParameter privateKey)
     {
-        super(context);
-
+        this.crypto = crypto;
         if (privateKey == null)
         {
             throw new IllegalArgumentException("'privateKey' cannot be null");
@@ -65,7 +64,7 @@ public class BcTlsRSASigner
              */
             signer = new GenericSigner(new PKCS1Encoding(new RSABlindedEngine()), new NullDigest());
         }
-        signer.init(true, new ParametersWithRandom(privateKey, context.getCrypto().getSecureRandom()));
+        signer.init(true, new ParametersWithRandom(privateKey, crypto.getSecureRandom()));
         signer.update(hash, 0, hash.length);
         try
         {

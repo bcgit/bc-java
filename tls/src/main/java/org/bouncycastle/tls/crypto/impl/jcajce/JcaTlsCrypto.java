@@ -17,12 +17,12 @@ import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipherSuite;
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
@@ -41,6 +41,7 @@ import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipherSuite;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipher;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipherSuite;
+import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
 import org.bouncycastle.tls.crypto.impl.TlsNullCipherSuite;
 import org.bouncycastle.tls.crypto.impl.TlsStreamCipher;
 import org.bouncycastle.tls.crypto.impl.TlsStreamCipherSuite;
@@ -74,7 +75,7 @@ public class JcaTlsCrypto
         this.nonceEntropySource = nonceEntropySource;
     }
 
-    public JceTlsSecret adoptSecret(byte[] data)
+    JceTlsSecret adoptLocalSecret(byte[] data)
     {
         return new JceTlsSecret(this, data);
     }
@@ -99,7 +100,7 @@ public class JcaTlsCrypto
         return new JcaTlsCertificate(encoding, helper);
     }
 
-    public TlsCipherSuite createCipherSuite(TlsContext context, int encryptionAlgorithm, int macAlgorithm)
+    TlsCipherSuite createCipherSuite(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
         throws IOException
     {
         try
@@ -107,54 +108,54 @@ public class JcaTlsCrypto
             switch (encryptionAlgorithm)
             {
             case EncryptionAlgorithm._3DES_EDE_CBC:
-                return createDESedeCipher(context, macAlgorithm);
+                return createDESedeCipher(cryptoParams, macAlgorithm);
             case EncryptionAlgorithm.AES_128_CBC:
-                return createAESCipher(context, 16, macAlgorithm);
+                return createAESCipher(cryptoParams, 16, macAlgorithm);
             case EncryptionAlgorithm.AES_128_CCM:
                 // NOTE: Ignores macAlgorithm
-                return createCipher_AES_CCM(context, 16, 16);
+                return createCipher_AES_CCM(cryptoParams, 16, 16);
             case EncryptionAlgorithm.AES_128_CCM_8:
                 // NOTE: Ignores macAlgorithm
-                return createCipher_AES_CCM(context, 16, 8);
+                return createCipher_AES_CCM(cryptoParams, 16, 8);
             case EncryptionAlgorithm.AES_128_GCM:
                 // NOTE: Ignores macAlgorithm
-                return createCipher_AES_GCM(context, 16, 16);
+                return createCipher_AES_GCM(cryptoParams, 16, 16);
             case EncryptionAlgorithm.AES_128_OCB_TAGLEN96:
                 // NOTE: Ignores macAlgorithm
-                return createCipher_AES_OCB(context, 16, 12);
+                return createCipher_AES_OCB(cryptoParams, 16, 12);
             case EncryptionAlgorithm.AES_256_CBC:
-                return createAESCipher(context, 32, macAlgorithm);
+                return createAESCipher(cryptoParams, 32, macAlgorithm);
             case EncryptionAlgorithm.AES_256_CCM:
                 // NOTE: Ignores macAlgorithm
-                return createCipher_AES_CCM(context, 32, 16);
+                return createCipher_AES_CCM(cryptoParams, 32, 16);
             case EncryptionAlgorithm.AES_256_CCM_8:
                 // NOTE: Ignores macAlgorithm
-                return createCipher_AES_CCM(context, 32, 8);
+                return createCipher_AES_CCM(cryptoParams, 32, 8);
             case EncryptionAlgorithm.AES_256_GCM:
                 // NOTE: Ignores macAlgorithm
-                return createCipher_AES_GCM(context, 32, 16);
+                return createCipher_AES_GCM(cryptoParams, 32, 16);
             case EncryptionAlgorithm.AES_256_OCB_TAGLEN96:
                 // NOTE: Ignores macAlgorithm
-                return createCipher_AES_OCB(context, 32, 12);
+                return createCipher_AES_OCB(cryptoParams, 32, 12);
             case EncryptionAlgorithm.CAMELLIA_128_CBC:
-                return createCamelliaCipher(context, 16, macAlgorithm);
+                return createCamelliaCipher(cryptoParams, 16, macAlgorithm);
             case EncryptionAlgorithm.CAMELLIA_128_GCM:
                 // NOTE: Ignores macAlgorithm
-                return createCipher_Camellia_GCM(context, 16, 16);
+                return createCipher_Camellia_GCM(cryptoParams, 16, 16);
             case EncryptionAlgorithm.CAMELLIA_256_CBC:
-                return createCamelliaCipher(context, 32, macAlgorithm);
+                return createCamelliaCipher(cryptoParams, 32, macAlgorithm);
             case EncryptionAlgorithm.CAMELLIA_256_GCM:
                 // NOTE: Ignores macAlgorithm
-                return createCipher_Camellia_GCM(context, 32, 16);
+                return createCipher_Camellia_GCM(cryptoParams, 32, 16);
             case EncryptionAlgorithm.CHACHA20_POLY1305:
                 // NOTE: Ignores macAlgorithm
-                return createChaCha20Poly1305(context);
+                return createChaCha20Poly1305(cryptoParams);
             case EncryptionAlgorithm.NULL:
-                return createNullCipher(context, macAlgorithm);
+                return createNullCipher(cryptoParams, macAlgorithm);
             case EncryptionAlgorithm.RC4_128:
-                return createRC4Cipher(context, 16, macAlgorithm);
+                return createRC4Cipher(cryptoParams, 16, macAlgorithm);
             case EncryptionAlgorithm.SEED_CBC:
-                return createSEEDCipher(context, macAlgorithm);
+                return createSEEDCipher(cryptoParams, macAlgorithm);
             default:
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
@@ -209,11 +210,27 @@ public class JcaTlsCrypto
         throw new UnsupportedOperationException();
     }
 
+    public TlsSecret createSecret(byte[] data)
+    {
+        try
+        {
+            return adoptLocalSecret(Arrays.clone(data));
+        }
+        finally
+        {
+            // TODO[tls-ops] Add this after checking all callers
+//            if (data != null)
+//            {
+//                Arrays.fill(data, (byte)0);
+//            }
+        }
+    }
+
     public TlsSecret generateRandomSecret(int length)
     {
         byte[] data = new byte[length];
         getSecureRandom().nextBytes(data);
-        return adoptSecret(data);
+        return adoptLocalSecret(data);
     }
 
     public TlsSecret generateRSAPreMasterSecret(ProtocolVersion version)
@@ -221,7 +238,7 @@ public class JcaTlsCrypto
         byte[] data = new byte[48];
         getSecureRandom().nextBytes(data);
         TlsUtils.writeVersion(version, data, 0);
-        return adoptSecret(data);
+        return adoptLocalSecret(data);
     }
 
     public TlsHash createHash(short algorithm)
@@ -244,22 +261,6 @@ public class JcaTlsCrypto
         }
 
         return createHash(signatureAndHashAlgorithm.getHash());
-    }
-
-    public TlsSecret createSecret(byte[] data)
-    {
-        try
-        {
-            return adoptSecret(Arrays.clone(data));
-        }
-        finally
-        {
-            // TODO[tls-ops] Add this after checking all callers
-//            if (data != null)
-//            {
-//                Arrays.fill(data, (byte)0);
-//            }
-        }
     }
 
     public TlsDHDomain createDHDomain(TlsDHConfig dhConfig)
@@ -300,6 +301,13 @@ public class JcaTlsCrypto
                 }
             }
         };
+    }
+
+    public TlsSecret adoptSecret(TlsSecret secret)
+    {
+        JceTlsSecret sec = (JceTlsSecret)secret;
+        
+        return adoptLocalSecret(Arrays.clone(sec.data));
     }
 
     /**
@@ -413,10 +421,10 @@ public class JcaTlsCrypto
      * @throws IOException in case of failure.
      * @throws GeneralSecurityException in case of a specific failure in the JCA/JCE layer.
      */
-    protected TlsNullCipherSuite createNullCipher(TlsContext context, int macAlgorithm)
+    protected TlsNullCipherSuite createNullCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsNullCipherSuite(context, createMAC(context, macAlgorithm), createMAC(context, macAlgorithm));
+        return new TlsNullCipherSuite(cryptoParams, createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm));
     }
 
     JcaJceHelper getHelper()
@@ -424,38 +432,38 @@ public class JcaTlsCrypto
         return helper;
     }
 
-    private TlsBlockCipherSuite createAESCipher(TlsContext context, int cipherKeySize, int macAlgorithm)
+    private TlsBlockCipherSuite createAESCipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipherSuite(context, createBlockOperator(context, "AES/CBC/NoPadding", "AES", true, cipherKeySize), createBlockOperator(context, "AES/CBC/NoPadding", "AES", false, cipherKeySize),
-            createMAC(context, macAlgorithm), createMAC(context, macAlgorithm), cipherKeySize);
+        return new TlsBlockCipherSuite(this, cryptoParams, createBlockOperator(cryptoParams, "AES/CBC/NoPadding", "AES", true, cipherKeySize), createBlockOperator(cryptoParams, "AES/CBC/NoPadding", "AES", false, cipherKeySize),
+            createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm), cipherKeySize);
     }
 
-    private TlsBlockCipherSuite createCamelliaCipher(TlsContext context, int cipherKeySize, int macAlgorithm)
+    private TlsBlockCipherSuite createCamelliaCipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipherSuite(context, createBlockOperator(context, "Camellia/CBC/NoPadding", "Camellia", true, cipherKeySize), createBlockOperator(context, "Camellia/CBC/NoPadding", "Camellia", false, cipherKeySize),
-            createMAC(context, macAlgorithm), createMAC(context, macAlgorithm), cipherKeySize);
+        return new TlsBlockCipherSuite(this, cryptoParams, createBlockOperator(cryptoParams, "Camellia/CBC/NoPadding", "Camellia", true, cipherKeySize), createBlockOperator(cryptoParams, "Camellia/CBC/NoPadding", "Camellia", false, cipherKeySize),
+            createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm), cipherKeySize);
     }
 
-    private TlsBlockCipherSuite createDESedeCipher(TlsContext context, int macAlgorithm)
+    private TlsBlockCipherSuite createDESedeCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipherSuite(context, createBlockOperator(context, "DESede/CBC/NoPadding", "DESede", true, 24), createBlockOperator(context, "DESede/CBC/NoPadding", "DESede", false, 24),
-            createMAC(context, macAlgorithm), createMAC(context, macAlgorithm), 24);
+        return new TlsBlockCipherSuite(this, cryptoParams, createBlockOperator(cryptoParams, "DESede/CBC/NoPadding", "DESede", true, 24), createBlockOperator(cryptoParams, "DESede/CBC/NoPadding", "DESede", false, 24),
+            createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm), 24);
     }
 
-    private TlsBlockCipherSuite createSEEDCipher(TlsContext context, int macAlgorithm)
+    private TlsBlockCipherSuite createSEEDCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipherSuite(context, createBlockOperator(context, "SEED/CBC/NoPadding", "SEED", true, 16), createBlockOperator(context, "SEED/CBC/NoPadding", "SEED", false, 16),
-            createMAC(context, macAlgorithm), createMAC(context, macAlgorithm), 16);
+        return new TlsBlockCipherSuite(this, cryptoParams, createBlockOperator(cryptoParams, "SEED/CBC/NoPadding", "SEED", true, 16), createBlockOperator(cryptoParams, "SEED/CBC/NoPadding", "SEED", false, 16),
+            createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm), 16);
     }
 
-    private TlsBlockCipher createBlockOperator(TlsContext context, String cipherName, String algorithm, boolean forEncryption, int keySize)
+    private TlsBlockCipher createBlockOperator(TlsCryptoParameters cryptoParams, String cipherName, String algorithm, boolean forEncryption, int keySize)
         throws GeneralSecurityException
     {
-        if (TlsUtils.isTLSv11(context))
+        if (TlsImplUtils.isTLSv11(cryptoParams))
         {
             return createBlockCipher(cipherName, algorithm, keySize, forEncryption);
         }
@@ -465,10 +473,10 @@ public class JcaTlsCrypto
         }
     }
 
-    private TlsHMAC createMAC(TlsContext context, int macAlgorithm)
+    private TlsHMAC createMAC(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws GeneralSecurityException, IOException
     {
-        if (TlsUtils.isSSL(context))
+        if (TlsImplUtils.isSSL(cryptoParams))
         {
             return createSSL3HMAC(macAlgorithm);
         }
@@ -478,47 +486,47 @@ public class JcaTlsCrypto
         }
     }
 
-    private TlsCipherSuite createChaCha20Poly1305(TlsContext context)
+    private TlsCipherSuite createChaCha20Poly1305(TlsCryptoParameters cryptoParams)
         throws IOException, GeneralSecurityException
     {
-        return new ChaCha20Poly1305CipherSuite(context,
+        return new ChaCha20Poly1305CipherSuite(cryptoParams,
             createStreamCipher("ChaCha7539", "ChaCha7539", 32, true), createStreamCipher("ChaCha7539", "ChaCha7539", 32, false),
             createMAC("Poly1305"), createMAC("Poly1305"));
     }
 
-    private TlsAEADCipherSuite createCipher_AES_CCM(TlsContext context, int cipherKeySize, int macSize)
+    private TlsAEADCipherSuite createCipher_AES_CCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException, GeneralSecurityException
     {
-        return new TlsAEADCipherSuite(context, createAEADCipher("AES/CCM/NoPadding", "AES", cipherKeySize, true), createAEADCipher("AES/CCM/NoPadding", "AES", cipherKeySize, false),
+        return new TlsAEADCipherSuite(cryptoParams, createAEADCipher("AES/CCM/NoPadding", "AES", cipherKeySize, true), createAEADCipher("AES/CCM/NoPadding", "AES", cipherKeySize, false),
             cipherKeySize, macSize);
     }
 
-    private TlsAEADCipherSuite createCipher_AES_GCM(TlsContext context, int cipherKeySize, int macSize)
+    private TlsAEADCipherSuite createCipher_AES_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException, GeneralSecurityException
     {
-        return new TlsAEADCipherSuite(context, createAEADCipher("AES/GCM/NoPadding", "AES", cipherKeySize, true), createAEADCipher("AES/GCM/NoPadding", "AES", cipherKeySize, false),
+        return new TlsAEADCipherSuite(cryptoParams, createAEADCipher("AES/GCM/NoPadding", "AES", cipherKeySize, true), createAEADCipher("AES/GCM/NoPadding", "AES", cipherKeySize, false),
             cipherKeySize, macSize);
     }
 
-    private TlsAEADCipherSuite createCipher_AES_OCB(TlsContext context, int cipherKeySize, int macSize)
+    private TlsAEADCipherSuite createCipher_AES_OCB(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException, GeneralSecurityException
     {
-        return new TlsAEADCipherSuite(context, createAEADCipher("AES/OCB/NoPadding", "AES", cipherKeySize, true), createAEADCipher("AES/OCB/NoPadding", "AES", cipherKeySize, false),
+        return new TlsAEADCipherSuite(cryptoParams, createAEADCipher("AES/OCB/NoPadding", "AES", cipherKeySize, true), createAEADCipher("AES/OCB/NoPadding", "AES", cipherKeySize, false),
             cipherKeySize, macSize, TlsAEADCipherSuite.NONCE_RFC7905);
     }
 
-    private TlsAEADCipherSuite createCipher_Camellia_GCM(TlsContext context, int cipherKeySize, int macSize)
+    private TlsAEADCipherSuite createCipher_Camellia_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException, GeneralSecurityException
     {
-        return new TlsAEADCipherSuite(context, createAEADCipher("Camellia/GCM/NoPadding", "Camellia", cipherKeySize, true), createAEADCipher("Camellia/GCM/NoPadding", "Camellia", cipherKeySize, false),
+        return new TlsAEADCipherSuite(cryptoParams, createAEADCipher("Camellia/GCM/NoPadding", "Camellia", cipherKeySize, true), createAEADCipher("Camellia/GCM/NoPadding", "Camellia", cipherKeySize, false),
             cipherKeySize, macSize);
     }
 
-    private TlsStreamCipherSuite createRC4Cipher(TlsContext context, int cipherKeySize, int macAlgorithm)
+    private TlsStreamCipherSuite createRC4Cipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsStreamCipherSuite(context, createStreamCipher("RC4", "RC4", 128, true), createStreamCipher("RC4", "RC4", 128, false),
-            createMAC(context, macAlgorithm), createMAC(context, macAlgorithm), cipherKeySize, false);
+        return new TlsStreamCipherSuite(cryptoParams, createStreamCipher("RC4", "RC4", 128, true), createStreamCipher("RC4", "RC4", 128, false),
+            createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm), cipherKeySize, false);
     }
 
     private TlsHMAC createSSL3HMAC(int macAlgorithm)

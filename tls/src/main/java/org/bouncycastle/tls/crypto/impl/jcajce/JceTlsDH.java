@@ -38,7 +38,7 @@ public class JceTlsDH
         try
         {
             byte[] data = domain.calculateDHAgreement(peerPublicKey, (DHPrivateKey)localKeyPair.getPrivate());
-            return domain.getCrypto().adoptSecret(data);
+            return domain.getCrypto().adoptLocalSecret(data);
         }
         catch (GeneralSecurityException e)
         {

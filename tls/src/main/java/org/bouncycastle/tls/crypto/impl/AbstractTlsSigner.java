@@ -9,7 +9,7 @@ import org.bouncycastle.tls.crypto.TlsSigner;
 public abstract class AbstractTlsSigner
     implements TlsSigner
 {
-    protected TlsContext context;
+    private TlsContext context;
 
     protected AbstractTlsSigner(TlsContext context)
     {
@@ -20,8 +20,8 @@ public abstract class AbstractTlsSigner
         this.context = context;
     }
 
-    public TlsContext getContext()
-    {
-        return context;
-    }
+//    public TlsContext getContext()
+//    {
+//        return context;
+//    }
 }

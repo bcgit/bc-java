@@ -4,11 +4,9 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.TlsContext;
 
 /**
  * Service and object creation interface for the primitive types and services that are associated
@@ -16,60 +14,6 @@ import org.bouncycastle.tls.TlsContext;
  */
 public interface TlsCrypto
 {
-    /**
-     * Return the primary (safest) SecureRandom for this crypto.
-     *
-     * @return a SecureRandom suitable for key generation.
-     */
-    SecureRandom getSecureRandom();
-
-    /**
-     * Create a TlsCertificate from a ASN.1 binary encoding of an X.509 certificate.
-     *
-     * @param encoding DER/BER encoding of the certificate of interest.
-     * @return a TlsCertificate.
-     *
-     * @throws IOException if there is an issue on decoding or constructing the certificate.
-     */
-    TlsCertificate createCertificate(byte[] encoding) throws IOException;
-
-    /**
-     * Create a cipher suite that matches the passed in encryption algorithm and mac algorithm.
-     * <p>
-     * See enumeration classes {@link EncryptionAlgorithm}, {@link MACAlgorithm} for appropriate argument values.
-     * </p>
-     * @param encryptionAlgorithm the encryption algorithm to be employed by the cipher suite.
-     * @param macAlgorithm  the MAC algorithm to be employed by the cipher suite.
-     * @return a TlsCipherSuite supporting the encryption and mac algorithm.
-     * @throws IOException
-     */
-    TlsCipherSuite createCipherSuite(TlsContext context, int encryptionAlgorithm, int macAlgorithm) throws IOException;
-
-    /**
-     * Create an domain object supporting the domain parameters described in dhConfig.
-     *
-     * @param dhConfig the config describing the DH parameters to use.
-     * @return a TlsECDomain supporting the parameters in ecConfig.
-     */
-    TlsDHDomain createDHDomain(TlsDHConfig dhConfig);
-
-    /**
-     * Create an domain object supporting the domain parameters described in ecConfig.
-     *
-     * @param ecConfig the config describing the EC parameters to use.
-     * @return a TlsECDomain supporting the parameters in ecConfig.
-     */
-    TlsECDomain createECDomain(TlsECConfig ecConfig);
-
-    /**
-     * Return an encryptor based on the public key in certificate.
-     *
-     * @param certificate the certificate carrying the public key.
-     * @return a TlsEncryptor based on the certificate's public key.
-     */
-    TlsEncryptor createEncryptor(TlsCertificate certificate)
-        throws IOException;
-
     /**
      * Create a TlsSecret object based provided data.
      *
@@ -93,6 +37,56 @@ public interface TlsCrypto
      * @return a TlsSecret containing the PreMasterSecret.
      */
     TlsSecret generateRSAPreMasterSecret(ProtocolVersion clientVersion);
+
+    /**
+     * Return the primary (safest) SecureRandom for this crypto.
+     *
+     * @return a SecureRandom suitable for key generation.
+     */
+    SecureRandom getSecureRandom();
+
+    /**
+     * Create a TlsCertificate from a ASN.1 binary encoding of an X.509 certificate.
+     *
+     * @param encoding DER/BER encoding of the certificate of interest.
+     * @return a TlsCertificate.
+     *
+     * @throws IOException if there is an issue on decoding or constructing the certificate.
+     */
+    TlsCertificate createCertificate(byte[] encoding) throws IOException;
+
+    /**
+     * Return an encryptor based on the public key in certificate.
+     *
+     * @param certificate the certificate carrying the public key.
+     * @return a TlsEncryptor based on the certificate's public key.
+     */
+    TlsEncryptor createEncryptor(TlsCertificate certificate)
+        throws IOException;
+
+    /**
+     * Create an domain object supporting the domain parameters described in dhConfig.
+     *
+     * @param dhConfig the config describing the DH parameters to use.
+     * @return a TlsECDomain supporting the parameters in ecConfig.
+     */
+    TlsDHDomain createDHDomain(TlsDHConfig dhConfig);
+
+    /**
+     * Create an domain object supporting the domain parameters described in ecConfig.
+     *
+     * @param ecConfig the config describing the EC parameters to use.
+     * @return a TlsECDomain supporting the parameters in ecConfig.
+     */
+    TlsECDomain createECDomain(TlsECConfig ecConfig);
+
+    /**
+     * Adopt the passed in secret, creating a new copy of it..
+     *
+     * @param secret the secret to make a copy of.
+     * @return a TlsSecret based the original secret.
+     */
+    TlsSecret adoptSecret(TlsSecret secret);
 
     /**
      * Create a suitable hash for the signature algorithm identifier passed in.
