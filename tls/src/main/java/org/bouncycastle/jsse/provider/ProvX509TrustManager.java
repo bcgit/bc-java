@@ -1,8 +1,15 @@
 package org.bouncycastle.jsse.provider;
 
 import java.net.Socket;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.cert.CertPathBuilder;
+import java.security.cert.CertStore;
 import java.security.cert.CertificateException;
+import java.security.cert.CollectionCertStoreParameters;
+import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.PKIXCertPathValidatorResult;
+import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,17 +32,52 @@ class ProvX509TrustManager
     public void checkClientTrusted(X509Certificate[] x509Certificates, String authType)
         throws CertificateException
     {
-        System.err.println("Client");
+        // TODO: need to confirm cert and client identity match
+        // TODO: need to make sure authType makes sense.
+        validatePath(x509Certificates);
     }
 
     public void checkServerTrusted(X509Certificate[] x509Certificates, String authType)
         throws CertificateException
     {
 
-        System.err.println("Server");
-
-        System.err.println(Arrays.asList(x509Certificates));
+        // TODO: need to confirm cert and server identity match
+        // TODO: need to make sure authType makes sense.
+        validatePath(x509Certificates);
     }
+
+    public void checkClientTrusted(X509Certificate[] x509Certificates, String authType, Socket socket)
+        throws CertificateException
+    {
+        // TODO: need to confirm cert and client identity match
+        // TODO: need to make sure authType makes sense.
+        validatePath(x509Certificates);
+    }
+
+    public void checkServerTrusted(X509Certificate[] x509Certificates, String authType, Socket socket)
+        throws CertificateException
+    {
+        // TODO: need to confirm cert and server identity match
+        // TODO: need to make sure authType makes sense.
+        validatePath(x509Certificates);
+    }
+
+    public void checkClientTrusted(X509Certificate[] x509Certificates, String authType, SSLEngine sslEngine)
+        throws CertificateException
+    {
+        // TODO: need to confirm cert and client identity match
+        // TODO: need to make sure authType makes sense.
+        validatePath(x509Certificates);
+    }
+
+    public void checkServerTrusted(X509Certificate[] x509Certificates, String authType, SSLEngine sslEngine)
+        throws CertificateException
+    {
+        // TODO: need to confirm cert and server identity match
+        // TODO: need to make sure authType makes sense.
+        validatePath(x509Certificates);
+    }
+
 
     public X509Certificate[] getAcceptedIssuers()
     {
@@ -78,27 +120,29 @@ class ProvX509TrustManager
         }
     }
 
-    public void checkClientTrusted(X509Certificate[] x509Certificates, String s, Socket socket)
+    private void validatePath(X509Certificate[] x509Certificates)
         throws CertificateException
     {
-        System.err.println("Client1");
-    }
+        new Exception().printStackTrace(System.err);
+        try
+        {
+            CertStore certStore = CertStore.getInstance("Collection", new CollectionCertStoreParameters(Arrays.asList(x509Certificates)), "BC");
 
-    public void checkServerTrusted(X509Certificate[] x509Certificates, String s, Socket socket)
-        throws CertificateException
-    {
-        System.err.println("Server1");
-    }
+            CertPathBuilder pathBuilder = CertPathBuilder.getInstance("PKIX", "BC");
 
-    public void checkClientTrusted(X509Certificate[] x509Certificates, String s, SSLEngine sslEngine)
-        throws CertificateException
-    {
-        System.err.println("Client2");
-    }
+            X509CertSelector constraints = new X509CertSelector();
 
-    public void checkServerTrusted(X509Certificate[] x509Certificates, String s, SSLEngine sslEngine)
-        throws CertificateException
-    {
-        System.err.println("Server2");
+            constraints.setCertificate(x509Certificates[0]);
+
+            PKIXBuilderParameters param = new PKIXBuilderParameters(trustStore, constraints);
+            param.addCertStore(certStore);
+            param.setRevocationEnabled(false);
+
+            PKIXCertPathValidatorResult result = (PKIXCertPathValidatorResult)pathBuilder.build(param);
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new CertificateException("unable to process certificates: " + e.getMessage(), e);
+        }
     }
 }
