@@ -29,7 +29,7 @@ public class JcaTlsCertificate
 {
     private final JcaJceHelper helper;
 
-    static JcaTlsCertificate convert(TlsCertificate certificate, JcaJceHelper helper) throws IOException
+    public static JcaTlsCertificate convert(TlsCertificate certificate, JcaJceHelper helper) throws IOException
     {
         if (certificate instanceof JcaTlsCertificate)
         {
@@ -253,6 +253,11 @@ public class JcaTlsCertificate
         {
             throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
         }
+    }
+
+    public X509Certificate getX509Certificate()
+    {
+        return certificate;
     }
 
     protected void validateKeyUsage(int keyUsageBits)

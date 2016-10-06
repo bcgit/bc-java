@@ -2,6 +2,8 @@ package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -10,6 +12,7 @@ import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsProtocol;
@@ -59,6 +62,11 @@ class ProvSSLEngine
         this.sslParameters = sslParameters;
     }
 
+    protected ProvSSLContextSpi getContext()
+    {
+        return context;
+    }
+
     @Override
     public synchronized void beginHandshake()
         throws SSLException
@@ -74,14 +82,12 @@ class ProvSSLEngine
 
         try
         {
-            SSLParameters protocolParameters = context.copySSLParameters(sslParameters);
-
             if (this.useClientMode)
             {
                 TlsClientProtocol clientProtocol = new TlsClientProtocol();
                 this.protocol = clientProtocol;
 
-                ProvTlsClient client = new ProvTlsClient(context.getCrypto(), protocolParameters);
+                ProvTlsClient client = new ProvTlsClient(this);
                 this.protocolManager = client;
 
                 clientProtocol.connect(client);
@@ -91,7 +97,7 @@ class ProvSSLEngine
                 TlsServerProtocol serverProtocol = new TlsServerProtocol();
                 this.protocol = serverProtocol;
 
-                ProvTlsServer server = new ProvTlsServer(context, protocolParameters);
+                ProvTlsServer server = new ProvTlsServer(this);
                 this.protocolManager = server;
 
                 serverProtocol.accept(server);
@@ -352,5 +358,43 @@ class ProvSSLEngine
         {
             handshakeStatus = HandshakeStatus.NEED_UNWRAP;
         }
+    }
+
+    protected boolean isClientTrusted(X509Certificate[] chain, String authType)
+    {
+        // TODO[jsse] Consider X509ExtendedTrustManager and/or HostnameVerifier functionality
+
+        X509TrustManager tm = context.getX509TrustManager();
+        if (tm != null)
+        {
+            try
+            {
+                tm.checkClientTrusted(chain, authType);
+                return true;
+            }
+            catch(CertificateException e)
+            {
+            }
+        }
+        return false;
+    }
+
+    protected boolean isServerTrusted(X509Certificate[] chain, String authType)
+    {
+        // TODO[jsse] Consider X509ExtendedTrustManager and/or HostnameVerifier functionality
+
+        X509TrustManager tm = context.getX509TrustManager();
+        if (tm != null)
+        {
+            try
+            {
+                tm.checkServerTrusted(chain, authType);
+                return true;
+            }
+            catch(CertificateException e)
+            {
+            }
+        }
+        return false;
     }
 }

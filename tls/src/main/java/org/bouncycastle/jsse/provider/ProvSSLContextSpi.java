@@ -1,9 +1,12 @@
 package org.bouncycastle.jsse.provider;
 
+import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
+import java.security.KeyStore;
 import java.security.SecureRandom;
 
 import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContextSpi;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
@@ -11,9 +14,9 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509ExtendedKeyManager;
-import javax.net.ssl.X509ExtendedTrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
 
@@ -32,8 +35,8 @@ class ProvSSLContextSpi
 
     protected boolean initialized = false;
 
-    private X509ExtendedKeyManager km;
-    private X509ExtendedTrustManager tm;
+    private X509KeyManager km;
+    private X509TrustManager tm;
 
     ProvSSLContextSpi(TlsCrypto crypto)
     {
@@ -103,6 +106,7 @@ class ProvSSLContextSpi
     protected SSLEngine engineCreateSSLEngine()
     {
         checkInitialized();
+        // TODO[jsse] Does the engine need immutable refs to km/tm/random in case of re-init?
         return new ProvSSLEngine(this);
     }
 
@@ -160,45 +164,104 @@ class ProvSSLContextSpi
     }
 
     @Override
-    protected void engineInit(KeyManager[] kms, TrustManager[] tm, SecureRandom sr) throws KeyManagementException
+    protected synchronized void engineInit(KeyManager[] kms, TrustManager[] tms, SecureRandom sr) throws KeyManagementException
     {
         this.initialized = false;
-
         this.km = selectKeyManager(kms);
-
+        this.tm = selectTrustManager(tms);
+        // TODO[tls-ops] SecureRandom?
         this.initialized = true;
     }
 
-    public X509ExtendedKeyManager getKeyManager()
+    protected X509KeyManager findX509KeyManager(KeyManager[] kms)
+    {
+        if (kms != null)
+        {
+            for (KeyManager km : kms)
+            {
+                if (km instanceof X509KeyManager)
+                {
+                    return (X509KeyManager)km;
+                }
+            }
+        }
+        return null;
+    }
+
+    protected X509TrustManager findX509TrustManager(TrustManager[] tms)
+    {
+        if (tms != null)
+        {
+            for (TrustManager tm : tms)
+            {
+                if (tm instanceof X509TrustManager)
+                {
+                    return (X509TrustManager)tm;
+                }
+            }
+        }
+        return null;
+    }
+    
+    protected synchronized X509KeyManager getX509KeyManager()
     {
         return km;
     }
 
-    public X509ExtendedTrustManager getTrustManager()
+    protected synchronized X509TrustManager getX509TrustManager()
     {
         return tm;
     }
 
-    private X509ExtendedKeyManager selectKeyManager(KeyManager[] kms)
+    protected X509KeyManager selectKeyManager(KeyManager[] kms) throws KeyManagementException
     {
-        if (kms != null)
+        if (kms == null)
         {
-            for (int i = 0; i != kms.length; i++)
+            try
             {
-                KeyManager km = kms[i];
+                /*
+                 * "[...] the installed security providers will be searched for the highest priority
+                 * implementation of the appropriate factory."
+                 */
 
-                if (km instanceof X509ExtendedKeyManager)
-                {
-                    return (X509ExtendedKeyManager)km;
-                }
-                if (km instanceof X509KeyManager)
-                {
-                    return new X509KeyManagerExtender((X509KeyManager)km);
-                }
+                // TODO[tls-ops] Is PKIX a reasonable algorithm to use here?
+                KeyManagerFactory kmf = KeyManagerFactory.getInstance("PKIX");
+                // TODO[tls-ops] Is this supported generally?
+                kmf.init(null, null);
+                kms = kmf.getKeyManagers();
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new KeyManagementException(e);
             }
         }
 
-        // TODO: return default value
-        return null;
+        return findX509KeyManager(kms);
+    }
+
+    protected X509TrustManager selectTrustManager(TrustManager[] tms) throws KeyManagementException
+    {
+        if (tms == null)
+        {
+            try
+            {
+                /*
+                 * "[...] the installed security providers will be searched for the highest priority
+                 * implementation of the appropriate factory."
+                 */
+
+                // TODO[tls-ops] Is PKIX a reasonable algorithm to use here?
+                TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
+                // TODO[tls-ops] Is this supported generally?
+                tmf.init((KeyStore)null);
+                tms = tmf.getTrustManagers();
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new KeyManagementException(e);
+            }
+        }
+
+        return findX509TrustManager(tms);
     }
 }
