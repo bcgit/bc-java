@@ -168,6 +168,8 @@ public class SHA512
 
             provider.addAlgorithm("Mac.OLDHMACSHA512", PREFIX + "$OldSHA512");
 
+            provider.addAlgorithm("Mac.PBEWITHHMACSHA512", PREFIX + "$HashMac");
+
             addHMACAlgorithm(provider, "SHA512", PREFIX + "$HashMac",  PREFIX + "$KeyGenerator");
             addHMACAlias(provider, "SHA512", PKCSObjectIdentifiers.id_hmacWithSHA512);
 

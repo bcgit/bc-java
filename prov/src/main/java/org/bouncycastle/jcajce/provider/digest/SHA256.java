@@ -88,6 +88,8 @@ public class SHA256
             provider.addAlgorithm("Alg.Alias.SecretKeyFactory.PBEWITHHMACSHA-256", "PBEWITHHMACSHA256");
             provider.addAlgorithm("Alg.Alias.SecretKeyFactory." + NISTObjectIdentifiers.id_sha256, "PBEWITHHMACSHA256");
 
+            provider.addAlgorithm("Mac.PBEWITHHMACSHA256", PREFIX + "$HashMac");
+
             addHMACAlgorithm(provider, "SHA256", PREFIX + "$HashMac",  PREFIX + "$KeyGenerator");
             addHMACAlias(provider, "SHA256", PKCSObjectIdentifiers.id_hmacWithSHA256);
             addHMACAlias(provider, "SHA256", NISTObjectIdentifiers.id_sha256);

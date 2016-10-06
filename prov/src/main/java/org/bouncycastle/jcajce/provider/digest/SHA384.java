@@ -82,6 +82,8 @@ public class SHA384
             provider.addAlgorithm("Alg.Alias.MessageDigest." + NISTObjectIdentifiers.id_sha384, "SHA-384");
             provider.addAlgorithm("Mac.OLDHMACSHA384", PREFIX + "$OldSHA384");
 
+            provider.addAlgorithm("Mac.PBEWITHHMACSHA384", PREFIX + "$HashMac");
+
             addHMACAlgorithm(provider, "SHA384", PREFIX + "$HashMac",  PREFIX + "$KeyGenerator");
             addHMACAlias(provider, "SHA384", PKCSObjectIdentifiers.id_hmacWithSHA384);
         }

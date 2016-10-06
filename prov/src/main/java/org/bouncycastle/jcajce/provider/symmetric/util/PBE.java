@@ -141,6 +141,15 @@ public interface PBE
                 case GOST3411:
                     generator = new PKCS12ParametersGenerator(new GOST3411Digest());
                     break;
+                case SHA224:
+                    generator = new PKCS12ParametersGenerator(new SHA224Digest());
+                    break;
+                case SHA384:
+                    generator = new PKCS12ParametersGenerator(new SHA384Digest());
+                    break;
+                case SHA512:
+                    generator = new PKCS12ParametersGenerator(new SHA512Digest());
+                    break;
                 default:
                     throw new IllegalStateException("unknown digest scheme for PBE encryption.");
                 }
