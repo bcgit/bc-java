@@ -55,15 +55,16 @@ class ProvX509KeyManager
     {
         try
         {
-            // TODO
-            List<String> aliases = findAliases(keyTypes[0], principalToIssuers(issuers));
-
-            if (aliases.isEmpty())
+            for (int i = 0; i != keyTypes.length; i++)
             {
-                return null;
+                List<String> aliases = findAliases(keyTypes[i], principalToIssuers(issuers));
+                if (!aliases.isEmpty())
+                {
+                    return aliases.get(0);
+                }
             }
 
-            return aliases.get(0);
+            return null;
         }
         catch (Exception e)
         {
