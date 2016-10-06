@@ -707,6 +707,21 @@ public class TlsUtils
         return vectorOfOne(new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.rsa));
     }
 
+    public static Vector getDefaultSignatureAlgorithms(int signatureAlgorithm)
+    {
+        switch (signatureAlgorithm)
+        {
+        case SignatureAlgorithm.dsa:
+            return getDefaultDSSSignatureAlgorithms();
+        case SignatureAlgorithm.ecdsa:
+            return getDefaultECDSASignatureAlgorithms();
+        case SignatureAlgorithm.rsa:
+            return getDefaultRSASignatureAlgorithms();
+        default:
+            throw new IllegalArgumentException("unknown SignatureAlgorithm");
+        }
+    }
+
     public static Vector getDefaultSupportedSignatureAlgorithms()
     {
         short[] hashAlgorithms = new short[]{ HashAlgorithm.sha1, HashAlgorithm.sha224, HashAlgorithm.sha256,

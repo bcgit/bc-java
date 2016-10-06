@@ -1,6 +1,8 @@
 package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
+import java.net.Socket;
+import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Vector;
@@ -15,15 +17,25 @@ import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.DefaultTlsServer;
+import org.bouncycastle.tls.HashAlgorithm;
+import org.bouncycastle.tls.KeyExchangeAlgorithm;
+import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaDefaultTlsCredentialedSigner;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 
 class ProvTlsServer
     extends DefaultTlsServer
     implements TlsProtocolManager
 {
+    protected static short MINIMUM_HASH_STRICT = HashAlgorithm.sha1;
+    protected static short MINIMUM_HASH_PREFERRED = HashAlgorithm.sha256;
+
     protected final ProvSSLEngine engine;
     protected final SSLParameters sslParameters;
 
@@ -42,17 +54,81 @@ class ProvTlsServer
         return handshakeComplete;
     }
 
-    public TlsCredentials getCredentials() throws IOException
+    public TlsCredentials getCredentials()
+        throws IOException
     {
-        // TODO[tls-ops] Locate credentials in configured key stores, suitable for the selected ciphersuite
+        int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite);
+        switch (keyExchangeAlgorithm)
+        {
+        case KeyExchangeAlgorithm.DH_anon:
+        case KeyExchangeAlgorithm.ECDH_anon:
+            return null;
+
+        case KeyExchangeAlgorithm.DHE_DSS:
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+        case KeyExchangeAlgorithm.DHE_RSA:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
+        case KeyExchangeAlgorithm.RSA:
+            break;
+
+        default:
+            /* Note: internal error here; selected a key exchange we don't implement! */
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         X509KeyManager km = engine.getContext().getX509KeyManager();
+        if (km == null)
+        {
+            return null;
+        }
 
-        String alias = ""; // TODO: km.chooseServerAlias();
+        String keyType = JsseUtils.getAuthType(keyExchangeAlgorithm);
+        // TODO[jsse] Is there some extension where the client can specify these (SNI maybe)?
+        Principal[] issuers = null;
+        // TODO[jsse] How is this used?
+        Socket socket = null;
 
-        PrivateKey key = km.getPrivateKey(alias);
-        X509Certificate[] certChain = km.getCertificateChain(alias);
+        String alias = km.chooseServerAlias(keyType, issuers, socket);
+        if (alias == null)
+        {
+            return null;
+        }
 
-        throw new UnsupportedOperationException();
+        TlsCrypto crypto = getCrypto();
+        if (!(crypto instanceof JcaTlsCrypto))
+        {
+            // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key
+            throw new UnsupportedOperationException();
+        }
+
+        PrivateKey privateKey = km.getPrivateKey(alias);
+        Certificate certificate = JsseUtils.getCertificateMessage(crypto, km.getCertificateChain(alias));
+
+        switch (keyExchangeAlgorithm)
+        {
+        case KeyExchangeAlgorithm.DHE_DSS:
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+        case KeyExchangeAlgorithm.DHE_RSA:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
+        {
+            short signatureAlgorithm = TlsUtils.getSignatureAlgorithm(keyExchangeAlgorithm);
+            SignatureAndHashAlgorithm sigAlg = chooseSignatureAndHashAlgorithm(signatureAlgorithm);
+
+            // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key
+            return new JcaDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), (JcaTlsCrypto)crypto,
+                privateKey, certificate, sigAlg);
+        }
+
+        case KeyExchangeAlgorithm.RSA:
+        {
+            // TODO[tls-ops] Missing JceDefaultTlsCredentialedEncryptor?
+            throw new UnsupportedOperationException();
+        }
+
+        default:
+            /* Note: internal error here; selected a key exchange we don't implement! */
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
     }
 
 //  public int[] getCipherSuites()
@@ -143,5 +219,61 @@ class ProvTlsServer
         {
             // TODO[tls-ops] Register the session with the server SSLSessionContext of our SSLContext
         }
+    }
+
+    // TODO[tls-ops] Consider moving this to TlsUtils
+    protected SignatureAndHashAlgorithm chooseSignatureAndHashAlgorithm(int signatureAlgorithm)
+        throws IOException
+    {
+        if (!TlsUtils.isTLSv12(context))
+        {
+            return null;
+        }
+
+        Vector algs = supportedSignatureAlgorithms;
+        if (algs == null)
+        {
+            algs = TlsUtils.getDefaultSignatureAlgorithms(signatureAlgorithm);
+        }
+
+        SignatureAndHashAlgorithm result = null;
+        for (int i = 0; i < algs.size(); ++i)
+        {
+            SignatureAndHashAlgorithm alg = (SignatureAndHashAlgorithm)algs.elementAt(i);
+            if (alg.getSignature() == signatureAlgorithm)
+            {
+                short hash = alg.getHash();
+                if (result == null)
+                {
+                    if (hash >= MINIMUM_HASH_STRICT)
+                    {
+                        result = alg;
+                    }
+                }
+                else
+                {
+                    short current = result.getHash();
+                    if (current < MINIMUM_HASH_PREFERRED)
+                    {
+                        if (hash > current)
+                        {
+                            result = alg;
+                        }
+                    }
+                    else
+                    {
+                        if (hash < current)
+                        {
+                            result = alg;
+                        }
+                    }
+                }
+            }
+        }
+        if (result == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+        return result;
     }
 }

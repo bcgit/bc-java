@@ -21,6 +21,7 @@ import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsCredentialedAgreement;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
 import org.bouncycastle.tls.TlsCredentialedSigner;
+import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
@@ -156,28 +157,27 @@ public class TlsTestUtils
     static TlsCredentialedSigner loadSignerCredentials(TlsContext context, Vector supportedSignatureAlgorithms,
         short signatureAlgorithm, String certResource, String keyResource) throws IOException
     {
-        /*
-         * TODO Note that this code fails to provide default value for the client supported
-         * algorithms if it wasn't sent.
-         */
         SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
-        if (supportedSignatureAlgorithms != null)
+        if (supportedSignatureAlgorithms == null)
         {
-            for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
-            {
-                SignatureAndHashAlgorithm alg = (SignatureAndHashAlgorithm)
-                    supportedSignatureAlgorithms.elementAt(i);
-                if (alg.getSignature() == signatureAlgorithm)
-                {
-                    signatureAndHashAlgorithm = alg;
-                    break;
-                }
-            }
+            supportedSignatureAlgorithms = TlsUtils.getDefaultSignatureAlgorithms(signatureAlgorithm);
+        }
 
-            if (signatureAndHashAlgorithm == null)
+        for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
+        {
+            SignatureAndHashAlgorithm alg = (SignatureAndHashAlgorithm)
+                supportedSignatureAlgorithms.elementAt(i);
+            if (alg.getSignature() == signatureAlgorithm)
             {
-                return null;
+                // Just grab the first one we find
+                signatureAndHashAlgorithm = alg;
+                break;
             }
+        }
+
+        if (signatureAndHashAlgorithm == null)
+        {
+            return null;
         }
 
         return loadSignerCredentials(context, new String[]{ certResource, "x509-ca.pem" },

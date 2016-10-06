@@ -267,6 +267,9 @@ public abstract class AbstractTlsServer
         throws IOException
     {
         /*
+         * TODO[tls-ops] Expedite the TODO below. Additionally, the signature algorithms need to be
+         * first pruned based on the signing credentials that are actually available.
+         * 
          * TODO RFC 5246 7.4.3. In order to negotiate correctly, the server MUST check any candidate
          * cipher suites against the "signature_algorithms" extension before selecting them. This is
          * somewhat inelegant but is a compromise designed to minimize changes to the original

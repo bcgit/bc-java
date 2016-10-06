@@ -1,6 +1,7 @@
 package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
@@ -9,6 +10,8 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCertificate;
 
 public class JsseUtils
@@ -33,6 +36,30 @@ public class JsseUtils
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
+    }
+
+    public static Certificate getCertificateMessage(TlsCrypto crypto, X509Certificate[] chain) throws IOException
+    {
+        if (chain == null || chain.length < 1)
+        {
+            return Certificate.EMPTY_CHAIN;
+        }
+
+        TlsCertificate[] certificateList = new TlsCertificate[chain.length];
+        try
+        {
+            for (int i = 0; i < chain.length; ++i)
+            {
+                // TODO[jsse] Prefer an option that will not re-encode for typical use-cases
+                certificateList[i] = crypto.createCertificate(chain[i].getEncoded());
+            }
+        }
+        catch (CertificateEncodingException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
+        }
+
+        return new Certificate(certificateList);
     }
 
     public static X509Certificate[] getX509CertificateChain(Certificate certificateMessage) throws IOException
