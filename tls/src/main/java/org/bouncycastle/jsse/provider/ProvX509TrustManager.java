@@ -123,7 +123,6 @@ class ProvX509TrustManager
     private void validatePath(X509Certificate[] x509Certificates)
         throws CertificateException
     {
-        new Exception().printStackTrace(System.err);
         try
         {
             CertStore certStore = CertStore.getInstance("Collection", new CollectionCertStoreParameters(Arrays.asList(x509Certificates)), "BC");
