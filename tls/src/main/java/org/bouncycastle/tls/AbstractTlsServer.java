@@ -79,7 +79,7 @@ public abstract class AbstractTlsServer
 
     protected ProtocolVersion getMaximumVersion()
     {
-        return ProtocolVersion.TLSv11;
+        return ProtocolVersion.TLSv12;
     }
 
     protected ProtocolVersion getMinimumVersion()

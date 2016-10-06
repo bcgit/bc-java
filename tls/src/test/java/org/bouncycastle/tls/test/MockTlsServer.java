@@ -49,11 +49,6 @@ class MockTlsServer
             + ", " + AlertDescription.getText(alertDescription));
     }
 
-    protected ProtocolVersion getMaximumVersion()
-    {
-        return ProtocolVersion.TLSv12;
-    }
-
     public ProtocolVersion getServerVersion() throws IOException
     {
         ProtocolVersion serverVersion = super.getServerVersion();
