@@ -48,6 +48,7 @@ public class RFC5649WrapEngine
         if (param instanceof KeyParameter)
         {
             this.param = (KeyParameter)param;
+            this.preIV = highOrderIV;
         }
         else if (param instanceof ParametersWithIV)
         {
@@ -192,7 +193,6 @@ public class RFC5649WrapEngine
         System.arraycopy(extractedAIV, 0, extractedHighOrderAIV, 0, extractedHighOrderAIV.length);
         System.arraycopy(extractedAIV, extractedHighOrderAIV.length, mliBytes, 0, mliBytes.length);
         int mli = Pack.bigEndianToInt(mliBytes, 0);
-
         // Even if a check fails we still continue and check everything 
         // else in order to avoid certain timing based side-channel attacks.
         boolean isValid = true;
