@@ -21,13 +21,11 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipherSuite;
-import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
-import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsMAC;
@@ -36,11 +34,13 @@ import org.bouncycastle.tls.crypto.TlsSRP6Server;
 import org.bouncycastle.tls.crypto.TlsSRP6VerifierGenerator;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
+import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.ChaCha20Poly1305CipherSuite;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipherSuite;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipher;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipherSuite;
+import org.bouncycastle.tls.crypto.impl.TlsEncryptor;
 import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
 import org.bouncycastle.tls.crypto.impl.TlsNullCipherSuite;
 import org.bouncycastle.tls.crypto.impl.TlsStreamCipher;
@@ -55,7 +55,7 @@ import org.bouncycastle.util.Arrays;
  * </p>
  */
 public class JcaTlsCrypto
-    implements TlsCrypto
+    extends AbstractTlsCrypto
 {
     private final JcaJceHelper helper;
     private final SecureRandom entropySource;
@@ -100,7 +100,7 @@ public class JcaTlsCrypto
         return new JcaTlsCertificate(encoding, helper);
     }
 
-    TlsCipherSuite createCipherSuite(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
+    protected TlsCipherSuite createCipherSuite(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
         throws IOException
     {
         try
@@ -301,13 +301,6 @@ public class JcaTlsCrypto
                 }
             }
         };
-    }
-
-    public TlsSecret adoptSecret(TlsSecret secret)
-    {
-        JceTlsSecret sec = (JceTlsSecret)secret;
-        
-        return adoptLocalSecret(Arrays.clone(sec.data));
     }
 
     /**

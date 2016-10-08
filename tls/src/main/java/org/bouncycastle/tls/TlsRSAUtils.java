@@ -3,7 +3,7 @@ package org.bouncycastle.tls;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.bouncycastle.tls.crypto.TlsEncryptor;
+import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
 /**
@@ -18,12 +18,12 @@ public abstract class TlsRSAUtils
     /*
      * Generate a pre_master_secret and send it encrypted to the server
      */
-    public static TlsSecret generateEncryptedPreMasterSecret(TlsContext context, TlsEncryptor encryptor,
+    public static TlsSecret generateEncryptedPreMasterSecret(TlsContext context, TlsCertificate certificate,
         OutputStream output) throws IOException
     {
         TlsSecret preMasterSecret = context.getCrypto().generateRSAPreMasterSecret(context.getClientVersion());
 
-        byte[] encryptedPreMasterSecret = preMasterSecret.encrypt(encryptor);
+        byte[] encryptedPreMasterSecret = preMasterSecret.encrypt(certificate);
 
         if (TlsUtils.isSSL(context))
         {

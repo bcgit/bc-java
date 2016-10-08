@@ -5,8 +5,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
-import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.io.Streams;
 
@@ -16,10 +16,8 @@ import org.bouncycastle.util.io.Streams;
 public class TlsRSAKeyExchange
     extends AbstractTlsKeyExchange
 {
-    protected TlsEncryptor encryptor = null;
-
     protected TlsCredentialedDecryptor serverCredentials = null;
-
+    protected TlsCertificate serverCertificate;
     protected TlsSecret preMasterSecret;
 
     public TlsRSAKeyExchange(Vector supportedSignatureAlgorithms)
@@ -54,7 +52,7 @@ public class TlsRSAKeyExchange
 
         checkServerCertSigAlg(serverCertificate);
 
-        this.encryptor = context.getCrypto().createEncryptor(serverCertificate.getCertificateAt(0));
+        this.serverCertificate = serverCertificate.getCertificateAt(0);
     }
 
     public void validateCertificateRequest(CertificateRequest certificateRequest)
@@ -87,7 +85,7 @@ public class TlsRSAKeyExchange
     public void generateClientKeyExchange(OutputStream output)
         throws IOException
     {
-        this.preMasterSecret = TlsRSAUtils.generateEncryptedPreMasterSecret(context, encryptor, output);
+        this.preMasterSecret = TlsRSAUtils.generateEncryptedPreMasterSecret(context, serverCertificate, output);
     }
 
     public void processClientKeyExchange(InputStream input)
