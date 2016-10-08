@@ -24,9 +24,14 @@ public abstract class AbstractTlsCrypto
      */
     public TlsSecret adoptSecret(TlsSecret secret)
     {
-        AbstractTlsSecret sec = (AbstractTlsSecret)secret;
+        if (secret instanceof AbstractTlsSecret)
+        {
+            AbstractTlsSecret sec = (AbstractTlsSecret)secret;
 
-        return createSecret(sec.copyData());
+            return createSecret(sec.copyData());
+        }
+
+        throw new IllegalArgumentException("unrecognized TlsSecret - cannot copy data: " + secret.getClass().getName());
     }
 
     /**
