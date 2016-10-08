@@ -1,46 +1,30 @@
 package org.bouncycastle.tls.crypto.impl.bc;
 
-import java.io.IOException;
-
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.PRFAlgorithm;
-import org.bouncycastle.tls.crypto.TlsCipherSuite;
-import org.bouncycastle.tls.crypto.TlsCryptoParameters;
-import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsSecret;
+import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
+import org.bouncycastle.tls.crypto.impl.AbstractTlsSecret;
 import org.bouncycastle.util.Arrays;
 
 public class BcTlsSecret
-    implements TlsSecret
+    extends AbstractTlsSecret
 {
-    protected static final int MD5_SIZE = 16;
-
-    // SSL3 magic mix constants ("A", "BB", "CCC", ...)
-    private static final byte[][] SSL3_CONST = generateSSL3Constants();
-
-    protected static byte[][] generateSSL3Constants()
-    {
-        int n = 10;
-        byte[][] arr = new byte[n][];
-        for (int i = 0; i < n; i++)
-        {
-            byte[] b = new byte[i + 1];
-            Arrays.fill(b, (byte)('A' + i));
-            arr[i] = b;
-        }
-        return arr;
-    }
-
     protected final BcTlsCrypto crypto;
-    protected byte[] data;
 
     public BcTlsSecret(BcTlsCrypto crypto, byte[] data)
     {
+        super(data);
+
         this.crypto = crypto;
-        this.data = data;
+    }
+
+    protected AbstractTlsCrypto getCrypto()
+    {
+        return crypto;
     }
 
     public synchronized TlsSecret deriveSSLKeyBlock(byte[] seed, int length)
@@ -70,48 +54,6 @@ public class BcTlsSecret
             :   prf_1_2(crypto.createPRFHash(prfAlgorithm), data, labelSeed, length);
 
         return crypto.adoptLocalSecret(result);
-    }
-
-    public TlsCipherSuite createCipherSuite(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
-        throws IOException
-    {
-        return crypto.createCipherSuite(cryptoParams, encryptionAlgorithm, macAlgorithm);
-    }
-
-    public synchronized void destroy()
-    {
-        if (data != null)
-        {
-            // TODO Is there a way to ensure the data is really overwritten?
-            Arrays.fill(data, (byte)0);
-            this.data = null;
-        }
-    }
-
-    public synchronized byte[] encrypt(TlsEncryptor encryptor) throws IOException
-    {
-        checkAlive();
-        
-        // TODO [tls-ops] Maybe we need to encrypt to a TlsCertificate after all (which we can easily 'convert'),
-        // since this potentially sends the secret outside this crypto module.
-        return encryptor.encrypt(data, 0, data.length);
-    }
-
-    public synchronized byte[] extract()
-    {
-        checkAlive();
-
-        byte[] result = data;
-        this.data = null;
-        return result;
-    }
-
-    protected void checkAlive()
-    {
-        if (data == null)
-        {
-            throw new IllegalStateException("Secret has already been extracted or destroyed");
-        }
     }
 
     protected void hmacHash(Digest digest, byte[] secret, byte[] seed, byte[] output)

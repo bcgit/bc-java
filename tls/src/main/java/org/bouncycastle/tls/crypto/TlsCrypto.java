@@ -56,15 +56,6 @@ public interface TlsCrypto
     TlsCertificate createCertificate(byte[] encoding) throws IOException;
 
     /**
-     * Return an encryptor based on the public key in certificate.
-     *
-     * @param certificate the certificate carrying the public key.
-     * @return a TlsEncryptor based on the certificate's public key.
-     */
-    TlsEncryptor createEncryptor(TlsCertificate certificate)
-        throws IOException;
-
-    /**
      * Create an domain object supporting the domain parameters described in dhConfig.
      *
      * @param dhConfig the config describing the DH parameters to use.

@@ -150,7 +150,7 @@ public class JcaTlsCertificate
     {
         try
         {
-            // TODO[tls-ops] A DER encoding is required here - check this will be the case for any/all providers.
+            // DER encoding enforced by provider - as defined by JCA for X.509 certificates.
             return certificate.getEncoded();
         }
         catch (CertificateEncodingException e)

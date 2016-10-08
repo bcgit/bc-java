@@ -1,6 +1,5 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
-import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 
@@ -9,41 +8,21 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsCipherSuite;
-import org.bouncycastle.tls.crypto.TlsCryptoParameters;
-import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsSecret;
+import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
+import org.bouncycastle.tls.crypto.impl.AbstractTlsSecret;
 import org.bouncycastle.util.Arrays;
 
 public class JceTlsSecret
-    implements TlsSecret
+    extends AbstractTlsSecret
 {
-    protected static final int MD5_SIZE = 16;
-
-    // SSL3 magic mix constants ("A", "BB", "CCC", ...)
-    private static final byte[][] SSL3_CONST = generateSSL3Constants();
-
-    protected static byte[][] generateSSL3Constants()
-    {
-        int n = 10;
-        byte[][] arr = new byte[n][];
-        for (int i = 0; i < n; i++)
-        {
-            byte[] b = new byte[i + 1];
-            Arrays.fill(b, (byte)('A' + i));
-            arr[i] = b;
-        }
-        return arr;
-    }
-
     private final JcaTlsCrypto crypto;
-
-    protected byte[] data;
 
     public JceTlsSecret(JcaTlsCrypto crypto, byte[] data)
     {
+        super(data);
+
         this.crypto = crypto;
-        this.data = data;
     }
 
     public synchronized TlsSecret deriveSSLKeyBlock(byte[] seed, int length)
@@ -78,31 +57,6 @@ public class JceTlsSecret
         }
     }
 
-    public synchronized void destroy()
-    {
-        if (data != null)
-        {
-            // TODO Is there a way to ensure the data is really overwritten?
-            Arrays.fill(data, (byte)0);
-            this.data = null;
-        }
-    }
-
-    public synchronized byte[] extract()
-    {
-        checkAlive();
-
-        byte[] result = data;
-        this.data = null;
-        return result;
-    }
-
-    public synchronized byte[] encrypt(TlsEncryptor encryptor) throws IOException
-    {
-        checkAlive();
-        return encryptor.encrypt(data, 0, data.length);
-    }
-
     public synchronized TlsSecret deriveUsingPRF(int prfAlgorithm, byte[] labelSeed, int length)
     {
         checkAlive();
@@ -117,23 +71,13 @@ public class JceTlsSecret
         }
         catch (GeneralSecurityException e)
         {
-            e.printStackTrace();
             throw new IllegalStateException(); // TODO
         }
     }
 
-    public TlsCipherSuite createCipherSuite(TlsCryptoParameters contextParams, int encryptionAlgorithm, int macAlgorithm)
-        throws IOException
+    protected AbstractTlsCrypto getCrypto()
     {
-        return crypto.createCipherSuite(contextParams, encryptionAlgorithm, macAlgorithm);
-    }
-
-    protected void checkAlive()
-    {
-        if (data == null)
-        {
-            throw new IllegalStateException("Secret has already been extracted or destroyed");
-        }
+        return crypto;
     }
 
     protected void hmacHash(String digestName, byte[] secret, byte[] seed, byte[] output)
