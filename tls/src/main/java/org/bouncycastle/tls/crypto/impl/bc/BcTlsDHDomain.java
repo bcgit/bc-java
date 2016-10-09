@@ -17,6 +17,9 @@ import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.util.BigIntegers;
 
+/**
+ * BC light-weight support class for Diffie-Hellman key pair generation and key agreement over a specified Diffie-Hellman configuration.
+ */
 public class BcTlsDHDomain implements TlsDHDomain
 {
     protected BcTlsCrypto crypto;

@@ -9,11 +9,13 @@ import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.util.Arrays;
 
 /**
- * HMAC implementation based on original internet draft for HMAC (RFC 2104)
- * <p>
- * The difference is that padding is concatenated versus XORed with the key
- * <p>
- * H(K + opad, H(K + ipad, text))
+ * HMAC implementation based on original internet draft for HMAC (RFC 2104).
+ * <br />
+ * The difference is that padding is concatenated versus XORed with the key, e.g:
+ * <pre>
+ *   H(K + opad, H(K + ipad, text))
+ * </pre>
+ *
  */
 public class SSL3Mac
     implements Mac, TlsHMAC

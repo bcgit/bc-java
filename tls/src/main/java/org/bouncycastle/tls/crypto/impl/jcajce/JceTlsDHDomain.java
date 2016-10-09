@@ -20,6 +20,9 @@ import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.util.BigIntegers;
 
+/**
+ * JCE support class for Diffie-Hellman key pair generation and key agreement over a specified Diffie-Hellman configuration.
+ */
 public class JceTlsDHDomain
     implements TlsDHDomain
 {

@@ -9,6 +9,9 @@ import java.security.interfaces.ECPublicKey;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
+/**
+ * Support class for ephemeral Elliptic Curve Diffie-Hellman using the JCE.
+ */
 public class JceTlsECDH
     implements TlsAgreement
 {

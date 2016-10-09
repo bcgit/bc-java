@@ -10,6 +10,9 @@ import javax.crypto.interfaces.DHPublicKey;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
+/**
+ * Support class for ephemeral Diffie-Hellman using the JCE.
+ */
 public class JceTlsDH
     implements TlsAgreement
 {

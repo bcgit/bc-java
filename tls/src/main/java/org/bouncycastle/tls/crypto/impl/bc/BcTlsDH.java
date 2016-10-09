@@ -9,6 +9,9 @@ import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
+/**
+ * Support class for ephemeral Diffie-Hellman using the BC light-weight library.
+ */
 public class BcTlsDH implements TlsAgreement
 {
     protected BcTlsDHDomain domain;

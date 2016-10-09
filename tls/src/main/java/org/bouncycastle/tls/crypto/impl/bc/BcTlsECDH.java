@@ -8,6 +8,9 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
+/**
+ * Support class for ephemeral Elliptic Curve Diffie-Hellman using the BC light-weight library.
+ */
 public class BcTlsECDH implements TlsAgreement
 {
     protected BcTlsECDomain domain;

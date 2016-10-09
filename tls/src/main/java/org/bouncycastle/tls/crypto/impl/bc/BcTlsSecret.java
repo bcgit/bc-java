@@ -10,6 +10,9 @@ import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsSecret;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * BC light-weight support class for handling TLS secrets and deriving key material and other secrets from them.
+ */
 public class BcTlsSecret
     extends AbstractTlsSecret
 {

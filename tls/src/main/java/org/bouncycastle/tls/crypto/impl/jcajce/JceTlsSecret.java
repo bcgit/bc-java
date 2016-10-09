@@ -13,6 +13,9 @@ import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsSecret;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * JCE support class for handling TLS secrets and deriving key material and other secrets from them.
+ */
 public class JceTlsSecret
     extends AbstractTlsSecret
 {
