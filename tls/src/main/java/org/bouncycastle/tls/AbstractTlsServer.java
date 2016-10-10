@@ -2,6 +2,7 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 import java.util.Hashtable;
+import java.util.Set;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.DHGroup;
@@ -131,6 +132,7 @@ public abstract class AbstractTlsServer
 
     protected int selectDefaultCurve(int minimumCurveBits)
     {
+        // Note: this must all have a co-factor of 1 to qualify for FIPS ECDH.
         return minimumCurveBits <= 256 ? NamedCurve.secp256r1
             :  minimumCurveBits <= 384 ? NamedCurve.secp384r1
             :  minimumCurveBits <= 521 ? NamedCurve.secp521r1
@@ -226,8 +228,10 @@ public abstract class AbstractTlsServer
                     throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
             }
+            // TODO: restrict curve set using NamedCurve.FIPS if FIPS mode turned on.
+            Set<Integer> acceptedCurves = NamedCurve.ALL;
 
-            this.namedCurves = TlsECCUtils.getSupportedEllipticCurvesExtension(clientExtensions);
+            this.namedCurves = TlsECCUtils.getSupportedEllipticCurvesExtension(clientExtensions, acceptedCurves);
             this.clientECPointFormats = TlsECCUtils.getSupportedPointFormatsExtension(clientExtensions);
         }
 

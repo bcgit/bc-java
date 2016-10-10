@@ -29,15 +29,13 @@ public class ExtensionType
     public static final int cert_type = 9;
 
     /*
-     * draft-ietf-tls-negotiated-ff-dhe-10
+     * RFC 4492 5.1. (elliptic_curves) and draft-ietf-tls-negotiated-ff-dhe-10
      */
     public static final int supported_groups = 10;
 
     /*
      * RFC 4492 5.1.
      */
-    /** @deprecated Use {@link #supported_groups} instead */
-    public static final int elliptic_curves = supported_groups;
     public static final int ec_point_formats = 11;
 
     /*
