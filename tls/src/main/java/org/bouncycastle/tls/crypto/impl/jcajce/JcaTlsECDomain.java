@@ -137,7 +137,8 @@ public class JcaTlsECDomain
         try
         {
             this.ecDomain  = crypto.getHelper().createAlgorithmParameters("EC");
-            this.ecDomain .init(new ECGenParameterSpec(curveName));
+
+            this.ecDomain.init(new ECGenParameterSpec(curveName));
             // It's a bit inefficient to do this conversion every time
             ECParameterSpec ecSpec = this.ecDomain.getParameterSpec(ECParameterSpec.class);
 
