@@ -80,7 +80,7 @@ class DeferredHash
 
     public TlsHandshakeHash stopTracking()
     {
-        TlsHash prfHash = ((TlsHash)hashes.get(prfHashAlgorithm)).cloneHash();
+        TlsHash prfHash = (TlsHash)hashes.get(prfHashAlgorithm).clone();
         if (buf != null)
         {
             buf.updateDigest(prfHash);
@@ -101,7 +101,7 @@ class DeferredHash
             return prfHash;
         }
 
-        return ((TlsHash)hashes.get(prfHashAlgorithm)).cloneHash();
+        return (TlsHash)hashes.get(prfHashAlgorithm).clone();
     }
 
     public byte[] getFinalHash(short hashAlgorithm)
@@ -112,7 +112,7 @@ class DeferredHash
             throw new IllegalStateException("HashAlgorithm." + HashAlgorithm.getText(hashAlgorithm) + " is not being tracked");
         }
 
-        d = d.cloneHash();
+        d = (TlsHash)d.clone();
         if (buf != null)
         {
             buf.updateDigest(d);
@@ -142,9 +142,9 @@ class DeferredHash
         throw new IllegalStateException("Use fork() to get a definite Digest");
     }
 
-    public TlsHash cloneHash()
+    public Object clone()
     {
-        return null;
+        throw new IllegalStateException("attempt to clone a DeferredHash");
     }
 
     public void reset()

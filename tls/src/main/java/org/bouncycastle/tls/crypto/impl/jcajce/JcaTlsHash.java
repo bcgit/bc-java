@@ -4,6 +4,9 @@ import java.security.MessageDigest;
 
 import org.bouncycastle.tls.crypto.TlsHash;
 
+/**
+ * Wrapper class for providing support methods for a TlsHash based on the JCA MessageDigest class.
+ */
 public class JcaTlsHash
     implements TlsHash
 {
@@ -24,7 +27,7 @@ public class JcaTlsHash
         return digest.digest();
     }
 
-    public TlsHash cloneHash()
+    public Object clone()
     {
         try
         {

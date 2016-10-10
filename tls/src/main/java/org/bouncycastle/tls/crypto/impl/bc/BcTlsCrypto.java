@@ -337,7 +337,7 @@ public class BcTlsCrypto
             return rv;
         }
 
-        public TlsHash cloneHash()
+        public Object clone()
         {
             return new BcTlsHash(hashAlgorithm, cloneDigest(hashAlgorithm, digest));
         }
@@ -349,27 +349,6 @@ public class BcTlsCrypto
     }
 
     public static Digest cloneDigest(short hashAlgorithm, Digest hash)
-    {
-        switch (hashAlgorithm)
-        {
-        case HashAlgorithm.md5:
-            return new MD5Digest((MD5Digest)hash);
-        case HashAlgorithm.sha1:
-            return new SHA1Digest((SHA1Digest)hash);
-        case HashAlgorithm.sha224:
-            return new SHA224Digest((SHA224Digest)hash);
-        case HashAlgorithm.sha256:
-            return new SHA256Digest((SHA256Digest)hash);
-        case HashAlgorithm.sha384:
-            return new SHA384Digest((SHA384Digest)hash);
-        case HashAlgorithm.sha512:
-            return new SHA512Digest((SHA512Digest)hash);
-        default:
-            throw new IllegalArgumentException("unknown HashAlgorithm");
-        }
-    }
-
-    public Digest cloneHash(short hashAlgorithm, Digest hash)
     {
         switch (hashAlgorithm)
         {

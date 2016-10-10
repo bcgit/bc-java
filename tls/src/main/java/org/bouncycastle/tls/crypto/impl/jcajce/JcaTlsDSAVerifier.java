@@ -10,6 +10,9 @@ import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 
+/**
+ * Implementation class for the verification of the raw DSA signature type using the JCA.
+ */
 public class JcaTlsDSAVerifier
     implements TlsVerifier
 {

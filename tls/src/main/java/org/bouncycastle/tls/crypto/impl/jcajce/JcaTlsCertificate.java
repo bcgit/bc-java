@@ -24,6 +24,9 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 
+/**
+ * Implementation class for a single X.509 certificate based on the JCA.
+ */
 public class JcaTlsCertificate
     implements TlsCertificate
 {

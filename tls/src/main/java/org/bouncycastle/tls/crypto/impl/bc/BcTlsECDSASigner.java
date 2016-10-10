@@ -6,6 +6,9 @@ import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.tls.SignatureAlgorithm;
 
+/**
+ * Implementation class for generation of the raw ECDSA signature type using the BC light-weight API.
+ */
 public class BcTlsECDSASigner
     extends BcTlsDSSSigner
 {

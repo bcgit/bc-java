@@ -32,8 +32,8 @@ public class CombinedHash
     {
         this.context = t.context;
         this.crypto = t.crypto;
-        this.md5 = t.md5.cloneHash();
-        this.sha1 = t.sha1.cloneHash();
+        this.md5 = (TlsHash)t.md5.clone();
+        this.sha1 = (TlsHash)t.sha1.clone();
     }
 
     public TlsHandshakeHash notifyPRFDetermined()
@@ -85,7 +85,7 @@ public class CombinedHash
         return Arrays.concatenate(md5.calculateHash(), sha1.calculateHash());
     }
 
-    public TlsHash cloneHash()
+    public Object clone()
     {
         return new CombinedHash(this);
     }

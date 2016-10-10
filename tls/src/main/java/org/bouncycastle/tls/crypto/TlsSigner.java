@@ -9,13 +9,6 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
  */
 public interface TlsSigner
 {
-//    /**
-//     * Return the TLS context associated with this service.
-//     *
-//     * @return the context for this service.
-//     */
-//    TlsContext getContext();
-
     /**
      * Generate an encoded signature based on the passed in hash,
      *

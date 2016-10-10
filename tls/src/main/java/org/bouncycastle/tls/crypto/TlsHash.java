@@ -26,7 +26,7 @@ public interface TlsHash
      *
      * @return a clone of the current hash.
      */
-    TlsHash cloneHash(); // TODO: change to clone() when properly added
+    Object clone();
 
     /**
      * Reset the hash underlying this service.

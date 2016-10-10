@@ -6,6 +6,9 @@ import org.bouncycastle.crypto.signers.DSASigner;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.tls.SignatureAlgorithm;
 
+/**
+ * Implementation class for generation of the raw DSA signature type using the BC light-weight API.
+ */
 public class BcTlsDSASigner
     extends BcTlsDSSSigner
 {

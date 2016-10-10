@@ -15,6 +15,9 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsSigner;
 
+/**
+ * BC light-weight base class for the signers implementing the two DSA style algorithms from FIPS PUB 186-4: DSA and ECDSA.
+ */
 public abstract class BcTlsDSSSigner
     implements TlsSigner
 {

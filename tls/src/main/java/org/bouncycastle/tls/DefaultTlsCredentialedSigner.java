@@ -6,6 +6,9 @@ import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSigner;
 import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
 
+/**
+ * Container class for generating signatures that carries the signature type, parameters, public key certificate and public key's associated signer object.
+ */
 public class DefaultTlsCredentialedSigner
     implements TlsCredentialedSigner
 {

@@ -22,9 +22,14 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 
-public class BcTlsCertificate implements TlsCertificate
+/**
+ * Implementation class for a single X.509 certificate based on the BC light-weight API.
+ */
+public class BcTlsCertificate
+    implements TlsCertificate
 {
-    public static BcTlsCertificate convert(BcTlsCrypto crypto, TlsCertificate certificate) throws IOException
+    public static BcTlsCertificate convert(BcTlsCrypto crypto, TlsCertificate certificate)
+        throws IOException
     {
         if (certificate instanceof BcTlsCertificate)
         {
@@ -62,7 +67,7 @@ public class BcTlsCertificate implements TlsCertificate
         switch (signatureAlgorithm)
         {
         case SignatureAlgorithm.dsa:
-            return new BcTlsDSSVerifier(this.crypto, getPubKeyDSS());
+            return new BcTlsDSAVerifier(this.crypto, getPubKeyDSS());
 
         case SignatureAlgorithm.ecdsa:
             return new BcTlsECDSAVerifier(this.crypto, getPubKeyEC());

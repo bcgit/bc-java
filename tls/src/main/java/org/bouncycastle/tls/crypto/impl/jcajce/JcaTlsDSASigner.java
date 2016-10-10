@@ -4,6 +4,9 @@ import java.security.PrivateKey;
 
 import org.bouncycastle.tls.SignatureAlgorithm;
 
+/**
+ * Implementation class for generation of the raw DSA signature type using the JCA.
+ */
 public class JcaTlsDSASigner
     extends JcaTlsDSSSigner
 {
