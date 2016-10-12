@@ -1,18 +1,25 @@
 package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
+import java.net.Socket;
+import java.security.Principal;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
 import javax.net.ssl.SSLParameters;
+import javax.net.ssl.X509KeyManager;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.Certificate;
+import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.DefaultTlsClient;
-import org.bouncycastle.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.tls.TlsAuthentication;
+import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 
 class ProvTlsClient
     extends DefaultTlsClient
@@ -38,11 +45,72 @@ class ProvTlsClient
 
     public TlsAuthentication getAuthentication() throws IOException
     {
-        // TODO[jsse] If client authentication enabled, locate credentials in configured key stores,
-        // suitable for the selected ciphersuite
-
-        return new ServerOnlyTlsAuthentication()
+        return new TlsAuthentication()
         {
+            public TlsCredentials getClientCredentials(CertificateRequest certificateRequest) throws IOException
+            {
+                // TODO[jsse] If client authentication enabled, locate credentials in configured key stores,
+                // suitable for the selected ciphersuite
+
+                X509KeyManager km = engine.getContext().getX509KeyManager();
+                if (km == null)
+                {
+                    return null;
+                }
+
+                String[] keyType = null; //certificateRequest.getCertificateTypes(), certificateRequest.getSupportedSignatureAlgorithms()
+                Principal[] issuers = null; //certificateRequest.getCertificateAuthorities();
+                // TODO[jsse] How is this used?
+                Socket socket = null;
+
+                String alias = km.chooseClientAlias(keyType, issuers, socket);
+                if (alias == null)
+                {
+                    return null;
+                }
+
+                TlsCrypto crypto = getCrypto();
+                if (!(crypto instanceof JcaTlsCrypto))
+                {
+                    // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key
+                    throw new UnsupportedOperationException();
+                }
+
+                PrivateKey privateKey = km.getPrivateKey(alias);
+                X509Certificate[] chain = km.getCertificateChain(alias);
+                Certificate certificate = JsseUtils.getCertificateMessage(crypto, chain);
+
+                // TODO[jsse] Branch on whether the chosen credentials are for signing (vs. agreement)
+
+//                switch (keyExchangeAlgorithm)
+//                {
+//                case KeyExchangeAlgorithm.DHE_DSS:
+//                case KeyExchangeAlgorithm.ECDHE_ECDSA:
+//                case KeyExchangeAlgorithm.DHE_RSA:
+//                case KeyExchangeAlgorithm.ECDHE_RSA:
+//                {
+//                    short signatureAlgorithm = TlsUtils.getSignatureAlgorithm(keyExchangeAlgorithm);
+//                    SignatureAndHashAlgorithm sigAlg = chooseSignatureAndHashAlgorithm(signatureAlgorithm);
+//
+//                    // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key
+//                    return new JcaDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), (JcaTlsCrypto)crypto,
+//                        privateKey, certificate, sigAlg);
+//                }
+//
+//                case KeyExchangeAlgorithm.RSA:
+//                {
+//                    // TODO[tls-ops] Missing JceDefaultTlsCredentialedEncryptor?
+//                    throw new UnsupportedOperationException();
+//                }
+//
+//                default:
+//                    /* Note: internal error here; selected a key exchange we don't implement! */
+//                    throw new TlsFatalAlert(AlertDescription.internal_error);
+//                }
+
+                throw new UnsupportedOperationException();
+            }
+
             public void notifyServerCertificate(Certificate serverCertificate) throws IOException
             {
                 boolean noServerCert = serverCertificate == null || serverCertificate.isEmpty();
