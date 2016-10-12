@@ -1,6 +1,6 @@
 package org.bouncycastle.jsse.provider;
 
-interface TlsProtocolManager
+interface ProvTlsPeer
 {
     boolean isHandshakeComplete();
 }

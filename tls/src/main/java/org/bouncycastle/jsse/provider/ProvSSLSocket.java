@@ -4,25 +4,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.channels.SocketChannel;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
-import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
 
 class ProvSSLSocket
-    extends SSLSocket
+    extends ProvSSLSocketBase
 {
-    protected final Set<HandshakeCompletedListenerAdapter> listeners = Collections.synchronizedSet(
-        new HashSet<HandshakeCompletedListenerAdapter>());
-
     protected final SSLEngine engine;
 
     protected ProvSSLSocket(SSLEngine engine)
@@ -62,17 +52,6 @@ class ProvSSLSocket
     }
 
     @Override
-    public void addHandshakeCompletedListener(HandshakeCompletedListener listener)
-    {
-        if (listener == null)
-        {
-            throw new IllegalArgumentException("'listener' cannot be null");
-        }
-
-        listeners.add(new HandshakeCompletedListenerAdapter(listener));
-    }
-
-    @Override
     public synchronized void close() throws IOException
     {
         // TODO[tls-ops] See javadoc for full discussion of SSLEngine closure
@@ -84,13 +63,6 @@ class ProvSSLSocket
         // - Check under what circumstances need to call engine.closeInbound
 
         super.close();
-    }
-
-    @Override
-    public SocketChannel getChannel()
-    {
-//        return super.getChannel();
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -128,12 +100,6 @@ class ProvSSLSocket
     public boolean getNeedClientAuth()
     {
         return engine.getNeedClientAuth();
-    }
-
-    @Override
-    public boolean getOOBInline() throws SocketException
-    {
-        return false;
     }
 
     @Override
@@ -180,25 +146,6 @@ class ProvSSLSocket
     }
 
     @Override
-    public void removeHandshakeCompletedListener(HandshakeCompletedListener listener)
-    {
-        if (listener == null)
-        {
-            throw new IllegalArgumentException("'listener' cannot be null");
-        }
-        if (!listeners.remove(new HandshakeCompletedListenerAdapter(listener)))
-        {
-            throw new IllegalArgumentException("'listener' is not registered");
-        }
-    }
-
-    @Override
-    public void sendUrgentData(int data) throws IOException
-    {
-        throw new UnsupportedOperationException("Urgent data not supported in TLS");
-    }
-
-    @Override
     public void setEnabledCipherSuites(String[] suites)
     {
         engine.setEnabledCipherSuites(suites);
@@ -220,15 +167,6 @@ class ProvSSLSocket
     public void setNeedClientAuth(boolean need)
     {
         engine.setNeedClientAuth(need);
-    }
-
-    @Override
-    public void setOOBInline(boolean on) throws SocketException
-    {
-        if (on)
-        {
-            throw new UnsupportedOperationException("Urgent data not supported in TLS");
-        }
     }
 
     @Override

@@ -23,19 +23,19 @@ import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 
 class ProvTlsClient
     extends DefaultTlsClient
-    implements TlsProtocolManager
+    implements ProvTlsPeer
 {
-    protected final ProvSSLEngine engine;
+    protected final ProvTlsManager manager;
     protected final SSLParameters sslParameters;
 
     protected boolean handshakeComplete = false;
 
-    ProvTlsClient(ProvSSLEngine engine)
+    ProvTlsClient(ProvTlsManager manager)
     {
-        super(engine.getContext().getCrypto());
+        super(manager.getContext().getCrypto());
 
-        this.engine = engine;
-        this.sslParameters = engine.getSSLParameters();
+        this.manager = manager;
+        this.sslParameters = manager.getSSLParameters();
     }
 
     public synchronized boolean isHandshakeComplete()
@@ -52,7 +52,7 @@ class ProvTlsClient
                 // TODO[jsse] If client authentication enabled, locate credentials in configured key stores,
                 // suitable for the selected ciphersuite
 
-                X509KeyManager km = engine.getContext().getX509KeyManager();
+                X509KeyManager km = manager.getContext().getX509KeyManager();
                 if (km == null)
                 {
                     return null;
@@ -123,7 +123,7 @@ class ProvTlsClient
                     X509Certificate[] chain = JsseUtils.getX509CertificateChain(serverCertificate);
                     String authType = JsseUtils.getAuthType(TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite));
     
-                    if (engine.isServerTrusted(chain, authType))
+                    if (manager.isServerTrusted(chain, authType))
                     {
                         // TODO[jsse] Install server certificate in the session accordingly
                     }

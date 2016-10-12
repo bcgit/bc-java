@@ -24,6 +24,7 @@ import org.bouncycastle.tls.TlsServerProtocol;
  */
 class ProvSSLEngine
     extends SSLEngine
+    implements ProvTlsManager
 {
     protected final ProvSSLContextSpi context;
 
@@ -34,35 +35,25 @@ class ProvSSLEngine
     protected boolean initialHandshakeBegun = false;
     protected HandshakeStatus handshakeStatus = HandshakeStatus.NOT_HANDSHAKING; 
     protected TlsProtocol protocol = null;
-    protected TlsProtocolManager protocolManager = null;
+    protected ProvTlsPeer protocolPeer = null;
 
     protected ProvSSLEngine(ProvSSLContextSpi context)
-    {
-        this(context, context.engineGetDefaultSSLParameters());
-    }
-
-    protected ProvSSLEngine(ProvSSLContextSpi context, String host, int port)
-    {
-        this(context, context.engineGetDefaultSSLParameters(), host, port);
-    }
-
-    protected ProvSSLEngine(ProvSSLContextSpi context, SSLParameters sslParameters)
     {
         super();
 
         this.context = context;
-        this.sslParameters = sslParameters;
+        this.sslParameters = context.engineGetDefaultSSLParameters();
     }
 
-    protected ProvSSLEngine(ProvSSLContextSpi context, SSLParameters sslParameters, String host, int port)
+    protected ProvSSLEngine(ProvSSLContextSpi context, String host, int port)
     {
         super(host, port);
 
         this.context = context;
-        this.sslParameters = sslParameters;
+        this.sslParameters = context.engineGetDefaultSSLParameters();
     }
 
-    protected ProvSSLContextSpi getContext()
+    public ProvSSLContextSpi getContext()
     {
         return context;
     }
@@ -88,7 +79,7 @@ class ProvSSLEngine
                 this.protocol = clientProtocol;
 
                 ProvTlsClient client = new ProvTlsClient(this);
-                this.protocolManager = client;
+                this.protocolPeer = client;
 
                 clientProtocol.connect(client);
             }
@@ -98,7 +89,7 @@ class ProvSSLEngine
                 this.protocol = serverProtocol;
 
                 ProvTlsServer server = new ProvTlsServer(this);
-                this.protocolManager = server;
+                this.protocolPeer = server;
 
                 serverProtocol.accept(server);
             }
@@ -170,6 +161,15 @@ class ProvSSLEngine
     @Override
     public synchronized SSLSession getSession()
     {
+        if (!initialHandshakeBegun || !protocolPeer.isHandshakeComplete())
+        {
+            /*
+             * TODO[jsse] "Until the initial handshake has completed, this method returns a session
+             * object which reports an invalid cipher suite of SSL_NULL_WITH_NULL_NULL."
+             */
+            throw new UnsupportedOperationException();
+        }
+
         throw new UnsupportedOperationException();
     }
 
@@ -342,7 +342,7 @@ class ProvSSLEngine
     {
         // NOTE: We currently never delegate tasks (will never have status HandshakeStatus.NEED_TASK)
 
-        if (!initialHandshakeBegun || protocolManager.isHandshakeComplete())
+        if (!initialHandshakeBegun || protocolPeer.isHandshakeComplete())
         {
             handshakeStatus = HandshakeStatus.NOT_HANDSHAKING;
         }
@@ -360,7 +360,7 @@ class ProvSSLEngine
         }
     }
 
-    protected boolean isClientTrusted(X509Certificate[] chain, String authType)
+    public boolean isClientTrusted(X509Certificate[] chain, String authType)
     {
         // TODO[jsse] Consider X509ExtendedTrustManager and/or HostnameVerifier functionality
 
@@ -372,14 +372,14 @@ class ProvSSLEngine
                 tm.checkClientTrusted(chain, authType);
                 return true;
             }
-            catch(CertificateException e)
+            catch (CertificateException e)
             {
             }
         }
         return false;
     }
 
-    protected boolean isServerTrusted(X509Certificate[] chain, String authType)
+    public boolean isServerTrusted(X509Certificate[] chain, String authType)
     {
         // TODO[jsse] Consider X509ExtendedTrustManager and/or HostnameVerifier functionality
 
@@ -391,7 +391,7 @@ class ProvSSLEngine
                 tm.checkServerTrusted(chain, authType);
                 return true;
             }
-            catch(CertificateException e)
+            catch (CertificateException e)
             {
             }
         }

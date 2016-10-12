@@ -31,22 +31,22 @@ import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 
 class ProvTlsServer
     extends DefaultTlsServer
-    implements TlsProtocolManager
+    implements ProvTlsPeer
 {
     protected static short MINIMUM_HASH_STRICT = HashAlgorithm.sha1;
     protected static short MINIMUM_HASH_PREFERRED = HashAlgorithm.sha256;
 
-    protected final ProvSSLEngine engine;
+    protected final ProvTlsManager manager;
     protected final SSLParameters sslParameters;
 
     protected boolean handshakeComplete = false;
 
-    ProvTlsServer(ProvSSLEngine engine)
+    ProvTlsServer(ProvTlsManager manager)
     {
-        super(engine.getContext().getCrypto());
+        super(manager.getContext().getCrypto());
 
-        this.engine = engine;
-        this.sslParameters = engine.getSSLParameters();
+        this.manager = manager;
+        this.sslParameters = manager.getSSLParameters();
     }
 
     public synchronized boolean isHandshakeComplete()
@@ -76,7 +76,7 @@ class ProvTlsServer
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        X509KeyManager km = engine.getContext().getX509KeyManager();
+        X509KeyManager km = manager.getContext().getX509KeyManager();
         if (km == null)
         {
             return null;
@@ -162,7 +162,7 @@ class ProvTlsServer
         }
 
         Vector certificateAuthorities = new Vector();
-        X509TrustManager tm = engine.getContext().getX509TrustManager();
+        X509TrustManager tm = manager.getContext().getX509TrustManager();
         if (tm != null)
         {
             for (X509Certificate caCert : tm.getAcceptedIssuers())
@@ -193,7 +193,7 @@ class ProvTlsServer
             X509Certificate[] chain = JsseUtils.getX509CertificateChain(clientCertificate);
             String authType = JsseUtils.getAuthType(TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite));
 
-            if (engine.isClientTrusted(chain, authType))
+            if (manager.isClientTrusted(chain, authType))
             {
                 // TODO[jsse] Install client certificate in the session accordingly
             }

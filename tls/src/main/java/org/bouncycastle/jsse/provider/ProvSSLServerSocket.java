@@ -5,7 +5,6 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 
-import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
@@ -58,8 +57,9 @@ class ProvSSLServerSocket
     @Override
     public synchronized Socket accept() throws IOException
     {
-        SSLEngine engine = context.engineCreateSSLEngine(getInetAddress().getHostName(), getLocalPort());
-        SSLSocket socket = new ProvSSLSocket(engine);
+//        SSLEngine engine = context.engineCreateSSLEngine(getInetAddress().getHostName(), getLocalPort());
+//        SSLSocket socket = new ProvSSLSocket(engine);
+        SSLSocket socket = new ProvSSLSocketDirect(context);
 
         implAccept(socket);
 
