@@ -49,7 +49,7 @@ public abstract class BaseKeyFactorySpi
             }
             catch (Exception e)
             {
-                throw new InvalidKeySpecException("encoded key spec not recognised");
+                throw new InvalidKeySpecException("encoded key spec not recognised: " + e.getMessage());
             }
         }
         else
