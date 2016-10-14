@@ -8,8 +8,6 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.SignatureSpi;
-import java.security.interfaces.DSAKey;
-import java.security.interfaces.DSAPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -18,7 +16,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DSA;
@@ -179,6 +176,11 @@ public class DSASigner
         throws IOException
     {
         ASN1Sequence s = (ASN1Sequence)ASN1Primitive.fromByteArray(encoding);
+        if (s.size() != 2)
+        {
+            throw new IOException("malformed signature");
+        }
+
         return new BigInteger[]{
             ((ASN1Integer)s.getObjectAt(0)).getValue(),
             ((ASN1Integer)s.getObjectAt(1)).getValue()
