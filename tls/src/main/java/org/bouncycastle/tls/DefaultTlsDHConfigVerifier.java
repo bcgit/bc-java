@@ -21,18 +21,12 @@ public class DefaultTlsDHConfigVerifier
 
     static
     {
-        addDefaultGroup(DHStandardGroups.rfc2409_768);
-        addDefaultGroup(DHStandardGroups.rfc2409_1024);
-
         addDefaultGroup(DHStandardGroups.rfc3526_1536);
         addDefaultGroup(DHStandardGroups.rfc3526_2048);
         addDefaultGroup(DHStandardGroups.rfc3526_3072);
         addDefaultGroup(DHStandardGroups.rfc3526_4096);
         addDefaultGroup(DHStandardGroups.rfc3526_6144);
         addDefaultGroup(DHStandardGroups.rfc3526_8192);
-
-        addDefaultGroup(DHStandardGroups.rfc4306_768);
-        addDefaultGroup(DHStandardGroups.rfc4306_1024);
 
         addDefaultGroup(DHStandardGroups.rfc5114_1024_160);
         addDefaultGroup(DHStandardGroups.rfc5114_2048_224);
