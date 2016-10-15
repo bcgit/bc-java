@@ -1112,18 +1112,18 @@ public class ECDSA5Test
     public void performTest()
         throws Exception
     {
-//        testKeyConversion();
-//        testAdaptiveKeyConversion();
-//        decodeTest();
-//        testECDSA239bitPrime();
-//        testECDSA239bitBinary();
-//        testGeneration();
-//        testKeyPairGenerationWithOIDs();
-//        testNamedCurveParameterPreservation();
-//        testNamedCurveSigning();
-//        testBSI();
-//        testMQVwithHMACOnePass();
-//        testAlgorithmParameters();
+        testKeyConversion();
+        testAdaptiveKeyConversion();
+        decodeTest();
+        testECDSA239bitPrime();
+        testECDSA239bitBinary();
+        testGeneration();
+        testKeyPairGenerationWithOIDs();
+        testNamedCurveParameterPreservation();
+        testNamedCurveSigning();
+        testBSI();
+        testMQVwithHMACOnePass();
+        testAlgorithmParameters();
         testModified();
     }
 
