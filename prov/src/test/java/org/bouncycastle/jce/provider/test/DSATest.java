@@ -686,7 +686,9 @@ public class DSATest
     private void doDsaTest(String sigName, BigInteger s, KeyFactory ecKeyFact, DSAPublicKeySpec pubKey, DSAPrivateKeySpec priKey)
         throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, InvalidKeySpecException, SignatureException
     {
-        SecureRandom k = new TestRandomBigInteger(BigIntegers.asUnsignedByteArray(new BigInteger("72546832179840998877302529996971396893172522460793442785601695562409154906335")));
+        SecureRandom k = new FixedSecureRandom(
+            new FixedSecureRandom.Source[] { new FixedSecureRandom.BigInteger(BigIntegers.asUnsignedByteArray(new BigInteger("72546832179840998877302529996971396893172522460793442785601695562409154906335"))),
+                new FixedSecureRandom.Data(Hex.decode("01020304")) });
 
         byte[] M = Hex.decode("1BD4ED430B0F384B4E8D458EFF1A8A553286D7AC21CB2F6806172EF5F94A06AD");
 
