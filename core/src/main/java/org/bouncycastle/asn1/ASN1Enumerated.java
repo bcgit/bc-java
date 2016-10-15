@@ -99,6 +99,17 @@ public class ASN1Enumerated
     public ASN1Enumerated(
         byte[]   bytes)
     {
+        if (bytes.length > 1)
+        {
+            if (bytes[0] == 0 && (bytes[1] & 0x80) == 0)
+            {
+                throw new IllegalArgumentException("malformed enumerated");
+            }
+            if (bytes[0] == (byte)0xff && (bytes[1] & 0x80) != 0)
+            {
+                throw new IllegalArgumentException("malformed enumerated");
+            }
+        }
         this.bytes = Arrays.clone(bytes);
     }
 

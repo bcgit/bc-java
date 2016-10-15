@@ -29,6 +29,7 @@ import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
+import org.bouncycastle.util.Arrays;
 
 public class DSASigner
     extends SignatureSpi
@@ -177,6 +178,10 @@ public class DSASigner
     {
         ASN1Sequence s = (ASN1Sequence)ASN1Primitive.fromByteArray(encoding);
         if (s.size() != 2)
+        {
+            throw new IOException("malformed signature");
+        }
+        if (!Arrays.areEqual(encoding, s.getEncoded(ASN1Encoding.DER)))
         {
             throw new IOException("malformed signature");
         }

@@ -89,6 +89,17 @@ public class ASN1Integer
 
     ASN1Integer(byte[] bytes, boolean clone)
     {
+        if (bytes.length > 1)
+        {
+            if (bytes[0] == 0 && (bytes[1] & 0x80) == 0)
+            {
+                throw new IllegalArgumentException("malformed integer");
+            }
+            if (bytes[0] == (byte)0xff && (bytes[1] & 0x80) != 0)
+            {
+                throw new IllegalArgumentException("malformed integer");
+            }
+        }
         this.bytes = (clone) ? Arrays.clone(bytes) : bytes;
     }
 
