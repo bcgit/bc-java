@@ -23,7 +23,6 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.ECNRSigner;
@@ -31,6 +30,7 @@ import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.jcajce.provider.asymmetric.util.DSABase;
 import org.bouncycastle.jcajce.provider.asymmetric.util.DSAEncoder;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
+import org.bouncycastle.util.Arrays;
 
 public class SignatureSpi
     extends DSABase
@@ -367,6 +367,15 @@ public class SignatureSpi
             throws IOException
         {
             ASN1Sequence s = (ASN1Sequence)ASN1Primitive.fromByteArray(encoding);
+            if (s.size() != 2)
+            {
+                throw new IOException("malformed signature");
+            }
+            if (!Arrays.areEqual(encoding, s.getEncoded(ASN1Encoding.DER)))
+            {
+                throw new IOException("malformed signature");
+            }
+
             BigInteger[] sig = new BigInteger[2];
 
             sig[0] = ASN1Integer.getInstance(s.getObjectAt(0)).getValue();

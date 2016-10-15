@@ -5,7 +5,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.BERSequence;
@@ -67,6 +69,46 @@ public class MiscTest
         }
     }
 
+    public void derIntegerTest()
+        throws Exception
+    {
+        try
+        {
+            new ASN1Integer(new byte[] { 0, 0, 0, 1});
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong exc", "malformed integer".equals(e.getMessage()));
+        }
+
+        try
+        {
+            new ASN1Integer(new byte[] {(byte)0xff, (byte)0x80, 0, 1});
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong exc", "malformed integer".equals(e.getMessage()));
+        }
+
+        try
+        {
+            new ASN1Enumerated(new byte[] { 0, 0, 0, 1});
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong exc", "malformed enumerated".equals(e.getMessage()));
+        }
+
+        try
+        {
+            new ASN1Enumerated(new byte[] {(byte)0xff, (byte)0x80, 0, 1});
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong exc", "malformed enumerated".equals(e.getMessage()));
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -115,6 +157,7 @@ public class MiscTest
         }
 
         shouldFailOnExtraData();
+        derIntegerTest();
     }
 
     public String getName()
