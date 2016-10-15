@@ -48,7 +48,6 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
-import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -155,7 +154,6 @@ public class ECDSA5Test
             try
             {
                 failed = !sig.verify(Hex.decode(MODIFIED_SIGNATURES[i]));
-                System.err.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(Hex.decode(MODIFIED_SIGNATURES[i]))));
             }
             catch (SignatureException e)
             {
