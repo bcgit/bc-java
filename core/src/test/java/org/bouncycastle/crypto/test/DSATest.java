@@ -44,7 +44,7 @@ public class DSATest
     byte[] keyData = Hex.decode("b5014e4b60ef2ba8b6211b4062ba3224e0427dd3");
     
     SecureRandom    keyRandom = new FixedSecureRandom(
-                      new FixedSecureRandom.Source[] { new FixedSecureRandom.Data(keyData), new FixedSecureRandom.Data(keyData) });
+                      new FixedSecureRandom.Source[] { new FixedSecureRandom.Data(keyData), new FixedSecureRandom.Data(keyData), new FixedSecureRandom.Data(Hex.decode("01020304"))});
 
     BigInteger  pValue = new BigInteger("8df2a494492276aa3d25759bb06869cbeac0d83afb8d0cf7cbb8324f0d7882e5d0762fc5b7210eafc2e9adac32ab7aac49693dfbf83724c2ec0736ee31c80291", 16);
     BigInteger  qValue = new BigInteger("c773218c737ec8ee993b4f2ded30f48edace915f", 16);
@@ -165,7 +165,11 @@ public class DSATest
                     "A5613957D7E5C7A6D5A5834B4CB069E0831753ECF65BA02B", 16);
 
         DSAPrivateKeyParameters priKey = new DSAPrivateKeyParameters(x, dsaParams);
-        SecureRandom k = new TestRandomBigInteger("72546832179840998877302529996971396893172522460793442785601695562409154906335");
+        SecureRandom k = new FixedSecureRandom(
+            new FixedSecureRandom.Source[] {
+                new FixedSecureRandom.BigInteger(BigIntegers.asUnsignedByteArray(new BigInteger("72546832179840998877302529996971396893172522460793442785601695562409154906335"))),
+                new FixedSecureRandom.Data(Hex.decode("01020304"))
+            });
 
         byte[] M = Hex.decode("1BD4ED430B0F384B4E8D458EFF1A8A553286D7AC21CB2F6806172EF5F94A06AD");
 
@@ -287,7 +291,10 @@ public class DSATest
 
         DSASigner signer = new DSASigner();
 
-        signer.init(true, new ParametersWithRandom(kp.getPrivate(), new TestRandomBigInteger("349C55648DCF992F3F33E8026CFAC87C1D2BA075", 16)));
+        signer.init(true, new ParametersWithRandom(kp.getPrivate(), new FixedSecureRandom(
+            new FixedSecureRandom.Source[] {
+                new FixedSecureRandom.BigInteger("349C55648DCF992F3F33E8026CFAC87C1D2BA075"),
+                new FixedSecureRandom.Data(Hex.decode("01020304")) })));
 
         byte[] msg = Hex.decode("A9993E364706816ABA3E25717850C26C9CD0D89D");
 
@@ -404,7 +411,11 @@ public class DSATest
 
             DSASigner signer = new DSASigner();
 
-            signer.init(true, new ParametersWithRandom(kp.getPrivate(), new TestRandomData(Hex.decode("735959CC4463B8B440E407EECA8A473BF6A6D1FE657546F67D401F05"))));
+            signer.init(true, new ParametersWithRandom(kp.getPrivate(), new FixedSecureRandom(
+                new FixedSecureRandom.Source[] {
+                    new FixedSecureRandom.BigInteger(Hex.decode("735959CC4463B8B440E407EECA8A473BF6A6D1FE657546F67D401F05")),
+                    new FixedSecureRandom.Data(Hex.decode("01020304"))
+                })));
 
             byte[] msg = Hex.decode("23097D223405D8228642A477BDA255B32AADBCE4BDA0B3F7E36C9DA7");
 
@@ -520,7 +531,11 @@ public class DSATest
 
         DSASigner signer = new DSASigner();
 
-        signer.init(true, new ParametersWithRandom(kp.getPrivate(), new TestRandomData(Hex.decode("0CAF2EF547EC49C4F3A6FE6DF4223A174D01F2C115D49A6F73437C29A2A8458C"))));
+        signer.init(true, new ParametersWithRandom(kp.getPrivate(), new FixedSecureRandom(
+            new FixedSecureRandom.Source[] {
+                new FixedSecureRandom.BigInteger(Hex.decode("0CAF2EF547EC49C4F3A6FE6DF4223A174D01F2C115D49A6F73437C29A2A8458C")),
+                new FixedSecureRandom.Data(Hex.decode("01020304"))
+            })));
 
         byte[] msg = Hex.decode("BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD");
 
@@ -651,7 +666,10 @@ public class DSATest
 
         DSASigner signer = new DSASigner();
 
-        signer.init(true, new ParametersWithRandom(kp.getPrivate(), new TestRandomData(Hex.decode("A6902C1E6E3943C5628061588A8B007BCCEA91DBF12915483F04B24AB0678BEE"))));
+        signer.init(true, new ParametersWithRandom(kp.getPrivate(), new FixedSecureRandom(
+            new FixedSecureRandom.Source[]
+                { new FixedSecureRandom.BigInteger("A6902C1E6E3943C5628061588A8B007BCCEA91DBF12915483F04B24AB0678BEE"),
+                  new FixedSecureRandom.Data(Hex.decode("01020304")) })));
 
         byte[] msg = Hex.decode("BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD");
 
