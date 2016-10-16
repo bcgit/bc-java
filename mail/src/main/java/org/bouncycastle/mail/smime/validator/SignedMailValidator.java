@@ -194,14 +194,14 @@ public class SignedMailValidator
 
             int fromsLength = (froms != null) ? froms.length : 0;
             fromAddresses = new String[fromsLength + ((sender != null) ? 1 : 0)];
-            for (int i = 0; i < froms.length; i++)
+            for (int i = 0; i < fromsLength; i++)
             {
                 InternetAddress inetAddr = (InternetAddress)froms[i];
                 fromAddresses[i] = inetAddr.getAddress();
             }
             if (sender != null)
             {
-                fromAddresses[froms.length] = sender.getAddress();
+                fromAddresses[fromsLength] = sender.getAddress();
             }
 
             // initialize results
