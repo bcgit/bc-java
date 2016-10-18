@@ -1,6 +1,8 @@
 package org.bouncycastle.jce.provider;
 
 import java.security.Permission;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.crypto.spec.DHParameterSpec;
 
@@ -27,6 +29,7 @@ class BouncyCastleProviderConfiguration
 
     private volatile ECParameterSpec ecImplicitCaParams;
     private volatile Object dhDefaultParams;
+    private volatile Set acceptableNamedCurves = new HashSet();
 
     void setParameter(String parameterName, Object parameter)
     {
@@ -118,6 +121,10 @@ class BouncyCastleProviderConfiguration
                 throw new IllegalArgumentException("not a valid DHParameterSpec or DHParameterSpec[]");
             }
         }
+        else if (parameterName.equals(ConfigurableProvider.NAMED_CURVE_TABLE))
+        {
+             this.acceptableNamedCurves = (Set)parameter;
+        }
     }
 
     public ECParameterSpec getEcImplicitlyCa()
@@ -163,5 +170,10 @@ class BouncyCastleProviderConfiguration
         }
 
         return null;
+    }
+
+    public Set getAcceptableNamedCurves()
+    {
+        return acceptableNamedCurves;
     }
 }

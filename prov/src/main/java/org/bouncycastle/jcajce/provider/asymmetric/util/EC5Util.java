@@ -10,6 +10,7 @@ import java.security.spec.EllipticCurve;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
@@ -58,23 +59,39 @@ public class EC5Util
         X962Parameters params)
     {
         ECCurve curve;
+        Set acceptableCurves = configuration.getAcceptableNamedCurves();
 
         if (params.isNamedCurve())
         {
             ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(params.getParameters());
-            X9ECParameters ecP = ECUtil.getNamedCurveByOid(oid);
 
-            curve = ecP.getCurve();
+            if (acceptableCurves.isEmpty() || acceptableCurves.contains(oid))
+            {
+                X9ECParameters ecP = ECUtil.getNamedCurveByOid(oid);
+
+                curve = ecP.getCurve();
+            }
+            else
+            {
+                throw new IllegalStateException("named curve not acceptable");
+            }
         }
-        else if (params.isImplicitlyCA())
+        else if (acceptableCurves.isEmpty())
         {
-            curve = configuration.getEcImplicitlyCa().getCurve();
+            if (params.isImplicitlyCA())
+            {
+                curve = configuration.getEcImplicitlyCa().getCurve();
+            }
+            else
+            {
+                X9ECParameters ecP = X9ECParameters.getInstance(params.getParameters());
+
+                curve = ecP.getCurve();
+            }
         }
         else
         {
-            X9ECParameters ecP = X9ECParameters.getInstance(params.getParameters());
-
-            curve = ecP.getCurve();
+            throw new IllegalStateException("encoded parameters not acceptable");
         }
 
         return curve;
