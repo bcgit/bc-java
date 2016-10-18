@@ -29,6 +29,11 @@ public interface ConfigurableProvider
      */
     static final String DH_DEFAULT_PARAMS = "DhDefaultParams";
 
+    /**
+     * A set of OBJECT IDENTIFIERs representing acceptable named curves for imported keys.
+     */
+    static final String NAMED_CURVE_TABLE = "namedCurveTable";
+
     void setParameter(String parameterName, Object parameter);
 
     void addAlgorithm(String key, String value);
