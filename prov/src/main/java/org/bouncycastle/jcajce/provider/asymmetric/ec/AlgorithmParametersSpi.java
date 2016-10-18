@@ -81,7 +81,13 @@ public class AlgorithmParametersSpi
 
             if (params.isNamedCurve())
             {
-                curveName = ECNamedCurveTable.getName(ASN1ObjectIdentifier.getInstance(params.getParameters()));
+                ASN1ObjectIdentifier curveId = ASN1ObjectIdentifier.getInstance(params.getParameters());
+
+                curveName = ECNamedCurveTable.getName(curveId);
+                if (curveName == null)
+                {
+                    curveName = curveId.getId();
+                }
             }
 
             ecParameterSpec = EC5Util.convertToSpec(params, curve);

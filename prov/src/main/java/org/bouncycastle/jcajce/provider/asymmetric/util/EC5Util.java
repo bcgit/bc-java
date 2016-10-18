@@ -19,6 +19,7 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECAlgorithms;
@@ -69,6 +70,11 @@ public class EC5Util
             {
                 X9ECParameters ecP = ECUtil.getNamedCurveByOid(oid);
 
+                if (ecP == null)
+                {
+                    ecP = (X9ECParameters)configuration.getAdditionalECParameters().get(oid);
+                }
+
                 curve = ecP.getCurve();
             }
             else
@@ -76,18 +82,15 @@ public class EC5Util
                 throw new IllegalStateException("named curve not acceptable");
             }
         }
+        else if (params.isImplicitlyCA())
+        {
+            curve = configuration.getEcImplicitlyCa().getCurve();
+        }
         else if (acceptableCurves.isEmpty())
         {
-            if (params.isImplicitlyCA())
-            {
-                curve = configuration.getEcImplicitlyCa().getCurve();
-            }
-            else
-            {
-                X9ECParameters ecP = X9ECParameters.getInstance(params.getParameters());
+            X9ECParameters ecP = X9ECParameters.getInstance(params.getParameters());
 
-                curve = ecP.getCurve();
-            }
+            curve = ecP.getCurve();
         }
         else
         {
@@ -127,6 +130,14 @@ public class EC5Util
         {
             ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)params.getParameters();
             X9ECParameters ecP = ECUtil.getNamedCurveByOid(oid);
+            if (ecP == null)
+            {
+                Map additionalECParameters = BouncyCastleProvider.CONFIGURATION.getAdditionalECParameters();
+                if (!additionalECParameters.isEmpty())
+                {
+                    ecP = (X9ECParameters)additionalECParameters.get(oid);
+                }
+            }
 
             ellipticCurve = EC5Util.convertCurve(curve, ecP.getSeed());
 

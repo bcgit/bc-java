@@ -1,7 +1,10 @@
 package org.bouncycastle.jce.provider;
 
 import java.security.Permission;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import javax.crypto.spec.DHParameterSpec;
@@ -23,6 +26,10 @@ class BouncyCastleProviderConfiguration
         BouncyCastleProvider.PROVIDER_NAME, ConfigurableProvider.THREAD_LOCAL_DH_DEFAULT_PARAMS);
     private static Permission BC_DH_PERMISSION = new ProviderConfigurationPermission(
         BouncyCastleProvider.PROVIDER_NAME, ConfigurableProvider.DH_DEFAULT_PARAMS);
+    private static Permission BC_EC_CURVE_PERMISSION = new ProviderConfigurationPermission(
+        BouncyCastleProvider.PROVIDER_NAME, ConfigurableProvider.ACCEPTABLE_EC_CURVES);
+    private static Permission BC_ADDITIONAL_EC_CURVE_PERMISSION = new ProviderConfigurationPermission(
+        BouncyCastleProvider.PROVIDER_NAME, ConfigurableProvider.ADDITIONAL_EC_PARAMETERS);
 
     private ThreadLocal ecThreadSpec = new ThreadLocal();
     private ThreadLocal dhThreadSpec = new ThreadLocal();
@@ -30,6 +37,7 @@ class BouncyCastleProviderConfiguration
     private volatile ECParameterSpec ecImplicitCaParams;
     private volatile Object dhDefaultParams;
     private volatile Set acceptableNamedCurves = new HashSet();
+    private volatile Map additionalECParameters = new HashMap();
 
     void setParameter(String parameterName, Object parameter)
     {
@@ -121,9 +129,23 @@ class BouncyCastleProviderConfiguration
                 throw new IllegalArgumentException("not a valid DHParameterSpec or DHParameterSpec[]");
             }
         }
-        else if (parameterName.equals(ConfigurableProvider.NAMED_CURVE_TABLE))
+        else if (parameterName.equals(ConfigurableProvider.ACCEPTABLE_EC_CURVES))
         {
-             this.acceptableNamedCurves = (Set)parameter;
+            if (securityManager != null)
+            {
+                securityManager.checkPermission(BC_EC_CURVE_PERMISSION);
+            }
+
+            this.acceptableNamedCurves = (Set)parameter;
+        }
+        else if (parameterName.equals(ConfigurableProvider.ADDITIONAL_EC_PARAMETERS))
+        {
+            if (securityManager != null)
+            {
+                securityManager.checkPermission(BC_ADDITIONAL_EC_CURVE_PERMISSION);
+            }
+
+            this.additionalECParameters = (Map)parameter;
         }
     }
 
@@ -174,6 +196,11 @@ class BouncyCastleProviderConfiguration
 
     public Set getAcceptableNamedCurves()
     {
-        return acceptableNamedCurves;
+        return Collections.unmodifiableSet(acceptableNamedCurves);
+    }
+
+    public Map getAdditionalECParameters()
+    {
+        return Collections.unmodifiableMap(additionalECParameters);
     }
 }
