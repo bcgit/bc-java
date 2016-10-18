@@ -5,6 +5,7 @@ import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Enumeration;
+import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.anssi.ANSSINamedCurves;
@@ -144,7 +145,12 @@ public class ECUtil
         {
             ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(params.getParameters());
             X9ECParameters ecP = ECUtil.getNamedCurveByOid(oid);
+            if (ecP == null)
+            {
+                Map extraCurves = configuration.getAdditionalECParameters();
 
+                ecP = (X9ECParameters)extraCurves.get(oid);
+            }
             domainParameters = new ECNamedDomainParameters(oid, ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(), ecP.getSeed());
         }
         else if (params.isImplicitlyCA())

@@ -32,7 +32,12 @@ public interface ConfigurableProvider
     /**
      * A set of OBJECT IDENTIFIERs representing acceptable named curves for imported keys.
      */
-    static final String NAMED_CURVE_TABLE = "namedCurveTable";
+    static final String ACCEPTABLE_EC_CURVES = "acceptableEcCurves";
+
+    /**
+     * A set of OBJECT IDENTIFIERs to EC Curves providing local curve name mapping.
+     */
+    static final String ADDITIONAL_EC_PARAMETERS = "additionalEcParameters";
 
     void setParameter(String parameterName, Object parameter);
 

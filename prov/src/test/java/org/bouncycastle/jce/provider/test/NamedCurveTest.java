@@ -23,10 +23,12 @@ import java.util.Set;
 
 import javax.crypto.KeyAgreement;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.teletrust.TeleTrusTNamedCurves;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x9.X962NamedCurves;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -303,7 +305,7 @@ public class NamedCurveTest
 
         ConfigurableProvider bcProv = ((ConfigurableProvider)Security.getProvider("BC"));
 
-        bcProv.setParameter(ConfigurableProvider.NAMED_CURVE_TABLE, Collections.singleton(NISTNamedCurves.getOID("P-384")));
+        bcProv.setParameter(ConfigurableProvider.ACCEPTABLE_EC_CURVES, Collections.singleton(NISTNamedCurves.getOID("P-384")));
 
         try
         {
@@ -325,12 +327,35 @@ public class NamedCurveTest
             isTrue("wrong message", "encoded key spec not recognized: named curve not acceptable".equals(e.getMessage()));
         }
 
-        bcProv.setParameter(ConfigurableProvider.NAMED_CURVE_TABLE, Collections.singleton(NISTNamedCurves.getOID("P-256")));
+        bcProv.setParameter(ConfigurableProvider.ACCEPTABLE_EC_CURVES, Collections.singleton(NISTNamedCurves.getOID("P-256")));
 
         kf.generatePrivate(privSpec);
         kf.generatePublic(pubSpec);
 
-        bcProv.setParameter(ConfigurableProvider.NAMED_CURVE_TABLE, Collections.EMPTY_SET);
+        bcProv.setParameter(ConfigurableProvider.ACCEPTABLE_EC_CURVES, Collections.EMPTY_SET);
+
+        kf.generatePrivate(privSpec);
+        kf.generatePublic(pubSpec);
+    }
+
+    public void testAdditional()
+        throws Exception
+    {
+        ConfigurableProvider bcProv = ((ConfigurableProvider)Security.getProvider("BC"));
+        ASN1ObjectIdentifier bogusCurveID = Extension.auditIdentity;
+
+        bcProv.setParameter(ConfigurableProvider.ADDITIONAL_EC_PARAMETERS, Collections.singletonMap(bogusCurveID, NISTNamedCurves.getByName("P-384")));
+
+        KeyPairGenerator       kpGen = KeyPairGenerator.getInstance("EC", "BC");
+
+        kpGen.initialize(new ECGenParameterSpec(bogusCurveID.getId()));
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        X509EncodedKeySpec pubSpec = new X509EncodedKeySpec(kp.getPublic().getEncoded());
+        PKCS8EncodedKeySpec privSpec = new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded());
+
+        KeyFactory kf = KeyFactory.getInstance("EC", "BC");
 
         kf.generatePrivate(privSpec);
         kf.generatePublic(pubSpec);
@@ -385,6 +410,7 @@ public class NamedCurveTest
         }
 
         testAcceptable();
+        testAdditional();
     }
     
     public static void main(

@@ -402,9 +402,10 @@ public class BCECPrivateKey
 
         byte[] enc = (byte[])in.readObject();
 
+        this.configuration = BouncyCastleProvider.CONFIGURATION;
+
         populateFromPrivKeyInfo(PrivateKeyInfo.getInstance(ASN1Primitive.fromByteArray(enc)));
 
-        this.configuration = BouncyCastleProvider.CONFIGURATION;
         this.attrCarrier = new PKCS12BagAttributeCarrierImpl();
     }
 
