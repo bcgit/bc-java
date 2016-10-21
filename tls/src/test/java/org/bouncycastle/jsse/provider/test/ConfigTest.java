@@ -20,11 +20,15 @@ public class ConfigTest
 
     public void testWithString()
     {
-        BouncyCastleJsseProvider jsseProv = new BouncyCastleJsseProvider("true:BC");
+        BouncyCastleJsseProvider jsseProv = new BouncyCastleJsseProvider("fips:BC");
 
         assertTrue(jsseProv.isFipsMode());
 
-        jsseProv = new BouncyCastleJsseProvider("false:BC");
+        jsseProv = new BouncyCastleJsseProvider("BC");
+
+        assertFalse(jsseProv.isFipsMode());
+
+        jsseProv = new BouncyCastleJsseProvider("unknown:BC");
 
         assertFalse(jsseProv.isFipsMode());
     }
