@@ -43,7 +43,7 @@ public class KeyManagerFactoryTest
     {
         KeyManagerFactory fact = KeyManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
 
-        KeyStore ks = getRsaKeyStore();
+        KeyStore ks = getRsaKeyStore(true);
 
         fact.init(ks, PASSWORD);
 
@@ -77,7 +77,7 @@ public class KeyManagerFactoryTest
     {
         KeyManagerFactory fact = KeyManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
 
-        KeyStore ks = getEcKeyStore();
+        KeyStore ks = getEcKeyStore(false);
 
         fact.init(ks, PASSWORD);
 
@@ -85,7 +85,7 @@ public class KeyManagerFactoryTest
 
         X509ExtendedKeyManager manager = (X509ExtendedKeyManager)managers[0];
 
-        String alias = manager.chooseServerAlias("EC", null, null);
+        String alias = manager.chooseServerAlias("ECDHE_ECDSA", null, null);
 
         assertNotNull(alias);
 
@@ -93,11 +93,11 @@ public class KeyManagerFactoryTest
 
         assertNotNull(manager.getPrivateKey(alias));
 
-        alias = manager.chooseServerAlias("EC", new Principal[] { new X500Principal("CN=TLS Test") }, null);
+        alias = manager.chooseServerAlias("ECDHE_ECDSA", new Principal[] { new X500Principal("CN=TLS Test") }, null);
 
         assertNull(alias);
 
-        alias = manager.chooseServerAlias("EC", new Principal[] { new X500Principal("CN=TLS Test CA") }, null);
+        alias = manager.chooseServerAlias("ECDHE_ECDSA", new Principal[] { new X500Principal("CN=TLS Test CA") }, null);
 
         assertNotNull(alias);
 
@@ -106,7 +106,7 @@ public class KeyManagerFactoryTest
         assertNotNull(manager.getPrivateKey(alias));
     }
 
-    private KeyStore getRsaKeyStore()
+    private KeyStore getRsaKeyStore(boolean encryption)
         throws Exception
     {
         KeyStore ks = KeyStore.getInstance("JKS");
@@ -117,7 +117,16 @@ public class KeyManagerFactoryTest
 
         X509Certificate rCert = TestUtils.generateRootCert(rPair);
         X509Certificate iCert = TestUtils.generateIntermediateCert(iPair.getPublic(), new X500Name("CN=TLS Test CA"), rPair.getPrivate(), rCert);
-        X509Certificate eCert = TestUtils.generateEndEntityCert(ePair.getPublic(), new X500Name("CN=TLS Test"), iPair.getPrivate(), iCert);
+
+        X509Certificate eCert;
+        if (encryption)
+        {
+            eCert = TestUtils.generateEndEntityCertEnc(ePair.getPublic(), new X500Name("CN=TLS Test"), iPair.getPrivate(), iCert);
+        }
+        else
+        {
+            eCert = TestUtils.generateEndEntityCertSign(ePair.getPublic(), new X500Name("CN=TLS Test"), iPair.getPrivate(), iCert);
+        }
 
         ks.load(null, PASSWORD);
 
@@ -128,7 +137,7 @@ public class KeyManagerFactoryTest
         return ks;
     }
 
-    private KeyStore getEcKeyStore()
+    private KeyStore getEcKeyStore(boolean agreement)
         throws Exception
     {
         KeyStore ks = KeyStore.getInstance("JKS");
@@ -139,7 +148,16 @@ public class KeyManagerFactoryTest
 
         X509Certificate rCert = TestUtils.generateRootCert(rPair);
         X509Certificate iCert = TestUtils.generateIntermediateCert(iPair.getPublic(), new X500Name("CN=TLS Test CA"), rPair.getPrivate(), rCert);
-        X509Certificate eCert = TestUtils.generateEndEntityCert(ePair.getPublic(), new X500Name("CN=TLS Test"), iPair.getPrivate(), iCert);
+
+        X509Certificate eCert;
+        if (agreement)
+        {
+            eCert = TestUtils.generateEndEntityCertAgree(ePair.getPublic(), new X500Name("CN=TLS Test"), iPair.getPrivate(), iCert);
+        }
+        else
+        {
+            eCert = TestUtils.generateEndEntityCertSign(ePair.getPublic(), new X500Name("CN=TLS Test"), iPair.getPrivate(), iCert);
+        }
 
         ks.load(null, PASSWORD);
 
@@ -153,7 +171,7 @@ public class KeyManagerFactoryTest
     public void testRSAServer()
         throws Exception
     {
-        KeyStore ks = getRsaKeyStore();
+        KeyStore ks = getRsaKeyStore(false);
 
         KeyStore trustStore = KeyStore.getInstance("JKS");
 
@@ -188,7 +206,7 @@ public class KeyManagerFactoryTest
     public void testRSAServerWithClientAuth()
         throws Exception
     {
-        KeyStore ks = getRsaKeyStore();
+        KeyStore ks = getRsaKeyStore(false);
 
         KeyStore trustStore = KeyStore.getInstance("JKS");
 

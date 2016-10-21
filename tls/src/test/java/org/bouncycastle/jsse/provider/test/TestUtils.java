@@ -1,9 +1,7 @@
 package org.bouncycastle.jsse.provider.test;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
@@ -35,7 +33,6 @@ import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
-import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -226,14 +223,43 @@ class TestUtils
         }
     }
 
-    public static X509Certificate generateEndEntityCert(PublicKey intKey, PrivateKey caKey, X509Certificate caCert)
+    public static X509Certificate generateEndEntityCertAgree(PublicKey intKey, PrivateKey caKey, X509Certificate caCert)
         throws Exception
     {
-        return generateEndEntityCert(
-            intKey, new X500Name("CN=Test End Certificate"), caKey, caCert);
+        return generateEndEntityCertAgree(intKey, new X500Name("CN=Test End Certificate"), caKey, caCert);
     }
 
-    public static X509Certificate generateEndEntityCert(PublicKey entityKey, X500Name subject, PrivateKey caKey, X509Certificate caCert)
+    public static X509Certificate generateEndEntityCertEnc(PublicKey intKey, PrivateKey caKey, X509Certificate caCert)
+        throws Exception
+    {
+        return generateEndEntityCertEnc(intKey, new X500Name("CN=Test End Certificate"), caKey, caCert);
+    }
+
+    public static X509Certificate generateEndEntityCertSign(PublicKey intKey, PrivateKey caKey, X509Certificate caCert)
+        throws Exception
+    {
+        return generateEndEntityCertSign(intKey, new X500Name("CN=Test End Certificate"), caKey, caCert);
+    }
+
+    public static X509Certificate generateEndEntityCertAgree(PublicKey entityKey, X500Name subject, PrivateKey caKey, X509Certificate caCert)
+        throws Exception
+    {
+        return generateEndEntityCert(entityKey, subject, KeyUsage.keyAgreement, caKey, caCert);
+    }
+
+    public static X509Certificate generateEndEntityCertEnc(PublicKey entityKey, X500Name subject, PrivateKey caKey, X509Certificate caCert)
+        throws Exception
+    {
+        return generateEndEntityCert(entityKey, subject, KeyUsage.keyEncipherment, caKey, caCert);
+    }
+
+    public static X509Certificate generateEndEntityCertSign(PublicKey entityKey, X500Name subject, PrivateKey caKey, X509Certificate caCert)
+        throws Exception
+    {
+        return generateEndEntityCert(entityKey, subject, KeyUsage.digitalSignature | KeyUsage.keyCertSign | KeyUsage.cRLSign, caKey, caCert);
+    }
+
+    public static X509Certificate generateEndEntityCert(PublicKey entityKey, X500Name subject, int keyUsage, PrivateKey caKey, X509Certificate caCert)
         throws Exception
     {
         Certificate caCertLw = Certificate.getInstance(caCert.getEncoded());
@@ -245,7 +271,8 @@ class TestUtils
             caCertLw.getSerialNumber().getValue()));
         extGen.addExtension(Extension.subjectKeyIdentifier, false, new SubjectKeyIdentifier(getDigest(entityKey.getEncoded())));
         extGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
-        extGen.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign | KeyUsage.cRLSign));
+//        extGen.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign | KeyUsage.cRLSign));
+        extGen.addExtension(Extension.keyUsage, true, new KeyUsage(keyUsage));
 
         if (entityKey.getAlgorithm().equals("RSA"))
         {

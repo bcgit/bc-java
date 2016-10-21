@@ -244,6 +244,10 @@ class ProvX509KeyManager
         {
             return (pub instanceof ECPublicKey) && isSuitableKeyUsage(KeyUsage.digitalSignature, c);
         }
+        else if (keyType.equalsIgnoreCase("RSA"))
+        {
+            return (pub instanceof RSAPublicKey) && isSuitableKeyUsage(KeyUsage.keyEncipherment, c);
+        }
         // TODO[jsse] Support other key exchanges (and client certificate types)
         return false;
     }
