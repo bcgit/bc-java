@@ -39,9 +39,9 @@ task printProperties << {
 subprojects {
     apply plugin: 'eclipse'
 
-    sourceCompatibility = 1.5
-    targetCompatibility = 1.5
-    version = '1.52'
+    sourceCompatibility = 1.6
+    targetCompatibility = 1.6
+    version = '1.55'
 
     test {
         systemProperty 'bc.test.data.home', bcTestDataHome
