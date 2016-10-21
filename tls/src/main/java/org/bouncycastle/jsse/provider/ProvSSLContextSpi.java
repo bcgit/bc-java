@@ -67,7 +67,7 @@ class ProvSSLContextSpi
     String[] getDefaultCipherSuites()
     {
         // TODO[tls-ops] Flesh out list and get strings by lookup of CipherSuite constants
-        return new String[]{ "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA" };
+        return new String[]{ "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA" };
     }
 
     String[] getDefaultProtocols()

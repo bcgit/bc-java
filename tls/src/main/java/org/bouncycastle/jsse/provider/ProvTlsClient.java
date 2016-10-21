@@ -12,6 +12,7 @@ import javax.net.ssl.X509KeyManager;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
+import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentials;
@@ -136,16 +137,32 @@ class ProvTlsClient
         };
     }
 
-//    public int[] getCipherSuites()
-//    {
+    public int[] getCipherSuites()
+    {
 //        // TODO[jsse] Needs to come from the JSSE enabledCipherSuites
-//        throw new UnsupportedOperationException();
-//    }
+        return new int[]{ CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA };
+    }
 
 //    public TlsKeyExchange getKeyExchange() throws IOException
 //    {
 //        // TODO[jsse] Check that all key exchanges used in JSSE supportedCipherSuites are handled
 //        return super.getKeyExchange();
+//    }
+
+//    @Override
+//    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
+//    {
+//        PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
+//        out.println("JSSE client raised alert: " + AlertLevel.getText(alertLevel)
+//            + ", " + AlertDescription.getText(alertDescription));
+//        if (message != null)
+//        {
+//            out.println("> " + message);
+//        }
+//        if (cause != null)
+//        {
+//            cause.printStackTrace(out);
+//        }
 //    }
 
     @Override

@@ -5,8 +5,11 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.Principal;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -22,24 +25,13 @@ import javax.net.ssl.X509ExtendedKeyManager;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.TBSCertificate;
 
 class ProvX509KeyManager
     extends X509ExtendedKeyManager
 {
-    private static final Map<String, String> ALGORITHM_ALIASES = new HashMap<String, String>();
-    static
-    {
-        ALGORITHM_ALIASES.put("DHE", "DH");
-        ALGORITHM_ALIASES.put("ECDH", "EC");
-        ALGORITHM_ALIASES.put("ECDHE", "EC");
-    }
-
-    private static String resolveAlgorithmAlias(String alias)
-    {
-        String target = ALGORITHM_ALIASES.get(alias);
-        return target == null ? alias : target;
-    }
-
     private final List<KeyStore.Builder> builders;
 
     private final String RSA = "RSA";
@@ -158,23 +150,6 @@ class ProvX509KeyManager
 
     private List<String> findAliases(String keyType, Set<X500Name> issuers)
     {
-        String algType;
-        String sigType;
-        int dashIndex = keyType.indexOf("_");
-
-        if (dashIndex > 0)
-        {
-            algType = keyType.substring(0, dashIndex);
-            sigType = keyType.substring(dashIndex + 1);
-        }
-        else
-        {
-            algType = keyType;
-            sigType = null;
-        }
-
-        algType = resolveAlgorithmAlias(algType);
-
         List<String> aliases = new ArrayList<String>();
 
         for (int i = 0; i != builders.size(); i++)
@@ -183,7 +158,7 @@ class ProvX509KeyManager
 
             try
             {
-                aliases.addAll(findAliases(i, builder.getKeyStore(), builder, algType, sigType, issuers));
+                aliases.addAll(findAliases(i, builder.getKeyStore(), builder, keyType, issuers));
             }
             catch (GeneralSecurityException e)
             {
@@ -194,7 +169,7 @@ class ProvX509KeyManager
         return aliases;
     }
 
-    private List<String> findAliases(int index, KeyStore keyStore, KeyStore.Builder storeBuilder, String algType, String sigType, Set<X500Name> issuers)
+    private List<String> findAliases(int index, KeyStore keyStore, KeyStore.Builder storeBuilder, String keyType, Set<X500Name> issuers)
         throws GeneralSecurityException
     {
         List<String> aliases = new ArrayList<String>();
@@ -224,22 +199,12 @@ class ProvX509KeyManager
             for (int i = chain.length - 1; i >= 0; i--)
             {
                 X509Certificate x509Cert = (X509Certificate)chain[i];
-
-                org.bouncycastle.asn1.x509.Certificate asn1Cert = org.bouncycastle.asn1.x509.Certificate.getInstance(x509Cert.getEncoded());
-
-                if (!issuers.isEmpty() && !issuers.contains(asn1Cert.getIssuer()))   // not the right issuer
+                if (isSuitableCertificate(keyType, issuers, x509Cert))
                 {
-                    continue;
+                    // TODO[jsse] Double-check the private key type here?
+                    found = true;
+                    break;
                 }
-
-                if (!x509Cert.getPublicKey().getAlgorithm().equals(algType))
-                {
-                    continue;
-                }
-
-                found = true;
-                break;
-
             }
             // TODO: manage two key/certs in one store that matches
 
@@ -256,5 +221,68 @@ class ProvX509KeyManager
         }
 
         return aliases;
+    }
+
+    private boolean isSuitableCertificate(String keyType, Set<X500Name> issuers, X509Certificate c)
+    {
+        if (keyType == null || c == null)
+        {
+            return false;
+        }
+        if (!isSuitableIssuer(issuers, c))
+        {
+            return false;
+        }
+        PublicKey pub = c.getPublicKey();
+        if (keyType.equalsIgnoreCase("DHE_RSA")
+            || keyType.equalsIgnoreCase("ECDHE_RSA")
+            || keyType.equalsIgnoreCase("SRP_RSA"))
+        {
+            return (pub instanceof RSAPublicKey) && isSuitableKeyUsage(KeyUsage.digitalSignature, c);
+        }
+        else if (keyType.equalsIgnoreCase("ECDHE_ECDSA"))
+        {
+            return (pub instanceof ECPublicKey) && isSuitableKeyUsage(KeyUsage.digitalSignature, c);
+        }
+        // TODO[jsse] Support other key exchanges (and client certificate types)
+        return false;
+    }
+
+    private boolean isSuitableIssuer(Set<X500Name> issuers, X509Certificate c)
+    {
+        try
+        {
+            org.bouncycastle.asn1.x509.Certificate asn1Cert = org.bouncycastle.asn1.x509.Certificate.getInstance(c.getEncoded());
+            return issuers == null || issuers.isEmpty() || issuers.contains(asn1Cert.getIssuer());
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
+    }
+
+    private boolean isSuitableKeyUsage(int keyUsageBits, X509Certificate c)
+    {
+        try
+        {
+            Extensions exts = TBSCertificate.getInstance(c.getTBSCertificate()).getExtensions();
+            if (exts != null)
+            {
+                KeyUsage ku = KeyUsage.fromExtensions(exts);
+                if (ku != null)
+                {
+                    int bits = ku.getBytes()[0] & 0xff;
+                    if ((bits & keyUsageBits) != keyUsageBits)
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
+        return true;
     }
 }

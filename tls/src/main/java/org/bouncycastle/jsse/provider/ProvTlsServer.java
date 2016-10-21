@@ -15,6 +15,7 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
+import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.HashAlgorithm;
@@ -131,11 +132,11 @@ class ProvTlsServer
         }
     }
 
-//  public int[] getCipherSuites()
-//  {
-//      // TODO[tls-ops] Needs to come from the JSSE enabledCipherSuites
-//      throw new UnsupportedOperationException();
-//  }
+  public int[] getCipherSuites()
+  {
+      // TODO[tls-ops] Needs to come from the JSSE enabledCipherSuites
+      return new int[]{ CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA };
+  }
 
 //  public TlsKeyExchange getKeyExchange() throws IOException
 //  {
@@ -173,6 +174,22 @@ class ProvTlsServer
 
         return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
     }
+
+//    @Override
+//    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
+//    {
+//        PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
+//        out.println("JSSE server raised alert: " + AlertLevel.getText(alertLevel)
+//            + ", " + AlertDescription.getText(alertDescription));
+//        if (message != null)
+//        {
+//            out.println("> " + message);
+//        }
+//        if (cause != null)
+//        {
+//            cause.printStackTrace(out);
+//        }
+//    }
 
     @Override
     public void notifyClientCertificate(Certificate clientCertificate) throws IOException

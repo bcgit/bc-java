@@ -27,12 +27,20 @@ class JsseUtils
             return "DH_RSA";
         case KeyExchangeAlgorithm.DHE_RSA:
             return "DHE_RSA";
+        case KeyExchangeAlgorithm.ECDH_ECDSA:
+            return "ECDH_ECDSA";
         case KeyExchangeAlgorithm.ECDH_RSA:
             return "ECDH_RSA";
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+            return "ECDHE_ECDSA";
         case KeyExchangeAlgorithm.ECDHE_RSA:
             return "ECDHE_RSA";
         case KeyExchangeAlgorithm.RSA:
             return "RSA";
+        case KeyExchangeAlgorithm.RSA_PSK:
+            return "RSA_PSK";
+        case KeyExchangeAlgorithm.SRP_RSA:
+            return "SRP_RSA";
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
