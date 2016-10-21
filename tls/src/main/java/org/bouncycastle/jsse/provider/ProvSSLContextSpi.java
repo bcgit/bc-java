@@ -114,6 +114,46 @@ class ProvSSLContextSpi
         return new String[]{ "TLSv1.2" };
     }
 
+    ProtocolVersion getMaximumVersion(String[] protocols)
+    {
+        ProtocolVersion max = null;
+        if (protocols != null)
+        {
+            for (String protocol : protocols)
+            {
+                if (protocol != null)
+                {
+                    ProtocolVersion v = supportedProtocols.get(protocol);
+                    if (v != null && (max == null || v.isLaterVersionOf(max)))
+                    {
+                        max = v;
+                    }
+                }
+            }
+        }
+        return max;
+    }
+
+    ProtocolVersion getMinimumVersion(String[] protocols)
+    {
+        ProtocolVersion min = null;
+        if (protocols != null)
+        {
+            for (String protocol : protocols)
+            {
+                if (protocol != null)
+                {
+                    ProtocolVersion v = supportedProtocols.get(protocol);
+                    if (v != null && (min == null || min.isLaterVersionOf(v)))
+                    {
+                        min = v;
+                    }
+                }
+            }
+        }
+        return min;
+    }
+
     String[] getSupportedCipherSuites()
     {
         return supportedCipherSuites.keySet().toArray(new String[supportedCipherSuites.size()]);
@@ -122,6 +162,21 @@ class ProvSSLContextSpi
     String[] getSupportedProtocols()
     {
         return supportedProtocols.keySet().toArray(new String[supportedProtocols.size()]);
+    }
+
+    String getVersionString(ProtocolVersion v)
+    {
+        if (v != null)
+        {
+            for (Map.Entry<String, ProtocolVersion> entry : supportedProtocols.entrySet())
+            {
+                if (v.equals(entry.getValue()))
+                {
+                    return entry.getKey();
+                }
+            }
+        }
+        return null;
     }
 
     boolean isSupportedCipherSuites(String[] suites)

@@ -12,8 +12,8 @@ import javax.net.ssl.X509KeyManager;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
-import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.DefaultTlsClient;
+import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsFatalAlert;
@@ -139,6 +139,7 @@ class ProvTlsClient
         };
     }
 
+    @Override
     public int[] getCipherSuites()
     {
         return manager.getContext().convertCipherSuites(sslParameters.getCipherSuites());
@@ -150,6 +151,18 @@ class ProvTlsClient
 //        return super.getKeyExchange();
 //    }
 
+    @Override
+    public ProtocolVersion getMinimumVersion()
+    {
+        return manager.getContext().getMinimumVersion(sslParameters.getProtocols());
+    }
+
+    @Override
+    public ProtocolVersion getClientVersion()
+    {
+        return manager.getContext().getMaximumVersion(sslParameters.getProtocols());
+    }
+    
 //    @Override
 //    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
 //    {
@@ -176,5 +189,22 @@ class ProvTlsClient
         {
             // TODO[tls-ops] Register the session with the client SSLSessionContext of our SSLContext
         }
+    }
+
+    @Override
+    public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
+    {
+        String selected = manager.getContext().getVersionString(serverVersion);
+        if (selected != null)
+        {
+            for (String protocol : sslParameters.getProtocols())
+            {
+                if (selected.equals(protocol))
+                {
+                    return;
+                }
+            }
+        }
+        throw new TlsFatalAlert(AlertDescription.protocol_version);
     }
 }
