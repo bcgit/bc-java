@@ -135,11 +135,13 @@ public class BasicTlsTest
         X509Certificate caCert = TestUtils.generateRootCert(caKeyPair);
 
         KeyStore ks = KeyStore.getInstance("JKS");
-
         ks.load(null, null);
-
         ks.setKeyEntry("server", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
 
-        TestProtocolUtil.runClientAndServer(new SimpleServer(ks, keyPass), new SimpleClient(ks));
+        KeyStore ts = KeyStore.getInstance("JKS");
+        ts.load(null, null);
+        ts.setCertificateEntry("ca", caCert);
+
+        TestProtocolUtil.runClientAndServer(new SimpleServer(ks, keyPass), new SimpleClient(ts));
     }
 }
