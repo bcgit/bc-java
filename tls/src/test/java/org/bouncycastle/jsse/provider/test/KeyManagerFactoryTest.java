@@ -174,6 +174,10 @@ public class KeyManagerFactoryTest
         SSLSocketFactory f = context.getSocketFactory();
 
         SSLSocket c = (SSLSocket)f.createSocket("localhost", 8888);
+        c.setUseClientMode(true);
+
+        // TODO[jsse] Is this supposed to be a necessary call to get an SSL connection?
+        c.startHandshake();
 
         c.getOutputStream().write('!');
 
@@ -209,6 +213,10 @@ public class KeyManagerFactoryTest
         SSLSocketFactory f = context.getSocketFactory();
 
         SSLSocket c = (SSLSocket)f.createSocket("localhost", 8888);
+        c.setUseClientMode(true);
+
+        // TODO[jsse] Is this supposed to be a necessary call to get an SSL connection?
+        c.startHandshake();
 
         c.getOutputStream().write('!');
 

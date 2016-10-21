@@ -43,6 +43,10 @@ class SSLUtils
                     ss.setNeedClientAuth(needClientAuth);
 
                     SSLSocket s = (SSLSocket)ss.accept();
+                    s.setUseClientMode(false);
+
+                    // TODO[jsse] Is this supposed to be a necessary call to get an SSL connection?
+                    s.startHandshake();
 
                     s.getInputStream().read();
 

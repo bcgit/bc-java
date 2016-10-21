@@ -108,6 +108,10 @@ public class BasicTlsTest
             latch.countDown();
 
             SSLSocket sslSock = (SSLSocket)sSock.accept();
+            sslSock.setUseClientMode(false);
+
+            // TODO[jsse] Is this supposed to be a necessary call to get an SSL connection?
+            sslSock.startHandshake();
 
             TestProtocolUtil.doServerProtocol(sslSock, "World");
 
