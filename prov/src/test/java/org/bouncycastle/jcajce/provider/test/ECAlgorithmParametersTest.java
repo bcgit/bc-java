@@ -147,18 +147,19 @@ public class ECAlgorithmParametersTest
          {
              AlgorithmParameters algParams = AlgorithmParameters.getInstance("EC", "BC");
 
-             algParams.init(new ECGenParameterSpec(entries[i]));
-
-             ECParameterSpec ecSpec = null;
-
              try
              {
-                 ecSpec = algParams.getParameterSpec(ECParameterSpec.class);
+                 algParams.init(new ECGenParameterSpec(entries[i]));
              }
              catch (IllegalArgumentException e)
              {
                  // ignore - this is due to a JDK 1.5 bug
              }
+
+             ECParameterSpec ecSpec = null;
+
+             ecSpec = algParams.getParameterSpec(ECParameterSpec.class);
+
 
              ECGenParameterSpec spec = algParams.getParameterSpec(ECGenParameterSpec.class);
 
