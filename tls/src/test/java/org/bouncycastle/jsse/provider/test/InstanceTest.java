@@ -19,24 +19,24 @@ public class InstanceTest
 
     protected void tearDown()
     {
-        Security.removeProvider("BCTLS");
+        Security.removeProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
     }
 
     public void testKeyManager()
         throws Exception
     {
-        KeyManagerFactory.getInstance("PKIX", "BCTLS");
+        KeyManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
     }
 
     public void testTrustManager()
         throws Exception
     {
-        TrustManagerFactory.getInstance("PKIX", "BCTLS");
+        TrustManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
     }
 
     public void testSSLContext()
         throws Exception
     {
-        SSLContext.getInstance("TLS", "BCTLS");
+        SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
     }
 }

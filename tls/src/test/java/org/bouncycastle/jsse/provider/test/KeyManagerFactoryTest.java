@@ -35,13 +35,13 @@ public class KeyManagerFactoryTest
 
     protected void tearDown()
     {
-        Security.removeProvider("BCTLS");
+        Security.removeProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
     }
 
     public void testBasicRSA()
         throws Exception
     {
-        KeyManagerFactory fact = KeyManagerFactory.getInstance("PKIX", "BCTLS");
+        KeyManagerFactory fact = KeyManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
 
         KeyStore ks = getRsaKeyStore();
 
@@ -75,7 +75,7 @@ public class KeyManagerFactoryTest
     public void testBasicEC()
         throws Exception
     {
-        KeyManagerFactory fact = KeyManagerFactory.getInstance("PKIX", "BCTLS");
+        KeyManagerFactory fact = KeyManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
 
         KeyStore ks = getEcKeyStore();
 
@@ -163,7 +163,7 @@ public class KeyManagerFactoryTest
 
         SSLUtils.startServer(ks, PASSWORD, trustStore);
 
-        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX", "BCTLS");
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
 
         trustManagerFactory.init(trustStore);
 
@@ -198,11 +198,11 @@ public class KeyManagerFactoryTest
 
         SSLUtils.startServer(ks, PASSWORD, trustStore, true);
 
-        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("PKIX", "BCTLS");
+        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
 
         keyManagerFactory.init(ks, PASSWORD);
 
-        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX", "BCTLS");
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
 
         trustManagerFactory.init(trustStore);
 
