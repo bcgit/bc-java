@@ -26,6 +26,20 @@ import org.bouncycastle.asn1.x500.X500Name;
 class ProvX509KeyManager
     extends X509ExtendedKeyManager
 {
+    private static final Map<String, String> ALGORITHM_ALIASES = new HashMap<String, String>();
+    static
+    {
+        ALGORITHM_ALIASES.put("DHE", "DH");
+        ALGORITHM_ALIASES.put("ECDH", "EC");
+        ALGORITHM_ALIASES.put("ECDHE", "EC");
+    }
+
+    private static String resolveAlgorithmAlias(String alias)
+    {
+        String target = ALGORITHM_ALIASES.get(alias);
+        return target == null ? alias : target;
+    }
+
     private final List<KeyStore.Builder> builders;
 
     private final String RSA = "RSA";
@@ -158,6 +172,8 @@ class ProvX509KeyManager
             algType = keyType;
             sigType = null;
         }
+
+        algType = resolveAlgorithmAlias(algType);
 
         List<String> aliases = new ArrayList<String>();
 
