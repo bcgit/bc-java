@@ -50,15 +50,16 @@ class ProvTlsClient
         {
             public TlsCredentials getClientCredentials(CertificateRequest certificateRequest) throws IOException
             {
-                // TODO[jsse] If client authentication enabled, locate credentials in configured key stores,
-                // suitable for the selected ciphersuite
+                // TODO[jsse] What criteria determines whether we are willing to send client authentication?
 
                 X509KeyManager km = manager.getContext().getX509KeyManager();
                 if (km == null)
                 {
+                    // TODO[jsse] Should sslParameters.getNeedClientAuth imply failing the handshake here?
                     return null;
                 }
 
+                // TODO[jsse] Supply these parameters correctly
                 String[] keyType = null; //certificateRequest.getCertificateTypes(), certificateRequest.getSupportedSignatureAlgorithms()
                 Principal[] issuers = null; //certificateRequest.getCertificateAuthorities();
                 // TODO[jsse] How is this used?
@@ -67,6 +68,7 @@ class ProvTlsClient
                 String alias = km.chooseClientAlias(keyType, issuers, socket);
                 if (alias == null)
                 {
+                    // TODO[jsse] Should sslParameters.getNeedClientAuth imply failing the handshake here?
                     return null;
                 }
 
@@ -139,8 +141,7 @@ class ProvTlsClient
 
     public int[] getCipherSuites()
     {
-//        // TODO[jsse] Needs to come from the JSSE enabledCipherSuites
-        return new int[]{ CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA };
+        return manager.getContext().convertCipherSuites(sslParameters.getCipherSuites());
     }
 
 //    public TlsKeyExchange getKeyExchange() throws IOException

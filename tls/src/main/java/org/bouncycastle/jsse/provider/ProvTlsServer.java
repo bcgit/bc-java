@@ -132,11 +132,10 @@ class ProvTlsServer
         }
     }
 
-  public int[] getCipherSuites()
-  {
-      // TODO[tls-ops] Needs to come from the JSSE enabledCipherSuites
-      return new int[]{ CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA };
-  }
+    public int[] getCipherSuites()
+    {
+        return manager.getContext().convertCipherSuites(sslParameters.getCipherSuites());
+    }
 
 //  public TlsKeyExchange getKeyExchange() throws IOException
 //  {

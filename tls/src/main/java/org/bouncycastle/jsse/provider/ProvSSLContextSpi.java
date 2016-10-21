@@ -4,6 +4,8 @@ import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -18,11 +20,35 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.bouncycastle.tls.CipherSuite;
+import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 
 class ProvSSLContextSpi
     extends SSLContextSpi
 {
+    private static final Map<String, Integer> supportedCipherSuites = createSupportedCipherSuites();
+    private static final Map<String, ProtocolVersion> supportedProtocols = createSupportedProtocols();
+
+    private static Map<String, Integer> createSupportedCipherSuites()
+    {
+        Map<String, Integer> cs = new HashMap<String, Integer>();
+        cs.put("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA", CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA);
+        cs.put("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA", CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA);
+        cs.put("TLS_RSA_WITH_AES_128_CBC_SHA", CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA);
+        return cs;
+    }
+
+    private static Map<String, ProtocolVersion> createSupportedProtocols()
+    {
+        Map<String, ProtocolVersion> ps = new HashMap<String, ProtocolVersion>();
+//        ps.put("SSLv3", ProtocolVersion.SSLv3);
+        ps.put("TLSv1", ProtocolVersion.TLSv10);
+        ps.put("TLSv1.1", ProtocolVersion.TLSv11);
+        ps.put("TLSv1.2", ProtocolVersion.TLSv12);
+        return ps;
+    }
+
     protected static SSLSessionContext createSSLSessionContext()
     {
         return new ProvSSLSessionContext();
@@ -48,6 +74,16 @@ class ProvSSLContextSpi
         return crypto;
     }
 
+    int[] convertCipherSuites(String[] suites)
+    {
+        int[] result = new int[suites.length];
+        for (int i = 0; i < suites.length; ++i)
+        {
+            result[i] = supportedCipherSuites.get(suites[i]);
+        }
+        return result;
+    }
+
     SSLParameters copySSLParameters(SSLParameters p)
     {
         SSLParameters r = new SSLParameters();
@@ -66,31 +102,58 @@ class ProvSSLContextSpi
 
     String[] getDefaultCipherSuites()
     {
-        // TODO[tls-ops] Flesh out list and get strings by lookup of CipherSuite constants
-        return new String[]{ "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA" };
+        return new String[]{
+            "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+            "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+            "TLS_RSA_WITH_AES_128_CBC_SHA",
+        };
     }
 
     String[] getDefaultProtocols()
     {
-        // TODO[tls-ops] Consider 
         return new String[]{ "TLSv1.2" };
     }
 
     String[] getSupportedCipherSuites()
     {
-        // TODO[tls-ops] Add any supported, non-default cipherSuites
-        return getDefaultCipherSuites();
+        return supportedCipherSuites.keySet().toArray(new String[supportedCipherSuites.size()]);
     }
 
     String[] getSupportedProtocols()
     {
-        // TODO[tls-ops] Get string constants by lookup
-        return new String[]{
-//            "SSLv3",
-            "TLSv1",
-            "TLSv1.1",
-            "TLSv1.2",
-        };
+        return supportedProtocols.keySet().toArray(new String[supportedProtocols.size()]);
+    }
+
+    boolean isSupportedCipherSuites(String[] suites)
+    {
+        if (suites == null)
+        {
+            return false;
+        }
+        for (String suite : suites)
+        {
+            if (suite == null || !supportedCipherSuites.containsKey(suite))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    boolean isSupportedProtocols(String[] protocols)
+    {
+        if (protocols == null)
+        {
+            return false;
+        }
+        for (String protocol : protocols)
+        {
+            if (protocol == null || !supportedProtocols.containsKey(protocol))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     protected void checkInitialized()

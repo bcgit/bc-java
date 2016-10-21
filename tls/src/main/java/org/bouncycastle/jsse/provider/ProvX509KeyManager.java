@@ -61,6 +61,7 @@ class ProvX509KeyManager
     {
         try
         {
+            // TODO[jsse] Need to support the keyTypes that SunJSSE sends here
             for (int i = 0; i != keyTypes.length; i++)
             {
                 List<String> aliases = findAliases(keyTypes[i], principalToIssuers(issuers));
