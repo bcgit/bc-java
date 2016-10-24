@@ -8,6 +8,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
@@ -34,11 +35,6 @@ class ProvX509KeyManager
 {
     private final List<KeyStore.Builder> builders;
 
-    private final String RSA = "RSA";
-    private final String DSA = "DSA";
-    private final String DH = "DH";
-    private final String EC = "EC";
-
     // TODO: does this need to be threadsafe? Will leak memory...
     private final Map<String, KeyStore.PrivateKeyEntry> keys = new HashMap<String, KeyStore.PrivateKeyEntry>();
 
@@ -52,7 +48,7 @@ class ProvX509KeyManager
 
     public String[] getClientAliases(String keyType, Principal[] issuers)
     {
-        List<String> aliases = findAliases(keyType, principalToIssuers(issuers));
+        List<String> aliases = findAliases(false, keyType, principalToIssuers(issuers));
 
         return aliases.toArray(new String[aliases.size()]);
     }
@@ -64,7 +60,7 @@ class ProvX509KeyManager
             // TODO[jsse] Need to support the keyTypes that SunJSSE sends here
             for (int i = 0; i != keyTypes.length; i++)
             {
-                List<String> aliases = findAliases(keyTypes[i], principalToIssuers(issuers));
+                List<String> aliases = findAliases(false, keyTypes[i], principalToIssuers(issuers));
                 if (!aliases.isEmpty())
                 {
                     return aliases.get(0);
@@ -81,7 +77,7 @@ class ProvX509KeyManager
 
     public String[] getServerAliases(String keyType, Principal[] issuers)
     {
-        List<String> aliases = findAliases(keyType, principalToIssuers(issuers));
+        List<String> aliases = findAliases(true, keyType, principalToIssuers(issuers));
 
         return aliases.toArray(new String[aliases.size()]);
     }
@@ -90,7 +86,7 @@ class ProvX509KeyManager
     {
         try
         {
-            List<String> aliases = findAliases(keyType, principalToIssuers(issuers));
+            List<String> aliases = findAliases(true, keyType, principalToIssuers(issuers));
 
             if (aliases.isEmpty())
             {
@@ -149,7 +145,7 @@ class ProvX509KeyManager
         return issuers;
     }
 
-    private List<String> findAliases(String keyType, Set<X500Name> issuers)
+    private List<String> findAliases(boolean forServer, String keyType, Set<X500Name> issuers)
     {
         List<String> aliases = new ArrayList<String>();
 
@@ -159,7 +155,7 @@ class ProvX509KeyManager
 
             try
             {
-                aliases.addAll(findAliases(i, builder.getKeyStore(), builder, keyType, issuers));
+                aliases.addAll(findAliases(forServer, i, builder.getKeyStore(), builder, keyType, issuers));
             }
             catch (GeneralSecurityException e)
             {
@@ -170,7 +166,7 @@ class ProvX509KeyManager
         return aliases;
     }
 
-    private List<String> findAliases(int index, KeyStore keyStore, KeyStore.Builder storeBuilder, String keyType, Set<X500Name> issuers)
+    private List<String> findAliases(boolean forServer, int index, KeyStore keyStore, KeyStore.Builder storeBuilder, String keyType, Set<X500Name> issuers)
         throws GeneralSecurityException
     {
         List<String> aliases = new ArrayList<String>();
@@ -200,7 +196,7 @@ class ProvX509KeyManager
             for (int i = chain.length - 1; i >= 0; i--)
             {
                 X509Certificate x509Cert = (X509Certificate)chain[i];
-                if (isSuitableCertificate(keyType, issuers, x509Cert))
+                if (isSuitableCertificate(forServer, keyType, issuers, x509Cert))
                 {
                     // TODO[jsse] Double-check the private key type here?
                     found = true;
@@ -224,7 +220,7 @@ class ProvX509KeyManager
         return aliases;
     }
 
-    private boolean isSuitableCertificate(String keyType, Set<X500Name> issuers, X509Certificate c)
+    private boolean isSuitableCertificate(boolean forServer, String keyType, Set<X500Name> issuers, X509Certificate c)
     {
         if (keyType == null || c == null)
         {
@@ -241,13 +237,22 @@ class ProvX509KeyManager
         {
             return (pub instanceof RSAPublicKey) && isSuitableKeyUsage(KeyUsage.digitalSignature, c);
         }
-        else if (keyType.equalsIgnoreCase("ECDHE_ECDSA"))
+        if (keyType.equalsIgnoreCase("ECDHE_ECDSA"))
         {
             return (pub instanceof ECPublicKey) && isSuitableKeyUsage(KeyUsage.digitalSignature, c);
         }
         else if (keyType.equalsIgnoreCase("RSA"))
         {
-            return (pub instanceof RSAPublicKey) && isSuitableKeyUsage(KeyUsage.keyEncipherment, c);
+            int keyUsage = forServer ? KeyUsage.keyEncipherment : KeyUsage.digitalSignature;
+            return (pub instanceof RSAPublicKey) && isSuitableKeyUsage(keyUsage, c);
+        }
+        else if (keyType.equalsIgnoreCase("DSA"))
+        {
+            return !forServer && (pub instanceof DSAPublicKey) && isSuitableKeyUsage(KeyUsage.digitalSignature, c);
+        }
+        else if (keyType.equalsIgnoreCase("EC"))
+        {
+            return !forServer && (pub instanceof ECPublicKey) && isSuitableKeyUsage(KeyUsage.digitalSignature, c);
         }
         // TODO[jsse] Support other key exchanges (and client certificate types)
         return false;
