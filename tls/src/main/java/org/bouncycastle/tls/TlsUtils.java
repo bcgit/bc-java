@@ -36,6 +36,9 @@ public class TlsUtils
 
     public static final Integer EXT_signature_algorithms = Integers.valueOf(ExtensionType.signature_algorithms);
 
+    protected static short MINIMUM_HASH_STRICT = HashAlgorithm.sha1;
+    protected static short MINIMUM_HASH_PREFERRED = HashAlgorithm.sha256;
+
     public static void checkUint8(short i) throws IOException
     {
         if (!isValidUint8(i))
@@ -2271,4 +2274,59 @@ public class TlsUtils
     {
         return getMinimumVersion(cipherSuite).isEqualOrEarlierVersionOf(serverVersion.getEquivalentTLSVersion());
     }
+
+    public static SignatureAndHashAlgorithm chooseSignatureAndHashAlgorithm(TlsContext context, Vector algs, int signatureAlgorithm)
+        throws IOException
+    {
+        if (!TlsUtils.isTLSv12(context))
+        {
+            return null;
+        }
+
+        if (algs == null)
+        {
+            algs = TlsUtils.getDefaultSignatureAlgorithms(signatureAlgorithm);
+        }
+
+        SignatureAndHashAlgorithm result = null;
+        for (int i = 0; i < algs.size(); ++i)
+        {
+            SignatureAndHashAlgorithm alg = (SignatureAndHashAlgorithm)algs.elementAt(i);
+            if (alg.getSignature() == signatureAlgorithm)
+            {
+                short hash = alg.getHash();
+                if (hash < MINIMUM_HASH_STRICT)
+                {
+                    continue;
+                }
+                if (result == null)
+                {
+                    result = alg;
+                    continue;
+                }
+
+                short current = result.getHash();
+                if (hash < MINIMUM_HASH_PREFERRED)
+                {
+                    if (hash > current)
+                    {
+                        result = alg;
+                    }
+                }
+                else
+                {
+                    if (hash < current)
+                    {
+                        result = alg;
+                    }
+                }
+            }
+        }
+        if (result == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+        return result;
+    }
+
 }
