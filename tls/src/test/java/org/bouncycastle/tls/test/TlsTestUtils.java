@@ -32,6 +32,7 @@ import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedAgreement;
+import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedDecryptor;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
@@ -128,8 +129,7 @@ public class TlsTestUtils
         {
             PrivateKey privateKey = loadJcaPrivateKeyResource(keyResource);
 
-            // TODO[tls-ops] Missing JceDefaultTlsCredentialedEncryptor?
-            throw new UnsupportedOperationException();
+            return new JceDefaultTlsCredentialedDecryptor((JcaTlsCrypto)crypto, certificate, privateKey);
         }
     }
 
