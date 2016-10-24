@@ -19,11 +19,6 @@ public class DHStandardGroups
         return new DHGroup(fromHex(hexP), fromHex(hexG));
     }
 
-    private static DHGroup fromPQG(String hexP, String hexQ, String hexG)
-    {
-        return new DHGroup(fromHex(hexP), fromHex(hexQ), fromHex(hexG));
-    }
-
     /*
      * RFC 2409
      */
