@@ -28,10 +28,6 @@ public class DefaultTlsDHConfigVerifier
         addDefaultGroup(DHStandardGroups.rfc3526_6144);
         addDefaultGroup(DHStandardGroups.rfc3526_8192);
 
-        addDefaultGroup(DHStandardGroups.rfc5114_1024_160);
-        addDefaultGroup(DHStandardGroups.rfc5114_2048_224);
-        addDefaultGroup(DHStandardGroups.rfc5114_2048_256);
-
         addDefaultGroup(DHStandardGroups.rfc5996_768);
         addDefaultGroup(DHStandardGroups.rfc5996_1024);
     }
