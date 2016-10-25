@@ -37,6 +37,11 @@
             <fileset dir="prov/src/test/java" includes="**/*.java" />
             <fileset dir="prov/src/test/resources" includes="**/*.*" />
 
+            <fileset dir="tls/src/main/java" includes="**/*.java" />
+            <fileset dir="tls/src/main/javadoc" includes="**/*.html" />
+            <fileset dir="tls/src/test/java" includes="**/*.java" />
+            <fileset dir="tls/src/test/resources" includes="**/*.*" />
+
             <fileset dir="pkix/src/main/java" includes="**/*.java" />
             <fileset dir="pkix/src/main/javadoc" includes="**/*.html" />
             <fileset dir="pkix/src/main/java" includes="**/*.properties" />
@@ -86,6 +91,7 @@
     </target>
     
     <target name="build" depends="init">
+        <ant antfile="ant/bc+-build.xml" dir="." target="build-tls" />
         <ant antfile="ant/bc+-build.xml" dir="." />
         <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-lw" />
         <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-libraries" />

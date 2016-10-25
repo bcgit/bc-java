@@ -31,7 +31,6 @@
                 <exclude name="**/ValidateSignedMail.java"/>
             </fileset>
             <fileset dir="prov/src/main/java">
-                <exclude name="**/ec/ECUtils.java" />
                 <exclude name="**/ECPointUtil.java" />
                 <exclude name="**/ECNamedCurveSpec.java" />
                 <exclude name="**/BCEC*.java" />
