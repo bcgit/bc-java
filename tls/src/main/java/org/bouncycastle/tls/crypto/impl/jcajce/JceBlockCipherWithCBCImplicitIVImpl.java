@@ -12,24 +12,24 @@ import org.bouncycastle.util.Arrays;
 
 /**
  * A basic wrapper for a JCE Cipher class to provide the needed block cipher functionality for TLS where the
- * cipher-suite requires the IV to be continued between calls.
+ * cipher requires the IV to be continued between calls.
  */
-public class JceBlockCipherWithImplicitIVImpl
+public class JceBlockCipherWithCBCImplicitIVImpl
     implements TlsBlockCipherImpl
 {
-    private final int cipherMode;
     private final Cipher cipher;
     private final String algorithm;
+    private final boolean isEncrypting;
 
     private SecretKey key;
     private byte[] nextIV;
 
-    public JceBlockCipherWithImplicitIVImpl(Cipher cipher, String algorithm, boolean isEncrypting)
+    public JceBlockCipherWithCBCImplicitIVImpl(Cipher cipher, String algorithm, boolean isEncrypting)
         throws GeneralSecurityException
     {
         this.cipher = cipher;
         this.algorithm = algorithm;
-        this.cipherMode = (isEncrypting) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
+        this.isEncrypting = isEncrypting;
     }
 
     public void setKey(byte[] key)
@@ -39,6 +39,11 @@ public class JceBlockCipherWithImplicitIVImpl
 
     public void init(byte[] iv)
     {
+        if (nextIV != null)
+        {
+            throw new IllegalStateException("unexpected reinitialization of an implicit-IV cipher");
+        }
+
         nextIV = iv;
     }
 
@@ -46,21 +51,21 @@ public class JceBlockCipherWithImplicitIVImpl
     {
         try
         {
-            cipher.init(cipherMode, key, new IvParameterSpec(nextIV));
+            cipher.init(isEncrypting ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE, key, new IvParameterSpec(nextIV));
 
-            if (cipherMode == Cipher.DECRYPT_MODE)
+            nextIV = null;
+
+            if (!isEncrypting)
             {
                 nextIV = Arrays.copyOfRange(input, inputOffset + inputLength - cipher.getBlockSize(), inputOffset + inputLength);
             }
 
             int len = cipher.doFinal(input, inputOffset, inputLength, output, outputOffset);
 
-            if (cipherMode == Cipher.ENCRYPT_MODE)
+            if (isEncrypting)
             {
                 nextIV = Arrays.copyOfRange(output, outputOffset + inputLength - cipher.getBlockSize(), outputOffset + inputLength);
             }
-
-            init(nextIV);
 
             return len;
         }
