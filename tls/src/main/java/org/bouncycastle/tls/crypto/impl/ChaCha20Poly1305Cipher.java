@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.TlsCipherSuite;
+import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsMAC;
 import org.bouncycastle.util.Arrays;
@@ -14,8 +14,8 @@ import org.bouncycastle.util.Pack;
 /**
  * Cipher suite specified in RFC 7905 using ChaCha20 and Poly1305.
  */
-public class ChaCha20Poly1305CipherSuite
-    implements TlsCipherSuite
+public class ChaCha20Poly1305Cipher
+    implements TlsCipher
 {
     private static final byte[] ZEROES = new byte[15];
 
@@ -24,12 +24,12 @@ public class ChaCha20Poly1305CipherSuite
     protected TlsMAC writeMac;
     protected TlsMAC readMac;
 
-    protected TlsStreamCipher encryptCipher;
-    protected TlsStreamCipher decryptCipher;
+    protected TlsStreamCipherImpl encryptCipher;
+    protected TlsStreamCipherImpl decryptCipher;
 
     protected byte[] encryptIV, decryptIV;
 
-    public ChaCha20Poly1305CipherSuite(TlsCryptoParameters context, TlsStreamCipher encryptCipher, TlsStreamCipher decryptCipher,
+    public ChaCha20Poly1305Cipher(TlsCryptoParameters context, TlsStreamCipherImpl encryptCipher, TlsStreamCipherImpl decryptCipher,
                                        TlsMAC writeMac, TlsMAC readMac)
         throws IOException
     {
@@ -158,7 +158,7 @@ public class ChaCha20Poly1305CipherSuite
         return output;
     }
 
-    protected void initRecord(TlsStreamCipher cipher, long seqNo, byte[] iv)
+    protected void initRecord(TlsStreamCipherImpl cipher, long seqNo, byte[] iv)
         throws IOException
     {
         byte[] nonce = calculateNonce(seqNo, iv);

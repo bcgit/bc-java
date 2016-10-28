@@ -48,7 +48,7 @@ public interface TlsSecret
      * @return a TlsCipherSuite supporting the encryption and mac algorithm.
      * @throws IOException
      */
-    TlsCipherSuite createCipherSuite(TlsCryptoParameters contextParams, int encryptionAlgorithm, int macAlgorithm) throws IOException;
+    TlsCipher createCipher(TlsCryptoParameters contextParams, int encryptionAlgorithm, int macAlgorithm) throws IOException;
 
     /**
      * Destroy the internal state of the secret. After this call, any attempt to use the

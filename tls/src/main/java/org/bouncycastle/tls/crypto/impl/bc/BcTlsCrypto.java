@@ -55,7 +55,7 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.TlsCipherSuite;
+import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
@@ -70,14 +70,16 @@ import org.bouncycastle.tls.crypto.TlsSRP6VerifierGenerator;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
-import org.bouncycastle.tls.crypto.impl.ChaCha20Poly1305CipherSuite;
-import org.bouncycastle.tls.crypto.impl.TlsAEADCipherSuite;
+import org.bouncycastle.tls.crypto.impl.ChaCha20Poly1305Cipher;
+import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
+import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipher;
-import org.bouncycastle.tls.crypto.impl.TlsBlockCipherSuite;
+import org.bouncycastle.tls.crypto.impl.TlsBlockCipherImpl;
 import org.bouncycastle.tls.crypto.impl.TlsEncryptor;
 import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
-import org.bouncycastle.tls.crypto.impl.TlsNullCipherSuite;
-import org.bouncycastle.tls.crypto.impl.TlsStreamCipherSuite;
+import org.bouncycastle.tls.crypto.impl.TlsNullCipher;
+import org.bouncycastle.tls.crypto.impl.TlsStreamCipher;
+import org.bouncycastle.tls.crypto.impl.TlsStreamCipherImpl;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Times;
 
@@ -130,7 +132,7 @@ public class BcTlsCrypto
         return new BcTlsCertificate(this, encoding);
     }
 
-    protected TlsCipherSuite createCipherSuite(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
+    protected TlsCipher createCipher(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
         throws IOException
     {
         switch (encryptionAlgorithm)
@@ -380,80 +382,80 @@ public class BcTlsCrypto
         }
     }
 
-    protected TlsCipherSuite createAESCipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
+    protected TlsCipher createAESCipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
-        return new TlsBlockCipherSuite(this, cryptoParams, new BlockOperator(createAESBlockCipher(), true), new BlockOperator(createAESBlockCipher(), false),
+        return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createAESBlockCipher(), true), new BlockOperator(createAESBlockCipher(), false),
             createMac(cryptoParams, macAlgorithm), createMac(cryptoParams, macAlgorithm), cipherKeySize);
     }
 
-    protected TlsCipherSuite createCamelliaCipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
+    protected TlsCipher createCamelliaCipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
-        return new TlsBlockCipherSuite(this, cryptoParams, new BlockOperator(createCamelliaBlockCipher(), true), new BlockOperator(createCamelliaBlockCipher(), false),
+        return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createCamelliaBlockCipher(), true), new BlockOperator(createCamelliaBlockCipher(), false),
             createMac(cryptoParams, macAlgorithm), createMac(cryptoParams, macAlgorithm), cipherKeySize);
     }
 
-    protected TlsCipherSuite createChaCha20Poly1305(TlsCryptoParameters cryptoParams)
+    protected TlsCipher createChaCha20Poly1305(TlsCryptoParameters cryptoParams)
         throws IOException
     {
-        return new ChaCha20Poly1305CipherSuite(cryptoParams,
+        return new ChaCha20Poly1305Cipher(cryptoParams,
                 new StreamOperator(new ChaCha7539Engine(), true), new StreamOperator(new ChaCha7539Engine(), false),
             new MacOperator(new Poly1305()), new MacOperator(new Poly1305()));
     }
 
-    protected TlsAEADCipherSuite createCipher_AES_CCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
+    protected TlsAEADCipher createCipher_AES_CCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException
     {
-        return new TlsAEADCipherSuite(cryptoParams, new AeadOperator(createAEADBlockCipher_AES_CCM(), true), new AeadOperator(createAEADBlockCipher_AES_CCM(), false),
+        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_AES_CCM(), true), new AeadOperator(createAEADBlockCipher_AES_CCM(), false),
             cipherKeySize, macSize);
     }
 
-    protected TlsAEADCipherSuite createCipher_AES_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
+    protected TlsAEADCipher createCipher_AES_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException
     {
-        return new TlsAEADCipherSuite(cryptoParams, new AeadOperator(createAEADBlockCipher_AES_GCM(), true), new AeadOperator(createAEADBlockCipher_AES_GCM(), false),
+        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_AES_GCM(), true), new AeadOperator(createAEADBlockCipher_AES_GCM(), false),
             cipherKeySize, macSize);
     }
 
-    protected TlsAEADCipherSuite createCipher_AES_OCB(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
+    protected TlsAEADCipher createCipher_AES_OCB(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException
     {
-        return new TlsAEADCipherSuite(cryptoParams, new AeadOperator(createAEADBlockCipher_AES_OCB(), true), new AeadOperator(createAEADBlockCipher_AES_OCB(), false),
-            cipherKeySize, macSize, TlsAEADCipherSuite.NONCE_RFC7905);
+        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_AES_OCB(), true), new AeadOperator(createAEADBlockCipher_AES_OCB(), false),
+            cipherKeySize, macSize, TlsAEADCipher.NONCE_RFC7905);
     }
 
-    protected TlsAEADCipherSuite createCipher_Camellia_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
+    protected TlsAEADCipher createCipher_Camellia_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
         throws IOException
     {
-        return new TlsAEADCipherSuite(cryptoParams, new AeadOperator(createAEADBlockCipher_Camellia_GCM(), true), new AeadOperator(createAEADBlockCipher_Camellia_GCM(), false),
+        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_Camellia_GCM(), true), new AeadOperator(createAEADBlockCipher_Camellia_GCM(), false),
             cipherKeySize, macSize);
     }
 
-    protected TlsBlockCipherSuite createDESedeCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
+    protected TlsBlockCipher createDESedeCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException
     {
-        return new TlsBlockCipherSuite(this, cryptoParams, new BlockOperator(createDESedeBlockCipher(), true), new BlockOperator(createDESedeBlockCipher(), false),
+        return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createDESedeBlockCipher(), true), new BlockOperator(createDESedeBlockCipher(), false),
             createMac(cryptoParams, macAlgorithm), createMac(cryptoParams, macAlgorithm), 24);
     }
 
-    protected TlsNullCipherSuite createNullCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
+    protected TlsNullCipher createNullCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException
     {
-        return new TlsNullCipherSuite(cryptoParams, createMac(cryptoParams, macAlgorithm), createMac(cryptoParams, macAlgorithm));
+        return new TlsNullCipher(cryptoParams, createMac(cryptoParams, macAlgorithm), createMac(cryptoParams, macAlgorithm));
     }
 
-    protected TlsStreamCipherSuite createRC4Cipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
+    protected TlsStreamCipher createRC4Cipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
-        return new TlsStreamCipherSuite(cryptoParams, new StreamOperator(createRC4StreamCipher(), true), new StreamOperator(createRC4StreamCipher(), false),
+        return new TlsStreamCipher(cryptoParams, new StreamOperator(createRC4StreamCipher(), true), new StreamOperator(createRC4StreamCipher(), false),
             createMac(cryptoParams, macAlgorithm), createMac(cryptoParams, macAlgorithm), cipherKeySize, false);
     }
 
-    protected TlsBlockCipherSuite createSEEDCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
+    protected TlsBlockCipher createSEEDCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException
     {
-        return new TlsBlockCipherSuite(this, cryptoParams, new BlockOperator(createSEEDBlockCipher(), true), new BlockOperator(createSEEDBlockCipher(), false),
+        return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createSEEDBlockCipher(), true), new BlockOperator(createSEEDBlockCipher(), false),
             createMac(cryptoParams, macAlgorithm), createMac(cryptoParams, macAlgorithm), 16);
     }
 
@@ -731,7 +733,7 @@ public class BcTlsCrypto
     }
 
     private class BlockOperator
-        implements TlsBlockCipher
+        implements TlsBlockCipherImpl
     {
         private final boolean isEncrypting;
         private final BlockCipher cipher;
@@ -774,7 +776,7 @@ public class BcTlsCrypto
     }
 
     private class StreamOperator
-        implements org.bouncycastle.tls.crypto.impl.TlsStreamCipher
+        implements TlsStreamCipherImpl
     {
         private final boolean isEncrypting;
         private final StreamCipher cipher;
@@ -811,7 +813,7 @@ public class BcTlsCrypto
     }
 
     public class AeadOperator
-        implements org.bouncycastle.tls.crypto.impl.TlsAEADCipher
+        implements TlsAEADCipherImpl
     {
         private final boolean isEncrypting;
         private final AEADBlockCipher cipher;

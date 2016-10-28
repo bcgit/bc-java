@@ -7,13 +7,13 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.tls.crypto.impl.TlsBlockCipher;
+import org.bouncycastle.tls.crypto.impl.TlsBlockCipherImpl;
 
 /**
  * A basic wrapper for a JCE Cipher class to provide the needed block cipher functionality for TLS.
  */
-public class JceBlockCipher
-    implements TlsBlockCipher
+public class JceBlockCipherImpl
+    implements TlsBlockCipherImpl
 {
     private final int cipherMode;
     private final Cipher cipher;
@@ -21,7 +21,7 @@ public class JceBlockCipher
 
     private SecretKey key;
 
-    public JceBlockCipher(Cipher cipher, String algorithm, boolean isEncrypting)
+    public JceBlockCipherImpl(Cipher cipher, String algorithm, boolean isEncrypting)
         throws GeneralSecurityException
     {
         this.cipher = cipher;

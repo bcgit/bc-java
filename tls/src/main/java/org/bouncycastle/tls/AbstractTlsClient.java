@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.tls.crypto.TlsCipherSuite;
+import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 
@@ -253,7 +253,7 @@ public abstract class AbstractTlsClient
         }
     }
 
-    public TlsCipherSuite getCipher()
+    public TlsCipher getCipher()
         throws IOException
     {
         int encryptionAlgorithm = TlsUtils.getEncryptionAlgorithm(selectedCipherSuite);
@@ -264,7 +264,7 @@ public abstract class AbstractTlsClient
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        return context.getSecurityParameters().getMasterSecret().createCipherSuite(new TlsCryptoParameters(context), encryptionAlgorithm, macAlgorithm);
+        return context.getSecurityParameters().getMasterSecret().createCipher(new TlsCryptoParameters(context), encryptionAlgorithm, macAlgorithm);
     }
 
     public void notifyNewSessionTicket(NewSessionTicket newSessionTicket)
