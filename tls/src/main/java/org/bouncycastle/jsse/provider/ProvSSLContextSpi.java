@@ -90,13 +90,21 @@ class ProvSSLContextSpi
         r.setAlgorithmConstraints(r.getAlgorithmConstraints());
         r.setCipherSuites(p.getCipherSuites());
         r.setEndpointIdentificationAlgorithm(p.getEndpointIdentificationAlgorithm());
-        r.setNeedClientAuth(p.getNeedClientAuth());
         r.setProtocols(p.getProtocols());
         // TODO[tls-ops] JDK 1.8 only
 //        r.setServerNames(p.getServerNames());
 //        r.setSNIMatchers(p.getSNIMatchers());
 //        r.setUseCipherSuitesOrder(p.getUseCipherSuitesOrder());
-        r.setWantClientAuth(p.getWantClientAuth());
+
+        // NOTE: The client-auth setters each clear the other client-auth property, so only one can be set
+        if (p.getNeedClientAuth())
+        {
+            r.setNeedClientAuth(true);
+        }
+        else if (p.getWantClientAuth())
+        {
+            r.setWantClientAuth(true);
+        }
         return r;
     }
 
