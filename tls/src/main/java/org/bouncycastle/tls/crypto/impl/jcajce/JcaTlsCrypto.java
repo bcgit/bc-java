@@ -345,10 +345,10 @@ public class JcaTlsCrypto
      * @return a block cipher.
      * @throws GeneralSecurityException in case of failure.
      */
-    protected TlsBlockCipherImpl createBlockCipherWithImplicitIV(String cipherName, String algorithm, int keySize, boolean isEncrypting)
+    protected TlsBlockCipherImpl createBlockCipherWithCBCImplicitIV(String cipherName, String algorithm, int keySize, boolean isEncrypting)
         throws GeneralSecurityException
     {
-        return new JceBlockCipherWithImplicitIVImpl(helper.createCipher(cipherName), algorithm, isEncrypting);
+        return new JceBlockCipherWithCBCImplicitIVImpl(helper.createCipher(cipherName), algorithm, isEncrypting);
     }
 
     /**
@@ -428,41 +428,43 @@ public class JcaTlsCrypto
     private TlsBlockCipher createAESCipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipher(this, cryptoParams, createBlockOperator(cryptoParams, "AES/CBC/NoPadding", "AES", true, cipherKeySize), createBlockOperator(cryptoParams, "AES/CBC/NoPadding", "AES", false, cipherKeySize),
+        return new TlsBlockCipher(this, cryptoParams, createCBCBlockOperator(cryptoParams, "AES", true, cipherKeySize), createCBCBlockOperator(cryptoParams, "AES", false, cipherKeySize),
             createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm), cipherKeySize);
     }
 
     private TlsBlockCipher createCamelliaCipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipher(this, cryptoParams, createBlockOperator(cryptoParams, "Camellia/CBC/NoPadding", "Camellia", true, cipherKeySize), createBlockOperator(cryptoParams, "Camellia/CBC/NoPadding", "Camellia", false, cipherKeySize),
+        return new TlsBlockCipher(this, cryptoParams, createCBCBlockOperator(cryptoParams, "Camellia", true, cipherKeySize), createCBCBlockOperator(cryptoParams, "Camellia", false, cipherKeySize),
             createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm), cipherKeySize);
     }
 
     private TlsBlockCipher createDESedeCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipher(this, cryptoParams, createBlockOperator(cryptoParams, "DESede/CBC/NoPadding", "DESede", true, 24), createBlockOperator(cryptoParams, "DESede/CBC/NoPadding", "DESede", false, 24),
+        return new TlsBlockCipher(this, cryptoParams, createCBCBlockOperator(cryptoParams, "DESede", true, 24), createCBCBlockOperator(cryptoParams, "DESede", false, 24),
             createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm), 24);
     }
 
     private TlsBlockCipher createSEEDCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsBlockCipher(this, cryptoParams, createBlockOperator(cryptoParams, "SEED/CBC/NoPadding", "SEED", true, 16), createBlockOperator(cryptoParams, "SEED/CBC/NoPadding", "SEED", false, 16),
+        return new TlsBlockCipher(this, cryptoParams, createCBCBlockOperator(cryptoParams, "SEED", true, 16), createCBCBlockOperator(cryptoParams, "SEED", false, 16),
             createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm), 16);
     }
 
-    private TlsBlockCipherImpl createBlockOperator(TlsCryptoParameters cryptoParams, String cipherName, String algorithm, boolean forEncryption, int keySize)
+    private TlsBlockCipherImpl createCBCBlockOperator(TlsCryptoParameters cryptoParams, String algorithm, boolean forEncryption, int keySize)
         throws GeneralSecurityException
     {
+        String cipherName = algorithm + "/CBC/NoPadding";
+
         if (TlsImplUtils.isTLSv11(cryptoParams))
         {
             return createBlockCipher(cipherName, algorithm, keySize, forEncryption);
         }
         else
         {
-            return createBlockCipherWithImplicitIV(cipherName, algorithm, keySize, forEncryption);
+            return createBlockCipherWithCBCImplicitIV(cipherName, algorithm, keySize, forEncryption);
         }
     }
 
