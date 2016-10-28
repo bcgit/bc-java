@@ -20,25 +20,40 @@ class JsseUtils
 
     public static String getAuthType(int keyExchangeAlgorithm) throws IOException
     {
-        // TODO[jsse] Support for full range of key exchange algorithms
         switch (keyExchangeAlgorithm)
         {
+        case KeyExchangeAlgorithm.DH_anon:
+            return "DH_anon";
+        case KeyExchangeAlgorithm.DH_DSS:
+            return "DH_DSS";
         case KeyExchangeAlgorithm.DH_RSA:
             return "DH_RSA";
+        case KeyExchangeAlgorithm.DHE_DSS:
+            return "DHE_DSS";
+        case KeyExchangeAlgorithm.DHE_PSK:
+            return "DHE_PSK";
         case KeyExchangeAlgorithm.DHE_RSA:
             return "DHE_RSA";
+        case KeyExchangeAlgorithm.ECDH_anon:
+            return "ECDH_anon";
         case KeyExchangeAlgorithm.ECDH_ECDSA:
             return "ECDH_ECDSA";
         case KeyExchangeAlgorithm.ECDH_RSA:
             return "ECDH_RSA";
         case KeyExchangeAlgorithm.ECDHE_ECDSA:
             return "ECDHE_ECDSA";
+        case KeyExchangeAlgorithm.ECDHE_PSK:
+            return "ECDHE_PSK";
         case KeyExchangeAlgorithm.ECDHE_RSA:
             return "ECDHE_RSA";
         case KeyExchangeAlgorithm.RSA:
             return "RSA";
         case KeyExchangeAlgorithm.RSA_PSK:
             return "RSA_PSK";
+        case KeyExchangeAlgorithm.SRP:
+            return "SRP";
+        case KeyExchangeAlgorithm.SRP_DSS:
+            return "SRP_DSS";
         case KeyExchangeAlgorithm.SRP_RSA:
             return "SRP_RSA";
         default:
