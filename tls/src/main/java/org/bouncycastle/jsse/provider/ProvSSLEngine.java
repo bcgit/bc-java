@@ -36,6 +36,8 @@ class ProvSSLEngine
     protected HandshakeStatus handshakeStatus = HandshakeStatus.NOT_HANDSHAKING; 
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
+    protected ProvSSLSession session = ProvSSLSession.NULL_SESSION;
+    protected ProvSSLSession handshakeSession = null;
 
     protected ProvSSLEngine(ProvSSLContextSpi context)
     {
@@ -69,7 +71,8 @@ class ProvSSLEngine
 
         this.initialHandshakeBegun = true;
 
-        // TODO[tls-ops] Check for session to re-use and apply to handshake
+        // TODO[jsse] Check for session to re-use and apply to handshake
+        // TODO[jsse] Allocate this.handshakeSession and update it during handshake
 
         try
         {
@@ -142,8 +145,9 @@ class ProvSSLEngine
     @Override
     public synchronized SSLSession getHandshakeSession()
     {
-//        return super.getHandshakeSession();
-        throw new UnsupportedOperationException();
+        // TODO[jsse] this.handshakeSession needs to be reset (to null) whenever not handshaking
+
+        return handshakeSession;
     }
 
     @Override
@@ -161,16 +165,9 @@ class ProvSSLEngine
     @Override
     public synchronized SSLSession getSession()
     {
-        if (!initialHandshakeBegun || !protocolPeer.isHandshakeComplete())
-        {
-            /*
-             * TODO[jsse] "Until the initial handshake has completed, this method returns a session
-             * object which reports an invalid cipher suite of SSL_NULL_WITH_NULL_NULL."
-             */
-            throw new UnsupportedOperationException();
-        }
+        // TODO[jsse] this.session needs to be set after a successful handshake
 
-        throw new UnsupportedOperationException();
+        return session;
     }
 
     @Override
