@@ -30,6 +30,8 @@ class ProvSSLSocketDirect
     protected boolean initialHandshakeBegun = false;
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
+    protected ProvSSLSession session = ProvSSLSession.NULL_SESSION;
+    protected ProvSSLSession handshakeSession = null;
 
     protected ProvSSLSocketDirect(ProvSSLContextSpi context)
     {
@@ -109,8 +111,7 @@ class ProvSSLSocketDirect
     @Override
     public synchronized SSLSession getHandshakeSession()
     {
-//      return super.getHandshakeSession();
-      throw new UnsupportedOperationException();
+        return handshakeSession;
     }
 
     @Override
@@ -164,16 +165,11 @@ class ProvSSLSocketDirect
             }
             catch (Exception e)
             {
-                /*
-                 * TODO[jsse] "If an error occurs during the initial handshake, this method returns
-                 * an invalid session object which reports an invalid cipher suite of
-                 * "SSL_NULL_WITH_NULL_NULL"."
-                 */
-                throw new UnsupportedOperationException();
+                // TODO[jsse] Logging?
             }
         }
 
-        throw new UnsupportedOperationException();
+        return session;
     }
 
     @Override
@@ -273,27 +269,37 @@ class ProvSSLSocketDirect
 
         this.initialHandshakeBegun = true;
 
-        // TODO[tls-ops] Check for session to re-use and apply to handshake
-
-        if (this.useClientMode)
+        try
         {
-            TlsClientProtocol clientProtocol = new TlsClientProtocol(super.getInputStream(), super.getOutputStream());
-            this.protocol = clientProtocol;
+            // TODO[jsse] Check for session to re-use and apply to handshake
+            // TODO[jsse] Allocate this.handshakeSession and update it during handshake
+    
+            if (this.useClientMode)
+            {
+                TlsClientProtocol clientProtocol = new TlsClientProtocol(super.getInputStream(), super.getOutputStream());
+                this.protocol = clientProtocol;
+    
+                ProvTlsClient client = new ProvTlsClient(this);
+                this.protocolPeer = client;
+    
+                clientProtocol.connect(client);
+            }
+            else
+            {
+                TlsServerProtocol serverProtocol = new TlsServerProtocol(super.getInputStream(), super.getOutputStream());
+                this.protocol = serverProtocol;
+    
+                ProvTlsServer server = new ProvTlsServer(this);
+                this.protocolPeer = server;
+    
+                serverProtocol.accept(server);
+            }
 
-            ProvTlsClient client = new ProvTlsClient(this);
-            this.protocolPeer = client;
-
-            clientProtocol.connect(client);
+            // TODO[jsse] this.session needs to be set after a successful handshake
         }
-        else
+        finally
         {
-            TlsServerProtocol serverProtocol = new TlsServerProtocol(super.getInputStream(), super.getOutputStream());
-            this.protocol = serverProtocol;
-
-            ProvTlsServer server = new ProvTlsServer(this);
-            this.protocolPeer = server;
-
-            serverProtocol.accept(server);
+            this.handshakeSession = null;
         }
     }
 

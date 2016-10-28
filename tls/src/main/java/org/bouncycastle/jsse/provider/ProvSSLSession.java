@@ -17,6 +17,9 @@ import javax.security.cert.X509Certificate;
 class ProvSSLSession
     extends ExtendedSSLSession
 {
+    // TODO[jsse] Ensure this behaves according to the javadoc for SSLSocket.getSession and SSLEngine.getSession
+    protected final static ProvSSLSession NULL_SESSION = new ProvSSLSession(null);
+
     protected final Map<String, Object> valueMap = Collections.synchronizedMap(new HashMap<String, Object>());
 
     protected final ProvSSLSessionContext context;
