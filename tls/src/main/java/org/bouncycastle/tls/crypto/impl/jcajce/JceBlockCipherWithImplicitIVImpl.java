@@ -7,15 +7,15 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.tls.crypto.impl.TlsBlockCipher;
+import org.bouncycastle.tls.crypto.impl.TlsBlockCipherImpl;
 import org.bouncycastle.util.Arrays;
 
 /**
  * A basic wrapper for a JCE Cipher class to provide the needed block cipher functionality for TLS where the
  * cipher-suite requires the IV to be continued between calls.
  */
-public class JceBlockCipherWithImplicitIV
-    implements TlsBlockCipher
+public class JceBlockCipherWithImplicitIVImpl
+    implements TlsBlockCipherImpl
 {
     private final int cipherMode;
     private final Cipher cipher;
@@ -24,7 +24,7 @@ public class JceBlockCipherWithImplicitIV
     private SecretKey key;
     private byte[] nextIV;
 
-    public JceBlockCipherWithImplicitIV(Cipher cipher, String algorithm, boolean isEncrypting)
+    public JceBlockCipherWithImplicitIVImpl(Cipher cipher, String algorithm, boolean isEncrypting)
         throws GeneralSecurityException
     {
         this.cipher = cipher;

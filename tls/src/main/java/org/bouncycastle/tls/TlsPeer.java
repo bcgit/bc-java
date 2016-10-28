@@ -2,7 +2,7 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
-import org.bouncycastle.tls.crypto.TlsCipherSuite;
+import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 
 public interface TlsPeer
@@ -24,7 +24,7 @@ public interface TlsPeer
 
     TlsCompression getCompression() throws IOException;
 
-    TlsCipherSuite getCipher() throws IOException;
+    TlsCipher getCipher() throws IOException;
 
     /**
      * This method will be called when an alert is raised by the protocol.

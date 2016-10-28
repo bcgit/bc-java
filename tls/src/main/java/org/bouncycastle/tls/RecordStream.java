@@ -5,8 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.bouncycastle.tls.crypto.TlsCipherSuite;
-import org.bouncycastle.tls.crypto.TlsNullNullCipherSuite;
+import org.bouncycastle.tls.crypto.TlsCipher;
+import org.bouncycastle.tls.crypto.TlsNullNullCipher;
 
 /**
  * An implementation of the TLS 1.0/1.1/1.2 record layer, allowing downgrade to SSLv3.
@@ -23,7 +23,7 @@ class RecordStream
     private InputStream input;
     private OutputStream output;
     private TlsCompression pendingCompression = null, readCompression = null, writeCompression = null;
-    private TlsCipherSuite pendingCipher = null, readCipher = null, writeCipher = null;
+    private TlsCipher pendingCipher = null, readCipher = null, writeCipher = null;
     private long readSeqNo = 0, writeSeqNo = 0;
     private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
@@ -45,7 +45,7 @@ class RecordStream
 
     void init(TlsContext context)
     {
-        this.readCipher = new TlsNullNullCipherSuite();
+        this.readCipher = new TlsNullNullCipher();
         this.writeCipher = this.readCipher;
         this.handshakeHash = new DeferredHash(context);
 
@@ -91,7 +91,7 @@ class RecordStream
         this.restrictReadVersion = enabled;
     }
 
-    void setPendingConnectionState(TlsCompression tlsCompression, TlsCipherSuite tlsCipher)
+    void setPendingConnectionState(TlsCompression tlsCompression, TlsCipher tlsCipher)
     {
         this.pendingCompression = tlsCompression;
         this.pendingCipher = tlsCipher;

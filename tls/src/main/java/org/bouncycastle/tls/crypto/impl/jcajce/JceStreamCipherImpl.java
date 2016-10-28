@@ -7,13 +7,13 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.tls.crypto.impl.TlsStreamCipher;
+import org.bouncycastle.tls.crypto.impl.TlsStreamCipherImpl;
 
 /**
  * A basic wrapper for a JCE Cipher class to provide the needed stream cipher functionality for TLS.
  */
-public class JceStreamCipher
-    implements TlsStreamCipher
+public class JceStreamCipherImpl
+    implements TlsStreamCipherImpl
 {
     private final int cipherMode;
     private final Cipher cipher;
@@ -22,7 +22,7 @@ public class JceStreamCipher
     private SecretKey key;
     private boolean hasNoIv;
 
-    public JceStreamCipher(Cipher cipher, String algorithm, boolean isEncrypting)
+    public JceStreamCipherImpl(Cipher cipher, String algorithm, boolean isEncrypting)
         throws GeneralSecurityException
     {
         this.cipher = cipher;

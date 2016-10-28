@@ -2,8 +2,8 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
-import org.bouncycastle.tls.crypto.TlsCipherSuite;
-import org.bouncycastle.tls.crypto.TlsNullNullCipherSuite;
+import org.bouncycastle.tls.crypto.TlsCipher;
+import org.bouncycastle.tls.crypto.TlsNullNullCipher;
 
 class DTLSRecordLayer
     implements DatagramTransport
@@ -39,7 +39,7 @@ class DTLSRecordLayer
 
         this.inHandshake = true;
 
-        this.currentEpoch = new DTLSEpoch(0, new TlsNullNullCipherSuite());
+        this.currentEpoch = new DTLSEpoch(0, new TlsNullNullCipher());
         this.pendingEpoch = null;
         this.readEpoch = currentEpoch;
         this.writeEpoch = currentEpoch;
@@ -67,7 +67,7 @@ class DTLSRecordLayer
         this.writeVersion = writeVersion;
     }
 
-    void initPendingEpoch(TlsCipherSuite pendingCipher)
+    void initPendingEpoch(TlsCipher pendingCipher)
     {
         if (pendingEpoch != null)
         {

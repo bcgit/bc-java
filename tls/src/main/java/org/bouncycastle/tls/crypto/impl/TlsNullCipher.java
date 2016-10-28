@@ -4,23 +4,23 @@ import java.io.IOException;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.crypto.TlsCipherSuite;
+import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.util.Arrays;
 
 /**
- * The cipher suite for the NULL cipher.
+ * The NULL cipher.
  */
-public class TlsNullCipherSuite
-    implements TlsCipherSuite
+public class TlsNullCipher
+    implements TlsCipher
 {
     protected TlsCryptoParameters cryptoParameters;
 
     protected TlsSuiteHMac writeMac;
     protected TlsSuiteHMac readMac;
 
-    public TlsNullCipherSuite(TlsCryptoParameters cryptoParameters, TlsHMAC clientMac, TlsHMAC serverMac)
+    public TlsNullCipher(TlsCryptoParameters cryptoParameters, TlsHMAC clientMac, TlsHMAC serverMac)
         throws IOException
     {
         this.cryptoParameters = cryptoParameters;

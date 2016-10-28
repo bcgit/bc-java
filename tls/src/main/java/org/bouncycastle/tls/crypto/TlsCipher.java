@@ -5,7 +5,7 @@ import java.io.IOException;
 /**
  * Base interface for a TLS cipher suite.
  */
-public interface TlsCipherSuite
+public interface TlsCipher
 {
     /**
      * Return the maximum size for the plaintext given ciphertextlimit bytes of ciphertext.

@@ -7,13 +7,13 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
-import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
+import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
 
 /**
  * A basic wrapper for a JCE Cipher class to provide the needed AEAD cipher functionality for TLS.
  */
-public class JceAEADCipher
-    implements TlsAEADCipher
+public class JceAEADCipherImpl
+    implements TlsAEADCipherImpl
 {
     private final int cipherMode;
     private final Cipher cipher;
@@ -21,7 +21,7 @@ public class JceAEADCipher
 
     private SecretKey key;
 
-    public JceAEADCipher(Cipher cipher, String algorithm, boolean isEncrypting)
+    public JceAEADCipherImpl(Cipher cipher, String algorithm, boolean isEncrypting)
         throws GeneralSecurityException
     {
         this.cipher = cipher;

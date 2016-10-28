@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.TlsCipherSuite;
+import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSecret;
@@ -35,19 +35,18 @@ public abstract class AbstractTlsCrypto
     }
 
     /**
-     * Create a cipher suite that matches the passed in encryption algorithm and mac algorithm.
+     * Create a cipher for the specified encryption and MAC algorithms.
      * <p>
      * See enumeration classes {@link EncryptionAlgorithm}, {@link MACAlgorithm} for appropriate argument values.
      * </p>
      * @param cryptoParams context specific parameters.
-     * @param encryptionAlgorithm the encryption algorithm to be employed by the cipher suite.
-     * @param macAlgorithm  the MAC algorithm to be employed by the cipher suite.
-     * @return a TlsCipherSuite supporting the encryption and mac algorithm.
+     * @param encryptionAlgorithm the encryption algorithm to be employed by the cipher.
+     * @param macAlgorithm the MAC algorithm to be employed by the cipher.
+     * @return a {@link TlsCipher} implementing the encryption and MAC algorithm.
      * @throws IOException
      */
-    protected abstract TlsCipherSuite createCipherSuite(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
+    protected abstract TlsCipher createCipher(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
             throws IOException;
-
 
     /**
      * Return an encryptor based on the public key in certificate.

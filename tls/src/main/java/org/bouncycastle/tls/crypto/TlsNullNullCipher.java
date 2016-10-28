@@ -5,10 +5,10 @@ import java.io.IOException;
 import org.bouncycastle.util.Arrays;
 
 /**
- * The cipher suite for TLS_NULL_WITH_NULL_NULL.
+ * The cipher for TLS_NULL_WITH_NULL_NULL.
  */
-public class TlsNullNullCipherSuite
-    implements TlsCipherSuite
+public class TlsNullNullCipher
+    implements TlsCipher
 {
     public int getPlaintextLimit(int ciphertextLimit)
     {
