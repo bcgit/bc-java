@@ -408,6 +408,10 @@ public class IESEngine
                 {
                     throw new InvalidCipherTextException("unable to recover ephemeral public key: " + e.getMessage(), e);
                 }
+                catch (IllegalArgumentException e)
+                {
+                    throw new InvalidCipherTextException("unable to recover ephemeral public key: " + e.getMessage(), e);
+                }
 
                 int encLength = (inLen - bIn.available());
                 this.V = Arrays.copyOfRange(in, inOff, inOff + encLength);
