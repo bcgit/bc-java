@@ -26,6 +26,12 @@ public class DHPublicKeyParameters
             throw new NullPointerException("y value cannot be null");
         }
 
+        // TLS check
+        if (y.compareTo(TWO) < 0 || y.compareTo(dhParams.getP().subtract(TWO)) > 0)
+        {
+            throw new IllegalArgumentException("invalid DH public key");
+        }
+
         if (dhParams.getQ() != null)
         {
             if (ONE.equals(y.modPow(dhParams.getQ(), dhParams.getP())))
@@ -37,12 +43,6 @@ public class DHPublicKeyParameters
         }
         else
         {
-            // TLS check
-            if (y.compareTo(TWO) < 0 || y.compareTo(dhParams.getP().subtract(TWO)) > 0)
-            {
-                throw new IllegalArgumentException("invalid DH public key");
-            }
-
             return y;         // we can't validate without Q.
         }
     }
