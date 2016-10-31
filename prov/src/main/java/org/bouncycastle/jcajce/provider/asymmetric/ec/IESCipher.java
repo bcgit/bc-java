@@ -24,7 +24,7 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.KeyEncoder;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.IESEngine;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
@@ -538,7 +538,7 @@ public class IESCipher
     {
         public ECIESwithAESCBC()
         {
-            super(new CBCBlockCipher(new AESFastEngine()), 16);
+            super(new CBCBlockCipher(new AESEngine()), 16);
         }
     }
 }

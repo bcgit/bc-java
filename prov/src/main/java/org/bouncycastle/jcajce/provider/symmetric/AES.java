@@ -20,7 +20,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Mac;
-import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.AESWrapEngine;
 import org.bouncycastle.crypto.engines.RFC3211WrapEngine;
 import org.bouncycastle.crypto.engines.RFC5649WrapEngine;
@@ -61,7 +61,7 @@ public final class AES
             {
                 public BlockCipher get()
                 {
-                    return new AESFastEngine();
+                    return new AESEngine();
                 }
             });
         }
@@ -72,7 +72,7 @@ public final class AES
     {
         public CBC()
         {
-            super(new CBCBlockCipher(new AESFastEngine()), 128);
+            super(new CBCBlockCipher(new AESEngine()), 128);
         }
     }
 
@@ -81,7 +81,7 @@ public final class AES
     {
         public CFB()
         {
-            super(new BufferedBlockCipher(new CFBBlockCipher(new AESFastEngine(), 128)), 128);
+            super(new BufferedBlockCipher(new CFBBlockCipher(new AESEngine(), 128)), 128);
         }
     }
 
@@ -90,7 +90,7 @@ public final class AES
     {
         public OFB()
         {
-            super(new BufferedBlockCipher(new OFBBlockCipher(new AESFastEngine(), 128)), 128);
+            super(new BufferedBlockCipher(new OFBBlockCipher(new AESEngine(), 128)), 128);
         }
     }
 
@@ -99,7 +99,7 @@ public final class AES
     {
         public GCM()
         {
-            super(new GCMBlockCipher(new AESFastEngine()));
+            super(new GCMBlockCipher(new AESEngine()));
         }
     }
 
@@ -108,7 +108,7 @@ public final class AES
     {
         public CCM()
         {
-            super(new CCMBlockCipher(new AESFastEngine()), false, 16);
+            super(new CCMBlockCipher(new AESEngine()), false, 16);
         }
     }
 
@@ -117,7 +117,7 @@ public final class AES
     {
         public AESCMAC()
         {
-            super(new CMac(new AESFastEngine()));
+            super(new CMac(new AESEngine()));
         }
     }
 
@@ -126,7 +126,7 @@ public final class AES
     {
         public AESGMAC()
         {
-            super(new GMac(new GCMBlockCipher(new AESFastEngine())));
+            super(new GMac(new GCMBlockCipher(new AESEngine())));
         }
     }
 
@@ -141,7 +141,7 @@ public final class AES
         private static class CCMMac
             implements Mac
         {
-            private final CCMBlockCipher ccm = new CCMBlockCipher(new AESFastEngine());
+            private final CCMBlockCipher ccm = new CCMBlockCipher(new AESEngine());
 
             private int macLength = 8;
 
@@ -200,7 +200,7 @@ public final class AES
     {
         public Poly1305()
         {
-            super(new org.bouncycastle.crypto.macs.Poly1305(new AESFastEngine()));
+            super(new org.bouncycastle.crypto.macs.Poly1305(new AESEngine()));
         }
     }
 
@@ -227,7 +227,7 @@ public final class AES
     {
         public RFC3211Wrap()
         {
-            super(new RFC3211WrapEngine(new AESFastEngine()), 16);
+            super(new RFC3211WrapEngine(new AESEngine()), 16);
         }
     }
 
@@ -236,7 +236,7 @@ public final class AES
     {
         public RFC5649Wrap()
         {
-            super(new RFC5649WrapEngine(new AESFastEngine()));
+            super(new RFC5649WrapEngine(new AESEngine()));
         }
     }
 
@@ -248,7 +248,7 @@ public final class AES
     {
         public PBEWithAESCBC()
         {
-            super(new CBCBlockCipher(new AESFastEngine()));
+            super(new CBCBlockCipher(new AESEngine()));
         }
     }
 
@@ -260,7 +260,7 @@ public final class AES
     {
         public PBEWithSHA1AESCBC128()
         {
-            super(new CBCBlockCipher(new AESFastEngine()), PKCS12, SHA1, 128, 16);
+            super(new CBCBlockCipher(new AESEngine()), PKCS12, SHA1, 128, 16);
         }
     }
 
@@ -269,7 +269,7 @@ public final class AES
     {
         public PBEWithSHA1AESCBC192()
         {
-            super(new CBCBlockCipher(new AESFastEngine()), PKCS12, SHA1, 192, 16);
+            super(new CBCBlockCipher(new AESEngine()), PKCS12, SHA1, 192, 16);
         }
     }
 
@@ -278,7 +278,7 @@ public final class AES
     {
         public PBEWithSHA1AESCBC256()
         {
-            super(new CBCBlockCipher(new AESFastEngine()), PKCS12, SHA1, 256, 16);
+            super(new CBCBlockCipher(new AESEngine()), PKCS12, SHA1, 256, 16);
         }
     }
 
@@ -290,7 +290,7 @@ public final class AES
     {
         public PBEWithSHA256AESCBC128()
         {
-            super(new CBCBlockCipher(new AESFastEngine()), PKCS12, SHA256, 128, 16);
+            super(new CBCBlockCipher(new AESEngine()), PKCS12, SHA256, 128, 16);
         }
     }
 
@@ -299,7 +299,7 @@ public final class AES
     {
         public PBEWithSHA256AESCBC192()
         {
-            super(new CBCBlockCipher(new AESFastEngine()), PKCS12, SHA256, 192, 16);
+            super(new CBCBlockCipher(new AESEngine()), PKCS12, SHA256, 192, 16);
         }
     }
 
@@ -308,7 +308,7 @@ public final class AES
     {
         public PBEWithSHA256AESCBC256()
         {
-            super(new CBCBlockCipher(new AESFastEngine()), PKCS12, SHA256, 256, 16);
+            super(new CBCBlockCipher(new AESEngine()), PKCS12, SHA256, 256, 16);
         }
     }
 

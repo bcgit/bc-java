@@ -82,7 +82,14 @@ public class KeyFactorySpi
     {
         if (keySpec instanceof DHPublicKeySpec)
         {
-            return new BCDHPublicKey((DHPublicKeySpec)keySpec);
+            try
+            {
+                return new BCDHPublicKey((DHPublicKeySpec)keySpec);
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new InvalidKeySpecException(e.getMessage(), e);
+            }
         }
 
         return super.engineGeneratePublic(keySpec);
