@@ -2,6 +2,7 @@ package org.bouncycastle.jsse.provider.test;
 
 import java.security.KeyStore;
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -27,11 +28,14 @@ class SSLUtils
 
     static void startServer(final KeyStore keyStore, final char[] password, final KeyStore serverStore)
     {
-        startServer(keyStore, password, serverStore, false);
+        startServer(keyStore, password, serverStore, false, 8888);
     }
 
-    static void startServer(final KeyStore keyStore, final char[] password, final KeyStore serverStore, final boolean needClientAuth)
+    static void startServer(final KeyStore keyStore, final char[] password, final KeyStore serverStore, final boolean needClientAuth,
+        final int port)
     {
+        final CountDownLatch latch = new CountDownLatch(1);
+
         Runnable serverTask = new Runnable()
         {
             public void run()
@@ -52,9 +56,11 @@ class SSLUtils
 
                     SSLServerSocketFactory sslSocketFactory = context.getServerSocketFactory();
 
-                    SSLServerSocket ss = (SSLServerSocket)sslSocketFactory.createServerSocket(8888);
+                    SSLServerSocket ss = (SSLServerSocket)sslSocketFactory.createServerSocket(port);
 
                     ss.setNeedClientAuth(needClientAuth);
+
+                    latch.countDown();
 
                     SSLSocket s = (SSLSocket)ss.accept();
                     s.setUseClientMode(false);
@@ -78,5 +84,14 @@ class SSLUtils
         };
 
         new Thread(serverTask).start();
+
+        try
+        {
+            latch.await();
+        }
+        catch (InterruptedException e)
+        {
+            
+        }
     }
 }
