@@ -117,8 +117,7 @@ public class TlsPSKKeyExchange
 
         checkServerCertSigAlg(serverCertificate);
 
-        // TODO[tls-ops] Restore validation step here
-        this.serverCertificate = serverCertificate.getCertificateAt(0);
+        this.serverCertificate = serverCertificate.getCertificateAt(0).useInRole(ConnectionEnd.server, keyExchange);
     }
 
     public byte[] generateServerKeyExchange() throws IOException
