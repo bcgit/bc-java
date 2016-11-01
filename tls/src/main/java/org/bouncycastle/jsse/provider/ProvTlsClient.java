@@ -60,16 +60,15 @@ class ProvTlsClient
                 int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite);
                 switch (keyExchangeAlgorithm)
                 {
-                case KeyExchangeAlgorithm.DH_anon:
-                case KeyExchangeAlgorithm.ECDH_anon:
-                    return null;
-
                 case KeyExchangeAlgorithm.DH_DSS:
                 case KeyExchangeAlgorithm.DH_RSA:
-                case KeyExchangeAlgorithm.DHE_DSS:
-                case KeyExchangeAlgorithm.DHE_RSA:
                 case KeyExchangeAlgorithm.ECDH_ECDSA:
                 case KeyExchangeAlgorithm.ECDH_RSA:
+                    // TODO[jsse] Add support for the static key exchanges
+                    return null;
+
+                case KeyExchangeAlgorithm.DHE_DSS:
+                case KeyExchangeAlgorithm.DHE_RSA:
                 case KeyExchangeAlgorithm.ECDHE_ECDSA:
                 case KeyExchangeAlgorithm.ECDHE_RSA:
                 case KeyExchangeAlgorithm.RSA:
@@ -83,17 +82,29 @@ class ProvTlsClient
                 X509KeyManager km = manager.getContextData().getKeyManager();
                 if (km == null)
                 {
-                    // TODO[jsse] Should sslParameters.getNeedClientAuth imply failing the handshake here?
                     return null;
                 }
 
-                // TODO[jsse] Supply these parameters correctly
-                String[] keyType = null; //certificateRequest.getCertificateTypes(), certificateRequest.getSupportedSignatureAlgorithms()
+                short[] certTypes = certificateRequest.getCertificateTypes();
+                if (certTypes == null || certTypes.length == 0)
+                {
+                    // TODO[jsse] Or does this mean ANY type - or something else?
+                    return null;
+                }
+
+                String[] keyTypes = new String[certTypes.length];
+                for (int i = 0; i < certTypes.length; ++i)
+                {
+                    // TODO[jsse] Need to also take notice of certificateRequest.getSupportedSignatureAlgorithms(), if present
+                    keyTypes[i] = JsseUtils.getClientAuthType(certTypes[i]);
+                }
+
+                // TODO[jsse] Convert X500Name to X500Principal here
                 Principal[] issuers = null; //certificateRequest.getCertificateAuthorities();
                 // TODO[jsse] How is this used?
                 Socket socket = null;
 
-                String alias = km.chooseClientAlias(keyType, issuers, socket);
+                String alias = km.chooseClientAlias(keyTypes, issuers, socket);
                 if (alias == null)
                 {
                     // TODO[jsse] Should sslParameters.getNeedClientAuth imply failing the handshake here?
