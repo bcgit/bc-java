@@ -80,7 +80,7 @@ class ProvTlsClient
                     throw new TlsFatalAlert(AlertDescription.internal_error);
                 }
 
-                X509KeyManager km = manager.getContext().getX509KeyManager();
+                X509KeyManager km = manager.getContextData().getKeyManager();
                 if (km == null)
                 {
                     // TODO[jsse] Should sslParameters.getNeedClientAuth imply failing the handshake here?

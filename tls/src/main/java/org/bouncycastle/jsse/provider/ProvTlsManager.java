@@ -8,6 +8,8 @@ interface ProvTlsManager
 {
     ProvSSLContextSpi getContext();
 
+    ContextData getContextData();
+
     SSLParameters getSSLParameters();
 
     boolean isClientTrusted(X509Certificate[] chain, String authType);

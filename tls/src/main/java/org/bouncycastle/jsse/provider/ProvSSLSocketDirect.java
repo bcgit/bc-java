@@ -22,6 +22,7 @@ class ProvSSLSocketDirect
     implements ProvTlsManager
 {
     protected final ProvSSLContextSpi context;
+    protected final ContextData contextData;
 
     protected SSLParameters sslParameters;
     protected boolean enableSessionCreation = false;
@@ -33,51 +34,61 @@ class ProvSSLSocketDirect
     protected ProvSSLSession session = ProvSSLSession.NULL_SESSION;
     protected ProvSSLSession handshakeSession = null;
 
-    protected ProvSSLSocketDirect(ProvSSLContextSpi context)
+    protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData)
     {
         super();
 
         this.context = context;
+        this.contextData = contextData;
         this.sslParameters = context.engineGetDefaultSSLParameters();
     }
 
-    protected ProvSSLSocketDirect(ProvSSLContextSpi context, InetAddress address, int port, InetAddress clientAddress, int clientPort)
+    protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, InetAddress address, int port, InetAddress clientAddress, int clientPort)
         throws IOException
     {
         super(address, port, clientAddress, clientPort);
 
         this.context = context;
+        this.contextData = contextData;
         this.sslParameters = context.engineGetDefaultSSLParameters();
     }
 
-    protected ProvSSLSocketDirect(ProvSSLContextSpi context, InetAddress address, int port) throws IOException
+    protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, InetAddress address, int port) throws IOException
     {
         super(address, port);
 
         this.context = context;
+        this.contextData = contextData;
         this.sslParameters = context.engineGetDefaultSSLParameters();
     }
 
-    protected ProvSSLSocketDirect(ProvSSLContextSpi context, String host, int port, InetAddress clientAddress, int clientPort)
+    protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, String host, int port, InetAddress clientAddress, int clientPort)
         throws IOException, UnknownHostException
     {
         super(host, port, clientAddress, clientPort);
 
         this.context = context;
+        this.contextData = contextData;
         this.sslParameters = context.engineGetDefaultSSLParameters();
     }
 
-    protected ProvSSLSocketDirect(ProvSSLContextSpi context, String host, int port) throws IOException, UnknownHostException
+    protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, String host, int port) throws IOException, UnknownHostException
     {
         super(host, port);
 
         this.context = context;
+        this.contextData = contextData;
         this.sslParameters = context.engineGetDefaultSSLParameters();
     }
 
     public ProvSSLContextSpi getContext()
     {
         return context;
+    }
+
+    public ContextData getContextData()
+    {
+        return contextData;
     }
 
     @Override
@@ -307,7 +318,7 @@ class ProvSSLSocketDirect
     {
         // TODO[jsse] Consider X509ExtendedTrustManager and/or HostnameVerifier functionality
 
-        X509TrustManager tm = context.getX509TrustManager();
+        X509TrustManager tm = contextData.getTrustManager();
         if (tm != null)
         {
             try
@@ -326,7 +337,7 @@ class ProvSSLSocketDirect
     {
         // TODO[jsse] Consider X509ExtendedTrustManager and/or HostnameVerifier functionality
 
-        X509TrustManager tm = context.getX509TrustManager();
+        X509TrustManager tm = contextData.getTrustManager();
         if (tm != null)
         {
             try

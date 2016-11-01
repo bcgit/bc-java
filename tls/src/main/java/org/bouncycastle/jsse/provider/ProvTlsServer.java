@@ -78,7 +78,7 @@ class ProvTlsServer
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        X509KeyManager km = manager.getContext().getX509KeyManager();
+        X509KeyManager km = manager.getContextData().getKeyManager();
         if (km == null)
         {
             return null;
@@ -173,7 +173,7 @@ class ProvTlsServer
         }
 
         Vector certificateAuthorities = new Vector();
-        X509TrustManager tm = manager.getContext().getX509TrustManager();
+        X509TrustManager tm = manager.getContextData().getTrustManager();
         if (tm != null)
         {
             for (X509Certificate caCert : tm.getAcceptedIssuers())
