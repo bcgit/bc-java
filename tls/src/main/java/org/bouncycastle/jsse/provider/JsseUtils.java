@@ -8,6 +8,7 @@ import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.Certificate;
+import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCertificate;
@@ -83,6 +84,25 @@ class JsseUtils
         }
 
         return new Certificate(certificateList);
+    }
+
+    public static String getClientAuthType(short clientCertificateType) throws IOException
+    {
+        switch (clientCertificateType)
+        {
+        case ClientCertificateType.dss_sign:
+            return "DSA";
+        case ClientCertificateType.ecdsa_sign:
+            // TODO[jsse] Seems to be what SunJSSE forwards to KeyManager.chooseClientAlias
+            return "EC";
+        case ClientCertificateType.rsa_sign:
+            return "RSA";
+
+        // TODO[jsse] "fixed" types and any others
+
+        default:
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
     }
 
     public static X509Certificate[] getX509CertificateChain(Certificate certificateMessage) throws IOException
