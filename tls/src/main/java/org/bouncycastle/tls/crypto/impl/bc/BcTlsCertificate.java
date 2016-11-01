@@ -12,6 +12,7 @@ import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.crypto.tls.ConnectionEnd;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ClientCertificateType;
@@ -45,6 +46,7 @@ public class BcTlsCertificate
 
     protected DHPublicKeyParameters pubKeyDH = null;
     protected ECPublicKeyParameters pubKeyEC = null;
+    protected RSAKeyParameters pubKeyRSA = null;
 
     public BcTlsCertificate(BcTlsCrypto crypto, byte[] encoding)
         throws IOException
@@ -231,6 +233,20 @@ public class BcTlsCertificate
             this.pubKeyEC = getPubKeyEC();
             return this;
         }
+        }
+
+        if (connectionEnd == ConnectionEnd.server)
+        {
+            switch (keyExchangeAlgorithm)
+            {
+            case KeyExchangeAlgorithm.RSA:
+            case KeyExchangeAlgorithm.RSA_PSK:
+            {
+                validateKeyUsage(KeyUsage.keyEncipherment);
+                this.pubKeyRSA = getPubKeyRSA();
+                return this;
+            }
+            }
         }
 
         throw new TlsFatalAlert(AlertDescription.certificate_unknown);

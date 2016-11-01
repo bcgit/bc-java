@@ -15,6 +15,7 @@ import javax.crypto.interfaces.DHPublicKey;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.TBSCertificate;
+import org.bouncycastle.crypto.tls.ConnectionEnd;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ClientCertificateType;
@@ -46,6 +47,7 @@ public class JcaTlsCertificate
 
     protected DHPublicKey pubKeyDH = null;
     protected ECPublicKey pubKeyEC = null;
+    protected RSAPublicKey pubKeyRSA = null;
 
     public JcaTlsCertificate(byte[] encoding, JcaJceHelper helper)
         throws IOException
@@ -241,6 +243,20 @@ public class JcaTlsCertificate
             this.pubKeyEC = getPubKeyEC();
             return this;
         }
+        }
+
+        if (connectionEnd == ConnectionEnd.server)
+        {
+            switch (keyExchangeAlgorithm)
+            {
+            case KeyExchangeAlgorithm.RSA:
+            case KeyExchangeAlgorithm.RSA_PSK:
+            {
+                validateKeyUsage(KeyUsage.keyEncipherment);
+                this.pubKeyRSA = getPubKeyRSA();
+                return this;
+            }
+            }
         }
 
         throw new TlsFatalAlert(AlertDescription.certificate_unknown);

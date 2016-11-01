@@ -52,8 +52,7 @@ public class TlsRSAKeyExchange
 
         checkServerCertSigAlg(serverCertificate);
 
-        // TODO[tls-ops] Restore validation step here
-        this.serverCertificate = serverCertificate.getCertificateAt(0);
+        this.serverCertificate = serverCertificate.getCertificateAt(0).useInRole(ConnectionEnd.server, keyExchange);
     }
 
     public void validateCertificateRequest(CertificateRequest certificateRequest)
