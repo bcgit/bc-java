@@ -252,7 +252,8 @@ class ProvX509KeyManager
         }
         else if (keyType.equalsIgnoreCase("EC"))
         {
-            return !forServer && (pub instanceof ECPublicKey) && isSuitableKeyUsage(KeyUsage.digitalSignature, c);
+            // NOTE: SunJSSE server asks for "EC" for ECDHE_ECDSA key exchange
+            return (pub instanceof ECPublicKey) && isSuitableKeyUsage(KeyUsage.digitalSignature, c);
         }
         // TODO[jsse] Support other key exchanges (and client certificate types)
         return false;
