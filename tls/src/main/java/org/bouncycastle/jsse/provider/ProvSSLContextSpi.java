@@ -88,11 +88,12 @@ class ProvSSLContextSpi
     SSLParameters copySSLParameters(SSLParameters p)
     {
         SSLParameters r = new SSLParameters();
-        r.setAlgorithmConstraints(r.getAlgorithmConstraints());
         r.setCipherSuites(p.getCipherSuites());
-        r.setEndpointIdentificationAlgorithm(p.getEndpointIdentificationAlgorithm());
         r.setProtocols(p.getProtocols());
-        // TODO[tls-ops] JDK 1.8 only
+        // TODO[tls-ops] From JDK 1.7
+//        r.setAlgorithmConstraints(r.getAlgorithmConstraints());
+//        r.setEndpointIdentificationAlgorithm(p.getEndpointIdentificationAlgorithm());
+        // TODO[tls-ops] From JDK 1.8
 //        r.setServerNames(p.getServerNames());
 //        r.setSNIMatchers(p.getSNIMatchers());
 //        r.setUseCipherSuitesOrder(p.getUseCipherSuitesOrder());
@@ -105,6 +106,10 @@ class ProvSSLContextSpi
         else if (p.getWantClientAuth())
         {
             r.setWantClientAuth(true);
+        }
+        else
+        {
+            r.setWantClientAuth(false);
         }
         return r;
     }
