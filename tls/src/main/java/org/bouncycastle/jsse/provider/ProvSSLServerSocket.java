@@ -13,44 +13,49 @@ class ProvSSLServerSocket
     extends SSLServerSocket
 {
     protected final ProvSSLContextSpi context;
+    protected final ContextData contextData;
 
     protected SSLParameters sslParameters;
     protected boolean enableSessionCreation = false;
     protected boolean useClientMode = false;
 
-    protected ProvSSLServerSocket(ProvSSLContextSpi context)
+    protected ProvSSLServerSocket(ProvSSLContextSpi context, ContextData contextData)
         throws IOException
     {
         super();
 
         this.context = context;
+        this.contextData = contextData;
         this.sslParameters = context.engineGetDefaultSSLParameters();
     }
 
-    protected ProvSSLServerSocket(ProvSSLContextSpi context, int port)
+    protected ProvSSLServerSocket(ProvSSLContextSpi context, ContextData contextData, int port)
         throws IOException
     {
         super(port);
 
         this.context = context;
+        this.contextData = contextData;
         this.sslParameters = context.engineGetDefaultSSLParameters();
     }
 
-    protected ProvSSLServerSocket(ProvSSLContextSpi context, int port, int backlog)
+    protected ProvSSLServerSocket(ProvSSLContextSpi context, ContextData contextData, int port, int backlog)
         throws IOException
     {
         super(port, backlog);
 
         this.context = context;
+        this.contextData = contextData;
         this.sslParameters = context.engineGetDefaultSSLParameters();
     }
 
-    protected ProvSSLServerSocket(ProvSSLContextSpi context, int port, int backlog, InetAddress address)
+    protected ProvSSLServerSocket(ProvSSLContextSpi context, ContextData contextData, int port, int backlog, InetAddress address)
         throws IOException
     {
         super(port, backlog, address);
 
         this.context = context;
+        this.contextData = contextData;
         this.sslParameters = context.engineGetDefaultSSLParameters();
     }
 
@@ -59,7 +64,7 @@ class ProvSSLServerSocket
     {
 //        SSLEngine engine = context.engineCreateSSLEngine(getInetAddress().getHostName(), getLocalPort());
 //        SSLSocket socket = new ProvSSLSocket(engine);
-        SSLSocket socket = new ProvSSLSocketDirect(context);
+        SSLSocket socket = new ProvSSLSocketDirect(context, contextData);
 
         implAccept(socket);
 

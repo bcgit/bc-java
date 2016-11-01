@@ -21,25 +21,25 @@ class ProvSSLServerSocketFactory
     @Override
     public ServerSocket createServerSocket() throws IOException
     {
-        return new ProvSSLServerSocket(context);
+        return new ProvSSLServerSocket(context, context.createContextData());
     }
 
     @Override
     public ServerSocket createServerSocket(int port) throws IOException
     {
-        return new ProvSSLServerSocket(context, port);
+        return new ProvSSLServerSocket(context, context.createContextData(), port);
     }
 
     @Override
     public ServerSocket createServerSocket(int port, int backlog) throws IOException
     {
-        return new ProvSSLServerSocket(context, port, backlog);
+        return new ProvSSLServerSocket(context, context.createContextData(), port, backlog);
     }
 
     @Override
     public ServerSocket createServerSocket(int port, int backlog, InetAddress ifAddress) throws IOException
     {
-        return new ProvSSLServerSocket(context, port, backlog, ifAddress);
+        return new ProvSSLServerSocket(context, context.createContextData(), port, backlog, ifAddress);
     }
 
     @Override

@@ -27,6 +27,7 @@ class ProvSSLEngine
     implements ProvTlsManager
 {
     protected final ProvSSLContextSpi context;
+    protected final ContextData contextData;
 
     protected SSLParameters sslParameters;
     protected boolean enableSessionCreation = false;
@@ -39,25 +40,32 @@ class ProvSSLEngine
     protected ProvSSLSession session = ProvSSLSession.NULL_SESSION;
     protected ProvSSLSession handshakeSession = null;
 
-    protected ProvSSLEngine(ProvSSLContextSpi context)
+    protected ProvSSLEngine(ProvSSLContextSpi context, ContextData contextData)
     {
         super();
 
         this.context = context;
+        this.contextData = contextData;
         this.sslParameters = context.engineGetDefaultSSLParameters();
     }
 
-    protected ProvSSLEngine(ProvSSLContextSpi context, String host, int port)
+    protected ProvSSLEngine(ProvSSLContextSpi context, ContextData contextData, String host, int port)
     {
         super(host, port);
 
         this.context = context;
+        this.contextData = contextData;
         this.sslParameters = context.engineGetDefaultSSLParameters();
     }
 
     public ProvSSLContextSpi getContext()
     {
         return context;
+    }
+
+    public ContextData getContextData()
+    {
+        return contextData;
     }
 
     @Override
@@ -371,7 +379,7 @@ class ProvSSLEngine
     {
         // TODO[jsse] Consider X509ExtendedTrustManager and/or HostnameVerifier functionality
 
-        X509TrustManager tm = context.getX509TrustManager();
+        X509TrustManager tm = contextData.getTrustManager();
         if (tm != null)
         {
             try
@@ -390,7 +398,7 @@ class ProvSSLEngine
     {
         // TODO[jsse] Consider X509ExtendedTrustManager and/or HostnameVerifier functionality
 
-        X509TrustManager tm = context.getX509TrustManager();
+        X509TrustManager tm = contextData.getTrustManager();
         if (tm != null)
         {
             try

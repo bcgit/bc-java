@@ -63,6 +63,7 @@ class ProvSSLContextSpi
 
     private X509KeyManager km;
     private X509TrustManager tm;
+    private SecureRandom sr;
 
     ProvSSLContextSpi(TlsCrypto crypto)
     {
@@ -229,18 +230,17 @@ class ProvSSLContextSpi
     }
 
     @Override
-    protected SSLEngine engineCreateSSLEngine()
+    protected synchronized SSLEngine engineCreateSSLEngine()
     {
         checkInitialized();
-        // TODO[jsse] Does the engine need immutable refs to km/tm/random in case of re-init?
-        return new ProvSSLEngine(this);
+        return new ProvSSLEngine(this, createContextData());
     }
 
     @Override
-    protected SSLEngine engineCreateSSLEngine(String host, int port)
+    protected synchronized SSLEngine engineCreateSSLEngine(String host, int port)
     {
         checkInitialized();
-        return new ProvSSLEngine(this, host, port);
+        return new ProvSSLEngine(this, createContextData(), host, port);
     }
 
     @Override
@@ -295,8 +295,13 @@ class ProvSSLContextSpi
         this.initialized = false;
         this.km = selectKeyManager(kms);
         this.tm = selectTrustManager(tms);
-        // TODO[tls-ops] SecureRandom?
+        this.sr = sr != null ? sr : crypto.getSecureRandom();
         this.initialized = true;
+    }
+
+    protected ContextData createContextData()
+    {
+        return new ContextData(km, tm, sr);
     }
 
     protected X509KeyManager findX509KeyManager(KeyManager[] kms)
@@ -327,16 +332,6 @@ class ProvSSLContextSpi
             }
         }
         return null;
-    }
-    
-    protected synchronized X509KeyManager getX509KeyManager()
-    {
-        return km;
-    }
-
-    protected synchronized X509TrustManager getX509TrustManager()
-    {
-        return tm;
     }
 
     protected X509KeyManager selectKeyManager(KeyManager[] kms) throws KeyManagementException

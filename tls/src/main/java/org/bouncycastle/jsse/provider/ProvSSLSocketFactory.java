@@ -25,7 +25,7 @@ class ProvSSLSocketFactory
     {
 //        SSLEngine engine = context.engineCreateSSLEngine();
 //        return new ProvSSLSocket(engine);
-        return new ProvSSLSocketDirect(context);
+        return new ProvSSLSocketDirect(context, context.createContextData());
     }
 
     @Override
@@ -33,7 +33,7 @@ class ProvSSLSocketFactory
     {
 //        SSLEngine engine = context.engineCreateSSLEngine(host.getHostName(), port);
 //        return new ProvSSLSocket(engine, host, port);
-        return new ProvSSLSocketDirect(context, host, port);
+        return new ProvSSLSocketDirect(context, context.createContextData(), host, port);
     }
 
     @Override
@@ -42,7 +42,7 @@ class ProvSSLSocketFactory
     {
 //        SSLEngine engine = context.engineCreateSSLEngine(address.getHostName(), port);
 //        return new ProvSSLSocket(engine, address, port, localAddress, localPort);
-        return new ProvSSLSocketDirect(context, address, port, localAddress, localPort);
+        return new ProvSSLSocketDirect(context, context.createContextData(), address, port, localAddress, localPort);
     }
 
     @Override
@@ -50,7 +50,7 @@ class ProvSSLSocketFactory
     {
 //        SSLEngine engine = context.engineCreateSSLEngine(host, port);
 //        return new ProvSSLSocket(engine, host, port);
-        return new ProvSSLSocketDirect(context, host, port);
+        return new ProvSSLSocketDirect(context, context.createContextData(), host, port);
     }
 
     @Override
@@ -59,7 +59,7 @@ class ProvSSLSocketFactory
     {
 //        SSLEngine engine = context.engineCreateSSLEngine(host, port);
 //        return new ProvSSLSocket(engine, host, port, localHost, localPort);
-        return new ProvSSLSocketDirect(context, host, port, localHost, localPort);
+        return new ProvSSLSocketDirect(context, context.createContextData(), host, port, localHost, localPort);
     }
 
     public Socket createSocket(Socket s, InputStream consumed, boolean autoClose) throws IOException
