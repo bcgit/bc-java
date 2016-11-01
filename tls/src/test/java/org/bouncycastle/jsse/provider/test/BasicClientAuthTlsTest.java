@@ -1,6 +1,5 @@
 package org.bouncycastle.jsse.provider.test;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
@@ -18,9 +17,10 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
-import junit.framework.TestCase;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+
+import junit.framework.TestCase;
 
 public class BasicClientAuthTlsTest
     extends TestCase
@@ -80,7 +80,14 @@ public class BasicClientAuthTlsTest
             SSLSocketFactory fact = clientContext.getSocketFactory();
             SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, PORT_NO);
 
+            SSLUtils.restrictKeyExchange(cSock, "ECDHE_ECDSA");
+
+            // TODO[jsse] Is this supposed to be a necessary call to get an SSL connection?
+            cSock.startHandshake();
+
             TestProtocolUtil.doClientProtocol(cSock, "Hello");
+
+            // TODO[jsse] Establish that server-auth actually worked - via session peer certificate?
 
             latch.countDown();
 
@@ -140,7 +147,14 @@ public class BasicClientAuthTlsTest
 
             SSLSocket sslSock = (SSLSocket)sSock.accept();
 
+            SSLUtils.restrictKeyExchange(sslSock, "ECDHE_ECDSA");
+
+            // TODO[jsse] Is this supposed to be a necessary call to get an SSL connection?
+            sslSock.startHandshake();
+
             TestProtocolUtil.doServerProtocol(sslSock, "World");
+
+            // TODO[jsse] Establish that client-auth actually worked - via session peer certificate?
 
             sslSock.close();
 
