@@ -154,16 +154,6 @@ public class BasicClientAuthTlsTest
         }
     }
 
-    private static KeyStore rebuildStore(String storeType, char[] storePassword, byte[] encoding)
-        throws GeneralSecurityException, IOException
-    {
-        KeyStore keyStore = KeyStore.getInstance(storeType, "BCFIPS");
-
-        keyStore.load(new ByteArrayInputStream(encoding), storePassword);
-
-        return keyStore;
-    }
-
     public void testClientAuthTlsConnection()
         throws Exception
     {
