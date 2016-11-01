@@ -248,7 +248,7 @@ class ProvSSLSocketDirect
     }
 
     @Override
-    public synchronized void setSSLParameters(SSLParameters params)
+    public synchronized void setSSLParameters(SSLParameters sslParameters)
     {
         this.sslParameters = context.copySSLParameters(sslParameters);
     }
