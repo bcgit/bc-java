@@ -179,7 +179,7 @@ public class KeyManagerFactoryTest
 
         trustStore.setCertificateEntry("server", ks.getCertificate("root"));
 
-        SSLUtils.startServer(ks, PASSWORD, trustStore);
+        SSLUtils.startServer(ks, PASSWORD, trustStore, false, 8886);
 
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
 
@@ -191,7 +191,7 @@ public class KeyManagerFactoryTest
 
         SSLSocketFactory f = context.getSocketFactory();
 
-        SSLSocket c = (SSLSocket)f.createSocket("localhost", 8888);
+        SSLSocket c = (SSLSocket)f.createSocket("localhost", 8886);
         c.setUseClientMode(true);
 
         // TODO[jsse] Is this supposed to be a necessary call to get an SSL connection?
@@ -214,7 +214,7 @@ public class KeyManagerFactoryTest
 
         trustStore.setCertificateEntry("server", ks.getCertificate("root"));
 
-        SSLUtils.startServer(ks, PASSWORD, trustStore, true);
+        SSLUtils.startServer(ks, PASSWORD, trustStore, true, 8887);
 
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
 
@@ -230,7 +230,7 @@ public class KeyManagerFactoryTest
 
         SSLSocketFactory f = context.getSocketFactory();
 
-        SSLSocket c = (SSLSocket)f.createSocket("localhost", 8888);
+        SSLSocket c = (SSLSocket)f.createSocket("localhost", 8887);
         c.setUseClientMode(true);
 
         SSLUtils.restrictKeyExchange(c, "ECDHE_RSA");
