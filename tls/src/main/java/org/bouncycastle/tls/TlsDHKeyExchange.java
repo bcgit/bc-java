@@ -148,7 +148,7 @@ public class TlsDHKeyExchange
     {
         if (keyExchange == KeyExchangeAlgorithm.DH_anon)
         {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
 
         short[] types = certificateRequest.getCertificateTypes();
