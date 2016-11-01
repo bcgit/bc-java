@@ -155,7 +155,7 @@ public class TlsECDHKeyExchange
     {
         if (keyExchange == KeyExchangeAlgorithm.ECDH_anon)
         {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
 
         /*
