@@ -33,7 +33,7 @@ public class JcaTlsECDSAVerifier
     public boolean verifySignature(DigitallySigned signedParams, byte[] hash)
     {
         SignatureAndHashAlgorithm algorithm = signedParams.getAlgorithm();
-        if (algorithm != null && algorithm.getSignature() != SignatureAlgorithm.dsa)
+        if (algorithm != null && algorithm.getSignature() != SignatureAlgorithm.ecdsa)
         {
             throw new IllegalStateException();
         }
