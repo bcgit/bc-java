@@ -174,6 +174,11 @@ public class Extension
      */
     public static final ASN1ObjectIdentifier targetInformation = new ASN1ObjectIdentifier("2.5.29.55").intern();
 
+    /**
+     * Expired Certificates on CRL extension
+     */
+    public static final ASN1ObjectIdentifier expiredCertsOnCRL = new ASN1ObjectIdentifier("2.5.29.60").intern();
+
     private ASN1ObjectIdentifier extnId;
     private boolean             critical;
     private ASN1OctetString      value;
