@@ -42,6 +42,7 @@ public class KeyPairGeneratorSpi
     {
         this.strength = strength;
         this.random = random;
+        this.initialised = false;
     }
 
     public void initialize(
@@ -113,7 +114,6 @@ public class KeyPairGeneratorSpi
         DHPublicKeyParameters pub = (DHPublicKeyParameters)pair.getPublic();
         DHPrivateKeyParameters priv = (DHPrivateKeyParameters)pair.getPrivate();
 
-        return new KeyPair(new BCDHPublicKey(pub),
-            new BCDHPrivateKey(priv));
+        return new KeyPair(new BCDHPublicKey(pub), new BCDHPrivateKey(priv));
     }
 }
