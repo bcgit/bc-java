@@ -62,19 +62,13 @@ class ProvSSLContextSpi
 
     protected boolean initialized = false;
 
+    private TlsCrypto crypto;
     private X509KeyManager km;
     private X509TrustManager tm;
-    private SecureRandom sr;
-    private TlsCrypto crypto;
 
     ProvSSLContextSpi(TlsCryptoProvider cryptoProvider)
     {
         this.cryptoProvider = cryptoProvider;
-    }
-
-    TlsCrypto getCrypto()
-    {
-        return crypto;
     }
 
     int[] convertCipherSuites(String[] suites)
@@ -303,13 +297,12 @@ class ProvSSLContextSpi
         this.km = selectKeyManager(kms);
         this.tm = selectTrustManager(tms);
         this.crypto = cryptoProvider.create(sr);
-        this.sr = crypto.getSecureRandom();
         this.initialized = true;
     }
 
     protected ContextData createContextData()
     {
-        return new ContextData(km, tm, sr);
+        return new ContextData(crypto, km, tm);
     }
 
     protected X509KeyManager findX509KeyManager(KeyManager[] kms)

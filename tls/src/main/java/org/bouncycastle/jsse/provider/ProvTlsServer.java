@@ -41,7 +41,7 @@ class ProvTlsServer
 
     ProvTlsServer(ProvTlsManager manager)
     {
-        super(manager.getContext().getCrypto());
+        super(manager.getContextData().getCrypto());
 
         this.manager = manager;
         this.sslParameters = manager.getSSLParameters();
