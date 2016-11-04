@@ -3,7 +3,6 @@ package org.bouncycastle.jsse.provider;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
-import java.security.SecureRandom;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,8 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoBuilder;
+import org.bouncycastle.tls.crypto.TlsCryptoProvider;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoProvider;
 import org.bouncycastle.util.Strings;
 
 public class BouncyCastleJsseProvider
@@ -34,11 +33,7 @@ public class BouncyCastleJsseProvider
     {
         super(PROVIDER_NAME, version, info);
 
-        SecureRandom entropySource = new SecureRandom();
-
-        // TODO[tls-ops] Should still use a separate SecureRandom for nonceEntropySource
-
-        configure(false, new JcaTlsCryptoBuilder(entropySource, entropySource).build());
+        configure(false, new JcaTlsCryptoProvider());
     }
 
     public BouncyCastleJsseProvider(Provider provider)
@@ -50,16 +45,7 @@ public class BouncyCastleJsseProvider
     {
         super(PROVIDER_NAME, version, info);
 
-        try
-        {
-            SecureRandom mainEntropy = SecureRandom.getInstance("DEFAULT", provider);
-
-            configure(isInFipsMode, new JcaTlsCryptoBuilder(mainEntropy, SecureRandom.getInstance("NONCEANDIV", provider)).setProvider(provider).build());
-        }
-        catch (GeneralSecurityException e)
-        {
-            throw new IllegalArgumentException("unable to set up TlsCrypto: " + e.getMessage(), e);
-        }
+        configure(isInFipsMode, new JcaTlsCryptoProvider().setProvider(provider));
     }
 
     public BouncyCastleJsseProvider(String config)
@@ -76,11 +62,11 @@ public class BouncyCastleJsseProvider
 
                 String cryptoName = config.substring(config.indexOf(':') + 1).trim();
 
-                configure(isFips, createCrypto(cryptoName));
+                configure(isFips, createCryptoProvider(cryptoName));
             }
             else
             {
-                configure(isFips, createCrypto(config.trim()));
+                configure(isFips, createCryptoProvider(config.trim()));
             }
         }
         catch (GeneralSecurityException e)
@@ -89,51 +75,45 @@ public class BouncyCastleJsseProvider
         }
     }
 
-    public BouncyCastleJsseProvider(boolean fipsMode, TlsCrypto tlsCrypto)
+    public BouncyCastleJsseProvider(boolean fipsMode, TlsCryptoProvider tlsCryptoProvider)
     {
         super(PROVIDER_NAME, version, info);
 
-        configure(fipsMode, tlsCrypto);
+        configure(fipsMode, tlsCryptoProvider);
     }
     
-    private TlsCrypto createCrypto(String cryptoName)
+    private TlsCryptoProvider createCryptoProvider(String cryptoName)
         throws GeneralSecurityException
     {
         if (cryptoName.equalsIgnoreCase("default"))
-        {        
-            SecureRandom mainEntropy = SecureRandom.getInstance("DEFAULT");
-
-            return new JcaTlsCryptoBuilder(mainEntropy, SecureRandom.getInstance("NONCEANDIV")).build();
+        {
+            return new JcaTlsCryptoProvider();
         }
         else
         {
             Provider provider = Security.getProvider(cryptoName);
 
             if (provider != null)
-            { 
-                SecureRandom mainEntropy = SecureRandom.getInstance("DEFAULT", provider);
-                
-                return new JcaTlsCryptoBuilder(mainEntropy, SecureRandom.getInstance("NONCEANDIV", provider)).build();
+            {
+                return new JcaTlsCryptoProvider().setProvider(provider);
             }
             else
             {
                 try
                 {
-                    Class cryptoClass = Class.forName(cryptoName);
+                    Class cryptoProviderClass = Class.forName(cryptoName);
 
-                    // the TlsCrypto/Provider class named requires a no-args constructor
-                    Object o = cryptoClass.newInstance();
-                    if (o instanceof TlsCrypto)
+                    // the TlsCryptoProvider/Provider class named requires a no-args constructor
+                    Object o = cryptoProviderClass.newInstance();
+                    if (o instanceof TlsCryptoProvider)
                     {
-                        return (TlsCrypto)o;
+                        return (TlsCryptoProvider)o;
                     }
                     if (o instanceof Provider)
                     {
                         provider = (Provider)o;
 
-                        SecureRandom mainEntropy = SecureRandom.getInstance("DEFAULT", provider);
-
-                        return new JcaTlsCryptoBuilder(mainEntropy, SecureRandom.getInstance("NONCEANDIV", provider)).build();
+                        return new JcaTlsCryptoProvider().setProvider(provider);
                     }
 
                     throw new IllegalArgumentException("unrecognized class: " + cryptoName);
@@ -155,7 +135,7 @@ public class BouncyCastleJsseProvider
     }
 
     // TODO: add a real fips mode
-    private void configure(boolean isInFipsMode, final TlsCrypto baseCrypto)
+    private void configure(boolean isInFipsMode, final TlsCryptoProvider baseCryptoProvider)
     {
         this.isInFipsMode = isInFipsMode;
 
@@ -186,7 +166,7 @@ public class BouncyCastleJsseProvider
             {
                 public Object createInstance(Object constructorParameter)
                 {
-                    return new ProvSSLContextSpi(baseCrypto);
+                    return new ProvSSLContextSpi(baseCryptoProvider);
                 }
             });
         }
@@ -195,21 +175,21 @@ public class BouncyCastleJsseProvider
         {
             public Object createInstance(Object constructorParameter)
             {
-                return new ProvSSLContextSpi(baseCrypto);
+                return new ProvSSLContextSpi(baseCryptoProvider);
             }
         });
         addAlgorithmImplementation("SSLContext.TLSv1", "org.bouncycastle.jsse.provider.SSLContext.TLS.1", new EngineCreator()
         {
             public Object createInstance(Object constructorParameter)
             {
-                return new ProvSSLContextSpi(baseCrypto);
+                return new ProvSSLContextSpi(baseCryptoProvider);
             }
         });
         addAlgorithmImplementation("SSLContext.Default", "org.bouncycastle.jsse.provider.SSLContext.TLS.Default", new EngineCreator()
         {
             public Object createInstance(Object constructorParameter)
             {
-                return new ProvSSLContextSpi(baseCrypto);
+                return new ProvSSLContextSpi(baseCryptoProvider);
             }
         });
     }

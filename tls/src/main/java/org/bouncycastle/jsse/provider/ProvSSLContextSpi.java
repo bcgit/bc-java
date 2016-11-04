@@ -23,6 +23,7 @@ import javax.net.ssl.X509TrustManager;
 import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsCryptoProvider;
 
 class ProvSSLContextSpi
     extends SSLContextSpi
@@ -57,17 +58,18 @@ class ProvSSLContextSpi
     protected final SSLSessionContext clientSessionContext = createSSLSessionContext();
     protected final SSLSessionContext serverSessionContext = createSSLSessionContext();
 
-    protected final TlsCrypto crypto;
+    protected final TlsCryptoProvider cryptoProvider;
 
     protected boolean initialized = false;
 
     private X509KeyManager km;
     private X509TrustManager tm;
     private SecureRandom sr;
+    private TlsCrypto crypto;
 
-    ProvSSLContextSpi(TlsCrypto crypto)
+    ProvSSLContextSpi(TlsCryptoProvider cryptoProvider)
     {
-        this.crypto = crypto;
+        this.cryptoProvider = cryptoProvider;
     }
 
     TlsCrypto getCrypto()
@@ -300,7 +302,8 @@ class ProvSSLContextSpi
         this.initialized = false;
         this.km = selectKeyManager(kms);
         this.tm = selectTrustManager(tms);
-        this.sr = sr != null ? sr : crypto.getSecureRandom();
+        this.crypto = cryptoProvider.create(sr);
+        this.sr = crypto.getSecureRandom();
         this.initialized = true;
     }
 

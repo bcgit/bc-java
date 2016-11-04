@@ -29,7 +29,7 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
-import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoBuilder;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoProvider;
 import org.bouncycastle.util.Arrays;
 
 class TlsTestClientImpl
@@ -62,7 +62,7 @@ class TlsTestClientImpl
         switch (config.clientCrypto)
         {
         case TlsTestConfig.CRYPTO_JCA:
-            return new JcaTlsCryptoBuilder(new SecureRandom(), new SecureRandom()).setProvider(new BouncyCastleProvider()).build();
+            return new JcaTlsCryptoProvider().setProvider(new BouncyCastleProvider()).create(new SecureRandom(), new SecureRandom());
         default:
             return new BcTlsCrypto(new SecureRandom());
         }
