@@ -6,6 +6,7 @@ import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -95,5 +96,11 @@ public class DefaultJcaJceHelper
         throws CertificateException
     {
         return CertificateFactory.getInstance(algorithm);
+    }
+
+    public SecureRandom createSecureRandom(String algorithm)
+        throws NoSuchAlgorithmException
+    {
+        return SecureRandom.getInstance(algorithm);
     }
 }
