@@ -26,7 +26,7 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.KeyEncoder;
 import org.bouncycastle.crypto.agreement.DHBasicAgreement;
 import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.IESEngine;
 import org.bouncycastle.crypto.generators.DHKeyPairGenerator;
@@ -540,7 +540,7 @@ public class IESCipher
             super(new IESEngine(new DHBasicAgreement(),
                 new KDF2BytesGenerator(new SHA1Digest()),
                 new HMac(new SHA1Digest()),
-                new PaddedBufferedBlockCipher(new CBCBlockCipher(new AESFastEngine()))), 16);
+                new PaddedBufferedBlockCipher(new CBCBlockCipher(new AESEngine()))), 16);
         }
     }
 }

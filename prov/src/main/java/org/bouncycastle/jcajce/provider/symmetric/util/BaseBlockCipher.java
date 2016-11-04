@@ -839,13 +839,7 @@ public class BaseBlockCipher
         }
         catch (final Exception e)
         {
-            throw new InvalidKeyException(e.getMessage())
-            {
-                public Throwable getCause()
-                {
-                    return e;
-                }
-            };
+            throw new InvalidKeyOrParametersException(e.getMessage(), e);
         }
     }
 
@@ -1323,6 +1317,23 @@ public class BaseBlockCipher
                 }
                 throw new BadPaddingException(e.getMessage());
             }
+        }
+    }
+
+    private static class InvalidKeyOrParametersException
+        extends InvalidKeyException
+    {
+        private final Throwable cause;
+
+        InvalidKeyOrParametersException(String msg, Throwable cause)
+        {
+             super(msg);
+            this.cause = cause;
+        }
+
+        public Throwable getCause()
+        {
+            return cause;
         }
     }
 }
