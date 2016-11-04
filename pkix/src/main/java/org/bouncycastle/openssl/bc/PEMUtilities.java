@@ -12,7 +12,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.PBEParametersGenerator;
 import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.BlowfishEngine;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
@@ -194,7 +194,7 @@ class PEMUtilities
                 throw new EncryptionException("unknown AES encryption with private key: " + dekAlgName);
             }
             sKey = getKey(password, keyBits / 8, salt);
-            engine = new AESFastEngine();
+            engine = new AESEngine();
         }
         else
         {

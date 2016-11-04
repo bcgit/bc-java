@@ -67,6 +67,7 @@ public class AEADTest extends SimpleTest
             testGCMParameterSpecWithRepeatKey(K2, N2, A2, P2, C2);
             testGCMGeneric(KGCM, NGCM, new byte[0], new byte[0], CGCM);
             testGCMParameterSpecWithMultipleUpdates(K2, N2, A2, P2, C2);
+            testRepeatedGCMWithSpec(KGCM, NGCM, A2, P2, Hex.decode("f4732d84342623f65b7d63c3c335dd44b87d"));
         }
         else
         {
@@ -414,6 +415,69 @@ public class AEADTest extends SimpleTest
         if (!Arrays.areEqual(eax.getIV(), gcmParameters.getNonce()))
         {
             fail("iv mismatch");
+        }
+    }
+
+    private void testRepeatedGCMWithSpec(byte[] K,
+                                 byte[] N,
+                                 byte[] A,
+                                 byte[] P,
+                                 byte[] C)
+        throws InvalidKeyException, NoSuchAlgorithmException,
+        NoSuchPaddingException, IllegalBlockSizeException,
+        BadPaddingException, InvalidAlgorithmParameterException, NoSuchProviderException, IOException
+    {
+        Cipher eax = Cipher.getInstance("AES/GCM/NoPadding", "BC");
+        SecretKeySpec key = new SecretKeySpec(K, "AES");
+        GCMParameterSpec spec = new GCMParameterSpec(128, N);
+        eax.init(Cipher.ENCRYPT_MODE, key, spec);
+
+        eax.updateAAD(A);
+        byte[] c = eax.doFinal(P);
+
+        if (!areEqual(C, c))
+        {
+            fail("JCE encrypt with additional data and RepeatedSecretKeySpec failed.");
+        }
+
+        eax = Cipher.getInstance("GCM", "BC");
+        eax.init(Cipher.DECRYPT_MODE, key, spec);
+        eax.updateAAD(A);
+        byte[] p = eax.doFinal(C);
+
+        if (!areEqual(P, p))
+        {
+            fail("JCE decrypt with additional data and GCMParameterSpec failed.");
+        }
+
+        try
+        {
+            eax.init(Cipher.ENCRYPT_MODE, new RepeatedSecretKeySpec("AES"), spec);
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            isTrue("wrong message", "cannot reuse nonce for GCM encryption".equals(e.getMessage()));
+        }
+
+        try
+        {
+            eax.init(Cipher.ENCRYPT_MODE, new RepeatedSecretKeySpec("AES"), new IvParameterSpec(spec.getIV()));
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            isTrue("wrong message", "cannot reuse nonce for GCM encryption".equals(e.getMessage()));
+        }
+
+        try
+        {
+            eax.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(K, "AES"), new IvParameterSpec(spec.getIV()));
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            isTrue("wrong message", "cannot reuse nonce for GCM encryption".equals(e.getMessage()));
         }
     }
 
