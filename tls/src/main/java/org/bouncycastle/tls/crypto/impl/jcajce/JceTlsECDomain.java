@@ -28,7 +28,10 @@ import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 
-public class JcaTlsECDomain
+/**
+ * EC domain class for generating key pairs and performing key agreement.
+ */
+public class JceTlsECDomain
     implements TlsECDomain
 {
     protected JcaTlsCrypto crypto;
@@ -36,7 +39,7 @@ public class JcaTlsECDomain
     protected AlgorithmParameters ecDomain;
     protected ECCurve ecCurve;
 
-    public JcaTlsECDomain(JcaTlsCrypto crypto, TlsECConfig ecConfig)
+    public JceTlsECDomain(JcaTlsCrypto crypto, TlsECConfig ecConfig)
     {
         this.crypto = crypto;
         this.ecConfig = ecConfig;
