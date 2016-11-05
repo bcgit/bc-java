@@ -12,7 +12,7 @@ import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSigner;
 
 /**
- * Container class for generating signatures based on the use of primitives from the JCA.
+ * Credentialed class for generating signatures based on the use of primitives from the JCA.
  */
 public class JcaDefaultTlsCredentialedSigner
     extends DefaultTlsCredentialedSigner

@@ -83,6 +83,13 @@ import org.bouncycastle.tls.crypto.impl.TlsStreamCipherImpl;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Times;
 
+/**
+ * Class for providing cryptographic services for TLS based on implementations in the BC light-weight API.
+ * <p>
+ *     This class provides default implementations for everything. If you need to customise it, extend the class
+ *     and override the appropriate methods.
+ * </p>
+ */
 public class BcTlsCrypto
     extends AbstractTlsCrypto
 {

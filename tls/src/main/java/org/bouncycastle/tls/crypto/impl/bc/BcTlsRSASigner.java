@@ -18,6 +18,9 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsSigner;
 
+/**
+ * Operator supporting the generation of RSA signatures using the BC light-weight API.
+ */
 public class BcTlsRSASigner
     implements TlsSigner
 {
