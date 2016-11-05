@@ -15,11 +15,11 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 public class JceTlsECDH
     implements TlsAgreement
 {
-    protected JcaTlsECDomain domain;
+    protected JceTlsECDomain domain;
     protected KeyPair localKeyPair;
     protected ECPublicKey peerPublicKey;
 
-    public JceTlsECDH(JcaTlsECDomain domain)
+    public JceTlsECDH(JceTlsECDomain domain)
     {
         this.domain = domain;
     }

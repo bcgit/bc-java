@@ -36,15 +36,15 @@ import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.ChaCha20Poly1305Cipher;
-import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
-import org.bouncycastle.tls.crypto.impl.TlsBlockCipherImpl;
+import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipher;
+import org.bouncycastle.tls.crypto.impl.TlsBlockCipherImpl;
 import org.bouncycastle.tls.crypto.impl.TlsEncryptor;
 import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
 import org.bouncycastle.tls.crypto.impl.TlsNullCipher;
-import org.bouncycastle.tls.crypto.impl.TlsStreamCipherImpl;
 import org.bouncycastle.tls.crypto.impl.TlsStreamCipher;
+import org.bouncycastle.tls.crypto.impl.TlsStreamCipherImpl;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -270,7 +270,7 @@ public class JcaTlsCrypto
 
     public TlsECDomain createECDomain(TlsECConfig ecConfig)
     {
-        return new JcaTlsECDomain(this, ecConfig);
+        return new JceTlsECDomain(this, ecConfig);
     }
 
     public TlsEncryptor createEncryptor(TlsCertificate certificate)
