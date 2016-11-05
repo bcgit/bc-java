@@ -22,6 +22,9 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.util.BigIntegers;
 
+/**
+ * EC domain class for generating key pairs and performing key agreement.
+ */
 public class BcTlsECDomain implements TlsECDomain
 {
     protected BcTlsCrypto crypto;

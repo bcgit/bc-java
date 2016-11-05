@@ -15,6 +15,9 @@ import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Credentialed class decrypting RSA encrypted secrets sent from a peer for our end of the TLS connection using the BC light-weight API.
+ */
 public class BcDefaultTlsCredentialedDecryptor
     implements TlsCredentialedDecryptor
 {

@@ -11,7 +11,7 @@ import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSigner;
 
 /**
- * Container class for generating signatures based on the use of primitives from the BC light-weight API.
+ * Credentialed class for generating signatures based on the use of primitives from the BC light-weight API.
  */
 public class BcDefaultTlsCredentialedSigner
     extends DefaultTlsCredentialedSigner

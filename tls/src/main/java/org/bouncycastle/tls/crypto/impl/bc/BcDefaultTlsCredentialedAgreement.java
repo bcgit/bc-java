@@ -16,7 +16,7 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.BigIntegers;
 
 /**
- * Container class generating agreed secrets from a peer's public key for our end of the TLS connection using the BC light-weight API.
+ * Credentialed class generating agreed secrets from a peer's public key for our end of the TLS connection using the BC light-weight API.
  */
 public class BcDefaultTlsCredentialedAgreement
     implements TlsCredentialedAgreement

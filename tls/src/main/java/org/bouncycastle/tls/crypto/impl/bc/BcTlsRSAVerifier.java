@@ -13,6 +13,9 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 
+/**
+ * Operator supporting the verification of RSA signatures using the BC light-weight API.
+ */
 public class BcTlsRSAVerifier
     implements TlsVerifier
 {
