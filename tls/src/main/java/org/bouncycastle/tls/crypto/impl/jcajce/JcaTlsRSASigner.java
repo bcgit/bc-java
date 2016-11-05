@@ -15,6 +15,9 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsSigner;
 
+/**
+ * Operator supporting the generation of RSA signatures.
+ */
 public class JcaTlsRSASigner
     implements TlsSigner
 {
