@@ -15,6 +15,9 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 
+/**
+ * Operator supporting the verification of RSA signatures.
+ */
 public class JcaTlsRSAVerifier
     implements TlsVerifier
 {

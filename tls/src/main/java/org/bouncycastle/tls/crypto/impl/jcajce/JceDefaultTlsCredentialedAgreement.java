@@ -14,7 +14,7 @@ import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
 /**
- * Container class generating agreed secrets from a peer's public key for our end of the TLS connection using the JCE.
+ * Credentialed class generating agreed secrets from a peer's public key for our end of the TLS connection using the JCE.
  */
 public class JceDefaultTlsCredentialedAgreement
     implements TlsCredentialedAgreement
