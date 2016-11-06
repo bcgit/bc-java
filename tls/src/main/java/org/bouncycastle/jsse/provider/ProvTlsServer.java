@@ -99,7 +99,7 @@ class ProvTlsServer
         TlsCrypto crypto = getCrypto();
         if (!(crypto instanceof JcaTlsCrypto))
         {
-            // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key
+            // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
             throw new UnsupportedOperationException();
         }
 
@@ -113,7 +113,7 @@ class ProvTlsServer
         case KeyExchangeAlgorithm.ECDH_ECDSA:
         case KeyExchangeAlgorithm.ECDH_RSA:
         {
-            // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key
+            // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
             return new JceDefaultTlsCredentialedAgreement((JcaTlsCrypto)crypto, certificate, privateKey);
         }
 
@@ -126,14 +126,14 @@ class ProvTlsServer
             SignatureAndHashAlgorithm sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
                 supportedSignatureAlgorithms, signatureAlgorithm);
 
-            // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key
+            // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
             return new JcaDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), (JcaTlsCrypto)crypto,
                 privateKey, certificate, sigAlg);
         }
 
         case KeyExchangeAlgorithm.RSA:
         {
-            // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key
+            // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
             return new JceDefaultTlsCredentialedDecryptor((JcaTlsCrypto)crypto, certificate, privateKey);
         }
 
@@ -150,7 +150,7 @@ class ProvTlsServer
 
 //  public TlsKeyExchange getKeyExchange() throws IOException
 //  {
-//      // TODO[tls-ops] Check that all key exchanges used in JSSE supportedCipherSuites are handled
+//      // TODO[jsse] Check that all key exchanges used in JSSE supportedCipherSuites are handled
 //      return super.getKeyExchange();
 //  }
 

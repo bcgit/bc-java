@@ -20,7 +20,7 @@ abstract class CallbackUtil
         }
         catch (Throwable t)
         {
-            // TODO[tls-ops] Logging
+            // TODO[jsse] Logging
         }
     }
 }

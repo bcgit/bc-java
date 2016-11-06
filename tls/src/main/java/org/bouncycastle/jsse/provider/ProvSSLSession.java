@@ -13,7 +13,7 @@ import javax.net.ssl.SSLSessionBindingListener;
 import javax.net.ssl.SSLSessionContext;
 import javax.security.cert.X509Certificate;
 
-// TODO[tls-ops] Serializable ?
+// TODO[jsse] Serializable ?
 class ProvSSLSession
     extends ExtendedSSLSession
 {

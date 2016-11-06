@@ -13,7 +13,7 @@ import javax.net.ssl.SSLSessionContext;
 import org.bouncycastle.tls.SessionID;
 
 /*
- * TODO[tls-ops]
+ * TODO[jsse]
  * - Need to add sessions to the context at handshake completion
  * - Implement the cache/timeout mechanisms
  */
@@ -33,7 +33,7 @@ class ProvSSLSessionContext
             ArrayList<byte[]> ids = new ArrayList<byte[]>(keys.size());
             for (SessionID key : keys)
             {
-                // TODO[tls-ops] Filter out invalidated/timed-out sessions?
+                // TODO[jsse] Filter out invalidated/timed-out sessions?
                 ids.add(key.getBytes());
             }
             return Collections.enumeration(ids);
@@ -45,7 +45,7 @@ class ProvSSLSessionContext
         SessionID key = new SessionID(sessionId);
         ProvSSLSession session = sessionMap.get(key);
 
-        // TODO[tls-ops] Should we return a session if it's been invalidated/timed-out?
+        // TODO[jsse] Should we return a session if it's been invalidated/timed-out?
 
         return session;
     }
@@ -69,7 +69,7 @@ class ProvSSLSessionContext
 
         this.sessionCacheSize = size;
 
-        // TODO[tls-ops] Immediately discard any extra sessions
+        // TODO[jsse] Immediately discard any extra sessions
     }
 
     public synchronized void setSessionTimeout(int seconds) throws IllegalArgumentException
@@ -81,6 +81,6 @@ class ProvSSLSessionContext
 
         this.sessionTimeout = seconds;
 
-        // TODO[tls-ops] Immediately check the new timeout for all sessions
+        // TODO[jsse] Immediately check the new timeout for all sessions
     }
 }

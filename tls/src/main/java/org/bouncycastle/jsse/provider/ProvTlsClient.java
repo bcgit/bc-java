@@ -114,7 +114,7 @@ class ProvTlsClient
                 TlsCrypto crypto = getCrypto();
                 if (!(crypto instanceof JcaTlsCrypto))
                 {
-                    // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key
+                    // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
                     throw new UnsupportedOperationException();
                 }
 
@@ -129,7 +129,7 @@ class ProvTlsClient
                 case KeyExchangeAlgorithm.ECDH_ECDSA:
                 case KeyExchangeAlgorithm.ECDH_RSA:
                 {
-                    // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key
+                    // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
                     return new JceDefaultTlsCredentialedAgreement((JcaTlsCrypto)crypto, certificate, privateKey);
                 }
 
@@ -143,7 +143,7 @@ class ProvTlsClient
                     SignatureAndHashAlgorithm sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
                         supportedSignatureAlgorithms, signatureAlgorithm);
 
-                    // TODO[tls-ops] Need to have TlsCrypto construct the credentials from the certs/key
+                    // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
                     return new JcaDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), (JcaTlsCrypto)crypto,
                         privateKey, certificate, sigAlg);
                 }
@@ -227,7 +227,7 @@ class ProvTlsClient
         TlsSession tlsSession = context.getResumableSession();
         if (tlsSession != null && tlsSession.isResumable())
         {
-            // TODO[tls-ops] Register the session with the client SSLSessionContext of our SSLContext
+            // TODO[jsse] Register the session with the client SSLSessionContext of our SSLContext
         }
     }
 

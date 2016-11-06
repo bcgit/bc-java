@@ -54,11 +54,11 @@ class ProvSSLSocket
     @Override
     public synchronized void close() throws IOException
     {
-        // TODO[tls-ops] See javadoc for full discussion of SSLEngine closure
+        // TODO[jsse] See javadoc for full discussion of SSLEngine closure
 
         engine.closeOutbound();
 
-        // TODO[tls-ops]
+        // TODO[jsse]
         // - Flush output by calling engine.wrap while not CLOSED 
         // - Check under what circumstances need to call engine.closeInbound
 
@@ -194,9 +194,9 @@ class ProvSSLSocket
          * "This method is synchronous for the initial handshake on a connection and returns when the negotiated handshake is complete."
          */
 
-        // TODO[tls-ops] Consider checking Thread.interrupted occasionally and aborting with InterruptedIOException accordingly.
+        // TODO[jsse] Consider checking Thread.interrupted occasionally and aborting with InterruptedIOException accordingly.
 
-        // TODO[tls-ops]
+        // TODO[jsse]
 //        engine.beginHandshake();
 //
 //        HandshakeStatus status = engine.getHandshakeStatus();
@@ -217,7 +217,7 @@ class ProvSSLSocket
 
         throw new UnsupportedOperationException();
 
-        // TODO[tls-ops]
+        // TODO[jsse]
 //        if (!listeners.isEmpty())
 //        {
 //            HandshakeCompletedEvent event = new HandshakeCompletedEvent(this, getSession());

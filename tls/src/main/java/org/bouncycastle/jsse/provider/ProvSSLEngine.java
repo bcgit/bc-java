@@ -19,7 +19,7 @@ import org.bouncycastle.tls.TlsProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
 
 /*
- * TODO[tls-ops] Currently doesn't properly support NIO usage, or conform very well with SSLEngine javadoc
+ * TODO[jsse] Currently doesn't properly support NIO usage, or conform very well with SSLEngine javadoc
  * - e.g. "The wrap() and unwrap() methods may execute concurrently of each other." is not true yet.
  */
 class ProvSSLEngine
@@ -281,7 +281,7 @@ class ProvSSLEngine
     public synchronized SSLEngineResult unwrap(ByteBuffer src, ByteBuffer[] dsts, int offset, int length)
         throws SSLException
     {
-        // TODO[tls-ops] Argument checks - see javadoc
+        // TODO[jsse] Argument checks - see javadoc
 
         if (!initialHandshakeBegun)
         {
@@ -302,7 +302,7 @@ class ProvSSLEngine
             }
             catch (IOException e)
             {
-                // TODO[tls-ops] Throw a subclass of SSLException?
+                // TODO[jsse] Throw a subclass of SSLException?
                 throw new SSLException(e);
             }
     
