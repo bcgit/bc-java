@@ -86,10 +86,10 @@ class ProvSSLContextSpi
         SSLParameters r = new SSLParameters();
         r.setCipherSuites(p.getCipherSuites());
         r.setProtocols(p.getProtocols());
-        // TODO[tls-ops] From JDK 1.7
+        // TODO[jsse] From JDK 1.7
 //        r.setAlgorithmConstraints(r.getAlgorithmConstraints());
 //        r.setEndpointIdentificationAlgorithm(p.getEndpointIdentificationAlgorithm());
-        // TODO[tls-ops] From JDK 1.8
+        // TODO[jsse] From JDK 1.8
 //        r.setServerNames(p.getServerNames());
 //        r.setSNIMatchers(p.getSNIMatchers());
 //        r.setUseCipherSuitesOrder(p.getUseCipherSuitesOrder());
@@ -225,7 +225,6 @@ class ProvSSLContextSpi
     {
         if (!initialized)
         {
-            // TODO[tls-ops] If initialization turns out to be optional, create default objects here instead (and set initialized = true)
             throw new IllegalStateException("SSLContext has not been initialized.");
         }
     }
@@ -253,7 +252,7 @@ class ProvSSLContextSpi
     @Override
     protected SSLParameters engineGetDefaultSSLParameters()
     {
-        // TODO[tls-ops] Review initial values
+        // TODO[jsse] Review initial values
         SSLParameters r = new SSLParameters();
         r.setCipherSuites(getDefaultCipherSuites());
         r.setProtocols(getDefaultProtocols());
@@ -283,7 +282,7 @@ class ProvSSLContextSpi
     @Override
     protected SSLParameters engineGetSupportedSSLParameters()
     {
-        // TODO[tls-ops] Review initial values
+        // TODO[jsse] Review initial values
         SSLParameters r = new SSLParameters();
         r.setCipherSuites(getSupportedCipherSuites());
         r.setProtocols(getSupportedProtocols());
@@ -346,9 +345,9 @@ class ProvSSLContextSpi
                  * implementation of the appropriate factory."
                  */
 
-                // TODO[tls-ops] Is PKIX a reasonable algorithm to use here?
+                // TODO[jsse] Is PKIX a reasonable algorithm to use here?
                 KeyManagerFactory kmf = KeyManagerFactory.getInstance("PKIX");
-                // TODO[tls-ops] Is this supported generally?
+                // TODO[jsse] Is this supported generally?
                 kmf.init(null, null);
                 kms = kmf.getKeyManagers();
             }
@@ -372,9 +371,9 @@ class ProvSSLContextSpi
                  * implementation of the appropriate factory."
                  */
 
-                // TODO[tls-ops] Is PKIX a reasonable algorithm to use here?
+                // TODO[jsse] Is PKIX a reasonable algorithm to use here?
                 TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
-                // TODO[tls-ops] Is this supported generally?
+                // TODO[jsse] Is this supported generally?
                 tmf.init((KeyStore)null);
                 tms = tmf.getTrustManagers();
             }
