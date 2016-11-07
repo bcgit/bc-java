@@ -5,7 +5,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.Mac;
-import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
 import org.bouncycastle.crypto.macs.Poly1305;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -133,7 +133,7 @@ public class Poly1305Test
         }
         else
         {
-            mac = new Poly1305(new AESFastEngine());
+            mac = new Poly1305(new AESEngine());
             mac.init(new ParametersWithIV(new KeyParameter(tc.key), tc.nonce));
         }
         mac.update(tc.message, 0, tc.message.length);
@@ -155,7 +155,7 @@ public class Poly1305Test
         byte[] out = new byte[16];
 
         int c = 0;
-        final Mac mac = new Poly1305(new AESFastEngine());
+        final Mac mac = new Poly1305(new AESEngine());
         for (int loop = 0; loop < 13; loop++)
         {
             len = 0;
@@ -234,7 +234,7 @@ public class Poly1305Test
         byte[] out = new byte[16];
 
         // Generate baseline
-        Mac poly = new Poly1305(new AESFastEngine());
+        Mac poly = new Poly1305(new AESEngine());
         poly.init(new ParametersWithIV(new KeyParameter(k), new byte[16]));
 
         poly.update(m, 0, m.length);
@@ -280,7 +280,7 @@ public class Poly1305Test
         gen.init(new KeyGenerationParameters(new SecureRandom(), 256));
         byte[] k = gen.generateKey();
 
-        Mac poly = new Poly1305(new AESFastEngine());
+        Mac poly = new Poly1305(new AESEngine());
         poly.init(new ParametersWithIV(new KeyParameter(k), new byte[16]));
 
         try
