@@ -4,7 +4,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.modes.gcm.BasicGCMMultiplier;
@@ -309,7 +309,7 @@ public class GCMTest
 
     protected BlockCipher createAESEngine()
     {
-        return new AESFastEngine();
+        return new AESEngine();
     }
 
     private void testExceptions() throws InvalidCipherTextException

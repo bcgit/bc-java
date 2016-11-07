@@ -2,7 +2,7 @@ package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Mac;
-import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.macs.GMac;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -104,7 +104,7 @@ public class GMacTest extends SimpleTest
         {
             TestCase testCase = TEST_VECTORS[i];
 
-            Mac mac = new GMac(new GCMBlockCipher(new AESFastEngine()), testCase.getTag().length * 8);
+            Mac mac = new GMac(new GCMBlockCipher(new AESEngine()), testCase.getTag().length * 8);
             CipherParameters key = new KeyParameter(testCase.getKey());
             mac.init(new ParametersWithIV(key, testCase.getIv()));
 
@@ -122,7 +122,7 @@ public class GMacTest extends SimpleTest
     {
         try
         {
-            GMac mac = new GMac(new GCMBlockCipher(new AESFastEngine()), size);
+            GMac mac = new GMac(new GCMBlockCipher(new AESEngine()), size);
             mac.init(new ParametersWithIV(null, new byte[16]));
             fail("Expected failure for illegal mac size " + size);
         }
