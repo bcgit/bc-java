@@ -100,8 +100,6 @@ public class JndiDANEFetcherFactory
                     NamingEnumeration bindings;
                     if (domainName.indexOf("_smimecert.") > 0)
                     {
-                        bindings = ctx.listBindings(domainName);
-
                         // need to use fully qualified domain name if using named DNS server.
                         Attributes attrs = ctx.getAttributes(domainName, new String[]{DANE_TYPE});
                         Attribute smimeAttr = attrs.get(DANE_TYPE);

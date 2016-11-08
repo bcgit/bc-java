@@ -10,6 +10,11 @@ import org.bouncycastle.util.Arrays;
  */
 public class DANEEntry
 {
+    public static final int CERT_USAGE_CA = 0;
+    public static final int CERT_USAGE_PKIX_VALIDATE = 1;
+    public static final int CERT_USAGE_TRUST_ANCHOR = 2;
+    public static final int CERT_USAGE_ACCEPT = 3;
+
     static final int CERT_USAGE = 0;
     static final int SELECTOR = 1;
     static final int MATCHING_TYPE = 2;
@@ -78,6 +83,6 @@ public class DANEEntry
     public static boolean isValidCertificate(byte[] data)
     {
         // TODO: perhaps validate ASN.1 data as well...
-        return (data[CERT_USAGE] == 3 && data[SELECTOR] == 0 && data[MATCHING_TYPE] == 0);
+        return ((data[CERT_USAGE] >= 0 || data[CERT_USAGE] <= 3)&& data[SELECTOR] == 0 && data[MATCHING_TYPE] == 0);
     }
 }
