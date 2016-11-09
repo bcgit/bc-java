@@ -18,7 +18,7 @@ public final class ProtocolVersion
 
     private ProtocolVersion(int v, String name)
     {
-        this.version = v & 0xffff;
+        this.version = v & 0xFFFF;
         this.name = name;
     }
 
@@ -34,7 +34,7 @@ public final class ProtocolVersion
 
     public int getMinorVersion()
     {
-        return version & 0xff;
+        return version & 0xFF;
     }
 
     public boolean isDTLS()
@@ -44,7 +44,7 @@ public final class ProtocolVersion
 
     public boolean isSSL()
     {
-        return this == SSLv3;
+        return getFullVersion() == SSLv3.getFullVersion();
     }
 
     public boolean isTLS()
@@ -54,15 +54,37 @@ public final class ProtocolVersion
 
     public ProtocolVersion getEquivalentTLSVersion()
     {
-        if (!isDTLS())
+        if (isTLS())
         {
             return this;
         }
-        if (this == DTLSv10)
+        switch (getMinorVersion())
         {
-            return TLSv11;
+        case 0xFF: return TLSv11;
+        case 0xFD: return TLSv12;
+        default:   return null;
         }
-        return TLSv12;
+    }
+
+    public ProtocolVersion getPreviousVersion() throws IOException
+    {
+        if (isDTLS())
+        {
+            switch(getMinorVersion())
+            {
+            case 0xFF: return null;
+            case 0xFD: return DTLSv10;
+            default  : return get(getMajorVersion(), getMinorVersion() + 1);
+            }
+        }
+        else
+        {
+            switch (getMinorVersion())
+            {
+            case 0x00: return null;
+            default  : return get(getMajorVersion(), getMinorVersion() - 1);
+            }
+        }
     }
 
     public boolean isEqualOrEarlierVersionOf(ProtocolVersion version)
