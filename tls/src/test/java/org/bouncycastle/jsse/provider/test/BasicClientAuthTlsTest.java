@@ -141,13 +141,13 @@ public class BasicClientAuthTlsTest
             SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
             SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(PORT_NO);
 
+            SSLUtils.enableAll(sSock);
+
             sSock.setNeedClientAuth(true);
 
             latch.countDown();
 
             SSLSocket sslSock = (SSLSocket)sSock.accept();
-
-            SSLUtils.restrictKeyExchange(sslSock, "ECDHE_ECDSA");
 
             // TODO[jsse] Is this supposed to be a necessary call to get an SSL connection?
             sslSock.startHandshake();
