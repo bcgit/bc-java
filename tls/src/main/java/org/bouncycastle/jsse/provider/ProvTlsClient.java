@@ -5,10 +5,14 @@ import java.net.Socket;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Set;
+import java.util.Vector;
 
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.X509KeyManager;
+import javax.security.auth.x500.X500Principal;
 
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
@@ -99,8 +103,15 @@ class ProvTlsClient
                     keyTypes[i] = JsseUtils.getClientAuthType(certTypes[i]);
                 }
 
-                // TODO[jsse] Convert X500Name to X500Principal here
-                Principal[] issuers = null; //certificateRequest.getCertificateAuthorities();
+                Principal[] issuers = null;
+                Vector<X500Name> cas = (Vector<X500Name>)certificateRequest.getCertificateAuthorities();
+                if (cas != null && cas.size() > 0)
+                {
+                	X500Name[] names = cas.toArray(new X500Name[cas.size()]);
+                	Set<X500Principal> principals = JsseUtils.toX500Principals(names);
+                	issuers = principals.toArray(new Principal[principals.size()]);
+                }
+
                 // TODO[jsse] How is this used?
                 Socket socket = null;
 

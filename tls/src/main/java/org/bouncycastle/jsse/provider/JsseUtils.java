@@ -1,9 +1,17 @@
 package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
+import java.security.Principal;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
+import javax.security.auth.x500.X500Principal;
+
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
@@ -121,5 +129,52 @@ class JsseUtils
             chain[i] = JcaTlsCertificate.convert(certificateMessage.getCertificateAt(i), helper).getX509Certificate();
         }
         return chain;
+    }
+
+    static Set<X500Principal> toX500Principals(X500Name[] names) throws IOException
+    {
+        if (names == null || names.length == 0)
+        {
+            return Collections.emptySet();
+        }
+
+        Set<X500Principal> principals = new HashSet<X500Principal>(names.length);
+
+        for (int i = 0; i < names.length; ++i)
+        {
+            X500Name name = names[i];
+            if (name != null)
+            {
+            	principals.add(new X500Principal(name.getEncoded(ASN1Encoding.DER)));
+            }
+        }
+
+        return principals;
+    }
+
+    static Set<X500Name> toX500Names(Principal[] principals)
+    {
+        if (principals == null || principals.length == 0)
+        {
+            return Collections.emptySet();
+        }
+
+        Set<X500Name> names = new HashSet<X500Name>(principals.length);
+
+        for (int i = 0; i != principals.length; i++)
+        {
+            Principal principal = principals[i];
+            if (principal instanceof X500Principal)
+            {
+                names.add(X500Name.getInstance(((X500Principal)principal).getEncoded()));
+            }
+            else if (principal != null)
+            {
+            	// TODO[jsse] Should we really be trying to support these?
+                names.add(new X500Name(principal.getName()));       // hope for the best
+            }
+        }
+
+        return names;
     }
 }

@@ -48,7 +48,7 @@ class ProvX509KeyManager
 
     public String[] getClientAliases(String keyType, Principal[] issuers)
     {
-        List<String> aliases = findAliases(false, keyType, principalToIssuers(issuers));
+        List<String> aliases = findAliases(false, keyType, JsseUtils.toX500Names(issuers));
 
         return aliases.toArray(new String[aliases.size()]);
     }
@@ -57,10 +57,12 @@ class ProvX509KeyManager
     {
         try
         {
+            Set<X500Name> issuerNames = JsseUtils.toX500Names(issuers);
+
             // TODO[jsse] Need to support the keyTypes that SunJSSE sends here
             for (int i = 0; i != keyTypes.length; i++)
             {
-                List<String> aliases = findAliases(false, keyTypes[i], principalToIssuers(issuers));
+				List<String> aliases = findAliases(false, keyTypes[i], issuerNames);
                 if (!aliases.isEmpty())
                 {
                     return aliases.get(0);
@@ -77,7 +79,7 @@ class ProvX509KeyManager
 
     public String[] getServerAliases(String keyType, Principal[] issuers)
     {
-        List<String> aliases = findAliases(true, keyType, principalToIssuers(issuers));
+        List<String> aliases = findAliases(true, keyType, JsseUtils.toX500Names(issuers));
 
         return aliases.toArray(new String[aliases.size()]);
     }
@@ -86,7 +88,7 @@ class ProvX509KeyManager
     {
         try
         {
-            List<String> aliases = findAliases(true, keyType, principalToIssuers(issuers));
+            List<String> aliases = findAliases(true, keyType, JsseUtils.toX500Names(issuers));
 
             if (aliases.isEmpty())
             {
@@ -117,32 +119,6 @@ class ProvX509KeyManager
     public PrivateKey getPrivateKey(String alias)
     {
         return keys.get(alias).getPrivateKey();
-    }
-
-    private static Set<X500Name> principalToIssuers(Principal[] principals)
-    {
-        if (principals == null || principals.length == 0)
-        {
-            return Collections.emptySet();
-        }
-
-        Set<X500Name> issuers = new HashSet<X500Name>(principals.length);
-
-        for (int i = 0; i != principals.length; i++)
-        {
-            Principal p = principals[i];
-
-            if (p instanceof X500Principal)
-            {
-                issuers.add(X500Name.getInstance(((X500Principal)p).getEncoded()));
-            }
-            else
-            {
-                issuers.add(new X500Name(p.getName()));       // hope for the best
-            }
-        }
-
-        return issuers;
     }
 
     private List<String> findAliases(boolean forServer, String keyType, Set<X500Name> issuers)
