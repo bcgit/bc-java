@@ -18,6 +18,7 @@ import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
+import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsFatalAlert;
@@ -200,6 +201,29 @@ class ProvTlsServer
 //            cause.printStackTrace(out);
 //        }
 //    }
+
+    @Override
+    public ProtocolVersion getServerVersion() throws IOException
+    {
+        /*
+         * TODO[jsse] It may be best to just require the "protocols" list to be a contiguous set
+         * (especially in light of TLS_FALLBACK_SCSV), then just determine the minimum/maximum,
+         * and keep the super class implementation of this. 
+         */
+        String[] protocols = sslParameters.getProtocols();
+        if (protocols != null && protocols.length > 0)
+        {
+            for (ProtocolVersion version = clientVersion; version != null; version = version.getPreviousVersion())
+            {
+                String versionString = manager.getContext().getVersionString(version);
+                if (versionString != null && JsseUtils.contains(protocols, versionString))
+                {
+                    return serverVersion = version;
+                }
+            }
+        }
+        throw new TlsFatalAlert(AlertDescription.protocol_version);
+    }
 
     @Override
     public void notifyClientCertificate(Certificate clientCertificate) throws IOException

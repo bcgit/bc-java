@@ -27,6 +27,18 @@ class JsseUtils
 {
     protected static X509Certificate[] EMPTY_CHAIN = new X509Certificate[0];
 
+    static boolean contains(String[] values, String value)
+    {
+        for (int i = 0; i < values.length; ++i)
+        {
+            if (value.equals(values[i]))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static String getAuthType(int keyExchangeAlgorithm) throws IOException
     {
         switch (keyExchangeAlgorithm)
