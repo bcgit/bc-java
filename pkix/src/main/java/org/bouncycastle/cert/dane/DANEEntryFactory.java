@@ -45,7 +45,7 @@ public class DANEEntryFactory
     public DANEEntry createEntry(String emailAddress, int certUsage, X509CertificateHolder certificate)
         throws DANEException
     {
-        if (certUsage <= 0 || certUsage >= 3)
+        if (certUsage < 0 || certUsage > 3)
         {
             throw new DANEException("unknown certificate usage: " + certUsage);
         }
