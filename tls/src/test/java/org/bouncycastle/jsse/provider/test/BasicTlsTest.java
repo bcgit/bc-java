@@ -63,6 +63,8 @@ public class BasicTlsTest
             SSLSocketFactory fact = clientContext.getSocketFactory();
             SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, PORT_NO);
 
+            SSLUtils.restrictKeyExchange(cSock, "ECDHE_ECDSA");
+
             TestProtocolUtil.doClientProtocol(cSock, "Hello");
 
             latch.countDown();
@@ -104,6 +106,8 @@ public class BasicTlsTest
 
             SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
             SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(PORT_NO);
+
+            SSLUtils.enableAll(sSock);
 
             latch.countDown();
 

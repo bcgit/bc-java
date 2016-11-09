@@ -13,6 +13,12 @@ import javax.net.ssl.TrustManagerFactory;
 
 class SSLUtils
 {
+    static void enableAll(SSLServerSocket ss)
+    {
+        ss.setEnabledCipherSuites(ss.getSupportedCipherSuites());
+        ss.setEnabledProtocols(ss.getEnabledProtocols());
+    }
+
     static void restrictKeyExchange(SSLSocket s, String keyExchange)
     {
         ArrayList<String> enabled = new ArrayList<String>();
@@ -57,6 +63,8 @@ class SSLUtils
                     SSLServerSocketFactory sslSocketFactory = context.getServerSocketFactory();
 
                     SSLServerSocket ss = (SSLServerSocket)sslSocketFactory.createServerSocket(port);
+
+                    enableAll(ss);
 
                     ss.setNeedClientAuth(needClientAuth);
 
