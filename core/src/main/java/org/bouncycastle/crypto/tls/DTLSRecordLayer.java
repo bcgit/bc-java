@@ -243,7 +243,7 @@ class DTLSRecordLayer
 
                         if (alertLevel == AlertLevel.fatal)
                         {
-                            fail(alertDescription);
+                            failed();
                             throw new TlsFatalAlert(alertDescription);
                         }
 
@@ -395,6 +395,16 @@ class DTLSRecordLayer
                 // Ignore
             }
 
+            failed = true;
+
+            closeTransport();
+        }
+    }
+
+    void failed()
+    {
+        if (!closed)
+        {
             failed = true;
 
             closeTransport();
