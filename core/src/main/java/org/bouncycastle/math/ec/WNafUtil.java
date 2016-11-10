@@ -440,7 +440,7 @@ public abstract class WNafUtil
                          *      1) additions do not use the curve's A, B coefficients.
                          *      2) no special cases (i.e. Q +/- Q) when calculating 1P, 3P, 5P, ...
                          */
-                        if (ECAlgorithms.isFpCurve(c) && c.getFieldSize() >= 64)
+                        if (!twiceP.isInfinity() && ECAlgorithms.isFpCurve(c) && c.getFieldSize() >= 64)
                         {
                             switch (c.getCoordinateSystem())
                             {
