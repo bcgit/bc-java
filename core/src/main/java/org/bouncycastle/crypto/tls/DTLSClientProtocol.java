@@ -61,19 +61,29 @@ public class DTLSClientProtocol
         }
         catch (TlsFatalAlert fatalAlert)
         {
-            recordLayer.fail(fatalAlert.getAlertDescription());
+            abortClientHandshake(state, recordLayer, fatalAlert.getAlertDescription());
             throw fatalAlert;
         }
         catch (IOException e)
         {
-            recordLayer.fail(AlertDescription.internal_error);
+            abortClientHandshake(state, recordLayer, AlertDescription.internal_error);
             throw e;
         }
         catch (RuntimeException e)
         {
-            recordLayer.fail(AlertDescription.internal_error);
+            abortClientHandshake(state, recordLayer, AlertDescription.internal_error);
             throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
+        finally
+        {
+            securityParameters.clear();
+        }
+    }
+
+    protected void abortClientHandshake(ClientHandshakeState state, DTLSRecordLayer recordLayer, short alertDescription)
+    {
+        recordLayer.fail(alertDescription);
+        invalidateSession(state);
     }
 
     protected DTLSTransport clientHandshake(ClientHandshakeState state, DTLSRecordLayer recordLayer)
