@@ -224,19 +224,6 @@ public class BCRSAPrivateCrtKey
 
     public String toString()
     {
-        StringBuffer    buf = new StringBuffer();
-        String          nl = Strings.lineSeparator();
-
-        buf.append("RSA Private CRT Key").append(nl);
-        buf.append("            modulus: ").append(this.getModulus().toString(16)).append(nl);
-        buf.append("    public exponent: ").append(this.getPublicExponent().toString(16)).append(nl);
-        buf.append("   private exponent: ").append(this.getPrivateExponent().toString(16)).append(nl);
-        buf.append("             primeP: ").append(this.getPrimeP().toString(16)).append(nl);
-        buf.append("             primeQ: ").append(this.getPrimeQ().toString(16)).append(nl);
-        buf.append("     primeExponentP: ").append(this.getPrimeExponentP().toString(16)).append(nl);
-        buf.append("     primeExponentQ: ").append(this.getPrimeExponentQ().toString(16)).append(nl);
-        buf.append("     crtCoefficient: ").append(this.getCrtCoefficient().toString(16)).append(nl);
-
-        return buf.toString();
+        return "BCRSAPrivateCrtKey class";
     }
 }
