@@ -25,6 +25,10 @@ public class GCMBlockCipher
 {
     private static final int BLOCK_SIZE = 16;
 
+    // If the plaintext/ciphertext length is larger than 2^36 - 32 bytes, the
+    // counter is wrapped and it leaks the plaintext and authentication key.
+    private static final long MAX_DATA_SIZE = ((1L<<36) - 32);
+
     // not final due to a compiler bug
     private BlockCipher   cipher;
     private GCMMultiplier multiplier;
@@ -292,6 +296,11 @@ public class GCMBlockCipher
     public int processByte(byte in, byte[] out, int outOff)
         throws DataLengthException
     {
+        if (totalLength + bufOff + 1 > MAX_DATA_SIZE)
+        {
+            throw new DataLengthException("Data exceeded " + MAX_DATA_SIZE + " bytes.");
+        }
+
         bufBlock[bufOff] = in;
         if (++bufOff == bufBlock.length)
         {
@@ -304,6 +313,11 @@ public class GCMBlockCipher
     public int processBytes(byte[] in, int inOff, int len, byte[] out, int outOff)
         throws DataLengthException
     {
+        if (totalLength + bufOff + len > MAX_DATA_SIZE)
+        {
+            throw new DataLengthException("Data exceeded " + MAX_DATA_SIZE + " bytes.");
+        }
+
         if (in.length < (inOff + len))
         {
             throw new DataLengthException("Input buffer too short");
