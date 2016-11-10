@@ -27,6 +27,8 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.params.DSAKeyParameters;
+import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.util.Arrays;
@@ -52,7 +54,8 @@ public class DSASigner
         throws InvalidKeyException
     {
         CipherParameters    param = DSAUtil.generatePublicKeyParameter(publicKey);
-
+        DSAParameters       dsaParam = ((DSAKeyParameters) param).getParameters();
+        checkKey(dsaParam);
         digest.reset();
         signer.init(false, param);
     }
@@ -71,6 +74,8 @@ public class DSASigner
         throws InvalidKeyException
     {
         CipherParameters    param = DSAUtil.generatePrivateKeyParameter(privateKey);
+        DSAParameters       dsaParam = ((DSAKeyParameters) param).getParameters();
+        checkKey(dsaParam);
 
         if (random != null)
         {
@@ -142,6 +147,40 @@ public class DSASigner
         AlgorithmParameterSpec params)
     {
         throw new UnsupportedOperationException("engineSetParameter unsupported");
+    }
+
+    protected void checkKey(
+        DSAParameters params)
+        throws InvalidKeyException
+    {
+        if (params == null) {
+            throw new InvalidKeyException("DSA key's parameter is null");
+        }
+        int valueL = params.getP().bitLength();
+        int valueN = params.getQ().bitLength();
+        int digestSize = digest.getDigestSize();
+
+        // These checks are consistent with DSAParametersGenerator's init method.
+        if ((valueL < 1024 || valueL > 3072) || valueL % 1024 != 0) 
+        {
+            throw new InvalidKeyException("valueL values must be between 1024 and 3072 and a multiple of 1024");
+        } 
+        else if (valueL == 1024 && valueN != 160) 
+        {
+            throw new InvalidKeyException("valueN must be 160 for valueL = 1024");
+        } 
+        else if (valueL == 2048 && (valueN != 224 && valueN != 256)) 
+        {
+            throw new InvalidKeyException("valueN must be 224 or 256 for valueL = 2048");
+        } 
+        else if (valueL == 3072 && valueN != 256) 
+        {
+            throw new InvalidKeyException("valueN must be 256 for valueL = 3072");
+        }
+        if (valueN > digestSize * 8) 
+        {
+            throw new InvalidKeyException("Key is too strong for this signature algorithm");
+        }
     }
 
     /**
