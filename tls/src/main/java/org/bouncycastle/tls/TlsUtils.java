@@ -1207,6 +1207,7 @@ public class TlsUtils
         case EncryptionAlgorithm.SEED_CBC:
             return CipherType.block;
 
+        case EncryptionAlgorithm.NULL:
         case EncryptionAlgorithm.RC4_40:
         case EncryptionAlgorithm.RC4_128:
             return CipherType.stream;
