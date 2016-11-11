@@ -228,7 +228,7 @@ public class ECIESKeyEncapsulation
     protected KeyParameter deriveKey(int keyLen, byte[] C, byte[] PEH)
     {
         byte[] kdfInput = PEH;
-        if (SingleHashMode)
+        if (!SingleHashMode)
         {
             kdfInput = Arrays.concatenate(C, PEH);
             Arrays.fill(PEH, (byte)0);
