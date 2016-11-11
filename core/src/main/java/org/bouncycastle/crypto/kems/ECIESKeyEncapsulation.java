@@ -35,7 +35,7 @@ public class ECIESKeyEncapsulation
     private boolean SingleHashMode;
 
     /**
-     * Set up the ECIES-KEM.
+     * Set up the ECIES-KEM. By default singleHashMode is true.
      *
      * @param kdf the key derivation function to be used.
      * @param rnd the random source for the session key.
@@ -48,7 +48,7 @@ public class ECIESKeyEncapsulation
         this.rnd = rnd;
         this.CofactorMode = false;
         this.OldCofactorMode = false;
-        this.SingleHashMode = false;
+        this.SingleHashMode = true;
     }
 
     /**
@@ -56,9 +56,9 @@ public class ECIESKeyEncapsulation
      *
      * @param kdf             the key derivation function to be used.
      * @param rnd             the random source for the session key.
-     * @param cofactorMode    true to use the new cofactor ECDH.
-     * @param oldCofactorMode true to use the old cofactor ECDH.
-     * @param singleHashMode  true to use single hash mode.
+     * @param cofactorMode    if true use the new cofactor ECDH.
+     * @param oldCofactorMode if true use the old cofactor ECDH.
+     * @param singleHashMode  if true use single hash mode.
      */
     public ECIESKeyEncapsulation(
         DerivationFunction kdf,
