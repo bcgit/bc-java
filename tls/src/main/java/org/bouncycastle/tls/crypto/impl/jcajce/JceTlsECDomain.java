@@ -145,7 +145,7 @@ public class JceTlsECDomain
             // It's a bit inefficient to do this conversion every time
             ECParameterSpec ecSpec = this.ecDomain.getParameterSpec(ECParameterSpec.class);
 
-            this.ecCurve = convertCurve(ecSpec.getCurve());
+            this.ecCurve = convertCurve(ecSpec.getCurve(), ecSpec.getOrder(), ecSpec.getCofactor());
         }
         catch (GeneralSecurityException e)
         {
@@ -154,7 +154,9 @@ public class JceTlsECDomain
     }
 
     private static ECCurve convertCurve(
-        EllipticCurve ec)
+        EllipticCurve ec,
+        BigInteger order,
+        int cofactor)
     {
         ECField field = ec.getField();
         BigInteger a = ec.getA();
@@ -162,7 +164,7 @@ public class JceTlsECDomain
 
         if (field instanceof ECFieldFp)
         {
-            ECCurve.Fp curve = new ECCurve.Fp(((ECFieldFp)field).getP(), a, b);
+            ECCurve.Fp curve = new ECCurve.Fp(((ECFieldFp)field).getP(), a, b, order, BigInteger.valueOf(cofactor));
 
             return curve;
         }
@@ -171,7 +173,7 @@ public class JceTlsECDomain
             ECFieldF2m fieldF2m = (ECFieldF2m)field;
             int m = fieldF2m.getM();
             int ks[] = convertMidTerms(fieldF2m.getMidTermsOfReductionPolynomial());
-            return new ECCurve.F2m(m, ks[0], ks[1], ks[2], a, b);
+            return new ECCurve.F2m(m, ks[0], ks[1], ks[2], a, b, order, BigInteger.valueOf(cofactor));
         }
     }
 
