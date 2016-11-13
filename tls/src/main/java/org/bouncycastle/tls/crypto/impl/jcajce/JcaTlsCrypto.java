@@ -19,6 +19,7 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.SRP6Group;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
@@ -45,6 +46,9 @@ import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
 import org.bouncycastle.tls.crypto.impl.TlsNullCipher;
 import org.bouncycastle.tls.crypto.impl.TlsStreamCipher;
 import org.bouncycastle.tls.crypto.impl.TlsStreamCipherImpl;
+import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6Client;
+import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6Server;
+import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6VerifierGenerator;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -197,17 +201,76 @@ public class JcaTlsCrypto
 
     public TlsSRP6Client createSRP6Client(TlsSRPConfig srpConfig)
     {
-        throw new UnsupportedOperationException();
+        final SRP6Client srpClient = new SRP6Client();
+
+        BigInteger[] ng = srpConfig.getExplicitNG();
+        SRP6Group srpGroup= new SRP6Group(ng[0], ng[1]);
+        srpClient.init(srpGroup, createHash(HashAlgorithm.sha1), this.getSecureRandom());
+
+        return new TlsSRP6Client()
+        {
+            public BigInteger calculateSecret(BigInteger serverB)
+                throws TlsFatalAlert
+            {
+                try
+                {
+                    return srpClient.calculateSecret(serverB);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
+                }
+            }
+
+            public BigInteger generateClientCredentials(byte[] srpSalt, byte[] identity, byte[] password)
+            {
+                return srpClient.generateClientCredentials(srpSalt, identity, password);
+            }
+        };
     }
 
     public TlsSRP6Server createSRP6Server(TlsSRPConfig srpConfig, BigInteger srpVerifier)
     {
-        throw new UnsupportedOperationException();
+        final SRP6Server srpServer = new SRP6Server();
+        BigInteger[] ng = srpConfig.getExplicitNG();
+        SRP6Group srpGroup= new SRP6Group(ng[0], ng[1]);
+        srpServer.init(srpGroup, srpVerifier, createHash(HashAlgorithm.sha1), this.getSecureRandom());
+        return new TlsSRP6Server()
+        {
+            public BigInteger generateServerCredentials()
+            {
+                return srpServer.generateServerCredentials();
+            }
+
+            public BigInteger calculateSecret(BigInteger clientA)
+                throws IOException
+            {
+                try
+                {
+                    return srpServer.calculateSecret(clientA);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
+                }
+            }
+        };
     }
 
     public TlsSRP6VerifierGenerator createSRP6VerifierGenerator(TlsSRPConfig srpConfig)
     {
-        throw new UnsupportedOperationException();
+        BigInteger[] ng = srpConfig.getExplicitNG();
+        final SRP6VerifierGenerator verifierGenerator = new SRP6VerifierGenerator();
+
+        verifierGenerator.init(ng[0], ng[1], createHash(HashAlgorithm.sha1));
+
+        return new TlsSRP6VerifierGenerator()
+        {
+            public BigInteger generateVerifier(byte[] salt, byte[] identity, byte[] password)
+            {
+                return verifierGenerator.generateVerifier(salt, identity, password);
+            }
+        };
     }
 
     public TlsSecret createSecret(byte[] data)
