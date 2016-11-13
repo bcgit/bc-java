@@ -6,6 +6,8 @@ dependencies {
     compile group: 'javax.mail', name: 'mail', version: '1.4'
 }
 
+jar.baseName = "bcmail-jdk15on"
+
 cobertura {
    coverageDirs = [
        "${rootProject.projectDir}/core/build/classes/main",
