@@ -3,28 +3,12 @@ package org.bouncycastle.tls;
 import java.io.IOException;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.util.Arrays;
 
 public abstract class DefaultTlsClient
     extends AbstractTlsClient
 {
-    protected TlsDHConfigVerifier dhConfigVerifier;
-
-    // TODO[tls-ops] Need to restore a default constructor here
-
-    public DefaultTlsClient(TlsCrypto crypto)
-    {
-        this(crypto, new DefaultTlsKeyExchangeFactory(), new DefaultTlsDHConfigVerifier());
-    }
-
-    public DefaultTlsClient(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsDHConfigVerifier dhConfigVerifier)
-    {
-        super(crypto, keyExchangeFactory);
-        this.dhConfigVerifier = dhConfigVerifier;
-    }
-
-    public int[] getCipherSuites()
-    {
-        return new int[]
+    protected static final int[] BASE_CIPHER_SUITES = new int[]
         {
             CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
             CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
@@ -42,6 +26,27 @@ public abstract class DefaultTlsClient
             CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256,
             CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
         };
+
+    protected TlsDHConfigVerifier dhConfigVerifier;
+    protected int[] supportedCipherSuites;
+
+    // TODO[tls-ops] Need to restore a default constructor here
+
+    public DefaultTlsClient(TlsCrypto crypto)
+    {
+        this(crypto, new DefaultTlsKeyExchangeFactory(), new DefaultTlsDHConfigVerifier());
+    }
+
+    public DefaultTlsClient(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsDHConfigVerifier dhConfigVerifier)
+    {
+        super(crypto, keyExchangeFactory);
+        this.dhConfigVerifier = dhConfigVerifier;
+        this.supportedCipherSuites = TlsUtils.getSupportedCipherSuites(crypto, BASE_CIPHER_SUITES);
+    }
+
+    public int[] getCipherSuites()
+    {
+        return Arrays.clone(supportedCipherSuites);
     }
 
     public TlsKeyExchange getKeyExchange()

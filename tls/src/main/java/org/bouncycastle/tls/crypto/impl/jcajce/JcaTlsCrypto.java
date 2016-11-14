@@ -273,6 +273,48 @@ public class JcaTlsCrypto
         };
     }
 
+    public boolean hasEncryptionAlgorithm(int encryptionAlgorithm)
+    {
+        if (encryptionAlgorithm == EncryptionAlgorithm.CHACHA20_POLY1305)
+        {
+            try
+            {
+                helper.createCipher("ChaCha7539");
+                helper.createMac("Poly1305");
+            }
+            catch (GeneralSecurityException e)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public boolean hasHashAlgorithm(short hashAlgorithm)
+    {
+        // TODO: expand
+        return true;
+    }
+
+    public boolean hasMacAlgorithm(int macAlgorithm)
+    {
+        // TODO: expand
+        return true;
+    }
+
+    public boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm)
+    {
+        // TODO: expand
+        return true;
+    }
+
+    public boolean hasRSAEncryption()
+    {
+        // TODO: expand
+        return true;
+    }
+
     public TlsSecret createSecret(byte[] data)
     {
         try
@@ -287,13 +329,6 @@ public class JcaTlsCrypto
 //                Arrays.fill(data, (byte)0);
 //            }
         }
-    }
-
-    public TlsSecret generateRandomSecret(int length)
-    {
-        byte[] data = new byte[length];
-        getSecureRandom().nextBytes(data);
-        return adoptLocalSecret(data);
     }
 
     public TlsSecret generateRSAPreMasterSecret(ProtocolVersion version)

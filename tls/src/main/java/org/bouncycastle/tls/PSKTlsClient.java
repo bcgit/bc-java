@@ -3,12 +3,25 @@ package org.bouncycastle.tls;
 import java.io.IOException;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.util.Arrays;
 
 public class PSKTlsClient
     extends AbstractTlsClient
 {
+    protected static final int[] BASE_CIPHER_SUITES = new int[]
+    {
+        CipherSuite.TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256,
+        CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256,
+        CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA,
+        CipherSuite.TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256,
+        CipherSuite.TLS_DHE_PSK_WITH_AES_128_GCM_SHA256,
+        CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA256,
+        CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA
+    };
+
     protected TlsDHConfigVerifier dhConfigVerifier;
     protected TlsPSKIdentity pskIdentity;
+    protected int[] supportedCipherSuites;
 
     // TODO[tls-ops] Need to restore a single-arg constructor here
 
@@ -24,20 +37,12 @@ public class PSKTlsClient
 
         this.dhConfigVerifier = dhConfigVerifier;
         this.pskIdentity = pskIdentity;
+        this.supportedCipherSuites = TlsUtils.getSupportedCipherSuites(crypto, BASE_CIPHER_SUITES);
     }
 
     public int[] getCipherSuites()
     {
-        return new int[]
-        {
-            CipherSuite.TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256,
-            CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256,
-            CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA,
-            CipherSuite.TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256,
-            CipherSuite.TLS_DHE_PSK_WITH_AES_128_GCM_SHA256,
-            CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA256,
-            CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA
-        };
+        return Arrays.clone(supportedCipherSuites);
     }
 
     public TlsKeyExchange getKeyExchange() throws IOException

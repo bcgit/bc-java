@@ -6,7 +6,9 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -16,6 +18,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsVerifier;
@@ -2330,4 +2333,29 @@ public class TlsUtils
         return result;
     }
 
+    static int[] getSupportedCipherSuites(TlsCrypto crypto, int[] baseCipherSuiteList)
+    {
+        List<Integer> supported = new ArrayList<Integer>();
+
+        for (int i = 0; i != baseCipherSuiteList.length; i++)
+        {
+            int cipherSuite = baseCipherSuiteList[i];
+            int encryptionAlgorithm = TlsUtils.getEncryptionAlgorithm(cipherSuite);
+            int macAlgorithm = TlsUtils.getMACAlgorithm(cipherSuite);
+
+            if (crypto.hasEncryptionAlgorithm(encryptionAlgorithm) && crypto.hasMacAlgorithm(macAlgorithm))
+            {
+                supported.add(baseCipherSuiteList[i]);
+            }
+        }
+
+        int[] rv = new int[supported.size()];
+
+        for (int i = 0; i != rv.length; i++)
+        {
+            rv[i] = supported.get(i);
+        }
+
+        return rv;
+    }
 }

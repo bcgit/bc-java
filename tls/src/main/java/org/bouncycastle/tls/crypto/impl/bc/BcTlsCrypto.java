@@ -238,6 +238,31 @@ public class BcTlsCrypto
         };
     }
 
+    public boolean hasEncryptionAlgorithm(int encryptionAlgorithm)
+    {
+        return true;
+    }
+
+    public boolean hasHashAlgorithm(short hashAlgorithm)
+    {
+        return true;
+    }
+
+    public boolean hasMacAlgorithm(int macAlgorithm)
+    {
+        return true;
+    }
+
+    public boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm)
+    {
+        return true;
+    }
+
+    public boolean hasRSAEncryption()
+    {
+        return true;
+    }
+
     public TlsSecret createSecret(byte[] data)
     {
         try
@@ -252,13 +277,6 @@ public class BcTlsCrypto
 //                Arrays.fill(data, (byte)0);
 //            }
         }
-    }
-
-    public TlsSecret generateRandomSecret(int length)
-    {
-        byte[] data = new byte[length];
-        entropySource.nextBytes(data);
-        return adoptLocalSecret(data);
     }
 
     public TlsSecret generateRSAPreMasterSecret(ProtocolVersion version)
