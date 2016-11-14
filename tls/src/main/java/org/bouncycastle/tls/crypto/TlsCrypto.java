@@ -15,20 +15,51 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 public interface TlsCrypto
 {
     /**
+     * Return true if this TlsCrypto can support the passed in block/stream encryption algorithm.
+     *
+     * @param encryptionAlgorithm the algorithm of interest.
+     * @return true if encryptionAlgorithm is supported, false otherwise.
+     */
+    boolean hasEncryptionAlgorithm(int encryptionAlgorithm);
+
+    /**
+     * Return true if this TlsCrypto can support the passed in hash algorithm.
+     *
+     * @param hashAlgorithm the algorithm of interest.
+     * @return true if hashAlgorithm is supported, false otherwise.
+     */
+    boolean hasHashAlgorithm(short hashAlgorithm);
+
+    /**
+     * Return true if this TlsCrypto can support the passed in MAC algorithm.
+     *
+     * @param macAlgorithm the algorithm of interest.
+     * @return true if macAlgorithm is supported, false otherwise.
+     */
+    boolean hasMacAlgorithm(int macAlgorithm);
+
+    /**
+     * Return true if this TlsCrypto can support the passed in signature algorithm.
+     *
+     * @param sigAndHashAlgorithm the algorithm of interest.
+     * @return true if sigAndHashAlgorithm is supported, false otherwise.
+     */
+    boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm);
+
+    /**
+     * Return true if this TlsCrypto can support RSA encryption/decryption.
+     *
+     * @return true if this instance can support RSA encryption/decryption, false otherwise.
+     */
+    boolean hasRSAEncryption();
+
+    /**
      * Create a TlsSecret object based provided data.
      *
      * @param data the data to base the TlsSecret on.
      * @return a TlsSecret based on random data.
      */
     TlsSecret createSecret(byte[] data);
-
-    /**
-     * Create a TlsSecret object based on a random byte array.
-     *
-     * @param length the length, in bytes, of the secret to be generated.
-     * @return a TlsSecret based on random data.
-     */
-    TlsSecret generateRandomSecret(int length);
 
     /**
      * Create a TlsSecret object containing a randomly-generated RSA PreMasterSecret

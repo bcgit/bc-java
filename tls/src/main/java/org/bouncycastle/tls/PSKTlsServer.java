@@ -5,33 +5,12 @@ import java.io.IOException;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
+import org.bouncycastle.util.Arrays;
 
 public class PSKTlsServer
     extends AbstractTlsServer
 {
-    protected TlsPSKIdentityManager pskIdentityManager;
-
-    // TODO[tls-ops] Need to restore a single-arg constructor here
-
-    public PSKTlsServer(TlsCrypto crypto, TlsPSKIdentityManager pskIdentityManager)
-    {
-        this(crypto, new DefaultTlsKeyExchangeFactory(), pskIdentityManager);
-    }
-
-    public PSKTlsServer(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsPSKIdentityManager pskIdentityManager)
-    {
-        super(crypto, keyExchangeFactory);
-        this.pskIdentityManager = pskIdentityManager;
-    }
-
-    protected TlsCredentialedDecryptor getRSAEncryptionCredentials() throws IOException
-    {
-        throw new TlsFatalAlert(AlertDescription.internal_error);
-    }
-
-    protected int[] getCipherSuites()
-    {
-        return new int[]
+    public static final int[] BASE_CIPHER_SUITES = new int[]
         {
             CipherSuite.TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256,
             CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384,
@@ -46,6 +25,32 @@ public class PSKTlsServer
             CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA,
             CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA
         };
+
+    protected TlsPSKIdentityManager pskIdentityManager;
+    protected int[] supportedCipherSuites;
+
+    // TODO[tls-ops] Need to restore a single-arg constructor here
+
+    public PSKTlsServer(TlsCrypto crypto, TlsPSKIdentityManager pskIdentityManager)
+    {
+        this(crypto, new DefaultTlsKeyExchangeFactory(), pskIdentityManager);
+    }
+
+    public PSKTlsServer(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsPSKIdentityManager pskIdentityManager)
+    {
+        super(crypto, keyExchangeFactory);
+        this.pskIdentityManager = pskIdentityManager;
+        this.supportedCipherSuites = TlsUtils.getSupportedCipherSuites(crypto, BASE_CIPHER_SUITES);
+    }
+
+    protected TlsCredentialedDecryptor getRSAEncryptionCredentials() throws IOException
+    {
+        throw new TlsFatalAlert(AlertDescription.internal_error);
+    }
+
+    protected int[] getCipherSuites()
+    {
+        return Arrays.clone(supportedCipherSuites);
     }
 
     public TlsCredentials getCredentials() throws IOException

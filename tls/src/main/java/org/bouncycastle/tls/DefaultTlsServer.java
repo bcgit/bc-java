@@ -3,20 +3,49 @@ package org.bouncycastle.tls;
 import java.io.IOException;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.util.Arrays;
 
 public abstract class DefaultTlsServer
     extends AbstractTlsServer
 {
+    protected static final int[] BASE_CIPHER_SUITES = new int[]
+    {
+        CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+        CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+        CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+        CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
+        CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+        CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+        CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+        CipherSuite.TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+        CipherSuite.TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
+        CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
+        CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,
+        CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,
+        CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
+        CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
+        CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384,
+        CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256,
+        CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256,
+        CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256,
+        CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
+        CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
+    };
+
     // TODO[tls-ops] Need to restore a default constructor here
+
+    protected int[] supportedCipherSuites;
 
     public DefaultTlsServer(TlsCrypto crypto)
     {
         super(crypto);
+        this.supportedCipherSuites = TlsUtils.getSupportedCipherSuites(crypto, BASE_CIPHER_SUITES);
     }
 
     public DefaultTlsServer(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory)
     {
         super(crypto, keyExchangeFactory);
+        this.supportedCipherSuites = TlsUtils.getSupportedCipherSuites(crypto, BASE_CIPHER_SUITES);
     }
 
     protected TlsCredentialedSigner getDSASignerCredentials()
@@ -45,29 +74,7 @@ public abstract class DefaultTlsServer
 
     protected int[] getCipherSuites()
     {
-        return new int[]
-        {
-            CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
-            CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-            CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-            CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
-            CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
-            CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
-            CipherSuite.TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
-            CipherSuite.TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
-            CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
-            CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,
-            CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,
-            CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
-            CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384,
-            CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256,
-            CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256,
-            CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256,
-            CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
-        };
+        return Arrays.clone(supportedCipherSuites);
     }
 
     public TlsCredentials getCredentials()
