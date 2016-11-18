@@ -106,22 +106,7 @@ public class JndiDANEFetcherFactory
 
                         if (smimeAttr != null)
                         {
-                            for (int index = 0; index != smimeAttr.size(); index++)
-                            {
-                                byte[] data = (byte[])smimeAttr.get(index);
-
-                                if (DANEEntry.isValidCertificate(data))
-                                {
-                                    try
-                                    {
-                                        entries.add(new DANEEntry(domainName, data));
-                                    }
-                                    catch (IOException e)
-                                    {
-                                        throw new DANEException("Exception parsing entry: " + e.getMessage(), e);
-                                    }
-                                }
-                            }
+                            addEntries(entries, domainName, smimeAttr);
                         }
                     }
                     else
@@ -142,24 +127,10 @@ public class JndiDANEFetcherFactory
 
                             if (smimeAttr != null)
                             {
-                                for (int index = 0; index != smimeAttr.size(); index++)
-                                {
-                                    byte[] data = (byte[])smimeAttr.get(index);
+                                String fullName = sc.getNameInNamespace();
+                                String domainName = fullName.substring(1, fullName.length() - 1);
 
-                                    if (DANEEntry.isValidCertificate(data))
-                                    {
-                                        try
-                                        {
-                                            String fullName = sc.getNameInNamespace();
-
-                                            entries.add(new DANEEntry(fullName.substring(1, fullName.length() - 1), data));
-                                        }
-                                        catch (IOException e)
-                                        {
-                                            throw new DANEException("Exception parsing entry: " + e.getMessage(), e);
-                                        }
-                                    }
-                                }
+                                addEntries(entries, domainName, smimeAttr);
                             }
                         }
                     }
@@ -172,5 +143,26 @@ public class JndiDANEFetcherFactory
                 }
             }
         };
+    }
+
+    private void addEntries(List entries, String domainName, Attribute smimeAttr)
+        throws NamingException, DANEException
+    {
+        for (int index = 0; index != smimeAttr.size(); index++)
+        {
+            byte[] data = (byte[])smimeAttr.get(index);
+
+            if (DANEEntry.isValidCertificate(data))
+            {
+                try
+                {
+                    entries.add(new DANEEntry(domainName, data));
+                }
+                catch (IOException e)
+                {
+                    throw new DANEException("Exception parsing entry: " + e.getMessage(), e);
+                }
+            }
+        }
     }
 }
