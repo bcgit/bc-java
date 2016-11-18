@@ -106,17 +106,20 @@ public class JndiDANEFetcherFactory
 
                         if (smimeAttr != null)
                         {
-                            byte[] data = (byte[])attrs.get(DANE_TYPE).get();
-
-                            if (DANEEntry.isValidCertificate(data))
+                            for (int index = 0; index != smimeAttr.size(); index++)
                             {
-                                try
+                                byte[] data = (byte[])smimeAttr.get(index);
+
+                                if (DANEEntry.isValidCertificate(data))
                                 {
-                                    entries.add(new DANEEntry(domainName, data));
-                                }
-                                catch (IOException e)
-                                {
-                                    throw new DANEException("Exception parsing entry: " + e.getMessage(), e);
+                                    try
+                                    {
+                                        entries.add(new DANEEntry(domainName, data));
+                                    }
+                                    catch (IOException e)
+                                    {
+                                        throw new DANEException("Exception parsing entry: " + e.getMessage(), e);
+                                    }
                                 }
                             }
                         }
@@ -139,25 +142,28 @@ public class JndiDANEFetcherFactory
 
                             if (smimeAttr != null)
                             {
-                                byte[] data = (byte[])attrs.get(DANE_TYPE).get();
-
-                                if (DANEEntry.isValidCertificate(data))
+                                for (int index = 0; index != smimeAttr.size(); index++)
                                 {
-                                    try
-                                    {
-                                        String fullName = sc.getNameInNamespace();
+                                    byte[] data = (byte[])smimeAttr.get(index);
 
-                                        entries.add(new DANEEntry(fullName.substring(1, fullName.length() - 1), data));
-                                    }
-                                    catch (IOException e)
+                                    if (DANEEntry.isValidCertificate(data))
                                     {
-                                        throw new DANEException("Exception parsing entry: " + e.getMessage(), e);
+                                        try
+                                        {
+                                            String fullName = sc.getNameInNamespace();
+
+                                            entries.add(new DANEEntry(fullName.substring(1, fullName.length() - 1), data));
+                                        }
+                                        catch (IOException e)
+                                        {
+                                            throw new DANEException("Exception parsing entry: " + e.getMessage(), e);
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-                    ;
+
                     return entries;
                 }
                 catch (NamingException e)
