@@ -2333,7 +2333,7 @@ public class TlsUtils
         return result;
     }
 
-    static int[] getSupportedCipherSuites(TlsCrypto crypto, int[] baseCipherSuiteList)
+    public static int[] getSupportedCipherSuites(TlsCrypto crypto, int[] baseCipherSuiteList)
     {
         List<Integer> supported = new ArrayList<Integer>();
 

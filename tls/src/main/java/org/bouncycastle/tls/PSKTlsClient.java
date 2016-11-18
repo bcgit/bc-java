@@ -8,6 +8,7 @@ import org.bouncycastle.util.Arrays;
 public class PSKTlsClient
     extends AbstractTlsClient
 {
+    // TODO[tls] Perhaps not ideal to keep this in a writable array
     protected static final int[] BASE_CIPHER_SUITES = new int[]
     {
         CipherSuite.TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256,

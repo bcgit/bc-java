@@ -193,7 +193,8 @@ class ProvTlsClient
     @Override
     public int[] getCipherSuites()
     {
-        return manager.getContext().convertCipherSuites(sslParameters.getCipherSuites());
+        return TlsUtils.getSupportedCipherSuites(manager.getContextData().getCrypto(),
+            manager.getContext().convertCipherSuites(sslParameters.getCipherSuites()));
     }
 
 //    public TlsKeyExchange getKeyExchange() throws IOException

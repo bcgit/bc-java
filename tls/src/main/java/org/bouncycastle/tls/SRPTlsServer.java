@@ -4,11 +4,24 @@ import java.io.IOException;
 import java.util.Hashtable;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.util.Arrays;
 
 public class SRPTlsServer
     extends AbstractTlsServer
 {
+    // TODO[tls] Perhaps not ideal to keep this in a writable array
+    public static final int[] BASE_CIPHER_SUITES = new int[]
+    {
+        CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA,
+        CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_128_CBC_SHA,
+        CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA,
+        CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA,
+        CipherSuite.TLS_SRP_SHA_WITH_AES_256_CBC_SHA,
+        CipherSuite.TLS_SRP_SHA_WITH_AES_128_CBC_SHA
+    };
+
     protected TlsSRPIdentityManager srpIdentityManager;
+    protected int[] supportedCipherSuites;
 
     protected byte[] srpIdentity = null;
     protected TlsSRPLoginParameters loginParameters = null;
@@ -24,6 +37,7 @@ public class SRPTlsServer
     {
         super(crypto, keyExchangeFactory);
         this.srpIdentityManager = srpIdentityManager;
+        this.supportedCipherSuites = TlsUtils.getSupportedCipherSuites(crypto, BASE_CIPHER_SUITES);
     }
 
     protected TlsCredentialedSigner getDSASignerCredentials()
@@ -40,15 +54,7 @@ public class SRPTlsServer
 
     protected int[] getCipherSuites()
     {
-        return new int[]
-        {
-            CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_128_CBC_SHA,
-            CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA,
-            CipherSuite.TLS_SRP_SHA_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_SRP_SHA_WITH_AES_128_CBC_SHA
-        };
+        return Arrays.clone(supportedCipherSuites);
     }
 
     public void processClientExtensions(Hashtable clientExtensions) throws IOException
