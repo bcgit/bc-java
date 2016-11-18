@@ -33,7 +33,7 @@ import org.bouncycastle.util.encoders.Hex;
 public class BasicTlsTest
     extends TestCase
 {
-    private static final int PORT_NO = 8003;
+    private static final int PORT_NO = 12001;
 
     protected boolean isSufficientVMVersion(String vmVersion)
     {
