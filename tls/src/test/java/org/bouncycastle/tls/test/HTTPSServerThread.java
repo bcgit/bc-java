@@ -19,7 +19,7 @@ import javax.net.ssl.TrustManagerFactory;
 public class HTTPSServerThread
     extends Thread
 {
-    private static final int PORT_NO = 8003;
+    private static final int PORT_NO = 12001;
     private static final char[] SERVER_PASSWORD = "serverPassword".toCharArray();
     private static final char[] TRUST_STORE_PASSWORD = "trustPassword".toCharArray();
 
