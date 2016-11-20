@@ -11,6 +11,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
 
 import org.bouncycastle.tls.SessionID;
+import org.bouncycastle.tls.TlsSession;
 
 /*
  * TODO[jsse]
@@ -34,6 +35,17 @@ class ProvSSLSessionContext
     ProvSSLContextSpi getSSLContext()
     {
         return sslContext;
+    }
+
+    SSLSession reportSession(TlsSession tlsSession)
+    {
+        // TODO[jsse] Check for existing session with same ID
+
+        ProvSSLSession sslSession = new ProvSSLSession(this, tlsSession);
+
+        // TODO[jsse] Register session for re-use
+
+        return sslSession;
     }
 
     public Enumeration<byte[]> getIds()
