@@ -2,33 +2,44 @@ package org.bouncycastle.jsse.provider;
 
 import java.security.Principal;
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.ExtendedSSLSession;
+import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSessionBindingEvent;
 import javax.net.ssl.SSLSessionBindingListener;
 import javax.net.ssl.SSLSessionContext;
-import javax.security.cert.X509Certificate;
+import javax.security.auth.x500.X500Principal;
+
+import org.bouncycastle.tls.SessionParameters;
+import org.bouncycastle.tls.TlsSession;
+import org.bouncycastle.util.Arrays;
 
 // TODO[jsse] Serializable ?
 class ProvSSLSession
     extends ExtendedSSLSession
 {
     // TODO[jsse] Ensure this behaves according to the javadoc for SSLSocket.getSession and SSLEngine.getSession
-    protected final static ProvSSLSession NULL_SESSION = new ProvSSLSession(null);
+    protected final static ProvSSLSession NULL_SESSION = new ProvSSLSession(null, null);
 
     protected final Map<String, Object> valueMap = Collections.synchronizedMap(new HashMap<String, Object>());
 
-    protected final ProvSSLSessionContext context;
+    protected final ProvSSLSessionContext sslSessionContext;
+    protected final TlsSession tlsSession;
+    protected final SessionParameters sessionParameters;
 
-    ProvSSLSession(ProvSSLSessionContext context)
+    ProvSSLSession(ProvSSLSessionContext sslSessionContext, TlsSession tlsSession)
     {
-        this.context = context;
+        this.sslSessionContext = sslSessionContext;
+        this.tlsSession = tlsSession;
+        this.sessionParameters = tlsSession == null ? null : tlsSession.exportSessionParameters();
     }
-    
+
     public int getApplicationBufferSize()
     {
         throw new UnsupportedOperationException();
@@ -36,7 +47,9 @@ class ProvSSLSession
 
     public String getCipherSuite()
     {
-        throw new UnsupportedOperationException();
+        return sessionParameters == null
+            ?   null
+            :   sslSessionContext.getSSLContext().getCipherSuiteString(sessionParameters.getCipherSuite());
     }
 
     public long getCreationTime()
@@ -46,7 +59,9 @@ class ProvSSLSession
 
     public byte[] getId()
     {
-        throw new UnsupportedOperationException();
+        return tlsSession == null
+            ?   null
+            :   Arrays.clone(tlsSession.getSessionID());
     }
 
     public long getLastAccessedTime()
@@ -56,12 +71,23 @@ class ProvSSLSession
 
     public Certificate[] getLocalCertificates()
     {
-        throw new UnsupportedOperationException();
+        if (sessionParameters != null)
+        {
+            X509Certificate[] chain = JsseUtils.getX509CertificateChain(sessionParameters.getLocalCertificate());
+            if (chain != null && chain.length > 0)
+            {
+                return chain;
+            }
+        }
+
+        return null;
     }
 
     public Principal getLocalPrincipal()
     {
-        throw new UnsupportedOperationException();
+        return sessionParameters == null
+            ?   null
+            :   JsseUtils.getSubject(sessionParameters.getLocalCertificate());
     }
 
     @Override
@@ -75,29 +101,53 @@ class ProvSSLSession
         throw new UnsupportedOperationException();
     }
 
-    public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException
+    public javax.security.cert.X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException
     {
+        /*
+         * TODO[jsse] "Note: this method exists for compatibility with previous releases. New
+         * applications should use getPeerCertificates() instead."
+         */
         throw new UnsupportedOperationException();
     }
 
     public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException
     {
-        throw new UnsupportedOperationException();
+        if (sessionParameters != null)
+        {
+            X509Certificate[] chain = JsseUtils.getX509CertificateChain(sessionParameters.getPeerCertificate());
+            if (chain != null && chain.length > 0)
+            {
+                return chain;
+            }
+        }
+
+        throw new SSLPeerUnverifiedException("No peer identity established");
     }
 
     public String getPeerHost()
     {
-        throw new UnsupportedOperationException();
+        // TODO[jsse] "It is mainly used as a hint for SSLSession caching strategies."
+        return null;
     }
 
     public int getPeerPort()
     {
-        throw new UnsupportedOperationException();
+        // TODO[jsse] "It is mainly used as a hint for SSLSession caching strategies."
+        return -1;
     }
 
     public Principal getPeerPrincipal() throws SSLPeerUnverifiedException
     {
-        throw new UnsupportedOperationException();
+        if (sessionParameters != null)
+        {
+            X500Principal principal = JsseUtils.getSubject(sessionParameters.getPeerCertificate());
+            if (principal != null)
+            {
+                return principal;
+            }
+        }
+
+        throw new SSLPeerUnverifiedException("No peer identity established");
     }
 
     @Override
@@ -108,18 +158,20 @@ class ProvSSLSession
 
     public String getProtocol()
     {
+        return sessionParameters == null
+            ?   null
+            :   sslSessionContext.getSSLContext().getProtocolString(sessionParameters.getNegotiatedVersion());
+    }
+
+    @Override
+    public List<SNIServerName> getRequestedServerNames()
+    {
         throw new UnsupportedOperationException();
     }
 
-//    @Override
-//    public List<SNIServerName> getRequestedServerNames()
-//    {
-//        return super.getRequestedServerNames();
-//    }
-
     public SSLSessionContext getSessionContext()
     {
-        return context;
+        return sslSessionContext;
     }
 
     public Object getValue(String name)
@@ -137,12 +189,15 @@ class ProvSSLSession
 
     public void invalidate()
     {
-        throw new UnsupportedOperationException();
+        if (tlsSession != null)
+        {
+            tlsSession.invalidate();
+        }
     }
 
     public boolean isValid()
     {
-        throw new UnsupportedOperationException();
+        return tlsSession != null && tlsSession.isResumable();
     }
 
     public void putValue(String name, Object value)

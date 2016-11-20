@@ -15,4 +15,6 @@ interface ProvTlsManager
     boolean isClientTrusted(X509Certificate[] chain, String authType);
 
     boolean isServerTrusted(X509Certificate[] chain, String authType);
+
+    void notifyHandshakeComplete(ProvSSLSession session); 
 }

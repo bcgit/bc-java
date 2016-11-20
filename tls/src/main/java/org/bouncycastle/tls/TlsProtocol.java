@@ -77,6 +77,7 @@ public abstract class TlsProtocol
     protected TlsSession tlsSession = null;
     protected SessionParameters sessionParameters = null;
     protected SecurityParameters securityParameters = null;
+    protected Certificate localCertificate = null;
     protected Certificate peerCertificate = null;
 
     protected int[] offeredCipherSuites = null;
@@ -161,6 +162,7 @@ public abstract class TlsProtocol
         }
 
         this.securityParameters.clear();
+        this.localCertificate = null;
         this.peerCertificate = null;
 
         this.offeredCipherSuites = null;
@@ -221,7 +223,9 @@ public abstract class TlsProtocol
                     this.sessionParameters = new SessionParameters.Builder()
                         .setCipherSuite(this.securityParameters.getCipherSuite())
                         .setCompressionAlgorithm(this.securityParameters.getCompressionAlgorithm())
+                        .setLocalCertificate(this.localCertificate)
                         .setMasterSecret(this.securityParameters.getMasterSecret())
+                        .setNegotiatedVersion(getContext().getServerVersion())
                         .setPeerCertificate(this.peerCertificate)
                         .setPSKIdentity(this.securityParameters.getPSKIdentity())
                         .setSRPIdentity(this.securityParameters.getSRPIdentity())
@@ -990,6 +994,8 @@ public abstract class TlsProtocol
         certificate.encode(message);
 
         message.writeToRecordStream();
+
+        this.localCertificate = certificate;
     }
 
     protected void sendChangeCipherSpecMessage()

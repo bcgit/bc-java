@@ -13,6 +13,7 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
@@ -73,7 +74,7 @@ public class BasicClientAuthTlsTest
 
             keyMgrFact.init(clientStore, clientKeyPass);
 
-            SSLContext clientContext = SSLContext.getInstance("TLS");
+            SSLContext clientContext = SSLContext.getInstance("TLS", "BCJSSE");
 
             clientContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(), SecureRandom.getInstance("DEFAULT", "BC"));
 
@@ -82,12 +83,12 @@ public class BasicClientAuthTlsTest
 
             SSLUtils.restrictKeyExchange(cSock, "ECDHE_ECDSA");
 
-            // TODO[jsse] Is this supposed to be a necessary call to get an SSL connection?
-            cSock.startHandshake();
+            SSLSession session = cSock.getSession();
+
+            assertEquals("CN=Test CA Certificate", session.getLocalPrincipal().getName());
+            assertEquals("CN=Test CA Certificate", session.getPeerPrincipal().getName());
 
             TestProtocolUtil.doClientProtocol(cSock, "Hello");
-
-            // TODO[jsse] Establish that server-auth actually worked - via session peer certificate?
 
             latch.countDown();
 
@@ -134,6 +135,7 @@ public class BasicClientAuthTlsTest
 
             trustMgrFact.init(trustStore);
 
+            // TODO[jsse] Need better support for sessions in the low-level API to use BCJSSE here
             SSLContext serverContext = SSLContext.getInstance("TLS");
 
             serverContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(), SecureRandom.getInstance("DEFAULT", "BC"));
@@ -149,12 +151,12 @@ public class BasicClientAuthTlsTest
 
             SSLSocket sslSock = (SSLSocket)sSock.accept();
 
-            // TODO[jsse] Is this supposed to be a necessary call to get an SSL connection?
-            sslSock.startHandshake();
+            SSLSession session = sslSock.getSession();
+
+            assertEquals("CN=Test CA Certificate", session.getLocalPrincipal().getName());
+            assertEquals("CN=Test CA Certificate", session.getPeerPrincipal().getName());
 
             TestProtocolUtil.doServerProtocol(sslSock, "World");
-
-            // TODO[jsse] Establish that client-auth actually worked - via session peer certificate?
 
             sslSock.close();
 

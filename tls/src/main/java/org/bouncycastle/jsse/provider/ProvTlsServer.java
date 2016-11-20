@@ -216,7 +216,7 @@ class ProvTlsServer
         {
             for (ProtocolVersion version = clientVersion; version != null; version = version.getPreviousVersion())
             {
-                String versionString = manager.getContext().getVersionString(version);
+                String versionString = manager.getContext().getProtocolString(version);
                 if (versionString != null && JsseUtils.contains(protocols, versionString))
                 {
                     return serverVersion = version;
@@ -269,7 +269,12 @@ class ProvTlsServer
         TlsSession tlsSession = context.getResumableSession();
         if (tlsSession != null && tlsSession.isResumable())
         {
-            // TODO[jsse] Register the session with the server SSLSessionContext of our SSLContext
+            ProvSSLSessionContext serverSessionContext = manager.getContextData().getServerSessionContext();
+            ProvSSLSession session = new ProvSSLSession(serverSessionContext, tlsSession);
+
+            // TODO[jsse] Register the session with the serverSessionContext
+
+            manager.notifyHandshakeComplete(session);
         }
     }
 }
