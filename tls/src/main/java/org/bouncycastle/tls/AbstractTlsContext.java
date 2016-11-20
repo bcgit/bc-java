@@ -51,10 +51,20 @@ abstract class AbstractTlsContext
 
     public TlsSession getResumableSession()
     {
+        TlsSession session = getSession();
+        if (session == null || !session.isResumable())
+        {
+            return null;
+        }
         return session;
     }
 
-    void setResumableSession(TlsSession session)
+    public TlsSession getSession()
+    {
+        return session;
+    }
+
+    void setSession(TlsSession session)
     {
         this.session = session;
     }

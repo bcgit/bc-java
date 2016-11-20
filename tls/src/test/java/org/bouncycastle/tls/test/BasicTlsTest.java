@@ -276,6 +276,11 @@ public class BasicTlsTest
             return null;
         }
 
+        public TlsSession getSession()
+        {
+            return null;
+        }
+
         public Object getUserObject()
         {
             throw new UnsupportedOperationException();

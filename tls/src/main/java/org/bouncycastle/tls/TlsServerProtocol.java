@@ -132,6 +132,14 @@ public class TlsServerProtocol
                 receiveClientHelloMessage(buf);
                 this.connection_state = CS_CLIENT_HELLO;
 
+                // NOTE: Currently no server support for session resumption
+                {
+                    invalidateSession();
+
+                    this.tlsSession = TlsUtils.importSession(TlsUtils.EMPTY_BYTES, null);
+                    this.sessionParameters = null;
+                }
+
                 sendServerHelloMessage();
                 this.connection_state = CS_SERVER_HELLO;
 
@@ -728,7 +736,7 @@ public class TlsServerProtocol
          * The server may return an empty session_id to indicate that the session will not be cached
          * and therefore cannot be resumed.
          */
-        TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, message);
+        TlsUtils.writeOpaque8(tlsSession.getSessionID(), message);
 
         int selectedCipherSuite = tlsServer.getSelectedCipherSuite();
         if (!Arrays.contains(offeredCipherSuites, selectedCipherSuite)

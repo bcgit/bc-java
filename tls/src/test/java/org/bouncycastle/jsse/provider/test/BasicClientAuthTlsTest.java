@@ -135,8 +135,7 @@ public class BasicClientAuthTlsTest
 
             trustMgrFact.init(trustStore);
 
-            // TODO[jsse] Need better support for sessions in the low-level API to use BCJSSE here
-            SSLContext serverContext = SSLContext.getInstance("TLS");
+            SSLContext serverContext = SSLContext.getInstance("TLS", "BCJSSE");
 
             serverContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(), SecureRandom.getInstance("DEFAULT", "BC"));
 

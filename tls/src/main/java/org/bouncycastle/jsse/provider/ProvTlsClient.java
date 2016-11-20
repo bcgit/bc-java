@@ -24,6 +24,7 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
@@ -214,7 +215,14 @@ class ProvTlsClient
     {
         return manager.getContext().getMaximumVersion(sslParameters.getProtocols());
     }
-    
+
+    @Override
+    public TlsSession getSessionToResume()
+    {
+        // TODO[jsse] Search for a suitable session in the client session context
+        return null;
+    }
+
 //    @Override
 //    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
 //    {
@@ -237,7 +245,7 @@ class ProvTlsClient
         this.handshakeComplete = true;
 
         ProvSSLSessionContext sessionContext = manager.getContextData().getClientSessionContext();
-        SSLSession session = sessionContext.reportSession(context.getResumableSession());
+        SSLSession session = sessionContext.reportSession(context.getSession());
 
         manager.notifyHandshakeComplete(session);
     }

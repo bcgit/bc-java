@@ -24,6 +24,16 @@ public interface TlsContext
      */
     TlsSession getResumableSession();
 
+    /**
+     * Used to get the session, if any, used by this connection. Only available after the handshake
+     * has successfully completed. Use {@link TlsSession#isResumable()} to find out if the session
+     * is resumable.
+     * 
+     * @return A {@link TlsSession} representing the session used by this connection.
+     * @see TlsPeer#notifyHandshakeComplete()
+     */
+    TlsSession getSession();
+
     Object getUserObject();
 
     void setUserObject(Object userObject);
