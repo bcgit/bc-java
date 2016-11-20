@@ -125,7 +125,7 @@ class JsseUtils
         }
     }
 
-    public static X509Certificate[] getX509CertificateChain(Certificate certificateMessage) throws IOException
+    public static X509Certificate[] getX509CertificateChain(Certificate certificateMessage)
     {
         if (certificateMessage == null || certificateMessage.isEmpty())
         {
@@ -135,12 +135,42 @@ class JsseUtils
         // TODO[jsse] Consider provider-related issues
         JcaJceHelper helper = new DefaultJcaJceHelper();
 
-        X509Certificate[] chain = new X509Certificate[certificateMessage.getLength()];
-        for (int i = 0; i < chain.length; ++i)
+        try
         {
-            chain[i] = JcaTlsCertificate.convert(certificateMessage.getCertificateAt(i), helper).getX509Certificate();
+            X509Certificate[] chain = new X509Certificate[certificateMessage.getLength()];
+            for (int i = 0; i < chain.length; ++i)
+            {
+                chain[i] = JcaTlsCertificate.convert(certificateMessage.getCertificateAt(i), helper).getX509Certificate();
+            }
+            return chain;
         }
-        return chain;
+        catch (IOException e)
+        {
+            // TODO[jsse] Logging
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static X500Principal getSubject(Certificate certificateMessage)
+    {
+        if (certificateMessage == null || certificateMessage.isEmpty())
+        {
+            return null;
+        }
+
+        // TODO[jsse] Consider provider-related issues
+        JcaJceHelper helper = new DefaultJcaJceHelper();
+
+        try
+        {
+            return JcaTlsCertificate.convert(certificateMessage.getCertificateAt(0), helper).getX509Certificate()
+                .getSubjectX500Principal();
+        }
+        catch (IOException e)
+        {
+            // TODO[jsse] Logging
+            throw new RuntimeException(e);
+        }
     }
 
     static Set<X500Principal> toX500Principals(X500Name[] names) throws IOException

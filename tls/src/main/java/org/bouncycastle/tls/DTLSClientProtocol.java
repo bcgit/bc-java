@@ -268,6 +268,8 @@ public class DTLSClientProtocol
             handshake.sendMessage(HandshakeType.supplemental_data, supplementalDataBody);
         }
 
+        Certificate clientCertificate = null;
+
         if (state.certificateRequest != null)
         {
             state.clientCredentials = TlsProtocol.validateCredentials(
@@ -279,7 +281,6 @@ public class DTLSClientProtocol
              * 
              * NOTE: In previous RFCs, this was SHOULD instead of MUST.
              */
-            Certificate clientCertificate = null;
             if (state.clientCredentials != null)
             {
                 clientCertificate = state.clientCredentials.getCertificate();
@@ -367,7 +368,9 @@ public class DTLSClientProtocol
             state.sessionParameters = new SessionParameters.Builder()
                 .setCipherSuite(securityParameters.getCipherSuite())
                 .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
+                .setLocalCertificate(clientCertificate)
                 .setMasterSecret(securityParameters.getMasterSecret())
+                .setNegotiatedVersion(state.clientContext.getServerVersion())
                 .setPeerCertificate(serverCertificate)
                 .setPSKIdentity(securityParameters.getPSKIdentity())
                 .setSRPIdentity(securityParameters.getSRPIdentity())

@@ -412,4 +412,9 @@ class ProvSSLEngine
         }
         return false;
     }
+
+    public synchronized void notifyHandshakeComplete(ProvSSLSession session)
+    {
+        this.session = session;
+    }
 }

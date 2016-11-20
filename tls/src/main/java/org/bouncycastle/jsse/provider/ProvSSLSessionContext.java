@@ -22,8 +22,19 @@ class ProvSSLSessionContext
 {
     protected final Map<SessionID, ProvSSLSession> sessionMap = Collections.synchronizedMap(new HashMap<SessionID, ProvSSLSession>());
 
+    protected final ProvSSLContextSpi sslContext;
     protected int sessionCacheSize = 0;
     protected int sessionTimeout = 0;
+
+    ProvSSLSessionContext(ProvSSLContextSpi sslContext)
+    {
+        this.sslContext = sslContext;
+    }
+
+    ProvSSLContextSpi getSSLContext()
+    {
+        return sslContext;
+    }
 
     public Enumeration<byte[]> getIds()
     {

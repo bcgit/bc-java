@@ -305,8 +305,6 @@ class ProvSSLSocketDirect
     
                 serverProtocol.accept(server);
             }
-
-            // TODO[jsse] this.session needs to be set after a successful handshake
         }
         finally
         {
@@ -350,5 +348,10 @@ class ProvSSLSocketDirect
             }
         }
         return false;
+    }
+
+    public synchronized void notifyHandshakeComplete(ProvSSLSession session)
+    {
+        this.session = session;
     }
 }

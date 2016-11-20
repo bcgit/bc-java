@@ -239,14 +239,19 @@ class ProvTlsClient
         TlsSession tlsSession = context.getResumableSession();
         if (tlsSession != null && tlsSession.isResumable())
         {
-            // TODO[jsse] Register the session with the client SSLSessionContext of our SSLContext
+            ProvSSLSessionContext clientSessionContext = manager.getContextData().getClientSessionContext();
+            ProvSSLSession session = new ProvSSLSession(clientSessionContext, tlsSession);
+
+            // TODO[jsse] Register the session with the clientSessionContext
+
+            manager.notifyHandshakeComplete(session);
         }
     }
 
     @Override
     public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
     {
-        String selected = manager.getContext().getVersionString(serverVersion);
+        String selected = manager.getContext().getProtocolString(serverVersion);
         if (selected != null)
         {
             for (String protocol : sslParameters.getProtocols())

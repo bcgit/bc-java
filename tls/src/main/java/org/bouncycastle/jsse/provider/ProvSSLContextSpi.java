@@ -23,6 +23,7 @@ import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoProvider;
 
@@ -72,14 +73,6 @@ class ProvSSLContextSpi
         return Collections.unmodifiableMap(ps);
     }
 
-    protected static SSLSessionContext createSSLSessionContext()
-    {
-        return new ProvSSLSessionContext();
-    }
-
-    protected final SSLSessionContext clientSessionContext = createSSLSessionContext();
-    protected final SSLSessionContext serverSessionContext = createSSLSessionContext();
-
     protected final TlsCryptoProvider cryptoProvider;
 
     protected boolean initialized = false;
@@ -87,6 +80,8 @@ class ProvSSLContextSpi
     private TlsCrypto crypto;
     private X509KeyManager km;
     private X509TrustManager tm;
+    private ProvSSLSessionContext clientSessionContext;
+    private ProvSSLSessionContext serverSessionContext;
 
     ProvSSLContextSpi(TlsCryptoProvider cryptoProvider)
     {
@@ -130,6 +125,26 @@ class ProvSSLContextSpi
             r.setWantClientAuth(false);
         }
         return r;
+    }
+
+    ProvSSLSessionContext createSSLSessionContext()
+    {
+        return new ProvSSLSessionContext(this);
+    }
+
+    String getCipherSuiteString(int suite)
+    {
+        if (TlsUtils.isValidUint16(suite))
+        {
+            for (Map.Entry<String, Integer> entry : supportedCipherSuites.entrySet())
+            {
+                if (entry.getValue().intValue() == suite)
+                {
+                    return entry.getKey();
+                }
+            }
+        }
+        return null;
     }
 
     String[] getDefaultCipherSuites()
@@ -187,17 +202,7 @@ class ProvSSLContextSpi
         return min;
     }
 
-    String[] getSupportedCipherSuites()
-    {
-        return supportedCipherSuites.keySet().toArray(new String[supportedCipherSuites.size()]);
-    }
-
-    String[] getSupportedProtocols()
-    {
-        return supportedProtocols.keySet().toArray(new String[supportedProtocols.size()]);
-    }
-
-    String getVersionString(ProtocolVersion v)
+    String getProtocolString(ProtocolVersion v)
     {
         if (v != null)
         {
@@ -210,6 +215,16 @@ class ProvSSLContextSpi
             }
         }
         return null;
+    }
+
+    String[] getSupportedCipherSuites()
+    {
+        return supportedCipherSuites.keySet().toArray(new String[supportedCipherSuites.size()]);
+    }
+
+    String[] getSupportedProtocols()
+    {
+        return supportedProtocols.keySet().toArray(new String[supportedProtocols.size()]);
     }
 
     boolean isSupportedCipherSuites(String[] suites)
@@ -267,7 +282,7 @@ class ProvSSLContextSpi
     }
 
     @Override
-    protected SSLSessionContext engineGetClientSessionContext()
+    protected synchronized SSLSessionContext engineGetClientSessionContext()
     {
         return clientSessionContext;
     }
@@ -283,7 +298,7 @@ class ProvSSLContextSpi
     }
 
     @Override
-    protected SSLSessionContext engineGetServerSessionContext()
+    protected synchronized SSLSessionContext engineGetServerSessionContext()
     {
         return serverSessionContext;
     }
@@ -316,15 +331,17 @@ class ProvSSLContextSpi
     protected synchronized void engineInit(KeyManager[] kms, TrustManager[] tms, SecureRandom sr) throws KeyManagementException
     {
         this.initialized = false;
+        this.crypto = cryptoProvider.create(sr);
         this.km = selectKeyManager(kms);
         this.tm = selectTrustManager(tms);
-        this.crypto = cryptoProvider.create(sr);
+        this.clientSessionContext = createSSLSessionContext();
+        this.serverSessionContext = createSSLSessionContext();
         this.initialized = true;
     }
 
     protected ContextData createContextData()
     {
-        return new ContextData(crypto, km, tm);
+        return new ContextData(crypto, km, tm, clientSessionContext, serverSessionContext);
     }
 
     protected X509KeyManager findX509KeyManager(KeyManager[] kms)
