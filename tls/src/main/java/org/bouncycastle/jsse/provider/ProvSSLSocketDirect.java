@@ -31,8 +31,8 @@ class ProvSSLSocketDirect
     protected boolean initialHandshakeBegun = false;
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
-    protected ProvSSLSession session = ProvSSLSession.NULL_SESSION;
-    protected ProvSSLSession handshakeSession = null;
+    protected SSLSession session = ProvSSLSession.NULL_SESSION;
+    protected SSLSession handshakeSession = null;
 
     protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData)
     {
@@ -350,7 +350,7 @@ class ProvSSLSocketDirect
         return false;
     }
 
-    public synchronized void notifyHandshakeComplete(ProvSSLSession session)
+    public synchronized void notifyHandshakeComplete(SSLSession session)
     {
         this.session = session;
     }

@@ -3,6 +3,7 @@ package org.bouncycastle.jsse.provider;
 import java.security.cert.X509Certificate;
 
 import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSession;
 
 interface ProvTlsManager
 {
@@ -16,5 +17,5 @@ interface ProvTlsManager
 
     boolean isServerTrusted(X509Certificate[] chain, String authType);
 
-    void notifyHandshakeComplete(ProvSSLSession session); 
+    void notifyHandshakeComplete(SSLSession session); 
 }

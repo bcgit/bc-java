@@ -8,6 +8,7 @@ import java.security.cert.X509Certificate;
 import java.util.Vector;
 
 import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
@@ -22,7 +23,6 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
@@ -266,15 +266,9 @@ class ProvTlsServer
     {
         this.handshakeComplete = true;
 
-        TlsSession tlsSession = context.getResumableSession();
-        if (tlsSession != null && tlsSession.isResumable())
-        {
-            ProvSSLSessionContext serverSessionContext = manager.getContextData().getServerSessionContext();
-            ProvSSLSession session = new ProvSSLSession(serverSessionContext, tlsSession);
+        ProvSSLSessionContext sessionContext = manager.getContextData().getServerSessionContext();
+        SSLSession session = sessionContext.reportSession(context.getResumableSession());
 
-            // TODO[jsse] Register the session with the serverSessionContext
-
-            manager.notifyHandshakeComplete(session);
-        }
+        manager.notifyHandshakeComplete(session);
     }
 }
