@@ -108,6 +108,14 @@ public class DTLSServerProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
+        // NOTE: Currently no server support for session resumption
+        {
+            invalidateSession(state);
+    
+            state.tlsSession = TlsUtils.importSession(TlsUtils.EMPTY_BYTES, null);
+            state.sessionParameters = null;
+        }
+
         {
             byte[] serverHelloBody = generateServerHello(state);
 
@@ -280,6 +288,23 @@ public class DTLSServerProtocol
 
         handshake.finish();
 
+        state.sessionParameters = new SessionParameters.Builder()
+            .setCipherSuite(securityParameters.getCipherSuite())
+            .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
+            .setLocalCertificate(serverCertificate)
+            .setMasterSecret(state.serverContext.getCrypto().adoptSecret(securityParameters.getMasterSecret()))
+            .setNegotiatedVersion(state.serverContext.getServerVersion())
+            .setPeerCertificate(state.clientCertificate)
+            .setPSKIdentity(securityParameters.getPSKIdentity())
+            .setSRPIdentity(securityParameters.getSRPIdentity())
+            // TODO Consider filtering extensions that aren't relevant to resumed sessions
+            .setServerExtensions(state.serverExtensions)
+            .build();
+
+        state.tlsSession = TlsUtils.importSession(state.tlsSession.getSessionID(), state.sessionParameters);
+
+        state.serverContext.setSession(state.tlsSession);
+
         state.server.notifyHandshakeComplete();
 
         return new DTLSTransport(recordLayer);
@@ -338,7 +363,7 @@ public class DTLSServerProtocol
          * The server may return an empty session_id to indicate that the session will not be cached
          * and therefore cannot be resumed.
          */
-        TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, buf);
+        TlsUtils.writeOpaque8(state.tlsSession.getSessionID(), buf);
 
         int selectedCipherSuite = state.server.getSelectedCipherSuite();
         if (!Arrays.contains(state.offeredCipherSuites, selectedCipherSuite)

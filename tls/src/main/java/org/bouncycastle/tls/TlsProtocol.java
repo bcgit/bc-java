@@ -161,6 +161,8 @@ public abstract class TlsProtocol
             this.expected_verify_data = null;
         }
 
+        this.tlsSession = null;
+        this.sessionParameters = null;
         this.securityParameters.clear();
         this.localCertificate = null;
         this.peerCertificate = null;
@@ -216,28 +218,25 @@ public abstract class TlsProtocol
                 }
             }
 
-            if (this.tlsSession != null)
+            if (this.sessionParameters == null)
             {
-                if (this.sessionParameters == null)
-                {
-                    this.sessionParameters = new SessionParameters.Builder()
-                        .setCipherSuite(this.securityParameters.getCipherSuite())
-                        .setCompressionAlgorithm(this.securityParameters.getCompressionAlgorithm())
-                        .setLocalCertificate(this.localCertificate)
-                        .setMasterSecret(this.securityParameters.getMasterSecret())
-                        .setNegotiatedVersion(getContext().getServerVersion())
-                        .setPeerCertificate(this.peerCertificate)
-                        .setPSKIdentity(this.securityParameters.getPSKIdentity())
-                        .setSRPIdentity(this.securityParameters.getSRPIdentity())
-                        // TODO Consider filtering extensions that aren't relevant to resumed sessions
-                        .setServerExtensions(this.serverExtensions)
-                        .build();
+                this.sessionParameters = new SessionParameters.Builder()
+                    .setCipherSuite(this.securityParameters.getCipherSuite())
+                    .setCompressionAlgorithm(this.securityParameters.getCompressionAlgorithm())
+                    .setLocalCertificate(this.localCertificate)
+                    .setMasterSecret(getContext().getCrypto().adoptSecret(this.securityParameters.getMasterSecret()))
+                    .setNegotiatedVersion(getContext().getServerVersion())
+                    .setPeerCertificate(this.peerCertificate)
+                    .setPSKIdentity(this.securityParameters.getPSKIdentity())
+                    .setSRPIdentity(this.securityParameters.getSRPIdentity())
+                    // TODO Consider filtering extensions that aren't relevant to resumed sessions
+                    .setServerExtensions(this.serverExtensions)
+                    .build();
 
-                    this.tlsSession = TlsUtils.importSession(this.tlsSession.getSessionID(), this.sessionParameters);
-                }
-
-                getContextAdmin().setResumableSession(this.tlsSession);
+                this.tlsSession = TlsUtils.importSession(this.tlsSession.getSessionID(), this.sessionParameters);
             }
+
+            getContextAdmin().setSession(this.tlsSession);
 
             getPeer().notifyHandshakeComplete();
         }

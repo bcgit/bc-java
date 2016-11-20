@@ -160,7 +160,7 @@ public class DTLSClientProtocol
 
             handshake.finish();
 
-            state.clientContext.setResumableSession(state.tlsSession);
+            state.clientContext.setSession(state.tlsSession);
 
             state.client.notifyHandshakeComplete();
 
@@ -169,10 +169,8 @@ public class DTLSClientProtocol
 
         invalidateSession(state);
 
-        if (state.selectedSessionID.length > 0)
-        {
-            state.tlsSession = new TlsSessionImpl(state.selectedSessionID, null);
-        }
+        state.tlsSession = TlsUtils.importSession(state.selectedSessionID, null);
+        state.sessionParameters = null;
 
         serverMessage = handshake.receiveMessage();
 
@@ -363,25 +361,22 @@ public class DTLSClientProtocol
 
         handshake.finish();
 
-        if (state.tlsSession != null)
-        {
-            state.sessionParameters = new SessionParameters.Builder()
-                .setCipherSuite(securityParameters.getCipherSuite())
-                .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
-                .setLocalCertificate(clientCertificate)
-                .setMasterSecret(securityParameters.getMasterSecret())
-                .setNegotiatedVersion(state.clientContext.getServerVersion())
-                .setPeerCertificate(serverCertificate)
-                .setPSKIdentity(securityParameters.getPSKIdentity())
-                .setSRPIdentity(securityParameters.getSRPIdentity())
-                // TODO Consider filtering extensions that aren't relevant to resumed sessions
-                .setServerExtensions(state.serverExtensions)
-                .build();
+        state.sessionParameters = new SessionParameters.Builder()
+            .setCipherSuite(securityParameters.getCipherSuite())
+            .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
+            .setLocalCertificate(clientCertificate)
+            .setMasterSecret(state.clientContext.getCrypto().adoptSecret(securityParameters.getMasterSecret()))
+            .setNegotiatedVersion(state.clientContext.getServerVersion())
+            .setPeerCertificate(serverCertificate)
+            .setPSKIdentity(securityParameters.getPSKIdentity())
+            .setSRPIdentity(securityParameters.getSRPIdentity())
+            // TODO Consider filtering extensions that aren't relevant to resumed sessions
+            .setServerExtensions(state.serverExtensions)
+            .build();
 
-            state.tlsSession = TlsUtils.importSession(state.tlsSession.getSessionID(), state.sessionParameters);
+        state.tlsSession = TlsUtils.importSession(state.tlsSession.getSessionID(), state.sessionParameters);
 
-            state.clientContext.setResumableSession(state.tlsSession);
-        }
+        state.clientContext.setSession(state.tlsSession);
 
         state.client.notifyHandshakeComplete();
 

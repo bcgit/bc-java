@@ -54,7 +54,7 @@ public interface TlsClient
      * Notifies the client of the session_id sent in the ServerHello.
      *
      * @param sessionID
-     * @see TlsContext#getResumableSession()
+     * @see TlsContext#getSession()
      */
     void notifySessionID(byte[] sessionID);
 

@@ -274,10 +274,8 @@ public class TlsClientProtocol
                 {
                     invalidateSession();
 
-                    if (this.selectedSessionID.length > 0)
-                    {
-                        this.tlsSession = new TlsSessionImpl(this.selectedSessionID, null);
-                    }
+                    this.tlsSession = TlsUtils.importSession(this.selectedSessionID, null);
+                    this.sessionParameters = null;
                 }
 
                 break;
