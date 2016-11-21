@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.ExtendedSSLSession;
-import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSessionBindingEvent;
 import javax.net.ssl.SSLSessionBindingListener;
@@ -150,7 +149,6 @@ class ProvSSLSession
         throw new SSLPeerUnverifiedException("No peer identity established");
     }
 
-    @Override
     public String[] getPeerSupportedSignatureAlgorithms()
     {
         throw new UnsupportedOperationException();
@@ -163,8 +161,8 @@ class ProvSSLSession
             :   sslSessionContext.getSSLContext().getProtocolString(sessionParameters.getNegotiatedVersion());
     }
 
-    @Override
-    public List<SNIServerName> getRequestedServerNames()
+    // TODO: SSNIServerName post 1.7
+    public List getRequestedServerNames()
     {
         throw new UnsupportedOperationException();
     }
