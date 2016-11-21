@@ -32,7 +32,7 @@ public class TlsServerProtocol
      * Similarly, when data needs to be sent, use
      * {@link #offerOutput(byte[], int, int)} to provide the cleartext, then use
      * {@link #readOutput(byte[], int, int)} to get the corresponding
-     * ciphertext.
+     * ciphertext.                                                           fetch
      */
     public TlsServerProtocol()
     {
