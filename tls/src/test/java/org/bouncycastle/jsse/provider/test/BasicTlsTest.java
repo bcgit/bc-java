@@ -56,7 +56,7 @@ public class BasicTlsTest
 
             trustMgrFact.init(trustStore);
 
-            SSLContext clientContext = SSLContext.getInstance("TLS");
+            SSLContext clientContext = SSLContext.getInstance("TLS", "BCJSSE");
 
             clientContext.init(null, trustMgrFact.getTrustManagers(), SecureRandom.getInstance("DEFAULT", "BC"));
 
@@ -64,6 +64,9 @@ public class BasicTlsTest
             SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, PORT_NO);
 
             SSLUtils.restrictKeyExchange(cSock, "ECDHE_ECDSA");
+
+            // TODO[jsse] Is this supposed to be a necessary call to get an SSL connection?
+            cSock.startHandshake();
 
             TestProtocolUtil.doClientProtocol(cSock, "Hello");
 
