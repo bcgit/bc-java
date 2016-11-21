@@ -33,9 +33,6 @@ public class TlsServerProtocol
      * {@link #offerOutput(byte[], int, int)} to provide the cleartext, then use
      * {@link #readOutput(byte[], int, int)} to get the corresponding
      * ciphertext.
-     * 
-     * @param secureRandom
-     *            Random number generator for various cryptographic functions
      */
     public TlsServerProtocol()
     {
