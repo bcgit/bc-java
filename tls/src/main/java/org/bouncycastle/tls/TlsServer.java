@@ -7,6 +7,9 @@ import java.util.Vector;
 import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedAgreement;
 import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedDecryptor;
 
+/**
+ * Interface describing a TLS server endpoint.
+ */
 public interface TlsServer
     extends TlsPeer
 {
