@@ -6,7 +6,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.util.BigIntegers;
 
-public class SRP6Util
+class SRP6Util
 {
     private static final byte[] colon = new byte[] { (byte)':' };
 
