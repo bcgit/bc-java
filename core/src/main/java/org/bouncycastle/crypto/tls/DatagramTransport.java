@@ -2,6 +2,9 @@ package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
 
+/**
+ * Base interface for an object sending and receiving DTLS data.
+ */
 public interface DatagramTransport
 {
     int getReceiveLimit()

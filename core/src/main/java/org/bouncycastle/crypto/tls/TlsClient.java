@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
+/**
+ * Interface describing a TLS client endpoint.
+ */
 public interface TlsClient
     extends TlsPeer
 {
