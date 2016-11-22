@@ -5,6 +5,9 @@ import java.io.IOException;
 import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedAgreement;
 import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedDecryptor;
 
+/**
+ * Base interface to provide TLS authentication credentials.
+ */
 public interface TlsAuthentication
 {
     /**
@@ -23,8 +26,7 @@ public interface TlsAuthentication
      * {@link TlsCredentialedDecryptor}, or {@link TlsCredentialedSigner}, depending on the key
      * exchange that was negotiated and the details of the {@link CertificateRequest}.
      * 
-     * @see {@link BcDefaultTlsCredentialedAgreement}, {@link BcDefaultTlsCredentialedDecryptor},
-     *      {@link BcDefaultTlsCredentialedSigner}
+     * @see {@link BcDefaultTlsCredentialedAgreement}, {@link BcDefaultTlsCredentialedDecryptor}
      *
      * @param certificateRequest
      *            details of the certificate request

@@ -5,6 +5,9 @@ import java.io.IOException;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 
+/**
+ * Base interface for a TLS endpoint.
+ */
 public interface TlsPeer
 {
     TlsCrypto getCrypto();
