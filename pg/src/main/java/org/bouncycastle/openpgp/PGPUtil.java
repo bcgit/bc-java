@@ -18,6 +18,7 @@ import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.DecoderException;
 
 /**
  * PGP utilities.
@@ -343,7 +344,7 @@ public class PGPUtil
      *
      * @param in the stream to be checked and possibly wrapped.
      * @return a stream that will return PGP binary encoded data.
-     * @throws IOException if an error occurs reading the stream, or initalising the
+     * @throws IOException if an error occurs reading the stream, or initialising the
      * {@link ArmoredInputStream}.
      */
     public static InputStream getDecoderStream(
@@ -414,17 +415,24 @@ public class PGPUtil
 
             System.arraycopy(buf, 0, firstBlock, 0, firstBlock.length);
 
-            byte[] decoded = Base64.decode(firstBlock);
-
-            //
-            // it's a base64 PGP block.
-            //
-            if ((decoded[0] & 0x80) != 0)
+            try
             {
-                return new ArmoredInputStream(in, false);
-            }
+                byte[] decoded = Base64.decode(firstBlock);
 
-            return new ArmoredInputStream(in);
+                //
+                // it's a base64 PGP block.
+                //
+                if ((decoded[0] & 0x80) != 0)
+                {
+                    return new ArmoredInputStream(in, false);
+                }
+
+                return new ArmoredInputStream(in);
+            }
+            catch (DecoderException e)
+            {
+                 throw new IOException(e.getMessage());
+            }
         }
     }
 
