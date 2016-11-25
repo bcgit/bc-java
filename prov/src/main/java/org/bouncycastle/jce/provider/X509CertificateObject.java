@@ -66,6 +66,9 @@ import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
+/**
+ * @deprecated Do not use this class directly - either use org.bouncycastle.cert (bcpkix) or CertificateFactory.
+ */
 public class X509CertificateObject
     extends X509Certificate
     implements PKCS12BagAttributeCarrier
