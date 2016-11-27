@@ -902,9 +902,9 @@ public class PGPPublicKey
 
         if (!found)
         {
-            for (Iterator it = key.getUserIDs(); it.hasNext();)
+            for (Iterator it = key.getRawUserIDs(); it.hasNext();)
             {
-                String id = (String)it.next();
+                UserIDPacket id = (UserIDPacket)it.next();
                 for (Iterator sIt = key.getSignaturesForID(id); sIt.hasNext();)
                 {
                     if (certification == sIt.next())
