@@ -52,6 +52,7 @@ import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.V1TBSCertificateGenerator;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
  * Test Utils
@@ -90,7 +91,7 @@ class TestUtils
         certGen.setSignature((AlgorithmIdentifier)algIds.get(sigName));
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()));
 
-        Signature sig = Signature.getInstance(sigName, "BC");
+        Signature sig = Signature.getInstance(sigName, BouncyCastleProvider.PROVIDER_NAME);
 
         sig.initSign(keyPair.getPrivate());
 
@@ -104,7 +105,8 @@ class TestUtils
         v.add((AlgorithmIdentifier)algIds.get(sigName));
         v.add(new DERBitString(sig.sign()));
 
-        return (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
+        return (X509Certificate)CertificateFactory.getInstance("X.509", BouncyCastleProvider.PROVIDER_NAME)
+            .generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
     }
 
     public static X509Certificate createCert(X500Name signerName, PrivateKey signerKey, String dn, String sigName, Extensions extensions, PublicKey pubKey)
@@ -129,7 +131,7 @@ class TestUtils
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()));
         certGen.setExtensions(extensions);
 
-        Signature sig = Signature.getInstance(sigName, "BC");
+        Signature sig = Signature.getInstance(sigName, BouncyCastleProvider.PROVIDER_NAME);
 
         sig.initSign(signerKey);
 
@@ -143,7 +145,8 @@ class TestUtils
         v.add((AlgorithmIdentifier)algIds.get(sigName));
         v.add(new DERBitString(sig.sign()));
 
-        return (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
+        return (X509Certificate)CertificateFactory.getInstance("X.509", BouncyCastleProvider.PROVIDER_NAME)
+            .generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
     }
 
     /**
@@ -152,7 +155,7 @@ class TestUtils
     public static KeyPair generateRSAKeyPair()
         throws Exception
     {
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", "BC");
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", BouncyCastleProvider.PROVIDER_NAME);
 
         kpGen.initialize(1024, new SecureRandom());
 
@@ -162,7 +165,7 @@ class TestUtils
     public static KeyPair generateECKeyPair()
         throws Exception
     {
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", "BC");
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", BouncyCastleProvider.PROVIDER_NAME);
 
         kpGen.initialize(256, new SecureRandom());
 

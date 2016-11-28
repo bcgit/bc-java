@@ -12,7 +12,7 @@ public class ConfigTest
 {
     protected void setUp()
     {
-        if (Security.getProvider("BC") == null)
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
         {
             Security.addProvider(new BouncyCastleProvider());
         }
@@ -20,15 +20,17 @@ public class ConfigTest
 
     public void testWithString()
     {
-        BouncyCastleJsseProvider jsseProv = new BouncyCastleJsseProvider("fips:BC");
+        String BC = BouncyCastleProvider.PROVIDER_NAME;
+
+        BouncyCastleJsseProvider jsseProv = new BouncyCastleJsseProvider("fips:" + BC);
 
         assertTrue(jsseProv.isFipsMode());
 
-        jsseProv = new BouncyCastleJsseProvider("BC");
+        jsseProv = new BouncyCastleJsseProvider(BC);
 
         assertFalse(jsseProv.isFipsMode());
 
-        jsseProv = new BouncyCastleJsseProvider("unknown:BC");
+        jsseProv = new BouncyCastleJsseProvider("unknown:" + BC);
 
         assertFalse(jsseProv.isFipsMode());
     }

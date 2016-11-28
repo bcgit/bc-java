@@ -24,11 +24,11 @@ public class BasicTlsTest
 {
     protected void setUp()
     {
-        if (Security.getProvider("BC") == null)
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
         {
             Security.addProvider(new BouncyCastleProvider());
         }
-        if (Security.getProvider("BCJSSE") == null)
+        if (Security.getProvider(BouncyCastleJsseProvider.PROVIDER_NAME) == null)
         {
             Security.addProvider(new BouncyCastleJsseProvider());
         }
@@ -52,13 +52,15 @@ public class BasicTlsTest
         public Object call()
             throws Exception
         {
-            TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("X509", "BCJSSE");
+            TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("X509",
+                BouncyCastleJsseProvider.PROVIDER_NAME);
 
             trustMgrFact.init(trustStore);
 
-            SSLContext clientContext = SSLContext.getInstance("TLS", "BCJSSE");
+            SSLContext clientContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
 
-            clientContext.init(null, trustMgrFact.getTrustManagers(), SecureRandom.getInstance("DEFAULT", "BC"));
+            clientContext.init(null, trustMgrFact.getTrustManagers(),
+                SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
 
             SSLSocketFactory fact = clientContext.getSocketFactory();
             SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, PORT_NO);
@@ -96,13 +98,15 @@ public class BasicTlsTest
         public Object call()
             throws Exception
         {
-            KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("X509", "BCJSSE");
+            KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("X509",
+                BouncyCastleJsseProvider.PROVIDER_NAME);
 
             keyMgrFact.init(serverStore, keyPass);
 
-            SSLContext serverContext = SSLContext.getInstance("TLS", "BCJSSE");
+            SSLContext serverContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
 
-            serverContext.init(keyMgrFact.getKeyManagers(), null, SecureRandom.getInstance("DEFAULT", "BC"));
+            serverContext.init(keyMgrFact.getKeyManagers(), null,
+                SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
 
             SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
             SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(PORT_NO);
