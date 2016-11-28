@@ -177,12 +177,8 @@ class ProvTlsClient
                 {
                     X509Certificate[] chain = JsseUtils.getX509CertificateChain(serverCertificate);
                     String authType = JsseUtils.getAuthType(TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite));
-    
-                    if (manager.isServerTrusted(chain, authType))
-                    {
-                        // TODO[jsse] Install server certificate in the session accordingly
-                    }
-                    else
+
+                    if (!manager.isServerTrusted(chain, authType))
                     {
                         throw new TlsFatalAlert(AlertDescription.bad_certificate);
                     }
