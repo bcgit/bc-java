@@ -460,7 +460,7 @@ public abstract class TlsProtocol
         }
     }
 
-    protected int applicationDataAvailable()
+    public int applicationDataAvailable()
     {
         return applicationDataQueue.available();
     }
@@ -475,7 +475,7 @@ public abstract class TlsProtocol
      * @return The number of bytes read.
      * @throws IOException If something goes wrong during reading data.
      */
-    protected int readApplicationData(byte[] buf, int offset, int len)
+    public int readApplicationData(byte[] buf, int offset, int len)
         throws IOException
     {
         if (len < 1)
@@ -502,6 +502,10 @@ public abstract class TlsProtocol
                  * Connection has been closed, there is no more data to read.
                  */
                 return -1;
+            }
+            if (!appDataReady)
+            {
+                throw new IllegalStateException("Cannot read application data until initial handshake completed.");
             }
 
             safeReadRecord();
@@ -584,16 +588,28 @@ public abstract class TlsProtocol
     }
 
     /**
-     * Send some application data to the remote system.
-     * <p>
-     * The method will handle fragmentation internally.
-     * </p>
-     * @param buf    The buffer with the data.
-     * @param offset The position in the buffer where the data is placed.
-     * @param len    The length of the data.
-     * @throws IOException If something goes wrong during sending.
+     * Write some application data. Fragmentation is handled internally. Usable in both
+     * blocking/non-blocking modes.<br>
+     * <br>
+     * In blocking mode, the output will be automatically sent via the underlying transport. In
+     * non-blocking mode, call {@link #readOutput(byte[], int, int)} to get the output bytes to send
+     * to the peer.<br>
+     * <br>
+     * This method must not be called until after the initial handshake is complete. Attempting to
+     * call it earlier will result in an {@link IllegalStateException}.
+     *
+     * @param buf
+     *            The buffer containing application data to send
+     * @param offset
+     *            The offset at which the application data begins
+     * @param length
+     *            The number of bytes of application data
+     * @throws IllegalStateException
+     *             If called before the initial handshake has completed.
+     * @throws IOException
+     *             If connection is already closed, or for encryption or transport errors.
      */
-    protected void writeData(byte[] buf, int offset, int len)
+    public void writeApplicationData(byte[] buf, int offset, int len)
         throws IOException
     {
         if (this.closed)
@@ -604,6 +620,10 @@ public abstract class TlsProtocol
             }
 
             throw new IOException("Sorry, connection has been closed, you cannot write more data");
+        }
+        if (!appDataReady)
+        {
+            throw new IllegalStateException("Cannot write application data until initial handshake completed.");
         }
 
         while (len > 0)
@@ -778,46 +798,15 @@ public abstract class TlsProtocol
         {
             throw new IllegalStateException("Cannot use readInput() in blocking mode! Use getInputStream() instead.");
         }
-        
-        try
-        {
-            return readApplicationData(buffer, offset, Math.min(length, applicationDataAvailable()));
-        }
-        catch (IOException e)
-        {
-            // readApplicationData() only throws if there is no data available, so this should never happen
-            throw new RuntimeException(e.toString()); // early JDK fix.
-        }
-    }
 
-    /**
-     * Offer output from an arbitrary source. Only allowed in non-blocking mode.<br>
-     * <br>
-     * After this method returns, the specified section of the buffer will have been
-     * processed. Use {@link #readOutput(byte[], int, int)} to get the bytes to
-     * transmit to the other peer.<br>
-     * <br>
-     * This method must not be called until after the handshake is complete! Attempting
-     * to call it before the handshake is complete will result in an exception.
-     * @param buffer The buffer containing application data to encrypt
-     * @param offset The offset at which to begin reading data
-     * @param length The number of bytes of data to read
-     * @throws IOException If an error occurs encrypting the data, or the handshake is not complete
-     */
-    public void offerOutput(byte[] buffer, int offset, int length)
-            throws IOException
-    {
-        if (blocking)
+        length = Math.min(length, applicationDataQueue.available());
+        if (length < 1)
         {
-            throw new IllegalStateException("Cannot use offerOutput() in blocking mode! Use getOutputStream() instead.");
+            return 0;
         }
-        
-        if (!appDataReady)
-        {
-            throw new IOException("Application data cannot be sent until the handshake is complete!");
-        }
-        
-        writeData(buffer, offset, length);
+
+        applicationDataQueue.removeData(buffer, offset, length, 0);
+        return length;
     }
 
     /**
@@ -1060,7 +1049,7 @@ public abstract class TlsProtocol
         }
     }
 
-    protected void flush()
+    public void flush()
         throws IOException
     {
         recordStream.flush();

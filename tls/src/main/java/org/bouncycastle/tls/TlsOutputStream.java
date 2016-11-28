@@ -20,7 +20,7 @@ class TlsOutputStream
     public void write(byte buf[], int offset, int len)
         throws IOException
     {
-        this.handler.writeData(buf, offset, len);
+        this.handler.writeApplicationData(buf, offset, len);
     }
 
     public void write(int arg0)
