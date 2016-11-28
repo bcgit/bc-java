@@ -353,7 +353,7 @@ class ProvSSLSocketDirect
             {
                 return protocol == null
                     ?   0
-                    :   protocol.getInputStream().available();
+                    :   protocol.applicationDataAvailable();
             }
         }
 
@@ -367,7 +367,10 @@ class ProvSSLSocketDirect
         public int read() throws IOException
         {
             handshakeIfNecessary();
-            return protocol.getInputStream().read();
+
+            byte[] buf = new byte[1];
+            int ret = protocol.readApplicationData(buf, 0, 1);
+            return ret < 0 ? -1 : buf[0] & 0xFF;
         }
 
         @Override
@@ -379,7 +382,7 @@ class ProvSSLSocketDirect
             }
 
             handshakeIfNecessary();
-            return protocol.getInputStream().read(b, off, len);
+            return protocol.readApplicationData(b, off, len);
         }
     }
 
@@ -398,7 +401,7 @@ class ProvSSLSocketDirect
             {
                 if (protocol != null)
                 {
-                    protocol.getOutputStream().flush();
+                    protocol.flush();
                 }
             }
         }
@@ -407,7 +410,9 @@ class ProvSSLSocketDirect
         public void write(int b) throws IOException
         {
             handshakeIfNecessary();
-            protocol.getOutputStream().write(b);
+
+            byte[] buf = new byte[]{ (byte)b };
+            protocol.writeApplicationData(buf, 0, 1);
         }
 
         @Override
@@ -416,7 +421,7 @@ class ProvSSLSocketDirect
             if (len > 0)
             {
                 handshakeIfNecessary();
-                protocol.getOutputStream().write(b, off, len);
+                protocol.writeApplicationData(b, off, len);
             }
         }
     }

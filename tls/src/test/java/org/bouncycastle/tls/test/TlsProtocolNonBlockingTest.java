@@ -59,7 +59,7 @@ public class TlsProtocolNonBlockingTest
         throws IOException
     {
         int dataSize = data.length;
-        writer.offerOutput(data, 0, dataSize);
+        writer.writeApplicationData(data, 0, dataSize);
         pumpData(writer, reader, fragment);
 
         assertEquals(dataSize, reader.getAvailableInputBytes());
@@ -110,7 +110,7 @@ public class TlsProtocolNonBlockingTest
 
         try
         {
-            protocol.offerOutput(new byte[10], 0, 10);
+            protocol.writeApplicationData(new byte[10], 0, 10);
             fail("Output was accepted after close");
         }
         catch (IOException e)
