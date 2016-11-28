@@ -35,7 +35,7 @@ public class BasicTlsTest
     }
 
     private static final String HOST = "localhost";
-    private static final int PORT_NO = 9020;
+    private static final int PORT_NO = 9021;
 
     public static class SimpleClient
         implements TestProtocolUtil.BlockingCallable
