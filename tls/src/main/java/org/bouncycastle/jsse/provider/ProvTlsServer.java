@@ -245,18 +245,13 @@ class ProvTlsServer
             X509Certificate[] chain = JsseUtils.getX509CertificateChain(clientCertificate);
             String authType = JsseUtils.getAuthType(TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite));
 
-            if (manager.isClientTrusted(chain, authType))
+            if (!manager.isClientTrusted(chain, authType))
             {
-                // TODO[jsse] Install client certificate in the session accordingly
-            }
-            else
-            {
-                if (sslParameters.getNeedClientAuth())
-                {
-                    throw new TlsFatalAlert(AlertDescription.bad_certificate);
-                }
-
-                // TODO[jsse] Double-check whether to proceed with unauthenticated client
+                /*
+                 * TODO[jsse] The low-level TLS API currently doesn't provide a way to indicate that
+                 * we wish to proceed with an untrusted client certificate, so we always fail here.
+                 */
+                throw new TlsFatalAlert(AlertDescription.bad_certificate);
             }
         }
     }
