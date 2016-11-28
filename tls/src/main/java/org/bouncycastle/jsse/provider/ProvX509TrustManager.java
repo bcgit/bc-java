@@ -20,6 +20,8 @@ import java.util.Set;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedTrustManager;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 class ProvX509TrustManager
     extends X509ExtendedTrustManager
 {
@@ -110,9 +112,10 @@ class ProvX509TrustManager
     {
         try
         {
-            CertStore certStore = CertStore.getInstance("Collection", new CollectionCertStoreParameters(Arrays.asList(x509Certificates)), "BC");
+            CertStore certStore = CertStore.getInstance("Collection",
+                new CollectionCertStoreParameters(Arrays.asList(x509Certificates)), BouncyCastleProvider.PROVIDER_NAME);
 
-            CertPathBuilder pathBuilder = CertPathBuilder.getInstance("PKIX", "BC");
+            CertPathBuilder pathBuilder = CertPathBuilder.getInstance("PKIX", BouncyCastleProvider.PROVIDER_NAME);
 
             X509CertSelector constraints = new X509CertSelector();
 
