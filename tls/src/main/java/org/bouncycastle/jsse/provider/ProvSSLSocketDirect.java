@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -21,6 +20,9 @@ class ProvSSLSocketDirect
     extends ProvSSLSocketBase
     implements ProvTlsManager
 {
+    protected final AppDataInput appDataIn = new AppDataInput();
+    protected final AppDataOutput appDataOut = new AppDataOutput();
+
     protected final ProvSSLContextSpi context;
     protected final ContextData contextData;
 
@@ -126,18 +128,9 @@ class ProvSSLSocketDirect
     }
 
     @Override
-    public synchronized InputStream getInputStream() throws IOException
+    public InputStream getInputStream() throws IOException
     {
-        if (!initialHandshakeBegun)
-        {
-//            return super.getInputStream();
-            throw new UnsupportedOperationException();
-        }
-        if (protocol == null)
-        {
-            throw new SocketException();
-        }
-        return protocol.getInputStream();
+        return appDataIn;
     }
 
     @Override
@@ -147,18 +140,9 @@ class ProvSSLSocketDirect
     }
 
     @Override
-    public synchronized OutputStream getOutputStream() throws IOException
+    public OutputStream getOutputStream() throws IOException
     {
-        if (!initialHandshakeBegun)
-        {
-//            return super.getOutputStream();
-            throw new UnsupportedOperationException();
-        }
-        if (protocol == null)
-        {
-            throw new SocketException();
-        }
-        return protocol.getOutputStream();
+        return appDataOut;
     }
 
     @Override
@@ -168,16 +152,13 @@ class ProvSSLSocketDirect
          * "This method will initiate the initial handshake if necessary and then block until the
          * handshake has been established."
          */
-        if (!initialHandshakeBegun)
+        try
         {
-            try
-            {
-                startHandshake();
-            }
-            catch (Exception e)
-            {
-                // TODO[jsse] Logging?
-            }
+            handshakeIfNecessary();
+        }
+        catch (Exception e)
+        {
+            // TODO[jsse] Logging?
         }
 
         return session;
@@ -353,5 +334,90 @@ class ProvSSLSocketDirect
     public synchronized void notifyHandshakeComplete(SSLSession session)
     {
         this.session = session;
+    }
+
+    synchronized void handshakeIfNecessary() throws IOException
+    {
+        if (!initialHandshakeBegun)
+        {
+            startHandshake();
+        }
+    }
+
+    class AppDataInput extends InputStream
+    {
+        @Override
+        public int available() throws IOException
+        {
+            synchronized (ProvSSLSocketDirect.this)
+            {
+                return protocol == null
+                    ?   0
+                    :   protocol.getInputStream().available();
+            }
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            ProvSSLSocketDirect.this.close();
+        }
+
+        @Override
+        public int read() throws IOException
+        {
+            handshakeIfNecessary();
+            return protocol.getInputStream().read();
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException
+        {
+            if (len < 1)
+            {
+                return 0;
+            }
+
+            handshakeIfNecessary();
+            return protocol.getInputStream().read(b, off, len);
+        }
+    }
+
+    class AppDataOutput extends OutputStream
+    {
+        @Override
+        public void close() throws IOException
+        {
+            ProvSSLSocketDirect.this.close();
+        }
+
+        @Override
+        public void flush() throws IOException
+        {
+            synchronized (ProvSSLSocketDirect.this)
+            {
+                if (protocol != null)
+                {
+                    protocol.getOutputStream().flush();
+                }
+            }
+        }
+
+        @Override
+        public void write(int b) throws IOException
+        {
+            handshakeIfNecessary();
+            protocol.getOutputStream().write(b);
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException
+        {
+            if (len > 0)
+            {
+                handshakeIfNecessary();
+                protocol.getOutputStream().write(b, off, len);
+            }
+        }
     }
 }

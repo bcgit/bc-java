@@ -65,9 +65,6 @@ public class BasicTlsTest
 
             SSLUtils.restrictKeyExchange(cSock, "ECDHE_ECDSA");
 
-            // TODO[jsse] Is this supposed to be a necessary call to get an SSL connection?
-            cSock.startHandshake();
-
             TestProtocolUtil.doClientProtocol(cSock, "Hello");
 
             latch.countDown();
@@ -116,9 +113,6 @@ public class BasicTlsTest
 
             SSLSocket sslSock = (SSLSocket)sSock.accept();
             sslSock.setUseClientMode(false);
-
-            // TODO[jsse] Is this supposed to be a necessary call to get an SSL connection?
-            sslSock.startHandshake();
 
             TestProtocolUtil.doServerProtocol(sslSock, "World");
 

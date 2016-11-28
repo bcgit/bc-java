@@ -95,7 +95,6 @@ public class HTTPSServerThread
             SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(PORT_NO);
             SSLSocket sslSock = (SSLSocket)sSock.accept();
             sslSock.setUseClientMode(false);
-            sslSock.startHandshake();
 
             readRequest(sslSock.getInputStream());
 
