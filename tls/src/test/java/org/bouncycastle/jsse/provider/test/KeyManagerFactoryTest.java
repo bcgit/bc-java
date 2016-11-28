@@ -194,9 +194,6 @@ public class KeyManagerFactoryTest
         SSLSocket c = (SSLSocket)f.createSocket("localhost", 8886);
         c.setUseClientMode(true);
 
-        // TODO[jsse] Is this supposed to be a necessary call to get an SSL connection?
-        c.startHandshake();
-
         c.getOutputStream().write('!');
 
         c.getInputStream().read();
@@ -234,9 +231,6 @@ public class KeyManagerFactoryTest
         c.setUseClientMode(true);
 
         SSLUtils.restrictKeyExchange(c, "ECDHE_RSA");
-
-        // TODO[jsse] Is this supposed to be a necessary call to get an SSL connection?
-        c.startHandshake();
 
         c.getOutputStream().write('!');
 
