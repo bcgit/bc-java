@@ -26,15 +26,20 @@ to conform the algorithms to the JCE framework.
 Release: 1.56 <br/>
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
+<li>Carry propagation bugs in the implementation of squaring for several raw math classes have been fixed (org.bouncycastle.math.raw.Nat???). These classes are used by our custom elliptic curve implementations (org.bouncycastle.math.ec.custom.**), so there was the possibility of rare (in general usage) spurious calculations for elliptic curve scalar multiplications. Such errors would have been detected with high probability by the output validation for our scalar multipliers.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>Support for the explicit setting of AlgorithmParameters has been added to the JceCMSContentEncryptorBuilder and the JceCMSMacCaculatorBuilder classes to allow configuration of the session cipher/MAC used.</li>
 <li>EC, ECGOST3410, and DSTU4145 Public keys are now validated on construction in the JCA/JCE and the light weight API.</li>
 <li>DSA Public keys are now validated on construction in the JCA/JCE and the light weight API.</li>
-<li>Diffie-Hellman public keys are now validated where parameters allow it.<li>
-<li>Some validations are now applied to RSA modulii and public exponents.<li>
+<li>Diffie-Hellman public keys are now validated where parameters allow it.</li>
+<li>Some validations are now applied to RSA moduli and public exponents.</li>
 <li>The ASN.1 Object Identifier cache now uses a Concurrent HashMap for additional speed.</li>
+</ul>
+<h3>2.1.4 Security Advisory</h3>
+<ul>
+<li>We consider the carry propagation bugs fixed in this release to have been exploitable in previous releases (1.51-1.55), for static ECDH, to reveal the long-term key, per <a href="https://eprint.iacr.org/2011/633">"Practical realisation and elimination of an ECC-related software bug attack", Brumley et.al.</a>. The most common case of this would be the non-ephemeral ECDH ciphersuites in TLS. These are not enabled by default in our TLS implementations, but they can be enabled explicitly by users. We recommend that users DO NOT enable static ECDH ciphersuites for TLS.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
