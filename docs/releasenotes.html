@@ -35,6 +35,18 @@ Release: 1.56 <br/>
 <li>Diffie-Hellman public keys are now validated where parameters allow it.<li>
 <li>Some validations are now applied to RSA modulii and public exponents.<li>
 <li>The ASN.1 Object Identifier cache now uses a Concurrent HashMap for additional speed.</li>
+<li>AES-CCM MAC support has been added to the provider.</li>
+<li>Support for ChaCha7539 (ChaCha20 as defined in RFC 7539) and Poly1305 have been added to the provider.</li>
+<li>Support has been added for defining your own curves and making them available to the key generators and factories.</li>
+</ul>
+<h3>2.1.4 Security Related Changes</h3>
+<ul>
+<li>Work has been done to improve the "constant time" behaviour of the RSA padding mechanisms.</li>
+<li>IES/ECIES with the base cipher in ECB mode is no longer supported as it is now felt it is too difficult to use without risk. See "A Proposal for an ISO Standard for Public Key Encryption (version 2.1)", Section 4.2, by Victor Shoup, for a discussion as to why. Contact us at feedback-crypto&#064bouncycastle.org if you need a work around. The constructor for IESParameterSpec that allows the use of cipher without a nonce has been deleted.</li>
+<li>Work has been done to improve the "constant time" behaviour of the IES mechanisms.</li>
+<li>DSA signature generation now incorporates blinding</li>
+<li>It is now possible to configure the provider to only import keys for specific named curves.</li>
+<li>DSA and ECDSA signature verification now enforces strict DER encoding rules, as part of this strict encoding enforcement has been introduced for ASN1Integer.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
