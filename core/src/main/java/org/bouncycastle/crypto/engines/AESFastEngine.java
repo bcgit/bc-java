@@ -26,9 +26,11 @@ import org.bouncycastle.util.Pack;
  * the contents of the first
  *
  * The slowest version uses no static tables at all and computes the values in each round
+ * </p>
  * <p>
- * This file contains the fast version with 8Kbytes of static tables for round precomputation
- *
+ * This file contains the fast version with 8Kbytes of static tables for round precomputation.
+ * </p>
+ * @deprecated unfortunately this class is has a few side channel issues. In an environment where encryption/decryption may be closely observed it should not be used.
  */
 public class AESFastEngine
     implements BlockCipher
