@@ -184,7 +184,7 @@ public final class AES
                 }
                 catch (InvalidCipherTextException e)
                 {
-                    throw new IllegalStateException("exception on doFinal()", e);
+                    throw new IllegalStateException("exception on doFinal(): " + e.toString());
                 }
             }
 
