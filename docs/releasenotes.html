@@ -49,7 +49,7 @@ Release: 1.56 <br/>
 <li>It is now possible to configure the provider to only import keys for specific named curves.</li>
 <li>DSA and ECDSA signature verification now enforces strict DER encoding rules, as part of this strict encoding enforcement has been introduced for ASN1Integer.</li>
 </ul>
-<h3>2.1.4 Security Advisory</h3>
+<h3>2.1.5 Security Advisory</h3>
 <ul>
 <li>We consider the carry propagation bugs fixed in this release to have been exploitable in previous releases (1.51-1.55), for static ECDH, to reveal the long-term key, per <a href="https://eprint.iacr.org/2011/633">"Practical realisation and elimination of an ECC-related software bug attack", Brumley et.al.</a>. The most common case of this would be the non-ephemeral ECDH ciphersuites in TLS. These are not enabled by default in our TLS implementations, but they can be enabled explicitly by users. We recommend that users DO NOT enable static ECDH ciphersuites for TLS.</li>
 </ul>
