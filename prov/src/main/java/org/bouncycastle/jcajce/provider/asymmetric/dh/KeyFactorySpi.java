@@ -88,7 +88,7 @@ public class KeyFactorySpi
             }
             catch (IllegalArgumentException e)
             {
-                throw new InvalidKeySpecException(e.getMessage(), e);
+                throw new InvalidKeySpecException(e.toString());
             }
         }
 
