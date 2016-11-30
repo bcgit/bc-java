@@ -1045,7 +1045,7 @@ public class DHTest
             }
             catch (GeneralSecurityException ex)
             {
-                isTrue("wrong message", "invalid DH public key".equals(ex.getMessage()));
+                isTrue("wrong message (generate)", "invalid DH public key".equals(ex.getMessage()));
             }
             ka.init(priv);
             try
@@ -1081,7 +1081,7 @@ public class DHTest
             }
             catch (GeneralSecurityException ex)
             {
-                isTrue("wrong message", "Invalid DH PublicKey".equals(ex.getMessage()));
+                isTrue("wrong message (doPhase)", "Invalid DH PublicKey".equals(ex.getMessage()));
             }
         }
     }
