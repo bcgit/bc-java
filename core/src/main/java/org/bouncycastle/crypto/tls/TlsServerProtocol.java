@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.SecureRandom;
+import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -147,7 +148,7 @@ public class TlsServerProtocol
                     if (this.securityParameters.cipherSuite != this.sessionParameters.getCipherSuite()
                        || this.securityParameters.compressionAlgorithm != this.sessionParameters.getCompressionAlgorithm())
                     {
-                        throw new TlsFatalAlert(AlertDescription.internal_error);
+                        throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                     }
                     this.securityParameters.masterSecret = this.sessionParameters.getMasterSecret();
                     this.securityParameters.pskIdentity = this.sessionParameters.getPSKIdentity();
@@ -636,8 +637,34 @@ public class TlsServerProtocol
          */
         if (this.resumedSession)
         {
-            readExtensions(buf); // drop provided extensions...
+            Hashtable newClientExtensions = readExtensions(buf);
             this.clientExtensions = this.sessionParameters.readPeerExtensions();
+            /*
+             * RFC 3546 indicates we MUST ignore extensions, but RFC 7627 Section 5.3 says:
+             * o  If the original session did not use the "extended_master_secret"
+             *    extension but the new ClientHello contains the extension, then the
+             *    server MUST NOT perform the abbreviated handshake.  Instead, it
+             *    SHOULD continue with a full handshake (as described in
+             *    Section 5.2) to negotiate a new session.
+             *
+             * o  If the original session used the "extended_master_secret"
+             *    extension but the new ClientHello does not contain it, the server
+             *    MUST abort the abbreviated handshake.
+             */
+            boolean prevHasEMS = TlsExtensionsUtils.hasExtendedMasterSecretExtension(clientExtensions);
+            boolean curHasEMS = TlsExtensionsUtils.hasExtendedMasterSecretExtension(newClientExtensions);
+            if (curHasEMS != prevHasEMS) {
+                if (!prevHasEMS) {
+                    /*
+                     * This is the case where we SHOULD continue with a full handshake...
+                     */
+                    this.sessionParameters = null;
+                    this.tlsSession = null;
+                    this.resumedSession = false;
+                    this.clientExtensions = newClientExtensions;
+                } else
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
         }
         else
         {
@@ -844,18 +871,13 @@ public class TlsServerProtocol
          * RFC 3546 2.3 If [...] the older session is resumed, then the server MUST ignore
          * extensions appearing in the client hello, and send a server hello containing no
          * extensions.
+         *
+         * The server hello containing no extensions is not entirely true. RFC 5746 explicitly
+         * states out in 3.6. Server Behavior that the secure_renegotiation extensions is also
+         * sent during session resumption. So we need to handle this part.
          */
-
-        if (this.resumedSession)
-        {
-            applyMaxFragmentLengthExtension();
-
-            // we don't need the serverExtensions for resumed sessions. So we can leave here...
-            message.writeToRecordStream();
-            return;
-        }
-
-        this.serverExtensions = tlsServer.getServerExtensions();
+        if (!this.resumedSession)
+           this.serverExtensions = tlsServer.getServerExtensions();
 
         /*
          * RFC 5746 3.6. Server Behavior: Initial Handshake
