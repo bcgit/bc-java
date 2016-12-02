@@ -162,15 +162,7 @@ class TlsTestClientImpl
             public void notifyServerCertificate(org.bouncycastle.tls.Certificate serverCertificate)
                 throws IOException
             {
-                boolean isEmpty = serverCertificate == null || serverCertificate.isEmpty();
-
                 TlsCertificate[] chain = serverCertificate.getCertificateList();
-
-                if (isEmpty || !TlsTestUtils.isCertificateOneOf(context.getCrypto(), chain[0],
-                    new String[]{ "x509-server.pem", "x509-server-dsa.pem", "x509-server-ecdsa.pem"}))
-                {
-                    throw new TlsFatalAlert(AlertDescription.bad_certificate);
-                }
 
                 if (TlsTestConfig.DEBUG)
                 {
@@ -182,6 +174,13 @@ class TlsTestClientImpl
                         System.out.println("    fingerprint:SHA-256 " + TlsTestUtils.fingerprint(entry) + " ("
                             + entry.getSubject() + ")");
                     }
+                }
+
+                boolean isEmpty = serverCertificate == null || serverCertificate.isEmpty();
+                if (isEmpty || !TlsTestUtils.isCertificateOneOf(context.getCrypto(), chain[0],
+                    new String[]{ "x509-server.pem", "x509-server-dsa.pem", "x509-server-ecdsa.pem"}))
+                {
+                    throw new TlsFatalAlert(AlertDescription.bad_certificate);
                 }
             }
 
