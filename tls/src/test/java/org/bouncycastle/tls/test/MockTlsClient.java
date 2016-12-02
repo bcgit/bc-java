@@ -17,6 +17,7 @@ import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsExtensionsUtils;
+import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
@@ -94,6 +95,7 @@ class MockTlsClient
                 throws IOException
             {
                 TlsCertificate[] chain = serverCertificate.getCertificateList();
+
                 System.out.println("TLS client received server certificate chain of length " + chain.length);
                 for (int i = 0; i != chain.length; i++)
                 {
@@ -101,6 +103,13 @@ class MockTlsClient
                     // TODO Create fingerprint based on certificate signature algorithm digest
                     System.out.println("    fingerprint:SHA-256 " + TlsTestUtils.fingerprint(entry) + " ("
                         + entry.getSubject() + ")");
+                }
+
+                boolean isEmpty = serverCertificate == null || serverCertificate.isEmpty();
+                if (isEmpty || !TlsTestUtils.isCertificateOneOf(context.getCrypto(), chain[0],
+                    new String[]{ "x509-server.pem", "x509-server-dsa.pem", "x509-server-ecdsa.pem"}))
+                {
+                    throw new TlsFatalAlert(AlertDescription.bad_certificate);
                 }
             }
 
