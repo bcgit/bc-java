@@ -174,12 +174,6 @@ class TlsTestServerImpl
 
         TlsCertificate[] chain = clientCertificate.getCertificateList();
 
-        if (!isEmpty && !TlsTestUtils.isCertificateOneOf(context.getCrypto(), chain[0],
-            new String[]{ "x509-client.pem", "x509-client-dsa.pem", "x509-client-ecdsa.pem"}))
-        {
-            throw new TlsFatalAlert(AlertDescription.bad_certificate);
-        }
-
         if (TlsTestConfig.DEBUG)
         {
             System.out.println("TLS server received client certificate chain of length " + chain.length);
@@ -190,6 +184,12 @@ class TlsTestServerImpl
                 System.out.println("    fingerprint:SHA-256 " + TlsTestUtils.fingerprint(entry) + " ("
                     + entry.getSubject() + ")");
             }
+        }
+
+        if (!isEmpty && !TlsTestUtils.isCertificateOneOf(context.getCrypto(), chain[0],
+            new String[]{ "x509-client.pem", "x509-client-dsa.pem", "x509-client-ecdsa.pem"}))
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
     }
 
