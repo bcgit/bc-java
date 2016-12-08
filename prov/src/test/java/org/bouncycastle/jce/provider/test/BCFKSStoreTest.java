@@ -26,14 +26,12 @@ import java.util.Enumeration;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import junit.framework.TestCase;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-import org.junit.Assert;
 
 /**
  * Exercise the  BCFKS KeyStore,
@@ -73,8 +71,8 @@ public class BCFKSStoreTest
 
         store1.load(null, null);
 
-        Assert.assertEquals(0, store1.size());
-        Assert.assertFalse(store1.aliases().hasMoreElements());
+        isTrue("", 0 == store1.size());
+        isTrue("", !store1.aliases().hasMoreElements());
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
@@ -84,8 +82,8 @@ public class BCFKSStoreTest
 
         store2.load(new ByteArrayInputStream(bOut.toByteArray()), passwd);
 
-        Assert.assertEquals(0, store2.size());
-        Assert.assertFalse(store2.aliases().hasMoreElements());
+        isTrue("", 0 == store2.size());
+        isTrue("", !store2.aliases().hasMoreElements());
 
         checkInvalidLoad(store2, passwd, bOut.toByteArray());
     }
@@ -110,11 +108,11 @@ public class BCFKSStoreTest
         }
         catch (IOException e)
         {
-            Assert.assertEquals("BCFKS KeyStore corrupted: MAC calculation failed.", e.getMessage());
+            isTrue("wrong message", "BCFKS KeyStore corrupted: MAC calculation failed.".equals(e.getMessage()));
         }
 
-        Assert.assertEquals(0, store.size());
-        Assert.assertFalse(store.aliases().hasMoreElements());
+        isTrue("", 0 == store.size());
+        isTrue("", !store.aliases().hasMoreElements());
     }
 
     public void shouldStoreOneCertificate()
@@ -135,11 +133,11 @@ public class BCFKSStoreTest
 
         store1.setCertificateEntry("cert", cert);
 
-        Assert.assertEquals(1, store1.size());
+        isTrue("", 1 == store1.size());
         Enumeration<String> en1 = store1.aliases();
 
-        Assert.assertEquals("cert", en1.nextElement());
-        Assert.assertFalse(en1.hasMoreElements());
+        isTrue("", "cert".equals(en1.nextElement()));
+        isTrue("", !en1.hasMoreElements());
 
         certStorageCheck(store1, "cert", cert);
 
@@ -153,12 +151,12 @@ public class BCFKSStoreTest
 
         store2.load(new ByteArrayInputStream(bOut.toByteArray()), passwd);
 
-        Assert.assertEquals(entryDate, store2.getCreationDate("cert"));
-        Assert.assertEquals(1, store2.size());
+        isTrue("", entryDate.equals(store2.getCreationDate("cert")));
+        isTrue("", 1 == store2.size());
         Enumeration<String> en2 = store2.aliases();
 
-        Assert.assertEquals("cert", en2.nextElement());
-        Assert.assertFalse(en2.hasMoreElements());
+        isTrue("", "cert".equals(en2.nextElement()));
+        isTrue("", !en2.hasMoreElements());
 
         certStorageCheck(store2, "cert", cert);
 
@@ -170,8 +168,8 @@ public class BCFKSStoreTest
 
         store1.deleteEntry("cert");
 
-        Assert.assertEquals(0, store1.size());
-        Assert.assertFalse(store1.aliases().hasMoreElements());
+        isTrue("", 0 == store1.size());
+        isTrue("", !store1.aliases().hasMoreElements());
 
         bOut = new ByteArrayOutputStream();
 
@@ -181,8 +179,8 @@ public class BCFKSStoreTest
 
         store2.load(new ByteArrayInputStream(bOut.toByteArray()), passwd);
 
-        Assert.assertEquals(0, store2.size());
-        Assert.assertFalse(store2.aliases().hasMoreElements());
+        isTrue("", 0 == store2.size());
+        isTrue("", !store2.aliases().hasMoreElements());
     }
 
     public void shouldStoreOnePrivateKey()
@@ -269,7 +267,7 @@ public class BCFKSStoreTest
         }
         catch (KeyStoreException e)
         {
-            Assert.assertEquals("RSA keys do not have the same modulus", e.getCause().getMessage());
+            isTrue("", "RSA keys do not have the same modulus".equals(e.getCause().getMessage()));
         }
     }
 
@@ -298,11 +296,11 @@ public class BCFKSStoreTest
     {
         store1.setKeyEntry("privkey", key, passwd, certs);
 
-        Assert.assertEquals(1, store1.size());
+        isTrue("", 1 == store1.size());
         Enumeration<String> en1 = store1.aliases();
 
-        Assert.assertEquals("privkey", en1.nextElement());
-        Assert.assertFalse(en1.hasMoreElements());
+        isTrue("", "privkey".equals(en1.nextElement()));
+        isTrue("", !en1.hasMoreElements());
 
         privateKeyStorageCheck(store1, "privkey", key, certs[0], passwd);
 
@@ -316,18 +314,18 @@ public class BCFKSStoreTest
 
         store2.load(new ByteArrayInputStream(bOut.toByteArray()), passwd);
 
-        Assert.assertEquals(store2.getCertificateChain("privkey").length, certs.length);
+        isTrue("", store2.getCertificateChain("privkey").length == certs.length);
         Certificate[] sChain = store2.getCertificateChain("privkey");
         for (int i = 0; i != sChain.length; i++)
         {
-            Assert.assertEquals(certs[i], sChain[i]);
+            isTrue("", certs[i].equals(sChain[i]));
         }
-        Assert.assertEquals(entryDate, store2.getCreationDate("privkey"));
-        Assert.assertEquals(1, store2.size());
+        isTrue("", entryDate.equals(store2.getCreationDate("privkey")));
+        isTrue("", 1 == store2.size());
         Enumeration<String> en2 = store2.aliases();
 
-        Assert.assertEquals("privkey", en2.nextElement());
-        Assert.assertFalse(en2.hasMoreElements());
+        isTrue("", "privkey".equals(en2.nextElement()));
+        isTrue("", !en2.hasMoreElements());
 
         privateKeyStorageCheck(store2, "privkey", key, certs[0], passwd);
 
@@ -339,8 +337,8 @@ public class BCFKSStoreTest
 
         store1.deleteEntry("privkey");
 
-        Assert.assertEquals(0, store1.size());
-        Assert.assertFalse(store1.aliases().hasMoreElements());
+        isTrue("", 0 == store1.size());
+        isTrue("", !store1.aliases().hasMoreElements());
 
         bOut = new ByteArrayOutputStream();
 
@@ -350,8 +348,8 @@ public class BCFKSStoreTest
 
         store2.load(new ByteArrayInputStream(bOut.toByteArray()), passwd);
 
-        Assert.assertEquals(0, store2.size());
-        Assert.assertFalse(store2.aliases().hasMoreElements());
+        isTrue("", 0 == store2.size());
+        isTrue("", !store2.aliases().hasMoreElements());
     }
 
     public void shouldStoreMultipleKeys()
@@ -398,34 +396,34 @@ public class BCFKSStoreTest
 
         store2.load(new ByteArrayInputStream(bOut.toByteArray()), testPassword);
 
-        Assert.assertEquals(4, store2.size());
+        isTrue("", 4 ==store2.size());
 
         Key storeDesEde = store2.getKey("secret2", "secretPwd2".toCharArray());
 
-        Assert.assertEquals(edeKey.getAlgorithm(), storeDesEde.getAlgorithm());
+        isTrue("", edeKey.getAlgorithm().equals(storeDesEde.getAlgorithm()));
 
-        Assert.assertTrue(Arrays.areEqual(edeKey.getEncoded(), storeDesEde.getEncoded()));
+        isTrue("", Arrays.areEqual(edeKey.getEncoded(), storeDesEde.getEncoded()));
 
         Key storeAes = store2.getKey("secret1", "secretPwd1".toCharArray());
-        Assert.assertTrue(Arrays.areEqual(aesKey.getEncoded(), storeAes.getEncoded()));
-        Assert.assertEquals(aesKey.getAlgorithm(), storeAes.getAlgorithm());
+        isTrue("", Arrays.areEqual(aesKey.getEncoded(), storeAes.getEncoded()));
+        isTrue("", aesKey.getAlgorithm().equals(storeAes.getAlgorithm()));
 
         Key storePrivKey = store2.getKey("privkey", testPassword);
-        Assert.assertEquals(privKey, storePrivKey);
-        Assert.assertEquals(2, store2.getCertificateChain("privkey").length);
+        isTrue("", privKey.equals(storePrivKey));
+        isTrue("", 2 == store2.getCertificateChain("privkey").length);
 
         Certificate storeCert = store2.getCertificate("trusted");
-        Assert.assertEquals(cert, storeCert);
+        isTrue("", cert.equals(storeCert));
 
-        Assert.assertNull(store2.getCertificate("unknown"));
+        isTrue("", null ==store2.getCertificate("unknown"));
 
-        Assert.assertNull(store2.getCertificateChain("unknown"));
+        isTrue("", null ==store2.getCertificateChain("unknown"));
 
-        Assert.assertFalse(store2.isCertificateEntry("unknown"));
+        isTrue("", !store2.isCertificateEntry("unknown"));
 
-        Assert.assertFalse(store2.isKeyEntry("unknown"));
+        isTrue("", !store2.isKeyEntry("unknown"));
 
-        Assert.assertFalse(store2.containsAlias("unknown"));
+        isTrue("", !store2.containsAlias("unknown"));
     }
 
     public void shouldStoreSecretKeys()
@@ -483,7 +481,7 @@ public class BCFKSStoreTest
         checkSecretKey(store2, "secret8", "secretPwd8".toCharArray(), hmacKey384);
         checkSecretKey(store2, "secret9", "secretPwd9".toCharArray(), hmacKey512);
 
-        Assert.assertNull(store2.getKey("secret10", new char[0]));
+        isTrue("", null ==store2.getKey("secret10", new char[0]));
     }
 
     private void checkSecretKey(KeyStore store, String alias, char[] passwd, SecretKey key)
@@ -491,16 +489,16 @@ public class BCFKSStoreTest
     {
         SecretKey sKey = (SecretKey)store.getKey(alias, passwd);
 
-        Assert.assertTrue(Arrays.areEqual(key.getEncoded(), sKey.getEncoded()));
-        Assert.assertEquals(key.getAlgorithm(), sKey.getAlgorithm());
+        isTrue("", Arrays.areEqual(key.getEncoded(), sKey.getEncoded()));
+        isTrue("", key.getAlgorithm().equals(sKey.getAlgorithm()));
 
         if (!store.isKeyEntry(alias))
         {
-            TestCase.fail("key not identified as key entry");
+            fail("key not identified as key entry");
         }
         if (!store.entryInstanceOf(alias, KeyStore.SecretKeyEntry.class))
         {
-            TestCase.fail("not identified as key entry via SecretKeyEntry");
+            fail("not identified as key entry via SecretKeyEntry");
         }
     }
 
@@ -527,7 +525,7 @@ public class BCFKSStoreTest
         }
         catch (Exception e)
         {
-            TestCase.fail("error setting up keys - " + e.toString());
+            fail("error setting up keys - " + e.toString());
         }
 
         return privKey;
@@ -549,11 +547,11 @@ public class BCFKSStoreTest
 
         store1.setKeyEntry("seckey", key, passwd, null);
 
-        Assert.assertEquals(1, store1.size());
+        isTrue("", 1 == store1.size());
         Enumeration<String> en1 = store1.aliases();
 
-        Assert.assertEquals("seckey", en1.nextElement());
-        Assert.assertFalse(en1.hasMoreElements());
+        isTrue("", "seckey".equals(en1.nextElement()));
+        isTrue("", !en1.hasMoreElements());
 
         secretKeyStorageCheck(store1, "seckey", key, passwd);
 
@@ -567,12 +565,12 @@ public class BCFKSStoreTest
 
         store2.load(new ByteArrayInputStream(bOut.toByteArray()), passwd);
 
-        Assert.assertEquals(entryDate, store2.getCreationDate("seckey"));
-        Assert.assertEquals(1, store2.size());
+        isTrue("", entryDate.equals(store2.getCreationDate("seckey")));
+        isTrue("", 1 == store2.size());
         Enumeration<String> en2 = store2.aliases();
 
-        Assert.assertEquals("seckey", en2.nextElement());
-        Assert.assertFalse(en2.hasMoreElements());
+        isTrue("", "seckey".equals(en2.nextElement()));
+        isTrue("", !en2.hasMoreElements());
 
         secretKeyStorageCheck(store2, "seckey", key, passwd);
 
@@ -584,8 +582,8 @@ public class BCFKSStoreTest
 
         store1.deleteEntry("seckey");
 
-        Assert.assertEquals(0, store1.size());
-        Assert.assertFalse(store1.aliases().hasMoreElements());
+        isTrue("", 0 == store1.size());
+        isTrue("", !store1.aliases().hasMoreElements());
 
         bOut = new ByteArrayOutputStream();
 
@@ -595,8 +593,8 @@ public class BCFKSStoreTest
 
         store2.load(new ByteArrayInputStream(bOut.toByteArray()), passwd);
 
-        Assert.assertEquals(0, store2.size());
-        Assert.assertFalse(store2.aliases().hasMoreElements());
+        isTrue("", 0 == store2.size());
+        isTrue("", !store2.aliases().hasMoreElements());
     }
 
     private void privateKeyStorageCheck(KeyStore store, String keyName, PrivateKey key, Certificate cert, char[] password)
@@ -604,24 +602,24 @@ public class BCFKSStoreTest
     {
         if (!store.containsAlias(keyName))
         {
-            TestCase.fail("couldn't find alias privateKey");
+            fail("couldn't find alias privateKey");
         }
 
         if (store.isCertificateEntry(keyName))
         {
-            TestCase.fail("key identified as certificate entry");
+            fail("key identified as certificate entry");
         }
 
         if (!store.isKeyEntry(keyName))
         {
-            TestCase.fail("key not identified as key entry");
+            fail("key not identified as key entry");
         }
 
         Key storeKey = store.getKey(keyName, password);
 
         if (store.getType().equals("BCFKS"))
         {
-            TestCase.assertEquals(key, storeKey);
+            isTrue("", key.equals(storeKey));
         }
 
         if (password != null)
@@ -632,32 +630,32 @@ public class BCFKSStoreTest
              }
              catch (UnrecoverableKeyException e)
              {
-                 TestCase.assertTrue(e.getMessage().startsWith("BCFKS KeyStore unable to recover private key (privkey)"));
+                 isTrue("",e.getMessage().startsWith("BCFKS KeyStore unable to recover private key (privkey)"));
              }
         }
 
         Certificate[] certificateChain = store.getCertificateChain(keyName);
         if (certificateChain == null)
         {
-            TestCase.fail("Did not return certificate chain");
+            fail("Did not return certificate chain");
         }
-        TestCase.assertEquals(cert, certificateChain[0]);
+        isTrue("", cert.equals(certificateChain[0]));
 
-        Assert.assertEquals(keyName, store.getCertificateAlias(cert));
+        isTrue("", keyName.equals(store.getCertificateAlias(cert)));
 
         if (store.entryInstanceOf(keyName, KeyStore.TrustedCertificateEntry.class))
         {
-            TestCase.fail("identified as TrustedCertificateEntry");
+            fail("identified as TrustedCertificateEntry");
         }
 
         if (!store.entryInstanceOf(keyName, KeyStore.PrivateKeyEntry.class))
         {
-            TestCase.fail("not identified as key entry via PrivateKeyEntry");
+            fail("not identified as key entry via PrivateKeyEntry");
         }
 
         if (store.entryInstanceOf(keyName, KeyStore.SecretKeyEntry.class))
         {
-            TestCase.fail("identified as key entry via SecretKeyEntry");
+            fail("identified as key entry via SecretKeyEntry");
         }
     }
 
@@ -666,37 +664,37 @@ public class BCFKSStoreTest
     {
         if (!store.containsAlias(certName))
         {
-            TestCase.fail("couldn't find alias " + certName);
+            fail("couldn't find alias " + certName);
         }
 
         if (!store.isCertificateEntry(certName))
         {
-            TestCase.fail("cert not identified as certificate entry");
+            fail("cert not identified as certificate entry");
         }
 
         if (store.isKeyEntry(certName))
         {
-            TestCase.fail("cert identified as key entry");
+            fail("cert identified as key entry");
         }
 
         if (!store.entryInstanceOf(certName, KeyStore.TrustedCertificateEntry.class))
         {
-            TestCase.fail("cert not identified as TrustedCertificateEntry");
+            fail("cert not identified as TrustedCertificateEntry");
         }
 
         if (store.entryInstanceOf(certName, KeyStore.PrivateKeyEntry.class))
         {
-            TestCase.fail("cert identified as key entry via PrivateKeyEntry");
+            fail("cert identified as key entry via PrivateKeyEntry");
         }
 
         if (store.entryInstanceOf(certName, KeyStore.SecretKeyEntry.class))
         {
-            TestCase.fail("cert identified as key entry via SecretKeyEntry");
+            fail("cert identified as key entry via SecretKeyEntry");
         }
 
         if (!certName.equals(store.getCertificateAlias(cert)))
         {
-            TestCase.fail("Did not return alias for certificate entry");
+            fail("Did not return alias for certificate entry");
         }
     }
 
@@ -705,22 +703,22 @@ public class BCFKSStoreTest
     {
         if (!store.containsAlias(keyName))
         {
-            TestCase.fail("couldn't find alias privateKey");
+            fail("couldn't find alias privateKey");
         }
 
         if (store.isCertificateEntry(keyName))
         {
-            TestCase.fail("key identified as certificate entry");
+            fail("key identified as certificate entry");
         }
 
         if (!store.isKeyEntry(keyName))
         {
-            TestCase.fail("key not identified as key entry");
+            fail("key not identified as key entry");
         }
 
         Key storeKey = store.getKey(keyName, password);
 
-        TestCase.assertTrue(Arrays.areEqual(key.getEncoded(), storeKey.getEncoded()));
+        isTrue("", Arrays.areEqual(key.getEncoded(), storeKey.getEncoded()));
 
         if (password != null)
         {
@@ -730,29 +728,29 @@ public class BCFKSStoreTest
              }
              catch (UnrecoverableKeyException e)
              {
-                 TestCase.assertTrue(e.getMessage().startsWith("BCFKS KeyStore unable to recover secret key (seckey)"));
+                 isTrue("", e.getMessage().startsWith("BCFKS KeyStore unable to recover secret key (seckey)"));
              }
         }
 
         Certificate[] certificateChain = store.getCertificateChain(keyName);
         if (certificateChain != null)
         {
-            TestCase.fail("returned certificates!");
+            fail("returned certificates!");
         }
 
         if (store.entryInstanceOf(keyName, KeyStore.TrustedCertificateEntry.class))
         {
-            TestCase.fail("identified as TrustedCertificateEntry");
+            fail("identified as TrustedCertificateEntry");
         }
 
         if (store.entryInstanceOf(keyName, KeyStore.PrivateKeyEntry.class))
         {
-            TestCase.fail("identified as key entry via PrivateKeyEntry");
+            fail("identified as key entry via PrivateKeyEntry");
         }
 
         if (!store.entryInstanceOf(keyName, KeyStore.SecretKeyEntry.class))
         {
-            TestCase.fail("not identified as key entry via SecretKeyEntry");
+            fail("not identified as key entry via SecretKeyEntry");
         }
     }
 
