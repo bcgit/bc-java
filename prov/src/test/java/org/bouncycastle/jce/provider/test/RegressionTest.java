@@ -79,7 +79,8 @@ public class RegressionTest
         new DetDSATest(),
         new ThreefishTest(),
         new SM4Test(),
-        new TLSKDFTest()
+        new TLSKDFTest(),
+        new BCFKSStoreTest()
     };
 
     public static void main(
