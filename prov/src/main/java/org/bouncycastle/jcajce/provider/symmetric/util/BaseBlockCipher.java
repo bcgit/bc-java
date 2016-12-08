@@ -157,9 +157,9 @@ public class BaseBlockCipher
     protected BaseBlockCipher(
         AEADBlockCipher engine)
     {
-        baseEngine = engine.getUnderlyingCipher();
-        ivLength = baseEngine.getBlockSize();
-        cipher = new AEADGenericBlockCipher(engine);
+        this.baseEngine = engine.getUnderlyingCipher();
+        this.ivLength = baseEngine.getBlockSize();
+        this.cipher = new AEADGenericBlockCipher(engine);
     }
 
     protected BaseBlockCipher(
@@ -236,6 +236,18 @@ public class BaseBlockCipher
                     return null;
                 }
             }
+            else if (aeadParams != null)
+            {
+                try
+                {
+                    engineParams = createParametersInstance("GCM");
+                    engineParams.init(new GCMParameters(aeadParams.getNonce(), aeadParams.getMacSize() / 8).getEncoded());
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException(e.toString());
+                }
+            }
             else if (ivParam != null)
             {
                 String  name = cipher.getUnderlyingCipher().getAlgorithmName();
@@ -249,18 +261,6 @@ public class BaseBlockCipher
                 {
                     engineParams = createParametersInstance(name);
                     engineParams.init(ivParam.getIV());
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException(e.toString());
-                }
-            }
-            else if (aeadParams != null)
-            {
-                try
-                {
-                    engineParams = createParametersInstance("GCM");
-                    engineParams.init(new GCMParameters(aeadParams.getNonce(), aeadParams.getMacSize() / 8).getEncoded());
                 }
                 catch (Exception e)
                 {
@@ -816,6 +816,8 @@ public class BaseBlockCipher
             }
         }
 
+
+
         if (random != null && padded)
         {
             param = new ParametersWithRandom(param, random);
@@ -835,6 +837,13 @@ public class BaseBlockCipher
                 break;
             default:
                 throw new InvalidParameterException("unknown opmode " + opmode + " passed");
+            }
+
+            if (cipher instanceof AEADGenericBlockCipher && aeadParams == null)
+            {
+                AEADBlockCipher aeadCipher = ((AEADGenericBlockCipher)cipher).cipher;
+
+                aeadParams = new AEADParameters((KeyParameter)ivParam.getParameters(), aeadCipher.getMac().length * 8, ivParam.getIV());
             }
         }
         catch (final Exception e)

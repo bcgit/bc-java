@@ -12,6 +12,7 @@ import javax.crypto.spec.DESedeKeySpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.engines.DESedeEngine;
@@ -397,6 +398,8 @@ public final class DESede
             provider.addAlgorithm("KeyGenerator.DESEDEWRAP", PREFIX + "$KeyGenerator");
 
             provider.addAlgorithm("SecretKeyFactory.DESEDE", PREFIX + "$KeyFactory");
+
+            provider.addAlgorithm("SecretKeyFactory", OIWObjectIdentifiers.desEDE, PREFIX + "$KeyFactory");
 
             provider.addAlgorithm("Mac.DESEDECMAC", PREFIX + "$CMAC");
             provider.addAlgorithm("Mac.DESEDEMAC", PREFIX + "$CBCMAC");
