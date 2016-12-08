@@ -3,6 +3,7 @@ package org.bouncycastle.jsse.provider;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.Provider;
 import java.security.cert.CertPathBuilder;
 import java.security.cert.CertStore;
 import java.security.cert.Certificate;
@@ -20,15 +21,15 @@ import java.util.Set;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedTrustManager;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
 class ProvX509TrustManager
     extends X509ExtendedTrustManager
 {
+    private final Provider pkixProvider;
     private final KeyStore trustStore;
 
-    public ProvX509TrustManager(KeyStore trustStore)
+    public ProvX509TrustManager(Provider pkixProvider, KeyStore trustStore)
     {
+        this.pkixProvider = pkixProvider;
         this.trustStore = trustStore;
     }
 
@@ -113,9 +114,9 @@ class ProvX509TrustManager
         try
         {
             CertStore certStore = CertStore.getInstance("Collection",
-                new CollectionCertStoreParameters(Arrays.asList(x509Certificates)), BouncyCastleProvider.PROVIDER_NAME);
+                new CollectionCertStoreParameters(Arrays.asList(x509Certificates)), pkixProvider);
 
-            CertPathBuilder pathBuilder = CertPathBuilder.getInstance("PKIX", BouncyCastleProvider.PROVIDER_NAME);
+            CertPathBuilder pathBuilder = CertPathBuilder.getInstance("PKIX", pkixProvider);
 
             X509CertSelector constraints = new X509CertSelector();
 

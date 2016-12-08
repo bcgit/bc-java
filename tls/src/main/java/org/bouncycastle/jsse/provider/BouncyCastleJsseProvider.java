@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.bouncycastle.tls.crypto.TlsCryptoProvider;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoProvider;
 import org.bouncycastle.util.Strings;
 
@@ -75,14 +74,14 @@ public class BouncyCastleJsseProvider
         }
     }
 
-    public BouncyCastleJsseProvider(boolean fipsMode, TlsCryptoProvider tlsCryptoProvider)
+    public BouncyCastleJsseProvider(boolean fipsMode, JcaTlsCryptoProvider tlsCryptoProvider)
     {
         super(PROVIDER_NAME, version, info);
 
         configure(fipsMode, tlsCryptoProvider);
     }
     
-    private TlsCryptoProvider createCryptoProvider(String cryptoName)
+    private JcaTlsCryptoProvider createCryptoProvider(String cryptoName)
         throws GeneralSecurityException
     {
         if (cryptoName.equalsIgnoreCase("default"))
@@ -105,9 +104,9 @@ public class BouncyCastleJsseProvider
 
                     // the TlsCryptoProvider/Provider class named requires a no-args constructor
                     Object o = cryptoProviderClass.newInstance();
-                    if (o instanceof TlsCryptoProvider)
+                    if (o instanceof JcaTlsCryptoProvider)
                     {
-                        return (TlsCryptoProvider)o;
+                        return (JcaTlsCryptoProvider)o;
                     }
                     if (o instanceof Provider)
                     {
@@ -135,7 +134,7 @@ public class BouncyCastleJsseProvider
     }
 
     // TODO: add a real fips mode
-    private void configure(boolean isInFipsMode, final TlsCryptoProvider baseCryptoProvider)
+    private void configure(boolean isInFipsMode, final JcaTlsCryptoProvider baseCryptoProvider)
     {
         this.isInFipsMode = isInFipsMode;
 
@@ -154,7 +153,7 @@ public class BouncyCastleJsseProvider
         {
             public Object createInstance(Object constructorParameter)
             {
-                return new ProvTrustManagerFactorySpi();
+                return new ProvTrustManagerFactorySpi(baseCryptoProvider.getPkixProvider());
             }
         });
         addAlias("Alg.Alias.TrustManagerFactory.X.509", "PKIX");

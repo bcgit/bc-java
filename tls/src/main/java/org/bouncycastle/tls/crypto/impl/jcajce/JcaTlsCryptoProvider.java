@@ -90,6 +90,18 @@ public class JcaTlsCryptoProvider
         return new JcaTlsCrypto(helper, keyRandom, nonceRandom);
     }
 
+    public Provider getPkixProvider()
+    {
+        try
+        {
+            return helper.createCertificateFactory("X.509").getProvider();
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new IllegalStateException("unable to find CertificateFactory");
+        }
+    }
+
     private static class NonceEntropySource
        extends SecureRandom
     {
