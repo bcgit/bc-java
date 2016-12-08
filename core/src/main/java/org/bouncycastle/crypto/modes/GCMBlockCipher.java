@@ -212,6 +212,10 @@ public class GCMBlockCipher
 
     public byte[] getMac()
     {
+        if (macBlock == null)
+        {
+            return new byte[macSize];
+        }
         return Arrays.clone(macBlock);
     }
 
