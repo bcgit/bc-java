@@ -51,8 +51,8 @@ public class DefaultSignedAttributeTableGenerator
 
     /**
      * Create a standard attribute table from the passed in parameters - this will
-     * normally include contentType, signingTime, and messageDigest. If the constructor
-     * using an AttributeTable was used, entries in it for contentType, signingTime, and
+     * normally include contentType, signingTime, messageDigest, and CMS algorithm protection.
+     * If the constructor using an AttributeTable was used, entries in it for contentType, signingTime, and
      * messageDigest will override the generated ones.
      *
      * @param parameters source parameters for table generation.
