@@ -2,16 +2,15 @@ package org.bouncycastle.jsse.provider;
 
 import java.security.cert.X509Certificate;
 
-import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 
 interface ProvTlsManager
 {
     ProvSSLContextSpi getContext();
 
-    ContextData getContextData();
+    ProvSSLParameters getProvSSLParameters();
 
-    SSLParameters getSSLParameters();
+    ContextData getContextData();
 
     boolean isClientTrusted(X509Certificate[] chain, String authType);
 

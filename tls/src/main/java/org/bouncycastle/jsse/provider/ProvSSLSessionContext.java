@@ -21,6 +21,23 @@ import org.bouncycastle.tls.TlsSession;
 class ProvSSLSessionContext
     implements SSLSessionContext
 {
+    static final boolean hasExtendedSSLSession;
+
+    static
+    {
+        Class clazz = null;
+        try
+        {
+            clazz = ProvSSLServerSocket.class.getClassLoader().loadClass("javax.net.ssl.ExtendedSSLSession");
+        }
+        catch (Exception e)
+        {
+            clazz = null;
+        }
+
+        hasExtendedSSLSession = (clazz != null);
+    }
+
     protected final Map<SessionID, ProvSSLSession> sessionMap = Collections.synchronizedMap(new HashMap<SessionID, ProvSSLSession>());
 
     protected final ProvSSLContextSpi sslContext;
@@ -44,6 +61,11 @@ class ProvSSLSessionContext
         ProvSSLSession sslSession = new ProvSSLSession(this, tlsSession);
 
         // TODO[jsse] Register session for re-use
+
+        if (hasExtendedSSLSession)
+        {
+             return new ProvExtendedSSLSession(sslSession);
+        }
 
         return sslSession;
     }

@@ -1,6 +1,5 @@
 package org.bouncycastle.jsse.provider;
 
-import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.Provider;
@@ -18,11 +17,10 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.X509ExtendedTrustManager;
+import javax.net.ssl.X509TrustManager;
 
 class ProvX509TrustManager
-    extends X509ExtendedTrustManager
+    implements X509TrustManager
 {
     private final Provider pkixProvider;
     private final KeyStore trustStore;
@@ -50,39 +48,6 @@ class ProvX509TrustManager
         validatePath(x509Certificates);
     }
 
-    public void checkClientTrusted(X509Certificate[] x509Certificates, String authType, Socket socket)
-        throws CertificateException
-    {
-        // TODO: need to confirm cert and client identity match
-        // TODO: need to make sure authType makes sense.
-        validatePath(x509Certificates);
-    }
-
-    public void checkServerTrusted(X509Certificate[] x509Certificates, String authType, Socket socket)
-        throws CertificateException
-    {
-        // TODO: need to confirm cert and server identity match
-        // TODO: need to make sure authType makes sense.
-        validatePath(x509Certificates);
-    }
-
-    public void checkClientTrusted(X509Certificate[] x509Certificates, String authType, SSLEngine sslEngine)
-        throws CertificateException
-    {
-        // TODO: need to confirm cert and client identity match
-        // TODO: need to make sure authType makes sense.
-        validatePath(x509Certificates);
-    }
-
-    public void checkServerTrusted(X509Certificate[] x509Certificates, String authType, SSLEngine sslEngine)
-        throws CertificateException
-    {
-        // TODO: need to confirm cert and server identity match
-        // TODO: need to make sure authType makes sense.
-        validatePath(x509Certificates);
-    }
-
-
     public X509Certificate[] getAcceptedIssuers()
     {
         try
@@ -108,7 +73,7 @@ class ProvX509TrustManager
         }
     }
 
-    private void validatePath(X509Certificate[] x509Certificates)
+    protected void validatePath(X509Certificate[] x509Certificates)
         throws CertificateException
     {
         try

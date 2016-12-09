@@ -5,11 +5,10 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import javax.net.ssl.ExtendedSSLSession;
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionBindingEvent;
 import javax.net.ssl.SSLSessionBindingListener;
 import javax.net.ssl.SSLSessionContext;
@@ -21,7 +20,7 @@ import org.bouncycastle.util.Arrays;
 
 // TODO[jsse] Serializable ?
 class ProvSSLSession
-    extends ExtendedSSLSession
+    implements SSLSession
 {
     // TODO[jsse] Ensure this behaves according to the javadoc for SSLSocket.getSession and SSLEngine.getSession
     protected final static ProvSSLSession NULL_SESSION = new ProvSSLSession(null, null);
@@ -89,12 +88,6 @@ class ProvSSLSession
             :   JsseUtils.getSubject(sessionParameters.getLocalCertificate());
     }
 
-    @Override
-    public String[] getLocalSupportedSignatureAlgorithms()
-    {
-        throw new UnsupportedOperationException();
-    }
-
     public int getPacketBufferSize()
     {
         throw new UnsupportedOperationException();
@@ -149,22 +142,11 @@ class ProvSSLSession
         throw new SSLPeerUnverifiedException("No peer identity established");
     }
 
-    public String[] getPeerSupportedSignatureAlgorithms()
-    {
-        throw new UnsupportedOperationException();
-    }
-
     public String getProtocol()
     {
         return sessionParameters == null
             ?   null
             :   sslSessionContext.getSSLContext().getProtocolString(sessionParameters.getNegotiatedVersion());
-    }
-
-    // TODO: SSNIServerName post 1.7
-    public List getRequestedServerNames()
-    {
-        throw new UnsupportedOperationException();
     }
 
     public SSLSessionContext getSessionContext()
