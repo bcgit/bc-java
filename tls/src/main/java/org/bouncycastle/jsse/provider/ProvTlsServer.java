@@ -7,7 +7,6 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Vector;
 
-import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
@@ -36,7 +35,7 @@ class ProvTlsServer
     implements ProvTlsPeer
 {
     protected final ProvTlsManager manager;
-    protected final SSLParameters sslParameters;
+    protected final ProvSSLParameters sslParameters;
 
     protected boolean handshakeComplete = false;
 
@@ -45,7 +44,7 @@ class ProvTlsServer
         super(manager.getContextData().getCrypto());
 
         this.manager = manager;
-        this.sslParameters = manager.getSSLParameters();
+        this.sslParameters = manager.getProvSSLParameters();
     }
 
     public synchronized boolean isHandshakeComplete()

@@ -98,35 +98,6 @@ class ProvSSLContextSpi
         return result;
     }
 
-    SSLParameters copySSLParameters(SSLParameters p)
-    {
-        SSLParameters r = new SSLParameters();
-        r.setCipherSuites(p.getCipherSuites());
-        r.setProtocols(p.getProtocols());
-        // TODO[jsse] From JDK 1.7
-//        r.setAlgorithmConstraints(r.getAlgorithmConstraints());
-//        r.setEndpointIdentificationAlgorithm(p.getEndpointIdentificationAlgorithm());
-        // TODO[jsse] From JDK 1.8
-//        r.setServerNames(p.getServerNames());
-//        r.setSNIMatchers(p.getSNIMatchers());
-//        r.setUseCipherSuitesOrder(p.getUseCipherSuitesOrder());
-
-        // NOTE: The client-auth setters each clear the other client-auth property, so only one can be set
-        if (p.getNeedClientAuth())
-        {
-            r.setNeedClientAuth(true);
-        }
-        else if (p.getWantClientAuth())
-        {
-            r.setWantClientAuth(true);
-        }
-        else
-        {
-            r.setWantClientAuth(false);
-        }
-        return r;
-    }
-
     ProvSSLSessionContext createSSLSessionContext()
     {
         return new ProvSSLSessionContext(this);

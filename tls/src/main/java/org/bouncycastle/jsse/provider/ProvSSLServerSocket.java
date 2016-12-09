@@ -12,10 +12,11 @@ import javax.net.ssl.SSLSocket;
 class ProvSSLServerSocket
     extends SSLServerSocket
 {
+
     protected final ProvSSLContextSpi context;
     protected final ContextData contextData;
 
-    protected SSLParameters sslParameters;
+    protected ProvSSLParameters sslParameters;
     protected boolean enableSessionCreation = false;
     protected boolean useClientMode = false;
 
@@ -26,7 +27,7 @@ class ProvSSLServerSocket
 
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.engineGetDefaultSSLParameters();
+        this.sslParameters = ProvSSLParameters.extractDefaultParameters(context);
     }
 
     protected ProvSSLServerSocket(ProvSSLContextSpi context, ContextData contextData, int port)
@@ -36,7 +37,7 @@ class ProvSSLServerSocket
 
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.engineGetDefaultSSLParameters();
+        this.sslParameters = ProvSSLParameters.extractDefaultParameters(context);
     }
 
     protected ProvSSLServerSocket(ProvSSLContextSpi context, ContextData contextData, int port, int backlog)
@@ -46,7 +47,7 @@ class ProvSSLServerSocket
 
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.engineGetDefaultSSLParameters();
+        this.sslParameters = ProvSSLParameters.extractDefaultParameters(context);
     }
 
     protected ProvSSLServerSocket(ProvSSLContextSpi context, ContextData contextData, int port, int backlog, InetAddress address)
@@ -56,7 +57,7 @@ class ProvSSLServerSocket
 
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.engineGetDefaultSSLParameters();
+        this.sslParameters = ProvSSLParameters.extractDefaultParameters(context);
     }
 
     @Override
@@ -68,7 +69,37 @@ class ProvSSLServerSocket
 
         implAccept(socket);
 
-        socket.setSSLParameters(sslParameters);
+        if (ProvSSLParameters.hasSslParameters)
+        {
+            socket.setSSLParameters(SSLParametersUtil.toSSLParameters(sslParameters));
+        }
+        else
+        {
+            String[] cipherSuites = sslParameters.getCipherSuites();
+            if (cipherSuites != null)
+            {
+                socket.setEnabledCipherSuites(cipherSuites);
+            }
+            String[] protocols = sslParameters.getProtocols();
+            if (protocols != null)
+            {
+                socket.setEnabledProtocols(protocols);
+            }
+
+            if (sslParameters.getNeedClientAuth())
+            {
+                socket.setNeedClientAuth(true);
+            }
+            else if (sslParameters.getWantClientAuth())
+            {
+                socket.setWantClientAuth(true);
+            }
+            else
+            {
+                socket.setWantClientAuth(false);
+            }
+        }
+
         socket.setEnableSessionCreation(enableSessionCreation);
         socket.setUseClientMode(useClientMode);
 
@@ -109,7 +140,7 @@ class ProvSSLServerSocket
     @Override
     public synchronized SSLParameters getSSLParameters()
     {
-        return context.copySSLParameters(sslParameters);
+        return SSLParametersUtil.toSSLParameters(sslParameters);
     }
 
     @Override
@@ -173,7 +204,7 @@ class ProvSSLServerSocket
     @Override
     public synchronized void setSSLParameters(SSLParameters sslParameters)
     {
-        this.sslParameters = context.copySSLParameters(sslParameters);
+        this.sslParameters = SSLParametersUtil.toProvSSLParameters(sslParameters);
     }
 
     @Override

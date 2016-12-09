@@ -29,7 +29,7 @@ class ProvSSLEngine
     protected final ProvSSLContextSpi context;
     protected final ContextData contextData;
 
-    protected SSLParameters sslParameters;
+    protected ProvSSLParameters sslParameters;
     protected boolean enableSessionCreation = false;
     protected boolean useClientMode = true;
 
@@ -46,7 +46,7 @@ class ProvSSLEngine
 
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.engineGetDefaultSSLParameters();
+        this.sslParameters = ProvSSLParameters.extractDefaultParameters(context);
     }
 
     protected ProvSSLEngine(ProvSSLContextSpi context, ContextData contextData, String host, int port)
@@ -55,7 +55,7 @@ class ProvSSLEngine
 
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.engineGetDefaultSSLParameters();
+        this.sslParameters = ProvSSLParameters.extractDefaultParameters(context);;
     }
 
     public ProvSSLContextSpi getContext()
@@ -181,7 +181,12 @@ class ProvSSLEngine
     @Override
     public synchronized SSLParameters getSSLParameters()
     {
-        return context.copySSLParameters(sslParameters);
+        return SSLParametersUtil.toSSLParameters(sslParameters);
+    }
+
+    public synchronized ProvSSLParameters getProvSSLParameters()
+    {
+        return sslParameters;
     }
 
     @Override
@@ -257,7 +262,7 @@ class ProvSSLEngine
     @Override
     public synchronized void setSSLParameters(SSLParameters sslParameters)
     {
-        this.sslParameters = context.copySSLParameters(sslParameters);
+        this.sslParameters = SSLParametersUtil.toProvSSLParameters(sslParameters);
     }
 
     @Override

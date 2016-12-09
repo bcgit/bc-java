@@ -26,7 +26,7 @@ class ProvSSLSocketDirect
     protected final ProvSSLContextSpi context;
     protected final ContextData contextData;
 
-    protected SSLParameters sslParameters;
+    protected ProvSSLParameters sslParameters;
     protected boolean enableSessionCreation = false;
     protected boolean useClientMode = true;
 
@@ -42,7 +42,7 @@ class ProvSSLSocketDirect
 
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.engineGetDefaultSSLParameters();
+        this.sslParameters = ProvSSLParameters.extractDefaultParameters(context);
     }
 
     protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, InetAddress address, int port, InetAddress clientAddress, int clientPort)
@@ -52,7 +52,7 @@ class ProvSSLSocketDirect
 
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.engineGetDefaultSSLParameters();
+        this.sslParameters = ProvSSLParameters.extractDefaultParameters(context);
     }
 
     protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, InetAddress address, int port) throws IOException
@@ -61,7 +61,7 @@ class ProvSSLSocketDirect
 
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.engineGetDefaultSSLParameters();
+        this.sslParameters = ProvSSLParameters.extractDefaultParameters(context);
     }
 
     protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, String host, int port, InetAddress clientAddress, int clientPort)
@@ -71,7 +71,7 @@ class ProvSSLSocketDirect
 
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.engineGetDefaultSSLParameters();
+        this.sslParameters = ProvSSLParameters.extractDefaultParameters(context);
     }
 
     protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, String host, int port) throws IOException, UnknownHostException
@@ -80,7 +80,7 @@ class ProvSSLSocketDirect
 
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = context.engineGetDefaultSSLParameters();
+        this.sslParameters = ProvSSLParameters.extractDefaultParameters(context);
     }
 
     public ProvSSLContextSpi getContext()
@@ -167,7 +167,12 @@ class ProvSSLSocketDirect
     @Override
     public synchronized SSLParameters getSSLParameters()
     {
-        return context.copySSLParameters(sslParameters);
+        return SSLParametersUtil.toSSLParameters(sslParameters);
+    }
+
+    public synchronized ProvSSLParameters getProvSSLParameters()
+    {
+        return sslParameters;
     }
 
     @Override
@@ -231,7 +236,7 @@ class ProvSSLSocketDirect
     @Override
     public synchronized void setSSLParameters(SSLParameters sslParameters)
     {
-        this.sslParameters = context.copySSLParameters(sslParameters);
+        this.sslParameters = SSLParametersUtil.toProvSSLParameters(sslParameters);
     }
 
     @Override
