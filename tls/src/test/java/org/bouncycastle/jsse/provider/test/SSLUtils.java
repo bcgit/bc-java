@@ -48,7 +48,7 @@ class SSLUtils
             {
                 try
                 {
-                    KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("PKIX");
+                    KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
 
                     keyManagerFactory.init(keyStore, password);
 
