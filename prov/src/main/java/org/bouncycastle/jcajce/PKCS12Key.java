@@ -29,7 +29,14 @@ public class PKCS12Key
      */
     public PKCS12Key(char[] password, boolean useWrongZeroLengthConversion)
     {
-        this.password = new char[password.length];
+        if (password == null)
+        {
+            this.password = new char[0];
+        }
+        else
+        {
+            this.password = new char[password.length];
+        }
         this.useWrongZeroLengthConversion = useWrongZeroLengthConversion;
 
         System.arraycopy(password, 0, this.password, 0, password.length);
