@@ -1,6 +1,7 @@
 package org.bouncycastle.jsse.provider.test;
 
 import java.security.KeyStore;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 
@@ -29,6 +30,17 @@ class SSLUtils
                 enabled.add(suite);
             }
         }
+        // some JSSE don't use TLS_
+        if (enabled.isEmpty())
+        {
+            for (String suite : s.getSupportedCipherSuites())
+            {
+                if (suite.startsWith("SSL_" + keyExchange + "_WITH"))
+                {
+                    enabled.add(suite);
+                }
+            }
+        }
         s.setEnabledCipherSuites(enabled.toArray(new String[enabled.size()]));
     }
 
@@ -48,7 +60,16 @@ class SSLUtils
             {
                 try
                 {
-                    KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
+                    KeyManagerFactory keyManagerFactory;
+
+                    if (Security.getProvider("IBMJSSE2") != null)
+                    {
+                        keyManagerFactory = KeyManagerFactory.getInstance("IBMX509");
+                    }
+                    else
+                    {
+                        keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
+                    }
 
                     keyManagerFactory.init(keyStore, password);
 
