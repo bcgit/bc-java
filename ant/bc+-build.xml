@@ -550,13 +550,13 @@
 
         <copy todir="${tls.target.src.dir}">
              <fileset dir="${src.dir}">
+                 <exclude name="**/*Test.java" />
+                 <exclude name="**/*Tests.java" />
+                 <exclude name="**/test/*.java" />
                  <include name="org/bouncycastle/tls/**/*.java" />
                  <include name="org/bouncycastle/tls/**/*.properties" />
                  <include name="org/bouncycastle/jsse/**/*.java" />
                  <include name="org/bouncycastle/jsse/**/*.properties" />
-                 <exclude name="**/*Test.java" />
-                 <exclude name="**/*Tests.java" />
-                 <exclude name="**/test/*.java" />
              </fileset>
         </copy>
 
