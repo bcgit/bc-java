@@ -22,6 +22,7 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.SRP6Group;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
+import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
@@ -166,7 +167,7 @@ public class JcaTlsCrypto
         }
         catch (GeneralSecurityException e)
         {
-            throw new IOException("cannot create cipher: " + e.getMessage(), e);
+            throw new TlsCryptoException("cannot create cipher: " + e.getMessage(), e);
         }
     }
 
@@ -195,7 +196,7 @@ public class JcaTlsCrypto
         }
         catch (GeneralSecurityException e)
         {
-            throw new IOException("cannot create HMAC: " + e.getMessage(), e);
+            throw new TlsCryptoException("cannot create HMAC: " + e.getMessage(), e);
         }
     }
 
