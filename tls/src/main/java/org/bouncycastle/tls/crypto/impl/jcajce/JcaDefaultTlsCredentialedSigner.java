@@ -20,17 +20,17 @@ public class JcaDefaultTlsCredentialedSigner
     private static TlsSigner makeSigner(JcaTlsCrypto crypto, PrivateKey privateKey)
     {
         TlsSigner signer;
-        if (privateKey instanceof RSAPrivateKey)
+        if (privateKey instanceof RSAPrivateKey || "RSA".equals(privateKey.getAlgorithm()))
         {
-            signer = new JcaTlsRSASigner(crypto, (RSAPrivateKey)privateKey);
+            signer = new JcaTlsRSASigner(crypto, privateKey);
         }
-        else if (privateKey instanceof DSAPrivateKey)
+        else if (privateKey instanceof DSAPrivateKey || "DSA".equals(privateKey.getAlgorithm()))
         {
-            signer = new JcaTlsDSASigner(crypto, (DSAPrivateKey)privateKey);
+            signer = new JcaTlsDSASigner(crypto, privateKey);
         }
-        else if (privateKey instanceof ECPrivateKey)
+        else if (privateKey instanceof ECPrivateKey || "EC".equals(privateKey.getAlgorithm()))
         {
-            signer = new JcaTlsECDSASigner(crypto, (ECPrivateKey)privateKey);
+            signer = new JcaTlsECDSASigner(crypto, privateKey);
         }
         else
         {

@@ -15,14 +15,13 @@ public class DRBG
 {
     private static final String PREFIX = DRBG.class.getName();
 
-    private static SecureRandom secureRandom = new SecureRandom();
-
     public static class Default
         extends SecureRandomSpi
     {
-        private SecureRandom random = new SP800SecureRandomBuilder(secureRandom, true)
-            .setPersonalizationString(generateDefaultPersonalizationString(secureRandom))
-            .buildHash(new SHA512Digest(), secureRandom.generateSeed(32), true);
+        private SecureRandom randomSource = new SecureRandom();   // needs to be done late, can't use static
+        private SecureRandom random = new SP800SecureRandomBuilder(randomSource, true)
+            .setPersonalizationString(generateDefaultPersonalizationString(randomSource))
+            .buildHash(new SHA512Digest(), randomSource.generateSeed(32), true);
 
         protected void engineSetSeed(byte[] bytes)
         {
@@ -36,16 +35,17 @@ public class DRBG
 
         protected byte[] engineGenerateSeed(int numBytes)
         {
-            return secureRandom.generateSeed(numBytes);
+            return randomSource.generateSeed(numBytes);
         }
     }
 
     public static class NonceAndIV
         extends SecureRandomSpi
     {
-        private SecureRandom random = new SP800SecureRandomBuilder(secureRandom, true)
-            .setPersonalizationString(generateNonceIVPersonalizationString(secureRandom))
-            .buildHash(new SHA512Digest(), secureRandom.generateSeed(32), false);
+        private SecureRandom randomSource = new SecureRandom();  // needs to be done late, can't use static
+        private SecureRandom random = new SP800SecureRandomBuilder(randomSource, true)
+            .setPersonalizationString(generateNonceIVPersonalizationString(randomSource))
+            .buildHash(new SHA512Digest(), randomSource.generateSeed(32), false);
 
         protected void engineSetSeed(byte[] bytes)
         {
@@ -59,7 +59,7 @@ public class DRBG
 
         protected byte[] engineGenerateSeed(int numBytes)
         {
-            return secureRandom.generateSeed(numBytes);
+            return randomSource.generateSeed(numBytes);
         }
     }
 
