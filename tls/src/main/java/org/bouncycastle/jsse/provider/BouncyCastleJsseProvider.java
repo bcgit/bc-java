@@ -17,7 +17,7 @@ import org.bouncycastle.util.Strings;
 public class BouncyCastleJsseProvider
     extends Provider
 {
-    private static String info = "Bouncy Castle JSSE Provider";
+    private static String info = "Bouncy Castle JSSE Provider Beta Version";
 
     public static final String PROVIDER_NAME = "BCJSSE";
 

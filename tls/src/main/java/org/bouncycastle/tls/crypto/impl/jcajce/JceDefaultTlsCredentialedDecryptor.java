@@ -1,6 +1,7 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPrivateKey;
@@ -22,7 +23,7 @@ public class JceDefaultTlsCredentialedDecryptor
 {
     protected JcaTlsCrypto crypto;
     protected Certificate certificate;
-    protected RSAPrivateKey privateKey;
+    protected PrivateKey privateKey;
 
     public JceDefaultTlsCredentialedDecryptor(JcaTlsCrypto crypto, Certificate certificate,
                                               PrivateKey privateKey)
@@ -44,11 +45,11 @@ public class JceDefaultTlsCredentialedDecryptor
             throw new IllegalArgumentException("'privateKey' cannot be null");
         }
 
-        if (privateKey instanceof RSAPrivateKey)
+        if (privateKey instanceof RSAPrivateKey || "RSA".equals(privateKey.getAlgorithm()))
         {
             this.crypto = crypto;
             this.certificate = certificate;
-            this.privateKey = (RSAPrivateKey)privateKey;
+            this.privateKey = privateKey;
         }
         else
         {
@@ -72,7 +73,7 @@ public class JceDefaultTlsCredentialedDecryptor
      * TODO[tls-ops] Probably need to make RSA encryption/decryption into TlsCrypto functions so
      * that users can implement "generic" encryption credentials externally
      */
-    protected TlsSecret safeDecryptPreMasterSecret(TlsCryptoParameters cryptoParams, RSAPrivateKey rsaServerPrivateKey,
+    protected TlsSecret safeDecryptPreMasterSecret(TlsCryptoParameters cryptoParams, PrivateKey rsaServerPrivateKey,
                                                    byte[] encryptedPreMasterSecret)
     {
         SecureRandom secureRandom = crypto.getSecureRandom();
@@ -95,7 +96,15 @@ public class JceDefaultTlsCredentialedDecryptor
         byte[] M = Arrays.clone(fallback);
         try
         {
-            Cipher c = crypto.getHelper().createCipher("RSA/NONE/PKCS1Padding");
+            Cipher c;
+            try
+            {
+                c = crypto.getHelper().createCipher("RSA/NONE/PKCS1Padding");
+            }
+            catch (NoSuchAlgorithmException e)
+            {
+                c = crypto.getHelper().createCipher("RSA/ECB/PKCS1Padding");    // try old style
+            }
 
             c.init(Cipher.DECRYPT_MODE, rsaServerPrivateKey);
 
