@@ -613,13 +613,45 @@ public class PGPPublicKey
     {
         ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
         
-        this.encode(bOut);
+        this.encode(bOut, false);
         
         return bOut.toByteArray();
     }
-    
+
+    /**
+     * Return an encoding of the key, with trust packets stripped out if forTransfer is true.
+     *
+     * @param forTransfer if the purpose of encoding is to send key to other users.
+     * @return a encoded byte array representing the key.
+     * @throws IOException in case of encoding error.
+     */
+    public byte[] getEncoded(boolean forTransfer)
+        throws IOException
+    {
+        ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
+
+        this.encode(bOut, forTransfer);
+
+        return bOut.toByteArray();
+    }
+
     public void encode(
-        OutputStream    outStream) 
+        OutputStream    outStream)
+        throws IOException
+    {
+        encode(outStream, false);
+    }
+
+    /**
+     * Encode the key to outStream, with trust packets stripped out if forTransfer is true.
+     *
+     * @param outStream stream to write the key encoding to.
+     * @param forTransfer if the purpose of encoding is to send key to other users.
+     * @throws IOException in case of encoding error.
+     */
+    public void encode(
+        OutputStream    outStream,
+        boolean         forTransfer)
         throws IOException
     {
         BCPGOutputStream    out;
@@ -634,7 +666,7 @@ public class PGPPublicKey
         }
         
         out.writePacket(publicPk);
-        if (trustPk != null)
+        if (!forTransfer && trustPk != null)
         {
             out.writePacket(trustPk);
         }
@@ -661,7 +693,7 @@ public class PGPPublicKey
                     out.writePacket(new UserAttributePacket(v.toSubpacketArray()));
                 }
                 
-                if (idTrusts.get(i) != null)
+                if (!forTransfer && idTrusts.get(i) != null)
                 {
                     out.writePacket((ContainedPacket)idTrusts.get(i));
                 }
@@ -669,7 +701,7 @@ public class PGPPublicKey
                 List    sigs = (List)idSigs.get(i);
                 for (int j = 0; j != sigs.size(); j++)
                 {
-                    ((PGPSignature)sigs.get(j)).encode(out);
+                    ((PGPSignature)sigs.get(j)).encode(out, forTransfer);
                 }
             }
         }
@@ -677,7 +709,7 @@ public class PGPPublicKey
         {
             for (int j = 0; j != subSigs.size(); j++)
             {
-                ((PGPSignature)subSigs.get(j)).encode(out);
+                ((PGPSignature)subSigs.get(j)).encode(out, forTransfer);
             }
         }
     }

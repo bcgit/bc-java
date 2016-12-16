@@ -198,16 +198,48 @@ public class PGPPublicKeyRing
         
         return bOut.toByteArray();
     }
-    
+
+    /**
+     * Return an encoding of the key ring, with trust packets stripped out if forTransfer is true.
+     *
+     * @param forTransfer if the purpose of encoding is to send key to other users.
+     * @return a encoded byte array representing the key.
+     * @throws IOException in case of encoding error.
+     */
+    public byte[] getEncoded(boolean forTransfer)
+        throws IOException
+    {
+        ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
+
+        this.encode(bOut, forTransfer);
+
+        return bOut.toByteArray();
+    }
+
     public void encode(
-        OutputStream    outStream) 
+        OutputStream    outStream)
+        throws IOException
+    {
+        encode(outStream, false);
+    }
+
+    /**
+     * Encode the key ring to outStream, with trust packets stripped out if forTransfer is true.
+     *
+     * @param outStream stream to write the key encoding to.
+     * @param forTransfer if the purpose of encoding is to send key to other users.
+     * @throws IOException in case of encoding error.
+     */
+    public void encode(
+        OutputStream    outStream,
+        boolean         forTransfer)
         throws IOException
     {
         for (int i = 0; i != keys.size(); i++)
         {
             PGPPublicKey    k = (PGPPublicKey)keys.get(i);
-            
-            k.encode(outStream);
+
+            k.encode(outStream, forTransfer);
         }
     }
     
