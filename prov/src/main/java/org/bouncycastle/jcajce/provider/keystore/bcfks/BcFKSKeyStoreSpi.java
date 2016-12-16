@@ -99,7 +99,7 @@ class BcFKSKeyStoreSpi
 
     private static String getPublicKeyAlg(ASN1ObjectIdentifier oid)
     {
-        String algName = publicAlgMap.get(oid);
+        String algName = (String)publicAlgMap.get(oid);
 
         if (algName != null)
         {
@@ -129,17 +129,16 @@ class BcFKSKeyStoreSpi
         this.provider = provider;
     }
 
-    @Override
     public Key engineGetKey(String alias, char[] password)
         throws NoSuchAlgorithmException, UnrecoverableKeyException
     {
-        ObjectData ent = entries.get(alias);
+        ObjectData ent = (ObjectData)entries.get(alias);
 
         if (ent != null)
         {
             if (ent.getType().equals(PRIVATE_KEY) || ent.getType().equals(PROTECTED_PRIVATE_KEY))
             {
-                PrivateKey cachedKey = privateKeyCache.get(alias);
+                PrivateKey cachedKey = (PrivateKey)privateKeyCache.get(alias);
                 if (cachedKey != null)
                 {
                     return cachedKey;
@@ -209,10 +208,9 @@ class BcFKSKeyStoreSpi
         return null;
     }
 
-    @Override
     public Certificate[] engineGetCertificateChain(String alias)
     {
-        ObjectData ent = entries.get(alias);
+        ObjectData ent = (ObjectData)entries.get(alias);
 
         if (ent != null)
         {
@@ -234,10 +232,9 @@ class BcFKSKeyStoreSpi
         return null;
     }
 
-    @Override
     public Certificate engineGetCertificate(String s)
     {
-        ObjectData ent = entries.get(s);
+        ObjectData ent = (ObjectData)entries.get(s);
 
         if (ent != null)
         {
@@ -287,10 +284,9 @@ class BcFKSKeyStoreSpi
         }
     }
 
-    @Override
     public Date engineGetCreationDate(String s)
     {
-        ObjectData ent = entries.get(s);
+        ObjectData ent = (ObjectData)entries.get(s);
 
         if (ent != null)
         {
@@ -308,14 +304,13 @@ class BcFKSKeyStoreSpi
         return null;
     }
 
-    @Override
     public void engineSetKeyEntry(String alias, Key key, char[] password, Certificate[] chain)
         throws KeyStoreException
     {
         Date creationDate = new Date();
         Date lastEditDate = creationDate;
 
-        ObjectData entry = entries.get(alias);
+        ObjectData entry = (ObjectData)entries.get(alias);
         if (entry != null)
         {
             creationDate = extractCreationDate(entry, creationDate);
@@ -366,7 +361,7 @@ class BcFKSKeyStoreSpi
             }
             catch (Exception e)
             {
-                throw new KeyStoreException("BCFKS KeyStore exception storing private key: " + e.toString(), e);
+                throw new ExtKeyStoreException("BCFKS KeyStore exception storing private key: " + e.toString(), e);
             }
         }
         else if (key instanceof SecretKey)
@@ -399,13 +394,13 @@ class BcFKSKeyStoreSpi
                 String keyAlg = Strings.toUpperCase(key.getAlgorithm());
                 byte[] encryptedKey;
 
-                if (keyAlg.contains("AES"))
+                if (keyAlg.indexOf("AES") > -1)
                 {
                     encryptedKey = c.doFinal(new SecretKeyData(NISTObjectIdentifiers.aes, encodedKey).getEncoded());
                 }
                 else
                 {
-                    ASN1ObjectIdentifier algOid = oidMap.get(keyAlg);
+                    ASN1ObjectIdentifier algOid = (ASN1ObjectIdentifier)oidMap.get(keyAlg);
                     if (algOid != null)
                     {
                         encryptedKey = c.doFinal(new SecretKeyData(algOid, encodedKey).getEncoded());
@@ -427,7 +422,7 @@ class BcFKSKeyStoreSpi
             }
             catch (Exception e)
             {
-                throw new KeyStoreException("BCFKS KeyStore exception storing private key: " + e.toString(), e);
+                throw new ExtKeyStoreException("BCFKS KeyStore exception storing private key: " + e.toString(), e);
             }
         }
         else
@@ -455,14 +450,13 @@ class BcFKSKeyStoreSpi
         return new EncryptedPrivateKeyData(encryptedPrivateKeyInfo, certChain);
     }
 
-    @Override
     public void engineSetKeyEntry(String alias, byte[] keyBytes, Certificate[] chain)
         throws KeyStoreException
     {
         Date creationDate = new Date();
         Date lastEditDate = creationDate;
 
-        ObjectData entry = entries.get(alias);
+        ObjectData entry = (ObjectData)entries.get(alias);
         if (entry != null)
         {
             creationDate = extractCreationDate(entry, creationDate);
@@ -478,7 +472,7 @@ class BcFKSKeyStoreSpi
             }
             catch (Exception e)
             {
-                throw new KeyStoreException("BCFKS KeyStore private key encoding must be an EncryptedPrivateKeyInfo.", e);
+                throw new ExtKeyStoreException("BCFKS KeyStore private key encoding must be an EncryptedPrivateKeyInfo.", e);
             }
 
             try
@@ -488,7 +482,7 @@ class BcFKSKeyStoreSpi
             }
             catch (Exception e)
             {
-                throw new KeyStoreException("BCFKS KeyStore exception storing protected private key: " + e.toString(), e);
+                throw new ExtKeyStoreException("BCFKS KeyStore exception storing protected private key: " + e.toString(), e);
             }
         }
         else
@@ -499,18 +493,17 @@ class BcFKSKeyStoreSpi
             }
             catch (Exception e)
             {
-                throw new KeyStoreException("BCFKS KeyStore exception storing protected private key: " + e.toString(), e);
+                throw new ExtKeyStoreException("BCFKS KeyStore exception storing protected private key: " + e.toString(), e);
             }
         }
 
         lastModifiedDate = lastEditDate;
     }
 
-    @Override
     public void engineSetCertificateEntry(String alias, Certificate certificate)
         throws KeyStoreException
     {
-        ObjectData entry = entries.get(alias);
+        ObjectData entry = (ObjectData)entries.get(alias);
         Date creationDate = new Date();
         Date lastEditDate = creationDate;
 
@@ -530,7 +523,7 @@ class BcFKSKeyStoreSpi
         }
         catch (CertificateEncodingException e)
         {
-            throw new KeyStoreException("BCFKS KeyStore unable to handle certificate: " + e.getMessage(), e);
+            throw new ExtKeyStoreException("BCFKS KeyStore unable to handle certificate: " + e.getMessage(), e);
         }
 
         lastModifiedDate = lastEditDate;
@@ -549,11 +542,10 @@ class BcFKSKeyStoreSpi
         return creationDate;
     }
 
-    @Override
     public void engineDeleteEntry(String alias)
         throws KeyStoreException
     {
-        ObjectData entry = entries.get(alias);
+        ObjectData entry = (ObjectData)entries.get(alias);
 
         if (entry == null)
         {
@@ -566,26 +558,24 @@ class BcFKSKeyStoreSpi
         lastModifiedDate = new Date();
     }
 
-    @Override
     public Enumeration<String> engineAliases()
     {
         final Iterator<String> it = new HashSet(entries.keySet()).iterator();
 
-        return new Enumeration<String>()
+        return new Enumeration()
         {
             public boolean hasMoreElements()
             {
                 return it.hasNext();
             }
 
-            public String nextElement()
+            public Object nextElement()
             {
                 return it.next();
             }
         };
     }
 
-    @Override
     public boolean engineContainsAlias(String alias)
     {
         if (alias == null)
@@ -596,16 +586,14 @@ class BcFKSKeyStoreSpi
         return entries.containsKey(alias);
     }
 
-    @Override
     public int engineSize()
     {
         return entries.size();
     }
 
-    @Override
     public boolean engineIsKeyEntry(String alias)
     {
-        ObjectData ent = entries.get(alias);
+        ObjectData ent = (ObjectData)entries.get(alias);
 
         if (ent != null)
         {
@@ -617,10 +605,9 @@ class BcFKSKeyStoreSpi
         return false;
     }
 
-    @Override
     public boolean engineIsCertificateEntry(String alias)
     {
-        ObjectData ent = entries.get(alias);
+        ObjectData ent = (ObjectData)entries.get(alias);
 
         if (ent != null)
         {
@@ -630,7 +617,6 @@ class BcFKSKeyStoreSpi
         return false;
     }
 
-    @Override
     public String engineGetCertificateAlias(Certificate certificate)
     {
         byte[] encodedCert;
@@ -645,8 +631,8 @@ class BcFKSKeyStoreSpi
 
         for (Iterator<String> it = entries.keySet().iterator(); it.hasNext(); )
         {
-            String alias = it.next();
-            ObjectData ent = entries.get(alias);
+            String alias = (String)it.next();
+            ObjectData ent = (ObjectData)entries.get(alias);
 
             if (ent.getType().equals(CERTIFICATE))
             {
@@ -746,11 +732,10 @@ class BcFKSKeyStoreSpi
         return mac.doFinal(content);
     }
 
-    @Override
     public void engineStore(OutputStream outputStream, char[] password)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
-        ObjectData[] dataArray = entries.values().toArray(new ObjectData[entries.size()]);
+        ObjectData[] dataArray = (ObjectData[])entries.values().toArray(new ObjectData[entries.size()]);
 
         KeyDerivationFunc pbkdAlgId = generatePkbdAlgorithmIdentifier(256 / 8);
         byte[] keyBytes = generateKey(pbkdAlgId, "STORE_ENCRYPTION", ((password != null) ? password : new char[0]));
@@ -814,7 +799,6 @@ class BcFKSKeyStoreSpi
         outputStream.flush();
     }
 
-    @Override
     public void engineLoad(InputStream inputStream, char[] password)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
@@ -962,6 +946,23 @@ class BcFKSKeyStoreSpi
         public Def()
         {
             super(null);
+        }
+    }
+
+    private static class ExtKeyStoreException
+        extends KeyStoreException
+    {
+        private final Throwable cause;
+
+        ExtKeyStoreException(String msg, Throwable cause)
+        {
+            super(msg);
+            this.cause = cause;
+        }
+
+        public Throwable getCause()
+        {
+           return cause;
         }
     }
 }
