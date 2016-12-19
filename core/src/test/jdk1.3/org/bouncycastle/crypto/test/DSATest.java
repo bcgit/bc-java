@@ -3,9 +3,12 @@ package org.bouncycastle.crypto.test;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.generators.DSAKeyPairGenerator;
 import org.bouncycastle.crypto.generators.DSAParametersGenerator;
 import org.bouncycastle.crypto.params.DSAKeyGenerationParameters;
@@ -15,12 +18,16 @@ import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.DSAValidationParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.crypto.signers.DSASigner;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.util.test.TestRandomBigInteger;
+import org.bouncycastle.util.test.TestRandomData;
 
 /**
  * Test based on FIPS 186-2, Appendix 5, an example of DSA, and FIPS 168-3 test vectors.
@@ -31,12 +38,14 @@ public class DSATest
     byte[] k1 = Hex.decode("d5014e4b60ef2ba8b6211b4062ba3224e0427dd3");
     byte[] k2 = Hex.decode("345e8d05c075c3a508df729a1685690e68fcfb8c8117847e89063bca1f85d968fd281540b6e13bd1af989a1fbf17e06462bf511f9d0b140fb48ac1b1baa5bded");
 
-    SecureRandom    random = new FixedSecureRandom(new byte[][] { k1, k2});
+    SecureRandom    random = new FixedSecureRandom(
+        new FixedSecureRandom.Source[] { new FixedSecureRandom.Data(k1), new FixedSecureRandom.Data(k2) });
 
     byte[] keyData = Hex.decode("b5014e4b60ef2ba8b6211b4062ba3224e0427dd3");
     
-    SecureRandom    keyRandom = new FixedSecureRandom(new byte[][] { keyData, keyData });
-    
+    SecureRandom    keyRandom = new FixedSecureRandom(
+                      new FixedSecureRandom.Source[] { new FixedSecureRandom.Data(keyData), new FixedSecureRandom.Data(keyData), new FixedSecureRandom.Data(Hex.decode("01020304"))});
+
     BigInteger  pValue = new BigInteger("8df2a494492276aa3d25759bb06869cbeac0d83afb8d0cf7cbb8324f0d7882e5d0762fc5b7210eafc2e9adac32ab7aac49693dfbf83724c2ec0736ee31c80291", 16);
     BigInteger  qValue = new BigInteger("c773218c737ec8ee993b4f2ded30f48edace915f", 16);
 
@@ -51,7 +60,7 @@ public class DSATest
         BigInteger              s = new BigInteger("1089214853334067536215539335472893651470583479365");
         DSAParametersGenerator  pGen = new DSAParametersGenerator();
 
-        pGen.init(512, 20, random);
+        pGen.init(512, 80, random);
 
         DSAParameters           params = pGen.generateParameters();
         DSAValidationParameters pValid = params.getValidationParameters();
@@ -103,6 +112,106 @@ public class DSATest
         //dsa2Test2();
         //dsa2Test3();
         //dsa2Test4();
+
+        testDSAsha3(224, new BigInteger("613202af2a7f77e02b11b5c3a5311cf6b412192bc0032aac3ec127faebfc6bd0", 16));
+        testDSAsha3(256, new BigInteger("2450755c5e15a691b121bc833b97864e34a61ee025ecec89289c949c1858091e", 16));
+        testDSAsha3(384, new BigInteger("7aad97c0b71bb1e1a6483b6948a03bbe952e4780b0cee699a11731f90d84ddd1", 16));
+        testDSAsha3(512, new BigInteger("725ad64d923c668e64e7c3898b5efde484cab49ce7f98c2885d2a13a9e355ad4", 16));
+    }
+
+    private void testDSAsha3(int size, BigInteger s)
+    {
+        DSAParameters dsaParams = new DSAParameters(
+            new BigInteger(
+                        "F56C2A7D366E3EBDEAA1891FD2A0D099" +
+                        "436438A673FED4D75F594959CFFEBCA7BE0FC72E4FE67D91" +
+                        "D801CBA0693AC4ED9E411B41D19E2FD1699C4390AD27D94C" +
+                        "69C0B143F1DC88932CFE2310C886412047BD9B1C7A67F8A2" +
+                        "5909132627F51A0C866877E672E555342BDF9355347DBD43" +
+                        "B47156B2C20BAD9D2B071BC2FDCF9757F75C168C5D9FC431" +
+                        "31BE162A0756D1BDEC2CA0EB0E3B018A8B38D3EF2487782A" +
+                        "EB9FBF99D8B30499C55E4F61E5C7DCEE2A2BB55BD7F75FCD" +
+                        "F00E48F2E8356BDB59D86114028F67B8E07B127744778AFF" +
+                        "1CF1399A4D679D92FDE7D941C5C85C5D7BFF91BA69F9489D" +
+                        "531D1EBFA727CFDA651390F8021719FA9F7216CEB177BD75", 16),
+            new BigInteger("C24ED361870B61E0D367F008F99F8A1F75525889C89DB1B673C45AF5867CB467", 16),
+            new BigInteger(
+                        "8DC6CC814CAE4A1C05A3E186A6FE27EA" +
+                        "BA8CDB133FDCE14A963A92E809790CBA096EAA26140550C1" +
+                        "29FA2B98C16E84236AA33BF919CD6F587E048C52666576DB" +
+                        "6E925C6CBE9B9EC5C16020F9A44C9F1C8F7A8E611C1F6EC2" +
+                        "513EA6AA0B8D0F72FED73CA37DF240DB57BBB27431D61869" +
+                        "7B9E771B0B301D5DF05955425061A30DC6D33BB6D2A32BD0" +
+                        "A75A0A71D2184F506372ABF84A56AEEEA8EB693BF29A6403" +
+                        "45FA1298A16E85421B2208D00068A5A42915F82CF0B858C8" +
+                        "FA39D43D704B6927E0B2F916304E86FB6A1B487F07D8139E" +
+                        "428BB096C6D67A76EC0B8D4EF274B8A2CF556D279AD267CC" +
+                        "EF5AF477AFED029F485B5597739F5D0240F67C2D948A6279", 16)
+        );
+
+        BigInteger x = new BigInteger("0CAF2EF547EC49C4F3A6FE6DF4223A174D01F2C115D49A6F73437C29A2A8458C", 16);
+
+        BigInteger y = new BigInteger(
+                    "2828003D7C747199143C370FDD07A286" +
+                    "1524514ACC57F63F80C38C2087C6B795B62DE1C224BF8D1D" +
+                    "1424E60CE3F5AE3F76C754A2464AF292286D873A7A30B7EA" +
+                    "CBBC75AAFDE7191D9157598CDB0B60E0C5AA3F6EBE425500" +
+                    "C611957DBF5ED35490714A42811FDCDEB19AF2AB30BEADFF" +
+                    "2907931CEE7F3B55532CFFAEB371F84F01347630EB227A41" +
+                    "9B1F3F558BC8A509D64A765D8987D493B007C4412C297CAF" +
+                    "41566E26FAEE475137EC781A0DC088A26C8804A98C23140E" +
+                    "7C936281864B99571EE95C416AA38CEEBB41FDBFF1EB1D1D" +
+                    "C97B63CE1355257627C8B0FD840DDB20ED35BE92F08C49AE" +
+                    "A5613957D7E5C7A6D5A5834B4CB069E0831753ECF65BA02B", 16);
+
+        DSAPrivateKeyParameters priKey = new DSAPrivateKeyParameters(x, dsaParams);
+        SecureRandom k = new FixedSecureRandom(
+            new FixedSecureRandom.Source[] {
+                new FixedSecureRandom.BigInteger(BigIntegers.asUnsignedByteArray(new BigInteger("72546832179840998877302529996971396893172522460793442785601695562409154906335"))),
+                new FixedSecureRandom.Data(Hex.decode("01020304"))
+            });
+
+        byte[] M = Hex.decode("1BD4ED430B0F384B4E8D458EFF1A8A553286D7AC21CB2F6806172EF5F94A06AD");
+
+        DSADigestSigner dsa = new DSADigestSigner(new DSASigner(), new SHA3Digest(size));
+
+        dsa.init(true, new ParametersWithRandom(priKey, k));
+
+        dsa.update(M, 0, M.length);
+
+        byte[] encSig = dsa.generateSignature();
+
+        ASN1Sequence sig = ASN1Sequence.getInstance(encSig);
+
+        BigInteger r = new BigInteger("4864074fe30e6601268ee663440e4d9b703f62673419864e91e9edb0338ce510", 16);
+
+        BigInteger sigR = ASN1Integer.getInstance(sig.getObjectAt(0)).getValue();
+        if (!r.equals(sigR))
+        {
+            fail("r component wrong." + Strings.lineSeparator()
+                + " expecting: " + r.toString(16) + Strings.lineSeparator()
+                + " got      : " + sigR.toString(16));
+        }
+
+        BigInteger sigS = ASN1Integer.getInstance(sig.getObjectAt(1)).getValue();
+        if (!s.equals(sigS))
+        {
+            fail("s component wrong." + Strings.lineSeparator()
+                + " expecting: " + s.toString(16) + Strings.lineSeparator()
+                + " got      : " + sigS.toString(16));
+        }
+
+        // Verify the signature
+        DSAPublicKeyParameters pubKey = new DSAPublicKeyParameters(y, dsaParams);
+
+        dsa.init(false, pubKey);
+
+        dsa.update(M, 0, M.length);
+
+        if (!dsa.verifySignature(encSig))
+        {
+            fail("signature fails");
+        }
     }
 
     private void dsa2Test1()
@@ -111,7 +220,7 @@ public class DSATest
 
         DSAParametersGenerator pGen = new DSAParametersGenerator();
 
-        pGen.init(new DSAParameterGenerationParameters(1024, 160, 10, new DSATestSecureRandom(seed)));
+        pGen.init(new DSAParameterGenerationParameters(1024, 160, 80, new DSATestSecureRandom(seed)));
 
         DSAParameters params = pGen.generateParameters();
 
@@ -156,7 +265,7 @@ public class DSATest
 
         DSAKeyPairGenerator kpGen = new DSAKeyPairGenerator();
 
-        kpGen.init(new DSAKeyGenerationParameters(new FixedSecureRandom(Hex.decode("D0EC4E50BB290A42E9E355C73D8809345DE2E139")), params));
+        kpGen.init(new DSAKeyGenerationParameters(new TestRandomBigInteger("D0EC4E50BB290A42E9E355C73D8809345DE2E139", 16), params));
 
         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
@@ -182,7 +291,10 @@ public class DSATest
 
         DSASigner signer = new DSASigner();
 
-        signer.init(true, new ParametersWithRandom(kp.getPrivate(), new FixedSecureRandom(Hex.decode("349C55648DCF992F3F33E8026CFAC87C1D2BA075"))));
+        signer.init(true, new ParametersWithRandom(kp.getPrivate(), new FixedSecureRandom(
+            new FixedSecureRandom.Source[] {
+                new FixedSecureRandom.BigInteger("349C55648DCF992F3F33E8026CFAC87C1D2BA075"),
+                new FixedSecureRandom.Data(Hex.decode("01020304")) })));
 
         byte[] msg = Hex.decode("A9993E364706816ABA3E25717850C26C9CD0D89D");
 
@@ -213,7 +325,7 @@ public class DSATest
 
             DSAParametersGenerator pGen = new DSAParametersGenerator(new SHA224Digest());
 
-            pGen.init(new DSAParameterGenerationParameters(2048, 224, 10, new DSATestSecureRandom(seed)));
+            pGen.init(new DSAParameterGenerationParameters(2048, 224, 80, new DSATestSecureRandom(seed)));
 
             DSAParameters params = pGen.generateParameters();
 
@@ -268,7 +380,7 @@ public class DSATest
 
             DSAKeyPairGenerator kpGen = new DSAKeyPairGenerator();
 
-            kpGen.init(new DSAKeyGenerationParameters(new FixedSecureRandom(Hex.decode("00D0F09ED3E2568F6CADF9224117DA2AEC5A4300E009DE1366023E17")), params));
+            kpGen.init(new DSAKeyGenerationParameters(new TestRandomData(Hex.decode("00D0F09ED3E2568F6CADF9224117DA2AEC5A4300E009DE1366023E17")), params));
 
             AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
@@ -299,7 +411,11 @@ public class DSATest
 
             DSASigner signer = new DSASigner();
 
-            signer.init(true, new ParametersWithRandom(kp.getPrivate(), new FixedSecureRandom(Hex.decode("735959CC4463B8B440E407EECA8A473BF6A6D1FE657546F67D401F05"))));
+            signer.init(true, new ParametersWithRandom(kp.getPrivate(), new FixedSecureRandom(
+                new FixedSecureRandom.Source[] {
+                    new FixedSecureRandom.BigInteger(Hex.decode("735959CC4463B8B440E407EECA8A473BF6A6D1FE657546F67D401F05")),
+                    new FixedSecureRandom.Data(Hex.decode("01020304"))
+                })));
 
             byte[] msg = Hex.decode("23097D223405D8228642A477BDA255B32AADBCE4BDA0B3F7E36C9DA7");
 
@@ -329,7 +445,7 @@ public class DSATest
 
         DSAParametersGenerator pGen = new DSAParametersGenerator(new SHA256Digest());
 
-        pGen.init(new DSAParameterGenerationParameters(2048, 256, 10, new DSATestSecureRandom(seed)));
+        pGen.init(new DSAParameterGenerationParameters(2048, 256, 80, new DSATestSecureRandom(seed)));
 
         DSAParameters params = pGen.generateParameters();
 
@@ -384,7 +500,7 @@ public class DSATest
 
         DSAKeyPairGenerator kpGen = new DSAKeyPairGenerator();
 
-        kpGen.init(new DSAKeyGenerationParameters(new FixedSecureRandom(Hex.decode("0CAF2EF547EC49C4F3A6FE6DF4223A174D01F2C115D49A6F73437C29A2A8458C")), params));
+        kpGen.init(new DSAKeyGenerationParameters(new TestRandomData(Hex.decode("0CAF2EF547EC49C4F3A6FE6DF4223A174D01F2C115D49A6F73437C29A2A8458C")), params));
 
         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
@@ -415,7 +531,11 @@ public class DSATest
 
         DSASigner signer = new DSASigner();
 
-        signer.init(true, new ParametersWithRandom(kp.getPrivate(), new FixedSecureRandom(Hex.decode("0CAF2EF547EC49C4F3A6FE6DF4223A174D01F2C115D49A6F73437C29A2A8458C"))));
+        signer.init(true, new ParametersWithRandom(kp.getPrivate(), new FixedSecureRandom(
+            new FixedSecureRandom.Source[] {
+                new FixedSecureRandom.BigInteger(Hex.decode("0CAF2EF547EC49C4F3A6FE6DF4223A174D01F2C115D49A6F73437C29A2A8458C")),
+                new FixedSecureRandom.Data(Hex.decode("01020304"))
+            })));
 
         byte[] msg = Hex.decode("BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD");
 
@@ -445,7 +565,7 @@ public class DSATest
 
         DSAParametersGenerator pGen = new DSAParametersGenerator(new SHA256Digest());
 
-        pGen.init(new DSAParameterGenerationParameters(3072, 256, 10, new DSATestSecureRandom(seed)));
+        pGen.init(new DSAParameterGenerationParameters(3072, 256, 80, new DSATestSecureRandom(seed)));
 
         DSAParameters params = pGen.generateParameters();
 
@@ -510,7 +630,7 @@ public class DSATest
 
         DSAKeyPairGenerator kpGen = new DSAKeyPairGenerator();
 
-        kpGen.init(new DSAKeyGenerationParameters(new FixedSecureRandom(Hex.decode("3ABC1587297CE7B9EA1AD6651CF2BC4D7F92ED25CABC8553F567D1B40EBB8764")), params));
+        kpGen.init(new DSAKeyGenerationParameters(new TestRandomData(Hex.decode("3ABC1587297CE7B9EA1AD6651CF2BC4D7F92ED25CABC8553F567D1B40EBB8764")), params));
 
         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
@@ -546,7 +666,10 @@ public class DSATest
 
         DSASigner signer = new DSASigner();
 
-        signer.init(true, new ParametersWithRandom(kp.getPrivate(), new FixedSecureRandom(Hex.decode("A6902C1E6E3943C5628061588A8B007BCCEA91DBF12915483F04B24AB0678BEE"))));
+        signer.init(true, new ParametersWithRandom(kp.getPrivate(), new FixedSecureRandom(
+            new FixedSecureRandom.Source[]
+                { new FixedSecureRandom.BigInteger("A6902C1E6E3943C5628061588A8B007BCCEA91DBF12915483F04B24AB0678BEE"),
+                  new FixedSecureRandom.Data(Hex.decode("01020304")) })));
 
         byte[] msg = Hex.decode("BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD");
 
@@ -577,7 +700,7 @@ public class DSATest
     }
 
     private class DSATestSecureRandom
-        extends FixedSecureRandom
+        extends TestRandomData
     {
         private boolean first = true;
 
