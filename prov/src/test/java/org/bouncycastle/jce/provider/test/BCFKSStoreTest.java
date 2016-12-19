@@ -263,6 +263,7 @@ public class BCFKSStoreTest
         try
         {
             store1.setKeyEntry("privkey", privKey, "hello".toCharArray(), new X509Certificate[]{interCert});
+            fail("no exception");
         }
         catch (KeyStoreException e)
         {
