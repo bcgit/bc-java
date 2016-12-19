@@ -26,7 +26,6 @@ import java.util.Enumeration;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
@@ -208,7 +207,7 @@ public class BCFKSStoreTest
 
         X509Certificate finalCert = TestUtils.createSelfSignedCert("CN=Final", "SHA1withRSA", kp2);
         X509Certificate interCert = TestUtils.createCert(
-            X500Name.getInstance(finalCert.getSubjectX500Principal().getEncoded()),
+            TestUtils.getCertSubject(finalCert),
             kp2.getPrivate(),
             "CN=EE",
             "SHA1withRSA",
@@ -234,7 +233,7 @@ public class BCFKSStoreTest
 
         X509Certificate finalCert = TestUtils.createSelfSignedCert("CN=Final", "SHA1withECDSA", kp2);
         X509Certificate interCert = TestUtils.createCert(
-            X500Name.getInstance(finalCert.getSubjectX500Principal().getEncoded()),
+            TestUtils.getCertSubject(finalCert),
             kp2.getPrivate(),
             "CN=EE",
             "SHA1withECDSA",
@@ -364,7 +363,7 @@ public class BCFKSStoreTest
 
         X509Certificate finalCert = TestUtils.createSelfSignedCert("CN=Final", "SHA1withRSA", kp2);
         X509Certificate interCert = TestUtils.createCert(
-            X500Name.getInstance(finalCert.getSubjectX500Principal().getEncoded()),
+            TestUtils.getCertSubject(finalCert),
             kp2.getPrivate(),
             "CN=EE",
             "SHA1withRSA",
@@ -768,6 +767,7 @@ public class BCFKSStoreTest
         shouldStoreOneCertificate();
         shouldStoreOneECKeyWithChain();
         shouldStoreOnePrivateKey();
+        shouldStoreOnePrivateKeyWithChain();
     }
 
     public static void main(
