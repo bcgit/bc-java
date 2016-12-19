@@ -20,16 +20,17 @@ public class DRBG
 {
     private static final String PREFIX = DRBG.class.getName();
 
-    private static final String[][] initialEntropySourceNames = new String[][]{
-        // Normal JVM
-        {"sun.security.provider.Sun", "sun.security.provider.SecureRandom"},
-        // Apache harmony
-        {"org.apache.harmony.security.provider.crypto.CryptoProvider", "org.apache.harmony.security.provider.crypto.SHA1PRNG_SecureRandomImpl"},
-        // {"Provider class name","SecureRandomSpi class name"}
-        //            // Android.
-        {"com.android.org.conscrypt.OpenSSLProvider", "com.android.org.conscrypt.OpenSSLRandom"},
-        {"org.conscrypt.OpenSSLProvider", "org.conscrypt.OpenSSLRandom"},
-    };
+    // {"Provider class name","SecureRandomSpi class name"}
+    private static final String[][] initialEntropySourceNames = new String[][]
+        {
+            // Normal JVM
+            {"sun.security.provider.Sun", "sun.security.provider.SecureRandom"},
+            // Apache harmony
+            {"org.apache.harmony.security.provider.crypto.CryptoProvider", "org.apache.harmony.security.provider.crypto.SHA1PRNG_SecureRandomImpl"},
+            // Android.
+            {"com.android.org.conscrypt.OpenSSLProvider", "com.android.org.conscrypt.OpenSSLRandom"},
+            {"org.conscrypt.OpenSSLProvider", "org.conscrypt.OpenSSLRandom"},
+        };
 
     private static final Object[] initialEntropySourceAndSpi = findSource();
 
@@ -99,30 +100,34 @@ public class DRBG
         });
     }
 
+    private static SecureRandom createBaseRandom(boolean isPredictionResistant)
+    {
+        if (System.getProperty("org.bouncycastle.drbg.entropysource") != null)
+        {
+            EntropySourceProvider entropyProvider = createEntropySource();
+
+            EntropySource initSource = entropyProvider.get(16 * 8);
+
+            return new SP800SecureRandomBuilder(entropyProvider)
+                                .setPersonalizationString(generateDefaultPersonalizationString(initSource.getEntropy()))
+                                .buildHash(new SHA512Digest(), Arrays.concatenate(initSource.getEntropy(), initSource.getEntropy()), isPredictionResistant);
+        }
+        else
+        {
+            SecureRandom randomSource = createInitialEntropySource();   // needs to be done late, can't use static
+            return new SP800SecureRandomBuilder(randomSource, true)
+                .setPersonalizationString(generateDefaultPersonalizationString(randomSource.generateSeed(16)))
+                .buildHash(new SHA512Digest(), randomSource.generateSeed(32), isPredictionResistant);
+        }
+    }
+
     public static class Default
         extends SecureRandomSpi
     {
-        private final SecureRandom random;
+        private static final SecureRandom random = createBaseRandom(true);
 
         public Default()
         {
-            if (System.getProperty("org.bouncycastle.drbg.entropysource") != null)
-            {
-                EntropySourceProvider entropyProvider = createEntropySource();
-
-                EntropySource initSource = entropyProvider.get(16 * 8);
-
-                random = new SP800SecureRandomBuilder(entropyProvider)
-                                    .setPersonalizationString(generateDefaultPersonalizationString(initSource.getEntropy()))
-                                    .buildHash(new SHA512Digest(), Arrays.concatenate(initSource.getEntropy(), initSource.getEntropy()), true);
-            }
-            else
-            {
-                SecureRandom randomSource = createInitialEntropySource();   // needs to be done late, can't use static
-                random = new SP800SecureRandomBuilder(randomSource, true)
-                    .setPersonalizationString(generateDefaultPersonalizationString(randomSource.generateSeed(16)))
-                    .buildHash(new SHA512Digest(), randomSource.generateSeed(32), true);
-            }
         }
 
         protected void engineSetSeed(byte[] bytes)
@@ -144,27 +149,10 @@ public class DRBG
     public static class NonceAndIV
         extends SecureRandomSpi
     {
-        private final SecureRandom random;
+        private static final SecureRandom random = createBaseRandom(false);
 
         public NonceAndIV()
         {
-            if (System.getProperty("org.bouncycastle.drbg.entropysource") != null)
-            {
-                EntropySourceProvider entropyProvider = createEntropySource();
-
-                EntropySource initSource = entropyProvider.get(16 * 8);
-
-                random = new SP800SecureRandomBuilder(entropyProvider)
-                                    .setPersonalizationString(generateDefaultPersonalizationString(initSource.getEntropy()))
-                                    .buildHash(new SHA512Digest(), Arrays.concatenate(initSource.getEntropy(), initSource.getEntropy()), true);
-            }
-            else
-            {
-                SecureRandom randomSource = createInitialEntropySource();   // needs to be done late, can't use static
-                random = new SP800SecureRandomBuilder(randomSource, true)
-                    .setPersonalizationString(generateDefaultPersonalizationString(randomSource.generateSeed(16)))
-                    .buildHash(new SHA512Digest(), randomSource.generateSeed(32), false);
-            }
         }
 
         protected void engineSetSeed(byte[] bytes)
