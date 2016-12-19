@@ -260,6 +260,18 @@ class TestUtils
         return new ExceptionCertificate(exceptionOnEncode);
     }
 
+    public static X500Name getCertIssuer(X509Certificate x509Certificate)
+        throws CertificateEncodingException
+    {
+        return TBSCertificate.getInstance(x509Certificate.getTBSCertificate()).getIssuer();
+    }
+
+    public static X500Name getCertSubject(X509Certificate x509Certificate)
+        throws CertificateEncodingException
+    {
+        return TBSCertificate.getInstance(x509Certificate.getTBSCertificate()).getSubject();
+    }
+
     private static class ExceptionCertificate
         extends X509Certificate
     {
