@@ -619,6 +619,11 @@ class BcFKSKeyStoreSpi
 
     public String engineGetCertificateAlias(Certificate certificate)
     {
+        if (certificate == null)
+        {
+            return null;
+        }
+
         byte[] encodedCert;
         try
         {

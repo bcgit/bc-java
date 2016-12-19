@@ -1,10 +1,14 @@
 package org.bouncycastle.jcajce.provider.drbg;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.SecureRandomSpi;
 
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.prng.EntropySource;
+import org.bouncycastle.crypto.prng.EntropySourceProvider;
 import org.bouncycastle.crypto.prng.SP800SecureRandomBuilder;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
@@ -73,13 +77,53 @@ public class DRBG
         }
     }
 
+    private static EntropySourceProvider createEntropySource()
+    {
+        final String sourceClass = System.getProperty("org.bouncycastle.drbg.entropysource");
+
+        return AccessController.doPrivileged(new PrivilegedAction<EntropySourceProvider>()
+        {
+            public EntropySourceProvider run()
+            {
+                try
+                {
+                    Class clazz = DRBG.class.getClassLoader().loadClass(sourceClass);
+
+                    return (EntropySourceProvider)clazz.newInstance();
+                }
+                catch (Exception e)
+                {
+                    throw new IllegalStateException("entropy source " + sourceClass + " not created: " + e.getMessage(), e);
+                }
+            }
+        });
+    }
+
     public static class Default
         extends SecureRandomSpi
     {
-        private SecureRandom randomSource = createInitialEntropySource();   // needs to be done late, can't use static
-        private SecureRandom random = new SP800SecureRandomBuilder(randomSource, true)
-            .setPersonalizationString(generateDefaultPersonalizationString(randomSource))
-            .buildHash(new SHA512Digest(), randomSource.generateSeed(32), true);
+        private final SecureRandom random;
+
+        public Default()
+        {
+            if (System.getProperty("org.bouncycastle.drbg.entropysource") != null)
+            {
+                EntropySourceProvider entropyProvider = createEntropySource();
+
+                EntropySource initSource = entropyProvider.get(16 * 8);
+
+                random = new SP800SecureRandomBuilder(entropyProvider)
+                                    .setPersonalizationString(generateDefaultPersonalizationString(initSource.getEntropy()))
+                                    .buildHash(new SHA512Digest(), Arrays.concatenate(initSource.getEntropy(), initSource.getEntropy()), true);
+            }
+            else
+            {
+                SecureRandom randomSource = createInitialEntropySource();   // needs to be done late, can't use static
+                random = new SP800SecureRandomBuilder(randomSource, true)
+                    .setPersonalizationString(generateDefaultPersonalizationString(randomSource.generateSeed(16)))
+                    .buildHash(new SHA512Digest(), randomSource.generateSeed(32), true);
+            }
+        }
 
         protected void engineSetSeed(byte[] bytes)
         {
@@ -93,17 +137,35 @@ public class DRBG
 
         protected byte[] engineGenerateSeed(int numBytes)
         {
-            return randomSource.generateSeed(numBytes);
+            return random.generateSeed(numBytes);
         }
     }
 
     public static class NonceAndIV
         extends SecureRandomSpi
     {
-        private SecureRandom randomSource = createInitialEntropySource();
-        private SecureRandom random = new SP800SecureRandomBuilder(randomSource, true)
-            .setPersonalizationString(generateNonceIVPersonalizationString(randomSource))
-            .buildHash(new SHA512Digest(), randomSource.generateSeed(32), false);
+        private final SecureRandom random;
+
+        public NonceAndIV()
+        {
+            if (System.getProperty("org.bouncycastle.drbg.entropysource") != null)
+            {
+                EntropySourceProvider entropyProvider = createEntropySource();
+
+                EntropySource initSource = entropyProvider.get(16 * 8);
+
+                random = new SP800SecureRandomBuilder(entropyProvider)
+                                    .setPersonalizationString(generateDefaultPersonalizationString(initSource.getEntropy()))
+                                    .buildHash(new SHA512Digest(), Arrays.concatenate(initSource.getEntropy(), initSource.getEntropy()), true);
+            }
+            else
+            {
+                SecureRandom randomSource = createInitialEntropySource();   // needs to be done late, can't use static
+                random = new SP800SecureRandomBuilder(randomSource, true)
+                    .setPersonalizationString(generateDefaultPersonalizationString(randomSource.generateSeed(16)))
+                    .buildHash(new SHA512Digest(), randomSource.generateSeed(32), false);
+            }
+        }
 
         protected void engineSetSeed(byte[] bytes)
         {
@@ -117,7 +179,7 @@ public class DRBG
 
         protected byte[] engineGenerateSeed(int numBytes)
         {
-            return randomSource.generateSeed(numBytes);
+            return random.generateSeed(numBytes);
         }
     }
 
@@ -135,15 +197,15 @@ public class DRBG
         }
     }
 
-    private static byte[] generateDefaultPersonalizationString(SecureRandom random)
+    private static byte[] generateDefaultPersonalizationString(byte[] seed)
     {
-        return Arrays.concatenate(Strings.toByteArray("Default"), random.generateSeed(16),
+        return Arrays.concatenate(Strings.toByteArray("Default"), seed,
             Pack.longToBigEndian(Thread.currentThread().getId()), Pack.longToBigEndian(System.currentTimeMillis()));
     }
 
-    private static byte[] generateNonceIVPersonalizationString(SecureRandom random)
+    private static byte[] generateNonceIVPersonalizationString(byte[] seed)
     {
-        return Arrays.concatenate(Strings.toByteArray("Nonce"), random.generateSeed(16),
+        return Arrays.concatenate(Strings.toByteArray("Nonce"), seed,
             Pack.longToLittleEndian(Thread.currentThread().getId()), Pack.longToLittleEndian(System.currentTimeMillis()));
     }
 }
