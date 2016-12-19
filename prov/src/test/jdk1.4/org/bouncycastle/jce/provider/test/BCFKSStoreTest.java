@@ -26,7 +26,6 @@ import java.util.Enumeration;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
@@ -208,7 +207,7 @@ public class BCFKSStoreTest
 
         X509Certificate finalCert = TestUtils.createSelfSignedCert("CN=Final", "SHA1withRSA", kp2);
         X509Certificate interCert = TestUtils.createCert(
-            X500Name.getInstance(finalCert.getSubjectX500Principal().getEncoded()),
+            TestUtils.getCertSubject(finalCert),
             kp2.getPrivate(),
             "CN=EE",
             "SHA1withRSA",
@@ -234,7 +233,7 @@ public class BCFKSStoreTest
 
         X509Certificate finalCert = TestUtils.createSelfSignedCert("CN=Final", "SHA1withECDSA", kp2);
         X509Certificate interCert = TestUtils.createCert(
-            X500Name.getInstance(finalCert.getSubjectX500Principal().getEncoded()),
+            TestUtils.getCertSubject(finalCert),
             kp2.getPrivate(),
             "CN=EE",
             "SHA1withECDSA",
@@ -264,6 +263,7 @@ public class BCFKSStoreTest
         try
         {
             store1.setKeyEntry("privkey", privKey, "hello".toCharArray(), new X509Certificate[]{interCert});
+            fail("no exception");
         }
         catch (KeyStoreException e)
         {
@@ -364,7 +364,7 @@ public class BCFKSStoreTest
 
         X509Certificate finalCert = TestUtils.createSelfSignedCert("CN=Final", "SHA1withRSA", kp2);
         X509Certificate interCert = TestUtils.createCert(
-            X500Name.getInstance(finalCert.getSubjectX500Principal().getEncoded()),
+            TestUtils.getCertSubject(finalCert),
             kp2.getPrivate(),
             "CN=EE",
             "SHA1withRSA",
@@ -496,12 +496,6 @@ public class BCFKSStoreTest
         {
             fail("key not identified as key entry");
         }
-/*
-        if (!store.entryInstanceOf(alias, KeyStore.SecretKeyEntry.class))
-        {
-            fail("not identified as key entry via SecretKeyEntry");
-        }
-*/
     }
 
     private PrivateKey getPrivateKey()
@@ -644,23 +638,6 @@ public class BCFKSStoreTest
         isTrue("", cert.equals(certificateChain[0]));
 
         isTrue("", keyName.equals(store.getCertificateAlias(cert)));
-
-/*
-        if (store.entryInstanceOf(keyName, KeyStore.TrustedCertificateEntry.class))
-        {
-            fail("identified as TrustedCertificateEntry");
-        }
-
-        if (!store.entryInstanceOf(keyName, KeyStore.PrivateKeyEntry.class))
-        {
-            fail("not identified as key entry via PrivateKeyEntry");
-        }
-
-        if (store.entryInstanceOf(keyName, KeyStore.SecretKeyEntry.class))
-        {
-            fail("identified as key entry via SecretKeyEntry");
-        }
-*/
     }
 
     private void certStorageCheck(KeyStore store, String certName, Certificate cert)
@@ -681,22 +658,6 @@ public class BCFKSStoreTest
             fail("cert identified as key entry");
         }
 
-/*
-        if (!store.entryInstanceOf(certName, KeyStore.TrustedCertificateEntry.class))
-        {
-            fail("cert not identified as TrustedCertificateEntry");
-        }
-
-        if (store.entryInstanceOf(certName, KeyStore.PrivateKeyEntry.class))
-        {
-            fail("cert identified as key entry via PrivateKeyEntry");
-        }
-
-        if (store.entryInstanceOf(certName, KeyStore.SecretKeyEntry.class))
-        {
-            fail("cert identified as key entry via SecretKeyEntry");
-        }
-*/
         if (!certName.equals(store.getCertificateAlias(cert)))
         {
             fail("Did not return alias for certificate entry");
@@ -742,23 +703,6 @@ public class BCFKSStoreTest
         {
             fail("returned certificates!");
         }
-
-/*
-        if (store.entryInstanceOf(keyName, KeyStore.TrustedCertificateEntry.class))
-        {
-            fail("identified as TrustedCertificateEntry");
-        }
-
-        if (store.entryInstanceOf(keyName, KeyStore.PrivateKeyEntry.class))
-        {
-            fail("identified as key entry via PrivateKeyEntry");
-        }
-
-        if (!store.entryInstanceOf(keyName, KeyStore.SecretKeyEntry.class))
-        {
-            fail("not identified as key entry via SecretKeyEntry");
-        }
-*/
     }
 
     public String getName()
@@ -775,6 +719,7 @@ public class BCFKSStoreTest
         shouldStoreOneCertificate();
         shouldStoreOneECKeyWithChain();
         shouldStoreOnePrivateKey();
+        shouldStoreOnePrivateKeyWithChain();
     }
 
     public static void main(
