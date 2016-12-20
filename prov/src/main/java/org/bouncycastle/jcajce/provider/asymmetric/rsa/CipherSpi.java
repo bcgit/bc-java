@@ -533,6 +533,10 @@ public class CipherSpi
         {
             throw new BadBlockException("unable to decrypt block", e);
         }
+        catch (ArrayIndexOutOfBoundsException e)
+        {
+            throw new BadBlockException("unable to decrypt block", e);
+        }
         finally
         {
             bOut.reset();
