@@ -30,6 +30,7 @@ import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.ElGamalEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseCipherSpi;
+import org.bouncycastle.jcajce.provider.util.BadBlockException;
 import org.bouncycastle.jcajce.provider.util.DigestFactory;
 import org.bouncycastle.jce.interfaces.ElGamalKey;
 import org.bouncycastle.jce.interfaces.ElGamalPrivateKey;
@@ -317,6 +318,10 @@ public class CipherSpi
                     return e;
                 }
             };
+        }
+        catch (ArrayIndexOutOfBoundsException e)
+        {
+            throw new BadBlockException("unable to decrypt block", e);
         }
     }
 
