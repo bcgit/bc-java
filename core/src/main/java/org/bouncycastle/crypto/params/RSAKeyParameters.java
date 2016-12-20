@@ -5,6 +5,8 @@ import java.math.BigInteger;
 public class RSAKeyParameters
     extends AsymmetricKeyParameter
 {
+    private static final BigInteger ONE = BigInteger.valueOf(1);
+
     private BigInteger      modulus;
     private BigInteger      exponent;
 
@@ -39,7 +41,7 @@ public class RSAKeyParameters
             "931517706595657435907891265414916764399268423699130577757433083166" +
             "651158914570105971074227669275788291575622090199821297575654322355" +
             "049043101306108213104080801056529374892690144291505781966373045481" +
-            "8359472391642885328171302299245556663073719855")).equals(BigInteger.ONE))
+            "8359472391642885328171302299245556663073719855")).equals(ONE))
         {
             throw new IllegalArgumentException("RSA modulus has a small prime factor");
         }

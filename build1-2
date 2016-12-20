@@ -110,10 +110,10 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm org/bouncycastle/jce/provider/test/DetDSATest.java
     rm org/bouncycastle/jce/provider/test/AEADTest.java
     rm -rf org/bouncycastle/jce/provider/JDKPKCS12StoreParameter.java
-    rm -rf org/bouncycastle/jcajce/provider/asymmetric/ec/ECUtils.java
     rm -rf org/bouncycastle/jcajce/provider/config/PKCS12StoreParameter.java
     rm -rf org/bouncycastle/jcajce/provider/test/PrivateConstructorTest.java
     rm -rf org/bouncycastle/jcajce/provider/test/ECAlgorithmParametersTest.java
+    rm -rf org/bouncycastle/jcajce/provider/test/RandomTest.java
     rm org/bouncycastle/asn1/test/GetInstanceTest.java
     rm org/bouncycastle/asn1/test/ASN1SequenceParserTest.java
     rm org/bouncycastle/asn1/test/OctetStringTest.java
@@ -344,8 +344,12 @@ then
 
     (cd src/org/bouncycastle/jce/cert; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src *.java  )
     (cd src/org/bouncycastle/jcajce/provider; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src [abcis]*/*.java [abcis]*/*/*.java )
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src *.java [abci]*/*.java [abci]*/*/*.java [abci]*/*/*/*.java )
+echo "here 0"
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src *.java a*/*.java a*/*/*.java a*/*/*/*.java )
+echo "here 1"
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src *.java [bci]*/*.java [bci]*/*/*.java [bci]*/*/*/*.java )
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src [jmop]*/*.java [jmop]*/*/*.java [jmop]*/*/*/*.java [jmop]*/*/*/*/*.java)
+echo "here 2"
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src [tuvx]*/*.java [tuvx]*/*/*.java [tuvx]*/*/*/*.java)
 
     (cd src/javax/crypto; javac -d ../../../classes -classpath ../../../classes:../../../src *.java */*.java)
