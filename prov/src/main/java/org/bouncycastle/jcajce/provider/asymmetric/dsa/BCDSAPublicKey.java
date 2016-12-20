@@ -187,7 +187,7 @@ public class BCDSAPublicKey
         in.defaultReadObject();
 
         BigInteger p = (BigInteger)in.readObject();
-        if (p.equals(BigInteger.ZERO))
+        if (p.equals(ZERO))
         {
             this.dsaSpec = null;
         }
