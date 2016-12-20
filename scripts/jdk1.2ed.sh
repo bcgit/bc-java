@@ -24,3 +24,9 @@ g/private final AlgorithmIdentifier kdfAlgorithm;/s/final//
 w
 q
 %
+
+ed org/bouncycastle/util/test/FixedSecureRandom.java <<%
+g/private static final boolean/s/final//
+w
+q
+%

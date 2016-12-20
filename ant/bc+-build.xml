@@ -43,12 +43,6 @@
     <property name="pg.target.docs.dir" value="${pg.target.dir}/javadoc" />
     <property name="pg.target.src.zip" value="${pg.target.dir}/src.zip" />
 
-    <property name="tls.target" value="bctls-${target.name}" />
-    <property name="tls.target.dir" value="${artifacts.dir}/${tls.target}" />
-    <property name="tls.target.src.dir" value="${tls.target.dir}/src" />
-    <property name="tls.target.docs.dir" value="${tls.target.dir}/javadoc" />
-    <property name="tls.target.src.zip" value="${tls.target.dir}/src.zip" />
-
     <property name="lcrypto.target" value="lcrypto-${target.name}" />
     <property name="lcrypto.target.dir" value="${artifacts.dir}/${lcrypto.target}" />
     <property name="lcrypto.target.src.dir" value="${lcrypto.target.dir}/src" />
@@ -103,7 +97,7 @@
                 <mkdir dir="${build.dir}/@{target}/classes" />
                 <mkdir dir="${artifacts.dir}/@{target}" />
 
-                <javac source="${bc.javac.source}" target="${bc.javac.target}"
+                <javac source="${bc.javac.source}" fork="true" memoryMaximumSize="384m" target="${bc.javac.target}"
                     srcdir="${artifacts.dir}/@{target}/src"
                     destdir="${build.dir}/@{target}/classes"
                     debug="${release.debug}">
@@ -279,7 +273,7 @@
         <javac source="${bc.javac.source}" target="${bc.javac.target}"
             srcdir="${lcrypto.target.src.dir}"
             destdir="${lcrypto.target.classes.dir}"
-            debug="${release.debug}">
+            debug="${release.debug}" fork="yes">
             <classpath>
                 <path refid="project.classpath" /> 
             </classpath>
@@ -326,8 +320,6 @@
                  <exclude name="org/bouncycastle/tsp/**" />
                  <exclude name="org/bouncycastle/voms/**" />
                  <exclude name="org/bouncycastle/apache/**" />
-                 <exclude name="org/bouncycastle/tls/**" />
-                 <exclude name="org/bouncycastle/jsse/**" />
              </fileset>
              <fileset dir="${src.dir}">
                  <include name="org/bouncycastle/x509/CertPathReviewerMessages*.properties" />
@@ -438,8 +430,6 @@
                  <exclude name="org/bouncycastle/mozilla/**" />
                  <exclude name="org/bouncycastle/bcpg/**" />
                  <exclude name="org/bouncycastle/voms/**" />
-                 <exclude name="org/bouncycastle/tls/**" />
-                 <exclude name="org/bouncycastle/jsse/**" />
                  <exclude name="org/apache/**/*.java" />
              </fileset>
              <fileset dir="${src.dir}" includes="org/bouncycastle/util/test/*.java" />
@@ -530,50 +520,6 @@
                 <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
                 <attribute name="Implementation-Version" value="${release.version}.0" />
                 <attribute name="Application-Name" value="Bouncy Castle S/MIME API" />
-                <attribute name="Trusted-Library" value="true" />
-                <attribute name="Permissions" value="all-permissions" />
-                <attribute name="Codebase" value="*" />
-                <attribute name="Application-Library-Allowable-Codebase" value="*" />
-                <attribute name="Caller-Allowable-Codebase" value="*" />
-            </manifestElements>
-        </compile>
-
-    </target>
-
-    <!--
-          TLS
-    -->
-    <target name="build-tls" depends="initMacros">
-        <mkdir dir="${tls.target.dir}" />
-
-        <copyStandardFiles toDir="${tls.target.dir}" />
-
-        <copy todir="${tls.target.src.dir}">
-             <fileset dir="${src.dir}">
-                 <exclude name="**/*Test.java" />
-                 <exclude name="**/*Tests.java" />
-                 <exclude name="**/test/*.java" />
-                 <include name="org/bouncycastle/tls/**/*.java" />
-                 <include name="org/bouncycastle/tls/**/*.properties" />
-                 <include name="org/bouncycastle/jsse/**/*.java" />
-                 <include name="org/bouncycastle/jsse/**/*.properties" />
-             </fileset>
-        </copy>
-
-        <compile target="${tls.target}">
-            <jarFileSet>
-                <include name="**/*.class"/>
-                <include name="**/*.properties"/>
-            </jarFileSet>
-            <manifestElements>
-                <attribute name="Manifest-Version" value="1.0" />
-                <attribute name="Extension-Name" value="org.bouncycastle.bctls" />
-                <attribute name="Specification-Vendor" value="BouncyCastle.org" />
-                <attribute name="Specification-Version" value="1.1" />
-                <attribute name="Implementation-Vendor-Id" value="org.bouncycastle" />
-                <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
-                <attribute name="Implementation-Version" value="${release.version}.0" />
-                <attribute name="Application-Name" value="Bouncy Castle TLS API and Provider" />
                 <attribute name="Trusted-Library" value="true" />
                 <attribute name="Permissions" value="all-permissions" />
                 <attribute name="Codebase" value="*" />
@@ -807,7 +753,7 @@
         </junitreport>
     </target>
 
-    <target name="javadoc-libraries" depends="javadoc-pkix, javadoc-mail, javadoc-pg, javadoc-tls" />
+    <target name="javadoc-libraries" depends="javadoc-pkix, javadoc-mail, javadoc-pg" />
 
     <!--
           Provider JavaDoc
@@ -914,34 +860,6 @@
 
         <copy todir="${mail.target.docs.dir}">
              <fileset dir="${artifacts.docs.dir}/bcmail" />
-        </copy>
-    </target>
-
-    <!--
-          TLS JavaDoc
-    -->
-    <target name="javadoc-tls" depends="initMacros">
-        <copy todir="${tls.target.src.dir}">
-             <fileset dir="${src.dir}">
-                 <include name="org/bouncycastle/jsse/**/test/*.java" />
-                 <include name="org/bouncycastle/jsse/**/*.html" />
-                 <include name="org/bouncycastle/tls/**/test/*.java" />
-                 <include name="org/bouncycastle/tls/**/*.html" />
-             </fileset>
-        </copy>
-
-        <compile-doc srcDir="${tls.target.src.dir}" docsDir="${artifacts.docs.dir}/bctls">
-            <docElements>
-                <package name="org.bouncycastle.tls.*" />
-                <package name="org.bouncycastle.jsse.*" />
-                <group title="TLS/DTLS Packages" packages="org.bouncycastle.tls,org.bouncycastle.tls.crypto*" />
-                <group title="JSSE Provider Packages" packages="org.bouncycastle.jsse.provider" />
-                <group title="TLS/DTLS/JSSE Provider Test and Example Packages" packages="org.bouncycastle.jsse.provider.test*,org.bouncycastle.tls.test*" />
-            </docElements>
-        </compile-doc>
-
-        <copy todir="${tls.target.docs.dir}">
-             <fileset dir="${artifacts.docs.dir}/bctls" />
         </copy>
     </target>
 

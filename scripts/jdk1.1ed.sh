@@ -154,3 +154,33 @@ g/private final .*;/s/final//
 w
 q
 %
+
+ed org/bouncycastle/asn1/bc/ObjectStoreIntegrityCheck.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/jcajce/spec/AEADParameterSpec.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/jcajce/provider/asymmetric/dh/IESCipher.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/jcajce/provider/keystore/bcfks/BcFKSKeyStoreSpi.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/cert/dane/DANEEntry.java <<%
+g/private final .*;/s/final//
+w
+q
+%
