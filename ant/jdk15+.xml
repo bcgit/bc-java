@@ -95,6 +95,7 @@
         <ant antfile="ant/bc+-build.xml" dir="." />
         <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-lw" />
         <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-libraries" />
+        <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-tls" />
     </target>
 
     <target name="build-lw" depends="init">
