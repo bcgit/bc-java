@@ -106,7 +106,7 @@
                 <javac source="${bc.javac.source}" target="${bc.javac.target}"
                     srcdir="${artifacts.dir}/@{target}/src"
                     destdir="${build.dir}/@{target}/classes"
-                    debug="${release.debug}">
+                    debug="${release.debug}" fork="true">
                     <classpath>
                         <path refid="project.classpath" /> 
                         <fileset dir="${artifacts.jars.dir}">
