@@ -807,7 +807,7 @@
         </junitreport>
     </target>
 
-    <target name="javadoc-libraries" depends="javadoc-pkix, javadoc-mail, javadoc-pg, javadoc-tls" />
+    <target name="javadoc-libraries" depends="javadoc-pkix, javadoc-mail, javadoc-pg" />
 
     <!--
           Provider JavaDoc
