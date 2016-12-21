@@ -26,7 +26,11 @@ to conform the algorithms to the JCE framework.
 Release: 1.56 <br/>
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
+<li>See section 2.1.4 for Security Defects.</li>
 <li>Carry propagation bugs in the implementation of squaring for several raw math classes have been fixed (org.bouncycastle.math.raw.Nat???). These classes are used by our custom elliptic curve implementations (org.bouncycastle.math.ec.custom.**), so there was the possibility of rare (in general usage) spurious calculations for elliptic curve scalar multiplications. Such errors would have been detected with high probability by the output validation for our scalar multipliers.</li>
+<li>Using unknown status with the ASN.1 CertStatus primitive could result in an IllegalArgumentException on construction. This has been fixed.</li>
+<li>A potentional NullPointerException in a precomputation in WNafUtil has been removed.</li>
+<li>PGPUtil.getDecoderStream() would throw something other than an IOException for empty and very small data. This has been fixed.
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -39,15 +43,28 @@ Release: 1.56 <br/>
 <li>AES-CCM MAC support has been added to the provider.</li>
 <li>Support for ChaCha7539 (ChaCha20 as defined in RFC 7539) and Poly1305 have been added to the provider.</li>
 <li>Support has been added for defining your own curves and making them available to the key generators and factories.</li>
+<li>Methods have been added for specifying that a PGPPublicKey/PGPPublicKeyRing is being encoded for export and trust packets are not required.</li>
+<li>Plain-ECDSA and SHA-3 support has been added to DefaultDigestAlgorithmIdentifierFinder.</li>
+<li>SHA-3 support has been added to BcDefaultDigestProvider.</li>
+<li>A higher level TLS API and JSSE provider have been added to the project.</li>
 </ul>
-<h3>2.1.4 Security Related Changes</h3>
+<h3>2.1.4 Security Related Changes and CVE's Addressed by this Release</h3>
 <ul>
-<li>Work has been done to improve the "constant time" behaviour of the RSA padding mechanisms.</li>
-<li>IES/ECIES with the base cipher in ECB mode is no longer supported as it is now felt it is too difficult to use without risk. See "A Proposal for an ISO Standard for Public Key Encryption (version 2.1)", Section 4.2, by Victor Shoup, for a discussion as to why. Contact us at feedback-crypto&#064bouncycastle.org if you need a work around. The constructor for IESParameterSpec that allows the use of cipher without a nonce has been deleted.</li>
-<li>Work has been done to improve the "constant time" behaviour of the IES mechanisms.</li>
-<li>DSA signature generation now incorporates blinding</li>
 <li>It is now possible to configure the provider to only import keys for specific named curves.</li>
-<li>DSA and ECDSA signature verification now enforces strict DER encoding rules, as part of this strict encoding enforcement has been introduced for ASN1Integer.</li>
+<li>Work has been done to improve the "constant time" behaviour of the RSA padding mechanisms.</li>
+<li>The constructor for IESParameterSpec that allows the use of cipher without a nonce has been deleted. See also details for CVE-2016-1000344, CVE-2016-10003XX.</li>
+<li>Strict encoding enforcement has been introduced for ASN1Integer.</li>
+<li>CVE-2016-1000338: DSA does not fully validate ASN.1 encoding of signature on verification. It is possible to inject extra elements in the sequence making up the signature and still have it validate, which in some cases may allow the introduction of "invisible" data into a signed structure.</li>
+<li>CVE-2016-1000339: AESFastEngine has a side channel leak if table accesses can be observed. The use of lookup large static lookup tables in AESFastEngine means that where data accesses by the CPU can be observed, it is possible to gain infromation about the key used to initialize the cipher. We now recommend not using AESFastEngine where this might be a concern. The BC provider is now using AESEngine by default.</li>
+<li>CVE-2016-1000340: Static ECDH vulnerable to carry propagation bug.</li>
+<li>CVE-2016-1000341: DSA signature generation vulnerable to timing attack. Where timings can be closely observed for the generation of signatures, the lack of blinding in 1.55 or earlier, may allow an attacker to gain information about the signatures k value and ultimately the private value as well.</li>
+<li>CVE-2016-1000342: ECDSA does not fully validate ASN.1 encoding of signature on verification. It is possible to inject extra elements in the sequence making up the signature and still have it validate, which in some cases may allow the introduction of "invisible" data into a signed structure.</li>
+<li>CVE-2016-1000344: DSA key pair generator generates a weak private key if used with default values. If the JCA key pair generator is not explicitly initialised with DSA parameters, 1.55 and earlier generates a private value assuming a 1024 bit key size. In earlier releases this can be dealt with by explictly passing parameters to the key pair generator.</li>
+<li>CVE-2016-1000344: DHIES allows the use of unsafe ECB mode. This algorithm is now removed from the provider.</li>
+<li>CVE-2016-1000345: DHIES/ECIES CBC mode vulnerable to padding oracle attack. For BC 1.55 and older, in an environment where timings can be easily observed, it is possible with enough observations to identify when the decryption is failing due to padding.</li>
+<li>CVE-2016-1000346: Other party DH public key not fully validated. This can cuase issues as invalid keys can be used to reveal details about the other party's private key where static Diffie-Hellman is in use. As of this release the key parameters are checked on agreement calculation.</li>
+<li>CVE-2016-1000352: ECIES allows the use of unsafe ECB mode. This algorithm is now removed from the provider.</li>
+</ul>
 </ul>
 <h3>2.1.5 Security Advisory</h3>
 <ul>
