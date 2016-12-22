@@ -51,7 +51,7 @@ Release: 1.56 <br/>
 <ul>
 <li>It is now possible to configure the provider to only import keys for specific named curves.</li>
 <li>Work has been done to improve the "constant time" behaviour of the RSA padding mechanisms.</li>
-<li>The GCM ciphers in the JCE and lightweight API will now fail if an attempt to use it for encryption a doFinal or without changing the IV.</li>
+<li>The GCM ciphers in the JCE and lightweight API will now fail if an attempt is made to use them for encryption after a doFinal or without changing the IV.</li>
 <li>The constructor for IESParameterSpec that allows the use of cipher without a nonce has been deleted. See also details for CVE-2016-1000344, CVE-2016-1000352.</li>
 <li>Strict encoding enforcement has been introduced for ASN1Integer.</li>
 <li>CVE-2016-1000338: DSA does not fully validate ASN.1 encoding of signature on verification. It is possible to inject extra elements in the sequence making up the signature and still have it validate, which in some cases may allow the introduction of "invisible" data into a signed structure.</li>
