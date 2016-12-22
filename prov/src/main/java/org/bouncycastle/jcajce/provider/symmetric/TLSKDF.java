@@ -6,15 +6,13 @@ import java.security.spec.KeySpec;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Mac;
-import org.bouncycastle.crypto.digests.MD5Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseSecretKeyFactory;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
@@ -77,8 +75,8 @@ public class TLSKDF
 
     private static byte[] PRF_legacy(TLSKeyMaterialSpec parameters)
     {
-        Mac md5Hmac = new HMac(new MD5Digest());
-        Mac sha1HMac = new HMac(new SHA1Digest());
+        Mac md5Hmac = new HMac(DigestFactory.createMD5());
+        Mac sha1HMac = new HMac(DigestFactory.createSHA1());
 
         byte[] label = Strings.toByteArray(parameters.getLabel());
         byte[] labelSeed = Arrays.concatenate(label, parameters.getSeed());

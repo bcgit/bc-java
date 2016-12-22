@@ -7,8 +7,8 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -27,7 +27,7 @@ public class OAEPEncoding
     public OAEPEncoding(
         AsymmetricBlockCipher   cipher)
     {
-        this(cipher, new SHA1Digest(), null);
+        this(cipher, DigestFactory.createSHA1(), null);
     }
     
     public OAEPEncoding(

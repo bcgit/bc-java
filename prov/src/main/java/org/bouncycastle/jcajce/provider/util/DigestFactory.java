@@ -10,14 +10,6 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.MD5Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.digests.SHA224Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA384Digest;
-import org.bouncycastle.crypto.digests.SHA3Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.digests.SHA512tDigest;
 import org.bouncycastle.util.Strings;
 
 public class DigestFactory
@@ -133,52 +125,52 @@ public class DigestFactory
         
         if (sha1.contains(digestName))
         {
-            return new SHA1Digest();
+            return org.bouncycastle.crypto.util.DigestFactory.createSHA1();
         }
         if (md5.contains(digestName))
         {
-            return new MD5Digest();
+            return org.bouncycastle.crypto.util.DigestFactory.createMD5();
         }
         if (sha224.contains(digestName))
         {
-            return new SHA224Digest();
+            return org.bouncycastle.crypto.util.DigestFactory.createSHA224();
         }
         if (sha256.contains(digestName))
         {
-            return new SHA256Digest();
+            return org.bouncycastle.crypto.util.DigestFactory.createSHA256();
         }
         if (sha384.contains(digestName))
         {
-            return new SHA384Digest();
+            return org.bouncycastle.crypto.util.DigestFactory.createSHA384();
         }
         if (sha512.contains(digestName))
         {
-            return new SHA512Digest();
+            return org.bouncycastle.crypto.util.DigestFactory.createSHA512();
         }
         if (sha512_224.contains(digestName))
         {
-            return new SHA512tDigest(224);
+            return org.bouncycastle.crypto.util.DigestFactory.createSHA512_224();
         }
         if (sha512_256.contains(digestName))
         {
-            return new SHA512tDigest(256);
+            return org.bouncycastle.crypto.util.DigestFactory.createSHA512_256();
         }
 
         if (sha3_224.contains(digestName))
         {
-            return new SHA3Digest(224);
+            return org.bouncycastle.crypto.util.DigestFactory.createSHA3_224();
         }
         if (sha3_256.contains(digestName))
         {
-            return new SHA3Digest(256);
+            return org.bouncycastle.crypto.util.DigestFactory.createSHA3_256();
         }
         if (sha3_384.contains(digestName))
         {
-            return new SHA3Digest(384);
+            return org.bouncycastle.crypto.util.DigestFactory.createSHA3_384();
         }
         if (sha3_512.contains(digestName))
         {
-            return new SHA3Digest(512);
+            return org.bouncycastle.crypto.util.DigestFactory.createSHA3_512();
         }
 
         return null;

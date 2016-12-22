@@ -14,15 +14,10 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.RIPEMD128Digest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.digests.SHA224Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA384Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.digests.SHA512tDigest;
 import org.bouncycastle.crypto.digests.WhirlpoolDigest;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.signers.X931Signer;
+import org.bouncycastle.crypto.util.DigestFactory;
 
 public class X931SignatureSpi
     extends SignatureSpi
@@ -142,7 +137,7 @@ public class X931SignatureSpi
     {
         public SHA1WithRSAEncryption()
         {
-            super(new SHA1Digest(), new RSABlindedEngine());
+            super(DigestFactory.createSHA1(), new RSABlindedEngine());
         }
     }
 
@@ -151,7 +146,7 @@ public class X931SignatureSpi
     {
         public SHA224WithRSAEncryption()
         {
-            super(new SHA224Digest(), new RSABlindedEngine());
+            super(DigestFactory.createSHA224(), new RSABlindedEngine());
         }
     }
 
@@ -160,7 +155,7 @@ public class X931SignatureSpi
     {
         public SHA256WithRSAEncryption()
         {
-            super(new SHA256Digest(), new RSABlindedEngine());
+            super(DigestFactory.createSHA256(), new RSABlindedEngine());
         }
     }
 
@@ -169,7 +164,7 @@ public class X931SignatureSpi
     {
         public SHA384WithRSAEncryption()
         {
-            super(new SHA384Digest(), new RSABlindedEngine());
+            super(DigestFactory.createSHA384(), new RSABlindedEngine());
         }
     }
 
@@ -178,7 +173,7 @@ public class X931SignatureSpi
     {
         public SHA512WithRSAEncryption()
         {
-            super(new SHA512Digest(), new RSABlindedEngine());
+            super(DigestFactory.createSHA512(), new RSABlindedEngine());
         }
     }
 
@@ -187,7 +182,7 @@ public class X931SignatureSpi
     {
         public SHA512_224WithRSAEncryption()
         {
-            super(new SHA512tDigest(224), new RSABlindedEngine());
+            super(DigestFactory.createSHA512_224(), new RSABlindedEngine());
         }
     }
 
@@ -196,7 +191,7 @@ public class X931SignatureSpi
     {
         public SHA512_256WithRSAEncryption()
         {
-            super(new SHA512tDigest(256), new RSABlindedEngine());
+            super(DigestFactory.createSHA512_256(), new RSABlindedEngine());
         }
     }
 

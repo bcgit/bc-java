@@ -23,7 +23,6 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.KeyEncoder;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
-import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.IESEngine;
@@ -41,6 +40,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.IESWithCipherParameters;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.parsers.ECIESPublicKeyParser;
+import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.IESUtil;
 import org.bouncycastle.jcajce.provider.util.BadBlockException;
@@ -507,8 +507,8 @@ public class IESCipher
         public ECIES()
         {
             super(new IESEngine(new ECDHBasicAgreement(),
-                new KDF2BytesGenerator(new SHA1Digest()),
-                new HMac(new SHA1Digest())));
+                new KDF2BytesGenerator(DigestFactory.createSHA1()),
+                new HMac(DigestFactory.createSHA1())));
         }
     }
 
@@ -518,8 +518,8 @@ public class IESCipher
         public ECIESwithCipher(BlockCipher cipher, int ivLength)
         {
             super(new IESEngine(new ECDHBasicAgreement(),
-                            new KDF2BytesGenerator(new SHA1Digest()),
-                            new HMac(new SHA1Digest()),
+                            new KDF2BytesGenerator(DigestFactory.createSHA1()),
+                            new HMac(DigestFactory.createSHA1()),
                             new PaddedBufferedBlockCipher(cipher)), ivLength);
         }
     }
