@@ -25,6 +25,8 @@ The **mail** module provides an S/MIME API built on top of CMS.
 
 The **pg** module is the home for code used to support OpenPGP.
 
+The **tls** module is the home for code used to a general TLS API and JSSE Provider (as at 1.56 this should be considered a beta).
+
 The build scripts that come with the full distribution allow creation of the different releases by using the different source trees while excluding classes that are not appropriate and copying in the required compatibility classes from the directories containing compatibility classes appropriate for the distribution.
 
 If you want to try create a build for yourself, using your own environment, the best way to do it is to start with the build for the distribution you are interested in, make sure that builds, and then modify your build scripts to do the required exclusions and file copies for your setup, otherwise you are likely to get class not found exceptions. The final caveat to this is that as the j2me distribution includes some compatibility classes starting in the java package, you need to use an obfuscator to change the package names before attempting to import a midlet using the BC API.
