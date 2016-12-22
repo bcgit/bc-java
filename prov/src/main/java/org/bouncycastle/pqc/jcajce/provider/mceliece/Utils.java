@@ -5,11 +5,7 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.digests.SHA224Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA384Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.util.DigestFactory;
 
 class Utils
 {
@@ -43,23 +39,23 @@ class Utils
     {
         if (digest.getAlgorithm().equals(OIWObjectIdentifiers.idSHA1))
         {
-            return new SHA1Digest();
+            return DigestFactory.createSHA1();
         }
         if (digest.getAlgorithm().equals(NISTObjectIdentifiers.id_sha224))
         {
-            return new SHA224Digest();
+            return DigestFactory.createSHA224();
         }
         if (digest.getAlgorithm().equals(NISTObjectIdentifiers.id_sha256))
         {
-            return new SHA256Digest();
+            return DigestFactory.createSHA256();
         }
         if (digest.getAlgorithm().equals(NISTObjectIdentifiers.id_sha384))
         {
-            return new SHA384Digest();
+            return DigestFactory.createSHA384();
         }
         if (digest.getAlgorithm().equals(NISTObjectIdentifiers.id_sha512))
         {
-            return new SHA512Digest();
+            return DigestFactory.createSHA512();
         }
         throw new IllegalArgumentException("unrecognised OID in digest algorithm identifier: " + digest.getAlgorithm());
     }

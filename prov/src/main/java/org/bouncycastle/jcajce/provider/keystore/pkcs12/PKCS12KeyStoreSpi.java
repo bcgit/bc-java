@@ -88,7 +88,7 @@ import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jcajce.PKCS12StoreParameter;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
@@ -226,7 +226,7 @@ public class PKCS12KeyStoreSpi
 
     private static byte[] getDigest(SubjectPublicKeyInfo spki)
     {
-        Digest digest = new SHA1Digest();
+        Digest digest = DigestFactory.createSHA1();
         byte[]  resBuf = new byte[digest.getDigestSize()];
 
         byte[] bytes = spki.getPublicKeyData().getBytes();

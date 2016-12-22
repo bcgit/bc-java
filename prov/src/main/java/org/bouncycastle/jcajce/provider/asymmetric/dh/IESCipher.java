@@ -25,7 +25,6 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.KeyEncoder;
 import org.bouncycastle.crypto.agreement.DHBasicAgreement;
-import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.IESEngine;
@@ -43,6 +42,7 @@ import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.crypto.params.IESWithCipherParameters;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.parsers.DHIESPublicKeyParser;
+import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.util.DHUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.IESUtil;
 import org.bouncycastle.jcajce.provider.util.BadBlockException;
@@ -515,8 +515,8 @@ public class IESCipher
         public IES()
         {
             super(new IESEngine(new DHBasicAgreement(),
-                new KDF2BytesGenerator(new SHA1Digest()),
-                new HMac(new SHA1Digest())));
+                new KDF2BytesGenerator(DigestFactory.createSHA1()),
+                new HMac(DigestFactory.createSHA1())));
         }
     }
 
@@ -526,8 +526,8 @@ public class IESCipher
         public IESwithDESedeCBC()
         {
             super(new IESEngine(new DHBasicAgreement(),
-                new KDF2BytesGenerator(new SHA1Digest()),
-                new HMac(new SHA1Digest()),
+                new KDF2BytesGenerator(DigestFactory.createSHA1()),
+                new HMac(DigestFactory.createSHA1()),
                 new PaddedBufferedBlockCipher(new CBCBlockCipher(new DESedeEngine()))), 8);
         }
     }
@@ -538,8 +538,8 @@ public class IESCipher
         public IESwithAESCBC()
         {
             super(new IESEngine(new DHBasicAgreement(),
-                new KDF2BytesGenerator(new SHA1Digest()),
-                new HMac(new SHA1Digest()),
+                new KDF2BytesGenerator(DigestFactory.createSHA1()),
+                new HMac(DigestFactory.createSHA1()),
                 new PaddedBufferedBlockCipher(new CBCBlockCipher(new AESEngine()))), 16);
         }
     }

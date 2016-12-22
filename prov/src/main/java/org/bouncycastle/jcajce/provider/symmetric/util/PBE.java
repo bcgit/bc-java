@@ -64,10 +64,10 @@ public interface PBE
                     generator = new PKCS5S1ParametersGenerator(new MD2Digest());
                     break;
                 case MD5:
-                    generator = new PKCS5S1ParametersGenerator(DigestFactory.getMD5());
+                    generator = new PKCS5S1ParametersGenerator(DigestFactory.createMD5());
                     break;
                 case SHA1:
-                    generator = new PKCS5S1ParametersGenerator(DigestFactory.getSHA1());
+                    generator = new PKCS5S1ParametersGenerator(DigestFactory.createSHA1());
                     break;
                 default:
                     throw new IllegalStateException("PKCS5 scheme 1 only supports MD2, MD5 and SHA1.");
@@ -81,10 +81,10 @@ public interface PBE
                     generator = new PKCS5S2ParametersGenerator(new MD2Digest());
                     break;
                 case MD5:
-                    generator = new PKCS5S2ParametersGenerator(DigestFactory.getMD5());
+                    generator = new PKCS5S2ParametersGenerator(DigestFactory.createMD5());
                     break;
                 case SHA1:
-                    generator = new PKCS5S2ParametersGenerator(DigestFactory.getSHA1());
+                    generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA1());
                     break;
                 case RIPEMD160:
                     generator = new PKCS5S2ParametersGenerator(new RIPEMD160Digest());
@@ -93,19 +93,19 @@ public interface PBE
                     generator = new PKCS5S2ParametersGenerator(new TigerDigest());
                     break;
                 case SHA256:
-                    generator = new PKCS5S2ParametersGenerator(DigestFactory.getSHA256());
+                    generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA256());
                     break;
                 case GOST3411:
                     generator = new PKCS5S2ParametersGenerator(new GOST3411Digest());
                     break;
                 case SHA224:
-                    generator = new PKCS5S2ParametersGenerator(DigestFactory.getSHA224());
+                    generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA224());
                     break;
                 case SHA384:
-                    generator = new PKCS5S2ParametersGenerator(DigestFactory.getSHA384());
+                    generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA384());
                     break;
                 case SHA512:
-                    generator = new PKCS5S2ParametersGenerator(DigestFactory.getSHA512());
+                    generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA512());
                     break;
                 default:
                     throw new IllegalStateException("unknown digest scheme for PBE PKCS5S2 encryption.");
@@ -119,10 +119,10 @@ public interface PBE
                     generator = new PKCS12ParametersGenerator(new MD2Digest());
                     break;
                 case MD5:
-                    generator = new PKCS12ParametersGenerator(DigestFactory.getMD5());
+                    generator = new PKCS12ParametersGenerator(DigestFactory.createMD5());
                     break;
                 case SHA1:
-                    generator = new PKCS12ParametersGenerator(DigestFactory.getSHA1());
+                    generator = new PKCS12ParametersGenerator(DigestFactory.createSHA1());
                     break;
                 case RIPEMD160:
                     generator = new PKCS12ParametersGenerator(new RIPEMD160Digest());
@@ -131,19 +131,19 @@ public interface PBE
                     generator = new PKCS12ParametersGenerator(new TigerDigest());
                     break;
                 case SHA256:
-                    generator = new PKCS12ParametersGenerator(DigestFactory.getSHA256());
+                    generator = new PKCS12ParametersGenerator(DigestFactory.createSHA256());
                     break;
                 case GOST3411:
                     generator = new PKCS12ParametersGenerator(new GOST3411Digest());
                     break;
                 case SHA224:
-                    generator = new PKCS12ParametersGenerator(DigestFactory.getSHA224());
+                    generator = new PKCS12ParametersGenerator(DigestFactory.createSHA224());
                     break;
                 case SHA384:
-                    generator = new PKCS12ParametersGenerator(DigestFactory.getSHA384());
+                    generator = new PKCS12ParametersGenerator(DigestFactory.createSHA384());
                     break;
                 case SHA512:
-                    generator = new PKCS12ParametersGenerator(DigestFactory.getSHA512());
+                    generator = new PKCS12ParametersGenerator(DigestFactory.createSHA512());
                     break;
                 default:
                     throw new IllegalStateException("unknown digest scheme for PBE encryption.");

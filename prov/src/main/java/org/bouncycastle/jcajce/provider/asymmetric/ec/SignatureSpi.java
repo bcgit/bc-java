@@ -17,16 +17,11 @@ import org.bouncycastle.crypto.DSA;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.digests.SHA224Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA384Digest;
-import org.bouncycastle.crypto.digests.SHA3Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.ECNRSigner;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
+import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.util.DSABase;
 import org.bouncycastle.jcajce.provider.asymmetric.util.DSAEncoder;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
@@ -72,7 +67,7 @@ public class SignatureSpi
     {
         public ecDSA()
         {
-            super(new SHA1Digest(), new ECDSASigner(), new StdDSAEncoder());
+            super(DigestFactory.createSHA1(), new ECDSASigner(), new StdDSAEncoder());
         }
     }
 
@@ -81,7 +76,7 @@ public class SignatureSpi
     {
         public ecDetDSA()
         {
-            super(new SHA1Digest(), new ECDSASigner(new HMacDSAKCalculator(new SHA1Digest())), new StdDSAEncoder());
+            super(DigestFactory.createSHA1(), new ECDSASigner(new HMacDSAKCalculator(DigestFactory.createSHA1())), new StdDSAEncoder());
         }
     }
 
@@ -99,7 +94,7 @@ public class SignatureSpi
     {
         public ecDSA224()
         {
-            super(new SHA224Digest(), new ECDSASigner(), new StdDSAEncoder());
+            super(DigestFactory.createSHA224(), new ECDSASigner(), new StdDSAEncoder());
         }
     }
 
@@ -108,7 +103,7 @@ public class SignatureSpi
     {
         public ecDetDSA224()
         {
-            super(new SHA224Digest(), new ECDSASigner(new HMacDSAKCalculator(new SHA224Digest())), new StdDSAEncoder());
+            super(DigestFactory.createSHA224(), new ECDSASigner(new HMacDSAKCalculator(DigestFactory.createSHA224())), new StdDSAEncoder());
         }
     }
 
@@ -117,7 +112,7 @@ public class SignatureSpi
     {
         public ecDSA256()
         {
-            super(new SHA256Digest(), new ECDSASigner(), new StdDSAEncoder());
+            super(DigestFactory.createSHA256(), new ECDSASigner(), new StdDSAEncoder());
         }
     }
 
@@ -126,7 +121,7 @@ public class SignatureSpi
     {
         public ecDetDSA256()
         {
-            super(new SHA256Digest(), new ECDSASigner(new HMacDSAKCalculator(new SHA256Digest())), new StdDSAEncoder());
+            super(DigestFactory.createSHA256(), new ECDSASigner(new HMacDSAKCalculator(DigestFactory.createSHA256())), new StdDSAEncoder());
         }
     }
 
@@ -135,7 +130,7 @@ public class SignatureSpi
     {
         public ecDSA384()
         {
-            super(new SHA384Digest(), new ECDSASigner(), new StdDSAEncoder());
+            super(DigestFactory.createSHA384(), new ECDSASigner(), new StdDSAEncoder());
         }
     }
 
@@ -144,7 +139,7 @@ public class SignatureSpi
     {
         public ecDetDSA384()
         {
-            super(new SHA384Digest(), new ECDSASigner(new HMacDSAKCalculator(new SHA384Digest())), new StdDSAEncoder());
+            super(DigestFactory.createSHA384(), new ECDSASigner(new HMacDSAKCalculator(DigestFactory.createSHA384())), new StdDSAEncoder());
         }
     }
 
@@ -153,7 +148,7 @@ public class SignatureSpi
     {
         public ecDSA512()
         {
-            super(new SHA512Digest(), new ECDSASigner(), new StdDSAEncoder());
+            super(DigestFactory.createSHA512(), new ECDSASigner(), new StdDSAEncoder());
         }
     }
 
@@ -162,7 +157,7 @@ public class SignatureSpi
     {
         public ecDetDSA512()
         {
-            super(new SHA512Digest(), new ECDSASigner(new HMacDSAKCalculator(new SHA512Digest())), new StdDSAEncoder());
+            super(DigestFactory.createSHA512(), new ECDSASigner(new HMacDSAKCalculator(DigestFactory.createSHA512())), new StdDSAEncoder());
         }
     }
 
@@ -171,7 +166,7 @@ public class SignatureSpi
     {
         public ecDSASha3_224()
         {
-            super(new SHA3Digest(224), new ECDSASigner(), new StdDSAEncoder());
+            super(DigestFactory.createSHA3_224(), new ECDSASigner(), new StdDSAEncoder());
         }
     }
 
@@ -180,7 +175,7 @@ public class SignatureSpi
     {
         public ecDetDSASha3_224()
         {
-            super(new SHA3Digest(224), new ECDSASigner(new HMacDSAKCalculator(new SHA3Digest(224))), new StdDSAEncoder());
+            super(DigestFactory.createSHA3_224(), new ECDSASigner(new HMacDSAKCalculator(DigestFactory.createSHA3_224())), new StdDSAEncoder());
         }
     }
 
@@ -189,7 +184,7 @@ public class SignatureSpi
     {
         public ecDSASha3_256()
         {
-            super(new SHA3Digest(256), new ECDSASigner(), new StdDSAEncoder());
+            super(DigestFactory.createSHA3_256(), new ECDSASigner(), new StdDSAEncoder());
         }
     }
 
@@ -198,7 +193,7 @@ public class SignatureSpi
     {
         public ecDetDSASha3_256()
         {
-            super(new SHA3Digest(256), new ECDSASigner(new HMacDSAKCalculator(new SHA3Digest(256))), new StdDSAEncoder());
+            super(DigestFactory.createSHA3_256(), new ECDSASigner(new HMacDSAKCalculator(DigestFactory.createSHA3_256())), new StdDSAEncoder());
         }
     }
 
@@ -207,7 +202,7 @@ public class SignatureSpi
     {
         public ecDSASha3_384()
         {
-            super(new SHA3Digest(384), new ECDSASigner(), new StdDSAEncoder());
+            super(DigestFactory.createSHA3_384(), new ECDSASigner(), new StdDSAEncoder());
         }
     }
 
@@ -216,7 +211,7 @@ public class SignatureSpi
     {
         public ecDetDSASha3_384()
         {
-            super(new SHA3Digest(384), new ECDSASigner(new HMacDSAKCalculator(new SHA3Digest(384))), new StdDSAEncoder());
+            super(DigestFactory.createSHA3_384(), new ECDSASigner(new HMacDSAKCalculator(DigestFactory.createSHA3_384())), new StdDSAEncoder());
         }
     }
 
@@ -225,7 +220,7 @@ public class SignatureSpi
     {
         public ecDSASha3_512()
         {
-            super(new SHA3Digest(512), new ECDSASigner(), new StdDSAEncoder());
+            super(DigestFactory.createSHA3_512(), new ECDSASigner(), new StdDSAEncoder());
         }
     }
 
@@ -234,7 +229,7 @@ public class SignatureSpi
     {
         public ecDetDSASha3_512()
         {
-            super(new SHA3Digest(512), new ECDSASigner(new HMacDSAKCalculator(new SHA3Digest(512))), new StdDSAEncoder());
+            super(DigestFactory.createSHA3_512(), new ECDSASigner(new HMacDSAKCalculator(DigestFactory.createSHA3_512())), new StdDSAEncoder());
         }
     }
 
@@ -252,7 +247,7 @@ public class SignatureSpi
     {
         public ecNR()
         {
-            super(new SHA1Digest(), new ECNRSigner(), new StdDSAEncoder());
+            super(DigestFactory.createSHA1(), new ECNRSigner(), new StdDSAEncoder());
         }
     }
 
@@ -261,7 +256,7 @@ public class SignatureSpi
     {
         public ecNR224()
         {
-            super(new SHA224Digest(), new ECNRSigner(), new StdDSAEncoder());
+            super(DigestFactory.createSHA224(), new ECNRSigner(), new StdDSAEncoder());
         }
     }
 
@@ -270,7 +265,7 @@ public class SignatureSpi
     {
         public ecNR256()
         {
-            super(new SHA256Digest(), new ECNRSigner(), new StdDSAEncoder());
+            super(DigestFactory.createSHA256(), new ECNRSigner(), new StdDSAEncoder());
         }
     }
 
@@ -279,7 +274,7 @@ public class SignatureSpi
     {
         public ecNR384()
         {
-            super(new SHA384Digest(), new ECNRSigner(), new StdDSAEncoder());
+            super(DigestFactory.createSHA384(), new ECNRSigner(), new StdDSAEncoder());
         }
     }
 
@@ -288,7 +283,7 @@ public class SignatureSpi
     {
         public ecNR512()
         {
-            super(new SHA512Digest(), new ECNRSigner(), new StdDSAEncoder());
+            super(DigestFactory.createSHA512(), new ECNRSigner(), new StdDSAEncoder());
         }
     }
 
@@ -297,7 +292,7 @@ public class SignatureSpi
     {
         public ecCVCDSA()
         {
-            super(new SHA1Digest(), new ECDSASigner(), new PlainDSAEncoder());
+            super(DigestFactory.createSHA1(), new ECDSASigner(), new PlainDSAEncoder());
         }
     }
 
@@ -306,7 +301,7 @@ public class SignatureSpi
     {
         public ecCVCDSA224()
         {
-            super(new SHA224Digest(), new ECDSASigner(), new PlainDSAEncoder());
+            super(DigestFactory.createSHA224(), new ECDSASigner(), new PlainDSAEncoder());
         }
     }
 
@@ -315,7 +310,7 @@ public class SignatureSpi
     {
         public ecCVCDSA256()
         {
-            super(new SHA256Digest(), new ECDSASigner(), new PlainDSAEncoder());
+            super(DigestFactory.createSHA256(), new ECDSASigner(), new PlainDSAEncoder());
         }
     }
 
@@ -324,7 +319,7 @@ public class SignatureSpi
     {
         public ecCVCDSA384()
         {
-            super(new SHA384Digest(), new ECDSASigner(), new PlainDSAEncoder());
+            super(DigestFactory.createSHA384(), new ECDSASigner(), new PlainDSAEncoder());
         }
     }
 
@@ -333,7 +328,7 @@ public class SignatureSpi
     {
         public ecCVCDSA512()
         {
-            super(new SHA512Digest(), new ECDSASigner(), new PlainDSAEncoder());
+            super(DigestFactory.createSHA512(), new ECDSASigner(), new PlainDSAEncoder());
         }
     }
 
