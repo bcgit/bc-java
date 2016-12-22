@@ -62,7 +62,7 @@ Carry propagation bugs in the implementation of squaring for several raw math cl
 <li>CVE-2016-1000344: DSA key pair generator generates a weak private key if used with default values. If the JCA key pair generator is not explicitly initialised with DSA parameters, 1.55 and earlier generates a private value assuming a 1024 bit key size. In earlier releases this can be dealt with by explictly passing parameters to the key pair generator.</li>
 <li>CVE-2016-1000344: DHIES allows the use of unsafe ECB mode. This algorithm is now removed from the provider.</li>
 <li>CVE-2016-1000345: DHIES/ECIES CBC mode vulnerable to padding oracle attack. For BC 1.55 and older, in an environment where timings can be easily observed, it is possible with enough observations to identify when the decryption is failing due to padding.</li>
-<li>CVE-2016-1000346: Other party DH public key not fully validated. This can cuase issues as invalid keys can be used to reveal details about the other party's private key where static Diffie-Hellman is in use. As of this release the key parameters are checked on agreement calculation.</li>
+<li>CVE-2016-1000346: Other party DH public key not fully validated. This can cause issues as invalid keys can be used to reveal details about the other party's private key where static Diffie-Hellman is in use. As of this release the key parameters are checked on agreement calculation.</li>
 <li>CVE-2016-1000352: ECIES allows the use of unsafe ECB mode. This algorithm is now removed from the provider.</li>
 </ul>
 </ul>
