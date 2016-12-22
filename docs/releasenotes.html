@@ -27,7 +27,6 @@ Release: 1.56 <br/>
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>See section 2.1.4 for Security Defects.</li>
-<li>Carry propagation bugs in the implementation of squaring for several raw math classes have been fixed (org.bouncycastle.math.raw.Nat???). These classes are used by our custom elliptic curve implementations (org.bouncycastle.math.ec.custom.**), so there was the possibility of rare (in general usage) spurious calculations for elliptic curve scalar multiplications. Such errors would have been detected with high probability by the output validation for our scalar multipliers.</li>
 <li>Using unknown status with the ASN.1 CertStatus primitive could result in an IllegalArgumentException on construction. This has been fixed.</li>
 <li>A potentional NullPointerException in a precomputation in WNafUtil has been removed.</li>
 <li>PGPUtil.getDecoderStream() would throw something other than an IOException for empty and very small data. This has been fixed.
@@ -52,11 +51,12 @@ Release: 1.56 <br/>
 <ul>
 <li>It is now possible to configure the provider to only import keys for specific named curves.</li>
 <li>Work has been done to improve the "constant time" behaviour of the RSA padding mechanisms.</li>
-<li>The constructor for IESParameterSpec that allows the use of cipher without a nonce has been deleted. See also details for CVE-2016-1000344, CVE-2016-10003XX.</li>
+<li>The constructor for IESParameterSpec that allows the use of cipher without a nonce has been deleted. See also details for CVE-2016-1000344, CVE-2016-1000352.</li>
 <li>Strict encoding enforcement has been introduced for ASN1Integer.</li>
 <li>CVE-2016-1000338: DSA does not fully validate ASN.1 encoding of signature on verification. It is possible to inject extra elements in the sequence making up the signature and still have it validate, which in some cases may allow the introduction of "invisible" data into a signed structure.</li>
 <li>CVE-2016-1000339: AESFastEngine has a side channel leak if table accesses can be observed. The use of lookup large static lookup tables in AESFastEngine means that where data accesses by the CPU can be observed, it is possible to gain infromation about the key used to initialize the cipher. We now recommend not using AESFastEngine where this might be a concern. The BC provider is now using AESEngine by default.</li>
-<li>CVE-2016-1000340: Static ECDH vulnerable to carry propagation bug.</li>
+<li>CVE-2016-1000340: Static ECDH vulnerable to carry propagation bug.
+Carry propagation bugs in the implementation of squaring for several raw math classes have been fixed (org.bouncycastle.math.raw.Nat???). These classes are used by our custom elliptic curve implementations (org.bouncycastle.math.ec.custom.**), so there was the possibility of rare (in general usage) spurious calculations for elliptic curve scalar multiplications. Such errors would have been detected with high probability by the output validation for our scalar multipliers.</li>
 <li>CVE-2016-1000341: DSA signature generation vulnerable to timing attack. Where timings can be closely observed for the generation of signatures, the lack of blinding in 1.55 or earlier, may allow an attacker to gain information about the signatures k value and ultimately the private value as well.</li>
 <li>CVE-2016-1000342: ECDSA does not fully validate ASN.1 encoding of signature on verification. It is possible to inject extra elements in the sequence making up the signature and still have it validate, which in some cases may allow the introduction of "invisible" data into a signed structure.</li>
 <li>CVE-2016-1000344: DSA key pair generator generates a weak private key if used with default values. If the JCA key pair generator is not explicitly initialised with DSA parameters, 1.55 and earlier generates a private value assuming a 1024 bit key size. In earlier releases this can be dealt with by explictly passing parameters to the key pair generator.</li>
