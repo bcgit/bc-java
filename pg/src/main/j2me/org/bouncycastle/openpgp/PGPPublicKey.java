@@ -1048,13 +1048,13 @@ public class PGPPublicKey
         {
             for (Iterator it = key.getRawUserIDs(); it.hasNext();)
             {
-                UserIDPacket id = (UserIDPacket)it.next();
-                for (Iterator sIt = key.getSignaturesForID(id); sIt.hasNext();)
+                byte[] rawID = (byte[])it.next();
+                for (Iterator sIt = key.getSignaturesForID(rawID); sIt.hasNext();)
                 {
                     if (certification == sIt.next())
                     {
                         found = true;
-                        returnKey = PGPPublicKey.removeCertification(returnKey, id.getRawID(), certification);
+                        returnKey = PGPPublicKey.removeCertification(returnKey, rawID, certification);
                     }
                 }
             }
