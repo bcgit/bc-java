@@ -2206,6 +2206,7 @@ public class PGPKeyRingTest
             }
         }
 
+        PGPSignature masterSig = null;
         Iterator kIt = pubRing.getKeysWithSignaturesBy(vKey.getKeyID());
         if (kIt.hasNext())
         {
@@ -2223,6 +2224,7 @@ public class PGPKeyRingTest
                     {
                         fail("master sig check failed");
                     }
+                    masterSig = sig;
                 }
                 else
                 {
@@ -2240,6 +2242,17 @@ public class PGPKeyRingTest
         else
         {
             fail("no keys found in iterator");
+        }
+
+        // try remove certification by sig.
+        PGPPublicKey editedKey = PGPPublicKey.removeCertification(vKey, masterSig);
+
+        for (it = editedKey.getSignatures(); it.hasNext();)
+        {
+              if (masterSig.equals(it.next()))
+              {
+                  fail("signature found");
+              }
         }
     }
 
