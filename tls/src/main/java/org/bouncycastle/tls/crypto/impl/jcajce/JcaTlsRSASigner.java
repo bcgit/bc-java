@@ -56,8 +56,16 @@ public class JcaTlsRSASigner
              */
                 try
                 {
-                    byte[] digInfo = new DigestInfo(new AlgorithmIdentifier(TlsUtils.getOIDForHashAlgorithm(algorithm.getHash()), DERNull.INSTANCE), hash).getEncoded();
-                    signer.update(digInfo, 0, digInfo.length);
+                    if (JcaUtils.signatureAssumesDigestAlgorithmFromSize(signer))
+                    {
+                        signer.update(hash, 0, hash.length);
+                    }
+                    else
+                    {
+                        byte[] digInfo = new DigestInfo(new AlgorithmIdentifier(TlsUtils.getOIDForHashAlgorithm(algorithm.getHash()), DERNull.INSTANCE), hash).getEncoded();
+                        signer.update(digInfo, 0, digInfo.length);
+                    }
+
                 }
                 catch (IOException e)
                 {
