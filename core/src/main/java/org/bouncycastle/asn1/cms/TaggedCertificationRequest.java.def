@@ -1,0 +1,76 @@
+package org.bouncycastle.asn1.cms;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.pkcs.CertificationRequest;
+
+/**
+ *
+ */
+public class TaggedCertificationRequest
+    extends ASN1Object
+{
+    private ASN1Integer bodyPartId;
+    private CertificationRequest certificationRequest;
+
+    public ASN1Primitive toASN1Primitive()
+    {
+        return new DERSequence(new ASN1Encodable[]{bodyPartId, certificationRequest});
+    }
+
+    public static TaggedCertificationRequest getInstance(Object src)
+        throws Exception
+    {
+        if (src instanceof ASN1Sequence)
+        {
+            return new TaggedCertificationRequest((ASN1Integer)((ASN1Sequence)src).getObjectAt(0), (CertificationRequest)((ASN1Sequence)src).getObjectAt(1));
+        }
+        else if (src instanceof ASN1InputStream)
+        {
+            return getInstance((ASN1Sequence)((ASN1InputStream)src).readObject());
+        }
+        else if (src instanceof InputStream)
+        {
+            return getInstance(new ASN1InputStream((InputStream)src));
+        }
+        else if (src instanceof byte[])
+        {
+            return getInstance(new ASN1InputStream(new ByteArrayInputStream((byte[])src)));
+        }
+        throw new IllegalArgumentException("Source must be, byte[], InputStream, ASN1InputStream or ASN1Sequence");
+    }
+
+    public TaggedCertificationRequest(ASN1Integer bodyPartId, CertificationRequest certificationRequest)
+    {
+        this.bodyPartId = bodyPartId;
+        this.certificationRequest = certificationRequest;
+    }
+
+    public ASN1Integer getBodyPartId()
+    {
+        return bodyPartId;
+    }
+
+    public void setBodyPartId(ASN1Integer bodyPartId)
+    {
+        this.bodyPartId = bodyPartId;
+    }
+
+    public CertificationRequest getCertificationRequest()
+    {
+        return certificationRequest;
+    }
+
+    public void setCertificationRequest(CertificationRequest certificationRequest)
+    {
+        this.certificationRequest = certificationRequest;
+    }
+}
