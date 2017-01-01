@@ -21,6 +21,15 @@ public abstract class SimpleTest
     }
 
     protected void isTrue(
+        boolean value)
+    {
+        if (!value)
+        {
+            throw new TestFailedException(SimpleTestResult.failed(this, "no message"));
+        }
+    }
+
+    protected void isTrue(
         String message,
         boolean value)
     {
@@ -29,7 +38,28 @@ public abstract class SimpleTest
             throw new TestFailedException(SimpleTestResult.failed(this, message));
         }
     }
-    
+
+    protected void isEquals(
+        Object a,
+        Object b)
+    {
+        if (!a.equals(b))
+        {
+            throw new TestFailedException(SimpleTestResult.failed(this, "no message"));
+        }
+    }
+
+    protected void isEquals(
+        String message,
+        Object a,
+        Object b)
+    {
+        if (!a.equals(b))
+        {
+            throw new TestFailedException(SimpleTestResult.failed(this, message));
+        }
+    }
+
     protected void fail(
         String    message,
         Throwable throwable)
