@@ -1,7 +1,11 @@
 package org.bouncycastle.asn1.test;
 
 
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERIA5String;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cmc.BodyPartID;
 import org.bouncycastle.asn1.cmc.CMCObjectIdentifiers;
@@ -37,6 +41,30 @@ public class TaggedAttributeTest
             isEquals(ta.getAttrType(), res1.getAttrType());
             isEquals(ta.getAttrValues().getObjectAt(0), res1.getAttrValues().getObjectAt(0));
             isTrue(Arrays.areEqual(res1.getEncoded(), d));
+        }
+
+        try
+        {
+            ASN1Sequence seq = new DERSequence(new ASN1Encodable[] { new BodyPartID(10) });
+
+            TaggedAttribute.getInstance(seq);
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("incorrect sequence size", e.getMessage());
+        }
+
+        try
+        {
+            ASN1Sequence seq = new DERSequence(new ASN1Encodable[] { ta.getBodyPartID(), ta.getAttrType(), ta.getAttrValues(), new ASN1Integer(0)});
+
+            TaggedAttribute.getInstance(seq);
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("incorrect sequence size", e.getMessage());
         }
     }
 
