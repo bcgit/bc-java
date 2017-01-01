@@ -4,20 +4,21 @@ import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
 
 /**
+ * <pre>
  * PKIData ::= SEQUENCE {
  * controlSequence    SEQUENCE SIZE(0..MAX) OF TaggedAttribute,
  * reqSequence        SEQUENCE SIZE(0..MAX) OF TaggedRequest,
  * cmsSequence        SEQUENCE SIZE(0..MAX) OF TaggedContentInfo,
  * otherMsgSequence   SEQUENCE SIZE(0..MAX) OF OtherMsg
  * }
+ * </pre>
  */
 public class PKIData extends ASN1Object
 {
-    private Vector<TaggedAttribute> controlSequence;
-    private Vector<TaggedRequest> reqSequence;
+    private Vector controlSequence;
+    private Vector reqSequence;
 
 
     public ASN1Primitive toASN1Primitive()
