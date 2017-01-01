@@ -51,6 +51,13 @@ public class CertReqMsg
         return null;
     }
 
+    public static CertReqMsg getInstance(
+        ASN1TaggedObject obj,
+        boolean explicit)
+    {
+        return getInstance(ASN1Sequence.getInstance(obj, explicit));
+    }
+
     /**
      * Creates a new CertReqMsg.
      * @param certReq CertRequest
