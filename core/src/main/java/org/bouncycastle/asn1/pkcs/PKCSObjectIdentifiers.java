@@ -337,6 +337,20 @@ public interface PKCSObjectIdentifiers
     /** PKCS#9: 1.2.840.113549.1.9.16.6.2.27 - <a href="http://tools.ietf.org/html/rfc3126">RFC 3126</a> */
     static final ASN1ObjectIdentifier id_aa_ets_archiveTimestamp = id_aa.branch("27");
 
+    /** PKCS#9: 1.2.840.113549.1.9.16.6.2.37 - <a href="https://tools.ietf.org/html/rfc4108#section-2.2.5">RFC 4108</a> */
+    static final ASN1ObjectIdentifier id_aa_decryptKeyID = id_aa.branch("37");
+
+    /** PKCS#9: 1.2.840.113549.1.9.16.6.2.38 - <a href="https://tools.ietf.org/html/rfc4108#section-2.2.6">RFC 4108</a> */
+    static final ASN1ObjectIdentifier id_aa_implCryptoAlgs = id_aa.branch("38");
+
+    /** PKCS#9: 1.2.840.113549.1.9.16.2.54 <a href="https://tools.ietf.org/html/rfc7030">RFC7030</a>*/
+    static final ASN1ObjectIdentifier id_aa_asymmDecryptKeyID = id_aa.branch("54");
+
+    /** PKCS#9: 1.2.840.113549.1.9.16.2.43   <a href="https://tools.ietf.org/html/rfc7030">RFC7030</a>*/
+    static final ASN1ObjectIdentifier id_aa_implCompressAlgs = id_aa.branch("43");
+    /** PKCS#9: 1.2.840.113549.1.9.16.2.40   <a href="https://tools.ietf.org/html/rfc7030">RFC7030</a>*/
+    static final ASN1ObjectIdentifier id_aa_communityIdentifiers = id_aa.branch("40");
+
     /** @deprecated use id_aa_ets_sigPolicyId instead */
     static final ASN1ObjectIdentifier id_aa_sigPolicyId    = id_aa_ets_sigPolicyId;
     /** @deprecated use id_aa_ets_commitmentType instead */
