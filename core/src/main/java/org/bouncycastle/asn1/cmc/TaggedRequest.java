@@ -60,7 +60,7 @@ public class TaggedRequest
 
         if (obj != null)
         {
-            if (obj instanceof ASN1Encodable)
+            if (obj instanceof ASN1Encodable || obj instanceof byte[])
             {
                 ASN1TaggedObject asn1Prim = ASN1TaggedObject.getInstance(((ASN1Encodable)obj).toASN1Primitive());
 
