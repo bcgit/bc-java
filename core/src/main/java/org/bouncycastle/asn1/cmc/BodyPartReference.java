@@ -1,5 +1,7 @@
 package org.bouncycastle.asn1.cmc;
 
+import java.io.IOException;
+
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -55,6 +57,17 @@ public class BodyPartReference
                 if (asn1Prim instanceof ASN1Sequence)
                 {
                     return new BodyPartReference(BodyPartPath.getInstance(asn1Prim));
+                }
+            }
+            if (obj instanceof byte[])
+            {
+                try
+                {
+                    return getInstance(ASN1Primitive.fromByteArray((byte[])obj));
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalArgumentException("unknown encoding in getInstance()");
                 }
             }
             throw new IllegalArgumentException("unknown object in getInstance(): " + obj.getClass().getName());
