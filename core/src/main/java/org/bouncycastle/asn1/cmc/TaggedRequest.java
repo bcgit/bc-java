@@ -1,5 +1,7 @@
 package org.bouncycastle.asn1.cmc;
 
+import java.io.IOException;
+
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
@@ -60,7 +62,7 @@ public class TaggedRequest
 
         if (obj != null)
         {
-            if (obj instanceof ASN1Encodable || obj instanceof byte[])
+            if (obj instanceof ASN1Encodable)
             {
                 ASN1TaggedObject asn1Prim = ASN1TaggedObject.getInstance(((ASN1Encodable)obj).toASN1Primitive());
 
@@ -74,6 +76,17 @@ public class TaggedRequest
                     return new TaggedRequest(ASN1Sequence.getInstance(asn1Prim, false));
                 default:
                     throw new IllegalArgumentException("unknown tag in getInstance(): " + asn1Prim.getTagNo());
+                }
+            }
+            if (obj instanceof byte[])
+            {
+                try
+                {
+                    return getInstance(ASN1Primitive.fromByteArray((byte[])obj));
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalArgumentException("unknown encoding in getInstance()");
                 }
             }
             throw new IllegalArgumentException("unknown object in getInstance(): " + obj.getClass().getName());
