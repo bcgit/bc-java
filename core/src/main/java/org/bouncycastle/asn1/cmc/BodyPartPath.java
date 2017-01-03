@@ -60,12 +60,7 @@ public class BodyPartPath
     private BodyPartPath(
         ASN1Sequence  seq)
     {
-        this.bodyPartIDs = new BodyPartID[seq.size()];
-
-        for (int i = 0; i != seq.size(); i++)
-        {
-            bodyPartIDs[i] = BodyPartID.getInstance(seq.getObjectAt(i));
-        }
+        this.bodyPartIDs = Utils.toBodyPartIDArray(seq);
     }
 
     public BodyPartID[] getBodyPartIDs()

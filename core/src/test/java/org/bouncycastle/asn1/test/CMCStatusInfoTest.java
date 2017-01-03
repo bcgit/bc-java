@@ -2,16 +2,14 @@ package org.bouncycastle.asn1.test;
 
 import java.util.Date;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERGeneralizedTime;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.cmc.BodyPartID;
 import org.bouncycastle.asn1.cmc.CMCFailInfo;
 import org.bouncycastle.asn1.cmc.CMCStatus;
 import org.bouncycastle.asn1.cmc.CMCStatusInfo;
+import org.bouncycastle.asn1.cmc.CMCStatusInfoBuilder;
 import org.bouncycastle.asn1.cmc.PendInfo;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
 
 
@@ -32,12 +30,32 @@ public class CMCStatusInfoTest
     public void performTest()
         throws Exception
     {
+        { // Without optional status String
+
+             CMCStatusInfoBuilder bldr =
+                 new CMCStatusInfoBuilder(CMCStatus.confirmRequired, new BodyPartID(10));
+
+             CMCStatusInfo cmsInfo = bldr.build();
+
+             isTrue("Has statusString", null == cmsInfo.getStatusString());
+             isEquals("Has other info", false, cmsInfo.hasOtherInfo());
+
+             byte[] b = cmsInfo.getEncoded();
+             CMCStatusInfo res = CMCStatusInfo.getInstance(b);
+
+             // Same
+             isEquals("CMCStatus with no optional part",cmsInfo, res);
+
+             isEquals("Has other info", false, res.hasOtherInfo());
+
+         }
+
         { // Without optional other info.
 
-            CMCStatusInfo cmsInfo = new CMCStatusInfo(
-                CMCStatus.confirmRequired,
-                new DERSequence(new BodyPartID(10)),
-                new DERUTF8String("Cats"));
+            CMCStatusInfoBuilder bldr =
+                new CMCStatusInfoBuilder(CMCStatus.confirmRequired, new BodyPartID(10)).setStatusString("Cats");
+
+            CMCStatusInfo cmsInfo = bldr.build();
 
             isEquals("Has other info", false, cmsInfo.hasOtherInfo());
 
@@ -53,15 +71,12 @@ public class CMCStatusInfoTest
 
 
         { // With optional info: PendInfo
-            CMCStatusInfo cmsInfo = new CMCStatusInfo(
-                CMCStatus.confirmRequired,
-                new DERSequence(new BodyPartID(10)),
-                new DERUTF8String("Cats"),
-                CMCStatusInfo.OtherInfo.getInstance(PendInfo.getInstance(new DERSequence(new ASN1Encodable[]{
-                    new DEROctetString("fish".getBytes()),
-                    new DERGeneralizedTime(new Date())
-                })))
-            );
+            CMCStatusInfoBuilder bldr =
+                new CMCStatusInfoBuilder(CMCStatus.confirmRequired, new BodyPartID(10))
+                    .setStatusString("Cats")
+                    .setOtherInfo(new PendInfo(Strings.toByteArray("fish"), new DERGeneralizedTime(new Date())));
+
+            CMCStatusInfo cmsInfo = bldr.build();
 
             isEquals("Must have other info", true, cmsInfo.hasOtherInfo());
             isEquals("Other is NOT fail info", false, cmsInfo.getOtherInfo().isFailInfo());
@@ -77,12 +92,12 @@ public class CMCStatusInfoTest
 
 
         { // With optional info: CMCFailInfo
-            CMCStatusInfo cmsInfo = new CMCStatusInfo(
-                CMCStatus.confirmRequired,
-                new DERSequence(new BodyPartID(10)),
-                new DERUTF8String("Cats"),
-                CMCStatusInfo.OtherInfo.getInstance(CMCFailInfo.authDataFail)
-            );
+            CMCStatusInfoBuilder bldr =
+                new CMCStatusInfoBuilder(CMCStatus.confirmRequired, new BodyPartID(10))
+                    .setStatusString("Cats")
+                    .setOtherInfo(CMCFailInfo.authDataFail);
+
+            CMCStatusInfo cmsInfo = bldr.build();
 
             isEquals("Must have other info", true, cmsInfo.hasOtherInfo());
             isEquals("Other is fail info", true, cmsInfo.getOtherInfo().isFailInfo());

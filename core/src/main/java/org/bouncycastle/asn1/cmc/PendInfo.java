@@ -24,6 +24,12 @@ public class PendInfo
     private final byte[] pendToken;
     private final ASN1GeneralizedTime pendTime;
 
+    public PendInfo(byte[] pendToken, ASN1GeneralizedTime pendTime)
+    {
+        this.pendToken = Arrays.clone(pendToken);
+        this.pendTime = pendTime;
+    }
+
     private PendInfo(ASN1Sequence seq)
     {
         if (seq.size() != 2)
