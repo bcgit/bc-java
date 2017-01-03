@@ -318,6 +318,7 @@
                  <exclude name="org/bouncycastle/dvcs/**" />
                  <exclude name="org/bouncycastle/eac/**" />
                  <exclude name="org/bouncycastle/est/**" />
+                 <exclude name="org/bouncycastle/mail/**" />
                  <exclude name="org/bouncycastle/openpgp/**" />
                  <exclude name="org/bouncycastle/openssl/**" />
                  <exclude name="org/bouncycastle/mozilla/**" />
