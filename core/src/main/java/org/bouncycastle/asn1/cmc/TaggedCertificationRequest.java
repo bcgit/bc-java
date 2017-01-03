@@ -6,7 +6,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.pkcs.CertificationRequest;
 
 /**
  * <pre>
@@ -20,7 +19,7 @@ public class TaggedCertificationRequest
     extends ASN1Object
 {
     private final BodyPartID bodyPartID;
-    private final CertificationRequest certificationRequest;  // TODO: provide local definition
+    private final CertificationRequest certificationRequest;
 
     public TaggedCertificationRequest(BodyPartID bodyPartID, CertificationRequest certificationRequest)
     {
