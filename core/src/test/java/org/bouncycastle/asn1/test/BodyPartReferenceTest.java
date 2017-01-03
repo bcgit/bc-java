@@ -8,7 +8,8 @@ import org.bouncycastle.asn1.cmc.BodyPartReference;
 import org.bouncycastle.util.test.SimpleTest;
 
 
-public class BodyPartReferenceTest extends SimpleTest
+public class BodyPartReferenceTest
+    extends SimpleTest
 {
 
     public String getName()
@@ -30,7 +31,7 @@ public class BodyPartReferenceTest extends SimpleTest
             byte[] b = ch0.getEncoded();
 
             BodyPartReference brRes = BodyPartReference.getInstance(b);
-            isEquals(brRes,ch0);
+            isEquals(brRes, ch0);
         }
 
         {
@@ -46,7 +47,7 @@ public class BodyPartReferenceTest extends SimpleTest
             byte[] b = ch1.getEncoded();
 
             BodyPartReference brRes = BodyPartReference.getInstance(b);
-            isEquals(brRes,ch1);
+            isEquals(brRes, ch1);
         }
 
 
@@ -61,14 +62,17 @@ public class BodyPartReferenceTest extends SimpleTest
             {
                 isEquals(ch0, ch1);
                 fail("Must not be equal.");
-            } catch (Throwable t) {
+            }
+            catch (Throwable t)
+            {
                 // Ignored
             }
         }
 
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         runTest(new BodyPartReferenceTest());
     }
 
