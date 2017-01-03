@@ -1,9 +1,5 @@
 package org.bouncycastle.asn1.test;
 
-import java.io.ByteArrayInputStream;
-
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.cmc.BodyPartID;
 import org.bouncycastle.asn1.cmc.CertificationRequest;
 import org.bouncycastle.asn1.cmc.TaggedCertificationRequest;
@@ -34,16 +30,12 @@ public class TaggedCertificationRequestTest extends SimpleTest
     public void performTest()
         throws Exception
     {
-
-        ByteArrayInputStream bIn = new ByteArrayInputStream(req1);
-        ASN1InputStream aIn = new ASN1InputStream(bIn);
-        CertificationRequest    r = CertificationRequest.getInstance((ASN1Sequence)aIn.readObject());
+        CertificationRequest    r = CertificationRequest.getInstance(req1);
         TaggedCertificationRequest tcr = new TaggedCertificationRequest(new BodyPartID(10L), r);
 
         byte[] b = tcr.getEncoded();
         TaggedCertificationRequest tcrResp = TaggedCertificationRequest.getInstance(b);
 
         isEquals(tcrResp,tcr);
-
     }
 }
