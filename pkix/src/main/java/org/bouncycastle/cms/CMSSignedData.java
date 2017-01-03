@@ -26,6 +26,9 @@ import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.cert.X509AttributeCertificateHolder;
+import org.bouncycastle.cert.X509CRLHolder;
+import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Store;
@@ -292,7 +295,7 @@ public class CMSSignedData
      *
      * @return a Store of X509CertificateHolder objects.
      */
-    public Store getCertificates()
+    public Store<X509CertificateHolder> getCertificates()
     {
         return HELPER.getCertificates(signedData.getCertificates());
     }
@@ -302,7 +305,7 @@ public class CMSSignedData
      *
      * @return a Store of X509CRLHolder objects.
      */
-    public Store getCRLs()
+    public Store<X509CRLHolder> getCRLs()
     {
         return HELPER.getCRLs(signedData.getCRLs());
     }
@@ -312,7 +315,7 @@ public class CMSSignedData
      *
      * @return a Store of X509AttributeCertificateHolder objects.
      */
-    public Store getAttributeCertificates()
+    public Store<X509AttributeCertificateHolder> getAttributeCertificates()
     {
         return HELPER.getAttributeCertificates(signedData.getCertificates());
     }
