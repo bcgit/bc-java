@@ -46,6 +46,20 @@ public class EncryptedPOP
         this.witness = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(4)).getOctets());
     }
 
+    public EncryptedPOP(
+        TaggedRequest request,
+        ContentInfo cms,
+        AlgorithmIdentifier thePOPAlgID,
+        AlgorithmIdentifier witnessAlgID,
+        byte[] witness)
+    {
+        this.request = request;
+        this.cms = cms;
+        this.thePOPAlgID = thePOPAlgID;
+        this.witnessAlgID = witnessAlgID;
+        this.witness = witness;
+    }
+
     public static EncryptedPOP getInstance(Object o)
     {
         if (o instanceof EncryptedPOP)
