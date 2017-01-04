@@ -1,13 +1,11 @@
 package org.bouncycastle.asn1.cmc;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
  * <pre>
@@ -17,28 +15,44 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  * id-cmc-statusInfoV2 OBJECT IDENTIFIER ::= {id-cmc 25}
  *
  * CMCStatusInfoV2 ::= SEQUENCE {
- *    cMCStatus             CMCStatus,
- *    bodyList              SEQUENCE SIZE (1..MAX) OF
- *                                         BodyPartReference,
- *    statusString          UTF8String OPTIONAL,
- *    otherInfo             CHOICE {
- *          failInfo               CMCFailInfo,
- *          pendInfo               PendInfo,
- *          extendedFailInfo       SEQUENCE {
- *              failInfoOID            OBJECT IDENTIFIER,
- *              failInfoValue          AttributeValue
- *          }
- *    } OPTIONAL
+ *  cMCStatus             CMCStatus,
+ *  bodyList              SEQUENCE SIZE (1..MAX) OF BodyPartReference,
+ *  statusString          UTF8String OPTIONAL,
+ *  otherStatusInfo             OtherStatusInfo OPTIONAL
+ * }
+ *
+ * OtherStatusInfo ::= CHOICE {
+ *  failInfo              CMCFailInfo,
+ *  pendInfo              PendInfo,
+ *  extendedFailInfo      ExtendedFailInfo
+ * }
+ *
+ * PendInfo ::= SEQUENCE {
+ * pendToken           OCTET STRING,
+ * pendTime            GeneralizedTime
+ * }
+ *
+ * ExtendedFailInfo ::= SEQUENCE {
+ * failInfoOID            OBJECT IDENTIFIER,
+ * failInfoValue          ANY DEFINED BY failInfoOID
  * }
  * </pre>
  */
 public class CMCStatusInfoV2
     extends ASN1Object
 {
-    private final AlgorithmIdentifier cMCStatus;
+    private final CMCStatus cMCStatus;
     private final ASN1Sequence bodyList;
     private final DERUTF8String statusString;
-    private final ASN1Encodable otherInfo;
+    private final OtherStatusInfo otherStatusInfo;
+
+    CMCStatusInfoV2(CMCStatus cMCStatus, ASN1Sequence bodyList, DERUTF8String statusString, OtherStatusInfo otherStatusInfo)
+    {
+        this.cMCStatus = cMCStatus;
+        this.bodyList = bodyList;
+        this.statusString = statusString;
+        this.otherStatusInfo = otherStatusInfo;
+    }
 
     private CMCStatusInfoV2(ASN1Sequence seq)
     {
@@ -46,7 +60,7 @@ public class CMCStatusInfoV2
         {
             throw new IllegalArgumentException("incorrect sequence size");
         }
-        this.cMCStatus = AlgorithmIdentifier.getInstance(seq.getObjectAt(0));
+        this.cMCStatus = CMCStatus.getInstance(seq.getObjectAt(0));
         this.bodyList = ASN1Sequence.getInstance(seq.getObjectAt(1));
 
         if (seq.size() > 2)
@@ -54,24 +68,49 @@ public class CMCStatusInfoV2
             if (seq.size() == 4)
             {
                 this.statusString = DERUTF8String.getInstance(seq.getObjectAt(2));
-                this.otherInfo = seq.getObjectAt(3);
+                this.otherStatusInfo = OtherStatusInfo.getInstance(seq.getObjectAt(3));
             }
             else if (seq.getObjectAt(2) instanceof DERUTF8String)
             {
                 this.statusString = DERUTF8String.getInstance(seq.getObjectAt(2));
-                this.otherInfo = null;
+                this.otherStatusInfo = null;
             }
             else
             {
                 this.statusString = null;
-                this.otherInfo = seq.getObjectAt(2);
+                this.otherStatusInfo = OtherStatusInfo.getInstance(seq.getObjectAt(2));
             }
         }
         else
         {
             this.statusString = null;
-            this.otherInfo = null;
+            this.otherStatusInfo = null;
         }
+    }
+
+
+    public CMCStatus getcMCStatus()
+    {
+        return cMCStatus;
+    }
+
+    public ASN1Sequence getBodyList()
+    {
+        return bodyList;
+    }
+
+    public DERUTF8String getStatusString()
+    {
+        return statusString;
+    }
+
+    public OtherStatusInfo getOtherStatusInfo()
+    {
+        return otherStatusInfo;
+    }
+
+    public boolean hasOtherInfo() {
+        return otherStatusInfo != null;
     }
 
     public static CMCStatusInfoV2 getInstance(Object o)
@@ -101,11 +140,13 @@ public class CMCStatusInfoV2
             v.add(statusString);
         }
 
-        if (otherInfo != null)
+        if (otherStatusInfo != null)
         {
-            v.add(otherInfo);
+            v.add(otherStatusInfo);
         }
 
         return new DERSequence(v);
     }
+
+
 }
