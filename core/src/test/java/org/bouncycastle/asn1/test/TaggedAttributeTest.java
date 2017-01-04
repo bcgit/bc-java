@@ -43,6 +43,9 @@ public class TaggedAttributeTest
             isTrue(Arrays.areEqual(res1.getEncoded(), d));
         }
 
+        //
+        // Where sequence is too short.
+        //
         try
         {
             ASN1Sequence seq = new DERSequence(new ASN1Encodable[] { new BodyPartID(10) });
@@ -55,6 +58,9 @@ public class TaggedAttributeTest
             isEquals("incorrect sequence size", e.getMessage());
         }
 
+        //
+        // Where sequence is too long.
+        //
         try
         {
             ASN1Sequence seq = new DERSequence(new ASN1Encodable[] { ta.getBodyPartID(), ta.getAttrType(), ta.getAttrValues(), new ASN1Integer(0)});
