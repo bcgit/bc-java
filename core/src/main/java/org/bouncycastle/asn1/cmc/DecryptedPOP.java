@@ -28,6 +28,13 @@ public class DecryptedPOP
     private final AlgorithmIdentifier thePOPAlgID;
     private final byte[] thePOP;
 
+    public DecryptedPOP(BodyPartID bodyPartID, AlgorithmIdentifier thePOPAlgID, byte[] thePOP)
+    {
+        this.bodyPartID = bodyPartID;
+        this.thePOPAlgID = thePOPAlgID;
+        this.thePOP = thePOP;
+    }
+
     private DecryptedPOP(ASN1Sequence seq)
     {
         if (seq.size() != 3)
@@ -38,6 +45,7 @@ public class DecryptedPOP
         this.thePOPAlgID = AlgorithmIdentifier.getInstance(seq.getObjectAt(1));
         this.thePOP = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(2)).getOctets());
     }
+
 
     public static DecryptedPOP getInstance(Object o)
     {
