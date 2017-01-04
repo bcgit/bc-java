@@ -32,7 +32,7 @@ public class DecryptedPOP
     {
         this.bodyPartID = bodyPartID;
         this.thePOPAlgID = thePOPAlgID;
-        this.thePOP = thePOP;
+        this.thePOP = Arrays.clone(thePOP);
     }
 
     private DecryptedPOP(ASN1Sequence seq)

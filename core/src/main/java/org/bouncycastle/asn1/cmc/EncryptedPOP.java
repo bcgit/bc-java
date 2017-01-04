@@ -57,7 +57,7 @@ public class EncryptedPOP
         this.cms = cms;
         this.thePOPAlgID = thePOPAlgID;
         this.witnessAlgID = witnessAlgID;
-        this.witness = witness;
+        this.witness = Arrays.clone(witness);
     }
 
     public static EncryptedPOP getInstance(Object o)
