@@ -4,6 +4,7 @@ import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
@@ -18,7 +19,7 @@ import org.bouncycastle.asn1.x509.GeneralName;
  *           serialNumber    INTEGER }
  * </pre>
  */
-public class GetCert
+public class GetCert extends ASN1Object
 {
     private final GeneralName issuerName;
     private final BigInteger serialNumber;
@@ -31,6 +32,12 @@ public class GetCert
         }
         this.issuerName = GeneralName.getInstance(seq.getObjectAt(0));
         this.serialNumber = ASN1Integer.getInstance(seq.getObjectAt(1)).getValue();
+    }
+
+    public GetCert(GeneralName issuerName, BigInteger serialNumber)
+    {
+        this.issuerName = issuerName;
+        this.serialNumber = serialNumber;
     }
 
     public static GetCert getInstance(Object o)
