@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.cmc.BodyPartID;
+import org.bouncycastle.asn1.cmc.BodyPartReference;
 import org.bouncycastle.asn1.cmc.ControlsProcessed;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -24,7 +25,7 @@ public class ControlsProcessedTest
     public void performTest()
         throws Exception
     {
-        ControlsProcessed cp = new ControlsProcessed(new BodyPartID[]{new BodyPartID(12L), new BodyPartID(14L)});
+        ControlsProcessed cp = new ControlsProcessed(new BodyPartReference[]{new BodyPartReference(new BodyPartID(12L)), new BodyPartReference(new BodyPartID(14L))});
         byte[] b = cp.getEncoded();
         ControlsProcessed cpResult = ControlsProcessed.getInstance(b);
         isEquals(cpResult.getBodyList().length, cp.getBodyList().length);

@@ -44,7 +44,7 @@ import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 public final class BouncyCastleProvider extends Provider
     implements ConfigurableProvider
 {
-    private static String info = "BouncyCastle Security Provider v1.56";
+    private static String info = "BouncyCastle Security Provider v1.57b";
 
     public static final String PROVIDER_NAME = "BC";
 
@@ -127,7 +127,7 @@ public final class BouncyCastleProvider extends Provider
      */
     public BouncyCastleProvider()
     {
-        super(PROVIDER_NAME, 1.56, info);
+        super(PROVIDER_NAME, 1.565, info);
 
         AccessController.doPrivileged(new PrivilegedAction()
         {

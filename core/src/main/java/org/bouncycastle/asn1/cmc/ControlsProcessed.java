@@ -35,16 +35,19 @@ public class ControlsProcessed
 
 
     public ControlsProcessed(
-        BodyPartID[] bodyPartIDs)
+        BodyPartReference[] bodyList)
     {
-        this.bodyPartReferences = new DERSequence(bodyPartIDs);
+        this.bodyPartReferences = new DERSequence(bodyList);
     }
 
 
-    public static ControlsProcessed getInstance(Object src) {
-        if (src instanceof ControlsProcessed) {
+    public static ControlsProcessed getInstance(Object src)
+    {
+        if (src instanceof ControlsProcessed)
+        {
             return (ControlsProcessed)src;
-        } else if (src != null)
+        }
+        else if (src != null)
         {
             return new ControlsProcessed(ASN1Sequence.getInstance(src));
         }
