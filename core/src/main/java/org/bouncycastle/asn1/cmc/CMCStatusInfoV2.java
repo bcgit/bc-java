@@ -94,9 +94,9 @@ public class CMCStatusInfoV2
         return cMCStatus;
     }
 
-    public ASN1Sequence getBodyList()
+    public BodyPartID[] getBodyList()
     {
-        return bodyList;
+        return Utils.toBodyPartIDArray(bodyList);
     }
 
     public DERUTF8String getStatusString()
@@ -109,7 +109,8 @@ public class CMCStatusInfoV2
         return otherStatusInfo;
     }
 
-    public boolean hasOtherInfo() {
+    public boolean hasOtherInfo()
+    {
         return otherStatusInfo != null;
     }
 
@@ -147,6 +148,4 @@ public class CMCStatusInfoV2
 
         return new DERSequence(v);
     }
-
-
 }
