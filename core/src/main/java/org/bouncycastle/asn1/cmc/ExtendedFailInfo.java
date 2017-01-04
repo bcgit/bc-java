@@ -59,7 +59,7 @@ public class ExtendedFailInfo
             return getInstance(ASN1Sequence.getInstance(obj));
         }
 
-        throw new IllegalArgumentException("unknown object in getInstance(): " + obj.getClass().getName());
+        return null;
     }
 
     public ASN1Primitive toASN1Primitive()

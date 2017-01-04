@@ -18,7 +18,7 @@ public class ExtensionReq
     private final Extension[] extensions;
 
     public static ExtensionReq getInstance(
-        Object  obj)
+        Object obj)
     {
         if (obj instanceof ExtensionReq)
         {
@@ -35,7 +35,7 @@ public class ExtensionReq
 
     public static ExtensionReq getInstance(
         ASN1TaggedObject obj,
-        boolean          explicit)
+        boolean explicit)
     {
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
@@ -46,9 +46,9 @@ public class ExtensionReq
      * @param Extension the Extension to be contained.
      */
     public ExtensionReq(
-        Extension  Extension)
+        Extension Extension)
     {
-        this.extensions = new Extension[] { Extension };
+        this.extensions = new Extension[]{Extension};
     }
 
 
@@ -59,7 +59,7 @@ public class ExtensionReq
     }
 
     private ExtensionReq(
-        ASN1Sequence  seq)
+        ASN1Sequence seq)
     {
         this.extensions = new Extension[seq.size()];
 
@@ -78,4 +78,6 @@ public class ExtensionReq
     {
         return new DERSequence(extensions);
     }
+
+
 }
