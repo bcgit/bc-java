@@ -32,7 +32,7 @@ public class ControlsProcessedTest
         isEquals(cpResult.getBodyList()[1], cp.getBodyList()[1]);
 
         //
-        // Incorrect sequence size
+        // Incorrect sequence size.
         //
 
         try

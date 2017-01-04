@@ -28,7 +28,7 @@ public class ControlsProcessed
      * @param bodyPartRef the BodyPartReference to be contained.
      */
     public ControlsProcessed(
-        BodyPartReference  bodyPartRef)
+        BodyPartReference bodyPartRef)
     {
         this.bodyPartReferences = new DERSequence(bodyPartRef);
     }
