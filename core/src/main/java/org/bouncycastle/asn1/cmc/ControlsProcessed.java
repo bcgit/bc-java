@@ -40,6 +40,18 @@ public class ControlsProcessed
         this.bodyPartReferences = new DERSequence(bodyPartIDs);
     }
 
+
+    public static ControlsProcessed getInstance(Object src) {
+        if (src instanceof ControlsProcessed) {
+            return (ControlsProcessed)src;
+        } else if (src != null)
+        {
+            return new ControlsProcessed(ASN1Sequence.getInstance(src));
+        }
+
+        return null;
+    }
+
     private ControlsProcessed(
         ASN1Sequence seq)
     {
