@@ -26,6 +26,13 @@ public class CMCUnsignedData
     private final ASN1ObjectIdentifier identifier;
     private final ASN1Encodable content;
 
+    public CMCUnsignedData(BodyPartPath bodyPartPath, ASN1ObjectIdentifier identifier, ASN1Encodable content)
+    {
+        this.bodyPartPath = bodyPartPath;
+        this.identifier = identifier;
+        this.content = content;
+    }
+
     private CMCUnsignedData(ASN1Sequence seq)
     {
         if (seq.size() != 3)
@@ -61,5 +68,20 @@ public class CMCUnsignedData
         v.add(content);
 
         return new DERSequence(v);
+    }
+
+    public BodyPartPath getBodyPartPath()
+    {
+        return bodyPartPath;
+    }
+
+    public ASN1ObjectIdentifier getIdentifier()
+    {
+        return identifier;
+    }
+
+    public ASN1Encodable getContent()
+    {
+        return content;
     }
 }
