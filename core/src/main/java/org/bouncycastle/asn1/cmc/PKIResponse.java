@@ -39,6 +39,7 @@ public class PKIResponse
         this.otherMsgSequence = ASN1Sequence.getInstance(seq.getObjectAt(2));
     }
 
+
     public static PKIResponse getInstance(Object o)
     {
         if (o instanceof PKIResponse)
@@ -70,5 +71,20 @@ public class PKIResponse
         v.add(otherMsgSequence);
 
         return new DERSequence(v);
+    }
+
+    public ASN1Sequence getControlSequence()
+    {
+        return controlSequence;
+    }
+
+    public ASN1Sequence getCmsSequence()
+    {
+        return cmsSequence;
+    }
+
+    public ASN1Sequence getOtherMsgSequence()
+    {
+        return otherMsgSequence;
     }
 }
