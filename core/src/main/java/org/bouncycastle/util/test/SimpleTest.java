@@ -13,7 +13,7 @@ public abstract class SimpleTest
     {
         return SimpleTestResult.successful(this, "Okay");
     }
-    
+
     protected void fail(
         String message)
     {
@@ -54,6 +54,19 @@ public abstract class SimpleTest
         Object a,
         Object b)
     {
+        if (a == null && b == null)
+        {
+            return;
+        }
+        else if (a == null)
+        {
+            throw new TestFailedException(SimpleTestResult.failed(this, message));
+        }
+        else if (b == null)
+        {
+            throw new TestFailedException(SimpleTestResult.failed(this, message));
+        }
+
         if (!a.equals(b))
         {
             throw new TestFailedException(SimpleTestResult.failed(this, message));
@@ -61,12 +74,12 @@ public abstract class SimpleTest
     }
 
     protected void fail(
-        String    message,
+        String message,
         Throwable throwable)
     {
         throw new TestFailedException(SimpleTestResult.failed(this, message, throwable));
     }
-    
+
     protected void fail(
         String message,
         Object expected,
@@ -74,20 +87,19 @@ public abstract class SimpleTest
     {
         throw new TestFailedException(SimpleTestResult.failed(this, message, expected, found));
     }
-        
+
     protected boolean areEqual(
         byte[] a,
         byte[] b)
     {
         return Arrays.areEqual(a, b);
     }
-    
+
     public TestResult perform()
     {
         try
         {
             performTest();
-            
             return success();
         }
         catch (TestFailedException e)
@@ -96,21 +108,21 @@ public abstract class SimpleTest
         }
         catch (Exception e)
         {
-            return SimpleTestResult.failed(this, "Exception: " +  e, e);
+            return SimpleTestResult.failed(this, "Exception: " + e, e);
         }
     }
-    
+
     protected static void runTest(
-        Test        test)
+        Test test)
     {
         runTest(test, System.out);
     }
-    
+
     protected static void runTest(
-        Test        test,
+        Test test,
         PrintStream out)
     {
-        TestResult      result = test.perform();
+        TestResult result = test.perform();
 
         out.println(result.toString());
         if (result.getException() != null)
