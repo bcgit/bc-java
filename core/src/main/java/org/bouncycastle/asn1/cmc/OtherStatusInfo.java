@@ -1,7 +1,11 @@
 package org.bouncycastle.asn1.cmc;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -10,7 +14,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 
 /**
  * Other info implements the choice component of CMCStatusInfoV2.
- *
+ * <p>
  * OtherStatusInfo ::= CHOICE {
  * failInfo              CMCFailInfo,
  * pendInfo              PendInfo,
@@ -47,6 +51,29 @@ public class OtherStatusInfo
                     return new OtherStatusInfo(ExtendedFailInfo.getInstance(asn1Value));
                 }
                 return new OtherStatusInfo(PendInfo.getInstance(asn1Value));
+            }
+        }
+        else if (obj instanceof byte[])
+        {
+            ASN1InputStream ain = new ASN1InputStream(new ByteArrayInputStream((byte[])obj));
+            try
+            {
+                return getInstance(ain.readObject());
+            }
+            catch (Exception e)
+            {
+                throw new IllegalArgumentException(e.getMessage(), e);
+            }
+            finally
+            {
+                try
+                {
+                    ain.close();
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalArgumentException(e.getMessage(), e);
+                }
             }
         }
         throw new IllegalArgumentException("unknown object in getInstance(): " + obj.getClass().getName());
