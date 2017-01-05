@@ -14,9 +14,9 @@ import org.bouncycastle.util.Arrays;
  * <pre>
  *      id-cmc-identityProofV2 OBJECT IDENTIFIER ::= { id-cmc 34 }
  *      identityProofV2 ::= SEQUENCE {
- *           keyGenAlgorithm   AlgorithmIdentifier,
- *           macAlgorithm      AlgorithmIdentifier,
- *           witness           OCTET STRING
+ *          proofAlgID       AlgorithmIdentifier,
+ *          macAlgId         AlgorithmIdentifier,
+ *          witness          OCTET STRING
  *      }
  * </pre>
  */
