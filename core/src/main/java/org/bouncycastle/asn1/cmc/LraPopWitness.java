@@ -22,6 +22,12 @@ public class LraPopWitness
     private final BodyPartID pkiDataBodyid;
     private final ASN1Sequence bodyIds;
 
+    public LraPopWitness(BodyPartID pkiDataBodyid, ASN1Sequence bodyIds)
+    {
+        this.pkiDataBodyid = pkiDataBodyid;
+        this.bodyIds = bodyIds;
+    }
+
     private LraPopWitness(ASN1Sequence seq)
     {
         if (seq.size() != 2)
@@ -51,6 +57,7 @@ public class LraPopWitness
     {
         return pkiDataBodyid;
     }
+
 
     public BodyPartID[] getBodyIds()
     {
