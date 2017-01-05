@@ -26,7 +26,6 @@ public class TaggedAttribute
     private final ASN1Set attrValues;
 
     public static TaggedAttribute getInstance(Object o)
-        throws Exception
     {
         if (o instanceof TaggedAttribute)
         {
