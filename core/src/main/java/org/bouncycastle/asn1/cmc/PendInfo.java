@@ -64,4 +64,14 @@ public class PendInfo
 
         return new DERSequence(v);
     }
+
+    public byte[] getPendToken()
+    {
+        return pendToken;
+    }
+
+    public ASN1GeneralizedTime getPendTime()
+    {
+        return pendTime;
+    }
 }
