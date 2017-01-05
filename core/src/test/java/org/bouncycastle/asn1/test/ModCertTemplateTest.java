@@ -64,8 +64,20 @@ public class ModCertTemplateTest
             isEquals("pkiDataReference", mct.getPkiDataReference(), pkiDataReference);
             isEquals("certReference", mct.getCertReferences(), certReferences);
             isEquals("DEFAULT TRUE on replacingFields", mct.isReplacingFields(), true);
-            isEquals("certTemplate", mct.getCertTemplate().getSerialNumber(), certTemplate);
+            isEquals("certTemplate", mct.getCertTemplate().getSerialNumber(), certTemplate.getSerialNumber());
         }
+
+
+        try
+        {
+            ModCertTemplate.getInstance(new DERSequence());
+            fail("Sequence must be 3 or 4.");
+        }
+        catch (Throwable t)
+        {
+            isEquals(t.getClass(), IllegalArgumentException.class);
+        }
+
 
     }
 }
