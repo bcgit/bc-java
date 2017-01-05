@@ -74,4 +74,19 @@ public class OtherMsg
 
         return new DERSequence(v);
     }
+
+    public BodyPartID getBodyPartID()
+    {
+        return bodyPartID;
+    }
+
+    public ASN1ObjectIdentifier getOtherMsgType()
+    {
+        return otherMsgType;
+    }
+
+    public ASN1Encodable getOtherMsgValue()
+    {
+        return otherMsgValue;
+    }
 }
