@@ -73,6 +73,35 @@ public abstract class SimpleTest
         }
     }
 
+    protected boolean areEqual(byte[][] left, byte[][] right)
+    {
+        if (left == null && right == null)
+        {
+            return true;
+        }
+        else if (left == null || right == null)
+        {
+            return false;
+        }
+
+        if (left.length != right.length)
+        {
+            return false;
+        }
+
+        for (int t = 0; t < left.length; t++)
+        {
+            if (areEqual(left[t], right[t]))
+            {
+                continue;
+            }
+            return false;
+        }
+
+        return true;
+    }
+
+
     protected void fail(
         String message,
         Throwable throwable)
