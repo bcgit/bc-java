@@ -37,6 +37,21 @@ public class RevokeRequest
     private ASN1OctetString passphrase;
     private DERUTF8String comment;
 
+    public RevokeRequest(X500Name name,
+                         ASN1Integer serialNumber,
+                         CRLReason reason,
+                         ASN1GeneralizedTime invalidityDate,
+                         ASN1OctetString passphrase,
+                         DERUTF8String comment)
+    {
+        this.name = name;
+        this.serialNumber = serialNumber;
+        this.reason = reason;
+        this.invalidityDate = invalidityDate;
+        this.passphrase = passphrase;
+        this.comment = comment;
+    }
+
     private RevokeRequest(ASN1Sequence seq)
     {
         if (seq.size() < 3 || seq.size() > 6)
@@ -90,6 +105,36 @@ public class RevokeRequest
     public CRLReason getReason()
     {
         return reason;
+    }
+
+    public ASN1GeneralizedTime getInvalidityDate()
+    {
+        return invalidityDate;
+    }
+
+    public void setInvalidityDate(ASN1GeneralizedTime invalidityDate)
+    {
+        this.invalidityDate = invalidityDate;
+    }
+
+    public ASN1OctetString getPassphrase()
+    {
+        return passphrase;
+    }
+
+    public void setPassphrase(ASN1OctetString passphrase)
+    {
+        this.passphrase = passphrase;
+    }
+
+    public DERUTF8String getComment()
+    {
+        return comment;
+    }
+
+    public void setComment(DERUTF8String comment)
+    {
+        this.comment = comment;
     }
 
     public byte[] getPassPhrase()
