@@ -5,13 +5,16 @@ import java.util.Collection;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1String;
+import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.selector.X509CertificateHolderSelector;
+import org.bouncycastle.cmc.SimplePKIResponse;
 import org.bouncycastle.est.CSRAttributesResponse;
-import org.bouncycastle.est.SimplePKIResponse;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
 
@@ -93,9 +96,47 @@ public class ESTParsingTest
     );
 
     private static byte[] csrattrs2 = Base64.decode(
-        "   MHwGBysGAQEBARYwIgYDiDcBMRsTGVBhcnNlIFNFVCBhcyAyLjk5OS4xIGRhdGEG" +
-            "   CSqGSIb3DQEJBzAsBgOINwIxJQYDiDcDBgOINwQTGVBhcnNlIFNFVCBhcyAyLjk5" +
-            "   OS4yIGRhdGEGCSskAwMCCAEBCwYJYIZIAWUDBAIC"
+        "MHwGBysGAQEBARYwIgYDiDcBMRsTGVBhcnNlIFNFVCBhcyAyLjk5OS4xIGRhdGEG" +
+            "CSqGSIb3DQEJBzAsBgOINwIxJQYDiDcDBgOINwQTGVBhcnNlIFNFVCBhcyAyLjk5" +
+            "OS4yIGRhdGEGCSskAwMCCAEBCwYJYIZIAWUDBAIC"
+    );
+
+    private static byte[] clientSimpleEnrol = Base64.decode(
+            "MIIChTCCAW0CAQAwHzEdMBsGA1UEAxMUZGVtb3N0ZXA0IDEzNjgxNDEzNTIwggEi" +
+            "MA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQClNp+kdz+Nj8XpEp9kaumWxDZ3" +
+            "eFYJpQKz9ddD5e5OzUeCm103ZIXQIxc0eVtMCatnRr3dnZRCAxGjwbqoB3eKt29/" +
+            "XSQffVv+odbyw0WdkQOIbntCQry8YdcBZ+8LjI/N7M2krmjmoSLmLwU2V4aNKf0Y" +
+            "MLR5Krmah3Ik31jmYCSvwTnv6mx6pr2pTJ82JavhTEIIt/fAYq1RYhkM1CXoBL+y" +
+            "hEoDanN7TzC94skfS3VV+f53J9SkUxTYcy1Rw0k3VXfxWwy+cSKEPREl7I6k0YeK" +
+            "tDEVAgBIEYM/L1S69RXTLujirwnqSRjOquzkAkD31BE961KZCxeYGrhxaR4PAgMB" +
+            "AAGgITAfBgkqhkiG9w0BCQcxEhMQK3JyQ2lyLzcrRVl1NTBUNDANBgkqhkiG9w0B" +
+            "AQUFAAOCAQEARBv0AJeXaHpl1MFIdzWqoi1dOCf6U+qaYWcBzpLADvJrPK1qx5pq" +
+            "wXM830A1O+7RvrFv+nyd6VF2rl/MrNp+IsKuA9LYWIBjVe/LXoBO8dB/KxrYl16c" +
+            "VUS+Yydi1m/a+DaftYSRGolMLtWeiqbc2SDBr2kHXW1TR130hIcpwmr29kC2Kzur" +
+            "5thsuj276FGL1vPu0dRfGQfx4WWa9uAHBgz6tW37CepZsrUKe/0pfVhr2oHxApYh" +
+            "cHGBQDQHVTFVjHccdUjAXicrtbsVhU5o1lPv7f4lEApv3SBQmJcaq5O832BzHw7n" +
+            "PyMFcM15E9gtUVee5C62bVwuk/tbnGsbwQ=="
+    );
+
+    private static byte[] serverSimpleEnrolResponse = Base64.decode(
+        "MIIDOAYJKoZIhvcNAQcCoIIDKTCCAyUCAQExADALBgkqhkiG9w0BBwGgggMLMIID" +
+            "BzCCAe+gAwIBAgIBFTANBgkqhkiG9w0BAQUFADAbMRkwFwYDVQQDExBlc3RFeGFt" +
+            "cGxlQ0EgTndOMB4XDTEzMDUwOTIzMTU1M1oXDTE0MDUwOTIzMTU1M1owHzEdMBsG" +
+            "A1UEAxMUZGVtb3N0ZXA0IDEzNjgxNDEzNTIwggEiMA0GCSqGSIb3DQEBAQUAA4IB" +
+            "DwAwggEKAoIBAQClNp+kdz+Nj8XpEp9kaumWxDZ3eFYJpQKz9ddD5e5OzUeCm103" +
+            "ZIXQIxc0eVtMCatnRr3dnZRCAxGjwbqoB3eKt29/XSQffVv+odbyw0WdkQOIbntC" +
+            "Qry8YdcBZ+8LjI/N7M2krmjmoSLmLwU2V4aNKf0YMLR5Krmah3Ik31jmYCSvwTnv" +
+            "6mx6pr2pTJ82JavhTEIIt/fAYq1RYhkM1CXoBL+yhEoDanN7TzC94skfS3VV+f53" +
+            "J9SkUxTYcy1Rw0k3VXfxWwy+cSKEPREl7I6k0YeKtDEVAgBIEYM/L1S69RXTLuji" +
+            "rwnqSRjOquzkAkD31BE961KZCxeYGrhxaR4PAgMBAAGjUjBQMA4GA1UdDwEB/wQE" +
+            "AwIEsDAdBgNVHQ4EFgQU/qDdB6ii6icQ8wGMXvy1jfE4xtUwHwYDVR0jBBgwFoAU" +
+            "scRp5lujBKfYl6OLO7+5arIyQjwwDQYJKoZIhvcNAQEFBQADggEBACmxg1hvL6+7" +
+            "a+lFTARoxainBx5gxdZ9omSb0L+qL+4PDvg/+KHzKsDnMCrcU6M4YP5n0EDKmGa6" +
+            "4lY8fbET4tt7juJg6ixb95/760Th0vuctwkGr6+D6ETTfqyHnrbhX3lAhnB+0Ja7" +
+            "o1gv4CWxh1I8aRaTXdpOHORvN0SMXdcrlCys2vrtOl+LjR2a3kajJO6eQ5leOdzF" +
+            "QlZfOPhaLWen0e2BLNJI0vsC2Fa+2LMCnfC38XfGALa5A8e7fNHXWZBjXZLBCza3" +
+            "rEs9Mlh2CjA/ocSC/WxmMvd+Eqnt/FpggRy+F8IZSRvBaRUCtGE1lgDmu6AFUxce" +
+            "R4POrT2xz8ChADEA"
     );
 
     public void testParsingCacertsResponse()
@@ -148,5 +189,29 @@ public class ESTParsingTest
         assertFalse(response.isAttribute(new ASN1ObjectIdentifier("1.3.6.1.1.1.1.22")));
         assertTrue(response.isAttribute(new ASN1ObjectIdentifier("2.999.1")));
         assertTrue(response.isAttribute(new ASN1ObjectIdentifier("2.999.2")));
+    }
+
+    public void testParsingSimpleEnrolRequest()
+        throws Exception
+    {
+        PKCS10CertificationRequest request = new PKCS10CertificationRequest(clientSimpleEnrol);
+
+        Attribute challenge = request.getAttributes(PKCSObjectIdentifiers.pkcs_9_at_challengePassword)[0];
+
+        ASN1String passwd = (ASN1String)challenge.getAttributeValues()[0];
+
+        assertEquals("+rrCir/7+EYu50T4", passwd.getString());
+    }
+
+    public void testParsingSimpleEnrolResponse()
+        throws Exception
+    {
+        SimplePKIResponse response = new SimplePKIResponse(serverSimpleEnrolResponse);
+
+        Store<X509CertificateHolder> certs = response.getCertificates();
+
+        assertEquals(1, certs.getMatches(null).size());
+
+        assertEquals(1, certs.getMatches(new X509CertificateHolderSelector(new X500Name("CN=estExampleCA NwN"), new BigInteger("21"))).size());
     }
 }
