@@ -318,6 +318,7 @@
                  <exclude name="org/bouncycastle/dvcs/**" />
                  <exclude name="org/bouncycastle/eac/**" />
                  <exclude name="org/bouncycastle/est/**" />
+                 <exclude name="org/bouncycastle/cmc/**" />
                  <exclude name="org/bouncycastle/mail/**" />
                  <exclude name="org/bouncycastle/openpgp/**" />
                  <exclude name="org/bouncycastle/openssl/**" />
@@ -430,6 +431,7 @@
                  <exclude name="org/bouncycastle/dvcs/**" />
                  <exclude name="org/bouncycastle/eac/**" />
                  <exclude name="org/bouncycastle/est/**" />
+                 <exclude name="org/bouncycastle/cmc/**" />
                  <exclude name="org/bouncycastle/cert/**" />
                  <exclude name="org/bouncycastle/pkcs/**" />
                  <exclude name="org/bouncycastle/operator/**" />
@@ -598,6 +600,7 @@
                  <include name="org/bouncycastle/dvcs/**/*.java" />
                  <include name="org/bouncycastle/eac/**/*.java" />
                  <include name="org/bouncycastle/est/**" />
+                 <include name="org/bouncycastle/cmc/**" />
                  <include name="org/bouncycastle/cert/**/*.java" />
                  <include name="org/bouncycastle/mozilla/**/*.java" />
                  <include name="org/bouncycastle/openssl/**/*.java" />
@@ -959,6 +962,7 @@
                  <include name="org/bouncycastle/dvcs/**/test/*.java" />
                  <include name="org/bouncycastle/eac/**/test/*.java" />
                  <include name="org/bouncycastle/est/**/test/*.java" />
+                 <include name="org/bouncycastle/cmc/**/test/*.java" />
                  <include name="org/bouncycastle/cert/**/test/*.java" />
                  <include name="org/bouncycastle/pkcs/**/test/*.java" />
                  <include name="org/bouncycastle/openssl/**/test/*.java" />
@@ -969,6 +973,7 @@
                  <include name="org/bouncycastle/dvcs/**/*.html" />
                  <include name="org/bouncycastle/eac/**/*.html" />
                  <include name="org/bouncycastle/est/**/*.html" />
+                 <include name="org/bouncycastle/cmc/**/*.html" />
                  <include name="org/bouncycastle/cert/**/*.html" />
                  <include name="org/bouncycastle/pkcs/**/*.html" />
                  <include name="org/bouncycastle/openssl/**/*.html" />
