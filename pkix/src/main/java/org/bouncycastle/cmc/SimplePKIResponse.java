@@ -1,4 +1,4 @@
-package org.bouncycastle.est;
+package org.bouncycastle.cmc;
 
 import java.io.IOException;
 
@@ -24,7 +24,7 @@ public class SimplePKIResponse
     private final CMSSignedData certificateResponse;
 
     private static ContentInfo parseBytes(byte[] responseEncoding)
-        throws ESTException
+        throws CMCException
     {
         try
         {
@@ -32,7 +32,7 @@ public class SimplePKIResponse
         }
         catch (Exception e)
         {
-            throw new ESTException("malformed data: " + e.getMessage(), e);
+            throw new CMCException("malformed data: " + e.getMessage(), e);
         }
     }
 
@@ -43,7 +43,7 @@ public class SimplePKIResponse
      * @throws IOException in the event of corrupted data, or an incorrect structure.
      */
     public SimplePKIResponse(byte[] responseEncoding)
-        throws ESTException
+        throws CMCException
     {
         this(parseBytes(responseEncoding));
     }
@@ -54,7 +54,7 @@ public class SimplePKIResponse
      * @param signedData a ContentInfo containing a SignedData.
      */
     public SimplePKIResponse(ContentInfo signedData)
-        throws ESTException
+        throws CMCException
     {
         try
         {
@@ -62,16 +62,16 @@ public class SimplePKIResponse
         }
         catch (CMSException e)
         {
-            throw new ESTException("malformed response: " + e.getMessage(), e);
+            throw new CMCException("malformed response: " + e.getMessage(), e);
         }
 
         if (certificateResponse.getSignerInfos().size() != 0)
         {
-            throw new ESTException("malformed response: SignerInfo structures found");
+            throw new CMCException("malformed response: SignerInfo structures found");
         }
         if (certificateResponse.getSignedContent() != null)
         {
-            throw new ESTException("malformed response: Signed Content found");
+            throw new CMCException("malformed response: Signed Content found");
         }
     }
 
