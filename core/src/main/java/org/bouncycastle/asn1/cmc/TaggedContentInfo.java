@@ -69,4 +69,14 @@ public class TaggedContentInfo
 
         return new DERSequence(v);
     }
+
+    public BodyPartID getBodyPartID()
+    {
+        return bodyPartID;
+    }
+
+    public ContentInfo getContentInfo()
+    {
+        return contentInfo;
+    }
 }
