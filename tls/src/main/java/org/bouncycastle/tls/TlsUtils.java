@@ -2310,7 +2310,7 @@ public class TlsUtils
                 }
 
                 short current = result.getHash();
-                if (hash < MINIMUM_HASH_PREFERRED)
+                if (current < MINIMUM_HASH_PREFERRED)
                 {
                     if (hash > current)
                     {
