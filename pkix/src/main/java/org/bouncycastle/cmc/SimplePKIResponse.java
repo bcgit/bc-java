@@ -76,7 +76,7 @@ public class SimplePKIResponse
     }
 
     /**
-     * Return any X.509 certificate objects in this SignedData structure as a Store of X509CertificateHolder objects.
+     * Return any X.509 certificate objects in this SimplePKIResponse structure as a Store of X509CertificateHolder objects.
      *
      * @return a Store of X509CertificateHolder objects.
      */
@@ -86,7 +86,7 @@ public class SimplePKIResponse
     }
 
     /**
-     * Return any X.509 CRL objects in this SignedData structure as a Store of X509CRLHolder objects.
+     * Return any X.509 CRL objects in this SimplePKIResponse structure as a Store of X509CRLHolder objects.
      *
      * @return a Store of X509CRLHolder objects.
      */
