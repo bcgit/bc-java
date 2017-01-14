@@ -12,7 +12,7 @@ public class ESTHttpException
     private final String message;
     private final InputStream body;
 
-    public ESTHttpException(String message, int statusCode, String message1, InputStream body)
+    public ESTHttpException(String message, int statusCode, String message1, InputStream body, int contentLength)
     {
         super(message);
         this.statusCode = statusCode;
@@ -25,7 +25,24 @@ public class ESTHttpException
             int i = body.read(b);
             while (i >= 0)
             {
-                bos.write(b, 0, i);
+
+                if (contentLength > -1)
+                {
+                    if (bos.size() + i > contentLength)
+                    {
+                        i = contentLength - bos.size();
+                        bos.write(b, 0, i);
+                        break;
+                    }
+                    else
+                    {
+                        bos.write(b, 0, i);
+                    }
+                }
+                else
+                {
+                    bos.write(b, 0, i);
+                }
                 i = body.read(b);
             }
             bos.flush();
