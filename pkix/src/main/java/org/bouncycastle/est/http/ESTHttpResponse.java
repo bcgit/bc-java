@@ -1,5 +1,6 @@
 package org.bouncycastle.est.http;
 
+import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -108,7 +109,6 @@ public class ESTHttpResponse
 
         return new String(lineBuffer, 0, c).trim();
     }
-
 
     public ESTHttpRequest getOriginalRequest()
     {

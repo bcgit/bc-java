@@ -18,6 +18,7 @@ import org.bouncycastle.est.http.ESTHttpRequest;
 import org.bouncycastle.est.http.ESTHttpResponse;
 import org.bouncycastle.util.Store;
 
+
 public class FetchCACerts
 {
 
@@ -32,24 +33,24 @@ public class FetchCACerts
         throws Exception
     {
         Store<X509CertificateHolder> caCerts = null;
-        ESTHttpResponse ESTHttpResponse = null;
+        ESTHttpResponse resp = null;
         try
         {
-            ESTHttpResponse = client.doRequest(new ESTHttpRequest("GET", url));
+            resp = client.doRequest(new ESTHttpRequest("GET", url));
 
-            if (ESTHttpResponse.getStatusCode() == 200)
+            if (resp.getStatusCode() == 200)
             {
-                ASN1InputStream ain = new ASN1InputStream(ESTHttpResponse.getInputStream());
+                ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
                 SimplePKIResponse spkr = new SimplePKIResponse(ContentInfo.getInstance((ASN1Sequence)ain.readObject()));
                 caCerts = spkr.getCertificates();
                 if (bootstrapAuthorizer != null)
                 {
-                    bootstrapAuthorizer.authorise(caCerts, ((SSLSocket)ESTHttpResponse.getSocket()).getSession().getPeerCertificateChain());
+                    bootstrapAuthorizer.authorise(caCerts, ((SSLSocket)resp.getSocket()).getSession().getPeerCertificateChain());
                 }
             }
             else
             {
-                throw new ESTHttpException("Fetching cacerts: " + url.toString(), ESTHttpResponse.getStatusCode(), ESTHttpResponse.getStatusMessage(), ESTHttpResponse.getInputStream());
+                throw new ESTHttpException("Fetching cacerts: " + url.toString(), resp.getStatusCode(), resp.getStatusMessage(), resp.getInputStream(), (int)resp.getContentLength());
             }
         }
         catch (Exception ex)
@@ -62,9 +63,9 @@ public class FetchCACerts
         }
         finally
         {
-            if (ESTHttpResponse != null)
+            if (resp != null)
             {
-                ESTHttpResponse.close();
+                resp.close();
             }
         }
         return caCerts;

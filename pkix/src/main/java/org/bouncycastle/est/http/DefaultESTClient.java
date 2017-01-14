@@ -58,6 +58,11 @@ public class DefaultESTClient
             }
             os.flush();
 
+            if (c.hijacker != null) {
+                res = c.hijacker.hijack(c,sock);
+                return res;
+            }
+
             res = new ESTHttpResponse(c, sock);
             return res;
 
