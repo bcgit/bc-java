@@ -1,4 +1,4 @@
-package org.bouncycastle.est.functions;
+package org.bouncycastle.est;
 
 import javax.security.cert.X509Certificate;
 

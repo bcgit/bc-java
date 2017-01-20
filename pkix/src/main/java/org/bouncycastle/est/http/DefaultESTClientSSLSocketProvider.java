@@ -94,7 +94,7 @@ public class DefaultESTClientSSLSocketProvider
     public SSLSocketFactory createFactory()
         throws Exception
     {
-        SSLContext ctx = SSLContext.getDefault();
+        SSLContext ctx = SSLContext.getInstance("TLS");
         X509TrustManager tm = new X509TrustManager()
         {
             public void checkClientTrusted(X509Certificate[] x509Certificates, String authType)

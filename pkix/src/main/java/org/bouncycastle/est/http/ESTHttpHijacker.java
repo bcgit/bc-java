@@ -10,5 +10,6 @@ import java.net.Socket;
  */
 public interface ESTHttpHijacker
 {
-    ESTHttpResponse hijack(ESTHttpRequest req, Socket sock);
+    ESTHttpResponse hijack(ESTHttpRequest req, Socket sock)
+        throws Exception;
 }
