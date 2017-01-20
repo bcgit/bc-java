@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.bouncycastle.est.http.enc.CTEBase64InputStream;
+import org.bouncycastle.util.Strings;
 
 /**
  * A basic http response.
@@ -32,7 +33,7 @@ public class ESTHttpResponse
         throws Exception
     {
         this.originalRequest = originalRequest;
-        this.inputStream = socket.getInputStream();
+        this.inputStream = new PrintingInputStream(socket.getInputStream());
         this.socket = socket;
         this.headers = new HashMap<String, List<String>>();
         this.lineBuffer = new byte[1024];
@@ -56,7 +57,7 @@ public class ESTHttpResponse
             i = line.indexOf(':');
             if (i > -1)
             {
-                String k = line.substring(0, i).trim().toLowerCase(); // Header keys are case insensitive
+                String k = Strings.toLowerCase(line.substring(0, i).trim()); // Header keys are case insensitive
                 List<String> l = headers.get(k);
                 if (l == null)
                 {
@@ -70,7 +71,7 @@ public class ESTHttpResponse
 
         if ("base64".equalsIgnoreCase(getHeader("content-transfer-encoding")))
         {
-            inputStream = new CTEBase64InputStream(inputStream);
+            inputStream = new CTEBase64InputStream(inputStream, getContentLength());
         }
 
 
@@ -78,7 +79,7 @@ public class ESTHttpResponse
 
     public String getHeader(String key)
     {
-        List<String> l = headers.get(key.toLowerCase());
+        List<String> l = headers.get(Strings.toLowerCase(key));
         if (l == null || l.isEmpty())
         {
             return "";
@@ -161,4 +162,23 @@ public class ESTHttpResponse
         this.socket.close();
     }
 
+
+    private class PrintingInputStream
+        extends InputStream
+    {
+        private final InputStream src;
+
+        private PrintingInputStream(InputStream src)
+        {
+            this.src = src;
+        }
+
+        public int read()
+            throws IOException
+        {
+            int i = src.read();
+            System.out.print(String.valueOf((char)i));
+            return i;
+        }
+    }
 }

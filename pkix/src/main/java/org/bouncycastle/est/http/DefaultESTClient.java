@@ -1,13 +1,17 @@
 package org.bouncycastle.est.http;
 
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import org.bouncycastle.est.ESTException;
 
 public class DefaultESTClient
     implements ESTHttpClient
@@ -21,9 +25,77 @@ public class DefaultESTClient
         this.sslSocketProvider = sslSocketProvider;
     }
 
-    public ESTHttpResponse doRequest(ESTHttpRequest c)
+
+    public ESTHttpResponse doRequest(ESTHttpRequest req)
         throws Exception
     {
+        ESTHttpResponse resp = null;
+        ESTHttpRequest r = req;
+        int rcCount = 15;
+        do
+        {
+            resp = performRequest(r);
+            r = redirectURL(resp);
+        }
+        while (r != null && --rcCount > 0); // Follow redirects.
+
+        if (rcCount == 0)
+        {
+            throw new ESTException("Too many redirects..");
+        }
+
+        return resp;
+    }
+
+    protected ESTHttpRequest redirectURL(ESTHttpResponse response)
+        throws Exception
+    {
+        ESTHttpRequest redirectingRequest = null;
+
+        if (response.getStatusCode() >= 300 && response.getStatusCode() <= 399)
+        {
+
+            switch (response.getStatusCode())
+            {
+            case 301:
+            case 302:
+            case 303:
+            case 306:
+            case 307:
+                String loc = response.getHeader("Location");
+                if ("".equals(loc))
+                {
+                    throw new ESTException("Redirect status type: " + response.getStatusCode() + " but no location header");
+                }
+
+                if (loc.startsWith("http"))
+                {
+                    redirectingRequest = response.getOriginalRequest().newWithURL(new URL(loc));
+                }
+                else
+                {
+                    URL u = response.getOriginalRequest().url;
+                    redirectingRequest = response.getOriginalRequest().newWithURL(new URL(u.getProtocol(), u.getHost(), u.getPort(), loc));
+                }
+                break;
+            default:
+                throw new ESTException("Client does not handle http status code: " + response.getStatusCode());
+            }
+        }
+
+        if (redirectingRequest != null)
+        {
+            response.close(); // Close original request.
+        }
+
+        return redirectingRequest;
+    }
+
+
+    public ESTHttpResponse performRequest(ESTHttpRequest c)
+        throws Exception
+    {
+        c.setEstHttpClient(this);
         Socket sock = null;
         ESTHttpResponse res = null;
         try
@@ -32,8 +104,9 @@ public class DefaultESTClient
             sock = sslSocketProvider.wrapSocket(sock, c.url.getHost(), c.url.getPort());
 
 
-            OutputStream os = sock.getOutputStream();
-            InputStream in = sock.getInputStream();
+            OutputStream os = new PrintingOutputStream(sock.getOutputStream());
+//            InputStream in = new PrintingInputStream(sock.getInputStream());
+
             String req = c.url.getPath() + ((c.url.getQuery() != null) ? c.url.getQuery() : "");
 
             // Replace host header.
@@ -58,12 +131,16 @@ public class DefaultESTClient
             }
             os.flush();
 
-            if (c.hijacker != null) {
-                res = c.hijacker.hijack(c,sock);
+            if (c.hijacker != null)
+            {
+                res = c.hijacker.hijack(c, sock);
                 return res;
             }
+            else
+            {
+                res = new ESTHttpResponse(c, sock);
+            }
 
-            res = new ESTHttpResponse(c, sock);
             return res;
 
         }
@@ -85,6 +162,27 @@ public class DefaultESTClient
         os.write(s.getBytes());
         os.write(CRLF);
     }
+
+
+    private class PrintingOutputStream
+        extends OutputStream
+    {
+        private final OutputStream tgt;
+
+        public PrintingOutputStream(OutputStream tgt)
+        {
+            this.tgt = tgt;
+        }
+
+        public void write(int b)
+            throws IOException
+        {
+            System.out.print(String.valueOf((char)b));
+            tgt.write(b);
+        }
+    }
+
+
 
 
 }

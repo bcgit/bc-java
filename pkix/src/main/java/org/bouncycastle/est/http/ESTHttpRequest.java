@@ -20,8 +20,8 @@ public class ESTHttpRequest
     final byte[] readAheadBuf = new byte[1024];
     final ESTClientRequestInputSource writer;
     final ESTHttpHijacker hijacker;
+    protected ESTHttpClient estHttpClient;
 
-    boolean digestAuth = false;
 
     public ESTHttpRequest(String method, URL url, ESTClientRequestInputSource writer)
     {
@@ -68,21 +68,78 @@ public class ESTHttpRequest
         return this;
     }
 
-    public ESTHttpRequest withBasicAuth(String realm, String user, String password)
+    public ESTHttpRequest copy() {
+        return this.newWithHijacker(this.hijacker);
+    }
+
+    public ESTHttpRequest setHeader(String key, String value)
     {
-        if (realm != null && realm.length() > 0)
-        {
-            headers.put("WWW-Authenticate", Collections.singletonList("Basic realm=\"" + realm + "\""));
-        }
-        if (user.contains(":"))
-        {
-            throw new IllegalArgumentException("User must not contain a ':'");
-        }
-        String userPass = user + ":" + password;
-        headers.put("Authorization", Collections.singletonList("Basic " + Base64.toBase64String(userPass.getBytes())));
+        headers.put(key, Collections.singletonList(value));
         return this;
     }
 
 
+    protected ESTHttpRequest newWithHijacker(ESTHttpHijacker estHttpHijacker)
+    {
+        ESTHttpRequest req = new ESTHttpRequest(this.method, this.url, this.writer, estHttpHijacker);
 
+        for (Map.Entry<String, List<String>> s : headers.entrySet())
+        {
+            req.headers.put(s.getKey(), s.getValue());
+        }
+        return req;
+    }
+
+
+    protected ESTHttpRequest newWithURL(URL url)
+    {
+        ESTHttpRequest req = new ESTHttpRequest(this.method, url, this.writer, hijacker);
+
+        for (Map.Entry<String, List<String>> s : headers.entrySet())
+        {
+            req.headers.put(s.getKey(), s.getValue());
+        }
+        return req;
+    }
+
+
+    public String getMethod()
+    {
+        return method;
+    }
+
+    public URL getUrl()
+    {
+        return url;
+    }
+
+    public Map<String, List<String>> getHeaders()
+    {
+        return headers;
+    }
+
+    public byte[] getReadAheadBuf()
+    {
+        return readAheadBuf;
+    }
+
+    public ESTClientRequestInputSource getWriter()
+    {
+        return writer;
+    }
+
+    public ESTHttpHijacker getHijacker()
+    {
+        return hijacker;
+    }
+
+    public ESTHttpClient getEstHttpClient()
+    {
+        return estHttpClient;
+    }
+
+    public void setEstHttpClient(ESTHttpClient estHttpClient)
+    {
+        this.estHttpClient = estHttpClient;
+    }
 }
