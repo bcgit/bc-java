@@ -12,6 +12,7 @@ public class RegressionTest
         new AESFastTest(),
         new AESWrapTest(),
         new AESWrapPadTest(),
+        new ARIATest(),
         new DESTest(),
         new DESedeTest(),
         new ModeTest(),
