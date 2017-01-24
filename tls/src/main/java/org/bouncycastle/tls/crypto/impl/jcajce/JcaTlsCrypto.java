@@ -142,6 +142,16 @@ public class JcaTlsCrypto
             case EncryptionAlgorithm.AES_256_OCB_TAGLEN96:
                 // NOTE: Ignores macAlgorithm
                 return createCipher_AES_OCB(cryptoParams, 32, 12);
+            case EncryptionAlgorithm.ARIA_128_CBC:
+                return createARIACipher(cryptoParams, 16, macAlgorithm);
+            case EncryptionAlgorithm.ARIA_128_GCM:
+                // NOTE: Ignores macAlgorithm
+                return createCipher_ARIA_GCM(cryptoParams, 16, 16);
+            case EncryptionAlgorithm.ARIA_256_CBC:
+                return createARIACipher(cryptoParams, 32, macAlgorithm);
+            case EncryptionAlgorithm.ARIA_256_GCM:
+                // NOTE: Ignores macAlgorithm
+                return createCipher_ARIA_GCM(cryptoParams, 32, 16);
             case EncryptionAlgorithm.CAMELLIA_128_CBC:
                 return createCamelliaCipher(cryptoParams, 16, macAlgorithm);
             case EncryptionAlgorithm.CAMELLIA_128_GCM:
@@ -531,6 +541,13 @@ public class JcaTlsCrypto
             createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm), cipherKeySize);
     }
 
+    private TlsBlockCipher createARIACipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
+        throws IOException, GeneralSecurityException
+    {
+        return new TlsBlockCipher(this, cryptoParams, createCBCBlockOperator(cryptoParams, "ARIA", true, cipherKeySize), createCBCBlockOperator(cryptoParams, "ARIA", false, cipherKeySize),
+            createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm), cipherKeySize);
+    }
+
     private TlsBlockCipher createCamelliaCipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
@@ -607,6 +624,13 @@ public class JcaTlsCrypto
     {
         return new TlsAEADCipher(cryptoParams, createAEADCipher("AES/OCB/NoPadding", "AES", cipherKeySize, true), createAEADCipher("AES/OCB/NoPadding", "AES", cipherKeySize, false),
             cipherKeySize, macSize, TlsAEADCipher.NONCE_RFC7905);
+    }
+
+    private TlsAEADCipher createCipher_ARIA_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
+        throws IOException, GeneralSecurityException
+    {
+        return new TlsAEADCipher(cryptoParams, createAEADCipher("ARIA/GCM/NoPadding", "ARIA", cipherKeySize, true), createAEADCipher("ARIA/GCM/NoPadding", "ARIA", cipherKeySize, false),
+            cipherKeySize, macSize);
     }
 
     private TlsAEADCipher createCipher_Camellia_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
