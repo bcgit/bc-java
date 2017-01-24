@@ -255,6 +255,68 @@ public class CipherSuite
     public static final int TLS_EMPTY_RENEGOTIATION_INFO_SCSV = 0x00FF;
 
     /*
+     * RFC 6209
+     */
+    public static final int TLS_RSA_WITH_ARIA_128_CBC_SHA256 = 0xC03C;
+    public static final int TLS_RSA_WITH_ARIA_256_CBC_SHA384 = 0xC03D;
+    public static final int TLS_DH_DSS_WITH_ARIA_128_CBC_SHA256 = 0xC03E;
+    public static final int TLS_DH_DSS_WITH_ARIA_256_CBC_SHA384 = 0xC03F;
+    public static final int TLS_DH_RSA_WITH_ARIA_128_CBC_SHA256 = 0xC040;
+    public static final int TLS_DH_RSA_WITH_ARIA_256_CBC_SHA384 = 0xC041;
+    public static final int TLS_DHE_DSS_WITH_ARIA_128_CBC_SHA256 = 0xC042;
+    public static final int TLS_DHE_DSS_WITH_ARIA_256_CBC_SHA384 = 0xC043;
+    public static final int TLS_DHE_RSA_WITH_ARIA_128_CBC_SHA256 = 0xC044;
+    public static final int TLS_DHE_RSA_WITH_ARIA_256_CBC_SHA384 = 0xC045;
+    public static final int TLS_DH_anon_WITH_ARIA_128_CBC_SHA256 = 0xC046;
+    public static final int TLS_DH_anon_WITH_ARIA_256_CBC_SHA384 = 0xC047;
+
+    public static final int TLS_ECDHE_ECDSA_WITH_ARIA_128_CBC_SHA256 = 0xC048;
+    public static final int TLS_ECDHE_ECDSA_WITH_ARIA_256_CBC_SHA384 = 0xC049;
+    public static final int TLS_ECDH_ECDSA_WITH_ARIA_128_CBC_SHA256 = 0xC04A;
+    public static final int TLS_ECDH_ECDSA_WITH_ARIA_256_CBC_SHA384 = 0xC04B;
+    public static final int TLS_ECDHE_RSA_WITH_ARIA_128_CBC_SHA256 = 0xC04C;
+    public static final int TLS_ECDHE_RSA_WITH_ARIA_256_CBC_SHA384 = 0xC04D;
+    public static final int TLS_ECDH_RSA_WITH_ARIA_128_CBC_SHA256 = 0xC04E;
+    public static final int TLS_ECDH_RSA_WITH_ARIA_256_CBC_SHA384 = 0xC04F;
+
+    public static final int TLS_RSA_WITH_ARIA_128_GCM_SHA256 = 0xC050;
+    public static final int TLS_RSA_WITH_ARIA_256_GCM_SHA384 = 0xC051;
+    public static final int TLS_DHE_RSA_WITH_ARIA_128_GCM_SHA256 = 0xC052;
+    public static final int TLS_DHE_RSA_WITH_ARIA_256_GCM_SHA384 = 0xC053;
+    public static final int TLS_DH_RSA_WITH_ARIA_128_GCM_SHA256 = 0xC054;
+    public static final int TLS_DH_RSA_WITH_ARIA_256_GCM_SHA384 = 0xC055;
+    public static final int TLS_DHE_DSS_WITH_ARIA_128_GCM_SHA256 = 0xC056;
+    public static final int TLS_DHE_DSS_WITH_ARIA_256_GCM_SHA384 = 0xC057;
+    public static final int TLS_DH_DSS_WITH_ARIA_128_GCM_SHA256 = 0xC058;
+    public static final int TLS_DH_DSS_WITH_ARIA_256_GCM_SHA384 = 0xC059;
+    public static final int TLS_DH_anon_WITH_ARIA_128_GCM_SHA256 = 0xC05A;
+    public static final int TLS_DH_anon_WITH_ARIA_256_GCM_SHA384 = 0xC05B;
+
+    public static final int TLS_ECDHE_ECDSA_WITH_ARIA_128_GCM_SHA256 = 0xC05C;
+    public static final int TLS_ECDHE_ECDSA_WITH_ARIA_256_GCM_SHA384 = 0xC05D;
+    public static final int TLS_ECDH_ECDSA_WITH_ARIA_128_GCM_SHA256 = 0xC05E;
+    public static final int TLS_ECDH_ECDSA_WITH_ARIA_256_GCM_SHA384 = 0xC05F;
+    public static final int TLS_ECDHE_RSA_WITH_ARIA_128_GCM_SHA256 = 0xC060;
+    public static final int TLS_ECDHE_RSA_WITH_ARIA_256_GCM_SHA384 = 0xC061;
+    public static final int TLS_ECDH_RSA_WITH_ARIA_128_GCM_SHA256 = 0xC062;
+    public static final int TLS_ECDH_RSA_WITH_ARIA_256_GCM_SHA384 = 0xC063;
+    
+    public static final int TLS_PSK_WITH_ARIA_128_CBC_SHA256 = 0xC064;
+    public static final int TLS_PSK_WITH_ARIA_256_CBC_SHA384 = 0xC065;
+    public static final int TLS_DHE_PSK_WITH_ARIA_128_CBC_SHA256 = 0xC066;
+    public static final int TLS_DHE_PSK_WITH_ARIA_256_CBC_SHA384 = 0xC067;
+    public static final int TLS_RSA_PSK_WITH_ARIA_128_CBC_SHA256 = 0xC068;
+    public static final int TLS_RSA_PSK_WITH_ARIA_256_CBC_SHA384 = 0xC069;
+    public static final int TLS_PSK_WITH_ARIA_128_GCM_SHA256 = 0xC06A;
+    public static final int TLS_PSK_WITH_ARIA_256_GCM_SHA384 = 0xC06B;
+    public static final int TLS_DHE_PSK_WITH_ARIA_128_GCM_SHA256 = 0xC06C;
+    public static final int TLS_DHE_PSK_WITH_ARIA_256_GCM_SHA384 = 0xC06D;
+    public static final int TLS_RSA_PSK_WITH_ARIA_128_GCM_SHA256 = 0xC06E;
+    public static final int TLS_RSA_PSK_WITH_ARIA_256_GCM_SHA384 = 0xC06F;
+    public static final int TLS_ECDHE_PSK_WITH_ARIA_128_CBC_SHA256 = 0xC070;
+    public static final int TLS_ECDHE_PSK_WITH_ARIA_256_CBC_SHA384 = 0xC071;
+
+    /*
      * RFC 6367
      */
     public static final int TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256 = 0xC072;
