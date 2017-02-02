@@ -16,7 +16,6 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
@@ -26,15 +25,12 @@ import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.est.CsrAttrs;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cmc.SimplePKIResponse;
-import org.bouncycastle.est.http.DefaultESTClient;
-import org.bouncycastle.est.http.DefaultESTClientSSLSocketProvider;
 import org.bouncycastle.est.http.ESTClientRequestInputSource;
 import org.bouncycastle.est.http.ESTHttpAuth;
 import org.bouncycastle.est.http.ESTHttpClient;
 import org.bouncycastle.est.http.ESTHttpException;
 import org.bouncycastle.est.http.ESTHttpRequest;
 import org.bouncycastle.est.http.ESTHttpResponse;
-import org.bouncycastle.est.http.TLSAcceptedIssuersSource;
 import org.bouncycastle.est.http.TLSAuthorizer;
 import org.bouncycastle.est.http.TLSHostNameAuthorizer;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
@@ -56,6 +52,7 @@ public class ESTService
     private final String server;
     private final TLSAuthorizer<SSLSession> tlsAuthorizer;
     private final CRL revocationList;
+    private final ESTHttpClientProvider clientProvider;
 
     protected final String CACERTS = "/cacerts";
     protected final String SIMPLE_ENROLL = "/simpleenroll";
@@ -69,7 +66,7 @@ public class ESTService
                char[] clientKeystorePassword,
                TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer,
                String server,
-               TLSAuthorizer<SSLSession> tlsAuthorizer, CRL revocationList)
+               TLSAuthorizer<SSLSession> tlsAuthorizer, CRL revocationList, ESTHttpClientProvider clientProvider)
     {
         this.tlsTrustAnchors = tlsTrustAnchors;
         this.clientKeystore = clientKeystore;
@@ -77,6 +74,7 @@ public class ESTService
         this.hostNameAuthorizer = hostNameAuthorizer;
         this.tlsAuthorizer = tlsAuthorizer;
         this.revocationList = revocationList;
+        this.clientProvider = clientProvider;
         if (server.endsWith("/"))
         {
             server = server.substring(0, server.length() - 1); // Trim off trailing slash
@@ -130,7 +128,7 @@ public class ESTService
                 tlsAuthorizer = this.tlsAuthorizer;
             }
 
-            ESTHttpClient client = makeHttpClient(tlsAuthorizer);
+            ESTHttpClient client = clientProvider.makeHttpClient(tlsAuthorizer);
             ESTHttpRequest req = new ESTHttpRequest("GET", url);
             resp = client.doRequest(req);
 
@@ -162,42 +160,6 @@ public class ESTService
         }
     }
 
-
-    protected ESTHttpClient makeHttpClient(TLSAuthorizer<SSLSession> tlsAuthorizer)
-        throws Exception
-    {
-
-        TLSAcceptedIssuersSource acceptedIssuersSource = (tlsTrustAnchors != null) ? new TLSAcceptedIssuersSource()
-        {
-            public Set<TrustAnchor> anchors()
-            {
-                return tlsTrustAnchors;
-            }
-        } : null;
-
-        KeyManagerFactory keyFact = null;
-        if (clientKeystore != null)
-        {
-            keyFact = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-            keyFact.init(clientKeystore, clientKeystorePassword);
-        }
-
-        if (tlsAuthorizer == null && acceptedIssuersSource == null)
-        {
-            return new DefaultESTClient(DefaultESTClientSSLSocketProvider.getUsingDefaultSSLSocketFactory(hostNameAuthorizer));
-        }
-
-        if (acceptedIssuersSource != null && tlsAuthorizer == null)
-        {
-            tlsAuthorizer = DefaultESTClientSSLSocketProvider.getCertPathTLSAuthorizer(revocationList);
-        }
-
-
-        return new DefaultESTClient(
-            new DefaultESTClientSSLSocketProvider(acceptedIssuersSource, tlsAuthorizer, keyFact, hostNameAuthorizer));
-    }
-
-
     /**
      * Reissue an existing request where the server had previously returned a 202.
      *
@@ -208,7 +170,7 @@ public class ESTService
     public ESTEnrollmentResponse simpleEnroll(ESTEnrollmentResponse priorResponse)
         throws Exception
     {
-        ESTHttpClient client = makeHttpClient(this.tlsAuthorizer);
+        ESTHttpClient client = clientProvider.makeHttpClient(this.tlsAuthorizer);
         ESTHttpResponse resp = client.doRequest(priorResponse.getRequestToRetry());
         return handleEnrollResponse(resp);
     }
@@ -232,7 +194,7 @@ public class ESTService
         final byte[] data = annotateRequest(certificationRequest.getEncoded()).getBytes();
 
         URL url = new URL(server + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
-        ESTHttpClient client = makeHttpClient(this.tlsAuthorizer);
+        ESTHttpClient client = clientProvider.makeHttpClient(this.tlsAuthorizer);
         ESTHttpRequest req = new ESTHttpRequest("POST", url, new ESTClientRequestInputSource()
         {
             public void ready(OutputStream os)
@@ -399,7 +361,7 @@ public class ESTService
     protected ESTHttpClient makeCSRAttributesClient(TLSAuthorizer<SSLSession> tlsAuthorizer)
         throws Exception
     {
-        return makeHttpClient(tlsAuthorizer);
+        return clientProvider.makeHttpClient(tlsAuthorizer);
     }
 
 
