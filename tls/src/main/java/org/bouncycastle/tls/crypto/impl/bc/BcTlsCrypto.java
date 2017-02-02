@@ -24,6 +24,7 @@ import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.engines.ARIAEngine;
 import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.engines.ChaCha7539Engine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
@@ -174,6 +175,16 @@ public class BcTlsCrypto
         case EncryptionAlgorithm.AES_256_OCB_TAGLEN96:
             // NOTE: Ignores macAlgorithm
             return createCipher_AES_OCB(cryptoParams, 32, 12);
+        case EncryptionAlgorithm.ARIA_128_CBC:
+            return createARIACipher(cryptoParams, 16, macAlgorithm);
+        case EncryptionAlgorithm.ARIA_128_GCM:
+            // NOTE: Ignores macAlgorithm
+            return createCipher_ARIA_GCM(cryptoParams, 16, 16);
+        case EncryptionAlgorithm.ARIA_256_CBC:
+            return createARIACipher(cryptoParams, 32, macAlgorithm);
+        case EncryptionAlgorithm.ARIA_256_GCM:
+            // NOTE: Ignores macAlgorithm
+            return createCipher_ARIA_GCM(cryptoParams, 32, 16);
         case EncryptionAlgorithm.CAMELLIA_128_CBC:
             return createCamelliaCipher(cryptoParams, 16, macAlgorithm);
         case EncryptionAlgorithm.CAMELLIA_128_GCM:
@@ -414,6 +425,13 @@ public class BcTlsCrypto
             createMac(cryptoParams, macAlgorithm), createMac(cryptoParams, macAlgorithm), cipherKeySize);
     }
 
+    protected TlsCipher createARIACipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
+        throws IOException
+    {
+        return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createARIABlockCipher(), true), new BlockOperator(createARIABlockCipher(), false),
+            createMac(cryptoParams, macAlgorithm), createMac(cryptoParams, macAlgorithm), cipherKeySize);
+    }
+
     protected TlsCipher createCamelliaCipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
@@ -448,6 +466,13 @@ public class BcTlsCrypto
     {
         return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_AES_OCB(), true), new AeadOperator(createAEADBlockCipher_AES_OCB(), false),
             cipherKeySize, macSize, TlsAEADCipher.NONCE_RFC7905);
+    }
+
+    protected TlsAEADCipher createCipher_ARIA_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
+        throws IOException
+    {
+        return new TlsAEADCipher(cryptoParams, new AeadOperator(createAEADBlockCipher_ARIA_GCM(), true), new AeadOperator(createAEADBlockCipher_ARIA_GCM(), false),
+            cipherKeySize, macSize);
     }
 
     protected TlsAEADCipher createCipher_Camellia_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
@@ -489,6 +514,11 @@ public class BcTlsCrypto
         return new AESEngine();
     }
 
+    protected BlockCipher createARIAEngine()
+    {
+        return new ARIAEngine();
+    }
+
     protected BlockCipher createCamelliaEngine()
     {
         return new CamelliaEngine();
@@ -497,6 +527,11 @@ public class BcTlsCrypto
     protected BlockCipher createAESBlockCipher()
     {
         return new CBCBlockCipher(createAESEngine());
+    }
+
+    protected BlockCipher createARIABlockCipher()
+    {
+        return new CBCBlockCipher(createARIAEngine());
     }
 
     protected AEADBlockCipher createAEADBlockCipher_AES_CCM()
@@ -513,6 +548,12 @@ public class BcTlsCrypto
     protected AEADBlockCipher createAEADBlockCipher_AES_OCB()
     {
         return new OCBBlockCipher(createAESEngine(), createAESEngine());
+    }
+
+    protected AEADBlockCipher createAEADBlockCipher_ARIA_GCM()
+    {
+        // TODO Consider allowing custom configuration of multiplier
+        return new GCMBlockCipher(createARIAEngine());
     }
 
     protected AEADBlockCipher createAEADBlockCipher_Camellia_GCM()
