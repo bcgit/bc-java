@@ -19,13 +19,13 @@ public class ESTServiceBuilder
     protected KeyStore clientKeystore;
     protected char[] clientKeystorePassword;
     protected TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer;
-    protected String server;
+    final protected String server;
     protected TLSAuthorizer<SSLSession> tlsAuthorizer;
     protected CRL revocationList;
 
-    public ESTServiceBuilder()
+    public ESTServiceBuilder(String server)
     {
-
+        this.server = server;
     }
 
     public ESTServiceBuilder withTlsTrustAnchors(Set<TrustAnchor> tlsTrustAnchors)
@@ -55,12 +55,6 @@ public class ESTServiceBuilder
     public ESTServiceBuilder withTlsAuthorizer(TLSAuthorizer<SSLSession> tlsAuthorizer)
     {
         this.tlsAuthorizer = tlsAuthorizer;
-        return this;
-    }
-
-    public ESTServiceBuilder withServer(String server)
-    {
-        this.server = server;
         return this;
     }
 
