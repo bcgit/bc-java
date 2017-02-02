@@ -112,7 +112,25 @@ public class ESTService
         try
         {
             URL url = new URL(server + CACERTS);
-            ESTHttpClient client = makeCACertsClient(tlsAcceptAny);
+
+            TLSAuthorizer<SSLSession> tlsAuthorizer = null;
+            if (tlsAcceptAny)
+            {
+                tlsAuthorizer = new TLSAuthorizer<SSLSession>()
+                {
+                    public void authorize(Set<TrustAnchor> acceptedIssuers, X509Certificate[] chain, String authType)
+                        throws CertificateException
+                    {
+                        // Does nothing, failure only occurs when exception is thrown.
+                    }
+                };
+            }
+            else
+            {
+                tlsAuthorizer = this.tlsAuthorizer;
+            }
+
+            ESTHttpClient client = makeCACertsClient(tlsAuthorizer);
             ESTHttpRequest req = new ESTHttpRequest("GET", url);
             resp = client.doRequest(req);
 
@@ -145,7 +163,7 @@ public class ESTService
     }
 
 
-    protected ESTHttpClient makeCACertsClient(final boolean tlsAcceptAny)
+    protected ESTHttpClient makeCACertsClient(TLSAuthorizer<SSLSession> tlsAuthorizer)
         throws Exception
     {
 
@@ -156,23 +174,6 @@ public class ESTService
                 return tlsTrustAnchors;
             }
         } : null;
-
-        TLSAuthorizer<SSLSession> tlsAuthorizer = null;
-        if (tlsAcceptAny)
-        {
-            tlsAuthorizer = new TLSAuthorizer<SSLSession>()
-            {
-                public void authorize(Set<TrustAnchor> acceptedIssuers, X509Certificate[] chain, String authType)
-                    throws CertificateException
-                {
-                    // Does nothing, failure only occurs when exception is thrown.
-                }
-            };
-        }
-        else
-        {
-            tlsAuthorizer = this.tlsAuthorizer;
-        }
 
         KeyManagerFactory keyFact = null;
         if (clientKeystore != null)
@@ -207,7 +208,7 @@ public class ESTService
     public ESTEnrollmentResponse simpleEnroll(ESTEnrollmentResponse priorResponse)
         throws Exception
     {
-        ESTHttpClient client = makeEnrollmentClient();
+        ESTHttpClient client = makeEnrollmentClient(this.tlsAuthorizer);
         ESTHttpResponse resp = client.doRequest(priorResponse.getRequestToRetry());
         return handleEnrollResponse(resp);
     }
@@ -231,7 +232,7 @@ public class ESTService
         final byte[] data = annotateRequest(certificationRequest.getEncoded()).getBytes();
 
         URL url = new URL(server + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
-        ESTHttpClient client = makeEnrollmentClient();
+        ESTHttpClient client = makeEnrollmentClient(this.tlsAuthorizer);
         ESTHttpRequest req = new ESTHttpRequest("POST", url, new ESTClientRequestInputSource()
         {
             public void ready(OutputStream os)
@@ -310,7 +311,7 @@ public class ESTService
     }
 
 
-    protected ESTHttpClient makeEnrollmentClient()
+    protected ESTHttpClient makeEnrollmentClient(TLSAuthorizer<SSLSession> tlsAuthorizer )
         throws Exception
     {
 
@@ -334,7 +335,6 @@ public class ESTService
             return new DefaultESTClient(DefaultESTClientSSLSocketProvider.getUsingDefaultSSLSocketFactory(hostNameAuthorizer));
         }
 
-        TLSAuthorizer<SSLSession> tlsAuthorizer = this.tlsAuthorizer;
 
         if (acceptedIssuersSource != null && tlsAuthorizer == null)
         {
@@ -356,7 +356,7 @@ public class ESTService
         {
             URL url = new URL(server + CSRATTRS);
 
-            ESTHttpClient client = makeCSRAttributesClient();
+            ESTHttpClient client = makeCSRAttributesClient(this.tlsAuthorizer);
             ESTHttpRequest req = new ESTHttpRequest("GET", url);
             resp = client.doRequest(req);
 
@@ -396,34 +396,10 @@ public class ESTService
      * @return an ESTHttpClient..
      * @throws Exception
      */
-    protected ESTHttpClient makeCSRAttributesClient()
+    protected ESTHttpClient makeCSRAttributesClient(TLSAuthorizer<SSLSession> tlsAuthorizer)
         throws Exception
     {
-
-        TLSAcceptedIssuersSource acceptedIssuersSource = (tlsTrustAnchors != null) ? new TLSAcceptedIssuersSource()
-        {
-            public Set<TrustAnchor> anchors()
-            {
-                return tlsTrustAnchors;
-            }
-        } : null;
-
-        KeyManagerFactory keyFact = null;
-        if (clientKeystore != null)
-        {
-            keyFact = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-            keyFact.init(clientKeystore, clientKeystorePassword);
-        }
-
-        if (acceptedIssuersSource == null)
-        {
-            return new DefaultESTClient(DefaultESTClientSSLSocketProvider.getUsingDefaultSSLSocketFactory(hostNameAuthorizer));
-        }
-
-
-        return new DefaultESTClient(
-            new DefaultESTClientSSLSocketProvider(acceptedIssuersSource, tlsAuthorizer, keyFact, hostNameAuthorizer));
-
+        return makeEnrollmentClient(tlsAuthorizer);
     }
 
 
