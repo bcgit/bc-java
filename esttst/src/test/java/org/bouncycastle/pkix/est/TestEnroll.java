@@ -22,7 +22,7 @@ import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.est.EST;
+import org.bouncycastle.est.ESTServiceBuilder;
 import org.bouncycastle.est.http.BasicAuth;
 import org.bouncycastle.est.http.DigestAuth;
 import org.bouncycastle.esttst.ESTServerUtils;
@@ -144,7 +144,7 @@ public class TestEnroll
         {
             serverInstance = startDefaultServerWithBasicAuth();
 
-            EST est = new EST("https://localhost:8443/.well-known/est/");
+            ESTServiceBuilder est = new ESTServiceBuilder("https://localhost:8443/.well-known/est/");
             est.setTlsTrustAnchors(
                 ESTTestUtils.toTrustAnchor(
                     ESTTestUtils.readPemCertificate(
@@ -165,12 +165,12 @@ public class TestEnroll
             PKCS10CertificationRequest csr = pkcs10Builder.build(
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
-            EST.ESTEnrollmentResponse enr = est.simpleEnroll(false, csr, new BasicAuth("estreal", "estuser", "estpwd"));
+            ESTServiceBuilder.ESTEnrollmentResponse enr = est.simpleEnroll(false, csr, new BasicAuth("estreal", "estuser", "estpwd"));
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
 
-            X509CertificateHolder enrolledAsHolder = EST.storeToArray(enr.getStore())[0];
+            X509CertificateHolder enrolledAsHolder = ESTServiceBuilder.storeToArray(enr.getStore())[0];
 
             X509Certificate enrolled = ESTTestUtils.toJavaX509Certificate(enrolledAsHolder);
 
@@ -203,7 +203,7 @@ public class TestEnroll
         {
             serverInstance = startDefaultServerWithDigestAuth();
 
-            EST est = new EST("https://localhost:8443/.well-known/est/");
+            ESTServiceBuilder est = new ESTServiceBuilder("https://localhost:8443/.well-known/est/");
             est.setTlsTrustAnchors(
                 ESTTestUtils.toTrustAnchor(
                     ESTTestUtils.readPemCertificate(
@@ -227,12 +227,12 @@ public class TestEnroll
             //
             // Use an override realm because while the Cisco server sends back "estreal" it the digest was calculated on "estrealm"
             //
-            EST.ESTEnrollmentResponse enr = est.simpleEnroll(false, csr, new DigestAuth("estrealm", "estuser", "estpwd"));
+            ESTServiceBuilder.ESTEnrollmentResponse enr = est.simpleEnroll(false, csr, new DigestAuth("estrealm", "estuser", "estpwd"));
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
 
-            X509CertificateHolder enrolledAsHolder = EST.storeToArray(enr.getStore())[0];
+            X509CertificateHolder enrolledAsHolder = ESTServiceBuilder.storeToArray(enr.getStore())[0];
 
             X509Certificate enrolled = ESTTestUtils.toJavaX509Certificate(enrolledAsHolder);
 
@@ -345,7 +345,7 @@ public class TestEnroll
         try
         {
 
-            EST est = new EST("https://localhost:8443/.well-known/est/");
+            ESTServiceBuilder est = new ESTServiceBuilder("https://localhost:8443/.well-known/est/");
 
             //
             // Keystore with client certificate.
@@ -371,13 +371,13 @@ public class TestEnroll
             PKCS10CertificationRequest csr = pkcs10Builder.build(
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
-            EST.ESTEnrollmentResponse enr = est.simpleEnroll(false, csr, new BasicAuth("estreal", "estuser", "estpwd"));
+            ESTServiceBuilder.ESTEnrollmentResponse enr = est.simpleEnroll(false, csr, new BasicAuth("estreal", "estuser", "estpwd"));
 
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
 
-            X509CertificateHolder enrolledAsHolder = EST.storeToArray(enr.getStore())[0];
+            X509CertificateHolder enrolledAsHolder = ESTServiceBuilder.storeToArray(enr.getStore())[0];
 
             X509Certificate enrolled = ESTTestUtils.toJavaX509Certificate(enrolledAsHolder);
 
