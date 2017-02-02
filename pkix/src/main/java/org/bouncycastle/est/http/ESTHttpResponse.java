@@ -1,6 +1,5 @@
 package org.bouncycastle.est.http;
 
-import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,9 +19,9 @@ public class ESTHttpResponse
 {
     private final ESTHttpRequest originalRequest;
     private final Map<String, List<String>> headers;
-    private final String HttpVersion;
-    private final int statusCode;
-    private final String statusMessage;
+    private String HttpVersion;
+    private int statusCode;
+    private String statusMessage;
     private final byte[] lineBuffer;
     private final Socket socket;
 
@@ -32,12 +31,35 @@ public class ESTHttpResponse
     public ESTHttpResponse(ESTHttpRequest originalRequest, Socket socket)
         throws Exception
     {
-        this.originalRequest = originalRequest;
-        this.inputStream = new PrintingInputStream(socket.getInputStream());
         this.socket = socket;
+        this.originalRequest = originalRequest;
+
+        this.inputStream = new PrintingInputStream(socket.getInputStream());
+        socket = null;
+
+        this.headers = new HashMap<String, List<String>>();
+        this.lineBuffer = new byte[1024];
+        process();
+    }
+
+
+    public ESTHttpResponse(ESTHttpRequest originalRequest, InputStream inputStream)
+        throws Exception
+    {
+        this.originalRequest = originalRequest;
+
+        this.inputStream = inputStream;
+        socket = null;
+
         this.headers = new HashMap<String, List<String>>();
         this.lineBuffer = new byte[1024];
 
+        process();
+    }
+
+    private void process()
+        throws Exception
+    {
         //
         // Status line.
         //
@@ -159,7 +181,10 @@ public class ESTHttpResponse
     public void close()
         throws Exception
     {
-        this.socket.close();
+        if (this.socket != null)
+        {
+            this.socket.close();
+        }
     }
 
 

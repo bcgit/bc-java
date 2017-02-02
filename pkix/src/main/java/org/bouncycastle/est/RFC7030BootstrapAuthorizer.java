@@ -24,6 +24,6 @@ public interface RFC7030BootstrapAuthorizer<T>
      * @param serverCertificates The server certificates supplied during TLS handshake by the server.
      * @throws Exception if authorisation can not be given.
      */
-    void authorise(Store<X509CertificateHolder> caCerts, X509Certificate[] serverCertificates)
+    void authorise(Store<X509CertificateHolder> caCerts, X509Certificate[] serverCertificates, T session)
         throws Exception;
 }
