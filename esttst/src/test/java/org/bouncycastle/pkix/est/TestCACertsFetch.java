@@ -13,6 +13,7 @@ import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.ESTServiceBuilder;
 import org.bouncycastle.est.RFC7030BootstrapAuthorizer;
 import org.bouncycastle.esttst.ESTServerUtils;
@@ -77,8 +78,8 @@ public class TestCACertsFetch
         {
             serverInstance = startDefaultServer();
 
-            ESTServiceBuilder est = new ESTServiceBuilder("https://localhost:8443/.well-known/est/");
-            X509CertificateHolder[] caCerts = ESTServiceBuilder.storeToArray(est.getCACerts(null, true));
+            ESTService est = new ESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
+            X509CertificateHolder[] caCerts = ESTService.storeToArray(est.getCACerts(null, true));
 
             FileReader fr = new FileReader(ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt"));
             PemReader reader = new PemReader(fr);
@@ -126,13 +127,18 @@ public class TestCACertsFetch
             reader.close();
             fr.close();
 
-            ESTServiceBuilder est = new ESTServiceBuilder("https://localhost:8443/.well-known/est/");
+
 
             //
             // Specify the trust anchor.
             //
             TrustAnchor ta = new TrustAnchor(ESTTestUtils.toJavaX509Certificate(fromFile), null);
-            est.setTlsTrustAnchors(Collections.singleton(ta));
+
+            ESTService est =
+                new ESTServiceBuilder("https://localhost:8443/.well-known/est/")
+                    .withTlsTrustAnchors(Collections.singleton(ta))
+                    .build();
+
 
 
             final AtomicBoolean bsaCalled = new AtomicBoolean(false);
@@ -147,7 +153,7 @@ public class TestCACertsFetch
 
 
             // Make the call. NB tlsAcceptAny is false.
-            X509CertificateHolder[] caCerts = ESTServiceBuilder.storeToArray(est.getCACerts(bsa, false));
+            X509CertificateHolder[] caCerts = ESTService.storeToArray(est.getCACerts(bsa, false));
 
             // We expect the bootstrap authorizer to not be called.
 
@@ -200,9 +206,9 @@ public class TestCACertsFetch
                 }
             };
 
+            ESTService est = new ESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
 
-            ESTServiceBuilder est = new ESTServiceBuilder("https://localhost:8443/.well-known/est/");
-            X509CertificateHolder[] caCerts = ESTServiceBuilder.storeToArray(est.getCACerts(bootstrapAuthorizer, true));
+            X509CertificateHolder[] caCerts = ESTService.storeToArray(est.getCACerts(bootstrapAuthorizer, true));
 
             FileReader fr = new FileReader(ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt"));
             PemReader reader = new PemReader(fr);
@@ -256,11 +262,11 @@ public class TestCACertsFetch
             };
 
 
-            ESTServiceBuilder est = new ESTServiceBuilder("https://localhost:8443/.well-known/est/");
+            ESTService est = new ESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
 
             try
             {
-                X509CertificateHolder[] caCerts = ESTServiceBuilder.storeToArray(est.getCACerts(bootstrapAuthorizer, true));
+                X509CertificateHolder[] caCerts = ESTService.storeToArray(est.getCACerts(bootstrapAuthorizer, true));
                 Assert.fail("Bootstrap authorizer exception did not propagate.");
             }
             catch (Throwable t)
@@ -318,7 +324,7 @@ public class TestCACertsFetch
                     //
                     X509CertificateHolder expectedCACert;
                     {
-                        X509CertificateHolder[] _caCerts = ESTServiceBuilder.storeToArray(caCerts);
+                        X509CertificateHolder[] _caCerts = ESTService.storeToArray(caCerts);
 
                         FileReader fr = new FileReader(ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt"));
                         PemReader reader = new PemReader(fr);
@@ -356,8 +362,8 @@ public class TestCACertsFetch
             };
 
 
-            ESTServiceBuilder est = new ESTServiceBuilder("https://localhost:8443/.well-known/est/");
-            X509CertificateHolder[] caCerts = ESTServiceBuilder.storeToArray(est.getCACerts(bootstrapAuthorizer, true));
+            ESTService est = new ESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
+            X509CertificateHolder[] caCerts = ESTService.storeToArray(est.getCACerts(bootstrapAuthorizer, true));
 
             Assert.assertEquals("Returned ca certs should be 1", caCerts.length, 1);
             Assert.assertEquals("Bootstrap authorizer must be called", true, bootStrapAuthorizerCalled.get());
