@@ -1,6 +1,8 @@
 package org.bouncycastle.est.http;
 
+import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
+import java.util.Set;
 
 /**
  * TLSAcceptedIssuersSource provides an array of X509Certificates that
@@ -8,5 +10,5 @@ import java.security.cert.X509Certificate;
  */
 public interface TLSAcceptedIssuersSource
 {
-    X509Certificate[] anchors();
+    Set<TrustAnchor> anchors();
 }

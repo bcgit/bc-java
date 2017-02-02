@@ -6,12 +6,14 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
 import java.security.KeyStore;
-import java.security.cert.Certificate;
+import java.security.cert.CRL;
 import java.security.cert.CertificateException;
+import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Locale;
+import java.util.Set;
 import java.util.TimeZone;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -47,18 +49,18 @@ import org.bouncycastle.util.encoders.Base64;
 public class EST
 {
 
-    protected X509Certificate[] tlsTrustAnchors;
+    protected Set<TrustAnchor> tlsTrustAnchors;
     protected KeyStore clientKeystore;
     protected char[] clientKeystorePassword;
     protected TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer;
     protected final String server;
     protected TLSAuthorizer<SSLSession> tlsAuthorizer;
 
-
     protected final String CACERTS = "/cacerts";
     protected final String SIMPLE_ENROLL = "/simpleenroll";
     protected final String SIMPLE_REENROLL = "/simplereenroll";
     protected final String CSRATTRS = "/csrattrs";
+    protected CRL revocationList;
 
     public EST(String server)
     {
@@ -108,9 +110,9 @@ public class EST
                 ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
                 SimplePKIResponse spkr = new SimplePKIResponse(ContentInfo.getInstance((ASN1Sequence)ain.readObject()));
                 caCerts = spkr.getCertificates();
-                if (bootstrapAuthorizer != null)
+                if (bootstrapAuthorizer != null && (tlsTrustAnchors == null || tlsTrustAnchors.isEmpty()))
                 {
-                    bootstrapAuthorizer.authorise(caCerts, ((SSLSocket)resp.getSocket()).getSession().getPeerCertificateChain());
+                    bootstrapAuthorizer.authorise(caCerts, ((SSLSocket)resp.getSocket()).getSession().getPeerCertificateChain(), ((SSLSocket)resp.getSocket()).getSession());
                 }
             }
             else
@@ -136,7 +138,7 @@ public class EST
 
         TLSAcceptedIssuersSource acceptedIssuersSource = (tlsTrustAnchors != null) ? new TLSAcceptedIssuersSource()
         {
-            public X509Certificate[] anchors()
+            public Set<TrustAnchor> anchors()
             {
                 return tlsTrustAnchors;
             }
@@ -147,7 +149,7 @@ public class EST
         {
             tlsAuthorizer = new TLSAuthorizer<SSLSession>()
             {
-                public void authorize(X509Certificate[] chain, String authType)
+                public void authorize(Set<TrustAnchor> acceptedIssuers, X509Certificate[] chain, String authType)
                     throws CertificateException
                 {
                     // Does nothing, failure only occurs when exception is thrown.
@@ -170,6 +172,12 @@ public class EST
         {
             return new DefaultESTClient(DefaultESTClientSSLSocketProvider.getUsingDefaultSSLSocketFactory(hostNameAuthorizer));
         }
+
+        if (acceptedIssuersSource != null && tlsAuthorizer == null)
+        {
+            tlsAuthorizer = DefaultESTClientSSLSocketProvider.getCertPathTLSAuthorizer(revocationList);
+        }
+
 
         return new DefaultESTClient(
             new DefaultESTClientSSLSocketProvider(acceptedIssuersSource, tlsAuthorizer, keyFact, hostNameAuthorizer));
@@ -295,7 +303,7 @@ public class EST
 
         TLSAcceptedIssuersSource acceptedIssuersSource = (tlsTrustAnchors != null) ? new TLSAcceptedIssuersSource()
         {
-            public X509Certificate[] anchors()
+            public Set<TrustAnchor> anchors()
             {
                 return tlsTrustAnchors;
             }
@@ -313,6 +321,10 @@ public class EST
             return new DefaultESTClient(DefaultESTClientSSLSocketProvider.getUsingDefaultSSLSocketFactory(hostNameAuthorizer));
         }
 
+        if (acceptedIssuersSource != null && tlsAuthorizer == null)
+        {
+            tlsAuthorizer = DefaultESTClientSSLSocketProvider.getCertPathTLSAuthorizer(revocationList);
+        }
 
         return new DefaultESTClient(
             new DefaultESTClientSSLSocketProvider(acceptedIssuersSource, tlsAuthorizer, keyFact, hostNameAuthorizer));
@@ -375,7 +387,7 @@ public class EST
 
         TLSAcceptedIssuersSource acceptedIssuersSource = (tlsTrustAnchors != null) ? new TLSAcceptedIssuersSource()
         {
-            public X509Certificate[] anchors()
+            public Set<TrustAnchor> anchors()
             {
                 return tlsTrustAnchors;
             }
@@ -427,12 +439,12 @@ public class EST
     }
 
 
-    public Certificate[] getTlsTrustAnchors()
+    public Set<TrustAnchor> getTlsTrustAnchors()
     {
         return tlsTrustAnchors;
     }
 
-    public void setTlsTrustAnchors(X509Certificate[] tlsTrustAnchors)
+    public void setTlsTrustAnchors(Set<TrustAnchor> tlsTrustAnchors)
     {
         this.tlsTrustAnchors = tlsTrustAnchors;
     }
@@ -457,6 +469,16 @@ public class EST
         this.clientKeystorePassword = clientKeystorePassword;
     }
 
+    public CRL getRevocationList()
+    {
+        return revocationList;
+    }
+
+    public void setRevocationList(CRL revocationList)
+    {
+        this.revocationList = revocationList;
+    }
+
     public TLSHostNameAuthorizer<SSLSession> getHostNameAuthorizer()
     {
         return hostNameAuthorizer;
@@ -465,6 +487,11 @@ public class EST
     public void setHostNameAuthorizer(TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer)
     {
         this.hostNameAuthorizer = hostNameAuthorizer;
+    }
+
+    public void setTlsAuthorizer(TLSAuthorizer<SSLSession> tlsAuthorizer)
+    {
+        this.tlsAuthorizer = tlsAuthorizer;
     }
 
     public static X509CertificateHolder[] storeToArray(Store<X509CertificateHolder> store)

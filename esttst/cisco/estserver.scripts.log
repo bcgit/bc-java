@@ -1,0 +1,4 @@
+###########..EXIT..##########
+SCRIPT ./createCA.sh EXIT: Unable to create est server certificate (1)
+###########^^EXIT^^##########
+ 
