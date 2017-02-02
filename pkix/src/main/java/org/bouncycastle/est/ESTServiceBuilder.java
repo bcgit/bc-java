@@ -34,10 +34,10 @@ public class ESTServiceBuilder
         this.server = server;
     }
 
-    public ESTServiceBuilder withTlsTrustAnchors(Set<TrustAnchor> tlsTrustAnchors)
+    public ESTServiceBuilder(Set<TrustAnchor> tlsTrustAnchors, String server)
     {
         this.tlsTrustAnchors = tlsTrustAnchors;
-        return this;
+        this.server = server;
     }
 
     public ESTServiceBuilder withClientKeystore(KeyStore clientKeystore)

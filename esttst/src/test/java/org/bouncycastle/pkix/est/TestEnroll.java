@@ -145,12 +145,10 @@ public class TestEnroll
         {
             serverInstance = startDefaultServerWithBasicAuth();
 
-            ESTService est = new ESTServiceBuilder("https://localhost:8443/.well-known/est/")
-            .withTlsTrustAnchors(
-                ESTTestUtils.toTrustAnchor(
-                    ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    ))).build();
+            ESTService est = new ESTServiceBuilder(ESTTestUtils.toTrustAnchor(
+                ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), "https://localhost:8443/.well-known/est/").build();
 
             //
             // Make certificate request.
@@ -204,12 +202,10 @@ public class TestEnroll
         {
             serverInstance = startDefaultServerWithDigestAuth();
 
-            ESTService est = new ESTServiceBuilder("https://localhost:8443/.well-known/est/")
-            .withTlsTrustAnchors(
-                ESTTestUtils.toTrustAnchor(
-                    ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    ))).build();
+            ESTService est = new ESTServiceBuilder(ESTTestUtils.toTrustAnchor(
+                ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), "https://localhost:8443/.well-known/est/").build();
 
             //
             // Make certificate request.
@@ -357,14 +353,13 @@ public class TestEnroll
                     )
                 ), null);
 
-            ESTService est = new ESTServiceBuilder("https://localhost:8443/.well-known/est/")
+            ESTService est = new ESTServiceBuilder(Collections.singleton(ta), "https://localhost:8443/.well-known/est/")
 
-            //
-            // Keystore with client certificate.
-            //
-            .withClientKeystore(clientKeyStore)
-            .withClientKeystorePassword(clientKeyStorePass)
-            .withTlsTrustAnchors(Collections.singleton(ta)).build();
+                //
+                // Keystore with client certificate.
+                //
+                .withClientKeystore(clientKeyStore)
+                .withClientKeystorePassword(clientKeyStorePass).build();
 
 
             PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(new X500Name("CN=Test"), enrollmentPair.getPublic());

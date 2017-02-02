@@ -170,6 +170,10 @@ public class ESTService
     public ESTEnrollmentResponse simpleEnroll(ESTEnrollmentResponse priorResponse)
         throws Exception
     {
+        if (tlsTrustAnchors == null || tlsTrustAnchors.isEmpty())
+        {
+            throw new IllegalStateException("No trust anchors.");
+        }
         ESTHttpClient client = clientProvider.makeHttpClient(this.tlsAuthorizer);
         ESTHttpResponse resp = client.doRequest(priorResponse.getRequestToRetry());
         return handleEnrollResponse(resp);
@@ -191,6 +195,11 @@ public class ESTService
     public ESTEnrollmentResponse simpleEnroll(boolean reenroll, PKCS10CertificationRequest certificationRequest, ESTHttpAuth auth)
         throws Exception
     {
+        if (tlsTrustAnchors == null || tlsTrustAnchors.isEmpty())
+        {
+            throw new IllegalStateException("No trust anchors.");
+        }
+
         final byte[] data = annotateRequest(certificationRequest.getEncoded()).getBytes();
 
         URL url = new URL(server + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
@@ -312,13 +321,17 @@ public class ESTService
     public CSRAttributesResponse getCSRAttributes()
         throws Exception
     {
+        if (tlsTrustAnchors == null || tlsTrustAnchors.isEmpty())
+        {
+            throw new IllegalStateException("No trust anchors.");
+        }
         ESTHttpResponse resp = null;
         CSRAttributesResponse response = null;
         try
         {
             URL url = new URL(server + CSRATTRS);
 
-            ESTHttpClient client = makeCSRAttributesClient(this.tlsAuthorizer);
+            ESTHttpClient client = clientProvider.makeHttpClient(this.tlsAuthorizer);
             ESTHttpRequest req = new ESTHttpRequest("GET", url);
             resp = client.doRequest(req);
 
@@ -349,19 +362,6 @@ public class ESTService
             }
         }
         return response;
-    }
-
-
-    /**
-     * Makes an client to fetch csr attributes.
-     *
-     * @return an ESTHttpClient..
-     * @throws Exception
-     */
-    protected ESTHttpClient makeCSRAttributesClient(TLSAuthorizer<SSLSession> tlsAuthorizer)
-        throws Exception
-    {
-        return clientProvider.makeHttpClient(tlsAuthorizer);
     }
 
 

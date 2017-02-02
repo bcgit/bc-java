@@ -84,12 +84,10 @@ public class TestReEnroll
         {
             serverInstance = startDefaultServerWithBasicAuth();
 
-            ESTService est = new ESTServiceBuilder("https://localhost:8443/.well-known/est/")
-            .withTlsTrustAnchors(
-                ESTTestUtils.toTrustAnchor(
-                    ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    ))).build();
+            ESTService est = new ESTServiceBuilder(ESTTestUtils.toTrustAnchor(
+                ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), "https://localhost:8443/.well-known/est/").build();
 
             //
             // Make certificate request.
@@ -132,12 +130,12 @@ public class TestReEnroll
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
             // Flag set true!
-             enr = est.simpleEnroll(true, csr, new BasicAuth("estreal", "estuser", "estpwd"));
-             expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
+            enr = est.simpleEnroll(true, csr, new BasicAuth("estreal", "estuser", "estpwd"));
+            expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
 
-             enrolledAsHolder = ESTService.storeToArray(enr.getStore())[0];
+            enrolledAsHolder = ESTService.storeToArray(enr.getStore())[0];
 
             enrolled = ESTTestUtils.toJavaX509Certificate(enrolledAsHolder);
 
@@ -152,25 +150,23 @@ public class TestReEnroll
             // Try and perform renerollment with different subject.
             //
 
-           // enrollmentPair = kpg.generateKeyPair();
+            // enrollmentPair = kpg.generateKeyPair();
             pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(new X500Name("CN=Samwise Gamgee"), enrollmentPair.getPublic());
             csr = pkcs10Builder.build(
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
             // Flag set true!
-           try
-           {
-               enr = est.simpleEnroll(true, csr, new BasicAuth("estreal", "estuser", "estpwd"));
-               Assert.fail("Reenrollment with different subject must fail.");
-           } catch (Exception ex) {
-
+            try
+            {
+                enr = est.simpleEnroll(true, csr, new BasicAuth("estreal", "estuser", "estpwd"));
+                Assert.fail("Reenrollment with different subject must fail.");
+            }
+            catch (Exception ex)
+            {
 
 
                 Assert.assertTrue(true);
-           }
-
-
-
+            }
 
 
         }

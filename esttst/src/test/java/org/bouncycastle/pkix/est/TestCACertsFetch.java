@@ -128,17 +128,13 @@ public class TestCACertsFetch
             fr.close();
 
 
-
             //
             // Specify the trust anchor.
             //
             TrustAnchor ta = new TrustAnchor(ESTTestUtils.toJavaX509Certificate(fromFile), null);
 
             ESTService est =
-                new ESTServiceBuilder("https://localhost:8443/.well-known/est/")
-                    .withTlsTrustAnchors(Collections.singleton(ta))
-                    .build();
-
+                new ESTServiceBuilder(Collections.singleton(ta), "https://localhost:8443/.well-known/est/").build();
 
 
             final AtomicBoolean bsaCalled = new AtomicBoolean(false);
