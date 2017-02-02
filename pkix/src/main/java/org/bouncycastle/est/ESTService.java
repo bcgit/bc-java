@@ -90,20 +90,17 @@ public class ESTService
      * It does however define a bootstrapping mode where if the client does not have the necessary ca certificates to
      * validate the server it can defer to an external source, such as a human, to formally accept the ca certs.
      * <p>
-     * Use the bootstrapAuthorizer to receive a callback after the ca certificates have been fetched but not returned to
-     * the caller to perform any out of band validation, throw an exception to invalidate.
-     * <p>
      * Depending on the servers configuration clients may be forced to accept any certificates tendered by the server
      * during the set up phase of TLS, set tlsAcceptAny to true to enable this but remember that it will accept
      * any certificates tended by the server.
+     * <p>
+     * If callers are using bootstrapping they must examine the CACertsResponse and validate it externally.
      *
-     * @param bootstrapAuthorizer The bootstrap authorizer, called when CA need external validation.
-     * @param tlsAcceptAny        case the TLS layer to accept any certificates tendered during the TLS negotiation
-     *                            phase.
+     * @param tlsAcceptAny case the TLS layer to accept any certificates tendered during the TLS negotiation
+     *                     phase.
      * @return A store of X509Certificates.
      */
-    public Store<X509CertificateHolder> getCACerts(
-        RFC7030BootstrapAuthorizer<SSLSession> bootstrapAuthorizer, boolean tlsAcceptAny)
+    public CACertsResponse getCACerts(boolean tlsAcceptAny)
         throws Exception
     {
         ESTHttpResponse resp = null;
@@ -139,17 +136,13 @@ public class ESTService
                 ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
                 SimplePKIResponse spkr = new SimplePKIResponse(ContentInfo.getInstance((ASN1Sequence)ain.readObject()));
                 caCerts = spkr.getCertificates();
-                if (bootstrapAuthorizer != null && (tlsTrustAnchors == null || tlsTrustAnchors.isEmpty()))
-                {
-                    bootstrapAuthorizer.authorise(caCerts, ((SSLSocket)resp.getSocket()).getSession().getPeerCertificateChain(), ((SSLSocket)resp.getSocket()).getSession());
-                }
             }
             else
             {
-                throw new ESTHttpException("Get CAcerts: " + url.toString(), resp.getStatusCode(), resp.getInputStream(), (int)resp.getContentLength());
+                throw new ESTHttpException("Get CACerts: " + url.toString(), resp.getStatusCode(), resp.getInputStream(), (int)resp.getContentLength());
             }
 
-            return caCerts;
+            return new CACertsResponse(caCerts, req, ((SSLSocket)resp.getSocket()).getSession());
         }
         finally
         {
@@ -167,7 +160,7 @@ public class ESTService
      * @return A new ESTEnrollmentResponse
      * @throws Exception
      */
-    public ESTEnrollmentResponse simpleEnroll(ESTEnrollmentResponse priorResponse)
+    public EnrollmentResponse simpleEnroll(EnrollmentResponse priorResponse)
         throws Exception
     {
         if (tlsTrustAnchors == null || tlsTrustAnchors.isEmpty())
@@ -192,7 +185,7 @@ public class ESTService
      * @param auth                 The http auth provider, basic auth or digest auth, can be null.
      * @return The enrolled certificate.
      */
-    public ESTEnrollmentResponse simpleEnroll(boolean reenroll, PKCS10CertificationRequest certificationRequest, ESTHttpAuth auth)
+    public EnrollmentResponse simpleEnroll(boolean reenroll, PKCS10CertificationRequest certificationRequest, ESTHttpAuth auth)
         throws Exception
     {
         if (tlsTrustAnchors == null || tlsTrustAnchors.isEmpty())
@@ -227,7 +220,7 @@ public class ESTService
     }
 
 
-    protected ESTEnrollmentResponse handleEnrollResponse(ESTHttpResponse resp)
+    protected EnrollmentResponse handleEnrollResponse(ESTHttpResponse resp)
         throws Exception
     {
         try
@@ -255,11 +248,13 @@ public class ESTService
                     }
                     catch (Exception ex)
                     {
-                        throw new ESTHttpException("Unable to parse Retry-After header:" + req.getUrl().toString() + " " + ex.getMessage(), resp.getStatusCode(), resp.getInputStream(), (int)resp.getContentLength());
+                        throw new ESTHttpException(
+                            "Unable to parse Retry-After header:" + req.getUrl().toString() + " " + ex.getMessage(),
+                            resp.getStatusCode(), resp.getInputStream(), (int)resp.getContentLength());
                     }
                 }
 
-                return new ESTEnrollmentResponse(null, notBefore, req.copy());
+                return new EnrollmentResponse(null, notBefore, req.copy(), ((SSLSocket)resp.getSocket()).getSession());
 
             }
             else if (resp.getStatusCode() == 200)
@@ -267,10 +262,12 @@ public class ESTService
                 ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
                 SimplePKIResponse spkr = new SimplePKIResponse(ContentInfo.getInstance((ASN1Sequence)ain.readObject()));
                 enrolled = spkr.getCertificates();
-                return new ESTEnrollmentResponse(enrolled, -1, null);
+                return new EnrollmentResponse(enrolled, -1, null, ((SSLSocket)resp.getSocket()).getSession());
             }
 
-            throw new ESTHttpException("Simple Enroll: " + req.getUrl().toString(), resp.getStatusCode(), resp.getInputStream(), (int)resp.getContentLength());
+            throw new ESTHttpException(
+                "Simple Enroll: " + req.getUrl().toString(),
+                resp.getStatusCode(), resp.getInputStream(), (int)resp.getContentLength());
         }
         finally
         {
@@ -282,43 +279,7 @@ public class ESTService
     }
 
 
-//    protected ESTHttpClient makeEnrollmentClient(TLSAuthorizer<SSLSession> tlsAuthorizer )
-//        throws Exception
-//    {
-//
-//        TLSAcceptedIssuersSource acceptedIssuersSource = (tlsTrustAnchors != null) ? new TLSAcceptedIssuersSource()
-//        {
-//            public Set<TrustAnchor> anchors()
-//            {
-//                return tlsTrustAnchors;
-//            }
-//        } : null;
-//
-//        KeyManagerFactory keyFact = null;
-//        if (clientKeystore != null)
-//        {
-//            keyFact = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-//            keyFact.init(clientKeystore, clientKeystorePassword);
-//        }
-//
-//        if (acceptedIssuersSource == null)
-//        {
-//            return new DefaultESTClient(DefaultESTClientSSLSocketProvider.getUsingDefaultSSLSocketFactory(hostNameAuthorizer));
-//        }
-//
-//
-//        if (acceptedIssuersSource != null && tlsAuthorizer == null)
-//        {
-//            tlsAuthorizer = DefaultESTClientSSLSocketProvider.getCertPathTLSAuthorizer(revocationList);
-//        }
-//
-//        return new DefaultESTClient(
-//            new DefaultESTClientSSLSocketProvider(acceptedIssuersSource, tlsAuthorizer, keyFact, hostNameAuthorizer));
-//
-//    }
-
-
-    public CSRAttributesResponse getCSRAttributes()
+    public CSRRequestResponse getCSRAttributes()
         throws Exception
     {
         if (tlsTrustAnchors == null || tlsTrustAnchors.isEmpty())
@@ -350,7 +311,9 @@ public class ESTService
                 response = null;
                 break;
             default:
-                throw new ESTHttpException("CSR Attribute request: " + req.getUrl().toString(), resp.getStatusCode(), resp.getInputStream(), (int)resp.getContentLength());
+                throw new ESTHttpException(
+                    "CSR Attribute request: " + req.getUrl().toString(),
+                    resp.getStatusCode(), resp.getInputStream(), (int)resp.getContentLength());
             }
 
         }
@@ -361,7 +324,7 @@ public class ESTService
                 resp.close();
             }
         }
-        return response;
+        return new CSRRequestResponse(response, ((SSLSocket)resp.getSocket()).getSession());
     }
 
 
@@ -418,18 +381,71 @@ public class ESTService
         return c.toArray(new X509CertificateHolder[c.size()]);
     }
 
+    public static class CSRRequestResponse
+    {
+        private final CSRAttributesResponse attributesResponse;
+        private final SSLSession session;
 
-    public static class ESTEnrollmentResponse
+        public CSRRequestResponse(CSRAttributesResponse attributesResponse, SSLSession session)
+        {
+            this.attributesResponse = attributesResponse;
+            this.session = session;
+        }
+
+        public CSRAttributesResponse getAttributesResponse()
+        {
+            return attributesResponse;
+        }
+
+        public SSLSession getSession()
+        {
+            return session;
+        }
+    }
+
+
+    public static class CACertsResponse
+    {
+        private final Store<X509CertificateHolder> store;
+        private final ESTHttpRequest requestToRetry;
+        private final SSLSession session;
+
+        public CACertsResponse(Store<X509CertificateHolder> store, ESTHttpRequest requestToRetry, SSLSession session)
+        {
+            this.store = store;
+            this.requestToRetry = requestToRetry;
+            this.session = session;
+        }
+
+        public Store<X509CertificateHolder> getStore()
+        {
+            return store;
+        }
+
+        public ESTHttpRequest getRequestToRetry()
+        {
+            return requestToRetry;
+        }
+
+        public SSLSession getSession()
+        {
+            return session;
+        }
+    }
+
+    public static class EnrollmentResponse
     {
         private final Store<X509CertificateHolder> store;
         private final long notBefore;
         private final ESTHttpRequest requestToRetry;
+        private final SSLSession session;
 
-        public ESTEnrollmentResponse(Store<X509CertificateHolder> store, long notBefore, ESTHttpRequest requestToRetry)
+        public EnrollmentResponse(Store<X509CertificateHolder> store, long notBefore, ESTHttpRequest requestToRetry, SSLSession session)
         {
             this.store = store;
             this.notBefore = notBefore;
             this.requestToRetry = requestToRetry;
+            this.session = session;
         }
 
         public boolean canRetry()
@@ -450,6 +466,11 @@ public class ESTService
         public ESTHttpRequest getRequestToRetry()
         {
             return requestToRetry;
+        }
+
+        public SSLSession getSession()
+        {
+            return session;
         }
     }
 

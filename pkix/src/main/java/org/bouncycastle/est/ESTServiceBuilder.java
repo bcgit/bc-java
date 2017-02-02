@@ -99,7 +99,7 @@ public class ESTServiceBuilder
     }
 
     public static class DefaultESTHttpClientProvider
-        implements ESTHttpClientProvider
+        implements ESTHttpClientProvider<SSLSession>
     {
 
 

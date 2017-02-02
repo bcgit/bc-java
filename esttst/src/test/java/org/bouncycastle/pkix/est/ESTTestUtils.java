@@ -131,6 +131,22 @@ public class ESTTestUtils
         return c;
     }
 
+
+    public static List<java.security.cert.X509Certificate> toCertList(Object[] certs)
+        throws Exception
+    {
+        CertificateFactory fac = CertificateFactory.getInstance("X509");
+
+        ArrayList<java.security.cert.X509Certificate> c = new ArrayList<java.security.cert.X509Certificate>();
+        for (Object cc : certs)
+        {
+            c.add(toJavaX509Certificate(cc));
+        }
+        return c;
+    }
+
+
+
     public static java.security.cert.X509Certificate toJavaX509Certificate(Object o)
         throws Exception
     {
@@ -142,8 +158,10 @@ public class ESTTestUtils
         else if (o instanceof X509Certificate)
         {
             return (java.security.cert.X509Certificate)fac.generateCertificate(new ByteArrayInputStream(((X509Certificate)o).getEncoded()));
+        } else if (o instanceof java.security.cert.X509Certificate) {
+            return (java.security.cert.X509Certificate)o;
         }
-        throw new IllegalArgumentException("Object not X509CertificateHolder or javax..X509Certificate");
+        throw new IllegalArgumentException("Object not X509CertificateHolder, javax..X509Certificate or java...X509Certificate");
     }
 
 
