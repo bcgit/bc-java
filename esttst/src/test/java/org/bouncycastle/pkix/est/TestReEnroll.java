@@ -10,7 +10,7 @@ import java.security.spec.ECGenParameterSpec;
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.est.EST;
+import org.bouncycastle.est.ESTServiceBuilder;
 import org.bouncycastle.est.http.BasicAuth;
 import org.bouncycastle.esttst.ESTServerUtils;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -83,7 +83,7 @@ public class TestReEnroll
         {
             serverInstance = startDefaultServerWithBasicAuth();
 
-            EST est = new EST("https://localhost:8443/.well-known/est/");
+            ESTServiceBuilder est = new ESTServiceBuilder("https://localhost:8443/.well-known/est/");
             est.setTlsTrustAnchors(
                 ESTTestUtils.toTrustAnchor(
                     ESTTestUtils.readPemCertificate(
@@ -104,12 +104,12 @@ public class TestReEnroll
             PKCS10CertificationRequest csr = pkcs10Builder.build(
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
-            EST.ESTEnrollmentResponse enr = est.simpleEnroll(false, csr, new BasicAuth("estreal", "estuser", "estpwd"));
+            ESTServiceBuilder.ESTEnrollmentResponse enr = est.simpleEnroll(false, csr, new BasicAuth("estreal", "estuser", "estpwd"));
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
 
-            X509CertificateHolder enrolledAsHolder = EST.storeToArray(enr.getStore())[0];
+            X509CertificateHolder enrolledAsHolder = ESTServiceBuilder.storeToArray(enr.getStore())[0];
 
             X509Certificate enrolled = ESTTestUtils.toJavaX509Certificate(enrolledAsHolder);
 
@@ -136,7 +136,7 @@ public class TestReEnroll
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
 
-             enrolledAsHolder = EST.storeToArray(enr.getStore())[0];
+             enrolledAsHolder = ESTServiceBuilder.storeToArray(enr.getStore())[0];
 
             enrolled = ESTTestUtils.toJavaX509Certificate(enrolledAsHolder);
 

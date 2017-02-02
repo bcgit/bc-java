@@ -43,27 +43,40 @@ import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
 
 /**
- * EST provides unified access to an EST server which is defined as implementmenting
+ * EST provides unified access to an EST server which is defined as implementing
  * RFC7030.
  */
-public class EST
+public class ESTService
 {
 
-    protected Set<TrustAnchor> tlsTrustAnchors;
-    protected KeyStore clientKeystore;
-    protected char[] clientKeystorePassword;
-    protected TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer;
-    protected final String server;
-    protected TLSAuthorizer<SSLSession> tlsAuthorizer;
+    private final Set<TrustAnchor> tlsTrustAnchors;
+    private final KeyStore clientKeystore;
+    private final char[] clientKeystorePassword;
+    private final TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer;
+    private final String server;
+    private final TLSAuthorizer<SSLSession> tlsAuthorizer;
+    private final CRL revocationList;
 
     protected final String CACERTS = "/cacerts";
     protected final String SIMPLE_ENROLL = "/simpleenroll";
     protected final String SIMPLE_REENROLL = "/simplereenroll";
     protected final String CSRATTRS = "/csrattrs";
-    protected CRL revocationList;
 
-    public EST(String server)
+
+    ESTService(Set<TrustAnchor>
+                   tlsTrustAnchors,
+               KeyStore clientKeystore,
+               char[] clientKeystorePassword,
+               TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer,
+               String server,
+               TLSAuthorizer<SSLSession> tlsAuthorizer, CRL revocationList)
     {
+        this.tlsTrustAnchors = tlsTrustAnchors;
+        this.clientKeystore = clientKeystore;
+        this.clientKeystorePassword = clientKeystorePassword;
+        this.hostNameAuthorizer = hostNameAuthorizer;
+        this.tlsAuthorizer = tlsAuthorizer;
+        this.revocationList = revocationList;
         if (server.endsWith("/"))
         {
             server = server.substring(0, server.length() - 1); // Trim off trailing slash
@@ -321,6 +334,8 @@ public class EST
             return new DefaultESTClient(DefaultESTClientSSLSocketProvider.getUsingDefaultSSLSocketFactory(hostNameAuthorizer));
         }
 
+        TLSAuthorizer<SSLSession> tlsAuthorizer = this.tlsAuthorizer;
+
         if (acceptedIssuersSource != null && tlsAuthorizer == null)
         {
             tlsAuthorizer = DefaultESTClientSSLSocketProvider.getCertPathTLSAuthorizer(revocationList);
@@ -444,54 +459,14 @@ public class EST
         return tlsTrustAnchors;
     }
 
-    public void setTlsTrustAnchors(Set<TrustAnchor> tlsTrustAnchors)
-    {
-        this.tlsTrustAnchors = tlsTrustAnchors;
-    }
-
-    public KeyStore getClientKeystore()
-    {
-        return clientKeystore;
-    }
-
-    public void setClientKeystore(KeyStore clientKeystore)
-    {
-        this.clientKeystore = clientKeystore;
-    }
-
-    public char[] getClientKeystorePassword()
-    {
-        return clientKeystorePassword;
-    }
-
-    public void setClientKeystorePassword(char[] clientKeystorePassword)
-    {
-        this.clientKeystorePassword = clientKeystorePassword;
-    }
-
     public CRL getRevocationList()
     {
         return revocationList;
     }
 
-    public void setRevocationList(CRL revocationList)
-    {
-        this.revocationList = revocationList;
-    }
-
     public TLSHostNameAuthorizer<SSLSession> getHostNameAuthorizer()
     {
         return hostNameAuthorizer;
-    }
-
-    public void setHostNameAuthorizer(TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer)
-    {
-        this.hostNameAuthorizer = hostNameAuthorizer;
-    }
-
-    public void setTlsAuthorizer(TLSAuthorizer<SSLSession> tlsAuthorizer)
-    {
-        this.tlsAuthorizer = tlsAuthorizer;
     }
 
     public static X509CertificateHolder[] storeToArray(Store<X509CertificateHolder> store)
