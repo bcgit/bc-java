@@ -34,14 +34,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.ExtensionsGenerator;
-import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.asn1.x509.TBSCertificate;
-import org.bouncycastle.asn1.x509.Time;
-import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
+import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -258,6 +251,70 @@ public class ESTTestUtils
                     new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)
                     ));
     }
+
+
+    /**
+     * @param sigName              signing algorithm
+     * @param subjectDN            Subject of the certificate.
+     * @param subjectPublicKeyInfo Public key of the subject.
+     * @param issuerPrivateKey     The issuer private key.
+     * @param serialNumber         Serial number.
+     * @return A (java) X509Certificate.
+     * @throws Exception
+     */
+    public static java.security.cert.X509Certificate createSelfsignedCert(
+            String sigName,
+            X500Name subjectDN,
+            SubjectPublicKeyInfo subjectPublicKeyInfo,
+            PrivateKey issuerPrivateKey,
+            long serialNumber
+
+    )
+            throws Exception
+    {
+
+        // SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()));
+
+        long time = System.currentTimeMillis();
+
+
+
+        V1TBSCertificateGenerator certGen = new V1TBSCertificateGenerator();
+
+        certGen.setSerialNumber(new ASN1Integer(serialNumber));
+        certGen.setIssuer(subjectDN);
+        certGen.setSubject(subjectDN);
+        certGen.setStartDate(new Time(new Date(time - 24 * 60 * 60000)));
+        certGen.setEndDate(new Time(new Date(time + 30 * 60 * 60000)));
+        certGen.setSignature((AlgorithmIdentifier)algIds.get(sigName));
+        certGen.setSubjectPublicKeyInfo(subjectPublicKeyInfo);
+
+
+        TBSCertificate tbsCert = certGen.generateTBSCertificate();
+
+        Signature sig = Signature.getInstance(sigName, "BC");
+
+        sig.initSign(issuerPrivateKey);
+
+        sig.update(certGen.generateTBSCertificate().getEncoded(ASN1Encoding.DER));
+
+        ASN1EncodableVector v = new ASN1EncodableVector();
+
+        v.add(tbsCert);
+        v.add((AlgorithmIdentifier)algIds.get(sigName));
+        v.add(new DERBitString(sig.sign()));
+
+        return (java.security.cert.X509Certificate)
+                CertificateFactory.getInstance("X.509", "BC")
+                        .generateCertificate(
+                                new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)
+                                ));
+    }
+
+
+
+
+
 
     public static PrivateKey readPemPrivateKeyPKCS8DER(File path, String alg)
         throws Exception

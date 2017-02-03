@@ -262,7 +262,7 @@ public class TestEnroll
 
         ECGenParameterSpec ecGenSpec = new ECGenParameterSpec("prime256v1");
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", "BC");
-        kpg.initialize(ecGenSpec, new SecureRandom()); // For the test only a bigger key size recommended in reality.
+        kpg.initialize(ecGenSpec, new SecureRandom());
         KeyPair originalKeyPair = kpg.generateKeyPair();
 
         //
