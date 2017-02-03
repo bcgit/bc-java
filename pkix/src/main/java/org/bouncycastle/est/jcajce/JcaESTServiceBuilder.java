@@ -60,7 +60,7 @@ public class JcaESTServiceBuilder extends ESTServiceBuilder
         return this;
     }
 
-    public JcaESTServiceBuilder withHostNameAuthorizer(TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer)
+    public JcaESTServiceBuilder withHostNameAuthorizer(TLSHostNameAuthorizer hostNameAuthorizer)
     {
         this.hostNameAuthorizer = hostNameAuthorizer;
         return this;

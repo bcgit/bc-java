@@ -12,8 +12,8 @@ import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
 
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
+
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -31,9 +31,9 @@ import java.util.TimeZone;
 public class ESTService
 {
 
-    private final TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer;
+    private final TLSHostNameAuthorizer hostNameAuthorizer;
     private final String server;
-    private final TLSAuthorizer<SSLSession> tlsAuthorizer;
+    private final TLSAuthorizer tlsAuthorizer;
     private final ESTHttpClientProvider clientProvider;
 
     protected final String CACERTS = "/cacerts";
@@ -44,9 +44,9 @@ public class ESTService
 
     ESTService(
 
-            TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer,
+            TLSHostNameAuthorizer hostNameAuthorizer,
             String server,
-            TLSAuthorizer<SSLSession> tlsAuthorizer, ESTHttpClientProvider clientProvider)
+            TLSAuthorizer tlsAuthorizer, ESTHttpClientProvider clientProvider)
     {
 
 
@@ -310,7 +310,7 @@ public class ESTService
     }
 
 
-    public TLSHostNameAuthorizer<SSLSession> getHostNameAuthorizer()
+    public TLSHostNameAuthorizer getHostNameAuthorizer()
     {
         return hostNameAuthorizer;
     }

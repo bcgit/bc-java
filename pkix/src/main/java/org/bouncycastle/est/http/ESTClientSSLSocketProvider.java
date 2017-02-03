@@ -9,6 +9,6 @@ import java.net.Socket;
  */
 public interface ESTClientSSLSocketProvider
 {
-    public SSLSocket wrapSocket(Socket plainSocket, String host, int port)
+    public Source wrapSocket(Socket plainSocket, String host, int port)
         throws Exception;
 }
