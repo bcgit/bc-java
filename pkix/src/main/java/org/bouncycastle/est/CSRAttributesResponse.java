@@ -1,14 +1,14 @@
 package org.bouncycastle.est;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.est.AttrOrOID;
 import org.bouncycastle.asn1.est.CsrAttrs;
 import org.bouncycastle.util.Encodable;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
 
 public class CSRAttributesResponse
     implements Encodable

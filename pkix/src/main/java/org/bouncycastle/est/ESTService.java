@@ -1,42 +1,28 @@
 package org.bouncycastle.est;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.net.URL;
-import java.security.KeyStore;
-import java.security.cert.CRL;
-import java.security.cert.CertificateException;
-import java.security.cert.TrustAnchor;
-import java.security.cert.X509Certificate;
-import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Locale;
-import java.util.Set;
-import java.util.TimeZone;
-
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
-
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.est.CsrAttrs;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cmc.SimplePKIResponse;
-import org.bouncycastle.est.http.ESTClientRequestInputSource;
-import org.bouncycastle.est.http.ESTHttpAuth;
-import org.bouncycastle.est.http.ESTHttpClient;
-import org.bouncycastle.est.http.ESTHttpException;
-import org.bouncycastle.est.http.ESTHttpRequest;
-import org.bouncycastle.est.http.ESTHttpResponse;
-import org.bouncycastle.est.http.TLSAuthorizer;
-import org.bouncycastle.est.http.TLSHostNameAuthorizer;
+import org.bouncycastle.est.http.*;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
+
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Collection;
+import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * EST provides unified access to an EST server which is defined as implementing
@@ -88,11 +74,9 @@ public class ESTService
      * <p>
      * If callers are using bootstrapping they must examine the CACertsResponse and validate it externally.
      *
-     * @param tlsAcceptAny case the TLS layer to accept any certificates tendered during the TLS negotiation
-     *                     phase.
      * @return A store of X509Certificates.
      */
-    public CACertsResponse getCACerts(boolean tlsAcceptAny)
+    public CACertsResponse getCACerts()
         throws Exception
     {
         ESTHttpResponse resp = null;
@@ -100,24 +84,7 @@ public class ESTService
         {
             URL url = new URL(server + CACERTS);
 
-            TLSAuthorizer<SSLSession> tlsAuthorizer = null;
-            if (tlsAcceptAny)
-            {
-                tlsAuthorizer = new TLSAuthorizer<SSLSession>()
-                {
-                    public void authorize(Set<TrustAnchor> acceptedIssuers, X509Certificate[] chain, String authType)
-                        throws CertificateException
-                    {
-                        // Does nothing, failure only occurs when exception is thrown.
-                    }
-                };
-            }
-            else
-            {
-                tlsAuthorizer = this.tlsAuthorizer;
-            }
-
-            ESTHttpClient client = clientProvider.makeHttpClient(tlsAuthorizer);
+            ESTHttpClient client = clientProvider.makeHttpClient();
             ESTHttpRequest req = new ESTHttpRequest("GET", url);
             resp = client.doRequest(req);
 
@@ -160,7 +127,7 @@ public class ESTService
         }
 
 
-        ESTHttpClient client = clientProvider.makeHttpClient(this.tlsAuthorizer);
+        ESTHttpClient client = clientProvider.makeHttpClient();
         ESTHttpResponse resp = client.doRequest(priorResponse.getRequestToRetry());
         return handleEnrollResponse(resp);
     }
@@ -188,7 +155,7 @@ public class ESTService
         final byte[] data = annotateRequest(certificationRequest.getEncoded()).getBytes();
 
         URL url = new URL(server + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
-        ESTHttpClient client = clientProvider.makeHttpClient(this.tlsAuthorizer);
+        ESTHttpClient client = clientProvider.makeHttpClient();
         ESTHttpRequest req = new ESTHttpRequest("POST", url, new ESTClientRequestInputSource()
         {
             public void ready(OutputStream os)
@@ -285,7 +252,7 @@ public class ESTService
         {
             URL url = new URL(server + CSRATTRS);
 
-            ESTHttpClient client = clientProvider.makeHttpClient(this.tlsAuthorizer);
+            ESTHttpClient client = clientProvider.makeHttpClient();
             ESTHttpRequest req = new ESTHttpRequest("GET", url);
             resp = client.doRequest(req);
 

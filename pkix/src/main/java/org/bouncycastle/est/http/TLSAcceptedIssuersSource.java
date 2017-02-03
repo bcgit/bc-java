@@ -1,7 +1,6 @@
 package org.bouncycastle.est.http;
 
 import java.security.cert.TrustAnchor;
-import java.security.cert.X509Certificate;
 import java.util.Set;
 
 /**

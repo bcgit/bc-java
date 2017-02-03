@@ -1,5 +1,11 @@
 package org.bouncycastle.est.http;
 
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.MD5Digest;
+import org.bouncycastle.crypto.io.DigestOutputStream;
+import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Hex;
+
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -9,12 +15,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.MD5Digest;
-import org.bouncycastle.crypto.io.DigestOutputStream;
-import org.bouncycastle.util.Strings;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Implements DigestAuth.

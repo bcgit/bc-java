@@ -1,5 +1,8 @@
 package org.bouncycastle.est.http;
 
+import org.bouncycastle.est.http.enc.CTEBase64InputStream;
+import org.bouncycastle.util.Strings;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,9 +11,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.bouncycastle.est.http.enc.CTEBase64InputStream;
-import org.bouncycastle.util.Strings;
 
 /**
  * A basic http response.

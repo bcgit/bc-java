@@ -1,13 +1,7 @@
 package org.bouncycastle.est.http;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.bouncycastle.util.encoders.Base64;
+import java.util.*;
 
 /**
  * A basic http request.

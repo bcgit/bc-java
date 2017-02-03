@@ -1,9 +1,9 @@
 package org.bouncycastle.est.http;
 
+import org.bouncycastle.util.encoders.Base64;
+
 import java.net.Socket;
 import java.util.Map;
-
-import org.bouncycastle.util.encoders.Base64;
 
 /**
  * BasicAuth implements http basic auth.

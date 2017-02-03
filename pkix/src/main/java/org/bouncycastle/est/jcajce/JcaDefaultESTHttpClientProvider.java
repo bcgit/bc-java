@@ -14,25 +14,27 @@ public class JcaDefaultESTHttpClientProvider
         implements ESTHttpClientProvider<SSLSession> {
 
 
-    private Set<TrustAnchor> tlsTrustAnchors;
-    private KeyStore clientKeystore;
-    private char[] clientKeystorePassword;
-    private TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer;
-    private CRL revocationList;
+    private final Set<TrustAnchor> tlsTrustAnchors;
+    private final KeyStore clientKeystore;
+    private final char[] clientKeystorePassword;
+    private final TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer;
+    private final CRL revocationList;
+    private final TLSAuthorizer<SSLSession> tlsAuthorizer;
 
     public JcaDefaultESTHttpClientProvider(Set<TrustAnchor> tlsTrustAnchors,
                                            KeyStore clientKeystore,
                                            char[] clientKeystorePassword,
                                            TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer,
-                                           CRL revocationList) {
+                                           CRL revocationList, TLSAuthorizer<SSLSession> tlsAuthorizer) {
         this.tlsTrustAnchors = tlsTrustAnchors;
         this.clientKeystore = clientKeystore;
         this.clientKeystorePassword = clientKeystorePassword;
         this.hostNameAuthorizer = hostNameAuthorizer;
         this.revocationList = revocationList;
+        this.tlsAuthorizer = tlsAuthorizer;
     }
 
-    public ESTHttpClient makeHttpClient(TLSAuthorizer<SSLSession> tlsAuthorizer)
+    public ESTHttpClient makeHttpClient()
             throws Exception {
         TLSAcceptedIssuersSource acceptedIssuersSource = (tlsTrustAnchors != null) ? new TLSAcceptedIssuersSource() {
             public Set<TrustAnchor> anchors() {
@@ -46,6 +48,8 @@ public class JcaDefaultESTHttpClientProvider
             keyFact.init(clientKeystore, clientKeystorePassword);
         }
 
+        TLSAuthorizer<SSLSession> tlsAuthorizer = this.tlsAuthorizer;
+
         if (tlsAuthorizer == null && acceptedIssuersSource == null) {
             return new DefaultESTClient(DefaultESTClientSSLSocketProvider.getUsingDefaultSSLSocketFactory(hostNameAuthorizer));
         }
@@ -53,7 +57,6 @@ public class JcaDefaultESTHttpClientProvider
         if (acceptedIssuersSource != null && tlsAuthorizer == null) {
             tlsAuthorizer = DefaultESTClientSSLSocketProvider.getCertPathTLSAuthorizer(revocationList);
         }
-
 
         return new DefaultESTClient(
                 new DefaultESTClientSSLSocketProvider(acceptedIssuersSource, tlsAuthorizer, keyFact, hostNameAuthorizer));
