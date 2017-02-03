@@ -1,6 +1,11 @@
 package org.bouncycastle.pkix.est;
 
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.est.ESTException;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.esttst.ESTServerUtils;
@@ -9,9 +14,14 @@ import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;
 import org.junit.Test;
 
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSession;
 import java.io.FileReader;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.SecureRandom;
 import java.security.cert.*;
+import java.security.spec.ECGenParameterSpec;
 import java.util.Collections;
 
 
@@ -106,48 +116,65 @@ public class TestCACertsFetch
         //  TODO create self signed cert to use as trust anchor.
         // TLS layer should fail.
 
-//        ESTTestUtils.ensureProvider();
-//        X509CertificateHolder[] theirCAs = null;
-//        ESTServerUtils.ServerInstance serverInstance = null;
-//        try {
-//            serverInstance = startDefaultServer();
-//
-//            //
-//            // Load the certificate that will become the trust anchor.
-//            //
-//            FileReader fr = new FileReader(ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt"));
-//            PemReader reader = new PemReader(fr);
-//            X509CertificateHolder fromFile = new X509CertificateHolder(reader.readPemObject().getContent());
-//            reader.close();
-//            fr.close();
-//
-//
-//
-//
-//            //
-//            // Specify the trust anchor.
-//            //
-//            TrustAnchor ta = new TrustAnchor(ESTTestUtils.toJavaX509Certificate(fromFile), null);
-//
-//            ESTService est =
-//                    new JcaESTServiceBuilder(
-//                            "https://localhost:8443/.well-known/est/",
-//                            Collections.singleton(ta)).build();
-//
-//
-//            // Make the call. NB tlsAcceptAny is false.
-//            X509CertificateHolder[] caCerts = ESTService.storeToArray(est.getCACerts().getStore());
-//
-//            // We expect the bootstrap authorizer to not be called.
-//
-//            Assert.assertEquals("Returned ca certs should be 1", caCerts.length, 1);
-//            Assert.assertEquals("CA cert did match expected.", fromFile, caCerts[0]);
-//
-//        } finally {
-//            if (serverInstance != null) {
-//                serverInstance.getServer().stop_server();
-//            }
-//        }
+        ESTTestUtils.ensureProvider();
+        X509CertificateHolder[] theirCAs = null;
+        ESTServerUtils.ServerInstance serverInstance = null;
+        try
+        {
+            serverInstance = startDefaultServer();
+
+
+            ECGenParameterSpec ecGenSpec = new ECGenParameterSpec("prime256v1");
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", "BC");
+            kpg.initialize(ecGenSpec, new SecureRandom());
+            KeyPair originalKeyPair = kpg.generateKeyPair();
+
+            X500NameBuilder builder = new X500NameBuilder();
+            builder.addRDN(BCStyle.C, "AI");
+            builder.addRDN(BCStyle.CN, "BogusCA");
+            builder.addRDN(BCStyle.O, "BogusCA providers.");
+            builder.addRDN(BCStyle.L, "Atlantis");
+
+            X500Name name = builder.build();
+
+
+            X509Certificate bogusCA = ESTTestUtils.createSelfsignedCert("SHA256WITHECDSA",
+                    name,
+                    SubjectPublicKeyInfo.getInstance(originalKeyPair.getPublic().getEncoded()),
+                    originalKeyPair.getPrivate(),
+                    1
+            );
+
+
+            //
+            // Specify the trust anchor.
+            //
+            TrustAnchor ta = new TrustAnchor(bogusCA, null);
+
+            ESTService est =
+                    new JcaESTServiceBuilder(
+                            "https://localhost:8443/.well-known/est/",
+                            Collections.singleton(ta)).build();
+
+
+            try
+            {
+                X509CertificateHolder[] caCerts = ESTService.storeToArray(est.getCACerts().getStore());
+                Assert.fail("Bogus CA must not validate the server.!");
+            } catch (Exception ex)
+            {
+                Assert.assertEquals("Only ESTException", ex.getClass(), ESTException.class);
+                Assert.assertEquals("Cause must be SSLHandshakeException", ex.getCause().getClass(), SSLHandshakeException.class);
+            }
+
+
+        } finally
+        {
+            if (serverInstance != null)
+            {
+                serverInstance.getServer().stop_server();
+            }
+        }
 
     }
 
@@ -255,7 +282,7 @@ public class TestCACertsFetch
             //
             CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
 
-            CertPath cp = cf.generateCertPath(ESTTestUtils.toCertList( ((SSLSession)caCertsResponse.getSession()).getPeerCertificates()));
+            CertPath cp = cf.generateCertPath(ESTTestUtils.toCertList(((SSLSession) caCertsResponse.getSession()).getPeerCertificates()));
             CertPathValidator v = CertPathValidator.getInstance("PKIX", "BC");
 
             PKIXParameters pkixParameters = new PKIXParameters(ESTTestUtils.toTrustAnchor(expectedCACert));

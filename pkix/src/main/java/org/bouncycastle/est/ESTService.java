@@ -11,8 +11,6 @@ import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
 
-
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -100,6 +98,15 @@ public class ESTService
             }
 
             return new CACertsResponse(caCerts, req, resp.getSource());
+        } catch (Throwable t)
+        {
+            if (t instanceof ESTException)
+            {
+                throw (ESTException) t;
+            } else
+            {
+                throw new ESTException(t.getMessage(), t);
+            }
         } finally
         {
             if (resp != null)
@@ -223,6 +230,15 @@ public class ESTService
             throw new ESTException(
                     "Simple Enroll: " + req.getUrl().toString(),
                     resp.getStatusCode(), resp.getInputStream(), (int) resp.getContentLength());
+        } catch (Throwable t)
+        {
+            if (t instanceof ESTException)
+            {
+                throw (ESTException) t;
+            } else
+            {
+                throw new ESTException(t.getMessage(), t);
+            }
         } finally
         {
             if (resp != null)
@@ -271,7 +287,15 @@ public class ESTService
                             "CSR Attribute request: " + req.getUrl().toString(),
                             resp.getStatusCode(), resp.getInputStream(), (int) resp.getContentLength());
             }
-
+        } catch (Throwable t)
+        {
+            if (t instanceof ESTException)
+            {
+                throw (ESTException) t;
+            } else
+            {
+                throw new ESTException(t.getMessage(), t);
+            }
         } finally
         {
             if (resp != null)
