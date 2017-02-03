@@ -98,15 +98,15 @@ public class DefaultESTClient
         c.setEstHttpClient(this);
         Socket sock = null;
         ESTHttpResponse res = null;
-        SSLSocketSource socketSource = null;
+        Source socketSource = null;
         try
         {
             sock = new Socket(c.url.getHost(), c.url.getPort());
-            sock = sslSocketProvider.wrapSocket(sock, c.url.getHost(), c.url.getPort());
+            socketSource = sslSocketProvider.wrapSocket(sock, c.url.getHost(), c.url.getPort());
 
-            socketSource = new SSLSocketSource((SSLSocket)sock);
+          //  socketSource = new SSLSocketSource((SSLSocket)sock);
 
-            OutputStream os = new PrintingOutputStream(sock.getOutputStream());
+            OutputStream os = new PrintingOutputStream(socketSource.getOutputStream());
 //            InputStream in = new PrintingInputStream(sock.getInputStream());
 
             String req = c.url.getPath() + ((c.url.getQuery() != null) ? c.url.getQuery() : "");

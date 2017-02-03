@@ -182,7 +182,7 @@ public class DefaultESTClientSSLSocketProvider
     }
 
 
-    public SSLSocket wrapSocket(Socket plainSocket, String host, int port)
+    public Source wrapSocket(Socket plainSocket, String host, int port)
         throws Exception
     {
         SSLSocket sock = (SSLSocket)sslSocketFactory.createSocket(plainSocket, host, port, true);
@@ -192,6 +192,6 @@ public class DefaultESTClientSSLSocketProvider
         {
             throw new IOException("Hostname was not verified: " + host);
         }
-        return sock;
+        return new SSLSocketSource(sock);
     }
 }

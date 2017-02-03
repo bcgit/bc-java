@@ -4,7 +4,7 @@ package org.bouncycastle.est;
 import org.bouncycastle.est.http.TLSAuthorizer;
 import org.bouncycastle.est.http.TLSHostNameAuthorizer;
 
-import javax.net.ssl.SSLSession;
+
 
 
 /**
@@ -13,9 +13,9 @@ import javax.net.ssl.SSLSession;
 public class ESTServiceBuilder
 {
 
-    protected TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer;
+    protected TLSHostNameAuthorizer hostNameAuthorizer;
     final protected String server;
-    protected TLSAuthorizer<SSLSession> tlsAuthorizer;
+    protected TLSAuthorizer tlsAuthorizer;
     protected ESTHttpClientProvider clientProvider;
 
     public ESTServiceBuilder(String server)
@@ -25,13 +25,13 @@ public class ESTServiceBuilder
 
 
 
-    public ESTServiceBuilder withHostNameAuthorizer(TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer)
+    public ESTServiceBuilder withHostNameAuthorizer(TLSHostNameAuthorizer hostNameAuthorizer)
     {
         this.hostNameAuthorizer = hostNameAuthorizer;
         return this;
     }
 
-    public ESTServiceBuilder withTlsAuthorizer(TLSAuthorizer<SSLSession> tlsAuthorizer)
+    public ESTServiceBuilder withTlsAuthorizer(TLSAuthorizer tlsAuthorizer)
     {
         this.tlsAuthorizer = tlsAuthorizer;
         return this;
