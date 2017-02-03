@@ -1,4 +1,4 @@
-package org.bouncycastle.est.http;
+package org.bouncycastle.est;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.MD5Digest;
@@ -7,7 +7,6 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -19,7 +18,7 @@ import java.util.Map;
  * Implements DigestAuth.
  */
 public class DigestAuth
-    implements ESTHttpAuth
+    implements ESTAuth
 {
 
     private final String realm;
@@ -43,15 +42,15 @@ public class DigestAuth
         this.password = password;
     }
 
-    public ESTHttpRequest applyAuth(final ESTHttpRequest request)
+    public ESTRequest applyAuth(final ESTRequest request)
     {
 
-        ESTHttpRequest r = request.newWithHijacker(new ESTHttpHijacker()
+        ESTRequest r = request.newWithHijacker(new ESTHttpHijacker()
         {
-            public ESTHttpResponse hijack(ESTHttpRequest req, Source sock)
+            public ESTResponse hijack(ESTRequest req, Source sock)
                 throws Exception
             {
-                ESTHttpResponse res = new ESTHttpResponse(req, sock);
+                ESTResponse res = new ESTResponse(req, sock);
 
                 if (res.getStatusCode() == 401 && res.getHeader("WWW-Authenticate").startsWith("Digest"))
                 {
@@ -65,14 +64,14 @@ public class DigestAuth
     }
 
 
-    protected ESTHttpResponse doDigestFunction(ESTHttpResponse res)
+    protected ESTResponse doDigestFunction(ESTResponse res)
         throws Exception
     {
         res.close(); // Close off the last request.
-        ESTHttpRequest req = res.getOriginalRequest();
+        ESTRequest req = res.getOriginalRequest();
         Map<String, String> parts = HttpUtil.splitCSL("Digest", res.getHeader("WWW-Authenticate"));
-        String uri = req.url.toURI().getPath();
-        String method = req.method;
+        String uri = req.getUrl().toURI().getPath();
+        String method = req.getMethod();
         String realm = parts.get("realm");
         String nonce = parts.get("nonce");
         String opaque = parts.get("opaque");
@@ -125,7 +124,7 @@ public class DigestAuth
         byte[] ha2 = null;
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        PrintWriter pw = new PrintWriter(new OutputStreamWriter(bos));
+        PrintWriter pw = new PrintWriter(bos);
         String crnonce = makeNonce(10); // TODO arbitrary?
 
         if (algorithm.equals("md5-sess"))
@@ -177,7 +176,7 @@ public class DigestAuth
 
             // Digest body
             DigestOutputStream dos = new DigestOutputStream(dig);
-            req.writer.ready(dos);
+            req.getWriter().ready(dos);
             dos.flush();
             byte[] b = new byte[dig.getDigestSize()];
             dig.doFinal(b, 0);
@@ -264,9 +263,9 @@ public class DigestAuth
             hdr.put("opaque", makeNonce(20));
         }
 
-        ESTHttpRequest answer = req.newWithHijacker(null);
+        ESTRequest answer = req.newWithHijacker(null);
         answer.setHeader("Authorization", HttpUtil.mergeCSL("Digest", hdr));
-        return req.getEstHttpClient().doRequest(answer);
+        return req.getEstClient().doRequest(answer);
     }
 
 

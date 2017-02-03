@@ -1,9 +1,8 @@
-package org.bouncycastle.est.http;
+package org.bouncycastle.est.jcajce;
 
 
-import org.bouncycastle.est.ESTException;
+import org.bouncycastle.est.*;
 
-import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -14,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 public class DefaultESTClient
-    implements ESTHttpClient
+    implements ESTClient
 {
     private final ESTClientSSLSocketProvider sslSocketProvider;
     private static final Charset utf8 = Charset.forName("UTF-8");
@@ -26,11 +25,11 @@ public class DefaultESTClient
     }
 
 
-    public ESTHttpResponse doRequest(ESTHttpRequest req)
+    public ESTResponse doRequest(ESTRequest req)
         throws Exception
     {
-        ESTHttpResponse resp = null;
-        ESTHttpRequest r = req;
+        ESTResponse resp = null;
+        ESTRequest r = req;
         int rcCount = 15;
         do
         {
@@ -47,10 +46,10 @@ public class DefaultESTClient
         return resp;
     }
 
-    protected ESTHttpRequest redirectURL(ESTHttpResponse response)
+    protected ESTRequest redirectURL(ESTResponse response)
         throws Exception
     {
-        ESTHttpRequest redirectingRequest = null;
+        ESTRequest redirectingRequest = null;
 
         if (response.getStatusCode() >= 300 && response.getStatusCode() <= 399)
         {
@@ -74,7 +73,7 @@ public class DefaultESTClient
                 }
                 else
                 {
-                    URL u = response.getOriginalRequest().url;
+                    URL u = response.getOriginalRequest().getUrl();
                     redirectingRequest = response.getOriginalRequest().newWithURL(new URL(u.getProtocol(), u.getHost(), u.getPort(), loc));
                 }
                 break;
@@ -92,32 +91,33 @@ public class DefaultESTClient
     }
 
 
-    public ESTHttpResponse performRequest(ESTHttpRequest c)
+    public ESTResponse performRequest(ESTRequest c)
         throws Exception
     {
-        c.setEstHttpClient(this);
+        c.setEstClient(this);
         Socket sock = null;
-        ESTHttpResponse res = null;
+        ESTResponse res = null;
         Source socketSource = null;
         try
         {
-            sock = new Socket(c.url.getHost(), c.url.getPort());
-            socketSource = sslSocketProvider.wrapSocket(sock, c.url.getHost(), c.url.getPort());
+
+            sock = new Socket(c.getUrl().getHost(), c.getUrl().getPort());
+            socketSource = sslSocketProvider.wrapSocket(sock, c.getUrl().getHost(), c.getUrl().getPort());
 
           //  socketSource = new SSLSocketSource((SSLSocket)sock);
 
             OutputStream os = new PrintingOutputStream(socketSource.getOutputStream());
 //            InputStream in = new PrintingInputStream(sock.getInputStream());
 
-            String req = c.url.getPath() + ((c.url.getQuery() != null) ? c.url.getQuery() : "");
+            String req = c.getUrl().getPath() + ((c.getUrl().getQuery() != null) ? c.getUrl().getQuery() : "");
 
             // Replace host header.
 
-            c.headers.put("Host", Collections.singletonList(c.url.getHost()));
-            writeLine(os, c.method + " " + req + " HTTP/1.1");
+            c.getHeaders().put("Host", Collections.singletonList(c.getUrl().getHost()));
+            writeLine(os, c.getMethod() + " " + req + " HTTP/1.1");
 
 
-            for (Map.Entry<String, List<String>> ent : c.headers.entrySet())
+            for (Map.Entry<String, List<String>> ent : c.getHeaders().entrySet())
             {
                 for (String v : ent.getValue())
                 {
@@ -127,20 +127,20 @@ public class DefaultESTClient
 
             os.write(CRLF);
             os.flush();
-            if (c.writer != null)
+            if (c.getWriter() != null)
             {
-                c.writer.ready(os);
+                c.getWriter().ready(os);
             }
             os.flush();
 
-            if (c.hijacker != null)
+            if (c.getHijacker() != null)
             {
-                res = c.hijacker.hijack(c, socketSource);
+                res = c.getHijacker().hijack(c, socketSource);
                 return res;
             }
             else
             {
-                res = new ESTHttpResponse(c, socketSource);
+                res = new ESTResponse(c, socketSource);
             }
 
             return res;

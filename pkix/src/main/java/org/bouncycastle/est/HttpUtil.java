@@ -1,11 +1,11 @@
-package org.bouncycastle.est.http;
+package org.bouncycastle.est;
 
 
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HttpUtil
+class HttpUtil
 {
 
     /**
@@ -14,7 +14,7 @@ public class HttpUtil
      * @param kv
      * @return
      */
-    public static String mergeCSL(String prefix, Map<String, String> kv)
+     static String mergeCSL(String prefix, Map<String, String> kv)
     {
         StringWriter sw = new StringWriter();
         sw.write(prefix);
@@ -41,7 +41,7 @@ public class HttpUtil
     }
 
 
-    public static Map<String, String> splitCSL(String skip, String src)
+     static Map<String, String> splitCSL(String skip, String src)
     {
         src = src.trim();
         if (src.startsWith(skip))
@@ -53,19 +53,19 @@ public class HttpUtil
     }
 
 
-    private static class PartLexer
+     static class PartLexer
     {
         private final String src;
         int last = 0;
         int p = 0;
 
-        public PartLexer(String src)
+         PartLexer(String src)
         {
             this.src = src;
         }
 
 
-        public Map<String, String> Parse()
+         Map<String, String> Parse()
         {
             Map<String, String> out = new HashMap<String, String>();
             String key = null;
@@ -171,35 +171,4 @@ public class HttpUtil
 
     }
 
-    private static class Lexeme
-    {
-
-        public static final int Label = 0;
-        public static final int Assign = 1;
-        public static final int Literal = 2;
-
-        private final int type;
-        private final String value;
-
-        public Lexeme(int type, String value)
-        {
-            this.type = type;
-            this.value = value;
-        }
-    }
-
-
-   /*
-    public static void main(String[] args)
-    {
-        String src = "Digest\n" +
-            "                 realm=\"testrealm@host.com\",\n" +
-            "                 qop=\"auth,auth-int\",\n" +
-            "                 nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\",\n" +
-            "                 opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"";
-
-
-        Map<String, String> val = splitCSL("Digest", src);
-    }
-*/
 }

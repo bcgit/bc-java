@@ -6,7 +6,6 @@ import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.est.CsrAttrs;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cmc.SimplePKIResponse;
-import org.bouncycastle.est.http.*;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
@@ -34,7 +33,7 @@ public class ESTService
     private final TLSHostNameAuthorizer hostNameAuthorizer;
     private final String server;
     private final TLSAuthorizer tlsAuthorizer;
-    private final ESTHttpClientProvider clientProvider;
+    private final ESTClientProvider clientProvider;
 
     protected final String CACERTS = "/cacerts";
     protected final String SIMPLE_ENROLL = "/simpleenroll";
@@ -46,7 +45,7 @@ public class ESTService
 
             TLSHostNameAuthorizer hostNameAuthorizer,
             String server,
-            TLSAuthorizer tlsAuthorizer, ESTHttpClientProvider clientProvider)
+            TLSAuthorizer tlsAuthorizer, ESTClientProvider clientProvider)
     {
 
 
@@ -79,13 +78,13 @@ public class ESTService
     public CACertsResponse getCACerts()
             throws Exception
     {
-        ESTHttpResponse resp = null;
+        ESTResponse resp = null;
         try
         {
             URL url = new URL(server + CACERTS);
 
-            ESTHttpClient client = clientProvider.makeHttpClient();
-            ESTHttpRequest req = new ESTHttpRequest("GET", url);
+            ESTClient client = clientProvider.makeHttpClient();
+            ESTRequest req = new ESTRequest("GET", url);
             resp = client.doRequest(req);
 
             Store<X509CertificateHolder> caCerts;
@@ -97,7 +96,7 @@ public class ESTService
                 caCerts = spkr.getCertificates();
             } else
             {
-                throw new ESTHttpException("Get CACerts: " + url.toString(), resp.getStatusCode(), resp.getInputStream(), (int) resp.getContentLength());
+                throw new ESTException("Get CACerts: " + url.toString(), resp.getStatusCode(), resp.getInputStream(), (int) resp.getContentLength());
             }
 
             return new CACertsResponse(caCerts, req, resp.getSource());
@@ -126,8 +125,8 @@ public class ESTService
         }
 
 
-        ESTHttpClient client = clientProvider.makeHttpClient();
-        ESTHttpResponse resp = client.doRequest(priorResponse.getRequestToRetry());
+        ESTClient client = clientProvider.makeHttpClient();
+        ESTResponse resp = client.doRequest(priorResponse.getRequestToRetry());
         return handleEnrollResponse(resp);
     }
 
@@ -144,7 +143,7 @@ public class ESTService
      * @param auth                 The http auth provider, basic auth or digest auth, can be null.
      * @return The enrolled certificate.
      */
-    public EnrollmentResponse simpleEnroll(boolean reenroll, PKCS10CertificationRequest certificationRequest, ESTHttpAuth auth)
+    public EnrollmentResponse simpleEnroll(boolean reenroll, PKCS10CertificationRequest certificationRequest, ESTAuth auth)
             throws Exception
     {
         if (!clientProvider.isTrusted())
@@ -155,8 +154,8 @@ public class ESTService
         final byte[] data = annotateRequest(certificationRequest.getEncoded()).getBytes();
 
         URL url = new URL(server + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
-        ESTHttpClient client = clientProvider.makeHttpClient();
-        ESTHttpRequest req = new ESTHttpRequest("POST", url, new ESTClientRequestInputSource()
+        ESTClient client = clientProvider.makeHttpClient();
+        ESTRequest req = new ESTRequest("POST", url, new ESTClientRequestInputSource()
         {
             public void ready(OutputStream os)
                     throws IOException
@@ -174,17 +173,17 @@ public class ESTService
             req = auth.applyAuth(req);
         }
 
-        ESTHttpResponse resp = client.doRequest(req);
+        ESTResponse resp = client.doRequest(req);
         return handleEnrollResponse(resp);
     }
 
 
-    protected EnrollmentResponse handleEnrollResponse(ESTHttpResponse resp)
+    protected EnrollmentResponse handleEnrollResponse(ESTResponse resp)
             throws Exception
     {
         try
         {
-            ESTHttpRequest req = resp.getOriginalRequest();
+            ESTRequest req = resp.getOriginalRequest();
             Store<X509CertificateHolder> enrolled = null;
             if (resp.getStatusCode() == 202)
             {
@@ -205,7 +204,7 @@ public class ESTService
                         notBefore = dateFormat.parse(rt).getTime();
                     } catch (Exception ex)
                     {
-                        throw new ESTHttpException(
+                        throw new ESTException(
                                 "Unable to parse Retry-After header:" + req.getUrl().toString() + " " + ex.getMessage(),
                                 resp.getStatusCode(), resp.getInputStream(), (int) resp.getContentLength());
                     }
@@ -221,7 +220,7 @@ public class ESTService
                 return new EnrollmentResponse(enrolled, -1, null, resp.getSource());
             }
 
-            throw new ESTHttpException(
+            throw new ESTException(
                     "Simple Enroll: " + req.getUrl().toString(),
                     resp.getStatusCode(), resp.getInputStream(), (int) resp.getContentLength());
         } finally
@@ -243,14 +242,14 @@ public class ESTService
             throw new IllegalStateException("No trust anchors.");
         }
 
-        ESTHttpResponse resp = null;
+        ESTResponse resp = null;
         CSRAttributesResponse response = null;
         try
         {
             URL url = new URL(server + CSRATTRS);
 
-            ESTHttpClient client = clientProvider.makeHttpClient();
-            ESTHttpRequest req = new ESTHttpRequest("GET", url);
+            ESTClient client = clientProvider.makeHttpClient();
+            ESTRequest req = new ESTRequest("GET", url);
             resp = client.doRequest(req);
 
 
@@ -268,7 +267,7 @@ public class ESTService
                     response = null;
                     break;
                 default:
-                    throw new ESTHttpException(
+                    throw new ESTException(
                             "CSR Attribute request: " + req.getUrl().toString(),
                             resp.getStatusCode(), resp.getInputStream(), (int) resp.getContentLength());
             }
@@ -352,10 +351,10 @@ public class ESTService
     public static class CACertsResponse
     {
         private final Store<X509CertificateHolder> store;
-        private final ESTHttpRequest requestToRetry;
+        private final ESTRequest requestToRetry;
         private final Source session;
 
-        public CACertsResponse(Store<X509CertificateHolder> store, ESTHttpRequest requestToRetry, Source session)
+        public CACertsResponse(Store<X509CertificateHolder> store, ESTRequest requestToRetry, Source session)
         {
             this.store = store;
             this.requestToRetry = requestToRetry;
@@ -367,7 +366,7 @@ public class ESTService
             return store;
         }
 
-        public ESTHttpRequest getRequestToRetry()
+        public ESTRequest getRequestToRetry()
         {
             return requestToRetry;
         }
@@ -382,10 +381,10 @@ public class ESTService
     {
         private final Store<X509CertificateHolder> store;
         private final long notBefore;
-        private final ESTHttpRequest requestToRetry;
+        private final ESTRequest requestToRetry;
         private final Source session;
 
-        public EnrollmentResponse(Store<X509CertificateHolder> store, long notBefore, ESTHttpRequest requestToRetry, Source session)
+        public EnrollmentResponse(Store<X509CertificateHolder> store, long notBefore, ESTRequest requestToRetry, Source session)
         {
             this.store = store;
             this.notBefore = notBefore;
@@ -408,7 +407,7 @@ public class ESTService
             return notBefore;
         }
 
-        public ESTHttpRequest getRequestToRetry()
+        public ESTRequest getRequestToRetry()
         {
             return requestToRetry;
         }

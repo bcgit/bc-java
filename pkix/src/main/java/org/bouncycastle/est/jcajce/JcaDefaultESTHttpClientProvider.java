@@ -1,7 +1,6 @@
 package org.bouncycastle.est.jcajce;
 
-import org.bouncycastle.est.ESTHttpClientProvider;
-import org.bouncycastle.est.http.*;
+import org.bouncycastle.est.*;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLSession;
@@ -11,7 +10,8 @@ import java.security.cert.TrustAnchor;
 import java.util.Set;
 
 public class JcaDefaultESTHttpClientProvider
-        implements ESTHttpClientProvider<SSLSession> {
+        implements ESTClientProvider<SSLSession>
+{
 
 
     private final Set<TrustAnchor> tlsTrustAnchors;
@@ -34,7 +34,7 @@ public class JcaDefaultESTHttpClientProvider
         this.tlsAuthorizer = tlsAuthorizer;
     }
 
-    public ESTHttpClient makeHttpClient()
+    public ESTClient makeHttpClient()
             throws Exception {
         TLSAcceptedIssuersSource acceptedIssuersSource = (tlsTrustAnchors != null) ? new TLSAcceptedIssuersSource() {
             public Set<TrustAnchor> anchors() {

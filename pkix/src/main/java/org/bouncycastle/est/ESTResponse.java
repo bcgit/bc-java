@@ -1,6 +1,5 @@
-package org.bouncycastle.est.http;
+package org.bouncycastle.est;
 
-import org.bouncycastle.est.http.enc.CTEBase64InputStream;
 import org.bouncycastle.util.Strings;
 
 import java.io.EOFException;
@@ -14,9 +13,9 @@ import java.util.Map;
 /**
  * A basic http response.
  */
-public class ESTHttpResponse<T>
+public class ESTResponse
 {
-    private final ESTHttpRequest originalRequest;
+    private final ESTRequest originalRequest;
     private final Map<String, List<String>> headers;
     private String HttpVersion;
     private int statusCode;
@@ -25,10 +24,10 @@ public class ESTHttpResponse<T>
 
     private InputStream inputStream;
     private long contentLength = -1;
-    private final Source<T> source;
+    private final Source source;
 
 
-    public ESTHttpResponse(ESTHttpRequest originalRequest, Source<T> source)
+    public ESTResponse(ESTRequest originalRequest, Source source)
             throws Exception
     {
         this.originalRequest = originalRequest;
@@ -117,7 +116,7 @@ public class ESTHttpResponse<T>
         return new String(lineBuffer, 0, c).trim();
     }
 
-    public ESTHttpRequest getOriginalRequest()
+    public ESTRequest getOriginalRequest()
     {
         return originalRequest;
     }
@@ -148,7 +147,7 @@ public class ESTHttpResponse<T>
     }
 
 
-    public Source<T> getSource()
+    public Source getSource()
     {
         return source;
     }

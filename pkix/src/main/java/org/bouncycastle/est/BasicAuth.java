@@ -1,4 +1,4 @@
-package org.bouncycastle.est.http;
+package org.bouncycastle.est;
 
 import org.bouncycastle.util.encoders.Base64;
 
@@ -8,7 +8,7 @@ import java.util.Map;
  * BasicAuth implements http basic auth.
  */
 public class BasicAuth
-    implements ESTHttpAuth
+    implements ESTAuth
 {
     private final String realm;
     private final String username;
@@ -22,15 +22,15 @@ public class BasicAuth
     }
 
 
-    public ESTHttpRequest applyAuth(ESTHttpRequest request)
+    public ESTRequest applyAuth(ESTRequest request)
     {
 
         return request.newWithHijacker(new ESTHttpHijacker()
         {
-            public ESTHttpResponse hijack(ESTHttpRequest req, Source sock)
+            public ESTResponse hijack(ESTRequest req, Source sock)
                 throws Exception
             {
-                ESTHttpResponse res = new ESTHttpResponse(req, sock);
+                ESTResponse res = new ESTResponse(req, sock);
                 if (res.getStatusCode() == 401 && res.getHeader("WWW-Authenticate").startsWith("Basic"))
                 {
                     res.close(); // Close off the last request.
@@ -48,14 +48,14 @@ public class BasicAuth
                         if (!realm.equals(s.get("realm")))
                         {
                             // Not equal then fail.
-                            throw new ESTHttpException("Supplied realm '" + realm + "' does not match server realm '" + s.get("realm") + "'", 401, null, 0);
+                            throw new ESTException("Supplied realm '" + realm + "' does not match server realm '" + s.get("realm") + "'", 401, null, 0);
                         }
                     }
 
                     //
                     // Prepare basic auth answer.
                     //
-                    ESTHttpRequest answer = req.newWithHijacker(null);
+                    ESTRequest answer = req.newWithHijacker(null);
 
                     if (realm != null && realm.length() > 0)
                     {
@@ -68,7 +68,7 @@ public class BasicAuth
                     String userPass = username + ":" + password;
                     answer.setHeader("Authorization", "Basic " + Base64.toBase64String(userPass.getBytes()));
 
-                    res = req.getEstHttpClient().doRequest(answer);
+                    res = req.getEstClient().doRequest(answer);
                 }
                 return res;
             }
