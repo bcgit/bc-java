@@ -64,7 +64,7 @@ public class TestCACertsFetch
      * This is just a catch all to prove we can get some certificates back.
      * Do not use this as an example of how to do it in the world, you need
      * to make a conscious decision about accepting the certificates tended
-     * as part of the TLS handshake. See testFetchCaCertsWithCallbackAuthorizerChecks()
+     * as part of the TLS handshake. See testFetchCaCertsWithBogusTrustAnchor()
      *
      * @throws Exception
      */
@@ -113,8 +113,6 @@ public class TestCACertsFetch
             throws Exception
     {
 
-        //  TODO create self signed cert to use as trust anchor.
-        // TLS layer should fail.
 
         ESTTestUtils.ensureProvider();
         X509CertificateHolder[] theirCAs = null;
@@ -123,6 +121,11 @@ public class TestCACertsFetch
         {
             serverInstance = startDefaultServer();
 
+
+            //
+            // Create a self signed certificate to tend as trust anchor that will
+            // not be part of the servers path.
+            //
 
             ECGenParameterSpec ecGenSpec = new ECGenParameterSpec("prime256v1");
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", "BC");
@@ -137,7 +140,6 @@ public class TestCACertsFetch
 
             X500Name name = builder.build();
 
-
             X509Certificate bogusCA = ESTTestUtils.createSelfsignedCert("SHA256WITHECDSA",
                     name,
                     SubjectPublicKeyInfo.getInstance(originalKeyPair.getPublic().getEncoded()),
@@ -147,16 +149,19 @@ public class TestCACertsFetch
 
 
             //
-            // Specify the trust anchor.
+            // Use the trust anchor.
             //
-            TrustAnchor ta = new TrustAnchor(bogusCA, null);
 
+            TrustAnchor ta = new TrustAnchor(bogusCA, null);
             ESTService est =
                     new JcaESTServiceBuilder(
                             "https://localhost:8443/.well-known/est/",
                             Collections.singleton(ta)).build();
 
 
+            //
+            // Call expecting failure.
+            //
             try
             {
                 X509CertificateHolder[] caCerts = ESTService.storeToArray(est.getCACerts().getStore());
@@ -236,9 +241,13 @@ public class TestCACertsFetch
 
 
     /**
-     * Fetch CA and verify certificates tendered as part of tls.
-     * <p>
-     * This uses the CertPath API.
+     * This exercises the concept of bootstrapping as per RFC 7030.
+     *
+     * We fetch the CA certs from the server using a TLS layer that will accept any certificate tendered by the server.
+     * In this situation some sort of out of band validation is expected for example, ask the user if they wish to proceed.
+     *
+     * This test will fetch the CA certs and use the CertPath api to validate that the CA returned is as expected and
+     * it will use the CertPath API to validate the certificates tendered during the TLS handshake by the server.
      *
      * @throws Exception
      */
@@ -253,6 +262,7 @@ public class TestCACertsFetch
         try
         {
 
+            // Note the constructor without TrustAnchors.
             ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
             ESTService.CACertsResponse caCertsResponse = est.getCACerts(); //<= Accept any certs tendered by the server.
 
