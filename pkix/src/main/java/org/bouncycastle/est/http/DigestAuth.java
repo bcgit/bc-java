@@ -9,7 +9,6 @@ import org.bouncycastle.util.encoders.Hex;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.net.Socket;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,7 +48,7 @@ public class DigestAuth
 
         ESTHttpRequest r = request.newWithHijacker(new ESTHttpHijacker()
         {
-            public ESTHttpResponse hijack(ESTHttpRequest req, Socket sock)
+            public ESTHttpResponse hijack(ESTHttpRequest req, Source sock)
                 throws Exception
             {
                 ESTHttpResponse res = new ESTHttpResponse(req, sock);

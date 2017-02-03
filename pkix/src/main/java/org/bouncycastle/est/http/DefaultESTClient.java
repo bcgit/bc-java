@@ -3,6 +3,7 @@ package org.bouncycastle.est.http;
 
 import org.bouncycastle.est.ESTException;
 
+import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -97,11 +98,13 @@ public class DefaultESTClient
         c.setEstHttpClient(this);
         Socket sock = null;
         ESTHttpResponse res = null;
+        SSLSocketSource socketSource = null;
         try
         {
             sock = new Socket(c.url.getHost(), c.url.getPort());
             sock = sslSocketProvider.wrapSocket(sock, c.url.getHost(), c.url.getPort());
 
+            socketSource = new SSLSocketSource((SSLSocket)sock);
 
             OutputStream os = new PrintingOutputStream(sock.getOutputStream());
 //            InputStream in = new PrintingInputStream(sock.getInputStream());
@@ -132,12 +135,12 @@ public class DefaultESTClient
 
             if (c.hijacker != null)
             {
-                res = c.hijacker.hijack(c, sock);
+                res = c.hijacker.hijack(c, socketSource);
                 return res;
             }
             else
             {
-                res = new ESTHttpResponse(c, sock);
+                res = new ESTHttpResponse(c, socketSource);
             }
 
             return res;

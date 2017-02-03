@@ -2,7 +2,6 @@ package org.bouncycastle.est.http;
 
 import org.bouncycastle.util.encoders.Base64;
 
-import java.net.Socket;
 import java.util.Map;
 
 /**
@@ -28,7 +27,7 @@ public class BasicAuth
 
         return request.newWithHijacker(new ESTHttpHijacker()
         {
-            public ESTHttpResponse hijack(ESTHttpRequest req, Socket sock)
+            public ESTHttpResponse hijack(ESTHttpRequest req, Source sock)
                 throws Exception
             {
                 ESTHttpResponse res = new ESTHttpResponse(req, sock);
