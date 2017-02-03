@@ -6,7 +6,6 @@ import org.bouncycastle.util.Strings;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,7 +14,7 @@ import java.util.Map;
 /**
  * A basic http response.
  */
-public class ESTHttpResponse
+public class ESTHttpResponse<T>
 {
     private final ESTHttpRequest originalRequest;
     private final Map<String, List<String>> headers;
@@ -23,33 +22,18 @@ public class ESTHttpResponse
     private int statusCode;
     private String statusMessage;
     private final byte[] lineBuffer;
-    private final Socket socket;
 
     private InputStream inputStream;
     private long contentLength = -1;
-
-    public ESTHttpResponse(ESTHttpRequest originalRequest, Socket socket)
-        throws Exception
-    {
-        this.socket = socket;
-        this.originalRequest = originalRequest;
-
-        this.inputStream = new PrintingInputStream(socket.getInputStream());
-        socket = null;
-
-        this.headers = new HashMap<String, List<String>>();
-        this.lineBuffer = new byte[1024];
-        process();
-    }
+    private final Source<T> source;
 
 
-    public ESTHttpResponse(ESTHttpRequest originalRequest, InputStream inputStream)
-        throws Exception
+    public ESTHttpResponse(ESTHttpRequest originalRequest, Source<T> source)
+            throws Exception
     {
         this.originalRequest = originalRequest;
-
-        this.inputStream = inputStream;
-        socket = null;
+        this.source = source;
+        this.inputStream = new PrintingInputStream(source.getInputStream());
 
         this.headers = new HashMap<String, List<String>>();
         this.lineBuffer = new byte[1024];
@@ -58,7 +42,7 @@ public class ESTHttpResponse
     }
 
     private void process()
-        throws Exception
+            throws Exception
     {
         //
         // Status line.
@@ -111,14 +95,14 @@ public class ESTHttpResponse
 
 
     protected String readStringIncluding(char until)
-        throws Exception
+            throws Exception
     {
         int c = 0;
         int j;
         do
         {
             j = inputStream.read();
-            lineBuffer[c++] = (byte)j;
+            lineBuffer[c++] = (byte) j;
             if (c >= lineBuffer.length)
             {
                 throw new IOException("Server sent line > " + lineBuffer.length);
@@ -163,9 +147,10 @@ public class ESTHttpResponse
         return inputStream;
     }
 
-    public Socket getSocket()
+
+    public Source<T> getSource()
     {
-        return socket;
+        return source;
     }
 
     public long getContentLength()
@@ -179,17 +164,14 @@ public class ESTHttpResponse
     }
 
     public void close()
-        throws Exception
+            throws Exception
     {
-        if (this.socket != null)
-        {
-            this.socket.close();
-        }
+        this.source.close();
     }
 
 
     private class PrintingInputStream
-        extends InputStream
+            extends InputStream
     {
         private final InputStream src;
 
@@ -199,10 +181,10 @@ public class ESTHttpResponse
         }
 
         public int read()
-            throws IOException
+                throws IOException
         {
             int i = src.read();
-            System.out.print(String.valueOf((char)i));
+            System.out.print(String.valueOf((char) i));
             return i;
         }
     }

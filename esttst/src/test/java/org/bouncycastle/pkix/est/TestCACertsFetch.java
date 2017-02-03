@@ -9,6 +9,7 @@ import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;
 import org.junit.Test;
 
+import javax.net.ssl.SSLSession;
 import java.io.FileReader;
 import java.security.cert.*;
 import java.util.Collections;
@@ -254,7 +255,7 @@ public class TestCACertsFetch
             //
             CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
 
-            CertPath cp = cf.generateCertPath(ESTTestUtils.toCertList(caCertsResponse.getSession().getPeerCertificates()));
+            CertPath cp = cf.generateCertPath(ESTTestUtils.toCertList( ((SSLSession)caCertsResponse.getSession()).getPeerCertificates()));
             CertPathValidator v = CertPathValidator.getInstance("PKIX", "BC");
 
             PKIXParameters pkixParameters = new PKIXParameters(ESTTestUtils.toTrustAnchor(expectedCACert));

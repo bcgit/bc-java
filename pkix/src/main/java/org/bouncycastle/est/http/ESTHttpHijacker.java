@@ -1,8 +1,6 @@
 package org.bouncycastle.est.http;
 
 
-import java.net.Socket;
-
 /**
  * ESTHttpHijacker can take control of the socket after the initial connection
  * has been sent so that other protocol can be negotiated outside of the normal
@@ -10,6 +8,6 @@ import java.net.Socket;
  */
 public interface ESTHttpHijacker
 {
-    ESTHttpResponse hijack(ESTHttpRequest req, Socket sock)
+    ESTHttpResponse hijack(ESTHttpRequest req, Source sock)
         throws Exception;
 }
