@@ -1,14 +1,10 @@
 package org.bouncycastle.est;
 
 
-import java.security.cert.CRL;
-import java.security.cert.TrustAnchor;
-import java.util.Set;
-
-import javax.net.ssl.SSLSession;
-
 import org.bouncycastle.est.http.TLSAuthorizer;
 import org.bouncycastle.est.http.TLSHostNameAuthorizer;
+
+import javax.net.ssl.SSLSession;
 
 
 /**

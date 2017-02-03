@@ -1,16 +1,7 @@
 package org.bouncycastle.pkix.est;
 
-import java.io.FileReader;
-import java.security.cert.CertPath;
-import java.security.cert.CertPathValidator;
-import java.security.cert.CertificateFactory;
-import java.security.cert.PKIXParameters;
-import java.security.cert.TrustAnchor;
-import java.util.Collections;
-
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.est.ESTService;
-import org.bouncycastle.est.ESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.esttst.ESTServerUtils;
 import org.bouncycastle.util.io.pem.PemReader;
@@ -18,21 +9,29 @@ import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.FileReader;
+import java.security.cert.*;
+import java.util.Collections;
+
 
 public class TestCACertsFetch
-        extends SimpleTest {
+        extends SimpleTest
+{
 
-    public String getName() {
+    public String getName()
+    {
         return "TestCACertsFetch";
     }
 
     public void performTest()
-            throws Exception {
+            throws Exception
+    {
         ESTTestUtils.runJUnit(TestCACertsFetch.class);
     }
 
     private ESTServerUtils.ServerInstance startDefaultServer()
-            throws Exception {
+            throws Exception
+    {
 
         final ESTServerUtils.EstServerConfig config = new ESTServerUtils.EstServerConfig();
         config.serverCertPemFile = ESTServerUtils.makeRelativeToServerHome("estCA/private/estservercertandkey.pem").getCanonicalPath();
@@ -60,15 +59,17 @@ public class TestCACertsFetch
      */
     @Test
     public void testFetchCaCerts()
-            throws Exception {
+            throws Exception
+    {
         ESTTestUtils.ensureProvider();
         X509CertificateHolder[] theirCAs = null;
         ESTServerUtils.ServerInstance serverInstance = null;
-        try {
+        try
+        {
             serverInstance = startDefaultServer();
 
             ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
-            X509CertificateHolder[] caCerts = ESTService.storeToArray(est.getCACerts(true).getStore());
+            X509CertificateHolder[] caCerts = ESTService.storeToArray(est.getCACerts().getStore());
 
             FileReader fr = new FileReader(ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt"));
             PemReader reader = new PemReader(fr);
@@ -79,11 +80,73 @@ public class TestCACertsFetch
             Assert.assertEquals("Returned ca certs should be 1", caCerts.length, 1);
             Assert.assertEquals("CA cert did match expected.", fromFile, caCerts[0]);
 
-        } finally {
-            if (serverInstance != null) {
+        } finally
+        {
+            if (serverInstance != null)
+            {
                 serverInstance.getServer().stop_server();
             }
         }
+
+    }
+
+
+    /**
+     * Fetch CA certs with a bogus trust anchor.
+     * Expect local library to fail.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testFetchCaCertsWithBogusTrustAnchor()
+            throws Exception
+    {
+
+        //  TODO create self signed cert to use as trust anchor.
+        // TLS layer should fail.
+
+//        ESTTestUtils.ensureProvider();
+//        X509CertificateHolder[] theirCAs = null;
+//        ESTServerUtils.ServerInstance serverInstance = null;
+//        try {
+//            serverInstance = startDefaultServer();
+//
+//            //
+//            // Load the certificate that will become the trust anchor.
+//            //
+//            FileReader fr = new FileReader(ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt"));
+//            PemReader reader = new PemReader(fr);
+//            X509CertificateHolder fromFile = new X509CertificateHolder(reader.readPemObject().getContent());
+//            reader.close();
+//            fr.close();
+//
+//
+//
+//
+//            //
+//            // Specify the trust anchor.
+//            //
+//            TrustAnchor ta = new TrustAnchor(ESTTestUtils.toJavaX509Certificate(fromFile), null);
+//
+//            ESTService est =
+//                    new JcaESTServiceBuilder(
+//                            "https://localhost:8443/.well-known/est/",
+//                            Collections.singleton(ta)).build();
+//
+//
+//            // Make the call. NB tlsAcceptAny is false.
+//            X509CertificateHolder[] caCerts = ESTService.storeToArray(est.getCACerts().getStore());
+//
+//            // We expect the bootstrap authorizer to not be called.
+//
+//            Assert.assertEquals("Returned ca certs should be 1", caCerts.length, 1);
+//            Assert.assertEquals("CA cert did match expected.", fromFile, caCerts[0]);
+//
+//        } finally {
+//            if (serverInstance != null) {
+//                serverInstance.getServer().stop_server();
+//            }
+//        }
 
     }
 
@@ -95,11 +158,13 @@ public class TestCACertsFetch
      */
     @Test
     public void testFetchCaCertsWithTrustAnchor()
-            throws Exception {
+            throws Exception
+    {
         ESTTestUtils.ensureProvider();
         X509CertificateHolder[] theirCAs = null;
         ESTServerUtils.ServerInstance serverInstance = null;
-        try {
+        try
+        {
             serverInstance = startDefaultServer();
 
             //
@@ -124,15 +189,17 @@ public class TestCACertsFetch
 
 
             // Make the call. NB tlsAcceptAny is false.
-            X509CertificateHolder[] caCerts = ESTService.storeToArray(est.getCACerts(false).getStore());
+            X509CertificateHolder[] caCerts = ESTService.storeToArray(est.getCACerts().getStore());
 
             // We expect the bootstrap authorizer to not be called.
 
             Assert.assertEquals("Returned ca certs should be 1", caCerts.length, 1);
             Assert.assertEquals("CA cert did match expected.", fromFile, caCerts[0]);
 
-        } finally {
-            if (serverInstance != null) {
+        } finally
+        {
+            if (serverInstance != null)
+            {
                 serverInstance.getServer().stop_server();
             }
         }
@@ -141,25 +208,25 @@ public class TestCACertsFetch
 
 
     /**
-     * Fetch CA certificates using a bootstrap authorizer that checks that the
-     * tendered CA and the certificates tendered as part of the TLS handshake form a
-     * path.
+     * Fetch CA and verify certificates tendered as part of tls.
      * <p>
      * This uses the CertPath API.
      *
      * @throws Exception
      */
     @Test
-    public void testFetchCaCertsWithCallbackAuthorizerChecks()
-            throws Exception {
+    public void testFetchCaCertsChecksResponseUsingCertpath()
+            throws Exception
+    {
         ESTTestUtils.ensureProvider();
         X509CertificateHolder[] theirCAs = null;
 
         final ESTServerUtils.ServerInstance serverInstance = startDefaultServer();
-        try {
+        try
+        {
 
             ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
-            ESTService.CACertsResponse caCertsResponse = est.getCACerts(true); //<= Accept any certs tendered by the server.
+            ESTService.CACertsResponse caCertsResponse = est.getCACerts(); //<= Accept any certs tendered by the server.
 
             Assert.assertEquals("Returned ca certs should be 1", ESTService.storeToArray(caCertsResponse.getStore()).length, 1);
 
@@ -196,8 +263,10 @@ public class TestCACertsFetch
             v.validate(cp, pkixParameters); // <= Throws exception if the path does not validate.
 
 
-        } finally {
-            if (serverInstance != null) {
+        } finally
+        {
+            if (serverInstance != null)
+            {
                 serverInstance.getServer().stop_server();
             }
         }
@@ -206,7 +275,8 @@ public class TestCACertsFetch
 
 
     public static void main(String[] args)
-            throws Exception {
+            throws Exception
+    {
         ESTTestUtils.ensureProvider();
         runTest(new TestCACertsFetch());
     }

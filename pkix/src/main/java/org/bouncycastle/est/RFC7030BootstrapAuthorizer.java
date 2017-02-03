@@ -1,9 +1,9 @@
 package org.bouncycastle.est;
 
-import javax.security.cert.X509Certificate;
-
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.util.Store;
+
+import javax.security.cert.X509Certificate;
 
 /**
  * RFC7030BootstrapAuthorizer implementations will be called

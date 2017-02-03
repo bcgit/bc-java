@@ -1,10 +1,10 @@
 package org.bouncycastle.est.http.enc;
 
+import org.bouncycastle.util.encoders.Base64;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
-import org.bouncycastle.util.encoders.Base64;
 
 
 public class CTEBase64InputStream

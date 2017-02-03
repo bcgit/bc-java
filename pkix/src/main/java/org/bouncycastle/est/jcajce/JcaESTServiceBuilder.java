@@ -10,7 +10,9 @@ import org.bouncycastle.est.http.TLSHostNameAuthorizer;
 import javax.net.ssl.SSLSession;
 import java.security.KeyStore;
 import java.security.cert.CRL;
+import java.security.cert.CertificateException;
 import java.security.cert.TrustAnchor;
+import java.security.cert.X509Certificate;
 import java.util.Set;
 
 
@@ -29,10 +31,25 @@ public class JcaESTServiceBuilder extends ESTServiceBuilder
     public JcaESTServiceBuilder(String server)
     {
         super(server);
+        this.tlsAuthorizer = new TLSAuthorizer<SSLSession>() {
+            public void authorize(
+                    Set<TrustAnchor> acceptedIssuers,
+                    X509Certificate[] chain,
+                    String authType) throws CertificateException {
+                // Does nothing, will accept any and all tendered certificates from the server.
+            }
+        };
     }
 
     public JcaESTServiceBuilder(String server, Set<TrustAnchor> tlsTrustAnchors) {
         super(server);
+        if (tlsTrustAnchors == null || tlsTrustAnchors.isEmpty()) {
+            //
+            // You must set trust anchors to use this constructor, if you desire the service to accept
+            // any server tendered certificates then use the alternative constructor.
+            //
+            throw new IllegalStateException("Trust anchors must be not null and not empty.");
+        }
         this.tlsTrustAnchors = tlsTrustAnchors;
     }
 
@@ -46,12 +63,6 @@ public class JcaESTServiceBuilder extends ESTServiceBuilder
     public JcaESTServiceBuilder withHostNameAuthorizer(TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer)
     {
         this.hostNameAuthorizer = hostNameAuthorizer;
-        return this;
-    }
-
-    public JcaESTServiceBuilder withTlsAuthorizer(TLSAuthorizer<SSLSession> tlsAuthorizer)
-    {
-        this.tlsAuthorizer = tlsAuthorizer;
         return this;
     }
 
@@ -80,7 +91,7 @@ public class JcaESTServiceBuilder extends ESTServiceBuilder
                 tlsTrustAnchors,
                 clientKeystore,
                 clientKeystorePassword,
-                hostNameAuthorizer, revocationList);
+                hostNameAuthorizer, revocationList, tlsAuthorizer);
         }
 
         return super.build();
