@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.est.CsrAttrs;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.ESTServiceBuilder;
+import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.esttst.ESTServerUtils;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
@@ -70,10 +71,13 @@ public class TestGetCSRAttrs
         {
             serverInstance = startDefaultServer();
 
-            ESTService est = new ESTServiceBuilder(ESTTestUtils.toTrustAnchor(
-                ESTTestUtils.readPemCertificate(
-                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                )), "https://localhost:8443/.well-known/est/").build();
+            ESTService est = new JcaESTServiceBuilder(
+                    "https://localhost:8443/.well-known/est/",
+                    ESTTestUtils.toTrustAnchor(
+                            ESTTestUtils.readPemCertificate(
+                                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                            ))
+                    ).build();
 
             ESTService.CSRRequestResponse csrRequestResponse = est.getCSRAttributes();
             Assert.assertEquals(csrRequestResponse.getAttributesResponse().getRequirements().size(), 1);

@@ -11,6 +11,7 @@ import java.util.Collections;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.ESTServiceBuilder;
+import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.esttst.ESTServerUtils;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.test.SimpleTest;
@@ -19,23 +20,19 @@ import org.junit.Test;
 
 
 public class TestCACertsFetch
-    extends SimpleTest
-{
+        extends SimpleTest {
 
-    public String getName()
-    {
+    public String getName() {
         return "TestCACertsFetch";
     }
 
     public void performTest()
-        throws Exception
-    {
+            throws Exception {
         ESTTestUtils.runJUnit(TestCACertsFetch.class);
     }
 
     private ESTServerUtils.ServerInstance startDefaultServer()
-        throws Exception
-    {
+            throws Exception {
 
         final ESTServerUtils.EstServerConfig config = new ESTServerUtils.EstServerConfig();
         config.serverCertPemFile = ESTServerUtils.makeRelativeToServerHome("estCA/private/estservercertandkey.pem").getCanonicalPath();
@@ -63,16 +60,14 @@ public class TestCACertsFetch
      */
     @Test
     public void testFetchCaCerts()
-        throws Exception
-    {
+            throws Exception {
         ESTTestUtils.ensureProvider();
         X509CertificateHolder[] theirCAs = null;
         ESTServerUtils.ServerInstance serverInstance = null;
-        try
-        {
+        try {
             serverInstance = startDefaultServer();
 
-            ESTService est = new ESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
+            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
             X509CertificateHolder[] caCerts = ESTService.storeToArray(est.getCACerts(true).getStore());
 
             FileReader fr = new FileReader(ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt"));
@@ -84,11 +79,8 @@ public class TestCACertsFetch
             Assert.assertEquals("Returned ca certs should be 1", caCerts.length, 1);
             Assert.assertEquals("CA cert did match expected.", fromFile, caCerts[0]);
 
-        }
-        finally
-        {
-            if (serverInstance != null)
-            {
+        } finally {
+            if (serverInstance != null) {
                 serverInstance.getServer().stop_server();
             }
         }
@@ -103,13 +95,11 @@ public class TestCACertsFetch
      */
     @Test
     public void testFetchCaCertsWithTrustAnchor()
-        throws Exception
-    {
+            throws Exception {
         ESTTestUtils.ensureProvider();
         X509CertificateHolder[] theirCAs = null;
         ESTServerUtils.ServerInstance serverInstance = null;
-        try
-        {
+        try {
             serverInstance = startDefaultServer();
 
             //
@@ -128,7 +118,9 @@ public class TestCACertsFetch
             TrustAnchor ta = new TrustAnchor(ESTTestUtils.toJavaX509Certificate(fromFile), null);
 
             ESTService est =
-                new ESTServiceBuilder(Collections.singleton(ta), "https://localhost:8443/.well-known/est/").build();
+                    new JcaESTServiceBuilder(
+                            "https://localhost:8443/.well-known/est/",
+                            Collections.singleton(ta)).build();
 
 
             // Make the call. NB tlsAcceptAny is false.
@@ -139,11 +131,8 @@ public class TestCACertsFetch
             Assert.assertEquals("Returned ca certs should be 1", caCerts.length, 1);
             Assert.assertEquals("CA cert did match expected.", fromFile, caCerts[0]);
 
-        }
-        finally
-        {
-            if (serverInstance != null)
-            {
+        } finally {
+            if (serverInstance != null) {
                 serverInstance.getServer().stop_server();
             }
         }
@@ -162,16 +151,14 @@ public class TestCACertsFetch
      */
     @Test
     public void testFetchCaCertsWithCallbackAuthorizerChecks()
-        throws Exception
-    {
+            throws Exception {
         ESTTestUtils.ensureProvider();
         X509CertificateHolder[] theirCAs = null;
 
         final ESTServerUtils.ServerInstance serverInstance = startDefaultServer();
-        try
-        {
+        try {
 
-            ESTService est = new ESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
+            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
             ESTService.CACertsResponse caCertsResponse = est.getCACerts(true); //<= Accept any certs tendered by the server.
 
             Assert.assertEquals("Returned ca certs should be 1", ESTService.storeToArray(caCertsResponse.getStore()).length, 1);
@@ -209,11 +196,8 @@ public class TestCACertsFetch
             v.validate(cp, pkixParameters); // <= Throws exception if the path does not validate.
 
 
-        }
-        finally
-        {
-            if (serverInstance != null)
-            {
+        } finally {
+            if (serverInstance != null) {
                 serverInstance.getServer().stop_server();
             }
         }
@@ -222,8 +206,7 @@ public class TestCACertsFetch
 
 
     public static void main(String[] args)
-        throws Exception
-    {
+            throws Exception {
         ESTTestUtils.ensureProvider();
         runTest(new TestCACertsFetch());
     }
