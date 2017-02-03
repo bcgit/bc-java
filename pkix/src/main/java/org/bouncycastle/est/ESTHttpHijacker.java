@@ -1,4 +1,4 @@
-package org.bouncycastle.est.http;
+package org.bouncycastle.est;
 
 
 /**
@@ -8,6 +8,6 @@ package org.bouncycastle.est.http;
  */
 public interface ESTHttpHijacker
 {
-    ESTHttpResponse hijack(ESTHttpRequest req, Source sock)
+    ESTResponse hijack(ESTRequest req, Source sock)
         throws Exception;
 }

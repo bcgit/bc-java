@@ -1,4 +1,4 @@
-package org.bouncycastle.est.http.enc;
+package org.bouncycastle.est;
 
 import org.bouncycastle.util.encoders.Base64;
 

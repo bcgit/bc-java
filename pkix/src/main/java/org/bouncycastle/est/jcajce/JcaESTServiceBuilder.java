@@ -1,11 +1,11 @@
 package org.bouncycastle.est.jcajce;
 
 
-import org.bouncycastle.est.ESTHttpClientProvider;
+import org.bouncycastle.est.ESTClientProvider;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.ESTServiceBuilder;
-import org.bouncycastle.est.http.TLSAuthorizer;
-import org.bouncycastle.est.http.TLSHostNameAuthorizer;
+import org.bouncycastle.est.TLSAuthorizer;
+import org.bouncycastle.est.TLSHostNameAuthorizer;
 
 import javax.net.ssl.SSLSession;
 import java.security.KeyStore;
@@ -72,7 +72,7 @@ public class JcaESTServiceBuilder extends ESTServiceBuilder
         return this;
     }
 
-    public JcaESTServiceBuilder withClientProvider(ESTHttpClientProvider clientProvider)
+    public JcaESTServiceBuilder withClientProvider(ESTClientProvider clientProvider)
     {
         this.clientProvider = clientProvider;
         return this;

@@ -1,6 +1,5 @@
-package org.bouncycastle.est.http;
+package org.bouncycastle.est;
 
-import javax.net.ssl.SSLSocket;
 import java.net.Socket;
 
 /**

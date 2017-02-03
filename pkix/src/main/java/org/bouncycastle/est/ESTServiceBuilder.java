@@ -1,12 +1,6 @@
 package org.bouncycastle.est;
 
 
-import org.bouncycastle.est.http.TLSAuthorizer;
-import org.bouncycastle.est.http.TLSHostNameAuthorizer;
-
-
-
-
 /**
  * Build a RFC7030 client.
  */
@@ -16,7 +10,7 @@ public class ESTServiceBuilder
     protected TLSHostNameAuthorizer hostNameAuthorizer;
     final protected String server;
     protected TLSAuthorizer tlsAuthorizer;
-    protected ESTHttpClientProvider clientProvider;
+    protected ESTClientProvider clientProvider;
 
     public ESTServiceBuilder(String server)
     {
@@ -38,7 +32,7 @@ public class ESTServiceBuilder
     }
 
 
-    public ESTServiceBuilder withClientProvider(ESTHttpClientProvider clientProvider)
+    public ESTServiceBuilder withClientProvider(ESTClientProvider clientProvider)
     {
         this.clientProvider = clientProvider;
         return this;

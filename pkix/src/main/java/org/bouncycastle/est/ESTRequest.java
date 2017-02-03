@@ -1,4 +1,4 @@
-package org.bouncycastle.est.http;
+package org.bouncycastle.est;
 
 import java.net.URL;
 import java.util.*;
@@ -6,7 +6,7 @@ import java.util.*;
 /**
  * A basic http request.
  */
-public class ESTHttpRequest
+public class ESTRequest
 {
     final String method;
     final URL url;
@@ -14,10 +14,10 @@ public class ESTHttpRequest
     final byte[] readAheadBuf = new byte[1024];
     final ESTClientRequestInputSource writer;
     final ESTHttpHijacker hijacker;
-    protected ESTHttpClient estHttpClient;
+    protected ESTClient estClient;
 
 
-    public ESTHttpRequest(String method, URL url, ESTClientRequestInputSource writer)
+    public ESTRequest(String method, URL url, ESTClientRequestInputSource writer)
     {
         this.method = method;
         this.url = url;
@@ -25,7 +25,7 @@ public class ESTHttpRequest
         this.hijacker = null;
     }
 
-    public ESTHttpRequest(String method, URL url)
+    public ESTRequest(String method, URL url)
     {
         this.method = method;
         this.url = url;
@@ -34,7 +34,7 @@ public class ESTHttpRequest
     }
 
 
-    public ESTHttpRequest(String method, URL url, ESTClientRequestInputSource writer, ESTHttpHijacker hijacker)
+    public ESTRequest(String method, URL url, ESTClientRequestInputSource writer, ESTHttpHijacker hijacker)
     {
         this.method = method;
         this.url = url;
@@ -42,7 +42,7 @@ public class ESTHttpRequest
         this.hijacker = hijacker;
     }
 
-    public ESTHttpRequest(String method, URL url, ESTHttpHijacker hijacker)
+    public ESTRequest(String method, URL url, ESTHttpHijacker hijacker)
     {
         this.method = method;
         this.url = url;
@@ -50,7 +50,7 @@ public class ESTHttpRequest
         this.writer = null;
     }
 
-    public ESTHttpRequest addHeader(String key, String value)
+    public ESTRequest addHeader(String key, String value)
     {
         List<String> l = headers.get(key);
         if (l == null)
@@ -62,20 +62,20 @@ public class ESTHttpRequest
         return this;
     }
 
-    public ESTHttpRequest copy() {
+    public ESTRequest copy() {
         return this.newWithHijacker(this.hijacker);
     }
 
-    public ESTHttpRequest setHeader(String key, String value)
+    public ESTRequest setHeader(String key, String value)
     {
         headers.put(key, Collections.singletonList(value));
         return this;
     }
 
 
-    protected ESTHttpRequest newWithHijacker(ESTHttpHijacker estHttpHijacker)
+    public ESTRequest newWithHijacker(ESTHttpHijacker estHttpHijacker)
     {
-        ESTHttpRequest req = new ESTHttpRequest(this.method, this.url, this.writer, estHttpHijacker);
+        ESTRequest req = new ESTRequest(this.method, this.url, this.writer, estHttpHijacker);
 
         for (Map.Entry<String, List<String>> s : headers.entrySet())
         {
@@ -85,9 +85,9 @@ public class ESTHttpRequest
     }
 
 
-    protected ESTHttpRequest newWithURL(URL url)
+    public ESTRequest newWithURL(URL url)
     {
-        ESTHttpRequest req = new ESTHttpRequest(this.method, url, this.writer, hijacker);
+        ESTRequest req = new ESTRequest(this.method, url, this.writer, hijacker);
 
         for (Map.Entry<String, List<String>> s : headers.entrySet())
         {
@@ -127,13 +127,13 @@ public class ESTHttpRequest
         return hijacker;
     }
 
-    public ESTHttpClient getEstHttpClient()
+    public ESTClient getEstClient()
     {
-        return estHttpClient;
+        return estClient;
     }
 
-    public void setEstHttpClient(ESTHttpClient estHttpClient)
+    public void setEstClient(ESTClient estClient)
     {
-        this.estHttpClient = estHttpClient;
+        this.estClient = estClient;
     }
 }

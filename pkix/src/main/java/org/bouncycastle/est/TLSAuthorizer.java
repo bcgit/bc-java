@@ -1,4 +1,4 @@
-package org.bouncycastle.est.http;
+package org.bouncycastle.est;
 
 
 import java.security.cert.CertificateException;

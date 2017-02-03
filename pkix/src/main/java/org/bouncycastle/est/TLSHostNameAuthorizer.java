@@ -1,4 +1,4 @@
-package org.bouncycastle.est.http;
+package org.bouncycastle.est;
 
 /**
  * Verify the host name is as expected after the SSL Handshake has been completed.

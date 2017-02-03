@@ -11,7 +11,7 @@ import junit.framework.TestCase;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.est.ESTService;
-import org.bouncycastle.est.http.BasicAuth;
+import org.bouncycastle.est.BasicAuth;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.esttst.ESTServerUtils;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;

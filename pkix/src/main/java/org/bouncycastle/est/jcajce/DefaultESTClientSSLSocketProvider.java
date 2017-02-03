@@ -1,5 +1,7 @@
-package org.bouncycastle.est.http;
+package org.bouncycastle.est.jcajce;
 
+
+import org.bouncycastle.est.*;
 
 import javax.net.ssl.*;
 import java.io.IOException;

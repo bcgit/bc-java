@@ -1,4 +1,4 @@
-package org.bouncycastle.est.http;
+package org.bouncycastle.est;
 
 /**
  * ESTHttpClient provides a http(s) connection with TLS or Certificate-Less TLS Mutual Authentication.
@@ -8,7 +8,7 @@ package org.bouncycastle.est.http;
  * including SRP modes.
  *
  */
-public interface ESTHttpClient
+public interface ESTClient
 {
-    public ESTHttpResponse doRequest(ESTHttpRequest c) throws Exception;
+    public ESTResponse doRequest(ESTRequest c) throws Exception;
 }

@@ -1,4 +1,6 @@
-package org.bouncycastle.est.http;
+package org.bouncycastle.est.jcajce;
+
+import org.bouncycastle.est.Source;
 
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
