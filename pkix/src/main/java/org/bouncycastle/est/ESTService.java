@@ -65,10 +65,6 @@ public class ESTService
      * It does however define a bootstrapping mode where if the client does not have the necessary ca certificates to
      * validate the server it can defer to an external source, such as a human, to formally accept the ca certs.
      * <p>
-     * Depending on the servers configuration clients may be forced to accept any certificates tendered by the server
-     * during the set up phase of TLS, set tlsAcceptAny to true to enable this but remember that it will accept
-     * any certificates tended by the server.
-     * <p>
      * If callers are using bootstrapping they must examine the CACertsResponse and validate it externally.
      *
      * @return A store of X509Certificates.
@@ -131,10 +127,29 @@ public class ESTService
             throw new IllegalStateException("No trust anchors.");
         }
 
+        ESTResponse resp = null;
 
-        ESTClient client = clientProvider.makeHttpClient();
-        ESTResponse resp = client.doRequest(priorResponse.getRequestToRetry());
-        return handleEnrollResponse(resp);
+        try
+        {
+            ESTClient client = clientProvider.makeHttpClient();
+            resp = client.doRequest(priorResponse.getRequestToRetry());
+            return handleEnrollResponse(resp);
+        } catch (Throwable t)
+        {
+            if (t instanceof ESTException)
+            {
+                throw (ESTException) t;
+            } else
+            {
+                throw new ESTException(t.getMessage(), t);
+            }
+        } finally
+        {
+            if (resp != null)
+            {
+                resp.close();
+            }
+        }
     }
 
 
@@ -158,78 +173,34 @@ public class ESTService
             throw new IllegalStateException("No trust anchors.");
         }
 
-        final byte[] data = annotateRequest(certificationRequest.getEncoded()).getBytes();
-
-        URL url = new URL(server + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
-        ESTClient client = clientProvider.makeHttpClient();
-        ESTRequest req = new ESTRequest("POST", url, new ESTClientRequestInputSource()
-        {
-            public void ready(OutputStream os)
-                    throws IOException
-            {
-                os.write(data);
-                os.flush();
-            }
-        });
-
-        req.addHeader("Content-Type", "application/pkcs10");
-        req.addHeader("content-length", "" + data.length);
-
-        if (auth != null)
-        {
-            req = auth.applyAuth(req);
-        }
-
-        ESTResponse resp = client.doRequest(req);
-        return handleEnrollResponse(resp);
-    }
-
-
-    protected EnrollmentResponse handleEnrollResponse(ESTResponse resp)
-            throws Exception
-    {
+        ESTResponse resp = null;
         try
         {
-            ESTRequest req = resp.getOriginalRequest();
-            Store<X509CertificateHolder> enrolled = null;
-            if (resp.getStatusCode() == 202)
-            {
-                // Received but not ready.
-                String rt = resp.getHeader("Retry-After");
-                long notBefore = -1;
+            final byte[] data = annotateRequest(certificationRequest.getEncoded()).getBytes();
 
-                try
+            URL url = new URL(server + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
+            ESTClient client = clientProvider.makeHttpClient();
+            ESTRequest req = new ESTRequest("POST", url, new ESTClientRequestInputSource()
+            {
+                public void ready(OutputStream os)
+                        throws IOException
                 {
-                    notBefore = System.currentTimeMillis() + Long.parseLong(rt);
-                } catch (NumberFormatException nfe)
-                {
-                    try
-                    {
-                        SimpleDateFormat dateFormat = new SimpleDateFormat(
-                                "EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
-                        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-                        notBefore = dateFormat.parse(rt).getTime();
-                    } catch (Exception ex)
-                    {
-                        throw new ESTException(
-                                "Unable to parse Retry-After header:" + req.getUrl().toString() + " " + ex.getMessage(),
-                                resp.getStatusCode(), resp.getInputStream(), (int) resp.getContentLength());
-                    }
+                    os.write(data);
+                    os.flush();
                 }
+            });
 
-                return new EnrollmentResponse(null, notBefore, req.copy(), resp.getSource());
+            req.addHeader("Content-Type", "application/pkcs10");
+            req.addHeader("content-length", "" + data.length);
 
-            } else if (resp.getStatusCode() == 200)
+            if (auth != null)
             {
-                ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
-                SimplePKIResponse spkr = new SimplePKIResponse(ContentInfo.getInstance((ASN1Sequence) ain.readObject()));
-                enrolled = spkr.getCertificates();
-                return new EnrollmentResponse(enrolled, -1, null, resp.getSource());
+                req = auth.applyAuth(req);
             }
 
-            throw new ESTException(
-                    "Simple Enroll: " + req.getUrl().toString(),
-                    resp.getStatusCode(), resp.getInputStream(), (int) resp.getContentLength());
+            resp = client.doRequest(req);
+            return handleEnrollResponse(resp);
+
         } catch (Throwable t)
         {
             if (t instanceof ESTException)
@@ -246,6 +217,55 @@ public class ESTService
                 resp.close();
             }
         }
+
+    }
+
+
+    protected EnrollmentResponse handleEnrollResponse(ESTResponse resp)
+            throws Exception
+    {
+
+        ESTRequest req = resp.getOriginalRequest();
+        Store<X509CertificateHolder> enrolled = null;
+        if (resp.getStatusCode() == 202)
+        {
+            // Received but not ready.
+            String rt = resp.getHeader("Retry-After");
+            long notBefore = -1;
+
+            try
+            {
+                notBefore = System.currentTimeMillis() + Long.parseLong(rt);
+            } catch (NumberFormatException nfe)
+            {
+                try
+                {
+                    SimpleDateFormat dateFormat = new SimpleDateFormat(
+                            "EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+                    dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+                    notBefore = dateFormat.parse(rt).getTime();
+                } catch (Exception ex)
+                {
+                    throw new ESTException(
+                            "Unable to parse Retry-After header:" + req.getUrl().toString() + " " + ex.getMessage(),
+                            resp.getStatusCode(), resp.getInputStream(), (int) resp.getContentLength());
+                }
+            }
+
+            return new EnrollmentResponse(null, notBefore, req.copy(), resp.getSource());
+
+        } else if (resp.getStatusCode() == 200)
+        {
+            ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
+            SimplePKIResponse spkr = new SimplePKIResponse(ContentInfo.getInstance((ASN1Sequence) ain.readObject()));
+            enrolled = spkr.getCertificates();
+            return new EnrollmentResponse(enrolled, -1, null, resp.getSource());
+        }
+
+        throw new ESTException(
+                "Simple Enroll: " + req.getUrl().toString(),
+                resp.getStatusCode(), resp.getInputStream(), (int) resp.getContentLength());
+
     }
 
 

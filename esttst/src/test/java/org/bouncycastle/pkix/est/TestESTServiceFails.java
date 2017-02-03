@@ -17,8 +17,6 @@ import java.util.Collections;
  */
 public class TestESTServiceFails extends SimpleTest
 {
-
-
     public String getName()
     {
         return "ESTServiceFails";
@@ -38,7 +36,7 @@ public class TestESTServiceFails extends SimpleTest
     @Test(expected = IllegalStateException.class)
     public void testNullTrustAnchors() throws Exception
     {
-        ESTServiceBuilder b = new JcaESTServiceBuilder("", Collections.<TrustAnchor>emptySet());
+        ESTServiceBuilder b = new JcaESTServiceBuilder("", null);
     }
 
     @Test

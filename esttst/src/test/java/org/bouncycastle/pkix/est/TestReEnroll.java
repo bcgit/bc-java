@@ -20,6 +20,7 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestReEnroll
@@ -65,7 +66,6 @@ public class TestReEnroll
 
 
 
-
     /*
      * We are assuming that the auth modes for enrollment are tested in the TestEnroll tests.
      * Here we want to check for correct behaviour as part of the enrollment process not authentication.
@@ -73,9 +73,12 @@ public class TestReEnroll
      */
 
     @Test
+    @Ignore("Server does not appear to enforce failure on an attempt to re enroll with " +
+            "an existing SubjectPublicKeyInfo but with a different Name, we need to review.")
     public void testReEnrollUsingBasicAuth()
         throws Exception
     {
+
         ESTTestUtils.ensureProvider();
         X509CertificateHolder[] theirCAs = null;
         ESTServerUtils.ServerInstance serverInstance = null;
@@ -121,10 +124,8 @@ public class TestReEnroll
 
 
             //
-            // Perform a reenrollment Subject and SubjectAltNames must be same.
+            // Perform a re enrollment Subject and SubjectAltNames must be same.
             //
-
-
             enrollmentPair = kpg.generateKeyPair();  // We keep the enrollment keypair.
             pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(csr.getSubject(), enrollmentPair.getPublic());
             csr = pkcs10Builder.build(
@@ -148,25 +149,21 @@ public class TestReEnroll
 
 
             //
-            // Try and perform renerollment with different subject.
+            // Try and perform re enrollment with different subject but same public key as before.
             //
 
             // enrollmentPair = kpg.generateKeyPair();
             pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(new X500Name("CN=Samwise Gamgee"), enrollmentPair.getPublic());
             csr = pkcs10Builder.build(
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
-
-            // Flag set true!
             try
             {
                 enr = est.simpleEnroll(true, csr, new BasicAuth("estreal", "estuser", "estpwd"));
-               // TODO Server needs to enforce this..
+               // TODO Server needs to enforce this, need to discuss.
                // Assert.fail("Reenrollment with different subject must fail.");
             }
             catch (Exception ex)
             {
-
-
                 Assert.assertTrue(true);
             }
 
