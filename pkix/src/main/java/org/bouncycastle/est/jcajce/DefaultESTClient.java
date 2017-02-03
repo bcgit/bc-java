@@ -15,11 +15,11 @@ import java.util.Map;
 public class DefaultESTClient
     implements ESTClient
 {
-    private final ESTClientSSLSocketProvider sslSocketProvider;
+    private final ESTClientSourceProvider sslSocketProvider;
     private static final Charset utf8 = Charset.forName("UTF-8");
     private static byte[] CRLF = new byte[]{'\r', '\n'};
 
-    public DefaultESTClient(ESTClientSSLSocketProvider sslSocketProvider)
+    public DefaultESTClient(ESTClientSourceProvider sslSocketProvider)
     {
         this.sslSocketProvider = sslSocketProvider;
     }

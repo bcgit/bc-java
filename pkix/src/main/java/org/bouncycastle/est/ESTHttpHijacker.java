@@ -2,9 +2,12 @@ package org.bouncycastle.est;
 
 
 /**
- * ESTHttpHijacker can take control of the socket after the initial connection
- * has been sent so that other protocol can be negotiated outside of the normal
- * request / response flow.
+ * ESTHijacker can take control of the source after the initial http request
+ * has been sent and a response received.
+ * A hijacker is then able to send more request or be able to modify the response before returning a response
+ * to the original caller.
+ *
+ * See DigestAuth and BasicAuth.
  */
 public interface ESTHttpHijacker
 {

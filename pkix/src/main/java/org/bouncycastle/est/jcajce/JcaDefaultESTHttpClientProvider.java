@@ -10,7 +10,7 @@ import java.security.cert.TrustAnchor;
 import java.util.Set;
 
 public class JcaDefaultESTHttpClientProvider
-        implements ESTClientProvider<SSLSession>
+        implements ESTClientProvider
 {
 
 
@@ -19,13 +19,13 @@ public class JcaDefaultESTHttpClientProvider
     private final char[] clientKeystorePassword;
     private final TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer;
     private final CRL revocationList;
-    private final TLSAuthorizer<SSLSession> tlsAuthorizer;
+    private final TLSAuthorizer tlsAuthorizer;
 
     public JcaDefaultESTHttpClientProvider(Set<TrustAnchor> tlsTrustAnchors,
                                            KeyStore clientKeystore,
                                            char[] clientKeystorePassword,
                                            TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer,
-                                           CRL revocationList, TLSAuthorizer<SSLSession> tlsAuthorizer) {
+                                           CRL revocationList, TLSAuthorizer tlsAuthorizer) {
         this.tlsTrustAnchors = tlsTrustAnchors;
         this.clientKeystore = clientKeystore;
         this.clientKeystorePassword = clientKeystorePassword;
@@ -48,18 +48,18 @@ public class JcaDefaultESTHttpClientProvider
             keyFact.init(clientKeystore, clientKeystorePassword);
         }
 
-        TLSAuthorizer<SSLSession> tlsAuthorizer = this.tlsAuthorizer;
+        TLSAuthorizer tlsAuthorizer = this.tlsAuthorizer;
 
         if (tlsAuthorizer == null && acceptedIssuersSource == null) {
-            return new DefaultESTClient(DefaultESTClientSSLSocketProvider.getUsingDefaultSSLSocketFactory(hostNameAuthorizer));
+            return new DefaultESTClient(DefaultESTClientSourceProvider.getUsingDefaultSSLSocketFactory(hostNameAuthorizer));
         }
 
         if (acceptedIssuersSource != null && tlsAuthorizer == null) {
-            tlsAuthorizer = DefaultESTClientSSLSocketProvider.getCertPathTLSAuthorizer(revocationList);
+            tlsAuthorizer = DefaultESTClientSourceProvider.getCertPathTLSAuthorizer(revocationList);
         }
 
         return new DefaultESTClient(
-                new DefaultESTClientSSLSocketProvider(acceptedIssuersSource, tlsAuthorizer, keyFact, hostNameAuthorizer));
+                new DefaultESTClientSourceProvider(acceptedIssuersSource, tlsAuthorizer, keyFact, hostNameAuthorizer));
     }
 
     public boolean isTrusted() {
