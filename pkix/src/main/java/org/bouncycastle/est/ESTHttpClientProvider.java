@@ -10,4 +10,6 @@ public interface ESTHttpClientProvider<T>
 {
     ESTHttpClient makeHttpClient(TLSAuthorizer<T> tlsAuthorizer)
         throws Exception;
+
+    boolean isTrusted();
 }

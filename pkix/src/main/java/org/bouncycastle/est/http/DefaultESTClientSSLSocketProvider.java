@@ -153,6 +153,8 @@ public class DefaultESTClientSSLSocketProvider
 
     public static TLSAuthorizer<SSLSession> getCertPathTLSAuthorizer(final CRL revocationList)
     {
+        // TODO must accept array of revocation lists.
+
         return new TLSAuthorizer<SSLSession>()
         {
             public void authorize(Set<TrustAnchor> acceptedIssuers, X509Certificate[] chain, String authType)
@@ -174,7 +176,16 @@ public class DefaultESTClientSSLSocketProvider
 
                     PKIXBuilderParameters param = new PKIXBuilderParameters(acceptedIssuers, constraints);
                     param.addCertStore(certStore);
-                    param.setRevocationEnabled(false);
+                    if (revocationList != null) {
+                        param.setRevocationEnabled(true);
+                        param.addCertStore(
+                                CertStore.getInstance(
+                                        "Collection",
+                                        new CollectionCertStoreParameters(Arrays.asList(revocationList)
+                                        )));
+                    } else {
+                        param.setRevocationEnabled(false);
+                    }
 
                     PKIXCertPathValidatorResult result = (PKIXCertPathValidatorResult)pathBuilder.build(param);
                 }

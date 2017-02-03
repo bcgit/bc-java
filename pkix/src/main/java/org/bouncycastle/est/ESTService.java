@@ -45,13 +45,9 @@ import org.bouncycastle.util.encoders.Base64;
 public class ESTService
 {
 
-    private final Set<TrustAnchor> tlsTrustAnchors;
-    private final KeyStore clientKeystore;
-    private final char[] clientKeystorePassword;
     private final TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer;
     private final String server;
     private final TLSAuthorizer<SSLSession> tlsAuthorizer;
-    private final CRL revocationList;
     private final ESTHttpClientProvider clientProvider;
 
     protected final String CACERTS = "/cacerts";
@@ -60,20 +56,16 @@ public class ESTService
     protected final String CSRATTRS = "/csrattrs";
 
 
-    ESTService(Set<TrustAnchor>
-                   tlsTrustAnchors,
-               KeyStore clientKeystore,
-               char[] clientKeystorePassword,
+    ESTService(
+
                TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer,
                String server,
-               TLSAuthorizer<SSLSession> tlsAuthorizer, CRL revocationList, ESTHttpClientProvider clientProvider)
+               TLSAuthorizer<SSLSession> tlsAuthorizer, ESTHttpClientProvider clientProvider)
     {
-        this.tlsTrustAnchors = tlsTrustAnchors;
-        this.clientKeystore = clientKeystore;
-        this.clientKeystorePassword = clientKeystorePassword;
+
+
         this.hostNameAuthorizer = hostNameAuthorizer;
         this.tlsAuthorizer = tlsAuthorizer;
-        this.revocationList = revocationList;
         this.clientProvider = clientProvider;
         if (server.endsWith("/"))
         {
@@ -163,10 +155,11 @@ public class ESTService
     public EnrollmentResponse simpleEnroll(EnrollmentResponse priorResponse)
         throws Exception
     {
-        if (tlsTrustAnchors == null || tlsTrustAnchors.isEmpty())
-        {
+        if (!clientProvider.isTrusted()) {
             throw new IllegalStateException("No trust anchors.");
         }
+
+
         ESTHttpClient client = clientProvider.makeHttpClient(this.tlsAuthorizer);
         ESTHttpResponse resp = client.doRequest(priorResponse.getRequestToRetry());
         return handleEnrollResponse(resp);
@@ -188,8 +181,7 @@ public class ESTService
     public EnrollmentResponse simpleEnroll(boolean reenroll, PKCS10CertificationRequest certificationRequest, ESTHttpAuth auth)
         throws Exception
     {
-        if (tlsTrustAnchors == null || tlsTrustAnchors.isEmpty())
-        {
+        if (!clientProvider.isTrusted()) {
             throw new IllegalStateException("No trust anchors.");
         }
 
@@ -282,10 +274,11 @@ public class ESTService
     public CSRRequestResponse getCSRAttributes()
         throws Exception
     {
-        if (tlsTrustAnchors == null || tlsTrustAnchors.isEmpty())
-        {
+
+        if (!clientProvider.isTrusted()) {
             throw new IllegalStateException("No trust anchors.");
         }
+
         ESTHttpResponse resp = null;
         CSRAttributesResponse response = null;
         try
@@ -354,16 +347,6 @@ public class ESTService
         return sw.toString();
     }
 
-
-    public Set<TrustAnchor> getTlsTrustAnchors()
-    {
-        return tlsTrustAnchors;
-    }
-
-    public CRL getRevocationList()
-    {
-        return revocationList;
-    }
 
     public TLSHostNameAuthorizer<SSLSession> getHostNameAuthorizer()
     {
