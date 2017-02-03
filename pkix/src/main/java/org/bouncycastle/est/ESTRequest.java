@@ -4,7 +4,7 @@ import java.net.URL;
 import java.util.*;
 
 /**
- * A basic http request.
+ * Implements a basic http request.
  */
 public class ESTRequest
 {

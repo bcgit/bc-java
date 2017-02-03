@@ -4,6 +4,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
+/**
+ * Exception emitted by EST classes.
+ */
 public class ESTException
         extends Exception
 {

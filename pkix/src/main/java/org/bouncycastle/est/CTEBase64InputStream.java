@@ -8,52 +8,55 @@ import java.io.OutputStream;
 
 
 public class CTEBase64InputStream
-    extends InputStream
+        extends InputStream
 {
-    protected InputStream src;
-    protected byte[] rawBuf = new byte[1024];
-    protected byte[] data = new byte[768];
+    protected final InputStream src;
+    protected final byte[] rawBuf = new byte[1024];
+    protected final byte[] data = new byte[768];
+    protected final OutputStream dataOutputStream;
     protected int rp;
     protected int wp;
     protected boolean end;
-    protected OutputStream dataOutputStream;
-    protected long max;
+    protected final long max;
     protected long read;
 
 
     public CTEBase64InputStream(InputStream src)
-        throws Exception
+            throws Exception
     {
         this.src = src;
         this.dataOutputStream = new OutputStream()
         {
             @Override
             public void write(int b)
-                throws IOException
+                    throws IOException
             {
-                data[wp++] = (byte)b;
+                data[wp++] = (byte) b;
             }
         };
         this.max = Long.MAX_VALUE;
     }
 
+
     public CTEBase64InputStream(InputStream src, long limit)
-        throws Exception
+            throws Exception
     {
         this.src = src;
         this.dataOutputStream = new OutputStream()
         {
             @Override
             public void write(int b)
-                throws IOException
+                    throws IOException
             {
-                data[wp++] = (byte)b;
+                data[wp++] = (byte) b;
             }
         };
-        this.max = limit;
-        if (this.max < 0)
+        if (limit < 0)
         {
             this.max = Long.MAX_VALUE;
+        } else
+        {
+            this.max = limit;
         }
     }
 
@@ -61,7 +64,7 @@ public class CTEBase64InputStream
     // Pulls a line from the source, decodes it and returns the decoded length.
     // Or returns -1 if there is nothing more to read and nothing was read in this pass.
     protected int pullFromSrc()
-        throws IOException
+            throws IOException
     {
 
         if (this.read >= this.max)
@@ -82,10 +85,9 @@ public class CTEBase64InputStream
              */
             if (j >= 33 || (j == '\r' || j == '\n'))
             {
-                rawBuf[c++] = (byte)j;
+                rawBuf[c++] = (byte) j;
                 read += 1;
-            }
-            else if (j >= 0)
+            } else if (j >= 0)
             {
                 read += 1;
             }
@@ -95,8 +97,7 @@ public class CTEBase64InputStream
         if (c > 0)
         {
             Base64.decode(rawBuf, 0, c, dataOutputStream);
-        }
-        else
+        } else
         {
             if (j == -1)
             {
@@ -107,7 +108,7 @@ public class CTEBase64InputStream
     }
 
     public int read()
-        throws IOException
+            throws IOException
     {
         // When we have read up to the write pointer (wp) pull some more.
         if (rp == wp)

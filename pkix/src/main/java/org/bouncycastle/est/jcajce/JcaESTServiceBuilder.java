@@ -25,13 +25,13 @@ public class JcaESTServiceBuilder extends ESTServiceBuilder
     protected KeyStore clientKeystore;
     protected char[] clientKeystorePassword;
     protected TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer;
-    protected TLSAuthorizer<SSLSession> tlsAuthorizer;
+    protected TLSAuthorizer tlsAuthorizer;
     protected CRL revocationList;
 
     public JcaESTServiceBuilder(String server)
     {
         super(server);
-        this.tlsAuthorizer = new TLSAuthorizer<SSLSession>() {
+        this.tlsAuthorizer = new TLSAuthorizer() {
             public void authorize(
                     Set<TrustAnchor> acceptedIssuers,
                     X509Certificate[] chain,

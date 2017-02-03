@@ -40,15 +40,6 @@ public class ESTServiceBuilder
 
     public ESTService build()
     {
-//        if (clientProvider == null)
-//        {
-//            clientProvider = new JcaDefaultESTHttpClientProvider(
-//                tlsTrustAnchors,
-//                clientKeystore,
-//                clientKeystorePassword,
-//                hostNameAuthorizer, revocationList);
-//        }
-
         return new ESTService(
             hostNameAuthorizer,
             server,

@@ -13,8 +13,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Set;
 
-public class DefaultESTClientSSLSocketProvider
-    implements ESTClientSSLSocketProvider
+public class DefaultESTClientSourceProvider
+    implements ESTClientSourceProvider
 {
 
     private final TLSAcceptedIssuersSource tlsAcceptedIssuersSource;
@@ -25,7 +25,7 @@ public class DefaultESTClientSSLSocketProvider
 
     private SSLSocketFactory sslSocketFactory;
 
-    public DefaultESTClientSSLSocketProvider(
+    public DefaultESTClientSourceProvider(
         TLSAcceptedIssuersSource tlsAcceptedIssuersSource,
         TLSAuthorizer serverTLSAuthorizer,
         KeyManagerFactory keyManagerFactory,
@@ -46,10 +46,10 @@ public class DefaultESTClientSSLSocketProvider
      * @return ESTClientSSLSocketProvider
      * @throws Exception
      */
-    public static ESTClientSSLSocketProvider getUsingDefaultSSLSocketFactory(TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer)
+    public static ESTClientSourceProvider getUsingDefaultSSLSocketFactory(TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer)
         throws Exception
     {
-        return new DefaultESTClientSSLSocketProvider(null, null, null, hostNameAuthorizer)
+        return new DefaultESTClientSourceProvider(null, null, null, hostNameAuthorizer)
         {
             @Override
             public SSLSocketFactory createFactory()
@@ -68,10 +68,10 @@ public class DefaultESTClientSSLSocketProvider
      * @return ESTClientSSLSocketProvider
      * @throws Exception
      */
-    public static ESTClientSSLSocketProvider getUsingDefaultSSLSocketFactory(KeyManagerFactory keyManagerFactory, TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer)
+    public static ESTClientSourceProvider getUsingDefaultSSLSocketFactory(KeyManagerFactory keyManagerFactory, TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer)
         throws Exception
     {
-        return new DefaultESTClientSSLSocketProvider(null, null, keyManagerFactory, hostNameAuthorizer)
+        return new DefaultESTClientSourceProvider(null, null, keyManagerFactory, hostNameAuthorizer)
         {
             @Override
             public SSLSocketFactory createFactory()
@@ -137,11 +137,11 @@ public class DefaultESTClientSSLSocketProvider
     }
 
 
-    public static TLSAuthorizer<SSLSession> getCertPathTLSAuthorizer(final CRL revocationList)
+    public static TLSAuthorizer getCertPathTLSAuthorizer(final CRL revocationList)
     {
         // TODO must accept array of revocation lists.
 
-        return new TLSAuthorizer<SSLSession>()
+        return new TLSAuthorizer()
         {
             public void authorize(Set<TrustAnchor> acceptedIssuers, X509Certificate[] chain, String authType)
                 throws CertificateException
