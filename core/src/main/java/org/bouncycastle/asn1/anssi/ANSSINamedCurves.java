@@ -58,7 +58,7 @@ public class ANSSINamedCurves
 
     static void defineCurve(String name, ASN1ObjectIdentifier oid, X9ECParametersHolder holder)
     {
-        objIds.put(name.toLowerCase(), oid);
+        objIds.put(Strings.toLowerCase(name), oid);
         names.put(oid, name);
         curves.put(oid, holder);
     }
