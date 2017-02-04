@@ -6,9 +6,9 @@ package org.bouncycastle.est;
  */
 public class ESTServiceBuilder
 {
+    protected final String server;
 
     protected TLSHostNameAuthorizer hostNameAuthorizer;
-    final protected String server;
     protected TLSAuthorizer tlsAuthorizer;
     protected ESTClientProvider clientProvider;
 
@@ -16,8 +16,6 @@ public class ESTServiceBuilder
     {
         this.server = server;
     }
-
-
 
     public ESTServiceBuilder withHostNameAuthorizer(TLSHostNameAuthorizer hostNameAuthorizer)
     {
