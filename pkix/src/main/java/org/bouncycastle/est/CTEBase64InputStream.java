@@ -7,7 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 
-public class CTEBase64InputStream
+class CTEBase64InputStream
         extends InputStream
 {
     protected final InputStream src;
@@ -19,7 +19,6 @@ public class CTEBase64InputStream
     protected boolean end;
     protected final long max;
     protected long read;
-
 
     public CTEBase64InputStream(InputStream src)
             throws Exception

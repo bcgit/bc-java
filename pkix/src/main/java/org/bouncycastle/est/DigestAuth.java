@@ -45,7 +45,7 @@ public class DigestAuth
     public ESTRequest applyAuth(final ESTRequest request)
     {
 
-        ESTRequest r = request.newWithHijacker(new ESTHttpHijacker()
+        ESTRequest r = request.newWithHijacker(new ESTHijacker()
         {
             public ESTResponse hijack(ESTRequest req, Source sock)
                 throws Exception
@@ -238,7 +238,7 @@ public class DigestAuth
 
         String digest = Hex.toHexString(takeDigest(dig, digestResult));
 
-        HashMap<String, String> hdr = new HashMap<String, String>();
+        Map<String, String> hdr = new HashMap<String, String>();
         hdr.put("username", username);
         hdr.put("realm", realm);
         hdr.put("nonce", nonce);
