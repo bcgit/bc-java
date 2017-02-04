@@ -1,17 +1,37 @@
 package org.bouncycastle.est.jcajce;
 
 
-import org.bouncycastle.est.*;
-
-import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
-import java.security.cert.*;
+import java.security.cert.CRL;
+import java.security.cert.CertPathBuilder;
+import java.security.cert.CertStore;
+import java.security.cert.CertificateException;
+import java.security.cert.CollectionCertStoreParameters;
+import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.PKIXCertPathValidatorResult;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509CertSelector;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Set;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import org.bouncycastle.est.ESTClientSourceProvider;
+import org.bouncycastle.est.Source;
+import org.bouncycastle.est.TLSAcceptedIssuersSource;
+import org.bouncycastle.est.TLSAuthorizer;
+import org.bouncycastle.est.TLSHostNameAuthorizer;
 
 public class DefaultESTClientSourceProvider
     implements ESTClientSourceProvider
@@ -53,7 +73,6 @@ public class DefaultESTClientSourceProvider
         {
             @Override
             public SSLSocketFactory createFactory()
-                throws Exception
             {
                 return (SSLSocketFactory)SSLSocketFactory.getDefault();
             }
@@ -75,7 +94,6 @@ public class DefaultESTClientSourceProvider
         {
             @Override
             public SSLSocketFactory createFactory()
-                throws Exception
             {
                 return (SSLSocketFactory)SSLSocketFactory.getDefault();
             }
@@ -90,7 +108,7 @@ public class DefaultESTClientSourceProvider
      * @throws Exception
      */
     public SSLSocketFactory createFactory()
-        throws Exception
+        throws GeneralSecurityException
     {
         SSLContext ctx = SSLContext.getInstance("TLS");
         X509TrustManager tm = new X509TrustManager()
@@ -162,14 +180,17 @@ public class DefaultESTClientSourceProvider
 
                     PKIXBuilderParameters param = new PKIXBuilderParameters(acceptedIssuers, constraints);
                     param.addCertStore(certStore);
-                    if (revocationList != null) {
+                    if (revocationList != null)
+                    {
                         param.setRevocationEnabled(true);
                         param.addCertStore(
-                                CertStore.getInstance(
-                                        "Collection",
-                                        new CollectionCertStoreParameters(Arrays.asList(revocationList)
-                                        )));
-                    } else {
+                            CertStore.getInstance(
+                                "Collection",
+                                new CollectionCertStoreParameters(Arrays.asList(revocationList)
+                                )));
+                    }
+                    else
+                    {
                         param.setRevocationEnabled(false);
                     }
 
@@ -185,7 +206,7 @@ public class DefaultESTClientSourceProvider
 
 
     public Source wrapSocket(Socket plainSocket, String host, int port)
-        throws Exception
+        throws IOException
     {
         SSLSocket sock = (SSLSocket)sslSocketFactory.createSocket(plainSocket, host, port, true);
         sock.setUseClientMode(true);
