@@ -13,7 +13,7 @@ public class ESTRequest
     final Map<String, List<String>> headers = new HashMap<String, List<String>>();
     final byte[] readAheadBuf = new byte[1024];
     final ESTClientRequestInputSource writer;
-    final ESTHttpHijacker hijacker;
+    final ESTHijacker hijacker;
     protected ESTClient estClient;
 
 
@@ -34,7 +34,7 @@ public class ESTRequest
     }
 
 
-    public ESTRequest(String method, URL url, ESTClientRequestInputSource writer, ESTHttpHijacker hijacker)
+    public ESTRequest(String method, URL url, ESTClientRequestInputSource writer, ESTHijacker hijacker)
     {
         this.method = method;
         this.url = url;
@@ -42,7 +42,7 @@ public class ESTRequest
         this.hijacker = hijacker;
     }
 
-    public ESTRequest(String method, URL url, ESTHttpHijacker hijacker)
+    public ESTRequest(String method, URL url, ESTHijacker hijacker)
     {
         this.method = method;
         this.url = url;
@@ -73,7 +73,7 @@ public class ESTRequest
     }
 
 
-    public ESTRequest newWithHijacker(ESTHttpHijacker estHttpHijacker)
+    public ESTRequest newWithHijacker(ESTHijacker estHttpHijacker)
     {
         ESTRequest req = new ESTRequest(this.method, this.url, this.writer, estHttpHijacker);
 
@@ -122,7 +122,7 @@ public class ESTRequest
         return writer;
     }
 
-    public ESTHttpHijacker getHijacker()
+    public ESTHijacker getHijacker()
     {
         return hijacker;
     }

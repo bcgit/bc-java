@@ -25,7 +25,7 @@ public class BasicAuth
     public ESTRequest applyAuth(ESTRequest request)
     {
 
-        return request.newWithHijacker(new ESTHttpHijacker()
+        return request.newWithHijacker(new ESTHijacker()
         {
             public ESTResponse hijack(ESTRequest req, Source sock)
                 throws Exception

@@ -9,7 +9,7 @@ package org.bouncycastle.est;
  *
  * See DigestAuth and BasicAuth.
  */
-public interface ESTHttpHijacker
+public interface ESTHijacker
 {
     ESTResponse hijack(ESTRequest req, Source sock)
         throws Exception;
