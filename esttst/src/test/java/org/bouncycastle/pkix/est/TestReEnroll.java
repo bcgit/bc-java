@@ -10,8 +10,8 @@ import java.security.spec.ECGenParameterSpec;
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.BasicAuth;
+import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.esttst.ESTServerUtils;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -74,7 +74,7 @@ public class TestReEnroll
 
     @Test
     @Ignore("Server does not appear to enforce failure on an attempt to re enroll with " +
-            "an existing SubjectPublicKeyInfo but with a different Name, we need to review.")
+        "an existing SubjectPublicKeyInfo but with a different Name, we need to review.")
     public void testReEnrollUsingBasicAuth()
         throws Exception
     {
@@ -88,10 +88,10 @@ public class TestReEnroll
             serverInstance = startDefaultServerWithBasicAuth();
 
             ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/",
-                    ESTTestUtils.toTrustAnchor(
-                        ESTTestUtils.readPemCertificate(
-                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                ))).build();
+                ESTTestUtils.toTrustAnchor(
+                    ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    ))).build();
 
             //
             // Make certificate request.
@@ -159,8 +159,8 @@ public class TestReEnroll
             try
             {
                 enr = est.simpleEnroll(true, csr, new BasicAuth("estreal", "estuser", "estpwd"));
-               // TODO Server needs to enforce this, need to discuss.
-               // Assert.fail("Reenrollment with different subject must fail.");
+                // TODO Server needs to enforce this, need to discuss.
+                // Assert.fail("Reenrollment with different subject must fail.");
             }
             catch (Exception ex)
             {
@@ -178,12 +178,10 @@ public class TestReEnroll
         }
     }
 
-
     public static void main(String[] args)
         throws Exception
     {
         ESTTestUtils.ensureProvider();
         runTest(new TestReEnroll());
     }
-
 }

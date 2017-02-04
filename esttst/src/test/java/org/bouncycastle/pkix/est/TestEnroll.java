@@ -13,6 +13,8 @@ import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Collections;
 
+import javax.net.ssl.SSLHandshakeException;
+
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -22,10 +24,10 @@ import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.est.ESTException;
-import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.BasicAuth;
 import org.bouncycastle.est.DigestAuth;
+import org.bouncycastle.est.ESTException;
+import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.esttst.ESTServerUtils;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -36,17 +38,18 @@ import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;
 import org.junit.Test;
 
-import javax.net.ssl.SSLHandshakeException;
-
 public class TestEnroll
-        extends SimpleTest {
+    extends SimpleTest
+{
 
-    public String getName() {
+    public String getName()
+    {
         return "TestEnroll";
     }
 
     public void performTest()
-            throws Exception {
+        throws Exception
+    {
         ESTTestUtils.runJUnit(TestEnroll.class);
     }
 
@@ -54,7 +57,8 @@ public class TestEnroll
     // Start a server instance that uses basic auth.
     // But disables the POP validation.
     private ESTServerUtils.ServerInstance startDefaultServerTLSAndBasicAuth(int delay)
-            throws Exception {
+        throws Exception
+    {
         final ESTServerUtils.EstServerConfig config = new ESTServerUtils.EstServerConfig();
         config.serverCertPemFile = ESTServerUtils.makeRelativeToServerHome("estCA/private/estservercertandkey.pem").getCanonicalPath();
         config.serverKeyPemFile = ESTServerUtils.makeRelativeToServerHome("estCA/private/estservercertandkey.pem").getCanonicalPath();
@@ -84,15 +88,15 @@ public class TestEnroll
 
     /**
      * Test enrollment with digest auth.
-     *
+     * <p>
      * NB: The digest as of 2016-Feb-03 is hard coded in the server.
-     *
      *
      * @return
      * @throws Exception
      */
     private ESTServerUtils.ServerInstance startDefaultServerWithDigestAuth()
-            throws Exception {
+        throws Exception
+    {
 
         final ESTServerUtils.EstServerConfig config = new ESTServerUtils.EstServerConfig();
         config.serverCertPemFile = ESTServerUtils.makeRelativeToServerHome("estCA/private/estservercertandkey.pem").getCanonicalPath();
@@ -120,18 +124,20 @@ public class TestEnroll
 
     @Test
     public void testEnrollUsingBasicAuth()
-            throws Exception {
+        throws Exception
+    {
         ESTTestUtils.ensureProvider();
         X509CertificateHolder[] theirCAs = null;
         ESTServerUtils.ServerInstance serverInstance = null;
 
-        try {
+        try
+        {
             serverInstance = startDefaultServerTLSAndBasicAuth(0);
 
             ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/")
-            .withTlsTrustAnchors(ESTTestUtils.toTrustAnchor(
+                .withTlsTrustAnchors(ESTTestUtils.toTrustAnchor(
                     ESTTestUtils.readPemCertificate(
-                            ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                     ))).build();
 
 
@@ -145,15 +151,15 @@ public class TestEnroll
             KeyPair enrollmentPair = kpg.generateKeyPair();
 
             PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
-                    new X500Name("CN=Test"),
-                    enrollmentPair.getPublic());
+                new X500Name("CN=Test"),
+                enrollmentPair.getPublic());
 
             PKCS10CertificationRequest csr = pkcs10Builder.build(
-                    new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+                new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
             ESTService.EnrollmentResponse enr = est.simpleEnroll(false, csr, new BasicAuth("estreal", "estuser", "estpwd"));
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
-                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
 
             X509CertificateHolder enrolledAsHolder = ESTService.storeToArray(enr.getStore())[0];
@@ -167,31 +173,34 @@ public class TestEnroll
             TestCase.assertEquals(enrolledAsHolder.getSubjectPublicKeyInfo(), csr.getSubjectPublicKeyInfo());
 
 
-        } finally {
-            if (serverInstance != null) {
+        }
+        finally
+        {
+            if (serverInstance != null)
+            {
                 serverInstance.getServer().stop_server();
             }
         }
     }
 
 
-
-
     @Test
     public void testEnrollUsingBasicAuthWithDelay()
-            throws Exception {
+        throws Exception
+    {
         ESTTestUtils.ensureProvider();
         X509CertificateHolder[] theirCAs = null;
         ESTServerUtils.ServerInstance serverInstance = null;
 
-        try {
+        try
+        {
             serverInstance = startDefaultServerTLSAndBasicAuth(5);
 
             ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/")
-                    .withTlsTrustAnchors(ESTTestUtils.toTrustAnchor(
-                            ESTTestUtils.readPemCertificate(
-                                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                            ))).build();
+                .withTlsTrustAnchors(ESTTestUtils.toTrustAnchor(
+                    ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    ))).build();
 
 
             //
@@ -204,35 +213,36 @@ public class TestEnroll
             KeyPair enrollmentPair = kpg.generateKeyPair();
 
             PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
-                    new X500Name("CN=Test"),
-                    enrollmentPair.getPublic());
+                new X500Name("CN=Test"),
+                enrollmentPair.getPublic());
 
             PKCS10CertificationRequest csr = pkcs10Builder.build(
-                    new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+                new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
             ESTService.EnrollmentResponse enr = est.simpleEnroll(false, csr, new BasicAuth("estreal", "estuser", "estpwd"));
 
 
-            Assert.assertFalse("Can Retry is true.",  enr.canRetry());
-            Assert.assertNull( "Store is null", enr.getStore());
+            Assert.assertFalse("Can Retry is true.", enr.canRetry());
+            Assert.assertNull("Store is null", enr.getStore());
 
             System.out.println(enr.getNotBefore() - System.currentTimeMillis());
-            Assert.assertTrue("Future time reasonable?",enr.getNotBefore() - System.currentTimeMillis() > 2000);
+            Assert.assertTrue("Future time reasonable?", enr.getNotBefore() - System.currentTimeMillis() > 2000);
 
             int max = 100;
-            while (!enr.canRetry() && --max >0){
+            while (!enr.canRetry() && --max > 0)
+            {
                 Thread.sleep(500);
             }
-            Assert.assertTrue("Wait looped out.",max >0);
+            Assert.assertTrue("Wait looped out.", max > 0);
 
-            Assert.assertTrue("Can we retry?",  enr.canRetry());
+            Assert.assertTrue("Can we retry?", enr.canRetry());
 
 
             ESTService.EnrollmentResponse entTriedAgain = est.simpleEnroll(enr);
 
 
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
-                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
 
             X509CertificateHolder enrolledAsHolder = ESTService.storeToArray(entTriedAgain.getStore())[0];
@@ -246,38 +256,38 @@ public class TestEnroll
             TestCase.assertEquals(enrolledAsHolder.getSubjectPublicKeyInfo(), csr.getSubjectPublicKeyInfo());
 
 
-        } finally {
-            if (serverInstance != null) {
+        }
+        finally
+        {
+            if (serverInstance != null)
+            {
                 serverInstance.getServer().stop_server();
             }
         }
     }
 
 
-
-
-
-
-
-
     /**
      * Perform enrollment using digest auth.
+     *
      * @throws Exception
      */
     @Test
     public void testEnrollUsingDigestAuth()
-            throws Exception {
+        throws Exception
+    {
         ESTTestUtils.ensureProvider();
         X509CertificateHolder[] theirCAs = null;
         ESTServerUtils.ServerInstance serverInstance = null;
-        try {
+        try
+        {
             serverInstance = startDefaultServerWithDigestAuth();
 
             ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/")
-                    .withTlsTrustAnchors(ESTTestUtils.toTrustAnchor(
-                                            ESTTestUtils.readPemCertificate(
-                                                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                                            ))).build();
+                .withTlsTrustAnchors(ESTTestUtils.toTrustAnchor(
+                    ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    ))).build();
 
             //
             // Make certificate request.
@@ -291,12 +301,12 @@ public class TestEnroll
             PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(new X500Name("CN=Test"), enrollmentPair.getPublic());
 
             PKCS10CertificationRequest csr = pkcs10Builder.build(
-                    new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+                new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
 
             ESTService.EnrollmentResponse enr = est.simpleEnroll(false, csr, new DigestAuth(null, "estuser", "estpwd"));
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
-                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
 
             X509CertificateHolder enrolledAsHolder = ESTService.storeToArray(enr.getStore())[0];
@@ -308,8 +318,11 @@ public class TestEnroll
 
             TestCase.assertEquals(enrolledAsHolder.getSubject(), csr.getSubject());
             TestCase.assertEquals(enrolledAsHolder.getSubjectPublicKeyInfo(), csr.getSubjectPublicKeyInfo());
-        } finally {
-            if (serverInstance != null) {
+        }
+        finally
+        {
+            if (serverInstance != null)
+            {
                 serverInstance.getServer().stop_server();
             }
         }
@@ -317,11 +330,12 @@ public class TestEnroll
 
 
     /**
-     *
      * @return [privateKey, X509Certificate]
      * @throws Exception
      */
-    private static Object[] bogusCAGenerator() throws Exception {
+    private static Object[] bogusCAGenerator()
+        throws Exception
+    {
         //
         // Create a self signed certificate to tend as trust anchor that will
         // not be part of the servers path.
@@ -340,11 +354,11 @@ public class TestEnroll
 
         X500Name name = builder.build();
 
-        return new Object[]{originalKeyPair.getPrivate(),  ESTTestUtils.createSelfsignedCert("SHA256WITHECDSA",
-                name,
-                SubjectPublicKeyInfo.getInstance(originalKeyPair.getPublic().getEncoded()),
-                originalKeyPair.getPrivate(),
-                1
+        return new Object[]{originalKeyPair.getPrivate(), ESTTestUtils.createSelfsignedCert("SHA256WITHECDSA",
+            name,
+            SubjectPublicKeyInfo.getInstance(originalKeyPair.getPublic().getEncoded()),
+            originalKeyPair.getPrivate(),
+            1
         )};
     }
 
@@ -357,15 +371,16 @@ public class TestEnroll
      */
     @Test
     public void testEnrollUsingBogusTLSClientAuthAndBasicAuth()
-            throws Exception {
+        throws Exception
+    {
         ESTTestUtils.ensureProvider();
 
         X509CertificateHolder caCert = ESTTestUtils.readPemCertificate(
-                ESTServerUtils.makeRelativeToServerHome("/extCA/cacert.crt")
+            ESTServerUtils.makeRelativeToServerHome("/extCA/cacert.crt")
         );
 
         PrivateKey caPrivateKey = ESTTestUtils.readPemPrivateKey(
-                ESTServerUtils.makeRelativeToServerHome("/extCA/private/cakey.pem"), "ECDSA"
+            ESTServerUtils.makeRelativeToServerHome("/extCA/private/cakey.pem"), "ECDSA"
         );
 
 
@@ -393,8 +408,8 @@ public class TestEnroll
         X500Name name = builder.build();
 
         KeyUsage keyUsage = new KeyUsage(KeyUsage.keyCertSign
-                | KeyUsage.digitalSignature | KeyUsage.keyEncipherment
-                | KeyUsage.dataEncipherment | KeyUsage.cRLSign);
+            | KeyUsage.digitalSignature | KeyUsage.keyEncipherment
+            | KeyUsage.dataEncipherment | KeyUsage.cRLSign);
 
         ASN1EncodableVector purposes = new ASN1EncodableVector();
         purposes.add(KeyPurposeId.id_kp_serverAuth);
@@ -403,11 +418,11 @@ public class TestEnroll
 
 
         X509Certificate clientTLSCert = ESTTestUtils.createASignedCert("SHA256WITHECDSA",
-                name,
-                SubjectPublicKeyInfo.getInstance(originalKeyPair.getPublic().getEncoded()),
-                 new X500Name(((X509Certificate)bogusCA[1]).getSubjectDN().getName()),
-                ((PrivateKey) bogusCA[0]),
-                1, purposes, keyUsage
+            name,
+            SubjectPublicKeyInfo.getInstance(originalKeyPair.getPublic().getEncoded()),
+            new X500Name(((X509Certificate)bogusCA[1]).getSubjectDN().getName()),
+            ((PrivateKey)bogusCA[0]),
+            1, purposes, keyUsage
         );
 
 
@@ -423,12 +438,12 @@ public class TestEnroll
         char[] clientKeyStorePass = "tstpass".toCharArray();
 
         clientKeyStore.setKeyEntry(
-                "estuser", // This is hardcoded into the test server.
-                originalKeyPair.getPrivate(), clientKeyStorePass,
-                new Certificate[]{
-                        //  ESTTestUtils.toJavaX509Certificate(caCert),
-                        clientTLSCert
-                });
+            "estuser", // This is hardcoded into the test server.
+            originalKeyPair.getPrivate(), clientKeyStorePass,
+            new Certificate[]{
+                //  ESTTestUtils.toJavaX509Certificate(caCert),
+                clientTLSCert
+            });
 
         clientKeyStore.store(new ByteArrayOutputStream(), clientKeyStorePass);
 
@@ -444,31 +459,32 @@ public class TestEnroll
 
         ESTTestUtils.ensureProvider();
         final ESTServerUtils.ServerInstance serverInstance = startDefaultServerTLSAndBasicAuth(0);
-        try {
+        try
+        {
 
             //
             // Set server trust anchor so client can validate server.
             //
 
             TrustAnchor ta = new TrustAnchor(
-                    ESTTestUtils.toJavaX509Certificate(
-                            ESTTestUtils.readPemCertificate(
-                                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                            )
-                    ), null);
+                ESTTestUtils.toJavaX509Certificate(
+                    ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )
+                ), null);
 
             ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/")
-                    .withClientKeystore(clientKeyStore,clientKeyStorePass)
-                    .withTlsTrustAnchors(Collections.singleton(ta))
-                    .build();
+                .withClientKeystore(clientKeyStore, clientKeyStorePass)
+                .withTlsTrustAnchors(Collections.singleton(ta))
+                .build();
 
 
             PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
-                    new X500Name("CN=Test"),
-                    enrollmentPair.getPublic());
+                new X500Name("CN=Test"),
+                enrollmentPair.getPublic());
 
             PKCS10CertificationRequest csr = pkcs10Builder.build(
-                    new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+                new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
             //
             // Even though we are using TLS we still need to use an HTTP auth.
@@ -477,23 +493,23 @@ public class TestEnroll
             try
             {
                 ESTService.EnrollmentResponse enr = est.simpleEnroll(
-                        false,
-                        csr,
-                        new BasicAuth("estreal", "estuser", "estpwd"));
-            } catch (Exception ex) {
+                    false,
+                    csr,
+                    new BasicAuth("estreal", "estuser", "estpwd"));
+            }
+            catch (Exception ex)
+            {
                 Assert.assertEquals("Only ESTException", ex.getClass(), ESTException.class);
                 Assert.assertEquals("Cause must be SSLHandshakeException", ex.getCause().getClass(), SSLHandshakeException.class);
             }
 
 
-        } finally {
+        }
+        finally
+        {
             serverInstance.getServer().stop_server();
         }
     }
-
-
-
-
 
 
     /**
@@ -504,15 +520,16 @@ public class TestEnroll
      */
     @Test
     public void testEnrollUsingTLSClientAuthAndBasicAuthP()
-            throws Exception {
+        throws Exception
+    {
         ESTTestUtils.ensureProvider();
 
         X509CertificateHolder caCert = ESTTestUtils.readPemCertificate(
-                ESTServerUtils.makeRelativeToServerHome("/extCA/cacert.crt")
+            ESTServerUtils.makeRelativeToServerHome("/extCA/cacert.crt")
         );
 
         PrivateKey caPrivateKey = ESTTestUtils.readPemPrivateKey(
-                ESTServerUtils.makeRelativeToServerHome("/extCA/private/cakey.pem"), "ECDSA"
+            ESTServerUtils.makeRelativeToServerHome("/extCA/private/cakey.pem"), "ECDSA"
         );
 
         //
@@ -536,8 +553,8 @@ public class TestEnroll
         X500Name name = builder.build();
 
         KeyUsage keyUsage = new KeyUsage(KeyUsage.keyCertSign
-                | KeyUsage.digitalSignature | KeyUsage.keyEncipherment
-                | KeyUsage.dataEncipherment | KeyUsage.cRLSign);
+            | KeyUsage.digitalSignature | KeyUsage.keyEncipherment
+            | KeyUsage.dataEncipherment | KeyUsage.cRLSign);
 
         ASN1EncodableVector purposes = new ASN1EncodableVector();
         purposes.add(KeyPurposeId.id_kp_serverAuth);
@@ -546,13 +563,12 @@ public class TestEnroll
 
 
         X509Certificate clientTLSCert = ESTTestUtils.createASignedCert("SHA256WITHECDSA",
-                name,
-                SubjectPublicKeyInfo.getInstance(originalKeyPair.getPublic().getEncoded()),
-                caCert.getSubject(),
-                caPrivateKey,
-                1, purposes, keyUsage
+            name,
+            SubjectPublicKeyInfo.getInstance(originalKeyPair.getPublic().getEncoded()),
+            caCert.getSubject(),
+            caPrivateKey,
+            1, purposes, keyUsage
         );
-
 
 
         //
@@ -564,12 +580,12 @@ public class TestEnroll
         char[] clientKeyStorePass = "tstpass".toCharArray();
 
         clientKeyStore.setKeyEntry(
-                "estuser", // This is hardcoded into the test server.
-                originalKeyPair.getPrivate(), clientKeyStorePass,
-                new Certificate[]{
-                        //  ESTTestUtils.toJavaX509Certificate(caCert),
-                        clientTLSCert
-                });
+            "estuser", // This is hardcoded into the test server.
+            originalKeyPair.getPrivate(), clientKeyStorePass,
+            new Certificate[]{
+                //  ESTTestUtils.toJavaX509Certificate(caCert),
+                clientTLSCert
+            });
 
         clientKeyStore.store(new ByteArrayOutputStream(), clientKeyStorePass);
 
@@ -585,43 +601,44 @@ public class TestEnroll
 
         ESTTestUtils.ensureProvider();
         final ESTServerUtils.ServerInstance serverInstance = startDefaultServerTLSAndBasicAuth(0);
-        try {
+        try
+        {
 
             //
             // Set server trust anchor so client can validate server.
             //
 
             TrustAnchor ta = new TrustAnchor(
-                    ESTTestUtils.toJavaX509Certificate(
-                            ESTTestUtils.readPemCertificate(
-                                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                            )
-                    ), null);
+                ESTTestUtils.toJavaX509Certificate(
+                    ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )
+                ), null);
 
             ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/")
-                    .withClientKeystore(clientKeyStore,clientKeyStorePass)
-                    .withTlsTrustAnchors(Collections.singleton(ta))
-                    .build();
+                .withClientKeystore(clientKeyStore, clientKeyStorePass)
+                .withTlsTrustAnchors(Collections.singleton(ta))
+                .build();
 
 
             PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
-                    new X500Name("CN=Test"),
-                    enrollmentPair.getPublic());
+                new X500Name("CN=Test"),
+                enrollmentPair.getPublic());
 
             PKCS10CertificationRequest csr = pkcs10Builder.build(
-                    new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+                new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
             //
             // Even though we are using TLS we still need to use an HTTP auth.
             //
 
             ESTService.EnrollmentResponse enr = est.simpleEnroll(
-                    false,
-                    csr,
-                    new BasicAuth("estreal", "estuser", "estpwd"));
+                false,
+                csr,
+                new BasicAuth("estreal", "estuser", "estpwd"));
 
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
-                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
 
             X509CertificateHolder enrolledAsHolder = ESTService.storeToArray(enr.getStore())[0];
@@ -634,17 +651,17 @@ public class TestEnroll
             TestCase.assertEquals(enrolledAsHolder.getSubject(), csr.getSubject());
             TestCase.assertEquals(enrolledAsHolder.getSubjectPublicKeyInfo(), csr.getSubjectPublicKeyInfo());
 
-        } finally {
+        }
+        finally
+        {
             serverInstance.getServer().stop_server();
         }
     }
 
 
-
-
-
     public static void main(String[] args)
-            throws Exception {
+        throws Exception
+    {
         ESTTestUtils.ensureProvider();
         runTest(new TestEnroll());
     }
