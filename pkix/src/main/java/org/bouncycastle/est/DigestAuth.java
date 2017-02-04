@@ -1,18 +1,20 @@
 package org.bouncycastle.est;
 
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.MD5Digest;
-import org.bouncycastle.crypto.io.DigestOutputStream;
-import org.bouncycastle.util.Strings;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URISyntaxException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.MD5Digest;
+import org.bouncycastle.crypto.io.DigestOutputStream;
+import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Implements DigestAuth.
@@ -48,7 +50,7 @@ public class DigestAuth
         ESTRequest r = request.newWithHijacker(new ESTHijacker()
         {
             public ESTResponse hijack(ESTRequest req, Source sock)
-                throws Exception
+                throws IOException
             {
                 ESTResponse res = new ESTResponse(req, sock);
 
@@ -65,12 +67,22 @@ public class DigestAuth
 
 
     protected ESTResponse doDigestFunction(ESTResponse res)
-        throws Exception
+        throws IOException
     {
         res.close(); // Close off the last request.
         ESTRequest req = res.getOriginalRequest();
         Map<String, String> parts = HttpUtil.splitCSL("Digest", res.getHeader("WWW-Authenticate"));
-        String uri = req.getUrl().toURI().getPath();
+
+        String uri = null;
+        try
+        {
+            uri = req.getUrl().toURI().getPath();
+        }
+        catch (URISyntaxException e)
+        {
+            throw new IOException("unable to process URL in request: " + e.getMessage());
+        }
+
         String method = req.getMethod();
         String realm = parts.get("realm");
         String nonce = parts.get("nonce");
