@@ -5,9 +5,9 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.engines.ARIAEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-import org.junit.Assert;
 
 public class ARIATest
     extends SimpleTest
@@ -81,7 +81,7 @@ public class ARIATest
                 ce.processBlock(txt, 0, enc, 0);
                 cd.processBlock(enc, 0, dec, 0);
 
-                Assert.assertArrayEquals(txt, dec);
+                isTrue("", Arrays.areEqual(txt, dec));
 
                 System.arraycopy(enc, 0, txt, 0, enc.length);
             }
@@ -94,28 +94,28 @@ public class ARIATest
 
         BlockCipher c = new ARIAEngine();
         int blockSize = c.getBlockSize();
-        Assert.assertEquals("Wrong block size returned from getBlockSize() for " + name, 16, blockSize);
+        isTrue("Wrong block size returned from getBlockSize() for " + name, 16 == blockSize);
 
         KeyParameter key = new KeyParameter(Hex.decode(tv[1]));
         byte[] plaintext = Hex.decode(tv[2]);
         byte[] ciphertext = Hex.decode(tv[3]);
 
-        Assert.assertEquals("Unexpected plaintext length for " + name, blockSize, plaintext.length);
-        Assert.assertEquals("Unexpected ciphertext length for " + name, blockSize, ciphertext.length);
+        isTrue("Unexpected plaintext length for " + name, blockSize == plaintext.length);
+        isTrue("Unexpected ciphertext length for " + name, blockSize == ciphertext.length);
 
         c.init(true, key);
 
         byte[] actual = new byte[blockSize];
         int num = c.processBlock(plaintext, 0, actual, 0);
 
-        Assert.assertEquals("Wrong length returned from processBlock() (encryption) for " + name, blockSize, num);
-        Assert.assertArrayEquals("Incorrect ciphertext computed for " + name, ciphertext, actual);
+        isTrue("Wrong length returned from processBlock() (encryption) for " + name, blockSize == num);
+        isTrue("Incorrect ciphertext computed for " + name, Arrays.areEqual(ciphertext, actual));
 
         c.init(false, key);
         num = c.processBlock(ciphertext, 0, actual, 0);
 
-        Assert.assertEquals("Wrong length returned from processBlock() (decryption) for " + name, blockSize, num);
-        Assert.assertArrayEquals("Incorrect plaintext computed for " + name, plaintext, actual);
+        isTrue("Wrong length returned from processBlock() (decryption) for " + name, blockSize == num);
+        isTrue("Incorrect plaintext computed for " + name, Arrays.areEqual(plaintext, actual));
     }
 
     private void checkTestVectors_RFC5794()
@@ -131,7 +131,7 @@ public class ARIATest
         runTest(new ARIATest());
     }
 
-    private static class MyARIAEngine extends ARIAEngine
+    private class MyARIAEngine extends ARIAEngine
     {
         public void checkImplementation()
         {
@@ -149,7 +149,7 @@ public class ARIATest
                 System.arraycopy(x, 0, y, 0, 16);
                 A(y);
                 A(y);
-                Assert.assertArrayEquals(x, y);
+                isTrue("", Arrays.areEqual(x, y));
             }
         }
 
@@ -159,11 +159,11 @@ public class ARIATest
             {
                 byte x = (byte)i;
 
-                Assert.assertEquals(x, SB1(SB3(x)));
-                Assert.assertEquals(x, SB3(SB1(x)));
+                isTrue("", x == SB1(SB3(x)));
+                isTrue("", x == SB3(SB1(x)));
 
-                Assert.assertEquals(x, SB2(SB4(x)));
-                Assert.assertEquals(x, SB4(SB2(x)));
+                isTrue("", x == SB2(SB4(x)));
+                isTrue("", x == SB4(SB2(x)));
             }
         }
     }
