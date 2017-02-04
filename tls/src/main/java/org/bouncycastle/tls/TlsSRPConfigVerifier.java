@@ -2,6 +2,9 @@ package org.bouncycastle.tls;
 
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
 
+/**
+ * Interface a class for verifying SRP config needs to conform to.
+ */
 public interface TlsSRPConfigVerifier
 {
     /**
