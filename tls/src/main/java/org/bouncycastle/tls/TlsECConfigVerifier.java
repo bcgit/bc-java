@@ -2,6 +2,9 @@ package org.bouncycastle.tls;
 
 import org.bouncycastle.tls.crypto.TlsECConfig;
 
+/**
+ * Interface a class for verifying EC config needs to conform to.
+ */
 public interface TlsECConfigVerifier
 {
     /**
