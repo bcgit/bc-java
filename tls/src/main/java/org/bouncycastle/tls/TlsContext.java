@@ -2,12 +2,20 @@ package org.bouncycastle.tls;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
 
+/**
+ * Base interface for a TLS context implementation.
+ */
 public interface TlsContext
 {
     TlsCrypto getCrypto();
 
     SecurityParameters getSecurityParameters();
 
+    /**
+     * Return true if this context is for a server, false otherwise.
+     *
+     * @return true for a server based context, false for a client based one.
+     */
     boolean isServer();
 
     ProtocolVersion getClientVersion();
