@@ -1,5 +1,21 @@
 package org.bouncycastle.pkix.est;
 
+import java.io.FileReader;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.SecureRandom;
+import java.security.cert.CertPath;
+import java.security.cert.CertPathValidator;
+import java.security.cert.CertificateFactory;
+import java.security.cert.PKIXParameters;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509Certificate;
+import java.security.spec.ECGenParameterSpec;
+import java.util.Collections;
+
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLSession;
+
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
@@ -14,19 +30,9 @@ import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;
 import org.junit.Test;
 
-import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLSession;
-import java.io.FileReader;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.SecureRandom;
-import java.security.cert.*;
-import java.security.spec.ECGenParameterSpec;
-import java.util.Collections;
-
 
 public class TestCACertsFetch
-        extends SimpleTest
+    extends SimpleTest
 {
 
     public String getName()
@@ -35,13 +41,13 @@ public class TestCACertsFetch
     }
 
     public void performTest()
-            throws Exception
+        throws Exception
     {
         ESTTestUtils.runJUnit(TestCACertsFetch.class);
     }
 
     private ESTServerUtils.ServerInstance startDefaultServer()
-            throws Exception
+        throws Exception
     {
 
         final ESTServerUtils.EstServerConfig config = new ESTServerUtils.EstServerConfig();
@@ -70,7 +76,7 @@ public class TestCACertsFetch
      */
     @Test
     public void testFetchCaCerts()
-            throws Exception
+        throws Exception
     {
         ESTTestUtils.ensureProvider();
         X509CertificateHolder[] theirCAs = null;
@@ -88,11 +94,12 @@ public class TestCACertsFetch
             X509CertificateHolder fromFile = new X509CertificateHolder(reader.readPemObject().getContent());
             reader.close();
             fr.close();
-            Assert.assertFalse("Must not be trusted.",caCertsResponse.isTrusted());
+            Assert.assertFalse("Must not be trusted.", caCertsResponse.isTrusted());
             Assert.assertEquals("Returned ca certs should be 1", caCerts.length, 1);
             Assert.assertEquals("CA cert did match expected.", fromFile, caCerts[0]);
 
-        } finally
+        }
+        finally
         {
             if (serverInstance != null)
             {
@@ -111,7 +118,7 @@ public class TestCACertsFetch
      */
     @Test
     public void testFetchCaCertsWithBogusTrustAnchor()
-            throws Exception
+        throws Exception
     {
 
 
@@ -142,10 +149,10 @@ public class TestCACertsFetch
             X500Name name = builder.build();
 
             X509Certificate bogusCA = ESTTestUtils.createSelfsignedCert("SHA256WITHECDSA",
-                    name,
-                    SubjectPublicKeyInfo.getInstance(originalKeyPair.getPublic().getEncoded()),
-                    originalKeyPair.getPrivate(),
-                    1
+                name,
+                SubjectPublicKeyInfo.getInstance(originalKeyPair.getPublic().getEncoded()),
+                originalKeyPair.getPrivate(),
+                1
             );
 
 
@@ -155,9 +162,9 @@ public class TestCACertsFetch
 
             TrustAnchor ta = new TrustAnchor(bogusCA, null);
             ESTService est =
-                    new JcaESTServiceBuilder(
-                            "https://localhost:8443/.well-known/est/",
-                            Collections.singleton(ta)).build();
+                new JcaESTServiceBuilder(
+                    "https://localhost:8443/.well-known/est/",
+                    Collections.singleton(ta)).build();
 
 
             //
@@ -167,14 +174,16 @@ public class TestCACertsFetch
             {
                 X509CertificateHolder[] caCerts = ESTService.storeToArray(est.getCACerts().getStore());
                 Assert.fail("Bogus CA must not validate the server.!");
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 Assert.assertEquals("Only ESTException", ex.getClass(), ESTException.class);
                 Assert.assertEquals("Cause must be SSLHandshakeException", ex.getCause().getClass(), SSLHandshakeException.class);
             }
 
 
-        } finally
+        }
+        finally
         {
             if (serverInstance != null)
             {
@@ -192,7 +201,7 @@ public class TestCACertsFetch
      */
     @Test
     public void testFetchCaCertsWithTrustAnchor()
-            throws Exception
+        throws Exception
     {
         ESTTestUtils.ensureProvider();
         X509CertificateHolder[] theirCAs = null;
@@ -217,9 +226,9 @@ public class TestCACertsFetch
             TrustAnchor ta = new TrustAnchor(ESTTestUtils.toJavaX509Certificate(fromFile), null);
 
             ESTService est =
-                    new JcaESTServiceBuilder(
-                            "https://localhost:8443/.well-known/est/",
-                            Collections.singleton(ta)).build();
+                new JcaESTServiceBuilder(
+                    "https://localhost:8443/.well-known/est/",
+                    Collections.singleton(ta)).build();
 
             ESTService.CACertsResponse caCertsResponse = est.getCACerts();
             // Make the call. NB tlsAcceptAny is false.
@@ -229,8 +238,9 @@ public class TestCACertsFetch
 
             Assert.assertEquals("Returned ca certs should be 1", caCerts.length, 1);
             Assert.assertEquals("CA cert did match expected.", fromFile, caCerts[0]);
-            Assert.assertTrue("Must be trusted.",caCertsResponse.isTrusted());
-        } finally
+            Assert.assertTrue("Must be trusted.", caCertsResponse.isTrusted());
+        }
+        finally
         {
             if (serverInstance != null)
             {
@@ -243,10 +253,10 @@ public class TestCACertsFetch
 
     /**
      * This exercises the concept of bootstrapping as per RFC 7030.
-     *
+     * <p>
      * We fetch the CA certs from the server using a TLS layer that will accept any certificate tendered by the server.
      * In this situation some sort of out of band validation is expected for example, ask the user if they wish to proceed.
-     *
+     * <p>
      * This test will fetch the CA certs and use the CertPath api to validate that the CA returned is as expected and
      * it will use the CertPath API to validate the certificates tendered during the TLS handshake by the server.
      *
@@ -254,7 +264,7 @@ public class TestCACertsFetch
      */
     @Test
     public void testFetchCaCertsChecksResponseUsingCertpath()
-            throws Exception
+        throws Exception
     {
         ESTTestUtils.ensureProvider();
         X509CertificateHolder[] theirCAs = null;
@@ -293,7 +303,7 @@ public class TestCACertsFetch
             //
             CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
 
-            CertPath cp = cf.generateCertPath(ESTTestUtils.toCertList(((SSLSession) caCertsResponse.getSession()).getPeerCertificates()));
+            CertPath cp = cf.generateCertPath(ESTTestUtils.toCertList(((SSLSession)caCertsResponse.getSession()).getPeerCertificates()));
             CertPathValidator v = CertPathValidator.getInstance("PKIX", "BC");
 
             PKIXParameters pkixParameters = new PKIXParameters(ESTTestUtils.toTrustAnchor(expectedCACert));
@@ -302,7 +312,8 @@ public class TestCACertsFetch
             v.validate(cp, pkixParameters); // <= Throws exception if the path does not validate.
 
 
-        } finally
+        }
+        finally
         {
             if (serverInstance != null)
             {
@@ -314,7 +325,7 @@ public class TestCACertsFetch
 
 
     public static void main(String[] args)
-            throws Exception
+        throws Exception
     {
         ESTTestUtils.ensureProvider();
         runTest(new TestCACertsFetch());

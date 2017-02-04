@@ -34,7 +34,15 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.ExtensionsGenerator;
+import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x509.TBSCertificate;
+import org.bouncycastle.asn1.x509.Time;
+import org.bouncycastle.asn1.x509.V1TBSCertificateGenerator;
+import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -139,7 +147,6 @@ public class ESTTestUtils
     }
 
 
-
     public static java.security.cert.X509Certificate toJavaX509Certificate(Object o)
         throws Exception
     {
@@ -151,7 +158,9 @@ public class ESTTestUtils
         else if (o instanceof X509Certificate)
         {
             return (java.security.cert.X509Certificate)fac.generateCertificate(new ByteArrayInputStream(((X509Certificate)o).getEncoded()));
-        } else if (o instanceof java.security.cert.X509Certificate) {
+        }
+        else if (o instanceof java.security.cert.X509Certificate)
+        {
             return (java.security.cert.X509Certificate)o;
         }
         throw new IllegalArgumentException("Object not X509CertificateHolder, javax..X509Certificate or java...X509Certificate");
@@ -263,20 +272,19 @@ public class ESTTestUtils
      * @throws Exception
      */
     public static java.security.cert.X509Certificate createSelfsignedCert(
-            String sigName,
-            X500Name subjectDN,
-            SubjectPublicKeyInfo subjectPublicKeyInfo,
-            PrivateKey issuerPrivateKey,
-            long serialNumber
+        String sigName,
+        X500Name subjectDN,
+        SubjectPublicKeyInfo subjectPublicKeyInfo,
+        PrivateKey issuerPrivateKey,
+        long serialNumber
 
     )
-            throws Exception
+        throws Exception
     {
 
         // SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()));
 
         long time = System.currentTimeMillis();
-
 
 
         V1TBSCertificateGenerator certGen = new V1TBSCertificateGenerator();
@@ -305,15 +313,11 @@ public class ESTTestUtils
         v.add(new DERBitString(sig.sign()));
 
         return (java.security.cert.X509Certificate)
-                CertificateFactory.getInstance("X.509", "BC")
-                        .generateCertificate(
-                                new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)
-                                ));
+            CertificateFactory.getInstance("X.509", "BC")
+                .generateCertificate(
+                    new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)
+                    ));
     }
-
-
-
-
 
 
     public static PrivateKey readPemPrivateKeyPKCS8DER(File path, String alg)
