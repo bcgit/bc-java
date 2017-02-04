@@ -2,6 +2,7 @@ package org.bouncycastle.pkix.est;
 
 
 import java.io.ByteArrayOutputStream;
+import java.net.SocketException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
@@ -500,7 +501,12 @@ public class TestEnroll
             catch (Exception ex)
             {
                 Assert.assertEquals("Only ESTException", ex.getClass(), ESTException.class);
-                Assert.assertEquals("Cause must be SSLHandshakeException", ex.getCause().getClass(), SSLHandshakeException.class);
+
+                // NB: I guess it depends on how the server hangs up
+                // but we either get a handshake exception or a socket exception.
+                // TODO might be a race.
+                Assert.assertTrue("Either SocketException or SSLHandshakeException", (ex.getCause() instanceof SocketException || ex.getCause() instanceof SSLHandshakeException));
+                Assert.assertEquals("Cause must be SSLHandshakeException", SocketException.class, ex.getCause().getClass());
             }
 
 
