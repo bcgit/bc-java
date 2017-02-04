@@ -1,5 +1,8 @@
 package org.bouncycastle.tls;
 
+/**
+ * Base interface for an object that can return login parameters from an SRP identity.
+ */
 public interface TlsSRPIdentityManager
 {
     /**
