@@ -2,6 +2,9 @@ package org.bouncycastle.tls;
 
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 
+/**
+ * Interface a class for verifying Diffie-Hellman config needs to conform to.
+ */
 public interface TlsDHConfigVerifier
 {
     /**
