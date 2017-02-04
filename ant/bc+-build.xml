@@ -1006,7 +1006,7 @@
                 <group title="PKCS Packages" packages="org.bouncycastle.pkcs*" />
                 <group title="OpenSSL and PEM Support Packages" packages="org.bouncycastle.openssl*" />
                 <group title="TSP Packages" packages="org.bouncycastle.tsp*" />
-                <group title="Test and Example Packages" packages="org.bouncycastle.openssl.test*,org.bouncycastle.mozilla.test*,org.bouncycastle.pkcs.test*,org.bouncycastle.cert.test*,org.bouncycastle.cert.path.test*,org.bouncycastle.cert.ocsp.test*,org.bouncycastle.cert.crmf.test*,org.bouncycastle.cert.cmp.test*,org.bouncycastle.eac.test*,org.bouncycastle.dvcs.test*,org.bouncycastle.est.test*,org.bouncycastle.cms.test*,org.bouncycastle.tsp.test*" />
+                <group title="Test and Example Packages" packages="org.bouncycastle.openssl.test*,org.bouncycastle.mozilla.test*,org.bouncycastle.pkcs.test*,org.bouncycastle.cert.test*,org.bouncycastle.cert.path.test*,org.bouncycastle.cert.ocsp.test*,org.bouncycastle.cert.crmf.test*,org.bouncycastle.cert.cmp.test*,org.bouncycastle.eac.test*,org.bouncycastle.dvcs.test*,org.bouncycastle.est.test*,org.bouncycastle.cms.test*,org.bouncycastle.tsp.test*,org.bouncycastle.operator.test*" />
             </docElements>
         </compile-doc>
 
