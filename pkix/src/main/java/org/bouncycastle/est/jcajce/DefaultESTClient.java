@@ -1,8 +1,6 @@
 package org.bouncycastle.est.jcajce;
 
 
-import org.bouncycastle.est.*;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -11,6 +9,13 @@ import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import org.bouncycastle.est.ESTClient;
+import org.bouncycastle.est.ESTClientSourceProvider;
+import org.bouncycastle.est.ESTException;
+import org.bouncycastle.est.ESTRequest;
+import org.bouncycastle.est.ESTResponse;
+import org.bouncycastle.est.Source;
 
 public class DefaultESTClient
     implements ESTClient
@@ -26,7 +31,7 @@ public class DefaultESTClient
 
 
     public ESTResponse doRequest(ESTRequest req)
-        throws Exception
+        throws IOException
     {
         ESTResponse resp = null;
         ESTRequest r = req;
@@ -47,7 +52,7 @@ public class DefaultESTClient
     }
 
     protected ESTRequest redirectURL(ESTResponse response)
-        throws Exception
+        throws IOException
     {
         ESTRequest redirectingRequest = null;
 
@@ -92,7 +97,7 @@ public class DefaultESTClient
 
 
     public ESTResponse performRequest(ESTRequest c)
-        throws Exception
+        throws IOException
     {
         c.setEstClient(this);
         Socket sock = null;
@@ -159,12 +164,11 @@ public class DefaultESTClient
 
 
     private static void writeLine(OutputStream os, String s)
-        throws Exception
+        throws IOException
     {
         os.write(s.getBytes());
         os.write(CRLF);
     }
-
 
     private class PrintingOutputStream
         extends OutputStream
@@ -183,8 +187,4 @@ public class DefaultESTClient
             tgt.write(b);
         }
     }
-
-
-
-
 }

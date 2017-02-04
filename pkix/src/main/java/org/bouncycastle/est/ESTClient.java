@@ -1,5 +1,7 @@
 package org.bouncycastle.est;
 
+import java.io.IOException;
+
 /**
  * ESTClient implement connection to the server.
  *
@@ -10,5 +12,5 @@ package org.bouncycastle.est;
  */
 public interface ESTClient
 {
-    public ESTResponse doRequest(ESTRequest c) throws Exception;
+    public ESTResponse doRequest(ESTRequest c) throws IOException;
 }

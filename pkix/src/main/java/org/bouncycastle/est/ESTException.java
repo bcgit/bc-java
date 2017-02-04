@@ -2,13 +2,14 @@ package org.bouncycastle.est;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 /**
  * Exception emitted by EST classes.
  */
 public class ESTException
-        extends Exception
+    extends IOException
 {
     private Throwable cause;
     private InputStream body;
