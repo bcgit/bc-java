@@ -2,6 +2,9 @@ package org.bouncycastle.tls;
 
 import org.bouncycastle.tls.crypto.TlsHash;
 
+/**
+ * Base interface for an object that can calculate a handshake hash.
+ */
 public interface TlsHandshakeHash
     extends TlsHash
 {
