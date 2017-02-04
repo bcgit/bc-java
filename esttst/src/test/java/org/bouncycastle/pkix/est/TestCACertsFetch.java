@@ -80,14 +80,15 @@ public class TestCACertsFetch
             serverInstance = startDefaultServer();
 
             ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
-            X509CertificateHolder[] caCerts = ESTService.storeToArray(est.getCACerts().getStore());
+            ESTService.CACertsResponse caCertsResponse = est.getCACerts();
+            X509CertificateHolder[] caCerts = ESTService.storeToArray(caCertsResponse.getStore());
 
             FileReader fr = new FileReader(ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt"));
             PemReader reader = new PemReader(fr);
             X509CertificateHolder fromFile = new X509CertificateHolder(reader.readPemObject().getContent());
             reader.close();
             fr.close();
-
+            Assert.assertFalse("Must not be trusted.",caCertsResponse.isTrusted());
             Assert.assertEquals("Returned ca certs should be 1", caCerts.length, 1);
             Assert.assertEquals("CA cert did match expected.", fromFile, caCerts[0]);
 
@@ -220,15 +221,15 @@ public class TestCACertsFetch
                             "https://localhost:8443/.well-known/est/",
                             Collections.singleton(ta)).build();
 
-
+            ESTService.CACertsResponse caCertsResponse = est.getCACerts();
             // Make the call. NB tlsAcceptAny is false.
-            X509CertificateHolder[] caCerts = ESTService.storeToArray(est.getCACerts().getStore());
+            X509CertificateHolder[] caCerts = ESTService.storeToArray(caCertsResponse.getStore());
 
             // We expect the bootstrap authorizer to not be called.
 
             Assert.assertEquals("Returned ca certs should be 1", caCerts.length, 1);
             Assert.assertEquals("CA cert did match expected.", fromFile, caCerts[0]);
-
+            Assert.assertTrue("Must be trusted.",caCertsResponse.isTrusted());
         } finally
         {
             if (serverInstance != null)
