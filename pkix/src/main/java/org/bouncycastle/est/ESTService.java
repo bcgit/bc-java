@@ -77,7 +77,7 @@ public class ESTService
         {
             URL url = new URL(server + CACERTS);
 
-            ESTClient client = clientProvider.makeHttpClient();
+            ESTClient client = clientProvider.makeClient();
             ESTRequest req = new ESTRequest("GET", url);
             resp = client.doRequest(req);
 
@@ -131,7 +131,7 @@ public class ESTService
 
         try
         {
-            ESTClient client = clientProvider.makeHttpClient();
+            ESTClient client = clientProvider.makeClient();
             resp = client.doRequest(priorResponse.getRequestToRetry());
             return handleEnrollResponse(resp);
         } catch (Throwable t)
@@ -179,7 +179,7 @@ public class ESTService
             final byte[] data = annotateRequest(certificationRequest.getEncoded()).getBytes();
 
             URL url = new URL(server + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
-            ESTClient client = clientProvider.makeHttpClient();
+            ESTClient client = clientProvider.makeClient();
             ESTRequest req = new ESTRequest("POST", url, new ESTClientRequestInputSource()
             {
                 public void ready(OutputStream os)
@@ -284,7 +284,7 @@ public class ESTService
         {
             URL url = new URL(server + CSRATTRS);
 
-            ESTClient client = clientProvider.makeHttpClient();
+            ESTClient client = clientProvider.makeClient();
             ESTRequest req = new ESTRequest("GET", url);
             resp = client.doRequest(req);
 

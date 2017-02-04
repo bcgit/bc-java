@@ -34,7 +34,7 @@ public class JcaDefaultESTHttpClientProvider
         this.tlsAuthorizer = tlsAuthorizer;
     }
 
-    public ESTClient makeHttpClient()
+    public ESTClient makeClient()
             throws Exception {
         TLSAcceptedIssuersSource acceptedIssuersSource = (tlsTrustAnchors != null) ? new TLSAcceptedIssuersSource() {
             public Set<TrustAnchor> anchors() {

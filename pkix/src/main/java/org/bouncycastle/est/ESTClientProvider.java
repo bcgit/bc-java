@@ -6,7 +6,7 @@ package org.bouncycastle.est;
  */
 public interface ESTClientProvider
 {
-    ESTClient makeHttpClient()
+    ESTClient makeClient()
         throws Exception;
 
     /**
