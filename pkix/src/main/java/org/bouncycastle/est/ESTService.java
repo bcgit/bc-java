@@ -93,7 +93,7 @@ public class ESTService
                 throw new ESTException("Get CACerts: " + url.toString(), resp.getStatusCode(), resp.getInputStream(), (int) resp.getContentLength());
             }
 
-            return new CACertsResponse(caCerts, req, resp.getSource());
+            return new CACertsResponse(caCerts, req, resp.getSource(), clientProvider.isTrusted());
         } catch (Throwable t)
         {
             if (t instanceof ESTException)
@@ -397,12 +397,14 @@ public class ESTService
         private final Store<X509CertificateHolder> store;
         private final ESTRequest requestToRetry;
         private final Source session;
+        private final boolean trusted;
 
-        public CACertsResponse(Store<X509CertificateHolder> store, ESTRequest requestToRetry, Source session)
+        public CACertsResponse(Store<X509CertificateHolder> store, ESTRequest requestToRetry, Source session, boolean trusted)
         {
             this.store = store;
             this.requestToRetry = requestToRetry;
             this.session = session;
+            this.trusted = trusted;
         }
 
         public Store<X509CertificateHolder> getStore()
@@ -418,6 +420,11 @@ public class ESTService
         public Object getSession()
         {
             return session.getSession();
+        }
+
+        public boolean isTrusted()
+        {
+            return trusted;
         }
     }
 
