@@ -7,7 +7,7 @@ package org.bouncycastle.est;
 public interface ESTClientProvider
 {
     ESTClient makeClient()
-        throws Exception;
+        throws ESTException;
 
     /**
      * Return true if the client is presently configured to verify the server.

@@ -50,7 +50,7 @@ public class DefaultESTClientSourceProvider
         TLSAuthorizer serverTLSAuthorizer,
         KeyManagerFactory keyManagerFactory,
         TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer)
-        throws Exception
+        throws GeneralSecurityException
     {
         this.tlsAcceptedIssuersSource = tlsAcceptedIssuersSource;
         this.serverTLSAuthorizer = serverTLSAuthorizer;
@@ -67,7 +67,7 @@ public class DefaultESTClientSourceProvider
      * @throws Exception
      */
     public static ESTClientSourceProvider getUsingDefaultSSLSocketFactory(TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer)
-        throws Exception
+        throws GeneralSecurityException
     {
         return new DefaultESTClientSourceProvider(null, null, null, hostNameAuthorizer)
         {

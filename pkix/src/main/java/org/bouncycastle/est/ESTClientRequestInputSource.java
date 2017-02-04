@@ -11,6 +11,6 @@ import java.io.OutputStream;
  */
 public interface ESTClientRequestInputSource
 {
-    public void ready(OutputStream os)
+    void ready(OutputStream os)
         throws IOException;
 }
