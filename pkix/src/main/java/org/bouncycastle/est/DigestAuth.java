@@ -28,6 +28,7 @@ public class DigestAuth
     private final String password;
 
 
+    // TODO: this needs to be removed
     private static SecureRandom secureRandom = new SecureRandom();
 
     public DigestAuth(String username, String password)
