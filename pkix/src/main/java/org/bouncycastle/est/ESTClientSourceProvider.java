@@ -1,5 +1,6 @@
 package org.bouncycastle.est;
 
+import java.io.IOException;
 import java.net.Socket;
 
 /**
@@ -9,5 +10,5 @@ import java.net.Socket;
 public interface ESTClientSourceProvider
 {
     Source wrapSocket(Socket plainSocket, String host, int port)
-        throws Exception;
+        throws IOException;
 }

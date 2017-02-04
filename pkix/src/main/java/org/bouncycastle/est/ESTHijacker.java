@@ -1,6 +1,8 @@
 package org.bouncycastle.est;
 
 
+import java.io.IOException;
+
 /**
  * ESTHijacker can take control of the source after the initial http request
  * has been sent and a response received.
@@ -12,5 +14,5 @@ package org.bouncycastle.est;
 public interface ESTHijacker
 {
     ESTResponse hijack(ESTRequest req, Source sock)
-        throws Exception;
+        throws IOException;
 }

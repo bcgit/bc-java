@@ -1,7 +1,5 @@
 package org.bouncycastle.est;
 
-import org.bouncycastle.util.Strings;
-
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,6 +7,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.bouncycastle.util.Strings;
 
 /**
  * A basic http response.
@@ -28,7 +28,7 @@ public class ESTResponse
 
 
     public ESTResponse(ESTRequest originalRequest, Source source)
-            throws Exception
+        throws IOException
     {
         this.originalRequest = originalRequest;
         this.source = source;
@@ -41,7 +41,7 @@ public class ESTResponse
     }
 
     private void process()
-            throws Exception
+        throws IOException
     {
         //
         // Status line.
@@ -94,7 +94,7 @@ public class ESTResponse
 
 
     protected String readStringIncluding(char until)
-            throws Exception
+        throws IOException
     {
         int c = 0;
         int j;
@@ -163,7 +163,7 @@ public class ESTResponse
     }
 
     public void close()
-            throws Exception
+        throws IOException
     {
         this.source.close();
     }

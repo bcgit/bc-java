@@ -1,8 +1,9 @@
 package org.bouncycastle.est;
 
-import org.bouncycastle.util.encoders.Base64;
-
+import java.io.IOException;
 import java.util.Map;
+
+import org.bouncycastle.util.encoders.Base64;
 
 /**
  * BasicAuth implements http basic auth.
@@ -28,7 +29,7 @@ public class BasicAuth
         return request.newWithHijacker(new ESTHijacker()
         {
             public ESTResponse hijack(ESTRequest req, Source sock)
-                throws Exception
+                throws ESTException, IOException
             {
                 ESTResponse res = new ESTResponse(req, sock);
                 if (res.getStatusCode() == 401 && res.getHeader("WWW-Authenticate").startsWith("Basic"))

@@ -1,10 +1,10 @@
 package org.bouncycastle.est;
 
-import org.bouncycastle.util.encoders.Base64;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
+import org.bouncycastle.util.encoders.Base64;
 
 
 class CTEBase64InputStream
@@ -20,25 +20,7 @@ class CTEBase64InputStream
     protected final long max;
     protected long read;
 
-    public CTEBase64InputStream(InputStream src)
-            throws Exception
-    {
-        this.src = src;
-        this.dataOutputStream = new OutputStream()
-        {
-            @Override
-            public void write(int b)
-                    throws IOException
-            {
-                data[wp++] = (byte) b;
-            }
-        };
-        this.max = Long.MAX_VALUE;
-    }
-
-
     public CTEBase64InputStream(InputStream src, long limit)
-            throws Exception
     {
         this.src = src;
         this.dataOutputStream = new OutputStream()
