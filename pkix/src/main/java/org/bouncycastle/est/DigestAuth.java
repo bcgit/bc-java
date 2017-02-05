@@ -22,27 +22,25 @@ import org.bouncycastle.util.encoders.Hex;
 public class DigestAuth
     implements ESTAuth
 {
-
     private final String realm;
     private final String username;
     private final String password;
+    private final SecureRandom nonceGenerator;
 
-
-    // TODO: this needs to be removed
-    private static SecureRandom secureRandom = new SecureRandom();
-
-    public DigestAuth(String username, String password)
+    public DigestAuth(String username, String password, SecureRandom nonceGenerator)
     {
         this.username = username;
         this.password = password;
+        this.nonceGenerator = nonceGenerator;
         this.realm = null;
     }
 
-    public DigestAuth(String realm, String username, String password)
+    public DigestAuth(String realm, String username, String password, SecureRandom nonceGenerator)
     {
         this.realm = realm;
         this.username = username;
         this.password = password;
+        this.nonceGenerator = nonceGenerator;
     }
 
     public ESTRequest applyAuth(final ESTRequest request)
@@ -292,10 +290,10 @@ public class DigestAuth
     }
 
 
-    private static String makeNonce(int len)
+    private String makeNonce(int len)
     {
         byte[] b = new byte[len];
-        secureRandom.nextBytes(b);
+        nonceGenerator.nextBytes(b);
         return Hex.toHexString(b);
     }
 

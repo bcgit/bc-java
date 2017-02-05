@@ -304,8 +304,8 @@ public class TestEnroll
             PKCS10CertificationRequest csr = pkcs10Builder.build(
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
-
-            ESTService.EnrollmentResponse enr = est.simpleEnroll(false, csr, new DigestAuth(null, "estuser", "estpwd"));
+            SecureRandom nonceRandom = new SecureRandom();
+            ESTService.EnrollmentResponse enr = est.simpleEnroll(false, csr, new DigestAuth(null, "estuser", "estpwd", nonceRandom));
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
