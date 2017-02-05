@@ -1,4 +1,4 @@
-package org.bouncycastle.pkix.est;
+package org.bouncycastle.test.est;
 
 
 import java.security.KeyPair;
@@ -13,7 +13,6 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.est.BasicAuth;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
-import org.bouncycastle.esttst.ESTServerUtils;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;

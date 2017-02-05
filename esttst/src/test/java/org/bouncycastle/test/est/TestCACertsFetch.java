@@ -1,4 +1,4 @@
-package org.bouncycastle.pkix.est;
+package org.bouncycastle.test.est;
 
 import java.io.FileReader;
 import java.security.KeyPair;
@@ -24,7 +24,6 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.est.ESTException;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
-import org.bouncycastle.esttst.ESTServerUtils;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;

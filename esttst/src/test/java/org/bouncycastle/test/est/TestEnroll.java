@@ -1,4 +1,4 @@
-package org.bouncycastle.pkix.est;
+package org.bouncycastle.test.est;
 
 
 import java.io.ByteArrayOutputStream;
@@ -30,7 +30,6 @@ import org.bouncycastle.est.DigestAuth;
 import org.bouncycastle.est.ESTException;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
-import org.bouncycastle.esttst.ESTServerUtils;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
