@@ -1,4 +1,4 @@
-package org.bouncycastle.pkix.est;
+package org.bouncycastle.test.est;
 
 
 import java.security.cert.TrustAnchor;

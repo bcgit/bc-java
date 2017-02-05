@@ -1,4 +1,4 @@
-package org.bouncycastle.pkix.est;
+package org.bouncycastle.test.est;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.est.AttrOrOID;
@@ -6,7 +6,6 @@ import org.bouncycastle.asn1.est.CsrAttrs;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
-import org.bouncycastle.esttst.ESTServerUtils;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;

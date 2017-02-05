@@ -1,4 +1,4 @@
-package org.bouncycastle.pkix.est;
+package org.bouncycastle.test.est.examples;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -47,11 +47,12 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.io.pem.PemReader;
-import org.junit.runner.JUnitCore;
-import org.junit.runner.Result;
-import org.junit.runner.notification.Failure;
 
-public class ESTTestUtils
+/**
+ * A Collection of utility functions for reading and handling certificates and private keys.
+ * Copied directly from ESTTestUtils.
+ */
+public class ExampleUtils
 {
 
     private static Map algIds = new HashMap();
@@ -98,7 +99,7 @@ public class ESTTestUtils
             {
                 out.add(new TrustAnchor((java.security.cert.X509Certificate)fac.generateCertificate(new ByteArrayInputStream(((X509CertificateHolder)o).getEncoded())), null));
             }
-            else if (o instanceof javax.security.cert.X509Certificate)
+            else if (o instanceof X509Certificate)
             {
                 out.add(new TrustAnchor((java.security.cert.X509Certificate)fac.generateCertificate(new ByteArrayInputStream(((X509Certificate)o).getEncoded())), null));
             }
@@ -164,27 +165,6 @@ public class ESTTestUtils
             return (java.security.cert.X509Certificate)o;
         }
         throw new IllegalArgumentException("Object not X509CertificateHolder, javax..X509Certificate or java...X509Certificate");
-    }
-
-
-    public static void runJUnit(Class c)
-        throws Exception
-    {
-        JUnitCore junit = new JUnitCore();
-        Result result = junit.run(c);
-        if (!result.wasSuccessful())
-        {
-
-            StringWriter sw = new StringWriter();
-
-            for (Failure f : result.getFailures())
-            {
-                sw.write(f.toString());
-                sw.write('\n');
-            }
-
-            throw new Exception("Tests failed: " + sw.toString());
-        }
     }
 
 

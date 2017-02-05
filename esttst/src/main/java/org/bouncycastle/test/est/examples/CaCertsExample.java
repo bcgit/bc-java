@@ -1,4 +1,4 @@
-package org.bouncycastle.esttst.examples;
+package org.bouncycastle.test.est.examples;
 
 
 import java.io.BufferedReader;
@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.security.cert.TrustAnchor;
-import java.security.cert.X509Certificate;
 import java.util.Set;
 
 import javax.net.ssl.SSLSession;
