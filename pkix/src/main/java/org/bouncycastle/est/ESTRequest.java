@@ -1,7 +1,11 @@
 package org.bouncycastle.est;
 
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Implements a basic http request.
@@ -62,7 +66,8 @@ public class ESTRequest
         return this;
     }
 
-    public ESTRequest copy() {
+    public ESTRequest copy()
+    {
         return this.newWithHijacker(this.hijacker);
     }
 

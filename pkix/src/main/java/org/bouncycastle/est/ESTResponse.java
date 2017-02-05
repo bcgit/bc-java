@@ -7,7 +7,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -17,14 +19,13 @@ public class ESTResponse
 {
     private final ESTRequest originalRequest;
     private final Map<String, List<String>> headers;
+    private final byte[] lineBuffer;
+    private final Source source;
     private String HttpVersion;
     private int statusCode;
     private String statusMessage;
-    private final byte[] lineBuffer;
-
     private InputStream inputStream;
     private long contentLength = -1;
-    private final Source source;
 
 
     public ESTResponse(ESTRequest originalRequest, Source source)
@@ -32,6 +33,18 @@ public class ESTResponse
     {
         this.originalRequest = originalRequest;
         this.source = source;
+
+        Set<String> opts = Properties.asKeySet("org.bouncycastle.debug.est");
+        if (opts.contains("input") ||
+            opts.contains("all"))
+        {
+            this.inputStream = new PrintingInputStream(source.getInputStream());
+        }
+        else
+        {
+            this.inputStream = source.getInputStream();
+        }
+
         this.inputStream = new PrintingInputStream(source.getInputStream());
 
         this.headers = new HashMap<String, List<String>>();
@@ -101,7 +114,7 @@ public class ESTResponse
         do
         {
             j = inputStream.read();
-            lineBuffer[c++] = (byte) j;
+            lineBuffer[c++] = (byte)j;
             if (c >= lineBuffer.length)
             {
                 throw new IOException("Server sent line > " + lineBuffer.length);
@@ -170,7 +183,7 @@ public class ESTResponse
 
 
     private class PrintingInputStream
-            extends InputStream
+        extends InputStream
     {
         private final InputStream src;
 
@@ -180,10 +193,10 @@ public class ESTResponse
         }
 
         public int read()
-                throws IOException
+            throws IOException
         {
             int i = src.read();
-            System.out.print(String.valueOf((char) i));
+            System.out.print(String.valueOf((char)i));
             return i;
         }
     }

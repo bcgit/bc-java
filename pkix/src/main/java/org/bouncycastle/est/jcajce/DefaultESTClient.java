@@ -9,6 +9,7 @@ import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.bouncycastle.est.ESTClient;
 import org.bouncycastle.est.ESTClientSourceProvider;
@@ -16,19 +17,26 @@ import org.bouncycastle.est.ESTException;
 import org.bouncycastle.est.ESTRequest;
 import org.bouncycastle.est.ESTResponse;
 import org.bouncycastle.est.Source;
+import org.bouncycastle.util.Properties;
 
 public class DefaultESTClient
     implements ESTClient
 {
-    private final ESTClientSourceProvider sslSocketProvider;
     private static final Charset utf8 = Charset.forName("UTF-8");
     private static byte[] CRLF = new byte[]{'\r', '\n'};
+    private final ESTClientSourceProvider sslSocketProvider;
 
     public DefaultESTClient(ESTClientSourceProvider sslSocketProvider)
     {
         this.sslSocketProvider = sslSocketProvider;
     }
 
+    private static void writeLine(OutputStream os, String s)
+        throws IOException
+    {
+        os.write(s.getBytes());
+        os.write(CRLF);
+    }
 
     public ESTResponse doRequest(ESTRequest req)
         throws IOException
@@ -95,7 +103,6 @@ public class DefaultESTClient
         return redirectingRequest;
     }
 
-
     public ESTResponse performRequest(ESTRequest c)
         throws IOException
     {
@@ -109,9 +116,21 @@ public class DefaultESTClient
             sock = new Socket(c.getUrl().getHost(), c.getUrl().getPort());
             socketSource = sslSocketProvider.wrapSocket(sock, c.getUrl().getHost(), c.getUrl().getPort());
 
-          //  socketSource = new SSLSocketSource((SSLSocket)sock);
+            //  socketSource = new SSLSocketSource((SSLSocket)sock);
 
-            OutputStream os = new PrintingOutputStream(socketSource.getOutputStream());
+            OutputStream os = null;
+
+            Set<String> opts = Properties.asKeySet("org.bouncycastle.debug.est");
+            if (opts.contains("output") ||
+                opts.contains("all"))
+            {
+                os = new PrintingOutputStream(socketSource.getOutputStream());
+            }
+            else
+            {
+                os = socketSource.getOutputStream();
+            }
+
 //            InputStream in = new PrintingInputStream(sock.getInputStream());
 
             String req = c.getUrl().getPath() + ((c.getUrl().getQuery() != null) ? c.getUrl().getQuery() : "");
@@ -160,14 +179,6 @@ public class DefaultESTClient
             }
         }
 
-    }
-
-
-    private static void writeLine(OutputStream os, String s)
-        throws IOException
-    {
-        os.write(s.getBytes());
-        os.write(CRLF);
     }
 
     private class PrintingOutputStream

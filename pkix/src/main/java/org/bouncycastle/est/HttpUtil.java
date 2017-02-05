@@ -10,11 +10,12 @@ class HttpUtil
 
     /**
      * Merge kv into comma separated set of key="value" pairs.
+     *
      * @param prefix Optional prefix to apply, eg:  prefix key="value" (,key="value")
      * @param kv
      * @return
      */
-     static String mergeCSL(String prefix, Map<String, String> kv)
+    static String mergeCSL(String prefix, Map<String, String> kv)
     {
         StringWriter sw = new StringWriter();
         sw.write(prefix);
@@ -41,7 +42,7 @@ class HttpUtil
     }
 
 
-     static Map<String, String> splitCSL(String skip, String src)
+    static Map<String, String> splitCSL(String skip, String src)
     {
         src = src.trim();
         if (src.startsWith(skip))
@@ -53,19 +54,19 @@ class HttpUtil
     }
 
 
-     static class PartLexer
+    static class PartLexer
     {
         private final String src;
         int last = 0;
         int p = 0;
 
-         PartLexer(String src)
+        PartLexer(String src)
         {
             this.src = src;
         }
 
 
-         Map<String, String> Parse()
+        Map<String, String> Parse()
         {
             Map<String, String> out = new HashMap<String, String>();
             String key = null;

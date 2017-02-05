@@ -1,33 +1,20 @@
 package org.bouncycastle.est;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
+
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.est.AttrOrOID;
 import org.bouncycastle.asn1.est.CsrAttrs;
 import org.bouncycastle.util.Encodable;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-
 public class CSRAttributesResponse
     implements Encodable
 {
     private final CsrAttrs csrAttrs;
     private final HashMap<ASN1ObjectIdentifier, AttrOrOID> index;
-
-    private static CsrAttrs parseBytes(byte[] responseEncoding)
-        throws ESTException
-    {
-        try
-        {
-            return CsrAttrs.getInstance(ASN1Primitive.fromByteArray(responseEncoding));
-        }
-        catch (Exception e)
-        {
-            throw new ESTException("malformed data: " + e.getMessage(), e);
-        }
-    }
 
     /**
      * Create a CSRAttributesResponse from the passed in bytes.
@@ -65,6 +52,19 @@ public class CSRAttributesResponse
             {
                 index.put(attrOrOID.getAttribute().getAttrType(), attrOrOID);
             }
+        }
+    }
+
+    private static CsrAttrs parseBytes(byte[] responseEncoding)
+        throws ESTException
+    {
+        try
+        {
+            return CsrAttrs.getInstance(ASN1Primitive.fromByteArray(responseEncoding));
+        }
+        catch (Exception e)
+        {
+            throw new ESTException("malformed data: " + e.getMessage(), e);
         }
     }
 
