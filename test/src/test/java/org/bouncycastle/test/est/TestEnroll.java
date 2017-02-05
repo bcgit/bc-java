@@ -501,11 +501,10 @@ public class TestEnroll
             {
                 Assert.assertEquals("Only ESTException", ex.getClass(), ESTException.class);
 
-                // NB: I guess it depends on how the server hangs up
-                // but we either get a handshake exception or a socket exception.
+                // NB: My assumption is that it depends on how the server hangs up
+                // but we either get a SSL handshake exception or a Socket exception.
                 // TODO might be a race.
                 Assert.assertTrue("Either SocketException or SSLHandshakeException", (ex.getCause() instanceof SocketException || ex.getCause() instanceof SSLHandshakeException));
-                Assert.assertEquals("Cause must be SSLHandshakeException", SocketException.class, ex.getCause().getClass());
             }
 
 
