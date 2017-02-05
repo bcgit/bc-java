@@ -65,11 +65,13 @@ public class ESTException
                             i = contentLength - bos.size();
                             bos.write(b, 0, i);
                             break;
-                        } else
+                        }
+                        else
                         {
                             bos.write(b, 0, i);
                         }
-                    } else
+                    }
+                    else
                     {
                         bos.write(b, 0, i);
                     }
@@ -79,11 +81,13 @@ public class ESTException
                 bos.close();
                 this.body = new ByteArrayInputStream(bos.toByteArray());
                 body.close();
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 throw new RuntimeException("Reading error body:" + ex.getMessage(), ex);
             }
-        } else
+        }
+        else
         {
             this.body = null;
         }

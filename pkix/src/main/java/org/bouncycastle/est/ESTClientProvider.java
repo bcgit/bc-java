@@ -11,6 +11,7 @@ public interface ESTClientProvider
 
     /**
      * Return true if the client is presently configured to verify the server.
+     *
      * @return true = verifying server.
      */
     boolean isTrusted();

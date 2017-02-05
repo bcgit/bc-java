@@ -29,15 +29,14 @@ import org.bouncycastle.util.encoders.Base64;
 public class ESTService
 {
 
-    private final TLSHostNameAuthorizer hostNameAuthorizer;
-    private final String server;
-    private final TLSAuthorizer tlsAuthorizer;
-    private final ESTClientProvider clientProvider;
-
     protected final String CACERTS = "/cacerts";
     protected final String SIMPLE_ENROLL = "/simpleenroll";
     protected final String SIMPLE_REENROLL = "/simplereenroll";
     protected final String CSRATTRS = "/csrattrs";
+    private final TLSHostNameAuthorizer hostNameAuthorizer;
+    private final String server;
+    private final TLSAuthorizer tlsAuthorizer;
+    private final ESTClientProvider clientProvider;
 
 
     ESTService(
@@ -56,6 +55,17 @@ public class ESTService
             server = server.substring(0, server.length() - 1); // Trim off trailing slash
         }
         this.server = server;
+    }
+
+    public static X509CertificateHolder[] storeToArray(Store<X509CertificateHolder> store)
+    {
+        return storeToArray(store, null);
+    }
+
+    public static X509CertificateHolder[] storeToArray(Store<X509CertificateHolder> store, Selector<X509CertificateHolder> selector)
+    {
+        Collection<X509CertificateHolder> c = store.getMatches(selector);
+        return c.toArray(new X509CertificateHolder[c.size()]);
     }
 
     /**
@@ -160,7 +170,6 @@ public class ESTService
         }
     }
 
-
     /**
      * Perform a simple enrollment operation.
      * <p>
@@ -231,7 +240,6 @@ public class ESTService
 
     }
 
-
     protected EnrollmentResponse handleEnrollResponse(ESTResponse resp)
         throws IOException
     {
@@ -289,7 +297,6 @@ public class ESTService
             resp.getStatusCode(), resp.getInputStream(), (int)resp.getContentLength());
 
     }
-
 
     public CSRRequestResponse getCSRAttributes()
         throws IOException
@@ -351,7 +358,6 @@ public class ESTService
         return new CSRRequestResponse(response, resp.getSource());
     }
 
-
     private String annotateRequest(byte[] data)
     {
         int i = 0;
@@ -378,21 +384,9 @@ public class ESTService
         return sw.toString();
     }
 
-
     public TLSHostNameAuthorizer getHostNameAuthorizer()
     {
         return hostNameAuthorizer;
-    }
-
-    public static X509CertificateHolder[] storeToArray(Store<X509CertificateHolder> store)
-    {
-        return storeToArray(store, null);
-    }
-
-    public static X509CertificateHolder[] storeToArray(Store<X509CertificateHolder> store, Selector<X509CertificateHolder> selector)
-    {
-        Collection<X509CertificateHolder> c = store.getMatches(selector);
-        return c.toArray(new X509CertificateHolder[c.size()]);
     }
 
     public static class CSRRequestResponse

@@ -100,6 +100,54 @@ public class DefaultESTClientSourceProvider
         };
     }
 
+    public static TLSAuthorizer getCertPathTLSAuthorizer(final CRL revocationList)
+    {
+        // TODO must accept array of revocation lists.
+
+        return new TLSAuthorizer()
+        {
+            public void authorize(Set<TrustAnchor> acceptedIssuers, X509Certificate[] chain, String authType)
+                throws CertificateException
+            {
+                try
+                {
+                    // From BC JSSE.
+                    // TODO Review.
+                    CertStore certStore = CertStore.getInstance("Collection",
+                        new CollectionCertStoreParameters(Arrays.asList(chain)), "BC");
+
+                    CertPathBuilder pathBuilder = CertPathBuilder.getInstance("PKIX", "BC");
+
+                    X509CertSelector constraints = new X509CertSelector();
+
+                    constraints.setCertificate(chain[0]);
+
+
+                    PKIXBuilderParameters param = new PKIXBuilderParameters(acceptedIssuers, constraints);
+                    param.addCertStore(certStore);
+                    if (revocationList != null)
+                    {
+                        param.setRevocationEnabled(true);
+                        param.addCertStore(
+                            CertStore.getInstance(
+                                "Collection",
+                                new CollectionCertStoreParameters(Arrays.asList(revocationList)
+                                )));
+                    }
+                    else
+                    {
+                        param.setRevocationEnabled(false);
+                    }
+
+                    PKIXCertPathValidatorResult result = (PKIXCertPathValidatorResult)pathBuilder.build(param);
+                }
+                catch (GeneralSecurityException e)
+                {
+                    throw new CertificateException("unable to process certificates: " + e.getMessage(), e);
+                }
+            }
+        };
+    }
 
     /**
      * Creates the SSLSocketFactory.
@@ -153,57 +201,6 @@ public class DefaultESTClientSourceProvider
         ctx.init((keyManagerFactory != null) ? keyManagerFactory.getKeyManagers() : null, new TrustManager[]{tm}, new SecureRandom());
         return ctx.getSocketFactory();
     }
-
-
-    public static TLSAuthorizer getCertPathTLSAuthorizer(final CRL revocationList)
-    {
-        // TODO must accept array of revocation lists.
-
-        return new TLSAuthorizer()
-        {
-            public void authorize(Set<TrustAnchor> acceptedIssuers, X509Certificate[] chain, String authType)
-                throws CertificateException
-            {
-                try
-                {
-                    // From BC JSSE.
-                    // TODO Review.
-                    CertStore certStore = CertStore.getInstance("Collection",
-                        new CollectionCertStoreParameters(Arrays.asList(chain)), "BC");
-
-                    CertPathBuilder pathBuilder = CertPathBuilder.getInstance("PKIX", "BC");
-
-                    X509CertSelector constraints = new X509CertSelector();
-
-                    constraints.setCertificate(chain[0]);
-
-
-                    PKIXBuilderParameters param = new PKIXBuilderParameters(acceptedIssuers, constraints);
-                    param.addCertStore(certStore);
-                    if (revocationList != null)
-                    {
-                        param.setRevocationEnabled(true);
-                        param.addCertStore(
-                            CertStore.getInstance(
-                                "Collection",
-                                new CollectionCertStoreParameters(Arrays.asList(revocationList)
-                                )));
-                    }
-                    else
-                    {
-                        param.setRevocationEnabled(false);
-                    }
-
-                    PKIXCertPathValidatorResult result = (PKIXCertPathValidatorResult)pathBuilder.build(param);
-                }
-                catch (GeneralSecurityException e)
-                {
-                    throw new CertificateException("unable to process certificates: " + e.getMessage(), e);
-                }
-            }
-        };
-    }
-
 
     public Source wrapSocket(Socket plainSocket, String host, int port)
         throws IOException

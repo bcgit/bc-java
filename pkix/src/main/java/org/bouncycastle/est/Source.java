@@ -7,12 +7,19 @@ import java.io.OutputStream;
 
 /**
  * Used to Wrap a socket and to provide access to the underlying session.
+ *
  * @param <T> Is the type of session that is returned. Eg For JSSE would be SSLSession.
  */
 public interface Source<T>
 {
-    InputStream getInputStream() throws IOException;
-    OutputStream getOutputStream() throws IOException;
+    InputStream getInputStream()
+        throws IOException;
+
+    OutputStream getOutputStream()
+        throws IOException;
+
     T getSession();
-    void close() throws IOException;
+
+    void close()
+        throws IOException;
 }

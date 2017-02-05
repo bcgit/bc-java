@@ -1,15 +1,17 @@
 package org.bouncycastle.est.jcajce;
 
-import org.bouncycastle.est.Source;
-
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
 
-public class SSLSocketSource implements Source<SSLSession>
+import org.bouncycastle.est.Source;
+
+
+public class SSLSocketSource
+    implements Source<SSLSession>
 {
     protected final SSLSocket socket;
 
@@ -18,12 +20,14 @@ public class SSLSocketSource implements Source<SSLSession>
         this.socket = sock;
     }
 
-    public InputStream getInputStream() throws IOException
+    public InputStream getInputStream()
+        throws IOException
     {
         return socket.getInputStream();
     }
 
-    public OutputStream getOutputStream() throws IOException
+    public OutputStream getOutputStream()
+        throws IOException
     {
         return socket.getOutputStream();
     }
@@ -33,7 +37,8 @@ public class SSLSocketSource implements Source<SSLSession>
         return socket.getSession();
     }
 
-    public void close() throws IOException
+    public void close()
+        throws IOException
     {
         socket.close();
     }
