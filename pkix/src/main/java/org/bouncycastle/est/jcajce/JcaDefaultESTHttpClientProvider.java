@@ -21,7 +21,7 @@ import org.bouncycastle.est.ESTAuthorizer;
 import org.bouncycastle.est.ESTClient;
 import org.bouncycastle.est.ESTClientProvider;
 import org.bouncycastle.est.ESTException;
-import org.bouncycastle.est.TLSHostNameAuthorizer;
+import org.bouncycastle.est.ESTHostNameAuthorizer;
 
 public class JcaDefaultESTHttpClientProvider
     implements ESTClientProvider
@@ -30,14 +30,14 @@ public class JcaDefaultESTHttpClientProvider
     private final Set<TrustAnchor> tlsTrustAnchors;
     private final KeyStore clientKeystore;
     private final char[] clientKeystorePassword;
-    private final TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer;
+    private final ESTHostNameAuthorizer<SSLSession> hostNameAuthorizer;
     private final CRL revocationList;
     private final ESTAuthorizer estAuthorizer;
 
     public JcaDefaultESTHttpClientProvider(Set<TrustAnchor> tlsTrustAnchors,
                                            KeyStore clientKeystore,
                                            char[] clientKeystorePassword,
-                                           TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer,
+                                           ESTHostNameAuthorizer<SSLSession> hostNameAuthorizer,
                                            CRL revocationList, ESTAuthorizer estAuthorizer)
     {
         this.tlsTrustAnchors = tlsTrustAnchors;

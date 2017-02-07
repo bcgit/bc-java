@@ -23,20 +23,20 @@ import javax.net.ssl.SSLSocketFactory;
 
 import org.bouncycastle.est.ESTAuthorizer;
 import org.bouncycastle.est.ESTClientSourceProvider;
+import org.bouncycastle.est.ESTHostNameAuthorizer;
 import org.bouncycastle.est.Source;
-import org.bouncycastle.est.TLSHostNameAuthorizer;
 
 public class DefaultESTClientSourceProvider
     implements ESTClientSourceProvider
 {
 
     private final SSLSocketFactory sslSocketFactory;
-    private final TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer;
+    private final ESTHostNameAuthorizer<SSLSession> hostNameAuthorizer;
 
 
     public DefaultESTClientSourceProvider(
         SSLSocketFactory socketFactory,
-        TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer
+        ESTHostNameAuthorizer<SSLSession> hostNameAuthorizer
     )
         throws GeneralSecurityException
     {

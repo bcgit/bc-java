@@ -33,22 +33,14 @@ public class ESTService
     protected final String SIMPLE_ENROLL = "/simpleenroll";
     protected final String SIMPLE_REENROLL = "/simplereenroll";
     protected final String CSRATTRS = "/csrattrs";
-    private final TLSHostNameAuthorizer hostNameAuthorizer;
     private final String server;
-    private final ESTAuthorizer ESTAuthorizer;
     private final ESTClientProvider clientProvider;
 
 
     ESTService(
-
-        TLSHostNameAuthorizer hostNameAuthorizer,
         String server,
-        ESTAuthorizer ESTAuthorizer, ESTClientProvider clientProvider)
+        ESTClientProvider clientProvider)
     {
-
-
-        this.hostNameAuthorizer = hostNameAuthorizer;
-        this.ESTAuthorizer = ESTAuthorizer;
         this.clientProvider = clientProvider;
         if (server.endsWith("/"))
         {
@@ -384,10 +376,6 @@ public class ESTService
         return sw.toString();
     }
 
-    public TLSHostNameAuthorizer getHostNameAuthorizer()
-    {
-        return hostNameAuthorizer;
-    }
 
     public static class CSRRequestResponse
     {
