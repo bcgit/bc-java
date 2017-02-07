@@ -475,6 +475,11 @@ public class ESTService
         {
             return session.getSession();
         }
+
+        public boolean isCompleted()
+        {
+            return requestToRetry == null;
+        }
     }
 
 }

@@ -134,11 +134,10 @@ public class TestEnroll
         {
             serverInstance = startDefaultServerTLSAndBasicAuth(0);
 
-            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/")
-                .withTlsTrustAnchors(ESTTestUtils.toTrustAnchor(
-                    ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    ))).build();
+            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/", ESTTestUtils.toTrustAnchor(
+                ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                ))).build();
 
 
             //
@@ -196,11 +195,10 @@ public class TestEnroll
         {
             serverInstance = startDefaultServerTLSAndBasicAuth(5);
 
-            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/")
-                .withTlsTrustAnchors(ESTTestUtils.toTrustAnchor(
-                    ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    ))).build();
+            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/", ESTTestUtils.toTrustAnchor(
+                ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                ))).build();
 
 
             //
@@ -224,6 +222,7 @@ public class TestEnroll
 
             Assert.assertFalse("Can Retry is true.", enr.canRetry());
             Assert.assertNull("Store is null", enr.getStore());
+            Assert.assertFalse("Must not be completed:?", enr.isCompleted());
 
             System.out.println(enr.getNotBefore() - System.currentTimeMillis());
             Assert.assertTrue("Future time reasonable?", enr.getNotBefore() - System.currentTimeMillis() > 2000);
@@ -240,6 +239,7 @@ public class TestEnroll
 
             ESTService.EnrollmentResponse entTriedAgain = est.simpleEnroll(enr);
 
+            Assert.assertTrue("Must be completed:?", entTriedAgain.isCompleted());
 
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -283,11 +283,10 @@ public class TestEnroll
         {
             serverInstance = startDefaultServerWithDigestAuth();
 
-            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/")
-                .withTlsTrustAnchors(ESTTestUtils.toTrustAnchor(
-                    ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    ))).build();
+            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/", ESTTestUtils.toTrustAnchor(
+                ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                ))).build();
 
             //
             // Make certificate request.
@@ -473,9 +472,8 @@ public class TestEnroll
                     )
                 ), null);
 
-            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/")
+            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/", Collections.singleton(ta))
                 .withClientKeystore(clientKeyStore, clientKeyStorePass)
-                .withTlsTrustAnchors(Collections.singleton(ta))
                 .build();
 
 
@@ -619,9 +617,8 @@ public class TestEnroll
                     )
                 ), null);
 
-            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/")
+            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/", Collections.singleton(ta))
                 .withClientKeystore(clientKeyStore, clientKeyStorePass)
-                .withTlsTrustAnchors(Collections.singleton(ta))
                 .build();
 
 

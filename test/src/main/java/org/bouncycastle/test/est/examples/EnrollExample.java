@@ -11,6 +11,11 @@ import java.security.Security;
 import java.security.spec.ECGenParameterSpec;
 
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.est.BasicAuth;
+import org.bouncycastle.est.DigestAuth;
+import org.bouncycastle.est.ESTAuth;
+import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -36,51 +41,81 @@ public class EnrollExample
         File clientKeyStoreFile = null;
         char[] clientKeyStoreFilePassword = null;
         String keyStoreType = null;
+        boolean basicAuth = false;
+        boolean digestAuth = false;
+        String[] credentials = null;
+        boolean reEnroll = false;
 
         try
         {
             for (int t = 0; t < args.length; t++)
             {
                 String arg = args[t];
-                if (arg.equals("-ta"))
+                if (arg.equals("-r"))
+                {
+                    reEnroll = true;
+                    continue;
+                }
+                else if (arg.equals("-t"))
                 {
                     trustAnchorFile = ExampleUtils.nextArgAsFile("Trust Anchor File", args, t);
                     t += 1;
                     continue;
                 }
-                else if (arg.equals("-url"))
+                else if (arg.equals("-u"))
                 {
                     serverRootUrl = ExampleUtils.nextArgAsString("Server URL", args, t);
                     t += 1;
                     continue;
                 }
-                else if (arg.equals("-url"))
+                else if (arg.equals("-c"))
                 {
                     cn = ExampleUtils.nextArgAsString("Common Name", args, t);
                     t += 1;
                     continue;
                 }
-                else if (arg.equals("-keyStore"))
+                else if (arg.equals("--keyStore"))
                 {
                     clientKeyStoreFile = ExampleUtils.nextArgAsFile("Client Key store", args, t);
                     t += 1;
                     continue;
                 }
-                else if (arg.equals("-keyStorePass"))
+                else if (arg.equals("--keyStorePass"))
                 {
                     clientKeyStoreFilePassword = ExampleUtils.nextArgAsString("Keystore password", args, t).toCharArray();
                     t += 1;
                     continue;
                 }
-                if (arg.equals("-keyStoreType"))
+                if (arg.equals("--keyStoreType"))
                 {
                     keyStoreType = ExampleUtils.nextArgAsString("Keystore type", args, t);
                     t += 1;
                     continue;
                 }
+                else if (arg.equals("--keyStoreType"))
+                {
+                    keyStoreType = ExampleUtils.nextArgAsString("Keystore type", args, t);
+                    t += 1;
+                    continue;
+                }
+                else if (arg.equals("--digestAuth"))
+                {
+                    credentials = ExampleUtils.nextArgAsString("Keystore type", args, t).split(":");
+                    digestAuth = true;
+                    t += 1;
+                    continue;
+                }
+                else if (arg.equals("--basicAuth"))
+                {
+                    credentials = ExampleUtils.nextArgAsString("Keystore type", args, t).split(":");
+                    basicAuth = true;
+                    t += 1;
+                    continue;
+                }
                 else
                 {
-                    throw new IllegalArgumentException("Unknown argument " + arg);
+                    printArgs();
+                    System.exit(0);
                 }
             }
         }
@@ -90,27 +125,43 @@ public class EnrollExample
             System.exit(1);
         }
 
+        if (args.length == 0)
+        {
+            System.out.println("-r                                    Re-enroll");
+            System.out.println("-t <file>                             Trust anchor file");
+            System.out.println("-u <url>                              EST server url.");
+            System.out.println("-c <common name>                      EST server url.");
+            System.out.println("--keyStore <file>                      Optional Key Store.");
+            System.out.println("--keyStorePass <password>              Optional Key Store password.");
+            System.out.println("--keyStoreType <JKS>                   Optional Key Store type, defaults to JKS");
+            System.out.println("--digestAuth <realm:user:password>     Digest Auth credentials, if real is not");
+            System.out.println("                                      specified <user:password> then the realm from the server is used.");
+            System.out.println("--basicAuth <realm:user:password>      Use basic auth.");
+            System.exit(0);
+        }
+
+
         if (serverRootUrl == null)
         {
-            System.err.println("Server url (-url) must be defined.");
+            System.err.println("Server url (-u) must be defined.");
             System.exit(-1);
         }
 
         if (cn == null)
         {
-            System.err.println("Common Name (-cn) must be defined.");
+            System.err.println("Common Name (-c) must be defined.");
             System.exit(-1);
         }
 
         if (trustAnchorFile == null)
         {
-            System.err.println("Trust Anchor (-tn) must be defined.");
+            System.err.println("Trust Anchor (-t) must be defined.");
             System.exit(-1);
         }
 
 
         //
-        // Make CSR
+        // Make a CSR here
         //
 
         ECGenParameterSpec ecGenSpec = new ECGenParameterSpec("prime256v1");
@@ -119,14 +170,13 @@ public class EnrollExample
         KeyPair keyPair = kpg.generateKeyPair();
 
         PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
-            new X500Name("CN=Test"),
+            new X500Name("CN=" + cn),
             keyPair.getPublic());
 
         PKCS10CertificationRequest csr = pkcs10Builder.build(
             new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(keyPair.getPrivate()));
 
-        JcaESTServiceBuilder est = new JcaESTServiceBuilder(
-            "https://localhost:8443/.well-known/est/",
+        JcaESTServiceBuilder est = new JcaESTServiceBuilder(serverRootUrl,
             ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificate(trustAnchorFile)));
 
         if (clientKeyStoreFile != null)
@@ -140,15 +190,102 @@ public class EnrollExample
             est.withClientKeystore(ks, clientKeyStoreFilePassword);
         }
 
-        est.build();
+        ESTAuth auth = null;
 
+        if (digestAuth)
+        {
+            if (credentials.length == 3)
+            {
+                auth = new DigestAuth(credentials[0], credentials[1], credentials[2], new SecureRandom());
+            }
+            else if (credentials.length == 2)
+            {
+                auth = new DigestAuth(null, credentials[0], credentials[1], new SecureRandom());
+            }
+            else
+            {
+                System.err.println("Not enough credential for digest auth.");
+                System.exit(0);
+            }
+        }
+        else if (basicAuth)
+        {
+            if (credentials.length == 3)
+            {
+                auth = new BasicAuth(credentials[0], credentials[1], credentials[2]);
+            }
+            else if (credentials.length == 2)
+            {
+                auth = new BasicAuth(null, credentials[0], credentials[1]);
+            }
+            else
+            {
+                System.err.println("Not enough credential for basic auth.");
+                System.exit(0);
+            }
+        }
+
+        ESTService estService = est.build();
+        ESTService.EnrollmentResponse enrollmentResponse;
+
+        //
+        // The enrollment action can be deferred by the server.
+        // In this example we will check if the response is actually completed.
+        // If it is not then we must wait long enough for it to be completed.
+        //
+        do
+        {
+            enrollmentResponse = estService.simpleEnroll(reEnroll, csr, auth);
+            if (!enrollmentResponse.isCompleted())
+            {
+                long t = enrollmentResponse.getNotBefore() - System.currentTimeMillis();
+                if (t < 0)
+                {
+                    continue;
+                }
+                t += 1000;
+                Thread.sleep(t);
+                continue;
+            }
+        }
+        while (!enrollmentResponse.isCompleted());
+
+
+        for (X509CertificateHolder holder : ESTService.storeToArray(enrollmentResponse.getStore()))
+        {
+
+            //
+            // Limited the amount of information for the sake of the example.
+            // The default too string prints everything and is hard to follow.
+            //
+
+            System.out.println("Subject: " + holder.getSubject());
+            System.out.println("Issuer: " + holder.getIssuer());
+            System.out.println("Serial Number: " + holder.getSerialNumber());
+            System.out.println("Not Before: " + holder.getNotBefore());
+            System.out.println("Not After: " + holder.getNotAfter());
+            System.out.println("Signature Algorithm: " + holder.getSignatureAlgorithm());
+            System.out.println();
+
+        }
 
     }
-
 
     public static void main(String[] args)
         throws Exception
     {
         new EnrollExample(args);
+    }
+
+    public void printArgs()
+    {
+        System.out.println("-ta <file>                            Trust anchor file");
+        System.out.println("-url <url>                            EST server url.");
+        System.out.println("-keyStore <file>                      Optional Key Store.");
+        System.out.println("-keyStorePass <password>              Optional Key Store password.");
+        System.out.println("-keyStoreType <JKS>                   Optional Key Store type, defaults to JKS");
+        System.out.println("-digestAuth <realm:user:password>     Digest Auth credentials, if real is not");
+        System.out.println("                                      specified <user:password> then the realm from the server is used.");
+        System.out.println("-basicAuth <realm:user:password>      Use basic auth.");
     }
 }

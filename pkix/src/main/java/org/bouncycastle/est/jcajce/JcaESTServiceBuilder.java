@@ -51,7 +51,7 @@ public class JcaESTServiceBuilder
     /**
      * Create a builder for a client talking to a already trusted server.
      *
-     * @param server name of the server to talk to (URL format).
+     * @param server          name of the server to talk to (URL format).
      * @param tlsTrustAnchors the trust anchor set to use to authenticate the server.
      */
     public JcaESTServiceBuilder(String server, Set<TrustAnchor> tlsTrustAnchors)

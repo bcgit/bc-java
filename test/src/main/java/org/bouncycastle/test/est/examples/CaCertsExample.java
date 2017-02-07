@@ -23,6 +23,12 @@ public class CaCertsExample
         throws Exception
     {
 
+        if (args.length == 0)
+        {
+            printArguments();
+            System.exit(1);
+        }
+
         Security.addProvider(new BouncyCastleProvider());
 
         File trustAnchorFile = null;
@@ -34,19 +40,19 @@ public class CaCertsExample
             for (int t = 0; t < args.length; t++)
             {
                 String arg = args[t];
-                if (arg.equals("-ta"))
+                if (arg.equals("-t"))
                 {
                     trustAnchorFile = ExampleUtils.nextArgAsFile("Trust Anchor File", args, t);
                     t += 1;
                     continue;
                 }
-                else if (arg.equals("-url"))
+                else if (arg.equals("-u"))
                 {
                     serverRootUrl = ExampleUtils.nextArgAsString("Server URL", args, t);
                     t += 1;
                     continue;
                 }
-                else if (arg.equals("-printTLS"))
+                else if (arg.equals("--printTLS"))
                 {
                     printTLSCerts = true;
                 }
@@ -60,12 +66,15 @@ public class CaCertsExample
         catch (IllegalArgumentException ilex)
         {
             System.err.println(ilex.getMessage());
+
+            printArguments();
+
             System.exit(1);
         }
 
         if (serverRootUrl == null)
         {
-            System.err.println("Server url (-url) must be defined.");
+            System.err.println("Server url (-u) must be defined.");
             System.exit(-1);
         }
 
@@ -176,12 +185,9 @@ public class CaCertsExample
             System.out.println(ExampleUtils.toPem(holder));
         }
 
-
-        System.out.println("\n TLS Certificates");
-
-
         if (printTLSCerts)
         {
+            System.out.println("\n TLS Certificates");
             System.out.println();
             for (javax.security.cert.X509Certificate cert : certs)
             {
@@ -195,6 +201,13 @@ public class CaCertsExample
         throws Exception
     {
         new CaCertsExample(args);
+    }
+
+    public void printArguments()
+    {
+        System.out.println("-t <file>                Trust anchor file. (PEM)");
+        System.out.println("-u <url>                 Server URL");
+        System.out.println("--printTLS <url>         Print TLS certificates as PEM format");
     }
 
 }
