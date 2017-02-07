@@ -26,8 +26,13 @@ public class JcaESTServiceBuilder
     protected char[] clientKeystorePassword;
     protected JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer;
     protected JcaJceAuthorizer ESTAuthorizer;
-    protected CRL revocationList;
+    protected CRL[] revocationLists;
 
+    /**
+     * Create a builder for a client talking to a server where trust anchors have not been established yet.
+     *
+     * @param server name of the server to talk to (URL format).
+     */
     public JcaESTServiceBuilder(String server)
     {
         super(server);
@@ -43,6 +48,12 @@ public class JcaESTServiceBuilder
         };
     }
 
+    /**
+     * Create a builder for a client talking to a already trusted server.
+     *
+     * @param server name of the server to talk to (URL format).
+     * @param tlsTrustAnchors the trust anchor set to use to authenticate the server.
+     */
     public JcaESTServiceBuilder(String server, Set<TrustAnchor> tlsTrustAnchors)
     {
         super(server);
@@ -70,9 +81,9 @@ public class JcaESTServiceBuilder
         return this;
     }
 
-    public JcaESTServiceBuilder withRevocationList(CRL revocationList)
+    public JcaESTServiceBuilder withRevocationLists(CRL[] revocationLists)
     {
-        this.revocationList = revocationList;
+        this.revocationLists = revocationLists;
         return this;
     }
 
@@ -91,7 +102,7 @@ public class JcaESTServiceBuilder
                 tlsTrustAnchors,
                 clientKeystore,
                 clientKeystorePassword,
-                hostNameAuthorizer, revocationList, ESTAuthorizer);
+                hostNameAuthorizer, revocationLists, ESTAuthorizer);
         }
 
         return super.build();
