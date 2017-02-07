@@ -10,8 +10,8 @@ import java.util.Set;
  * Implementations of this are to examine the chain in conjunction with the authType
  * and  throw some sort of exception or allow the method to complete.
  */
-public interface TLSAuthorizer
+public interface ESTAuthorizer<T>
 {
-    void authorize(Set<TrustAnchor> acceptedIssuers, X509Certificate[] chain, String authType)
+    void authorize(Set<T> acceptedIssuers, X509Certificate[] chain, String authType)
         throws CertificateException;
 }

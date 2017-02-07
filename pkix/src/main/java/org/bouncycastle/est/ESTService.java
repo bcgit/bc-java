@@ -35,7 +35,7 @@ public class ESTService
     protected final String CSRATTRS = "/csrattrs";
     private final TLSHostNameAuthorizer hostNameAuthorizer;
     private final String server;
-    private final TLSAuthorizer tlsAuthorizer;
+    private final ESTAuthorizer ESTAuthorizer;
     private final ESTClientProvider clientProvider;
 
 
@@ -43,12 +43,12 @@ public class ESTService
 
         TLSHostNameAuthorizer hostNameAuthorizer,
         String server,
-        TLSAuthorizer tlsAuthorizer, ESTClientProvider clientProvider)
+        ESTAuthorizer ESTAuthorizer, ESTClientProvider clientProvider)
     {
 
 
         this.hostNameAuthorizer = hostNameAuthorizer;
-        this.tlsAuthorizer = tlsAuthorizer;
+        this.ESTAuthorizer = ESTAuthorizer;
         this.clientProvider = clientProvider;
         if (server.endsWith("/"))
         {

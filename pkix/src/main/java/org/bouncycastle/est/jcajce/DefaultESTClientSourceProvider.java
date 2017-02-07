@@ -30,7 +30,7 @@ import javax.net.ssl.X509TrustManager;
 import org.bouncycastle.est.ESTClientSourceProvider;
 import org.bouncycastle.est.Source;
 import org.bouncycastle.est.TLSAcceptedIssuersSource;
-import org.bouncycastle.est.TLSAuthorizer;
+import org.bouncycastle.est.ESTAuthorizer;
 import org.bouncycastle.est.TLSHostNameAuthorizer;
 
 public class DefaultESTClientSourceProvider
@@ -38,7 +38,7 @@ public class DefaultESTClientSourceProvider
 {
 
     private final TLSAcceptedIssuersSource tlsAcceptedIssuersSource;
-    private final TLSAuthorizer serverTLSAuthorizer;
+    private final ESTAuthorizer serverESTAuthorizer;
     private final KeyManagerFactory keyManagerFactory;
     private final TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer;
 
@@ -47,13 +47,13 @@ public class DefaultESTClientSourceProvider
 
     public DefaultESTClientSourceProvider(
         TLSAcceptedIssuersSource tlsAcceptedIssuersSource,
-        TLSAuthorizer serverTLSAuthorizer,
+        ESTAuthorizer serverESTAuthorizer,
         KeyManagerFactory keyManagerFactory,
         TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer)
         throws GeneralSecurityException
     {
         this.tlsAcceptedIssuersSource = tlsAcceptedIssuersSource;
-        this.serverTLSAuthorizer = serverTLSAuthorizer;
+        this.serverESTAuthorizer = serverESTAuthorizer;
         this.hostNameAuthorizer = hostNameAuthorizer;
         this.keyManagerFactory = keyManagerFactory;
         sslSocketFactory = createFactory();
@@ -100,11 +100,11 @@ public class DefaultESTClientSourceProvider
         };
     }
 
-    public static TLSAuthorizer getCertPathTLSAuthorizer(final CRL revocationList)
+    public static ESTAuthorizer getCertPathTLSAuthorizer(final CRL revocationList)
     {
         // TODO must accept array of revocation lists.
 
-        return new TLSAuthorizer()
+        return new ESTAuthorizer<TrustAnchor>()
         {
             public void authorize(Set<TrustAnchor> acceptedIssuers, X509Certificate[] chain, String authType)
                 throws CertificateException
@@ -170,14 +170,14 @@ public class DefaultESTClientSourceProvider
             public void checkServerTrusted(X509Certificate[] x509Certificates, String s)
                 throws CertificateException
             {
-                if (serverTLSAuthorizer == null)
+                if (serverESTAuthorizer == null)
                 {
                     throw new CertificateException(
                         "No serverTLSAuthorizer specified, if you wish to have no validation then you must supply an instance that does nothing."
                     );
                 }
 
-                serverTLSAuthorizer.authorize(tlsAcceptedIssuersSource != null ? tlsAcceptedIssuersSource.anchors() : null, x509Certificates, s);
+                serverESTAuthorizer.authorize(tlsAcceptedIssuersSource != null ? tlsAcceptedIssuersSource.anchors() : null, x509Certificates, s);
             }
 
             public X509Certificate[] getAcceptedIssuers()
