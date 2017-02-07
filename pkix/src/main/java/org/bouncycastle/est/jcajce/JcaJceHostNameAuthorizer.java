@@ -1,11 +1,11 @@
-package org.bouncycastle.est;
+package org.bouncycastle.est.jcajce;
 
 /**
  * Verify the host name is as expected after the SSL Handshake has been completed.
  *
  * @param <T>
  */
-public interface ESTHostNameAuthorizer<T>
+public interface JcaJceHostNameAuthorizer<T>
 {
     /**
      * Verify the passed in host name according to the context object.

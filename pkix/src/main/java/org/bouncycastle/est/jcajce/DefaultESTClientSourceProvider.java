@@ -21,9 +21,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
-import org.bouncycastle.est.ESTAuthorizer;
 import org.bouncycastle.est.ESTClientSourceProvider;
-import org.bouncycastle.est.ESTHostNameAuthorizer;
 import org.bouncycastle.est.Source;
 
 public class DefaultESTClientSourceProvider
@@ -31,12 +29,12 @@ public class DefaultESTClientSourceProvider
 {
 
     private final SSLSocketFactory sslSocketFactory;
-    private final ESTHostNameAuthorizer<SSLSession> hostNameAuthorizer;
+    private final JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer;
 
 
     public DefaultESTClientSourceProvider(
         SSLSocketFactory socketFactory,
-        ESTHostNameAuthorizer<SSLSession> hostNameAuthorizer
+        JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer
     )
         throws GeneralSecurityException
     {
@@ -44,11 +42,11 @@ public class DefaultESTClientSourceProvider
         this.hostNameAuthorizer = hostNameAuthorizer;
     }
 
-    public static ESTAuthorizer getCertPathTLSAuthorizer(final CRL revocationList, final Set<TrustAnchor> tlsTrustAnchors)
+    public static JcaJceAuthorizer getCertPathTLSAuthorizer(final CRL revocationList, final Set<TrustAnchor> tlsTrustAnchors)
     {
         // TODO must accept array of revocation lists.
 
-        return new ESTAuthorizer<TrustAnchor>()
+        return new JcaJceAuthorizer<TrustAnchor>()
         {
             public void authorize(X509Certificate[] chain, String authType)
                 throws CertificateException

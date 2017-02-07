@@ -7,7 +7,6 @@ package org.bouncycastle.est;
 public class ESTServiceBuilder
 {
     protected final String server;
-    protected ESTAuthorizer ESTAuthorizer;
     protected ESTClientProvider clientProvider;
 
     public ESTServiceBuilder(String server)
