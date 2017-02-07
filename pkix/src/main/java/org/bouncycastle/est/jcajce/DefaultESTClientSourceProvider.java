@@ -208,7 +208,7 @@ public class DefaultESTClientSourceProvider
         SSLSocket sock = (SSLSocket)sslSocketFactory.createSocket(plainSocket, host, port, true);
         sock.setUseClientMode(true);
         sock.startHandshake();
-        if (hostNameAuthorizer != null && !hostNameAuthorizer.authorise(host, sock.getSession()))
+        if (hostNameAuthorizer != null && !hostNameAuthorizer.verified(host, sock.getSession()))
         {
             throw new IOException("Hostname was not verified: " + host);
         }
