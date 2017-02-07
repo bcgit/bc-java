@@ -84,10 +84,12 @@ public class CaCertsExample
         JcaESTServiceBuilder builder = null;
         if (trustAnchors != null && !trustAnchors.isEmpty())
         {
+            // In this case we have trusted anchors so create a builder for a client talking to a trusted server
             builder = new JcaESTServiceBuilder(serverRootUrl, trustAnchors);
         }
         else
         {
+            // In this case we do not have trust anchors so create a builder for a client talking to an untrusted server.
             builder = new JcaESTServiceBuilder(serverRootUrl);
         }
 
