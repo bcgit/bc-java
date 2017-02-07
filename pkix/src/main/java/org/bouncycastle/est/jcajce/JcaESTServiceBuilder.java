@@ -10,9 +10,7 @@ import java.util.Set;
 
 import javax.net.ssl.SSLSession;
 
-import org.bouncycastle.est.ESTAuthorizer;
 import org.bouncycastle.est.ESTClientProvider;
-import org.bouncycastle.est.ESTHostNameAuthorizer;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.ESTServiceBuilder;
 
@@ -26,14 +24,14 @@ public class JcaESTServiceBuilder
     protected Set<TrustAnchor> tlsTrustAnchors;
     protected KeyStore clientKeystore;
     protected char[] clientKeystorePassword;
-    protected ESTHostNameAuthorizer<SSLSession> hostNameAuthorizer;
-    protected ESTAuthorizer ESTAuthorizer;
+    protected JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer;
+    protected JcaJceAuthorizer ESTAuthorizer;
     protected CRL revocationList;
 
     public JcaESTServiceBuilder(String server)
     {
         super(server);
-        this.ESTAuthorizer = new ESTAuthorizer<TrustAnchor>()
+        this.ESTAuthorizer = new JcaJceAuthorizer<TrustAnchor>()
         {
             public void authorize(
                 X509Certificate[] chain,
@@ -66,7 +64,7 @@ public class JcaESTServiceBuilder
         return this;
     }
 
-    public JcaESTServiceBuilder withHostNameAuthorizer(ESTHostNameAuthorizer hostNameAuthorizer)
+    public JcaESTServiceBuilder withHostNameAuthorizer(JcaJceHostNameAuthorizer hostNameAuthorizer)
     {
         this.hostNameAuthorizer = hostNameAuthorizer;
         return this;

@@ -17,11 +17,9 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import org.bouncycastle.est.ESTAuthorizer;
 import org.bouncycastle.est.ESTClient;
 import org.bouncycastle.est.ESTClientProvider;
 import org.bouncycastle.est.ESTException;
-import org.bouncycastle.est.ESTHostNameAuthorizer;
 
 public class JcaDefaultESTHttpClientProvider
     implements ESTClientProvider
@@ -30,15 +28,15 @@ public class JcaDefaultESTHttpClientProvider
     private final Set<TrustAnchor> tlsTrustAnchors;
     private final KeyStore clientKeystore;
     private final char[] clientKeystorePassword;
-    private final ESTHostNameAuthorizer<SSLSession> hostNameAuthorizer;
+    private final JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer;
     private final CRL revocationList;
-    private final ESTAuthorizer estAuthorizer;
+    private final JcaJceAuthorizer estAuthorizer;
 
     public JcaDefaultESTHttpClientProvider(Set<TrustAnchor> tlsTrustAnchors,
                                            KeyStore clientKeystore,
                                            char[] clientKeystorePassword,
-                                           ESTHostNameAuthorizer<SSLSession> hostNameAuthorizer,
-                                           CRL revocationList, ESTAuthorizer estAuthorizer)
+                                           JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer,
+                                           CRL revocationList, JcaJceAuthorizer estAuthorizer)
     {
         this.tlsTrustAnchors = tlsTrustAnchors;
         this.clientKeystore = clientKeystore;
@@ -62,7 +60,7 @@ public class JcaDefaultESTHttpClientProvider
                 keyFact.init(clientKeystore, clientKeystorePassword);
             }
 
-            ESTAuthorizer estAuthorizer = this.estAuthorizer;
+            JcaJceAuthorizer estAuthorizer = this.estAuthorizer;
 
             SSLSocketFactory socketFactory = null;
 
@@ -87,7 +85,7 @@ public class JcaDefaultESTHttpClientProvider
         }
     }
 
-    public SSLSocketFactory createFactory(KeyManagerFactory keyManagerFactory, final ESTAuthorizer estAuthorizer)
+    public SSLSocketFactory createFactory(KeyManagerFactory keyManagerFactory, final JcaJceAuthorizer estAuthorizer)
         throws GeneralSecurityException
     {
         SSLContext ctx = SSLContext.getInstance("TLS");
