@@ -1,11 +1,13 @@
 package org.bouncycastle.test.est.examples;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
@@ -47,6 +49,7 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.MiscPEMGenerator;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.io.pem.PemWriter;
 
@@ -373,4 +376,48 @@ public class ExampleUtils
         return pemOut.toString();
     }
 
+    static File nextArgAsFile(String label, String[] args, int t)
+    {
+        if (t + 1 >= args.length || args[t + 1].startsWith("-"))
+        {
+            throw new IllegalArgumentException(label + ": Missing File argument");
+        }
+
+        return new File(args[t + 1]);
+    }
+
+    static String nextArgAsString(String label, String[] args, int t)
+    {
+        if (t + 1 >= args.length || args[t + 1].startsWith("-"))
+        {
+            throw new IllegalArgumentException(label + ": Missing File argument");
+        }
+
+        return args[t + 1];
+    }
+
+    static boolean userSaysYes(String question)
+        throws IOException
+    {
+        BufferedReader bin = new BufferedReader(new InputStreamReader(System.in));
+        String line;
+        System.out.println();
+        System.out.println(question + " ");
+        while ((line = bin.readLine()) != null)
+        {
+            if (Strings.toLowerCase(line).startsWith("y"))
+            {
+                System.out.println();
+                return true;
+            }
+            else if (Strings.toLowerCase(line).startsWith("n"))
+            {
+                break;
+            }
+            System.out.println();
+            System.out.println(question + " ");
+        }
+        System.out.println();
+        return false;
+    }
 }
