@@ -5,7 +5,7 @@ package org.bouncycastle.est;
  *
  * @param <T>
  */
-public interface TLSHostNameAuthorizer<T>
+public interface ESTHostNameAuthorizer<T>
 {
     /**
      * Verify the passed in host name according to the context object.
