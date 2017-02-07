@@ -13,7 +13,7 @@ import org.bouncycastle.est.ESTClient;
 import org.bouncycastle.est.ESTClientProvider;
 import org.bouncycastle.est.ESTException;
 import org.bouncycastle.est.TLSAcceptedIssuersSource;
-import org.bouncycastle.est.TLSAuthorizer;
+import org.bouncycastle.est.ESTAuthorizer;
 import org.bouncycastle.est.TLSHostNameAuthorizer;
 
 public class JcaDefaultESTHttpClientProvider
@@ -26,20 +26,20 @@ public class JcaDefaultESTHttpClientProvider
     private final char[] clientKeystorePassword;
     private final TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer;
     private final CRL revocationList;
-    private final TLSAuthorizer tlsAuthorizer;
+    private final ESTAuthorizer ESTAuthorizer;
 
     public JcaDefaultESTHttpClientProvider(Set<TrustAnchor> tlsTrustAnchors,
                                            KeyStore clientKeystore,
                                            char[] clientKeystorePassword,
                                            TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer,
-                                           CRL revocationList, TLSAuthorizer tlsAuthorizer)
+                                           CRL revocationList, ESTAuthorizer ESTAuthorizer)
     {
         this.tlsTrustAnchors = tlsTrustAnchors;
         this.clientKeystore = clientKeystore;
         this.clientKeystorePassword = clientKeystorePassword;
         this.hostNameAuthorizer = hostNameAuthorizer;
         this.revocationList = revocationList;
-        this.tlsAuthorizer = tlsAuthorizer;
+        this.ESTAuthorizer = ESTAuthorizer;
     }
 
     public ESTClient makeClient()
@@ -62,20 +62,20 @@ public class JcaDefaultESTHttpClientProvider
                 keyFact.init(clientKeystore, clientKeystorePassword);
             }
 
-            TLSAuthorizer tlsAuthorizer = this.tlsAuthorizer;
+            ESTAuthorizer ESTAuthorizer = this.ESTAuthorizer;
 
-            if (tlsAuthorizer == null && acceptedIssuersSource == null)
+            if (ESTAuthorizer == null && acceptedIssuersSource == null)
             {
                 return new DefaultESTClient(DefaultESTClientSourceProvider.getUsingDefaultSSLSocketFactory(hostNameAuthorizer));
             }
 
-            if (acceptedIssuersSource != null && tlsAuthorizer == null)
+            if (acceptedIssuersSource != null && ESTAuthorizer == null)
             {
-                tlsAuthorizer = DefaultESTClientSourceProvider.getCertPathTLSAuthorizer(revocationList);
+                ESTAuthorizer = DefaultESTClientSourceProvider.getCertPathTLSAuthorizer(revocationList);
             }
 
             return new DefaultESTClient(
-                new DefaultESTClientSourceProvider(acceptedIssuersSource, tlsAuthorizer, keyFact, hostNameAuthorizer));
+                new DefaultESTClientSourceProvider(acceptedIssuersSource, ESTAuthorizer, keyFact, hostNameAuthorizer));
         }
         catch (GeneralSecurityException e)
         {

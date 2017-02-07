@@ -9,7 +9,7 @@ public class ESTServiceBuilder
     protected final String server;
 
     protected TLSHostNameAuthorizer hostNameAuthorizer;
-    protected TLSAuthorizer tlsAuthorizer;
+    protected ESTAuthorizer ESTAuthorizer;
     protected ESTClientProvider clientProvider;
 
     public ESTServiceBuilder(String server)
@@ -23,9 +23,9 @@ public class ESTServiceBuilder
         return this;
     }
 
-    public ESTServiceBuilder withTlsAuthorizer(TLSAuthorizer tlsAuthorizer)
+    public ESTServiceBuilder withTlsAuthorizer(ESTAuthorizer ESTAuthorizer)
     {
-        this.tlsAuthorizer = tlsAuthorizer;
+        this.ESTAuthorizer = ESTAuthorizer;
         return this;
     }
 
@@ -41,7 +41,7 @@ public class ESTServiceBuilder
         return new ESTService(
             hostNameAuthorizer,
             server,
-            tlsAuthorizer,
+            ESTAuthorizer,
             clientProvider);
     }
 
