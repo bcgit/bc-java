@@ -15,13 +15,13 @@ The utility scripts to run each example can be found in same folder as this file
 
 The Bouncycastle EST client makes no assumptions about trust anchors, it assumes that the caller either can supply
 trust anchors or it cannot, if you don't supply trust anchors the only interaction you may perform is to request CA
-certificates from the EST server using the Bootstrapping procedure defined in RFC 7030.
+certificates from an EST server using the Bootstrapping procedure defined in RFC 7030.
 
 
 #### Bootstrapping
-If bootstrapping is used the user will be asked to manually validate the certificates, you will be presented with the
+If bootstrapping is used, the user will be asked to manually validate the certificates, you will be presented with the
 peer certificates from the TLS connection first, then you will be presented with the CA certificate second.
-You will need to confirm type 'y [enter]' each certificate:
+You will need to confirm by typing 'y [enter]' for each certificate:
 
 ```
 #
@@ -82,7 +82,7 @@ As we are using the Cisco Test Server:
 http://testrfc7030.cisco.com/
 ```
 
-In order to proceed you will need to the last TLS certificate and use that as a trust anchor for the remaining examples:
+In order to proceed you will need copy the last TLS certificate and use that as a trust anchor for the remaining examples:
 
 ```
 ./cacerts.sh -u https://testrfc7030.cisco.com:8443/.well-known/est --printTLS
@@ -92,7 +92,7 @@ Answer the prompts as usual and at the very the TLS peer certificates will be pr
 Take the last one of those and use it as a trust anchor, so cut and paste that into a file.
 Or try this one, but be aware it may not be current.
 
-Call the file ```server.ta.pem```
+Copy the certificate to the file: ```server.ta.pem```
 
 ```
 -----BEGIN CERTIFICATE-----
@@ -136,7 +136,7 @@ EZAHFZ3Zivg2BaD4tOISO8/T2FDjG7PNUv0tgPAOKw2t94B+1evrSUhqJDU0Wf9c
 -----END CERTIFICATE-----
 ```
 
-#### Non boot strapping
+#### Non bootstrap fetching of CA certs
 
 If you have a trust anchor then fetching CA certs will simply
 return the CA cert, if the server cannot be validated with
@@ -171,21 +171,21 @@ ___
 
 ### Enrollment
 To perform enrollment the user must have a trust anchor to verify the EST server, the enrollment example
-can accept an optional keystore without a trust anchor.
+can accept an optional keystore without a trust anchor for client side authentication.
 
 The enroll example has a number of options:
 ```
 ./enroll.sh
 
--r                                    Re-enroll
--t <file>                             Trust anchor file
--u <url>                              EST server url.
--c <common name>                      EST server url.
+-r                                     Re-enroll
+-t <file>                              Trust anchor file
+-u <url>                               EST server url.
+-c <common name>                       EST server url.
 --keyStore <file>                      Optional Key Store.
 --keyStorePass <password>              Optional Key Store password.
 --keyStoreType <JKS>                   Optional Key Store type, defaults to JKS
 --digestAuth <realm:user:password>     Digest Auth credentials, if real is not
-                                      specified <user:password> then the realm from the server is used.
+                                       specified <user:password> then the realm from the server is used.
 --basicAuth <realm:user:password>      Use basic auth.
 
 ```
@@ -217,8 +217,9 @@ And for reenrollment:
 ---
 
 ### Fetching CSR Attributes
-The EST server may require that CSRs have a certain set of attributes. Which attributes can be fetched from the server.
-You will need a trust anchor for the server to make this call with the BouncyCastle libraries.
+The EST server may require that CSRs have a certain set of attributes. 
+These attributes can be fetched from the server and you will need a trust
+anchor for the server to make this call.
 
 To fetch the attributes:
 
@@ -236,4 +237,3 @@ To fetch the attributes:
 Unit tests for fetching csr attributes can be found in:
 ```<bc-java>/test/src/test/java/org/bouncycastle/test/est/TestGetCSRAttrs.java```
 ---
-
