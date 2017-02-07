@@ -45,8 +45,6 @@ public class ESTResponse
             this.inputStream = source.getInputStream();
         }
 
-        this.inputStream = new PrintingInputStream(source.getInputStream());
-
         this.headers = new HashMap<String, List<String>>();
         this.lineBuffer = new byte[1024];
 
