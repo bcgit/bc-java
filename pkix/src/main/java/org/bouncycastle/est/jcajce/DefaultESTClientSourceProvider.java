@@ -42,10 +42,8 @@ public class DefaultESTClientSourceProvider
         this.hostNameAuthorizer = hostNameAuthorizer;
     }
 
-    public static JcaJceAuthorizer getCertPathTLSAuthorizer(final CRL revocationList, final Set<TrustAnchor> tlsTrustAnchors)
+    public static JcaJceAuthorizer getCertPathTLSAuthorizer(final CRL[] revocationLists, final Set<TrustAnchor> tlsTrustAnchors)
     {
-        // TODO must accept array of revocation lists.
-
         return new JcaJceAuthorizer<TrustAnchor>()
         {
             public void authorize(X509Certificate[] chain, String authType)
@@ -67,13 +65,13 @@ public class DefaultESTClientSourceProvider
 
                     PKIXBuilderParameters param = new PKIXBuilderParameters(tlsTrustAnchors, constraints);
                     param.addCertStore(certStore);
-                    if (revocationList != null)
+                    if (revocationLists != null)
                     {
                         param.setRevocationEnabled(true);
                         param.addCertStore(
                             CertStore.getInstance(
                                 "Collection",
-                                new CollectionCertStoreParameters(Arrays.asList(revocationList)
+                                new CollectionCertStoreParameters(Arrays.asList(revocationLists)
                                 )));
                     }
                     else

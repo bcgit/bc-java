@@ -29,20 +29,20 @@ public class JcaDefaultESTHttpClientProvider
     private final KeyStore clientKeystore;
     private final char[] clientKeystorePassword;
     private final JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer;
-    private final CRL revocationList;
+    private final CRL[] revocationLists;
     private final JcaJceAuthorizer estAuthorizer;
 
     public JcaDefaultESTHttpClientProvider(Set<TrustAnchor> tlsTrustAnchors,
                                            KeyStore clientKeystore,
                                            char[] clientKeystorePassword,
                                            JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer,
-                                           CRL revocationList, JcaJceAuthorizer estAuthorizer)
+                                           CRL[] revocationLists, JcaJceAuthorizer estAuthorizer)
     {
         this.tlsTrustAnchors = tlsTrustAnchors;
         this.clientKeystore = clientKeystore;
         this.clientKeystorePassword = clientKeystorePassword;
         this.hostNameAuthorizer = hostNameAuthorizer;
-        this.revocationList = revocationList;
+        this.revocationLists = revocationLists;
         this.estAuthorizer = estAuthorizer;
     }
 
@@ -70,7 +70,7 @@ public class JcaDefaultESTHttpClientProvider
             }
             else if (tlsTrustAnchors != null && estAuthorizer == null)
             {
-                estAuthorizer = DefaultESTClientSourceProvider.getCertPathTLSAuthorizer(revocationList, tlsTrustAnchors);
+                estAuthorizer = DefaultESTClientSourceProvider.getCertPathTLSAuthorizer(revocationLists, tlsTrustAnchors);
             }
             if (socketFactory == null)
             {
