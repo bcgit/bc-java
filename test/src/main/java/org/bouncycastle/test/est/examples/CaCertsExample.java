@@ -5,7 +5,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringWriter;
+import java.security.Security;
 import java.security.cert.TrustAnchor;
+import java.security.cert.X509Certificate;
 import java.util.Set;
 
 import javax.net.ssl.SSLSession;
@@ -13,7 +16,10 @@ import javax.net.ssl.SSLSession;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.MiscPEMGenerator;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.io.pem.PemWriter;
 
 /**
  * CaCertsExample gives examples of fetching CA certs.
@@ -24,8 +30,12 @@ public class CaCertsExample
     public CaCertsExample(String[] args)
         throws Exception
     {
+
+        Security.addProvider(new BouncyCastleProvider());
+
         File trustAnchorFile = null;
         String serverRootUrl = null;
+        boolean printTLSCerts = false;
 
         try
         {
@@ -43,6 +53,8 @@ public class CaCertsExample
                     serverRootUrl = nextArgAsString("Server URL", args, t);
                     t += 1;
                     continue;
+                } else if (arg.equals("-printTLS")) {
+                    printTLSCerts = true;
                 }
                 else
                 {
@@ -55,6 +67,12 @@ public class CaCertsExample
         {
             System.err.println(ilex.getMessage());
             System.exit(1);
+        }
+
+        if (serverRootUrl == null)
+        {
+            System.err.println("Server url (-url) must be defined.");
+            System.exit(-1);
         }
 
         //
@@ -93,28 +111,87 @@ public class CaCertsExample
         // This is congruent with <https://tools.ietf.org/html/rfc7030#section-4.1.1> Bootstrapping.
         //
 
+        javax.security.cert.X509Certificate[] certs = ((SSLSession)caCertsResponse.getSession()).getPeerCertificateChain();
+
         if (!caCertsResponse.isTrusted())
         {
-           javax.security.cert.X509Certificate[] certs = ((SSLSession)caCertsResponse.getSession()).getPeerCertificateChain();
-           for (javax.security.cert.X509Certificate cert: certs) {
-               System.out.println(cert.toString());
-           }
 
-           System.out.println("As part of the TLS handshake, the server tendered to us these certificates.");
-           if (!userSaysYes("Do you accept these certificates (y,n) ?")) {
-               System.exit(0);
-           }
+            System.out.println();
 
-           for (X509CertificateHolder holder: ESTService.storeToArray(caCertsResponse.getStore())) {
-               System.out.println(ExampleUtils.toJavaX509Certificate(holder).toString());
-           }
+            for (javax.security.cert.X509Certificate cert : certs)
+            {
+
+                //
+                // Limited the amount of information for the sake of the example.
+                // The default too string prints everything and is hard to follow.
+                // It is at this point developers should present users with enough information to make an informed
+                // decision.
+                //
+
+                System.out.println("Subject: " + cert.getSubjectDN());
+                System.out.println("Issuer: " + cert.getIssuerDN());
+                System.out.println("Serial Number: " + cert.getSerialNumber());
+                System.out.println("Not Before: " + cert.getNotBefore());
+                System.out.println("Not After: " + cert.getNotAfter());
+                System.out.println("Signature Algorithm: " + cert.getSigAlgName());
+
+                System.out.println();
+            }
+
+            System.out.println("As part of the TLS handshake, the server tendered to us these certificates.");
+            if (!userSaysYes("Do you accept these certificates (y,n) ?"))
+            {
+                System.exit(0);
+            }
+
+            System.out.println();
             System.out.println("The untrusted server tendered to us these certificates as CA certs");
-            if (!userSaysYes("Do you accept these certificates (y,n) ?")) {
+            for (X509CertificateHolder holder : ESTService.storeToArray(caCertsResponse.getStore()))
+            {
+
+                //
+                // Limited the amount of information for the sake of the example.
+                // The default too string prints everything and is hard to follow.
+                // It is at this point developers should present users with enough information to make an informed
+                // decision.
+                //
+
+                System.out.println("Subject: " + holder.getSubject());
+                System.out.println("Issuer: " + holder.getIssuer());
+                System.out.println("Serial Number: " + holder.getSerialNumber());
+                System.out.println("Not Before: " + holder.getNotBefore());
+                System.out.println("Not After: " + holder.getNotAfter());
+                System.out.println("Signature Algorithm: " + holder.getSignatureAlgorithm());
+                System.out.println();
+
+            }
+
+            if (!userSaysYes("Do you accept these certificates (y,n) ?"))
+            {
                 System.exit(0);
             }
         }
 
 
+        System.out.println("Fetched CA Certs:\n\n");
+
+        for (X509CertificateHolder holder : ESTService.storeToArray(caCertsResponse.getStore()))
+        {
+           System.out.println(ExampleUtils.toPem(holder));
+        }
+
+
+
+        System.out.println("\n TLS Certificates");
+
+
+        if (printTLSCerts) {
+            System.out.println();
+            for (javax.security.cert.X509Certificate cert : certs)
+            {
+                System.out.println(ExampleUtils.toPem(new X509CertificateHolder(cert.getEncoded())));
+            }
+        }
 
     }
 
@@ -149,19 +226,23 @@ public class CaCertsExample
     {
         BufferedReader bin = new BufferedReader(new InputStreamReader(System.in));
         String line;
+        System.out.println();
+        System.out.println(question + " ");
         while ((line = bin.readLine()) != null)
         {
-            System.out.println();
-            System.out.print(question + " ");
             if (Strings.toLowerCase(line).startsWith("y"))
             {
+                System.out.println();
                 return true;
             }
             else if (Strings.toLowerCase(line).startsWith("n"))
             {
                 break;
             }
+            System.out.println();
+            System.out.println(question + " ");
         }
+        System.out.println();
         return false;
     }
 }

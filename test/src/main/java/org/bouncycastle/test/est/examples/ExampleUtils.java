@@ -46,7 +46,9 @@ import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.MiscPEMGenerator;
 import org.bouncycastle.util.io.pem.PemReader;
+import org.bouncycastle.util.io.pem.PemWriter;
 
 /**
  * A Collection of utility functions for reading and handling certificates and private keys.
@@ -358,6 +360,17 @@ public class ExampleUtils
         fr.close();
         sw.close();
         return sw.toString();
+    }
+
+
+    public static String toPem(X509CertificateHolder holder)
+        throws Exception
+    {
+        StringWriter pemOut = new StringWriter();
+        PemWriter pw = new PemWriter(pemOut);
+        pw.writeObject(new MiscPEMGenerator(holder));
+        pw.flush();
+        return pemOut.toString();
     }
 
 }
