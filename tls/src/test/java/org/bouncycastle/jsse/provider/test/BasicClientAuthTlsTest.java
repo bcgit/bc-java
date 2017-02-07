@@ -88,6 +88,7 @@ public class BasicClientAuthTlsTest
 
             SSLSession session = cSock.getSession();
 
+            assertNotNull(session.getCipherSuite());
             assertEquals("CN=Test CA Certificate", session.getLocalPrincipal().getName());
             assertEquals("CN=Test CA Certificate", session.getPeerPrincipal().getName());
 
@@ -158,6 +159,7 @@ public class BasicClientAuthTlsTest
 
             SSLSession session = sslSock.getSession();
 
+            assertNotNull(session.getCipherSuite());
             assertEquals("CN=Test CA Certificate", session.getLocalPrincipal().getName());
             assertEquals("CN=Test CA Certificate", session.getPeerPrincipal().getName());
 
