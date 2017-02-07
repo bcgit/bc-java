@@ -10,7 +10,7 @@ public interface TLSHostNameAuthorizer<T>
     /**
      * Verify the passed in host name according to the context object.
      *
-     * @param name name of the host to be verified.
+     * @param name    name of the host to be verified.
      * @param context context object to do the verification under.
      * @return true if name verified, false otherwise.
      */

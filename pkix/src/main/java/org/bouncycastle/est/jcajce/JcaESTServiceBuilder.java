@@ -10,10 +10,10 @@ import java.util.Set;
 
 import javax.net.ssl.SSLSession;
 
+import org.bouncycastle.est.ESTAuthorizer;
 import org.bouncycastle.est.ESTClientProvider;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.ESTServiceBuilder;
-import org.bouncycastle.est.ESTAuthorizer;
 import org.bouncycastle.est.TLSHostNameAuthorizer;
 
 
@@ -36,7 +36,6 @@ public class JcaESTServiceBuilder
         this.ESTAuthorizer = new ESTAuthorizer<TrustAnchor>()
         {
             public void authorize(
-                Set<TrustAnchor> acceptedIssuers,
                 X509Certificate[] chain,
                 String authType)
                 throws CertificateException

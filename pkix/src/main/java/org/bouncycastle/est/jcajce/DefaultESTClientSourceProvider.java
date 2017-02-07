@@ -4,7 +4,6 @@ package org.bouncycastle.est.jcajce;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
-import java.security.SecureRandom;
 import java.security.cert.CRL;
 import java.security.cert.CertPathBuilder;
 import java.security.cert.CertStore;
@@ -16,97 +15,42 @@ import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.Set;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 
+import org.bouncycastle.est.ESTAuthorizer;
 import org.bouncycastle.est.ESTClientSourceProvider;
 import org.bouncycastle.est.Source;
-import org.bouncycastle.est.TLSAcceptedIssuersSource;
-import org.bouncycastle.est.ESTAuthorizer;
 import org.bouncycastle.est.TLSHostNameAuthorizer;
 
 public class DefaultESTClientSourceProvider
     implements ESTClientSourceProvider
 {
 
-    private final TLSAcceptedIssuersSource tlsAcceptedIssuersSource;
-    private final ESTAuthorizer serverESTAuthorizer;
-    private final KeyManagerFactory keyManagerFactory;
+    private final SSLSocketFactory sslSocketFactory;
     private final TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer;
 
 
-    private SSLSocketFactory sslSocketFactory;
-
     public DefaultESTClientSourceProvider(
-        TLSAcceptedIssuersSource tlsAcceptedIssuersSource,
-        ESTAuthorizer serverESTAuthorizer,
-        KeyManagerFactory keyManagerFactory,
-        TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer)
+        SSLSocketFactory socketFactory,
+        TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer
+    )
         throws GeneralSecurityException
     {
-        this.tlsAcceptedIssuersSource = tlsAcceptedIssuersSource;
-        this.serverESTAuthorizer = serverESTAuthorizer;
+        this.sslSocketFactory = socketFactory;
         this.hostNameAuthorizer = hostNameAuthorizer;
-        this.keyManagerFactory = keyManagerFactory;
-        sslSocketFactory = createFactory();
     }
 
-    /**
-     * Return an ESTClientSSLSocketProvider that uses the the default SSLSocketProvider and a host name verifier.
-     *
-     * @param hostNameAuthorizer The host name authorizer. (Can be null for no hostname verification.)
-     * @return ESTClientSSLSocketProvider
-     * @throws Exception
-     */
-    public static ESTClientSourceProvider getUsingDefaultSSLSocketFactory(TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer)
-        throws GeneralSecurityException
-    {
-        return new DefaultESTClientSourceProvider(null, null, null, hostNameAuthorizer)
-        {
-            @Override
-            public SSLSocketFactory createFactory()
-            {
-                return (SSLSocketFactory)SSLSocketFactory.getDefault();
-            }
-        };
-    }
-
-    /**
-     * Return an ESTClientSSLSocketProvider that uses the the default SSLSocketProvider and a host name verifier.
-     *
-     * @param keyManagerFactory  The keymanager factory supplying the client keys.
-     * @param hostNameAuthorizer The host name authorizer. (Can be null for no hostname verification.)
-     * @return ESTClientSSLSocketProvider
-     * @throws Exception
-     */
-    public static ESTClientSourceProvider getUsingDefaultSSLSocketFactory(KeyManagerFactory keyManagerFactory, TLSHostNameAuthorizer<SSLSession> hostNameAuthorizer)
-        throws Exception
-    {
-        return new DefaultESTClientSourceProvider(null, null, keyManagerFactory, hostNameAuthorizer)
-        {
-            @Override
-            public SSLSocketFactory createFactory()
-            {
-                return (SSLSocketFactory)SSLSocketFactory.getDefault();
-            }
-        };
-    }
-
-    public static ESTAuthorizer getCertPathTLSAuthorizer(final CRL revocationList)
+    public static ESTAuthorizer getCertPathTLSAuthorizer(final CRL revocationList, final Set<TrustAnchor> tlsTrustAnchors)
     {
         // TODO must accept array of revocation lists.
 
         return new ESTAuthorizer<TrustAnchor>()
         {
-            public void authorize(Set<TrustAnchor> acceptedIssuers, X509Certificate[] chain, String authType)
+            public void authorize(X509Certificate[] chain, String authType)
                 throws CertificateException
             {
                 try
@@ -123,7 +67,7 @@ public class DefaultESTClientSourceProvider
                     constraints.setCertificate(chain[0]);
 
 
-                    PKIXBuilderParameters param = new PKIXBuilderParameters(acceptedIssuers, constraints);
+                    PKIXBuilderParameters param = new PKIXBuilderParameters(tlsTrustAnchors, constraints);
                     param.addCertStore(certStore);
                     if (revocationList != null)
                     {
@@ -149,58 +93,6 @@ public class DefaultESTClientSourceProvider
         };
     }
 
-    /**
-     * Creates the SSLSocketFactory.
-     *
-     * @return A SSLSocketFactory instance.
-     * @throws Exception
-     */
-    public SSLSocketFactory createFactory()
-        throws GeneralSecurityException
-    {
-        SSLContext ctx = SSLContext.getInstance("TLS");
-        X509TrustManager tm = new X509TrustManager()
-        {
-            public void checkClientTrusted(X509Certificate[] x509Certificates, String authType)
-                throws CertificateException
-            {
-                // For clients.
-            }
-
-            public void checkServerTrusted(X509Certificate[] x509Certificates, String s)
-                throws CertificateException
-            {
-                if (serverESTAuthorizer == null)
-                {
-                    throw new CertificateException(
-                        "No serverTLSAuthorizer specified, if you wish to have no validation then you must supply an instance that does nothing."
-                    );
-                }
-
-                serverESTAuthorizer.authorize(tlsAcceptedIssuersSource != null ? tlsAcceptedIssuersSource.anchors() : null, x509Certificates, s);
-            }
-
-            public X509Certificate[] getAcceptedIssuers()
-            {
-                if (tlsAcceptedIssuersSource != null)
-                {
-                    Set<TrustAnchor> tas = tlsAcceptedIssuersSource.anchors();
-                    X509Certificate[] c = new X509Certificate[tas.size()];
-                    int j = 0;
-                    for (Iterator it = tas.iterator(); it.hasNext(); )
-                    {
-                        TrustAnchor ta = (TrustAnchor)it.next();
-                        c[j++] = ta.getTrustedCert();
-                    }
-                    return c;
-                }
-                return new X509Certificate[0];
-            }
-        };
-
-        ctx.init((keyManagerFactory != null) ? keyManagerFactory.getKeyManagers() : null, new TrustManager[]{tm}, new SecureRandom());
-        return ctx.getSocketFactory();
-    }
 
     public Source wrapSocket(Socket plainSocket, String host, int port)
         throws IOException
