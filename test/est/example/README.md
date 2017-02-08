@@ -1,6 +1,48 @@
 
 # EST client examples
 
+## Before running
+
+The examples below use utility scripts, these scripts will try to ensure the dependencies are met to run the examples.
+
+To do this ahead of time run the following:
+
+```
+cd <bc-java>/test/est/example
+./ensurejar.sh
+```
+
+This script will download the provider from the betas page and it will then endeavour to build, using gradle the 
+Bouncycastle distribution. You will need to have installed gradle and have it on the PATH for this to run.
+
+When it is done building it will then copy the jars into the ```<bc-java>/test/est/example/jars/``` directory.
+
+If you need to refresh these jars delete the jars directory.
+
+## Not in a unix environment
+The examples need a provider, the pkix jar, and the test jar.
+
+If you have openjdk installed you can simply use gradle to compile bc-java and the libraries will be in
+```
+cd <bc-java>
+
+gradle -x test clean jar
+
+# Libraries will be in:
+# test/build/libs
+# prov/build/libs
+# pkix/build/libs
+#
+```
+NB: The above was built disabling the tests.
+
+
+OpenJDK does not enforce provider signing which can be advantageous in testing. If you are using a JVM that does
+enforce provider signing then you will need to download the provider from the betas page.
+
+If you are familiar with .BAT files you will be able to examine each .sh file to see how to invoke the examples.
+
+
 ## The code:
 The code can be found in
 ```
