@@ -210,7 +210,12 @@ class ProvX509KeyManager
         {
             return (pub instanceof RSAPublicKey) && isSuitableKeyUsage(KeyUsage.digitalSignature, c);
         }
-        if (keyType.equalsIgnoreCase("ECDHE_ECDSA"))
+        else if (keyType.equalsIgnoreCase("DHE_DSS")
+            || keyType.equalsIgnoreCase("SRP_DSS"))
+        {
+            return (pub instanceof DSAPublicKey) && isSuitableKeyUsage(KeyUsage.digitalSignature, c);
+        }
+        else if (keyType.equalsIgnoreCase("ECDHE_ECDSA"))
         {
             return (pub instanceof ECPublicKey) && isSuitableKeyUsage(KeyUsage.digitalSignature, c);
         }
