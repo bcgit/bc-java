@@ -170,7 +170,7 @@ class ProvTlsServer
         Vector serverSigAlgs = null;
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(serverVersion))
         {
-            serverSigAlgs = TlsUtils.getDefaultSupportedSignatureAlgorithms();
+            serverSigAlgs = JsseUtils.getSupportedSignatureAlgorithms(getCrypto());
         }
 
         Vector certificateAuthorities = new Vector();
@@ -186,6 +186,16 @@ class ProvTlsServer
         return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
     }
 
+//    @Override
+//    public int getSelectedCipherSuite() throws IOException
+//    {
+//        int selectedCipherSuite = super.getSelectedCipherSuite();
+//
+//        System.out.println("Server selected cipher suite: " + manager.getContext().getCipherSuiteString(selectedCipherSuite));
+//
+//        return selectedCipherSuite;
+//    }
+//
 //    @Override
 //    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
 //    {
