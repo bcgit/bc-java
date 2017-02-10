@@ -2586,13 +2586,24 @@ public class TlsUtils
     public static boolean isSupportedCipherSuite(TlsCrypto crypto, int cipherSuite)
     {
         int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(cipherSuite);
+
+        // TODO Probably want TlsCrypto.hasKeyExchangeAlgorithm
+        switch (keyExchangeAlgorithm)
+        {
+        case KeyExchangeAlgorithm.RSA:
+        case KeyExchangeAlgorithm.RSA_EXPORT:
+        case KeyExchangeAlgorithm.RSA_PSK:
+        {
+            if (!crypto.hasRSAEncryption())
+            {
+                return false;
+            }
+            break;
+        }
+        }
+
         int encryptionAlgorithm = TlsUtils.getEncryptionAlgorithm(cipherSuite);
         int macAlgorithm = TlsUtils.getMACAlgorithm(cipherSuite);
-
-        if (keyExchangeAlgorithm == KeyExchangeAlgorithm.RSA && !crypto.hasRSAEncryption())
-        {
-            return false;
-        }
 
         return crypto.hasEncryptionAlgorithm(encryptionAlgorithm) && crypto.hasMacAlgorithm(macAlgorithm);
     }
