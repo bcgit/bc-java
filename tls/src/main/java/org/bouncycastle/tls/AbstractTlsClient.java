@@ -70,6 +70,11 @@ public abstract class AbstractTlsClient
         return new DefaultTlsECConfigVerifier(minimumCurveBits, namedCurves);
     }
 
+    protected Vector getSupportedSignatureAlgorithms()
+    {
+        return TlsUtils.getDefaultSupportedSignatureAlgorithms();
+    }
+
     public void init(TlsClientContext context)
     {
         this.context = context;
@@ -120,9 +125,7 @@ public abstract class AbstractTlsClient
          */
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(clientVersion))
         {
-            // TODO Provide a way for the user to specify the acceptable hash/signature algorithms.
-
-            this.supportedSignatureAlgorithms = TlsUtils.getDefaultSupportedSignatureAlgorithms();
+            this.supportedSignatureAlgorithms = getSupportedSignatureAlgorithms();
 
             clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(clientExtensions);
 
