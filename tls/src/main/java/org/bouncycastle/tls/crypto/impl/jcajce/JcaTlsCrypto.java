@@ -286,19 +286,48 @@ public class JcaTlsCrypto
 
     public boolean hasEncryptionAlgorithm(int encryptionAlgorithm)
     {
-        if (encryptionAlgorithm == EncryptionAlgorithm.CHACHA20_POLY1305)
+        try
         {
-            try
+            switch (encryptionAlgorithm)
+            {
+            case EncryptionAlgorithm.CHACHA20_POLY1305:
             {
                 helper.createCipher("ChaCha7539");
                 helper.createMac("Poly1305");
+                break;
             }
-            catch (GeneralSecurityException e)
+            case EncryptionAlgorithm.AES_128_CCM:
+            case EncryptionAlgorithm.AES_128_CCM_8:
+            case EncryptionAlgorithm.AES_256_CCM:
+            case EncryptionAlgorithm.AES_256_CCM_8:
             {
-                return false;
+                helper.createCipher("AES/CCM/NoPadding");
+                break;
+            }
+            case EncryptionAlgorithm.AES_128_GCM:
+            case EncryptionAlgorithm.AES_256_GCM:
+            {
+                helper.createCipher("AES/GCM/NoPadding");
+                break;
+            }
+            case EncryptionAlgorithm.ARIA_128_GCM:
+            case EncryptionAlgorithm.ARIA_256_GCM:
+            {
+                helper.createCipher("ARIA/GCM/NoPadding");
+                break;
+            }
+            case EncryptionAlgorithm.CAMELLIA_128_GCM:
+            case EncryptionAlgorithm.CAMELLIA_256_GCM:
+            {
+                helper.createCipher("CAMELLIA/GCM/NoPadding");
+                break;
+            }
             }
         }
-
+        catch (GeneralSecurityException e)
+        {
+            return false;
+        }
         return true;
     }
 
