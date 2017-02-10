@@ -96,18 +96,8 @@ public class JceDefaultTlsCredentialedDecryptor
         byte[] M = Arrays.clone(fallback);
         try
         {
-            Cipher c;
-            try
-            {
-                c = crypto.getHelper().createCipher("RSA/NONE/PKCS1Padding");
-            }
-            catch (NoSuchAlgorithmException e)
-            {
-                c = crypto.getHelper().createCipher("RSA/ECB/PKCS1Padding");    // try old style
-            }
-
+            Cipher c = crypto.createRSAEncryptionCipher();
             c.init(Cipher.DECRYPT_MODE, rsaServerPrivateKey);
-
             M = c.doFinal(encryptedPreMasterSecret);
         }
         catch (Exception e)
