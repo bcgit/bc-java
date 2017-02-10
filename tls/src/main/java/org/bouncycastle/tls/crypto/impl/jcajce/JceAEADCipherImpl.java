@@ -1,9 +1,12 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
+import java.lang.reflect.Constructor;
 import java.security.GeneralSecurityException;
+import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
@@ -15,6 +18,23 @@ import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
 public class JceAEADCipherImpl
     implements TlsAEADCipherImpl
 {
+    private static Constructor<AlgorithmParameterSpec> initSpecConstructor()
+    {
+        try
+        {
+            Class<AlgorithmParameterSpec> clazz = (Class<AlgorithmParameterSpec>)
+                Class.forName("javax.crypto.spec.GCMParameterSpec", true, IvParameterSpec.class.getClassLoader());
+            return clazz.getConstructor(int.class, byte[].class);
+        }
+        catch (Exception ignore)
+        {
+            // TODO[logging] Log the fact that we are falling back to BC-specific class
+            return null;
+        }
+    }
+
+    private static final Constructor<AlgorithmParameterSpec> specConstructor = initSpecConstructor();
+
     private final int cipherMode;
     private final Cipher cipher;
     private final String algorithm;
@@ -36,8 +56,28 @@ public class JceAEADCipherImpl
 
     public void init(byte[] nonce, int macSize, byte[] additionalData)
     {
+
         try
         {
+            // Try to use GCMParameterSpec (introduced in JDK 7)
+            if (specConstructor != null)
+            {
+                try
+                {
+                    AlgorithmParameterSpec spec = specConstructor.newInstance(macSize * 8, nonce);
+                    cipher.init(cipherMode, key, spec);
+                    if (additionalData != null && additionalData.length > 0)
+                    {
+                        cipher.updateAAD(additionalData);
+                    }
+                    return;
+                }
+                catch (Exception e)
+                {
+                }
+            }
+
+            // Otherwise fall back to the BC-specific AEADParameterSpec
             cipher.init(cipherMode, key, new AEADParameterSpec(nonce, macSize * 8, additionalData));
         }
         catch (GeneralSecurityException e)
