@@ -7,6 +7,7 @@ import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Vector;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -17,7 +18,10 @@ import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.ClientCertificateType;
+import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
+import org.bouncycastle.tls.SignatureAlgorithm;
+import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
@@ -171,6 +175,27 @@ class JsseUtils
             // TODO[jsse] Logging
             throw new RuntimeException(e);
         }
+    }
+
+    static Vector getSupportedSignatureAlgorithms(TlsCrypto crypto)
+    {
+        short[] hashAlgorithms = new short[]{ HashAlgorithm.sha1, HashAlgorithm.sha224, HashAlgorithm.sha256,
+            HashAlgorithm.sha384, HashAlgorithm.sha512 };
+        short[] signatureAlgorithms = new short[]{ SignatureAlgorithm.rsa, SignatureAlgorithm.ecdsa };
+
+        Vector result = new Vector();
+        for (int i = 0; i < signatureAlgorithms.length; ++i)
+        {
+            for (int j = 0; j < hashAlgorithms.length; ++j)
+            {
+                result.addElement(new SignatureAndHashAlgorithm(hashAlgorithms[j], signatureAlgorithms[i]));
+            }
+        }
+
+        // TODO Dynamically detect whether the TlsCrypto implementation can handle DSA2
+        result.addElement(new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.dsa));
+
+        return result;
     }
 
     static Set<X500Principal> toX500Principals(X500Name[] names) throws IOException

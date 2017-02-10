@@ -48,6 +48,12 @@ class ProvTlsClient
         this.sslParameters = manager.getProvSSLParameters();
     }
 
+    @Override
+    protected Vector getSupportedSignatureAlgorithms()
+    {
+        return JsseUtils.getSupportedSignatureAlgorithms(getCrypto());
+    }
+
     public synchronized boolean isHandshakeComplete()
     {
         return handshakeComplete;
@@ -244,6 +250,14 @@ class ProvTlsClient
 
         manager.notifyHandshakeComplete(session);
     }
+
+//    @Override
+//    public void notifySelectedCipherSuite(int selectedCipherSuite)
+//    {
+//        super.notifySelectedCipherSuite(selectedCipherSuite);
+//
+//        System.out.println("Client notified of selected cipher suite: " + manager.getContext().getCipherSuiteString(selectedCipherSuite));
+//    }
 
     @Override
     public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
