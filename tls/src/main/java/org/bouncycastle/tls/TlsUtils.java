@@ -2567,11 +2567,7 @@ public class TlsUtils
 
         for (int i = 0; i != baseCipherSuiteList.length; i++)
         {
-            int cipherSuite = baseCipherSuiteList[i];
-            int encryptionAlgorithm = TlsUtils.getEncryptionAlgorithm(cipherSuite);
-            int macAlgorithm = TlsUtils.getMACAlgorithm(cipherSuite);
-
-            if (crypto.hasEncryptionAlgorithm(encryptionAlgorithm) && crypto.hasMacAlgorithm(macAlgorithm))
+            if (isSupportedCipherSuite(crypto, baseCipherSuiteList[i]))
             {
                 supported.add(baseCipherSuiteList[i]);
             }
@@ -2585,5 +2581,19 @@ public class TlsUtils
         }
 
         return rv;
+    }
+
+    public static boolean isSupportedCipherSuite(TlsCrypto crypto, int cipherSuite)
+    {
+        int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(cipherSuite);
+        int encryptionAlgorithm = TlsUtils.getEncryptionAlgorithm(cipherSuite);
+        int macAlgorithm = TlsUtils.getMACAlgorithm(cipherSuite);
+
+        if (keyExchangeAlgorithm == KeyExchangeAlgorithm.RSA && !crypto.hasRSAEncryption())
+        {
+            return false;
+        }
+
+        return crypto.hasEncryptionAlgorithm(encryptionAlgorithm) && crypto.hasMacAlgorithm(macAlgorithm);
     }
 }

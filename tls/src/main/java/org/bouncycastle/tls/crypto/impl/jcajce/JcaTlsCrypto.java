@@ -85,6 +85,18 @@ public class JcaTlsCrypto
         return new JceTlsSecret(this, data);
     }
 
+    Cipher createRSAEncryptionCipher() throws GeneralSecurityException
+    {
+        try
+        {
+            return getHelper().createCipher("RSA/NONE/PKCS1Padding");
+        }
+        catch (GeneralSecurityException e)
+        {
+            return getHelper().createCipher("RSA/ECB/PKCS1Padding");    // try old style
+        }
+    }
+
     public byte[] createNonce(int size)
     {
         byte[] nonce = new byte[size];
@@ -351,8 +363,15 @@ public class JcaTlsCrypto
 
     public boolean hasRSAEncryption()
     {
-        // TODO: expand
-        return true;
+        try
+        {
+            createRSAEncryptionCipher();
+            return true;
+        }
+        catch (GeneralSecurityException e)
+        {
+            return false;
+        }
     }
 
     public TlsSecret createSecret(byte[] data)
@@ -426,9 +445,9 @@ public class JcaTlsCrypto
             {
                 try
                 {
-                    Cipher encoding = getHelper().createCipher("RSA/NONE/PKCS1Padding");
-                    encoding.init(Cipher.WRAP_MODE, pubKeyRSA, getSecureRandom());
-                    return encoding.doFinal(input, inOff, length);
+                    Cipher c = createRSAEncryptionCipher();
+                    c.init(Cipher.ENCRYPT_MODE, pubKeyRSA, getSecureRandom());
+                    return c.doFinal(input, inOff, length);
                 }
                 catch (GeneralSecurityException e)
                 {
