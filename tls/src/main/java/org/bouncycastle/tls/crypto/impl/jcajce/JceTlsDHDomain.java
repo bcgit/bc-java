@@ -95,7 +95,7 @@ public class JceTlsDHDomain
     {
         try
         {
-            KeyPairGenerator keyPairGenerator = crypto.getHelper().createKeyPairGenerator("EC");
+            KeyPairGenerator keyPairGenerator = crypto.getHelper().createKeyPairGenerator("DH");
             keyPairGenerator.initialize(getParameters(dhConfig), crypto.getSecureRandom());
             return keyPairGenerator.generateKeyPair();
         }
