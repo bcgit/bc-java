@@ -25,6 +25,8 @@ public class AllTests
         suite.addTestSuite(InstanceTest.class);
         suite.addTestSuite(KeyManagerFactoryTest.class);
 
+        suite.addTest(CipherSuitesTestSuite.suite());
+
         return new BCTestSetup(suite);
     }
 

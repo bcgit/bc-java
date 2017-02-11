@@ -24,18 +24,18 @@ import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 public class KeyManagerFactoryTest
     extends TestCase
 {
-
     private static final char[] PASSWORD = "fred".toCharArray();
 
     protected void setUp()
     {
-        Security.addProvider(new BouncyCastleProvider());
-        Security.addProvider(new BouncyCastleJsseProvider());
-    }
-
-    protected void tearDown()
-    {
-        Security.removeProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+        if (Security.getProvider(BouncyCastleJsseProvider.PROVIDER_NAME) == null)
+        {
+            Security.addProvider(new BouncyCastleJsseProvider());
+        }
     }
 
     public void testBasicRSA()

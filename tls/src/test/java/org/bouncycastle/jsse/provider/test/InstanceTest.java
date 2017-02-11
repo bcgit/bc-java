@@ -17,11 +17,6 @@ public class InstanceTest
         Security.addProvider(new BouncyCastleJsseProvider());
     }
 
-    protected void tearDown()
-    {
-        Security.removeProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
-    }
-
     public void testKeyManager()
         throws Exception
     {

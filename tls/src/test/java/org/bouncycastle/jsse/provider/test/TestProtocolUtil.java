@@ -6,13 +6,14 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.concurrent.Callable;
 
-import junit.framework.Assert;
 import org.bouncycastle.util.Strings;
+
+import junit.framework.Assert;
 
 class TestProtocolUtil
 {
     public interface BlockingCallable
-        extends Callable
+        extends Callable<Exception>
     {
         void await() throws InterruptedException;
     }
@@ -20,26 +21,28 @@ class TestProtocolUtil
     public static class Task
         implements Runnable
     {
-        private final Callable callable;
+        private final Callable<Exception> callable;
+        private Exception result = null;
 
-        public Task(Callable callable)
+        public Task(Callable<Exception> callable)
         {
             this.callable = callable;
+        }
+
+        public Exception getResult()
+        {
+            return result;
         }
 
         public void run()
         {
             try
             {
-                callable.call();
+                result = callable.call();
             }
             catch (Exception e)
             {
-                e.printStackTrace(System.err);
-                if (e.getCause() != null)
-                {
-                    e.getCause().printStackTrace(System.err);
-                }
+                result = e;
             }
         }
     }
@@ -47,11 +50,21 @@ class TestProtocolUtil
     public static void runClientAndServer(BlockingCallable server, BlockingCallable client)
         throws InterruptedException
     {
-        new Thread(new TestProtocolUtil.Task(server)).start();
+        TestProtocolUtil.Task serverTask = new TestProtocolUtil.Task(server);
+        Thread serverThread = new Thread(serverTask);
+        serverThread.start();
         server.await();
 
-        new Thread(new TestProtocolUtil.Task(client)).start();
+        TestProtocolUtil.Task clientTask = new TestProtocolUtil.Task(client);
+        Thread clientThread = new Thread(clientTask);
+        clientThread.start();
         client.await();
+
+        serverThread.join();
+        clientThread.join();
+
+        Assert.assertNull(serverTask.getResult());
+        Assert.assertNull(clientTask.getResult());
     }
 
     public static void doClientProtocol(
