@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.MPInteger;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.TrustPacket;
@@ -485,17 +486,30 @@ public class PGPSignature
             }
             else
             {
-                try
+                if (sigPck.getKeyAlgorithm() == PublicKeyAlgorithmTags.EDDSA)
                 {
-                    ASN1EncodableVector v = new ASN1EncodableVector();
-                    v.add(new ASN1Integer(sigValues[0].getValue()));
-                    v.add(new ASN1Integer(sigValues[1].getValue()));
+                    signature = new byte[64];
+                    byte[] bytes;
+                    bytes = BigIntegers.asUnsignedByteArray(sigValues[0].getValue());
+                    System.arraycopy(bytes, 0, signature, 0, bytes.length);
 
-                    signature = new DERSequence(v).getEncoded();
+                    bytes = BigIntegers.asUnsignedByteArray(sigValues[1].getValue());
+                    System.arraycopy(bytes, 0, signature, 32, bytes.length);
                 }
-                catch (IOException e)
+                else
                 {
-                    throw new PGPException("exception encoding DSA sig.", e);
+                    try
+                    {
+                        ASN1EncodableVector v = new ASN1EncodableVector();
+                        v.add(new ASN1Integer(sigValues[0].getValue()));
+                        v.add(new ASN1Integer(sigValues[1].getValue()));
+
+                        signature = new DERSequence(v).getEncoded();
+                    }
+                    catch (IOException e)
+                    {
+                        throw new PGPException("exception encoding DSA sig.", e);
+                    }
                 }
             }
         }

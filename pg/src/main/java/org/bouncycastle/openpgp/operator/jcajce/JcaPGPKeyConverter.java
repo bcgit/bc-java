@@ -1,5 +1,6 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
+import java.io.IOException;
 import java.security.AlgorithmParameters;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -30,7 +31,6 @@ import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPrivateKeySpec;
 import javax.crypto.spec.DHPublicKeySpec;
-
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
@@ -45,6 +45,8 @@ import org.bouncycastle.bcpg.DSASecretBCPGKey;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.ECDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.ECSecretBCPGKey;
+import org.bouncycastle.bcpg.EdDSAPublicBCPGKey;
+import org.bouncycastle.bcpg.EdDSASecretBCPGKey;
 import org.bouncycastle.bcpg.ElGamalPublicBCPGKey;
 import org.bouncycastle.bcpg.ElGamalSecretBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
@@ -53,6 +55,12 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 import org.bouncycastle.bcpg.RSASecretBCPGKey;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.jcajce.provider.asymmetric.eddsa.EdDSAPrivateKey;
+import org.bouncycastle.jcajce.provider.asymmetric.eddsa.EdDSAPublicKey;
+import org.bouncycastle.jcajce.provider.asymmetric.eddsa.spec.EdDSANamedCurveTable;
+import org.bouncycastle.jcajce.provider.asymmetric.eddsa.spec.EdDSAParameterSpec;
+import org.bouncycastle.jcajce.provider.asymmetric.eddsa.spec.EdDSAPrivateKeySpec;
+import org.bouncycastle.jcajce.provider.asymmetric.eddsa.spec.EdDSAPublicKeySpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -138,6 +146,15 @@ public class JcaPGPKeyConverter
                 fact = helper.createKeyFactory("ECDSA");
 
                 return fact.generatePublic(ecDsaSpec);
+            case PublicKeyAlgorithmTags.EDDSA:
+                EdDSAPublicBCPGKey eddsaK = ((EdDSAPublicBCPGKey) publicPk.getKey());
+                EdDSAParameterSpec spec = EdDSANamedCurveTable.getByName("ed25519");
+                byte[] pointData = eddsaK.getEdDSAEncodedPoint();
+
+                EdDSAPublicKeySpec edDsaSpec = new EdDSAPublicKeySpec(pointData, spec);
+
+                fact = helper.createKeyFactory("EDDSA");
+                return fact.generatePublic(edDsaSpec);
             default:
                 throw new PGPException("unknown public key algorithm encountered");
             }
@@ -188,6 +205,20 @@ public class JcaPGPKeyConverter
             DHParameterSpec eS = eK.getParams();
 
             bcpgKey = new ElGamalPublicBCPGKey(eS.getP(), eS.getG(), eK.getY());
+        }
+        else if (pubKey instanceof EdDSAPublicKey)
+        {
+            EdDSAPublicKey dK = (EdDSAPublicKey) pubKey;
+
+            try
+            {
+                byte[] eddsaEncodedPoint = dK.getA().toByteArray();
+                bcpgKey = EdDSAPublicBCPGKey.fromEdDSAEncodedPoint(eddsaEncodedPoint);
+            }
+            catch (IOException e)
+            {
+                throw new PGPException("Error converting to EdDSA key", e);
+            }
         }
         else if (pubKey instanceof ECPublicKey)
         {
@@ -307,6 +338,13 @@ public class JcaPGPKeyConverter
                 fact = helper.createKeyFactory("ECDSA");
 
                 return fact.generatePrivate(ecDsaSpec);
+            case PublicKeyAlgorithmTags.EDDSA:
+                EdDSASecretBCPGKey eddsaK = (EdDSASecretBCPGKey) privPk;
+                EdDSAPrivateKeySpec edDsaSpec = new EdDSAPrivateKeySpec(eddsaK.getSeed(),
+                        EdDSANamedCurveTable.getByName("ed25519"));
+                fact = helper.createKeyFactory("EDDSA");
+
+                return fact.generatePrivate(edDsaSpec);
             case PGPPublicKey.ELGAMAL_ENCRYPT:
             case PGPPublicKey.ELGAMAL_GENERAL:
                 ElGamalPublicBCPGKey elPub = (ElGamalPublicBCPGKey)pubPk.getKey();
@@ -368,6 +406,11 @@ public class JcaPGPKeyConverter
             ECPrivateKey ecK = (ECPrivateKey)privKey;
 
             privPk = new ECSecretBCPGKey(ecK.getS());
+            break;
+        case PGPPublicKey.EDDSA:
+            EdDSAPrivateKey edK = (EdDSAPrivateKey) privKey;
+
+            privPk = new EdDSASecretBCPGKey(edK.getSeed());
             break;
         default:
             throw new PGPException("unknown key class");

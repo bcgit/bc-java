@@ -155,6 +155,7 @@ public class SignaturePacket
             signature[2] = y;
             break;
         case ECDSA:
+            case EDDSA:
             MPInteger    ecR = new MPInteger(in);
             MPInteger    ecS = new MPInteger(in);
 

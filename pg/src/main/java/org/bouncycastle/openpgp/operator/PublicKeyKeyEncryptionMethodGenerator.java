@@ -35,6 +35,8 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
             throw new IllegalArgumentException("Can't use DSA for encryption.");
         case PGPPublicKey.ECDSA:
             throw new IllegalArgumentException("Can't use ECDSA for encryption.");
+        case PGPPublicKey.EDDSA:
+            throw new IllegalArgumentException("Can't use EdDSA for encryption.");
         default:
             throw new IllegalArgumentException("unknown asymmetric algorithm: " + pubKey.getAlgorithm());
         }

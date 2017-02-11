@@ -18,6 +18,7 @@ public interface PublicKeyAlgorithmTags
     public static final int ECDSA = 19;            // Reserved for ECDSA
     public static final int ELGAMAL_GENERAL = 20;  // Elgamal (Encrypt or Sign)
     public static final int DIFFIE_HELLMAN = 21;   // Reserved for Diffie-Hellman (X9.42, as defined for IETF-S/MIME)
+    public static final int EDDSA = 22;            // EdDSA https://tools.ietf.org/html/draft-koch-eddsa-for-openpgp-04
 
     public static final int EXPERIMENTAL_1 = 100;
     public static final int EXPERIMENTAL_2 = 101;

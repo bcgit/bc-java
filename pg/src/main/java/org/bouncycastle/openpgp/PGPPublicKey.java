@@ -15,6 +15,7 @@ import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.DSAPublicBCPGKey;
 import org.bouncycastle.bcpg.ECPublicBCPGKey;
+import org.bouncycastle.bcpg.EdDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.ElGamalPublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
@@ -22,6 +23,8 @@ import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UserAttributePacket;
 import org.bouncycastle.bcpg.UserIDPacket;
+import org.bouncycastle.jcajce.provider.asymmetric.eddsa.spec.EdDSANamedCurveSpec;
+import org.bouncycastle.jcajce.provider.asymmetric.eddsa.spec.EdDSANamedCurveTable;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Arrays;
 
@@ -85,7 +88,17 @@ public class PGPPublicKey
             }
             else if (key instanceof ECPublicBCPGKey)
             {
-                this.keyStrength = ECNamedCurveTable.getByOID(((ECPublicBCPGKey)key).getCurveOID()).getCurve().getFieldSize();
+                if (key instanceof EdDSAPublicBCPGKey)
+                {
+                    EdDSANamedCurveSpec eddsaSpec =
+                            EdDSANamedCurveTable.getByName("ed25519");
+                    this.keyStrength = eddsaSpec.getCurve().getField().getb();
+                }
+                else
+                {
+                    this.keyStrength =
+                            ECNamedCurveTable.getByOID(((ECPublicBCPGKey) key).getCurveOID()).getCurve().getFieldSize();
+                }
             }
         }
     }
