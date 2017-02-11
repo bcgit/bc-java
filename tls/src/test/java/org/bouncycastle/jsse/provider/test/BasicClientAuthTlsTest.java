@@ -63,38 +63,43 @@ public class BasicClientAuthTlsTest
             this.latch = new CountDownLatch(1);
         }
 
-        public Object call()
+        public Exception call()
             throws Exception
         {
-            TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("X509",
-                BouncyCastleJsseProvider.PROVIDER_NAME);
-
-            trustMgrFact.init(trustStore);
-
-            KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
-                BouncyCastleJsseProvider.PROVIDER_NAME);
-
-            keyMgrFact.init(clientStore, clientKeyPass);
-
-            SSLContext clientContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
-
-            clientContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
-                SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
-
-            SSLSocketFactory fact = clientContext.getSocketFactory();
-            SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, PORT_NO);
-
-            SSLUtils.restrictKeyExchange(cSock, "ECDHE_ECDSA");
-
-            SSLSession session = cSock.getSession();
-
-            assertNotNull(session.getCipherSuite());
-            assertEquals("CN=Test CA Certificate", session.getLocalPrincipal().getName());
-            assertEquals("CN=Test CA Certificate", session.getPeerPrincipal().getName());
-
-            TestProtocolUtil.doClientProtocol(cSock, "Hello");
-
-            latch.countDown();
+            try
+            {
+                TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
+                    BouncyCastleJsseProvider.PROVIDER_NAME);
+    
+                trustMgrFact.init(trustStore);
+    
+                KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
+                    BouncyCastleJsseProvider.PROVIDER_NAME);
+    
+                keyMgrFact.init(clientStore, clientKeyPass);
+    
+                SSLContext clientContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
+    
+                clientContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
+                    SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
+    
+                SSLSocketFactory fact = clientContext.getSocketFactory();
+                SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, PORT_NO);
+    
+                SSLUtils.restrictKeyExchange(cSock, "ECDHE_ECDSA");
+    
+                SSLSession session = cSock.getSession();
+    
+                assertNotNull(session.getCipherSuite());
+                assertEquals("CN=Test CA Certificate", session.getLocalPrincipal().getName());
+                assertEquals("CN=Test CA Certificate", session.getPeerPrincipal().getName());
+    
+                TestProtocolUtil.doClientProtocol(cSock, "Hello");
+            }
+            finally
+            {
+                latch.countDown();
+            }
 
             return null;
         }
@@ -128,44 +133,51 @@ public class BasicClientAuthTlsTest
             this.latch = new CountDownLatch(1);
         }
 
-        public Object call()
+        public Exception call()
             throws Exception
         {
-            KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("X509",
-                BouncyCastleJsseProvider.PROVIDER_NAME);
-
-            keyMgrFact.init(serverStore, keyPass);
-
-            TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
-                BouncyCastleJsseProvider.PROVIDER_NAME);
-
-            trustMgrFact.init(trustStore);
-
-            SSLContext serverContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
-
-            serverContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
-                SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
-
-            SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
-            SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(PORT_NO);
-
-            SSLUtils.enableAll(sSock);
-
-            sSock.setNeedClientAuth(true);
-
-            latch.countDown();
-
-            SSLSocket sslSock = (SSLSocket)sSock.accept();
-
-            SSLSession session = sslSock.getSession();
-
-            assertNotNull(session.getCipherSuite());
-            assertEquals("CN=Test CA Certificate", session.getLocalPrincipal().getName());
-            assertEquals("CN=Test CA Certificate", session.getPeerPrincipal().getName());
-
-            TestProtocolUtil.doServerProtocol(sslSock, "World");
-
-            sslSock.close();
+            try
+            {
+                KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX",
+                    BouncyCastleJsseProvider.PROVIDER_NAME);
+    
+                keyMgrFact.init(serverStore, keyPass);
+    
+                TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
+                    BouncyCastleJsseProvider.PROVIDER_NAME);
+    
+                trustMgrFact.init(trustStore);
+    
+                SSLContext serverContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
+    
+                serverContext.init(keyMgrFact.getKeyManagers(), trustMgrFact.getTrustManagers(),
+                    SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
+    
+                SSLServerSocketFactory fact = serverContext.getServerSocketFactory();
+                SSLServerSocket sSock = (SSLServerSocket)fact.createServerSocket(PORT_NO);
+    
+                SSLUtils.enableAll(sSock);
+    
+                sSock.setNeedClientAuth(true);
+    
+                latch.countDown();
+    
+                SSLSocket sslSock = (SSLSocket)sSock.accept();
+    
+                SSLSession session = sslSock.getSession();
+    
+                assertNotNull(session.getCipherSuite());
+                assertEquals("CN=Test CA Certificate", session.getLocalPrincipal().getName());
+                assertEquals("CN=Test CA Certificate", session.getPeerPrincipal().getName());
+    
+                TestProtocolUtil.doServerProtocol(sslSock, "World");
+    
+                sslSock.close();
+            }
+            finally
+            {
+                latch.countDown();
+            }
 
             return null;
         }
