@@ -22,6 +22,7 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.AESWrapEngine;
+import org.bouncycastle.crypto.engines.AESWrapPadEngine;
 import org.bouncycastle.crypto.engines.RFC3211WrapEngine;
 import org.bouncycastle.crypto.engines.RFC5649WrapEngine;
 import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
@@ -229,6 +230,15 @@ public final class AES
         public Wrap()
         {
             super(new AESWrapEngine());
+        }
+    }
+
+    public static class WrapPad
+        extends BaseWrapCipher
+    {
+        public WrapPad()
+        {
+            super(new AESWrapPadEngine());
         }
     }
 
@@ -834,6 +844,12 @@ public final class AES
             provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes256_wrap, "AESWRAP");
             provider.addAlgorithm("Alg.Alias.Cipher.AESKW", "AESWRAP");
 
+            provider.addAlgorithm("Cipher.AESWRAPPAD", PREFIX + "$WrapPad");
+            provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes128_wrap_pad, "AESWRAPPAD");
+            provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes192_wrap_pad, "AESWRAPPAD");
+            provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes256_wrap_pad, "AESWRAPPAD");
+            provider.addAlgorithm("Alg.Alias.Cipher.AESKWP", "AESWRAPPAD");
+
             provider.addAlgorithm("Cipher.AESRFC3211WRAP", PREFIX + "$RFC3211Wrap");
             provider.addAlgorithm("Cipher.AESRFC5649WRAP", PREFIX + "$RFC5649Wrap");
 
@@ -883,6 +899,10 @@ public final class AES
             provider.addAlgorithm("KeyGenerator", NISTObjectIdentifiers.id_aes128_CCM, PREFIX + "$KeyGen128");
             provider.addAlgorithm("KeyGenerator", NISTObjectIdentifiers.id_aes192_CCM, PREFIX + "$KeyGen192");
             provider.addAlgorithm("KeyGenerator", NISTObjectIdentifiers.id_aes256_CCM, PREFIX + "$KeyGen256");
+            provider.addAlgorithm("KeyGenerator.AESWRAPPAD", PREFIX + "$KeyGen");
+            provider.addAlgorithm("KeyGenerator", NISTObjectIdentifiers.id_aes128_wrap_pad, PREFIX + "$KeyGen128");
+            provider.addAlgorithm("KeyGenerator", NISTObjectIdentifiers.id_aes192_wrap_pad, PREFIX + "$KeyGen192");
+            provider.addAlgorithm("KeyGenerator", NISTObjectIdentifiers.id_aes256_wrap_pad, PREFIX + "$KeyGen256");
 
             provider.addAlgorithm("Mac.AESCMAC", PREFIX + "$AESCMAC");
 
