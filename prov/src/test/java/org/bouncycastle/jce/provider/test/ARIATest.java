@@ -14,36 +14,36 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.nsri.NSRIObjectIdentifiers;
 import org.bouncycastle.crypto.prng.FixedSecureRandom;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
- * basic test class for the AES cipher vectors from FIPS-197
+ * basic test class for the ARIA cipher vectors from FIPS-197
  */
-public class AESTest
+public class ARIATest
     extends BaseBlockCipherTest
 {
     static String[] cipherTests =
     {
-        "128",
-        "000102030405060708090a0b0c0d0e0f",
-        "00112233445566778899aabbccddeeff",
-        "69c4e0d86a7b0430d8cdb78070b4c55a",
-        "192",
-        "000102030405060708090a0b0c0d0e0f1011121314151617",
-        "00112233445566778899aabbccddeeff",
-        "dda97ca4864cdfe06eaf70a0ec0d7191",
-        "256",
-        "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
-        "00112233445566778899aabbccddeeff",
-        "8ea2b7ca516745bfeafc49904b496089",
+            "128",
+            "000102030405060708090a0b0c0d0e0f",
+            "00112233445566778899aabbccddeeff",
+            "d718fbd6ab644c739da95f3be6451778",
+            "192",
+            "000102030405060708090a0b0c0d0e0f1011121314151617",
+            "00112233445566778899aabbccddeeff",
+            "26449c1805dbe7aa25a468ce263a9e79",
+            "256",
+            "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+            "00112233445566778899aabbccddeeff",
+            "f92bd7c79fb72e2f2b8f80c1972d24fc"
     };
 
-    public AESTest()
+    public ARIATest()
     {
-        super("AES");
+        super("ARIA");
     }
 
     private void test(
@@ -60,10 +60,10 @@ public class AESTest
         ByteArrayInputStream    bIn;
         ByteArrayOutputStream   bOut;
 
-        key = new SecretKeySpec(keyBytes, "AES");
+        key = new SecretKeySpec(keyBytes, "ARIA");
 
-        in = Cipher.getInstance("AES/ECB/NoPadding", "BC");
-        out = Cipher.getInstance("AES/ECB/NoPadding", "BC");
+        in = Cipher.getInstance("ARIA/ECB/NoPadding", "BC");
+        out = Cipher.getInstance("ARIA/ECB/NoPadding", "BC");
         
         try
         {
@@ -71,7 +71,7 @@ public class AESTest
         }
         catch (Exception e)
         {
-            fail("AES failed initialisation - " + e.toString(), e);
+            fail("ARIA failed initialisation - " + e.toString(), e);
         }
 
         try
@@ -80,7 +80,7 @@ public class AESTest
         }
         catch (Exception e)
         {
-            fail("AES failed initialisation - " + e.toString(), e);
+            fail("ARIA failed initialisation - " + e.toString(), e);
         }
 
         //
@@ -101,7 +101,7 @@ public class AESTest
         }
         catch (IOException e)
         {
-            fail("AES failed encryption - " + e.toString(), e);
+            fail("ARIA failed encryption - " + e.toString(), e);
         }
 
         byte[]    bytes;
@@ -110,7 +110,7 @@ public class AESTest
 
         if (!areEqual(bytes, output))
         {
-            fail("AES failed encryption - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(bytes)));
+            fail("ARIA failed encryption - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(bytes)));
         }
 
         //
@@ -134,12 +134,12 @@ public class AESTest
         }
         catch (Exception e)
         {
-            fail("AES failed encryption - " + e.toString(), e);
+            fail("ARIA failed encryption - " + e.toString(), e);
         }
 
         if (!areEqual(bytes, input))
         {
-            fail("AES failed decryption - expected " + new String(Hex.encode(input)) + " got " + new String(Hex.encode(bytes)));
+            fail("ARIA failed decryption - expected " + new String(Hex.encode(input)) + " got " + new String(Hex.encode(bytes)));
         }
     }
 
@@ -149,22 +149,22 @@ public class AESTest
         byte[] K = Hex.decode("233952DEE4D5ED5F9B9C6D6FF80FF478");
         byte[] N = Hex.decode("62EC67F9C3A4A407FCB2A8C49031A8B3");
         byte[] P = Hex.decode("68656c6c6f20776f726c642121");
-        byte[] C = Hex.decode("2f9f76cb7659c70e4be11670a3e193ae1bc6b5762a");
+        byte[] C = Hex.decode("85fe63d6cfb872d2420e65425c074dfad6fe752e03");
 
         Key                     key;
         Cipher                  in, out;
 
-        key = new SecretKeySpec(K, "AES");
+        key = new SecretKeySpec(K, "ARIA");
 
-        in = Cipher.getInstance("AES/EAX/NoPadding", "BC");
-        out = Cipher.getInstance("AES/EAX/NoPadding", "BC");
+        in = Cipher.getInstance("ARIA/EAX/NoPadding", "BC");
+        out = Cipher.getInstance("ARIA/EAX/NoPadding", "BC");
 
         in.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(N));
 
         byte[] enc = in.doFinal(P);
         if (!areEqual(enc, C))
         {
-            fail("ciphertext doesn't match in EAX");
+            fail("ciphertext doesn't match in EAX: " + Hex.toHexString(enc));
         }
 
         out.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(N));
@@ -177,7 +177,7 @@ public class AESTest
 
         try
         {
-            in = Cipher.getInstance("AES/EAX/PKCS5Padding", "BC");
+            in = Cipher.getInstance("ARIA/EAX/PKCS5Padding", "BC");
 
             fail("bad padding missed in EAX");
         }
@@ -193,22 +193,22 @@ public class AESTest
         byte[] K = Hex.decode("404142434445464748494a4b4c4d4e4f");
         byte[] N = Hex.decode("10111213141516");
         byte[] P = Hex.decode("68656c6c6f20776f726c642121");
-        byte[] C = Hex.decode("39264f148b54c456035de0a531c8344f46db12b388");
+        byte[] C = Hex.decode("0af625ff69cd9dbe65fae181d654717eb7a0263bcd");
 
         Key                     key;
         Cipher                  in, out;
 
-        key = new SecretKeySpec(K, "AES");
+        key = new SecretKeySpec(K, "ARIA");
 
-        in = Cipher.getInstance("AES/CCM/NoPadding", "BC");
-        out = Cipher.getInstance("AES/CCM/NoPadding", "BC");
+        in = Cipher.getInstance("ARIA/CCM/NoPadding", "BC");
+        out = Cipher.getInstance("ARIA/CCM/NoPadding", "BC");
 
         in.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(N));
 
         byte[] enc = in.doFinal(P);
         if (!areEqual(enc, C))
         {
-            fail("ciphertext doesn't match in CCM");
+            fail("ciphertext doesn't match in CCM: " + Hex.toHexString(enc));
         }
 
         out.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(N));
@@ -221,7 +221,7 @@ public class AESTest
 
         try
         {
-            in = Cipher.getInstance("AES/CCM/PKCS5Padding", "BC");
+            in = Cipher.getInstance("ARIA/CCM/PKCS5Padding", "BC");
 
             fail("bad padding missed in CCM");
         }
@@ -244,28 +244,25 @@ public class AESTest
             + "1c3c0c95956809532fcf0e2449a6b525"
             + "b16aedf5aa0de657ba637b391aafd255");
         byte[] N = Hex.decode("cafebabefacedbaddecaf888");
-        String T = "b094dac5d93471bdec1a502270e3cc6c";
-        byte[] C = Hex.decode(
-              "522dc1f099567d07f47f37a32a84427d"
-            + "643a8cdcbfe5c0c97598a2bd2555d1aa"
-            + "8cb08e48590dbb3da7b08b1056828838"
-            + "c5f61e6393ba7a0abcc9f662898015ad"
+        String T = "c8f245c8619ca9ba7d6d9545e7f48214";
+        byte[] C = Hex.decode(             
+              "c3aa0e01a4f8b5dfdb25d0f1c78c275e516114080e2be7a7f7bffd4504b19a8552f80ad5b55f3d911725489629996d398d5ed6f077e22924c5b8ebe20a219693"
             + T);
 
         Key                     key;
         Cipher                  in, out;
 
-        key = new SecretKeySpec(K, "AES");
+        key = new SecretKeySpec(K, "ARIA");
 
-        in = Cipher.getInstance("AES/GCM/NoPadding", "BC");
-        out = Cipher.getInstance("AES/GCM/NoPadding", "BC");
+        in = Cipher.getInstance("ARIA/GCM/NoPadding", "BC");
+        out = Cipher.getInstance("ARIA/GCM/NoPadding", "BC");
 
         in.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(N));
 
         byte[] enc = in.doFinal(P);
         if (!areEqual(enc, C))
         {
-            fail("ciphertext doesn't match in GCM");
+            fail("ciphertext doesn't match in GCM: " + Hex.toHexString(enc));
         }
 
         out.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(N));
@@ -278,7 +275,7 @@ public class AESTest
 
         try
         {
-            in = Cipher.getInstance("AES/GCM/PKCS5Padding", "BC");
+            in = Cipher.getInstance("ARIA/GCM/PKCS5Padding", "BC");
     
             fail("bad padding missed in GCM");
         }
@@ -296,24 +293,24 @@ public class AESTest
         byte[] P = Hex.decode(
               "000102030405060708090A0B0C0D0E0F");
         byte[] N = Hex.decode("000102030405060708090A0B");
-        String T = "4CBB3E4BD6B456AF";
+        String T = "0027ce4f3aaeec75";
         byte[] C = Hex.decode(
-            "BEA5E8798DBE7110031C144DA0B2612213CC8B747807121A" + T);
+            "7bcae9eac9f1f54704a630e309099a87f53a1c1559de1b3b" + T);
 
         Key                     key;
         Cipher                  in, out;
 
-        key = new SecretKeySpec(K, "AES");
+        key = new SecretKeySpec(K, "ARIA");
 
-        in = Cipher.getInstance("AES/OCB/NoPadding", "BC");
-        out = Cipher.getInstance("AES/OCB/NoPadding", "BC");
+        in = Cipher.getInstance("ARIA/OCB/NoPadding", "BC");
+        out = Cipher.getInstance("ARIA/OCB/NoPadding", "BC");
 
         in.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(N));
 
         byte[] enc = in.doFinal(P);
         if (!areEqual(enc, C))
         {
-            fail("ciphertext doesn't match in OCB");
+            fail("ciphertext doesn't match in OCB: " + Hex.toHexString(enc));
         }
 
         out.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(N));
@@ -326,7 +323,7 @@ public class AESTest
 
         try
         {
-            in = Cipher.getInstance("AES/OCB/PKCS5Padding", "BC");
+            in = Cipher.getInstance("ARIA/OCB/PKCS5Padding", "BC");
 
             fail("bad padding missed in OCB");
         }
@@ -349,70 +346,70 @@ public class AESTest
 
         byte[]  kek1 = Hex.decode("000102030405060708090a0b0c0d0e0f");
         byte[]  in1 = Hex.decode("00112233445566778899aabbccddeeff");
-        byte[]  out1 = Hex.decode("1fa68b0a8112b447aef34bd8fb5a7b829d3e862371d2cfe5");
+        byte[]  out1 = Hex.decode("a93f148d4909d85f1aae656909879275ae597b3acf9d60db");
         
-        wrapTest(1, "AESWrap", kek1, in1, out1);
+        wrapTest(1, "ARIAWrap", kek1, in1, out1);
 
         byte[]  kek2 = Hex.decode("000102030405060708090a0b0c0d0e0f");
         byte[]  in2 = Hex.decode("00112233445566778899aabbccddeeff");
-        byte[]  out2 = Hex.decode("7c8798dfc802553b3f00bb4315e3a087322725c92398b9c112c74d0925c63b61");
+        byte[]  out2 = Hex.decode("9b2d3cac0acf9d4bde7c1bdb0313fbef931f025acc77bf57d3d1cabc88b514d0");
 
-        wrapTest(2, "AESRFC3211WRAP", kek2,  kek2, new FixedSecureRandom(Hex.decode("9688df2af1b7b1ac9688df2a")), in2, out2);
+        wrapTest(2, "ARIARFC3211WRAP", kek2,  kek2, new FixedSecureRandom(Hex.decode("9688df2af1b7b1ac9688df2a")), in2, out2);
 
-        byte[] kek3 = Hex.decode("5840df6e29b02af1ab493b705bf16ea1ae8338f4dcc176a8");
-        byte[] in3 = Hex.decode("c37b7e6492584340bed12207808941155068f738");
-        byte[] out3 = Hex.decode("138bdeaa9b8fa7fc61f97742e72248ee5ae6ae5360d1ae6a5f54f373fa543b6a");
+        byte[]  kek3 = Hex.decode("000102030405060708090a0b0c0d0e0f");
+        byte[]  in3 = Hex.decode("00112233445566778899aabbccddeeff");
+        byte[]  out3 = Hex.decode("ac0e22699a036ced63adeb75f4946f82dc98ad8af43b24d5");
 
-        wrapTest(3, "AESRFC5649WRAP", kek3, in3, out3);
+        wrapTest(3, "ARIAWrapPad", kek3, in3, out3);
 
         String[] oids = {
-                NISTObjectIdentifiers.id_aes128_ECB.getId(),
-                NISTObjectIdentifiers.id_aes128_CBC.getId(),
-                NISTObjectIdentifiers.id_aes128_OFB.getId(),
-                NISTObjectIdentifiers.id_aes128_CFB.getId(),
-                NISTObjectIdentifiers.id_aes192_ECB.getId(),
-                NISTObjectIdentifiers.id_aes192_CBC.getId(),
-                NISTObjectIdentifiers.id_aes192_OFB.getId(),
-                NISTObjectIdentifiers.id_aes192_CFB.getId(),
-                NISTObjectIdentifiers.id_aes256_ECB.getId(),
-                NISTObjectIdentifiers.id_aes256_CBC.getId(),
-                NISTObjectIdentifiers.id_aes256_OFB.getId(),
-                NISTObjectIdentifiers.id_aes256_CFB.getId()
+                NSRIObjectIdentifiers.id_aria128_ecb.getId(),
+                NSRIObjectIdentifiers.id_aria128_cbc.getId(),
+                NSRIObjectIdentifiers.id_aria128_ofb.getId(),
+                NSRIObjectIdentifiers.id_aria128_cfb.getId(),
+                NSRIObjectIdentifiers.id_aria192_ecb.getId(),
+                NSRIObjectIdentifiers.id_aria192_cbc.getId(),
+                NSRIObjectIdentifiers.id_aria192_ofb.getId(),
+                NSRIObjectIdentifiers.id_aria192_cfb.getId(),
+                NSRIObjectIdentifiers.id_aria256_ecb.getId(),
+                NSRIObjectIdentifiers.id_aria256_cbc.getId(),
+                NSRIObjectIdentifiers.id_aria256_ofb.getId(),
+                NSRIObjectIdentifiers.id_aria256_cfb.getId()
         };
 
         String[] names = {
-                "AES/ECB/PKCS7Padding",
-                "AES/CBC/PKCS7Padding",
-                "AES/OFB/NoPadding",
-                "AES/CFB/NoPadding",
-                "AES/ECB/PKCS7Padding",
-                "AES/CBC/PKCS7Padding",
-                "AES/OFB/NoPadding",
-                "AES/CFB/NoPadding",
-                "AES/ECB/PKCS7Padding",
-                "AES/CBC/PKCS7Padding",
-                "AES/OFB/NoPadding",
-                "AES/CFB/NoPadding"
+                "ARIA/ECB/PKCS7Padding",
+                "ARIA/CBC/PKCS7Padding",
+                "ARIA/OFB/NoPadding",
+                "ARIA/CFB/NoPadding",
+                "ARIA/ECB/PKCS7Padding",
+                "ARIA/CBC/PKCS7Padding",
+                "ARIA/OFB/NoPadding",
+                "ARIA/CFB/NoPadding",
+                "ARIA/ECB/PKCS7Padding",
+                "ARIA/CBC/PKCS7Padding",
+                "ARIA/OFB/NoPadding",
+                "ARIA/CFB/NoPadding"
         };
 
         oidTest(oids, names, 4);
 
 
         String[] wrapOids = {
-            NISTObjectIdentifiers.id_aes128_wrap.getId(),
-            NISTObjectIdentifiers.id_aes192_wrap.getId(),
-            NISTObjectIdentifiers.id_aes256_wrap.getId(),
+                NSRIObjectIdentifiers.id_aria128_kw.getId(),
+                NSRIObjectIdentifiers.id_aria192_kw.getId(),
+                NSRIObjectIdentifiers.id_aria256_kw.getId()
         };
 
-        wrapOidTest(wrapOids, "AESWrap");
+        wrapOidTest(wrapOids, "ARIAWrap");
 
         wrapOids = new String[] {
-                NISTObjectIdentifiers.id_aes128_wrap_pad.getId(),
-                NISTObjectIdentifiers.id_aes192_wrap_pad.getId(),
-                NISTObjectIdentifiers.id_aes256_wrap_pad.getId()
+                NSRIObjectIdentifiers.id_aria128_kwp.getId(),
+                NSRIObjectIdentifiers.id_aria192_kwp.getId(),
+                NSRIObjectIdentifiers.id_aria256_kwp.getId()
         };
 
-        wrapOidTest(wrapOids, "AESWrapPad");
+        wrapOidTest(wrapOids, "ARIAWrapPad");
 
         eaxTest();
         ccmTest();
@@ -425,6 +422,6 @@ public class AESTest
     {
         Security.addProvider(new BouncyCastleProvider());
 
-        runTest(new AESTest());
+        runTest(new ARIATest());
     }
 }
