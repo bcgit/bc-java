@@ -113,7 +113,7 @@ public class JcaTlsCryptoProvider
         NonceEntropySource(JcaJceHelper helper, SecureRandom random)
             throws GeneralSecurityException
         {
-            super(new NonceEntropySourceSpi(random, helper.createDigest("SHA-512")), null);
+            super(new NonceEntropySourceSpi(random, helper.createDigest("SHA-512")), random.getProvider());
         }
 
         private static class NonceEntropySourceSpi
