@@ -27,6 +27,7 @@ public class JcaESTServiceBuilder
     protected JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer;
     protected JcaJceAuthorizer ESTAuthorizer;
     protected CRL[] revocationLists;
+    protected String tlsVersion = "TLS";
 
     /**
      * Create a builder for a client talking to a server where trust anchors have not been established yet.
@@ -93,6 +94,11 @@ public class JcaESTServiceBuilder
         return this;
     }
 
+    public JcaESTServiceBuilder withTlsVersion(String tlsVersion)
+    {
+        this.tlsVersion = tlsVersion;
+        return this;
+    }
 
     public ESTService build()
     {
@@ -102,7 +108,7 @@ public class JcaESTServiceBuilder
                 tlsTrustAnchors,
                 clientKeystore,
                 clientKeystorePassword,
-                hostNameAuthorizer, revocationLists, ESTAuthorizer);
+                hostNameAuthorizer, revocationLists, ESTAuthorizer, tlsVersion);
         }
 
         return super.build();

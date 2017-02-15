@@ -11,7 +11,7 @@ import org.bouncycastle.est.Source;
 
 
 public class SSLSocketSource
-    implements Source<SSLSession>
+    implements Source<SSLSession, byte[]>
 {
     protected final SSLSocket socket;
 
@@ -35,6 +35,11 @@ public class SSLSocketSource
     public SSLSession getSession()
     {
         return socket.getSession();
+    }
+
+    public byte[] getUnique()
+    {
+        return null;
     }
 
     public void close()

@@ -9,6 +9,7 @@ import java.util.Set;
 import javax.net.ssl.SSLSession;
 
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.est.CACertsResponse;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -34,6 +35,7 @@ public class CaCertsExample
         File trustAnchorFile = null;
         String serverRootUrl = null;
         boolean printTLSCerts = false;
+        String tlsVersion = "TLS";
 
         try
         {
@@ -44,17 +46,20 @@ public class CaCertsExample
                 {
                     trustAnchorFile = ExampleUtils.nextArgAsFile("Trust Anchor File", args, t);
                     t += 1;
-                    continue;
                 }
                 else if (arg.equals("-u"))
                 {
                     serverRootUrl = ExampleUtils.nextArgAsString("Server URL", args, t);
                     t += 1;
-                    continue;
                 }
                 else if (arg.equals("--printTLS"))
                 {
                     printTLSCerts = true;
+                }
+                else if (arg.equals("--tls"))
+                {
+                    tlsVersion = ExampleUtils.nextArgAsString("TLS version", args, t);
+                    t += 1;
                 }
                 else
                 {
@@ -102,13 +107,14 @@ public class CaCertsExample
             builder = new JcaESTServiceBuilder(serverRootUrl);
         }
 
+        builder.withTlsVersion(tlsVersion);
         //
         // Make a client.
         //
 
         ESTService estService = builder.build();
 
-        ESTService.CACertsResponse caCertsResponse = estService.getCACerts();
+        CACertsResponse caCertsResponse = estService.getCACerts();
         //
         // We must check the response is trusted. If it is not trusted we have fetched the CAs
         // without verifying the source using a trust anchor. At this point an out of band 'ie user' must
@@ -208,6 +214,7 @@ public class CaCertsExample
         System.out.println("-t <file>                Trust anchor file. (PEM)");
         System.out.println("-u <url>                 Server URL");
         System.out.println("--printTLS <url>         Print TLS certificates as PEM format");
+        System.out.println("--tls <version>          Use this TLS version when creating socket factory, Eg TLSv1.2");
     }
 
 }

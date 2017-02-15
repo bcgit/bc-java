@@ -31,6 +31,7 @@ public class CSRAttributesExample
         File trustAnchorFile = null;
         String serverRootUrl = null;
         boolean printTLSCerts = false;
+        String tlsVersion = "TLS";
 
         try
         {
@@ -41,13 +42,16 @@ public class CSRAttributesExample
                 {
                     trustAnchorFile = ExampleUtils.nextArgAsFile("Trust Anchor File", args, t);
                     t += 1;
-                    continue;
                 }
                 else if (arg.equals("-u"))
                 {
                     serverRootUrl = ExampleUtils.nextArgAsString("Server URL", args, t);
                     t += 1;
-                    continue;
+                }
+                else if (arg.equals("--tls"))
+                {
+                    tlsVersion = ExampleUtils.nextArgAsString("TLS version", args, t);
+                    t += 1;
                 }
                 else
                 {
@@ -85,6 +89,8 @@ public class CSRAttributesExample
         //
         JcaESTServiceBuilder builder = new JcaESTServiceBuilder(serverRootUrl, trustAnchors);
 
+        builder.withTlsVersion(tlsVersion);
+
         //
         // Make a client.
         //
@@ -107,8 +113,9 @@ public class CSRAttributesExample
 
     public void printArguments()
     {
-        System.out.println("-t <file>        Trust anchor file. (PEM)");
-        System.out.println("-u <url>         Server URL");
+        System.out.println("-t <file>                Trust anchor file. (PEM)");
+        System.out.println("-u <url>                 Server URL");
+        System.out.println("--tls <version>          Use this TLS version when creating socket factory, Eg TLSv1.2");
     }
 
 }
