@@ -10,40 +10,42 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 
+import org.bouncycastle.jsse.BcSSLConnection;
+
 class ProvSSLSocket
     extends ProvSSLSocketBase
 {
-    protected final SSLEngine engine;
+    protected final ProvSSLEngine engine;
 
-    protected ProvSSLSocket(SSLEngine engine)
+    protected ProvSSLSocket(ProvSSLEngine engine)
     {
         super();
 
         this.engine = engine;
     }
 
-    protected ProvSSLSocket(SSLEngine engine, InetAddress address, int port) throws IOException
+    protected ProvSSLSocket(ProvSSLEngine engine, InetAddress address, int port) throws IOException
     {
         super(address, port);
 
         this.engine = engine;
     }
 
-    protected ProvSSLSocket(SSLEngine engine, InetAddress address, int port, InetAddress clientAddress, int clientPort) throws IOException
+    protected ProvSSLSocket(ProvSSLEngine engine, InetAddress address, int port, InetAddress clientAddress, int clientPort) throws IOException
     {
         super(address, port, clientAddress, clientPort);
 
         this.engine = engine;
     }
 
-    protected ProvSSLSocket(SSLEngine engine, String host, int port) throws IOException, UnknownHostException
+    protected ProvSSLSocket(ProvSSLEngine engine, String host, int port) throws IOException, UnknownHostException
     {
         super(host, port);
 
         this.engine = engine;
     }
 
-    protected ProvSSLSocket(SSLEngine engine, String host, int port, InetAddress clientAddress, int clientPort)
+    protected ProvSSLSocket(ProvSSLEngine engine, String host, int port, InetAddress clientAddress, int clientPort)
         throws IOException, UnknownHostException
     {
         super(host, port, clientAddress, clientPort);
@@ -63,6 +65,11 @@ class ProvSSLSocket
         // - Check under what circumstances need to call engine.closeInbound
 
         super.close();
+    }
+
+    public BcSSLConnection getConnection()
+    {
+        return engine.getConnection();
     }
 
     @Override

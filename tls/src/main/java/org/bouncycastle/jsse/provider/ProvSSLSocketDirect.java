@@ -12,6 +12,7 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.X509TrustManager;
 
+import org.bouncycastle.jsse.BcSSLConnection;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
@@ -33,7 +34,7 @@ class ProvSSLSocketDirect
     protected boolean initialHandshakeBegun = false;
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
-    protected SSLSession session = ProvSSLSession.NULL_SESSION;
+    protected BcSSLConnection connection = null;
     protected SSLSession handshakeSession = null;
 
     protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData)
@@ -103,6 +104,20 @@ class ProvSSLSocketDirect
         super.close();
     }
 
+    public synchronized BcSSLConnection getConnection()
+    {
+        try
+        {
+            handshakeIfNecessary();
+        }
+        catch (Exception e)
+        {
+            // TODO[jsse] Logging?
+        }
+
+        return connection;
+    }
+
     @Override
     public synchronized String[] getEnabledCipherSuites()
     {
@@ -148,20 +163,9 @@ class ProvSSLSocketDirect
     @Override
     public synchronized SSLSession getSession()
     {
-        /*
-         * "This method will initiate the initial handshake if necessary and then block until the
-         * handshake has been established."
-         */
-        try
-        {
-            handshakeIfNecessary();
-        }
-        catch (Exception e)
-        {
-            // TODO[jsse] Logging?
-        }
+        BcSSLConnection connection = getConnection();
 
-        return session;
+        return connection == null ? ProvSSLSession.NULL_SESSION : connection.getSession();
     }
 
     @Override
@@ -336,9 +340,9 @@ class ProvSSLSocketDirect
         return false;
     }
 
-    public synchronized void notifyHandshakeComplete(SSLSession session)
+    public synchronized void notifyHandshakeComplete(ProvSSLConnection connection)
     {
-        this.session = session;
+        this.connection = connection;
     }
 
     synchronized void handshakeIfNecessary() throws IOException

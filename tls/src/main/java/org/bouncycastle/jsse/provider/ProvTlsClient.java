@@ -247,8 +247,9 @@ class ProvTlsClient
 
         ProvSSLSessionContext sessionContext = manager.getContextData().getClientSessionContext();
         SSLSession session = sessionContext.reportSession(context.getSession());
+        ProvSSLConnection connection = new ProvSSLConnection(context, session);
 
-        manager.notifyHandshakeComplete(session);
+        manager.notifyHandshakeComplete(connection);
     }
 
 //    @Override
