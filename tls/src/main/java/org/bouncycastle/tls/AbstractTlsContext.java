@@ -1,6 +1,7 @@
 package org.bouncycastle.tls;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.util.Arrays;
 
 abstract class AbstractTlsContext
     implements TlsContext
@@ -77,6 +78,27 @@ abstract class AbstractTlsContext
     public void setUserObject(Object userObject)
     {
         this.userObject = userObject;
+    }
+
+    public byte[] exportChannelBinding(int channelBinding)
+    {
+        switch (channelBinding)
+        {
+        case ChannelBinding.tls_unique:
+        {
+            byte[] tlsUnique = getSecurityParameters().getTLSUnique();
+            if (tlsUnique == null)
+            {
+                throw new IllegalStateException("'tls-unique' channel binding unavailable before handshake completion");
+            }
+            return Arrays.clone(tlsUnique);
+        }
+
+        case ChannelBinding.tls_server_end_point:
+        case ChannelBinding.tls_unique_for_telnet:
+        default:
+            throw new UnsupportedOperationException();
+        }
     }
 
     public byte[] exportKeyingMaterial(String asciiLabel, byte[] context_value, int length)

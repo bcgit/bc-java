@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.CertificateRequest;
+import org.bouncycastle.tls.ChannelBinding;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.MaxFragmentLength;
@@ -131,6 +132,9 @@ class MockTlsClient
     public void notifyHandshakeComplete() throws IOException
     {
         super.notifyHandshakeComplete();
+
+        byte[] tlsUnique = context.exportChannelBinding(ChannelBinding.tls_unique);
+        System.out.println("'tls-unique': " + Hex.toHexString(tlsUnique));
 
         TlsSession newSession = context.getResumableSession();
         if (newSession != null)

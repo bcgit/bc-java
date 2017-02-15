@@ -291,6 +291,11 @@ public class BasicTlsTest
             throw new UnsupportedOperationException();
         }
 
+        public byte[] exportChannelBinding(int channelBinding)
+        {
+            throw new UnsupportedOperationException();
+        }
+
         public byte[] exportKeyingMaterial(String asciiLabel, byte[] context_value, int length)
         {
             throw new UnsupportedOperationException();

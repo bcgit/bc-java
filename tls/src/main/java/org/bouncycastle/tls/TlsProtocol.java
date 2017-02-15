@@ -934,6 +934,11 @@ public abstract class TlsProtocol
              */
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
+
+        if (null == securityParameters.getTLSUnique())
+        {
+            securityParameters.tlsUnique = verify_data;
+        }
     }
 
     protected void raiseAlert(short alertLevel, short alertDescription, String message, Throwable cause)
@@ -1004,6 +1009,11 @@ public abstract class TlsProtocol
         message.write(verify_data);
 
         message.writeToRecordStream();
+
+        if (null == securityParameters.getTLSUnique())
+        {
+            securityParameters.tlsUnique = verify_data;
+        }
     }
 
     protected void sendSupplementalDataMessage(Vector supplementalData)

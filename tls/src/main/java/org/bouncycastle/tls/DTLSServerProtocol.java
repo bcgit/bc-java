@@ -108,7 +108,11 @@ public class DTLSServerProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        // NOTE: Currently no server support for session resumption
+        /*
+         *  NOTE: Currently no server support for session resumption
+         *  
+         *  If adding support, ensure securityParameters.tlsUnique is set to the serverVerifyData accordingly
+         */
         {
             invalidateSession(state);
     
@@ -302,6 +306,8 @@ public class DTLSServerProtocol
             .build();
 
         state.tlsSession = TlsUtils.importSession(state.tlsSession.getSessionID(), state.sessionParameters);
+
+        securityParameters.tlsUnique = expectedClientVerifyData;
 
         state.serverContext.setSession(state.tlsSession);
 

@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.CertificateRequest;
+import org.bouncycastle.tls.ChannelBinding;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.ProtocolVersion;
@@ -19,6 +20,7 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
+import org.bouncycastle.util.encoders.Hex;
 
 class MockTlsServer
     extends DefaultTlsServer
@@ -96,6 +98,14 @@ class MockTlsServer
         {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
+    }
+
+    public void notifyHandshakeComplete() throws IOException
+    {
+        super.notifyHandshakeComplete();
+
+        byte[] tlsUnique = context.exportChannelBinding(ChannelBinding.tls_unique);
+        System.out.println("'tls-unique': " + Hex.toHexString(tlsUnique));
     }
 
     protected TlsCredentialedDecryptor getRSAEncryptionCredentials()
