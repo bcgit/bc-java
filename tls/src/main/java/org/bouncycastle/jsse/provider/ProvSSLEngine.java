@@ -14,6 +14,8 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.X509TrustManager;
 
+import org.bouncycastle.jsse.BcSSLConnection;
+import org.bouncycastle.jsse.BcSSLEngine;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
@@ -24,7 +26,7 @@ import org.bouncycastle.tls.TlsServerProtocol;
  */
 class ProvSSLEngine
     extends SSLEngine
-    implements ProvTlsManager
+    implements BcSSLEngine, ProvTlsManager
 {
     protected final ProvSSLContextSpi context;
     protected final ContextData contextData;
@@ -37,7 +39,7 @@ class ProvSSLEngine
     protected HandshakeStatus handshakeStatus = HandshakeStatus.NOT_HANDSHAKING; 
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
-    protected SSLSession session = ProvSSLSession.NULL_SESSION;
+    protected BcSSLConnection connection = null;
     protected SSLSession handshakeSession = null;
 
     protected ProvSSLEngine(ProvSSLContextSpi context, ContextData contextData)
@@ -126,6 +128,11 @@ class ProvSSLEngine
         throw new UnsupportedOperationException();
     }
 
+    public synchronized BcSSLConnection getConnection()
+    {
+        return connection;
+    }
+
     @Override
     public synchronized Runnable getDelegatedTask()
     {
@@ -173,9 +180,7 @@ class ProvSSLEngine
     @Override
     public synchronized SSLSession getSession()
     {
-        // TODO[jsse] this.session needs to be set after a successful handshake
-
-        return session;
+        return connection == null ? ProvSSLSession.NULL_SESSION : connection.getSession();
     }
 
     @Override
@@ -418,8 +423,8 @@ class ProvSSLEngine
         return false;
     }
 
-    public synchronized void notifyHandshakeComplete(SSLSession session)
+    public synchronized void notifyHandshakeComplete(ProvSSLConnection connection)
     {
-        this.session = session;
+        this.connection = connection;
     }
 }

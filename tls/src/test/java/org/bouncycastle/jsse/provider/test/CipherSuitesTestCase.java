@@ -14,6 +14,7 @@ import javax.net.ssl.TrustManagerFactory;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+import org.junit.Assert;
 
 import junit.framework.TestCase;
 
@@ -50,7 +51,14 @@ public class CipherSuitesTestCase extends TestCase
 
         int port = PORT_NO.incrementAndGet();
 
-        TestProtocolUtil.runClientAndServer(new SimpleServer(port, config), new SimpleClient(port, config));
+        SimpleServer server = new SimpleServer(port, config);
+        SimpleClient client = new SimpleClient(port, config);
+
+        TestProtocolUtil.runClientAndServer(server, client);
+
+        Assert.assertNotNull(server.tlsUnique);
+        Assert.assertNotNull(client.tlsUnique);
+        Assert.assertArrayEquals(server.tlsUnique, client.tlsUnique);
     }
 
     private static final String HOST = "localhost";
@@ -62,6 +70,7 @@ public class CipherSuitesTestCase extends TestCase
         private final int port;
         private final CipherSuitesTestConfig config;
         private final CountDownLatch latch;
+        private byte[] tlsUnique = null; 
 
         SimpleClient(int port, CipherSuitesTestConfig config)
         {
@@ -89,7 +98,9 @@ public class CipherSuitesTestCase extends TestCase
                 SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, port);
     
                 cSock.setEnabledCipherSuites(new String[]{ config.cipherSuite });
-    
+
+                this.tlsUnique = TestUtils.getChannelBinding(cSock, "tls-unique");
+
                 TestProtocolUtil.doClientProtocol(cSock, "Hello");
             }
             finally
@@ -113,6 +124,7 @@ public class CipherSuitesTestCase extends TestCase
         private final int port;
         private final CipherSuitesTestConfig config;
         private final CountDownLatch latch;
+        private byte[] tlsUnique = null; 
 
         SimpleServer(int port, CipherSuitesTestConfig config)
         {
@@ -145,7 +157,9 @@ public class CipherSuitesTestCase extends TestCase
     
                 SSLSocket sslSock = (SSLSocket)sSock.accept();
                 sslSock.setUseClientMode(false);
-    
+
+                this.tlsUnique = TestUtils.getChannelBinding(sslSock, "tls-unique");
+
                 TestProtocolUtil.doServerProtocol(sslSock, "World");
             }
             finally

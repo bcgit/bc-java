@@ -12,8 +12,11 @@ import java.util.Set;
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLSocket;
 
+import org.bouncycastle.jsse.BcSSLSocket;
+
 abstract class ProvSSLSocketBase
     extends SSLSocket
+    implements BcSSLSocket
 {
     protected final Set<HandshakeCompletedListenerAdapter> listeners = Collections.synchronizedSet(
         new HashSet<HandshakeCompletedListenerAdapter>());

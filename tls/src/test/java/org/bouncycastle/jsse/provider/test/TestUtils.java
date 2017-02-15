@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import javax.net.ssl.SSLSocket;
+
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -55,6 +57,8 @@ import org.bouncycastle.asn1.x509.V1TBSCertificateGenerator;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jsse.BcSSLConnection;
+import org.bouncycastle.jsse.BcSSLSocket;
 
 /**
  * Test Utils
@@ -315,6 +319,19 @@ class TestUtils
                 caCertLw.getSubject(),
                 caKey, subject, "SHA256withECDSA", extGen.generate(), entityKey);
         }
+    }
+
+    public static byte[] getChannelBinding(SSLSocket s, String channelBinding)
+    {
+        if (s instanceof BcSSLSocket)
+        {
+            BcSSLConnection connection = ((BcSSLSocket)s).getConnection();
+            if (connection != null)
+            {
+                return connection.getChannelBinding(channelBinding);
+            }
+        }
+        return null;
     }
 
     public static X509Certificate createExceptionCertificate(boolean exceptionOnEncode)
