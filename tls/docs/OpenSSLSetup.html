@@ -1,0 +1,34 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<body>
+<h3>Instructions for setting up an OpenSSL server for use with DTLSClientTest, DTLSServerTest, TlsClientTest, TlsServerTest.</h3>
+
+<ul>
+<li> Download and Install OpenSSL (exercise for the reader)
+
+<li> Make a working folder somewhere and copy the x509-*.pem from this package (in src/test/resources) to there.
+
+<li> Go to working folder and start OpenSSL client or server:
+<ul>
+<li>
+TLS:
+<pre>
+    openssl s_client -connect localhost:5556 -debug -msg -state -tls1_2 -CAfile x509-ca.pem -cert x509-client.pem -key x509-client-key.pem -verify 0
+    openssl s_server -accept 5556 -debug -msg -state -tls1_2 -www -CAfile x509-ca.pem -cert x509-server.pem -key x509-server-key.pem -verify 0
+</pre>
+</li>
+<li>
+DTLS:
+<pre>
+    openssl s_client -connect localhost:5556 -mtu 1500 -debug -msg -state -dtls1_2 -CAfile x509-ca.pem -cert x509-client.pem -key x509-client-key.pem -verify 0
+    openssl s_server -accept 5556 -mtu 1500 -debug -msg -state -dtls1_2 -CAfile x509-ca.pem -cert x509-server.pem -key x509-server-key.pem -verify 0
+</pre>
+</li>
+</ul>
+</li>
+</ul>
+<p>NOTE: This is mainly of use to test the handshake. There doesn't appear to be an 'echo server' option with DTLS, but it will print
+      to stdout anything you send it, and lines you type into stdin (at the server) will be sent to the client.</p>
+</body>
+</html>
