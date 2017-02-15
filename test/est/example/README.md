@@ -19,6 +19,14 @@ When it is done building it will then copy the jars into the ```<bc-java>/test/e
 
 If you need to refresh these jars delete the jars directory.
 
+## Using Java 7 ('org.bouncycastle.est.ESTException: Connection reset')
+The Cisco EST server will reject TLS version 1 'TLSv1' handshakes. 
+
+This is the default in Java 7, however Java 8 defaults to TLSv1.2 which the Cisco test EST server will accept.
+
+When using Java 7 you will need to supply the argument: ```--tls TLSv1.2```
+
+
 ## Not in a unix environment
 The examples need a provider, the pkix jar, and the test jar.
 

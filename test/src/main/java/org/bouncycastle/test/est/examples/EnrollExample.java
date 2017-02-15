@@ -16,6 +16,7 @@ import org.bouncycastle.est.BasicAuth;
 import org.bouncycastle.est.DigestAuth;
 import org.bouncycastle.est.ESTAuth;
 import org.bouncycastle.est.ESTService;
+import org.bouncycastle.est.EnrollmentResponse;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -45,6 +46,7 @@ public class EnrollExample
         boolean digestAuth = false;
         String[] credentials = null;
         boolean reEnroll = false;
+        String tlsVersion = "TLS";
 
         try
         {
@@ -54,66 +56,62 @@ public class EnrollExample
                 if (arg.equals("-r"))
                 {
                     reEnroll = true;
-                    continue;
                 }
                 else if (arg.equals("-t"))
                 {
                     trustAnchorFile = ExampleUtils.nextArgAsFile("Trust Anchor File", args, t);
                     t += 1;
-                    continue;
                 }
                 else if (arg.equals("-u"))
                 {
                     serverRootUrl = ExampleUtils.nextArgAsString("Server URL", args, t);
                     t += 1;
-                    continue;
                 }
                 else if (arg.equals("-c"))
                 {
                     cn = ExampleUtils.nextArgAsString("Common Name", args, t);
                     t += 1;
-                    continue;
                 }
                 else if (arg.equals("--keyStore"))
                 {
                     clientKeyStoreFile = ExampleUtils.nextArgAsFile("Client Key store", args, t);
                     t += 1;
-                    continue;
                 }
                 else if (arg.equals("--keyStorePass"))
                 {
                     clientKeyStoreFilePassword = ExampleUtils.nextArgAsString("Keystore password", args, t).toCharArray();
                     t += 1;
-                    continue;
-                }
-                if (arg.equals("--keyStoreType"))
-                {
-                    keyStoreType = ExampleUtils.nextArgAsString("Keystore type", args, t);
-                    t += 1;
-                    continue;
                 }
                 else if (arg.equals("--keyStoreType"))
                 {
                     keyStoreType = ExampleUtils.nextArgAsString("Keystore type", args, t);
                     t += 1;
-                    continue;
+                }
+                else if (arg.equals("--keyStoreType"))
+                {
+                    keyStoreType = ExampleUtils.nextArgAsString("Keystore type", args, t);
+                    t += 1;
                 }
                 else if (arg.equals("--digestAuth"))
                 {
                     credentials = ExampleUtils.nextArgAsString("Keystore type", args, t).split(":");
                     digestAuth = true;
                     t += 1;
-                    continue;
                 }
                 else if (arg.equals("--basicAuth"))
                 {
                     credentials = ExampleUtils.nextArgAsString("Keystore type", args, t).split(":");
                     basicAuth = true;
                     t += 1;
-                    continue;
+                }
+                else if (arg.equals("--tls"))
+                {
+                    tlsVersion = ExampleUtils.nextArgAsString("TLS version", args, t);
+                    t += 1;
                 }
                 else
                 {
+                    System.out.println(arg);
                     printArgs();
                     System.exit(0);
                 }
@@ -127,16 +125,7 @@ public class EnrollExample
 
         if (args.length == 0)
         {
-            System.out.println("-r                                    Re-enroll");
-            System.out.println("-t <file>                             Trust anchor file");
-            System.out.println("-u <url>                              EST server url.");
-            System.out.println("-c <common name>                      EST server url.");
-            System.out.println("--keyStore <file>                      Optional Key Store.");
-            System.out.println("--keyStorePass <password>              Optional Key Store password.");
-            System.out.println("--keyStoreType <JKS>                   Optional Key Store type, defaults to JKS");
-            System.out.println("--digestAuth <realm:user:password>     Digest Auth credentials, if real is not");
-            System.out.println("                                      specified <user:password> then the realm from the server is used.");
-            System.out.println("--basicAuth <realm:user:password>      Use basic auth.");
+            printArgs();
             System.exit(0);
         }
 
@@ -225,8 +214,10 @@ public class EnrollExample
             }
         }
 
+        est.withTlsVersion(tlsVersion);
+
         ESTService estService = est.build();
-        ESTService.EnrollmentResponse enrollmentResponse;
+        EnrollmentResponse enrollmentResponse;
 
         //
         // The enrollment action can be deferred by the server.
@@ -279,13 +270,16 @@ public class EnrollExample
 
     public void printArgs()
     {
-        System.out.println("-ta <file>                            Trust anchor file");
-        System.out.println("-url <url>                            EST server url.");
-        System.out.println("-keyStore <file>                      Optional Key Store.");
-        System.out.println("-keyStorePass <password>              Optional Key Store password.");
-        System.out.println("-keyStoreType <JKS>                   Optional Key Store type, defaults to JKS");
-        System.out.println("-digestAuth <realm:user:password>     Digest Auth credentials, if real is not");
-        System.out.println("                                      specified <user:password> then the realm from the server is used.");
-        System.out.println("-basicAuth <realm:user:password>      Use basic auth.");
+        System.out.println("-r                                     Re-enroll");
+        System.out.println("-t <file>                              Trust anchor file");
+        System.out.println("-u <url>                               EST server url.");
+        System.out.println("-c <common name>                       EST server url.");
+        System.out.println("--keyStore <file>                      Optional Key Store.");
+        System.out.println("--keyStorePass <password>              Optional Key Store password.");
+        System.out.println("--keyStoreType <JKS>                   Optional Key Store type, defaults to JKS");
+        System.out.println("--digestAuth <realm:user:password>     Digest Auth credentials, if real is not");
+        System.out.println("                                       specified <user:password> then the realm from the server is used.");
+        System.out.println("--basicAuth <realm:user:password>      Use basic auth.");
+        System.out.println("--tls <version>                        Use this TLS version when creating socket factory, Eg TLSv1.2");
     }
 }

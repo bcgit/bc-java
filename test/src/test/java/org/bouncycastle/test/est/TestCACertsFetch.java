@@ -21,6 +21,7 @@ import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.est.CACertsResponse;
 import org.bouncycastle.est.ESTException;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
@@ -85,7 +86,7 @@ public class TestCACertsFetch
             serverInstance = startDefaultServer();
 
             ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
-            ESTService.CACertsResponse caCertsResponse = est.getCACerts();
+            CACertsResponse caCertsResponse = est.getCACerts();
             X509CertificateHolder[] caCerts = ESTService.storeToArray(caCertsResponse.getStore());
 
             FileReader fr = new FileReader(ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt"));
@@ -229,7 +230,7 @@ public class TestCACertsFetch
                     "https://localhost:8443/.well-known/est/",
                     Collections.singleton(ta)).build();
 
-            ESTService.CACertsResponse caCertsResponse = est.getCACerts();
+            CACertsResponse caCertsResponse = est.getCACerts();
             // Make the call. NB tlsAcceptAny is false.
             X509CertificateHolder[] caCerts = ESTService.storeToArray(caCertsResponse.getStore());
 
@@ -274,7 +275,7 @@ public class TestCACertsFetch
 
             // Note the constructor without TrustAnchors.
             ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
-            ESTService.CACertsResponse caCertsResponse = est.getCACerts(); //<= Accept any certs tendered by the server.
+            CACertsResponse caCertsResponse = est.getCACerts(); //<= Accept any certs tendered by the server.
 
             Assert.assertEquals("Returned ca certs should be 1", ESTService.storeToArray(caCertsResponse.getStore()).length, 1);
 
