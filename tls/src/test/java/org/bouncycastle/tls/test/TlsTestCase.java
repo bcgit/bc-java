@@ -94,7 +94,11 @@ public class TlsTestCase extends TestCase
     
             assertEquals(count, data.length);
             assertTrue(Arrays.areEqual(data, echo));
-    
+
+            assertNotNull(clientImpl.tlsUnique);
+            assertNotNull(serverImpl.tlsUnique);
+            assertTrue(Arrays.areEqual(clientImpl.tlsUnique, serverImpl.tlsUnique));
+
             output.close();
         }
         catch (Exception e)

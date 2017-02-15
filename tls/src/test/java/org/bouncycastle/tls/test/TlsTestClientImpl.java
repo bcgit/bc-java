@@ -15,6 +15,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.CertificateRequest;
+import org.bouncycastle.tls.ChannelBinding;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.DefaultTlsClient;
@@ -31,6 +32,7 @@ import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 class TlsTestClientImpl
     extends DefaultTlsClient
@@ -39,6 +41,8 @@ class TlsTestClientImpl
 
     protected int firstFatalAlertConnectionEnd = -1;
     protected short firstFatalAlertDescription = -1;
+
+    byte[] tlsUnique = null;
 
     TlsTestClientImpl(TlsTestConfig config)
     {
@@ -141,6 +145,18 @@ class TlsTestClientImpl
             PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
             out.println("TLS client received alert: " + AlertLevel.getText(alertLevel)
                 + ", " + AlertDescription.getText(alertDescription));
+        }
+    }
+
+    public void notifyHandshakeComplete() throws IOException
+    {
+        super.notifyHandshakeComplete();
+
+        tlsUnique = context.exportChannelBinding(ChannelBinding.tls_unique);
+
+        if (TlsTestConfig.DEBUG)
+        {
+            System.out.println("TLS client reports 'tls-unique' = " + Hex.toHexString(tlsUnique));
         }
     }
 

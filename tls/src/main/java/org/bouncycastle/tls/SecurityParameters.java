@@ -16,6 +16,7 @@ public class SecurityParameters
     byte[] sessionHash = null;
     byte[] pskIdentity = null;
     byte[] srpIdentity = null;
+    byte[] tlsUnique = null;
     boolean encryptThenMAC = false;
     boolean extendedMasterSecret = false;
     boolean truncatedHMac = false;
@@ -110,6 +111,11 @@ public class SecurityParameters
     public byte[] getSRPIdentity()
     {
         return srpIdentity;
+    }
+
+    public byte[] getTLSUnique()
+    {
+        return tlsUnique;
     }
 
     public boolean isEncryptThenMAC()

@@ -63,17 +63,22 @@ public class TlsUtilsTest
 
             public Object getUserObject()
             {
-                return null;
+                throw new UnsupportedOperationException();
             }
 
             public void setUserObject(Object userObject)
             {
+                throw new UnsupportedOperationException();
+            }
 
+            public byte[] exportChannelBinding(int channelBinding)
+            {
+                throw new UnsupportedOperationException();
             }
 
             public byte[] exportKeyingMaterial(String asciiLabel, byte[] context_value, int length)
             {
-                return new byte[0];
+                throw new UnsupportedOperationException();
             }
         };
 

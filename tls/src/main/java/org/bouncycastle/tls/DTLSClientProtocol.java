@@ -160,6 +160,8 @@ public class DTLSClientProtocol
 
             handshake.finish();
 
+            securityParameters.tlsUnique = expectedServerVerifyData;
+
             state.clientContext.setSession(state.tlsSession);
 
             state.client.notifyHandshakeComplete();
@@ -375,6 +377,8 @@ public class DTLSClientProtocol
             .build();
 
         state.tlsSession = TlsUtils.importSession(state.tlsSession.getSessionID(), state.sessionParameters);
+
+        securityParameters.tlsUnique = clientVerifyData;
 
         state.clientContext.setSession(state.tlsSession);
 

@@ -47,6 +47,15 @@ public interface TlsContext
     void setUserObject(Object userObject);
 
     /**
+     * Export the value of the specified channel binding. Only available after the handshake has
+     * successfully completed.
+     * 
+     * @param channelBinding A {@link ChannelBinding} constant specifying the channel binding to export.
+     * @return A copy of the channel binding data as a {@link byte[]}.
+     */
+    byte[] exportChannelBinding(int channelBinding);
+
+    /**
      * Export keying material according to RFC 5705: "Keying Material Exporters for TLS".
      *
      * @param asciiLabel    indicates which application will use the exported keys.
