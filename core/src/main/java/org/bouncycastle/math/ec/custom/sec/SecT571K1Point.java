@@ -147,7 +147,7 @@ public class SecT571K1Point extends AbstractF2m
             ECFieldElement Y2 = L2;
             ECFieldElement L = Y1.add(Y2).divide(X1);
 
-            X3 = L.square().add(L).add(X1).addOne();
+            X3 = L.square().add(L).add(X1);
             if (X3.isZero())
             {
                 return new SecT571K1Point(curve, X3, curve.getB(), this.withCompression);
