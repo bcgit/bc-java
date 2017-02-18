@@ -7,6 +7,7 @@ import java.security.cert.TrustAnchor;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.est.CSRRequestResponse;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -96,7 +97,7 @@ public class CSRAttributesExample
         //
         ESTService estService = builder.build();
 
-        ESTService.CSRRequestResponse csrAttributes = estService.getCSRAttributes();
+        CSRRequestResponse csrAttributes = estService.getCSRAttributes();
 
         for (ASN1ObjectIdentifier id : csrAttributes.getAttributesResponse().getRequirements())
         {

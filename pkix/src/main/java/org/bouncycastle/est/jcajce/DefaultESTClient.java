@@ -3,7 +3,6 @@ package org.bouncycastle.est.jcajce;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.Socket;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Collections;
@@ -107,14 +106,17 @@ public class DefaultESTClient
         throws IOException
     {
         c.setEstClient(this);
-        Socket sock = null;
+
         ESTResponse res = null;
         Source socketSource = null;
         try
         {
 
-            sock = new Socket(c.getUrl().getHost(), c.getUrl().getPort());
-            socketSource = sslSocketProvider.wrapSocket(sock, c.getUrl().getHost(), c.getUrl().getPort());
+            socketSource = sslSocketProvider.makeSource(c.getUrl().getHost(), c.getUrl().getPort());
+            if (c.getListener() != null)
+            {
+                c.getListener().onConnection(socketSource, c);
+            }
 
             //  socketSource = new SSLSocketSource((SSLSocket)sock);
 
@@ -173,9 +175,9 @@ public class DefaultESTClient
         finally
         {
             // Close only if response not generated.
-            if (sock != null && res == null)
+            if (socketSource != null && res == null)
             {
-                sock.close();
+                socketSource.close();
             }
         }
 

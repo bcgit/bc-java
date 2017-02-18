@@ -9,14 +9,14 @@ public class EnrollmentResponse
     private final Store<X509CertificateHolder> store;
     private final long notBefore;
     private final ESTRequest requestToRetry;
-    private final Source session;
+    private final Source source;
 
     public EnrollmentResponse(Store<X509CertificateHolder> store, long notBefore, ESTRequest requestToRetry, Source session)
     {
         this.store = store;
         this.notBefore = notBefore;
         this.requestToRetry = requestToRetry;
-        this.session = session;
+        this.source = session;
     }
 
     public boolean canRetry()
@@ -41,7 +41,12 @@ public class EnrollmentResponse
 
     public Object getSession()
     {
-        return session.getSession();
+        return source.getSession();
+    }
+
+    public Source getSource()
+    {
+        return source;
     }
 
     public boolean isCompleted()

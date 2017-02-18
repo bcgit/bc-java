@@ -14,10 +14,12 @@ public class SSLSocketSource
     implements Source<SSLSession, byte[]>
 {
     protected final SSLSocket socket;
+    private final ChannelBindingProvider bindingProvider;
 
-    public SSLSocketSource(SSLSocket sock)
+    public SSLSocketSource(SSLSocket sock, ChannelBindingProvider bindingProvider)
     {
         this.socket = sock;
+        this.bindingProvider = bindingProvider;
     }
 
     public InputStream getInputStream()
@@ -37,9 +39,20 @@ public class SSLSocketSource
         return socket.getSession();
     }
 
-    public byte[] getUnique()
+    public byte[] getTLSUnique()
     {
-        return null;
+        if (bindingProvider != null) {
+           return  bindingProvider.getChannelBinding(socket,"tls-unique");
+        }
+        throw new IllegalArgumentException("No binding provider.");
+    }
+
+    public boolean isTLSUniqueAvailable()
+    {
+        if (bindingProvider == null) {
+            return false;
+        }
+        return bindingProvider.canAccessChannelBinding(socket);
     }
 
     public void close()
