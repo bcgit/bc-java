@@ -257,6 +257,8 @@ public class EnrollExample
             System.out.println("Not After: " + holder.getNotAfter());
             System.out.println("Signature Algorithm: " + holder.getSignatureAlgorithm());
             System.out.println();
+            System.out.println(ExampleUtils.toJavaX509Certificate(holder));
+
 
         }
 

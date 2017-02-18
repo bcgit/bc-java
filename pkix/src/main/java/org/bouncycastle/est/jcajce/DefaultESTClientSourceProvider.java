@@ -2,7 +2,6 @@ package org.bouncycastle.est.jcajce;
 
 
 import java.io.IOException;
-import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.security.cert.CRL;
 import java.security.cert.CertPathBuilder;
@@ -30,21 +29,28 @@ public class DefaultESTClientSourceProvider
 
     private final SSLSocketFactory sslSocketFactory;
     private final JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer;
+    private final int timeout;
+    private final ChannelBindingProvider bindingProvider;
+    private final Set<String> cipherSuites;
 
 
     public DefaultESTClientSourceProvider(
         SSLSocketFactory socketFactory,
-        JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer
-    )
+        JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer,
+        int timeout, ChannelBindingProvider bindingProvider,
+        Set<String> cipherSuites)
         throws GeneralSecurityException
     {
         this.sslSocketFactory = socketFactory;
         this.hostNameAuthorizer = hostNameAuthorizer;
+        this.timeout = timeout;
+        this.bindingProvider = bindingProvider;
+        this.cipherSuites = cipherSuites;
     }
 
     public static JcaJceAuthorizer getCertPathTLSAuthorizer(final CRL[] revocationLists, final Set<TrustAnchor> tlsTrustAnchors)
     {
-        return new JcaJceAuthorizer<TrustAnchor>()
+        return new JcaJceAuthorizer()
         {
             public void authorize(X509Certificate[] chain, String authType)
                 throws CertificateException
@@ -90,16 +96,21 @@ public class DefaultESTClientSourceProvider
     }
 
 
-    public Source wrapSocket(Socket plainSocket, String host, int port)
+    public Source makeSource(String host, int port)
         throws IOException
     {
-        SSLSocket sock = (SSLSocket)sslSocketFactory.createSocket(plainSocket, host, port, true);
+        SSLSocket sock = (SSLSocket)sslSocketFactory.createSocket(host, port);
+        if (cipherSuites != null && !cipherSuites.isEmpty())
+        {
+           sock.setEnabledCipherSuites(cipherSuites.toArray(new String[cipherSuites.size()]));
+        }
+        sock.setSoTimeout(timeout);
         sock.setUseClientMode(true);
         sock.startHandshake();
         if (hostNameAuthorizer != null && !hostNameAuthorizer.verified(host, sock.getSession()))
         {
             throw new IOException("Hostname was not verified: " + host);
         }
-        return new SSLSocketSource(sock);
+        return new SSLSocketSource(sock, bindingProvider);
     }
 }

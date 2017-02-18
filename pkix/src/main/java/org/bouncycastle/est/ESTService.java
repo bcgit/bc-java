@@ -1,5 +1,6 @@
 package org.bouncycastle.est;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -12,12 +13,16 @@ import java.util.TimeZone;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.est.CsrAttrs;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cmc.CMCException;
 import org.bouncycastle.cmc.SimplePKIResponse;
+import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
@@ -81,7 +86,7 @@ public class ESTService
             URL url = new URL(server + CACERTS);
 
             ESTClient client = clientProvider.makeClient();
-            ESTRequest req = new ESTRequest("GET", url);
+            ESTRequest req = new ESTRequest("GET", url, null);
             resp = client.doRequest(req);
 
             Store<X509CertificateHolder> caCerts;
@@ -197,10 +202,11 @@ public class ESTService
                     os.write(data);
                     os.flush();
                 }
-            });
+            }, null);
 
             req.addHeader("Content-Type", "application/pkcs10");
             req.addHeader("content-length", "" + data.length);
+            req.addHeader("Content-Transfer-Encoding", "base64");
 
             if (auth != null)
             {
@@ -231,6 +237,103 @@ public class ESTService
         }
 
     }
+
+
+    /**
+     * Implements Enroll with PoP.
+     * Request will have the tls-unique attribute added to it before it is signed and completed.
+     *
+     * @param reEnroll      True = re enroll.
+     * @param builder       The request builder.
+     * @param contentSigner The content signer.
+     * @param auth          Auth modes.
+     * @return Enrollment response.
+     * @throws IOException
+     */
+    public EnrollmentResponse simpleEnrollPoP(boolean reEnroll, final PKCS10CertificationRequestBuilder builder, final ContentSigner contentSigner, ESTAuth auth)
+        throws IOException
+    {
+        if (!clientProvider.isTrusted())
+        {
+            throw new IllegalStateException("No trust anchors.");
+        }
+
+        ESTResponse resp = null;
+        try
+        {
+            final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            URL url = new URL(server + (reEnroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
+            ESTClient client = clientProvider.makeClient();
+
+            //
+            // Connect supplying a source listener.
+            // The source listener is responsible for completing the PCS10 Cert request and encoding it.
+            //
+
+            ESTRequest req = new ESTRequest("POST", url, new ESTClientRequestInputSource()
+            {
+                public void ready(OutputStream os)
+                    throws IOException
+                {
+                    os.write(bos.toByteArray());
+                    os.flush();
+                }
+            }, new ESTSourceConnectionListener()
+            {
+                public void onConnection(Source source, ESTRequest request)
+                    throws IOException
+                {
+                    //
+                    // Add challenge password from tls unique
+                    //
+                    if (source.isTLSUniqueAvailable())
+                    {
+                        byte[] tlsUnique = ((byte[])source.getTLSUnique());
+                        builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_challengePassword, new DERPrintableString(Base64.toBase64String(tlsUnique)));
+                        bos.write(annotateRequest(builder.build(contentSigner).getEncoded()).getBytes());
+                        bos.flush();
+                        request.setHeader("content-length", "" + bos.size());
+                    }
+                    else
+                    {
+                        throw new IOException("Source does not supple TLS unique.");
+                    }
+                }
+            });
+
+            req.addHeader("Content-Type", "application/pkcs10");
+            req.addHeader("Content-Transfer-Encoding", "base64");
+
+            if (auth != null)
+            {
+                req = auth.applyAuth(req);
+            }
+
+            resp = client.doRequest(req);
+            return handleEnrollResponse(resp);
+
+        }
+        catch (Throwable t)
+        {
+            if (t instanceof ESTException)
+            {
+                throw (ESTException)t;
+            }
+            else
+            {
+                throw new ESTException(t.getMessage(), t);
+            }
+        }
+        finally
+        {
+            if (resp != null)
+            {
+                resp.close();
+            }
+        }
+
+    }
+
 
     protected EnrollmentResponse handleEnrollResponse(ESTResponse resp)
         throws IOException
@@ -306,7 +409,7 @@ public class ESTService
             URL url = new URL(server + CSRATTRS);
 
             ESTClient client = clientProvider.makeClient();
-            ESTRequest req = new ESTRequest("GET", url);
+            ESTRequest req = new ESTRequest("GET", url, null);
             resp = client.doRequest(req);
 
 
@@ -355,7 +458,7 @@ public class ESTService
         int i = 0;
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
-        pw.print("-----BEGIN CERTIFICATE REQUEST-----\n");
+        // pw.print("-----BEGIN CERTIFICATE REQUEST-----\n");
         do
         {
             if (i + 48 < data.length)
@@ -371,32 +474,9 @@ public class ESTService
             pw.print('\n');
         }
         while (i < data.length);
-        pw.print("-----END CERTIFICATE REQUEST-----\n");
+        //  pw.print("-----END CERTIFICATE REQUEST-----\n");
         pw.flush();
         return sw.toString();
-    }
-
-
-    public static class CSRRequestResponse
-    {
-        private final CSRAttributesResponse attributesResponse;
-        private final Source source;
-
-        public CSRRequestResponse(CSRAttributesResponse attributesResponse, Source session)
-        {
-            this.attributesResponse = attributesResponse;
-            this.source = session;
-        }
-
-        public CSRAttributesResponse getAttributesResponse()
-        {
-            return attributesResponse;
-        }
-
-        public Object getSession()
-        {
-            return source.getSession();
-        }
     }
 
 

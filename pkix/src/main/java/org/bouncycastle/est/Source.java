@@ -20,7 +20,9 @@ public interface Source<T,I>
 
     T getSession();
 
-    I getUnique();
+    I getTLSUnique();
+
+    boolean isTLSUniqueAvailable();
 
     void close()
         throws IOException;

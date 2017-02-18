@@ -19,38 +19,43 @@ public class ESTRequest
     final ESTClientRequestInputSource writer;
     final ESTHijacker hijacker;
     protected ESTClient estClient;
+    final ESTSourceConnectionListener listener;
 
 
-    public ESTRequest(String method, URL url, ESTClientRequestInputSource writer)
+    public ESTRequest(String method, URL url, ESTClientRequestInputSource writer, ESTSourceConnectionListener listener)
     {
         this.method = method;
         this.url = url;
         this.writer = writer;
         this.hijacker = null;
+        this.listener = listener;
     }
 
-    public ESTRequest(String method, URL url)
+    public ESTRequest(String method, URL url, ESTSourceConnectionListener listener)
     {
         this.method = method;
         this.url = url;
+        this.listener = listener;
         this.hijacker = null;
         this.writer = null;
     }
 
 
-    public ESTRequest(String method, URL url, ESTClientRequestInputSource writer, ESTHijacker hijacker)
+    public ESTRequest(String method, URL url, ESTClientRequestInputSource writer, ESTHijacker hijacker, ESTSourceConnectionListener listener)
     {
         this.method = method;
         this.url = url;
         this.writer = writer;
         this.hijacker = hijacker;
+        this.listener = listener;
     }
 
-    public ESTRequest(String method, URL url, ESTHijacker hijacker)
+    public ESTRequest(String method, URL url, ESTHijacker hijacker, ESTSourceConnectionListener listener)
     {
         this.method = method;
         this.url = url;
         this.hijacker = hijacker;
+        this.listener = listener;
         this.writer = null;
     }
 
@@ -80,7 +85,7 @@ public class ESTRequest
 
     public ESTRequest newWithHijacker(ESTHijacker estHttpHijacker)
     {
-        ESTRequest req = new ESTRequest(this.method, this.url, this.writer, estHttpHijacker);
+        ESTRequest req = new ESTRequest(this.method, this.url, this.writer, estHttpHijacker, listener);
 
         for (Map.Entry<String, List<String>> s : headers.entrySet())
         {
@@ -92,7 +97,7 @@ public class ESTRequest
 
     public ESTRequest newWithURL(URL url)
     {
-        ESTRequest req = new ESTRequest(this.method, url, this.writer, hijacker);
+        ESTRequest req = new ESTRequest(this.method, url, this.writer, hijacker, listener);
 
         for (Map.Entry<String, List<String>> s : headers.entrySet())
         {
@@ -140,5 +145,10 @@ public class ESTRequest
     public void setEstClient(ESTClient estClient)
     {
         this.estClient = estClient;
+    }
+
+    public ESTSourceConnectionListener getListener()
+    {
+        return listener;
     }
 }

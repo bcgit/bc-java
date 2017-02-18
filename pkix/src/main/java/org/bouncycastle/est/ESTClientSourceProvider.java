@@ -4,11 +4,10 @@ import java.io.IOException;
 import java.net.Socket;
 
 /**
- * ESTClientSourceProvider, implementations of this are expected to provide custom
- * wrapping of an existing plain socket and return a source.
+ * ESTClientSourceProvider, implementations of this are expected to return a source.
  */
 public interface ESTClientSourceProvider
 {
-    Source wrapSocket(Socket plainSocket, String host, int port)
+    Source makeSource(String host, int port)
         throws IOException;
 }

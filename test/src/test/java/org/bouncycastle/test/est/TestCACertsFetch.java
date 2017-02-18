@@ -1,6 +1,11 @@
 package org.bouncycastle.test.est;
 
 import java.io.FileReader;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
@@ -12,6 +17,8 @@ import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Collections;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSession;
@@ -111,6 +118,84 @@ public class TestCACertsFetch
 
 
     /**
+     * Test to ensure timeout behavior.
+     * @throws Exception
+     */
+    @Test
+    public void testFetchCaCertsWithTimeout()
+        throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        X509CertificateHolder[] theirCAs = null;
+
+
+        final CountDownLatch ready = new CountDownLatch(1);
+        final CountDownLatch exited = new CountDownLatch(1);
+
+        Thread t = new Thread(new Runnable()
+        {
+            public void run()
+            {
+                ServerSocket ssock = null;
+                try
+                {
+                    ssock = new ServerSocket(8443);
+                    ready.countDown();
+                    Socket sock = ssock.accept();
+
+                    sock.getInputStream().read(); // Take one byte.
+
+                    Thread.sleep(2000);
+                }
+                catch (Exception ex)
+                {
+                    ex.printStackTrace();
+                }
+                finally
+                {
+                    if (ssock != null) {
+                        try
+                        {
+                            ssock.close();
+                        }
+                        catch (IOException e)
+                        {
+                           // Ignored.
+                        }
+                    }
+                    exited.countDown();
+                }
+            }
+        });
+        t.setPriority(Thread.MIN_PRIORITY);
+        t.start();
+
+        ready.await(1000, TimeUnit.MILLISECONDS);
+
+        ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/").withTimeout(500).build();
+
+        try
+        {
+            CACertsResponse caCertsResponse = est.getCACerts();
+            t.interrupt();
+            Assert.fail("Must time out.");
+        }
+        catch (Exception ex)
+        {
+            t.interrupt();
+            Assert.assertEquals("", ESTException.class, ex.getClass());
+            Assert.assertEquals("", SocketTimeoutException.class, ex.getCause().getClass());
+
+        }
+        finally
+        {
+            exited.await(2000, TimeUnit.MILLISECONDS);
+        }
+
+    }
+
+
+    /**
      * Fetch CA certs with a bogus trust anchor.
      * Expect local library to fail.
      *
@@ -120,7 +205,6 @@ public class TestCACertsFetch
     public void testFetchCaCertsWithBogusTrustAnchor()
         throws Exception
     {
-
 
         ESTTestUtils.ensureProvider();
         X509CertificateHolder[] theirCAs = null;

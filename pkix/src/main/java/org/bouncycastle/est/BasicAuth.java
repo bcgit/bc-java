@@ -26,53 +26,71 @@ public class BasicAuth
     public ESTRequest applyAuth(ESTRequest request)
     {
 
-        return request.newWithHijacker(new ESTHijacker()
+        //
+        // Sets the header on the first request, does not wait for a 401.
+        //
+        if (realm != null && realm.length() > 0)
         {
-            public ESTResponse hijack(ESTRequest req, Source sock)
-                throws ESTException, IOException
-            {
-                ESTResponse res = new ESTResponse(req, sock);
-                if (res.getStatusCode() == 401 && res.getHeader("WWW-Authenticate").startsWith("Basic"))
-                {
-                    res.close(); // Close off the last request.
+            request.setHeader("WWW-Authenticate", "Basic realm=\"" + realm + "\"");
+        }
+        if (username.contains(":"))
+        {
+            throw new IllegalArgumentException("User must not contain a ':'");
+        }
+        String userPass = username + ":" + password;
+        request.setHeader("Authorization", "Basic " + Base64.toBase64String(userPass.getBytes()));
 
-                    //
-                    // Check realm field from header.
-                    //
-                    Map<String, String> s = HttpUtil.splitCSL("Basic", res.getHeader("WWW-Authenticate"));
+        return request;
 
-                    //
-                    // If no realm supplied it will not check the server realm. TODO elaborate in documentation.
-                    //
-                    if (realm != null)
-                    {
-                        if (!realm.equals(s.get("realm")))
-                        {
-                            // Not equal then fail.
-                            throw new ESTException("Supplied realm '" + realm + "' does not match server realm '" + s.get("realm") + "'", 401, null, 0);
-                        }
-                    }
 
-                    //
-                    // Prepare basic auth answer.
-                    //
-                    ESTRequest answer = req.newWithHijacker(null);
 
-                    if (realm != null && realm.length() > 0)
-                    {
-                        answer.setHeader("WWW-Authenticate", "Basic realm=\"" + realm + "\"");
-                    }
-                    if (username.contains(":"))
-                    {
-                        throw new IllegalArgumentException("User must not contain a ':'");
-                    }
-                    String userPass = username + ":" + password;
-                    answer.setHeader("Authorization", "Basic " + Base64.toBase64String(userPass.getBytes()));
-
-                    res = req.getEstClient().doRequest(answer);
-                }
-                return res;
-            }
-        });
+//        return request.newWithHijacker(new ESTHijacker()
+//        {
+//            public ESTResponse hijack(ESTRequest req, Source sock)
+//                throws ESTException, IOException
+//            {
+//                ESTResponse res = new ESTResponse(req, sock);
+//                if (res.getStatusCode() == 401 && res.getHeader("WWW-Authenticate").startsWith("Basic"))
+//                {
+//                    res.close(); // Close off the last request.
+//
+//                    //
+//                    // Check realm field from header.
+//                    //
+//                    Map<String, String> s = HttpUtil.splitCSL("Basic", res.getHeader("WWW-Authenticate"));
+//
+//                    //
+//                    // If no realm supplied it will not check the server realm. TODO elaborate in documentation.
+//                    //
+//                    if (realm != null)
+//                    {
+//                        if (!realm.equals(s.get("realm")))
+//                        {
+//                            // Not equal then fail.
+//                            throw new ESTException("Supplied realm '" + realm + "' does not match server realm '" + s.get("realm") + "'", 401, null, 0);
+//                        }
+//                    }
+//
+//                    //
+//                    // Prepare basic auth answer.
+//                    //
+//                    ESTRequest answer = req.newWithHijacker(null);
+//
+//                    if (realm != null && realm.length() > 0)
+//                    {
+//                        answer.setHeader("WWW-Authenticate", "Basic realm=\"" + realm + "\"");
+//                    }
+//                    if (username.contains(":"))
+//                    {
+//                        throw new IllegalArgumentException("User must not contain a ':'");
+//                    }
+//                    String userPass = username + ":" + password;
+//                    answer.setHeader("Authorization", "Basic " + Base64.toBase64String(userPass.getBytes()));
+//
+//                    res = req.getEstClient().doRequest(answer);
+//                }
+//                return res;
+//            }
+//        });
     }
 }
