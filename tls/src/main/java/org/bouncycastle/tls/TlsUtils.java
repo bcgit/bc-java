@@ -728,8 +728,10 @@ public class TlsUtils
         }
     }
 
-    public static Vector getDefaultSupportedSignatureAlgorithms()
+    public static Vector getDefaultSupportedSignatureAlgorithms(TlsContext context)
     {
+        TlsCrypto crypto = context.getCrypto();
+
         short[] hashAlgorithms = new short[]{ HashAlgorithm.sha1, HashAlgorithm.sha224, HashAlgorithm.sha256,
             HashAlgorithm.sha384, HashAlgorithm.sha512 };
         short[] signatureAlgorithms = new short[]{ SignatureAlgorithm.rsa, SignatureAlgorithm.dsa,
@@ -740,7 +742,11 @@ public class TlsUtils
         {
             for (int j = 0; j < hashAlgorithms.length; ++j)
             {
-                result.addElement(new SignatureAndHashAlgorithm(hashAlgorithms[j], signatureAlgorithms[i]));
+                SignatureAndHashAlgorithm alg = new SignatureAndHashAlgorithm(hashAlgorithms[j], signatureAlgorithms[i]);
+                if (crypto.hasSignatureAndHashAlgorithm(alg))
+                {
+                    result.addElement(alg);
+                }
             }
         }
         return result;
