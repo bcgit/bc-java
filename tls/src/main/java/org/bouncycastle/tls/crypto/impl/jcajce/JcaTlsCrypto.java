@@ -357,6 +357,14 @@ public class JcaTlsCrypto
 
     public boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm)
     {
+        /*
+         * This is somewhat overkill, but much simpler for now. It's also consistent with SunJSSE behaviour.
+         */
+        if (sigAndHashAlgorithm.getHash() == HashAlgorithm.sha224 && JcaUtils.isSunMSCAPIProviderActive())
+        {
+            return false;
+        }
+
         // TODO: expand
         return true;
     }
