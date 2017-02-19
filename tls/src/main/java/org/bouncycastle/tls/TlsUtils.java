@@ -1105,6 +1105,29 @@ public class TlsUtils
         return h.calculateHash();
     }
 
+    static DigitallySigned generateCertificateVerify(TlsContext context, TlsCredentialedSigner credentials,
+        TlsHandshakeHash handshakeHash) throws IOException
+    {
+        /*
+         * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
+         */
+        SignatureAndHashAlgorithm signatureAndHashAlgorithm = TlsUtils.getSignatureAndHashAlgorithm(
+            context, credentials);
+
+        byte[] hash;
+        if (signatureAndHashAlgorithm == null)
+        {
+            hash = context.getSecurityParameters().getSessionHash();
+        }
+        else
+        {
+            hash = handshakeHash.getFinalHash(signatureAndHashAlgorithm.getHash());
+        }
+
+        byte[] signature = credentials.generateRawSignature(hash);
+        return new DigitallySigned(signatureAndHashAlgorithm, signature);
+    }
+
     static DigitallySigned generateServerKeyExchangeSignature(TlsContext context, TlsCredentialedSigner credentials,
         DigestInputBuffer buf) throws IOException
     {

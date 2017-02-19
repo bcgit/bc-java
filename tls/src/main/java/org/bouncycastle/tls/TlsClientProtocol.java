@@ -340,16 +340,16 @@ public class TlsClientProtocol
                 }
                 this.connection_state = CS_CLIENT_SUPPLEMENTAL_DATA;
 
-                TlsCredentials clientCreds = null;
+                TlsCredentials clientCredentials = null;
                 if (certificateRequest == null)
                 {
                     this.keyExchange.skipClientCredentials();
                 }
                 else
                 {
-                    clientCreds = validateCredentials(this.authentication.getClientCredentials(certificateRequest));
+                    clientCredentials = validateCredentials(this.authentication.getClientCredentials(certificateRequest));
 
-                    if (clientCreds == null)
+                    if (clientCredentials == null)
                     {
                         this.keyExchange.skipClientCredentials();
 
@@ -363,9 +363,9 @@ public class TlsClientProtocol
                     }
                     else
                     {
-                        this.keyExchange.processClientCredentials(clientCreds);
+                        this.keyExchange.processClientCredentials(clientCredentials);
 
-                        sendCertificateMessage(clientCreds.getCertificate());
+                        sendCertificateMessage(clientCredentials.getCertificate());
                     }
                 }
 
@@ -393,30 +393,11 @@ public class TlsClientProtocol
 
                 recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 
-                if (clientCreds != null && clientCreds instanceof TlsCredentialedSigner)
+                if (clientCredentials instanceof TlsCredentialedSigner)
                 {
-                    TlsCredentialedSigner signerCredentials = (TlsCredentialedSigner)clientCreds;
-
-                    /*
-                     * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
-                     */
-                    SignatureAndHashAlgorithm signatureAndHashAlgorithm = TlsUtils.getSignatureAndHashAlgorithm(
-                        getContext(), signerCredentials);
-
-                    byte[] hash;
-                    if (signatureAndHashAlgorithm == null)
-                    {
-                        hash = securityParameters.getSessionHash();
-                    }
-                    else
-                    {
-                        hash = prepareFinishHash.getFinalHash(signatureAndHashAlgorithm.getHash());
-                    }
-
-                    byte[] signature = signerCredentials.generateRawSignature(hash);
-                    DigitallySigned certificateVerify = new DigitallySigned(signatureAndHashAlgorithm, signature);
+                    DigitallySigned certificateVerify = TlsUtils.generateCertificateVerify(getContext(),
+                        (TlsCredentialedSigner)clientCredentials, prepareFinishHash);
                     sendCertificateVerifyMessage(certificateVerify);
-
                     this.connection_state = CS_CERTIFICATE_VERIFY;
                 }
 
