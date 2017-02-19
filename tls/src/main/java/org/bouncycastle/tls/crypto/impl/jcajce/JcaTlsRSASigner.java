@@ -36,8 +36,7 @@ public class JcaTlsRSASigner
         this.privateKey = privateKey;
     }
 
-    public byte[] generateRawSignature(SignatureAndHashAlgorithm algorithm,
-                                       byte[] hash) throws IOException
+    public byte[] generateRawSignature(SignatureAndHashAlgorithm algorithm, byte[] hash) throws IOException
     {
         try
         {
@@ -50,34 +49,20 @@ public class JcaTlsRSASigner
                     throw new IllegalStateException();
                 }
 
-            /*
-             * RFC 5246 4.7. In RSA signing, the opaque vector contains the signature generated
-             * using the RSASSA-PKCS1-v1_5 signature scheme defined in [PKCS1].
-             */
-                try
-                {
-                    if (JcaUtils.signatureAssumesDigestAlgorithmFromSize(signer))
-                    {
-                        signer.update(hash, 0, hash.length);
-                    }
-                    else
-                    {
-                        byte[] digInfo = new DigestInfo(new AlgorithmIdentifier(TlsUtils.getOIDForHashAlgorithm(algorithm.getHash()), DERNull.INSTANCE), hash).getEncoded();
-                        signer.update(digInfo, 0, digInfo.length);
-                    }
-
-                }
-                catch (IOException e)
-                {
-                    throw new TlsFatalAlert(AlertDescription.internal_error, e);
-                }
+                /*
+                 * RFC 5246 4.7. In RSA signing, the opaque vector contains the signature generated
+                 * using the RSASSA-PKCS1-v1_5 signature scheme defined in [PKCS1].
+                 */
+                AlgorithmIdentifier algID = new AlgorithmIdentifier(TlsUtils.getOIDForHashAlgorithm(algorithm.getHash()), DERNull.INSTANCE);
+                byte[] digestInfo = new DigestInfo(algID, hash).getEncoded();
+                signer.update(digestInfo, 0, digestInfo.length);
             }
             else
             {
-            /*
-             * RFC 5246 4.7. Note that earlier versions of TLS used a different RSA signature scheme
-             * that did not include a DigestInfo encoding.
-             */
+                /*
+                 * RFC 5246 4.7. Note that earlier versions of TLS used a different RSA signature
+                 * scheme that did not include a DigestInfo encoding.
+                 */
                 signer.update(hash, 0, hash.length);
             }
 
