@@ -8,17 +8,19 @@ import org.bouncycastle.util.Arrays;
  * A combined hash, which implements md5(m) || sha1(m).
  */
 public class CombinedHash
-    implements TlsHandshakeHash
+    implements TlsHash
 {
     protected TlsContext context;
     protected TlsCrypto crypto;
     protected TlsHash md5;
     protected TlsHash sha1;
 
-    public CombinedHash(TlsContext context)
+    CombinedHash(TlsContext context, TlsHash md5, TlsHash sha1)
     {
-        this(context.getCrypto());
         this.context = context;
+        this.crypto = context.getCrypto();
+        this.md5 = md5;
+        this.sha1 = sha1;
     }
 
     public CombinedHash(TlsCrypto crypto)
@@ -34,35 +36,6 @@ public class CombinedHash
         this.crypto = t.crypto;
         this.md5 = (TlsHash)t.md5.clone();
         this.sha1 = (TlsHash)t.sha1.clone();
-    }
-
-    public TlsHandshakeHash notifyPRFDetermined()
-    {
-        return this;
-    }
-
-    public void trackHashAlgorithm(short hashAlgorithm)
-    {
-        throw new IllegalStateException("CombinedHash only supports calculating the legacy PRF for handshake hash");
-    }
-
-    public void sealHashAlgorithms()
-    {
-    }
-
-    public TlsHandshakeHash stopTracking()
-    {
-        return new CombinedHash(this);
-    }
-
-    public TlsHash forkPRFHash()
-    {
-        return new CombinedHash(this);
-    }
-
-    public byte[] getFinalHash(short hashAlgorithm)
-    {
-        throw new IllegalStateException("CombinedHash doesn't support multiple hashes");
     }
 
     public void update(byte[] input, int inOff, int len)

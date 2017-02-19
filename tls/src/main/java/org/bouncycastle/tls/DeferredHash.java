@@ -18,23 +18,19 @@ class DeferredHash
 
     private DigestInputBuffer buf;
     private Hashtable<Short, TlsHash> hashes;
-    private Short prfHashAlgorithm;
 
     DeferredHash(TlsContext context)
     {
         this.context = context;
         this.buf = new DigestInputBuffer();
         this.hashes = new Hashtable();
-        this.prfHashAlgorithm = null;
     }
 
-    private DeferredHash(TlsContext context, Short prfHashAlgorithm, TlsHash prfHash)
+    private DeferredHash(TlsContext context, Hashtable hashes)
     {
         this.context = context;
         this.buf = null;
-        this.hashes = new Hashtable();
-        this.prfHashAlgorithm = prfHashAlgorithm;
-        hashes.put(prfHashAlgorithm, prfHash);
+        this.hashes = hashes;
     }
 
     public TlsHandshakeHash notifyPRFDetermined()
@@ -42,15 +38,13 @@ class DeferredHash
         int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
         if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
         {
-            CombinedHash legacyHash = new CombinedHash(context);
-            buf.updateDigest(legacyHash);
-            return legacyHash.notifyPRFDetermined();
+            checkTrackingHash(HashAlgorithm.md5);
+            checkTrackingHash(HashAlgorithm.sha1);
         }
-
-        this.prfHashAlgorithm = Shorts.valueOf(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
-
-        checkTrackingHash(prfHashAlgorithm);
-
+        else
+        {
+            checkTrackingHash(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
+        }
         return this;
     }
 
@@ -71,28 +65,42 @@ class DeferredHash
 
     public TlsHandshakeHash stopTracking()
     {
-        TlsHash prfHash = (TlsHash)hashes.get(prfHashAlgorithm).clone();
-        if (buf != null)
+        Hashtable newHashes = new Hashtable();
+        int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
+        if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
         {
-            buf.updateDigest(prfHash);
+            cloneHash(newHashes, HashAlgorithm.md5);
+            cloneHash(newHashes, HashAlgorithm.sha1);
         }
-        DeferredHash result = new DeferredHash(context, prfHashAlgorithm, prfHash);
-
-        return result;
+        else
+        {
+            cloneHash(newHashes, TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
+        }
+        return new DeferredHash(context, newHashes);
     }
 
     public TlsHash forkPRFHash()
     {
         checkStopBuffering();
 
-        if (buf != null)
+        TlsHash prfHash;
+
+        int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
+        if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
         {
-            TlsHash prfHash = context.getCrypto().createHash(prfHashAlgorithm.shortValue());
-            buf.updateDigest(prfHash);
-            return prfHash;
+            prfHash = new CombinedHash(context, cloneHash(HashAlgorithm.md5), cloneHash(HashAlgorithm.sha1));
+        }
+        else
+        {
+            prfHash = cloneHash(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
         }
 
-        return (TlsHash)hashes.get(prfHashAlgorithm).clone();
+        if (buf != null)
+        {
+            buf.updateDigest(prfHash);
+        }
+
+        return prfHash;
     }
 
     public byte[] getFinalHash(short hashAlgorithm)
@@ -176,5 +184,20 @@ class DeferredHash
             TlsHash hash = context.getCrypto().createHash(hashAlgorithm.shortValue());
             hashes.put(hashAlgorithm, hash);
         }
+    }
+
+    protected TlsHash cloneHash(Short hashAlgorithm)
+    {
+        return (TlsHash)hashes.get(hashAlgorithm).clone();
+    }
+
+    protected void cloneHash(Hashtable newHashes, Short hashAlgorithm)
+    {
+        TlsHash hash = cloneHash(hashAlgorithm);
+        if (buf != null)
+        {
+            buf.updateDigest(hash);
+        }
+        newHashes.put(hashAlgorithm, hash);
     }
 }
