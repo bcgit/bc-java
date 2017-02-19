@@ -57,7 +57,7 @@ public class MockDTLSServer
         Vector serverSigAlgs = null;
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(serverVersion))
         {
-            serverSigAlgs = TlsUtils.getDefaultSupportedSignatureAlgorithms();
+            serverSigAlgs = TlsUtils.getDefaultSupportedSignatureAlgorithms(context);
         }
 
         Vector certificateAuthorities = new Vector();
