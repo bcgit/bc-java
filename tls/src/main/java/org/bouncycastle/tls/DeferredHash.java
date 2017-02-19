@@ -37,15 +37,6 @@ class DeferredHash
         hashes.put(prfHashAlgorithm, prfHash);
     }
 
-    private DeferredHash(DeferredHash defHash)
-    {
-        this.context = defHash.context;
-        this.buf = null;// TODO: need clone method?
-        this.prfHashAlgorithm = defHash.prfHashAlgorithm;
-        this.hashes = (Hashtable)defHash.hashes.clone();
-        throw new IllegalStateException("not complete");
-    }
-
     public TlsHandshakeHash notifyPRFDetermined()
     {
         int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
