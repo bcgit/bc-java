@@ -312,28 +312,10 @@ public class DTLSClientProtocol
         TlsProtocol.establishMasterSecret(state.clientContext, state.keyExchange);
         recordLayer.initPendingEpoch(state.client.getCipher());
 
-        if (state.clientCredentials != null && state.clientCredentials instanceof TlsCredentialedSigner)
+        if (state.clientCredentials instanceof TlsCredentialedSigner)
         {
-            TlsCredentialedSigner signerCredentials = (TlsCredentialedSigner)state.clientCredentials;
-
-            /*
-             * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
-             */
-            SignatureAndHashAlgorithm signatureAndHashAlgorithm = TlsUtils.getSignatureAndHashAlgorithm(
-                state.clientContext, signerCredentials);
-
-            byte[] hash;
-            if (signatureAndHashAlgorithm == null)
-            {
-                hash = securityParameters.getSessionHash();
-            }
-            else
-            {
-                hash = prepareFinishHash.getFinalHash(signatureAndHashAlgorithm.getHash());
-            }
-
-            byte[] signature = signerCredentials.generateRawSignature(hash);
-            DigitallySigned certificateVerify = new DigitallySigned(signatureAndHashAlgorithm, signature);
+            DigitallySigned certificateVerify = TlsUtils.generateCertificateVerify(state.clientContext,
+                (TlsCredentialedSigner)state.clientCredentials, prepareFinishHash);
             byte[] certificateVerifyBody = generateCertificateVerify(state, certificateVerify);
             handshake.sendMessage(HandshakeType.certificate_verify, certificateVerifyBody);
         }
