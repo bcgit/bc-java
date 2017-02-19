@@ -35,7 +35,7 @@ public class JcaTlsRSAVerifier
         this.helper = helper;
     }
 
-    public boolean verifySignature(DigitallySigned signedParams, byte[] hash)
+    public boolean verifySignature(DigitallySigned signedParams, byte[] hash) throws IOException
     {
         SignatureAndHashAlgorithm algorithm = signedParams.getAlgorithm();
 
@@ -50,27 +50,13 @@ public class JcaTlsRSAVerifier
                     throw new IllegalStateException();
                 }
 
-            /*
-             * RFC 5246 4.7. In RSA signing, the opaque vector contains the signature generated
-             * using the RSASSA-PKCS1-v1_5 signature scheme defined in [PKCS1].
-             */
-
-                try
-                {
-                    if (JcaUtils.signatureAssumesDigestAlgorithmFromSize(signer))
-                    {
-                        signer.update(hash, 0, hash.length);
-                    }
-                    else
-                    {
-                        byte[] digInfo = new DigestInfo(new AlgorithmIdentifier(TlsUtils.getOIDForHashAlgorithm(algorithm.getHash()), DERNull.INSTANCE), hash).getEncoded();
-                        signer.update(digInfo, 0, digInfo.length);
-                    }
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();  // TODO
-                }
+                /*
+                 * RFC 5246 4.7. In RSA signing, the opaque vector contains the signature generated
+                 * using the RSASSA-PKCS1-v1_5 signature scheme defined in [PKCS1].
+                 */
+                AlgorithmIdentifier algID = new AlgorithmIdentifier(TlsUtils.getOIDForHashAlgorithm(algorithm.getHash()), DERNull.INSTANCE);
+                byte[] digestInfo = new DigestInfo(algID, hash).getEncoded();
+                signer.update(digestInfo, 0, digestInfo.length);
             }
             else
             {
