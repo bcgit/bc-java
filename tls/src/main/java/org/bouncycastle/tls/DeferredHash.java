@@ -1,5 +1,7 @@
 package org.bouncycastle.tls;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
@@ -18,12 +20,16 @@ class DeferredHash
 
     private DigestInputBuffer buf;
     private Hashtable<Short, TlsHash> hashes;
+    private boolean forceBuffering;
+    private boolean sealed;
 
     DeferredHash(TlsContext context)
     {
         this.context = context;
         this.buf = new DigestInputBuffer();
         this.hashes = new Hashtable();
+        this.forceBuffering = false;
+        this.sealed = false;
     }
 
     private DeferredHash(TlsContext context, Hashtable hashes)
@@ -31,6 +37,29 @@ class DeferredHash
         this.context = context;
         this.buf = null;
         this.hashes = hashes;
+        this.forceBuffering = false;
+        this.sealed = true;
+    }
+
+    public void copyBufferTo(OutputStream output) throws IOException
+    {
+        if (buf == null)
+        {
+            // If you see this, you need to call forceBuffering() before sealHashAlgorithms()
+            throw new IllegalStateException("Not buffering");
+        }
+
+        buf.copyTo(output);
+    }
+
+    public void forceBuffering()
+    {
+        if (sealed)
+        {
+            throw new IllegalStateException("Too late to force buffering");
+        }
+
+        this.forceBuffering = true;
     }
 
     public TlsHandshakeHash notifyPRFDetermined()
@@ -50,7 +79,7 @@ class DeferredHash
 
     public void trackHashAlgorithm(short hashAlgorithm)
     {
-        if (buf == null)
+        if (sealed)
         {
             throw new IllegalStateException("Too late to track more hash algorithms");
         }
@@ -60,7 +89,11 @@ class DeferredHash
 
     public void sealHashAlgorithms()
     {
-        checkStopBuffering();
+        if (!sealed)
+        {
+            sealed = true;
+            checkStopBuffering();
+        }
     }
 
     public TlsHandshakeHash stopTracking()
@@ -148,6 +181,9 @@ class DeferredHash
 
     public void reset()
     {
+        this.forceBuffering = false;
+        this.sealed = false;
+
         if (buf != null)
         {
             buf.reset();
@@ -164,7 +200,7 @@ class DeferredHash
 
     protected void checkStopBuffering()
     {
-        if (buf != null && hashes.size() <= BUFFERING_HASH_LIMIT)
+        if (!forceBuffering && sealed && buf != null && hashes.size() <= BUFFERING_HASH_LIMIT)
         {
             Enumeration e = hashes.elements();
             while (e.hasMoreElements())
