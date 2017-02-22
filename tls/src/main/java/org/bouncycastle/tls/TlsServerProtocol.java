@@ -216,7 +216,7 @@ public class TlsServerProtocol
                 sendServerHelloDoneMessage();
                 this.connection_state = CS_SERVER_HELLO_DONE;
 
-                this.recordStream.getHandshakeHash().sealHashAlgorithms();
+                TlsUtils.sealHandshakeHash(getContext(), this.recordStream.getHandshakeHash());
 
                 break;
             }

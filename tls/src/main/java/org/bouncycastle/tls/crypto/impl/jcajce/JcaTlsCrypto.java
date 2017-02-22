@@ -296,6 +296,11 @@ public class JcaTlsCrypto
         };
     }
 
+    public boolean hasAllRawSignatureAlgorithms()
+    {
+        return !JcaUtils.isSunMSCAPIProviderActive();
+    }
+
     public boolean hasEncryptionAlgorithm(int encryptionAlgorithm)
     {
         try

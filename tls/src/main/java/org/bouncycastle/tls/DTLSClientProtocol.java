@@ -259,7 +259,7 @@ public class DTLSClientProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        handshake.getHandshakeHash().sealHashAlgorithms();
+        TlsUtils.sealHandshakeHash(state.clientContext, handshake.getHandshakeHash());
 
         Vector clientSupplementalData = state.client.getClientSupplementalData();
         if (clientSupplementalData != null)

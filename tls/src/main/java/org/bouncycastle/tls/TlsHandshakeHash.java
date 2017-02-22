@@ -1,5 +1,8 @@
 package org.bouncycastle.tls;
 
+import java.io.IOException;
+import java.io.OutputStream;
+
 import org.bouncycastle.tls.crypto.TlsHash;
 
 /**
@@ -8,6 +11,10 @@ import org.bouncycastle.tls.crypto.TlsHash;
 public interface TlsHandshakeHash
     extends TlsHash
 {
+    void copyBufferTo(OutputStream output) throws IOException;
+
+    void forceBuffering();
+
     TlsHandshakeHash notifyPRFDetermined();
 
     void trackHashAlgorithm(short hashAlgorithm);
