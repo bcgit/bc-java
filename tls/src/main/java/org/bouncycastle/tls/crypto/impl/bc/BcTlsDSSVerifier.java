@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.crypto.TlsStreamVerifier;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 
 /**
@@ -38,7 +39,12 @@ public abstract class BcTlsDSSVerifier
 
     protected abstract short getSignatureAlgorithm();
 
-    public boolean verifySignature(DigitallySigned signedParams, byte[] hash)
+    public TlsStreamVerifier getStreamVerifier(DigitallySigned signature)
+    {
+        return null;
+    }
+
+    public boolean verifyRawSignature(DigitallySigned signedParams, byte[] hash)
     {
         SignatureAndHashAlgorithm algorithm = signedParams.getAlgorithm();
         if (algorithm != null && algorithm.getSignature() != getSignatureAlgorithm())

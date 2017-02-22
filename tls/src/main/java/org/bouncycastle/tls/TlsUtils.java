@@ -1151,7 +1151,7 @@ public class TlsUtils
     {
         byte[] hash = TlsUtils.calculateSignatureHash(context, signedParams.getAlgorithm(), buf);
 
-        if (!tlsVerifier.verifySignature(signedParams, hash))
+        if (!tlsVerifier.verifyRawSignature(signedParams, hash))
         {
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }

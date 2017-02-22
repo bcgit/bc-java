@@ -14,6 +14,7 @@ import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsSigner;
+import org.bouncycastle.tls.crypto.TlsStreamSigner;
 
 /**
  * BC light-weight base class for the signers implementing the two DSA style algorithms from FIPS PUB 186-4: DSA and ECDSA.
@@ -74,5 +75,10 @@ public abstract class BcTlsDSSSigner
         {
             throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
+    }
+
+    public TlsStreamSigner getStreamSigner(SignatureAndHashAlgorithm algorithm)
+    {
+        return null;
     }
 }

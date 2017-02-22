@@ -506,7 +506,7 @@ public class TlsServerProtocol
             TlsVerifier verifier = peerCertificate.getCertificateAt(0)
                 .createVerifier(TlsUtils.getSignatureAlgorithmClient(clientCertificateType));
 
-            if (!verifier.verifySignature(clientCertificateVerify, hash))
+            if (!verifier.verifyRawSignature(clientCertificateVerify, hash))
             {
                 throw new TlsFatalAlert(AlertDescription.decrypt_error);
             }

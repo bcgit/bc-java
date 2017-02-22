@@ -14,6 +14,7 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsSigner;
+import org.bouncycastle.tls.crypto.TlsStreamSigner;
 
 /**
  * Operator supporting the generation of RSA signatures.
@@ -72,5 +73,10 @@ public class JcaTlsRSASigner
         {
             throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
+    }
+
+    public TlsStreamSigner getStreamSigner(SignatureAndHashAlgorithm algorithm)
+    {
+        return null;
     }
 }
