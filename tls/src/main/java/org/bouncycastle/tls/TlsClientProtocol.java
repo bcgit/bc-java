@@ -331,7 +331,7 @@ public class TlsClientProtocol
 
                 this.connection_state = CS_SERVER_HELLO_DONE;
 
-                this.recordStream.getHandshakeHash().sealHashAlgorithms();
+                TlsUtils.sealHandshakeHash(getContext(), this.recordStream.getHandshakeHash());
 
                 Vector clientSupplementalData = tlsClient.getClientSupplementalData();
                 if (clientSupplementalData != null)

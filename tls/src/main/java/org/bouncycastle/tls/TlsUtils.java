@@ -2636,4 +2636,14 @@ public class TlsUtils
 
         return crypto.hasEncryptionAlgorithm(encryptionAlgorithm) && crypto.hasMacAlgorithm(macAlgorithm);
     }
+
+    static void sealHandshakeHash(TlsContext context, TlsHandshakeHash handshakeHash)
+    {
+        if (!context.getCrypto().hasAllRawSignatureAlgorithms())
+        {
+            handshakeHash.forceBuffering();
+        }
+
+        handshakeHash.sealHashAlgorithms();
+    }
 }
