@@ -46,7 +46,7 @@ public class JcaTlsRSASigner
         try
         {
             Signature signer = getRawSigner();
-            signer.initSign(privateKey, crypto.getSecureRandom());
+
             if (algorithm != null)
             {
                 if (algorithm.getSignature() != SignatureAlgorithm.rsa)
@@ -133,6 +133,7 @@ public class JcaTlsRSASigner
         if (rawSigner == null)
         {
             rawSigner = crypto.getHelper().createSignature("NoneWithRSA");
+            rawSigner.initSign(privateKey, crypto.getSecureRandom());
         }
         return rawSigner;
     }
