@@ -2,6 +2,8 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
+import org.bouncycastle.tls.crypto.TlsStreamSigner;
+
 /**
  * Support interface for generating a signature based on our private credentials.
  */
@@ -24,4 +26,6 @@ public interface TlsCredentialedSigner
      * @return the full algorithm details for the signature.
      */
     SignatureAndHashAlgorithm getSignatureAndHashAlgorithm();
+
+    TlsStreamSigner getStreamSigner() throws IOException;
 }
