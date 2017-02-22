@@ -205,7 +205,8 @@ public class DTLSServerProtocol
 
         handshake.sendMessage(HandshakeType.server_hello_done, TlsUtils.EMPTY_BYTES);
 
-        TlsUtils.sealHandshakeHash(state.serverContext, handshake.getHandshakeHash());
+        boolean forceBuffering = false;
+        TlsUtils.sealHandshakeHash(state.serverContext, handshake.getHandshakeHash(), forceBuffering);
 
         clientMessage = handshake.receiveMessage();
 
