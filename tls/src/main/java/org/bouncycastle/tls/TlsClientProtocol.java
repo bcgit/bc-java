@@ -8,6 +8,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.util.Arrays;
 
 public class TlsClientProtocol
@@ -331,8 +332,6 @@ public class TlsClientProtocol
 
                 this.connection_state = CS_SERVER_HELLO_DONE;
 
-                TlsUtils.sealHandshakeHash(getContext(), this.recordStream.getHandshakeHash());
-
                 Vector clientSupplementalData = tlsClient.getClientSupplementalData();
                 if (clientSupplementalData != null)
                 {
@@ -341,6 +340,9 @@ public class TlsClientProtocol
                 this.connection_state = CS_CLIENT_SUPPLEMENTAL_DATA;
 
                 TlsCredentials clientCredentials = null;
+                TlsCredentialedSigner credentialedSigner = null;
+                TlsStreamSigner streamSigner = null;
+
                 if (certificateRequest == null)
                 {
                     this.keyExchange.skipClientCredentials();
@@ -366,10 +368,19 @@ public class TlsClientProtocol
                         this.keyExchange.processClientCredentials(clientCredentials);
 
                         sendCertificateMessage(clientCredentials.getCertificate());
+
+                        if (clientCredentials instanceof TlsCredentialedSigner)
+                        {
+                            credentialedSigner = (TlsCredentialedSigner)clientCredentials;
+                            streamSigner = credentialedSigner.getStreamSigner();
+                        }
                     }
                 }
 
                 this.connection_state = CS_CLIENT_CERTIFICATE;
+
+                boolean forceBuffering = streamSigner != null;
+                TlsUtils.sealHandshakeHash(getContext(), this.recordStream.getHandshakeHash(), forceBuffering);
 
                 /*
                  * Send the client key exchange message, depending on the key exchange we are using
@@ -393,10 +404,10 @@ public class TlsClientProtocol
 
                 recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 
-                if (clientCredentials instanceof TlsCredentialedSigner)
+                if (credentialedSigner != null)
                 {
                     DigitallySigned certificateVerify = TlsUtils.generateCertificateVerify(getContext(),
-                        (TlsCredentialedSigner)clientCredentials, prepareFinishHash);
+                        credentialedSigner, streamSigner, prepareFinishHash);
                     sendCertificateVerifyMessage(certificateVerify);
                     this.connection_state = CS_CERTIFICATE_VERIFY;
                 }
