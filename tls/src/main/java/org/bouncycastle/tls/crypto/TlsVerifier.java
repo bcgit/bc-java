@@ -10,7 +10,7 @@ import org.bouncycastle.tls.DigitallySigned;
  */
 public interface TlsVerifier
 {
-    TlsStreamVerifier getStreamVerifier(DigitallySigned signature);
+    TlsStreamVerifier getStreamVerifier(DigitallySigned signature) throws IOException;
 
     /**
      * Return true if the passed in signature and hash represent a real signature.

@@ -1,12 +1,11 @@
 package org.bouncycastle.tls.crypto;
 
+import java.io.IOException;
 import java.io.OutputStream;
-
-import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 
 public interface TlsStreamVerifier
 {
-    OutputStream getOutputStream(SignatureAndHashAlgorithm algorithm);
+    OutputStream getOutputStream() throws IOException;
 
-    boolean isVerified();
+    boolean isVerified() throws IOException;
 }

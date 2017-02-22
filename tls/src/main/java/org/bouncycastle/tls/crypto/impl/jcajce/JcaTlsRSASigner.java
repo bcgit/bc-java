@@ -1,9 +1,11 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.Signature;
+import java.security.SignatureException;
 
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -25,6 +27,8 @@ public class JcaTlsRSASigner
     private final PrivateKey privateKey;
     private final JcaTlsCrypto crypto;
 
+    private Signature rawSigner = null;
+
     public JcaTlsRSASigner(JcaTlsCrypto crypto, PrivateKey privateKey)
     {
         this.crypto = crypto;
@@ -41,7 +45,7 @@ public class JcaTlsRSASigner
     {
         try
         {
-            Signature signer = crypto.getHelper().createSignature("NoneWithRSA");
+            Signature signer = getRawSigner();
             signer.initSign(privateKey, crypto.getSecureRandom());
             if (algorithm != null)
             {
@@ -54,7 +58,8 @@ public class JcaTlsRSASigner
                  * RFC 5246 4.7. In RSA signing, the opaque vector contains the signature generated
                  * using the RSASSA-PKCS1-v1_5 signature scheme defined in [PKCS1].
                  */
-                AlgorithmIdentifier algID = new AlgorithmIdentifier(TlsUtils.getOIDForHashAlgorithm(algorithm.getHash()), DERNull.INSTANCE);
+                AlgorithmIdentifier algID = new AlgorithmIdentifier(
+                    TlsUtils.getOIDForHashAlgorithm(algorithm.getHash()), DERNull.INSTANCE);
                 byte[] digestInfo = new DigestInfo(algID, hash).getEncoded();
                 signer.update(digestInfo, 0, digestInfo.length);
             }
@@ -75,8 +80,60 @@ public class JcaTlsRSASigner
         }
     }
 
-    public TlsStreamSigner getStreamSigner(SignatureAndHashAlgorithm algorithm)
+    public TlsStreamSigner getStreamSigner(SignatureAndHashAlgorithm algorithm) throws IOException
     {
+        /*
+         * NOTE: The SunMSCAPI provider's "NoneWithRSA" can't produce/verify RSA signatures in the correct format for TLS 1.2
+         */
+        if (algorithm != null && algorithm.getSignature() == SignatureAlgorithm.rsa && JcaUtils.isSunMSCAPIProviderActive())
+        {
+            try
+            {
+                Signature rawSigner = getRawSigner();
+
+                if (JcaUtils.isSunMSCAPIProvider(rawSigner.getProvider()))
+                {
+                    String algorithmName = JcaUtils.getJcaAlgorithmName(algorithm);
+
+                    final Signature signer = crypto.getHelper().createSignature(algorithmName);
+                    signer.initSign(privateKey, crypto.getSecureRandom());
+
+                    return new TlsStreamSigner()
+                    {
+                        public OutputStream getOutputStream()
+                        {
+                            return new SignatureOutputStream(signer);
+                        }
+
+                        public byte[] getSignature() throws IOException
+                        {
+                            try
+                            {
+                                return signer.sign();
+                            }
+                            catch (SignatureException e)
+                            {
+                                throw new TlsFatalAlert(AlertDescription.internal_error, e);
+                            }
+                        }
+                    };
+                }
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error, e);
+            }
+        }
+
         return null;
+    }
+
+    protected Signature getRawSigner() throws GeneralSecurityException
+    {
+        if (rawSigner == null)
+        {
+            rawSigner = crypto.getHelper().createSignature("NoneWithRSA");
+        }
+        return rawSigner;
     }
 }
