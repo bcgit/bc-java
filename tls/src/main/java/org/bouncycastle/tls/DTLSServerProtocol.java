@@ -576,7 +576,7 @@ public class DTLSServerProtocol
             TlsVerifier verifier = state.clientCertificate.getCertificateAt(0)
                 .createVerifier(TlsUtils.getSignatureAlgorithmClient(state.clientCertificateType));
 
-            if (!verifier.verifySignature(clientCertificateVerify, hash))
+            if (!verifier.verifyRawSignature(clientCertificateVerify, hash))
             {
                 throw new TlsFatalAlert(AlertDescription.decrypt_error);
             }
