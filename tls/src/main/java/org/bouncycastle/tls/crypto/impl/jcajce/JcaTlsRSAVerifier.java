@@ -99,7 +99,7 @@ public class JcaTlsRSAVerifier
         try
         {
             Signature verifier = getRawVerifier();
-            verifier.initVerify(pubKeyRSA);
+
             if (algorithm != null)
             {
                 if (algorithm.getSignature() != SignatureAlgorithm.rsa)
@@ -138,6 +138,7 @@ public class JcaTlsRSAVerifier
         if (rawVerifier == null)
         {
             rawVerifier = helper.createSignature("NoneWithRSA");
+            rawVerifier.initVerify(pubKeyRSA);
         }
         return rawVerifier;
     }
