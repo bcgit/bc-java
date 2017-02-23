@@ -9,4 +9,26 @@ public class SignatureAlgorithm
     public static final short rsa = 1;
     public static final short dsa = 2;
     public static final short ecdsa = 3;
+
+    public static String getName(short signatureAlgorithm)
+    {
+        switch (signatureAlgorithm)
+        {
+        case anonymous:
+            return "anonymous";
+        case rsa:
+            return "rsa";
+        case dsa:
+            return "dsa";
+        case ecdsa:
+            return "ecdsa";
+        default:
+            return "UNKNOWN";
+        }
+    }
+
+    public static String getText(short signatureAlgorithm)
+    {
+        return getName(signatureAlgorithm) + "(" + signatureAlgorithm + ")";
+    }
 }

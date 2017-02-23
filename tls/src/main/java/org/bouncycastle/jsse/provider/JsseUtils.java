@@ -188,12 +188,12 @@ class JsseUtils
         {
             for (int j = 0; j < hashAlgorithms.length; ++j)
             {
-                result.addElement(new SignatureAndHashAlgorithm(hashAlgorithms[j], signatureAlgorithms[i]));
+                addIfSupported(crypto, result, new SignatureAndHashAlgorithm(hashAlgorithms[j], signatureAlgorithms[i]));
             }
         }
 
         // TODO Dynamically detect whether the TlsCrypto implementation can handle DSA2
-        result.addElement(new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.dsa));
+        addIfSupported(crypto, result, new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.dsa));
 
         return result;
     }
@@ -243,5 +243,13 @@ class JsseUtils
         }
 
         return names;
+    }
+
+    private static void addIfSupported(TlsCrypto crypto, Vector v, SignatureAndHashAlgorithm alg)
+    {
+        if (crypto.hasSignatureAndHashAlgorithm(alg))
+        {
+            v.addElement(alg);
+        }
     }
 }

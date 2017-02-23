@@ -19,4 +19,6 @@ public interface TlsSigner
      */
     byte[] generateRawSignature(SignatureAndHashAlgorithm algorithm, byte[] hash)
         throws IOException;
+
+    TlsStreamSigner getStreamSigner(SignatureAndHashAlgorithm algorithm) throws IOException;
 }

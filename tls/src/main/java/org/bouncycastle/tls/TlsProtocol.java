@@ -523,9 +523,7 @@ public abstract class TlsProtocol
         {
             if (!recordStream.readRecord())
             {
-                // TODO It would be nicer to allow graceful connection close if between records
-//                this.failWithError(AlertLevel.warning, AlertDescription.close_notify);
-                throw new EOFException();
+                throw new TlsNoCloseNotifyException();
             }
         }
         catch (TlsFatalAlert e)

@@ -147,11 +147,9 @@ public class SecT233K1Point extends AbstractF2m
             ECFieldElement Y2 = L2;
             ECFieldElement L = Y1.add(Y2).divide(X1);
 
-//            X3 = L.square().add(L).add(X1).add(curve.getA());
             X3 = L.square().add(L).add(X1);
             if (X3.isZero())
             {
-//                return new SecT233K1Point(curve, X3, curve.getB().sqrt(), this.withCompression);
                 return new SecT233K1Point(curve, X3, curve.getB(), this.withCompression);
             }
 
@@ -169,7 +167,6 @@ public class SecT233K1Point extends AbstractF2m
             X3 = AU1.multiply(AU2);
             if (X3.isZero())
             {
-//                return new SecT233K1Point(curve, X3, curve.getB().sqrt(), this.withCompression);
                 return new SecT233K1Point(curve, X3, curve.getB(), this.withCompression);
             }
 
@@ -223,7 +220,6 @@ public class SecT233K1Point extends AbstractF2m
 
         if (T.isZero())
         {
-//            return new SecT233K1Point(curve, T, curve.getB().sqrt(), withCompression);
             return new SecT233K1Point(curve, T, curve.getB(), withCompression);
         }
 
@@ -272,10 +268,8 @@ public class SecT233K1Point extends AbstractF2m
         ECFieldElement Z1Sq = Z1.square();
         ECFieldElement L1Z1 = L1.multiply(Z1);
 
-//        ECFieldElement T = curve.getA().multiply(Z1Sq).add(L1Sq).add(L1Z1);
         ECFieldElement T = L1Sq.add(L1Z1);
         ECFieldElement L2plus1 = L2.addOne();
-//        ECFieldElement A = curve.getA().add(L2plus1).multiply(Z1Sq).add(L1Sq).multiplyPlusProduct(T, X1Sq, Z1Sq);
         ECFieldElement A = L2plus1.multiply(Z1Sq).add(L1Sq).multiplyPlusProduct(T, X1Sq, Z1Sq);
         ECFieldElement X2Z1Sq = X2.multiply(Z1Sq);
         ECFieldElement B = X2Z1Sq.add(T).square();
@@ -292,7 +286,6 @@ public class SecT233K1Point extends AbstractF2m
 
         if (A.isZero())
         {
-//            return new SecT233K1Point(curve, A, curve.getB().sqrt(), withCompression);
             return new SecT233K1Point(curve, A, curve.getB(), withCompression);
         }
 

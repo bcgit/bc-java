@@ -52,7 +52,7 @@ public interface TlsServer
      * {@link TlsCredentialedSigner}, depending on the key exchange that was negotiated.
      * 
      * @see {@link BcDefaultTlsCredentialedAgreement}, {@link BcDefaultTlsCredentialedDecryptor},
-     *      {@link DefaultTlsCredentialedSigner}
+     *      {@link BcDefaultTlsCredentialedSigner}
      * @return a TlsCredentials object or null for anonymous key exchanges
      * @throws IOException
      */

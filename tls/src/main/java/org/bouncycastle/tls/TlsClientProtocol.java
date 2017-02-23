@@ -8,6 +8,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.util.Arrays;
 
 public class TlsClientProtocol
@@ -331,8 +332,6 @@ public class TlsClientProtocol
 
                 this.connection_state = CS_SERVER_HELLO_DONE;
 
-                this.recordStream.getHandshakeHash().sealHashAlgorithms();
-
                 Vector clientSupplementalData = tlsClient.getClientSupplementalData();
                 if (clientSupplementalData != null)
                 {
@@ -340,16 +339,19 @@ public class TlsClientProtocol
                 }
                 this.connection_state = CS_CLIENT_SUPPLEMENTAL_DATA;
 
-                TlsCredentials clientCreds = null;
+                TlsCredentials clientCredentials = null;
+                TlsCredentialedSigner credentialedSigner = null;
+                TlsStreamSigner streamSigner = null;
+
                 if (certificateRequest == null)
                 {
                     this.keyExchange.skipClientCredentials();
                 }
                 else
                 {
-                    clientCreds = validateCredentials(this.authentication.getClientCredentials(certificateRequest));
+                    clientCredentials = validateCredentials(this.authentication.getClientCredentials(certificateRequest));
 
-                    if (clientCreds == null)
+                    if (clientCredentials == null)
                     {
                         this.keyExchange.skipClientCredentials();
 
@@ -363,13 +365,22 @@ public class TlsClientProtocol
                     }
                     else
                     {
-                        this.keyExchange.processClientCredentials(clientCreds);
+                        this.keyExchange.processClientCredentials(clientCredentials);
 
-                        sendCertificateMessage(clientCreds.getCertificate());
+                        sendCertificateMessage(clientCredentials.getCertificate());
+
+                        if (clientCredentials instanceof TlsCredentialedSigner)
+                        {
+                            credentialedSigner = (TlsCredentialedSigner)clientCredentials;
+                            streamSigner = credentialedSigner.getStreamSigner();
+                        }
                     }
                 }
 
                 this.connection_state = CS_CLIENT_CERTIFICATE;
+
+                boolean forceBuffering = streamSigner != null;
+                TlsUtils.sealHandshakeHash(getContext(), this.recordStream.getHandshakeHash(), forceBuffering);
 
                 /*
                  * Send the client key exchange message, depending on the key exchange we are using
@@ -393,30 +404,11 @@ public class TlsClientProtocol
 
                 recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 
-                if (clientCreds != null && clientCreds instanceof TlsCredentialedSigner)
+                if (credentialedSigner != null)
                 {
-                    TlsCredentialedSigner signerCredentials = (TlsCredentialedSigner)clientCreds;
-
-                    /*
-                     * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
-                     */
-                    SignatureAndHashAlgorithm signatureAndHashAlgorithm = TlsUtils.getSignatureAndHashAlgorithm(
-                        getContext(), signerCredentials);
-
-                    byte[] hash;
-                    if (signatureAndHashAlgorithm == null)
-                    {
-                        hash = securityParameters.getSessionHash();
-                    }
-                    else
-                    {
-                        hash = prepareFinishHash.getFinalHash(signatureAndHashAlgorithm.getHash());
-                    }
-
-                    byte[] signature = signerCredentials.generateRawSignature(hash);
-                    DigitallySigned certificateVerify = new DigitallySigned(signatureAndHashAlgorithm, signature);
+                    DigitallySigned certificateVerify = TlsUtils.generateCertificateVerify(getContext(),
+                        credentialedSigner, streamSigner, prepareFinishHash);
                     sendCertificateVerifyMessage(certificateVerify);
-
                     this.connection_state = CS_CERTIFICATE_VERIFY;
                 }
 

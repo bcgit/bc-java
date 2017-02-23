@@ -9,6 +9,7 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsSigner;
+import org.bouncycastle.tls.crypto.TlsStreamSigner;
 
 /**
  * JCA base class for the signers implementing the two DSA style algorithms from FIPS PUB 186-4: DSA and ECDSA.
@@ -57,5 +58,10 @@ public class JcaTlsDSSSigner
         {
             throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
+    }
+
+    public TlsStreamSigner getStreamSigner(SignatureAndHashAlgorithm algorithm)
+    {
+        return null;
     }
 }
