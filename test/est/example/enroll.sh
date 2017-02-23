@@ -7,5 +7,5 @@ popd
 
 $DIR/ensurejar.sh
 
-CP="$DIR/jars/bcpkix-jdk15on-1.56-SNAPSHOT.jar:$DIR/jars/bcprov-jdk15on-157b03.jar:$DIR/jars/test-1.56-SNAPSHOT.jar"
+CP="$DIR/jars/pkix.jar:$DIR/jars/bcprov.jar:$DIR/jars/test.jar:$DIR/jars/bctls.jar"
 java -classpath $CP org.bouncycastle.test.est.examples.EnrollExample $@

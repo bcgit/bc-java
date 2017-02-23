@@ -382,6 +382,20 @@ public class ESTTestUtils
         return fromFile;
     }
 
+    public static Object[] readCertAndKey(File path) throws Exception{
+
+        Object[] out = new Object[2];
+        FileReader fr = new FileReader(path);
+        PemReader reader = new PemReader(fr);
+        out[0] = toJavaX509Certificate(new X509CertificateHolder(reader.readPemObject().getContent()));
+        out[1] = new PKCS8EncodedKeySpec(reader.readPemObject().getContent());
+        reader.close();
+        fr.close();
+        return out;
+    }
+
+
+
     public static String readToString(File f)
         throws IOException
     {

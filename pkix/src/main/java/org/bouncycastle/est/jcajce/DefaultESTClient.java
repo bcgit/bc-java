@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -133,17 +131,26 @@ public class DefaultESTClient
                 os = socketSource.getOutputStream();
             }
 
-//            InputStream in = new PrintingInputStream(sock.getInputStream());
-
             String req = c.getUrl().getPath() + ((c.getUrl().getQuery() != null) ? c.getUrl().getQuery() : "");
 
-            // Replace host header.
+            c.getHeaders().ensureHeader("Connection", "close");
 
-            c.getHeaders().put("Host", Collections.singletonList(c.getUrl().getHost()));
+            // Replace host header.
+            URL u = c.getUrl();
+            if (u.getPort() > -1)
+            {
+                c.getHeaders().set("Host", String.format("%s:%d", u.getHost(), u.getPort()));
+            }
+            else
+            {
+                c.getHeaders().set("Host", u.getHost());
+            }
+
+
             writeLine(os, c.getMethod() + " " + req + " HTTP/1.1");
 
 
-            for (Map.Entry<String, List<String>> ent : c.getHeaders().entrySet())
+            for (Map.Entry<String, String[]> ent : c.getHeaders().entrySet())
             {
                 for (String v : ent.getValue())
                 {

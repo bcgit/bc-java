@@ -31,10 +31,11 @@ public class JcaESTServiceBuilder
     protected JcaJceAuthorizer ESTAuthorizer;
     protected CRL[] revocationLists;
     protected String tlsVersion = "TLS";
-    protected int timeout = 0;
+    protected int timeoutMillis = 0;
     protected String tlsProvider = null;
     protected ChannelBindingProvider bindingProvider;
     protected Set<String> supportedSuites = new HashSet<String>();
+    private Long absoluteLimit;
 
     /**
      * Create a builder for a client talking to a server where trust anchors have not been established yet.
@@ -113,11 +114,18 @@ public class JcaESTServiceBuilder
         return this;
     }
 
-    public JcaESTServiceBuilder withTimeout(int timeout)
+    public JcaESTServiceBuilder withTimeout(int timeoutMillis)
     {
-        this.timeout = timeout;
+        this.timeoutMillis = timeoutMillis;
         return this;
     }
+
+    public JcaESTServiceBuilder withReadLimit(long absoluteLimit)
+    {
+        this.absoluteLimit = absoluteLimit;
+        return this;
+    }
+
 
     public JcaESTServiceBuilder withChannelBindingProvider(ChannelBindingProvider channelBindingProvider)
     {
@@ -131,7 +139,8 @@ public class JcaESTServiceBuilder
         return this;
     }
 
-    public JcaESTServiceBuilder addCipherSuit(String[] names) {
+    public JcaESTServiceBuilder addCipherSuit(String[] names)
+    {
         this.supportedSuites.addAll(Arrays.asList(names));
         return this;
     }
@@ -165,9 +174,9 @@ public class JcaESTServiceBuilder
                 ESTAuthorizer,
                 tlsVersion,
                 tlsProvider,
-                timeout,
+                timeoutMillis,
                 bindingProvider,
-                supportedSuites);
+                supportedSuites, absoluteLimit);
         }
 
         return super.build();
