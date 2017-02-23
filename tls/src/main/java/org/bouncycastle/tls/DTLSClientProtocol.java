@@ -8,6 +8,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.util.Arrays;
 
 public class DTLSClientProtocol
@@ -259,8 +260,6 @@ public class DTLSClientProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        handshake.getHandshakeHash().sealHashAlgorithms();
-
         Vector clientSupplementalData = state.client.getClientSupplementalData();
         if (clientSupplementalData != null)
         {
@@ -294,14 +293,26 @@ public class DTLSClientProtocol
             handshake.sendMessage(HandshakeType.certificate, certificateBody);
         }
 
+        TlsCredentialedSigner credentialedSigner = null;
+        TlsStreamSigner streamSigner = null;
+
         if (state.clientCredentials != null)
         {
             state.keyExchange.processClientCredentials(state.clientCredentials);
+            
+            if (state.clientCredentials instanceof TlsCredentialedSigner)
+            {
+                credentialedSigner = (TlsCredentialedSigner)state.clientCredentials;
+                streamSigner = credentialedSigner.getStreamSigner();
+            }
         }
         else
         {
             state.keyExchange.skipClientCredentials();
         }
+
+        boolean forceBuffering = streamSigner != null;
+        TlsUtils.sealHandshakeHash(state.clientContext, handshake.getHandshakeHash(), forceBuffering);
 
         byte[] clientKeyExchangeBody = generateClientKeyExchange(state);
         handshake.sendMessage(HandshakeType.client_key_exchange, clientKeyExchangeBody);
@@ -312,28 +323,10 @@ public class DTLSClientProtocol
         TlsProtocol.establishMasterSecret(state.clientContext, state.keyExchange);
         recordLayer.initPendingEpoch(state.client.getCipher());
 
-        if (state.clientCredentials != null && state.clientCredentials instanceof TlsCredentialedSigner)
+        if (credentialedSigner != null)
         {
-            TlsCredentialedSigner signerCredentials = (TlsCredentialedSigner)state.clientCredentials;
-
-            /*
-             * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
-             */
-            SignatureAndHashAlgorithm signatureAndHashAlgorithm = TlsUtils.getSignatureAndHashAlgorithm(
-                state.clientContext, signerCredentials);
-
-            byte[] hash;
-            if (signatureAndHashAlgorithm == null)
-            {
-                hash = securityParameters.getSessionHash();
-            }
-            else
-            {
-                hash = prepareFinishHash.getFinalHash(signatureAndHashAlgorithm.getHash());
-            }
-
-            byte[] signature = signerCredentials.generateRawSignature(hash);
-            DigitallySigned certificateVerify = new DigitallySigned(signatureAndHashAlgorithm, signature);
+            DigitallySigned certificateVerify = TlsUtils.generateCertificateVerify(state.clientContext,
+                credentialedSigner, streamSigner, prepareFinishHash);
             byte[] certificateVerifyBody = generateCertificateVerify(state, certificateVerify);
             handshake.sendMessage(HandshakeType.certificate_verify, certificateVerifyBody);
         }

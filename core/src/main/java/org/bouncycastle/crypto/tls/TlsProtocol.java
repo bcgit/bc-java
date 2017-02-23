@@ -2,7 +2,6 @@ package org.bouncycastle.crypto.tls;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -518,9 +517,7 @@ public abstract class TlsProtocol
         {
             if (!recordStream.readRecord())
             {
-                // TODO It would be nicer to allow graceful connection close if between records
-//                this.failWithError(AlertLevel.warning, AlertDescription.close_notify);
-                throw new EOFException();
+                throw new TlsNoCloseNotifyException();
             }
         }
         catch (TlsFatalAlert e)

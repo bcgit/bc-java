@@ -21,6 +21,7 @@ import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsSecret;
+import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
@@ -728,8 +729,10 @@ public class TlsUtils
         }
     }
 
-    public static Vector getDefaultSupportedSignatureAlgorithms()
+    public static Vector getDefaultSupportedSignatureAlgorithms(TlsContext context)
     {
+        TlsCrypto crypto = context.getCrypto();
+
         short[] hashAlgorithms = new short[]{ HashAlgorithm.sha1, HashAlgorithm.sha224, HashAlgorithm.sha256,
             HashAlgorithm.sha384, HashAlgorithm.sha512 };
         short[] signatureAlgorithms = new short[]{ SignatureAlgorithm.rsa, SignatureAlgorithm.dsa,
@@ -740,7 +743,11 @@ public class TlsUtils
         {
             for (int j = 0; j < hashAlgorithms.length; ++j)
             {
-                result.addElement(new SignatureAndHashAlgorithm(hashAlgorithms[j], signatureAlgorithms[i]));
+                SignatureAndHashAlgorithm alg = new SignatureAndHashAlgorithm(hashAlgorithms[j], signatureAlgorithms[i]);
+                if (crypto.hasSignatureAndHashAlgorithm(alg))
+                {
+                    result.addElement(alg);
+                }
             }
         }
         return result;
@@ -1105,6 +1112,49 @@ public class TlsUtils
         return h.calculateHash();
     }
 
+    static void sendSignatureInput(TlsContext context, DigestInputBuffer buf, TlsStreamSigner streamSigner)
+        throws IOException
+    {
+        SecurityParameters securityParameters = context.getSecurityParameters();
+        OutputStream output = streamSigner.getOutputStream();
+        // NOTE: The implicit copy here is intended (and important)
+        output.write(Arrays.concatenate(securityParameters.clientRandom, securityParameters.serverRandom));
+        buf.copyTo(output);
+    }
+
+    static DigitallySigned generateCertificateVerify(TlsContext context, TlsCredentialedSigner credentialedSigner,
+        TlsStreamSigner streamSigner, TlsHandshakeHash handshakeHash) throws IOException
+    {
+        /*
+         * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
+         */
+        SignatureAndHashAlgorithm signatureAndHashAlgorithm = TlsUtils.getSignatureAndHashAlgorithm(
+            context, credentialedSigner);
+
+        byte[] signature;
+        if (streamSigner != null)
+        {
+            handshakeHash.copyBufferTo(streamSigner.getOutputStream());
+            signature = streamSigner.getSignature();
+        }
+        else
+        {
+            byte[] hash;
+            if (signatureAndHashAlgorithm == null)
+            {
+                hash = context.getSecurityParameters().getSessionHash();
+            }
+            else
+            {
+                hash = handshakeHash.getFinalHash(signatureAndHashAlgorithm.getHash());
+            }
+
+            signature = credentialedSigner.generateRawSignature(hash);
+        }
+
+        return new DigitallySigned(signatureAndHashAlgorithm, signature);
+    }
+
     static DigitallySigned generateServerKeyExchangeSignature(TlsContext context, TlsCredentialedSigner credentials,
         DigestInputBuffer buf) throws IOException
     {
@@ -1112,8 +1162,20 @@ public class TlsUtils
          * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
          */
         SignatureAndHashAlgorithm algorithm = TlsUtils.getSignatureAndHashAlgorithm(context, credentials);
-        byte[] hash = TlsUtils.calculateSignatureHash(context, algorithm, buf);
-        byte[] signature = credentials.generateRawSignature(hash);
+        TlsStreamSigner streamSigner = credentials.getStreamSigner();
+
+        byte[] signature;
+        if (streamSigner != null)
+        {
+            sendSignatureInput(context, buf, streamSigner);
+            signature = streamSigner.getSignature();
+        }
+        else
+        {
+            byte[] hash = TlsUtils.calculateSignatureHash(context, algorithm, buf);
+            signature = credentials.generateRawSignature(hash);
+        }
+
         return new DigitallySigned(algorithm, signature);
     }
 
@@ -1122,7 +1184,7 @@ public class TlsUtils
     {
         byte[] hash = TlsUtils.calculateSignatureHash(context, signedParams.getAlgorithm(), buf);
 
-        if (!tlsVerifier.verifySignature(signedParams, hash))
+        if (!tlsVerifier.verifyRawSignature(signedParams, hash))
         {
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
@@ -2606,5 +2668,15 @@ public class TlsUtils
         int macAlgorithm = TlsUtils.getMACAlgorithm(cipherSuite);
 
         return crypto.hasEncryptionAlgorithm(encryptionAlgorithm) && crypto.hasMacAlgorithm(macAlgorithm);
+    }
+
+    static void sealHandshakeHash(TlsContext context, TlsHandshakeHash handshakeHash, boolean forceBuffering)
+    {
+        if (forceBuffering || !context.getCrypto().hasAllRawSignatureAlgorithms())
+        {
+            handshakeHash.forceBuffering();
+        }
+
+        handshakeHash.sealHashAlgorithms();
     }
 }

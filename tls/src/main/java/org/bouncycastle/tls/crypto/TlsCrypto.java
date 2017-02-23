@@ -15,6 +15,13 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 public interface TlsCrypto
 {
     /**
+     * Return true if this TlsCrypto can perform raw signatures and verifications for all supported algorithms.
+     *
+     * @return true if this instance can perform raw signatures and verifications for all supported algorithms, false otherwise.
+     */
+    boolean hasAllRawSignatureAlgorithms();
+
+    /**
      * Return true if this TlsCrypto can support the passed in block/stream encryption algorithm.
      *
      * @param encryptionAlgorithm the algorithm of interest.

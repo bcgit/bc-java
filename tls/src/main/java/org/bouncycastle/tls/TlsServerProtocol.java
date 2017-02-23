@@ -216,7 +216,8 @@ public class TlsServerProtocol
                 sendServerHelloDoneMessage();
                 this.connection_state = CS_SERVER_HELLO_DONE;
 
-                this.recordStream.getHandshakeHash().sealHashAlgorithms();
+                boolean forceBuffering = false;
+                TlsUtils.sealHandshakeHash(getContext(), this.recordStream.getHandshakeHash(), forceBuffering);
 
                 break;
             }
@@ -506,7 +507,7 @@ public class TlsServerProtocol
             TlsVerifier verifier = peerCertificate.getCertificateAt(0)
                 .createVerifier(TlsUtils.getSignatureAlgorithmClient(clientCertificateType));
 
-            if (!verifier.verifySignature(clientCertificateVerify, hash))
+            if (!verifier.verifyRawSignature(clientCertificateVerify, hash))
             {
                 throw new TlsFatalAlert(AlertDescription.decrypt_error);
             }

@@ -72,7 +72,7 @@ public abstract class AbstractTlsClient
 
     protected Vector getSupportedSignatureAlgorithms()
     {
-        return TlsUtils.getDefaultSupportedSignatureAlgorithms();
+        return TlsUtils.getDefaultSupportedSignatureAlgorithms(context);
     }
 
     public void init(TlsClientContext context)
