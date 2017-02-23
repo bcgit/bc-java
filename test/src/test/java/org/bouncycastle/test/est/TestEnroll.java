@@ -2,15 +2,12 @@ package org.bouncycastle.test.est;
 
 
 import java.io.ByteArrayOutputStream;
-import java.net.Socket;
 import java.net.SocketException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
@@ -28,15 +25,12 @@ import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.est.BasicAuth;
-import org.bouncycastle.est.DigestAuth;
 import org.bouncycastle.est.ESTException;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.EnrollmentResponse;
+import org.bouncycastle.est.HttpAuth;
 import org.bouncycastle.est.jcajce.ChannelBindingProvider;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
-import org.bouncycastle.jsse.BcSSLConnection;
-import org.bouncycastle.jsse.BcSSLSocket;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -45,6 +39,7 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestEnroll
@@ -165,7 +160,7 @@ public class TestEnroll
             PKCS10CertificationRequest csr = pkcs10Builder.build(
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
-            EnrollmentResponse enr = est.simpleEnroll(false, csr, new BasicAuth("estreal", "estuser", "estpwd"));
+            EnrollmentResponse enr = est.simpleEnroll(false, csr, new HttpAuth("estreal", "estuser", "estpwd"));
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
@@ -226,7 +221,7 @@ public class TestEnroll
             PKCS10CertificationRequest csr = pkcs10Builder.build(
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
-            EnrollmentResponse enr = est.simpleEnroll(false, csr, new BasicAuth("estreal", "estuser", "estpwd"));
+            EnrollmentResponse enr = est.simpleEnroll(false, csr, new HttpAuth("estreal", "estuser", "estpwd"));
 
 
             Assert.assertFalse("Can Retry is true.", enr.canRetry());
@@ -312,7 +307,7 @@ public class TestEnroll
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
             SecureRandom nonceRandom = new SecureRandom();
-            EnrollmentResponse enr = est.simpleEnroll(false, csr, new DigestAuth(null, "estuser", "estpwd", nonceRandom));
+            EnrollmentResponse enr = est.simpleEnroll(false, csr, new HttpAuth(null, "estuser", "estpwd", nonceRandom));
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
@@ -502,7 +497,7 @@ public class TestEnroll
                 EnrollmentResponse enr = est.simpleEnroll(
                     false,
                     csr,
-                    new BasicAuth("estreal", "estuser", "estpwd"));
+                    new HttpAuth("estreal", "estuser", "estpwd"));
             }
             catch (Exception ex)
             {
@@ -645,7 +640,7 @@ public class TestEnroll
             EnrollmentResponse enr = est.simpleEnroll(
                 false,
                 csr,
-                new BasicAuth("estreal", "estuser", "estpwd"));
+                new HttpAuth("estreal", "estuser", "estpwd"));
 
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -773,23 +768,7 @@ public class TestEnroll
                     )
                 ), null);
 
-            ChannelBindingProvider bcChannelBindingProvider = new ChannelBindingProvider()
-            {
-                public boolean canAccessChannelBinding(Socket sock)
-                {
-                    return sock instanceof BcSSLSocket;
-                }
-
-                public byte[] getChannelBinding(Socket sock, String binding)
-                {
-                    BcSSLConnection bcon = ((BcSSLSocket)sock).getConnection();
-                    if (bcon != null)
-                    {
-                        return bcon.getChannelBinding(binding);
-                    }
-                    return null;
-                }
-            };
+            ChannelBindingProvider bcChannelBindingProvider = new BCChannelBindingProvider();
 
             ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/", Collections.singleton(ta))
                 .withClientKeystore(clientKeyStore, clientKeyStorePass)
@@ -864,7 +843,9 @@ public class TestEnroll
                 false,
                 pkcs10Builder,
                 contentSigner,
-                new BasicAuth("estreal", "estuser", "estpwd"));
+                new HttpAuth("estreal", "estuser", "estpwd"));
+
+
 
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")

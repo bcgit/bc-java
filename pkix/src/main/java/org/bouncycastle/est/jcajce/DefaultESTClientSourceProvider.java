@@ -22,6 +22,7 @@ import javax.net.ssl.SSLSocketFactory;
 
 import org.bouncycastle.est.ESTClientSourceProvider;
 import org.bouncycastle.est.Source;
+import org.bouncycastle.util.Strings;
 
 public class DefaultESTClientSourceProvider
     implements ESTClientSourceProvider
@@ -32,13 +33,14 @@ public class DefaultESTClientSourceProvider
     private final int timeout;
     private final ChannelBindingProvider bindingProvider;
     private final Set<String> cipherSuites;
+    private final Long absoluteLimit;
 
 
     public DefaultESTClientSourceProvider(
         SSLSocketFactory socketFactory,
         JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer,
         int timeout, ChannelBindingProvider bindingProvider,
-        Set<String> cipherSuites)
+        Set<String> cipherSuites, Long absoluteLimit)
         throws GeneralSecurityException
     {
         this.sslSocketFactory = socketFactory;
@@ -46,6 +48,7 @@ public class DefaultESTClientSourceProvider
         this.timeout = timeout;
         this.bindingProvider = bindingProvider;
         this.cipherSuites = cipherSuites;
+        this.absoluteLimit = absoluteLimit;
     }
 
     public static JcaJceAuthorizer getCertPathTLSAuthorizer(final CRL[] revocationLists, final Set<TrustAnchor> tlsTrustAnchors)
@@ -102,15 +105,36 @@ public class DefaultESTClientSourceProvider
         SSLSocket sock = (SSLSocket)sslSocketFactory.createSocket(host, port);
         if (cipherSuites != null && !cipherSuites.isEmpty())
         {
-           sock.setEnabledCipherSuites(cipherSuites.toArray(new String[cipherSuites.size()]));
+            sock.setEnabledCipherSuites(cipherSuites.toArray(new String[cipherSuites.size()]));
         }
+
         sock.setSoTimeout(timeout);
         sock.setUseClientMode(true);
         sock.startHandshake();
+
+        if (sock.getSession().getProtocol().equalsIgnoreCase("tlsv1"))
+        {
+            try
+            {
+                sock.close();
+            }
+            catch (Exception ex)
+            {
+                // Deliberately ignored.
+            }
+            throw new IOException("EST clients must not use TLSv1");
+        }
+
+        // check for use of null cipher and fail.
+        if (Strings.toLowerCase(sock.getSession().getCipherSuite()).contains("with null")) {
+            throw new IOException("EST clients must not use NULL ciphers");
+        }
+
+
         if (hostNameAuthorizer != null && !hostNameAuthorizer.verified(host, sock.getSession()))
         {
             throw new IOException("Hostname was not verified: " + host);
         }
-        return new SSLSocketSource(sock, bindingProvider);
+        return new SSLSocketSource(sock, bindingProvider, absoluteLimit);
     }
 }

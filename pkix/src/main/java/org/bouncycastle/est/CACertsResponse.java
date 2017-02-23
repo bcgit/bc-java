@@ -18,8 +18,16 @@ public class CACertsResponse
         this.trusted = trusted;
     }
 
+    public boolean hasStore()
+    {
+        return store != null;
+    }
+
     public Store<X509CertificateHolder> getStore()
     {
+        if (store == null) {
+            throw new IllegalStateException("Response has no certificates.");
+        }
         return store;
     }
 

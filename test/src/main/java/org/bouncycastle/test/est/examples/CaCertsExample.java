@@ -2,6 +2,7 @@ package org.bouncycastle.test.est.examples;
 
 
 import java.io.File;
+import java.security.Provider;
 import java.security.Security;
 import java.security.cert.TrustAnchor;
 import java.util.Set;
@@ -36,6 +37,9 @@ public class CaCertsExample
         String serverRootUrl = null;
         boolean printTLSCerts = false;
         String tlsVersion = "TLS";
+        String tlsProvider = null;
+        String tlsProviderClass = null;
+        int timeout = 0;
 
         try
         {
@@ -59,6 +63,18 @@ public class CaCertsExample
                 else if (arg.equals("--tls"))
                 {
                     tlsVersion = ExampleUtils.nextArgAsString("TLS version", args, t);
+                    t += 1;
+                }
+                else if (arg.equals("--tlsProvider"))
+                {
+                    tlsProvider = ExampleUtils.nextArgAsString("TLS Provider", args, t);
+                    t += 1;
+                    tlsProviderClass = ExampleUtils.nextArgAsString("TLS Provider Class", args, t);
+                    t += 1;
+                }
+                else if (arg.equals("--to"))
+                {
+                    timeout = ExampleUtils.nextArgAsInteger("Timeout", args, t);
                     t += 1;
                 }
                 else
@@ -92,6 +108,11 @@ public class CaCertsExample
             trustAnchors = ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificate(trustAnchorFile));
         }
 
+        if (tlsProviderClass != null)
+        {
+            Security.addProvider((Provider)Class.forName(tlsProviderClass).newInstance());
+        }
+
         //
         // Make est client builder
         //
@@ -108,6 +129,9 @@ public class CaCertsExample
         }
 
         builder.withTlsVersion(tlsVersion);
+        builder.withTlSProvider(tlsProvider);
+        builder.withTimeout(timeout);
+
         //
         // Make a client.
         //
@@ -146,6 +170,8 @@ public class CaCertsExample
                 System.out.println("Not After: " + cert.getNotAfter());
                 System.out.println("Signature Algorithm: " + cert.getSigAlgName());
 
+                System.out.println(cert.toString());
+
                 System.out.println();
             }
 
@@ -174,6 +200,7 @@ public class CaCertsExample
                 System.out.println("Not After: " + holder.getNotAfter());
                 System.out.println("Signature Algorithm: " + holder.getSignatureAlgorithm());
                 System.out.println();
+                System.out.println(ExampleUtils.toJavaX509Certificate(holder));
 
             }
 
@@ -211,10 +238,12 @@ public class CaCertsExample
 
     public void printArguments()
     {
-        System.out.println("-t <file>                Trust anchor file. (PEM)");
-        System.out.println("-u <url>                 Server URL");
-        System.out.println("--printTLS <url>         Print TLS certificates as PEM format");
-        System.out.println("--tls <version>          Use this TLS version when creating socket factory, Eg TLSv1.2");
+        System.out.println("-t <file>                         Trust anchor file. (PEM)");
+        System.out.println("-u <url>                          Server URL");
+        System.out.println("--printTLS <url>                  Print TLS certificates as PEM format");
+        System.out.println("--tls <version>                   Use this TLS version when creating socket factory, Eg TLSv1.2");
+        System.out.println("--tlsProvider <provider> <class>  The JSSE Provider.");
+        System.out.println("--to <milliseconds>               Timeout in milliseconds.");
     }
 
 }
