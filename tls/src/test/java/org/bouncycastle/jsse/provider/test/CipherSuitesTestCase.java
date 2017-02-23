@@ -12,11 +12,10 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
+import junit.framework.TestCase;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
-import org.junit.Assert;
-
-import junit.framework.TestCase;
+import org.bouncycastle.util.Arrays;
 
 public class CipherSuitesTestCase extends TestCase
 {
@@ -56,9 +55,9 @@ public class CipherSuitesTestCase extends TestCase
 
         TestProtocolUtil.runClientAndServer(server, client);
 
-        Assert.assertNotNull(server.tlsUnique);
-        Assert.assertNotNull(client.tlsUnique);
-        Assert.assertArrayEquals(server.tlsUnique, client.tlsUnique);
+        TestCase.assertNotNull(server.tlsUnique);
+        TestCase.assertNotNull(client.tlsUnique);
+        TestCase.assertTrue(Arrays.areEqual(server.tlsUnique, client.tlsUnique));
     }
 
     private static final String HOST = "localhost";
