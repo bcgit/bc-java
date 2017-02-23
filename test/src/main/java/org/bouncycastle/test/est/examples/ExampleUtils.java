@@ -376,6 +376,17 @@ public class ExampleUtils
         return pemOut.toString();
     }
 
+    static int nextArgAsInteger(String label, String[] args, int t)
+    {
+        if (t + 1 >= args.length || args[t + 1].startsWith("-"))
+        {
+            throw new IllegalArgumentException(label + ": Missing Integer argument");
+        }
+
+        return new Integer(args[t + 1]);
+    }
+
+
     static File nextArgAsFile(String label, String[] args, int t)
     {
         if (t + 1 >= args.length || args[t + 1].startsWith("-"))

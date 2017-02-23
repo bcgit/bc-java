@@ -36,6 +36,7 @@ public class JcaDefaultESTHttpClientProvider
     private final int timeout;
     private final ChannelBindingProvider bindingProvider;
     private final Set<String> cipherSuites;
+    private final Long absoluteLimit;
 
 
     public JcaDefaultESTHttpClientProvider(Set<TrustAnchor> tlsTrustAnchors,
@@ -46,7 +47,7 @@ public class JcaDefaultESTHttpClientProvider
                                            String tlsProvider,
                                            int timeout,
                                            ChannelBindingProvider bindingProvider,
-                                           Set<String> cipherSuites)
+                                           Set<String> cipherSuites, Long absoluteLimit)
     {
         this.tlsTrustAnchors = tlsTrustAnchors;
         this.clientKeystore = clientKeystore;
@@ -59,6 +60,7 @@ public class JcaDefaultESTHttpClientProvider
         this.timeout = timeout;
         this.bindingProvider = bindingProvider;
         this.cipherSuites = cipherSuites;
+        this.absoluteLimit = absoluteLimit;
     }
 
     public ESTClient makeClient()
@@ -92,7 +94,7 @@ public class JcaDefaultESTHttpClientProvider
                 socketFactory = createFactory(tlsVersion, tlsProvider, keyFact, estAuthorizer);
             }
             return new DefaultESTClient(
-                new DefaultESTClientSourceProvider(socketFactory, hostNameAuthorizer, timeout, bindingProvider, cipherSuites));
+                new DefaultESTClientSourceProvider(socketFactory, hostNameAuthorizer, timeout, bindingProvider, cipherSuites, absoluteLimit));
         }
         catch (GeneralSecurityException e)
         {

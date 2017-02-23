@@ -89,20 +89,38 @@ public class ESTService
             ESTRequest req = new ESTRequest("GET", url, null);
             resp = client.doRequest(req);
 
-            Store<X509CertificateHolder> caCerts;
+            Store<X509CertificateHolder> caCerts = null;
 
             if (resp.getStatusCode() == 200)
             {
-                ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
-                SimplePKIResponse spkr = new SimplePKIResponse(ContentInfo.getInstance((ASN1Sequence)ain.readObject()));
-                caCerts = spkr.getCertificates();
+                if (!"application/pkcs7-mime".equals(resp.getHeaders().getFirstValue("Content-Type")))
+                {
+                    String j = resp.getHeaders().getFirstValue("Content-Type") != null ? " got " + resp.getHeaders().getFirstValue("Content-Type") : " but was not present.";
+                    throw new ESTException(("Response : " + url.toString() + "Expecting application/pkcs7-mime ") + j, null, resp.getStatusCode(), resp.getInputStream());
+                }
+
+                try
+                {
+                    if (resp.getContentLength() != null && resp.getContentLength() >0)
+                    {
+                        ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
+                        SimplePKIResponse spkr = new SimplePKIResponse(ContentInfo.getInstance((ASN1Sequence)ain.readObject()));
+                        caCerts = spkr.getCertificates();
+                    }
+                }
+                catch (Throwable ex)
+                {
+                    throw new ESTException("Decoding CACerts: " + url.toString() + " " + ex.getMessage(), ex, resp.getStatusCode(), resp.getInputStream());
+                }
+
             }
-            else
+            else if (resp.getStatusCode() != 204) // 204 are No Content
             {
-                throw new ESTException("Get CACerts: " + url.toString(), resp.getStatusCode(), resp.getInputStream(), (int)resp.getContentLength());
+                throw new ESTException("Get CACerts: " + url.toString(), null, resp.getStatusCode(), resp.getInputStream());
             }
 
             return new CACertsResponse(caCerts, req, resp.getSource(), clientProvider.isTrusted());
+
         }
         catch (Throwable t)
         {
@@ -119,9 +137,18 @@ public class ESTService
         {
             if (resp != null)
             {
-                resp.close();
+                try
+                {
+                    resp.close();
+                }
+                catch (Throwable t)
+                {
+                    throw new ESTException("Get CACerts: ", t, resp.getStatusCode(), resp.getInputStream());
+                }
             }
         }
+
+
     }
 
     /**
@@ -194,7 +221,7 @@ public class ESTService
 
             URL url = new URL(server + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
             ESTClient client = clientProvider.makeClient();
-            ESTRequest req = new ESTRequest("POST", url, new ESTClientRequestInputSource()
+            ESTRequest req = new ESTRequest("POST", url, new ESTClientRequestIdempotentInputSource()
             {
                 public void ready(OutputStream os)
                     throws IOException
@@ -270,7 +297,8 @@ public class ESTService
             // The source listener is responsible for completing the PCS10 Cert request and encoding it.
             //
 
-            ESTRequest req = new ESTRequest("POST", url, new ESTClientRequestInputSource()
+
+            ESTRequest req = new ESTRequest("POST", url, new ESTClientRequestIdempotentInputSource()
             {
                 public void ready(OutputStream os)
                     throws IOException
@@ -286,13 +314,16 @@ public class ESTService
                     //
                     // Add challenge password from tls unique
                     //
-                    if (source.isTLSUniqueAvailable())
+
+                    if (source instanceof TLSUniqueProvider)
                     {
-                        byte[] tlsUnique = ((byte[])source.getTLSUnique());
+                        bos.reset();
+                        byte[] tlsUnique = ((TLSUniqueProvider)source).getTLSUnique();
+
                         builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_challengePassword, new DERPrintableString(Base64.toBase64String(tlsUnique)));
                         bos.write(annotateRequest(builder.build(contentSigner).getEncoded()).getBytes());
                         bos.flush();
-                        request.setHeader("content-length", "" + bos.size());
+                        request.setHeader("Content-Length", Long.toString(bos.size()));
                     }
                     else
                     {
@@ -363,8 +394,8 @@ public class ESTService
                 catch (Exception ex)
                 {
                     throw new ESTException(
-                        "Unable to parse Retry-After header:" + req.getUrl().toString() + " " + ex.getMessage(),
-                        resp.getStatusCode(), resp.getInputStream(), (int)resp.getContentLength());
+                        "Unable to parse Retry-After header:" + req.getUrl().toString() + " " + ex.getMessage(), null,
+                        resp.getStatusCode(), resp.getInputStream());
                 }
             }
 
@@ -388,8 +419,8 @@ public class ESTService
         }
 
         throw new ESTException(
-            "Simple Enroll: " + req.getUrl().toString(),
-            resp.getStatusCode(), resp.getInputStream(), (int)resp.getContentLength());
+            "Simple Enroll: " + req.getUrl().toString(), null,
+            resp.getStatusCode(), resp.getInputStream());
 
     }
 
@@ -428,8 +459,8 @@ public class ESTService
                 break;
             default:
                 throw new ESTException(
-                    "CSR Attribute request: " + req.getUrl().toString(),
-                    resp.getStatusCode(), resp.getInputStream(), (int)resp.getContentLength());
+                    "CSR Attribute request: " + req.getUrl().toString(), null,
+                    resp.getStatusCode(), resp.getInputStream());
             }
         }
         catch (Throwable t)

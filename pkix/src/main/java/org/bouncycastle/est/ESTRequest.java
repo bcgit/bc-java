@@ -1,10 +1,6 @@
 package org.bouncycastle.est;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -14,15 +10,15 @@ public class ESTRequest
 {
     final String method;
     final URL url;
-    final Map<String, List<String>> headers = new HashMap<String, List<String>>();
+    final HttpUtil.Headers headers = new HttpUtil.Headers();
     final byte[] readAheadBuf = new byte[1024];
-    final ESTClientRequestInputSource writer;
+    final ESTClientRequestIdempotentInputSource writer;
     final ESTHijacker hijacker;
     protected ESTClient estClient;
     final ESTSourceConnectionListener listener;
 
 
-    public ESTRequest(String method, URL url, ESTClientRequestInputSource writer, ESTSourceConnectionListener listener)
+    public ESTRequest(String method, URL url, ESTClientRequestIdempotentInputSource writer, ESTSourceConnectionListener listener)
     {
         this.method = method;
         this.url = url;
@@ -41,7 +37,7 @@ public class ESTRequest
     }
 
 
-    public ESTRequest(String method, URL url, ESTClientRequestInputSource writer, ESTHijacker hijacker, ESTSourceConnectionListener listener)
+    public ESTRequest(String method, URL url, ESTClientRequestIdempotentInputSource writer, ESTHijacker hijacker, ESTSourceConnectionListener listener)
     {
         this.method = method;
         this.url = url;
@@ -61,13 +57,7 @@ public class ESTRequest
 
     public ESTRequest addHeader(String key, String value)
     {
-        List<String> l = headers.get(key);
-        if (l == null)
-        {
-            l = new ArrayList<String>();
-            headers.put(key, l);
-        }
-        l.add(value);
+        headers.add(key, value);
         return this;
     }
 
@@ -78,7 +68,7 @@ public class ESTRequest
 
     public ESTRequest setHeader(String key, String value)
     {
-        headers.put(key, Collections.singletonList(value));
+        headers.set(key, value);
         return this;
     }
 
@@ -87,7 +77,7 @@ public class ESTRequest
     {
         ESTRequest req = new ESTRequest(this.method, this.url, this.writer, estHttpHijacker, listener);
 
-        for (Map.Entry<String, List<String>> s : headers.entrySet())
+        for (Map.Entry<String, String[]> s : headers.entrySet())
         {
             req.headers.put(s.getKey(), s.getValue());
         }
@@ -99,7 +89,7 @@ public class ESTRequest
     {
         ESTRequest req = new ESTRequest(this.method, url, this.writer, hijacker, listener);
 
-        for (Map.Entry<String, List<String>> s : headers.entrySet())
+        for (Map.Entry<String, String[]> s : headers.entrySet())
         {
             req.headers.put(s.getKey(), s.getValue());
         }
@@ -117,7 +107,7 @@ public class ESTRequest
         return url;
     }
 
-    public Map<String, List<String>> getHeaders()
+    public HttpUtil.Headers getHeaders()
     {
         return headers;
     }
@@ -127,7 +117,7 @@ public class ESTRequest
         return readAheadBuf;
     }
 
-    public ESTClientRequestInputSource getWriter()
+    public ESTClientRequestIdempotentInputSource getWriter()
     {
         return writer;
     }
