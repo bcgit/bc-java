@@ -3,11 +3,8 @@ package org.bouncycastle.est.jcajce;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.Socket;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -107,14 +104,17 @@ public class DefaultESTClient
         throws IOException
     {
         c.setEstClient(this);
-        Socket sock = null;
+
         ESTResponse res = null;
         Source socketSource = null;
         try
         {
 
-            sock = new Socket(c.getUrl().getHost(), c.getUrl().getPort());
-            socketSource = sslSocketProvider.wrapSocket(sock, c.getUrl().getHost(), c.getUrl().getPort());
+            socketSource = sslSocketProvider.makeSource(c.getUrl().getHost(), c.getUrl().getPort());
+            if (c.getListener() != null)
+            {
+                c.getListener().onConnection(socketSource, c);
+            }
 
             //  socketSource = new SSLSocketSource((SSLSocket)sock);
 
@@ -131,17 +131,26 @@ public class DefaultESTClient
                 os = socketSource.getOutputStream();
             }
 
-//            InputStream in = new PrintingInputStream(sock.getInputStream());
-
             String req = c.getUrl().getPath() + ((c.getUrl().getQuery() != null) ? c.getUrl().getQuery() : "");
 
-            // Replace host header.
+            c.getHeaders().ensureHeader("Connection", "close");
 
-            c.getHeaders().put("Host", Collections.singletonList(c.getUrl().getHost()));
+            // Replace host header.
+            URL u = c.getUrl();
+            if (u.getPort() > -1)
+            {
+                c.getHeaders().set("Host", String.format("%s:%d", u.getHost(), u.getPort()));
+            }
+            else
+            {
+                c.getHeaders().set("Host", u.getHost());
+            }
+
+
             writeLine(os, c.getMethod() + " " + req + " HTTP/1.1");
 
 
-            for (Map.Entry<String, List<String>> ent : c.getHeaders().entrySet())
+            for (Map.Entry<String, String[]> ent : c.getHeaders().entrySet())
             {
                 for (String v : ent.getValue())
                 {
@@ -173,9 +182,9 @@ public class DefaultESTClient
         finally
         {
             // Close only if response not generated.
-            if (sock != null && res == null)
+            if (socketSource != null && res == null)
             {
-                sock.close();
+                socketSource.close();
             }
         }
 

@@ -1,18 +1,35 @@
 package org.bouncycastle.test.est;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathValidator;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Collections;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSession;
 
@@ -22,8 +39,14 @@ import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.est.CACertsResponse;
+import org.bouncycastle.est.ESTClient;
+import org.bouncycastle.est.ESTClientProvider;
 import org.bouncycastle.est.ESTException;
+import org.bouncycastle.est.ESTRequest;
+import org.bouncycastle.est.ESTResponse;
 import org.bouncycastle.est.ESTService;
+import org.bouncycastle.est.ESTServiceBuilder;
+import org.bouncycastle.est.Source;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.test.SimpleTest;
@@ -84,9 +107,10 @@ public class TestCACertsFetch
         try
         {
             serverInstance = startDefaultServer();
-
+            System.setProperty("org.bouncycastle.debug.est", "all");
             ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
             CACertsResponse caCertsResponse = est.getCACerts();
+
             X509CertificateHolder[] caCerts = ESTService.storeToArray(caCertsResponse.getStore());
 
             FileReader fr = new FileReader(ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt"));
@@ -111,6 +135,86 @@ public class TestCACertsFetch
 
 
     /**
+     * Test to ensure timeout behavior.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testFetchCaCertsWithTimeout()
+        throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        X509CertificateHolder[] theirCAs = null;
+
+
+        final CountDownLatch ready = new CountDownLatch(1);
+        final CountDownLatch exited = new CountDownLatch(1);
+
+        Thread t = new Thread(new Runnable()
+        {
+            public void run()
+            {
+                ServerSocket ssock = null;
+                try
+                {
+                    ssock = new ServerSocket(8443);
+                    ready.countDown();
+                    Socket sock = ssock.accept();
+
+                    sock.getInputStream().read(); // Take one byte.
+
+                    Thread.sleep(2000);
+                }
+                catch (Exception ex)
+                {
+                    ex.printStackTrace();
+                }
+                finally
+                {
+                    if (ssock != null)
+                    {
+                        try
+                        {
+                            ssock.close();
+                        }
+                        catch (IOException e)
+                        {
+                            // Ignored.
+                        }
+                    }
+                    exited.countDown();
+                }
+            }
+        });
+        t.setPriority(Thread.MIN_PRIORITY);
+        t.start();
+
+        ready.await(1000, TimeUnit.MILLISECONDS);
+
+        ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/").withTimeout(500).build();
+
+        try
+        {
+            CACertsResponse caCertsResponse = est.getCACerts();
+            t.interrupt();
+            Assert.fail("Must time out.");
+        }
+        catch (Exception ex)
+        {
+            t.interrupt();
+            Assert.assertEquals("", ESTException.class, ex.getClass());
+            Assert.assertEquals("", SocketTimeoutException.class, ex.getCause().getClass());
+
+        }
+        finally
+        {
+            exited.await(2000, TimeUnit.MILLISECONDS);
+        }
+
+    }
+
+
+    /**
      * Fetch CA certs with a bogus trust anchor.
      * Expect local library to fail.
      *
@@ -120,7 +224,6 @@ public class TestCACertsFetch
     public void testFetchCaCertsWithBogusTrustAnchor()
         throws Exception
     {
-
 
         ESTTestUtils.ensureProvider();
         X509CertificateHolder[] theirCAs = null;
@@ -323,6 +426,922 @@ public class TestCACertsFetch
 
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void testEmptyCaCertsResponseZeroLength()
+        throws Exception
+    {
+
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\r\n");
+        pw.print("Status: 200 OK\r\n");
+        pw.print("Content-Type: application/pkcs7-mime\r\n");
+        pw.print("Content-Transfer-Encoding: base64\r\n");
+        pw.print("Content-Length: 0\r\n");
+        pw.print("\r\n");
+        pw.flush();
+
+
+        final ESTResponse response = new ESTResponse(null, new Source()
+        {
+            public InputStream getInputStream()
+                throws IOException
+            {
+                return new ByteArrayInputStream(responseData.toByteArray());
+            }
+
+            public OutputStream getOutputStream()
+                throws IOException
+            {
+                return null;
+            }
+
+            public Object getSession()
+            {
+                return null;
+            }
+
+            public Object getTLSUnique()
+            {
+                return null;
+            }
+
+            public boolean isTLSUniqueAvailable()
+            {
+                return false;
+            }
+
+            public void close()
+                throws IOException
+            {
+
+            }
+        });
+
+        ESTServiceBuilder builder = new ESTServiceBuilder("https://foo.local")
+        {
+            @Override
+            public ESTService build()
+            {
+                return super.build();
+            }
+        };
+
+        builder.withClientProvider(new ESTClientProvider()
+        {
+            public ESTClient makeClient()
+                throws ESTException
+            {
+                return new ESTClient()
+                {
+                    public ESTResponse doRequest(ESTRequest c)
+                        throws IOException
+                    {
+                        return response;
+                    }
+                };
+            }
+
+            public boolean isTrusted()
+            {
+                return false;
+            }
+        });
+
+
+        ESTService estService = builder.build();
+        CACertsResponse resp = estService.getCACerts();
+        Assert.assertFalse("Must be false, store is null", resp.hasStore());
+        resp.getStore();
+    }
+
+
+    @Test(expected = IllegalStateException.class)
+    public void testEmptyCaCertsResponse204()
+        throws Exception
+    {
+
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 204 OK\r\n");
+        pw.print("Status: 204 OK\r\n");
+        pw.print("Content-Type: application/pkcs7-mime\r\n");
+        pw.print("Content-Transfer-Encoding: base64\r\n");
+
+        pw.print("\r\n");
+        pw.flush();
+
+
+        final ESTResponse response = new ESTResponse(null, new Source()
+        {
+            public InputStream getInputStream()
+                throws IOException
+            {
+                return new ByteArrayInputStream(responseData.toByteArray());
+            }
+
+            public OutputStream getOutputStream()
+                throws IOException
+            {
+                return null;
+            }
+
+            public Object getSession()
+            {
+                return null;
+            }
+
+            public Object getTLSUnique()
+            {
+                return null;
+            }
+
+            public boolean isTLSUniqueAvailable()
+            {
+                return false;
+            }
+
+            public void close()
+                throws IOException
+            {
+
+            }
+        });
+
+        ESTServiceBuilder builder = new ESTServiceBuilder("https://foo.local")
+        {
+            @Override
+            public ESTService build()
+            {
+                return super.build();
+            }
+        };
+
+        builder.withClientProvider(new ESTClientProvider()
+        {
+            public ESTClient makeClient()
+                throws ESTException
+            {
+                return new ESTClient()
+                {
+                    public ESTResponse doRequest(ESTRequest c)
+                        throws IOException
+                    {
+                        return response;
+                    }
+                };
+            }
+
+            public boolean isTrusted()
+            {
+                return false;
+            }
+        });
+
+
+        ESTService estService = builder.build();
+        CACertsResponse resp = estService.getCACerts();
+        Assert.assertFalse("Must be false, store is null", resp.hasStore());
+        resp.getStore();
+    }
+
+
+    @Test()
+    public void testEmptyCaCertsResponseTruncated()
+        throws Exception
+    {
+
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+            "Status: 200 OK\n" +
+            "Content-Type: application/pkcs7-mime\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 10\n" +
+            "\n" +
+            "MIIBggYJKoZIhvcNAQcCoIIBczCCAW8CAQExADALBgkqhkiG9w0BBwGgggFXMIIB\n" +
+            "UzCB+qADAgECAgkA+syTlV9djhkwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMZXN0\n" +
+            "RXhhbXBsZUNBMB4XDTE3MDIxODAyNTQ1OVoXDTE4MDIxODAyNTQ1OVowFzEVMBMG\n" +
+            "A1UEAwwMZXN0RXhhbXBsZUNBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEobjd\n" +
+            "xMcCE5GfVRE4f86ik6yK0erBhAbN8er0u6vWTXlyk5IXJy7HsUmC7Wv1SDRno/Rp\n" +
+            "pyVekSu4T0/h7uBeaKMvMC0wDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQU8rjiAzjo\n" +
+            "Nldka5gT1bcbQqcESPMwCgYIKoZIzj0EAwIDSAAwRQIhAOwsMtixDryuVUYNBdaf\n" +
+            "3tQV1SlvBmCP6y3cKMST45sRAiBEUNYOsYnuFmH93I+0NSJPYuuBY+Zfqrc2awCs\n" +
+            "spOU3zEA");
+
+        pw.flush();
+
+        final ESTResponse response = new ESTResponse(null, new Source()
+        {
+            public InputStream getInputStream()
+                throws IOException
+            {
+                return new ByteArrayInputStream(responseData.toByteArray());
+            }
+
+            public OutputStream getOutputStream()
+                throws IOException
+            {
+                return null;
+            }
+
+            public Object getSession()
+            {
+                return null;
+            }
+
+            public Object getTLSUnique()
+            {
+                return null;
+            }
+
+            public boolean isTLSUniqueAvailable()
+            {
+                return false;
+            }
+
+            public void close()
+                throws IOException
+            {
+
+            }
+        });
+
+        ESTServiceBuilder builder = new ESTServiceBuilder("https://foo.local")
+        {
+            @Override
+            public ESTService build()
+            {
+                return super.build();
+            }
+        };
+
+        builder.withClientProvider(new ESTClientProvider()
+        {
+            public ESTClient makeClient()
+                throws ESTException
+            {
+                return new ESTClient()
+                {
+                    public ESTResponse doRequest(ESTRequest c)
+                        throws IOException
+                    {
+                        return response;
+                    }
+                };
+            }
+
+            public boolean isTrusted()
+            {
+                return false;
+            }
+        });
+
+
+        ESTService estService = builder.build();
+        try
+        {
+            CACertsResponse resp = estService.getCACerts();
+            Assert.fail("Must fail on too small content length.");
+        }
+        catch (Exception ex)
+        {
+            Assert.assertEquals("Expect EST Exception", ESTException.class, ex.getClass());
+            Assert.assertEquals("Expect cause an IOException", EOFException.class, ex.getCause().getClass());
+        }
+
+    }
+
+
+    @Test()
+    public void testEmptyCaCertsResponseContentExceedsResponse()
+        throws Exception
+    {
+
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+            "Status: 200 OK\n" +
+            "Content-Type: application/pkcs7-mime\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 1000\n" +
+            "\n" +
+            "MIIBggYJKoZIhvcNAQcCoIIBczCCAW8CAQExADALBgkqhkiG9w0BBwGgggFXMIIB\n" +
+            "UzCB+qADAgECAgkA+syTlV9djhkwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMZXN0\n" +
+            "RXhhbXBsZUNBMB4XDTE3MDIxODAyNTQ1OVoXDTE4MDIxODAyNTQ1OVowFzEVMBMG\n" +
+            "A1UEAwwMZXN0RXhhbXBsZUNBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEobjd\n" +
+            "xMcCE5GfVRE4f86ik6yK0erBhAbN8er0u6vWTXlyk5IXJy7HsUmC7Wv1SDRno/Rp\n" +
+            "pyVekSu4T0/h7uBeaKMvMC0wDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQU8rjiAzjo\n" +
+            "Nldka5gT1bcbQqcESPMwCgYIKoZIzj0EAwIDSAAwRQIhAOwsMtixDryuVUYNBdaf\n" +
+            "3tQV1SlvBmCP6y3cKMST45sRAiBEUNYOsYnuFmH93I+0NSJPYuuBY+Zfqrc2awCs\n" +
+            "spOU3zEA");
+
+        pw.flush();
+
+        final ESTResponse response = new ESTResponse(null, new Source()
+        {
+            public InputStream getInputStream()
+                throws IOException
+            {
+                return new ByteArrayInputStream(responseData.toByteArray());
+            }
+
+            public OutputStream getOutputStream()
+                throws IOException
+            {
+                return null;
+            }
+
+            public Object getSession()
+            {
+                return null;
+            }
+
+            public Object getTLSUnique()
+            {
+                return null;
+            }
+
+            public boolean isTLSUniqueAvailable()
+            {
+                return false;
+            }
+
+            public void close()
+                throws IOException
+            {
+
+            }
+        });
+
+        ESTServiceBuilder builder = new ESTServiceBuilder("https://foo.local")
+        {
+            @Override
+            public ESTService build()
+            {
+                return super.build();
+            }
+        };
+
+        builder.withClientProvider(new ESTClientProvider()
+        {
+            public ESTClient makeClient()
+                throws ESTException
+            {
+                return new ESTClient()
+                {
+                    public ESTResponse doRequest(ESTRequest c)
+                        throws IOException
+                    {
+                        return response;
+                    }
+                };
+            }
+
+            public boolean isTrusted()
+            {
+                return false;
+            }
+        });
+
+
+        ESTService estService = builder.build();
+        try
+        {
+            estService.getCACerts();
+            Assert.fail("Must fail on not reading all content.");
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+            Assert.assertEquals("Must be EST Exception", ESTException.class, ex.getClass());
+            Assert.assertEquals("Cause is IO Exception.", IOException.class, IOException.class);
+        }
+    }
+
+    @Test()
+    public void testEmptyCaCertsResponseContentLengthExceedsAbsoluteLimit()
+        throws Exception
+    {
+
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+            "Status: 200 OK\n" +
+            "Content-Type: application/pkcs7-mime\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 1000\n" +
+            "\n" +
+            "MIIBggYJKoZIhvcNAQcCoIIBczCCAW8CAQExADALBgkqhkiG9w0BBwGgggFXMIIB\n" +
+            "UzCB+qADAgECAgkA+syTlV9djhkwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMZXN0\n" +
+            "RXhhbXBsZUNBMB4XDTE3MDIxODAyNTQ1OVoXDTE4MDIxODAyNTQ1OVowFzEVMBMG\n" +
+            "A1UEAwwMZXN0RXhhbXBsZUNBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEobjd\n" +
+            "xMcCE5GfVRE4f86ik6yK0erBhAbN8er0u6vWTXlyk5IXJy7HsUmC7Wv1SDRno/Rp\n" +
+            "pyVekSu4T0/h7uBeaKMvMC0wDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQU8rjiAzjo\n" +
+            "Nldka5gT1bcbQqcESPMwCgYIKoZIzj0EAwIDSAAwRQIhAOwsMtixDryuVUYNBdaf\n" +
+            "3tQV1SlvBmCP6y3cKMST45sRAiBEUNYOsYnuFmH93I+0NSJPYuuBY+Zfqrc2awCs\n" +
+            "spOU3zEA");
+
+        pw.flush();
+
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+
+            int port = res.open(responseData.toByteArray());
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/");
+            builder.withReadLimit(1000L);
+            builder.addCipherSuit("TLS_DH_anon_WITH_AES_128_CBC_SHA");
+
+            ESTService est = builder.build();
+            try
+            {
+                est.getCACerts();
+                Assert.fail("Must fail.");
+            }
+            catch (Exception ex)
+            {
+                Assert.assertEquals("EST Exception", ESTException.class, ex.getClass());
+                Assert.assertEquals("", IOException.class, ex.getCause().getClass());
+
+            }
+
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testContentLengthBelowAbsoluteLimit()
+        throws Exception
+    {
+
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+            "Status: 200 OK\n" +
+            "Content-Type: application/pkcs7-mime\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 529\n" +
+            "\n" +
+            "MIIBggYJKoZIhvcNAQcCoIIBczCCAW8CAQExADALBgkqhkiG9w0BBwGgggFXMIIB\n" +
+            "UzCB+qADAgECAgkA+syTlV9djhkwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMZXN0\n" +
+            "RXhhbXBsZUNBMB4XDTE3MDIxODAyNTQ1OVoXDTE4MDIxODAyNTQ1OVowFzEVMBMG\n" +
+            "A1UEAwwMZXN0RXhhbXBsZUNBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEobjd\n" +
+            "xMcCE5GfVRE4f86ik6yK0erBhAbN8er0u6vWTXlyk5IXJy7HsUmC7Wv1SDRno/Rp\n" +
+            "pyVekSu4T0/h7uBeaKMvMC0wDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQU8rjiAzjo\n" +
+            "Nldka5gT1bcbQqcESPMwCgYIKoZIzj0EAwIDSAAwRQIhAOwsMtixDryuVUYNBdaf\n" +
+            "3tQV1SlvBmCP6y3cKMST45sRAiBEUNYOsYnuFmH93I+0NSJPYuuBY+Zfqrc2awCs\n" +
+            "spOU3zEA\n");
+
+        pw.flush();
+
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+
+            int port = res.open(responseData.toByteArray());
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/");
+            builder.withReadLimit(530);
+            builder.addCipherSuit("TLS_DH_anon_WITH_AES_128_CBC_SHA");
+
+            ESTService est = builder.build();
+
+            // This must not fail.
+            est.getCACerts();
+
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testResponseContentLengthInvalid()
+        throws Exception
+    {
+
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+            "Status: 200 OK\n" +
+            "Content-Type: application/pkcs7-mime\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: banana\n" +
+            "\n" +
+            "MIIBggYJKoZIhvcNAQcCoIIBczCCAW8CAQExADALBgkqhkiG9w0BBwGgggFXMIIB\n" +
+            "UzCB+qADAgECAgkA+syTlV9djhkwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMZXN0\n" +
+            "RXhhbXBsZUNBMB4XDTE3MDIxODAyNTQ1OVoXDTE4MDIxODAyNTQ1OVowFzEVMBMG\n" +
+            "A1UEAwwMZXN0RXhhbXBsZUNBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEobjd\n" +
+            "xMcCE5GfVRE4f86ik6yK0erBhAbN8er0u6vWTXlyk5IXJy7HsUmC7Wv1SDRno/Rp\n" +
+            "pyVekSu4T0/h7uBeaKMvMC0wDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQU8rjiAzjo\n" +
+            "Nldka5gT1bcbQqcESPMwCgYIKoZIzj0EAwIDSAAwRQIhAOwsMtixDryuVUYNBdaf\n" +
+            "3tQV1SlvBmCP6y3cKMST45sRAiBEUNYOsYnuFmH93I+0NSJPYuuBY+Zfqrc2awCs\n" +
+            "spOU3zEA\n");
+
+        pw.flush();
+
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+
+            int port = res.open(responseData.toByteArray());
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/");
+            builder.withReadLimit(530);
+            builder.addCipherSuit(res.getCipherSuites());
+
+            ESTService est = builder.build();
+
+            try
+            {
+                est.getCACerts();
+                Assert.fail("Must fail, content length = banana");
+            }
+            catch (Exception ex)
+            {
+                Assert.assertEquals("EST Exception", ESTException.class, ex.getClass());
+                Assert.assertEquals("", RuntimeException.class, ex.getCause().getClass());
+            }
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testResponseNoContentLengthHeader()
+        throws Exception
+    {
+
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+            "Status: 200 OK\n" +
+            "Content-Type: application/pkcs7-mime\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "\n" +
+            "MIIBggYJKoZIhvcNAQcCoIIBczCCAW8CAQExADALBgkqhkiG9w0BBwGgggFXMIIB\n" +
+            "UzCB+qADAgECAgkA+syTlV9djhkwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMZXN0\n" +
+            "RXhhbXBsZUNBMB4XDTE3MDIxODAyNTQ1OVoXDTE4MDIxODAyNTQ1OVowFzEVMBMG\n" +
+            "A1UEAwwMZXN0RXhhbXBsZUNBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEobjd\n" +
+            "xMcCE5GfVRE4f86ik6yK0erBhAbN8er0u6vWTXlyk5IXJy7HsUmC7Wv1SDRno/Rp\n" +
+            "pyVekSu4T0/h7uBeaKMvMC0wDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQU8rjiAzjo\n" +
+            "Nldka5gT1bcbQqcESPMwCgYIKoZIzj0EAwIDSAAwRQIhAOwsMtixDryuVUYNBdaf\n" +
+            "3tQV1SlvBmCP6y3cKMST45sRAiBEUNYOsYnuFmH93I+0NSJPYuuBY+Zfqrc2awCs\n" +
+            "spOU3zEA\n");
+
+        pw.flush();
+
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+
+            int port = res.open(responseData.toByteArray());
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/");
+            builder.withReadLimit(530);
+            builder.addCipherSuit(res.getCipherSuites());
+
+            ESTService est = builder.build();
+
+            try
+            {
+                est.getCACerts();
+                Assert.fail("Must fail, no content length header");
+            }
+            catch (Exception ex)
+            {
+                Assert.assertEquals("EST Exception", ESTException.class, ex.getClass());
+                Assert.assertEquals("", IOException.class, ex.getCause().getClass());
+            }
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testResponseNegativeContentLength()
+        throws Exception
+    {
+
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+            "Status: 200 OK\n" +
+            "Content-Type: application/pkcs7-mime\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: -1\n" +
+            "\n" +
+            "MIIBggYJKoZIhvcNAQcCoIIBczCCAW8CAQExADALBgkqhkiG9w0BBwGgggFXMIIB\n" +
+            "UzCB+qADAgECAgkA+syTlV9djhkwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMZXN0\n" +
+            "RXhhbXBsZUNBMB4XDTE3MDIxODAyNTQ1OVoXDTE4MDIxODAyNTQ1OVowFzEVMBMG\n" +
+            "A1UEAwwMZXN0RXhhbXBsZUNBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEobjd\n" +
+            "xMcCE5GfVRE4f86ik6yK0erBhAbN8er0u6vWTXlyk5IXJy7HsUmC7Wv1SDRno/Rp\n" +
+            "pyVekSu4T0/h7uBeaKMvMC0wDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQU8rjiAzjo\n" +
+            "Nldka5gT1bcbQqcESPMwCgYIKoZIzj0EAwIDSAAwRQIhAOwsMtixDryuVUYNBdaf\n" +
+            "3tQV1SlvBmCP6y3cKMST45sRAiBEUNYOsYnuFmH93I+0NSJPYuuBY+Zfqrc2awCs\n" +
+            "spOU3zEA\n");
+
+        pw.flush();
+
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+
+            int port = res.open(responseData.toByteArray());
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/");
+            builder.withReadLimit(530);
+            builder.addCipherSuit(res.getCipherSuites());
+
+            ESTService est = builder.build();
+
+            try
+            {
+                est.getCACerts();
+                Assert.fail("Must fail, content length = banana");
+            }
+            catch (Exception ex)
+            {
+                Assert.assertEquals("EST Exception", ESTException.class, ex.getClass());
+                Assert.assertEquals("", IOException.class, ex.getCause().getClass());
+            }
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+    }
+
+    @Test()
+    public void testIncorrectContentType()
+        throws Exception
+    {
+
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+            "Status: 200 OK\n" +
+            "Content-Type: application/octet-stream\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 529\n" +
+            "\n" +
+            "MIIBggYJKoZIhvcNAQcCoIIBczCCAW8CAQExADALBgkqhkiG9w0BBwGgggFXMIIB\n" +
+            "UzCB+qADAgECAgkA+syTlV9djhkwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMZXN0\n" +
+            "RXhhbXBsZUNBMB4XDTE3MDIxODAyNTQ1OVoXDTE4MDIxODAyNTQ1OVowFzEVMBMG\n" +
+            "A1UEAwwMZXN0RXhhbXBsZUNBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEobjd\n" +
+            "xMcCE5GfVRE4f86ik6yK0erBhAbN8er0u6vWTXlyk5IXJy7HsUmC7Wv1SDRno/Rp\n" +
+            "pyVekSu4T0/h7uBeaKMvMC0wDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQU8rjiAzjo\n" +
+            "Nldka5gT1bcbQqcESPMwCgYIKoZIzj0EAwIDSAAwRQIhAOwsMtixDryuVUYNBdaf\n" +
+            "3tQV1SlvBmCP6y3cKMST45sRAiBEUNYOsYnuFmH93I+0NSJPYuuBY+Zfqrc2awCs\n" +
+            "spOU3zEA\n");
+
+        pw.flush();
+
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+
+            int port = res.open(responseData.toByteArray());
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/");
+            builder.withReadLimit(530);
+            builder.addCipherSuit(res.getCipherSuites());
+
+            ESTService est = builder.build();
+
+            try
+            {
+                est.getCACerts();
+                Assert.fail("Must fail, incorrect content type.");
+            }
+            catch (Exception ex)
+            {
+                Assert.assertEquals("EST Exception", ESTException.class, ex.getClass());
+            }
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testMissingContentType()
+        throws Exception
+    {
+
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+            "Status: 200 OK\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 529\n" +
+            "\n" +
+            "MIIBggYJKoZIhvcNAQcCoIIBczCCAW8CAQExADALBgkqhkiG9w0BBwGgggFXMIIB\n" +
+            "UzCB+qADAgECAgkA+syTlV9djhkwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMZXN0\n" +
+            "RXhhbXBsZUNBMB4XDTE3MDIxODAyNTQ1OVoXDTE4MDIxODAyNTQ1OVowFzEVMBMG\n" +
+            "A1UEAwwMZXN0RXhhbXBsZUNBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEobjd\n" +
+            "xMcCE5GfVRE4f86ik6yK0erBhAbN8er0u6vWTXlyk5IXJy7HsUmC7Wv1SDRno/Rp\n" +
+            "pyVekSu4T0/h7uBeaKMvMC0wDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQU8rjiAzjo\n" +
+            "Nldka5gT1bcbQqcESPMwCgYIKoZIzj0EAwIDSAAwRQIhAOwsMtixDryuVUYNBdaf\n" +
+            "3tQV1SlvBmCP6y3cKMST45sRAiBEUNYOsYnuFmH93I+0NSJPYuuBY+Zfqrc2awCs\n" +
+            "spOU3zEA\n");
+
+        pw.flush();
+
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+
+            int port = res.open(responseData.toByteArray());
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/");
+            builder.withReadLimit(530);
+            builder.addCipherSuit(res.getCipherSuites());
+
+            ESTService est = builder.build();
+
+            try
+            {
+                est.getCACerts();
+                Assert.fail("Must fail, incorrect content type.");
+            }
+            catch (Exception ex)
+            {
+                Assert.assertEquals("EST Exception", ESTException.class, ex.getClass());
+                Assert.assertTrue(ex.getMessage().contains("but was not present"));
+            }
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testRejectOnTLSv1Establishment()
+        throws Exception
+    {
+
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+            "Status: 200 OK\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 529\n" +
+            "\n" +
+            "MIIBggYJKoZIhvcNAQcCoIIBczCCAW8CAQExADALBgkqhkiG9w0BBwGgggFXMIIB\n" +
+            "UzCB+qADAgECAgkA+syTlV9djhkwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMZXN0\n" +
+            "RXhhbXBsZUNBMB4XDTE3MDIxODAyNTQ1OVoXDTE4MDIxODAyNTQ1OVowFzEVMBMG\n" +
+            "A1UEAwwMZXN0RXhhbXBsZUNBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEobjd\n" +
+            "xMcCE5GfVRE4f86ik6yK0erBhAbN8er0u6vWTXlyk5IXJy7HsUmC7Wv1SDRno/Rp\n" +
+            "pyVekSu4T0/h7uBeaKMvMC0wDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQU8rjiAzjo\n" +
+            "Nldka5gT1bcbQqcESPMwCgYIKoZIzj0EAwIDSAAwRQIhAOwsMtixDryuVUYNBdaf\n" +
+            "3tQV1SlvBmCP6y3cKMST45sRAiBEUNYOsYnuFmH93I+0NSJPYuuBY+Zfqrc2awCs\n" +
+            "spOU3zEA\n");
+
+        pw.flush();
+
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder().withTlsProtocol("TLSv1");
+        try
+        {
+
+
+            int port = res.open(responseData.toByteArray());
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/");
+            builder.withReadLimit(530);
+            builder.withTlsVersion("TLSv1");
+            builder.addCipherSuit(res.getCipherSuites());
+
+            ESTService est = builder.build();
+
+            try
+            {
+                est.getCACerts();
+                Assert.fail("Must fail, incorrect content type.");
+            }
+            catch (Exception ex)
+            {
+                Assert.assertEquals("EST Exception", ESTException.class, ex.getClass());
+                Assert.assertEquals("", IOException.class, ex.getCause().getClass());
+                Assert.assertTrue(ex.getMessage().contains("must not use TLSv1"));
+            }
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+
+
+
+
+
+    /*
+
+     */
 
     public static void main(String[] args)
         throws Exception

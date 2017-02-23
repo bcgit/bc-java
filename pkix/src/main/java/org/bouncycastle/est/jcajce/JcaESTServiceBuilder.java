@@ -1,11 +1,14 @@
 package org.bouncycastle.est.jcajce;
 
 
+import java.net.Socket;
 import java.security.KeyStore;
 import java.security.cert.CRL;
 import java.security.cert.CertificateException;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.net.ssl.SSLSession;
@@ -28,6 +31,11 @@ public class JcaESTServiceBuilder
     protected JcaJceAuthorizer ESTAuthorizer;
     protected CRL[] revocationLists;
     protected String tlsVersion = "TLS";
+    protected int timeoutMillis = 0;
+    protected String tlsProvider = null;
+    protected ChannelBindingProvider bindingProvider;
+    protected Set<String> supportedSuites = new HashSet<String>();
+    private Long absoluteLimit;
 
     /**
      * Create a builder for a client talking to a server where trust anchors have not been established yet.
@@ -37,7 +45,7 @@ public class JcaESTServiceBuilder
     public JcaESTServiceBuilder(String server)
     {
         super(server);
-        this.ESTAuthorizer = new JcaJceAuthorizer<TrustAnchor>()
+        this.ESTAuthorizer = new JcaJceAuthorizer()
         {
             public void authorize(
                 X509Certificate[] chain,
@@ -100,15 +108,75 @@ public class JcaESTServiceBuilder
         return this;
     }
 
+    public JcaESTServiceBuilder withTlSProvider(String tlsProvider)
+    {
+        this.tlsProvider = tlsProvider;
+        return this;
+    }
+
+    public JcaESTServiceBuilder withTimeout(int timeoutMillis)
+    {
+        this.timeoutMillis = timeoutMillis;
+        return this;
+    }
+
+    public JcaESTServiceBuilder withReadLimit(long absoluteLimit)
+    {
+        this.absoluteLimit = absoluteLimit;
+        return this;
+    }
+
+
+    public JcaESTServiceBuilder withChannelBindingProvider(ChannelBindingProvider channelBindingProvider)
+    {
+        this.bindingProvider = channelBindingProvider;
+        return this;
+    }
+
+    public JcaESTServiceBuilder addCipherSuit(String name)
+    {
+        this.supportedSuites.add(name);
+        return this;
+    }
+
+    public JcaESTServiceBuilder addCipherSuit(String[] names)
+    {
+        this.supportedSuites.addAll(Arrays.asList(names));
+        return this;
+    }
+
     public ESTService build()
     {
+        if (bindingProvider == null)
+        {
+            bindingProvider = new ChannelBindingProvider()
+            {
+                public boolean canAccessChannelBinding(Socket sock)
+                {
+                    return false;
+                }
+
+                public byte[] getChannelBinding(Socket sock, String binding)
+                {
+                    return null;
+                }
+            };
+        }
+
         if (clientProvider == null)
         {
             clientProvider = new JcaDefaultESTHttpClientProvider(
                 tlsTrustAnchors,
                 clientKeystore,
                 clientKeystorePassword,
-                hostNameAuthorizer, revocationLists, ESTAuthorizer, tlsVersion);
+                hostNameAuthorizer,
+                revocationLists,
+                ESTAuthorizer,
+                tlsVersion,
+                tlsProvider,
+                timeoutMillis,
+                bindingProvider,
+                supportedSuites, absoluteLimit);
         }
 
         return super.build();

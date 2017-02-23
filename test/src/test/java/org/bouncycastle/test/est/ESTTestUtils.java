@@ -46,6 +46,7 @@ import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
@@ -68,15 +69,32 @@ public class ESTTestUtils
 
     public static void ensureProvider()
     {
+        ensureProvider("BC");
+    }
+
+    public static void ensureProvider(String name)
+    {
         Provider[] pp = Security.getProviders();
         for (Provider p : pp)
         {
-            if (p.getName().equals("BC"))
+            if (p.getName().equals(name))
             {
                 return;
             }
         }
-        Security.addProvider(new BouncyCastleProvider());
+
+        if (name.equals(BouncyCastleProvider.PROVIDER_NAME))
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+        else if (name.equals(BouncyCastleJsseProvider.PROVIDER_NAME))
+        {
+            Security.addProvider(new BouncyCastleJsseProvider());
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unknown provider " + name + " perhaps you need to add it here.");
+        }
     }
 
     /**
@@ -363,6 +381,20 @@ public class ESTTestUtils
         fr.close();
         return fromFile;
     }
+
+    public static Object[] readCertAndKey(File path) throws Exception{
+
+        Object[] out = new Object[2];
+        FileReader fr = new FileReader(path);
+        PemReader reader = new PemReader(fr);
+        out[0] = toJavaX509Certificate(new X509CertificateHolder(reader.readPemObject().getContent()));
+        out[1] = new PKCS8EncodedKeySpec(reader.readPemObject().getContent());
+        reader.close();
+        fr.close();
+        return out;
+    }
+
+
 
     public static String readToString(File f)
         throws IOException

@@ -2,6 +2,11 @@
 set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+if [ $1 = "force" ]; then
+    rm -Rf $DIR/jars
+fi
+
+
 if [ ! -d "$DIR/jars" ]; then
     mkdir $DIR/jars
 
@@ -12,12 +17,15 @@ popd
 pushd $DIR/jars
 
 if  type curl > /dev/null; then
-    curl -O https://downloads.bouncycastle.org/betas/bcprov-jdk15on-157b03.jar
+    curl -o bcprov.jar  https://downloads.bouncycastle.org/betas/bcprov-jdk15on-157b05.jar
+    curl -o bctls.jar https://downloads.bouncycastle.org/betas/bctls-jdk15on-157b05.tar.gz
 elif type wget > /dev/null ; then
-    wget https://downloads.bouncycastle.org/betas/bcprov-jdk15on-157b03.jar
+    wget -O bcprov.jar https://downloads.bouncycastle.org/betas/bcprov-jdk15on-157b05.jar
+    wget -O bctls.jar https://downloads.bouncycastle.org/betas/bctls-jdk15on-157b05.tar.gz
 else
     echo "No wget or curl to download provider jar"
 fi
+
 
 popd
 
@@ -25,8 +33,8 @@ cd $BCDIR
 
 gradle -x test clean jar
 
-cp $BCDIR/test/build/libs/* $DIR/jars
-cp $BCDIR/pkix/build/libs/*.jar $DIR/jars
+cp $BCDIR/test/build/libs/test-*.jar $DIR/jars/test.jar
+cp $BCDIR/pkix/build/libs/bcpkix-*.jar $DIR/jars/pkix.jar
 
 fi
 

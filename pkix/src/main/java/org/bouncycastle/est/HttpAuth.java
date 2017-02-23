@@ -14,12 +14,13 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.io.DigestOutputStream;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Implements DigestAuth.
  */
-public class DigestAuth
+public class HttpAuth
     implements ESTAuth
 {
     private final String realm;
@@ -27,7 +28,23 @@ public class DigestAuth
     private final String password;
     private final SecureRandom nonceGenerator;
 
-    public DigestAuth(String username, String password, SecureRandom nonceGenerator)
+    public HttpAuth(String username, String password)
+    {
+        this.username = username;
+        this.password = password;
+        this.nonceGenerator = new SecureRandom();
+        this.realm = null;
+    }
+
+    public HttpAuth(String realm, String username, String password)
+    {
+        this.realm = realm;
+        this.username = username;
+        this.password = password;
+        this.nonceGenerator = new SecureRandom();
+    }
+
+    public HttpAuth(String username, String password, SecureRandom nonceGenerator)
     {
         this.username = username;
         this.password = password;
@@ -35,7 +52,7 @@ public class DigestAuth
         this.realm = null;
     }
 
-    public DigestAuth(String realm, String username, String password, SecureRandom nonceGenerator)
+    public HttpAuth(String realm, String username, String password, SecureRandom nonceGenerator)
     {
         this.realm = realm;
         this.username = username;
@@ -53,14 +70,60 @@ public class DigestAuth
             {
                 ESTResponse res = new ESTResponse(req, sock);
 
-                if (res.getStatusCode() == 401 && res.getHeader("WWW-Authenticate").startsWith("Digest"))
+                if (res.getStatusCode() == 401)
                 {
-                    res = doDigestFunction(res);
+                    String authHeader = Strings.toLowerCase(res.getHeader("WWW-Authenticate"));
+
+                    if (authHeader.startsWith("digest"))
+                    {
+                        res = doDigestFunction(res);
+                    }
+                    else if (authHeader.startsWith("basic"))
+                    {
+                        res.close(); // Close off the last request.
+
+                        //
+                        // Check realm field from header.
+                        //
+                        Map<String, String> s = HttpUtil.splitCSL("Basic", res.getHeader("WWW-Authenticate"));
+
+                        //
+                        // If no realm supplied it will not check the server realm. TODO elaborate in documentation.
+                        //
+                        if (realm != null)
+                        {
+                            if (!realm.equals(s.get("realm")))
+                            {
+                                // Not equal then fail.
+                                throw new ESTException("Supplied realm '" + realm + "' does not match server realm '" + s.get("realm") + "'", null, 401, null);
+                            }
+                        }
+
+                        //
+                        // Prepare basic auth answer.
+                        //
+                        ESTRequest answer = req.newWithHijacker(null);
+
+                        if (realm != null && realm.length() > 0)
+                        {
+                            answer.setHeader("WWW-Authenticate", "Basic realm=\"" + realm + "\"");
+                        }
+                        if (username.contains(":"))
+                        {
+                            throw new IllegalArgumentException("User must not contain a ':'");
+                        }
+                        String userPass = username + ":" + password;
+                        answer.setHeader("Authorization", "Basic " + Base64.toBase64String(userPass.getBytes()));
+
+                        res = req.getEstClient().doRequest(answer);
+                    }
+
+
+                    return res;
                 }
                 return res;
             }
         });
-
         return r;
     }
 

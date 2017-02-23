@@ -4,6 +4,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.est.AttrOrOID;
 import org.bouncycastle.asn1.est.CsrAttrs;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.est.CSRRequestResponse;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.util.encoders.Base64;
@@ -77,7 +78,7 @@ public class TestGetCSRAttrs
                     ))
             ).build();
 
-            ESTService.CSRRequestResponse csrRequestResponse = est.getCSRAttributes();
+            CSRRequestResponse csrRequestResponse = est.getCSRAttributes();
             Assert.assertEquals( 1,csrRequestResponse.getAttributesResponse().getRequirements().size());
             Assert.assertTrue("Must have: ",
                 csrRequestResponse.getAttributesResponse().hasRequirement(new ASN1ObjectIdentifier("1.2.3.4")));
