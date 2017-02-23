@@ -249,6 +249,11 @@ public class BcTlsCrypto
         };
     }
 
+    public boolean hasAllRawSignatureAlgorithms()
+    {
+        return true;
+    }
+
     public boolean hasEncryptionAlgorithm(int encryptionAlgorithm)
     {
         return true;

@@ -205,7 +205,8 @@ public class DTLSServerProtocol
 
         handshake.sendMessage(HandshakeType.server_hello_done, TlsUtils.EMPTY_BYTES);
 
-        handshake.getHandshakeHash().sealHashAlgorithms();
+        boolean forceBuffering = false;
+        TlsUtils.sealHandshakeHash(state.serverContext, handshake.getHandshakeHash(), forceBuffering);
 
         clientMessage = handshake.receiveMessage();
 
@@ -576,7 +577,7 @@ public class DTLSServerProtocol
             TlsVerifier verifier = state.clientCertificate.getCertificateAt(0)
                 .createVerifier(TlsUtils.getSignatureAlgorithmClient(state.clientCertificateType));
 
-            if (!verifier.verifySignature(clientCertificateVerify, hash))
+            if (!verifier.verifyRawSignature(clientCertificateVerify, hash))
             {
                 throw new TlsFatalAlert(AlertDescription.decrypt_error);
             }

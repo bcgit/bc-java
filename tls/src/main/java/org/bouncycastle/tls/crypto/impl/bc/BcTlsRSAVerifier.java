@@ -11,6 +11,7 @@ import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsStreamVerifier;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 
 /**
@@ -35,7 +36,12 @@ public class BcTlsRSAVerifier
         this.pubKeyRSA = pubKeyRSA;
     }
 
-    public boolean verifySignature(DigitallySigned signedParams, byte[] hash)
+    public TlsStreamVerifier getStreamVerifier(DigitallySigned signature)
+    {
+        return null;
+    }
+
+    public boolean verifyRawSignature(DigitallySigned signedParams, byte[] hash)
     {
         SignatureAndHashAlgorithm algorithm = signedParams.getAlgorithm();
         Signer signer;

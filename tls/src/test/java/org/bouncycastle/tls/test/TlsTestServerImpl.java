@@ -164,7 +164,7 @@ class TlsTestServerImpl
             serverSigAlgs = config.serverCertReqSigAlgs;
             if (serverSigAlgs == null)
             {
-                serverSigAlgs = TlsUtils.getDefaultSupportedSignatureAlgorithms();
+                serverSigAlgs = TlsUtils.getDefaultSupportedSignatureAlgorithms(context);
             }
         }
 

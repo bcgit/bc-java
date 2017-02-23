@@ -1075,4 +1075,12 @@ public abstract class Nat
             z[i] = 0;
         }
     }
+
+    public static void zero64(int len, long[] z)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[i] = 0L;
+        }
+    }
 }

@@ -1,5 +1,7 @@
 package org.bouncycastle.tls;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
@@ -18,32 +20,46 @@ class DeferredHash
 
     private DigestInputBuffer buf;
     private Hashtable<Short, TlsHash> hashes;
-    private Short prfHashAlgorithm;
+    private boolean forceBuffering;
+    private boolean sealed;
 
     DeferredHash(TlsContext context)
     {
         this.context = context;
         this.buf = new DigestInputBuffer();
         this.hashes = new Hashtable();
-        this.prfHashAlgorithm = null;
+        this.forceBuffering = false;
+        this.sealed = false;
     }
 
-    private DeferredHash(TlsContext context, Short prfHashAlgorithm, TlsHash prfHash)
+    private DeferredHash(TlsContext context, Hashtable hashes)
     {
         this.context = context;
         this.buf = null;
-        this.hashes = new Hashtable();
-        this.prfHashAlgorithm = prfHashAlgorithm;
-        hashes.put(prfHashAlgorithm, prfHash);
+        this.hashes = hashes;
+        this.forceBuffering = false;
+        this.sealed = true;
     }
 
-    private DeferredHash(DeferredHash defHash)
+    public void copyBufferTo(OutputStream output) throws IOException
     {
-        this.context = defHash.context;
-        this.buf = null;// TODO: need clone method?
-        this.prfHashAlgorithm = defHash.prfHashAlgorithm;
-        this.hashes = (Hashtable)defHash.hashes.clone();
-        throw new IllegalStateException("not complete");
+        if (buf == null)
+        {
+            // If you see this, you need to call forceBuffering() before sealHashAlgorithms()
+            throw new IllegalStateException("Not buffering");
+        }
+
+        buf.copyTo(output);
+    }
+
+    public void forceBuffering()
+    {
+        if (sealed)
+        {
+            throw new IllegalStateException("Too late to force buffering");
+        }
+
+        this.forceBuffering = true;
     }
 
     public TlsHandshakeHash notifyPRFDetermined()
@@ -51,21 +67,19 @@ class DeferredHash
         int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
         if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
         {
-            CombinedHash legacyHash = new CombinedHash(context);
-            buf.updateDigest(legacyHash);
-            return legacyHash.notifyPRFDetermined();
+            checkTrackingHash(HashAlgorithm.md5);
+            checkTrackingHash(HashAlgorithm.sha1);
         }
-
-        this.prfHashAlgorithm = Shorts.valueOf(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
-
-        checkTrackingHash(prfHashAlgorithm);
-
+        else
+        {
+            checkTrackingHash(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
+        }
         return this;
     }
 
     public void trackHashAlgorithm(short hashAlgorithm)
     {
-        if (buf == null)
+        if (sealed)
         {
             throw new IllegalStateException("Too late to track more hash algorithms");
         }
@@ -75,33 +89,51 @@ class DeferredHash
 
     public void sealHashAlgorithms()
     {
-        checkStopBuffering();
+        if (!sealed)
+        {
+            sealed = true;
+            checkStopBuffering();
+        }
     }
 
     public TlsHandshakeHash stopTracking()
     {
-        TlsHash prfHash = (TlsHash)hashes.get(prfHashAlgorithm).clone();
-        if (buf != null)
+        Hashtable newHashes = new Hashtable();
+        int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
+        if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
         {
-            buf.updateDigest(prfHash);
+            cloneHash(newHashes, HashAlgorithm.md5);
+            cloneHash(newHashes, HashAlgorithm.sha1);
         }
-        DeferredHash result = new DeferredHash(context, prfHashAlgorithm, prfHash);
-
-        return result;
+        else
+        {
+            cloneHash(newHashes, TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
+        }
+        return new DeferredHash(context, newHashes);
     }
 
     public TlsHash forkPRFHash()
     {
         checkStopBuffering();
 
-        if (buf != null)
+        TlsHash prfHash;
+
+        int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
+        if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
         {
-            TlsHash prfHash = context.getCrypto().createHash(prfHashAlgorithm.shortValue());
-            buf.updateDigest(prfHash);
-            return prfHash;
+            prfHash = new CombinedHash(context, cloneHash(HashAlgorithm.md5), cloneHash(HashAlgorithm.sha1));
+        }
+        else
+        {
+            prfHash = cloneHash(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
         }
 
-        return (TlsHash)hashes.get(prfHashAlgorithm).clone();
+        if (buf != null)
+        {
+            buf.updateDigest(prfHash);
+        }
+
+        return prfHash;
     }
 
     public byte[] getFinalHash(short hashAlgorithm)
@@ -149,6 +181,9 @@ class DeferredHash
 
     public void reset()
     {
+        this.forceBuffering = false;
+        this.sealed = false;
+
         if (buf != null)
         {
             buf.reset();
@@ -165,7 +200,7 @@ class DeferredHash
 
     protected void checkStopBuffering()
     {
-        if (buf != null && hashes.size() <= BUFFERING_HASH_LIMIT)
+        if (!forceBuffering && sealed && buf != null && hashes.size() <= BUFFERING_HASH_LIMIT)
         {
             Enumeration e = hashes.elements();
             while (e.hasMoreElements())
@@ -185,5 +220,20 @@ class DeferredHash
             TlsHash hash = context.getCrypto().createHash(hashAlgorithm.shortValue());
             hashes.put(hashAlgorithm, hash);
         }
+    }
+
+    protected TlsHash cloneHash(Short hashAlgorithm)
+    {
+        return (TlsHash)hashes.get(hashAlgorithm).clone();
+    }
+
+    protected void cloneHash(Hashtable newHashes, Short hashAlgorithm)
+    {
+        TlsHash hash = cloneHash(hashAlgorithm);
+        if (buf != null)
+        {
+            buf.updateDigest(hash);
+        }
+        newHashes.put(hashAlgorithm, hash);
     }
 }

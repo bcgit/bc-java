@@ -29,6 +29,7 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoProvider;
 import org.bouncycastle.util.Arrays;
@@ -262,6 +263,11 @@ class TlsTestClientImpl
                     public SignatureAndHashAlgorithm getSignatureAndHashAlgorithm()
                     {
                         return signerCredentials.getSignatureAndHashAlgorithm();
+                    }
+
+                    public TlsStreamSigner getStreamSigner() throws IOException
+                    {
+                        return null;
                     }
                 };
             }
