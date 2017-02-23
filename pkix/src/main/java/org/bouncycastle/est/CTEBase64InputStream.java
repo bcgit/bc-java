@@ -14,13 +14,13 @@ class CTEBase64InputStream
     protected final byte[] rawBuf = new byte[1024];
     protected final byte[] data = new byte[768];
     protected final OutputStream dataOutputStream;
-    protected final long max;
+    protected final Long max;
     protected int rp;
     protected int wp;
     protected boolean end;
     protected long read;
 
-    public CTEBase64InputStream(InputStream src, long limit)
+    public CTEBase64InputStream(InputStream src, Long limit)
     {
         this.src = src;
         this.dataOutputStream = new OutputStream()
@@ -32,14 +32,7 @@ class CTEBase64InputStream
                 data[wp++] = (byte)b;
             }
         };
-        if (limit < 0)
-        {
-            this.max = Long.MAX_VALUE;
-        }
-        else
-        {
-            this.max = limit;
-        }
+        this.max = limit;
     }
 
 
@@ -106,6 +99,13 @@ class CTEBase64InputStream
             }
         }
         return data[rp++] & 0xFF;
+    }
+
+    @Override
+    public void close()
+        throws IOException
+    {
+        src.close();
     }
 
 }

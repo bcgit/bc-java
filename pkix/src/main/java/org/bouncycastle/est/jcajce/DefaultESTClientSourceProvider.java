@@ -2,7 +2,6 @@ package org.bouncycastle.est.jcajce;
 
 
 import java.io.IOException;
-import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.security.cert.CRL;
 import java.security.cert.CertPathBuilder;
@@ -23,6 +22,7 @@ import javax.net.ssl.SSLSocketFactory;
 
 import org.bouncycastle.est.ESTClientSourceProvider;
 import org.bouncycastle.est.Source;
+import org.bouncycastle.util.Strings;
 
 public class DefaultESTClientSourceProvider
     implements ESTClientSourceProvider
@@ -30,21 +30,30 @@ public class DefaultESTClientSourceProvider
 
     private final SSLSocketFactory sslSocketFactory;
     private final JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer;
+    private final int timeout;
+    private final ChannelBindingProvider bindingProvider;
+    private final Set<String> cipherSuites;
+    private final Long absoluteLimit;
 
 
     public DefaultESTClientSourceProvider(
         SSLSocketFactory socketFactory,
-        JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer
-    )
+        JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer,
+        int timeout, ChannelBindingProvider bindingProvider,
+        Set<String> cipherSuites, Long absoluteLimit)
         throws GeneralSecurityException
     {
         this.sslSocketFactory = socketFactory;
         this.hostNameAuthorizer = hostNameAuthorizer;
+        this.timeout = timeout;
+        this.bindingProvider = bindingProvider;
+        this.cipherSuites = cipherSuites;
+        this.absoluteLimit = absoluteLimit;
     }
 
     public static JcaJceAuthorizer getCertPathTLSAuthorizer(final CRL[] revocationLists, final Set<TrustAnchor> tlsTrustAnchors)
     {
-        return new JcaJceAuthorizer<TrustAnchor>()
+        return new JcaJceAuthorizer()
         {
             public void authorize(X509Certificate[] chain, String authType)
                 throws CertificateException
@@ -90,16 +99,42 @@ public class DefaultESTClientSourceProvider
     }
 
 
-    public Source wrapSocket(Socket plainSocket, String host, int port)
+    public Source makeSource(String host, int port)
         throws IOException
     {
-        SSLSocket sock = (SSLSocket)sslSocketFactory.createSocket(plainSocket, host, port, true);
+        SSLSocket sock = (SSLSocket)sslSocketFactory.createSocket(host, port);
+        if (cipherSuites != null && !cipherSuites.isEmpty())
+        {
+            sock.setEnabledCipherSuites(cipherSuites.toArray(new String[cipherSuites.size()]));
+        }
+
+        sock.setSoTimeout(timeout);
         sock.setUseClientMode(true);
         sock.startHandshake();
+
+        if (sock.getSession().getProtocol().equalsIgnoreCase("tlsv1"))
+        {
+            try
+            {
+                sock.close();
+            }
+            catch (Exception ex)
+            {
+                // Deliberately ignored.
+            }
+            throw new IOException("EST clients must not use TLSv1");
+        }
+
+        // check for use of null cipher and fail.
+        if (Strings.toLowerCase(sock.getSession().getCipherSuite()).contains("with null")) {
+            throw new IOException("EST clients must not use NULL ciphers");
+        }
+
+
         if (hostNameAuthorizer != null && !hostNameAuthorizer.verified(host, sock.getSession()))
         {
             throw new IOException("Hostname was not verified: " + host);
         }
-        return new SSLSocketSource(sock);
+        return new SSLSocketSource(sock, bindingProvider, absoluteLimit);
     }
 }

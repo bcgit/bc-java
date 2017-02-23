@@ -5,6 +5,8 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.util.Arrays;
+
 class HttpUtil
 {
 
@@ -170,6 +172,88 @@ class HttpUtil
             last = p;
         }
 
+    }
+
+    public static class Headers
+        extends HashMap<String, String[]>
+    {
+        public Headers()
+        {
+            super();
+        }
+
+        public String getFirstValue(String key)
+        {
+            String[] j = getValues(key);
+            if (j != null && j.length > 0)
+            {
+                return j[0];
+            }
+            return null;
+        }
+
+        public String[] getValues(String key)
+        {
+            key = actualKey(key);
+            if (key == null)
+            {
+                return null;
+            }
+            return get(key);
+        }
+
+        private String actualKey(String header)
+        {
+            if (containsKey(header))
+            {
+                return header;
+            }
+
+            for (String k : keySet())
+            {
+                if (header.equalsIgnoreCase(k))
+                {
+                    return k;
+                }
+            }
+
+            return null;
+        }
+
+        private boolean hasHeader(String header)
+        {
+            return actualKey(header) != null;
+        }
+
+
+        public void set(String key, String value)
+        {
+            put(key, new String[]{value});
+        }
+
+        public void add(String key, String value)
+        {
+            put(key, Arrays.append(get(key), value));
+        }
+
+        public void ensureHeader(String key, String value)
+        {
+            if (!containsKey(key))
+            {
+                set(key, value);
+            }
+        }
+
+        @Override
+        public Object clone()
+        {
+            Headers n = new Headers();
+            for (Entry<String, String[]> v : entrySet())
+            {
+                n.put(v.getKey(), v.getValue());
+            }
+            return n;
+        }
     }
 
 }
