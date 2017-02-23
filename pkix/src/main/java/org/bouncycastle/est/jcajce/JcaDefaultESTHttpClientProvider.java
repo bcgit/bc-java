@@ -32,12 +32,22 @@ public class JcaDefaultESTHttpClientProvider
     private final CRL[] revocationLists;
     private final JcaJceAuthorizer estAuthorizer;
     private final String tlsVersion;
+    private final String tlsProvider;
+    private final int timeout;
+    private final ChannelBindingProvider bindingProvider;
+    private final Set<String> cipherSuites;
+    private final Long absoluteLimit;
+
 
     public JcaDefaultESTHttpClientProvider(Set<TrustAnchor> tlsTrustAnchors,
                                            KeyStore clientKeystore,
                                            char[] clientKeystorePassword,
                                            JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer,
-                                           CRL[] revocationLists, JcaJceAuthorizer estAuthorizer, String tlsVersion)
+                                           CRL[] revocationLists, JcaJceAuthorizer estAuthorizer, String tlsVersion,
+                                           String tlsProvider,
+                                           int timeout,
+                                           ChannelBindingProvider bindingProvider,
+                                           Set<String> cipherSuites, Long absoluteLimit)
     {
         this.tlsTrustAnchors = tlsTrustAnchors;
         this.clientKeystore = clientKeystore;
@@ -46,6 +56,11 @@ public class JcaDefaultESTHttpClientProvider
         this.revocationLists = revocationLists;
         this.estAuthorizer = estAuthorizer;
         this.tlsVersion = tlsVersion;
+        this.tlsProvider = tlsProvider;
+        this.timeout = timeout;
+        this.bindingProvider = bindingProvider;
+        this.cipherSuites = cipherSuites;
+        this.absoluteLimit = absoluteLimit;
     }
 
     public ESTClient makeClient()
@@ -68,7 +83,7 @@ public class JcaDefaultESTHttpClientProvider
 
             if (tlsTrustAnchors == null && estAuthorizer == null)
             {
-                socketFactory = (SSLSocketFactory)createFactory(tlsVersion, null, null);
+                socketFactory = (SSLSocketFactory)createFactory(tlsVersion, tlsProvider, null, null);
             }
             else if (tlsTrustAnchors != null && estAuthorizer == null)
             {
@@ -76,10 +91,10 @@ public class JcaDefaultESTHttpClientProvider
             }
             if (socketFactory == null)
             {
-                socketFactory = createFactory(tlsVersion, keyFact, estAuthorizer);
+                socketFactory = createFactory(tlsVersion, tlsProvider, keyFact, estAuthorizer);
             }
             return new DefaultESTClient(
-                new DefaultESTClientSourceProvider(socketFactory, hostNameAuthorizer));
+                new DefaultESTClientSourceProvider(socketFactory, hostNameAuthorizer, timeout, bindingProvider, cipherSuites, absoluteLimit));
         }
         catch (GeneralSecurityException e)
         {
@@ -87,10 +102,19 @@ public class JcaDefaultESTHttpClientProvider
         }
     }
 
-    public SSLSocketFactory createFactory(String tlsVersion, KeyManagerFactory keyManagerFactory, final JcaJceAuthorizer estAuthorizer)
+    public SSLSocketFactory createFactory(String tlsVersion, String tlsProvider, KeyManagerFactory keyManagerFactory, final JcaJceAuthorizer estAuthorizer)
         throws GeneralSecurityException
     {
-        SSLContext ctx = SSLContext.getInstance(tlsVersion);
+        SSLContext ctx = null;
+        if (tlsProvider != null)
+        {
+            ctx = SSLContext.getInstance(tlsVersion, tlsProvider);
+        }
+        else
+        {
+            ctx = SSLContext.getInstance(tlsVersion);
+        }
+
 
         if (keyManagerFactory == null && estAuthorizer == null)
         {

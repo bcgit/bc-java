@@ -944,6 +944,22 @@ public final class Arrays
         return result;
     }
 
+    public static String[] append(String[] a, String b)
+    {
+        if (a == null)
+        {
+            return new String[]{ b };
+        }
+
+        int length = a.length;
+        String[] result = new String[length + 1];
+        System.arraycopy(a, 0, result, 0, length);
+        result[length] = b;
+        return result;
+    }
+
+
+
     public static byte[] concatenate(byte[] a, byte[] b)
     {
         if (a != null && b != null)

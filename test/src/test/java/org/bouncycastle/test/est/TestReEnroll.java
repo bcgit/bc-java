@@ -10,9 +10,9 @@ import java.security.spec.ECGenParameterSpec;
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.est.BasicAuth;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.EnrollmentResponse;
+import org.bouncycastle.est.HttpAuth;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
@@ -107,7 +107,7 @@ public class TestReEnroll
             PKCS10CertificationRequest csr = pkcs10Builder.build(
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
-            EnrollmentResponse enr = est.simpleEnroll(false, csr, new BasicAuth("estreal", "estuser", "estpwd"));
+            EnrollmentResponse enr = est.simpleEnroll(false, csr, new HttpAuth("estreal", "estuser", "estpwd"));
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
@@ -132,7 +132,7 @@ public class TestReEnroll
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
             // Flag set true!
-            enr = est.simpleEnroll(true, csr, new BasicAuth("estreal", "estuser", "estpwd"));
+            enr = est.simpleEnroll(true, csr, new HttpAuth("estreal", "estuser", "estpwd"));
             expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
@@ -158,7 +158,7 @@ public class TestReEnroll
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
             try
             {
-                enr = est.simpleEnroll(true, csr, new BasicAuth("estreal", "estuser", "estpwd"));
+                enr = est.simpleEnroll(true, csr, new HttpAuth("estreal", "estuser", "estpwd"));
                 // TODO Server needs to enforce this, need to discuss.
                 // Assert.fail("Reenrollment with different subject must fail.");
             }

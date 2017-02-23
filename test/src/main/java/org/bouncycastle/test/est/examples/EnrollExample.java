@@ -6,23 +6,25 @@ import java.io.FileInputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.ECGenParameterSpec;
 
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.est.BasicAuth;
-import org.bouncycastle.est.DigestAuth;
+import org.bouncycastle.est.HttpAuth;
 import org.bouncycastle.est.ESTAuth;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.EnrollmentResponse;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
+import org.bouncycastle.test.est.BCChannelBindingProvider;
 
 /**
  * Enroll example exercises the enrollment of a certificate.
@@ -42,12 +44,14 @@ public class EnrollExample
         File clientKeyStoreFile = null;
         char[] clientKeyStoreFilePassword = null;
         String keyStoreType = null;
-        boolean basicAuth = false;
-        boolean digestAuth = false;
+        boolean httpAuth = false;
         String[] credentials = null;
         boolean reEnroll = false;
         String tlsVersion = "TLS";
-
+        String tlsProvider = null;
+        String tlsProviderClass = null;
+        boolean pop = false;
+        int timeout = 0;
         try
         {
             for (int t = 0; t < args.length; t++)
@@ -92,21 +96,31 @@ public class EnrollExample
                     keyStoreType = ExampleUtils.nextArgAsString("Keystore type", args, t);
                     t += 1;
                 }
-                else if (arg.equals("--digestAuth"))
+                else if (arg.equals("--auth"))
                 {
                     credentials = ExampleUtils.nextArgAsString("Keystore type", args, t).split(":");
-                    digestAuth = true;
-                    t += 1;
-                }
-                else if (arg.equals("--basicAuth"))
-                {
-                    credentials = ExampleUtils.nextArgAsString("Keystore type", args, t).split(":");
-                    basicAuth = true;
+                    httpAuth = true;
                     t += 1;
                 }
                 else if (arg.equals("--tls"))
                 {
                     tlsVersion = ExampleUtils.nextArgAsString("TLS version", args, t);
+                    t += 1;
+                }
+                else if (arg.equals("--tlsProvider"))
+                {
+                    tlsProvider = ExampleUtils.nextArgAsString("TLS Provider", args, t);
+                    t += 1;
+                    tlsProviderClass = ExampleUtils.nextArgAsString("TLS Provider Class", args, t);
+                    t += 1;
+                }
+                else if (arg.equals("--pop"))
+                {
+                    pop = true;
+                }
+                else if (arg.equals("--to"))
+                {
+                    timeout = ExampleUtils.nextArgAsInteger("Timeout", args, t);
                     t += 1;
                 }
                 else
@@ -148,6 +162,11 @@ public class EnrollExample
             System.exit(-1);
         }
 
+        if (tlsProviderClass != null)
+        {
+            Security.addProvider((Provider)Class.forName(tlsProviderClass).newInstance());
+        }
+
 
         //
         // Make a CSR here
@@ -162,8 +181,8 @@ public class EnrollExample
             new X500Name("CN=" + cn),
             keyPair.getPublic());
 
-        PKCS10CertificationRequest csr = pkcs10Builder.build(
-            new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(keyPair.getPrivate()));
+        ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(keyPair.getPrivate());
+
 
         JcaESTServiceBuilder est = new JcaESTServiceBuilder(serverRootUrl,
             ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificate(trustAnchorFile)));
@@ -181,15 +200,15 @@ public class EnrollExample
 
         ESTAuth auth = null;
 
-        if (digestAuth)
+        if (httpAuth)
         {
             if (credentials.length == 3)
             {
-                auth = new DigestAuth(credentials[0], credentials[1], credentials[2], new SecureRandom());
+                auth = new HttpAuth(credentials[0], credentials[1], credentials[2], new SecureRandom());
             }
             else if (credentials.length == 2)
             {
-                auth = new DigestAuth(null, credentials[0], credentials[1], new SecureRandom());
+                auth = new HttpAuth(null, credentials[0], credentials[1], new SecureRandom());
             }
             else
             {
@@ -197,26 +216,13 @@ public class EnrollExample
                 System.exit(0);
             }
         }
-        else if (basicAuth)
-        {
-            if (credentials.length == 3)
-            {
-                auth = new BasicAuth(credentials[0], credentials[1], credentials[2]);
-            }
-            else if (credentials.length == 2)
-            {
-                auth = new BasicAuth(null, credentials[0], credentials[1]);
-            }
-            else
-            {
-                System.err.println("Not enough credential for basic auth.");
-                System.exit(0);
-            }
-        }
+
 
         est.withTlsVersion(tlsVersion);
+        est.withTlSProvider(tlsProvider);
+        est.withTimeout(timeout);
 
-        ESTService estService = est.build();
+
         EnrollmentResponse enrollmentResponse;
 
         //
@@ -226,7 +232,19 @@ public class EnrollExample
         //
         do
         {
-            enrollmentResponse = estService.simpleEnroll(reEnroll, csr, auth);
+            if (pop)
+            {
+                est.withChannelBindingProvider(new BCChannelBindingProvider());
+                ESTService estService = est.build();
+                enrollmentResponse = estService.simpleEnrollPoP(reEnroll, pkcs10Builder, contentSigner, auth);
+            }
+            else
+            {
+                ESTService estService = est.build();
+                PKCS10CertificationRequest csr = pkcs10Builder.build(contentSigner);
+                enrollmentResponse = estService.simpleEnroll(reEnroll, csr, auth);
+            }
+
             if (!enrollmentResponse.isCompleted())
             {
                 long t = enrollmentResponse.getNotBefore() - System.currentTimeMillis();
@@ -255,8 +273,9 @@ public class EnrollExample
             System.out.println("Serial Number: " + holder.getSerialNumber());
             System.out.println("Not Before: " + holder.getNotBefore());
             System.out.println("Not After: " + holder.getNotAfter());
-            System.out.println("Signature Algorithm: " + holder.getSignatureAlgorithm());
             System.out.println();
+            System.out.println(ExampleUtils.toJavaX509Certificate(holder));
+
 
         }
 
@@ -281,5 +300,11 @@ public class EnrollExample
         System.out.println("                                       specified <user:password> then the realm from the server is used.");
         System.out.println("--basicAuth <realm:user:password>      Use basic auth.");
         System.out.println("--tls <version>                        Use this TLS version when creating socket factory, Eg TLSv1.2");
+        System.out.println("--tlsProvider <provider>               The JSSE Provider.");
+        System.out.println("--tlsProvider <provider> <class>       The JSSE Provider.");
+        System.out.println("--pop                                  Turn on PoP");
+        System.out.println("--to <milliseconds>                    Timeout in milliseconds.");
+
+
     }
 }

@@ -3,10 +3,6 @@ package org.bouncycastle.est;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.bouncycastle.util.Properties;
@@ -18,21 +14,29 @@ import org.bouncycastle.util.Strings;
 public class ESTResponse
 {
     private final ESTRequest originalRequest;
-    private final Map<String, List<String>> headers;
+    private final HttpUtil.Headers headers;
     private final byte[] lineBuffer;
     private final Source source;
     private String HttpVersion;
     private int statusCode;
     private String statusMessage;
     private InputStream inputStream;
-    private long contentLength = -1;
+    private Long contentLength;
+    private long read = 0;
+    private Long absoluteReadLimit;
 
+    private static final Long ZERO = 0L;
 
     public ESTResponse(ESTRequest originalRequest, Source source)
         throws IOException
     {
         this.originalRequest = originalRequest;
         this.source = source;
+
+        if (source instanceof SourceLimiter)
+        {
+            this.absoluteReadLimit = ((SourceLimiter)source).getAbsoluteReadLimit();
+        }
 
         Set<String> opts = Properties.asKeySet("org.bouncycastle.debug.est");
         if (opts.contains("input") ||
@@ -45,7 +49,7 @@ public class ESTResponse
             this.inputStream = source.getInputStream();
         }
 
-        this.headers = new HashMap<String, List<String>>();
+        this.headers = new HttpUtil.Headers();
         this.lineBuffer = new byte[1024];
 
         process();
@@ -65,7 +69,6 @@ public class ESTResponse
         //
         // Headers.
         //
-
         String line = readStringIncluding('\n');
         int i;
         while (line.length() > 0)
@@ -74,33 +77,120 @@ public class ESTResponse
             if (i > -1)
             {
                 String k = Strings.toLowerCase(line.substring(0, i).trim()); // Header keys are case insensitive
-                List<String> l = headers.get(k);
-                if (l == null)
-                {
-                    l = new ArrayList<String>();
-                    headers.put(k, l);
-                }
-                l.add(line.substring(i + 1).trim());
+                headers.add(k, line.substring(i + 1).trim());
             }
             line = readStringIncluding('\n');
         }
 
+
+        contentLength = getContentLength();
+
+        //
+        // Concerned that different servers may or may not set a Content-length
+        // for these success types. In this case we will arbitrarily set content length
+        // to zero.
+        //
+        if (statusCode == 204 || statusCode == 202)
+        {
+            if (contentLength == null)
+            {
+                contentLength = 0L;
+            }
+            else
+            {
+                if (statusCode == 204 && contentLength > 0)
+                {
+                    throw new IOException("Got HTTP status 204 but Content-length > 0.");
+                }
+            }
+        }
+
+        if (contentLength == null)
+        {
+            throw new IOException("No Content-length header.");
+        }
+
+        if (contentLength.equals(ZERO))
+        {
+
+            //
+            // The server is likely to hang up the socket and any attempt to read can
+            // result in a broken pipe rather than an eof.
+            // So we will return a dummy input stream that will return eof to anything that reads from it.
+            //
+
+            inputStream = new InputStream()
+            {
+                @Override
+                public int read()
+                    throws IOException
+                {
+                    return -1;
+                }
+            };
+        }
+
+        if (contentLength != null)
+        {
+            if (contentLength < 0)
+            {
+                throw new IOException("Server returned negative content length: " + absoluteReadLimit);
+            }
+
+            if (absoluteReadLimit != null && contentLength >= absoluteReadLimit)
+            {
+                throw new IOException("Content length longer than absolute read limit: " + absoluteReadLimit + " Content-Length: " + contentLength);
+            }
+        }
+
+
+        inputStream = wrapWithCounter(inputStream, absoluteReadLimit);
+        //
+        // Observed that some
+        //
         if ("base64".equalsIgnoreCase(getHeader("content-transfer-encoding")))
         {
             inputStream = new CTEBase64InputStream(inputStream, getContentLength());
         }
-
-
     }
 
     public String getHeader(String key)
     {
-        List<String> l = headers.get(Strings.toLowerCase(key));
-        if (l == null || l.isEmpty())
+        return headers.getFirstValue(key);
+    }
+
+
+    protected InputStream wrapWithCounter(final InputStream in, final Long absoluteReadLimit)
+    {
+        return new InputStream()
         {
-            return "";
-        }
-        return l.get(0);
+            @Override
+            public int read()
+                throws IOException
+            {
+                int i = in.read();
+                if (i > -1)
+                {
+                    read++;
+                    if (absoluteReadLimit != null && read >= absoluteReadLimit)
+                    {
+                        throw new IOException("Absolute Read Limit exceeded: " + absoluteReadLimit);
+                    }
+                }
+                return i;
+            }
+
+            @Override
+            public void close()
+                throws IOException
+            {
+                if (contentLength != null && contentLength - 1 > read)
+                {
+                    throw new IOException("Stream closed before limit fully read, Read: " + read + " ContentLength: " + contentLength);
+                }
+                in.close();
+            }
+        };
     }
 
 
@@ -132,7 +222,7 @@ public class ESTResponse
         return originalRequest;
     }
 
-    public Map<String, List<String>> getHeaders()
+    public HttpUtil.Headers getHeaders()
     {
         return headers;
     }
@@ -163,19 +253,30 @@ public class ESTResponse
         return source;
     }
 
-    public long getContentLength()
+    public Long getContentLength()
     {
-        List<String> v = headers.get("content-length");
-        if (v == null || v.isEmpty())
+        String v = headers.getFirstValue("Content-Length");
+        if (v == null)
         {
-            return -1;
+            return null;
         }
-        return Long.parseLong(v.get(0));
+        try
+        {
+            return Long.parseLong(v);
+        }
+        catch (RuntimeException nfe)
+        {
+            throw new RuntimeException("Content Length: '" + v + "' invalid. " + nfe.getMessage());
+        }
     }
 
     public void close()
         throws IOException
     {
+        if (inputStream != null)
+        {
+            inputStream.close();
+        }
         this.source.close();
     }
 

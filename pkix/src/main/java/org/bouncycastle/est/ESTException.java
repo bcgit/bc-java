@@ -11,43 +11,31 @@ import java.io.InputStream;
 public class ESTException
     extends IOException
 {
-    private Throwable cause;
     private InputStream body;
     private int statusCode;
+
+    private static final long MAX_ERROR_BODY = 8192;
 
 
     public ESTException(String msg)
     {
         this(msg, null);
-        cause = null;
         body = null;
         statusCode = 0;
     }
 
     public ESTException(String msg, Throwable cause)
     {
-        super(msg);
-        this.cause = cause;
+        super(msg,cause);
         body = null;
         statusCode = 0;
     }
 
 
-    public ESTException(String message, Throwable cause, int statusCode, InputStream body)
+    public ESTException(String message, Throwable cause,  int statusCode, InputStream body)
     {
-        super(message, cause);
+        super(message,cause);
         this.statusCode = statusCode;
-        this.body = body;
-        this.cause = null;
-    }
-
-
-    public ESTException(String message, int statusCode, InputStream body, int contentLength)
-    {
-        super(message);
-        this.statusCode = statusCode;
-        this.cause = null;
-
         if (body != null)
         {
             byte[] b = new byte[8192];
@@ -57,24 +45,13 @@ public class ESTException
                 int i = body.read(b);
                 while (i >= 0)
                 {
-
-                    if (contentLength > -1)
+                    if (bos.size() + i > MAX_ERROR_BODY)
                     {
-                        if (bos.size() + i > contentLength)
-                        {
-                            i = contentLength - bos.size();
-                            bos.write(b, 0, i);
-                            break;
-                        }
-                        else
-                        {
-                            bos.write(b, 0, i);
-                        }
-                    }
-                    else
-                    {
+                        i = (int)MAX_ERROR_BODY - bos.size();
                         bos.write(b, 0, i);
+                        break;
                     }
+                    bos.write(b, 0, i);
                     i = body.read(b);
                 }
                 bos.flush();
@@ -84,13 +61,19 @@ public class ESTException
             }
             catch (Exception ex)
             {
-                throw new RuntimeException("Reading error body:" + ex.getMessage(), ex);
+                // This is a best effort read, input stream could be dead by this point.
             }
         }
         else
         {
             this.body = null;
         }
+    }
+
+    @Override
+    public String getMessage()
+    {
+        return super.getMessage() + " HTTP Status Code: " + statusCode;
     }
 
     public InputStream getBody()
@@ -103,8 +86,4 @@ public class ESTException
         return statusCode;
     }
 
-    public Throwable getCause()
-    {
-        return cause;
-    }
 }
