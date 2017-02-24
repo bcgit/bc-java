@@ -9,5 +9,5 @@ import java.io.IOException;
  */
 public interface ESTSourceConnectionListener<T,I>
 {
-    void onConnection(Source<T> source, ESTRequest request) throws IOException;
+    ESTRequest onConnection(Source<T> source, ESTRequest request) throws IOException;
 }
