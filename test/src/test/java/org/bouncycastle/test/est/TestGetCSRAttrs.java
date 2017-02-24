@@ -79,7 +79,7 @@ public class TestGetCSRAttrs
             ).build();
 
             CSRRequestResponse csrRequestResponse = est.getCSRAttributes();
-            Assert.assertEquals( 1,csrRequestResponse.getAttributesResponse().getRequirements().size());
+            Assert.assertEquals(1, csrRequestResponse.getAttributesResponse().getRequirements().size());
             Assert.assertTrue("Must have: ",
                 csrRequestResponse.getAttributesResponse().hasRequirement(new ASN1ObjectIdentifier("1.2.3.4")));
         }

@@ -8,7 +8,7 @@ import java.io.OutputStream;
  * (Request-Line and Request Headers) have been written to the source.
  * Implementations are required to ensure the headers for Content-length are appropriately set
  * before writing data.
- *
+ * <p>
  * Implementation may be called more than once if the server responds (401) and requires Authentication.
  * Subsequent calls must be idempotent.
  */

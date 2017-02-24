@@ -15,6 +15,7 @@ public class ESTRequestBuilder
     ESTClientRequestIdempotentInputSource writer;
     ESTHijacker hijacker;
     ESTSourceConnectionListener listener;
+    ESTClient client;
 
     public ESTRequestBuilder(ESTRequest request)
     {
@@ -25,6 +26,7 @@ public class ESTRequestBuilder
         this.writer = request.writer;
         this.hijacker = request.hijacker;
         this.headers = (HttpUtil.Headers)request.headers.clone();
+        this.client = request.getEstClient();
     }
 
     public ESTRequestBuilder(String method, URL url, ESTSourceConnectionListener listener)
@@ -68,8 +70,14 @@ public class ESTRequestBuilder
         return this;
     }
 
+    public ESTRequestBuilder withESTClient(ESTClient client)
+    {
+        this.client = client;
+        return this;
+    }
+
     public ESTRequest build()
     {
-        return new ESTRequest(method, url, writer, hijacker, listener, headers);
+        return new ESTRequest(method, url, writer, hijacker, listener, headers, client);
     }
 }

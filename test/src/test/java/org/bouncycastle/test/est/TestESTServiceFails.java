@@ -87,13 +87,12 @@ public class TestESTServiceFails
     public void testCACertsResponseNoStore()
         throws Exception
     {
-        CACertsResponse ca = new CACertsResponse(null, null, null, false);
+        CACertsResponse ca = new CACertsResponse(null, null, null, null, false);
 
-        TestCase.assertFalse("Must be false, store is null", ca.hasStore());
+        TestCase.assertFalse("Must be false, store is null", ca.hasCertificates());
 
-        ca.getStore();
+        ca.getCertificateStore();
     }
-
 
     @Test()
     public void testCACertsResponseWithStore()
@@ -101,27 +100,42 @@ public class TestESTServiceFails
     {
 
         String holder =
-            "MIIBggYJKoZIhvcNAQcCoIIBczCCAW8CAQExADALBgkqhkiG9w0BBwGgggFXMIIB\n" +
-                "UzCB+qADAgECAgkA+syTlV9djhkwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMZXN0\n" +
-                "RXhhbXBsZUNBMB4XDTE3MDIxODAyNTQ1OVoXDTE4MDIxODAyNTQ1OVowFzEVMBMG\n" +
-                "A1UEAwwMZXN0RXhhbXBsZUNBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEobjd\n" +
-                "xMcCE5GfVRE4f86ik6yK0erBhAbN8er0u6vWTXlyk5IXJy7HsUmC7Wv1SDRno/Rp\n" +
-                "pyVekSu4T0/h7uBeaKMvMC0wDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQU8rjiAzjo\n" +
-                "Nldka5gT1bcbQqcESPMwCgYIKoZIzj0EAwIDSAAwRQIhAOwsMtixDryuVUYNBdaf\n" +
-                "3tQV1SlvBmCP6y3cKMST45sRAiBEUNYOsYnuFmH93I+0NSJPYuuBY+Zfqrc2awCs\n" +
-                "spOU3zEA";
+            "MIIB3QYJKoZIhvcNAQcCoIIBzjCCAcoCAQExADALBgkqhkiG9w0BBwGgggGwMIIB\n" +
+                "rDCCAVKgAwIBAgICLdwwCQYHKoZIzj0EATAXMRUwEwYDVQQDDAxlc3RFeGFtcGxl\n" +
+                "Q0EwHhcNMTQwNzA5MTY0NzExWhcNMzMwOTA3MTY0NzExWjAXMRUwEwYDVQQDDAxl\n" +
+                "c3RFeGFtcGxlQ0EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATbixdp4YMKGmfj\n" +
+                "fF2rzwRQXMX+2YoJvsskqU3qMUAJhfrYvMPo3smPWbE0jftfw+UlsKD3HiHUCOCV\n" +
+                "ySHKSfPbo4GOMIGLMAwGA1UdEwQFMAMBAf8wHQYDVR0OBBYEFN0KrHLtKvSyE5OI\n" +
+                "c9MAA9sCAbTyMB8GA1UdIwQYMBaAFN0KrHLtKvSyE5OIc9MAA9sCAbTyMDsGA1Ud\n" +
+                "EQQ0MDKCCWxvY2FsaG9zdIINaXA2LWxvY2FsaG9zdIcEfwAAAYcQAAAAAAAAAAAA\n" +
+                "AAAAAAAAATAJBgcqhkjOPQQBA0kAMEYCIQDNq+Vjoi6mgSqXSLzJ7OVs+RzjGox3\n" +
+                "xXttoJ9B7eDjjgIhALpU+OVvyfhDJbHegWC02OX6laPTBNjAf6V8aVOP1rYdoQAx\n" +
+                "AA==";
 
         ASN1InputStream ain = new ASN1InputStream(Base64.decode(holder));
         SimplePKIResponse spkr = new SimplePKIResponse(ContentInfo.getInstance((ASN1Sequence)ain.readObject()));
 
-        CACertsResponse ca = new CACertsResponse(spkr.getCertificates(), null, null, false);
+        CACertsResponse ca = new CACertsResponse(spkr.getCertificates(), spkr.getCRLs(), null, null, false);
 
-        TestCase.assertTrue("Must be be, store is defined", ca.hasStore());
+        TestCase.assertTrue("Store is defined", ca.hasCertificates());
+        TestCase.assertTrue("CRL Store is defined", ca.hasCRLs());
+
 
         // Throws no exception.
-        ca.getStore();
+        ca.getCertificateStore();
 
     }
 
+
+    @Test(expected = IllegalStateException.class)
+    public void testCACertsResponseNoCRLs()
+        throws Exception
+    {
+        CACertsResponse ca = new CACertsResponse(null, null, null, null, false);
+
+        TestCase.assertFalse("Must be false, store is null", ca.hasCRLs());
+
+        ca.getCrlStore();
+    }
 
 }
