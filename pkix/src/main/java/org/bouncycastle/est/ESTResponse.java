@@ -184,7 +184,9 @@ public class ESTResponse
             public void close()
                 throws IOException
             {
-                if (contentLength != null && contentLength - 1 > read)
+
+
+                if (contentLength != null && contentLength -1  > read)
                 {
                     throw new IOException("Stream closed before limit fully read, Read: " + read + " ContentLength: " + contentLength);
                 }

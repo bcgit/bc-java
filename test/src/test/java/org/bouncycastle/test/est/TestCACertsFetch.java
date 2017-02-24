@@ -8,36 +8,34 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathValidator;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
-import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSession;
 
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cmc.SimplePKIResponse;
 import org.bouncycastle.est.CACertsResponse;
 import org.bouncycastle.est.ESTClient;
 import org.bouncycastle.est.ESTClientProvider;
@@ -48,6 +46,9 @@ import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.ESTServiceBuilder;
 import org.bouncycastle.est.Source;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
+import org.bouncycastle.test.est.examples.ExampleUtils;
+import org.bouncycastle.util.Store;
+import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;
@@ -111,7 +112,7 @@ public class TestCACertsFetch
             ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
             CACertsResponse caCertsResponse = est.getCACerts();
 
-            X509CertificateHolder[] caCerts = ESTService.storeToArray(caCertsResponse.getStore());
+            X509CertificateHolder[] caCerts = ESTService.storeToArray(caCertsResponse.getCertificateStore());
 
             FileReader fr = new FileReader(ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt"));
             PemReader reader = new PemReader(fr);
@@ -146,69 +147,28 @@ public class TestCACertsFetch
         ESTTestUtils.ensureProvider();
         X509CertificateHolder[] theirCAs = null;
 
+        HttpResponder res = new HttpResponder();
 
-        final CountDownLatch ready = new CountDownLatch(1);
-        final CountDownLatch exited = new CountDownLatch(1);
 
-        Thread t = new Thread(new Runnable()
-        {
-            public void run()
-            {
-                ServerSocket ssock = null;
-                try
-                {
-                    ssock = new ServerSocket(8443);
-                    ready.countDown();
-                    Socket sock = ssock.accept();
+        int port = res.open(null);
 
-                    sock.getInputStream().read(); // Take one byte.
-
-                    Thread.sleep(2000);
-                }
-                catch (Exception ex)
-                {
-                    ex.printStackTrace();
-                }
-                finally
-                {
-                    if (ssock != null)
-                    {
-                        try
-                        {
-                            ssock.close();
-                        }
-                        catch (IOException e)
-                        {
-                            // Ignored.
-                        }
-                    }
-                    exited.countDown();
-                }
-            }
-        });
-        t.setPriority(Thread.MIN_PRIORITY);
-        t.start();
-
-        ready.await(1000, TimeUnit.MILLISECONDS);
-
-        ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/").withTimeout(500).build();
+        ESTService est = new JcaESTServiceBuilder("https://localhost:" + port + "/.well-known/est/").withTimeout(500).addCipherSuites(res.getEnabledSuites()).build();
 
         try
         {
             CACertsResponse caCertsResponse = est.getCACerts();
-            t.interrupt();
             Assert.fail("Must time out.");
         }
         catch (Exception ex)
         {
-            t.interrupt();
+
             Assert.assertEquals("", ESTException.class, ex.getClass());
             Assert.assertEquals("", SocketTimeoutException.class, ex.getCause().getClass());
 
         }
         finally
         {
-            exited.await(2000, TimeUnit.MILLISECONDS);
+            res.getFinished().await(5, TimeUnit.SECONDS);
         }
 
     }
@@ -275,7 +235,7 @@ public class TestCACertsFetch
             //
             try
             {
-                X509CertificateHolder[] caCerts = ESTService.storeToArray(est.getCACerts().getStore());
+                X509CertificateHolder[] caCerts = ESTService.storeToArray(est.getCACerts().getCertificateStore());
                 Assert.fail("Bogus CA must not validate the server.!");
             }
             catch (Exception ex)
@@ -335,7 +295,7 @@ public class TestCACertsFetch
 
             CACertsResponse caCertsResponse = est.getCACerts();
             // Make the call. NB tlsAcceptAny is false.
-            X509CertificateHolder[] caCerts = ESTService.storeToArray(caCertsResponse.getStore());
+            X509CertificateHolder[] caCerts = ESTService.storeToArray(caCertsResponse.getCertificateStore());
 
             // We expect the bootstrap authorizer to not be called.
 
@@ -380,7 +340,7 @@ public class TestCACertsFetch
             ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
             CACertsResponse caCertsResponse = est.getCACerts(); //<= Accept any certs tendered by the server.
 
-            Assert.assertEquals("Returned ca certs should be 1", ESTService.storeToArray(caCertsResponse.getStore()).length, 1);
+            Assert.assertEquals("Returned ca certs should be 1", ESTService.storeToArray(caCertsResponse.getCertificateStore()).length, 1);
 
 
             //
@@ -389,7 +349,7 @@ public class TestCACertsFetch
             //
             X509CertificateHolder expectedCACert;
             {
-                X509CertificateHolder[] _caCerts = ESTService.storeToArray(caCertsResponse.getStore());
+                X509CertificateHolder[] _caCerts = ESTService.storeToArray(caCertsResponse.getCertificateStore());
 
                 FileReader fr = new FileReader(ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt"));
                 PemReader reader = new PemReader(fr);
@@ -512,8 +472,8 @@ public class TestCACertsFetch
 
         ESTService estService = builder.build();
         CACertsResponse resp = estService.getCACerts();
-        Assert.assertFalse("Must be false, store is null", resp.hasStore());
-        resp.getStore();
+        Assert.assertFalse("Must be false, store is null", resp.hasCertificates());
+        resp.getCertificateStore();
     }
 
 
@@ -603,8 +563,8 @@ public class TestCACertsFetch
 
         ESTService estService = builder.build();
         CACertsResponse resp = estService.getCACerts();
-        Assert.assertFalse("Must be false, store is null", resp.hasStore());
-        resp.getStore();
+        Assert.assertFalse("Must be false, store is null", resp.hasCertificates());
+        resp.getCertificateStore();
     }
 
 
@@ -845,7 +805,7 @@ public class TestCACertsFetch
             "pyVekSu4T0/h7uBeaKMvMC0wDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQU8rjiAzjo\n" +
             "Nldka5gT1bcbQqcESPMwCgYIKoZIzj0EAwIDSAAwRQIhAOwsMtixDryuVUYNBdaf\n" +
             "3tQV1SlvBmCP6y3cKMST45sRAiBEUNYOsYnuFmH93I+0NSJPYuuBY+Zfqrc2awCs\n" +
-            "spOU3zEA");
+            "spOU3zEA\n");
 
         pw.flush();
 
@@ -863,7 +823,7 @@ public class TestCACertsFetch
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
                 "https://localhost:" + port + "/.well-known/est/");
             builder.withReadLimit(1000L);
-            builder.addCipherSuit("TLS_DH_anon_WITH_AES_128_CBC_SHA");
+            builder.addCipherSuites(res.getEnabledSuites());
 
             ESTService est = builder.build();
             try
@@ -929,7 +889,7 @@ public class TestCACertsFetch
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
                 "https://localhost:" + port + "/.well-known/est/");
             builder.withReadLimit(530);
-            builder.addCipherSuit("TLS_DH_anon_WITH_AES_128_CBC_SHA");
+            builder.addCipherSuites(res.getEnabledSuites());
 
             ESTService est = builder.build();
 
@@ -987,7 +947,7 @@ public class TestCACertsFetch
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
                 "https://localhost:" + port + "/.well-known/est/");
             builder.withReadLimit(530);
-            builder.addCipherSuit(res.getCipherSuites());
+            builder.addCipherSuites(res.getSupportedCipherSuites());
 
             ESTService est = builder.build();
 
@@ -1051,7 +1011,7 @@ public class TestCACertsFetch
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
                 "https://localhost:" + port + "/.well-known/est/");
             builder.withReadLimit(530);
-            builder.addCipherSuit(res.getCipherSuites());
+            builder.addCipherSuites(res.getSupportedCipherSuites());
 
             ESTService est = builder.build();
 
@@ -1116,7 +1076,7 @@ public class TestCACertsFetch
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
                 "https://localhost:" + port + "/.well-known/est/");
             builder.withReadLimit(530);
-            builder.addCipherSuit(res.getCipherSuites());
+            builder.addCipherSuites(res.getSupportedCipherSuites());
 
             ESTService est = builder.build();
 
@@ -1179,7 +1139,7 @@ public class TestCACertsFetch
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
                 "https://localhost:" + port + "/.well-known/est/");
             builder.withReadLimit(530);
-            builder.addCipherSuit(res.getCipherSuites());
+            builder.addCipherSuites(res.getSupportedCipherSuites());
 
             ESTService est = builder.build();
 
@@ -1242,7 +1202,7 @@ public class TestCACertsFetch
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
                 "https://localhost:" + port + "/.well-known/est/");
             builder.withReadLimit(530);
-            builder.addCipherSuit(res.getCipherSuites());
+            builder.addCipherSuites(res.getSupportedCipherSuites());
 
             ESTService est = builder.build();
 
@@ -1308,7 +1268,7 @@ public class TestCACertsFetch
                 "https://localhost:" + port + "/.well-known/est/");
             builder.withReadLimit(530);
             builder.withTlsVersion("TLSv1");
-            builder.addCipherSuit(res.getCipherSuites());
+            builder.addCipherSuites(res.getSupportedCipherSuites());
 
             ESTService est = builder.build();
 
@@ -1334,14 +1294,408 @@ public class TestCACertsFetch
     }
 
 
+    @Test()
+    public void testRejectOnNullCipherEstablishment()
+        throws Exception
+    {
+
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+            "Status: 200 OK\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 529\n" +
+            "\n" +
+            "MIIBggYJKoZIhvcNAQcCoIIBczCCAW8CAQExADALBgkqhkiG9w0BBwGgggFXMIIB\n" +
+            "UzCB+qADAgECAgkA+syTlV9djhkwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMZXN0\n" +
+            "RXhhbXBsZUNBMB4XDTE3MDIxODAyNTQ1OVoXDTE4MDIxODAyNTQ1OVowFzEVMBMG\n" +
+            "A1UEAwwMZXN0RXhhbXBsZUNBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEobjd\n" +
+            "xMcCE5GfVRE4f86ik6yK0erBhAbN8er0u6vWTXlyk5IXJy7HsUmC7Wv1SDRno/Rp\n" +
+            "pyVekSu4T0/h7uBeaKMvMC0wDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQU8rjiAzjo\n" +
+            "Nldka5gT1bcbQqcESPMwCgYIKoZIzj0EAwIDSAAwRQIhAOwsMtixDryuVUYNBdaf\n" +
+            "3tQV1SlvBmCP6y3cKMST45sRAiBEUNYOsYnuFmH93I+0NSJPYuuBY+Zfqrc2awCs\n" +
+            "spOU3zEA\n");
+
+        pw.flush();
 
 
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        res.setCipherSuites(new String[]{
+            "TLS_RSA_WITH_NULL_SHA256",
+            "TLS_ECDHE_ECDSA_WITH_NULL_SHA",
+            "TLS_ECDHE_RSA_WITH_NULL_SHA",
+            "SSL_RSA_WITH_NULL_SHA",
+            "TLS_ECDH_ECDSA_WITH_NULL_SHA",
+            "TLS_ECDH_RSA_WITH_NULL_SHA",
+            "TLS_ECDH_anon_WITH_NULL_SHA",
+            "SSL_RSA_WITH_NULL_MD5"
+        });
+        try
+        {
+            int port = res.open(responseData.toByteArray());
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/");
+            builder.withReadLimit(530);
+            builder.addCipherSuites(res.getEnabledSuites());
+
+            ESTService est = builder.build();
+
+            try
+            {
+                est.getCACerts();
+                Assert.fail("Must fail, incorrect no null ciphers.");
+            }
+            catch (Exception ex)
+            {
+                Assert.assertEquals("EST Exception", ESTException.class, ex.getClass());
+                Assert.assertEquals("", IOException.class, ex.getCause().getClass());
+                Assert.assertTrue(ex.getMessage().contains("must not use NULL"));
+            }
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
 
 
+    @Test()
+    public void testRejectOnAnonCipherEstablishment()
+        throws Exception
+    {
 
-    /*
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
 
-     */
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+            "Status: 200 OK\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 529\n" +
+            "\n" +
+            "MIIBggYJKoZIhvcNAQcCoIIBczCCAW8CAQExADALBgkqhkiG9w0BBwGgggFXMIIB\n" +
+            "UzCB+qADAgECAgkA+syTlV9djhkwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMZXN0\n" +
+            "RXhhbXBsZUNBMB4XDTE3MDIxODAyNTQ1OVoXDTE4MDIxODAyNTQ1OVowFzEVMBMG\n" +
+            "A1UEAwwMZXN0RXhhbXBsZUNBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEobjd\n" +
+            "xMcCE5GfVRE4f86ik6yK0erBhAbN8er0u6vWTXlyk5IXJy7HsUmC7Wv1SDRno/Rp\n" +
+            "pyVekSu4T0/h7uBeaKMvMC0wDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQU8rjiAzjo\n" +
+            "Nldka5gT1bcbQqcESPMwCgYIKoZIzj0EAwIDSAAwRQIhAOwsMtixDryuVUYNBdaf\n" +
+            "3tQV1SlvBmCP6y3cKMST45sRAiBEUNYOsYnuFmH93I+0NSJPYuuBY+Zfqrc2awCs\n" +
+            "spOU3zEA\n");
+
+        pw.flush();
+
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        res.setCipherSuites(new String[]{
+            "TLS_DH_anon_WITH_AES_128_GCM_SHA256",
+            "TLS_DH_anon_WITH_AES_128_CBC_SHA256",
+            "TLS_ECDH_anon_WITH_AES_128_CBC_SHA",
+            "TLS_DH_anon_WITH_AES_128_CBC_SHA",
+            "TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA",
+            "SSL_DH_anon_WITH_3DES_EDE_CBC_SHA",
+            "TLS_ECDH_anon_WITH_RC4_128_SHA",
+            "SSL_DH_anon_WITH_RC4_128_MD5",
+            "SSL_DH_anon_WITH_DES_CBC_SHA",
+            "SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
+            "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",
+        });
+        try
+        {
+            int port = res.open(responseData.toByteArray());
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/");
+            builder.withReadLimit(530);
+            builder.addCipherSuites(res.getEnabledSuites());
+
+            ESTService est = builder.build();
+
+            try
+            {
+                est.getCACerts();
+                Assert.fail("Must fail, used anon cipher.");
+            }
+            catch (Exception ex)
+            {
+                Assert.assertEquals("EST Exception", ESTException.class, ex.getClass());
+                Assert.assertEquals("", IOException.class, ex.getCause().getClass());
+                Assert.assertTrue(ex.getMessage().contains("must not use anon"));
+            }
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testRejectOnExportCipherEstablishment()
+        throws Exception
+    {
+
+        ExampleUtils.ensureProvider();
+        //
+        // We need a self signed certificate using transformations old enough
+        // to work with Export suites.
+        //
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
+        kpg.initialize(2048);
+        KeyPair kp = kpg.generateKeyPair();
+
+        X509Certificate cert = ExampleUtils.toJavaX509Certificate(
+            ExampleUtils.createSelfsignedCert("SHA1withRSA", new X500Name("CN=Test"), SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded()), kp.getPrivate(), 1)
+        );
+
+
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+            "Status: 200 OK\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 529\n" +
+            "\n" +
+            "MIIBggYJKoZIhvcNAQcCoIIBczCCAW8CAQExADALBgkqhkiG9w0BBwGgggFXMIIB\n" +
+            "UzCB+qADAgECAgkA+syTlV9djhkwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMZXN0\n" +
+            "RXhhbXBsZUNBMB4XDTE3MDIxODAyNTQ1OVoXDTE4MDIxODAyNTQ1OVowFzEVMBMG\n" +
+            "A1UEAwwMZXN0RXhhbXBsZUNBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEobjd\n" +
+            "xMcCE5GfVRE4f86ik6yK0erBhAbN8er0u6vWTXlyk5IXJy7HsUmC7Wv1SDRno/Rp\n" +
+            "pyVekSu4T0/h7uBeaKMvMC0wDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQU8rjiAzjo\n" +
+            "Nldka5gT1bcbQqcESPMwCgYIKoZIzj0EAwIDSAAwRQIhAOwsMtixDryuVUYNBdaf\n" +
+            "3tQV1SlvBmCP6y3cKMST45sRAiBEUNYOsYnuFmH93I+0NSJPYuuBY+Zfqrc2awCs\n" +
+            "spOU3zEA\n");
+
+        pw.flush();
+
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder().withTlsProtocol("TLSv1").withCreds(cert, kp.getPrivate());
+        res.setCipherSuites(new String[]{
+            "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
+            "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
+            "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
+            "SSL_RSA_EXPORT_WITH_RC4_40_MD5",
+            "TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA",
+            "TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5",
+            "TLS_KRB5_EXPORT_WITH_RC4_40_SHA",
+            "TLS_KRB5_EXPORT_WITH_RC4_40_MD5"
+        });
+        try
+        {
+            int port = res.open(responseData.toByteArray());
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/");
+            builder.withReadLimit(530);
+            builder.addCipherSuites(res.getEnabledSuites());
+            builder.withTlsVersion("TLSv1"); // <- needed to get export suites to work.
+            ESTService est = builder.build();
+
+            try
+            {
+                est.getCACerts();
+                Assert.fail("Must fail, used export cipher.");
+            }
+            catch (Exception ex)
+            {
+                Assert.assertEquals("EST Exception", ESTException.class, ex.getClass());
+                Assert.assertEquals("Cause is IOException", IOException.class, ex.getCause().getClass());
+                Assert.assertTrue(ex.getMessage().contains("must not use export"));
+            }
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testRejectOnDESCipherEstablishment()
+        throws Exception
+    {
+
+        ExampleUtils.ensureProvider();
+        //
+        // We need a self signed certificate using transformations old enough
+        // to work with Export suites.
+        //
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
+        kpg.initialize(2048);
+        KeyPair kp = kpg.generateKeyPair();
+
+        X509Certificate cert = ExampleUtils.toJavaX509Certificate(
+            ExampleUtils.createSelfsignedCert("SHA1withRSA", new X500Name("CN=Test"), SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded()), kp.getPrivate(), 1)
+        );
+
+
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+            "Status: 200 OK\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 529\n" +
+            "\n" +
+            "MIIBggYJKoZIhvcNAQcCoIIBczCCAW8CAQExADALBgkqhkiG9w0BBwGgggFXMIIB\n" +
+            "UzCB+qADAgECAgkA+syTlV9djhkwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMZXN0\n" +
+            "RXhhbXBsZUNBMB4XDTE3MDIxODAyNTQ1OVoXDTE4MDIxODAyNTQ1OVowFzEVMBMG\n" +
+            "A1UEAwwMZXN0RXhhbXBsZUNBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEobjd\n" +
+            "xMcCE5GfVRE4f86ik6yK0erBhAbN8er0u6vWTXlyk5IXJy7HsUmC7Wv1SDRno/Rp\n" +
+            "pyVekSu4T0/h7uBeaKMvMC0wDAYDVR0TBAUwAwEB/zAdBgNVHQ4EFgQU8rjiAzjo\n" +
+            "Nldka5gT1bcbQqcESPMwCgYIKoZIzj0EAwIDSAAwRQIhAOwsMtixDryuVUYNBdaf\n" +
+            "3tQV1SlvBmCP6y3cKMST45sRAiBEUNYOsYnuFmH93I+0NSJPYuuBY+Zfqrc2awCs\n" +
+            "spOU3zEA\n");
+
+        pw.flush();
+
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder().withCreds(cert, kp.getPrivate());
+        res.setCipherSuites(new String[]{
+            "SSL_RSA_WITH_DES_CBC_SHA",
+            "SSL_DHE_RSA_WITH_DES_CBC_SHA",
+            "SSL_DHE_DSS_WITH_DES_CBC_SHA",
+            "SSL_DH_anon_WITH_DES_CBC_SHA",
+            "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
+            "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
+            "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
+            "SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
+            "TLS_KRB5_WITH_DES_CBC_SHA",
+            "TLS_KRB5_WITH_DES_CBC_MD5",
+            "TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA",
+            "TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5"
+        });
+        try
+        {
+            int port = res.open(responseData.toByteArray());
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/");
+            builder.withReadLimit(530);
+            builder.addCipherSuites(res.getEnabledSuites());
+            builder.withTlsVersion("TLSv1"); // <- needed to get export suites to work.
+            ESTService est = builder.build();
+
+            try
+            {
+                est.getCACerts();
+                Assert.fail("Must fail, used export cipher.");
+            }
+            catch (Exception ex)
+            {
+                Assert.assertEquals("EST Exception", ESTException.class, ex.getClass());
+                Assert.assertEquals("Cause is IOException", IOException.class, ex.getCause().getClass());
+                Assert.assertTrue(ex.getMessage().contains("must not use DES"));
+            }
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testCertResponseWithCRL()
+        throws Exception
+    {
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+            "Status: 200 OK\n" +
+            "Content-Type: application/pkcs7-mime\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 655\n" +
+            "\n" +
+            "MIIB3QYJKoZIhvcNAQcCoIIBzjCCAcoCAQExADALBgkqhkiG9w0BBwGgggGwMIIB\n" +
+            "rDCCAVKgAwIBAgICLdwwCQYHKoZIzj0EATAXMRUwEwYDVQQDDAxlc3RFeGFtcGxl\n" +
+            "Q0EwHhcNMTQwNzA5MTY0NzExWhcNMzMwOTA3MTY0NzExWjAXMRUwEwYDVQQDDAxl\n" +
+            "c3RFeGFtcGxlQ0EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATbixdp4YMKGmfj\n" +
+            "fF2rzwRQXMX+2YoJvsskqU3qMUAJhfrYvMPo3smPWbE0jftfw+UlsKD3HiHUCOCV\n" +
+            "ySHKSfPbo4GOMIGLMAwGA1UdEwQFMAMBAf8wHQYDVR0OBBYEFN0KrHLtKvSyE5OI\n" +
+            "c9MAA9sCAbTyMB8GA1UdIwQYMBaAFN0KrHLtKvSyE5OIc9MAA9sCAbTyMDsGA1Ud\n" +
+            "EQQ0MDKCCWxvY2FsaG9zdIINaXA2LWxvY2FsaG9zdIcEfwAAAYcQAAAAAAAAAAAA\n" +
+            "AAAAAAAAATAJBgcqhkjOPQQBA0kAMEYCIQDNq+Vjoi6mgSqXSLzJ7OVs+RzjGox3\n" +
+            "xXttoJ9B7eDjjgIhALpU+OVvyfhDJbHegWC02OX6laPTBNjAf6V8aVOP1rYdoQAx\n" +
+            "AA==\n");
+
+        pw.flush();
+
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+
+            int port = res.open(responseData.toByteArray());
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/");
+            builder.addCipherSuites(res.getSupportedCipherSuites());
+            ESTService est = builder.build();
+
+
+            CACertsResponse resp = est.getCACerts();
+
+
+            Assert.assertTrue("Must have CRLS", resp.hasCRLs());
+            Assert.assertTrue("Must have Certs", resp.hasCertificates());
+
+            Store<X509CertificateHolder> x509CertificateHolderStore = resp.getCertificateStore();
+            Collection<X509CertificateHolder> x509CertificateHolders = x509CertificateHolderStore.getMatches(null);
+            Assert.assertTrue(!x509CertificateHolders.isEmpty());
+
+            Store<X509CRLHolder> x509CRLHolderStore = resp.getCrlStore();
+            Collection<X509CRLHolder> x509CRLHolders = x509CRLHolderStore.getMatches(null);
+            Assert.assertTrue(x509CRLHolders.isEmpty()); // CRL is actually empty.
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
 
     public static void main(String[] args)
         throws Exception

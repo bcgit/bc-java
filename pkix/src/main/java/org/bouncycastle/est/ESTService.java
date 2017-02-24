@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -17,6 +18,7 @@ import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.est.CsrAttrs;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cmc.CMCException;
 import org.bouncycastle.cmc.SimplePKIResponse;
@@ -81,15 +83,20 @@ public class ESTService
         throws Exception
     {
         ESTResponse resp = null;
+        Exception finalThrowable = null;
+        CACertsResponse caCertsResponse = null;
+
         try
         {
             URL url = new URL(server + CACERTS);
 
             ESTClient client = clientProvider.makeClient();
-            ESTRequest req = new ESTRequest("GET", url, null);
+            ESTRequest req = new ESTRequest("GET", url, client, null);
             resp = client.doRequest(req);
 
             Store<X509CertificateHolder> caCerts = null;
+            Store<X509CRLHolder> crlHolderStore = null;
+
 
             if (resp.getStatusCode() == 200)
             {
@@ -101,11 +108,12 @@ public class ESTService
 
                 try
                 {
-                    if (resp.getContentLength() != null && resp.getContentLength() >0)
+                    if (resp.getContentLength() != null && resp.getContentLength() > 0)
                     {
                         ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
                         SimplePKIResponse spkr = new SimplePKIResponse(ContentInfo.getInstance((ASN1Sequence)ain.readObject()));
                         caCerts = spkr.getCertificates();
+                        crlHolderStore = spkr.getCRLs();
                     }
                 }
                 catch (Throwable ex)
@@ -119,7 +127,7 @@ public class ESTService
                 throw new ESTException("Get CACerts: " + url.toString(), null, resp.getStatusCode(), resp.getInputStream());
             }
 
-            return new CACertsResponse(caCerts, req, resp.getSource(), clientProvider.isTrusted());
+            caCertsResponse = new CACertsResponse(caCerts, crlHolderStore, req, resp.getSource(), clientProvider.isTrusted());
 
         }
         catch (Throwable t)
@@ -141,13 +149,19 @@ public class ESTService
                 {
                     resp.close();
                 }
-                catch (Throwable t)
+                catch (Exception t)
                 {
-                    throw new ESTException("Get CACerts: ", t, resp.getStatusCode(), resp.getInputStream());
+                    finalThrowable = t;
                 }
             }
         }
 
+        if (finalThrowable != null)
+        {
+            throw finalThrowable;
+        }
+
+        return caCertsResponse;
 
     }
 
@@ -229,7 +243,7 @@ public class ESTService
                     os.write(data);
                     os.flush();
                 }
-            }, null);
+            }, client, null);
 
             req.addHeader("Content-Type", "application/pkcs10");
             req.addHeader("content-length", "" + data.length);
@@ -297,6 +311,7 @@ public class ESTService
             // The source listener is responsible for completing the PCS10 Cert request and encoding it.
             //
 
+            final AtomicInteger ai = new AtomicInteger();
 
             ESTRequest req = new ESTRequest("POST", url, new ESTClientRequestIdempotentInputSource()
             {
@@ -306,7 +321,7 @@ public class ESTService
                     os.write(bos.toByteArray());
                     os.flush();
                 }
-            }, new ESTSourceConnectionListener()
+            }, client, new ESTSourceConnectionListener()
             {
                 public void onConnection(Source source, ESTRequest request)
                     throws IOException
@@ -319,6 +334,8 @@ public class ESTService
                     {
                         bos.reset();
                         byte[] tlsUnique = ((TLSUniqueProvider)source).getTLSUnique();
+
+                        System.out.println("(" + ai.incrementAndGet() + ") " + Base64.toBase64String(tlsUnique));
 
                         builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_challengePassword, new DERPrintableString(Base64.toBase64String(tlsUnique)));
                         bos.write(annotateRequest(builder.build(contentSigner).getEncoded()).getBytes());
@@ -440,7 +457,7 @@ public class ESTService
             URL url = new URL(server + CSRATTRS);
 
             ESTClient client = clientProvider.makeClient();
-            ESTRequest req = new ESTRequest("GET", url, null);
+            ESTRequest req = new ESTRequest("GET", url, client, null);
             resp = client.doRequest(req);
 
 
