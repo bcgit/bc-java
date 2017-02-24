@@ -107,7 +107,7 @@ public class TestReEnroll
             PKCS10CertificationRequest csr = pkcs10Builder.build(
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
-            EnrollmentResponse enr = est.simpleEnroll(false, csr, new HttpAuth("estreal", "estuser", "estpwd"));
+            EnrollmentResponse enr = est.simpleEnroll(false, csr, new HttpAuth("estreal", "estuser", "estpwd", new SecureRandom()));
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
@@ -132,7 +132,7 @@ public class TestReEnroll
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
             // Flag set true!
-            enr = est.simpleEnroll(true, csr, new HttpAuth("estreal", "estuser", "estpwd"));
+            enr = est.simpleEnroll(true, csr, new HttpAuth("estreal", "estuser", "estpwd", new SecureRandom()));
             expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
@@ -158,7 +158,7 @@ public class TestReEnroll
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
             try
             {
-                enr = est.simpleEnroll(true, csr, new HttpAuth("estreal", "estuser", "estpwd"));
+                enr = est.simpleEnroll(true, csr, new HttpAuth("estreal", "estuser", "estpwd", new SecureRandom()));
                 // TODO Server needs to enforce this, need to discuss.
                 // Assert.fail("Reenrollment with different subject must fail.");
             }
