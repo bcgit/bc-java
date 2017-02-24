@@ -114,7 +114,7 @@ public class HttpAuth
                         String userPass = username + ":" + password;
                         answer.setHeader("Authorization", "Basic " + Base64.toBase64String(userPass.getBytes()));
 
-                        res = req.getEstClient().doRequest(answer.build());
+                        res = req.getClient().doRequest(answer.build());
                     }
 
 
@@ -337,7 +337,7 @@ public class HttpAuth
 
         ESTRequestBuilder answer = new ESTRequestBuilder(req).withHijacker(null);
         answer.setHeader("Authorization", HttpUtil.mergeCSL("Digest", hdr));
-        return req.getEstClient().doRequest(answer.build());
+        return req.getClient().doRequest(answer.build());
     }
 
 
