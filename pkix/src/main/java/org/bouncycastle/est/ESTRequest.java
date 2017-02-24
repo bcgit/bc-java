@@ -1,5 +1,7 @@
 package org.bouncycastle.est;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URL;
 
 /**
@@ -10,16 +12,15 @@ public class ESTRequest
     final String method;
     final URL url;
     HttpUtil.Headers headers = new HttpUtil.Headers();
-    final ESTClientRequestIdempotentInputSource writer;
+    final byte[] data;
     final ESTHijacker hijacker;
     final ESTClient estClient;
     final ESTSourceConnectionListener listener;
 
-
     ESTRequest(
         String method,
         URL url,
-        ESTClientRequestIdempotentInputSource writer,
+        byte[] data,
         ESTHijacker hijacker,
         ESTSourceConnectionListener listener,
         HttpUtil.Headers headers,
@@ -27,7 +28,7 @@ public class ESTRequest
     {
         this.method = method;
         this.url = url;
-        this.writer = writer;
+        this.data = data;
         this.hijacker = hijacker;
         this.listener = listener;
         this.headers = headers;
@@ -49,11 +50,6 @@ public class ESTRequest
         return headers;
     }
 
-    public ESTClientRequestIdempotentInputSource getWriter()
-    {
-        return writer;
-    }
-
     public ESTHijacker getHijacker()
     {
         return hijacker;
@@ -67,5 +63,11 @@ public class ESTRequest
     public ESTSourceConnectionListener getListener()
     {
         return listener;
+    }
+
+    public void writeData(OutputStream os)
+        throws IOException
+    {
+        os.write(data);
     }
 }

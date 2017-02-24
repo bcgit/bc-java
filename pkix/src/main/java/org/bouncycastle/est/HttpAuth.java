@@ -232,7 +232,7 @@ public class HttpAuth
 
             // Digest body
             DigestOutputStream dos = new DigestOutputStream(dig);
-            req.getWriter().ready(dos);
+            req.writeData(dos);
             dos.flush();
             byte[] b = new byte[dig.getDigestSize()];
             dig.doFinal(b, 0);
