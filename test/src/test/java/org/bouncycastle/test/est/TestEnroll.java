@@ -845,7 +845,6 @@ public class TestEnroll
                 new HttpAuth("estreal", "estuser", "estpwd"));
 
 
-
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));

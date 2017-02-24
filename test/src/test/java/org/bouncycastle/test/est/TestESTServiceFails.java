@@ -121,7 +121,6 @@ public class TestESTServiceFails
         TestCase.assertTrue("CRL Store is defined", ca.hasCRLs());
 
 
-
         // Throws no exception.
         ca.getCertificateStore();
 

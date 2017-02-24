@@ -113,7 +113,7 @@ public class DefaultESTClient
 
             if (c.getListener() != null)
             {
-                c.getListener().onConnection(socketSource, c);
+                c = c.getListener().onConnection(socketSource, c);
             }
 
             //  socketSource = new SSLSocketSource((SSLSocket)sock);

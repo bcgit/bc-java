@@ -45,15 +45,17 @@ public class SSLSocketSource
 
     public byte[] getTLSUnique()
     {
-        if (bindingProvider != null) {
-           return  bindingProvider.getChannelBinding(socket,"tls-unique");
+        if (bindingProvider != null)
+        {
+            return bindingProvider.getChannelBinding(socket, "tls-unique");
         }
         throw new IllegalArgumentException("No binding provider.");
     }
 
     public boolean isTLSUniqueAvailable()
     {
-        if (bindingProvider == null) {
+        if (bindingProvider == null)
+        {
             return false;
         }
         return bindingProvider.canAccessChannelBinding(socket);

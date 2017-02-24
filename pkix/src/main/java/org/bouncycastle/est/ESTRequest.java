@@ -10,88 +10,33 @@ public class ESTRequest
 {
     final String method;
     final URL url;
-    final HttpUtil.Headers headers = new HttpUtil.Headers();
-    final byte[] readAheadBuf = new byte[1024];
+    HttpUtil.Headers headers = new HttpUtil.Headers();
     final ESTClientRequestIdempotentInputSource writer;
     final ESTHijacker hijacker;
     final ESTClient estClient;
     final ESTSourceConnectionListener listener;
 
-
-    public ESTRequest(String method, URL url, ESTClientRequestIdempotentInputSource writer, ESTClient estClient, ESTSourceConnectionListener listener)
-    {
-        this.method = method;
-        this.url = url;
-        this.writer = writer;
-        this.estClient = estClient;
-        this.hijacker = null;
-        this.listener = listener;
-    }
-
-    public ESTRequest(String method, URL url, ESTClient estClient, ESTSourceConnectionListener listener)
-    {
-        this.method = method;
-        this.url = url;
-        this.estClient = estClient;
-        this.listener = listener;
-        this.hijacker = null;
-        this.writer = null;
-    }
-
-
-    public ESTRequest(String method, URL url, ESTClientRequestIdempotentInputSource writer, ESTHijacker hijacker, ESTClient estClient, ESTSourceConnectionListener listener)
+    ESTRequest(
+        String method,
+        URL url,
+        ESTClientRequestIdempotentInputSource writer,
+        ESTHijacker hijacker,
+        ESTSourceConnectionListener listener,
+        HttpUtil.Headers headers,
+        ESTClient estClient)
     {
         this.method = method;
         this.url = url;
         this.writer = writer;
         this.hijacker = hijacker;
-        this.estClient = estClient;
         this.listener = listener;
-    }
-
-    public ESTRequest(String method, URL url, ESTHijacker hijacker, ESTClient estClient, ESTSourceConnectionListener listener)
-    {
-        this.method = method;
-        this.url = url;
-        this.hijacker = hijacker;
+        this.headers = headers;
         this.estClient = estClient;
-        this.listener = listener;
-        this.writer = null;
     }
-
-    public ESTRequest addHeader(String key, String value)
-    {
-        headers.add(key, value);
-        return this;
-    }
-
-    public ESTRequest copy()
-    {
-        return this.newWithHijacker(this.hijacker);
-    }
-
-    public ESTRequest setHeader(String key, String value)
-    {
-        headers.set(key, value);
-        return this;
-    }
-
-
-    public ESTRequest newWithHijacker(ESTHijacker estHttpHijacker)
-    {
-        ESTRequest req = new ESTRequest(this.method, this.url, this.writer, estHttpHijacker, estClient, listener);
-
-        for (Map.Entry<String, String[]> s : headers.entrySet())
-        {
-            req.headers.put(s.getKey(), s.getValue());
-        }
-        return req;
-    }
-
 
     public ESTRequest newWithURL(URL url)
     {
-        ESTRequest req = new ESTRequest(this.method, url, this.writer, hijacker, estClient, listener);
+        ESTRequest req = new ESTRequest(this.method, url, this.writer, hijacker, listener, new HttpUtil.Headers(), estClient);
 
         for (Map.Entry<String, String[]> s : headers.entrySet())
         {
@@ -116,11 +61,6 @@ public class ESTRequest
         return headers;
     }
 
-    public byte[] getReadAheadBuf()
-    {
-        return readAheadBuf;
-    }
-
     public ESTClientRequestIdempotentInputSource getWriter()
     {
         return writer;
@@ -134,16 +74,6 @@ public class ESTRequest
     public ESTClient getEstClient()
     {
         return estClient;
-    }
-
-    public ESTRequest withEstClient(ESTClient estClient)
-    {
-        ESTRequest req = new ESTRequest(this.method, url, this.writer, hijacker, estClient, listener);
-        for (Map.Entry<String, String[]> s : headers.entrySet())
-        {
-            req.headers.put(s.getKey(), s.getValue());
-        }
-        return req;
     }
 
     public ESTSourceConnectionListener getListener()

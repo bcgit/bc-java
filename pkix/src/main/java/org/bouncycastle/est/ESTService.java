@@ -10,7 +10,6 @@ import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.TimeZone;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -85,13 +84,13 @@ public class ESTService
         ESTResponse resp = null;
         Exception finalThrowable = null;
         CACertsResponse caCertsResponse = null;
-
+        URL url = null;
         try
         {
-            URL url = new URL(server + CACERTS);
+            url = new URL(server + CACERTS);
 
             ESTClient client = clientProvider.makeClient();
-            ESTRequest req = new ESTRequest("GET", url, client, null);
+            ESTRequest req = new ESTRequestBuilder("GET", url, null).withESTClient(client).build();
             resp = client.doRequest(req);
 
             Store<X509CertificateHolder> caCerts = null;
@@ -158,10 +157,15 @@ public class ESTService
 
         if (finalThrowable != null)
         {
-            throw finalThrowable;
+            if (finalThrowable instanceof ESTException)
+            {
+                throw finalThrowable;
+            }
+            throw new ESTException("Get CACerts: " + url.toString(), finalThrowable, resp.getStatusCode(), null);
         }
 
         return caCertsResponse;
+
 
     }
 
@@ -235,7 +239,7 @@ public class ESTService
 
             URL url = new URL(server + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
             ESTClient client = clientProvider.makeClient();
-            ESTRequest req = new ESTRequest("POST", url, new ESTClientRequestIdempotentInputSource()
+            ESTRequestBuilder req = new ESTRequestBuilder("POST", url, null).withClientRequestIdempotentInputSource(new ESTClientRequestIdempotentInputSource()
             {
                 public void ready(OutputStream os)
                     throws IOException
@@ -243,7 +247,7 @@ public class ESTService
                     os.write(data);
                     os.flush();
                 }
-            }, client, null);
+            });
 
             req.addHeader("Content-Type", "application/pkcs10");
             req.addHeader("content-length", "" + data.length);
@@ -251,10 +255,11 @@ public class ESTService
 
             if (auth != null)
             {
-                req = auth.applyAuth(req);
+                auth.applyAuth(req);
             }
 
-            resp = client.doRequest(req);
+            resp = client.doRequest(req.build());
+
             return handleEnrollResponse(resp);
 
         }
@@ -310,20 +315,9 @@ public class ESTService
             // Connect supplying a source listener.
             // The source listener is responsible for completing the PCS10 Cert request and encoding it.
             //
-
-            final AtomicInteger ai = new AtomicInteger();
-
-            ESTRequest req = new ESTRequest("POST", url, new ESTClientRequestIdempotentInputSource()
+            ESTRequestBuilder reqBldr = new ESTRequestBuilder("POST", url, new ESTSourceConnectionListener()
             {
-                public void ready(OutputStream os)
-                    throws IOException
-                {
-                    os.write(bos.toByteArray());
-                    os.flush();
-                }
-            }, client, new ESTSourceConnectionListener()
-            {
-                public void onConnection(Source source, ESTRequest request)
+                public ESTRequest onConnection(Source source, ESTRequest request)
                     throws IOException
                 {
                     //
@@ -335,29 +329,41 @@ public class ESTService
                         bos.reset();
                         byte[] tlsUnique = ((TLSUniqueProvider)source).getTLSUnique();
 
-                        System.out.println("(" + ai.incrementAndGet() + ") " + Base64.toBase64String(tlsUnique));
-
                         builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_challengePassword, new DERPrintableString(Base64.toBase64String(tlsUnique)));
                         bos.write(annotateRequest(builder.build(contentSigner).getEncoded()).getBytes());
                         bos.flush();
-                        request.setHeader("Content-Length", Long.toString(bos.size()));
+
+                        ESTRequestBuilder reqBuilder = new ESTRequestBuilder(request);
+
+                        reqBuilder.setHeader("Content-Length", Long.toString(bos.size()));
+
+                        return reqBuilder.build();
                     }
                     else
                     {
-                        throw new IOException("Source does not supple TLS unique.");
+                        throw new IOException("Source does not supply TLS unique.");
                     }
                 }
-            });
+            })
+                .withClientRequestIdempotentInputSource(new ESTClientRequestIdempotentInputSource()
+                {
+                    public void ready(OutputStream os)
+                        throws IOException
+                    {
+                        os.write(bos.toByteArray());
+                        os.flush();
+                    }
+                });
 
-            req.addHeader("Content-Type", "application/pkcs10");
-            req.addHeader("Content-Transfer-Encoding", "base64");
+            reqBldr.addHeader("Content-Type", "application/pkcs10");
+            reqBldr.addHeader("Content-Transfer-Encoding", "base64");
 
             if (auth != null)
             {
-                req = auth.applyAuth(req);
+                auth.applyAuth(reqBldr);
             }
 
-            resp = client.doRequest(req);
+            resp = client.doRequest(reqBldr.build());
             return handleEnrollResponse(resp);
 
         }
@@ -416,7 +422,7 @@ public class ESTService
                 }
             }
 
-            return new EnrollmentResponse(null, notBefore, req.copy(), resp.getSource());
+            return new EnrollmentResponse(null, notBefore, req, resp.getSource());
 
         }
         else if (resp.getStatusCode() == 200)
@@ -457,7 +463,7 @@ public class ESTService
             URL url = new URL(server + CSRATTRS);
 
             ESTClient client = clientProvider.makeClient();
-            ESTRequest req = new ESTRequest("GET", url, client, null);
+            ESTRequest req = new ESTRequestBuilder("GET", url, null).withESTClient(client).build(); //    new ESTRequest("GET", url, null);
             resp = client.doRequest(req);
 
 
