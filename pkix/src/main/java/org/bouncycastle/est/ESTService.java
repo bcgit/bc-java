@@ -89,7 +89,7 @@ public class ESTService
             url = new URL(server + CACERTS);
 
             ESTClient client = clientProvider.makeClient();
-            ESTRequest req = new ESTRequestBuilder("GET", url, null).withESTClient(client).build();
+            ESTRequest req = new ESTRequestBuilder("GET", url, null).withClient(client).build();
             resp = client.doRequest(req);
 
             Store<X509CertificateHolder> caCerts = null;
@@ -462,7 +462,7 @@ public class ESTService
             URL url = new URL(server + CSRATTRS);
 
             ESTClient client = clientProvider.makeClient();
-            ESTRequest req = new ESTRequestBuilder("GET", url, null).withESTClient(client).build(); //    new ESTRequest("GET", url, null);
+            ESTRequest req = new ESTRequestBuilder("GET", url, null).withClient(client).build(); //    new ESTRequest("GET", url, null);
             resp = client.doRequest(req);
 
 
