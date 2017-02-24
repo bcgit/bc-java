@@ -33,7 +33,6 @@ public class ESTRequestBuilder
     {
         this.method = method;
         this.url = url;
-        this.listener = listener;
         this.headers = new HttpUtil.Headers();
     }
 
