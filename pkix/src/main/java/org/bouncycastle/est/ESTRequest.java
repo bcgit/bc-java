@@ -59,7 +59,7 @@ public class ESTRequest
         return hijacker;
     }
 
-    public ESTClient getEstClient()
+    public ESTClient getClient()
     {
         return estClient;
     }
