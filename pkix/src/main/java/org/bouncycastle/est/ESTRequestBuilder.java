@@ -70,7 +70,7 @@ public class ESTRequestBuilder
         return this;
     }
 
-    public ESTRequestBuilder withESTClient(ESTClient client)
+    public ESTRequestBuilder withClient(ESTClient client)
     {
         this.client = client;
         return this;
