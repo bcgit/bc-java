@@ -2,7 +2,6 @@ package org.bouncycastle.est;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
@@ -238,15 +237,7 @@ public class ESTService
 
             URL url = new URL(server + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
             ESTClient client = clientProvider.makeClient();
-            ESTRequestBuilder req = new ESTRequestBuilder("POST", url).withClientRequestIdempotentInputSource(new ESTClientRequestIdempotentInputSource()
-            {
-                public void ready(OutputStream os)
-                    throws IOException
-                {
-                    os.write(data);
-                    os.flush();
-                }
-            });
+            ESTRequestBuilder req = new ESTRequestBuilder("POST", url).withData(data);
 
             req.addHeader("Content-Type", "application/pkcs10");
             req.addHeader("content-length", "" + data.length);
@@ -306,7 +297,6 @@ public class ESTService
         ESTResponse resp = null;
         try
         {
-            final ByteArrayOutputStream bos = new ByteArrayOutputStream();
             URL url = new URL(server + (reEnroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
             ESTClient client = clientProvider.makeClient();
 
@@ -325,15 +315,17 @@ public class ESTService
 
                     if (source instanceof TLSUniqueProvider)
                     {
-                        bos.reset();
+                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         byte[] tlsUnique = ((TLSUniqueProvider)source).getTLSUnique();
 
                         builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_challengePassword, new DERPrintableString(Base64.toBase64String(tlsUnique)));
                         bos.write(annotateRequest(builder.build(contentSigner).getEncoded()).getBytes());
                         bos.flush();
 
-                        ESTRequestBuilder reqBuilder = new ESTRequestBuilder(request);
+                        ESTRequestBuilder reqBuilder = new ESTRequestBuilder(request).withData(bos.toByteArray());
 
+                        reqBuilder.addHeader("Content-Type", "application/pkcs10");
+                        reqBuilder.addHeader("Content-Transfer-Encoding", "base64");
                         reqBuilder.setHeader("Content-Length", Long.toString(bos.size()));
 
                         return reqBuilder.build();
@@ -343,19 +335,7 @@ public class ESTService
                         throw new IOException("Source does not supply TLS unique.");
                     }
                 }
-            })
-                .withClientRequestIdempotentInputSource(new ESTClientRequestIdempotentInputSource()
-                {
-                    public void ready(OutputStream os)
-                        throws IOException
-                    {
-                        os.write(bos.toByteArray());
-                        os.flush();
-                    }
-                });
-
-            reqBldr.addHeader("Content-Type", "application/pkcs10");
-            reqBldr.addHeader("Content-Transfer-Encoding", "base64");
+            });
 
             if (auth != null)
             {
@@ -363,6 +343,7 @@ public class ESTService
             }
 
             resp = client.doRequest(reqBldr.build());
+
             return handleEnrollResponse(resp);
 
         }
