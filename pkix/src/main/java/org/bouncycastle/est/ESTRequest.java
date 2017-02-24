@@ -1,7 +1,6 @@
 package org.bouncycastle.est;
 
 import java.net.URL;
-import java.util.Map;
 
 /**
  * Implements a basic http request.
@@ -63,25 +62,13 @@ public class ESTRequest
         this.listener = listener;
         this.headers = headers;
     }
-
-    public ESTRequest newWithURL(URL url)
-    {
-        ESTRequest req = new ESTRequest(this.method, url, this.writer, hijacker, listener);
-
-        for (Map.Entry<String, String[]> s : headers.entrySet())
-        {
-            req.headers.put(s.getKey(), s.getValue());
-        }
-        return req;
-    }
-
-
+    
     public String getMethod()
     {
         return method;
     }
 
-    public URL getUrl()
+    public URL getURL()
     {
         return url;
     }

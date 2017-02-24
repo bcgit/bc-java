@@ -399,7 +399,7 @@ public class ESTService
                 catch (Exception ex)
                 {
                     throw new ESTException(
-                        "Unable to parse Retry-After header:" + req.getUrl().toString() + " " + ex.getMessage(), null,
+                        "Unable to parse Retry-After header:" + req.getURL().toString() + " " + ex.getMessage(), null,
                         resp.getStatusCode(), resp.getInputStream());
                 }
             }
@@ -424,7 +424,7 @@ public class ESTService
         }
 
         throw new ESTException(
-            "Simple Enroll: " + req.getUrl().toString(), null,
+            "Simple Enroll: " + req.getURL().toString(), null,
             resp.getStatusCode(), resp.getInputStream());
 
     }
@@ -464,7 +464,7 @@ public class ESTService
                 break;
             default:
                 throw new ESTException(
-                    "CSR Attribute request: " + req.getUrl().toString(), null,
+                    "CSR Attribute request: " + req.getURL().toString(), null,
                     resp.getStatusCode(), resp.getInputStream());
             }
         }
