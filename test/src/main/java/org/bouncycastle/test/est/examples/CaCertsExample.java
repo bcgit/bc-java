@@ -183,7 +183,7 @@ public class CaCertsExample
 
             System.out.println();
             System.out.println("The untrusted server tendered to us these certificates as CA certs");
-            for (X509CertificateHolder holder : ESTService.storeToArray(caCertsResponse.getStore()))
+            for (X509CertificateHolder holder : ESTService.storeToArray(caCertsResponse.getCertificateStore()))
             {
 
                 //
@@ -213,7 +213,7 @@ public class CaCertsExample
 
         System.out.println("Fetched CA Certs:\n\n");
 
-        for (X509CertificateHolder holder : ESTService.storeToArray(caCertsResponse.getStore()))
+        for (X509CertificateHolder holder : ESTService.storeToArray(caCertsResponse.getCertificateStore()))
         {
             System.out.println(ExampleUtils.toPem(holder));
         }
