@@ -159,7 +159,7 @@ public class TestEnroll
             PKCS10CertificationRequest csr = pkcs10Builder.build(
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
-            EnrollmentResponse enr = est.simpleEnroll(false, csr, new HttpAuth("estreal", "estuser", "estpwd"));
+            EnrollmentResponse enr = est.simpleEnroll(false, csr, new HttpAuth("estreal", "estuser", "estpwd", new SecureRandom()));
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
@@ -220,7 +220,7 @@ public class TestEnroll
             PKCS10CertificationRequest csr = pkcs10Builder.build(
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
-            EnrollmentResponse enr = est.simpleEnroll(false, csr, new HttpAuth("estreal", "estuser", "estpwd"));
+            EnrollmentResponse enr = est.simpleEnroll(false, csr, new HttpAuth("estreal", "estuser", "estpwd", new SecureRandom()));
 
 
             Assert.assertFalse("Can Retry is true.", enr.canRetry());
@@ -496,7 +496,7 @@ public class TestEnroll
                 EnrollmentResponse enr = est.simpleEnroll(
                     false,
                     csr,
-                    new HttpAuth("estreal", "estuser", "estpwd"));
+                    new HttpAuth("estreal", "estuser", "estpwd", new SecureRandom()));
             }
             catch (Exception ex)
             {
@@ -639,7 +639,7 @@ public class TestEnroll
             EnrollmentResponse enr = est.simpleEnroll(
                 false,
                 csr,
-                new HttpAuth("estreal", "estuser", "estpwd"));
+                new HttpAuth("estreal", "estuser", "estpwd", new SecureRandom()));
 
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -842,7 +842,7 @@ public class TestEnroll
                 false,
                 pkcs10Builder,
                 contentSigner,
-                new HttpAuth("estreal", "estuser", "estpwd"));
+                new HttpAuth("estreal", "estuser", "estpwd",new SecureRandom()));
 
 
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
