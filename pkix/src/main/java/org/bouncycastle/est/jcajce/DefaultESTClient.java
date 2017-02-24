@@ -103,7 +103,6 @@ public class DefaultESTClient
     public ESTResponse performRequest(ESTRequest c)
         throws IOException
     {
-        c.setEstClient(this);
 
         ESTResponse res = null;
         Source socketSource = null;
@@ -111,6 +110,7 @@ public class DefaultESTClient
         {
 
             socketSource = sslSocketProvider.makeSource(c.getUrl().getHost(), c.getUrl().getPort());
+
             if (c.getListener() != null)
             {
                 c.getListener().onConnection(socketSource, c);
