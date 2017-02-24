@@ -26,15 +26,15 @@ public class ESTException
 
     public ESTException(String msg, Throwable cause)
     {
-        super(msg,cause);
+        super(msg, cause);
         body = null;
         statusCode = 0;
     }
 
 
-    public ESTException(String message, Throwable cause,  int statusCode, InputStream body)
+    public ESTException(String message, Throwable cause, int statusCode, InputStream body)
     {
-        super(message,cause);
+        super(message, cause);
         this.statusCode = statusCode;
         if (body != null)
         {

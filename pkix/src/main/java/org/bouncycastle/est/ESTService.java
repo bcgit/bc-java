@@ -17,6 +17,7 @@ import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.est.CsrAttrs;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cmc.CMCException;
 import org.bouncycastle.cmc.SimplePKIResponse;
@@ -80,15 +81,20 @@ public class ESTService
         throws Exception
     {
         ESTResponse resp = null;
+        Exception finalThrowable = null;
+        CACertsResponse caCertsResponse = null;
+        URL url = null;
         try
         {
-            URL url = new URL(server + CACERTS);
+            url = new URL(server + CACERTS);
 
             ESTClient client = clientProvider.makeClient();
-            ESTRequest req = new ESTRequest("GET", url, null);
+            ESTRequest req = new ESTRequestBuilder("GET", url, null).withESTClient(client).build();
             resp = client.doRequest(req);
 
             Store<X509CertificateHolder> caCerts = null;
+            Store<X509CRLHolder> crlHolderStore = null;
+
 
             if (resp.getStatusCode() == 200)
             {
@@ -100,11 +106,12 @@ public class ESTService
 
                 try
                 {
-                    if (resp.getContentLength() != null && resp.getContentLength() >0)
+                    if (resp.getContentLength() != null && resp.getContentLength() > 0)
                     {
                         ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
                         SimplePKIResponse spkr = new SimplePKIResponse(ContentInfo.getInstance((ASN1Sequence)ain.readObject()));
                         caCerts = spkr.getCertificates();
+                        crlHolderStore = spkr.getCRLs();
                     }
                 }
                 catch (Throwable ex)
@@ -118,7 +125,7 @@ public class ESTService
                 throw new ESTException("Get CACerts: " + url.toString(), null, resp.getStatusCode(), resp.getInputStream());
             }
 
-            return new CACertsResponse(caCerts, req, resp.getSource(), clientProvider.isTrusted());
+            caCertsResponse = new CACertsResponse(caCerts, crlHolderStore, req, resp.getSource(), clientProvider.isTrusted());
 
         }
         catch (Throwable t)
@@ -140,12 +147,23 @@ public class ESTService
                 {
                     resp.close();
                 }
-                catch (Throwable t)
+                catch (Exception t)
                 {
-                    throw new ESTException("Get CACerts: ", t, resp.getStatusCode(), resp.getInputStream());
+                    finalThrowable = t;
                 }
             }
         }
+
+        if (finalThrowable != null)
+        {
+            if (finalThrowable instanceof ESTException)
+            {
+                throw finalThrowable;
+            }
+            throw new ESTException("Get CACerts: " + url.toString(), finalThrowable, resp.getStatusCode(), null);
+        }
+
+        return caCertsResponse;
 
 
     }
@@ -220,7 +238,7 @@ public class ESTService
 
             URL url = new URL(server + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
             ESTClient client = clientProvider.makeClient();
-            ESTRequestBuilder req = new ESTRequestBuilder("POST", url, null).withClientRequestIdempotentInputSource( new ESTClientRequestIdempotentInputSource()
+            ESTRequestBuilder req = new ESTRequestBuilder("POST", url, null).withClientRequestIdempotentInputSource(new ESTClientRequestIdempotentInputSource()
             {
                 public void ready(OutputStream os)
                     throws IOException
@@ -240,7 +258,7 @@ public class ESTService
             }
 
             resp = client.doRequest(req.build());
-            
+
             return handleEnrollResponse(resp);
 
         }
@@ -326,15 +344,15 @@ public class ESTService
                     }
                 }
             })
-            .withClientRequestIdempotentInputSource(new ESTClientRequestIdempotentInputSource()
-            {
-                public void ready(OutputStream os)
-                    throws IOException
+                .withClientRequestIdempotentInputSource(new ESTClientRequestIdempotentInputSource()
                 {
-                    os.write(bos.toByteArray());
-                    os.flush();
-                }
-            });
+                    public void ready(OutputStream os)
+                        throws IOException
+                    {
+                        os.write(bos.toByteArray());
+                        os.flush();
+                    }
+                });
 
             reqBldr.addHeader("Content-Type", "application/pkcs10");
             reqBldr.addHeader("Content-Transfer-Encoding", "base64");
@@ -444,7 +462,7 @@ public class ESTService
             URL url = new URL(server + CSRATTRS);
 
             ESTClient client = clientProvider.makeClient();
-            ESTRequest req = new ESTRequest("GET", url, null);
+            ESTRequest req = new ESTRequestBuilder("GET", url, null).withESTClient(client).build(); //    new ESTRequest("GET", url, null);
             resp = client.doRequest(req);
 
 

@@ -103,14 +103,40 @@ public class DefaultESTClientSourceProvider
         throws IOException
     {
         SSLSocket sock = (SSLSocket)sslSocketFactory.createSocket(host, port);
+        sock.setSoTimeout(timeout);
+
         if (cipherSuites != null && !cipherSuites.isEmpty())
         {
             sock.setEnabledCipherSuites(cipherSuites.toArray(new String[cipherSuites.size()]));
         }
 
-        sock.setSoTimeout(timeout);
-        sock.setUseClientMode(true);
         sock.startHandshake();
+
+        {
+            String t = Strings.toLowerCase(sock.getSession().getCipherSuite());
+            if (t.contains("_des_") || t.contains("_des40_") || t.contains("_3des_"))
+            {
+                throw new IOException("EST clients must not use DES ciphers");
+            }
+        }
+
+        // check for use of null cipher and fail.
+        if (Strings.toLowerCase(sock.getSession().getCipherSuite()).contains("null"))
+        {
+            throw new IOException("EST clients must not use NULL ciphers");
+        }
+
+        // check for use of anon cipher and fail.
+        if (Strings.toLowerCase(sock.getSession().getCipherSuite()).contains("anon"))
+        {
+            throw new IOException("EST clients must not use anon ciphers");
+        }
+
+        // check for use of anon cipher and fail.
+        if (Strings.toLowerCase(sock.getSession().getCipherSuite()).contains("export"))
+        {
+            throw new IOException("EST clients must not use export ciphers");
+        }
 
         if (sock.getSession().getProtocol().equalsIgnoreCase("tlsv1"))
         {
@@ -123,11 +149,6 @@ public class DefaultESTClientSourceProvider
                 // Deliberately ignored.
             }
             throw new IOException("EST clients must not use TLSv1");
-        }
-
-        // check for use of null cipher and fail.
-        if (Strings.toLowerCase(sock.getSession().getCipherSuite()).contains("with null")) {
-            throw new IOException("EST clients must not use NULL ciphers");
         }
 
 

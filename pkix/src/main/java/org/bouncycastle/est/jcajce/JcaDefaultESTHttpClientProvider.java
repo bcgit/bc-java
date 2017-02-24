@@ -93,6 +93,7 @@ public class JcaDefaultESTHttpClientProvider
             {
                 socketFactory = createFactory(tlsVersion, tlsProvider, keyFact, estAuthorizer);
             }
+
             return new DefaultESTClient(
                 new DefaultESTClientSourceProvider(socketFactory, hostNameAuthorizer, timeout, bindingProvider, cipherSuites, absoluteLimit));
         }
