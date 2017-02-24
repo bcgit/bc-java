@@ -105,7 +105,7 @@ public class DefaultESTClient
     public ESTResponse performRequest(ESTRequest c)
         throws IOException
     {
-        c.setEstClient(this);
+
 
         ESTResponse res = null;
         Source socketSource = null;

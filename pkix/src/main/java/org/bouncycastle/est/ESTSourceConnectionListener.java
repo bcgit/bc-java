@@ -7,7 +7,8 @@ import java.io.IOException;
  * is connected to the remote end point but no application
  * data has been sent.
  */
-public interface ESTSourceConnectionListener<T,I>
+public interface ESTSourceConnectionListener<T, I>
 {
-    ESTRequest onConnection(Source<T> source, ESTRequest request) throws IOException;
+    ESTRequest onConnection(Source<T> source, ESTRequest request)
+        throws IOException;
 }

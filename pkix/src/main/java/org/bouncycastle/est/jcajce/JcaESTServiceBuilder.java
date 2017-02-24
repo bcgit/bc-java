@@ -133,13 +133,13 @@ public class JcaESTServiceBuilder
         return this;
     }
 
-    public JcaESTServiceBuilder addCipherSuit(String name)
+    public JcaESTServiceBuilder addCipherSuites(String name)
     {
         this.supportedSuites.add(name);
         return this;
     }
 
-    public JcaESTServiceBuilder addCipherSuit(String[] names)
+    public JcaESTServiceBuilder addCipherSuites(String[] names)
     {
         this.supportedSuites.addAll(Arrays.asList(names));
         return this;

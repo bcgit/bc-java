@@ -39,7 +39,6 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestEnroll
@@ -775,7 +774,7 @@ public class TestEnroll
                 .withTlSProvider(BouncyCastleJsseProvider.PROVIDER_NAME)
                 .withChannelBindingProvider(bcChannelBindingProvider)
                 .withTlsVersion("TLS")
-                .addCipherSuit(new String[]{
+                .addCipherSuites(new String[]{
                     "TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
                     "TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",
                     "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
@@ -844,7 +843,6 @@ public class TestEnroll
                 pkcs10Builder,
                 contentSigner,
                 new HttpAuth("estreal", "estuser", "estpwd"));
-
 
 
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
