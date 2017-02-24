@@ -221,7 +221,7 @@ public class ESTService
 
             URL url = new URL(server + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
             ESTClient client = clientProvider.makeClient();
-            ESTRequest req = new ESTRequest("POST", url, new ESTClientRequestIdempotentInputSource()
+            ESTRequestBuilder req = new ESTRequestBuilder("POST", url, null).withClientRequestIdempotentInputSource( new ESTClientRequestIdempotentInputSource()
             {
                 public void ready(OutputStream os)
                     throws IOException
@@ -229,7 +229,7 @@ public class ESTService
                     os.write(data);
                     os.flush();
                 }
-            }, null);
+            });
 
             req.addHeader("Content-Type", "application/pkcs10");
             req.addHeader("content-length", "" + data.length);
@@ -237,10 +237,11 @@ public class ESTService
 
             if (auth != null)
             {
-                req = auth.applyAuth(req);
+                auth.applyAuth(req);
             }
 
-            resp = client.doRequest(req);
+            resp = client.doRequest(req.build());
+            
             return handleEnrollResponse(resp);
 
         }
@@ -296,19 +297,9 @@ public class ESTService
             // Connect supplying a source listener.
             // The source listener is responsible for completing the PCS10 Cert request and encoding it.
             //
-
-
-            ESTRequest req = new ESTRequest("POST", url, new ESTClientRequestIdempotentInputSource()
+            ESTRequestBuilder reqBldr = new ESTRequestBuilder("POST", url, new ESTSourceConnectionListener()
             {
-                public void ready(OutputStream os)
-                    throws IOException
-                {
-                    os.write(bos.toByteArray());
-                    os.flush();
-                }
-            }, new ESTSourceConnectionListener()
-            {
-                public void onConnection(Source source, ESTRequest request)
+                public ESTRequest onConnection(Source source, ESTRequest request)
                     throws IOException
                 {
                     //
@@ -323,24 +314,38 @@ public class ESTService
                         builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_challengePassword, new DERPrintableString(Base64.toBase64String(tlsUnique)));
                         bos.write(annotateRequest(builder.build(contentSigner).getEncoded()).getBytes());
                         bos.flush();
-                        request.setHeader("Content-Length", Long.toString(bos.size()));
+
+                        ESTRequestBuilder reqBuilder = new ESTRequestBuilder(request);
+
+                        reqBuilder.setHeader("Content-Length", Long.toString(bos.size()));
+
+                        return reqBuilder.build();
                     }
                     else
                     {
-                        throw new IOException("Source does not supple TLS unique.");
+                        throw new IOException("Source does not supply TLS unique.");
                     }
+                }
+            })
+            .withClientRequestIdempotentInputSource(new ESTClientRequestIdempotentInputSource()
+            {
+                public void ready(OutputStream os)
+                    throws IOException
+                {
+                    os.write(bos.toByteArray());
+                    os.flush();
                 }
             });
 
-            req.addHeader("Content-Type", "application/pkcs10");
-            req.addHeader("Content-Transfer-Encoding", "base64");
+            reqBldr.addHeader("Content-Type", "application/pkcs10");
+            reqBldr.addHeader("Content-Transfer-Encoding", "base64");
 
             if (auth != null)
             {
-                req = auth.applyAuth(req);
+                auth.applyAuth(reqBldr);
             }
 
-            resp = client.doRequest(req);
+            resp = client.doRequest(reqBldr.build());
             return handleEnrollResponse(resp);
 
         }
@@ -399,7 +404,7 @@ public class ESTService
                 }
             }
 
-            return new EnrollmentResponse(null, notBefore, req.copy(), resp.getSource());
+            return new EnrollmentResponse(null, notBefore, req, resp.getSource());
 
         }
         else if (resp.getStatusCode() == 200)
