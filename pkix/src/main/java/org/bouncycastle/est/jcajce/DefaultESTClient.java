@@ -162,10 +162,9 @@ public class DefaultESTClient
 
             os.write(CRLF);
             os.flush();
-            if (c.getWriter() != null)
-            {
-                c.getWriter().ready(os);
-            }
+
+            c.writeData(os);
+
             os.flush();
 
             if (c.getHijacker() != null)
