@@ -89,7 +89,7 @@ public class ESTService
             url = new URL(server + CACERTS);
 
             ESTClient client = clientProvider.makeClient();
-            ESTRequest req = new ESTRequestBuilder("GET", url, null).withClient(client).build();
+            ESTRequest req = new ESTRequestBuilder("GET", url).withClient(client).build();
             resp = client.doRequest(req);
 
             Store<X509CertificateHolder> caCerts = null;
@@ -238,7 +238,7 @@ public class ESTService
 
             URL url = new URL(server + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
             ESTClient client = clientProvider.makeClient();
-            ESTRequestBuilder req = new ESTRequestBuilder("POST", url, null).withClientRequestIdempotentInputSource(new ESTClientRequestIdempotentInputSource()
+            ESTRequestBuilder req = new ESTRequestBuilder("POST", url).withClientRequestIdempotentInputSource(new ESTClientRequestIdempotentInputSource()
             {
                 public void ready(OutputStream os)
                     throws IOException
@@ -314,7 +314,7 @@ public class ESTService
             // Connect supplying a source listener.
             // The source listener is responsible for completing the PCS10 Cert request and encoding it.
             //
-            ESTRequestBuilder reqBldr = new ESTRequestBuilder("POST", url, new ESTSourceConnectionListener()
+            ESTRequestBuilder reqBldr = new ESTRequestBuilder("POST", url).withConnectionListener(new ESTSourceConnectionListener()
             {
                 public ESTRequest onConnection(Source source, ESTRequest request)
                     throws IOException
@@ -462,7 +462,7 @@ public class ESTService
             URL url = new URL(server + CSRATTRS);
 
             ESTClient client = clientProvider.makeClient();
-            ESTRequest req = new ESTRequestBuilder("GET", url, null).withClient(client).build(); //    new ESTRequest("GET", url, null);
+            ESTRequest req = new ESTRequestBuilder("GET", url).withClient(client).build(); //    new ESTRequest("GET", url, null);
             resp = client.doRequest(req);
 
 
