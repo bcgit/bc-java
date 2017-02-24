@@ -68,6 +68,9 @@ public class ESTRequest
     public void writeData(OutputStream os)
         throws IOException
     {
-        os.write(data);
+        if (data != null)
+        {
+            os.write(data);
+        }
     }
 }
