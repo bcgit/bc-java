@@ -1,7 +1,6 @@
 package org.bouncycastle.est;
 
 import java.net.URL;
-import java.util.Map;
 
 /**
  * Builder for basic EST requests
@@ -26,11 +25,6 @@ public class ESTRequestBuilder
         this.writer = request.writer;
         this.hijacker = request.hijacker;
         this.headers = (HttpUtil.Headers)request.headers.clone();
-
-        for (Map.Entry<String, String[]> s : request.headers.entrySet())
-        {
-            headers.put(s.getKey(), s.getValue());
-        }
     }
 
     public ESTRequestBuilder(String method, URL url, ESTSourceConnectionListener listener)

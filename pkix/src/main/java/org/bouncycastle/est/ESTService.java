@@ -33,7 +33,6 @@ import org.bouncycastle.util.encoders.Base64;
  */
 public class ESTService
 {
-
     protected final String CACERTS = "/cacerts";
     protected final String SIMPLE_ENROLL = "/simpleenroll";
     protected final String SIMPLE_REENROLL = "/simplereenroll";
