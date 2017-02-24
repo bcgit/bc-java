@@ -382,7 +382,9 @@ public class ESTTestUtils
         return fromFile;
     }
 
-    public static Object[] readCertAndKey(File path) throws Exception{
+    public static Object[] readCertAndKey(File path)
+        throws Exception
+    {
 
         Object[] out = new Object[2];
         FileReader fr = new FileReader(path);
@@ -393,7 +395,6 @@ public class ESTTestUtils
         fr.close();
         return out;
     }
-
 
 
     public static String readToString(File f)

@@ -26,16 +26,12 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSession;
 
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cmc.SimplePKIResponse;
 import org.bouncycastle.est.CACertsResponse;
 import org.bouncycastle.est.ESTClient;
 import org.bouncycastle.est.ESTClientProvider;
@@ -48,7 +44,6 @@ import org.bouncycastle.est.Source;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.test.est.examples.ExampleUtils;
 import org.bouncycastle.util.Store;
-import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;
@@ -777,7 +772,6 @@ public class TestCACertsFetch
         }
         catch (Exception ex)
         {
-            ex.printStackTrace();
             Assert.assertEquals("Must be EST Exception", ESTException.class, ex.getClass());
             Assert.assertEquals("Cause is IO Exception.", IOException.class, IOException.class);
         }
@@ -1492,12 +1486,12 @@ public class TestCACertsFetch
         //
         HttpResponder res = new HttpResponder().withTlsProtocol("TLSv1").withCreds(cert, kp.getPrivate());
         res.setCipherSuites(new String[]{
-            "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
-            "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
-            "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
+//            "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
+//            "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
+//            "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
             "SSL_RSA_EXPORT_WITH_RC4_40_MD5",
-            "TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA",
-            "TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5",
+//            "TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA",
+//            "TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5",
             "TLS_KRB5_EXPORT_WITH_RC4_40_SHA",
             "TLS_KRB5_EXPORT_WITH_RC4_40_MD5"
         });
@@ -1684,7 +1678,9 @@ public class TestCACertsFetch
             Store<X509CRLHolder> x509CRLHolderStore = resp.getCrlStore();
             Collection<X509CRLHolder> x509CRLHolders = x509CRLHolderStore.getMatches(null);
             Assert.assertTrue(x509CRLHolders.isEmpty()); // CRL is actually empty.
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             ex.printStackTrace();
         }
         finally
