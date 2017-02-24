@@ -29,7 +29,7 @@ public class ESTRequestBuilder
         this.client = request.getClient();
     }
 
-    public ESTRequestBuilder(String method, URL url, ESTSourceConnectionListener listener)
+    public ESTRequestBuilder(String method, URL url)
     {
         this.method = method;
         this.url = url;
@@ -40,6 +40,13 @@ public class ESTRequestBuilder
     public ESTRequestBuilder withClientRequestIdempotentInputSource(ESTClientRequestIdempotentInputSource writer)
     {
         this.writer = writer;
+
+        return this;
+    }
+
+    public ESTRequestBuilder withConnectionListener(ESTSourceConnectionListener listener)
+    {
+        this.listener = listener;
 
         return this;
     }
