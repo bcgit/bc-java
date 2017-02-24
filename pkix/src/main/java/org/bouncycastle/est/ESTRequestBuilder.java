@@ -26,7 +26,7 @@ public class ESTRequestBuilder
         this.writer = request.writer;
         this.hijacker = request.hijacker;
         this.headers = (HttpUtil.Headers)request.headers.clone();
-        this.client = request.getEstClient();
+        this.client = request.getClient();
     }
 
     public ESTRequestBuilder(String method, URL url, ESTSourceConnectionListener listener)
