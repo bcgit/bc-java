@@ -248,7 +248,7 @@ class HttpUtil
         public Object clone()
         {
             Headers n = new Headers();
-            for (Entry<String, String[]> v : entrySet())
+            for (Map.Entry<String, String[]> v : entrySet())
             {
                 n.put(v.getKey(), v.getValue());
             }

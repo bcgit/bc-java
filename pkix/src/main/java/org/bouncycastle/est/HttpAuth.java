@@ -60,10 +60,9 @@ public class HttpAuth
         this.nonceGenerator = nonceGenerator;
     }
 
-    public ESTRequest applyAuth(final ESTRequest request)
+    public void applyAuth(final ESTRequestBuilder reqBldr)
     {
-
-        ESTRequest r = request.newWithHijacker(new ESTHijacker()
+        reqBldr.withHijacker(new ESTHijacker()
         {
             public ESTResponse hijack(ESTRequest req, Source sock)
                 throws IOException
@@ -80,7 +79,7 @@ public class HttpAuth
                     }
                     else if (authHeader.startsWith("basic"))
                     {
-                        res.close(); // Close off the last request.
+                        res.close(); // Close off the last reqBldr.
 
                         //
                         // Check realm field from header.
@@ -102,7 +101,7 @@ public class HttpAuth
                         //
                         // Prepare basic auth answer.
                         //
-                        ESTRequest answer = req.newWithHijacker(null);
+                        ESTRequestBuilder answer = new ESTRequestBuilder(req).withHijacker(null);
 
                         if (realm != null && realm.length() > 0)
                         {
@@ -115,7 +114,7 @@ public class HttpAuth
                         String userPass = username + ":" + password;
                         answer.setHeader("Authorization", "Basic " + Base64.toBase64String(userPass.getBytes()));
 
-                        res = req.getEstClient().doRequest(answer);
+                        res = req.getEstClient().doRequest(answer.build());
                     }
 
 
@@ -124,7 +123,6 @@ public class HttpAuth
                 return res;
             }
         });
-        return r;
     }
 
 
@@ -337,9 +335,9 @@ public class HttpAuth
             hdr.put("opaque", makeNonce(20));
         }
 
-        ESTRequest answer = req.newWithHijacker(null);
+        ESTRequestBuilder answer = new ESTRequestBuilder(req).withHijacker(null);
         answer.setHeader("Authorization", HttpUtil.mergeCSL("Digest", hdr));
-        return req.getEstClient().doRequest(answer);
+        return req.getEstClient().doRequest(answer.build());
     }
 
 
