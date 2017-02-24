@@ -12,6 +12,7 @@ import org.bouncycastle.est.ESTClient;
 import org.bouncycastle.est.ESTClientSourceProvider;
 import org.bouncycastle.est.ESTException;
 import org.bouncycastle.est.ESTRequest;
+import org.bouncycastle.est.ESTRequestBuilder;
 import org.bouncycastle.est.ESTResponse;
 import org.bouncycastle.est.Source;
 import org.bouncycastle.util.Properties;
@@ -77,14 +78,15 @@ public class DefaultESTClient
                     throw new ESTException("Redirect status type: " + response.getStatusCode() + " but no location header");
                 }
 
+                ESTRequestBuilder requestBuilder = new ESTRequestBuilder(response.getOriginalRequest());
                 if (loc.startsWith("http"))
                 {
-                    redirectingRequest = response.getOriginalRequest().newWithURL(new URL(loc));
+                    redirectingRequest = requestBuilder.withURL(new URL(loc)).build();
                 }
                 else
                 {
-                    URL u = response.getOriginalRequest().getUrl();
-                    redirectingRequest = response.getOriginalRequest().newWithURL(new URL(u.getProtocol(), u.getHost(), u.getPort(), loc));
+                    URL u = response.getOriginalRequest().getURL();
+                    redirectingRequest = requestBuilder.withURL(new URL(u.getProtocol(), u.getHost(), u.getPort(), loc)).build();
                 }
                 break;
             default:
@@ -110,7 +112,7 @@ public class DefaultESTClient
         try
         {
 
-            socketSource = sslSocketProvider.makeSource(c.getUrl().getHost(), c.getUrl().getPort());
+            socketSource = sslSocketProvider.makeSource(c.getURL().getHost(), c.getURL().getPort());
             if (c.getListener() != null)
             {
                 c = c.getListener().onConnection(socketSource, c);
@@ -131,12 +133,12 @@ public class DefaultESTClient
                 os = socketSource.getOutputStream();
             }
 
-            String req = c.getUrl().getPath() + ((c.getUrl().getQuery() != null) ? c.getUrl().getQuery() : "");
+            String req = c.getURL().getPath() + ((c.getURL().getQuery() != null) ? c.getURL().getQuery() : "");
 
             c.getHeaders().ensureHeader("Connection", "close");
 
             // Replace host header.
-            URL u = c.getUrl();
+            URL u = c.getURL();
             if (u.getPort() > -1)
             {
                 c.getHeaders().set("Host", String.format("%s:%d", u.getHost(), u.getPort()));

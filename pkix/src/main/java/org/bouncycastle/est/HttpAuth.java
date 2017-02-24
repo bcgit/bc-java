@@ -136,7 +136,7 @@ public class HttpAuth
         String uri = null;
         try
         {
-            uri = req.getUrl().toURI().getPath();
+            uri = req.getURL().toURI().getPath();
         }
         catch (URISyntaxException e)
         {

@@ -9,7 +9,7 @@ import java.util.Map;
 public class ESTRequestBuilder
 {
     private final String method;
-    private final URL url;
+    private URL url;
 
     private HttpUtil.Headers headers;
 
@@ -51,6 +51,13 @@ public class ESTRequestBuilder
     public ESTRequestBuilder withHijacker(ESTHijacker hijacker)
     {
         this.hijacker = hijacker;
+
+        return this;
+    }
+
+    public ESTRequestBuilder withURL(URL url)
+    {
+        this.url = url;
 
         return this;
     }
