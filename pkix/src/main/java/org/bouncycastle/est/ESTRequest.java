@@ -34,25 +34,6 @@ public class ESTRequest
         this.writer = null;
     }
 
-
-    public ESTRequest(String method, URL url, ESTClientRequestIdempotentInputSource writer, ESTHijacker hijacker, ESTSourceConnectionListener listener)
-    {
-        this.method = method;
-        this.url = url;
-        this.writer = writer;
-        this.hijacker = hijacker;
-        this.listener = listener;
-    }
-
-    public ESTRequest(String method, URL url, ESTHijacker hijacker, ESTSourceConnectionListener listener)
-    {
-        this.method = method;
-        this.url = url;
-        this.hijacker = hijacker;
-        this.listener = listener;
-        this.writer = null;
-    }
-
     ESTRequest(String method, URL url, ESTClientRequestIdempotentInputSource writer, ESTHijacker hijacker, ESTSourceConnectionListener listener, HttpUtil.Headers headers)
     {
         this.method = method;
