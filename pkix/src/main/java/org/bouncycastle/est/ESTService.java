@@ -450,9 +450,20 @@ public class ESTService
             switch (resp.getStatusCode())
             {
             case 200:
-                ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
-                ASN1Sequence seq = (ASN1Sequence)ain.readObject();
-                response = new CSRAttributesResponse(CsrAttrs.getInstance(seq));
+                try
+                {
+                    if (resp.getContentLength() != null && resp.getContentLength() > 0)
+                    {
+                        ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
+                        ASN1Sequence seq = (ASN1Sequence)ain.readObject();
+                        response = new CSRAttributesResponse(CsrAttrs.getInstance(seq));
+                    }
+                }
+                catch (Throwable ex)
+                {
+                    throw new ESTException("Decoding CACerts: " + url.toString() + " " + ex.getMessage(), ex, resp.getStatusCode(), resp.getInputStream());
+                }
+
                 break;
             case 204:
                 response = null;
