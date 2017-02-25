@@ -12,7 +12,11 @@ public class CACertsResponse
     private final Source session;
     private final boolean trusted;
 
-    public CACertsResponse(Store<X509CertificateHolder> store, Store<X509CRLHolder> crlHolderStore, ESTRequest requestToRetry, Source session, boolean trusted)
+    public CACertsResponse(
+            Store<X509CertificateHolder> store,
+            Store<X509CRLHolder> crlHolderStore,
+            ESTRequest requestToRetry,
+            Source session, boolean trusted)
     {
         this.store = store;
         this.requestToRetry = requestToRetry;
