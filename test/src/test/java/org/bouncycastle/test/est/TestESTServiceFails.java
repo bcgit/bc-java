@@ -10,10 +10,13 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.cmc.SimplePKIResponse;
 import org.bouncycastle.est.CACertsResponse;
+import org.bouncycastle.est.CSRAttributesResponse;
+import org.bouncycastle.est.CSRRequestResponse;
 import org.bouncycastle.est.ESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
+import org.junit.Assert;
 import org.junit.Test;
 
 
@@ -137,5 +140,28 @@ public class TestESTServiceFails
 
         ca.getCrlStore();
     }
+
+    @Test(expected = IllegalStateException.class)
+    public void testCSRRequestResponseNoCSRs() {
+        CSRRequestResponse rsp = new CSRRequestResponse(null,null);
+        TestCase.assertFalse("Must be false",rsp.hasAttributesResponse());
+        rsp.getAttributesResponse();
+        Assert.fail("Must throw exception");
+    }
+
+    @Test
+    public void testCSRAttributeResponsewithCSRs() throws Exception {
+        CSRRequestResponse rsp = new CSRRequestResponse(
+                new CSRAttributesResponse(
+                        Base64.decode("MFYGBysGAQEBARYGCSqGSIb3DQEJBwYJKyQDAwIIAQELBglghkgBZQMEAgIGCSqGSIb3DQEBAQYJKoZIhvcNAQEEBgkqhkiG9w0BAQUGCSqGSIb3DQEBBg==")),
+        null
+        );
+
+        TestCase.assertTrue("Response exists",rsp.hasAttributesResponse());
+
+        rsp.getAttributesResponse();
+
+    }
+
 
 }

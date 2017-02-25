@@ -60,6 +60,9 @@ class CTEBase64InputStream
              */
             if (j >= 33 || (j == '\r' || j == '\n'))
             {
+                if (c >= rawBuf.length) {
+                    throw new IOException("Content Transfer Encoding, base64 line length > 1024");
+                }
                 rawBuf[c++] = (byte)j;
                 read += 1;
             }

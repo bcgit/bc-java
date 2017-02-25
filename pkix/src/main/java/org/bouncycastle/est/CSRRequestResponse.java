@@ -14,8 +14,15 @@ public class CSRRequestResponse
         this.source = session;
     }
 
+    public boolean hasAttributesResponse() {
+        return attributesResponse != null;
+    }
+
     public CSRAttributesResponse getAttributesResponse()
     {
+        if (attributesResponse == null) {
+            throw new IllegalStateException("Response has no CSRAttributesResponse.");
+        }
         return attributesResponse;
     }
 
