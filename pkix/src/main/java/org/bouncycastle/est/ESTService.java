@@ -1,15 +1,5 @@
 package org.bouncycastle.est;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Locale;
-import java.util.TimeZone;
-
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERPrintableString;
@@ -27,6 +17,16 @@ import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Collection;
+import java.util.Locale;
+import java.util.TimeZone;
+
 /**
  * EST provides unified access to an EST server which is defined as implementing
  * RFC7030.
@@ -42,8 +42,8 @@ public class ESTService
 
 
     ESTService(
-        String server,
-        ESTClientProvider clientProvider)
+            String server,
+            ESTClientProvider clientProvider)
     {
         this.clientProvider = clientProvider;
         if (server.endsWith("/"))
@@ -77,12 +77,13 @@ public class ESTService
      * @return A store of X509Certificates.
      */
     public CACertsResponse getCACerts()
-        throws Exception
+            throws Exception
     {
         ESTResponse resp = null;
         Exception finalThrowable = null;
         CACertsResponse caCertsResponse = null;
         URL url = null;
+        boolean failedBeforeClose = false;
         try
         {
             url = new URL(server + CACERTS);
@@ -108,45 +109,40 @@ public class ESTService
                     if (resp.getContentLength() != null && resp.getContentLength() > 0)
                     {
                         ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
-                        SimplePKIResponse spkr = new SimplePKIResponse(ContentInfo.getInstance((ASN1Sequence)ain.readObject()));
+                        SimplePKIResponse spkr = new SimplePKIResponse(ContentInfo.getInstance((ASN1Sequence) ain.readObject()));
                         caCerts = spkr.getCertificates();
                         crlHolderStore = spkr.getCRLs();
                     }
-                }
-                catch (Throwable ex)
+                } catch (Throwable ex)
                 {
                     throw new ESTException("Decoding CACerts: " + url.toString() + " " + ex.getMessage(), ex, resp.getStatusCode(), resp.getInputStream());
                 }
 
-            }
-            else if (resp.getStatusCode() != 204) // 204 are No Content
+            } else if (resp.getStatusCode() != 204) // 204 are No Content
             {
                 throw new ESTException("Get CACerts: " + url.toString(), null, resp.getStatusCode(), resp.getInputStream());
             }
 
             caCertsResponse = new CACertsResponse(caCerts, crlHolderStore, req, resp.getSource(), clientProvider.isTrusted());
 
-        }
-        catch (Throwable t)
+        } catch (Throwable t)
         {
+            failedBeforeClose = true;
             if (t instanceof ESTException)
             {
-                throw (ESTException)t;
-            }
-            else
+                throw (ESTException) t;
+            } else
             {
                 throw new ESTException(t.getMessage(), t);
             }
-        }
-        finally
+        } finally
         {
             if (resp != null)
             {
                 try
                 {
                     resp.close();
-                }
-                catch (Exception t)
+                } catch (Exception t)
                 {
                     finalThrowable = t;
                 }
@@ -175,7 +171,7 @@ public class ESTService
      * @throws Exception
      */
     public EnrollmentResponse simpleEnroll(EnrollmentResponse priorResponse)
-        throws Exception
+            throws Exception
     {
         if (!clientProvider.isTrusted())
         {
@@ -189,19 +185,16 @@ public class ESTService
             ESTClient client = clientProvider.makeClient();
             resp = client.doRequest(priorResponse.getRequestToRetry());
             return handleEnrollResponse(resp);
-        }
-        catch (Throwable t)
+        } catch (Throwable t)
         {
             if (t instanceof ESTException)
             {
-                throw (ESTException)t;
-            }
-            else
+                throw (ESTException) t;
+            } else
             {
                 throw new ESTException(t.getMessage(), t);
             }
-        }
-        finally
+        } finally
         {
             if (resp != null)
             {
@@ -223,7 +216,7 @@ public class ESTService
      * @return The enrolled certificate.
      */
     public EnrollmentResponse simpleEnroll(boolean reenroll, PKCS10CertificationRequest certificationRequest, ESTAuth auth)
-        throws IOException
+            throws IOException
     {
         if (!clientProvider.isTrusted())
         {
@@ -252,19 +245,16 @@ public class ESTService
 
             return handleEnrollResponse(resp);
 
-        }
-        catch (Throwable t)
+        } catch (Throwable t)
         {
             if (t instanceof ESTException)
             {
-                throw (ESTException)t;
-            }
-            else
+                throw (ESTException) t;
+            } else
             {
                 throw new ESTException(t.getMessage(), t);
             }
-        }
-        finally
+        } finally
         {
             if (resp != null)
             {
@@ -287,7 +277,7 @@ public class ESTService
      * @throws IOException
      */
     public EnrollmentResponse simpleEnrollPoP(boolean reEnroll, final PKCS10CertificationRequestBuilder builder, final ContentSigner contentSigner, ESTAuth auth)
-        throws IOException
+            throws IOException
     {
         if (!clientProvider.isTrusted())
         {
@@ -307,7 +297,7 @@ public class ESTService
             ESTRequestBuilder reqBldr = new ESTRequestBuilder("POST", url).withConnectionListener(new ESTSourceConnectionListener()
             {
                 public ESTRequest onConnection(Source source, ESTRequest request)
-                    throws IOException
+                        throws IOException
                 {
                     //
                     // Add challenge password from tls unique
@@ -316,7 +306,7 @@ public class ESTService
                     if (source instanceof TLSUniqueProvider)
                     {
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                        byte[] tlsUnique = ((TLSUniqueProvider)source).getTLSUnique();
+                        byte[] tlsUnique = ((TLSUniqueProvider) source).getTLSUnique();
 
                         builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_challengePassword, new DERPrintableString(Base64.toBase64String(tlsUnique)));
                         bos.write(annotateRequest(builder.build(contentSigner).getEncoded()).getBytes());
@@ -329,8 +319,7 @@ public class ESTService
                         reqBuilder.setHeader("Content-Length", Long.toString(bos.size()));
 
                         return reqBuilder.build();
-                    }
-                    else
+                    } else
                     {
                         throw new IOException("Source does not supply TLS unique.");
                     }
@@ -346,19 +335,16 @@ public class ESTService
 
             return handleEnrollResponse(resp);
 
-        }
-        catch (Throwable t)
+        } catch (Throwable t)
         {
             if (t instanceof ESTException)
             {
-                throw (ESTException)t;
-            }
-            else
+                throw (ESTException) t;
+            } else
             {
                 throw new ESTException(t.getMessage(), t);
             }
-        }
-        finally
+        } finally
         {
             if (resp != null)
             {
@@ -370,7 +356,7 @@ public class ESTService
 
 
     protected EnrollmentResponse handleEnrollResponse(ESTResponse resp)
-        throws IOException
+            throws IOException
     {
 
         ESTRequest req = resp.getOriginalRequest();
@@ -384,36 +370,32 @@ public class ESTService
             try
             {
                 notBefore = System.currentTimeMillis() + Long.parseLong(rt);
-            }
-            catch (NumberFormatException nfe)
+            } catch (NumberFormatException nfe)
             {
                 try
                 {
                     SimpleDateFormat dateFormat = new SimpleDateFormat(
-                        "EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+                            "EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
                     dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
                     notBefore = dateFormat.parse(rt).getTime();
-                }
-                catch (Exception ex)
+                } catch (Exception ex)
                 {
                     throw new ESTException(
-                        "Unable to parse Retry-After header:" + req.getURL().toString() + " " + ex.getMessage(), null,
-                        resp.getStatusCode(), resp.getInputStream());
+                            "Unable to parse Retry-After header:" + req.getURL().toString() + " " + ex.getMessage(), null,
+                            resp.getStatusCode(), resp.getInputStream());
                 }
             }
 
             return new EnrollmentResponse(null, notBefore, req, resp.getSource());
 
-        }
-        else if (resp.getStatusCode() == 200)
+        } else if (resp.getStatusCode() == 200)
         {
             ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
             SimplePKIResponse spkr = null;
             try
             {
                 spkr = new SimplePKIResponse(ContentInfo.getInstance(ain.readObject()));
-            }
-            catch (CMCException e)
+            } catch (CMCException e)
             {
                 throw new ESTException(e.getMessage(), e.getCause());
             }
@@ -422,13 +404,13 @@ public class ESTService
         }
 
         throw new ESTException(
-            "Simple Enroll: " + req.getURL().toString(), null,
-            resp.getStatusCode(), resp.getInputStream());
+                "Simple Enroll: " + req.getURL().toString(), null,
+                resp.getStatusCode(), resp.getInputStream());
 
     }
 
     public CSRRequestResponse getCSRAttributes()
-        throws IOException
+            throws ESTException
     {
 
         if (!clientProvider.isTrusted())
@@ -438,9 +420,11 @@ public class ESTService
 
         ESTResponse resp = null;
         CSRAttributesResponse response = null;
+        Exception finalThrowable = null;
+        URL url = null;
         try
         {
-            URL url = new URL(server + CSRATTRS);
+            url = new URL(server + CSRATTRS);
 
             ESTClient client = clientProvider.makeClient();
             ESTRequest req = new ESTRequestBuilder("GET", url).withClient(client).build(); //    new ESTRequest("GET", url, null);
@@ -449,52 +433,65 @@ public class ESTService
 
             switch (resp.getStatusCode())
             {
-            case 200:
-                try
-                {
-                    if (resp.getContentLength() != null && resp.getContentLength() > 0)
+                case 200:
+                    try
                     {
-                        ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
-                        ASN1Sequence seq = (ASN1Sequence)ain.readObject();
-                        response = new CSRAttributesResponse(CsrAttrs.getInstance(seq));
+                        if (resp.getContentLength() != null && resp.getContentLength() > 0)
+                        {
+                            ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
+                            ASN1Sequence seq = (ASN1Sequence) ain.readObject();
+                            response = new CSRAttributesResponse(CsrAttrs.getInstance(seq));
+                        }
+                    } catch (Throwable ex)
+                    {
+                        throw new ESTException("Decoding CACerts: " + url.toString() + " " + ex.getMessage(), ex, resp.getStatusCode(), resp.getInputStream());
                     }
-                }
-                catch (Throwable ex)
-                {
-                    throw new ESTException("Decoding CACerts: " + url.toString() + " " + ex.getMessage(), ex, resp.getStatusCode(), resp.getInputStream());
-                }
 
-                break;
-            case 204:
-                response = null;
-                break;
-            case 404:
-                response = null;
-                break;
-            default:
-                throw new ESTException(
-                    "CSR Attribute request: " + req.getURL().toString(), null,
-                    resp.getStatusCode(), resp.getInputStream());
+                    break;
+                case 204:
+                    response = null;
+                    break;
+                case 404:
+                    response = null;
+                    break;
+                default:
+                    throw new ESTException(
+                            "CSR Attribute request: " + req.getURL().toString(), null,
+                            resp.getStatusCode(), resp.getInputStream());
             }
-        }
-        catch (Throwable t)
+        } catch (Throwable t)
         {
+
             if (t instanceof ESTException)
             {
-                throw (ESTException)t;
-            }
-            else
+                throw (ESTException) t;
+            } else
             {
                 throw new ESTException(t.getMessage(), t);
             }
-        }
-        finally
+        } finally
         {
             if (resp != null)
             {
-                resp.close();
+                try
+                {
+                    resp.close();
+                } catch (Exception ex)
+                {
+                    finalThrowable = ex;
+                }
             }
         }
+
+        if (finalThrowable != null)
+        {
+            if (finalThrowable instanceof ESTException)
+            {
+                throw (ESTException) finalThrowable;
+            }
+            throw new ESTException(finalThrowable.getMessage(), finalThrowable, resp.getStatusCode(), null);
+        }
+
         return new CSRRequestResponse(response, resp.getSource());
     }
 
@@ -510,8 +507,7 @@ public class ESTService
             {
                 pw.print(Base64.toBase64String(data, i, 48));
                 i += 48;
-            }
-            else
+            } else
             {
                 pw.print(Base64.toBase64String(data, i, data.length - i));
                 i = data.length;

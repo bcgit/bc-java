@@ -75,7 +75,12 @@ class CTEBase64InputStream
 
         if (c > 0)
         {
-            Base64.decode(rawBuf, 0, c, dataOutputStream);
+            try
+            {
+                Base64.decode(rawBuf, 0, c, dataOutputStream);
+            } catch (Exception ex) {
+                throw new IOException("Decode Base64 Content-Transfer-Encoding",ex);
+            }
         }
         else
         {
