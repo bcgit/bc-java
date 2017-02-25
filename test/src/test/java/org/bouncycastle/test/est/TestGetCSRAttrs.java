@@ -1,32 +1,27 @@
 package org.bouncycastle.test.est;
 
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.est.AttrOrOID;
 import org.bouncycastle.asn1.est.CsrAttrs;
-import org.bouncycastle.asn1.util.ASN1Dump;
-import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.est.CACertsResponse;
-import org.bouncycastle.est.CSRAttributesResponse;
 import org.bouncycastle.est.CSRRequestResponse;
+import org.bouncycastle.est.ESTException;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
-import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Collection;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeUnit;
 
 
 public class TestGetCSRAttrs
-    extends SimpleTest
+        extends SimpleTest
 {
 
     public String getName()
@@ -35,7 +30,7 @@ public class TestGetCSRAttrs
     }
 
     private ESTServerUtils.ServerInstance startDefaultServer()
-        throws Exception
+            throws Exception
     {
 
         final ESTServerUtils.EstServerConfig config = new ESTServerUtils.EstServerConfig();
@@ -58,7 +53,7 @@ public class TestGetCSRAttrs
 
 
     public void performTest()
-        throws Exception
+            throws Exception
     {
         ESTTestUtils.runJUnit(TestGetCSRAttrs.class);
     }
@@ -73,7 +68,7 @@ public class TestGetCSRAttrs
      */
     @Test
     public void testFetchCSRAttributes()
-        throws Exception
+            throws Exception
     {
         ESTTestUtils.ensureProvider();
         X509CertificateHolder[] theirCAs = null;
@@ -83,19 +78,18 @@ public class TestGetCSRAttrs
             serverInstance = startDefaultServer();
 
             ESTService est = new JcaESTServiceBuilder(
-                "https://localhost:8443/.well-known/est/",
-                ESTTestUtils.toTrustAnchor(
-                    ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    ))
+                    "https://localhost:8443/.well-known/est/",
+                    ESTTestUtils.toTrustAnchor(
+                            ESTTestUtils.readPemCertificate(
+                                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                            ))
             ).build();
 
             CSRRequestResponse csrRequestResponse = est.getCSRAttributes();
             Assert.assertEquals(1, csrRequestResponse.getAttributesResponse().getRequirements().size());
             Assert.assertTrue("Must have: ",
-                csrRequestResponse.getAttributesResponse().hasRequirement(new ASN1ObjectIdentifier("1.2.3.4")));
-        }
-        finally
+                    csrRequestResponse.getAttributesResponse().hasRequirement(new ASN1ObjectIdentifier("1.2.3.4")));
+        } finally
         {
             if (serverInstance != null)
             {
@@ -131,7 +125,7 @@ public class TestGetCSRAttrs
         {
             int port = res.open(responseData.toByteArray());
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                    "https://localhost:" + port + "/.well-known/est/",ESTTestUtils.toTrustAnchor(
+                    "https://localhost:" + port + "/.well-known/est/", ESTTestUtils.toTrustAnchor(
                     ESTTestUtils.readPemCertificate(
                             ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                     )));
@@ -142,21 +136,21 @@ public class TestGetCSRAttrs
 
             CSRRequestResponse resp = est.getCSRAttributes();
 
-            Assert.assertFalse("No response expected",resp.hasAttributesResponse());
+            Assert.assertFalse("No response expected", resp.hasAttributesResponse());
 
-            try {
+            try
+            {
                 resp.getAttributesResponse();
                 Assert.fail("Must throw exception.");
-            } catch (Throwable t) {
-                Assert.assertEquals("",IllegalStateException.class,t.getClass());
+            } catch (Throwable t)
+            {
+                Assert.assertEquals("", IllegalStateException.class, t.getClass());
             }
 
-        }
-        catch (Exception ex)
+        } catch (Exception ex)
         {
             ex.printStackTrace();
-        }
-        finally
+        } finally
         {
             res.close();
         }
@@ -191,7 +185,7 @@ public class TestGetCSRAttrs
         {
             int port = res.open(responseData.toByteArray());
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                    "https://localhost:" + port + "/.well-known/est/",ESTTestUtils.toTrustAnchor(
+                    "https://localhost:" + port + "/.well-known/est/", ESTTestUtils.toTrustAnchor(
                     ESTTestUtils.readPemCertificate(
                             ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                     )));
@@ -202,21 +196,21 @@ public class TestGetCSRAttrs
 
             CSRRequestResponse resp = est.getCSRAttributes();
 
-            Assert.assertFalse("No response expected",resp.hasAttributesResponse());
+            Assert.assertFalse("No response expected", resp.hasAttributesResponse());
 
-            try {
+            try
+            {
                 resp.getAttributesResponse();
                 Assert.fail("Must throw exception.");
-            } catch (Throwable t) {
-                Assert.assertEquals("",IllegalStateException.class,t.getClass());
+            } catch (Throwable t)
+            {
+                Assert.assertEquals("", IllegalStateException.class, t.getClass());
             }
 
-        }
-        catch (Exception ex)
+        } catch (Exception ex)
         {
             ex.printStackTrace();
-        }
-        finally
+        } finally
         {
             res.close();
         }
@@ -251,7 +245,7 @@ public class TestGetCSRAttrs
         {
             int port = res.open(responseData.toByteArray());
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                    "https://localhost:" + port + "/.well-known/est/",ESTTestUtils.toTrustAnchor(
+                    "https://localhost:" + port + "/.well-known/est/", ESTTestUtils.toTrustAnchor(
                     ESTTestUtils.readPemCertificate(
                             ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                     )));
@@ -262,21 +256,21 @@ public class TestGetCSRAttrs
 
             CSRRequestResponse resp = est.getCSRAttributes();
 
-            Assert.assertFalse("No response expected",resp.hasAttributesResponse());
+            Assert.assertFalse("No response expected", resp.hasAttributesResponse());
 
-            try {
+            try
+            {
                 resp.getAttributesResponse();
                 Assert.fail("Must throw exception.");
-            } catch (Throwable t) {
-                Assert.assertEquals("",IllegalStateException.class,t.getClass());
+            } catch (Throwable t)
+            {
+                Assert.assertEquals("", IllegalStateException.class, t.getClass());
             }
 
-        }
-        catch (Exception ex)
+        } catch (Exception ex)
         {
             ex.printStackTrace();
-        }
-        finally
+        } finally
         {
             res.close();
         }
@@ -291,23 +285,22 @@ public class TestGetCSRAttrs
     {
 
 
-        byte[] b = Base64.decode("MIID/AYHKwYBAQEBFgYJKoZIhvcNAQcBMYID5BOCA+AgMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzN\n" +
-                "DU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzND\n" +
-                "U2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU\n" +
-                "2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2\n" +
-                "Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2N\n" +
-                "zg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaNTU1NTc3NzczMzMzMzMzM1pXWFkxMmFiY2RlZmdoaWprbG1ub3BxcnN0dXZ4eXphYmNkZWZnaGlqa2xtbm9wcXJzdHV2eHl6YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnh5emFiY2RlZmdoaWprbG1ub3Bxcn\n" +
-                "N0dXZ4eXowOTg3NjU0MzIxYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnh5emFiY2RlZmdoaWprbG1ub3BxcnN0dXZ4eXphYmNkZWZnaGlqa2xtbm9wcXJzdHV2eHl6YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnh5ejA5ODc2NTQzMjExMjM0NTY3ODkwQUJDREVGR0h\n" +
-                "JSktMTU5PUFFSUw==\n");
-
-
-        ASN1InputStream ain = new ASN1InputStream(b);
-        ASN1Sequence seq = (ASN1Sequence)ain.readObject();
-
-        System.out.println(ASN1Dump.dumpAsString(seq,true));
-
-        CSRAttributesResponse response = new CSRAttributesResponse(CsrAttrs.getInstance(seq));
-
+//        byte[] b = Base64.decode("MIID/AYHKwYBAQEBFgYJKoZIhvcNAQcBMYID5BOCA+AgMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzN\n" +
+//                "DU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzND\n" +
+//                "U2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU\n" +
+//                "2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2\n" +
+//                "Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2Nzg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaMTIzNDU2N\n" +
+//                "zg5MEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaNTU1NTc3NzczMzMzMzMzM1pXWFkxMmFiY2RlZmdoaWprbG1ub3BxcnN0dXZ4eXphYmNkZWZnaGlqa2xtbm9wcXJzdHV2eHl6YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnh5emFiY2RlZmdoaWprbG1ub3Bxcn\n" +
+//                "N0dXZ4eXowOTg3NjU0MzIxYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnh5emFiY2RlZmdoaWprbG1ub3BxcnN0dXZ4eXphYmNkZWZnaGlqa2xtbm9wcXJzdHV2eHl6YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnh5ejA5ODc2NTQzMjExMjM0NTY3ODkwQUJDREVGR0h\n" +
+//                "JSktMTU5PUFFSUw==\n");
+//
+//
+//        ASN1InputStream ain = new ASN1InputStream(b);
+//        ASN1Sequence seq = (ASN1Sequence)ain.readObject();
+//
+//        System.out.println(ASN1Dump.dumpAsString(seq,true));
+//
+//        CSRAttributesResponse response = new CSRAttributesResponse(CsrAttrs.getInstance(seq));
 
 
 //        ESTTestUtils.ensureProvider();
@@ -375,9 +368,288 @@ public class TestGetCSRAttrs
     }
 
 
+    @Test()
+    public void testResponseWithInvalidResponse()
+            throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+                "Status: 200 OK\n" +
+                "Content-Type: application/csrattrs\n" +
+                "Content-Transfer-Encoding: base64\n" +
+                "Content-Length: 31\n\n" +
+                "THIS IS A TEST OF INVALID DATA.\n");
+
+        pw.flush();
+
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+            int port = res.open(responseData.toByteArray());
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                    "https://localhost:" + port + "/.well-known/est/", ESTTestUtils.toTrustAnchor(
+                    ESTTestUtils.readPemCertificate(
+                            ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )));
+
+            builder.addCipherSuites(res.getSupportedCipherSuites());
+            ESTService est = builder.build();
+
+
+            CSRRequestResponse resp = est.getCSRAttributes();
+
+            Assert.assertFalse("No response expected", resp.hasAttributesResponse());
+
+            try
+            {
+                resp.getAttributesResponse();
+                Assert.fail("Must throw exception.");
+            } catch (Throwable t)
+            {
+                Assert.assertTrue(t.getMessage().contains("Decoding CACerts"));
+            }
+
+        } catch (Exception ex)
+        {
+            ex.printStackTrace();
+        } finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testResponseWithShortContentLength()
+            throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+                "Status: 200 OK\n" +
+                "Content-Type: application/csrattrs\n" +
+                "Content-Transfer-Encoding: base64\n" +
+                "Content-Length: 14\n\n" +
+                "MAkGBysGAQEBARY=");
+
+        pw.flush();
+
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+            int port = res.open(responseData.toByteArray());
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                    "https://localhost:" + port + "/.well-known/est/", ESTTestUtils.toTrustAnchor(
+                    ESTTestUtils.readPemCertificate(
+                            ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )));
+
+            builder.addCipherSuites(res.getSupportedCipherSuites());
+            ESTService est = builder.build();
+
+            try
+            {
+                CSRRequestResponse resp = est.getCSRAttributes();
+                Assert.fail("Must throw exception.");
+            } catch (Throwable t)
+            {
+                Assert.assertEquals("Must be ESTException",t.getClass(), ESTException.class);
+                Assert.assertEquals("Cause must be IOException",t.getCause().getClass(), IOException.class);
+                Assert.assertTrue(t.getMessage().contains("extra content in pipe"));
+            }
+
+        } catch (Exception ex)
+        {
+            ex.printStackTrace();
+        } finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testResponseWithBrokenBase64()
+            throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+                "Status: 200 OK\n" +
+                "Content-Type: application/csrattrs\n"+
+                "Content-Transfer-Encoding: base64\n" +
+                "Content-Length: 36\n\n" +
+                "MBQGBysGAQEBARYGCSqGSIb3DQEHAQpppp==\n");
+
+        pw.flush();
+
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+            int port = res.open(responseData.toByteArray());
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                    "https://localhost:" + port + "/.well-known/est/", ESTTestUtils.toTrustAnchor(
+                    ESTTestUtils.readPemCertificate(
+                            ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )));
+
+            builder.addCipherSuites(res.getSupportedCipherSuites());
+            ESTService est = builder.build();
+
+            try
+            {
+                CSRRequestResponse resp = est.getCSRAttributes();
+                Assert.fail("Must throw exception.");
+            } catch (Throwable t)
+            {
+                Assert.assertEquals("Must be ESTException",t.getClass(), ESTException.class);
+                Assert.assertEquals("Cause must be IOException",t.getCause().getClass(), IOException.class);
+                Assert.assertTrue(t.getMessage().contains("extra content in pipe"));
+            }
+
+        } catch (Exception ex)
+        {
+            ex.printStackTrace();
+        } finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testResponseWithBrokenBase64_3113()
+            throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+                "Status: 200 OK\n" +
+                "Content-Type: application/csrattrs\n"+
+                "Content-Transfer-Encoding: base64\n" +
+                "Content-Length: 24\n\n" +
+                "MAkGBysGAQEBARY=\n");
+
+        pw.flush();
+
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+            int port = res.open(responseData.toByteArray());
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                    "https://localhost:" + port + "/.well-known/est/", ESTTestUtils.toTrustAnchor(
+                    ESTTestUtils.readPemCertificate(
+                            ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )));
+
+            builder.addCipherSuites(res.getSupportedCipherSuites());
+            ESTService est = builder.build();
+
+            try
+            {
+                CSRRequestResponse resp = est.getCSRAttributes();
+                Assert.fail("Must throw exception.");
+            } catch (Throwable t)
+            {
+                Assert.assertEquals("Must be ESTException",t.getClass(), ESTException.class);
+                Assert.assertEquals("Cause must be IOException",t.getCause().getClass(), IOException.class);
+                Assert.assertTrue(t.getMessage().contains("closed before limit"));
+            }
+
+        } catch (Exception ex)
+        {
+            ex.printStackTrace();
+        } finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+    @Test
+    public void testFetchCaCertsWithTimeout()
+            throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+
+        HttpResponder res = new HttpResponder();
+
+
+        int port = res.open(null);
+
+        JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/", ESTTestUtils.toTrustAnchor(
+                ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )));
+
+        builder.addCipherSuites(res.getSupportedCipherSuites()).withTimeout(500);
+
+        ESTService est = builder.build();
+
+
+        try
+        {
+            CSRRequestResponse csrRequestResponse = est.getCSRAttributes();
+            Assert.fail("Must time out.");
+        }
+        catch (Exception ex)
+        {
+
+            Assert.assertEquals("", ESTException.class, ex.getClass());
+            Assert.assertEquals("", SocketTimeoutException.class, ex.getCause().getClass());
+
+        }
+        finally
+        {
+            res.getFinished().await(5, TimeUnit.SECONDS);
+        }
+
+    }
+
 
     public static void main(String[] args)
-        throws Exception
+            throws Exception
     {
         ESTTestUtils.ensureProvider();
         runTest(new TestGetCSRAttrs());
