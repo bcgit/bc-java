@@ -2,9 +2,14 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.ECGenParameterSpec;
+import java.security.spec.ECParameterSpec;
+import java.util.Iterator;
+import java.util.Set;
 
 import javax.crypto.Cipher;
 
@@ -15,6 +20,7 @@ import org.bouncycastle.tls.CombinedHash;
 import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
+import org.bouncycastle.tls.NamedCurve;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
@@ -22,6 +28,7 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.SRP6Group;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
+import org.bouncycastle.tls.crypto.TlsCryptoCapabilities;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
@@ -65,19 +72,58 @@ public class JcaTlsCrypto
     private final JcaJceHelper helper;
     private final SecureRandom entropySource;
     private final SecureRandom nonceEntropySource;
+    private final TlsCryptoCapabilities capabilites;
 
     /**
      * Base constructor.
      *
+     * @param capabilities desired capabilities for the TlsCrypto.
      * @param helper a JCA/JCE helper configured for the class's default provider.
      * @param entropySource primary entropy source, used for key generation.
      * @param nonceEntropySource secondary entropy source, used for nonce and IV generation.
      */
-    protected JcaTlsCrypto(JcaJceHelper helper, SecureRandom entropySource, SecureRandom nonceEntropySource)
+    protected JcaTlsCrypto(TlsCryptoCapabilities capabilities, JcaJceHelper helper, SecureRandom entropySource, SecureRandom nonceEntropySource)
     {
+        // check we support the requested curves, culling those we don't.
+        Set<Integer> curveCapSet = capabilities.getSupportedNamedCurves();
+        int[] curveSet = new int[curveCapSet.size()];
+        int index = 0;
+
+        for (Iterator it = curveCapSet.iterator(); it.hasNext();)
+        {
+             Integer curveID = (Integer)it.next();
+             if (checkCurve(curveID.intValue()))
+             {
+                 curveSet[index] = curveID;
+             }
+        }
+
+        this.capabilites = new TlsCryptoCapabilities(Arrays.copyOfRange(curveSet, 0, index));
         this.helper = helper;
         this.entropySource = entropySource;
         this.nonceEntropySource = nonceEntropySource;
+    }
+
+    private boolean checkCurve(int namedCurve)
+    {
+        String curveName = NamedCurve.getNameOfSpecificCurve(namedCurve);
+        if (curveName == null)
+        {
+             return false;
+        }
+
+        try
+        {
+            AlgorithmParameters params = this.getHelper().createAlgorithmParameters("EC");
+
+            params.init(new ECGenParameterSpec(curveName));
+
+            return params.getParameterSpec(ECParameterSpec.class) != null;
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
     }
 
     JceTlsSecret adoptLocalSecret(byte[] data)
@@ -109,6 +155,11 @@ public class JcaTlsCrypto
     public SecureRandom getSecureRandom()
     {
         return entropySource;
+    }
+
+    public Set<Integer> getSupportedNamedCurves()
+    {
+        return capabilites.getSupportedNamedCurves();
     }
 
     public TlsCertificate createCertificate(byte[] encoding)
