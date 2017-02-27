@@ -11,9 +11,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.io.DigestOutputStream;
+import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.DigestCalculator;
+import org.bouncycastle.operator.DigestCalculatorProvider;
+import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
@@ -24,22 +32,36 @@ import org.bouncycastle.util.encoders.Hex;
 public class HttpAuth
     implements ESTAuth
 {
+    private static final DigestAlgorithmIdentifierFinder digestAlgorithmIdentifierFinder = new DefaultDigestAlgorithmIdentifierFinder();
+
     private final String realm;
     private final String username;
-    private final String password;
+    private final char[] password;
     private final SecureRandom nonceGenerator;
+    private final DigestCalculatorProvider digestCalculatorProvider;
 
-    public HttpAuth(String username, String password, SecureRandom nonceGenerator)
+    public HttpAuth(String username, char[] password)
     {
-        this(null, username, password, nonceGenerator);
+        this(null, username, password, null,null);
     }
 
-    public HttpAuth(String realm, String username, String password, SecureRandom nonceGenerator)
+    public HttpAuth(String realm, String username, char[] password)
+    {
+        this(realm, username, password, null,null);
+    }
+
+    public HttpAuth(String username, char[] password, SecureRandom nonceGenerator, DigestCalculatorProvider digestCalculatorProvider)
+    {
+        this(null, username, password, nonceGenerator, digestCalculatorProvider);
+    }
+
+    public HttpAuth(String realm, String username, char[] password, SecureRandom nonceGenerator,  DigestCalculatorProvider digestCalculatorProvider)
     {
         this.realm = realm;
         this.username = username;
         this.password = password;
         this.nonceGenerator = nonceGenerator;
+        this.digestCalculatorProvider = digestCalculatorProvider;
     }
 
     public void applyAuth(final ESTRequestBuilder reqBldr)
@@ -139,7 +161,6 @@ public class HttpAuth
             realm = this.realm;
         }
 
-
         // If an algorithm is not specified, default to MD5.
         if (algorithm == null)
         {
@@ -167,6 +188,12 @@ public class HttpAuth
             qopMods.add("missing");
         }
 
+        AlgorithmIdentifier digestAlg = lookupDigest(algorithm);
+        if (digestAlg == null)
+        {
+            throw new IOException("auth digest algorithm unknown: " + algorithm);
+        }
+
         Digest dig = null;
         if (algorithm.equals("MD5") || algorithm.equals("MD5-SESS"))
         {
@@ -176,7 +203,9 @@ public class HttpAuth
         byte[] ha1 = null;
         byte[] ha2 = null;
 
-        DigestOutputStream dOut = new DigestOutputStream(dig);
+        DigestCalculator dCalc = getDigestCalculator(algorithm, digestAlg);
+
+        OutputStream dOut = dCalc.getOutputStream();
         String crnonce = makeNonce(10); // TODO arbitrary?
 
         update(dOut, username);
@@ -187,7 +216,7 @@ public class HttpAuth
 
         dOut.close();
         
-        ha1 = dOut.getDigest();
+        ha1 = dCalc.getDigest();
 
         if (algorithm.endsWith("-SESS"))
         {
@@ -309,6 +338,42 @@ public class HttpAuth
         ESTRequestBuilder answer = new ESTRequestBuilder(req).withHijacker(null);
         answer.setHeader("Authorization", HttpUtil.mergeCSL("Digest", hdr));
         return req.getClient().doRequest(answer.build());
+    }
+
+    private DigestCalculator getDigestCalculator(String algorithm, AlgorithmIdentifier digestAlg)
+        throws IOException
+    {
+        DigestCalculator dCalc;
+        try
+        {
+            dCalc = digestCalculatorProvider.get(digestAlg);
+        }
+        catch (OperatorCreationException e)
+        {
+            throw new IOException("cannot create digest calculator for " + algorithm + ": " + e.getMessage());
+        }
+        return dCalc;
+    }
+
+    private AlgorithmIdentifier lookupDigest(String algorithm)
+    {
+        if (algorithm.endsWith("-SESS"))
+        {
+            algorithm = algorithm.substring(0, algorithm.length() - "-SESS".length());
+        }
+        
+        if (algorithm.equals("SHA-512-256"))
+        {
+            return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512_256, DERNull.INSTANCE);
+        }
+
+        return digestAlgorithmIdentifierFinder.find(algorithm);
+    }
+
+    private void update(OutputStream dOut, char[] value)
+        throws IOException
+    {
+        dOut.write(Strings.toUTF8ByteArray(value));
     }
 
     private void update(OutputStream dOut, String value)
