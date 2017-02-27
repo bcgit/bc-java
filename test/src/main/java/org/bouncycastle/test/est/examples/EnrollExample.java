@@ -13,11 +13,11 @@ import java.security.spec.ECGenParameterSpec;
 
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.est.HttpAuth;
 import org.bouncycastle.est.ESTAuth;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.EnrollmentResponse;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
+import org.bouncycastle.est.jcajce.JcaHttpAuthBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -204,11 +204,13 @@ public class EnrollExample
         {
             if (credentials.length == 3)
             {
-                auth = new HttpAuth(credentials[0], credentials[1], credentials[2], new SecureRandom());
+                auth = new JcaHttpAuthBuilder(credentials[0], credentials[1], credentials[2].toCharArray())
+                    .setNonceGenerator(new SecureRandom()).setProvider("BC").build();
             }
             else if (credentials.length == 2)
             {
-                auth = new HttpAuth(null, credentials[0], credentials[1], new SecureRandom());
+                auth = new JcaHttpAuthBuilder(null, credentials[0], credentials[1].toCharArray())
+                    .setNonceGenerator(new SecureRandom()).setProvider("BC").build();
             }
             else
             {

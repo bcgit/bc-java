@@ -86,12 +86,16 @@ public class DefaultDigestAlgorithmIdentifierFinder
         digestNameToOids.put("SHA-256", NISTObjectIdentifiers.id_sha256);
         digestNameToOids.put("SHA-384", NISTObjectIdentifiers.id_sha384);
         digestNameToOids.put("SHA-512", NISTObjectIdentifiers.id_sha512);
+        digestNameToOids.put("SHA-512-224", NISTObjectIdentifiers.id_sha512_224);
+        digestNameToOids.put("SHA-512-256", NISTObjectIdentifiers.id_sha512_256);
 
         digestNameToOids.put("SHA1", OIWObjectIdentifiers.idSHA1);
         digestNameToOids.put("SHA224", NISTObjectIdentifiers.id_sha224);
         digestNameToOids.put("SHA256", NISTObjectIdentifiers.id_sha256);
         digestNameToOids.put("SHA384", NISTObjectIdentifiers.id_sha384);
         digestNameToOids.put("SHA512", NISTObjectIdentifiers.id_sha512);
+        digestNameToOids.put("SHA512-224", NISTObjectIdentifiers.id_sha512_224);
+        digestNameToOids.put("SHA512-256", NISTObjectIdentifiers.id_sha512_256);
 
         digestNameToOids.put("SHA3-224", NISTObjectIdentifiers.id_sha3_224);
         digestNameToOids.put("SHA3-256", NISTObjectIdentifiers.id_sha3_256);

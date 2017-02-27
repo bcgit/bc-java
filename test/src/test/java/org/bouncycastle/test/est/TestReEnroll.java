@@ -12,8 +12,8 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.EnrollmentResponse;
-import org.bouncycastle.est.HttpAuth;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
+import org.bouncycastle.est.jcajce.JcaHttpAuthBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
@@ -107,7 +107,8 @@ public class TestReEnroll
             PKCS10CertificationRequest csr = pkcs10Builder.build(
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
-            EnrollmentResponse enr = est.simpleEnroll(false, csr, new HttpAuth("estreal", "estuser", "estpwd", new SecureRandom()));
+            EnrollmentResponse enr = est.simpleEnroll(false, csr, new JcaHttpAuthBuilder("estreal", "estuser", "estpwd".toCharArray())
+                .setNonceGenerator(new SecureRandom()).setProvider("BC").build());
             X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
@@ -132,7 +133,8 @@ public class TestReEnroll
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
             // Flag set true!
-            enr = est.simpleEnroll(true, csr, new HttpAuth("estreal", "estuser", "estpwd", new SecureRandom()));
+            enr = est.simpleEnroll(true, csr,
+                new JcaHttpAuthBuilder("estreal", "estuser", "estpwd".toCharArray()).setNonceGenerator(new SecureRandom()).setProvider("BC").build());
             expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             ));
@@ -158,7 +160,9 @@ public class TestReEnroll
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
             try
             {
-                enr = est.simpleEnroll(true, csr, new HttpAuth("estreal", "estuser", "estpwd", new SecureRandom()));
+                enr = est.simpleEnroll(true, csr,
+                    new JcaHttpAuthBuilder("estreal", "estuser", "estpwd".toCharArray())
+                        .setNonceGenerator(new SecureRandom()).setProvider("BC").build());
                 // TODO Server needs to enforce this, need to discuss.
                 // Assert.fail("Reenrollment with different subject must fail.");
             }
