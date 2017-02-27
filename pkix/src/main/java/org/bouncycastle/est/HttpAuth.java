@@ -29,6 +29,11 @@ public class HttpAuth
     private final String password;
     private final SecureRandom nonceGenerator;
 
+    public HttpAuth(String username, String password, SecureRandom nonceGenerator)
+    {
+        this(null, username, password, nonceGenerator);
+    }
+
     public HttpAuth(String realm, String username, String password, SecureRandom nonceGenerator)
     {
         this.realm = realm;
