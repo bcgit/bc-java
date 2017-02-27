@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.bouncycastle.tls.NamedCurve;
+import org.bouncycastle.tls.crypto.TlsCryptoCapabilities;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoProvider;
 import org.bouncycastle.util.Strings;
 
@@ -22,7 +24,9 @@ public class BouncyCastleJsseProvider
     public static final String PROVIDER_NAME = "BCJSSE";
 
     private static final double version = 0.9;
-    
+
+    private static final TlsCryptoCapabilities fipsCapabilities = new FipsCapabilities();
+
     private Map<String, BcJsseService> serviceMap = new HashMap<String, BcJsseService>();
     private Map<String, EngineCreator> creatorMap = new HashMap<String, EngineCreator>();
 
@@ -138,6 +142,11 @@ public class BouncyCastleJsseProvider
     {
         this.isInFipsMode = isInFipsMode;
 
+        if (isInFipsMode)
+        {
+            baseCryptoProvider.setCapabilities(fipsCapabilities);
+        }
+        
         // TODO[jsse]: should X.509 be an alias.
         addAlgorithmImplementation("KeyManagerFactory.X.509", "org.bouncycastle.jsse.provider.KeyManagerFactory", new EngineCreator()
         {
@@ -358,6 +367,15 @@ public class BouncyCastleJsseProvider
             {
                 throw new NoSuchAlgorithmException("Unable to invoke creator for " + getAlgorithm() + ": " + e.getMessage(), e);
             }
+        }
+    }
+
+    private static final class FipsCapabilities
+        extends TlsCryptoCapabilities
+    {
+        public FipsCapabilities()
+        {
+            super(new int[]{ NamedCurve.secp256r1, NamedCurve.secp384r1 });
         }
     }
 }
