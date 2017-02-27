@@ -2,6 +2,7 @@ package org.bouncycastle.est;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.security.SecureRandom;
@@ -27,14 +28,6 @@ public class HttpAuth
     private final String username;
     private final String password;
     private final SecureRandom nonceGenerator;
-
-    public HttpAuth(String username, String password, SecureRandom nonceGenerator)
-    {
-        this.username = username;
-        this.password = password;
-        this.nonceGenerator = nonceGenerator;
-        this.realm = null;
-    }
 
     public HttpAuth(String realm, String username, String password, SecureRandom nonceGenerator)
     {
@@ -109,7 +102,6 @@ public class HttpAuth
         });
     }
 
-
     protected ESTResponse doDigestFunction(ESTResponse res)
         throws IOException
     {
@@ -149,7 +141,7 @@ public class HttpAuth
             algorithm = "MD5";
         }
 
-        algorithm = Strings.toLowerCase(algorithm);
+        algorithm = Strings.toUpperCase(algorithm);
 
         if (qop != null)
         {
@@ -171,7 +163,7 @@ public class HttpAuth
         }
 
         Digest dig = null;
-        if (algorithm.equals("md5") || algorithm.equals("md5-sess"))
+        if (algorithm.equals("MD5") || algorithm.equals("MD5-SESS"))
         {
             dig = new MD5Digest();
         }
@@ -179,120 +171,110 @@ public class HttpAuth
         byte[] ha1 = null;
         byte[] ha2 = null;
 
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        PrintWriter pw = new PrintWriter(bos);
+        DigestOutputStream dOut = new DigestOutputStream(dig);
         String crnonce = makeNonce(10); // TODO arbitrary?
 
-        if (algorithm.equals("md5-sess"))
+        update(dOut, username);
+        update(dOut, ":");
+        update(dOut, realm);
+        update(dOut, ":");
+        update(dOut, password);
+
+        dOut.close();
+        
+        ha1 = dOut.getDigest();
+
+        if (algorithm.endsWith("-SESS"))
         {
+            DigestOutputStream sessOut = new DigestOutputStream(dig);
+            String cs = Hex.toHexString(ha1);
 
+            update(sessOut, cs);
+            update(sessOut, ":");
+            update(sessOut, nonce);
+            update(sessOut, ":");
+            update(sessOut, crnonce);
 
-            pw.print(username);
-            pw.print(":");
-            pw.print(realm);
-            pw.print(":");
-            pw.print(password);
-            pw.flush();
-            String cs = Hex.toHexString(takeDigest(dig, bos.toByteArray()));
+            sessOut.close();
 
-            bos.reset();
-
-            pw.print(cs);
-            pw.print(":");
-            pw.print(nonce);
-            pw.print(":");
-            pw.print(crnonce);
-            pw.flush();
-
-            ha1 = takeDigest(dig, bos.toByteArray());
-        }
-        else
-        {
-
-            pw.print(username);
-            pw.print(":");
-            pw.print(realm);
-            pw.print(":");
-            pw.print(password);
-            pw.flush();
-            ha1 = takeDigest(dig, bos.toByteArray());
+            ha1 = sessOut.getDigest();
         }
 
         String hashHa1 = Hex.toHexString(ha1);
-        bos.reset();
+
+        DigestOutputStream authOut = new DigestOutputStream(dig);
 
         if (qopMods.get(0).equals("auth-int"))
         {
-            bos.reset();
-            pw.write(method);
-            pw.write(':');
-            pw.write(uri);
-            pw.write(':');
+            dig.reset();
+            // Digest body
+            DigestOutputStream reqOut = new DigestOutputStream(dig);
+
+            req.writeData(reqOut);
+
+            reqOut.close();
+
+            byte[] b = reqOut.getDigest();
+
             dig.reset();
 
-            // Digest body
-            DigestOutputStream dos = new DigestOutputStream(dig);
-            req.writeData(dos);
-            dos.flush();
-            byte[] b = new byte[dig.getDigestSize()];
-            dig.doFinal(b, 0);
-
-            pw.write(Hex.toHexString(b));
-            pw.flush();
-
-            ha2 = bos.toByteArray();
-
+            update(authOut, method);
+            update(authOut, ":");
+            update(authOut, uri);
+            update(authOut, ":");
+            update(authOut, Hex.toHexString(b));
         }
         else if (qopMods.get(0).equals("auth"))
         {
-            bos.reset();
-            pw.write(method);
-            pw.write(':');
-            pw.write(uri);
-            pw.flush();
-            ha2 = bos.toByteArray();
+            update(authOut, method);
+            update(authOut, ":");
+            update(authOut, uri);
         }
 
-        String hashHa2 = Hex.toHexString(takeDigest(dig, ha2));
-        bos.reset();
-        byte[] digestResult;
+        authOut.close();
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        PrintWriter pw = new PrintWriter(bos);
+
+        String hashHa2 = Hex.toHexString(authOut.getDigest());
+
+        DigestOutputStream responseOut = new DigestOutputStream(dig);
+
         if (qopMods.contains("missing"))
         {
-            pw.write(hashHa1);
-            pw.write(':');
-            pw.write(nonce);
-            pw.write(':');
-            pw.write(hashHa2);
-            pw.flush();
-            digestResult = bos.toByteArray();
+            update(responseOut, hashHa1);
+            update(responseOut, ":");
+            update(responseOut,nonce);
+            update(responseOut, ":");
+            update(responseOut, hashHa2);
         }
         else
         {
-            pw.write(hashHa1);
-            pw.write(':');
-            pw.write(nonce);
-            pw.write(':');
-            pw.write("00000001");
-            pw.write(':');
-            pw.write(crnonce);
-            pw.write(':');
+            update(responseOut, hashHa1);
+            update(responseOut, ":");
+            update(responseOut, nonce);
+            update(responseOut, ":");
+            update(responseOut, "00000001");
+            update(responseOut, ":");
+            update(responseOut, crnonce);
+            update(responseOut, ":");
 
             if (qopMods.get(0).equals("auth-int"))
             {
-                pw.write("auth-int");
+                update(responseOut, "auth-int");
             }
             else
             {
-                pw.write("auth");
+                update(responseOut, "auth");
             }
 
-            pw.write(':');
-            pw.write(hashHa2);
-            pw.flush();
-            digestResult = bos.toByteArray();
+            update(responseOut, ":");
+            update(responseOut, hashHa2);
         }
 
-        String digest = Hex.toHexString(takeDigest(dig, digestResult));
+        responseOut.close();
+
+        String digest = Hex.toHexString(responseOut.getDigest());
 
         Map<String, String> hdr = new HashMap<String, String>();
         hdr.put("username", username);
@@ -324,16 +306,11 @@ public class HttpAuth
         return req.getClient().doRequest(answer.build());
     }
 
-
-    private byte[] takeDigest(Digest dig, byte[] b)
+    private void update(OutputStream dOut, String value)
+        throws IOException
     {
-        dig.reset();
-        dig.update(b, 0, b.length);
-        byte[] o = new byte[dig.getDigestSize()];
-        dig.doFinal(o, 0);
-        return o;
+        dOut.write(Strings.toUTF8ByteArray(value));
     }
-
 
     private String makeNonce(int len)
     {
