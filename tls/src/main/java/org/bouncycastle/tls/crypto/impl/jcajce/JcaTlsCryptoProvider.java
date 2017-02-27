@@ -12,7 +12,9 @@ import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
+import org.bouncycastle.tls.crypto.DefaultTlsCryptoCapabilities;
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsCryptoCapabilities;
 import org.bouncycastle.tls.crypto.TlsCryptoProvider;
 
 /**
@@ -22,6 +24,7 @@ public class JcaTlsCryptoProvider
     implements TlsCryptoProvider
 {
     private JcaJceHelper helper = new DefaultJcaJceHelper();
+    private TlsCryptoCapabilities cryptoCapabilities = new DefaultTlsCryptoCapabilities();
 
     public JcaTlsCryptoProvider()
     {
@@ -49,6 +52,16 @@ public class JcaTlsCryptoProvider
     public JcaTlsCryptoProvider setProvider(String providerName)
     {
         this.helper = new NamedJcaJceHelper(providerName);
+
+        return this;
+    }
+
+    /**
+     *
+     */
+    public JcaTlsCryptoProvider setCapabilities(TlsCryptoCapabilities cryptoCapabilities)
+    {
+        this.cryptoCapabilities = cryptoCapabilities;
 
         return this;
     }
@@ -88,7 +101,7 @@ public class JcaTlsCryptoProvider
      */
     public TlsCrypto create(SecureRandom keyRandom, SecureRandom nonceRandom)
     {
-        return new JcaTlsCrypto(helper, keyRandom, nonceRandom);
+        return new JcaTlsCrypto(cryptoCapabilities, helper, keyRandom, nonceRandom);
     }
 
     public Provider getPkixProvider()
