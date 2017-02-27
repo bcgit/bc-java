@@ -115,7 +115,7 @@ public class HttpAuth
                         {
                             throw new IllegalArgumentException("User must not contain a ':'");
                         }
-                        String userPass = username + ":" + password;
+                        String userPass = username + ":" + new String(password);
                         answer.setHeader("Authorization", "Basic " + Base64.toBase64String(userPass.getBytes()));
 
                         res = req.getClient().doRequest(answer.build());
