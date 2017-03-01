@@ -4,9 +4,6 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedAgreement;
-import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedDecryptor;
-
 /**
  * Interface describing a TLS server endpoint.
  */
@@ -50,9 +47,7 @@ public interface TlsServer
      * Return server credentials to use. The returned value may be null, or else it MUST implement
      * <em>exactly one</em> of {@link TlsCredentialedAgreement}, {@link TlsCredentialedDecryptor}, or
      * {@link TlsCredentialedSigner}, depending on the key exchange that was negotiated.
-     * 
-     * @see {@link BcDefaultTlsCredentialedAgreement}, {@link BcDefaultTlsCredentialedDecryptor},
-     *      {@link BcDefaultTlsCredentialedSigner}
+     *
      * @return a TlsCredentials object or null for anonymous key exchanges
      * @throws IOException
      */
