@@ -13,8 +13,8 @@ import org.bouncycastle.est.CSRAttributesResponse;
 import org.bouncycastle.est.CSRRequestResponse;
 import org.bouncycastle.est.ESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
-import org.bouncycastle.est.jcajce.JcaJceSocketFactoryCreatorBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
+import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;
@@ -42,7 +42,7 @@ public class TestESTServiceFails
     public void testEmptyTrustAnchors()
         throws Exception
     {
-        JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder((X509TrustManager)null);
+        SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder((X509TrustManager)null);
         ESTServiceBuilder b = new JcaESTServiceBuilder("", sfcb.build());
     }
 
@@ -59,7 +59,7 @@ public class TestESTServiceFails
     {
         try
         {
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
             ESTServiceBuilder b = new JcaESTServiceBuilder("",sfcb.build());
             b.build().getCSRAttributes();
         }
@@ -70,7 +70,7 @@ public class TestESTServiceFails
 
         try
         {
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
             ESTServiceBuilder b = new JcaESTServiceBuilder("",sfcb.build());
             b.build().simpleEnroll(null);
         }
@@ -82,7 +82,7 @@ public class TestESTServiceFails
 
         try
         {
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
             ESTServiceBuilder b = new JcaESTServiceBuilder("",sfcb.build());
             b.build().simpleEnroll(false, null, null);
         }

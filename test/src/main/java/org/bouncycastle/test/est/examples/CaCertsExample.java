@@ -13,8 +13,8 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.est.CACertsResponse;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
-import org.bouncycastle.est.jcajce.JcaJceSocketFactoryCreatorBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
+import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
@@ -115,7 +115,7 @@ public class CaCertsExample
             Security.addProvider((Provider)Class.forName(tlsProviderClass).newInstance());
         }
 
-        JcaJceSocketFactoryCreatorBuilder sfcb = null;
+        SSLSocketFactoryCreatorBuilder sfcb = null;
 
         //
         // Make est client builder
@@ -123,16 +123,16 @@ public class CaCertsExample
         JcaESTServiceBuilder builder = null;
         if (trustAnchors != null && !trustAnchors.isEmpty())
         {
-            sfcb = new JcaJceSocketFactoryCreatorBuilder(JcaJceUtils.getCertPathTrustManager(trustAnchors, null));
+            sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getCertPathTrustManager(trustAnchors, null));
         }
         else
         {
             // In this case we do not have trust anchors so create a builder for a client talking to an untrusted server.
-            sfcb = new JcaJceSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
+            sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
         }
 
         sfcb.withTLSVersion(tlsVersion);
-        sfcb.withTLSProvider(tlsProvider);
+        sfcb.withProvider(tlsProvider);
 
 
         builder = new JcaESTServiceBuilder(serverRootUrl, sfcb.build());

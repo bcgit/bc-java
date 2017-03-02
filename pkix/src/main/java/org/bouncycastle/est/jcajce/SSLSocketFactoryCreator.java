@@ -6,7 +6,7 @@ import javax.net.ssl.SSLSocketFactory;
 /**
  * Implementations provide SSL socket factories.
  */
-public interface SocketFactoryCreator
+public interface SSLSocketFactoryCreator
 {
     SSLSocketFactory createFactory()
         throws Exception;

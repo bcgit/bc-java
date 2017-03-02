@@ -14,8 +14,8 @@ import org.bouncycastle.est.CSRRequestResponse;
 import org.bouncycastle.est.ESTException;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
-import org.bouncycastle.est.jcajce.JcaJceSocketFactoryCreatorBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
+import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;
@@ -78,7 +78,7 @@ public class TestGetCSRAttrs
         try
         {
             serverInstance = startDefaultServer();
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -130,7 +130,7 @@ public class TestGetCSRAttrs
         try
         {
             int port = res.open(responseData.toByteArray());
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -196,7 +196,7 @@ public class TestGetCSRAttrs
         try
         {
             int port = res.open(responseData.toByteArray());
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -264,7 +264,7 @@ public class TestGetCSRAttrs
         {
             int port = res.open(responseData.toByteArray());
 
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -421,7 +421,7 @@ public class TestGetCSRAttrs
         {
             int port = res.open(responseData.toByteArray());
 
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -490,7 +490,7 @@ public class TestGetCSRAttrs
         try
         {
             int port = res.open(responseData.toByteArray());
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -556,7 +556,7 @@ public class TestGetCSRAttrs
         {
             int port = res.open(responseData.toByteArray());
 
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -621,7 +621,7 @@ public class TestGetCSRAttrs
         try
         {
             int port = res.open(responseData.toByteArray());
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -670,7 +670,7 @@ public class TestGetCSRAttrs
 
         int port = res.open(null);
 
-        JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+        SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
             JcaJceUtils.getCertPathTrustManager(
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
