@@ -242,7 +242,7 @@ public class ESTService
             ESTRequestBuilder req = new ESTRequestBuilder("POST", url).withData(data).withClient(client);
 
             req.addHeader("Content-Type", "application/pkcs10");
-            req.addHeader("content-length", "" + data.length);
+            req.addHeader("Content-Length", "" + data.length);
             req.addHeader("Content-Transfer-Encoding", "base64");
 
             if (auth != null)
@@ -381,11 +381,18 @@ public class ESTService
         {
             // Received but not ready.
             String rt = resp.getHeader("Retry-After");
+
+            if (rt == null)
+            {
+                throw new ESTException("Got Status 202 but not Retry-After header from: " + req.getURL().toString());
+            }
+
             long notBefore = -1;
+
 
             try
             {
-                notBefore = System.currentTimeMillis() + Long.parseLong(rt);
+                notBefore = System.currentTimeMillis() + (Long.parseLong(rt) * 1000);
             }
             catch (NumberFormatException nfe)
             {

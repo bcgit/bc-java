@@ -2,6 +2,7 @@ package org.bouncycastle.test.est;
 
 
 import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
 import java.net.SocketException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -12,8 +13,9 @@ import java.security.cert.Certificate;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
-import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLHandshakeException;
 
 import junit.framework.TestCase;
@@ -32,6 +34,7 @@ import org.bouncycastle.est.HttpAuth;
 import org.bouncycastle.est.jcajce.ChannelBindingProvider;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaHttpAuthBuilder;
+import org.bouncycastle.est.jcajce.JcaJceSocketFactoryCreatorBuilder;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -77,6 +80,7 @@ public class TestEnroll
         config.disableHTTPAuth = false;
         config.enableCheckPOPtoTLSUID = popOn;
         config.manualEnroll = delay;
+
 
         //
         // Read in openssl config, and adjust it with the correct path.
@@ -139,12 +143,17 @@ public class TestEnroll
         {
             serverInstance = startDefaultServerTLSAndBasicAuth(0, false);
 
-            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/", ESTTestUtils.toTrustAnchor(
-                ESTTestUtils.readPemCertificate(
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                ))).build();
+                )));
+
+            ESTService est = new JcaESTServiceBuilder(
+                "https://localhost:8443/.well-known/est/", sfcb.build()
+            ).build();
 
 
+//            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/", ).build();
             //
             // Make certificate request.
             //
@@ -202,11 +211,14 @@ public class TestEnroll
         {
             serverInstance = startDefaultServerTLSAndBasicAuth(5, false);
 
-            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/", ESTTestUtils.toTrustAnchor(
-                ESTTestUtils.readPemCertificate(
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                ))).build();
+                )));
 
+            ESTService est = new JcaESTServiceBuilder(
+                "https://localhost:8443/.well-known/est/", sfcb.build()
+            ).build();
 
             //
             // Make certificate request.
@@ -290,11 +302,15 @@ public class TestEnroll
         {
             serverInstance = startDefaultServerWithDigestAuth();
 
-            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/", ESTTestUtils.toTrustAnchor(
-                ESTTestUtils.readPemCertificate(
-                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                ))).build();
 
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )));
+
+            ESTService est = new JcaESTServiceBuilder(
+                "https://localhost:8443/.well-known/est/", sfcb.build()
+            ).build();
             //
             // Make certificate request.
             //
@@ -480,9 +496,25 @@ public class TestEnroll
                     )
                 ), null);
 
-            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/", Collections.singleton(ta))
-                .withClientKeystore(clientKeyStore, clientKeyStorePass)
-                .build();
+
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )));
+
+
+            sfcb.withKeyManagerFactory(KeyManagerFactory.getDefaultAlgorithm(),null,clientKeyStore,clientKeyStorePass);
+
+
+
+            ESTService est = new JcaESTServiceBuilder(
+                "https://localhost:8443/.well-known/est/", sfcb.build()
+            ).build();
+
+
+//            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/", Collections.singleton(ta))
+//                .withClientKeystore(clientKeyStore, clientKeyStorePass)
+//                .build();
 
 
             PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
@@ -618,6 +650,7 @@ public class TestEnroll
             // Set server trust anchor so client can validate server.
             //
 
+
             TrustAnchor ta = new TrustAnchor(
                 ESTTestUtils.toJavaX509Certificate(
                     ESTTestUtils.readPemCertificate(
@@ -625,9 +658,11 @@ public class TestEnroll
                     )
                 ), null);
 
-            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/", Collections.singleton(ta))
-                .withClientKeystore(clientKeyStore, clientKeyStorePass)
-                .build();
+
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )));
 
 
             PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
@@ -636,6 +671,15 @@ public class TestEnroll
 
             PKCS10CertificationRequest csr = pkcs10Builder.build(
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+
+            sfcb.withKeyManagerFactory(KeyManagerFactory.getDefaultAlgorithm(),null,clientKeyStore,clientKeyStorePass);
+
+
+
+            ESTService est = new JcaESTServiceBuilder(
+                "https://localhost:8443/.well-known/est/", sfcb.build()
+            ).build();
+
 
             //
             // Even though we are using TLS we still need to use an HTTP auth.
@@ -775,11 +819,23 @@ public class TestEnroll
 
             ChannelBindingProvider bcChannelBindingProvider = new BCChannelBindingProvider();
 
-            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/", Collections.singleton(ta))
-                .withClientKeystore(clientKeyStore, clientKeyStorePass)
-                .withTlSProvider(BouncyCastleJsseProvider.PROVIDER_NAME)
+
+
+
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )));
+
+            sfcb.withKeyManagerFactory("X509",null,clientKeyStore,clientKeyStorePass)
+                .withTLSProvider(BouncyCastleJsseProvider.PROVIDER_NAME)
+                .withTLSVersion("TLS");
+
+
+            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/", sfcb.build())
+
                 .withChannelBindingProvider(bcChannelBindingProvider)
-                .withTlsVersion("TLS")
+
                 .addCipherSuites(new String[]{
                     "TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
                     "TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",
@@ -874,6 +930,1096 @@ public class TestEnroll
             serverInstance.getServer().stop_server();
         }
     }
+
+    @Test()
+    public void testResponseWith401AndNoAuth()
+        throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 401 Unauthorized\n" +
+            "Status: 401 Unauthorized\n" +
+            "Content-Length: 0\n\n");
+        pw.flush();
+
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+            ECGenParameterSpec ecGenSpec = new ECGenParameterSpec("prime256v1");
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", "BC");
+            kpg.initialize(ecGenSpec, new SecureRandom());
+            KeyPair enrollmentPair = kpg.generateKeyPair();
+
+
+            TrustAnchor ta = new TrustAnchor(
+                ESTTestUtils.toJavaX509Certificate(
+                    ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )
+                ), null);
+
+
+            PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
+                new X500Name("CN=Test"),
+                enrollmentPair.getPublic());
+
+            PKCS10CertificationRequest csr = pkcs10Builder.build(
+                new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+
+            //
+            // Even though we are using TLS we still need to use an HTTP auth.
+            //
+
+            int port = res.open(responseData.toByteArray());
+
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )));
+
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+
+            builder.addCipherSuites(res.getSupportedCipherSuites());
+
+
+            try
+            {
+                EnrollmentResponse resp = builder.build().simpleEnroll(false, csr, null);
+                Assert.fail("Must throw exception.");
+            }
+            catch (Exception t)
+            {
+                Assert.assertEquals("Must be ESTException", t.getClass(), ESTException.class);
+            }
+
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testResponseWith400()
+        throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 400 Bad Request\n" +
+            "Status: 400 Bad Request\n" +
+            "Content-Length: 0\n\n");
+        pw.flush();
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+            ECGenParameterSpec ecGenSpec = new ECGenParameterSpec("prime256v1");
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", "BC");
+            kpg.initialize(ecGenSpec, new SecureRandom());
+            KeyPair enrollmentPair = kpg.generateKeyPair();
+
+
+            TrustAnchor ta = new TrustAnchor(
+                ESTTestUtils.toJavaX509Certificate(
+                    ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )
+                ), null);
+
+
+            PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
+                new X500Name("CN=Test"),
+                enrollmentPair.getPublic());
+
+            PKCS10CertificationRequest csr = pkcs10Builder.build(
+                new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+
+            //
+            // Even though we are using TLS we still need to use an HTTP auth.
+            //
+
+            int port = res.open(responseData.toByteArray());
+
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )));
+
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+
+//            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+//                "https://localhost:" + port + "/.well-known/est/", ESTTestUtils.toTrustAnchor(
+//                ESTTestUtils.readPemCertificate(
+//                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+//                )));
+
+            builder.addCipherSuites(res.getSupportedCipherSuites());
+
+
+            try
+            {
+                EnrollmentResponse resp = builder.build().simpleEnroll(false, csr, null);
+                Assert.fail("Must throw exception.");
+            }
+            catch (Exception t)
+            {
+                Assert.assertEquals("Must be ESTException", t.getClass(), ESTException.class);
+                Assert.assertEquals("", 400, ((ESTException)t).getStatusCode());
+            }
+
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+    @Test()
+    public void testResponseWith401BAndBadQOP()
+        throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 401 Unauthorized\n" +
+            "Status: 401 Unauthorized\n" +
+            "Content-Length: 0\n" +
+            "WWW-Authenticate: Digest qop=\"invalid\", realm=\"estrealm\", nonce=\"1487704890\", algorithm=\"md5\"\n\n");
+        pw.flush();
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+            ECGenParameterSpec ecGenSpec = new ECGenParameterSpec("prime256v1");
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", "BC");
+            kpg.initialize(ecGenSpec, new SecureRandom());
+            KeyPair enrollmentPair = kpg.generateKeyPair();
+
+
+            TrustAnchor ta = new TrustAnchor(
+                ESTTestUtils.toJavaX509Certificate(
+                    ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )
+                ), null);
+
+
+            PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
+                new X500Name("CN=Test"),
+                enrollmentPair.getPublic());
+
+            PKCS10CertificationRequest csr = pkcs10Builder.build(
+                new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+
+            //
+            // Even though we are using TLS we still need to use an HTTP auth.
+            //
+
+            int port = res.open(responseData.toByteArray());
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )));
+
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+
+
+            builder.addCipherSuites(res.getSupportedCipherSuites());
+
+
+            try
+            {
+                EnrollmentResponse resp = builder.build().simpleEnroll(false, csr,
+                    new HttpAuth(
+                        "estrealm",
+                        "estuser",
+                        "estpwd".toCharArray(),
+                        new SecureRandom(),
+                        new JcaDigestCalculatorProviderBuilder().setProvider("BC").build())
+                );
+                Assert.fail("Must throw exception.");
+            }
+            catch (Exception t)
+            {
+                Assert.assertEquals("Must be ESTException", t.getClass(), ESTException.class);
+                Assert.assertTrue("", t.getMessage().contains("'invalid'"));
+            }
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+    @Test()
+    public void testResponseWith401UknownValueInHeader()
+        throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 401 Unauthorized\n" +
+            "Status: 401 Unauthorized\n" +
+            "Content-Length: 0\n" +
+            "WWW-Authenticate: Digest qop=\"invalid\", realm=\"estrealm\", nonce=\"1487704890\", algorithm=\"md5\", dummy=\"value\"\n\n");
+        pw.flush();
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+            ECGenParameterSpec ecGenSpec = new ECGenParameterSpec("prime256v1");
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", "BC");
+            kpg.initialize(ecGenSpec, new SecureRandom());
+            KeyPair enrollmentPair = kpg.generateKeyPair();
+
+
+            TrustAnchor ta = new TrustAnchor(
+                ESTTestUtils.toJavaX509Certificate(
+                    ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )
+                ), null);
+
+
+            PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
+                new X500Name("CN=Test"),
+                enrollmentPair.getPublic());
+
+            PKCS10CertificationRequest csr = pkcs10Builder.build(
+                new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+
+            //
+            // Even though we are using TLS we still need to use an HTTP auth.
+            //
+
+            int port = res.open(responseData.toByteArray());
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )));
+
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+
+            builder.addCipherSuites(res.getSupportedCipherSuites());
+
+
+            try
+            {
+                EnrollmentResponse resp = builder.build().simpleEnroll(false, csr,
+                    new HttpAuth(
+                        "estrealm",
+                        "estuser",
+                        "estpwd".toCharArray(),
+                        new SecureRandom(),
+                        new JcaDigestCalculatorProviderBuilder().setProvider("BC").build())
+                );
+                Assert.fail("Must throw exception.");
+            }
+            catch (Exception t)
+            {
+                Assert.assertEquals("Must be ESTException", t.getClass(), ESTException.class);
+                Assert.assertTrue("", t.getMessage().contains("'dummy'"));
+            }
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testResponseWith401QpopEmpty()
+        throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 401 Unauthorized\n" +
+            "Status: 401 Unauthorized\n" +
+            "Content-Length: 0\n" +
+            "WWW-Authenticate: Digest qop=\"\", realm=\"estrealm\", nonce=\"1487704890\", algorithm=\"md5\"\n\n");
+        pw.flush();
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+            ECGenParameterSpec ecGenSpec = new ECGenParameterSpec("prime256v1");
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", "BC");
+            kpg.initialize(ecGenSpec, new SecureRandom());
+            KeyPair enrollmentPair = kpg.generateKeyPair();
+
+
+            TrustAnchor ta = new TrustAnchor(
+                ESTTestUtils.toJavaX509Certificate(
+                    ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )
+                ), null);
+
+
+            PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
+                new X500Name("CN=Test"),
+                enrollmentPair.getPublic());
+
+            PKCS10CertificationRequest csr = pkcs10Builder.build(
+                new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+
+            //
+            // Even though we are using TLS we still need to use an HTTP auth.
+            //
+
+            int port = res.open(responseData.toByteArray());
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )));
+
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+
+            builder.addCipherSuites(res.getSupportedCipherSuites());
+
+
+            try
+            {
+                EnrollmentResponse resp = builder.build().simpleEnroll(false, csr,
+                    new HttpAuth(
+                        "estrealm",
+                        "estuser",
+                        "estpwd".toCharArray(),
+                        new SecureRandom(),
+                        new JcaDigestCalculatorProviderBuilder().setProvider("BC").build())
+                );
+                Assert.fail("Must throw exception.");
+            }
+            catch (Exception t)
+            {
+                Assert.assertEquals("Must be ESTException", t.getClass(), ESTException.class);
+                Assert.assertTrue("", t.getMessage().contains("value is empty"));
+            }
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testResponseWith401BadMode()
+        throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 401 Unauthorized\n" +
+            "Status: 401 Unauthorized\n" +
+            "Content-Length: 0\n" +
+            "WWW-Authenticate: Banana qop=\"\", realm=\"estrealm\", nonce=\"1487704890\", algorithm=\"md5\"\n\n");
+        pw.flush();
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+            ECGenParameterSpec ecGenSpec = new ECGenParameterSpec("prime256v1");
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", "BC");
+            kpg.initialize(ecGenSpec, new SecureRandom());
+            KeyPair enrollmentPair = kpg.generateKeyPair();
+
+
+            TrustAnchor ta = new TrustAnchor(
+                ESTTestUtils.toJavaX509Certificate(
+                    ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )
+                ), null);
+
+
+            PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
+                new X500Name("CN=Test"),
+                enrollmentPair.getPublic());
+
+            PKCS10CertificationRequest csr = pkcs10Builder.build(
+                new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+
+            //
+            // Even though we are using TLS we still need to use an HTTP auth.
+            //
+
+            int port = res.open(responseData.toByteArray());
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )));
+
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+
+
+            builder.addCipherSuites(res.getSupportedCipherSuites());
+
+
+            try
+            {
+                EnrollmentResponse resp = builder.build().simpleEnroll(false, csr,
+                    new HttpAuth(
+                        "estrealm",
+                        "estuser",
+                        "estpwd".toCharArray(),
+                        new SecureRandom(),
+                        new JcaDigestCalculatorProviderBuilder().setProvider("BC").build())
+                );
+                Assert.fail("Must throw exception.");
+            }
+            catch (Exception t)
+            {
+                Assert.assertEquals("Must be ESTException", t.getClass(), ESTException.class);
+                Assert.assertTrue("", t.getMessage().contains("banana"));
+            }
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testResponseWith401AndNoWWWHeader()
+        throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 401 Unauthorized\n" +
+            "Status: 401 Unauthorized\n" +
+            "Content-Length: 0\n" +
+            "\n");
+        pw.flush();
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+            ECGenParameterSpec ecGenSpec = new ECGenParameterSpec("prime256v1");
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", "BC");
+            kpg.initialize(ecGenSpec, new SecureRandom());
+            KeyPair enrollmentPair = kpg.generateKeyPair();
+
+
+            TrustAnchor ta = new TrustAnchor(
+                ESTTestUtils.toJavaX509Certificate(
+                    ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )
+                ), null);
+
+
+            PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
+                new X500Name("CN=Test"),
+                enrollmentPair.getPublic());
+
+            PKCS10CertificationRequest csr = pkcs10Builder.build(
+                new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+
+            //
+            // Even though we are using TLS we still need to use an HTTP auth.
+            //
+
+            int port = res.open(responseData.toByteArray());
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )));
+
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+
+
+            builder.addCipherSuites(res.getSupportedCipherSuites());
+
+
+            try
+            {
+                EnrollmentResponse resp = builder.build().simpleEnroll(false, csr,
+                    new HttpAuth(
+                        "estrealm",
+                        "estuser",
+                        "estpwd".toCharArray(),
+                        new SecureRandom(),
+                        new JcaDigestCalculatorProviderBuilder().setProvider("BC").build())
+                );
+                Assert.fail("Must throw exception.");
+            }
+            catch (Exception t)
+            {
+                Assert.assertEquals("Must be ESTException", t.getClass(), ESTException.class);
+                Assert.assertTrue("", t.getMessage().contains("no WWW-Authenticate"));
+            }
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testResponseWith401AndBadAlgorithm()
+        throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 401 Unauthorized\n" +
+            "Status: 401 Unauthorized\n" +
+            "Content-Length: 0\n" +
+            "WWW-Authenticate: Digest qop=\"auth\", realm=\"estrealm\", nonce=\"1487706836\", algorithm=\"token\"\n\n");
+        pw.flush();
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+            ECGenParameterSpec ecGenSpec = new ECGenParameterSpec("prime256v1");
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", "BC");
+            kpg.initialize(ecGenSpec, new SecureRandom());
+            KeyPair enrollmentPair = kpg.generateKeyPair();
+
+
+            TrustAnchor ta = new TrustAnchor(
+                ESTTestUtils.toJavaX509Certificate(
+                    ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )
+                ), null);
+
+
+            PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
+                new X500Name("CN=Test"),
+                enrollmentPair.getPublic());
+
+            PKCS10CertificationRequest csr = pkcs10Builder.build(
+                new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+
+            //
+            // Even though we are using TLS we still need to use an HTTP auth.
+            //
+
+            int port = res.open(responseData.toByteArray());
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )));
+
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+
+
+            builder.addCipherSuites(res.getSupportedCipherSuites());
+
+
+            try
+            {
+                EnrollmentResponse resp = builder.build().simpleEnroll(false, csr,
+                    new HttpAuth(
+                        "estrealm",
+                        "estuser",
+                        "estpwd".toCharArray(),
+                        new SecureRandom(),
+                        new JcaDigestCalculatorProviderBuilder().setProvider("BC").build())
+                );
+                Assert.fail("Must throw exception.");
+            }
+            catch (Exception t)
+            {
+                Assert.assertEquals("Must be ESTException", t.getClass(), ESTException.class);
+                Assert.assertTrue("", t.getMessage().contains("digest algorithm unknown"));
+            }
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testResponseWith401NullNonce()
+        throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 401 Unauthorized\n" +
+            "Status: 401 Unauthorized\n" +
+            "Content-Length: 0\n" +
+            "WWW-Authenticate: Digest qop=\"auth\", realm=\"estrealm\", nonce=\n\n");
+        pw.flush();
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+            ECGenParameterSpec ecGenSpec = new ECGenParameterSpec("prime256v1");
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", "BC");
+            kpg.initialize(ecGenSpec, new SecureRandom());
+            KeyPair enrollmentPair = kpg.generateKeyPair();
+
+
+            TrustAnchor ta = new TrustAnchor(
+                ESTTestUtils.toJavaX509Certificate(
+                    ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )
+                ), null);
+
+
+            PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
+                new X500Name("CN=Test"),
+                enrollmentPair.getPublic());
+
+            PKCS10CertificationRequest csr = pkcs10Builder.build(
+                new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+
+            //
+            // Even though we are using TLS we still need to use an HTTP auth.
+            //
+
+            int port = res.open(responseData.toByteArray());
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )));
+
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+
+            builder.addCipherSuites(res.getSupportedCipherSuites());
+
+
+            try
+            {
+                EnrollmentResponse resp = builder.build().simpleEnroll(false, csr,
+                    new HttpAuth(
+                        "estrealm",
+                        "estuser",
+                        "estpwd".toCharArray(),
+                        new SecureRandom(),
+                        new JcaDigestCalculatorProviderBuilder().setProvider("BC").build())
+                );
+                Assert.fail("Must throw exception.");
+            }
+            catch (Exception t)
+            {
+                Assert.assertEquals("Must be ESTException", t.getClass(), ESTException.class);
+                Assert.assertTrue("", t.getMessage().contains("Expecting start quote"));
+            }
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testResponseWith401NullRealm()
+        throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 401 Unauthorized\n" +
+            "Status: 401 Unauthorized\n" +
+            "Content-Length: 0\n" +
+            "WWW-Authenticate: Digest qop=\"auth\", realm=, nonce=\"1234\"\n\n");
+        pw.flush();
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+            ECGenParameterSpec ecGenSpec = new ECGenParameterSpec("prime256v1");
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", "BC");
+            kpg.initialize(ecGenSpec, new SecureRandom());
+            KeyPair enrollmentPair = kpg.generateKeyPair();
+
+
+            TrustAnchor ta = new TrustAnchor(
+                ESTTestUtils.toJavaX509Certificate(
+                    ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )
+                ), null);
+
+
+            PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
+                new X500Name("CN=Test"),
+                enrollmentPair.getPublic());
+
+            PKCS10CertificationRequest csr = pkcs10Builder.build(
+                new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+
+            //
+            // Even though we are using TLS we still need to use an HTTP auth.
+            //
+
+            int port = res.open(responseData.toByteArray());
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )));
+
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+
+            builder.addCipherSuites(res.getSupportedCipherSuites());
+
+
+            try
+            {
+                EnrollmentResponse resp = builder.build().simpleEnroll(false, csr,
+                    new HttpAuth(
+                        "estrealm",
+                        "estuser",
+                        "estpwd".toCharArray(),
+                        new SecureRandom(),
+                        new JcaDigestCalculatorProviderBuilder().setProvider("BC").build())
+                );
+                Assert.fail("Must throw exception.");
+            }
+            catch (Exception t)
+            {
+                Assert.assertEquals("Must be ESTException", t.getClass(), ESTException.class);
+                Assert.assertTrue("", t.getMessage().contains("Expecting start quote"));
+            }
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testResponseWith401NullQop()
+        throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 401 Unauthorized\n" +
+            "Status: 401 Unauthorized\n" +
+            "Content-Length: 0\n" +
+            "WWW-Authenticate: Digest realm=\"estrealm\", nonce=\"1487778654\", qop=\n\n");
+        pw.flush();
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+            ECGenParameterSpec ecGenSpec = new ECGenParameterSpec("prime256v1");
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", "BC");
+            kpg.initialize(ecGenSpec, new SecureRandom());
+            KeyPair enrollmentPair = kpg.generateKeyPair();
+
+
+            TrustAnchor ta = new TrustAnchor(
+                ESTTestUtils.toJavaX509Certificate(
+                    ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )
+                ), null);
+
+
+            PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
+                new X500Name("CN=Test"),
+                enrollmentPair.getPublic());
+
+            PKCS10CertificationRequest csr = pkcs10Builder.build(
+                new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+
+            //
+            // Even though we are using TLS we still need to use an HTTP auth.
+            //
+
+            int port = res.open(responseData.toByteArray());
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )));
+
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+
+
+            builder.addCipherSuites(res.getSupportedCipherSuites());
+
+
+            try
+            {
+                EnrollmentResponse resp = builder.build().simpleEnroll(false, csr,
+                    new HttpAuth(
+                        "estrealm",
+                        "estuser",
+                        "estpwd".toCharArray(),
+                        new SecureRandom(),
+                        new JcaDigestCalculatorProviderBuilder().setProvider("BC").build())
+                );
+                Assert.fail("Must throw exception.");
+            }
+            catch (Exception t)
+            {
+                Assert.assertEquals("Must be ESTException", t.getClass(), ESTException.class);
+                Assert.assertTrue("", t.getMessage().contains("Expecting start quote"));
+            }
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testResponseWith202NoRetryHeader()
+        throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 202 Accepted\n" +
+            "Status: 202 Accepted\n" +
+            "Content-Length: 0\n\n");
+        pw.flush();
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder();
+        try
+        {
+            ECGenParameterSpec ecGenSpec = new ECGenParameterSpec("prime256v1");
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", "BC");
+            kpg.initialize(ecGenSpec, new SecureRandom());
+            KeyPair enrollmentPair = kpg.generateKeyPair();
+
+
+            TrustAnchor ta = new TrustAnchor(
+                ESTTestUtils.toJavaX509Certificate(
+                    ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )
+                ), null);
+
+
+            PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
+                new X500Name("CN=Test"),
+                enrollmentPair.getPublic());
+
+            PKCS10CertificationRequest csr = pkcs10Builder.build(
+                new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+
+            //
+            // Even though we are using TLS we still need to use an HTTP auth.
+            //
+
+            int port = res.open(responseData.toByteArray());
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )));
+
+
+            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+
+            builder.addCipherSuites(res.getSupportedCipherSuites());
+
+
+            try
+            {
+                EnrollmentResponse resp = builder.build().simpleEnroll(false, csr,
+                    new HttpAuth(
+                        "estrealm",
+                        "estuser",
+                        "estpwd".toCharArray(),
+                        new SecureRandom(),
+                        new JcaDigestCalculatorProviderBuilder().setProvider("BC").build())
+                );
+                Assert.fail("Must throw exception.");
+            }
+            catch (Exception t)
+            {
+                Assert.assertEquals("Must be ESTException", t.getClass(), ESTException.class);
+                Assert.assertTrue("", t.getMessage().contains("not Retry-After header"));
+            }
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+
 
 
     public static void main(String[] args)

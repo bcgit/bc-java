@@ -2,11 +2,6 @@ package org.bouncycastle.est.jcajce;
 
 
 import java.net.Socket;
-import java.security.KeyStore;
-import java.security.cert.CRL;
-import java.security.cert.CertificateException;
-import java.security.cert.TrustAnchor;
-import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -24,75 +19,35 @@ import org.bouncycastle.est.ESTServiceBuilder;
 public class JcaESTServiceBuilder
     extends ESTServiceBuilder
 {
-    protected Set<TrustAnchor> tlsTrustAnchors;
-    protected KeyStore clientKeystore;
-    protected char[] clientKeystorePassword;
+    protected final SocketFactoryCreator socketFactoryCreator;
     protected JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer;
-    protected JcaJceAuthorizer ESTAuthorizer;
-    protected CRL[] revocationLists;
-    protected String tlsVersion = "TLS";
     protected int timeoutMillis = 0;
-    protected String tlsProvider = null;
     protected ChannelBindingProvider bindingProvider;
     protected Set<String> supportedSuites = new HashSet<String>();
-    private Long absoluteLimit;
+    protected Long absoluteLimit;
 
-    /**
-     * Create a builder for a client talking to a server where trust anchors have not been established yet.
-     *
-     * @param server name of the server to talk to (URL format).
-     */
-    public JcaESTServiceBuilder(String server)
-    {
-        super(server);
-        this.ESTAuthorizer = new JcaJceAuthorizer()
-        {
-            public void authorize(
-                X509Certificate[] chain,
-                String authType)
-                throws CertificateException
-            {
-                // Does nothing, will accept any and all tendered certificates from the server.
-            }
-        };
-    }
 
     /**
      * Create a builder for a client talking to a already trusted server.
      *
-     * @param server          name of the server to talk to (URL format).
-     * @param tlsTrustAnchors the trust anchor set to use to authenticate the server.
+     * @param server               name of the server to talk to (URL format).
+     * @param socketFactoryCreator creator of socket factories.
      */
-    public JcaESTServiceBuilder(String server, Set<TrustAnchor> tlsTrustAnchors)
+    public JcaESTServiceBuilder(String server, SocketFactoryCreator socketFactoryCreator)
     {
         super(server);
-        if (tlsTrustAnchors == null || tlsTrustAnchors.isEmpty())
+        if (socketFactoryCreator == null)
         {
-            //
-            // You must set trust anchors to use this constructor, if you desire the service to accept
-            // any server tendered certificates then use the alternative constructor.
-            //
-            throw new IllegalStateException("Trust anchors must be not null and not empty.");
+            throw new IllegalArgumentException("No socket factory creator.");
         }
-        this.tlsTrustAnchors = tlsTrustAnchors;
+        this.socketFactoryCreator = socketFactoryCreator;
+
     }
 
-    public JcaESTServiceBuilder withClientKeystore(KeyStore clientKeystore, char[] clientKeystorePassword)
-    {
-        this.clientKeystore = clientKeystore;
-        this.clientKeystorePassword = clientKeystorePassword;
-        return this;
-    }
 
     public JcaESTServiceBuilder withHostNameAuthorizer(JcaJceHostNameAuthorizer hostNameAuthorizer)
     {
         this.hostNameAuthorizer = hostNameAuthorizer;
-        return this;
-    }
-
-    public JcaESTServiceBuilder withRevocationLists(CRL[] revocationLists)
-    {
-        this.revocationLists = revocationLists;
         return this;
     }
 
@@ -102,17 +57,6 @@ public class JcaESTServiceBuilder
         return this;
     }
 
-    public JcaESTServiceBuilder withTlsVersion(String tlsVersion)
-    {
-        this.tlsVersion = tlsVersion;
-        return this;
-    }
-
-    public JcaESTServiceBuilder withTlSProvider(String tlsProvider)
-    {
-        this.tlsProvider = tlsProvider;
-        return this;
-    }
 
     public JcaESTServiceBuilder withTimeout(int timeoutMillis)
     {
@@ -166,17 +110,12 @@ public class JcaESTServiceBuilder
         if (clientProvider == null)
         {
             clientProvider = new JcaDefaultESTHttpClientProvider(
-                tlsTrustAnchors,
-                clientKeystore,
-                clientKeystorePassword,
                 hostNameAuthorizer,
-                revocationLists,
-                ESTAuthorizer,
-                tlsVersion,
-                tlsProvider,
+                socketFactoryCreator,
                 timeoutMillis,
                 bindingProvider,
-                supportedSuites, absoluteLimit);
+                supportedSuites,
+                absoluteLimit);
         }
 
         return super.build();

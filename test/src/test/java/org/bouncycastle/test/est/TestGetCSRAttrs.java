@@ -1,5 +1,11 @@
 package org.bouncycastle.test.est;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.SocketTimeoutException;
+import java.util.concurrent.TimeUnit;
+
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.est.AttrOrOID;
 import org.bouncycastle.asn1.est.CsrAttrs;
@@ -8,20 +14,15 @@ import org.bouncycastle.est.CSRRequestResponse;
 import org.bouncycastle.est.ESTException;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
+import org.bouncycastle.est.jcajce.JcaJceSocketFactoryCreatorBuilder;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.SocketTimeoutException;
-import java.util.concurrent.TimeUnit;
-
 
 public class TestGetCSRAttrs
-        extends SimpleTest
+    extends SimpleTest
 {
 
     public String getName()
@@ -30,7 +31,7 @@ public class TestGetCSRAttrs
     }
 
     private ESTServerUtils.ServerInstance startDefaultServer()
-            throws Exception
+        throws Exception
     {
 
         final ESTServerUtils.EstServerConfig config = new ESTServerUtils.EstServerConfig();
@@ -53,7 +54,7 @@ public class TestGetCSRAttrs
 
 
     public void performTest()
-            throws Exception
+        throws Exception
     {
         ESTTestUtils.runJUnit(TestGetCSRAttrs.class);
     }
@@ -68,7 +69,7 @@ public class TestGetCSRAttrs
      */
     @Test
     public void testFetchCSRAttributes()
-            throws Exception
+        throws Exception
     {
         ESTTestUtils.ensureProvider();
         X509CertificateHolder[] theirCAs = null;
@@ -77,19 +78,22 @@ public class TestGetCSRAttrs
         {
             serverInstance = startDefaultServer();
 
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+            )));
+
+
             ESTService est = new JcaESTServiceBuilder(
-                    "https://localhost:8443/.well-known/est/",
-                    ESTTestUtils.toTrustAnchor(
-                            ESTTestUtils.readPemCertificate(
-                                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                            ))
+                "https://localhost:8443/.well-known/est/",
+                sfcb.build()
             ).build();
 
             CSRRequestResponse csrRequestResponse = est.getCSRAttributes();
             Assert.assertEquals(1, csrRequestResponse.getAttributesResponse().getRequirements().size());
             Assert.assertTrue("Must have: ",
-                    csrRequestResponse.getAttributesResponse().hasRequirement(new ASN1ObjectIdentifier("1.2.3.4")));
-        } finally
+                csrRequestResponse.getAttributesResponse().hasRequirement(new ASN1ObjectIdentifier("1.2.3.4")));
+        }
+        finally
         {
             if (serverInstance != null)
             {
@@ -102,16 +106,16 @@ public class TestGetCSRAttrs
 
     @Test()
     public void testResponseWithNoCSRAttributes()
-            throws Exception
+        throws Exception
     {
         ESTTestUtils.ensureProvider();
         final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
 
         PrintWriter pw = new PrintWriter(responseData);
         pw.print("HTTP/1.1 200 OK\n" +
-                "Status: 200 OK\n" +
-                "Content-Type: application/csrattrs Content-Transfer-Encoding: base64\n" +
-                "Content-Length: 0\n\n");
+            "Status: 200 OK\n" +
+            "Content-Type: application/csrattrs Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 0\n\n");
 
         pw.flush();
 
@@ -124,11 +128,12 @@ public class TestGetCSRAttrs
         try
         {
             int port = res.open(responseData.toByteArray());
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+            )));
+
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                    "https://localhost:" + port + "/.well-known/est/", ESTTestUtils.toTrustAnchor(
-                    ESTTestUtils.readPemCertificate(
-                            ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )));
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
             ESTService est = builder.build();
@@ -142,15 +147,18 @@ public class TestGetCSRAttrs
             {
                 resp.getAttributesResponse();
                 Assert.fail("Must throw exception.");
-            } catch (Throwable t)
+            }
+            catch (Throwable t)
             {
                 Assert.assertEquals("", IllegalStateException.class, t.getClass());
             }
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             ex.printStackTrace();
-        } finally
+        }
+        finally
         {
             res.close();
         }
@@ -162,16 +170,16 @@ public class TestGetCSRAttrs
 
     @Test()
     public void testResponseWithNoCSRAttributes202()
-            throws Exception
+        throws Exception
     {
         ESTTestUtils.ensureProvider();
         final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
 
         PrintWriter pw = new PrintWriter(responseData);
         pw.print("HTTP/1.1 204 No Content\n" +
-                "Status: 204 No Content\n" +
-                "Content-Type: application/csrattrs Content-Transfer-Encoding: base64\n" +
-                "Content-Length: 0\n\n");
+            "Status: 204 No Content\n" +
+            "Content-Type: application/csrattrs Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 0\n\n");
 
         pw.flush();
 
@@ -184,11 +192,13 @@ public class TestGetCSRAttrs
         try
         {
             int port = res.open(responseData.toByteArray());
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+            )));
+
+
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                    "https://localhost:" + port + "/.well-known/est/", ESTTestUtils.toTrustAnchor(
-                    ESTTestUtils.readPemCertificate(
-                            ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )));
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
             ESTService est = builder.build();
@@ -202,15 +212,18 @@ public class TestGetCSRAttrs
             {
                 resp.getAttributesResponse();
                 Assert.fail("Must throw exception.");
-            } catch (Throwable t)
+            }
+            catch (Throwable t)
             {
                 Assert.assertEquals("", IllegalStateException.class, t.getClass());
             }
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             ex.printStackTrace();
-        } finally
+        }
+        finally
         {
             res.close();
         }
@@ -222,16 +235,16 @@ public class TestGetCSRAttrs
 
     @Test()
     public void testResponseWithNoCSRAttributes404()
-            throws Exception
+        throws Exception
     {
         ESTTestUtils.ensureProvider();
         final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
 
         PrintWriter pw = new PrintWriter(responseData);
         pw.print("HTTP/1.1 404 Not Found\n" +
-                "Status: 404 Not Found\n" +
-                "Content-Type: application/csrattrs Content-Transfer-Encoding: base64\n" +
-                "Content-Length: 0\n\n");
+            "Status: 404 Not Found\n" +
+            "Content-Type: application/csrattrs Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 0\n\n");
 
         pw.flush();
 
@@ -244,11 +257,13 @@ public class TestGetCSRAttrs
         try
         {
             int port = res.open(responseData.toByteArray());
+
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+            )));
+
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                    "https://localhost:" + port + "/.well-known/est/", ESTTestUtils.toTrustAnchor(
-                    ESTTestUtils.readPemCertificate(
-                            ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )));
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
             ESTService est = builder.build();
@@ -262,15 +277,18 @@ public class TestGetCSRAttrs
             {
                 resp.getAttributesResponse();
                 Assert.fail("Must throw exception.");
-            } catch (Throwable t)
+            }
+            catch (Throwable t)
             {
                 Assert.assertEquals("", IllegalStateException.class, t.getClass());
             }
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             ex.printStackTrace();
-        } finally
+        }
+        finally
         {
             res.close();
         }
@@ -281,7 +299,7 @@ public class TestGetCSRAttrs
 
     @Test()
     public void testResponseWithLongAttribute()
-            throws Exception
+        throws Exception
     {
 
 
@@ -370,18 +388,18 @@ public class TestGetCSRAttrs
 
     @Test()
     public void testResponseWithInvalidResponse()
-            throws Exception
+        throws Exception
     {
         ESTTestUtils.ensureProvider();
         final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
 
         PrintWriter pw = new PrintWriter(responseData);
         pw.print("HTTP/1.1 200 OK\n" +
-                "Status: 200 OK\n" +
-                "Content-Type: application/csrattrs\n" +
-                "Content-Transfer-Encoding: base64\n" +
-                "Content-Length: 31\n\n" +
-                "THIS IS A TEST OF INVALID DATA.\n");
+            "Status: 200 OK\n" +
+            "Content-Type: application/csrattrs\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 31\n\n" +
+            "THIS IS A TEST OF INVALID DATA.\n");
 
         pw.flush();
 
@@ -394,11 +412,14 @@ public class TestGetCSRAttrs
         try
         {
             int port = res.open(responseData.toByteArray());
+
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+            )));
+
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                    "https://localhost:" + port + "/.well-known/est/", ESTTestUtils.toTrustAnchor(
-                    ESTTestUtils.readPemCertificate(
-                            ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )));
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
             ESTService est = builder.build();
@@ -412,15 +433,18 @@ public class TestGetCSRAttrs
             {
                 resp.getAttributesResponse();
                 Assert.fail("Must throw exception.");
-            } catch (Throwable t)
+            }
+            catch (Throwable t)
             {
                 Assert.assertTrue(t.getMessage().contains("Decoding CACerts"));
             }
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             ex.printStackTrace();
-        } finally
+        }
+        finally
         {
             res.close();
         }
@@ -432,18 +456,18 @@ public class TestGetCSRAttrs
 
     @Test()
     public void testResponseWithShortContentLength()
-            throws Exception
+        throws Exception
     {
         ESTTestUtils.ensureProvider();
         final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
 
         PrintWriter pw = new PrintWriter(responseData);
         pw.print("HTTP/1.1 200 OK\n" +
-                "Status: 200 OK\n" +
-                "Content-Type: application/csrattrs\n" +
-                "Content-Transfer-Encoding: base64\n" +
-                "Content-Length: 14\n\n" +
-                "MAkGBysGAQEBARY=");
+            "Status: 200 OK\n" +
+            "Content-Type: application/csrattrs\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 14\n\n" +
+            "MAkGBysGAQEBARY=\n");
 
         pw.flush();
 
@@ -456,11 +480,12 @@ public class TestGetCSRAttrs
         try
         {
             int port = res.open(responseData.toByteArray());
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+            )));
+
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                    "https://localhost:" + port + "/.well-known/est/", ESTTestUtils.toTrustAnchor(
-                    ESTTestUtils.readPemCertificate(
-                            ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )));
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
             ESTService est = builder.build();
@@ -469,17 +494,20 @@ public class TestGetCSRAttrs
             {
                 CSRRequestResponse resp = est.getCSRAttributes();
                 Assert.fail("Must throw exception.");
-            } catch (Throwable t)
+            }
+            catch (Exception t)
             {
-                Assert.assertEquals("Must be ESTException",t.getClass(), ESTException.class);
-                Assert.assertEquals("Cause must be IOException",t.getCause().getClass(), IOException.class);
+                Assert.assertEquals("Must be ESTException", t.getClass(), ESTException.class);
+                Assert.assertEquals("Cause must be IOException", t.getCause().getClass(), IOException.class);
                 Assert.assertTrue(t.getMessage().contains("extra content in pipe"));
             }
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             ex.printStackTrace();
-        } finally
+        }
+        finally
         {
             res.close();
         }
@@ -491,18 +519,18 @@ public class TestGetCSRAttrs
 
     @Test()
     public void testResponseWithBrokenBase64()
-            throws Exception
+        throws Exception
     {
         ESTTestUtils.ensureProvider();
         final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
 
         PrintWriter pw = new PrintWriter(responseData);
         pw.print("HTTP/1.1 200 OK\n" +
-                "Status: 200 OK\n" +
-                "Content-Type: application/csrattrs\n"+
-                "Content-Transfer-Encoding: base64\n" +
-                "Content-Length: 36\n\n" +
-                "MBQGBysGAQEBARYGCSqGSIb3DQEHAQpppp==\n");
+            "Status: 200 OK\n" +
+            "Content-Type: application/csrattrs\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 36\n\n" +
+            "MBQGBysGAQEBARYGCSqGSIb3DQEHAQpppp==\n");
 
         pw.flush();
 
@@ -515,11 +543,13 @@ public class TestGetCSRAttrs
         try
         {
             int port = res.open(responseData.toByteArray());
+
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+            )));
+
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                    "https://localhost:" + port + "/.well-known/est/", ESTTestUtils.toTrustAnchor(
-                    ESTTestUtils.readPemCertificate(
-                            ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )));
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
             ESTService est = builder.build();
@@ -528,17 +558,20 @@ public class TestGetCSRAttrs
             {
                 CSRRequestResponse resp = est.getCSRAttributes();
                 Assert.fail("Must throw exception.");
-            } catch (Throwable t)
+            }
+            catch (Throwable t)
             {
-                Assert.assertEquals("Must be ESTException",t.getClass(), ESTException.class);
-                Assert.assertEquals("Cause must be IOException",t.getCause().getClass(), IOException.class);
+                Assert.assertEquals("Must be ESTException", t.getClass(), ESTException.class);
+                Assert.assertEquals("Cause must be IOException", t.getCause().getClass(), IOException.class);
                 Assert.assertTrue(t.getMessage().contains("extra content in pipe"));
             }
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             ex.printStackTrace();
-        } finally
+        }
+        finally
         {
             res.close();
         }
@@ -550,18 +583,18 @@ public class TestGetCSRAttrs
 
     @Test()
     public void testResponseWithBrokenBase64_3113()
-            throws Exception
+        throws Exception
     {
         ESTTestUtils.ensureProvider();
         final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
 
         PrintWriter pw = new PrintWriter(responseData);
         pw.print("HTTP/1.1 200 OK\n" +
-                "Status: 200 OK\n" +
-                "Content-Type: application/csrattrs\n"+
-                "Content-Transfer-Encoding: base64\n" +
-                "Content-Length: 24\n\n" +
-                "MAkGBysGAQEBARY=\n");
+            "Status: 200 OK\n" +
+            "Content-Type: application/csrattrs\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 24\n\n" +
+            "MAkGBysGAQEBARY=\n");
 
         pw.flush();
 
@@ -574,11 +607,12 @@ public class TestGetCSRAttrs
         try
         {
             int port = res.open(responseData.toByteArray());
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+            )));
+
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                    "https://localhost:" + port + "/.well-known/est/", ESTTestUtils.toTrustAnchor(
-                    ESTTestUtils.readPemCertificate(
-                            ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )));
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
             ESTService est = builder.build();
@@ -587,17 +621,20 @@ public class TestGetCSRAttrs
             {
                 CSRRequestResponse resp = est.getCSRAttributes();
                 Assert.fail("Must throw exception.");
-            } catch (Throwable t)
+            }
+            catch (Throwable t)
             {
-                Assert.assertEquals("Must be ESTException",t.getClass(), ESTException.class);
-                Assert.assertEquals("Cause must be IOException",t.getCause().getClass(), IOException.class);
+                Assert.assertEquals("Must be ESTException", t.getClass(), ESTException.class);
+                Assert.assertEquals("Cause must be IOException", t.getCause().getClass(), IOException.class);
                 Assert.assertTrue(t.getMessage().contains("closed before limit"));
             }
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             ex.printStackTrace();
-        } finally
+        }
+        finally
         {
             res.close();
         }
@@ -608,7 +645,7 @@ public class TestGetCSRAttrs
 
     @Test
     public void testFetchCaCertsWithTimeout()
-            throws Exception
+        throws Exception
     {
         ESTTestUtils.ensureProvider();
 
@@ -617,11 +654,12 @@ public class TestGetCSRAttrs
 
         int port = res.open(null);
 
+        JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+            ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+        )));
+
         JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", ESTTestUtils.toTrustAnchor(
-                ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                )));
+            "https://localhost:" + port + "/.well-known/est/", sfcb.build());
 
         builder.addCipherSuites(res.getSupportedCipherSuites()).withTimeout(500);
 
@@ -649,7 +687,7 @@ public class TestGetCSRAttrs
 
 
     public static void main(String[] args)
-            throws Exception
+        throws Exception
     {
         ESTTestUtils.ensureProvider();
         runTest(new TestGetCSRAttrs());

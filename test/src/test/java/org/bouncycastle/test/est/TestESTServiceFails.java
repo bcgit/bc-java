@@ -3,6 +3,7 @@ package org.bouncycastle.test.est;
 
 import java.security.cert.TrustAnchor;
 import java.util.Collections;
+import java.util.HashSet;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -14,6 +15,7 @@ import org.bouncycastle.est.CSRAttributesResponse;
 import org.bouncycastle.est.CSRRequestResponse;
 import org.bouncycastle.est.ESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
+import org.bouncycastle.est.jcajce.JcaJceSocketFactoryCreatorBuilder;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;
@@ -41,11 +43,12 @@ public class TestESTServiceFails
     public void testEmptyTrustAnchors()
         throws Exception
     {
-        ESTServiceBuilder b = new JcaESTServiceBuilder("", Collections.<TrustAnchor>emptySet());
+        JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(new HashSet<TrustAnchor>());
+        ESTServiceBuilder b = new JcaESTServiceBuilder("", sfcb.build());
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void testNullTrustAnchors()
+    @Test(expected = IllegalArgumentException.class)
+    public void testSocketFactoryCreator()
         throws Exception
     {
         ESTServiceBuilder b = new JcaESTServiceBuilder("", null);
@@ -55,7 +58,8 @@ public class TestESTServiceFails
     public void testEnforceTrusting()
         throws Exception
     {
-        ESTServiceBuilder b = new JcaESTServiceBuilder("");
+        JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder();
+        ESTServiceBuilder b = new JcaESTServiceBuilder("",sfcb.build());
         try
         {
             b.build().getCSRAttributes();
