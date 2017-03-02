@@ -3,17 +3,6 @@ package org.bouncycastle.est.jcajce;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.cert.CRL;
-import java.security.cert.CertPathBuilder;
-import java.security.cert.CertStore;
-import java.security.cert.CertificateException;
-import java.security.cert.CollectionCertStoreParameters;
-import java.security.cert.PKIXBuilderParameters;
-import java.security.cert.PKIXCertPathValidatorResult;
-import java.security.cert.TrustAnchor;
-import java.security.cert.X509CertSelector;
-import java.security.cert.X509Certificate;
-import java.util.Arrays;
 import java.util.Set;
 
 import javax.net.ssl.SSLSession;
@@ -49,53 +38,6 @@ public class DefaultESTClientSourceProvider
         this.bindingProvider = bindingProvider;
         this.cipherSuites = cipherSuites;
         this.absoluteLimit = absoluteLimit;
-    }
-
-    public static JcaJceAuthorizer getCertPathTLSAuthorizer(final CRL[] revocationLists, final Set<TrustAnchor> tlsTrustAnchors)
-    {
-        return new JcaJceAuthorizer()
-        {
-            public void authorize(X509Certificate[] chain, String authType)
-                throws CertificateException
-            {
-                try
-                {
-                    // From BC JSSE.
-                    // TODO Review.
-                    CertStore certStore = CertStore.getInstance("Collection",
-                        new CollectionCertStoreParameters(Arrays.asList(chain)), "BC");
-
-                    CertPathBuilder pathBuilder = CertPathBuilder.getInstance("PKIX", "BC");
-
-                    X509CertSelector constraints = new X509CertSelector();
-
-                    constraints.setCertificate(chain[0]);
-
-
-                    PKIXBuilderParameters param = new PKIXBuilderParameters(tlsTrustAnchors, constraints);
-                    param.addCertStore(certStore);
-                    if (revocationLists != null)
-                    {
-                        param.setRevocationEnabled(true);
-                        param.addCertStore(
-                            CertStore.getInstance(
-                                "Collection",
-                                new CollectionCertStoreParameters(Arrays.asList(revocationLists)
-                                )));
-                    }
-                    else
-                    {
-                        param.setRevocationEnabled(false);
-                    }
-
-                    PKIXCertPathValidatorResult result = (PKIXCertPathValidatorResult)pathBuilder.build(param);
-                }
-                catch (GeneralSecurityException e)
-                {
-                    throw new CertificateException("unable to process certificates: " + e.getMessage(), e);
-                }
-            }
-        };
     }
 
 

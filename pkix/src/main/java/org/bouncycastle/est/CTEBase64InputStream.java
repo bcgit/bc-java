@@ -60,7 +60,8 @@ class CTEBase64InputStream
              */
             if (j >= 33 || (j == '\r' || j == '\n'))
             {
-                if (c >= rawBuf.length) {
+                if (c >= rawBuf.length)
+                {
                     throw new IOException("Content Transfer Encoding, base64 line length > 1024");
                 }
                 rawBuf[c++] = (byte)j;
@@ -78,8 +79,10 @@ class CTEBase64InputStream
             try
             {
                 Base64.decode(rawBuf, 0, c, dataOutputStream);
-            } catch (Exception ex) {
-                throw new IOException("Decode Base64 Content-Transfer-Encoding",ex);
+            }
+            catch (Exception ex)
+            {
+                throw new IOException("Decode Base64 Content-Transfer-Encoding", ex);
             }
         }
         else
@@ -113,6 +116,8 @@ class CTEBase64InputStream
     public void close()
         throws IOException
     {
+        System.out.println(rp + " " + wp);
+
         src.close();
     }
 

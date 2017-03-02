@@ -33,7 +33,7 @@ public class JcaHttpAuthBuilder
     /**
      * Base constructor for digest auth with an expected realm.
      *
-     * @param realm expected server realm.
+     * @param realm    expected server realm.
      * @param username user id.
      * @param password user's password.
      */
@@ -85,13 +85,13 @@ public class JcaHttpAuthBuilder
 
     /**
      * Return a HttpAuth implementing digest auth for the user, password, and realm combination.
-     * 
+     *
      * @return a HttpAuth object.
      * @throws OperatorCreationException if there is an issue setting up access to digest operators.
      */
     public HttpAuth build()
         throws OperatorCreationException
     {
-         return new HttpAuth(realm, username, password, random, providerBuilder.build());
+        return new HttpAuth(realm, username, password, random, providerBuilder.build());
     }
 }

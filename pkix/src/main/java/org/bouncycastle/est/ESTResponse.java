@@ -189,7 +189,8 @@ public class ESTResponse
                     throw new IOException("Stream closed before limit fully read, Read: " + read + " ContentLength: " + contentLength);
                 }
 
-                if (in.available() >0) {
+                if (in.available() > 0)
+                {
                     throw new IOException("Stream closed with extra content in pipe that exceeds content length.");
                 }
 
@@ -302,6 +303,20 @@ public class ESTResponse
             int i = src.read();
             System.out.print(String.valueOf((char)i));
             return i;
+        }
+
+        @Override
+        public int available()
+            throws IOException
+        {
+            return src.available();
+        }
+
+        @Override
+        public void close()
+            throws IOException
+        {
+            src.close();
         }
     }
 }

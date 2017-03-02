@@ -42,6 +42,7 @@ import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.ESTServiceBuilder;
 import org.bouncycastle.est.Source;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
+import org.bouncycastle.est.jcajce.JcaJceSocketFactoryCreatorBuilder;
 import org.bouncycastle.test.est.examples.ExampleUtils;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.io.pem.PemReader;
@@ -84,6 +85,11 @@ public class TestCACertsFetch
     }
 
 
+
+//    JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+//        "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+
+
     /**
      * Test Fetch CA certs without doing any SSL TLS verification.
      * This is just a catch all to prove we can get some certificates back.
@@ -104,7 +110,10 @@ public class TestCACertsFetch
         {
             serverInstance = startDefaultServer();
             System.setProperty("org.bouncycastle.debug.est", "all");
-            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
+
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder();
+
+            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/",sfcb.build()).build();
             CACertsResponse caCertsResponse = est.getCACerts();
 
             X509CertificateHolder[] caCerts = ESTService.storeToArray(caCertsResponse.getCertificateStore());
@@ -147,7 +156,8 @@ public class TestCACertsFetch
 
         int port = res.open(null);
 
-        ESTService est = new JcaESTServiceBuilder("https://localhost:" + port + "/.well-known/est/").withTimeout(500).addCipherSuites(res.getEnabledSuites()).build();
+        JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder();
+        ESTService est = new JcaESTServiceBuilder("https://localhost:" + port + "/.well-known/est/",sfcb.build()).withTimeout(500).addCipherSuites(res.getEnabledSuites()).build();
 
         try
         {
@@ -219,10 +229,13 @@ public class TestCACertsFetch
             //
 
             TrustAnchor ta = new TrustAnchor(bogusCA, null);
+
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(ESTTestUtils.toTrustAnchor(ta));
+
             ESTService est =
                 new JcaESTServiceBuilder(
                     "https://localhost:8443/.well-known/est/",
-                    Collections.singleton(ta)).build();
+                    sfcb.build()).build();
 
 
             //
@@ -283,10 +296,12 @@ public class TestCACertsFetch
             //
             TrustAnchor ta = new TrustAnchor(ESTTestUtils.toJavaX509Certificate(fromFile), null);
 
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(ESTTestUtils.toTrustAnchor(ta));
+
             ESTService est =
                 new JcaESTServiceBuilder(
                     "https://localhost:8443/.well-known/est/",
-                    Collections.singleton(ta)).build();
+                    sfcb.build()).build();
 
             CACertsResponse caCertsResponse = est.getCACerts();
             // Make the call. NB tlsAcceptAny is false.
@@ -331,8 +346,19 @@ public class TestCACertsFetch
         try
         {
 
-            // Note the constructor without TrustAnchors.
-            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder();
+
+            ESTService est =
+                new JcaESTServiceBuilder(
+                    "https://localhost:8443/.well-known/est/",
+                    sfcb.build()).build();
+
+//            // Note the constructor without TrustAnchors.
+//            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/").build();
+
+
+
+
             CACertsResponse caCertsResponse = est.getCACerts(); //<= Accept any certs tendered by the server.
 
             Assert.assertEquals("Returned ca certs should be 1", ESTService.storeToArray(caCertsResponse.getCertificateStore()).length, 1);
@@ -814,8 +840,13 @@ public class TestCACertsFetch
 
             int port = res.open(responseData.toByteArray());
 
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder();
+
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/");
+                "https://localhost:" + port + "/.well-known/est/",sfcb.build());
+
+
+
             builder.withReadLimit(1000L);
             builder.addCipherSuites(res.getEnabledSuites());
 
@@ -880,8 +911,9 @@ public class TestCACertsFetch
 
             int port = res.open(responseData.toByteArray());
 
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder();
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/");
+                "https://localhost:" + port + "/.well-known/est/",sfcb.build());
             builder.withReadLimit(530);
             builder.addCipherSuites(res.getEnabledSuites());
 
@@ -937,9 +969,9 @@ public class TestCACertsFetch
         {
 
             int port = res.open(responseData.toByteArray());
-
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder();
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/");
+                "https://localhost:" + port + "/.well-known/est/",sfcb.build());
             builder.withReadLimit(530);
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1001,9 +1033,9 @@ public class TestCACertsFetch
         {
 
             int port = res.open(responseData.toByteArray());
-
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder();
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/");
+                "https://localhost:" + port + "/.well-known/est/",sfcb.build());
             builder.withReadLimit(530);
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1067,8 +1099,9 @@ public class TestCACertsFetch
 
             int port = res.open(responseData.toByteArray());
 
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder();
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/");
+                "https://localhost:" + port + "/.well-known/est/",sfcb.build());
             builder.withReadLimit(530);
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1129,9 +1162,9 @@ public class TestCACertsFetch
         {
 
             int port = res.open(responseData.toByteArray());
-
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder();
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/");
+                "https://localhost:" + port + "/.well-known/est/",sfcb.build());
             builder.withReadLimit(530);
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1192,9 +1225,9 @@ public class TestCACertsFetch
         {
 
             int port = res.open(responseData.toByteArray());
-
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder();
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/");
+                "https://localhost:" + port + "/.well-known/est/",sfcb.build());
             builder.withReadLimit(530);
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1258,10 +1291,13 @@ public class TestCACertsFetch
 
             int port = res.open(responseData.toByteArray());
 
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder();
+            sfcb.withTLSVersion("TLSv1");
+
+
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/");
+                "https://localhost:" + port + "/.well-known/est/",sfcb.build());
             builder.withReadLimit(530);
-            builder.withTlsVersion("TLSv1");
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
             ESTService est = builder.build();
@@ -1333,8 +1369,9 @@ public class TestCACertsFetch
         {
             int port = res.open(responseData.toByteArray());
 
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder();
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/");
+                "https://localhost:" + port + "/.well-known/est/",sfcb.build());
             builder.withReadLimit(530);
             builder.addCipherSuites(res.getEnabledSuites());
 
@@ -1410,8 +1447,9 @@ public class TestCACertsFetch
         {
             int port = res.open(responseData.toByteArray());
 
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder();
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/");
+                "https://localhost:" + port + "/.well-known/est/",sfcb.build());
             builder.withReadLimit(530);
             builder.addCipherSuites(res.getEnabledSuites());
 
@@ -1499,11 +1537,14 @@ public class TestCACertsFetch
         {
             int port = res.open(responseData.toByteArray());
 
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder();
+            sfcb.withTLSVersion("TLSv1"); // <- needed to get export suites to work.
+
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/");
+                "https://localhost:" + port + "/.well-known/est/",sfcb.build());
             builder.withReadLimit(530);
             builder.addCipherSuites(res.getEnabledSuites());
-            builder.withTlsVersion("TLSv1"); // <- needed to get export suites to work.
+
             ESTService est = builder.build();
 
             try
@@ -1591,12 +1632,14 @@ public class TestCACertsFetch
         try
         {
             int port = res.open(responseData.toByteArray());
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder();
+            sfcb.withTLSVersion("TLSv1"); // <- needed to get export suites to work.
 
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/");
+                "https://localhost:" + port + "/.well-known/est/",sfcb.build());
             builder.withReadLimit(530);
             builder.addCipherSuites(res.getEnabledSuites());
-            builder.withTlsVersion("TLSv1"); // <- needed to get export suites to work.
+
             ESTService est = builder.build();
 
             try
@@ -1658,9 +1701,9 @@ public class TestCACertsFetch
         {
 
             int port = res.open(responseData.toByteArray());
-
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder();
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/");
+                "https://localhost:" + port + "/.well-known/est/",sfcb.build());
             builder.addCipherSuites(res.getSupportedCipherSuites());
             ESTService est = builder.build();
 

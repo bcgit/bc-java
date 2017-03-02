@@ -14,6 +14,7 @@ import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.EnrollmentResponse;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaHttpAuthBuilder;
+import org.bouncycastle.est.jcajce.JcaJceSocketFactoryCreatorBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
@@ -87,11 +88,12 @@ public class TestReEnroll
         {
             serverInstance = startDefaultServerWithBasicAuth();
 
+            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+            )));
+
             ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/",
-                ESTTestUtils.toTrustAnchor(
-                    ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    ))).build();
+                sfcb.build()).build();
 
             //
             // Make certificate request.
