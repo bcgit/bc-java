@@ -509,7 +509,7 @@ public class TestEnroll
                     )), null));
 
 
-            sfcb.withKeyManagerFactory(JcaJceUtils.createKeyManagerFactory(KeyManagerFactory.getDefaultAlgorithm(), null, clientKeyStore, clientKeyStorePass));
+            sfcb.withKeyManagers(JcaJceUtils.createKeyManagerFactory(KeyManagerFactory.getDefaultAlgorithm(), null, clientKeyStore, clientKeyStorePass).getKeyManagers());
 
 
             ESTService est = new JcaESTServiceBuilder(
@@ -678,7 +678,7 @@ public class TestEnroll
             PKCS10CertificationRequest csr = pkcs10Builder.build(
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
-            sfcb.withKeyManagerFactory(JcaJceUtils.createKeyManagerFactory(KeyManagerFactory.getDefaultAlgorithm(), null, clientKeyStore, clientKeyStorePass));
+            sfcb.withKeyManagers(JcaJceUtils.createKeyManagerFactory(KeyManagerFactory.getDefaultAlgorithm(), null, clientKeyStore, clientKeyStorePass).getKeyManagers());
 
 
             ESTService est = new JcaESTServiceBuilder(
@@ -832,7 +832,7 @@ public class TestEnroll
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                     )), null));
 
-            sfcb.withKeyManagerFactory(JcaJceUtils.createKeyManagerFactory("X509", null, clientKeyStore, clientKeyStorePass))
+            sfcb.withKeyManagers(JcaJceUtils.createKeyManagerFactory("X509", null, clientKeyStore, clientKeyStorePass).getKeyManagers())
                 .withTLSProvider(BouncyCastleJsseProvider.PROVIDER_NAME)
                 .withTLSVersion("TLS");
 

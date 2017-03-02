@@ -201,7 +201,7 @@ public class EnrollExample
             }
             KeyStore ks = KeyStore.getInstance(keyStoreType, "BC");
             ks.load(new FileInputStream(clientKeyStoreFile), clientKeyStoreFilePassword);
-            sfcb.withKeyManagerFactory(JcaJceUtils.createKeyManagerFactory("X509", null, ks, clientKeyStoreFilePassword));
+            sfcb.withKeyManagers(JcaJceUtils.createKeyManagerFactory("X509", null, ks, clientKeyStoreFilePassword).getKeyManagers());
         }
 
         JcaESTServiceBuilder est = new JcaESTServiceBuilder(serverRootUrl, sfcb.build());
