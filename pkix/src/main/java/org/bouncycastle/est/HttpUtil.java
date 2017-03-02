@@ -228,7 +228,7 @@ class HttpUtil
 
         public void add(String key, String value)
         {
-            put(key, Arrays.append(get(key), value));
+            put(key, append(get(key), value));
         }
 
         public void ensureHeader(String key, String value)
@@ -249,6 +249,21 @@ class HttpUtil
             }
             return n;
         }
+    }
+
+
+    public static String[] append(String[] a, String b)
+    {
+        if (a == null)
+        {
+            return new String[]{ b };
+        }
+
+        int length = a.length;
+        String[] result = new String[length + 1];
+        System.arraycopy(a, 0, result, 0, length);
+        result[length] = b;
+        return result;
     }
 
 }

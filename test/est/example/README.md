@@ -67,6 +67,19 @@ The Bouncycastle EST client makes no assumptions about trust anchors, it assumes
 trust anchors or it cannot, if you don't supply trust anchors the only interaction you may perform is to request CA
 certificates from an EST server using the Bootstrapping procedure defined in RFC 7030.
 
+#### Arguments
+
+```
+-t <file>                         Trust anchor file. (PEM)
+-u <url>                          Server URL
+--printTLS <url>                  Print TLS certificates as PEM format
+--tls <version>                   Use this TLS version when creating socket factory, Eg TLSv1.2
+--tlsProvider <provider> <class>  The JSSE Provider.
+--to <milliseconds>               Timeout in milliseconds.
+
+```
+
+
 
 #### Bootstrapping
 If bootstrapping is used, the user will be asked to manually validate the certificates, you will be presented with the
@@ -227,16 +240,21 @@ The enroll example has a number of options:
 ```
 ./enroll.sh
 
--r                                     Re-enroll
--t <file>                              Trust anchor file
--u <url>                               EST server url.
--c <common name>                       EST server url.
---keyStore <file>                      Optional Key Store.
---keyStorePass <password>              Optional Key Store password.
---keyStoreType <JKS>                   Optional Key Store type, defaults to JKS
---digestAuth <realm:user:password>     Digest Auth credentials, if real is not
-                                       specified <user:password> then the realm from the server is used.
---basicAuth <realm:user:password>      Use basic auth.
+--r                                     Re-enroll
+ -t <file>                              Trust anchor file
+ -u <url>                               EST server url.
+ -c <common name>                       EST server url.
+ --keyStore <file>                      Optional Key Store.
+ --keyStorePass <password>              Optional Key Store password.
+ --keyStoreType <JKS>                   Optional Key Store type, defaults to JKS
+ --auth <realm:user:password>           Auth credentials, if real is not
+ --tls <version>                        Use this TLS version when creating socket factory, Eg TLSv1.2
+ --tlsProvider <provider>               The JSSE Provider.
+ --tlsProvider <provider> <class>       The JSSE Provider.
+ --pop                                  Turn on PoP
+ --to <milliseconds>                    Timeout in milliseconds.
+
+
 
 ```
 
@@ -244,7 +262,7 @@ The enroll example has a number of options:
 This following enrollment example will generate CSR internally but you an specify the common name, when enrollment is complete
 it will return a summary of the returned certificate.
 ```
-./enroll.sh -t server.ta.pem -u https://testrfc7030.cisco.com:8443/.well-known/est/ --basicAuth estuser:estpwd -c BARRY
+./enroll.sh -t server.ta.pem -u https://testrfc7030.cisco.com:8443/.well-known/est/ --auth estuser:estpwd -c BARRY
 
 
 Subject: CN=BARRY
@@ -270,6 +288,17 @@ And for reenrollment:
 The EST server may require that CSRs have a certain set of attributes. 
 These attributes can be fetched from the server and you will need a trust
 anchor for the server to make this call.
+
+#### Arguments
+```
+-t <file>                         Trust anchor file. (PEM)
+-u <url>                          Server URL
+--tls <version>                   Use this TLS version when creating socket factory, Eg TLSv1.2
+--tlsProvider <provider> <class>  The JSSE Provider.
+--to <milliseconds>               Timeout in milliseconds.
+```
+
+
 
 To fetch the attributes:
 
