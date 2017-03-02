@@ -34,7 +34,7 @@ public class ESTRequest
         this.headers = headers;
         this.estClient = estClient;
     }
-    
+
     public String getMethod()
     {
         return method;

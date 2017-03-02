@@ -97,11 +97,6 @@ class HttpUtil
                 discard();
 
                 value = consumeUntil('"');
-                if (value.length() == 0)
-                {
-                    throw new IllegalArgumentException("Expecting quoted value.");
-                }
-
                 discard(1);
                 out.put(key, value);
 
