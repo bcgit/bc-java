@@ -19,7 +19,7 @@ import org.bouncycastle.est.ESTServiceBuilder;
 public class JcaESTServiceBuilder
     extends ESTServiceBuilder
 {
-    protected final SocketFactoryCreator socketFactoryCreator;
+    protected final SSLSocketFactoryCreator socketFactoryCreator;
     protected JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer;
     protected int timeoutMillis = 0;
     protected ChannelBindingProvider bindingProvider;
@@ -33,7 +33,7 @@ public class JcaESTServiceBuilder
      * @param server               name of the server to talk to (URL format).
      * @param socketFactoryCreator creator of socket factories.
      */
-    public JcaESTServiceBuilder(String server, SocketFactoryCreator socketFactoryCreator)
+    public JcaESTServiceBuilder(String server, SSLSocketFactoryCreator socketFactoryCreator)
     {
         super(server);
         if (socketFactoryCreator == null)

@@ -14,7 +14,7 @@ public class JcaDefaultESTHttpClientProvider
 {
 
     private final JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer;
-    private final SocketFactoryCreator socketFactoryCreator;
+    private final SSLSocketFactoryCreator socketFactoryCreator;
 
     private final int timeout;
     private final ChannelBindingProvider bindingProvider;
@@ -24,7 +24,7 @@ public class JcaDefaultESTHttpClientProvider
 
     public JcaDefaultESTHttpClientProvider(
         JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer,
-        SocketFactoryCreator socketFactoryCreator, int timeout,
+        SSLSocketFactoryCreator socketFactoryCreator, int timeout,
         ChannelBindingProvider bindingProvider,
         Set<String> cipherSuites, Long absoluteLimit)
     {

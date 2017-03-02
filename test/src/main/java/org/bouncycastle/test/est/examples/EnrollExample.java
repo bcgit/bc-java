@@ -18,8 +18,8 @@ import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.EnrollmentResponse;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaHttpAuthBuilder;
-import org.bouncycastle.est.jcajce.JcaJceSocketFactoryCreatorBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
+import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -189,9 +189,9 @@ public class EnrollExample
         //
         JcaESTServiceBuilder builder = null;
 
-        JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(JcaJceUtils.getCertPathTrustManager(ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificate(trustAnchorFile)), null));
+        SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getCertPathTrustManager(ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificate(trustAnchorFile)), null));
         sfcb.withTLSVersion(tlsVersion);
-        sfcb.withTLSProvider(tlsProvider);
+        sfcb.withProvider(tlsProvider);
 
         if (clientKeyStoreFile != null)
         {

@@ -14,8 +14,8 @@ import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.EnrollmentResponse;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaHttpAuthBuilder;
-import org.bouncycastle.est.jcajce.JcaJceSocketFactoryCreatorBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
+import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
@@ -89,7 +89,7 @@ public class TestReEnroll
         {
             serverInstance = startDefaultServerWithBasicAuth();
 
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")

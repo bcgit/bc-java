@@ -1,21 +1,26 @@
 package org.bouncycastle.est.jcajce;
 
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Provider;
 import java.security.SecureRandom;
+import java.security.Security;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
 
-public class JcaJceSocketFactoryCreatorBuilder
+public class SSLSocketFactoryCreatorBuilder
 {
     protected String tlsVersion = "TLS";
-    protected String tlsProvider;
+    protected Provider tlsProvider;
     protected KeyManager[] keyManagers;
     protected X509TrustManager[] trustManagers;
 
-    public JcaJceSocketFactoryCreatorBuilder(X509TrustManager trustManager)
+    public SSLSocketFactoryCreatorBuilder(X509TrustManager trustManager)
     {
         if (trustManager == null)
         {
@@ -24,7 +29,7 @@ public class JcaJceSocketFactoryCreatorBuilder
         this.trustManagers = new X509TrustManager[]{ trustManager };
     }
 
-    public JcaJceSocketFactoryCreatorBuilder(X509TrustManager[] trustManagers)
+    public SSLSocketFactoryCreatorBuilder(X509TrustManager[] trustManagers)
     {
         if (trustManagers == null)
         {
@@ -33,19 +38,43 @@ public class JcaJceSocketFactoryCreatorBuilder
         this.trustManagers = trustManagers;
     }
 
-    public JcaJceSocketFactoryCreatorBuilder withTLSVersion(String tlsVersion)
+    public SSLSocketFactoryCreatorBuilder withTLSVersion(String tlsVersion)
     {
         this.tlsVersion = tlsVersion;
         return this;
     }
 
-    public JcaJceSocketFactoryCreatorBuilder withTLSProvider(String tlsProvider)
+    /**
+     * Configure this builder to use the provider with the passed in name.
+     *
+     * @param tlsProviderName the name JSSE Provider to use.
+     * @return the current builder instance.
+     * @throws NoSuchProviderException if the specified provider does not exist.
+     */
+    public SSLSocketFactoryCreatorBuilder withProvider(String tlsProviderName)
+        throws NoSuchProviderException
+    {
+        this.tlsProvider = Security.getProvider(tlsProviderName);
+        if (this.tlsProvider == null)
+        {
+            throw new NoSuchProviderException("JSSE provider not found: " + tlsProviderName);
+        }
+        return this;
+    }
+
+    /**
+     * Configure this builder to use the passed in provider.
+     *
+     * @param tlsProvider the JSSE Provider to use.
+     * @return the current builder instance.
+     */
+    public SSLSocketFactoryCreatorBuilder withProvider(Provider tlsProvider)
     {
         this.tlsProvider = tlsProvider;
         return this;
     }
 
-    public JcaJceSocketFactoryCreatorBuilder withKeyManager(KeyManager keyManager)
+    public SSLSocketFactoryCreatorBuilder withKeyManager(KeyManager keyManager)
     {
         if (keyManager == null)
         {
@@ -58,21 +87,16 @@ public class JcaJceSocketFactoryCreatorBuilder
         return this;
     }
 
-    public JcaJceSocketFactoryCreatorBuilder withKeyManagers(KeyManager[] keyManagers)
+    public SSLSocketFactoryCreatorBuilder withKeyManagers(KeyManager[] keyManagers)
     {
         this.keyManagers = keyManagers;
 
         return this;
     }
 
-    public SocketFactoryCreator build()
+    public SSLSocketFactoryCreator build()
     {
-        if (trustManagers == null)
-        {
-
-        }
-
-        return new SocketFactoryCreator()
+        return new SSLSocketFactoryCreator()
         {
             public boolean isTrusted()
             {
@@ -88,9 +112,10 @@ public class JcaJceSocketFactoryCreatorBuilder
             }
 
             public SSLSocketFactory createFactory()
-                throws Exception
+                throws NoSuchAlgorithmException, NoSuchProviderException, KeyManagementException
             {
-                SSLContext ctx = null;
+                SSLContext ctx;
+
                 if (tlsProvider != null)
                 {
                     ctx = SSLContext.getInstance(tlsVersion, tlsProvider);
