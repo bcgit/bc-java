@@ -56,7 +56,7 @@ public class JcaJceUtils
 
     }
 
-    public static X509TrustManager getCertPathTrustManager(final Set<TrustAnchor> anchors, final CRL[] revocationLists)
+    public static X509TrustManager[] getCertPathTrustManager(final Set<TrustAnchor> anchors, final CRL[] revocationLists)
     {
         final X509Certificate[] x509Certificates = new X509Certificate[anchors.size()];
         int c = 0;
@@ -65,7 +65,7 @@ public class JcaJceUtils
             x509Certificates[c++] = ta.getTrustedCert();
         }
 
-        return new X509TrustManager()
+        return new X509TrustManager[]{new X509TrustManager()
         {
             public void checkClientTrusted(X509Certificate[] x509Certificates, String s)
                 throws CertificateException
@@ -116,6 +116,7 @@ public class JcaJceUtils
             {
                 return x509Certificates;
             }
+        }
         };
     }
 

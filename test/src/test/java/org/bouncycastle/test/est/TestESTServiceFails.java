@@ -1,9 +1,7 @@
 package org.bouncycastle.test.est;
 
 
-import java.security.cert.TrustAnchor;
-import java.util.Collections;
-import java.util.HashSet;
+import javax.net.ssl.X509TrustManager;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -40,11 +38,11 @@ public class TestESTServiceFails
         ESTTestUtils.runJUnit(TestESTServiceFails.class);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = NullPointerException.class)
     public void testEmptyTrustAnchors()
         throws Exception
     {
-        JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(null);
+        JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder((X509TrustManager)null);
         ESTServiceBuilder b = new JcaESTServiceBuilder("", sfcb.build());
     }
 

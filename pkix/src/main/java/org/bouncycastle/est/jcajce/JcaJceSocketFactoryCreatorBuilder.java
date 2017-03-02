@@ -1,15 +1,9 @@
 package org.bouncycastle.est.jcajce;
 
 
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CRL;
 
-import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
@@ -18,21 +12,26 @@ public class JcaJceSocketFactoryCreatorBuilder
 {
     protected String tlsVersion = "TLS";
     protected String tlsProvider;
-    protected KeyManagerFactory keyManagerFactory;
+    protected KeyManager[] keyManagers;
     protected X509TrustManager[] trustManagers;
-    protected CRL[] revocationLists;
-
 
     public JcaJceSocketFactoryCreatorBuilder(X509TrustManager trustManager)
     {
         if (trustManager == null)
         {
-            this.trustManagers = null;
-            return;
+            throw new NullPointerException("Trust managers can not be null");
         }
-        this.trustManagers = new X509TrustManager[]{trustManager};
+        this.trustManagers = new X509TrustManager[]{ trustManager };
     }
 
+    public JcaJceSocketFactoryCreatorBuilder(X509TrustManager[] trustManagers)
+    {
+        if (trustManagers == null)
+        {
+            throw new NullPointerException("Trust managers can not be null");
+        }
+        this.trustManagers = trustManagers;
+    }
 
     public JcaJceSocketFactoryCreatorBuilder withTLSVersion(String tlsVersion)
     {
@@ -46,18 +45,23 @@ public class JcaJceSocketFactoryCreatorBuilder
         return this;
     }
 
-    public JcaJceSocketFactoryCreatorBuilder withKeyManagerFactory(KeyManagerFactory keyManagerFactory)
+    public JcaJceSocketFactoryCreatorBuilder withKeyManager(KeyManager keyManager)
     {
-        this.keyManagerFactory = keyManagerFactory;
+        if (keyManager == null)
+        {
+            this.keyManagers = null;
+        }
+        else
+        {
+            this.keyManagers = new KeyManager[]{keyManager};
+        }
         return this;
     }
 
-
-
-
-    public JcaJceSocketFactoryCreatorBuilder setRevocationLists(CRL[] revocationLists)
+    public JcaJceSocketFactoryCreatorBuilder withKeyManagers(KeyManager[] keyManagers)
     {
-        this.revocationLists = revocationLists;
+        this.keyManagers = keyManagers;
+
         return this;
     }
 
@@ -65,13 +69,11 @@ public class JcaJceSocketFactoryCreatorBuilder
     {
         if (trustManagers == null)
         {
-            throw new IllegalStateException("Trust managers can not be null");
-        }
 
+        }
 
         return new SocketFactoryCreator()
         {
-
             public boolean isTrusted()
             {
                 for (X509TrustManager tm : trustManagers)
@@ -98,12 +100,10 @@ public class JcaJceSocketFactoryCreatorBuilder
                     ctx = SSLContext.getInstance(tlsVersion);
                 }
 
+                ctx.init(keyManagers, trustManagers, new SecureRandom());
 
-                ctx.init((keyManagerFactory != null) ? keyManagerFactory.getKeyManagers() : null, trustManagers, new SecureRandom());
                 return ctx.getSocketFactory();
-
             }
         };
-
     }
 }
