@@ -34,8 +34,8 @@ import org.bouncycastle.est.HttpAuth;
 import org.bouncycastle.est.jcajce.ChannelBindingProvider;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaHttpAuthBuilder;
-import org.bouncycastle.est.jcajce.JcaJceSocketFactoryCreatorBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
+import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -145,7 +145,7 @@ public class TestEnroll
         {
             serverInstance = startDefaultServerTLSAndBasicAuth(0, false);
 
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -214,7 +214,7 @@ public class TestEnroll
         {
             serverInstance = startDefaultServerTLSAndBasicAuth(5, false);
 
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -307,7 +307,7 @@ public class TestEnroll
             serverInstance = startDefaultServerWithDigestAuth();
 
 
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -502,7 +502,7 @@ public class TestEnroll
                 ), null);
 
 
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -664,7 +664,7 @@ public class TestEnroll
                 ), null);
 
 
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -826,14 +826,14 @@ public class TestEnroll
             ChannelBindingProvider bcChannelBindingProvider = new BCChannelBindingProvider();
 
 
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                     )), null));
 
             sfcb.withKeyManagers(JcaJceUtils.createKeyManagerFactory("X509", null, clientKeyStore, clientKeyStorePass).getKeyManagers())
-                .withTLSProvider(BouncyCastleJsseProvider.PROVIDER_NAME)
+                .withProvider(BouncyCastleJsseProvider.PROVIDER_NAME)
                 .withTLSVersion("TLS");
 
 
@@ -984,7 +984,7 @@ public class TestEnroll
 
             int port = res.open(responseData.toByteArray());
 
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -1068,7 +1068,7 @@ public class TestEnroll
 
             int port = res.open(responseData.toByteArray());
 
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -1159,7 +1159,7 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -1251,7 +1251,7 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -1343,7 +1343,7 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -1434,7 +1434,7 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -1527,7 +1527,7 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -1619,7 +1619,7 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -1711,7 +1711,7 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -1803,7 +1803,7 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -1895,7 +1895,7 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -1987,7 +1987,7 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            JcaJceSocketFactoryCreatorBuilder sfcb = new JcaJceSocketFactoryCreatorBuilder(
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
