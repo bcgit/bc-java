@@ -147,8 +147,7 @@ public class CertificateHolderAuthorization
     {
         byte[] accessRights = new byte[1];
         accessRights[0] = rights;
-        this.accessRights = new DERApplicationSpecific(
-            EACTags.getTag(EACTags.DISCRETIONARY_DATA), accessRights);
+        this.accessRights = new DERApplicationSpecific(EACTags.DISCRETIONARY_DATA, accessRights);
     }
 
     /**

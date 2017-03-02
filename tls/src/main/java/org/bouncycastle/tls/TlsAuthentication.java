@@ -2,9 +2,6 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
-import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedAgreement;
-import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedDecryptor;
-
 /**
  * Base interface to provide TLS authentication credentials.
  */
@@ -25,8 +22,6 @@ public interface TlsAuthentication
      * be null, or else it MUST implement <em>exactly one</em> of {@link TlsCredentialedAgreement},
      * {@link TlsCredentialedDecryptor}, or {@link TlsCredentialedSigner}, depending on the key
      * exchange that was negotiated and the details of the {@link CertificateRequest}.
-     * 
-     * @see {@link BcDefaultTlsCredentialedAgreement}, {@link BcDefaultTlsCredentialedDecryptor}
      *
      * @param certificateRequest
      *            details of the certificate request

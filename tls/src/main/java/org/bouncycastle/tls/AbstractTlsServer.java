@@ -2,7 +2,6 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 import java.util.Hashtable;
-import java.util.Set;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.DHGroup;
@@ -228,10 +227,8 @@ public abstract class AbstractTlsServer
                     throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
             }
-            // TODO: restrict curve set using NamedCurve.FIPS if FIPS mode turned on.
-            Set<Integer> acceptedCurves = NamedCurve.ALL;
 
-            this.namedCurves = TlsECCUtils.getSupportedEllipticCurvesExtension(clientExtensions, acceptedCurves);
+            this.namedCurves = TlsECCUtils.getSupportedEllipticCurvesExtension(clientExtensions);
             this.clientECPointFormats = TlsECCUtils.getSupportedPointFormatsExtension(clientExtensions);
         }
 

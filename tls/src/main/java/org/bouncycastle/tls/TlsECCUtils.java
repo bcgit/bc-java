@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Hashtable;
-import java.util.Set;
 
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.util.Arrays;
@@ -27,10 +26,10 @@ public class TlsECCUtils
         extensions.put(EXT_ec_point_formats, createSupportedPointFormatsExtension(ecPointFormats));
     }
 
-    public static int[] getSupportedEllipticCurvesExtension(Hashtable extensions, Set<Integer> acceptedCurves) throws IOException
+    public static int[] getSupportedEllipticCurvesExtension(Hashtable extensions) throws IOException
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_elliptic_curves);
-        return extensionData == null ? null : readSupportedEllipticCurvesExtension(extensionData, acceptedCurves);
+        return extensionData == null ? null : readSupportedEllipticCurvesExtension(extensionData);
     }
 
     public static short[] getSupportedPointFormatsExtension(Hashtable extensions) throws IOException
@@ -65,7 +64,7 @@ public class TlsECCUtils
         return TlsUtils.encodeUint8ArrayWithUint8Length(ecPointFormats);
     }
 
-    public static int[] readSupportedEllipticCurvesExtension(byte[] extensionData, Set<Integer> acceptedCurves) throws IOException
+    public static int[] readSupportedEllipticCurvesExtension(byte[] extensionData) throws IOException
     {
         if (extensionData == null)
         {
@@ -83,39 +82,6 @@ public class TlsECCUtils
         int[] namedCurves = TlsUtils.readUint16Array(length / 2, buf);
 
         TlsProtocol.assertEmpty(buf);
-
-        //
-        // check the proposed list is acceptable
-        //
-        int count = 0;
-        for (int i = 0; i != namedCurves.length; i++)
-        {
-            if (acceptedCurves.contains(namedCurves[i]))
-            {
-                count++;
-            }
-        }
-
-        if (count == 0)
-        {
-            return null;
-        }
-
-        // prune list if necessary
-        if (count != namedCurves.length)
-        {
-            int ind = 0;
-            int[] acceptedNamedCurves = new int[count];
-            for (int i = 0; i != namedCurves.length; i++)
-            {
-                if (acceptedCurves.contains(namedCurves[i]))
-                {
-                    acceptedNamedCurves[ind++] = namedCurves[i];
-                }
-            }
-
-            return acceptedNamedCurves;
-        }
 
         return namedCurves;
     }

@@ -46,8 +46,7 @@ public abstract class AbstractTlsClient
              * Supported Elliptic Curves Extension is clearly intended to be client-only. If
              * present, we still require that it is a valid EllipticCurveList.
              */
-            // TODO: restrict curve set using NamedCurve.FIPS if FIPS mode turned on.
-            TlsECCUtils.readSupportedEllipticCurvesExtension(extensionData, NamedCurve.ALL);
+            TlsECCUtils.readSupportedEllipticCurvesExtension(extensionData);
             return true;
         default:
             return false;

@@ -61,39 +61,6 @@ public class NamedCurve
     public static final int arbitrary_explicit_prime_curves = 0xFF01;
     public static final int arbitrary_explicit_char2_curves = 0xFF02;
 
-    public static final Set<Integer> ALL;
-    public static final Set<Integer> FIPS_APPROVED;
-
-    static
-    {
-        Set<Integer> curves = new HashSet<Integer>();
-
-        for (int i = 0; i <= 28; i++)
-        {
-            curves.add(i);
-        }
-
-        curves.add(arbitrary_explicit_prime_curves);
-        curves.add(arbitrary_explicit_char2_curves);
-
-        ALL = Collections.unmodifiableSet(curves);
-
-        curves = new HashSet<Integer>();
-
-        curves.add(secp224k1);
-        curves.add(secp224r1);
-        curves.add(secp256k1);
-        curves.add(secp256r1);
-        curves.add(secp384r1);
-        curves.add(secp521r1);
-
-        curves.add(brainpoolP256r1);
-        curves.add(brainpoolP384r1);
-        curves.add(brainpoolP512r1);
-
-        FIPS_APPROVED = Collections.unmodifiableSet(curves);
-    }
-
     public static int getCurveBits(int namedCurve)
     {
         switch (namedCurve)
