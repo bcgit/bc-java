@@ -40,6 +40,7 @@ import org.bouncycastle.est.ESTResponse;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.ESTServiceBuilder;
 import org.bouncycastle.est.Source;
+import org.bouncycastle.est.jcajce.DefaultHostnameVerifier;
 import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
 import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
@@ -300,7 +301,8 @@ public class TestCACertsFetch
             ESTService est =
                 new JcaESTServiceBuilder(
                     "https://localhost:8443/.well-known/est/",
-                    sfcb.build()).build();
+                    sfcb.build())
+                    .build();
 
             CACertsResponse caCertsResponse = est.getCACerts();
             // Make the call. NB tlsAcceptAny is false.
@@ -1367,8 +1369,8 @@ public class TestCACertsFetch
 
             SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
-            builder.withReadLimit(530);
+                "https://127.0.0.1:" + port + "/.well-known/est/", sfcb.build());
+            builder.withReadLimit(530).withHostNameAuthorizer(null);
             builder.addCipherSuites(res.getEnabledSuites());
 
             ESTService est = builder.build();
@@ -1445,8 +1447,8 @@ public class TestCACertsFetch
 
             SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
-            builder.withReadLimit(530);
+                "https://127.0.0.1:" + port + "/.well-known/est/", sfcb.build());
+            builder.withReadLimit(530).withHostNameAuthorizer(null);
             builder.addCipherSuites(res.getEnabledSuites());
 
             ESTService est = builder.build();
@@ -1489,7 +1491,7 @@ public class TestCACertsFetch
         KeyPair kp = kpg.generateKeyPair();
 
         X509Certificate cert = ExampleUtils.toJavaX509Certificate(
-            ExampleUtils.createSelfsignedCert("SHA1withRSA", new X500Name("CN=Test"), SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded()), kp.getPrivate(), 1)
+            ExampleUtils.createSelfsignedCert("SHA1withRSA", new X500Name("CN=127.0.0.1"), SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded()), kp.getPrivate(), 1)
         );
 
 
@@ -1537,8 +1539,9 @@ public class TestCACertsFetch
             sfcb.withTLSVersion("TLSv1"); // <- needed to get export suites to work.
 
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+                "https://127.0.0.1:" + port + "/.well-known/est/", sfcb.build());
             builder.withReadLimit(530);
+
             builder.addCipherSuites(res.getEnabledSuites());
 
             ESTService est = builder.build();
@@ -1581,7 +1584,7 @@ public class TestCACertsFetch
         KeyPair kp = kpg.generateKeyPair();
 
         X509Certificate cert = ExampleUtils.toJavaX509Certificate(
-            ExampleUtils.createSelfsignedCert("SHA1withRSA", new X500Name("CN=Test"), SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded()), kp.getPrivate(), 1)
+            ExampleUtils.createSelfsignedCert("SHA1withRSA", new X500Name("CN=127.0.0.1"), SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded()), kp.getPrivate(), 1)
         );
 
 
@@ -1632,7 +1635,7 @@ public class TestCACertsFetch
             sfcb.withTLSVersion("TLSv1"); // <- needed to get export suites to work.
 
             JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+                "https://127.0.0.1:" + port + "/.well-known/est/", sfcb.build());
             builder.withReadLimit(530);
             builder.addCipherSuites(res.getEnabledSuites());
 

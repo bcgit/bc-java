@@ -50,8 +50,9 @@ public class EnrollExample
         String[] credentials = null;
         boolean reEnroll = false;
         String tlsVersion = "TLS";
-        String tlsProvider = null;
+        String tlsProvider = "SunJSSE";
         String tlsProviderClass = null;
+        boolean noNameVerifier = false;
         boolean pop = false;
         int timeout = 0;
         try
@@ -124,6 +125,10 @@ public class EnrollExample
                 {
                     timeout = ExampleUtils.nextArgAsInteger("Timeout", args, t);
                     t += 1;
+                }
+                else if (arg.equals("--no-name-verifier"))
+                {
+                    noNameVerifier = true;
                 }
                 else
                 {
@@ -221,6 +226,10 @@ public class EnrollExample
         builder = new JcaESTServiceBuilder(serverRootUrl, sfcb.build());
         builder.withTimeout(timeout);
 
+        if (noNameVerifier)
+        {
+            builder.withHostNameAuthorizer(null);
+        }
 
         ESTAuth auth = null;
 
@@ -336,6 +345,7 @@ public class EnrollExample
         System.out.println("--tlsProvider <provider> <class>       The JSSE Provider.");
         System.out.println("--pop                                  Turn on PoP");
         System.out.println("--to <milliseconds>                    Timeout in milliseconds.");
+        System.out.println("--no-name-verifier                     No hostname verifier.");
 
 
     }
