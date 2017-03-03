@@ -12,6 +12,7 @@ import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.Security;
 import java.security.Signature;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.TrustAnchor;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -413,4 +414,26 @@ public class ESTTestUtils
         return sw.toString();
     }
 
+
+    public static X509Certificate toJavaxX509Certificate(Object o)
+        throws Exception
+    {
+        if (o instanceof byte[])
+        {
+            return X509Certificate.getInstance((byte[])o);
+        }
+        else if (o instanceof java.security.cert.Certificate)
+        {
+            return X509Certificate.getInstance(new ByteArrayInputStream(((Certificate)o).getEncoded()));
+        }
+        else if (o instanceof X509CertificateHolder)
+        {
+            return X509Certificate.getInstance(((X509CertificateHolder)o).getEncoded());
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unable to convert certificate");
+        }
+
+    }
 }

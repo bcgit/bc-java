@@ -36,8 +36,9 @@ public class CSRAttributesExample
         String serverRootUrl = null;
         boolean printTLSCerts = false;
         String tlsVersion = "TLS";
-        String tlsProvider = null;
+        String tlsProvider = "SunJSSE";
         String tlsProviderClass = null;
+        boolean noNameVerifier = false;
         int timeout = 0;
 
         try
@@ -71,6 +72,8 @@ public class CSRAttributesExample
                 {
                     timeout = ExampleUtils.nextArgAsInteger("Timeout", args, t);
                     t += 1;
+                } else if (arg.equals("--no-name-verifier")) {
+                    noNameVerifier = true;
                 }
                 else
                 {
@@ -131,6 +134,10 @@ public class CSRAttributesExample
         builder = new JcaESTServiceBuilder(serverRootUrl, sfcb.build());
         builder.withTimeout(timeout);
 
+        if (noNameVerifier) {
+            builder.withHostNameAuthorizer(null);
+        }
+
         //
         // Make a client.
         //
@@ -168,6 +175,7 @@ public class CSRAttributesExample
         System.out.println("--tls <version>                   Use this TLS version when creating socket factory, Eg TLSv1.2");
         System.out.println("--tlsProvider <provider> <class>  The JSSE Provider.");
         System.out.println("--to <milliseconds>               Timeout in milliseconds.");
+        System.out.println("--no-name-verifier                No hostname verifier.");
     }
 
 }

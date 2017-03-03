@@ -1,5 +1,7 @@
 package org.bouncycastle.est.jcajce;
 
+import java.io.IOException;
+
 /**
  * Verify the host name is as expected after the SSL Handshake has been completed.
  *
@@ -14,5 +16,5 @@ public interface JcaJceHostNameAuthorizer<T>
      * @param context context object to do the verification under.
      * @return true if name verified, false otherwise.
      */
-    boolean verified(String name, T context);
+    boolean verified(String name, T context) throws IOException;
 }
