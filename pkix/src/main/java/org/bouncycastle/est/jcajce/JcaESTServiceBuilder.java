@@ -20,7 +20,7 @@ public class JcaESTServiceBuilder
     extends ESTServiceBuilder
 {
     protected final SSLSocketFactoryCreator socketFactoryCreator;
-    protected JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer;
+    protected JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer = new DefaultHostnameVerifier();
     protected int timeoutMillis = 0;
     protected ChannelBindingProvider bindingProvider;
     protected Set<String> supportedSuites = new HashSet<String>();

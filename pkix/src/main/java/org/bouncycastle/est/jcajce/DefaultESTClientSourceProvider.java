@@ -47,12 +47,19 @@ public class DefaultESTClientSourceProvider
         SSLSocket sock = (SSLSocket)sslSocketFactory.createSocket(host, port);
         sock.setSoTimeout(timeout);
 
+
         if (cipherSuites != null && !cipherSuites.isEmpty())
         {
             sock.setEnabledCipherSuites(cipherSuites.toArray(new String[cipherSuites.size()]));
         }
 
         sock.startHandshake();
+
+        if (hostNameAuthorizer != null) {
+           if (!hostNameAuthorizer.verified(host,sock.getSession())) {
+               throw new IOException("Host name could not be verified.");
+           }
+        }
 
         {
             String t = Strings.toLowerCase(sock.getSession().getCipherSuite());

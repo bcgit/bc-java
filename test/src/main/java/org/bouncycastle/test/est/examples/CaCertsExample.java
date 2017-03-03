@@ -39,8 +39,9 @@ public class CaCertsExample
         String serverRootUrl = null;
         boolean printTLSCerts = false;
         String tlsVersion = "TLS";
-        String tlsProvider = null;
+        String tlsProvider = "SunJSSE";
         String tlsProviderClass = null;
+        boolean noNameVerifier = false;
         int timeout = 0;
 
         try
@@ -78,6 +79,8 @@ public class CaCertsExample
                 {
                     timeout = ExampleUtils.nextArgAsInteger("Timeout", args, t);
                     t += 1;
+                } else if (arg.equals("--no-name-verifier")) {
+                    noNameVerifier = true;
                 }
                 else
                 {
@@ -136,6 +139,10 @@ public class CaCertsExample
 
 
         builder = new JcaESTServiceBuilder(serverRootUrl, sfcb.build());
+
+        if (noNameVerifier) {
+            builder.withHostNameAuthorizer(null);
+        }
         builder.withTimeout(timeout);
 
         //
@@ -262,6 +269,7 @@ public class CaCertsExample
         System.out.println("--tls <version>                   Use this TLS version when creating socket factory, Eg TLSv1.2");
         System.out.println("--tlsProvider <provider> <class>  The JSSE Provider.");
         System.out.println("--to <milliseconds>               Timeout in milliseconds.");
+        System.out.println("--no-name-verifier                No hostname verifier.");
     }
 
 }
