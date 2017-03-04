@@ -10,7 +10,7 @@ import java.util.Set;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.est.CSRRequestResponse;
 import org.bouncycastle.est.ESTService;
-import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
+import org.bouncycastle.est.jcajce.JSSEESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
 import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -117,7 +117,7 @@ public class CSRAttributesExample
         //
         // Make est client builder
         //
-        JcaESTServiceBuilder builder = null;
+        JSSEESTServiceBuilder builder = null;
         if (trustAnchors != null && !trustAnchors.isEmpty())
         {
             sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getCertPathTrustManager(trustAnchors, null));
@@ -131,7 +131,7 @@ public class CSRAttributesExample
         sfcb.withTLSVersion(tlsVersion);
         sfcb.withProvider(tlsProvider);
 
-        builder = new JcaESTServiceBuilder(serverRootUrl, sfcb.build());
+        builder = new JSSEESTServiceBuilder(serverRootUrl, sfcb.build());
         builder.withTimeout(timeout);
 
         if (noNameVerifier) {

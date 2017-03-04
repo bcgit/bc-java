@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Set;
 
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
@@ -18,7 +17,7 @@ public class DefaultESTClientSourceProvider
 {
 
     private final SSLSocketFactory sslSocketFactory;
-    private final HostnameAuthorizer<SSLSession> hostNameAuthorizer;
+    private final JSSEHostnameAuthorizer hostNameAuthorizer;
     private final int timeout;
     private final ChannelBindingProvider bindingProvider;
     private final Set<String> cipherSuites;
@@ -27,7 +26,7 @@ public class DefaultESTClientSourceProvider
 
     public DefaultESTClientSourceProvider(
         SSLSocketFactory socketFactory,
-        HostnameAuthorizer<SSLSession> hostNameAuthorizer,
+        JSSEHostnameAuthorizer hostNameAuthorizer,
         int timeout, ChannelBindingProvider bindingProvider,
         Set<String> cipherSuites, Long absoluteLimit)
         throws GeneralSecurityException

@@ -12,7 +12,7 @@ import javax.net.ssl.SSLSession;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.est.CACertsResponse;
 import org.bouncycastle.est.ESTService;
-import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
+import org.bouncycastle.est.jcajce.JSSEESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
 import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -123,7 +123,7 @@ public class CaCertsExample
         //
         // Make est client builder
         //
-        JcaESTServiceBuilder builder = null;
+        JSSEESTServiceBuilder builder = null;
         if (trustAnchors != null && !trustAnchors.isEmpty())
         {
             sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getCertPathTrustManager(trustAnchors, null));
@@ -138,7 +138,7 @@ public class CaCertsExample
         sfcb.withProvider(tlsProvider);
 
 
-        builder = new JcaESTServiceBuilder(serverRootUrl, sfcb.build());
+        builder = new JSSEESTServiceBuilder(serverRootUrl, sfcb.build());
 
         if (noNameVerifier) {
             builder.withHostNameAuthorizer(null);

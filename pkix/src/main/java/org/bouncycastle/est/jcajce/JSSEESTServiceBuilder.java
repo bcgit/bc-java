@@ -6,8 +6,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.net.ssl.SSLSession;
-
 import org.bouncycastle.est.ESTClientProvider;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.ESTServiceBuilder;
@@ -16,11 +14,11 @@ import org.bouncycastle.est.ESTServiceBuilder;
 /**
  * Build a RFC7030 client.
  */
-public class JcaESTServiceBuilder
+public class JSSEESTServiceBuilder
     extends ESTServiceBuilder
 {
     protected final SSLSocketFactoryCreator socketFactoryCreator;
-    protected HostnameAuthorizer<SSLSession> hostNameAuthorizer = new DefaultHostnameVerifier();
+    protected JSSEHostnameAuthorizer hostNameAuthorizer = new DefaultHostnameVerifier();
     protected int timeoutMillis = 0;
     protected ChannelBindingProvider bindingProvider;
     protected Set<String> supportedSuites = new HashSet<String>();
@@ -33,7 +31,7 @@ public class JcaESTServiceBuilder
      * @param server               name of the server to talk to (URL format).
      * @param socketFactoryCreator creator of socket factories.
      */
-    public JcaESTServiceBuilder(String server, SSLSocketFactoryCreator socketFactoryCreator)
+    public JSSEESTServiceBuilder(String server, SSLSocketFactoryCreator socketFactoryCreator)
     {
         super(server);
         if (socketFactoryCreator == null)
@@ -45,45 +43,45 @@ public class JcaESTServiceBuilder
     }
 
 
-    public JcaESTServiceBuilder withHostNameAuthorizer(HostnameAuthorizer hostNameAuthorizer)
+    public JSSEESTServiceBuilder withHostNameAuthorizer(JSSEHostnameAuthorizer hostNameAuthorizer)
     {
         this.hostNameAuthorizer = hostNameAuthorizer;
         return this;
     }
 
-    public JcaESTServiceBuilder withClientProvider(ESTClientProvider clientProvider)
+    public JSSEESTServiceBuilder withClientProvider(ESTClientProvider clientProvider)
     {
         this.clientProvider = clientProvider;
         return this;
     }
 
 
-    public JcaESTServiceBuilder withTimeout(int timeoutMillis)
+    public JSSEESTServiceBuilder withTimeout(int timeoutMillis)
     {
         this.timeoutMillis = timeoutMillis;
         return this;
     }
 
-    public JcaESTServiceBuilder withReadLimit(long absoluteLimit)
+    public JSSEESTServiceBuilder withReadLimit(long absoluteLimit)
     {
         this.absoluteLimit = absoluteLimit;
         return this;
     }
 
 
-    public JcaESTServiceBuilder withChannelBindingProvider(ChannelBindingProvider channelBindingProvider)
+    public JSSEESTServiceBuilder withChannelBindingProvider(ChannelBindingProvider channelBindingProvider)
     {
         this.bindingProvider = channelBindingProvider;
         return this;
     }
 
-    public JcaESTServiceBuilder addCipherSuites(String name)
+    public JSSEESTServiceBuilder addCipherSuites(String name)
     {
         this.supportedSuites.add(name);
         return this;
     }
 
-    public JcaESTServiceBuilder addCipherSuites(String[] names)
+    public JSSEESTServiceBuilder addCipherSuites(String[] names)
     {
         this.supportedSuites.addAll(Arrays.asList(names));
         return this;
@@ -109,7 +107,7 @@ public class JcaESTServiceBuilder
 
         if (clientProvider == null)
         {
-            clientProvider = new JcaDefaultESTHttpClientProvider(
+            clientProvider = new JSSEDefaultESTHttpClientProvider(
                 hostNameAuthorizer,
                 socketFactoryCreator,
                 timeoutMillis,
