@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.est.ESTException;
 import org.bouncycastle.util.Strings;
 
 
@@ -32,23 +33,23 @@ public class DefaultHostnameVerifier
                 new ByteArrayInputStream(((javax.security.cert.X509Certificate)context.getPeerCertificateChain()[0]).getEncoded()));
 
             return verify(name, cert);
-        } catch (Exception ex) {
-            if (ex instanceof IOException) {
-                throw (IOException)ex;
+        }
+        catch (Exception ex)
+        {
+            if (ex instanceof ESTException)
+            {
+                throw (ESTException)ex;
             }
-            throw new IOException(ex.getMessage(),ex);
+            throw new ESTException(ex.getMessage(), ex);
         }
     }
 
     public boolean verify(String name, X509Certificate cert)
         throws IOException
     {
-
-
         //
         // Test against san.
         //
-
         try
         {
             Collection<List<?>> n = cert.getSubjectAlternativeNames();
@@ -78,7 +79,7 @@ public class DefaultHostnameVerifier
         }
         catch (Exception ex)
         {
-            throw new IOException(ex.getMessage(), ex);
+            throw new ESTException(ex.getMessage(), ex);
         }
 
         // Common Name match only.
@@ -108,7 +109,6 @@ public class DefaultHostnameVerifier
 
             return Strings.toLowerCase(name).endsWith(Strings.toLowerCase(dnsName.substring(1)));
         }
-
 
         return name.equalsIgnoreCase(dnsName);
     }
