@@ -6,7 +6,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Vector;
 
-import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.util.Arrays;
 
 public class TlsServerProtocol
@@ -629,7 +628,7 @@ public class TlsServerProtocol
         }
 
         this.prepareFinishHash = recordStream.prepareToFinish();
-        this.securityParameters.sessionHash = getCurrentPRFHash(getContext(), prepareFinishHash, null);
+        this.securityParameters.sessionHash = TlsUtils.getCurrentPRFHash(prepareFinishHash);
 
         if (!TlsUtils.isSSL(getContext()))
         {

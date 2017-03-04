@@ -2,7 +2,6 @@ package org.bouncycastle.tls;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -1027,10 +1026,17 @@ public abstract class TlsProtocol
     protected byte[] createVerifyData(boolean isServer)
     {
         TlsContext context = getContext();
-        String asciiLabel = isServer ? ExporterLabel.server_finished : ExporterLabel.client_finished;
-        byte[] sslSender = isServer ? TlsUtils.SSL_SERVER : TlsUtils.SSL_CLIENT;
-        byte[] hash = getCurrentPRFHash(context, recordStream.getHandshakeHash(), sslSender);
-        return TlsUtils.calculateVerifyData(context, asciiLabel, hash);
+        TlsHandshakeHash handshakeHash = recordStream.getHandshakeHash();
+
+        if (TlsUtils.isSSL(context))
+        {
+            TlsHash prf = handshakeHash.forkPRFHash();
+            byte[] sslSender = isServer ? TlsUtils.SSL_SERVER : TlsUtils.SSL_CLIENT;
+            prf.update(sslSender, 0, sslSender.length);
+            return prf.calculateHash();
+        }
+
+        return TlsUtils.calculateTLSVerifyData(context, handshakeHash, isServer);
     }
 
     /**
@@ -1153,21 +1159,6 @@ public abstract class TlsProtocol
              */
             preMasterSecret.destroy();
         }
-    }
-
-    /**
-     * 'sender' only relevant to SSLv3
-     */
-    protected static byte[] getCurrentPRFHash(TlsContext context, TlsHandshakeHash handshakeHash, byte[] sslSender)
-    {
-        TlsHash d = handshakeHash.forkPRFHash();
-
-        if (sslSender != null && TlsUtils.isSSL(context))
-        {
-            d.update(sslSender, 0, sslSender.length);
-        }
-
-        return d.calculateHash();
     }
 
     protected static Hashtable readExtensions(ByteArrayInputStream input)
