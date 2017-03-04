@@ -17,7 +17,7 @@ import org.bouncycastle.est.ESTResponse;
 import org.bouncycastle.est.Source;
 import org.bouncycastle.util.Properties;
 
-public class DefaultESTClient
+class DefaultESTClient
     implements ESTClient
 {
     private static final Charset utf8 = Charset.forName("UTF-8");
