@@ -1156,6 +1156,43 @@ public class TlsUtils
         return new DigitallySigned(signatureAndHashAlgorithm, signature);
     }
 
+    static void verifyCertificateVerify(TlsContext context, CertificateRequest certificateRequest, Certificate certificate,
+        short certificateType, DigitallySigned certificateVerify, TlsHandshakeHash handshakeHash) throws IOException
+    {
+        // Verify the CertificateVerify message contains a correct signature.
+        try
+        {
+            SignatureAndHashAlgorithm signatureAlgorithm = certificateVerify.getAlgorithm();
+
+            byte[] hash;
+            if (TlsUtils.isTLSv12(context))
+            {
+                TlsUtils.verifySupportedSignatureAlgorithm(certificateRequest.getSupportedSignatureAlgorithms(), signatureAlgorithm);
+                hash = handshakeHash.getFinalHash(signatureAlgorithm.getHash());
+            }
+            else
+            {
+                hash = context.getSecurityParameters().getSessionHash();
+            }
+
+            TlsVerifier verifier = certificate.getCertificateAt(0)
+                .createVerifier(TlsUtils.getSignatureAlgorithmClient(certificateType));
+
+            if (!verifier.verifyRawSignature(certificateVerify, hash))
+            {
+                throw new TlsFatalAlert(AlertDescription.decrypt_error);
+            }
+        }
+        catch (TlsFatalAlert e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            throw new TlsFatalAlert(AlertDescription.decrypt_error, e);
+        }
+    }
+
     static DigitallySigned generateServerKeyExchangeSignature(TlsContext context, TlsCredentialedSigner credentials,
         DigestInputBuffer buf) throws IOException
     {

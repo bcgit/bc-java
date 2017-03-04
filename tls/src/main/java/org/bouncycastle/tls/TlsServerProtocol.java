@@ -484,42 +484,13 @@ public class TlsServerProtocol
             throw new IllegalStateException();
         }
 
-        DigitallySigned clientCertificateVerify = DigitallySigned.parse(getContext(), buf);
+        TlsContext context = getContext();
+        DigitallySigned clientCertificateVerify = DigitallySigned.parse(context, buf);
 
         assertEmpty(buf);
 
-        // Verify the CertificateVerify message contains a correct signature.
-        try
-        {
-            SignatureAndHashAlgorithm signatureAlgorithm = clientCertificateVerify.getAlgorithm();
-
-            byte[] hash;
-            if (TlsUtils.isTLSv12(getContext()))
-            {
-                TlsUtils.verifySupportedSignatureAlgorithm(certificateRequest.getSupportedSignatureAlgorithms(), signatureAlgorithm);
-                hash = prepareFinishHash.getFinalHash(signatureAlgorithm.getHash());
-            }
-            else
-            {
-                hash = securityParameters.getSessionHash();
-            }
-
-            TlsVerifier verifier = peerCertificate.getCertificateAt(0)
-                .createVerifier(TlsUtils.getSignatureAlgorithmClient(clientCertificateType));
-
-            if (!verifier.verifyRawSignature(clientCertificateVerify, hash))
-            {
-                throw new TlsFatalAlert(AlertDescription.decrypt_error);
-            }
-        }
-        catch (TlsFatalAlert e)
-        {
-            throw e;
-        }
-        catch (Exception e)
-        {
-            throw new TlsFatalAlert(AlertDescription.decrypt_error, e);
-        }
+        TlsUtils.verifyCertificateVerify(context, certificateRequest, peerCertificate, clientCertificateType,
+            clientCertificateVerify, prepareFinishHash);
     }
 
     protected void receiveClientHelloMessage(ByteArrayInputStream buf)
