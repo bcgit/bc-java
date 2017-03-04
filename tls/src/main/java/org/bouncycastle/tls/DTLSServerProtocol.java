@@ -558,38 +558,8 @@ public class DTLSServerProtocol
 
         TlsProtocol.assertEmpty(buf);
 
-        // Verify the CertificateVerify message contains a correct signature.
-        try
-        {
-            SignatureAndHashAlgorithm signatureAlgorithm = clientCertificateVerify.getAlgorithm();
-
-            byte[] hash;
-            if (TlsUtils.isTLSv12(context))
-            {
-                TlsUtils.verifySupportedSignatureAlgorithm(state.certificateRequest.getSupportedSignatureAlgorithms(), signatureAlgorithm);
-                hash = prepareFinishHash.getFinalHash(signatureAlgorithm.getHash());
-            }
-            else
-            {
-                hash = context.getSecurityParameters().getSessionHash();
-            }
-
-            TlsVerifier verifier = state.clientCertificate.getCertificateAt(0)
-                .createVerifier(TlsUtils.getSignatureAlgorithmClient(state.clientCertificateType));
-
-            if (!verifier.verifyRawSignature(clientCertificateVerify, hash))
-            {
-                throw new TlsFatalAlert(AlertDescription.decrypt_error);
-            }
-        }
-        catch (TlsFatalAlert e)
-        {
-            throw e;
-        }
-        catch (Exception e)
-        {
-            throw new TlsFatalAlert(AlertDescription.decrypt_error, e);
-        }
+        TlsUtils.verifyCertificateVerify(context, state.certificateRequest, state.clientCertificate, state.clientCertificateType,
+            clientCertificateVerify, prepareFinishHash);
     }
 
     protected void processClientHello(ServerHandshakeState state, byte[] body)
