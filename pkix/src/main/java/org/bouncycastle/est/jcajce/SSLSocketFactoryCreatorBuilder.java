@@ -22,6 +22,7 @@ public class SSLSocketFactoryCreatorBuilder
     protected Provider tlsProvider;
     protected KeyManager[] keyManagers;
     protected X509TrustManager[] trustManagers;
+    protected SecureRandom secureRandom = new SecureRandom();
 
     public SSLSocketFactoryCreatorBuilder(X509TrustManager trustManager)
     {
@@ -29,7 +30,7 @@ public class SSLSocketFactoryCreatorBuilder
         {
             throw new NullPointerException("Trust managers can not be null");
         }
-        this.trustManagers = new X509TrustManager[]{ trustManager };
+        this.trustManagers = new X509TrustManager[]{trustManager};
     }
 
     public SSLSocketFactoryCreatorBuilder(X509TrustManager[] trustManagers)
@@ -44,6 +45,12 @@ public class SSLSocketFactoryCreatorBuilder
     public SSLSocketFactoryCreatorBuilder withTLSVersion(String tlsVersion)
     {
         this.tlsVersion = tlsVersion;
+        return this;
+    }
+
+    public SSLSocketFactoryCreatorBuilder withSecureRandom(SecureRandom secureRandom)
+    {
+        this.secureRandom = secureRandom;
         return this;
     }
 
@@ -128,7 +135,7 @@ public class SSLSocketFactoryCreatorBuilder
                     ctx = SSLContext.getInstance(tlsVersion);
                 }
 
-                ctx.init(keyManagers, trustManagers, new SecureRandom());
+                ctx.init(keyManagers, trustManagers, secureRandom);
 
                 return ctx.getSocketFactory();
             }
