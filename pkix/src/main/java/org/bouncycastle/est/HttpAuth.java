@@ -79,8 +79,8 @@ public class HttpAuth
      *
      * @param username                 user id.
      * @param password                 user's password.
-     * @param nonceGenerator
-     * @param digestCalculatorProvider
+     * @param nonceGenerator           random source for generating nonces.
+     * @param digestCalculatorProvider provider for digest calculators needed for calculating hashes.
      */
     public HttpAuth(String username, char[] password, SecureRandom nonceGenerator, DigestCalculatorProvider digestCalculatorProvider)
     {
@@ -93,8 +93,8 @@ public class HttpAuth
      * @param realm                    expected server realm.
      * @param username                 user id.
      * @param password                 user's password.
-     * @param nonceGenerator
-     * @param digestCalculatorProvider
+     * @param nonceGenerator           random source for generating nonces.
+     * @param digestCalculatorProvider provider for digest calculators needed for calculating hashes.
      */
     public HttpAuth(String realm, String username, char[] password, SecureRandom nonceGenerator, DigestCalculatorProvider digestCalculatorProvider)
     {
