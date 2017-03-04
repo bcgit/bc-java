@@ -1162,23 +1162,35 @@ public class TlsUtils
         // Verify the CertificateVerify message contains a correct signature.
         try
         {
-            SignatureAndHashAlgorithm signatureAlgorithm = certificateVerify.getAlgorithm();
+            TlsVerifier verifier = certificate.getCertificateAt(0)
+                .createVerifier(TlsUtils.getSignatureAlgorithmClient(certificateType));
+            TlsStreamVerifier streamVerifier = verifier.getStreamVerifier(certificateVerify);
 
-            byte[] hash;
-            if (TlsUtils.isTLSv12(context))
+            boolean verified;
+            if (streamVerifier != null)
             {
-                TlsUtils.verifySupportedSignatureAlgorithm(certificateRequest.getSupportedSignatureAlgorithms(), signatureAlgorithm);
-                hash = handshakeHash.getFinalHash(signatureAlgorithm.getHash());
+                handshakeHash.copyBufferTo(streamVerifier.getOutputStream());
+                verified = streamVerifier.isVerified();
             }
             else
             {
-                hash = context.getSecurityParameters().getSessionHash();
+                SignatureAndHashAlgorithm signatureAlgorithm = certificateVerify.getAlgorithm();
+    
+                byte[] hash;
+                if (TlsUtils.isTLSv12(context))
+                {
+                    TlsUtils.verifySupportedSignatureAlgorithm(certificateRequest.getSupportedSignatureAlgorithms(), signatureAlgorithm);
+                    hash = handshakeHash.getFinalHash(signatureAlgorithm.getHash());
+                }
+                else
+                {
+                    hash = context.getSecurityParameters().getSessionHash();
+                }
+
+                verified = verifier.verifyRawSignature(certificateVerify, hash);
             }
 
-            TlsVerifier verifier = certificate.getCertificateAt(0)
-                .createVerifier(TlsUtils.getSignatureAlgorithmClient(certificateType));
-
-            if (!verifier.verifyRawSignature(certificateVerify, hash))
+            if (!verified)
             {
                 throw new TlsFatalAlert(AlertDescription.decrypt_error);
             }
@@ -1217,10 +1229,10 @@ public class TlsUtils
         return new DigitallySigned(algorithm, signature);
     }
 
-    static void verifyServerKeyExchangeSignature(TlsContext context, TlsVerifier tlsVerifier, DigestInputBuffer buf,
+    static void verifyServerKeyExchangeSignature(TlsContext context, TlsVerifier verifier, DigestInputBuffer buf,
         DigitallySigned signedParams) throws IOException
     {
-        TlsStreamVerifier streamVerifier = tlsVerifier.getStreamVerifier(signedParams);
+        TlsStreamVerifier streamVerifier = verifier.getStreamVerifier(signedParams);
 
         boolean verified;
         if (streamVerifier != null)
@@ -1231,7 +1243,7 @@ public class TlsUtils
         else
         {
             byte[] hash = TlsUtils.calculateSignatureHash(context, signedParams.getAlgorithm(), buf);
-            verified = tlsVerifier.verifyRawSignature(signedParams, hash);
+            verified = verifier.verifyRawSignature(signedParams, hash);
         }
 
         if (!verified)
