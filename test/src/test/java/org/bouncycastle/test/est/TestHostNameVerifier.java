@@ -8,8 +8,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.est.CSRRequestResponse;
 import org.bouncycastle.est.ESTService;
-import org.bouncycastle.est.jcajce.DefaultHostnameVerifier;
-import org.bouncycastle.est.jcajce.JSSEESTServiceBuilder;
+import org.bouncycastle.est.jcajce.JsseDefaultHostnameVerifier;
+import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
 import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.junit.Assert;
@@ -59,9 +59,9 @@ public class TestHostNameVerifier
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                     )), null));
 
-            JSSEESTServiceBuilder builder = new JSSEESTServiceBuilder(
+            JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
                 "https://localtest.me:" + port + "/.well-known/est/", sfcb.build())
-                .withHostNameAuthorizer(new DefaultHostnameVerifier())
+                .withHostNameAuthorizer(new JsseDefaultHostnameVerifier())
                 .addCipherSuites(res.getSupportedCipherSuites());
             ESTService est = builder.build();
 
@@ -93,8 +93,8 @@ public class TestHostNameVerifier
         X509Certificate cert = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
             ESTServerUtils.makeRelativeToServerHome("/san/cert_cn_match_wc.pem")));
 
-        Assert.assertTrue("Common Name match", new DefaultHostnameVerifier().verify("aardvark.cisco.com", cert));
-        Assert.assertFalse("Not match", new DefaultHostnameVerifier().verify("cisco.com", cert));
+        Assert.assertTrue("Common Name match", new JsseDefaultHostnameVerifier().verify("aardvark.cisco.com", cert));
+        Assert.assertFalse("Not match", new JsseDefaultHostnameVerifier().verify("cisco.com", cert));
     }
 
 
@@ -105,7 +105,7 @@ public class TestHostNameVerifier
         X509Certificate cert = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
             ESTServerUtils.makeRelativeToServerHome("/san/cert_cn_mismatch_wc.pem")));
 
-        Assert.assertFalse("Not match", new DefaultHostnameVerifier().verify("aardvark", cert));
+        Assert.assertFalse("Not match", new JsseDefaultHostnameVerifier().verify("aardvark", cert));
     }
 
 
@@ -118,7 +118,7 @@ public class TestHostNameVerifier
         X509Certificate cert = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
             ESTServerUtils.makeRelativeToServerHome("/san/cert_cn_mismatch_ip.pem")));
 
-        Assert.assertFalse("Not match", new DefaultHostnameVerifier().verify("127.0.0.1", cert));
+        Assert.assertFalse("Not match", new JsseDefaultHostnameVerifier().verify("127.0.0.1", cert));
     }
 
     @Test
@@ -128,7 +128,7 @@ public class TestHostNameVerifier
         X509Certificate cert = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
             ESTServerUtils.makeRelativeToServerHome("/san/cert_cn_mismatch_ip.pem")));
 
-        Assert.assertFalse("Not match", new DefaultHostnameVerifier().verify("aardvark.cisco.com", cert));
+        Assert.assertFalse("Not match", new JsseDefaultHostnameVerifier().verify("aardvark.cisco.com", cert));
     }
 
     @Test
@@ -137,7 +137,7 @@ public class TestHostNameVerifier
     {
         X509Certificate cert = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
             ESTServerUtils.makeRelativeToServerHome("/san/cert_san_match.pem")));
-        Assert.assertTrue("Match", new DefaultHostnameVerifier().verify("localhost.cisco.com", cert));
+        Assert.assertTrue("Match", new JsseDefaultHostnameVerifier().verify("localhost.cisco.com", cert));
     }
 
 
@@ -147,9 +147,9 @@ public class TestHostNameVerifier
     {
         X509Certificate cert = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
             ESTServerUtils.makeRelativeToServerHome("/san/cert_san_match_ip.pem")));
-        Assert.assertTrue("Match", new DefaultHostnameVerifier().verify("192.168.51.140", cert));
-        Assert.assertTrue("Match", new DefaultHostnameVerifier().verify("127.0.0.1", cert));
-        Assert.assertFalse("Not Match", new DefaultHostnameVerifier().verify("10.0.0.1", cert));
+        Assert.assertTrue("Match", new JsseDefaultHostnameVerifier().verify("192.168.51.140", cert));
+        Assert.assertTrue("Match", new JsseDefaultHostnameVerifier().verify("127.0.0.1", cert));
+        Assert.assertFalse("Not Match", new JsseDefaultHostnameVerifier().verify("10.0.0.1", cert));
     }
 
     @Test
@@ -158,8 +158,8 @@ public class TestHostNameVerifier
     {
         X509Certificate cert = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
             ESTServerUtils.makeRelativeToServerHome("/san/cert_san_mismatch.pem")));
-        Assert.assertTrue("Match", new DefaultHostnameVerifier().verify("roundhouse.cisco.com", cert));
-        Assert.assertFalse("Not Match", new DefaultHostnameVerifier().verify("aardvark.cisco.com", cert));
+        Assert.assertTrue("Match", new JsseDefaultHostnameVerifier().verify("roundhouse.cisco.com", cert));
+        Assert.assertFalse("Not Match", new JsseDefaultHostnameVerifier().verify("aardvark.cisco.com", cert));
     }
 
     @Test
@@ -168,7 +168,7 @@ public class TestHostNameVerifier
     {
         X509Certificate cert = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
             ESTServerUtils.makeRelativeToServerHome("/san/cert_san_mismatch_ip.pem")));
-        Assert.assertFalse("Not Match", new DefaultHostnameVerifier().verify("localhost.me", cert));
+        Assert.assertFalse("Not Match", new JsseDefaultHostnameVerifier().verify("localhost.me", cert));
     }
 
 
@@ -178,7 +178,7 @@ public class TestHostNameVerifier
     {
         X509Certificate cert = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
             ESTServerUtils.makeRelativeToServerHome("/san/cert_san_mismatch_ip.pem")));
-        Assert.assertFalse("Not Match", new DefaultHostnameVerifier().verify("localhost.me", cert));
+        Assert.assertFalse("Not Match", new JsseDefaultHostnameVerifier().verify("localhost.me", cert));
     }
 
 

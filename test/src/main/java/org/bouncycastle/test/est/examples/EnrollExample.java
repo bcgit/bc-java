@@ -16,7 +16,7 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.est.ESTAuth;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.EnrollmentResponse;
-import org.bouncycastle.est.jcajce.JSSEESTServiceBuilder;
+import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaHttpAuthBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
 import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
@@ -192,7 +192,7 @@ public class EnrollExample
 
         // Make est client builder
         //
-        JSSEESTServiceBuilder builder = null;
+        JsseESTServiceBuilder builder = null;
 
         SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getCertPathTrustManager(ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificate(trustAnchorFile)), null));
         sfcb.withTLSVersion(tlsVersion);
@@ -209,7 +209,7 @@ public class EnrollExample
             sfcb.withKeyManagers(JcaJceUtils.createKeyManagerFactory("X509", null, ks, clientKeyStoreFilePassword).getKeyManagers());
         }
 
-        JSSEESTServiceBuilder est = new JSSEESTServiceBuilder(serverRootUrl, sfcb.build());
+        JsseESTServiceBuilder est = new JsseESTServiceBuilder(serverRootUrl, sfcb.build());
 
 
 //        JcaESTServiceBuilder est = new JcaESTServiceBuilder(serverRootUrl,
@@ -223,7 +223,7 @@ public class EnrollExample
 //            );
 
 
-        builder = new JSSEESTServiceBuilder(serverRootUrl, sfcb.build());
+        builder = new JsseESTServiceBuilder(serverRootUrl, sfcb.build());
         builder.withTimeout(timeout);
 
         if (noNameVerifier)
