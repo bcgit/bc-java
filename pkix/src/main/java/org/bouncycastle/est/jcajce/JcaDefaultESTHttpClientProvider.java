@@ -13,7 +13,7 @@ public class JcaDefaultESTHttpClientProvider
     implements ESTClientProvider
 {
 
-    private final JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer;
+    private final HostnameAuthorizer<SSLSession> hostNameAuthorizer;
     private final SSLSocketFactoryCreator socketFactoryCreator;
 
     private final int timeout;
@@ -23,7 +23,7 @@ public class JcaDefaultESTHttpClientProvider
 
 
     public JcaDefaultESTHttpClientProvider(
-        JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer,
+        HostnameAuthorizer<SSLSession> hostNameAuthorizer,
         SSLSocketFactoryCreator socketFactoryCreator, int timeout,
         ChannelBindingProvider bindingProvider,
         Set<String> cipherSuites, Long absoluteLimit)

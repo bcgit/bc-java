@@ -19,7 +19,7 @@ import org.bouncycastle.util.Strings;
 
 
 public class DefaultHostnameVerifier
-    implements JcaJceHostNameAuthorizer<SSLSession>
+    implements HostnameAuthorizer<SSLSession>
 {
     public boolean verified(String name, SSLSession context)
         throws IOException

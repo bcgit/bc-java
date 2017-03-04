@@ -20,7 +20,7 @@ public class JcaESTServiceBuilder
     extends ESTServiceBuilder
 {
     protected final SSLSocketFactoryCreator socketFactoryCreator;
-    protected JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer = new DefaultHostnameVerifier();
+    protected HostnameAuthorizer<SSLSession> hostNameAuthorizer = new DefaultHostnameVerifier();
     protected int timeoutMillis = 0;
     protected ChannelBindingProvider bindingProvider;
     protected Set<String> supportedSuites = new HashSet<String>();
@@ -45,7 +45,7 @@ public class JcaESTServiceBuilder
     }
 
 
-    public JcaESTServiceBuilder withHostNameAuthorizer(JcaJceHostNameAuthorizer hostNameAuthorizer)
+    public JcaESTServiceBuilder withHostNameAuthorizer(HostnameAuthorizer hostNameAuthorizer)
     {
         this.hostNameAuthorizer = hostNameAuthorizer;
         return this;

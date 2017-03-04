@@ -18,7 +18,7 @@ public class DefaultESTClientSourceProvider
 {
 
     private final SSLSocketFactory sslSocketFactory;
-    private final JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer;
+    private final HostnameAuthorizer<SSLSession> hostNameAuthorizer;
     private final int timeout;
     private final ChannelBindingProvider bindingProvider;
     private final Set<String> cipherSuites;
@@ -27,7 +27,7 @@ public class DefaultESTClientSourceProvider
 
     public DefaultESTClientSourceProvider(
         SSLSocketFactory socketFactory,
-        JcaJceHostNameAuthorizer<SSLSession> hostNameAuthorizer,
+        HostnameAuthorizer<SSLSession> hostNameAuthorizer,
         int timeout, ChannelBindingProvider bindingProvider,
         Set<String> cipherSuites, Long absoluteLimit)
         throws GeneralSecurityException

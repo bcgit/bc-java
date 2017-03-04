@@ -7,7 +7,7 @@ import java.io.IOException;
  *
  * @param <T>
  */
-public interface JcaJceHostNameAuthorizer<T>
+public interface HostnameAuthorizer<T>
 {
     /**
      * Verify the passed in host name according to the context object.
