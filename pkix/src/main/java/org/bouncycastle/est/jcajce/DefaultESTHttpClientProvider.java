@@ -8,11 +8,11 @@ import org.bouncycastle.est.ESTClient;
 import org.bouncycastle.est.ESTClientProvider;
 import org.bouncycastle.est.ESTException;
 
-class JSSEDefaultESTHttpClientProvider
+class DefaultESTHttpClientProvider
     implements ESTClientProvider
 {
 
-    private final JSSEHostnameAuthorizer hostNameAuthorizer;
+    private final JsseHostnameAuthorizer hostNameAuthorizer;
     private final SSLSocketFactoryCreator socketFactoryCreator;
 
     private final int timeout;
@@ -21,8 +21,8 @@ class JSSEDefaultESTHttpClientProvider
     private final Long absoluteLimit;
 
 
-    public JSSEDefaultESTHttpClientProvider(
-        JSSEHostnameAuthorizer hostNameAuthorizer,
+    public DefaultESTHttpClientProvider(
+        JsseHostnameAuthorizer hostNameAuthorizer,
         SSLSocketFactoryCreator socketFactoryCreator, int timeout,
         ChannelBindingProvider bindingProvider,
         Set<String> cipherSuites, Long absoluteLimit)

@@ -14,11 +14,11 @@ import org.bouncycastle.est.ESTServiceBuilder;
 /**
  * Build a RFC7030 client.
  */
-public class JSSEESTServiceBuilder
+public class JsseESTServiceBuilder
     extends ESTServiceBuilder
 {
     protected final SSLSocketFactoryCreator socketFactoryCreator;
-    protected JSSEHostnameAuthorizer hostNameAuthorizer = new DefaultHostnameVerifier();
+    protected JsseHostnameAuthorizer hostNameAuthorizer = new JsseDefaultHostnameVerifier();
     protected int timeoutMillis = 0;
     protected ChannelBindingProvider bindingProvider;
     protected Set<String> supportedSuites = new HashSet<String>();
@@ -31,7 +31,7 @@ public class JSSEESTServiceBuilder
      * @param server               name of the server to talk to (URL format).
      * @param socketFactoryCreator creator of socket factories.
      */
-    public JSSEESTServiceBuilder(String server, SSLSocketFactoryCreator socketFactoryCreator)
+    public JsseESTServiceBuilder(String server, SSLSocketFactoryCreator socketFactoryCreator)
     {
         super(server);
         if (socketFactoryCreator == null)
@@ -43,45 +43,45 @@ public class JSSEESTServiceBuilder
     }
 
 
-    public JSSEESTServiceBuilder withHostNameAuthorizer(JSSEHostnameAuthorizer hostNameAuthorizer)
+    public JsseESTServiceBuilder withHostNameAuthorizer(JsseHostnameAuthorizer hostNameAuthorizer)
     {
         this.hostNameAuthorizer = hostNameAuthorizer;
         return this;
     }
 
-    public JSSEESTServiceBuilder withClientProvider(ESTClientProvider clientProvider)
+    public JsseESTServiceBuilder withClientProvider(ESTClientProvider clientProvider)
     {
         this.clientProvider = clientProvider;
         return this;
     }
 
 
-    public JSSEESTServiceBuilder withTimeout(int timeoutMillis)
+    public JsseESTServiceBuilder withTimeout(int timeoutMillis)
     {
         this.timeoutMillis = timeoutMillis;
         return this;
     }
 
-    public JSSEESTServiceBuilder withReadLimit(long absoluteLimit)
+    public JsseESTServiceBuilder withReadLimit(long absoluteLimit)
     {
         this.absoluteLimit = absoluteLimit;
         return this;
     }
 
 
-    public JSSEESTServiceBuilder withChannelBindingProvider(ChannelBindingProvider channelBindingProvider)
+    public JsseESTServiceBuilder withChannelBindingProvider(ChannelBindingProvider channelBindingProvider)
     {
         this.bindingProvider = channelBindingProvider;
         return this;
     }
 
-    public JSSEESTServiceBuilder addCipherSuites(String name)
+    public JsseESTServiceBuilder addCipherSuites(String name)
     {
         this.supportedSuites.add(name);
         return this;
     }
 
-    public JSSEESTServiceBuilder addCipherSuites(String[] names)
+    public JsseESTServiceBuilder addCipherSuites(String[] names)
     {
         this.supportedSuites.addAll(Arrays.asList(names));
         return this;
@@ -107,7 +107,7 @@ public class JSSEESTServiceBuilder
 
         if (clientProvider == null)
         {
-            clientProvider = new JSSEDefaultESTHttpClientProvider(
+            clientProvider = new DefaultESTHttpClientProvider(
                 hostNameAuthorizer,
                 socketFactoryCreator,
                 timeoutMillis,

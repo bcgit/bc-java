@@ -12,12 +12,12 @@ import org.bouncycastle.est.ESTClientSourceProvider;
 import org.bouncycastle.est.Source;
 import org.bouncycastle.util.Strings;
 
-public class DefaultESTClientSourceProvider
+class DefaultESTClientSourceProvider
     implements ESTClientSourceProvider
 {
 
     private final SSLSocketFactory sslSocketFactory;
-    private final JSSEHostnameAuthorizer hostNameAuthorizer;
+    private final JsseHostnameAuthorizer hostNameAuthorizer;
     private final int timeout;
     private final ChannelBindingProvider bindingProvider;
     private final Set<String> cipherSuites;
@@ -26,7 +26,7 @@ public class DefaultESTClientSourceProvider
 
     public DefaultESTClientSourceProvider(
         SSLSocketFactory socketFactory,
-        JSSEHostnameAuthorizer hostNameAuthorizer,
+        JsseHostnameAuthorizer hostNameAuthorizer,
         int timeout, ChannelBindingProvider bindingProvider,
         Set<String> cipherSuites, Long absoluteLimit)
         throws GeneralSecurityException

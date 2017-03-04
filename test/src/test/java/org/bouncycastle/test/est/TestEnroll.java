@@ -32,7 +32,7 @@ import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.EnrollmentResponse;
 import org.bouncycastle.est.HttpAuth;
 import org.bouncycastle.est.jcajce.ChannelBindingProvider;
-import org.bouncycastle.est.jcajce.JSSEESTServiceBuilder;
+import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaHttpAuthBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
 import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
@@ -151,7 +151,7 @@ public class TestEnroll
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                     )), null));
 
-            ESTService est = new JSSEESTServiceBuilder(
+            ESTService est = new JsseESTServiceBuilder(
                 "https://localhost:8443/.well-known/est/", sfcb.build()
             ).build();
 
@@ -220,7 +220,7 @@ public class TestEnroll
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                     )), null));
 
-            ESTService est = new JSSEESTServiceBuilder(
+            ESTService est = new JsseESTServiceBuilder(
                 "https://localhost:8443/.well-known/est/", sfcb.build()
             ).build();
 
@@ -313,7 +313,7 @@ public class TestEnroll
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                     )), null));
 
-            ESTService est = new JSSEESTServiceBuilder(
+            ESTService est = new JsseESTServiceBuilder(
                 "https://localhost:8443/.well-known/est/", sfcb.build()
             ).build();
             //
@@ -512,7 +512,7 @@ public class TestEnroll
             sfcb.withKeyManagers(JcaJceUtils.createKeyManagerFactory(KeyManagerFactory.getDefaultAlgorithm(), null, clientKeyStore, clientKeyStorePass).getKeyManagers());
 
 
-            ESTService est = new JSSEESTServiceBuilder(
+            ESTService est = new JsseESTServiceBuilder(
                 "https://localhost:8443/.well-known/est/", sfcb.build()
             ).build();
 
@@ -681,7 +681,7 @@ public class TestEnroll
             sfcb.withKeyManagers(JcaJceUtils.createKeyManagerFactory(KeyManagerFactory.getDefaultAlgorithm(), null, clientKeyStore, clientKeyStorePass).getKeyManagers());
 
 
-            ESTService est = new JSSEESTServiceBuilder(
+            ESTService est = new JsseESTServiceBuilder(
                 "https://localhost:8443/.well-known/est/", sfcb.build()
             ).build();
 
@@ -837,7 +837,7 @@ public class TestEnroll
                 .withTLSVersion("TLS");
 
 
-            ESTService est = new JSSEESTServiceBuilder("https://localhost:8443/.well-known/est/", sfcb.build())
+            ESTService est = new JsseESTServiceBuilder("https://localhost:8443/.well-known/est/", sfcb.build())
 
                 .withChannelBindingProvider(bcChannelBindingProvider)
 
@@ -990,7 +990,7 @@ public class TestEnroll
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                     )), null));
 
-            JSSEESTServiceBuilder builder = new JSSEESTServiceBuilder(
+            JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
                 "https://localhost:" + port + "/.well-known/est/", sfcb.build());
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
@@ -1075,7 +1075,7 @@ public class TestEnroll
                     )), null));
 
 
-            JSSEESTServiceBuilder builder = new JSSEESTServiceBuilder(
+            JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
                 "https://localhost:" + port + "/.well-known/est/", sfcb.build());
 
 //            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
@@ -1166,7 +1166,7 @@ public class TestEnroll
                     )), null));
 
 
-            JSSEESTServiceBuilder builder = new JSSEESTServiceBuilder(
+            JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
                 "https://localhost:" + port + "/.well-known/est/", sfcb.build());
 
 
@@ -1258,7 +1258,7 @@ public class TestEnroll
                     )), null));
 
 
-            JSSEESTServiceBuilder builder = new JSSEESTServiceBuilder(
+            JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
                 "https://localhost:" + port + "/.well-known/est/", sfcb.build());
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
@@ -1349,7 +1349,7 @@ public class TestEnroll
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                     )), null));
 
-            JSSEESTServiceBuilder builder = new JSSEESTServiceBuilder(
+            JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
                 "https://localhost:" + port + "/.well-known/est/", sfcb.build());
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
@@ -1441,7 +1441,7 @@ public class TestEnroll
                     )), null));
 
 
-            JSSEESTServiceBuilder builder = new JSSEESTServiceBuilder(
+            JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
                 "https://localhost:" + port + "/.well-known/est/", sfcb.build());
 
 
@@ -1533,7 +1533,7 @@ public class TestEnroll
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                     )), null));
 
-            JSSEESTServiceBuilder builder = new JSSEESTServiceBuilder(
+            JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
                 "https://localhost:" + port + "/.well-known/est/", sfcb.build());
 
 
@@ -1625,7 +1625,7 @@ public class TestEnroll
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                     )), null));
 
-            JSSEESTServiceBuilder builder = new JSSEESTServiceBuilder(
+            JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
                 "https://localhost:" + port + "/.well-known/est/", sfcb.build());
 
 
@@ -1718,7 +1718,7 @@ public class TestEnroll
                     )), null));
 
 
-            JSSEESTServiceBuilder builder = new JSSEESTServiceBuilder(
+            JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
                 "https://localhost:" + port + "/.well-known/est/", sfcb.build());
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
@@ -1810,7 +1810,7 @@ public class TestEnroll
                     )), null));
 
 
-            JSSEESTServiceBuilder builder = new JSSEESTServiceBuilder(
+            JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
                 "https://localhost:" + port + "/.well-known/est/", sfcb.build());
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
@@ -1902,7 +1902,7 @@ public class TestEnroll
                     )), null));
 
 
-            JSSEESTServiceBuilder builder = new JSSEESTServiceBuilder(
+            JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
                 "https://localhost:" + port + "/.well-known/est/", sfcb.build());
 
 
@@ -1993,7 +1993,7 @@ public class TestEnroll
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                     )), null));
 
-            JSSEESTServiceBuilder builder = new JSSEESTServiceBuilder(
+            JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
                 "https://localhost:" + port + "/.well-known/est/", sfcb.build());
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
