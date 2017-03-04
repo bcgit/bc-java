@@ -11,30 +11,30 @@ import java.io.InputStream;
 public class ESTException
     extends IOException
 {
+    private Throwable cause;
+
     private InputStream body;
     private int statusCode;
 
     private static final long MAX_ERROR_BODY = 8192;
 
-
     public ESTException(String msg)
     {
         this(msg, null);
-        body = null;
-        statusCode = 0;
     }
 
     public ESTException(String msg, Throwable cause)
     {
-        super(msg, cause);
+        super(msg);
+        this.cause = cause;
         body = null;
         statusCode = 0;
     }
 
-
     public ESTException(String message, Throwable cause, int statusCode, InputStream body)
     {
-        super(message, cause);
+        super(message);
+        this.cause = cause;
         this.statusCode = statusCode;
         if (body != null)
         {
@@ -68,6 +68,11 @@ public class ESTException
         {
             this.body = null;
         }
+    }
+
+    public Throwable getCause()
+    {
+        return cause;
     }
 
     @Override
