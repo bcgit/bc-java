@@ -17,7 +17,7 @@ Bouncycastle distribution. You will need to have installed gradle and have it on
 
 When it is done building it will then copy the jars into the ```<bc-java>/test/est/example/jars/``` directory.
 
-If you need to refresh these jars delete the jars directory.
+If you need to refresh these jars delete the jars directory or use ```./ensurejar.sh force```
 
 ## Using Java 7 ('org.bouncycastle.est.ESTException: Connection reset')
 The Cisco EST server will reject TLS version 1 'TLSv1' handshakes. 
