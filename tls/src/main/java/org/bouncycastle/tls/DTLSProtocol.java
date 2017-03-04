@@ -85,6 +85,11 @@ public abstract class DTLSProtocol
         return buf.toByteArray();
     }
 
+    protected byte[] createVerifyData(TlsContext context, DTLSReliableHandshake handshake, boolean isServer)
+    {
+        return TlsUtils.calculateTLSVerifyData(context, handshake.getHandshakeHash(), isServer);
+    }
+
     protected static void validateSelectedCipherSuite(int selectedCipherSuite, short alertDescription)
         throws IOException
     {

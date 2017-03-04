@@ -395,7 +395,7 @@ public class TlsClientProtocol
                 }
 
                 TlsHandshakeHash prepareFinishHash = recordStream.prepareToFinish();
-                this.securityParameters.sessionHash = getCurrentPRFHash(getContext(), prepareFinishHash, null);
+                this.securityParameters.sessionHash = TlsUtils.getCurrentPRFHash(prepareFinishHash);
 
                 if (!TlsUtils.isSSL(getContext()))
                 {

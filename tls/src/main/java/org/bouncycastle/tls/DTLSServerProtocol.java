@@ -7,7 +7,6 @@ import java.security.SecureRandom;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.util.Arrays;
 
 public class DTLSServerProtocol
@@ -258,7 +257,7 @@ public class DTLSServerProtocol
         }
 
         TlsHandshakeHash prepareFinishHash = handshake.prepareToFinish();
-        securityParameters.sessionHash = TlsProtocol.getCurrentPRFHash(state.serverContext, prepareFinishHash, null);
+        securityParameters.sessionHash = TlsUtils.getCurrentPRFHash(prepareFinishHash);
 
         TlsProtocol.establishMasterSecret(state.serverContext, state.keyExchange);
         recordLayer.initPendingEpoch(state.server.getCipher());
@@ -275,8 +274,7 @@ public class DTLSServerProtocol
         }
 
         // NOTE: Calculated exclusive of the actual Finished message from the client
-        byte[] expectedClientVerifyData = TlsUtils.calculateVerifyData(state.serverContext, ExporterLabel.client_finished,
-            TlsProtocol.getCurrentPRFHash(state.serverContext, handshake.getHandshakeHash(), null));
+        byte[] expectedClientVerifyData = createVerifyData(state.serverContext, handshake, false);
         processFinished(handshake.receiveMessageBody(HandshakeType.finished), expectedClientVerifyData);
 
         if (state.expectSessionTicket)
@@ -287,8 +285,7 @@ public class DTLSServerProtocol
         }
 
         // NOTE: Calculated exclusive of the Finished message itself
-        byte[] serverVerifyData = TlsUtils.calculateVerifyData(state.serverContext, ExporterLabel.server_finished,
-            TlsProtocol.getCurrentPRFHash(state.serverContext, handshake.getHandshakeHash(), null));
+        byte[] serverVerifyData = createVerifyData(state.serverContext, handshake, true);
         handshake.sendMessage(HandshakeType.finished, serverVerifyData);
 
         handshake.finish();

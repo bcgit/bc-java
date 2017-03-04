@@ -150,13 +150,11 @@ public class DTLSClientProtocol
             recordLayer.initPendingEpoch(state.client.getCipher());
 
             // NOTE: Calculated exclusive of the actual Finished message from the server
-            byte[] expectedServerVerifyData = TlsUtils.calculateVerifyData(state.clientContext, ExporterLabel.server_finished,
-                TlsProtocol.getCurrentPRFHash(state.clientContext, handshake.getHandshakeHash(), null));
+            byte[] expectedServerVerifyData = createVerifyData(state.clientContext, handshake, true);
             processFinished(handshake.receiveMessageBody(HandshakeType.finished), expectedServerVerifyData);
 
             // NOTE: Calculated exclusive of the Finished message itself
-            byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext, ExporterLabel.client_finished,
-                TlsProtocol.getCurrentPRFHash(state.clientContext, handshake.getHandshakeHash(), null));
+            byte[] clientVerifyData = createVerifyData(state.clientContext, handshake, false);
             handshake.sendMessage(HandshakeType.finished, clientVerifyData);
 
             handshake.finish();
@@ -318,7 +316,7 @@ public class DTLSClientProtocol
         handshake.sendMessage(HandshakeType.client_key_exchange, clientKeyExchangeBody);
 
         TlsHandshakeHash prepareFinishHash = handshake.prepareToFinish();
-        securityParameters.sessionHash = TlsProtocol.getCurrentPRFHash(state.clientContext, prepareFinishHash, null);
+        securityParameters.sessionHash = TlsUtils.getCurrentPRFHash(prepareFinishHash);
 
         TlsProtocol.establishMasterSecret(state.clientContext, state.keyExchange);
         recordLayer.initPendingEpoch(state.client.getCipher());
@@ -332,8 +330,7 @@ public class DTLSClientProtocol
         }
 
         // NOTE: Calculated exclusive of the Finished message itself
-        byte[] clientVerifyData = TlsUtils.calculateVerifyData(state.clientContext, ExporterLabel.client_finished,
-            TlsProtocol.getCurrentPRFHash(state.clientContext, handshake.getHandshakeHash(), null));
+        byte[] clientVerifyData = createVerifyData(state.clientContext, handshake, false);
         handshake.sendMessage(HandshakeType.finished, clientVerifyData);
 
         if (state.expectSessionTicket)
@@ -350,8 +347,7 @@ public class DTLSClientProtocol
         }
 
         // NOTE: Calculated exclusive of the actual Finished message from the server
-        byte[] expectedServerVerifyData = TlsUtils.calculateVerifyData(state.clientContext, ExporterLabel.server_finished,
-            TlsProtocol.getCurrentPRFHash(state.clientContext, handshake.getHandshakeHash(), null));
+        byte[] expectedServerVerifyData = createVerifyData(state.clientContext, handshake, true);
         processFinished(handshake.receiveMessageBody(HandshakeType.finished), expectedServerVerifyData);
 
         handshake.finish();

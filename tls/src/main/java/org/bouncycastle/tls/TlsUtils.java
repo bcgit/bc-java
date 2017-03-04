@@ -1051,18 +1051,21 @@ public class TlsUtils
         return PRF(context, preMasterSecret, asciiLabel, seed, 48);
     }
 
-    static byte[] calculateVerifyData(TlsContext context, String asciiLabel, byte[] handshakeHash)
+    static byte[] calculateTLSVerifyData(TlsContext context, TlsHandshakeHash handshakeHash, boolean isServer)
     {
-        if (isSSL(context))
-        {
-            return handshakeHash;
-        }
+        String asciiLabel = isServer ? ExporterLabel.server_finished : ExporterLabel.client_finished;
+        byte[] prfHash = getCurrentPRFHash(handshakeHash);
 
+        return TlsUtils.calculateTLSVerifyData(context, asciiLabel, prfHash);
+    }
+
+    static byte[] calculateTLSVerifyData(TlsContext context, String asciiLabel, byte[] prfHash)
+    {
         SecurityParameters securityParameters = context.getSecurityParameters();
         TlsSecret master_secret = securityParameters.getMasterSecret();
         int verify_data_length = securityParameters.getVerifyDataLength();
 
-        return PRF(context, master_secret, asciiLabel, handshakeHash, verify_data_length).extract();
+        return PRF(context, master_secret, asciiLabel, prfHash, verify_data_length).extract();
     }
 
     public static short getHashAlgorithmForPRFAlgorithm(int prfAlgorithm)
@@ -2730,6 +2733,11 @@ public class TlsUtils
         int macAlgorithm = TlsUtils.getMACAlgorithm(cipherSuite);
 
         return crypto.hasEncryptionAlgorithm(encryptionAlgorithm) && crypto.hasMacAlgorithm(macAlgorithm);
+    }
+
+    static byte[] getCurrentPRFHash(TlsHandshakeHash handshakeHash)
+    {
+        return handshakeHash.forkPRFHash().calculateHash();
     }
 
     static void sealHandshakeHash(TlsContext context, TlsHandshakeHash handshakeHash, boolean forceBuffering)
