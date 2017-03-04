@@ -76,6 +76,7 @@ certificates from an EST server using the Bootstrapping procedure defined in RFC
 --tls <version>                   Use this TLS version when creating socket factory, Eg TLSv1.2
 --tlsProvider <provider> <class>  The JSSE Provider.
 --to <milliseconds>               Timeout in milliseconds.
+--no-name-verifier                No hostname verifier.
 
 ```
 
@@ -240,21 +241,20 @@ The enroll example has a number of options:
 ```
 ./enroll.sh
 
---r                                     Re-enroll
- -t <file>                              Trust anchor file
- -u <url>                               EST server url.
- -c <common name>                       EST server url.
- --keyStore <file>                      Optional Key Store.
- --keyStorePass <password>              Optional Key Store password.
- --keyStoreType <JKS>                   Optional Key Store type, defaults to JKS
- --auth <realm:user:password>           Auth credentials, if real is not
- --tls <version>                        Use this TLS version when creating socket factory, Eg TLSv1.2
- --tlsProvider <provider>               The JSSE Provider.
- --tlsProvider <provider> <class>       The JSSE Provider.
- --pop                                  Turn on PoP
- --to <milliseconds>                    Timeout in milliseconds.
-
-
+-r                                     Re-enroll
+-t <file>                              Trust anchor file
+-u <url>                               EST server url.
+-c <common name>                       EST server url.
+--keyStore <file>                      Optional Key Store.
+--keyStorePass <password>              Optional Key Store password.
+--keyStoreType <JKS>                   Optional Key Store type, defaults to JKS
+--auth <realm:user:password>           Auth credentials, if real is not
+--tls <version>                        Use this TLS version when creating socket factory, Eg TLSv1.2
+--tlsProvider <provider>               The JSSE Provider.
+--tlsProvider <provider> <class>       The JSSE Provider.
+--pop                                  Turn on PoP
+--to <milliseconds>                    Timeout in milliseconds.
+--no-name-verifier                     No hostname verifier.
 
 ```
 
@@ -296,8 +296,8 @@ anchor for the server to make this call.
 --tls <version>                   Use this TLS version when creating socket factory, Eg TLSv1.2
 --tlsProvider <provider> <class>  The JSSE Provider.
 --to <milliseconds>               Timeout in milliseconds.
+--no-name-verifier                No hostname verifier.
 ```
-
 
 
 To fetch the attributes:

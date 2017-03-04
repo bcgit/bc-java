@@ -2,7 +2,7 @@
 set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-if [ $1 = "force" ]; then
+if [ "$1" = "force" ]; then
     rm -Rf $DIR/jars
 fi
 
