@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 import org.bouncycastle.est.CSRRequestResponse;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.DefaultHostnameVerifier;
-import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
+import org.bouncycastle.est.jcajce.JSSEESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
 import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.junit.Assert;
@@ -59,7 +59,7 @@ public class TestHostNameVerifier
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                     )), null));
 
-            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
+            JSSEESTServiceBuilder builder = new JSSEESTServiceBuilder(
                 "https://localtest.me:" + port + "/.well-known/est/", sfcb.build())
                 .withHostNameAuthorizer(new DefaultHostnameVerifier())
                 .addCipherSuites(res.getSupportedCipherSuites());

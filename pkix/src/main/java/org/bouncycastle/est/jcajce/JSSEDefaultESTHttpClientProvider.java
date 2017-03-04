@@ -2,18 +2,17 @@ package org.bouncycastle.est.jcajce;
 
 import java.util.Set;
 
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocketFactory;
 
 import org.bouncycastle.est.ESTClient;
 import org.bouncycastle.est.ESTClientProvider;
 import org.bouncycastle.est.ESTException;
 
-public class JcaDefaultESTHttpClientProvider
+class JSSEDefaultESTHttpClientProvider
     implements ESTClientProvider
 {
 
-    private final HostnameAuthorizer<SSLSession> hostNameAuthorizer;
+    private final JSSEHostnameAuthorizer hostNameAuthorizer;
     private final SSLSocketFactoryCreator socketFactoryCreator;
 
     private final int timeout;
@@ -22,8 +21,8 @@ public class JcaDefaultESTHttpClientProvider
     private final Long absoluteLimit;
 
 
-    public JcaDefaultESTHttpClientProvider(
-        HostnameAuthorizer<SSLSession> hostNameAuthorizer,
+    public JSSEDefaultESTHttpClientProvider(
+        JSSEHostnameAuthorizer hostNameAuthorizer,
         SSLSocketFactoryCreator socketFactoryCreator, int timeout,
         ChannelBindingProvider bindingProvider,
         Set<String> cipherSuites, Long absoluteLimit)

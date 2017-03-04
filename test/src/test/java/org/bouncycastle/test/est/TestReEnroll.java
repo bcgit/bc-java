@@ -12,7 +12,7 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.EnrollmentResponse;
-import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
+import org.bouncycastle.est.jcajce.JSSEESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaHttpAuthBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
 import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
@@ -95,7 +95,7 @@ public class TestReEnroll
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                     )), null));
 
-            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/",
+            ESTService est = new JSSEESTServiceBuilder("https://localhost:8443/.well-known/est/",
                 sfcb.build()).build();
 
             //

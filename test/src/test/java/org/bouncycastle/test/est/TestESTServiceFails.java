@@ -12,7 +12,7 @@ import org.bouncycastle.est.CACertsResponse;
 import org.bouncycastle.est.CSRAttributesResponse;
 import org.bouncycastle.est.CSRRequestResponse;
 import org.bouncycastle.est.ESTServiceBuilder;
-import org.bouncycastle.est.jcajce.JcaESTServiceBuilder;
+import org.bouncycastle.est.jcajce.JSSEESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
 import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.bouncycastle.util.encoders.Base64;
@@ -43,14 +43,14 @@ public class TestESTServiceFails
         throws Exception
     {
         SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder((X509TrustManager)null);
-        ESTServiceBuilder b = new JcaESTServiceBuilder("", sfcb.build());
+        ESTServiceBuilder b = new JSSEESTServiceBuilder("", sfcb.build());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testSocketFactoryCreator()
         throws Exception
     {
-        ESTServiceBuilder b = new JcaESTServiceBuilder("", null);
+        ESTServiceBuilder b = new JSSEESTServiceBuilder("", null);
     }
 
     @Test
@@ -60,7 +60,7 @@ public class TestESTServiceFails
         try
         {
             SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
-            ESTServiceBuilder b = new JcaESTServiceBuilder("",sfcb.build());
+            ESTServiceBuilder b = new JSSEESTServiceBuilder("",sfcb.build());
             b.build().getCSRAttributes();
         }
         catch (Exception ex)
@@ -71,7 +71,7 @@ public class TestESTServiceFails
         try
         {
             SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
-            ESTServiceBuilder b = new JcaESTServiceBuilder("",sfcb.build());
+            ESTServiceBuilder b = new JSSEESTServiceBuilder("",sfcb.build());
             b.build().simpleEnroll(null);
         }
         catch (Exception ex)
@@ -83,7 +83,7 @@ public class TestESTServiceFails
         try
         {
             SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
-            ESTServiceBuilder b = new JcaESTServiceBuilder("",sfcb.build());
+            ESTServiceBuilder b = new JSSEESTServiceBuilder("",sfcb.build());
             b.build().simpleEnroll(false, null, null);
         }
         catch (Exception ex)
