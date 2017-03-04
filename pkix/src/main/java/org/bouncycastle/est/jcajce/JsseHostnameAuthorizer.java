@@ -8,7 +8,7 @@ import javax.net.ssl.SSLSession;
  * Verify the host name is as expected after the SSL Handshake has been completed.
  *
  */
-public interface JSSEHostnameAuthorizer
+public interface JsseHostnameAuthorizer
 {
     /**
      * Verify the passed in host name according to the context object.
