@@ -22,6 +22,7 @@ import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
+import org.bouncycastle.tls.crypto.TlsStreamVerifier;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
@@ -1112,14 +1113,14 @@ public class TlsUtils
         return h.calculateHash();
     }
 
-    static void sendSignatureInput(TlsContext context, DigestInputBuffer buf, TlsStreamSigner streamSigner)
+    static void sendSignatureInput(TlsContext context, DigestInputBuffer buf, OutputStream output)
         throws IOException
     {
         SecurityParameters securityParameters = context.getSecurityParameters();
-        OutputStream output = streamSigner.getOutputStream();
         // NOTE: The implicit copy here is intended (and important)
         output.write(Arrays.concatenate(securityParameters.clientRandom, securityParameters.serverRandom));
         buf.copyTo(output);
+        output.close();
     }
 
     static DigitallySigned generateCertificateVerify(TlsContext context, TlsCredentialedSigner credentialedSigner,
@@ -1167,7 +1168,7 @@ public class TlsUtils
         byte[] signature;
         if (streamSigner != null)
         {
-            sendSignatureInput(context, buf, streamSigner);
+            sendSignatureInput(context, buf, streamSigner.getOutputStream());
             signature = streamSigner.getSignature();
         }
         else
@@ -1182,9 +1183,21 @@ public class TlsUtils
     static void verifyServerKeyExchangeSignature(TlsContext context, TlsVerifier tlsVerifier, DigestInputBuffer buf,
         DigitallySigned signedParams) throws IOException
     {
-        byte[] hash = TlsUtils.calculateSignatureHash(context, signedParams.getAlgorithm(), buf);
+        TlsStreamVerifier streamVerifier = tlsVerifier.getStreamVerifier(signedParams);
 
-        if (!tlsVerifier.verifyRawSignature(signedParams, hash))
+        boolean verified;
+        if (streamVerifier != null)
+        {
+            sendSignatureInput(context, buf, streamVerifier.getOutputStream());
+            verified = streamVerifier.isVerified();
+        }
+        else
+        {
+            byte[] hash = TlsUtils.calculateSignatureHash(context, signedParams.getAlgorithm(), buf);
+            verified = tlsVerifier.verifyRawSignature(signedParams, hash);
+        }
+
+        if (!verified)
         {
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
