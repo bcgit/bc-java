@@ -726,7 +726,7 @@ public class TestEnroll
      * @throws Exception
      */
     @Test()
-    @Ignore("Possible race condition.")
+    @Ignore("Possible race.")
     public void testEnrollUsingTLSClientAuthAndPOP()
         throws Exception
     {
