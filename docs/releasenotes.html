@@ -28,6 +28,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2016, December 23
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>A class cast exception for master certification removal in PGPPublicKey.removeCertification() by certification has been fixed.</li>
+<li>GOST GOFB 28147-89 mode had an edge condition concerning the incorrect calculation of N4 (see section 6.1 of RFC 5830) affecting about 1% of IVs. This has been fixed.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
