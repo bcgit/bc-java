@@ -18,7 +18,10 @@ import org.bouncycastle.est.ESTException;
 import org.bouncycastle.util.Strings;
 
 
-public class JsseDefaultHostnameVerifier
+/**
+ * A typical hostname authorizer for verifying a hostname against the available certificates.
+ */
+public class JsseDefaultHostnameAuthorizer
     implements JsseHostnameAuthorizer
 {
     public boolean verified(String name, SSLSession context)
