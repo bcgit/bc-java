@@ -1,7 +1,7 @@
 package org.bouncycastle.est;
 
 /**
- * CSRRequestResponse
+ * Holder class for a response containing the details making up /csrattrs response.
  */
 public class CSRRequestResponse
 {

@@ -4,6 +4,9 @@ import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.util.Store;
 
+/**
+ * Holder class for a SimplePKIResponse containing the details making up /cacerts response.
+ */
 public class CACertsResponse
 {
     private final Store<X509CertificateHolder> store;
