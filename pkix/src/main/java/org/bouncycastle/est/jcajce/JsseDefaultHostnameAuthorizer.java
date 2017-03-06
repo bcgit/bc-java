@@ -33,7 +33,7 @@ public class JsseDefaultHostnameAuthorizer
             CertificateFactory fac = CertificateFactory.getInstance("X509");
             X509Certificate cert = (
                 java.security.cert.X509Certificate)fac.generateCertificate(
-                new ByteArrayInputStream(((javax.security.cert.X509Certificate)context.getPeerCertificateChain()[0]).getEncoded()));
+                new ByteArrayInputStream((context.getPeerCertificates()[0]).getEncoded()));
 
             return verify(name, cert);
         }
