@@ -23,6 +23,9 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 
+/**
+ * General utility methods for building common objects for supporting the JCA/JCE/JSSE.
+ */
 public class JcaJceUtils
 {
 

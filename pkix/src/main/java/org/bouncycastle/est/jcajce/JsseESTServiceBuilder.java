@@ -18,7 +18,7 @@ public class JsseESTServiceBuilder
     extends ESTServiceBuilder
 {
     protected final SSLSocketFactoryCreator socketFactoryCreator;
-    protected JsseHostnameAuthorizer hostNameAuthorizer = new JsseDefaultHostnameVerifier();
+    protected JsseHostnameAuthorizer hostNameAuthorizer = new JsseDefaultHostnameAuthorizer();
     protected int timeoutMillis = 0;
     protected ChannelBindingProvider bindingProvider;
     protected Set<String> supportedSuites = new HashSet<String>();
