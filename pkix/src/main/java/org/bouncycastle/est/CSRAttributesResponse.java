@@ -10,6 +10,9 @@ import org.bouncycastle.asn1.est.AttrOrOID;
 import org.bouncycastle.asn1.est.CsrAttrs;
 import org.bouncycastle.util.Encodable;
 
+/**
+ * Wrapper class around a CsrAttrs structure.
+ */
 public class CSRAttributesResponse
     implements Encodable
 {
