@@ -7,19 +7,19 @@ import java.io.OutputStream;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
+import org.bouncycastle.est.LimitedSource;
 import org.bouncycastle.est.Source;
-import org.bouncycastle.est.SourceLimiter;
 import org.bouncycastle.est.TLSUniqueProvider;
 
 
-public class SSLSocketSource
-    implements Source<SSLSession>, TLSUniqueProvider, SourceLimiter
+class LimitedSSLSocketSource
+    implements Source<SSLSession>, TLSUniqueProvider, LimitedSource
 {
     protected final SSLSocket socket;
     private final ChannelBindingProvider bindingProvider;
     private final Long absoluteReadLimit;
 
-    public SSLSocketSource(SSLSocket sock, ChannelBindingProvider bindingProvider, Long absoluteReadLimit)
+    public LimitedSSLSocketSource(SSLSocket sock, ChannelBindingProvider bindingProvider, Long absoluteReadLimit)
     {
         this.socket = sock;
         this.bindingProvider = bindingProvider;
@@ -45,19 +45,15 @@ public class SSLSocketSource
 
     public byte[] getTLSUnique()
     {
-        if (bindingProvider != null)
+        if (isTLSUniqueAvailable())
         {
             return bindingProvider.getChannelBinding(socket, "tls-unique");
         }
-        throw new IllegalArgumentException("No binding provider.");
+        throw new IllegalStateException("No binding provider.");
     }
 
     public boolean isTLSUniqueAvailable()
     {
-        if (bindingProvider == null)
-        {
-            return false;
-        }
         return bindingProvider.canAccessChannelBinding(socket);
     }
 

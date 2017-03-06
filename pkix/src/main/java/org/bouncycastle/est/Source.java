@@ -20,7 +20,6 @@ public interface Source<T>
 
     T getSession();
 
-
     void close()
         throws IOException;
 
