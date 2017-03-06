@@ -4,6 +4,9 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.util.Store;
 
 
+/**
+ * Holder class for a response containing the details making up a /simpleenroll response.
+ */
 public class EnrollmentResponse
 {
     private final Store<X509CertificateHolder> store;
