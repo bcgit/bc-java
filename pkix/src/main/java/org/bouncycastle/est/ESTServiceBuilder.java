@@ -2,7 +2,7 @@ package org.bouncycastle.est;
 
 
 /**
- * Build a RFC7030 client.
+ * Build an RFC7030 (EST) service.
  */
 public class ESTServiceBuilder
 {
