@@ -28,7 +28,7 @@ import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
 
 /**
- * EST provides unified access to an EST server which is defined as implementing
+ * ESTService provides unified access to an EST server which is defined as implementing
  * RFC7030.
  */
 public class ESTService
@@ -315,7 +315,7 @@ public class ESTService
                     // Add challenge password from tls unique
                     //
 
-                    if (source instanceof TLSUniqueProvider)
+                    if (source instanceof TLSUniqueProvider && ((TLSUniqueProvider)source).isTLSUniqueAvailable())
                     {
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         byte[] tlsUnique = ((TLSUniqueProvider)source).getTLSUnique();
