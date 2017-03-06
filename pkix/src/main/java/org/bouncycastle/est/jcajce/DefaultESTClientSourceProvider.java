@@ -104,6 +104,6 @@ class DefaultESTClientSourceProvider
         {
             throw new IOException("Hostname was not verified: " + host);
         }
-        return new SSLSocketSource(sock, bindingProvider, absoluteLimit);
+        return new LimitedSSLSocketSource(sock, bindingProvider, absoluteLimit);
     }
 }

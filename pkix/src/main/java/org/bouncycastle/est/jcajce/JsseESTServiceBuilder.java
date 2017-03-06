@@ -12,7 +12,7 @@ import org.bouncycastle.est.ESTServiceBuilder;
 
 
 /**
- * Build a RFC7030 client.
+ * Build an RFC7030 (EST) service based on the JSSE.
  */
 public class JsseESTServiceBuilder
     extends ESTServiceBuilder

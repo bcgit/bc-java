@@ -33,9 +33,9 @@ public class ESTResponse
         this.originalRequest = originalRequest;
         this.source = source;
 
-        if (source instanceof SourceLimiter)
+        if (source instanceof LimitedSource)
         {
-            this.absoluteReadLimit = ((SourceLimiter)source).getAbsoluteReadLimit();
+            this.absoluteReadLimit = ((LimitedSource)source).getAbsoluteReadLimit();
         }
 
         Set<String> opts = Properties.asKeySet("org.bouncycastle.debug.est");
