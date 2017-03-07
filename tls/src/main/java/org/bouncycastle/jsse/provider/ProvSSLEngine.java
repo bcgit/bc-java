@@ -14,8 +14,8 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.X509TrustManager;
 
-import org.bouncycastle.jsse.BcSSLConnection;
-import org.bouncycastle.jsse.BcSSLEngine;
+import org.bouncycastle.jsse.BCSSLConnection;
+import org.bouncycastle.jsse.BCSSLEngine;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
@@ -26,7 +26,7 @@ import org.bouncycastle.tls.TlsServerProtocol;
  */
 class ProvSSLEngine
     extends SSLEngine
-    implements BcSSLEngine, ProvTlsManager
+    implements BCSSLEngine, ProvTlsManager
 {
     protected final ProvSSLContextSpi context;
     protected final ContextData contextData;
@@ -39,7 +39,7 @@ class ProvSSLEngine
     protected HandshakeStatus handshakeStatus = HandshakeStatus.NOT_HANDSHAKING; 
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
-    protected BcSSLConnection connection = null;
+    protected BCSSLConnection connection = null;
     protected SSLSession handshakeSession = null;
 
     protected ProvSSLEngine(ProvSSLContextSpi context, ContextData contextData)
@@ -128,7 +128,7 @@ class ProvSSLEngine
         throw new UnsupportedOperationException();
     }
 
-    public synchronized BcSSLConnection getConnection()
+    public synchronized BCSSLConnection getConnection()
     {
         return connection;
     }

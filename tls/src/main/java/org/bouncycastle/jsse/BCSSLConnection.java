@@ -5,7 +5,7 @@ import javax.net.ssl.SSLSession;
 /**
  * A BCJSSE-specific interface providing access to extended connection-specific functionality.
  */
-public interface BcSSLConnection
+public interface BCSSLConnection
 {
     /**
      * Request TLS Channel Bindings for this connection. See <a href="">RFC 5929</a> for details.
