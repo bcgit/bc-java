@@ -341,7 +341,6 @@ public class EnrollExample
         System.out.println("--keyStoreType <JKS>                   Optional Key Store type, defaults to JKS");
         System.out.println("--auth <realm:user:password>           Auth credentials, if real is not");
         System.out.println("--tls <version>                        Use this TLS version when creating socket factory, Eg TLSv1.2");
-        System.out.println("--tlsProvider <provider>               The JSSE Provider.");
         System.out.println("--tlsProvider <provider> <class>       The JSSE Provider.");
         System.out.println("--pop                                  Turn on PoP");
         System.out.println("--to <milliseconds>                    Timeout in milliseconds.");

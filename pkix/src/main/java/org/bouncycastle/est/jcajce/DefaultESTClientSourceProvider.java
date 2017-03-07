@@ -4,7 +4,11 @@ package org.bouncycastle.est.jcajce;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
+import javax.net.ssl.HandshakeCompletedEvent;
+import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
@@ -54,10 +58,12 @@ class DefaultESTClientSourceProvider
 
         sock.startHandshake();
 
-        if (hostNameAuthorizer != null) {
-           if (!hostNameAuthorizer.verified(host,sock.getSession())) {
-               throw new IOException("Host name could not be verified.");
-           }
+        if (hostNameAuthorizer != null)
+        {
+            if (!hostNameAuthorizer.verified(host, sock.getSession()))
+            {
+                throw new IOException("Host name could not be verified.");
+            }
         }
 
         {

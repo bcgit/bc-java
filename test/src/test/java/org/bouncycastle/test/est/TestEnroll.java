@@ -1,6 +1,7 @@
 package org.bouncycastle.test.est;
 
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.net.SocketException;
@@ -20,6 +21,9 @@ import javax.net.ssl.SSLHandshakeException;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
@@ -32,9 +36,9 @@ import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.EnrollmentResponse;
 import org.bouncycastle.est.HttpAuth;
 import org.bouncycastle.est.jcajce.ChannelBindingProvider;
-import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaHttpAuthBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
+import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
 import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.operator.ContentSigner;
@@ -43,9 +47,9 @@ import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
+import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestEnroll
@@ -726,14 +730,12 @@ public class TestEnroll
      * @throws Exception
      */
     @Test()
-    @Ignore("Possible race.")
     public void testEnrollUsingTLSClientAuthAndPOP()
         throws Exception
     {
 
         ESTTestUtils.ensureProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
         ESTTestUtils.ensureProvider();
-
 
         X509CertificateHolder caCert = ESTTestUtils.readPemCertificate(
             ESTServerUtils.makeRelativeToServerHome("/extCA/cacert.crt")
