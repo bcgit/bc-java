@@ -50,6 +50,20 @@ public class PKCS10CertificationRequestBuilder
     private List attributes = new ArrayList();
     private boolean leaveOffEmpty = false;
 
+
+    public PKCS10CertificationRequestBuilder(PKCS10CertificationRequestBuilder original)
+    {
+        this.publicKeyInfo = original.publicKeyInfo;
+        this.subject = original.subject;
+        this.leaveOffEmpty = original.leaveOffEmpty;
+        this.attributes = new ArrayList();
+        for (Object a : original.attributes)
+        {
+            this.attributes.add(a);
+        }
+    }
+
+
     /**
      * Basic constructor.
      *
@@ -77,7 +91,7 @@ public class PKCS10CertificationRequestBuilder
         {
             if (((Attribute)it.next()).getAttrType().equals(attrType))
             {
-                it.remove();
+                throw new IllegalStateException("Attribute " + attrType.toString() + " is already set");
             }
         }
         addAttribute(attrType, attrValue);
@@ -99,7 +113,7 @@ public class PKCS10CertificationRequestBuilder
         {
             if (((Attribute)it.next()).getAttrType().equals(attrType))
             {
-                it.remove();
+                throw new IllegalStateException("Attribute " + attrType.toString() + " is already set");
             }
         }
         addAttribute(attrType, attrValue);

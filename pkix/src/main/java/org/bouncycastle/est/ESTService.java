@@ -318,11 +318,13 @@ public class ESTService
 
                     if (source instanceof TLSUniqueProvider && ((TLSUniqueProvider)source).isTLSUniqueAvailable())
                     {
+                        PKCS10CertificationRequestBuilder localBuilder = new PKCS10CertificationRequestBuilder(builder);
+
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         byte[] tlsUnique = ((TLSUniqueProvider)source).getTLSUnique();
 
-                        builder.setAttribute(PKCSObjectIdentifiers.pkcs_9_at_challengePassword, new DERPrintableString(Base64.toBase64String(tlsUnique)));
-                        bos.write(annotateRequest(builder.build(contentSigner).getEncoded()).getBytes());
+                        localBuilder.setAttribute(PKCSObjectIdentifiers.pkcs_9_at_challengePassword, new DERPrintableString(Base64.toBase64String(tlsUnique)));
+                        bos.write(annotateRequest(localBuilder.build(contentSigner).getEncoded()).getBytes());
                         bos.flush();
 
                         ESTRequestBuilder reqBuilder = new ESTRequestBuilder(request).withData(bos.toByteArray());
