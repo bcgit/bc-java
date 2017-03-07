@@ -274,6 +274,17 @@ Signature Algorithm: org.bouncycastle.asn1.x509.AlgorithmIdentifier@ca7a8819
 
 ```
 
+#### Enrollment with PoP
+Not all Java TLS providers support the accessing of the TLS unique value that is required
+to perform PoP. 
+With these clients users are advised to use the BouncyCastle JSSE provider.
+
+
+```
+./enroll.sh -t server.ta.pem -u https://testrfc7030.cisco.com:8443/.well-known/est/ --auth estuser:estpwd -c BARRY --tlsProvider BCJSSE org.bouncycastle.jsse.provider.BouncyCastleJsseProvider
+```
+
+
 ---
 Unit Tests for Enrollment can be found in:
 

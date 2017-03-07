@@ -9,6 +9,7 @@ import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -320,14 +321,14 @@ public class ESTService
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         byte[] tlsUnique = ((TLSUniqueProvider)source).getTLSUnique();
 
-                        builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_challengePassword, new DERPrintableString(Base64.toBase64String(tlsUnique)));
+                        builder.setAttribute(PKCSObjectIdentifiers.pkcs_9_at_challengePassword, new DERPrintableString(Base64.toBase64String(tlsUnique)));
                         bos.write(annotateRequest(builder.build(contentSigner).getEncoded()).getBytes());
                         bos.flush();
 
                         ESTRequestBuilder reqBuilder = new ESTRequestBuilder(request).withData(bos.toByteArray());
 
-                        reqBuilder.addHeader("Content-Type", "application/pkcs10");
-                        reqBuilder.addHeader("Content-Transfer-Encoding", "base64");
+                        reqBuilder.setHeader("Content-Type", "application/pkcs10");
+                        reqBuilder.setHeader("Content-Transfer-Encoding", "base64");
                         reqBuilder.setHeader("Content-Length", Long.toString(bos.size()));
 
                         return reqBuilder.build();
