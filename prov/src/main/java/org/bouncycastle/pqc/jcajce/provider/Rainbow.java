@@ -30,7 +30,6 @@ public class Rainbow
             AsymmetricKeyInfoConverter keyFact = new RainbowKeyFactorySpi();
 
             registerOid(provider, PQCObjectIdentifiers.rainbow, "Rainbow", keyFact);
-            registerOidAlgorithmParameters(provider, PQCObjectIdentifiers.rainbow, "Rainbow");
         }
     }
 }

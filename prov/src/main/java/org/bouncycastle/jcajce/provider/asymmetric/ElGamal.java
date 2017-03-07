@@ -40,7 +40,7 @@ public class ElGamal
             AsymmetricKeyInfoConverter keyFact = new KeyFactorySpi();
 
             registerOid(provider, OIWObjectIdentifiers.elGamalAlgorithm, "ELGAMAL", keyFact);
-            registerOidAlgorithmParameters(provider, OIWObjectIdentifiers.elGamalAlgorithm, "ELGAMAL");
+            registerOidAlgorithmParameterGenerator(provider, OIWObjectIdentifiers.elGamalAlgorithm, "ELGAMAL");
         }
     }
 }
