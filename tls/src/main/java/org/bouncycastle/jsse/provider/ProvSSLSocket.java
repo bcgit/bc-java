@@ -10,7 +10,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 
-import org.bouncycastle.jsse.BcSSLConnection;
+import org.bouncycastle.jsse.BCSSLConnection;
 
 class ProvSSLSocket
     extends ProvSSLSocketBase
@@ -67,7 +67,7 @@ class ProvSSLSocket
         super.close();
     }
 
-    public BcSSLConnection getConnection()
+    public BCSSLConnection getConnection()
     {
         return engine.getConnection();
     }
