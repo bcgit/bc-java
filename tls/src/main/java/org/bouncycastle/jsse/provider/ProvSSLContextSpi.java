@@ -119,6 +119,7 @@ class ProvSSLContextSpi
     }
 
     protected final TlsCryptoProvider cryptoProvider;
+    protected final String[] defaultProtocols;
 
     protected boolean initialized = false;
 
@@ -130,7 +131,13 @@ class ProvSSLContextSpi
 
     ProvSSLContextSpi(TlsCryptoProvider cryptoProvider)
     {
+        this(cryptoProvider, new String[]{ "TLSv1.2" });
+    }
+
+    ProvSSLContextSpi(TlsCryptoProvider cryptoProvider, String[] defaultProtocols)
+    {
         this.cryptoProvider = cryptoProvider;
+        this.defaultProtocols = defaultProtocols;
     }
 
     int[] convertCipherSuites(String[] suites)
@@ -175,7 +182,7 @@ class ProvSSLContextSpi
 
     String[] getDefaultProtocols()
     {
-        return new String[]{ "TLSv1.2" };
+        return defaultProtocols;
     }
 
     ProtocolVersion getMaximumVersion(String[] protocols)
