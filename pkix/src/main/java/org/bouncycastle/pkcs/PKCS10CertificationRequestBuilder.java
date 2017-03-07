@@ -84,6 +84,28 @@ public class PKCS10CertificationRequestBuilder
         return this;
     }
 
+    /**
+     * Add an attribute with multiple values to the certification request we are building.
+     * Removed existing attributes with the same attrType.
+     *
+     * @param attrType  the OID giving the type of the attribute.
+     * @param attrValue the ASN.1 structure that forms the value of the attribute.
+     * @return this builder object.
+     */
+    public PKCS10CertificationRequestBuilder setAttribute(ASN1ObjectIdentifier attrType, ASN1Encodable[] attrValue)
+    {
+        // Remove existing copies of the attribute.
+        for (Iterator it = attributes.iterator(); it.hasNext(); )
+        {
+            if (((Attribute)it.next()).getAttrType().equals(attrType))
+            {
+                it.remove();
+            }
+        }
+        addAttribute(attrType, attrValue);
+        return this;
+    }
+
 
     /**
      * Add an attribute to the certification request we are building.
