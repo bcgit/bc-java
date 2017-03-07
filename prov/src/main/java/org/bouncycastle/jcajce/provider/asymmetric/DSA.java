@@ -79,7 +79,7 @@ public class DSA
                 provider.addAlgorithm("Alg.Alias.Signature." + DSAUtil.dsaOids[i], "DSA");
 
                 registerOid(provider, DSAUtil.dsaOids[i], "DSA", keyFact);
-                registerOidAlgorithmParameters(provider, DSAUtil.dsaOids[i], "DSA");
+                registerOidAlgorithmParameterGenerator(provider, DSAUtil.dsaOids[i], "DSA");
             }
         }
     }
