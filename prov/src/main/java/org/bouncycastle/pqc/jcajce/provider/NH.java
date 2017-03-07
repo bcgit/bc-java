@@ -27,7 +27,6 @@ public class NH
             AsymmetricKeyInfoConverter keyFact = new NHKeyFactorySpi();
 
             registerOid(provider, PQCObjectIdentifiers.newHope, "NH", keyFact);
-            registerOidAlgorithmParameters(provider, PQCObjectIdentifiers.newHope, "NH");
         }
     }
 }

@@ -31,7 +31,7 @@ public class GOST
             provider.addAlgorithm("AlgorithmParameterGenerator.GOST3410", PREFIX + "AlgorithmParameterGeneratorSpi");
 
             registerOid(provider, CryptoProObjectIdentifiers.gostR3410_94, "GOST3410", new KeyFactorySpi());
-            registerOidAlgorithmParameters(provider, CryptoProObjectIdentifiers.gostR3410_94, "GOST3410");
+            registerOidAlgorithmParameterGenerator(provider, CryptoProObjectIdentifiers.gostR3410_94, "GOST3410");
 
             provider.addAlgorithm("Signature.GOST3410", PREFIX + "SignatureSpi");
             provider.addAlgorithm("Alg.Alias.Signature.GOST-3410", "GOST3410");
