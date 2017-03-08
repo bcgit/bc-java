@@ -57,8 +57,8 @@ import org.bouncycastle.asn1.x509.V1TBSCertificateGenerator;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jsse.BcSSLConnection;
-import org.bouncycastle.jsse.BcSSLSocket;
+import org.bouncycastle.jsse.BCSSLConnection;
+import org.bouncycastle.jsse.BCSSLSocket;
 
 /**
  * Test Utils
@@ -323,9 +323,9 @@ class TestUtils
 
     public static byte[] getChannelBinding(SSLSocket s, String channelBinding)
     {
-        if (s instanceof BcSSLSocket)
+        if (s instanceof BCSSLSocket)
         {
-            BcSSLConnection connection = ((BcSSLSocket)s).getConnection();
+            BCSSLConnection connection = ((BCSSLSocket)s).getConnection();
             if (connection != null)
             {
                 return connection.getChannelBinding(channelBinding);

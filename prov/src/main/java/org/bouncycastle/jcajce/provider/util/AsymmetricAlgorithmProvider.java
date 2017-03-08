@@ -36,6 +36,11 @@ public abstract class AsymmetricAlgorithmProvider
 
     protected void registerOidAlgorithmParameters(ConfigurableProvider provider, ASN1ObjectIdentifier oid, String name)
     {
+        provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + oid, name);
+    }
+
+    protected void registerOidAlgorithmParameterGenerator(ConfigurableProvider provider, ASN1ObjectIdentifier oid, String name)
+    {
         provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + oid, name);
         provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + oid, name);
     }

@@ -5,10 +5,11 @@ import javax.net.ssl.SSLSession;
 /**
  * A BCJSSE-specific interface providing access to extended connection-specific functionality.
  */
-public interface BcSSLConnection
+public interface BCSSLConnection
 {
     /**
-     * Request TLS Channel Bindings for this connection. See <a href="">RFC 5929</a> for details.
+     * Request TLS Channel Bindings for this connection. See
+     * <a href="https://tools.ietf.org/html/rfc5929">RFC 5929</a> for details.
      * 
      * @param channelBinding
      *            An IANA-registered "Channel-binding unique prefix" valid for TLS e.g. "tls-unique".
