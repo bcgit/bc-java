@@ -2,12 +2,12 @@ package org.bouncycastle.jsse.provider;
 
 import javax.net.ssl.SSLSession;
 
-import org.bouncycastle.jsse.BcSSLConnection;
+import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.tls.ChannelBinding;
 import org.bouncycastle.tls.TlsContext;
 
 class ProvSSLConnection
-    implements BcSSLConnection
+    implements BCSSLConnection
 {
     protected final TlsContext tlsContext;
     protected final SSLSession session; 
