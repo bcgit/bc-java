@@ -12,7 +12,7 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.X509TrustManager;
 
-import org.bouncycastle.jsse.BcSSLConnection;
+import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
@@ -34,7 +34,7 @@ class ProvSSLSocketDirect
     protected boolean initialHandshakeBegun = false;
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
-    protected BcSSLConnection connection = null;
+    protected BCSSLConnection connection = null;
     protected SSLSession handshakeSession = null;
 
     protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData)
@@ -104,7 +104,7 @@ class ProvSSLSocketDirect
         super.close();
     }
 
-    public synchronized BcSSLConnection getConnection()
+    public synchronized BCSSLConnection getConnection()
     {
         try
         {
@@ -163,7 +163,7 @@ class ProvSSLSocketDirect
     @Override
     public synchronized SSLSession getSession()
     {
-        BcSSLConnection connection = getConnection();
+        BCSSLConnection connection = getConnection();
 
         return connection == null ? ProvSSLSession.NULL_SESSION : connection.getSession();
     }
