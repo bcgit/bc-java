@@ -10,8 +10,8 @@ import java.util.Set;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.est.CSRRequestResponse;
 import org.bouncycastle.est.ESTService;
-import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
+import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
 import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -40,6 +40,7 @@ public class CSRAttributesExample
         String tlsProviderClass = null;
         boolean noNameVerifier = false;
         int timeout = 0;
+        String label = null;
 
         try
         {
@@ -72,8 +73,15 @@ public class CSRAttributesExample
                 {
                     timeout = ExampleUtils.nextArgAsInteger("Timeout", args, t);
                     t += 1;
-                } else if (arg.equals("--no-name-verifier")) {
+                }
+                else if (arg.equals("--no-name-verifier"))
+                {
                     noNameVerifier = true;
+                }
+                else if (arg.equals("--label"))
+                {
+                    label = ExampleUtils.nextArgAsString("CA Label", args, t);
+                    t += 1;
                 }
                 else
                 {
@@ -133,8 +141,10 @@ public class CSRAttributesExample
 
         builder = new JsseESTServiceBuilder(serverRootUrl, sfcb.build());
         builder.withTimeout(timeout);
+        builder.withLabel(label);
 
-        if (noNameVerifier) {
+        if (noNameVerifier)
+        {
             builder.withHostNameAuthorizer(null);
         }
 
@@ -176,6 +186,7 @@ public class CSRAttributesExample
         System.out.println("--tlsProvider <provider> <class>  The JSSE Provider.");
         System.out.println("--to <milliseconds>               Timeout in milliseconds.");
         System.out.println("--no-name-verifier                No hostname verifier.");
+        System.out.println("--label <ca label>                CA Label.");
     }
 
 }

@@ -116,8 +116,6 @@ class CTEBase64InputStream
     public void close()
         throws IOException
     {
-        System.out.println(rp + " " + wp);
-
         src.close();
     }
 
