@@ -131,6 +131,42 @@ class RecordStream
         this.pendingCipher = null;
     }
 
+    void checkRecordHeader(byte[] recordHeader) throws IOException
+    {
+        short type = TlsUtils.readUint8(recordHeader, TLS_HEADER_TYPE_OFFSET);
+
+        /*
+         * RFC 5246 6. If a TLS implementation receives an unexpected record type, it MUST send an
+         * unexpected_message alert.
+         */
+        checkType(type, AlertDescription.unexpected_message);
+
+        if (!restrictReadVersion)
+        {
+            int version = TlsUtils.readVersionRaw(recordHeader, TLS_HEADER_VERSION_OFFSET);
+            if ((version & 0xffffff00) != 0x0300)
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+        }
+        else
+        {
+            ProtocolVersion version = TlsUtils.readVersion(recordHeader, TLS_HEADER_VERSION_OFFSET);
+            if (readVersion == null)
+            {
+                // Will be set later in 'readRecord'
+            }
+            else if (!version.equals(readVersion))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+        }
+
+        int length = TlsUtils.readUint16(recordHeader, TLS_HEADER_LENGTH_OFFSET);
+
+        checkLength(length, ciphertextLimit, AlertDescription.record_overflow);
+    }
+
     boolean readRecord()
         throws IOException
     {
@@ -170,6 +206,9 @@ class RecordStream
         }
 
         int length = TlsUtils.readUint16(recordHeader, TLS_HEADER_LENGTH_OFFSET);
+
+        checkLength(length, ciphertextLimit, AlertDescription.record_overflow);
+
         byte[] plaintext = decodeAndVerify(type, input, length);
         handler.processRecord(type, plaintext, 0, plaintext.length);
         return true;
@@ -178,8 +217,6 @@ class RecordStream
     byte[] decodeAndVerify(short type, InputStream input, int len)
         throws IOException
     {
-        checkLength(len, ciphertextLimit, AlertDescription.record_overflow);
-
         byte[] buf = TlsUtils.readFully(len, input);
         byte[] decoded = readCipher.decodeCiphertext(readSeqNo++, type, buf, 0, buf.length);
 
