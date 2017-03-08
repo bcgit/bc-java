@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.lang.reflect.Array;
 import java.net.SocketTimeoutException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -19,6 +20,7 @@ import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
@@ -1732,6 +1734,77 @@ public class TestCACertsFetch
         res.getFinished().await(5, TimeUnit.SECONDS);
 
     }
+
+
+    @Test()
+    public void testCertResponseWithLabelApplication()
+        throws Exception
+    {
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+            "Status: 200 OK\n" +
+            "Content-Type: application/pkcs7-mime\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 655\n" +
+            "\n" +
+            "MIIB3QYJKoZIhvcNAQcCoIIBzjCCAcoCAQExADALBgkqhkiG9w0BBwGgggGwMIIB\n" +
+            "rDCCAVKgAwIBAgICLdwwCQYHKoZIzj0EATAXMRUwEwYDVQQDDAxlc3RFeGFtcGxl\n" +
+            "Q0EwHhcNMTQwNzA5MTY0NzExWhcNMzMwOTA3MTY0NzExWjAXMRUwEwYDVQQDDAxl\n" +
+            "c3RFeGFtcGxlQ0EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATbixdp4YMKGmfj\n" +
+            "fF2rzwRQXMX+2YoJvsskqU3qMUAJhfrYvMPo3smPWbE0jftfw+UlsKD3HiHUCOCV\n" +
+            "ySHKSfPbo4GOMIGLMAwGA1UdEwQFMAMBAf8wHQYDVR0OBBYEFN0KrHLtKvSyE5OI\n" +
+            "c9MAA9sCAbTyMB8GA1UdIwQYMBaAFN0KrHLtKvSyE5OIc9MAA9sCAbTyMDsGA1Ud\n" +
+            "EQQ0MDKCCWxvY2FsaG9zdIINaXA2LWxvY2FsaG9zdIcEfwAAAYcQAAAAAAAAAAAA\n" +
+            "AAAAAAAAATAJBgcqhkjOPQQBA0kAMEYCIQDNq+Vjoi6mgSqXSLzJ7OVs+RzjGox3\n" +
+            "xXttoJ9B7eDjjgIhALpU+OVvyfhDJbHegWC02OX6laPTBNjAf6V8aVOP1rYdoQAx\n" +
+            "AA==\n");
+
+        pw.flush();
+
+
+        final ArrayList<String> lineBuffer = new ArrayList<String>();
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+        HttpResponder res = new HttpResponder(lineBuffer);
+        try
+        {
+
+            int port = res.open(responseData.toByteArray());
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
+            JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+            builder.addCipherSuites(res.getSupportedCipherSuites());
+
+            builder.withLabel("the_label");
+
+            ESTService est = builder.build();
+
+
+            CACertsResponse resp = est.getCACerts();
+
+            Assert.assertTrue(lineBuffer.get(0).contains("/.well-known/est/the_label/cacerts"));
+
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+
 
 
     public static void main(String[] args)

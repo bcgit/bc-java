@@ -12,8 +12,8 @@ import javax.net.ssl.SSLSession;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.est.CACertsResponse;
 import org.bouncycastle.est.ESTService;
-import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
+import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
 import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -42,6 +42,7 @@ public class CaCertsExample
         String tlsProvider = "SunJSSE";
         String tlsProviderClass = null;
         boolean noNameVerifier = false;
+        String label = null;
         int timeout = 0;
 
         try
@@ -79,8 +80,15 @@ public class CaCertsExample
                 {
                     timeout = ExampleUtils.nextArgAsInteger("Timeout", args, t);
                     t += 1;
-                } else if (arg.equals("--no-name-verifier")) {
+                }
+                else if (arg.equals("--no-name-verifier"))
+                {
                     noNameVerifier = true;
+                }
+                else if (arg.equals("--label"))
+                {
+                    label = ExampleUtils.nextArgAsString("CA Label", args, t);
+                    t += 1;
                 }
                 else
                 {
@@ -140,11 +148,12 @@ public class CaCertsExample
 
         builder = new JsseESTServiceBuilder(serverRootUrl, sfcb.build());
 
-        if (noNameVerifier) {
+        if (noNameVerifier)
+        {
             builder.withHostNameAuthorizer(null);
         }
         builder.withTimeout(timeout);
-
+        builder.withLabel(label);
         //
         // Make a client.
         //
@@ -270,6 +279,7 @@ public class CaCertsExample
         System.out.println("--tlsProvider <provider> <class>  The JSSE Provider.");
         System.out.println("--to <milliseconds>               Timeout in milliseconds.");
         System.out.println("--no-name-verifier                No hostname verifier.");
+        System.out.println("--label <ca label>                CA Label.");
     }
 
 }

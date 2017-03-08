@@ -1,9 +1,11 @@
 package org.bouncycastle.test.est;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -16,6 +18,7 @@ import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -27,7 +30,6 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.security.cert.X509Certificate;
 
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.test.est.examples.ExampleUtils;
 import org.bouncycastle.util.io.pem.PemReader;
 
 /**
@@ -46,13 +48,26 @@ public class HttpResponder
     private String tlsProtocol = null;
     ServerSocket serverSocket = null;
 
+    List<String> lineBuffer = null;
+
     private String[] cipherSuites;
 
     Object[] creds = null;
 
+    public HttpResponder(byte[] response, List<String> lineBuffer)
+    {
+        this.response = response;
+        this.lineBuffer = lineBuffer;
+    }
+
     public HttpResponder(byte[] response)
     {
         this.response = response;
+    }
+
+    public HttpResponder(List<String> lineBuffer)
+    {
+        this.lineBuffer = lineBuffer;
     }
 
     public HttpResponder()
@@ -76,7 +91,9 @@ public class HttpResponder
                 {
                     creds = readCertAndKey(ESTServerUtils.makeRelativeToServerHome("estCA/private/estservercertandkey.pem"));
                     ks.setKeyEntry("server", KeyFactory.getInstance("EC").generatePrivate(((PKCS8EncodedKeySpec)creds[1])), "password".toCharArray(), new Certificate[]{(Certificate)creds[0]});
-                } else {
+                }
+                else
+                {
                     ks.setKeyEntry("server", (Key)creds[1], "password".toCharArray(), new Certificate[]{(Certificate)creds[0]});
                 }
 
@@ -125,7 +142,18 @@ public class HttpResponder
                 throw new RuntimeException("Could not open test server socket.");
             }
             ready.countDown();
-             sock = serverSocket.accept();
+            sock = serverSocket.accept();
+
+            if (lineBuffer != null)
+            {
+                BufferedReader bin = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+                String line = null;
+                while ((line = bin.readLine()) != null && line.length() > 0)
+                {
+                    lineBuffer.add(line);
+                }
+            }
+
 
             if (response != null)
             {
@@ -138,8 +166,9 @@ public class HttpResponder
             }
 
 
-
-        }catch (InterruptedException ie) {
+        }
+        catch (InterruptedException ie)
+        {
             try
             {
                 sock.close();
@@ -153,7 +182,8 @@ public class HttpResponder
         catch (Exception e)
         {
             e.printStackTrace();
-        } finally
+        }
+        finally
         {
             try
             {

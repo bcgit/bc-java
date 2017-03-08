@@ -1,7 +1,6 @@
 package org.bouncycastle.test.est;
 
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.net.SocketException;
@@ -14,6 +13,7 @@ import java.security.cert.Certificate;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -21,9 +21,6 @@ import javax.net.ssl.SSLHandshakeException;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
@@ -47,7 +44,6 @@ import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
-import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -2018,6 +2014,107 @@ public class TestEnroll
                 Assert.assertEquals("Must be ESTException", t.getClass(), ESTException.class);
                 Assert.assertTrue("", t.getMessage().contains("not Retry-After header"));
             }
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+        finally
+        {
+            res.close();
+        }
+
+        res.getFinished().await(5, TimeUnit.SECONDS);
+
+    }
+
+
+    @Test()
+    public void testWithLabel()
+        throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 202 Accepted\n" +
+            "Status: 202 Accepted\n" +
+            "Content-Length: 0\n\n");
+        pw.flush();
+
+        //
+        // Test content length enforcement.
+        // Fail when content-length = read limit.
+        //
+
+        ArrayList<String> lines = new ArrayList<String>();
+
+        HttpResponder res = new HttpResponder(lines);
+        try
+        {
+            ECGenParameterSpec ecGenSpec = new ECGenParameterSpec("prime256v1");
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", "BC");
+            kpg.initialize(ecGenSpec, new SecureRandom());
+            KeyPair enrollmentPair = kpg.generateKeyPair();
+
+
+            TrustAnchor ta = new TrustAnchor(
+                ESTTestUtils.toJavaX509Certificate(
+                    ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )
+                ), null);
+
+
+            PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
+                new X500Name("CN=Test"),
+                enrollmentPair.getPublic());
+
+            PKCS10CertificationRequest csr = pkcs10Builder.build(
+                new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+
+            //
+            // Even though we are using TLS we still need to use an HTTP auth.
+            //
+
+            int port = res.open(responseData.toByteArray());
+            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
+                JcaJceUtils.getCertPathTrustManager(
+                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                    )), null));
+
+            JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
+                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+
+            builder.addCipherSuites(res.getSupportedCipherSuites());
+            builder.withLabel("the_label");
+
+            /*
+                We are only checking the use of the label.
+             */
+
+
+            try
+            {
+                EnrollmentResponse resp = builder.build().simpleEnroll(false, csr,
+                    new HttpAuth(
+                        "estrealm",
+                        "estuser",
+                        "estpwd".toCharArray(),
+                        new SecureRandom(),
+                        new JcaDigestCalculatorProviderBuilder().setProvider("BC").build())
+                );
+                Assert.fail("Must throw exception.");
+            }
+            catch (Exception t)
+            {
+//                  // Not tested here, tested elsewhere.
+            }
+
+            Assert.assertTrue(lines.get(0).contains("/.well-known/est/the_label/simpleenroll"));
+
+
         }
         catch (Exception ex)
         {
