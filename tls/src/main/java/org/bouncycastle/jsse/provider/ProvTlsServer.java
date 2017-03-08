@@ -6,6 +6,8 @@ import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.X509KeyManager;
@@ -13,6 +15,7 @@ import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.ClientCertificateType;
@@ -34,6 +37,8 @@ class ProvTlsServer
     extends DefaultTlsServer
     implements ProvTlsPeer
 {
+    private static Logger LOG = Logger.getLogger(ProvTlsServer.class.getName());
+
     protected final ProvTlsManager manager;
     protected final ProvSSLParameters sslParameters;
 
@@ -186,31 +191,50 @@ class ProvTlsServer
         return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
     }
 
-//    @Override
-//    public int getSelectedCipherSuite() throws IOException
-//    {
-//        int selectedCipherSuite = super.getSelectedCipherSuite();
-//
-//        System.out.println("Server selected cipher suite: " + manager.getContext().getCipherSuiteString(selectedCipherSuite));
-//
-//        return selectedCipherSuite;
-//    }
-//
-//    @Override
-//    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
-//    {
-//        PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-//        out.println("JSSE server raised alert: " + AlertLevel.getText(alertLevel)
-//            + ", " + AlertDescription.getText(alertDescription));
-//        if (message != null)
-//        {
-//            out.println("> " + message);
-//        }
-//        if (cause != null)
-//        {
-//            cause.printStackTrace(out);
-//        }
-//    }
+    @Override
+    public int getSelectedCipherSuite() throws IOException
+    {
+        int selectedCipherSuite = super.getSelectedCipherSuite();
+
+        LOG.fine("Server selected cipher suite: " + manager.getContext().getCipherSuiteString(selectedCipherSuite));
+
+        return selectedCipherSuite;
+    }
+
+    @Override
+    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
+    {
+        Level level = alertLevel == AlertLevel.warning                      ? Level.FINE
+                    : alertDescription == AlertDescription.internal_error   ? Level.WARNING
+                    :                                                         Level.INFO;
+
+        if (LOG.isLoggable(level))
+        {
+            String msg = JsseUtils.getAlertLogMessage("Server raised", alertLevel, alertDescription);
+            if (message != null)
+            {
+                msg = msg + ": " + message;
+            }
+
+            LOG.log(level, msg, cause);
+        }
+    }
+
+    @Override
+    public void notifyAlertReceived(short alertLevel, short alertDescription)
+    {
+        super.notifyAlertReceived(alertLevel, alertDescription);
+
+        Level level = alertLevel == AlertLevel.warning  ? Level.FINE
+                    :                                     Level.INFO;
+
+        if (LOG.isLoggable(level))
+        {
+            String msg = JsseUtils.getAlertLogMessage("Server received", alertLevel, alertDescription);
+
+            LOG.log(level, msg);
+        }
+    }
 
     @Override
     public ProtocolVersion getServerVersion() throws IOException
@@ -228,6 +252,7 @@ class ProvTlsServer
                 String versionString = manager.getContext().getProtocolString(version);
                 if (versionString != null && JsseUtils.contains(protocols, versionString))
                 {
+                    LOG.fine("Server selected protocol version: " + version);
                     return serverVersion = version;
                 }
             }
