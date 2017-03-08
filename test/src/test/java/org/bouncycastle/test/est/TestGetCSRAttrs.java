@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -660,7 +661,7 @@ public class TestGetCSRAttrs
     }
 
     @Test
-    public void testFetchCaCertsWithTimeout()
+    public void testFetchCSRAttrWithTimeout()
         throws Exception
     {
         ESTTestUtils.ensureProvider();
@@ -702,6 +703,73 @@ public class TestGetCSRAttrs
         }
 
     }
+
+
+
+    @Test
+    public void testFetchCSRWithLabel()
+        throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+
+        ArrayList<String> lines = new ArrayList<String>();
+        HttpResponder res = new HttpResponder(lines);
+
+        final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+        PrintWriter pw = new PrintWriter(responseData);
+        pw.print("HTTP/1.1 200 OK\n" +
+            "Status: 200 OK\n" +
+            "Content-Type: application/csrattrs\n" +
+            "Content-Transfer-Encoding: base64\n" +
+            "Content-Length: 17\n\n" +
+            "MAkGBysGAQEBARY=\n");
+
+        pw.flush();
+
+
+        int port = res.open(responseData.toByteArray());
+
+        SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
+            JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null));
+
+        JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
+            "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+
+        builder.addCipherSuites(res.getSupportedCipherSuites());
+
+        builder.withLabel("the_label");
+
+        ESTService est = builder.build();
+
+
+        try
+        {
+            CSRRequestResponse csrRequestResponse = est.getCSRAttributes();
+            Assert.assertTrue(lines.get(0).contains("/.well-known/est/the_label/csrattrs"));
+        }
+        catch (Exception ex)
+        {
+
+            // Not tested here!
+//            Assert.assertEquals("", ESTException.class, ex.getClass());
+//            Assert.assertEquals("", SocketTimeoutException.class, ex.getCause().getClass());
+
+        }
+        finally
+        {
+            res.close();
+            res.getFinished().await(5, TimeUnit.SECONDS);
+        }
+
+
+
+    }
+
+
 
 
     public static void main(String[] args)

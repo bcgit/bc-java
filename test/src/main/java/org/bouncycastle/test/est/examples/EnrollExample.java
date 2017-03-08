@@ -16,9 +16,9 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.est.ESTAuth;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.EnrollmentResponse;
-import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaHttpAuthBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
+import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
 import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
@@ -55,6 +55,7 @@ public class EnrollExample
         boolean noNameVerifier = false;
         boolean pop = false;
         int timeout = 0;
+        String label = null;
         try
         {
             for (int t = 0; t < args.length; t++)
@@ -130,6 +131,11 @@ public class EnrollExample
                 {
                     noNameVerifier = true;
                 }
+                else if (arg.equals("--label"))
+                {
+                    label = ExampleUtils.nextArgAsString("CA Label", args, t);
+                    t += 1;
+                }
                 else
                 {
                     System.out.println(arg);
@@ -190,9 +196,7 @@ public class EnrollExample
 
         ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(keyPair.getPrivate());
 
-        // Make est client builder
-        //
-        JsseESTServiceBuilder builder = null;
+
 
         SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getCertPathTrustManager(ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificate(trustAnchorFile)), null));
         sfcb.withTLSVersion(tlsVersion);
@@ -210,25 +214,12 @@ public class EnrollExample
         }
 
         JsseESTServiceBuilder est = new JsseESTServiceBuilder(serverRootUrl, sfcb.build());
-
-
-//        JcaESTServiceBuilder est = new JcaESTServiceBuilder(serverRootUrl,
-//            JcaESTServiceBuilder.createDefaultSocketFactory(
-//                "TLS",
-//                null,
-//                null,
-//                JcaESTServiceBuilder.getCertPathTLSAuthorizer(),
-//                ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificate(trustAnchorFile)),
-//                null)
-//            );
-
-
-        builder = new JsseESTServiceBuilder(serverRootUrl, sfcb.build());
-        builder.withTimeout(timeout);
+        est.withTimeout(timeout);
+        est.withLabel(label);
 
         if (noNameVerifier)
         {
-            builder.withHostNameAuthorizer(null);
+            est.withHostNameAuthorizer(null);
         }
 
         ESTAuth auth = null;
@@ -345,7 +336,6 @@ public class EnrollExample
         System.out.println("--pop                                  Turn on PoP");
         System.out.println("--to <milliseconds>                    Timeout in milliseconds.");
         System.out.println("--no-name-verifier                     No hostname verifier.");
-
-
+        System.out.println("--label <ca label>                     CA Label.");
     }
 }

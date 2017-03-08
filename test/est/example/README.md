@@ -77,6 +77,8 @@ certificates from an EST server using the Bootstrapping procedure defined in RFC
 --tlsProvider <provider> <class>  The JSSE Provider.
 --to <milliseconds>               Timeout in milliseconds.
 --no-name-verifier                No hostname verifier.
+--label <ca label>                CA Label.
+
 
 ```
 
@@ -250,11 +252,11 @@ The enroll example has a number of options:
 --keyStoreType <JKS>                   Optional Key Store type, defaults to JKS
 --auth <realm:user:password>           Auth credentials, if real is not
 --tls <version>                        Use this TLS version when creating socket factory, Eg TLSv1.2
---tlsProvider <provider>               The JSSE Provider.
 --tlsProvider <provider> <class>       The JSSE Provider.
 --pop                                  Turn on PoP
 --to <milliseconds>                    Timeout in milliseconds.
 --no-name-verifier                     No hostname verifier.
+--label <ca label>                     CA Label.
 
 ```
 
@@ -308,6 +310,8 @@ anchor for the server to make this call.
 --tlsProvider <provider> <class>  The JSSE Provider.
 --to <milliseconds>               Timeout in milliseconds.
 --no-name-verifier                No hostname verifier.
+--label <ca label>                CA Label.
+
 ```
 
 

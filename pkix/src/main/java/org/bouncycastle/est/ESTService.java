@@ -4,12 +4,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.TimeZone;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -39,14 +40,33 @@ public class ESTService
     protected final String SIMPLE_REENROLL = "/simplereenroll";
     protected final String CSRATTRS = "/csrattrs";
     private final String server;
+    private final String label;
     private final ESTClientProvider clientProvider;
 
 
     ESTService(
-        String server,
+        String server, String label,
         ESTClientProvider clientProvider)
     {
         this.clientProvider = clientProvider;
+
+        if (label != null)
+        {
+            try
+            {
+                this.label = URLEncoder.encode(label, "UTF-8");
+            }
+            catch (UnsupportedEncodingException e)
+            {
+                throw new IllegalStateException(e.getMessage(), e);
+            }
+        }
+        else
+        {
+            this.label = null;
+        }
+
+
         if (server.endsWith("/"))
         {
             server = server.substring(0, server.length() - 1); // Trim off trailing slash
@@ -54,11 +74,25 @@ public class ESTService
         this.server = server;
     }
 
+    /**
+     * Utility method to extract all the X509Certificates from a store and return them in an array.
+     *
+     * @param store The store.
+     * @return An arrar of certificates/
+     */
     public static X509CertificateHolder[] storeToArray(Store<X509CertificateHolder> store)
     {
         return storeToArray(store, null);
     }
 
+    /**
+     * Utility method to extract all the X509Certificates from a store using a filter and to return them
+     * as an array.
+     *
+     * @param store    The store.
+     * @param selector The selector.
+     * @return An array of X509Certificates.
+     */
     public static X509CertificateHolder[] storeToArray(Store<X509CertificateHolder> store, Selector<X509CertificateHolder> selector)
     {
         Collection<X509CertificateHolder> c = store.getMatches(selector);
@@ -87,7 +121,7 @@ public class ESTService
         boolean failedBeforeClose = false;
         try
         {
-            url = new URL(server + CACERTS);
+            url = new URL(makeLabeledURL() + CACERTS);
 
             ESTClient client = clientProvider.makeClient();
             ESTRequest req = new ESTRequestBuilder("GET", url).withClient(client).build();
@@ -238,7 +272,9 @@ public class ESTService
         {
             final byte[] data = annotateRequest(certificationRequest.getEncoded()).getBytes();
 
-            URL url = new URL(server + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
+            URL url = new URL(makeLabeledURL() + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
+
+
             ESTClient client = clientProvider.makeClient();
             ESTRequestBuilder req = new ESTRequestBuilder("POST", url).withData(data).withClient(client);
 
@@ -300,7 +336,7 @@ public class ESTService
         ESTResponse resp = null;
         try
         {
-            URL url = new URL(server + (reEnroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
+            URL url = new URL(makeLabeledURL() + (reEnroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
             ESTClient client = clientProvider.makeClient();
 
             //
@@ -374,6 +410,12 @@ public class ESTService
     }
 
 
+    /**
+     * Handles the enroll response, deals with status codes and setting of delays.
+     * @param resp The response.
+     * @return An EnrollmentResponse.
+     * @throws IOException
+     */
     protected EnrollmentResponse handleEnrollResponse(ESTResponse resp)
         throws IOException
     {
@@ -439,6 +481,11 @@ public class ESTService
 
     }
 
+    /**
+     * Fetch he CSR Attributes from the server.
+     * @return A CSRRequestResponse with the attributes.
+     * @throws ESTException
+     */
     public CSRRequestResponse getCSRAttributes()
         throws ESTException
     {
@@ -454,7 +501,7 @@ public class ESTService
         URL url = null;
         try
         {
-            url = new URL(server + CSRATTRS);
+            url = new URL(makeLabeledURL() + CSRATTRS);
 
             ESTClient client = clientProvider.makeClient();
             ESTRequest req = new ESTRequestBuilder("GET", url).withClient(client).build(); //    new ESTRequest("GET", url, null);
@@ -556,5 +603,13 @@ public class ESTService
         return sw.toString();
     }
 
+    private String makeLabeledURL()
+    {
+        if (label != null)
+        {
+            return server + "/" + label;
+        }
+        return server;
+    }
 
 }
