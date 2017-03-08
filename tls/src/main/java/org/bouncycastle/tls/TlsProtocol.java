@@ -515,6 +515,30 @@ public abstract class TlsProtocol
         return len;
     }
 
+    protected void safeCheckRecordHeader(byte[] recordHeader)
+        throws IOException
+    {
+        try
+        {
+            recordStream.checkRecordHeader(recordHeader);
+        }
+        catch (TlsFatalAlert e)
+        {
+            this.failWithError(AlertLevel.fatal, e.getAlertDescription(), "Failed to read record", e);
+            throw e;
+        }
+        catch (IOException e)
+        {
+            this.failWithError(AlertLevel.fatal, AlertDescription.internal_error, "Failed to read record", e);
+            throw e;
+        }
+        catch (RuntimeException e)
+        {
+            this.failWithError(AlertLevel.fatal, AlertDescription.internal_error, "Failed to read record", e);
+            throw e;
+        }
+    }
+
     protected void safeReadRecord()
         throws IOException
     {
@@ -746,13 +770,14 @@ public abstract class TlsProtocol
         // loop while there are enough bytes to read the length of the next record
         while (inputBuffers.available() >= RecordStream.TLS_HEADER_SIZE)
         {
-            byte[] header = new byte[RecordStream.TLS_HEADER_SIZE];
-            inputBuffers.peek(header);
+            byte[] recordHeader = new byte[RecordStream.TLS_HEADER_SIZE];
+            inputBuffers.peek(recordHeader);
 
-            int totalLength = TlsUtils.readUint16(header, RecordStream.TLS_HEADER_LENGTH_OFFSET) + RecordStream.TLS_HEADER_SIZE;
+            int totalLength = TlsUtils.readUint16(recordHeader, RecordStream.TLS_HEADER_LENGTH_OFFSET) + RecordStream.TLS_HEADER_SIZE;
             if (inputBuffers.available() < totalLength)
             {
                 // not enough bytes to read a whole record
+                safeCheckRecordHeader(recordHeader);
                 break;
             }
 
