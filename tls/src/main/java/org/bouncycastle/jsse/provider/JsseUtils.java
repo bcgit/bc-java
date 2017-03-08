@@ -16,6 +16,7 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.HashAlgorithm;
@@ -175,6 +176,11 @@ class JsseUtils
             // TODO[jsse] Logging
             throw new RuntimeException(e);
         }
+    }
+
+    static String getAlertLogMessage(String root, short alertLevel, short alertDescription)
+    {
+        return root + " " + AlertLevel.getText(alertLevel) + " " + AlertDescription.getText(alertDescription) + " alert";
     }
 
     static Vector getSupportedSignatureAlgorithms(TlsCrypto crypto)
