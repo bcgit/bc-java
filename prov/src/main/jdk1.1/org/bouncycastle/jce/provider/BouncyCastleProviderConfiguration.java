@@ -1,5 +1,11 @@
 package org.bouncycastle.jce.provider;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import javax.crypto.spec.DHParameterSpec;
 
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
@@ -11,11 +17,11 @@ class BouncyCastleProviderConfiguration
 {
     private volatile ECParameterSpec ecImplicitCaParams;
     private volatile Object dhDefaultParams;
+    private volatile Set acceptableNamedCurves = new HashSet();
+    private volatile Map additionalECParameters = new HashMap();
 
     void setParameter(String parameterName, Object parameter)
     {
-        SecurityManager securityManager = System.getSecurityManager();
-
         if (parameterName.equals(ConfigurableProvider.THREAD_LOCAL_EC_IMPLICITLY_CA))
         {
             ECParameterSpec curveSpec;
@@ -29,7 +35,7 @@ class BouncyCastleProviderConfiguration
                 throw new IllegalArgumentException("not a valid ECParameterSpec");
             }
 
-            ecImplicitCaParams = (ECParameterSpec)curveSpec;
+            ecImplicitCaParams = curveSpec;
         }
         else if (parameterName.equals(ConfigurableProvider.EC_IMPLICITLY_CA))
         {
@@ -46,7 +52,6 @@ class BouncyCastleProviderConfiguration
         {
             Object dhSpec;
 
-
             if (parameter instanceof DHParameterSpec || parameter instanceof DHParameterSpec[] || parameter == null)
             {
                 dhSpec = parameter;
@@ -60,7 +65,6 @@ class BouncyCastleProviderConfiguration
         }
         else if (parameterName.equals(ConfigurableProvider.DH_DEFAULT_PARAMS))
         {
-
             if (parameter instanceof DHParameterSpec || parameter instanceof DHParameterSpec[] || parameter == null)
             {
                 dhDefaultParams = parameter;
@@ -69,6 +73,14 @@ class BouncyCastleProviderConfiguration
             {
                 throw new IllegalArgumentException("not a valid DHParameterSpec or DHParameterSpec[]");
             }
+        }
+        else if (parameterName.equals(ConfigurableProvider.ACCEPTABLE_EC_CURVES))
+        {
+            this.acceptableNamedCurves = (Set)parameter;
+        }
+        else if (parameterName.equals(ConfigurableProvider.ADDITIONAL_EC_PARAMETERS))
+        {
+            this.additionalECParameters = (Map)parameter;
         }
     }
 
@@ -79,7 +91,7 @@ class BouncyCastleProviderConfiguration
 
     public DHParameterSpec getDHDefaultParameters(int keySize)
     {
-        Object    params = dhDefaultParams;
+        Object params = dhDefaultParams;
 
         if (params instanceof DHParameterSpec)
         {
@@ -104,5 +116,15 @@ class BouncyCastleProviderConfiguration
         }
 
         return null;
+    }
+
+    public Set getAcceptableNamedCurves()
+    {
+        return Collections.unmodifiableSet(acceptableNamedCurves);
+    }
+
+    public Map getAdditionalECParameters()
+    {
+        return Collections.unmodifiableMap(additionalECParameters);
     }
 }

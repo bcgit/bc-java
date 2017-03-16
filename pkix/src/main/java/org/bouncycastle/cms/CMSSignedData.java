@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -25,6 +26,9 @@ import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.cert.X509AttributeCertificateHolder;
+import org.bouncycastle.cert.X509CRLHolder;
+import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Store;
@@ -187,11 +191,18 @@ public class CMSSignedData
         // this can happen if the signed message is sent simply to send a
         // certificate chain.
         //
-        if (signedData.getEncapContentInfo().getContent() != null)
+        ASN1Encodable content = signedData.getEncapContentInfo().getContent();
+        if (content != null)
         {
-            this.signedContent = new CMSProcessableByteArray(signedData.getEncapContentInfo().getContentType(),
-                    ((ASN1OctetString)(signedData.getEncapContentInfo()
-                                                .getContent())).getOctets());
+            if (content instanceof ASN1OctetString)
+            {
+                this.signedContent = new CMSProcessableByteArray(signedData.getEncapContentInfo().getContentType(),
+                    ((ASN1OctetString)content).getOctets());
+            }
+            else
+            {
+                this.signedContent = new PKCS7ProcessableObject(signedData.getEncapContentInfo().getContentType(), content);
+            }
         }
         else
         {
@@ -284,7 +295,7 @@ public class CMSSignedData
      *
      * @return a Store of X509CertificateHolder objects.
      */
-    public Store getCertificates()
+    public Store<X509CertificateHolder> getCertificates()
     {
         return HELPER.getCertificates(signedData.getCertificates());
     }
@@ -294,7 +305,7 @@ public class CMSSignedData
      *
      * @return a Store of X509CRLHolder objects.
      */
-    public Store getCRLs()
+    public Store<X509CRLHolder> getCRLs()
     {
         return HELPER.getCRLs(signedData.getCRLs());
     }
@@ -304,7 +315,7 @@ public class CMSSignedData
      *
      * @return a Store of X509AttributeCertificateHolder objects.
      */
-    public Store getAttributeCertificates()
+    public Store<X509AttributeCertificateHolder> getAttributeCertificates()
     {
         return HELPER.getAttributeCertificates(signedData.getCertificates());
     }

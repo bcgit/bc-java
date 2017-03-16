@@ -29,6 +29,16 @@ public interface ConfigurableProvider
      */
     static final String DH_DEFAULT_PARAMS = "DhDefaultParams";
 
+    /**
+     * A set of OBJECT IDENTIFIERs representing acceptable named curves for imported keys.
+     */
+    static final String ACCEPTABLE_EC_CURVES = "acceptableEcCurves";
+
+    /**
+     * A set of OBJECT IDENTIFIERs to EC Curves providing local curve name mapping.
+     */
+    static final String ADDITIONAL_EC_PARAMETERS = "additionalEcParameters";
+
     void setParameter(String parameterName, Object parameter);
 
     void addAlgorithm(String key, String value);

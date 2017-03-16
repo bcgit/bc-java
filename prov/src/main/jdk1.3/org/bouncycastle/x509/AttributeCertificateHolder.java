@@ -112,7 +112,7 @@ public class AttributeCertificateHolder
         String digestAlgorithm, String otherObjectTypeID, byte[] objectDigest)
     {
         holder = new Holder(new ObjectDigestInfo(digestedObjectType,
-            new ASN1ObjectIdentifier(otherObjectTypeID), new AlgorithmIdentifier(digestAlgorithm), Arrays
+            new ASN1ObjectIdentifier(otherObjectTypeID), new AlgorithmIdentifier(new ASN1ObjectIdentifier(digestAlgorithm)), Arrays
                 .clone(objectDigest)));
     }
 
@@ -150,7 +150,7 @@ public class AttributeCertificateHolder
     {
         if (holder.getObjectDigestInfo() != null)
         {
-            return holder.getObjectDigestInfo().getDigestAlgorithm().getObjectId()
+            return holder.getObjectDigestInfo().getDigestAlgorithm().getAlgorithm()
                 .getId();
         }
         return null;

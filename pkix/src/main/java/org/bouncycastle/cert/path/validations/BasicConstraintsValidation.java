@@ -15,7 +15,8 @@ public class BasicConstraintsValidation
 {
     private boolean          isMandatory;
     private BasicConstraints bc;
-    private int              maxPathLength;
+    private int pathLengthRemaining;
+    private BigInteger maxPathLength;
 
     public BasicConstraintsValidation()
     {
@@ -30,7 +31,7 @@ public class BasicConstraintsValidation
     public void validate(CertPathValidationContext context, X509CertificateHolder certificate)
         throws CertPathValidationException
     {
-        if (maxPathLength < 0)
+        if (maxPathLength != null && pathLengthRemaining < 0)
         {
             throw new CertPathValidationException("BasicConstraints path length exceeded");
         }
@@ -51,9 +52,9 @@ public class BasicConstraintsValidation
                     {
                         int plc = pathLengthConstraint.intValue();
 
-                        if (plc < maxPathLength)
+                        if (plc < pathLengthRemaining)
                         {
-                            maxPathLength = plc;
+                            pathLengthRemaining = plc;
                             bc = certBC;
                         }
                     }
@@ -64,7 +65,12 @@ public class BasicConstraintsValidation
                 bc = certBC;
                 if (certBC.isCA())
                 {
-                    maxPathLength = certBC.getPathLenConstraint().intValue();
+                    maxPathLength = certBC.getPathLenConstraint();
+
+                    if (maxPathLength != null)
+                    {
+                        pathLengthRemaining = maxPathLength.intValue();
+                    }
                 }
             }
         }
@@ -72,7 +78,7 @@ public class BasicConstraintsValidation
         {
             if (bc != null)
             {
-                maxPathLength--;
+                pathLengthRemaining--;
             }
         }
 
@@ -87,7 +93,7 @@ public class BasicConstraintsValidation
         BasicConstraintsValidation v = new BasicConstraintsValidation(isMandatory);
 
         v.bc = this.bc;
-        v.maxPathLength = this.maxPathLength;
+        v.pathLengthRemaining = this.pathLengthRemaining;
 
         return v;
     }
@@ -98,6 +104,6 @@ public class BasicConstraintsValidation
 
         this.isMandatory = v.isMandatory;
         this.bc = v.bc;
-        this.maxPathLength = v.maxPathLength;
+        this.pathLengthRemaining = v.pathLengthRemaining;
     }
 }

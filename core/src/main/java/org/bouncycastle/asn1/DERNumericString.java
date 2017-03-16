@@ -12,7 +12,7 @@ public class DERNumericString
     extends ASN1Primitive
     implements ASN1String
 {
-    private byte[]  string;
+    private final byte[]  string;
 
     /**
      * return a Numeric string from the passed in object

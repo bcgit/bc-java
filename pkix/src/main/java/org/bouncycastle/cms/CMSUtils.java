@@ -5,8 +5,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -24,18 +26,40 @@ import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.OtherRevocationInfoFormat;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.ocsp.OCSPResponseStatus;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.util.Store;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.io.TeeInputStream;
 import org.bouncycastle.util.io.TeeOutputStream;
 
 class CMSUtils
 {
+    private static final Set<String> des = new HashSet<String>();
+
+    static
+    {
+        des.add("DES");
+        des.add("DESEDE");
+        des.add(OIWObjectIdentifiers.desCBC.getId());
+        des.add(PKCSObjectIdentifiers.des_EDE3_CBC.getId());
+        des.add(PKCSObjectIdentifiers.des_EDE3_CBC.getId());
+        des.add(PKCSObjectIdentifiers.id_alg_CMS3DESwrap.getId());
+    }
+
+    static boolean isDES(String algorithmID)
+    {
+        String name = Strings.toUpperCase(algorithmID);
+
+        return des.contains(name);
+    }
+
     static boolean isEquivalent(AlgorithmIdentifier algId1, AlgorithmIdentifier algId2)
     {
         if (algId1 == null || algId2 == null)

@@ -17,7 +17,7 @@ public class IES
         public void configure(ConfigurableProvider provider)
         {
             provider.addAlgorithm("AlgorithmParameters.IES", PREFIX + "AlgorithmParametersSpi");
-            provider.addAlgorithm("Cipher.IES", PREFIX + "CipherSpi$IES");
+            provider.addAlgorithm("AlgorithmParameters.ECIES", PREFIX + "AlgorithmParametersSpi");
         }
     }
 }

@@ -13,16 +13,17 @@ public class SignerUserID
 {
     public SignerUserID(
         boolean    critical,
+        boolean    isLongLength,
         byte[]     data)
     {
-        super(SignatureSubpacketTags.SIGNER_USER_ID, critical, data);
+        super(SignatureSubpacketTags.SIGNER_USER_ID, critical, isLongLength, data);
     }
     
     public SignerUserID(
         boolean    critical,
         String     userID)
     {
-        super(SignatureSubpacketTags.SIGNER_USER_ID, critical, Strings.toUTF8ByteArray(userID));
+        super(SignatureSubpacketTags.SIGNER_USER_ID, critical, false, Strings.toUTF8ByteArray(userID));
     }
     
     public String getID()

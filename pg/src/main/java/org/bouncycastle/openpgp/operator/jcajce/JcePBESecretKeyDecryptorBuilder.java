@@ -13,6 +13,7 @@ import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 
@@ -74,7 +75,7 @@ public class JcePBESecretKeyDecryptorBuilder
                 {
                     Cipher c = helper.createCipher(PGPUtil.getSymmetricCipherName(encAlgorithm) + "/CFB/NoPadding");
 
-                    c.init(Cipher.DECRYPT_MODE, PGPUtil.makeSymmetricKey(encAlgorithm, key), new IvParameterSpec(iv));
+                    c.init(Cipher.DECRYPT_MODE, JcaJcePGPUtil.makeSymmetricKey(encAlgorithm, key), new IvParameterSpec(iv));
 
                     return c.doFinal(keyData, keyOff, keyLen);
                 }

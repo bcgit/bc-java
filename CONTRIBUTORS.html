@@ -6,6 +6,28 @@ Thanks, may your castles never deflate!
 <p>
 Donors
 <p>
+The following people and organisations donated financially to help with the release of 1.56:
+<br />
+DidiSoft, Cotiviti, Atanas Krachev, Encryptomatic LLC, LogicalAnswersIncSupporter
+</p>
+<p>
+We also wish to acknowledge financial support from the <a href="https://www.coreinfrastructure.org/">Core Infrastructure Initiative</a> towards developing the TLS API and JSSE provider.
+</p>
+<p>
+The following people and organisations donated financially to help with the release of 1.55:
+<br />
+Digistamp, RAM NAG
+</p>
+<p>
+The following people and organisations donated financially to help with the release of 1.54:
+<br />
+Lobster GmbH
+</p>
+<p>
+The following people and organisations donated financially to help with the release of 1.53:
+<br />
+Sheba, Ishmal Bartley, and Li-Chang Johnny Lo
+</p>
 The following people and organisations donated financially to help with the release of 1.52:
 <br />
 lecker&#064buetterchen.de, Charles Proxy, Gunny Mills, Morgan Le Douget, Ben Whitaker, and Emilio Navarrete Lineros.
@@ -18,7 +40,7 @@ Gup & Boz @ Alki Seattle, Bytemine Gmbh, Ted Pennings, Atanas Krachev, PrimeKey 
 <p>
 Organisations
 <ul>
-<li>Holders of <a href="http://www.cryptoworkshop.com">Crypto Workshop Support Contracts</a>. Currently 100 hours of consulting time left over from these has been contributed back to working on the Bouncy Castle APIs. You know who you are!</li>
+<li>Holders of <a href="http://www.cryptoworkshop.com">Crypto Workshop Support Contracts</a>. Without the consulting time left over from support contracts being contributed back to working on the Bouncy Castle APIs, progress would be impossible. You know who you are!</li>
 <li><a href="http://www.atlassian.com/">Atlassian Software Systems</a> donation of Confluence and JIRA licences.</li>
 <li><a href="http://www.grierforensics.com/">Grier Forensics</a>, for collaborating in the development of the S/MIME Toolkit and DANE SMIMEA functionality.</li>
 <li>TU-Darmstadt, Computer Science Department, RBG, for the initial
@@ -338,7 +360,7 @@ CertPath support for implicit DSA parameters and a range of NameConstraints. Add
 <li>Samuel Lid&eacute;n Borell &lt;samuel&#064primekey.se&gt; patch to add DSTU-4145 to DefaultSignatureAlgorithmFinder</li>
 <li>Sergio Demian Lerner &lt;sergiolerner&#064certimix.com&gt; pointing out isInfinity issue in ECDSASigner signature verification.</li>
 <li>Tim Whittington &lt;Tim.Whittington&#064orionhealth.com&gt; patch to remove extra init call in CMac, additional of Memoable interface for Digest classes, initial implementation of GMAC, further correctness tests for IV and reset processing in OCB, CCM, and block cipher reset. Initial implementation of Skein, XSalsa20, ChaCha, reduced round Salsa20, Threefish, and the Poly1305 MAC. Documentation updates. Added OCB support to Noekeon and CAST6 in the provider, exception testing for CTS, optimisations for CCM, provider support for AAD cipher methods, safe CipherInput/OutputStream implementations for use with AAD and subsequent bug fixes, cleanup after IDEA patent expiry, work on JCE SipHash support, optimisations for AESFastEngine, further work on EncodableDigest for SHA-2 digests, contributions to BCrypt/OpenBSDBCrypt, PGP API documentation and code quality work.</li>
-<li>Marcus Lundblad &lt;marcus.lundblad&#064primekey.se&gt; patch for working arnound JDK jarsigner TSP bug, optional setting of IssuerSerial in TimeStampTokenGenerator.</li>
+<li>Marcus Lundblad &lt;marcus.lundblad&#064primekey.se&gt; patch for working arnound JDK jarsigner TSP bug, optional setting of IssuerSerial in TimeStampTokenGenerator, additional extensions enhancement for time stamp token generation.</li>
 <li>Andrey Zhozhin &lt;zhozhin&#064xrm.ru&gt; patch for override of TSP SignerInfo attributes.</li>
 <li>Sergey Tiunov &lt;t5555d&#064gmail.com&gt; initial cut of DVCS classes.</li>
 <li>Damian Kolasa &lt;fatfredyy&#064gmail.com&gt; ASN1Sequence patch for class cast issue in X9Curve.</li>
@@ -382,16 +404,35 @@ CertPath support for implicit DSA parameters and a range of NameConstraints. Add
 <li>Peter Jr Halicky &lt;peto&#064halicky.sk&gt; Correction to notification/error message handling in SignedMailValidator.</li>
 <li>lartiguePierre&lt;https://github.com/lartiguePierre&gt; Fix for counter signature SID in CMSSignedData.</li>
 <li>Thomas Belot&lt;thomas.belot+BC&#064gmail.com&gt; initial CertPathLoopTest for demonstrating stack overflow issue.</li>
-<li>Rich DiCroce&lt;https://github.com/rdicroce&gt; Initial implementation of server-side TLS-SRP support.</li>
+<li>Rich DiCroce&lt;https://github.com/rdicroce&gt; Initial implementation of server-side TLS-SRP support. TLS API extension to support non-blocking usage.</li>
 <li>Bj&ouml;rn Kautler&lt;https://github.com/Vampire&gt; Refinements to cert path validation (authority key addition, certificate order preservation).</li>
-<li>Dominik Sch&uuml;rmann&lt;https://github.com/dschuermann&gt; method for returning signatures/verifications without user IDs on PGPPublicKey, method for exposing S2K in PGPSecretKey, constants for GNU protection modes in S2K classes.</li>
+<li>Dominik Sch&uuml;rmann&lt;https://github.com/dschuermann&gt; method for returning signatures/verifications without user IDs on PGPPublicKey, method for exposing S2K in PGPSecretKey, constants for GNU protection modes in S2K classes, optional version header for armored output.</li>
 <li>Michael &lt;MSKnete&#064web.de&gt; initial fix for bitStrength issue for OpenPGP EC keys.</li>
 <li>Tobias Wagner &lt;tobias.wagner&#064n-design.de&gt; Fix SecureRandom handling in BcAsymmetricKeyWrapper [#BJA-536].</li>
-<li>Sergio Giro &lt;sgiro&#064google.com&gt; Fixed adding of additional stores from CRL distribution point [#BJA-537]. Fixed missing null check for CRL certificate issuer [#BJA-538].</li>
+<li>Sergio Giro &lt;sgiro&#064google.com&gt; Fixed adding of additional stores from CRL distribution point [#BJA-537]. Fixed missing null check for CRL certificate issuer [#BJA-538], removal of risky zeroisation code in PBE.java, check for salt in PBEKeys that require it.</li>
 <li>bschuette&lt;https://github.com/bschuette&gt; Fixed typo in DefaultSignatureAlgorithmIdentifierFinder, additional methods on CMSSignedDataParser.</li>
 <li>Leonard Dallot&lt;https://github.com/dallotTazTag&gt; Fix to S2K usage of none on changing passwords on keys without passwords originally.</li>
-<li>Jan Willem Janssen &lt;j.w.janssen+bouncycastle&#064lxtreme.nl&gt; Support for DSAParameters in lightweight SubjectPublicKeyInfoFactory.</li>
+<li>Jan Willem Janssen &lt;j.w.janssen+bouncycastle&#064lxtreme.nl&gt; Support for DSAParameters in lightweight SubjectPublicKeyInfoFactory, initial content signer verifier for BC lightweight EC.</li>
 <li>Sebastian Oerding &lt;sebastian.oerding@robotron.de&gt; Fixes to toString() in x509.CertificatePolicies.</li>
+<li>Kai Kramer &lt;kai.kramer&#064gmail.com&gt; Code to deal with orphaned chain certificates in the PKCS#12 KeyStore.</li>
+<li>Benoit Charles &lt;benoit.charles&#064opentrust.com&gt; Fix for IES data length check on decryption.</li>
+<li>Niko &lt;nfink95&#064gmail.com&gt; fix to cast issue in getOutputSize() for ECIES.</li>
+<li>akwizgran&lt;https://github.com/akwizgran&gt; Fixed clone of key in Blake2bDgest copy constructor, blake2b reset issue for varient keys.</li>
+<li>Matthias Edelhoff &lt;Matthias.Edelhoff&#064cryptovision.com&gt; BasicConstraintsValidation pathlen fix in PKIX certpath classes.</li>
+<li>Lukasz Deputat &lt;lukasz.deputat&#064gmail.com&gt; Fixed bugs in TlsUtils read methods [#BJA-592].</li>
+<li>Justin Ludwig &lt;https://github.com/justinludwig&gt; Iterator fix for PGPObjectFactory to handle stream packets at start of iterated data.</li>
+<li>Andr&eacute; Berenguel &lt;https://github.com/aberenguel&gt; Fix to include ECNamedCurveSpec in EC AlgorithmParameterSpi</li>
+<li>Slawomir Jaranowski&lt;https://github.com/slawekjaranowski&gt; Patch to make cipher/hash/signature name methods in PGP internal API public.</li>
+<li>Andrey Vasilyev&lt;https://github.com/andrey-vasilyev&gt; Initial implementation of GOST R 34.11-2012.</li>
+<li>William Glanton &lt;wglanton77&#064gmail.com&gt; Fixed bug in Poly1305 [#BJA-620].</li>
+<li>jdvorak001&lt;https://github.com/jdvorak001&gt; Speed improvements for ASN.1 ObjectIdentifier cache.</li>
+<li>Joseph Naegele &lt;jnaegele&#064grierforensics.com&gt; Patch for handling multiple certificates in a DANE SMIMEA entry.</li>
+<li>Andrew Bonventre&lt;https://github.com/andybons&gt; NullPointer patch for WNafUtil.</li>
+<li>The Google Security Team (Project Wycheproof) &lt;https://github.com/google/wycheproof&gt; defect analysis and additional test cases for the provider.</li>
+<li>Gorka Irazoqui &lt;girazoki&#064wpi.edu&gt; from Intel Security Center of Excellence &lt;https://security-center.intel.com/&gt; detection of the issue with AESFastEngine (CVE-2016-1000339), additional suggestions for improvement to hardening of AESEngine.</li>
+<li>Joerg Senekowitsch &lt;joerg.senekowitsch&#064veridos.com&gt; patch to deal with hard coded boolean in EAC ECDSAPublicKey.</li>
+<li>Alexandr Krivoshta &lt;wipe@ya.ru&gt; N4 calculation fix to GOFB mode.</li>
+<li>Artem Storozhuk &lt;storojs72@gmail.com&gt; N4 calculation fix to GOFB mode.</li>
 </ul>
 </body>
 </html>

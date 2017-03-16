@@ -6,7 +6,6 @@ import java.io.IOException;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.operator.InputDecryptor;
 import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.util.io.Streams;
@@ -27,11 +26,11 @@ public class PKCS8EncryptedPrivateKeyInfo
         }
         catch (ClassCastException e)
         {
-            throw new CertIOException("malformed data: " + e.getMessage(), e);
+            throw new PKCSIOException("malformed data: " + e.getMessage(), e);
         }
         catch (IllegalArgumentException e)
         {
-            throw new CertIOException("malformed data: " + e.getMessage(), e);
+            throw new PKCSIOException("malformed data: " + e.getMessage(), e);
         }
     }
 

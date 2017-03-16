@@ -51,11 +51,23 @@ public class PKIFailureInfoTest
         BitStringConstantTester.testFlagValueCorrect(7, PKIFailureInfo.incorrectData);
         BitStringConstantTester.testFlagValueCorrect(8, PKIFailureInfo.missingTimeStamp);
         BitStringConstantTester.testFlagValueCorrect(9, PKIFailureInfo.badPOP);
+        BitStringConstantTester.testFlagValueCorrect(10, PKIFailureInfo.certRevoked);
+        BitStringConstantTester.testFlagValueCorrect(11, PKIFailureInfo.certConfirmed);
+        BitStringConstantTester.testFlagValueCorrect(12, PKIFailureInfo.wrongIntegrity);
+        BitStringConstantTester.testFlagValueCorrect(13, PKIFailureInfo.badRecipientNonce);
         BitStringConstantTester.testFlagValueCorrect(14, PKIFailureInfo.timeNotAvailable);
         BitStringConstantTester.testFlagValueCorrect(15, PKIFailureInfo.unacceptedPolicy);
         BitStringConstantTester.testFlagValueCorrect(16, PKIFailureInfo.unacceptedExtension);
         BitStringConstantTester.testFlagValueCorrect(17, PKIFailureInfo.addInfoNotAvailable);
+        BitStringConstantTester.testFlagValueCorrect(18, PKIFailureInfo.badSenderNonce);
+        BitStringConstantTester.testFlagValueCorrect(19, PKIFailureInfo.badCertTemplate);
+        BitStringConstantTester.testFlagValueCorrect(20, PKIFailureInfo.signerNotTrusted);
+        BitStringConstantTester.testFlagValueCorrect(21, PKIFailureInfo.transactionIdInUse);
+        BitStringConstantTester.testFlagValueCorrect(22, PKIFailureInfo.unsupportedVersion);
+        BitStringConstantTester.testFlagValueCorrect(23, PKIFailureInfo.notAuthorized);
+        BitStringConstantTester.testFlagValueCorrect(24, PKIFailureInfo.systemUnavail);
         BitStringConstantTester.testFlagValueCorrect(25, PKIFailureInfo.systemFailure);
+        BitStringConstantTester.testFlagValueCorrect(26, PKIFailureInfo.duplicateCertReq);
 
         testEncoding();
     }

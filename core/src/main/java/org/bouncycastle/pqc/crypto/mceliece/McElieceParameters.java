@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.crypto.mceliece;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.pqc.math.linearalgebra.PolynomialRingGF2;
 
 public class McElieceParameters
@@ -37,12 +38,19 @@ public class McElieceParameters
      */
     private int fieldPoly;
 
+    private Digest digest;
+
     /**
      * Constructor. Set the default parameters: extension degree.
      */
     public McElieceParameters()
     {
         this(DEFAULT_M, DEFAULT_T);
+    }
+
+    public McElieceParameters(Digest digest)
+    {
+        this(DEFAULT_M, DEFAULT_T, digest);
     }
 
     /**
@@ -52,7 +60,18 @@ public class McElieceParameters
      * @throws IllegalArgumentException if <tt>keysize &lt; 1</tt>.
      */
     public McElieceParameters(int keysize)
-        throws IllegalArgumentException
+    {
+        this(keysize, null);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param keysize the length of a Goppa code
+     * @param digest CCA2 mode digest
+     * @throws IllegalArgumentException if <tt>keysize &lt; 1</tt>.
+     */
+    public McElieceParameters(int keysize, Digest digest)
     {
         if (keysize < 1)
         {
@@ -68,6 +87,7 @@ public class McElieceParameters
         t = n >>> 1;
         t /= m;
         fieldPoly = PolynomialRingGF2.getIrreduciblePolynomial(m);
+        this.digest = digest;
     }
 
     /**
@@ -79,7 +99,19 @@ public class McElieceParameters
      * <tt>t &lt; 0</tt> or <tt>t &gt; n</tt>.
      */
     public McElieceParameters(int m, int t)
-        throws IllegalArgumentException
+    {
+        this(m, t, null);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param m degree of the finite field GF(2^m)
+     * @param t error correction capability of the code
+     * @throws IllegalArgumentException if <tt>m &lt; 1</tt> or <tt>m &gt; 32</tt> or
+     * <tt>t &lt; 0</tt> or <tt>t &gt; n</tt>.
+     */
+    public McElieceParameters(int m, int t, Digest digest)
     {
         if (m < 1)
         {
@@ -101,6 +133,7 @@ public class McElieceParameters
         }
         this.t = t;
         fieldPoly = PolynomialRingGF2.getIrreduciblePolynomial(m);
+        this.digest = digest;
     }
 
     /**
@@ -114,7 +147,22 @@ public class McElieceParameters
      * <tt>poly</tt> is not an irreducible field polynomial.
      */
     public McElieceParameters(int m, int t, int poly)
-        throws IllegalArgumentException
+    {
+        this(m, t, poly, null);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param m    degree of the finite field GF(2^m)
+     * @param t    error correction capability of the code
+     * @param poly the field polynomial
+     * @param digest CCA2 mode digest
+     * @throws IllegalArgumentException if <tt>m &lt; 1</tt> or <tt>m &gt; 32</tt> or
+     * <tt>t &lt; 0</tt> or <tt>t &gt; n</tt> or
+     * <tt>poly</tt> is not an irreducible field polynomial.
+     */
+    public McElieceParameters(int m, int t, int poly, Digest digest)
     {
         this.m = m;
         if (m < 1)
@@ -145,6 +193,7 @@ public class McElieceParameters
             throw new IllegalArgumentException(
                 "polynomial is not a field polynomial for GF(2^m)");
         }
+        this.digest = digest;
     }
 
     /**

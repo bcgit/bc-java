@@ -93,7 +93,7 @@ public class DVCSCertInfo
 
             x = seq.getObjectAt(i++);
 
-            try
+            if (x instanceof ASN1TaggedObject)
             {
                 ASN1TaggedObject t = ASN1TaggedObject.getInstance(x);
                 int tagNo = t.getTagNo();
@@ -112,13 +112,11 @@ public class DVCSCertInfo
                 case TAG_CERTS:
                     this.certs = ASN1Sequence.getInstance(t, false);
                     break;
+                default:
+                    throw new IllegalArgumentException("Unknown tag encountered: " + tagNo);
                 }
 
                 continue;
-
-            }
-            catch (IllegalArgumentException e)
-            {
             }
 
             try

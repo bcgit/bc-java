@@ -119,12 +119,19 @@ public class PBEPBKDF2
         extends BaseSecretKeyFactory
     {
         private int scheme;
+        private int defaultDigest;
 
         public BasePBKDF2(String name, int scheme)
+        {
+            this(name, scheme, SHA1);
+        }
+
+        public BasePBKDF2(String name, int scheme, int defaultDigest)
         {
             super(name, PKCSObjectIdentifiers.id_PBKDF2);
 
             this.scheme = scheme;
+            this.defaultDigest = defaultDigest;
         }
 
         protected SecretKey engineGenerateSecret(
@@ -170,7 +177,7 @@ public class PBEPBKDF2
                 }
                 else
                 {
-                    int digest = SHA1;
+                    int digest = defaultDigest;
                     int keySize = pbeSpec.getKeyLength();
                     int ivSize = -1;    // JDK 1,2 and earlier does not understand simplified version.
                     CipherParameters param = PBE.Util.makePBEMacParameters(pbeSpec, scheme, digest, keySize);
@@ -194,6 +201,22 @@ public class PBEPBKDF2
             {
                 return SHA1;
             }
+            else if (algorithm.equals(PKCSObjectIdentifiers.id_hmacWithSHA256))
+            {
+                return SHA256;
+            }
+            else if (algorithm.equals(PKCSObjectIdentifiers.id_hmacWithSHA224))
+            {
+                return SHA224;
+            }
+            else if (algorithm.equals(PKCSObjectIdentifiers.id_hmacWithSHA384))
+            {
+                return SHA384;
+            }
+            else if (algorithm.equals(PKCSObjectIdentifiers.id_hmacWithSHA512))
+            {
+                return SHA512;
+            }
 
             throw new InvalidKeySpecException("Invalid KeySpec: unknown PRF algorithm " + algorithm);
         }
@@ -205,6 +228,41 @@ public class PBEPBKDF2
         public PBKDF2withUTF8()
         {
             super("PBKDF2", PKCS5S2_UTF8);
+        }
+    }
+
+    public static class PBKDF2withSHA224
+        extends BasePBKDF2
+    {
+        public PBKDF2withSHA224()
+        {
+            super("PBKDF2", PKCS5S2_UTF8, SHA224);
+        }
+    }
+
+    public static class PBKDF2withSHA256
+        extends BasePBKDF2
+    {
+        public PBKDF2withSHA256()
+        {
+            super("PBKDF2", PKCS5S2_UTF8, SHA256);
+        }
+    }
+
+    public static class PBKDF2withSHA384
+        extends BasePBKDF2
+    {
+        public PBKDF2withSHA384()
+        {
+            super("PBKDF2", PKCS5S2_UTF8, SHA384);
+        }
+    }
+    public static class PBKDF2withSHA512
+        extends BasePBKDF2
+    {
+        public PBKDF2withSHA512()
+        {
+            super("PBKDF2", PKCS5S2_UTF8, SHA512);
         }
     }
 
@@ -231,9 +289,16 @@ public class PBEPBKDF2
             provider.addAlgorithm("AlgorithmParameters.PBKDF2", PREFIX + "$AlgParams");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + PKCSObjectIdentifiers.id_PBKDF2, "PBKDF2");
             provider.addAlgorithm("SecretKeyFactory.PBKDF2", PREFIX + "$PBKDF2withUTF8");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory.PBKDF2WITHHMACSHA1", "PBKDF2");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory.PBKDF2WITHHMACSHA1ANDUTF8", "PBKDF2");
             provider.addAlgorithm("Alg.Alias.SecretKeyFactory." + PKCSObjectIdentifiers.id_PBKDF2, "PBKDF2");
             provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHASCII", PREFIX + "$PBKDF2with8BIT");
             provider.addAlgorithm("Alg.Alias.SecretKeyFactory.PBKDF2WITH8BIT", "PBKDF2WITHASCII");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory.PBKDF2WITHHMACSHA1AND8BIT", "PBKDF2WITHASCII");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA224", PREFIX + "$PBKDF2withSHA224");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA256", PREFIX + "$PBKDF2withSHA256");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA384", PREFIX + "$PBKDF2withSHA384");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA512", PREFIX + "$PBKDF2withSHA512");
         }
     }
 }

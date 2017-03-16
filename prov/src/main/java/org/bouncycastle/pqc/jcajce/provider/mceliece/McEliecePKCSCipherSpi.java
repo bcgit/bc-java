@@ -14,28 +14,19 @@ import javax.crypto.IllegalBlockSizeException;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.digests.SHA224Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA384Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.pqc.crypto.mceliece.McElieceCipher;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceKeyParameters;
-import org.bouncycastle.pqc.crypto.mceliece.McEliecePKCSCipher;
 import org.bouncycastle.pqc.jcajce.provider.util.AsymmetricBlockCipher;
 
 public class McEliecePKCSCipherSpi
     extends AsymmetricBlockCipher
     implements PKCSObjectIdentifiers, X509ObjectIdentifiers
 {
-    // TODO digest needed?
-    private Digest digest;
-    private McEliecePKCSCipher cipher;
+    private McElieceCipher cipher;
 
-    public McEliecePKCSCipherSpi(Digest digest, McEliecePKCSCipher cipher)
+    public McEliecePKCSCipherSpi(McElieceCipher cipher)
     {
-        this.digest = digest;
         this.cipher = cipher;
     }
 
@@ -49,7 +40,6 @@ public class McEliecePKCSCipherSpi
         param = McElieceKeysToParams.generatePublicKeyParameter((PublicKey)key);
 
         param = new ParametersWithRandom(param, sr);
-        digest.reset();
         cipher.init(true, param);
         this.maxPlainTextSize = cipher.maxPlainTextSize;
         this.cipherTextSize = cipher.cipherTextSize;
@@ -61,7 +51,6 @@ public class McEliecePKCSCipherSpi
         CipherParameters param;
         param = McElieceKeysToParams.generatePrivateKeyParameter((PrivateKey)key);
 
-        digest.reset();
         cipher.init(false, param);
         this.maxPlainTextSize = cipher.maxPlainTextSize;
         this.cipherTextSize = cipher.cipherTextSize;
@@ -120,52 +109,12 @@ public class McEliecePKCSCipherSpi
         return cipher.getKeySize(mcElieceKeyParameters);
     }
 
-    //////////////////////////////////////////////////////////////////////////////////
-
     static public class McEliecePKCS
         extends McEliecePKCSCipherSpi
     {
         public McEliecePKCS()
         {
-            super(new SHA1Digest(), new McEliecePKCSCipher());
+            super(new McElieceCipher());
         }
     }
-
-    static public class McEliecePKCS224
-        extends McEliecePKCSCipherSpi
-    {
-        public McEliecePKCS224()
-        {
-            super(new SHA224Digest(), new McEliecePKCSCipher());
-        }
-    }
-
-    static public class McEliecePKCS256
-        extends McEliecePKCSCipherSpi
-    {
-        public McEliecePKCS256()
-        {
-            super(new SHA256Digest(), new McEliecePKCSCipher());
-        }
-    }
-
-    static public class McEliecePKCS384
-        extends McEliecePKCSCipherSpi
-    {
-        public McEliecePKCS384()
-        {
-            super(new SHA384Digest(), new McEliecePKCSCipher());
-        }
-    }
-
-    static public class McEliecePKCS512
-        extends McEliecePKCSCipherSpi
-    {
-        public McEliecePKCS512()
-        {
-            super(new SHA512Digest(), new McEliecePKCSCipher());
-        }
-    }
-
-
 }

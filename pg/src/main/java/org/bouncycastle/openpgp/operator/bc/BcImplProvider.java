@@ -19,7 +19,6 @@ import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.TigerDigest;
 import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.engines.BlowfishEngine;
 import org.bouncycastle.crypto.engines.CAST5Engine;
 import org.bouncycastle.crypto.engines.CamelliaEngine;
@@ -134,7 +133,7 @@ class BcImplProvider
         case SymmetricKeyAlgorithmTags.AES_128:
         case SymmetricKeyAlgorithmTags.AES_192:
         case SymmetricKeyAlgorithmTags.AES_256:
-            return new RFC3394WrapEngine(new AESFastEngine());
+            return new RFC3394WrapEngine(new AESEngine());
         case SymmetricKeyAlgorithmTags.CAMELLIA_128:
         case SymmetricKeyAlgorithmTags.CAMELLIA_192:
         case SymmetricKeyAlgorithmTags.CAMELLIA_256:

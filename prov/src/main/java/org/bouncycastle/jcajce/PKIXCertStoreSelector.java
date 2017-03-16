@@ -1,9 +1,11 @@
 package org.bouncycastle.jcajce;
 
+import java.io.IOException;
 import java.security.cert.CertSelector;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreException;
 import java.security.cert.Certificate;
+import java.security.cert.X509CertSelector;
 import java.util.Collection;
 
 import org.bouncycastle.util.Selector;
@@ -64,17 +66,54 @@ public class PKIXCertStoreSelector<T extends Certificate>
     public static Collection<? extends Certificate> getCertificates(final PKIXCertStoreSelector selector, CertStore certStore)
         throws CertStoreException
     {
-        return certStore.getCertificates(new CertSelector()
-        {
-            public boolean match(Certificate certificate)
-            {
-                return (selector == null) ? true : selector.match(certificate);
-            }
+        return certStore.getCertificates(new SelectorClone(selector));
+    }
 
-            public Object clone()
+    private static class SelectorClone
+        extends X509CertSelector
+    {
+        private final PKIXCertStoreSelector selector;
+
+        SelectorClone(PKIXCertStoreSelector selector)
+        {
+            this.selector = selector;
+
+            if (selector.baseSelector instanceof X509CertSelector)
             {
-                return this;
+                X509CertSelector baseSelector = (X509CertSelector)selector.baseSelector;
+
+                this.setAuthorityKeyIdentifier(baseSelector.getAuthorityKeyIdentifier());
+                this.setBasicConstraints(baseSelector.getBasicConstraints());
+                this.setCertificate(baseSelector.getCertificate());
+                this.setCertificateValid(baseSelector.getCertificateValid());
+                this.setKeyUsage(baseSelector.getKeyUsage());
+                this.setMatchAllSubjectAltNames(baseSelector.getMatchAllSubjectAltNames());
+                this.setPrivateKeyValid(baseSelector.getPrivateKeyValid());
+                this.setSerialNumber(baseSelector.getSerialNumber());
+                this.setSubjectKeyIdentifier(baseSelector.getSubjectKeyIdentifier());
+                this.setSubjectPublicKey(baseSelector.getSubjectPublicKey());
+
+                try
+                {
+                    this.setExtendedKeyUsage(baseSelector.getExtendedKeyUsage());
+                    this.setIssuer(baseSelector.getIssuerAsBytes());
+                    this.setNameConstraints(baseSelector.getNameConstraints());
+                    this.setPathToNames(baseSelector.getPathToNames());
+                    this.setPolicy(baseSelector.getPolicy());
+                    this.setSubject(baseSelector.getSubjectAsBytes());
+                    this.setSubjectAlternativeNames(baseSelector.getSubjectAlternativeNames());
+                    this.setSubjectPublicKeyAlgID(baseSelector.getSubjectPublicKeyAlgID());
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalStateException("base selector invalid: " + e.getMessage(), e);
+                }
             }
-        });
+        }
+
+        public boolean match(Certificate certificate)
+        {
+            return (selector == null) ? (certificate != null) : selector.match(certificate);
+        }
     }
 }

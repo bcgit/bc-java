@@ -15,8 +15,8 @@ import org.bouncycastle.crypto.signers.ECGOST3410Signer;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.util.test.TestRandomData;
 
 /**
  *  ECGOST3410 tests are taken from GOST R 34.10-2001.
@@ -34,7 +34,7 @@ public class ECGOST3410Test
 
     byte[] kData = new BigInteger("53854137677348463731403841147996619241504003434302020712960838528893196233395").toByteArray();
 
-    SecureRandom    k = new FixedSecureRandom(kData);
+    SecureRandom    k = new TestRandomData(kData);
 
     private void ecGOST3410_TEST()
     {

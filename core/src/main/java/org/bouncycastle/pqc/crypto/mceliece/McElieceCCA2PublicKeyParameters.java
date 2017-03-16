@@ -10,10 +10,6 @@ import org.bouncycastle.pqc.math.linearalgebra.GF2Matrix;
 public class McElieceCCA2PublicKeyParameters
     extends McElieceCCA2KeyParameters
 {
-
-    // the OID of the algorithm
-    private String oid;
-
     // the length of the code
     private int n;
 
@@ -25,36 +21,18 @@ public class McElieceCCA2PublicKeyParameters
 
     /**
      * Constructor.
-     *
-     * @param n      length of the code
+     *  @param n      length of the code
      * @param t      error correction capability
      * @param matrix generator matrix
-     * @param params McElieceCCA2Parameters
+     * @param digest McElieceCCA2Parameters
      */
-    public McElieceCCA2PublicKeyParameters(String oid, int n, int t, GF2Matrix matrix, McElieceCCA2Parameters params)
+    public McElieceCCA2PublicKeyParameters(int n, int t, GF2Matrix matrix, String digest)
     {
-        super(false, params);
-        this.oid = oid;
+        super(false, digest);
+
         this.n = n;
         this.t = t;
         this.matrixG = new GF2Matrix(matrix);
-    }
-
-    /**
-     * Constructor.
-     *
-     * @param n         length of the code
-     * @param t         error correction capability of the code
-     * @param encMatrix encoded generator matrix
-     * @param params    McElieceCCA2Parameters
-     */
-    public McElieceCCA2PublicKeyParameters(String oid, int n, int t, byte[] encMatrix, McElieceCCA2Parameters params)
-    {
-        super(false, params);
-        this.oid = oid;
-        this.n = n;
-        this.t = t;
-        this.matrixG = new GF2Matrix(encMatrix);
     }
 
     /**
@@ -76,7 +54,7 @@ public class McElieceCCA2PublicKeyParameters
     /**
      * @return the generator matrix
      */
-    public GF2Matrix getMatrixG()
+    public GF2Matrix getG()
     {
         return matrixG;
     }
@@ -87,11 +65,5 @@ public class McElieceCCA2PublicKeyParameters
     public int getK()
     {
         return matrixG.getNumRows();
-    }
-
-    public String getOIDString()
-    {
-        return oid;
-
     }
 }

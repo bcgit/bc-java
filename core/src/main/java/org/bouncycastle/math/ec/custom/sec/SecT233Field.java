@@ -159,6 +159,47 @@ public class SecT233Field
         }
     }
 
+    public static void sqrt(long[] x, long[] z)
+    {
+        long u0, u1;
+        u0 = Interleave.unshuffle(x[0]); u1 = Interleave.unshuffle(x[1]);
+        long e0 = (u0 & 0x00000000FFFFFFFFL) | (u1 << 32);
+        long c0 = (u0 >>> 32) | (u1 & 0xFFFFFFFF00000000L);
+
+        u0 = Interleave.unshuffle(x[2]); u1 = Interleave.unshuffle(x[3]);
+        long e1 = (u0 & 0x00000000FFFFFFFFL) | (u1 << 32);
+        long c1 = (u0 >>> 32) | (u1 & 0xFFFFFFFF00000000L);
+
+        long c2;
+        c2  = (c1 >>> 27);
+        c1 ^= (c0 >>> 27) | (c1 << 37);
+        c0 ^=               (c0 << 37);
+
+        long[] tt = Nat256.createExt64();
+
+        int[] shifts = { 32, 117, 191 };
+        for (int i = 0; i < shifts.length; ++i)
+        {
+            int w = shifts[i] >>> 6, s = shifts[i] & 63;
+//            assert s != 0;
+            tt[w    ] ^= (c0 << s);
+            tt[w + 1] ^= (c1 << s) | (c0 >>> -s);
+            tt[w + 2] ^= (c2 << s) | (c1 >>> -s);
+            tt[w + 3] ^=             (c2 >>> -s);
+        }
+
+        reduce(tt, z);
+
+        z[0] ^= e0;
+        z[1] ^= e1;
+    }
+
+    public static int trace(long[] x)
+    {
+        // Non-zero-trace bits: 0, 159
+        return (int)(x[0] ^ (x[2] >>> 31)) & 1;
+    }
+
     protected static void implCompactExt(long[] zz)
     {
         long z0 = zz[0], z1 = zz[1], z2 = zz[2], z3 = zz[3], z4 = zz[4], z5 = zz[5], z6 = zz[6], z7 = zz[7];

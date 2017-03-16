@@ -55,13 +55,14 @@ public class EncryptionAlgorithm
     public static final int CAMELLIA_256_GCM = 20;
 
     /*
-     * draft-josefsson-salsa20-tls-04 
+     * draft-ietf-tls-chacha20-poly1305-04
      */
-    public static final int ESTREAM_SALSA20 = 100;
-    public static final int SALSA20 = 101;
+    public static final int CHACHA20_POLY1305 = 102;
+    /** @deprecated */ public static final int AEAD_CHACHA20_POLY1305 = CHACHA20_POLY1305;
 
     /*
-     * draft-agl-tls-chacha20poly1305-04
+     * draft-zauner-tls-aes-ocb-04
      */
-    public static final int AEAD_CHACHA20_POLY1305 = 102;
+    public static final int AES_128_OCB_TAGLEN96 = 103;
+    public static final int AES_256_OCB_TAGLEN96 = 104;
 }

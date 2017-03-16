@@ -1,93 +1,130 @@
 package org.bouncycastle.crypto.test;
 
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.SerpentEngine;
+import org.bouncycastle.crypto.modes.CBCBlockCipher;
+import org.bouncycastle.crypto.modes.EAXBlockCipher;
+import org.bouncycastle.crypto.paddings.PKCS7Padding;
+import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
+import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
+ * Test vectors based on the NESSIE submission
  */
 public class SerpentTest
     extends CipherTest
 {
     static SimpleTest[]  tests = 
             {
-               new BlockCipherVectorTest(0, new SerpentEngine(),
-                       new KeyParameter(Hex.decode("0000000000000000000000000000000000000000000000000000000000000000")),
-                      "00000000000000000000000000000000", "8910494504181950f98dd998a82b6749"),
+                new BlockCipherVectorTest(0, new SerpentEngine(),
+                                    new KeyParameter(Hex.decode("00000000000000000000000000000000")),
+                                    "00000000000000000000000000000000", "3620b17ae6a993d09618b8768266bae9"),
                 new BlockCipherVectorTest(1, new SerpentEngine(),
-                       new KeyParameter(Hex.decode("00000000000000000000000000000000")),
-                      "80000000000000000000000000000000", "10b5ffb720b8cb9002a1142b0ba2e94a"),
+                                    new KeyParameter(Hex.decode("80000000000000000000000000000000")),
+                                    "00000000000000000000000000000000", "264E5481EFF42A4606ABDA06C0BFDA3D"),
                 new BlockCipherVectorTest(2, new SerpentEngine(),
-                        new KeyParameter(Hex.decode("00000000000000000000000000000000")),
-                        "00000000008000000000000000000000", "4f057a42d8d5bd9746e434680ddcd5e5"),
+                                    new KeyParameter(Hex.decode("D9D9D9D9D9D9D9D9D9D9D9D9D9D9D9D9")),
+                                    "D9D9D9D9D9D9D9D9D9D9D9D9D9D9D9D9", "20EA07F19C8E93FDA30F6B822AD5D486"),
                 new BlockCipherVectorTest(3, new SerpentEngine(),
-                        new KeyParameter(Hex.decode("00000000000000000000000000000000")),
-                        "00000000000000000000400000000000", "99407bf8582ef12550886ef5b6f169b9"),
+                                    new KeyParameter(Hex.decode("000000000000000000000000000000000000000000008000")),
+                                   "00000000000000000000000000000000", "40520018C4AC2BBA285AEEB9BCB58755"),
                 new BlockCipherVectorTest(4, new SerpentEngine(),
-                        new KeyParameter(Hex.decode("000000000000000000000000000000000000000000000000")),
-                        "40000000000000000000000000000000", "d522a3b8d6d89d4d2a124fdd88f36896"),
+                                    new KeyParameter(Hex.decode("0000000000000000000000000000000000000000000000000000000000000000")),
+                                   "00000000000000000000000000000001", "AD86DE83231C3203A86AE33B721EAA9F"),
                 new BlockCipherVectorTest(5, new SerpentEngine(),
-                        new KeyParameter(Hex.decode("000000000000000000000000000000000000000000000000")),
-                        "00000000000200000000000000000000", "189b8ec3470085b3da97e82ca8964e32"),
+                                    new KeyParameter(Hex.decode("000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F")),
+                                   "3DA46FFA6F4D6F30CD258333E5A61369", "00112233445566778899AABBCCDDEEFF"),
                 new BlockCipherVectorTest(6, new SerpentEngine(),
-                        new KeyParameter(Hex.decode("000000000000000000000000000000000000000000000000")),
-                        "00000000000000000000008000000000", "f77d868cf760b9143a89809510ccb099"),
+                                    new KeyParameter(Hex.decode("2BD6459F82C5B300952C49104881FF482BD6459F82C5B300952C49104881FF48")),
+                                   "677C8DFAA08071743FD2B415D1B28AF2", "EA024714AD5C4D84EA024714AD5C4D84"),
                 new BlockCipherVectorTest(7, new SerpentEngine(),
-                        new KeyParameter(Hex.decode("0000000000000000000000000000000000000000000000000000000000000000")),
-                        "08000000000000000000000000000000", "d43b7b981b829342fce0e3ec6f5f4c82"),
+                                    new KeyParameter(Hex.decode("000102030405060708090A0B0C0D0E0F1011121314151617")),
+                                   "4528CACCB954D450655E8CFD71CBFAC7", "00112233445566778899AABBCCDDEEFF"),
                 new BlockCipherVectorTest(8, new SerpentEngine(),
-                        new KeyParameter(Hex.decode("0000000000000000000000000000000000000000000000000000000000000000")),
-                        "00000000000000000100000000000000", "0bf30e1a0c33ccf6d5293177886912a7"),
+                                    new KeyParameter(Hex.decode("2BD6459F82C5B300952C49104881FF482BD6459F82C5B300")),
+                                   "E0208BE278E21420C4B1B9747788A954", "EA024714AD5C4D84EA024714AD5C4D84"),
                 new BlockCipherVectorTest(9, new SerpentEngine(),
-                        new KeyParameter(Hex.decode("0000000000000000000000000000000000000000000000000000000000000000")),
-                        "00000000000000000000000000000001", "6a7f3b805d2ddcba49b89770ade5e507"),
+                                    new KeyParameter(Hex.decode("000102030405060708090A0B0C0D0E0F")),
+                                   "33B3DC87EDDD9B0F6A1F407D14919365", "00112233445566778899AABBCCDDEEFF"),
                 new BlockCipherVectorTest(10, new SerpentEngine(),
-                        new KeyParameter(Hex.decode("80000000000000000000000000000000")),
-                        "00000000000000000000000000000000", "49afbfad9d5a34052cd8ffa5986bd2dd"),
-                new BlockCipherVectorTest(11, new SerpentEngine(),
-                        new KeyParameter(Hex.decode("000000000000000000000000004000000000000000000000")),
-                        "00000000000000000000000000000000", "ba8829b1de058c4b48615d851fc74f17"),
-                new BlockCipherVectorTest(12, new SerpentEngine(),
-                        new KeyParameter(Hex.decode("0000000000000000000000000000000000000000000000000000000100000000")),
-                        "00000000000000000000000000000000", "89f64377bf1e8a46c8247044e8056a98"),
-/*
-                new BlockCipherMonteCarloTest(13, 10000, new SerpentEngine(),
-                        new KeyParameter(Hex.decode("47f5f881daab9b67b43bd1342e339c19")),
-                        "7a4f7db38c52a8b711b778a38d203b6b", "003380e19f10065740394f48e2fe80b7"),
-*/
-                new BlockCipherMonteCarloTest(13, 100, new SerpentEngine(),
-                        new KeyParameter(Hex.decode("47f5f881daab9b67b43bd1342e339c19")),
-                        "7a4f7db38c52a8b711b778a38d203b6b", "4db75303d815c2f7cc6ca935d1c5a046"),
-/*
-                new BlockCipherMonteCarloTest(14, 10000, new SerpentEngine(),
-                        new KeyParameter(Hex.decode("31fba879ebc5e80df35e6fa33eaf92d6")),
-                        "70a05e12f74589009692a337f53ff614", "afb5425426906db26b70bdf842ac5400"),
-*/
-                new BlockCipherMonteCarloTest(14, 100, new SerpentEngine(),
-                        new KeyParameter(Hex.decode("31fba879ebc5e80df35e6fa33eaf92d6")),
-                        "70a05e12f74589009692a337f53ff614", "fc53a50f4d3bc9836001893d2f41742d"),
-/*
-                new BlockCipherMonteCarloTest(15, 10000, new SerpentEngine(),
-                        new KeyParameter(Hex.decode("bde6dd392307984695aee80e574f9977caae9aa78eda53e8")),
-                        "9cc523d034a93740a0aa4e2054bb34d8", "1949d506ada7de1f1344986e8ea049b2"),
-*/
-                new BlockCipherMonteCarloTest(15, 100, new SerpentEngine(),
-                        new KeyParameter(Hex.decode("bde6dd392307984695aee80e574f9977caae9aa78eda53e8")),
-                        "9cc523d034a93740a0aa4e2054bb34d8", "77117e6a9e80f40b2a36b7d755573c2d"),
-/*
-                new BlockCipherMonteCarloTest(16, 10000, new SerpentEngine(),
-                        new KeyParameter(Hex.decode("60f6f8ad4290699dc50921a1bbcca92da914e7d9cf01a9317c79c0af8f2487a1")),
-                        "ee1a61106fae2d381d686cbf854bab65", "e57f45559027cb1f2ed9603d814e1c34"),
-*/
-                new BlockCipherMonteCarloTest(16, 100, new SerpentEngine(),
-                        new KeyParameter(Hex.decode("60f6f8ad4290699dc50921a1bbcca92da914e7d9cf01a9317c79c0af8f2487a1")),
-                        "ee1a61106fae2d381d686cbf854bab65", "dcd7f13ea0dcdfd0139d1a42e2ffb84b")
+                                    new KeyParameter(Hex.decode("2BD6459F82C5B300952C49104881FF48")),
+                                   "BEB6C069393822D3BE73FF30525EC43E", "EA024714AD5C4D84EA024714AD5C4D84"),
+                new BlockCipherMonteCarloTest(20, 100, new SerpentEngine(),
+                        new KeyParameter(Hex.decode("F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3")),
+                        "F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3", "8FD0E58DB7A54B929FCA6A12F96F20AF"),
+                new BlockCipherMonteCarloTest(21, 100, new SerpentEngine(),
+                         new KeyParameter(Hex.decode("0004000000000000000000000000000000000000000000000000000000000000")),
+                         "00000000000000000000000000000000", "E7B681E8871FD05FEAE5FB64DA891EA2"),
+                new BlockCipherMonteCarloTest(22, 100, new SerpentEngine(),
+                         new KeyParameter(Hex.decode("0000000020000000000000000000000000000000000000000000000000000000")),
+                         "00000000000000000000000000000000", "C5545D516EEC73BFA3622A8194F95620"),
+                new BlockCipherMonteCarloTest(23, 100, new SerpentEngine(),
+                         new KeyParameter(Hex.decode("0000000000000000000000000000000000000000000000000000000002000000")),
+                         "00000000000000000000000000000000", "11FF5C9BE006F82C98BD4FAC1A19920E"),
+                new BlockCipherMonteCarloTest(24, 100, new SerpentEngine(),
+                         new KeyParameter(Hex.decode("0000000000000000000000000000000000000000000000000000000000000000")),
+                         "00000000000000000000000000010000", "47CA1CA404B6481CAD4C21C8A0415A0E"),
+                new BlockCipherMonteCarloTest(25, 100, new SerpentEngine(),
+                          new KeyParameter(Hex.decode("0000000000000000000000000000000000000000000000000000000000000000")),
+                          "00000000000000008000000000000000", "A0A2D5B07E27D539CA5BEE9DE1EAB3E6")
             };
 
     SerpentTest()
     {
         super(tests, new SerpentEngine(), new KeyParameter(new byte[32]));
+    }
+
+    public void performTest()
+        throws Exception
+    {
+        super.performTest();
+
+        doCbc(Hex.decode("BE4295539F6BD1752FD0A80229EF8847"), Hex.decode("00963F59224794D5AD4252094358FBC3"), Strings.toByteArray("CBC Mode Test"), Hex.decode("CF2CF2547E02F6D34D97246E8042ED89"));
+        doEax(Hex.decode("7494A57648FB420043BFBFC5639EB82D"), Hex.decode("6DF94638B83E01458F3E30C9A1D6AF1C"), Strings.toByteArray("EAX Mode Test"), new byte[0], 128, Hex.decode("96C521F32DC5E9BBC369DDE4914CB13B710EEBBAB7D706D3ABE06A99DC"));
+    }
+
+    private void doEax(byte[] key, byte[] iv, byte[] pt, byte[] aad, int tagLength, byte[] expected)
+        throws InvalidCipherTextException
+    {
+        EAXBlockCipher c = new EAXBlockCipher(new SerpentEngine());
+
+        c.init(true, new AEADParameters(new KeyParameter(key), tagLength, iv, aad));
+
+        byte[] out = new byte[expected.length];
+
+        int len = c.processBytes(pt, 0, pt.length, out, 0);
+
+        c.doFinal(out, len);
+
+        if (!Arrays.areEqual(expected, out))
+        {
+            fail("EAX test failed");
+        }
+    }
+
+    private void doCbc(byte[] key, byte[] iv, byte[] pt, byte[] expected)
+        throws Exception
+    {
+        PaddedBufferedBlockCipher c = new PaddedBufferedBlockCipher(new CBCBlockCipher(new SerpentEngine()), new PKCS7Padding());
+
+        byte[] ct = new byte[expected.length];
+
+        c.init(true, new ParametersWithIV(new KeyParameter(key), iv));
+
+        int l = c.processBytes(pt, 0, pt.length, ct, 0);
+
+        c.doFinal(ct, l);
+
+        if (!Arrays.areEqual(expected, ct))
+        {
+            fail("CBC test failed");
+        }
     }
 
     public String getName()

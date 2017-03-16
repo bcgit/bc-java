@@ -214,7 +214,7 @@ public class TlsSRPKeyExchange extends AbstractTlsKeyExchange
 
         if (buf != null)
         {
-            DigitallySigned signed_params = DigitallySigned.parse(context, input);
+            DigitallySigned signed_params = parseSignature(input);
 
             Signer signer = initVerifyer(tlsSigner, signed_params.getAlgorithm(), securityParameters);
             buf.updateSigner(signer);

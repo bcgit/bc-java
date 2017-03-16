@@ -395,7 +395,7 @@ class X509CRLObject
 
     public byte[] getSignature()
     {
-        return c.getSignature().getBytes();
+        return c.getSignature().getOctets();
     }
 
     public String getSigAlgName()

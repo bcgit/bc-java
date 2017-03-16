@@ -3,6 +3,8 @@ package org.bouncycastle.asn1;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.bouncycastle.util.Arrays;
 
@@ -12,15 +14,16 @@ import org.bouncycastle.util.Arrays;
 public class ASN1ObjectIdentifier
     extends ASN1Primitive
 {
-    String identifier;
+    private final String identifier;
 
     private byte[] body;
 
     /**
      * return an OID from the passed in object
+     *
      * @param obj an ASN1ObjectIdentifier or an object that can be converted into one.
-     * @throws IllegalArgumentException if the object cannot be converted.
      * @return an ASN1ObjectIdentifier instance, or null.
+     * @throws IllegalArgumentException if the object cannot be converted.
      */
     public static ASN1ObjectIdentifier getInstance(
         Object obj)
@@ -57,9 +60,9 @@ public class ASN1ObjectIdentifier
      * @param obj      the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
      *                 tagged false otherwise.
+     * @return an ASN1ObjectIdentifier instance, or null.
      * @throws IllegalArgumentException if the tagged object cannot
      * be converted.
-     * @return an ASN1ObjectIdentifier instance, or null.
      */
     public static ASN1ObjectIdentifier getInstance(
         ASN1TaggedObject obj,
@@ -176,12 +179,12 @@ public class ASN1ObjectIdentifier
         this.identifier = identifier;
     }
 
-     /**
-      * Create an OID that creates a branch under the current one.
-      *
-      * @param branchID node numbers for the new branch.
-      * @return the OID for the new created branch.
-      */
+    /**
+     * Create an OID that creates a branch under the current one.
+     *
+     * @param branchID node numbers for the new branch.
+     * @return the OID for the new created branch.
+     */
     ASN1ObjectIdentifier(ASN1ObjectIdentifier oid, String branchID)
     {
         if (!isValidBranchID(branchID, 0))
@@ -292,7 +295,7 @@ public class ASN1ObjectIdentifier
         }
     }
 
-    protected synchronized byte[] getBody()
+    private synchronized byte[] getBody()
     {
         if (body == null)
         {
@@ -338,6 +341,11 @@ public class ASN1ObjectIdentifier
     boolean asn1Equals(
         ASN1Primitive o)
     {
+        if (o == this)
+        {
+            return true;
+        }
+
         if (!(o instanceof ASN1ObjectIdentifier))
         {
             return false;
@@ -402,71 +410,68 @@ public class ASN1ObjectIdentifier
         return isValidBranchID(identifier, 2);
     }
 
-    private static ASN1ObjectIdentifier[][] cache = new ASN1ObjectIdentifier[256][];
+    /**
+     * Intern will return a reference to a pooled version of this object, unless it
+     * is not present in which case intern will add it.
+     * <p>
+     * The pool is also used by the ASN.1 parsers to limit the number of duplicated OID
+     * objects in circulation.
+     * </p>
+     *
+     * @return a reference to the identifier in the pool.
+     */
+    public ASN1ObjectIdentifier intern()
+    {
+        final OidHandle hdl = new OidHandle(getBody());
+        ASN1ObjectIdentifier oid = pool.get(hdl);
+        if (oid == null)
+        {
+            oid = pool.putIfAbsent(hdl, this);
+            if (oid == null)
+            {
+                oid = this;
+            }
+        }
+        return oid;
+    }
+
+    private static final ConcurrentMap<OidHandle, ASN1ObjectIdentifier> pool = new ConcurrentHashMap<OidHandle, ASN1ObjectIdentifier>();
+
+    private static class OidHandle
+    {
+        private final int key;
+        private final byte[] enc;
+
+        OidHandle(byte[] enc)
+        {
+            this.key = Arrays.hashCode(enc);
+            this.enc = enc;
+        }
+
+        public int hashCode()
+        {
+            return key;
+        }
+
+        public boolean equals(Object o)
+        {
+            if (o instanceof OidHandle)
+            {
+                return Arrays.areEqual(enc, ((OidHandle)o).enc);
+            }
+
+            return false;
+        }
+    }
 
     static ASN1ObjectIdentifier fromOctetString(byte[] enc)
     {
-        if (enc.length < 3)
+        final OidHandle hdl = new OidHandle(enc);
+        ASN1ObjectIdentifier oid = pool.get(hdl);
+        if (oid == null)
         {
             return new ASN1ObjectIdentifier(enc);
         }
-
-        int idx1 = enc[enc.length - 2] & 0xff;
-        // in this case top bit is always zero
-        int idx2 = enc[enc.length - 1] & 0x7f;
-
-        ASN1ObjectIdentifier possibleMatch;
-
-        synchronized (cache)
-        {
-            ASN1ObjectIdentifier[] first = cache[idx1];
-            if (first == null)
-            {
-                first = cache[idx1] = new ASN1ObjectIdentifier[128];
-            }
-
-            possibleMatch = first[idx2];
-            if (possibleMatch == null)
-            {
-                return first[idx2] = new ASN1ObjectIdentifier(enc);
-            }
-
-            if (Arrays.areEqual(enc, possibleMatch.getBody()))
-            {
-                return possibleMatch;
-            }
-
-            idx1 = (idx1 + 1) & 0xff;
-            first = cache[idx1];
-            if (first == null)
-            {
-                first = cache[idx1] = new ASN1ObjectIdentifier[128];
-            }
-
-            possibleMatch = first[idx2];
-            if (possibleMatch == null)
-            {
-                return first[idx2] = new ASN1ObjectIdentifier(enc);
-            }
-
-            if (Arrays.areEqual(enc, possibleMatch.getBody()))
-            {
-                return possibleMatch;
-            }
-
-            idx2 = (idx2 + 1) & 0x7f;
-            possibleMatch = first[idx2];
-            if (possibleMatch == null)
-            {
-                return first[idx2] = new ASN1ObjectIdentifier(enc);
-            }
-        }
-
-        if (Arrays.areEqual(enc, possibleMatch.getBody()))
-        {
-            return possibleMatch;
-        }
-
-        return new ASN1ObjectIdentifier(enc);
+        return oid;
     }
 }

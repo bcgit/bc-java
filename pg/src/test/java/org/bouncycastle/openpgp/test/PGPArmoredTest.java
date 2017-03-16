@@ -2,9 +2,11 @@ package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -87,7 +89,25 @@ public class PGPArmoredTest
         return matches;
     }
 
-    private void blankLineTest() throws Exception
+    private void pgpUtilTest()
+        throws Exception
+    {
+        // check decoder exception isn't escaping.
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toByteArray("abcde"));
+
+        try
+        {
+            PGPUtil.getDecoderStream(bIn);
+            fail("no exception");
+        }
+        catch (IOException e)
+        {
+            // expected: ignore.
+        }
+    }
+
+    private void blankLineTest()
+        throws Exception
     {
         byte[] blankLineBytes = Strings.toByteArray(blankLineData);
         ByteArrayInputStream bIn = new ByteArrayInputStream(blankLineBytes);
@@ -240,6 +260,7 @@ public class PGPArmoredTest
         }
 
         blankLineTest();
+        pgpUtilTest();
     }
 
     public String getName()

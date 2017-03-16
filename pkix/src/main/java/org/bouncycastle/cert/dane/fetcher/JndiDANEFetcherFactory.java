@@ -26,7 +26,7 @@ import org.bouncycastle.cert.dane.DANEException;
 public class JndiDANEFetcherFactory
     implements DANEEntryFetcherFactory
 {
-    private static final String DANE_TYPE = "65500";
+    private static final String DANE_TYPE = "53";
 
     private List dnsServerList = new ArrayList();
     private boolean isAuthoritative;
@@ -45,7 +45,7 @@ public class JndiDANEFetcherFactory
     }
 
     /**
-     * Specify requests must be authoritative.
+     * Specify requests must be authoritative, or not (default false).
      *
      * @param isAuthoritative true if requests must be authoritative, false otherwise.
      * @return the current factory..
@@ -100,27 +100,13 @@ public class JndiDANEFetcherFactory
                     NamingEnumeration bindings;
                     if (domainName.indexOf("_smimecert.") > 0)
                     {
-                        bindings = ctx.listBindings(domainName);
-
                         // need to use fully qualified domain name if using named DNS server.
                         Attributes attrs = ctx.getAttributes(domainName, new String[]{DANE_TYPE});
                         Attribute smimeAttr = attrs.get(DANE_TYPE);
 
                         if (smimeAttr != null)
                         {
-                            byte[] data = (byte[])attrs.get(DANE_TYPE).get();
-
-                            if (DANEEntry.isValidCertificate(data))
-                            {
-                                try
-                                {
-                                    entries.add(new DANEEntry(domainName, data));
-                                }
-                                catch (IOException e)
-                                {
-                                    throw new DANEException("Exception parsing entry: " + e.getMessage(), e);
-                                }
-                            }
+                            addEntries(entries, domainName, smimeAttr);
                         }
                     }
                     else
@@ -141,25 +127,14 @@ public class JndiDANEFetcherFactory
 
                             if (smimeAttr != null)
                             {
-                                byte[] data = (byte[])attrs.get(DANE_TYPE).get();
+                                String fullName = sc.getNameInNamespace();
+                                String domainName = fullName.substring(1, fullName.length() - 1);
 
-                                if (DANEEntry.isValidCertificate(data))
-                                {
-                                    try
-                                    {
-                                        String fullName = sc.getNameInNamespace();
-
-                                        entries.add(new DANEEntry(fullName.substring(1, fullName.length() - 1), data));
-                                    }
-                                    catch (IOException e)
-                                    {
-                                        throw new DANEException("Exception parsing entry: " + e.getMessage(), e);
-                                    }
-                                }
+                                addEntries(entries, domainName, smimeAttr);
                             }
                         }
                     }
-                    ;
+
                     return entries;
                 }
                 catch (NamingException e)
@@ -168,5 +143,26 @@ public class JndiDANEFetcherFactory
                 }
             }
         };
+    }
+
+    private void addEntries(List entries, String domainName, Attribute smimeAttr)
+        throws NamingException, DANEException
+    {
+        for (int index = 0; index != smimeAttr.size(); index++)
+        {
+            byte[] data = (byte[])smimeAttr.get(index);
+
+            if (DANEEntry.isValidCertificate(data))
+            {
+                try
+                {
+                    entries.add(new DANEEntry(domainName, data));
+                }
+                catch (IOException e)
+                {
+                    throw new DANEException("Exception parsing entry: " + e.getMessage(), e);
+                }
+            }
+        }
     }
 }

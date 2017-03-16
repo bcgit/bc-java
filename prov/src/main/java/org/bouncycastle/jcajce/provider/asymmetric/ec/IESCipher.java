@@ -23,11 +23,9 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.KeyEncoder;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
-import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.IESEngine;
-import org.bouncycastle.crypto.engines.OldIESEngine;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.EphemeralKeyPairGenerator;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
@@ -42,8 +40,10 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.IESWithCipherParameters;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.parsers.ECIESPublicKeyParser;
+import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.IESUtil;
+import org.bouncycastle.jcajce.provider.util.BadBlockException;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.ECKey;
@@ -108,6 +108,10 @@ public class IESCipher
 
     public byte[] engineGetIV()
     {
+        if (engineSpec != null)
+        {
+            return engineSpec.getNonce();
+        }
         return null;
     }
 
@@ -154,15 +158,20 @@ public class IESCipher
     {
         int len1, len2, len3;
 
+        if (key == null)
+        {
+            throw new IllegalStateException("cipher not initialised");
+        }
+
         len1 = engine.getMac().getMacSize();
 
-        if (key != null)
+        if (otherKeyParameter == null)
         {
-            len2 = 1 + 2 * (((ECKey)key).getParameters().getCurve().getFieldSize() + 7) / 8;
+            len2 = 2 * (((ECKeyParameters)key).getParameters().getCurve().getFieldSize() + 7) / 8;
         }
         else
         {
-            throw new IllegalStateException("cipher not initialised");
+            len2 = 0;
         }
 
         if (engine.getCipher() == null)
@@ -184,7 +193,7 @@ public class IESCipher
 
         if (state == Cipher.ENCRYPT_MODE || state == Cipher.WRAP_MODE)
         {
-            return buffer.size() + len1 + len2 + len3;
+            return buffer.size() + len1 + 1 + len2 + len3;
         }
         else if (state == Cipher.DECRYPT_MODE || state == Cipher.UNWRAP_MODE)
         {
@@ -259,7 +268,13 @@ public class IESCipher
         // Use default parameters (including cipher key size) if none are specified
         if (engineSpec == null)
         {
-            this.engineSpec = IESUtil.guessParameterSpec(engine.getCipher());
+            byte[] nonce = null;
+            if (ivLength != 0 && opmode == Cipher.ENCRYPT_MODE)
+            {
+                nonce = new byte[ivLength];
+                random.nextBytes(nonce);
+            }
+            this.engineSpec = IESUtil.guessParameterSpec(engine.getCipher(), nonce);
         }
         else if (engineSpec instanceof IESParameterSpec)
         {
@@ -272,16 +287,9 @@ public class IESCipher
 
         byte[] nonce = this.engineSpec.getNonce();
 
-        if (nonce != null)
+        if (ivLength != 0 && (nonce == null || nonce.length != ivLength))
         {
-            if (ivLength == 0)
-            {
-                throw new InvalidAlgorithmParameterException("NONCE present in IES Parameters when none required");
-            }
-            else if (nonce.length != ivLength)
-            {
-                throw new InvalidAlgorithmParameterException("NONCE in IES Parameters needs to be " + ivLength + " bytes long");
-            }
+            throw new InvalidAlgorithmParameterException("NONCE in IES Parameters needs to be " + ivLength + " bytes long");
         }
 
         // Parse the recipient's key
@@ -289,13 +297,13 @@ public class IESCipher
         {
             if (key instanceof PublicKey)
             {
-                this.key = ECUtil.generatePublicKeyParameter((PublicKey)key);
+                this.key = ECUtils.generatePublicKeyParameter((PublicKey)key);
             }
             else if (key instanceof IESKey)
             {
                 IESKey ieKey = (IESKey)key;
 
-                this.key = ECUtil.generatePublicKeyParameter(ieKey.getPublic());
+                this.key = ECUtils.generatePublicKeyParameter(ieKey.getPublic());
                 this.otherKeyParameter = ECUtil.generatePrivateKeyParameter(ieKey.getPrivate());
             }
             else
@@ -313,7 +321,7 @@ public class IESCipher
             {
                 IESKey ieKey = (IESKey)key;
 
-                this.otherKeyParameter = ECUtil.generatePublicKeyParameter(ieKey.getPublic());
+                this.otherKeyParameter = ECUtils.generatePublicKeyParameter(ieKey.getPublic());
                 this.key = ECUtil.generatePrivateKeyParameter(ieKey.getPrivate());
             }
             else
@@ -346,7 +354,7 @@ public class IESCipher
         }
         catch (InvalidAlgorithmParameterException e)
         {
-            throw new IllegalArgumentException("can't handle supplied parameter spec");
+            throw new IllegalArgumentException("cannot handle supplied parameter spec: " + e.getMessage());
         }
 
     }
@@ -423,7 +431,7 @@ public class IESCipher
             }
             catch (Exception e)
             {
-                throw new BadPaddingException(e.getMessage());
+                throw new BadBlockException("unable to process block", e);
             }
         }
 
@@ -449,11 +457,10 @@ public class IESCipher
 
                 return engine.processBlock(in, 0, in.length);
             }
-            catch (Exception e)
+            catch (final Exception e)
             {
-                throw new BadPaddingException(e.getMessage());
+                throw new BadBlockException("unable to process block", e);
             }
-
         }
         else if (state == Cipher.DECRYPT_MODE || state == Cipher.UNWRAP_MODE)
         {
@@ -466,7 +473,7 @@ public class IESCipher
             }
             catch (InvalidCipherTextException e)
             {
-                throw new BadPaddingException(e.getMessage());
+                throw new BadBlockException("unable to process block", e);
             }
         }
         else
@@ -500,46 +507,20 @@ public class IESCipher
         public ECIES()
         {
             super(new IESEngine(new ECDHBasicAgreement(),
-                new KDF2BytesGenerator(new SHA1Digest()),
-                new HMac(new SHA1Digest())));
+                new KDF2BytesGenerator(DigestFactory.createSHA1()),
+                new HMac(DigestFactory.createSHA1())));
         }
     }
 
     static public class ECIESwithCipher
         extends IESCipher
     {
-        public ECIESwithCipher(BlockCipher cipher)
-        {
-            super(new IESEngine(new ECDHBasicAgreement(),
-                            new KDF2BytesGenerator(new SHA1Digest()),
-                            new HMac(new SHA1Digest()),
-                            new PaddedBufferedBlockCipher(cipher)));
-        }
-
         public ECIESwithCipher(BlockCipher cipher, int ivLength)
         {
             super(new IESEngine(new ECDHBasicAgreement(),
-                            new KDF2BytesGenerator(new SHA1Digest()),
-                            new HMac(new SHA1Digest()),
+                            new KDF2BytesGenerator(DigestFactory.createSHA1()),
+                            new HMac(DigestFactory.createSHA1()),
                             new PaddedBufferedBlockCipher(cipher)), ivLength);
-        }
-    }
-
-    static public class ECIESwithDESede
-        extends ECIESwithCipher
-    {
-        public ECIESwithDESede()
-        {
-            super(new DESedeEngine());
-        }
-    }
-
-    static public class ECIESwithAES
-        extends ECIESwithCipher
-    {
-        public ECIESwithAES()
-        {
-            super(new AESEngine());
         }
     }
 
@@ -556,76 +537,6 @@ public class IESCipher
         extends ECIESwithCipher
     {
         public ECIESwithAESCBC()
-        {
-            super(new CBCBlockCipher(new AESEngine()), 16);
-        }
-    }
-
-    /**
-     * Backwards compatibility
-     */
-    static public class OldECIES
-        extends IESCipher
-    {
-        public OldECIES()
-        {
-            super(new OldIESEngine(new ECDHBasicAgreement(),
-                new KDF2BytesGenerator(new SHA1Digest()),
-                new HMac(new SHA1Digest())));
-        }
-    }
-
-    static public class OldECIESwithCipher
-        extends IESCipher
-    {
-        public OldECIESwithCipher(BlockCipher baseCipher)
-        {
-            super(new OldIESEngine(new ECDHBasicAgreement(),
-                new KDF2BytesGenerator(new SHA1Digest()),
-                new HMac(new SHA1Digest()),
-                new PaddedBufferedBlockCipher(baseCipher)));
-        }
-
-        public OldECIESwithCipher(BlockCipher baseCipher, int ivLength)
-        {
-            super(new OldIESEngine(new ECDHBasicAgreement(),
-                new KDF2BytesGenerator(new SHA1Digest()),
-                new HMac(new SHA1Digest()),
-                new PaddedBufferedBlockCipher(baseCipher)), ivLength);
-        }
-    }
-
-    static public class OldECIESwithDESede
-        extends OldECIESwithCipher
-    {
-        public OldECIESwithDESede()
-        {
-            super(new DESedeEngine());
-        }
-    }
-
-    static public class OldECIESwithAES
-        extends OldECIESwithCipher
-    {
-        public OldECIESwithAES()
-        {
-            super(new AESEngine());
-        }
-    }
-
-    static public class OldECIESwithDESedeCBC
-        extends OldECIESwithCipher
-    {
-        public OldECIESwithDESedeCBC()
-        {
-            super(new CBCBlockCipher(new DESedeEngine()), 8);
-        }
-    }
-
-    static public class OldECIESwithAESCBC
-        extends OldECIESwithCipher
-    {
-        public OldECIESwithAESCBC()
         {
             super(new CBCBlockCipher(new AESEngine()), 16);
         }

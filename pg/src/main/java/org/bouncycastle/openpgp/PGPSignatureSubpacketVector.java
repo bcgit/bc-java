@@ -17,6 +17,7 @@ import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
 import org.bouncycastle.bcpg.sig.SignatureCreationTime;
 import org.bouncycastle.bcpg.sig.SignatureExpirationTime;
+import org.bouncycastle.bcpg.sig.SignatureTarget;
 import org.bouncycastle.bcpg.sig.SignerUserID;
 
 /**
@@ -279,6 +280,18 @@ public class PGPSignatureSubpacketVector
         return list;
     }
 
+    public SignatureTarget getSignatureTarget()
+    {
+        SignatureSubpacket    p = this.getSubpacket(SignatureSubpacketTags.SIGNATURE_TARGET);
+
+        if (p == null)
+        {
+            return null;
+        }
+
+        return new SignatureTarget(p.isCritical(), p.isLongLength(), p.getData());
+    }
+
     public Features getFeatures()
     {
         SignatureSubpacket    p = this.getSubpacket(SignatureSubpacketTags.FEATURES);
@@ -288,7 +301,7 @@ public class PGPSignatureSubpacketVector
             return null;
         }
 
-        return new Features(p.isCritical(), p.getData());
+        return new Features(p.isCritical(), p.isLongLength(), p.getData());
     }
 
     /**

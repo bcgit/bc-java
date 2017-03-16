@@ -240,7 +240,7 @@ public class X509CertificateHolder
      */
     public byte[] getSignature()
     {
-        return x509Certificate.getSignature().getBytes();
+        return x509Certificate.getSignature().getOctets();
     }
 
     /**
@@ -289,7 +289,7 @@ public class X509CertificateHolder
             throw new CertException("unable to process signature: " + e.getMessage(), e);
         }
 
-        return verifier.verify(x509Certificate.getSignature().getBytes());
+        return verifier.verify(this.getSignature());
     }
 
     public boolean equals(

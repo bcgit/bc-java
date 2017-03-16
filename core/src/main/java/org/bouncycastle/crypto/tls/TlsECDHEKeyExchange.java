@@ -4,13 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
 
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.TeeInputStream;
 
 /**
@@ -84,7 +80,7 @@ public class TlsECDHEKeyExchange
 
         byte[] point = TlsUtils.readOpaque8(teeIn);
 
-        DigitallySigned signed_params = DigitallySigned.parse(context, input);
+        DigitallySigned signed_params = parseSignature(input);
 
         Signer signer = initVerifyer(tlsSigner, signed_params.getAlgorithm(), securityParameters);
         buf.updateSigner(signer);

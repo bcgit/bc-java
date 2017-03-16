@@ -66,4 +66,27 @@ public interface BCObjectIdentifiers
     public static final ASN1ObjectIdentifier bc_pbe_sha256_pkcs12_aes192_cbc = bc_pbe_sha256_pkcs12.branch("1.22");
     /** 1.3.6.1.4.1.22554.1.1.2.2.42 */
     public static final ASN1ObjectIdentifier bc_pbe_sha256_pkcs12_aes256_cbc = bc_pbe_sha256_pkcs12.branch("1.42");
+
+    /**
+     * signature(2) algorithms
+     */
+    public static final ASN1ObjectIdentifier bc_sig        = bc.branch("2");
+
+    /**
+     * Sphincs-256
+     */
+    public static final ASN1ObjectIdentifier sphincs256                      = bc_sig.branch("1");
+    public static final ASN1ObjectIdentifier sphincs256_with_BLAKE512        = sphincs256.branch("1");
+    public static final ASN1ObjectIdentifier sphincs256_with_SHA512          = sphincs256.branch("2");
+    public static final ASN1ObjectIdentifier sphincs256_with_SHA3_512        = sphincs256.branch("3");
+
+    /**
+     * key_exchange(3) algorithms
+     */
+    public static final ASN1ObjectIdentifier bc_exch = bc.branch("3");
+
+    /**
+     * NewHope
+     */
+    public static final ASN1ObjectIdentifier newHope = bc_exch.branch("1");
 }

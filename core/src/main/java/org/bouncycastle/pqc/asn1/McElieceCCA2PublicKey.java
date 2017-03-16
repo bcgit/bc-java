@@ -5,46 +5,41 @@ import java.math.BigInteger;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.pqc.math.linearalgebra.GF2Matrix;
 
 public class McElieceCCA2PublicKey
     extends ASN1Object
 {
-    private ASN1ObjectIdentifier oid;
-    private int n;
-    private int t;
+    private final int n;
+    private final int t;
+    private final GF2Matrix g;
+    private final AlgorithmIdentifier digest;
 
-    private byte[] matrixG;
-
-    public McElieceCCA2PublicKey(ASN1ObjectIdentifier oid, int n, int t, GF2Matrix g)
+    public McElieceCCA2PublicKey(int n, int t, GF2Matrix g, AlgorithmIdentifier digest)
     {
-        this.oid = oid;
         this.n = n;
         this.t = t;
-        this.matrixG = g.getEncoded();
+        this.g = new GF2Matrix(g.getEncoded());
+        this.digest = digest;
     }
 
     private McElieceCCA2PublicKey(ASN1Sequence seq)
     {
-        oid = ((ASN1ObjectIdentifier)seq.getObjectAt(0));
-        BigInteger bigN = ((ASN1Integer)seq.getObjectAt(1)).getValue();
+        BigInteger bigN = ((ASN1Integer)seq.getObjectAt(0)).getValue();
         n = bigN.intValue();
 
-        BigInteger bigT = ((ASN1Integer)seq.getObjectAt(2)).getValue();
+        BigInteger bigT = ((ASN1Integer)seq.getObjectAt(1)).getValue();
         t = bigT.intValue();
 
-        matrixG = ((ASN1OctetString)seq.getObjectAt(3)).getOctets();
-    }
+        g = new GF2Matrix(((ASN1OctetString)seq.getObjectAt(2)).getOctets());
 
-    public ASN1ObjectIdentifier getOID()
-    {
-        return oid;
+        digest = AlgorithmIdentifier.getInstance(seq.getObjectAt(3));
     }
 
     public int getN()
@@ -59,14 +54,17 @@ public class McElieceCCA2PublicKey
 
     public GF2Matrix getG()
     {
-        return new GF2Matrix(matrixG);
+        return g;
+    }
+
+    public AlgorithmIdentifier getDigest()
+    {
+        return digest;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
-        // encode <oidString>
-        v.add(oid);
 
         // encode <n>
         v.add(new ASN1Integer(n));
@@ -75,7 +73,9 @@ public class McElieceCCA2PublicKey
         v.add(new ASN1Integer(t));
 
         // encode <matrixG>
-        v.add(new DEROctetString(matrixG));
+        v.add(new DEROctetString(g.getEncoded()));
+
+        v.add(digest);
 
         return new DERSequence(v);
     }

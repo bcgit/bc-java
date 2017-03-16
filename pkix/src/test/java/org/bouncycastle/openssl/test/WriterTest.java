@@ -21,7 +21,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.PasswordFinder;
 import org.bouncycastle.openssl.bc.BcPEMDecryptorProvider;
 import org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
@@ -75,23 +74,6 @@ public class WriterTest
         "RC2-40-CBC",
         "RC2-64-CBC",
     };
-
-    private class Password
-        implements PasswordFinder
-    {
-        private final char[] password;
-
-        public Password(
-            char[] word)
-        {
-            this.password = (char[]) word.clone();
-        }
-
-        public char[] getPassword()
-        {
-            return (char[]) password.clone();
-        }
-    }
 
     public String getName()
     {

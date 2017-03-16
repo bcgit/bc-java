@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.icao.DataGroupHash;
 import org.bouncycastle.asn1.icao.LDSSecurityObject;
 import org.bouncycastle.asn1.icao.LDSVersionInfo;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -39,7 +40,7 @@ public class LDSSecurityObjectUnitTest
     public void performTest() 
         throws Exception
     {
-        AlgorithmIdentifier  algoId = new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.3.14.3.2.26"));
+        AlgorithmIdentifier  algoId = new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1);
         DataGroupHash[] datas = new DataGroupHash[2];
       
         datas[0] = new DataGroupHash(1, new DEROctetString(generateHash()));

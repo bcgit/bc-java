@@ -65,10 +65,6 @@ public class SP800SecureRandom
 
     public byte[] generateSeed(int numBytes)
     {
-        byte[] bytes = new byte[numBytes];
-
-        this.nextBytes(bytes);
-
-        return bytes;
+        return EntropyUtil.generateSeed(entropySource, numBytes);
     }
 }

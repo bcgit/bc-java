@@ -388,6 +388,41 @@ public class AESTest
         }
     }
 
+    private void ctrCounterTest()
+    {
+        CipherParameters params = new ParametersWithIV(new KeyParameter(Hex.decode("5F060D3716B345C253F6749ABAC10917")), Hex.decode("000000000000000000000000000000"));
+        SICBlockCipher engine = new SICBlockCipher(new AESEngine());
+
+        engine.init(true, params);
+
+        SecureRandom rand = new SecureRandom();
+        byte[]       cipher = new byte[256 * 16];
+        byte[]       plain = new byte[255 * 16];
+
+        rand.nextBytes(plain);
+        engine.processBytes(plain, 0, plain.length, cipher, 0);
+
+        engine.init(true, params);
+
+        byte[]      fragment = new byte[20];
+
+        plain = new byte[256 * 16];
+        engine.init(true, params);
+
+        try
+        {
+            engine.processBytes(plain, 0, plain.length, cipher, 0);
+            fail("out of range data not caught");
+        }
+        catch (IllegalStateException e)
+        {
+            if (!"Counter in CTR/SIC mode out of range.".equals(e.getMessage()))
+            {
+                fail("wrong exception");
+            }
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -432,6 +467,7 @@ public class AESTest
         testNullCFB();
 
         skipTest();
+        ctrCounterTest();
     }
 
     public static void main(

@@ -46,7 +46,7 @@ public class ISOTrailers
 
     public static Integer getTrailer(Digest digest)
     {
-        return trailerMap.get(digest.getAlgorithmName());
+        return (Integer)trailerMap.get(digest.getAlgorithmName());  // JDK 1.4 compatibility
     }
 
     public static boolean noTrailerAvailable(Digest digest)

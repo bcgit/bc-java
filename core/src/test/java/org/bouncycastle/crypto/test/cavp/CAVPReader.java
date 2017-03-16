@@ -15,7 +15,7 @@ import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.macs.CMac;
 import org.bouncycastle.crypto.macs.HMac;
@@ -109,7 +109,7 @@ public class CAVPReader
         final Mac prf;
         if (config.getProperty("PRF").matches("CMAC_AES\\d\\d\\d"))
         {
-            BlockCipher blockCipher = new AESFastEngine();
+            BlockCipher blockCipher = new AESEngine();
             prf = new CMac(blockCipher);
         }
         else if (config.getProperty("PRF").matches("CMAC_TDES\\d"))

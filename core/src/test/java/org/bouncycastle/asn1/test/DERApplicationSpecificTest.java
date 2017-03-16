@@ -31,6 +31,9 @@ public class DERApplicationSpecificTest
       + "75F6C5F2E2D21F0395683B532A26E4C189B71EFE659C3F26E0EB9AEAE9986310"
       + "7F9B0DADA16414FFA204516AEE2B");
 
+    private final static byte[] sampleData = Hex.decode(
+        "613280020780a106060456000104a203020101a305a103020101be80288006025101020109a080b2800a01000000000000000000");
+
     public String getName()
     {
         return "DERApplicationSpecific";
@@ -88,6 +91,13 @@ public class DERApplicationSpecificTest
         throws Exception
     {
         testTaggedObject();
+
+        DERApplicationSpecific appSpec = (DERApplicationSpecific)ASN1Primitive.fromByteArray(sampleData);
+
+        if (1 != appSpec.getApplicationTag())
+        {
+            fail("wrong tag detected");
+        }
 
         ASN1Integer value = new ASN1Integer(9);
 

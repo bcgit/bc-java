@@ -12,7 +12,6 @@ import org.bouncycastle.pqc.math.linearalgebra.GoppaCode;
 import org.bouncycastle.pqc.math.linearalgebra.GoppaCode.MaMaPe;
 import org.bouncycastle.pqc.math.linearalgebra.Permutation;
 import org.bouncycastle.pqc.math.linearalgebra.PolynomialGF2mSmallM;
-import org.bouncycastle.pqc.math.linearalgebra.PolynomialRingGF2m;
 
 
 /**
@@ -89,10 +88,6 @@ public class McElieceCCA2KeyPairGenerator
         // irreducible Goppa polynomial
         PolynomialGF2mSmallM gp = new PolynomialGF2mSmallM(field, t,
             PolynomialGF2mSmallM.RANDOM_IRREDUCIBLE_POLYNOMIAL, random);
-        PolynomialRingGF2m ring = new PolynomialRingGF2m(field, gp);
-
-        // matrix for computing square roots in (GF(2^m))^t
-        PolynomialGF2mSmallM[] qInv = ring.getSquareRootMatrix();
 
         // generate canonical check matrix
         GF2Matrix h = GoppaCode.createCanonicalCheckMatrix(field, gp);
@@ -109,9 +104,8 @@ public class McElieceCCA2KeyPairGenerator
         int k = shortG.getNumRows();
 
         // generate keys
-        McElieceCCA2PublicKeyParameters pubKey = new McElieceCCA2PublicKeyParameters(OID, n, t, shortG, mcElieceCCA2Params.getParameters());
-        McElieceCCA2PrivateKeyParameters privKey = new McElieceCCA2PrivateKeyParameters(OID, n, k,
-            field, gp, p, h, qInv, mcElieceCCA2Params.getParameters());
+        McElieceCCA2PublicKeyParameters pubKey = new McElieceCCA2PublicKeyParameters(n, t, shortG, mcElieceCCA2Params.getParameters().getDigest());
+        McElieceCCA2PrivateKeyParameters privKey = new McElieceCCA2PrivateKeyParameters(n, k, field, gp, p, mcElieceCCA2Params.getParameters().getDigest());
 
         // return key pair
         return new AsymmetricCipherKeyPair(pubKey, privKey);

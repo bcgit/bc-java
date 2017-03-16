@@ -20,6 +20,7 @@ import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERGeneralString;
 import org.bouncycastle.asn1.DERGeneralizedTime;
+import org.bouncycastle.asn1.DERGraphicString;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERNumericString;
@@ -32,7 +33,10 @@ import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTCTime;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DERUniversalString;
+import org.bouncycastle.asn1.DERVideotexString;
 import org.bouncycastle.asn1.DERVisibleString;
+import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTestResult;
 import org.bouncycastle.util.test.Test;
 import org.bouncycastle.util.test.TestResult;
@@ -71,7 +75,9 @@ public class EqualsAndHashCodeTest
                 new DERUniversalString(data),
                 new DERUTCTime(new Date()),
                 new DERUTF8String("hello world"),
-                new DERVisibleString("hello world")
+                new DERVisibleString("hello world") ,
+                new DERGraphicString(Hex.decode("deadbeef")),
+                new DERVideotexString(Strings.toByteArray("Hello World"))
             };
         
         try
@@ -83,9 +89,7 @@ public class EqualsAndHashCodeTest
             {
                 aOut.writeObject(values[i]);
             }
-            
-            ASN1Primitive[] readValues = new ASN1Primitive[values.length];
-            
+
             ByteArrayInputStream    bIn = new ByteArrayInputStream(bOut.toByteArray());
             ASN1InputStream         aIn = new ASN1InputStream(bIn);
             

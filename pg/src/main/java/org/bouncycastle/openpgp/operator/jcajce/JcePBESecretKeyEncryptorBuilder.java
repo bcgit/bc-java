@@ -14,6 +14,7 @@ import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 
@@ -120,7 +121,7 @@ public class JcePBESecretKeyEncryptorBuilder
                 {
                     c = helper.createCipher(PGPUtil.getSymmetricCipherName(this.encAlgorithm) + "/CFB/NoPadding");
 
-                    c.init(Cipher.ENCRYPT_MODE, PGPUtil.makeSymmetricKey(this.encAlgorithm, key), this.random);
+                    c.init(Cipher.ENCRYPT_MODE, JcaJcePGPUtil.makeSymmetricKey(this.encAlgorithm, key), this.random);
 
                     iv = c.getIV();
 
@@ -147,7 +148,7 @@ public class JcePBESecretKeyEncryptorBuilder
                 {
                     c = helper.createCipher(PGPUtil.getSymmetricCipherName(this.encAlgorithm) + "/CFB/NoPadding");
 
-                    c.init(Cipher.ENCRYPT_MODE, PGPUtil.makeSymmetricKey(this.encAlgorithm, key), new IvParameterSpec(iv));
+                    c.init(Cipher.ENCRYPT_MODE, JcaJcePGPUtil.makeSymmetricKey(this.encAlgorithm, key), new IvParameterSpec(iv));
 
                     this.iv = iv;
 

@@ -127,7 +127,7 @@ public class BERTaggedObject
                 }
                 else
                 {
-                    throw new RuntimeException("not implemented: " + obj.getClass().getName());
+                    throw new ASN1Exception("not implemented: " + obj.getClass().getName());
                 }
 
                 while (e.hasMoreElements())

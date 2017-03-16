@@ -115,6 +115,13 @@ public class KeyPurposeId
      */
     public static final KeyPurposeId id_kp_smartcardlogon = new KeyPurposeId(new ASN1ObjectIdentifier("1.3.6.1.4.1.311.20.2.2"));
 
+
+    /**
+     *
+     */
+    public static final KeyPurposeId id_kp_macAddress = new KeyPurposeId(new ASN1ObjectIdentifier("1.3.6.1.1.1.1.22"));
+
+
     private ASN1ObjectIdentifier id;
 
     private KeyPurposeId(ASN1ObjectIdentifier id)
@@ -158,5 +165,10 @@ public class KeyPurposeId
     public String getId()
     {
         return id.getId();
+    }
+
+    public String toString()
+    {
+        return id.toString();
     }
 }

@@ -1242,7 +1242,7 @@ public class CertPathValidatorUtilities
 
                         for (int j = 0; j < genNames.length; j++)
                         {
-                            PKIXCRLStore store = (PKIXCRLStore)namedCRLStoreMap.get(genNames[i]);
+                            PKIXCRLStore store = (PKIXCRLStore)namedCRLStoreMap.get(genNames[j]);
                             if (store != null)
                             {
                                 stores.add(store);

@@ -12,7 +12,9 @@ import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
+import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
 
 public class AlgorithmParametersSpi
@@ -33,14 +35,25 @@ public class AlgorithmParametersSpi
         if (algorithmParameterSpec instanceof ECGenParameterSpec)
         {
             ECGenParameterSpec ecGenParameterSpec = (ECGenParameterSpec)algorithmParameterSpec;
-            X9ECParameters params = ECNamedCurveTable.getByName(ecGenParameterSpec.getName());
+            X9ECParameters params = ECUtils.getDomainParametersFromGenSpec(ecGenParameterSpec);
 
+            if (params == null)
+            {
+                throw new InvalidParameterSpecException("EC curve name not recognized: " + ecGenParameterSpec.getName());
+            }
             curveName = ecGenParameterSpec.getName();
             ecParameterSpec = EC5Util.convertToSpec(params);
         }
         else if (algorithmParameterSpec instanceof ECParameterSpec)
         {
-            curveName = null;
+            if (algorithmParameterSpec instanceof ECNamedCurveSpec)
+            {
+                curveName = ((ECNamedCurveSpec)algorithmParameterSpec).getName();
+            }
+            else
+            {
+                curveName = null;
+            }
             ecParameterSpec = (ECParameterSpec)algorithmParameterSpec;
         }
         else
@@ -68,7 +81,13 @@ public class AlgorithmParametersSpi
 
             if (params.isNamedCurve())
             {
-                curveName = ECNamedCurveTable.getName(ASN1ObjectIdentifier.getInstance(params.getParameters()));
+                ASN1ObjectIdentifier curveId = ASN1ObjectIdentifier.getInstance(params.getParameters());
+
+                curveName = ECNamedCurveTable.getName(curveId);
+                if (curveName == null)
+                {
+                    curveName = curveId.getId();
+                }
             }
 
             ecParameterSpec = EC5Util.convertToSpec(params, curve);
@@ -87,9 +106,27 @@ public class AlgorithmParametersSpi
         {
             return (T)ecParameterSpec;
         }
-        else if (ECGenParameterSpec.class.isAssignableFrom(paramSpec) && curveName != null)
+        else if (ECGenParameterSpec.class.isAssignableFrom(paramSpec))
         {
-            return (T)new ECGenParameterSpec(curveName);
+            if (curveName != null)
+            {
+                ASN1ObjectIdentifier namedCurveOid = ECUtil.getNamedCurveOid(curveName);
+
+                if (namedCurveOid != null)
+                {
+                    return (T)new ECGenParameterSpec(namedCurveOid.getId());
+                }
+                return (T)new ECGenParameterSpec(curveName);
+            }
+            else
+            {
+                ASN1ObjectIdentifier namedCurveOid = ECUtil.getNamedCurveOid(EC5Util.convertSpec(ecParameterSpec, false));
+
+                if (namedCurveOid != null)
+                {
+                    return (T)new ECGenParameterSpec(namedCurveOid.getId());
+                }
+            }
         }
         throw new InvalidParameterSpecException("EC AlgorithmParameters cannot convert to " + paramSpec.getName());
     }
@@ -115,7 +152,7 @@ public class AlgorithmParametersSpi
             }
             else if (curveName != null)
             {
-                params = new X962Parameters(ECNamedCurveTable.getOID(curveName));
+                params = new X962Parameters(ECUtil.getNamedCurveOid(curveName));
             }
             else
             {

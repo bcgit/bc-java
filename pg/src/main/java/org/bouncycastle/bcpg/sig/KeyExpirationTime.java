@@ -24,16 +24,17 @@ public class KeyExpirationTime
     
     public KeyExpirationTime(
         boolean    critical,
+        boolean    isLongLength,
         byte[]     data)
     {
-        super(SignatureSubpacketTags.KEY_EXPIRE_TIME, critical, data);
+        super(SignatureSubpacketTags.KEY_EXPIRE_TIME, critical, isLongLength, data);
     }
     
     public KeyExpirationTime(
         boolean    critical,
         long       seconds)
     {
-        super(SignatureSubpacketTags.KEY_EXPIRE_TIME, critical, timeToBytes(seconds));
+        super(SignatureSubpacketTags.KEY_EXPIRE_TIME, critical, false, timeToBytes(seconds));
     }
     
     /**

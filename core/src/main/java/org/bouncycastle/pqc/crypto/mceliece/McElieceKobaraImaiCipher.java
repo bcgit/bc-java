@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
@@ -46,13 +47,14 @@ public class McElieceKobaraImaiCipher
      * The McEliece main parameters
      */
     private int n, k, t;
+    private boolean forEncryption;
 
 
-    public void init(boolean forSigning,
+    public void init(boolean forEncryption,
                      CipherParameters param)
     {
-
-        if (forSigning)
+        this.forEncryption = forEncryption;
+        if (forEncryption)
         {
             if (param instanceof ParametersWithRandom)
             {
@@ -100,7 +102,7 @@ public class McElieceKobaraImaiCipher
 
     private void initCipherEncrypt(McElieceCCA2PublicKeyParameters pubKey)
     {
-        this.messDigest = pubKey.getParameters().getDigest();
+        this.messDigest = Utils.getDigest(pubKey.getDigest());
         n = pubKey.getN();
         k = pubKey.getK();
         t = pubKey.getT();
@@ -109,15 +111,18 @@ public class McElieceKobaraImaiCipher
 
     public void initCipherDecrypt(McElieceCCA2PrivateKeyParameters privKey)
     {
-        this.messDigest = privKey.getParameters().getDigest();
+        this.messDigest = Utils.getDigest(privKey.getDigest());
         n = privKey.getN();
         k = privKey.getK();
         t = privKey.getT();
     }
 
     public byte[] messageEncrypt(byte[] input)
-        throws Exception
     {
+        if (!forEncryption)
+        {
+            throw new IllegalStateException("cipher initialised for decryption");
+        }
 
         int c2Len = messDigest.getDigestSize();
         int c4Len = k >> 3;
@@ -212,14 +217,18 @@ public class McElieceKobaraImaiCipher
 
 
     public byte[] messageDecrypt(byte[] input)
-        throws Exception
+        throws InvalidCipherTextException
     {
+        if (forEncryption)
+        {
+            throw new IllegalStateException("cipher initialised for decryption");
+        }
 
         int nDiv8 = n >> 3;
 
         if (input.length < nDiv8)
         {
-            throw new Exception("Bad Padding: Ciphertext too short.");
+            throw new InvalidCipherTextException("Bad Padding: Ciphertext too short.");
         }
 
         int c2Len = messDigest.getDigestSize();
@@ -299,7 +308,7 @@ public class McElieceKobaraImaiCipher
 
         if (mConstPrime.length < c1Len)
         {
-            throw new Exception("Bad Padding: invalid ciphertext");
+            throw new InvalidCipherTextException("Bad Padding: invalid ciphertext");
         }
 
         byte[][] temp = ByteUtils.split(mConstPrime, c1Len
@@ -309,11 +318,9 @@ public class McElieceKobaraImaiCipher
 
         if (!ByteUtils.equals(constPrime, PUBLIC_CONSTANT))
         {
-            throw new Exception("Bad Padding: invalid ciphertext");
+            throw new InvalidCipherTextException("Bad Padding: invalid ciphertext");
         }
 
         return mr;
     }
-
-
 }

@@ -44,7 +44,7 @@ public abstract class DefaultTlsServer
 
     protected DHParameters getDHParameters()
     {
-        return DHStandardGroups.rfc5114_2048_256;
+        return DHStandardGroups.rfc3526_2048;
     }
 
     protected int[] getCipherSuites()
@@ -79,11 +79,12 @@ public abstract class DefaultTlsServer
 
         switch (keyExchangeAlgorithm)
         {
-        case KeyExchangeAlgorithm.DH_DSS:
         case KeyExchangeAlgorithm.DHE_DSS:
             return getDSASignerCredentials();
 
-        case KeyExchangeAlgorithm.ECDH_ECDSA:
+        case KeyExchangeAlgorithm.ECDH_anon:
+            return null;
+
         case KeyExchangeAlgorithm.ECDHE_ECDSA:
             return getECDSASignerCredentials();
 
@@ -115,6 +116,7 @@ public abstract class DefaultTlsServer
         case KeyExchangeAlgorithm.DHE_RSA:
             return createDHEKeyExchange(keyExchangeAlgorithm);
 
+        case KeyExchangeAlgorithm.ECDH_anon:
         case KeyExchangeAlgorithm.ECDH_ECDSA:
         case KeyExchangeAlgorithm.ECDH_RSA:
             return createECDHKeyExchange(keyExchangeAlgorithm);

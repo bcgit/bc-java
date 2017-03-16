@@ -109,7 +109,7 @@ public class JcaPublicKeyConverter
         }
 
         BigInteger p = key.getPrimeModulusP();
-        ECCurve.Fp curve = new ECCurve.Fp(p, key.getFirstCoefA(), key.getSecondCoefB());
+        ECCurve.Fp curve = new ECCurve.Fp(p, key.getFirstCoefA(), key.getSecondCoefB(), key.getOrderOfBasePointR(), key.getCofactorF());
 
         ECPoint.Fp pubY = (ECPoint.Fp)curve.decodePoint(key.getPublicPointY());
 
@@ -124,7 +124,7 @@ public class JcaPublicKeyConverter
         }
 
         BigInteger p = key.getPrimeModulusP();
-        ECCurve.Fp curve = new ECCurve.Fp(p, key.getFirstCoefA(), key.getSecondCoefB());
+        ECCurve.Fp curve = new ECCurve.Fp(p, key.getFirstCoefA(), key.getSecondCoefB(), key.getOrderOfBasePointR(), key.getCofactorF());
 
         ECPoint G = curve.decodePoint(key.getBasePointG());
 
@@ -153,9 +153,9 @@ public class JcaPublicKeyConverter
                 usage,
                 ((ECFieldFp)params.getCurve().getField()).getP(),
                 params.getCurve().getA(), params.getCurve().getB(),
-                convertPoint(convertCurve(params.getCurve()), params.getGenerator()).getEncoded(),
+                convertPoint(convertCurve(params.getCurve(), params.getOrder(), params.getCofactor()), params.getGenerator()).getEncoded(),
                 params.getOrder(),
-                convertPoint(convertCurve(params.getCurve()), pubKey.getW()).getEncoded(),
+                convertPoint(convertCurve(params.getCurve(), params.getOrder(), params.getCofactor()), pubKey.getW()).getEncoded(),
                 params.getCofactor());
         }
     }
@@ -168,7 +168,7 @@ public class JcaPublicKeyConverter
     }
 
     private static ECCurve convertCurve(
-        EllipticCurve ec)
+        EllipticCurve ec, BigInteger order, int coFactor)
     {
         ECField field = ec.getField();
         BigInteger a = ec.getA();
@@ -176,7 +176,7 @@ public class JcaPublicKeyConverter
 
         if (field instanceof ECFieldFp)
         {
-            return new ECCurve.Fp(((ECFieldFp)field).getP(), a, b);
+            return new ECCurve.Fp(((ECFieldFp)field).getP(), a, b, order, BigInteger.valueOf(coFactor));
         }
         else
         {

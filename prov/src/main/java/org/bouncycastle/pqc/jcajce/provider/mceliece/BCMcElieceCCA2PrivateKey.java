@@ -3,17 +3,13 @@ package org.bouncycastle.pqc.jcajce.provider.mceliece;
 import java.io.IOException;
 import java.security.PrivateKey;
 
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.asn1.McElieceCCA2PrivateKey;
+import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2KeyPairGenerator;
-import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2Parameters;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2PrivateKeyParameters;
-import org.bouncycastle.pqc.jcajce.spec.McElieceCCA2PrivateKeySpec;
 import org.bouncycastle.pqc.math.linearalgebra.GF2Matrix;
 import org.bouncycastle.pqc.math.linearalgebra.GF2mField;
 import org.bouncycastle.pqc.math.linearalgebra.Permutation;
@@ -26,94 +22,25 @@ import org.bouncycastle.pqc.math.linearalgebra.PolynomialGF2mSmallM;
  * @see McElieceCCA2KeyPairGenerator
  */
 public class BCMcElieceCCA2PrivateKey
-    implements CipherParameters, PrivateKey
+    implements PrivateKey
 {
-
-
-    /**
-     *
-     */
     private static final long serialVersionUID = 1L;
 
-    // the OID of the algorithm
-    private String oid;
-
-    // the length of the code
-    private int n;
-
-    // the dimension of the code, k>=n-mt
-    private int k;
-
-    // the finte field GF(2^m)
-    private GF2mField field;
-
-    // the irreducible Goppa polynomial
-    private PolynomialGF2mSmallM goppaPoly;
-
-    // the permutation
-    private Permutation p;
-
-    // the canonical check matrix
-    private GF2Matrix h;
-
-    // the matrix used to compute square roots in (GF(2^m))^t
-    private PolynomialGF2mSmallM[] qInv;
-
-    private McElieceCCA2Parameters mcElieceCCA2Params;
-
-    /**
-     * Constructor (used by the {@link McElieceCCA2KeyPairGenerator}).
-     *
-     * @param n     the length of the code
-     * @param k     the dimension of the code
-     * @param field the field polynomial
-     * @param gp    the irreducible Goppa polynomial
-     * @param p     the permutation
-     * @param h     the canonical check matrix
-     * @param qInv  the matrix used to compute square roots in
-     *              <tt>(GF(2^m))^t</tt>
-     */
-    public BCMcElieceCCA2PrivateKey(String oid, int n, int k, GF2mField field,
-                                    PolynomialGF2mSmallM gp, Permutation p, GF2Matrix h,
-                                    PolynomialGF2mSmallM[] qInv)
-    {
-        this.oid = oid;
-        this.n = n;
-        this.k = k;
-        this.field = field;
-        this.goppaPoly = gp;
-        this.p = p;
-        this.h = h;
-        this.qInv = qInv;
-    }
-
-    /**
-     * Constructor (used by the {@link McElieceCCA2KeyFactorySpi}).
-     *
-     * @param keySpec a {@link McElieceCCA2PrivateKeySpec}
-     */
-    public BCMcElieceCCA2PrivateKey(McElieceCCA2PrivateKeySpec keySpec)
-    {
-        this(keySpec.getOIDString(), keySpec.getN(), keySpec.getK(), keySpec.getField(), keySpec
-            .getGoppaPoly(), keySpec.getP(), keySpec.getH(), keySpec
-            .getQInv());
-    }
+    private McElieceCCA2PrivateKeyParameters params;
 
     public BCMcElieceCCA2PrivateKey(McElieceCCA2PrivateKeyParameters params)
     {
-        this(params.getOIDString(), params.getN(), params.getK(), params.getField(), params.getGoppaPoly(),
-            params.getP(), params.getH(), params.getQInv());
-        this.mcElieceCCA2Params = params.getParameters();
+        this.params = params;
     }
 
     /**
      * Return the name of the algorithm.
      *
-     * @return "McEliece"
+     * @return "McEliece-CCA2"
      */
     public String getAlgorithm()
     {
-        return "McEliece";
+        return "McEliece-CCA2";
     }
 
     /**
@@ -121,7 +48,7 @@ public class BCMcElieceCCA2PrivateKey
      */
     public int getN()
     {
-        return n;
+        return params.getN();
     }
 
     /**
@@ -129,7 +56,7 @@ public class BCMcElieceCCA2PrivateKey
      */
     public int getK()
     {
-        return k;
+        return params.getK();
     }
 
     /**
@@ -137,7 +64,7 @@ public class BCMcElieceCCA2PrivateKey
      */
     public int getT()
     {
-        return goppaPoly.getDegree();
+        return params.getGoppaPoly().getDegree();
     }
 
     /**
@@ -145,7 +72,7 @@ public class BCMcElieceCCA2PrivateKey
      */
     public GF2mField getField()
     {
-        return field;
+        return params.getField();
     }
 
     /**
@@ -153,7 +80,7 @@ public class BCMcElieceCCA2PrivateKey
      */
     public PolynomialGF2mSmallM getGoppaPoly()
     {
-        return goppaPoly;
+        return params.getGoppaPoly();
     }
 
     /**
@@ -161,7 +88,7 @@ public class BCMcElieceCCA2PrivateKey
      */
     public Permutation getP()
     {
-        return p;
+        return params.getP();
     }
 
     /**
@@ -169,7 +96,7 @@ public class BCMcElieceCCA2PrivateKey
      */
     public GF2Matrix getH()
     {
-        return h;
+        return params.getH();
     }
 
     /**
@@ -177,7 +104,7 @@ public class BCMcElieceCCA2PrivateKey
      */
     public PolynomialGF2mSmallM[] getQInv()
     {
-        return qInv;
+        return params.getQInv();
     }
 
     /**
@@ -186,9 +113,9 @@ public class BCMcElieceCCA2PrivateKey
     public String toString()
     {
         String result = "";
-        result += " extension degree of the field      : " + n + "\n";
-        result += " dimension of the code              : " + k + "\n";
-        result += " irreducible Goppa polynomial       : " + goppaPoly + "\n";
+        result += " extension degree of the field      : " + getN() + "\n";
+        result += " dimension of the code              : " + getK() + "\n";
+        result += " irreducible Goppa polynomial       : " + getGoppaPoly() + "\n";
         return result;
     }
 
@@ -207,10 +134,10 @@ public class BCMcElieceCCA2PrivateKey
 
         BCMcElieceCCA2PrivateKey otherKey = (BCMcElieceCCA2PrivateKey)other;
 
-        return (n == otherKey.n) && (k == otherKey.k)
-            && field.equals(otherKey.field)
-            && goppaPoly.equals(otherKey.goppaPoly) && p.equals(otherKey.p)
-            && h.equals(otherKey.h);
+        return (getN() == otherKey.getN()) && (getK() == otherKey.getK())
+            && getField().equals(otherKey.getField())
+            && getGoppaPoly().equals(otherKey.getGoppaPoly()) && getP().equals(otherKey.getP())
+            && getH().equals(otherKey.getH());
     }
 
     /**
@@ -218,35 +145,15 @@ public class BCMcElieceCCA2PrivateKey
      */
     public int hashCode()
     {
-        return k + n + field.hashCode() + goppaPoly.hashCode() + p.hashCode()
-            + h.hashCode();
-    }
+        int code = params.getK();
 
-    /**
-     * @return the OID of the algorithm
-     */
-    public String getOIDString()
-    {
-        return oid;
-    }
+        code = code * 37 + params.getN();
+        code = code * 37 + params.getField().hashCode();
+        code = code * 37 + params.getGoppaPoly().hashCode();
+        code = code * 37 + params.getP().hashCode();
 
-    /**
-     * @return the OID to encode in the SubjectPublicKeyInfo structure
-     */
-    protected ASN1ObjectIdentifier getOID()
-    {
-        return new ASN1ObjectIdentifier(McElieceCCA2KeyFactorySpi.OID);
+        return code * 37 + params.getH().hashCode();
     }
-
-    /**
-     * @return the algorithm parameters to encode in the SubjectPublicKeyInfo
-     *         structure
-     */
-    protected ASN1Primitive getAlgParams()
-    {
-        return null; // FIXME: needed at all?
-    }
-
 
     /**
      * Return the keyData to encode in the SubjectPublicKeyInfo structure.
@@ -264,43 +171,34 @@ public class BCMcElieceCCA2PrivateKey
      *   }
      * </pre>
      * </p>
+     *
      * @return the keyData to encode in the SubjectPublicKeyInfo structure
      */
     public byte[] getEncoded()
     {
-        McElieceCCA2PrivateKey privateKey = new McElieceCCA2PrivateKey(new ASN1ObjectIdentifier(oid), n, k, field, goppaPoly, p, h, qInv);
         PrivateKeyInfo pki;
         try
         {
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(this.getOID(), DERNull.INSTANCE);
+            McElieceCCA2PrivateKey privateKey = new McElieceCCA2PrivateKey(getN(), getK(), getField(), getGoppaPoly(), getP(), Utils.getDigAlgId(params.getDigest()));
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.mcElieceCca2);
+
             pki = new PrivateKeyInfo(algorithmIdentifier, privateKey);
+
+            return pki.getEncoded();
         }
         catch (IOException e)
         {
-            e.printStackTrace();
-            return null;
-        }
-        try
-        {
-            byte[] encoded = pki.getEncoded();
-            return encoded;
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
             return null;
         }
     }
 
     public String getFormat()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return "PKCS#8";
     }
 
-    public McElieceCCA2Parameters getMcElieceCCA2Parameters()
+    AsymmetricKeyParameter getKeyParams()
     {
-        return mcElieceCCA2Params;
+        return params;
     }
-
 }

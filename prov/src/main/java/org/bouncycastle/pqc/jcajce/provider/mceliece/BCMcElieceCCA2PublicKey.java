@@ -4,17 +4,14 @@ package org.bouncycastle.pqc.jcajce.provider.mceliece;
 import java.io.IOException;
 import java.security.PublicKey;
 
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.asn1.McElieceCCA2PublicKey;
+import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2KeyPairGenerator;
-import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2Parameters;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2PublicKeyParameters;
-import org.bouncycastle.pqc.jcajce.spec.McElieceCCA2PublicKeySpec;
 import org.bouncycastle.pqc.math.linearalgebra.GF2Matrix;
 
 /**
@@ -30,49 +27,11 @@ public class BCMcElieceCCA2PublicKey
      */
     private static final long serialVersionUID = 1L;
 
-    // the OID of the algorithm
-    private String oid;
-
-    // the length of the code
-    private int n;
-
-    // the error correction capability of the code
-    private int t;
-
-    // the generator matrix
-    private GF2Matrix g;
-
-    private McElieceCCA2Parameters McElieceCCA2Params;
-
-    /**
-     * Constructor (used by the {@link McElieceCCA2KeyPairGenerator}).
-     *
-     * @param n the length of the code
-     * @param t the error correction capability of the code
-     * @param g the generator matrix
-     */
-    public BCMcElieceCCA2PublicKey(String oid, int n, int t, GF2Matrix g)
-    {
-        this.oid = oid;
-        this.n = n;
-        this.t = t;
-        this.g = g;
-    }
-
-    /**
-     * Constructor (used by the {@link McElieceCCA2KeyFactorySpi}).
-     *
-     * @param keySpec a {@link McElieceCCA2PublicKeySpec}
-     */
-    public BCMcElieceCCA2PublicKey(McElieceCCA2PublicKeySpec keySpec)
-    {
-        this(keySpec.getOIDString(), keySpec.getN(), keySpec.getT(), keySpec.getMatrixG());
-    }
+    private McElieceCCA2PublicKeyParameters params;
 
     public BCMcElieceCCA2PublicKey(McElieceCCA2PublicKeyParameters params)
     {
-        this(params.getOIDString(), params.getN(), params.getT(), params.getMatrixG());
-        this.McElieceCCA2Params = params.getParameters();
+        this.params = params;
     }
 
     /**
@@ -82,7 +41,7 @@ public class BCMcElieceCCA2PublicKey
      */
     public String getAlgorithm()
     {
-        return "McEliece";
+        return "McEliece-CCA2";
     }
 
     /**
@@ -90,7 +49,7 @@ public class BCMcElieceCCA2PublicKey
      */
     public int getN()
     {
-        return n;
+        return params.getN();
     }
 
     /**
@@ -98,7 +57,7 @@ public class BCMcElieceCCA2PublicKey
      */
     public int getK()
     {
-        return g.getNumRows();
+        return params.getK();
     }
 
     /**
@@ -106,7 +65,7 @@ public class BCMcElieceCCA2PublicKey
      */
     public int getT()
     {
-        return t;
+        return params.getT();
     }
 
     /**
@@ -114,7 +73,7 @@ public class BCMcElieceCCA2PublicKey
      */
     public GF2Matrix getG()
     {
-        return g;
+        return params.getG();
     }
 
     /**
@@ -123,9 +82,9 @@ public class BCMcElieceCCA2PublicKey
     public String toString()
     {
         String result = "McEliecePublicKey:\n";
-        result += " length of the code         : " + n + "\n";
-        result += " error correction capability: " + t + "\n";
-        result += " generator matrix           : " + g.toString();
+        result += " length of the code         : " + params.getN() + "\n";
+        result += " error correction capability: " + params.getT() + "\n";
+        result += " generator matrix           : " + params.getG().toString();
         return result;
     }
 
@@ -144,7 +103,7 @@ public class BCMcElieceCCA2PublicKey
 
         BCMcElieceCCA2PublicKey otherKey = (BCMcElieceCCA2PublicKey)other;
 
-        return (n == otherKey.n) && (t == otherKey.t) && (g.equals(otherKey.g));
+        return (params.getN() == otherKey.getN()) && (params.getT() == otherKey.getT()) && (params.getG().equals(otherKey.getG()));
     }
 
     /**
@@ -152,32 +111,7 @@ public class BCMcElieceCCA2PublicKey
      */
     public int hashCode()
     {
-        return n + t + g.hashCode();
-    }
-
-    /**
-     * @return the OID of the algorithm
-     */
-    public String getOIDString()
-    {
-        return oid;
-    }
-
-    /**
-     * @return the OID to encode in the SubjectPublicKeyInfo structure
-     */
-    protected ASN1ObjectIdentifier getOID()
-    {
-        return new ASN1ObjectIdentifier(McElieceCCA2KeyFactorySpi.OID);
-    }
-
-    /**
-     * @return the algorithm parameters to encode in the SubjectPublicKeyInfo
-     *         structure
-     */
-    protected ASN1Primitive getAlgParams()
-    {
-        return null; // FIXME: needed at all?
+        return 37 * (params.getN() + 37 * params.getT()) + params.getG().hashCode();
     }
 
     /**
@@ -196,8 +130,8 @@ public class BCMcElieceCCA2PublicKey
      */
     public byte[] getEncoded()
     {
-        McElieceCCA2PublicKey key = new McElieceCCA2PublicKey(new ASN1ObjectIdentifier(oid), n, t, g);
-        AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(this.getOID(), DERNull.INSTANCE);
+        McElieceCCA2PublicKey key = new McElieceCCA2PublicKey(params.getN(), params.getT(), params.getG(), Utils.getDigAlgId(params.getDigest()));
+        AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.mcElieceCca2);
 
         try
         {
@@ -214,13 +148,11 @@ public class BCMcElieceCCA2PublicKey
 
     public String getFormat()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return "X.509";
     }
 
-    public McElieceCCA2Parameters getMcElieceCCA2Parameters()
+    AsymmetricKeyParameter getKeyParams()
     {
-        return McElieceCCA2Params;
+        return params;
     }
-
 }

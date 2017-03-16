@@ -242,11 +242,11 @@ public class KeccakDigest
 
         if ((bitsInQueue % 8) != 0)
         {
-            throw new IllegalStateException("attempt to absorb with odd length queue.");
+            throw new IllegalStateException("attempt to absorb with odd length queue");
         }
         if (squeezing)
         {
-            throw new IllegalStateException("attempt to absorb while squeezing.");
+            throw new IllegalStateException("attempt to absorb while squeezing");
         }
 
         i = 0;

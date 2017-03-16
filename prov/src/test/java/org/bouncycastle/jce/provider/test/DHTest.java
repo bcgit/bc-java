@@ -7,16 +7,21 @@ import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.security.AlgorithmParameterGenerator;
 import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECFieldFp;
 import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
+import java.security.spec.ECPublicKeySpec;
 import java.security.spec.EllipticCurve;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -52,51 +57,51 @@ public class DHTest
     private BigInteger g768 = new BigInteger("7c240073c1316c621df461b71ebb0cdcc90a6e5527e5e126633d131f87461c4dc4afc60c2cb0f053b6758871489a69613e2a8b4c8acde23954c08c81cbd36132cfd64d69e4ed9f8e51ed6e516297206672d5c0a69135df0a5dcf010d289a9ca1", 16);
     private BigInteger p768 = new BigInteger("8c9dd223debed1b80103b8b309715be009d48860ed5ae9b9d5d8159508efd802e3ad4501a7f7e1cfec78844489148cd72da24b21eddd01aa624291c48393e277cfc529e37075eccef957f3616f962d15b44aeab4039d01b817fde9eaa12fd73f", 16);
 
-    private BigInteger  g1024 = new BigInteger("1db17639cdf96bc4eabba19454f0b7e5bd4e14862889a725c96eb61048dcd676ceb303d586e30f060dbafd8a571a39c4d823982117da5cc4e0f89c77388b7a08896362429b94a18a327604eb7ff227bffbc83459ade299e57b5f77b50fb045250934938efa145511166e3197373e1b5b1e52de713eb49792bedde722c6717abf", 16);
-    private BigInteger  p1024 = new BigInteger("a00e283b3c624e5b2b4d9fbc2653b5185d99499b00fd1bf244c6f0bb817b4d1c451b2958d62a0f8a38caef059fb5ecd25d75ed9af403f5b5bdab97a642902f824e3c13789fed95fa106ddfe0ff4a707c85e2eb77d49e68f2808bcea18ce128b178cd287c6bc00efa9a1ad2a673fe0dceace53166f75b81d6709d5f8af7c66bb7", 16);
+    private BigInteger g1024 = new BigInteger("1db17639cdf96bc4eabba19454f0b7e5bd4e14862889a725c96eb61048dcd676ceb303d586e30f060dbafd8a571a39c4d823982117da5cc4e0f89c77388b7a08896362429b94a18a327604eb7ff227bffbc83459ade299e57b5f77b50fb045250934938efa145511166e3197373e1b5b1e52de713eb49792bedde722c6717abf", 16);
+    private BigInteger p1024 = new BigInteger("a00e283b3c624e5b2b4d9fbc2653b5185d99499b00fd1bf244c6f0bb817b4d1c451b2958d62a0f8a38caef059fb5ecd25d75ed9af403f5b5bdab97a642902f824e3c13789fed95fa106ddfe0ff4a707c85e2eb77d49e68f2808bcea18ce128b178cd287c6bc00efa9a1ad2a673fe0dceace53166f75b81d6709d5f8af7c66bb7", 16);
 
     // public key with mismatched oid/parameters
     private byte[] oldPubEnc = Base64.decode(
         "MIIBnzCCARQGByqGSM4+AgEwggEHAoGBAPxSrN417g43VAM9sZRf1dt6AocAf7D6" +
-        "WVCtqEDcBJrMzt63+g+BNJzhXVtbZ9kp9vw8L/0PHgzv0Ot/kOLX7Khn+JalOECW" +
-        "YlkyBhmOVbjR79TY5u2GAlvG6pqpizieQNBCEMlUuYuK1Iwseil6VoRuA13Zm7uw" +
-        "WO1eZmaJtY7LAoGAQaPRCFKM5rEdkMrV9FNzeSsYRs8m3DqPnnJHpuySpyO9wUcX" +
-        "OOJcJY5qvHbDO5SxHXu/+bMgXmVT6dXI5o0UeYqJR7fj6pR4E6T0FwG55RFr5Ok4" +
-        "3C4cpXmaOu176SyWuoDqGs1RDGmYQjwbZUi23DjaaTFUly9LCYXMliKrQfEDgYQA" +
-        "AoGAQUGCBN4TaBw1BpdBXdTvTfCU69XDB3eyU2FOBE3UWhpx9D8XJlx4f5DpA4Y6" +
-        "6sQMuCbhfmjEph8W7/sbMurM/awR+PSR8tTY7jeQV0OkmAYdGK2nzh0ZSifMO1oE" +
-        "NNhN2O62TLs67msxT28S4/S89+LMtc98mevQ2SX+JF3wEVU=");
+            "WVCtqEDcBJrMzt63+g+BNJzhXVtbZ9kp9vw8L/0PHgzv0Ot/kOLX7Khn+JalOECW" +
+            "YlkyBhmOVbjR79TY5u2GAlvG6pqpizieQNBCEMlUuYuK1Iwseil6VoRuA13Zm7uw" +
+            "WO1eZmaJtY7LAoGAQaPRCFKM5rEdkMrV9FNzeSsYRs8m3DqPnnJHpuySpyO9wUcX" +
+            "OOJcJY5qvHbDO5SxHXu/+bMgXmVT6dXI5o0UeYqJR7fj6pR4E6T0FwG55RFr5Ok4" +
+            "3C4cpXmaOu176SyWuoDqGs1RDGmYQjwbZUi23DjaaTFUly9LCYXMliKrQfEDgYQA" +
+            "AoGAQUGCBN4TaBw1BpdBXdTvTfCU69XDB3eyU2FOBE3UWhpx9D8XJlx4f5DpA4Y6" +
+            "6sQMuCbhfmjEph8W7/sbMurM/awR+PSR8tTY7jeQV0OkmAYdGK2nzh0ZSifMO1oE" +
+            "NNhN2O62TLs67msxT28S4/S89+LMtc98mevQ2SX+JF3wEVU=");
 
     // bogus key with full PKCS parameter set
     private byte[] oldFullParams = Base64.decode(
         "MIIBIzCCARgGByqGSM4+AgEwggELAoGBAP1/U4EddRIpUt9KnC7s5Of2EbdSPO9E" +
-        "AMMeP4C2USZpRV1AIlH7WT2NWPq/xfW6MPbLm1Vs14E7gB00b/JmYLdrmVClpJ+f" +
-        "6AR7ECLCT7up1/63xhv4O1fnxqimFQ8E+4P208UewwI1VBNaFpEy9nXzrith1yrv" +
-        "8iIDGZ3RSAHHAoGBAPfhoIXWmz3ey7yrXDa4V7l5lK+7+jrqgvlXTAs9B4JnUVlX" +
-        "jrrUWU/mcQcQgYC0SRZxI+hMKBYTt88JMozIpuE8FnqLVHyNKOCjrh4rs6Z1kW6j" +
-        "fwv6ITVi8ftiegEkO8yk8b6oUZCJqIPf4VrlnwaSi2ZegHtVJWQBTDv+z0kqAgFk" +
-        "AwUAAgIH0A==");
+            "AMMeP4C2USZpRV1AIlH7WT2NWPq/xfW6MPbLm1Vs14E7gB00b/JmYLdrmVClpJ+f" +
+            "6AR7ECLCT7up1/63xhv4O1fnxqimFQ8E+4P208UewwI1VBNaFpEy9nXzrith1yrv" +
+            "8iIDGZ3RSAHHAoGBAPfhoIXWmz3ey7yrXDa4V7l5lK+7+jrqgvlXTAs9B4JnUVlX" +
+            "jrrUWU/mcQcQgYC0SRZxI+hMKBYTt88JMozIpuE8FnqLVHyNKOCjrh4rs6Z1kW6j" +
+            "fwv6ITVi8ftiegEkO8yk8b6oUZCJqIPf4VrlnwaSi2ZegHtVJWQBTDv+z0kqAgFk" +
+            "AwUAAgIH0A==");
 
     private byte[] samplePubEnc = Base64.decode(
-       "MIIBpjCCARsGCSqGSIb3DQEDATCCAQwCgYEA/X9TgR11EilS30qcLuzk5/YRt1I8" +
-       "70QAwx4/gLZRJmlFXUAiUftZPY1Y+r/F9bow9subVWzXgTuAHTRv8mZgt2uZUKWk" +
-       "n5/oBHsQIsJPu6nX/rfGG/g7V+fGqKYVDwT7g/bTxR7DAjVUE1oWkTL2dfOuK2HX" +
-       "Ku/yIgMZndFIAccCgYEA9+GghdabPd7LvKtcNrhXuXmUr7v6OuqC+VdMCz0HgmdR" +
-       "WVeOutRZT+ZxBxCBgLRJFnEj6EwoFhO3zwkyjMim4TwWeotUfI0o4KOuHiuzpnWR" +
-       "bqN/C/ohNWLx+2J6ASQ7zKTxvqhRkImog9/hWuWfBpKLZl6Ae1UlZAFMO/7PSSoC" +
-       "AgIAA4GEAAKBgEIiqxoUW6E6GChoOgcfNbVFclW91ITf5MFSUGQwt2R0RHoOhxvO" +
-       "lZhNs++d0VPATLAyXovjfgENT9SGCbuZttYcqqLdKTbMXBWPek+rfnAl9E4iEMED" +
-       "IDd83FJTKs9hQcPAm7zmp0Xm1bGF9CbUFjP5G02265z7eBmHDaT0SNlB");
+        "MIIBpjCCARsGCSqGSIb3DQEDATCCAQwCgYEA/X9TgR11EilS30qcLuzk5/YRt1I8" +
+            "70QAwx4/gLZRJmlFXUAiUftZPY1Y+r/F9bow9subVWzXgTuAHTRv8mZgt2uZUKWk" +
+            "n5/oBHsQIsJPu6nX/rfGG/g7V+fGqKYVDwT7g/bTxR7DAjVUE1oWkTL2dfOuK2HX" +
+            "Ku/yIgMZndFIAccCgYEA9+GghdabPd7LvKtcNrhXuXmUr7v6OuqC+VdMCz0HgmdR" +
+            "WVeOutRZT+ZxBxCBgLRJFnEj6EwoFhO3zwkyjMim4TwWeotUfI0o4KOuHiuzpnWR" +
+            "bqN/C/ohNWLx+2J6ASQ7zKTxvqhRkImog9/hWuWfBpKLZl6Ae1UlZAFMO/7PSSoC" +
+            "AgIAA4GEAAKBgEIiqxoUW6E6GChoOgcfNbVFclW91ITf5MFSUGQwt2R0RHoOhxvO" +
+            "lZhNs++d0VPATLAyXovjfgENT9SGCbuZttYcqqLdKTbMXBWPek+rfnAl9E4iEMED" +
+            "IDd83FJTKs9hQcPAm7zmp0Xm1bGF9CbUFjP5G02265z7eBmHDaT0SNlB");
 
     private byte[] samplePrivEnc = Base64.decode(
-       "MIIBZgIBADCCARsGCSqGSIb3DQEDATCCAQwCgYEA/X9TgR11EilS30qcLuzk5/YR" +
-       "t1I870QAwx4/gLZRJmlFXUAiUftZPY1Y+r/F9bow9subVWzXgTuAHTRv8mZgt2uZ" +
-       "UKWkn5/oBHsQIsJPu6nX/rfGG/g7V+fGqKYVDwT7g/bTxR7DAjVUE1oWkTL2dfOu" +
-       "K2HXKu/yIgMZndFIAccCgYEA9+GghdabPd7LvKtcNrhXuXmUr7v6OuqC+VdMCz0H" +
-       "gmdRWVeOutRZT+ZxBxCBgLRJFnEj6EwoFhO3zwkyjMim4TwWeotUfI0o4KOuHiuz" +
-       "pnWRbqN/C/ohNWLx+2J6ASQ7zKTxvqhRkImog9/hWuWfBpKLZl6Ae1UlZAFMO/7P" +
-       "SSoCAgIABEICQAZYXnBHazxXUUdFP4NIf2Ipu7du0suJPZQKKff81wymi2zfCfHh" +
-       "uhe9gQ9xdm4GpzeNtrQ8/MzpTy+ZVrtd29Q=");
+        "MIIBZgIBADCCARsGCSqGSIb3DQEDATCCAQwCgYEA/X9TgR11EilS30qcLuzk5/YR" +
+            "t1I870QAwx4/gLZRJmlFXUAiUftZPY1Y+r/F9bow9subVWzXgTuAHTRv8mZgt2uZ" +
+            "UKWkn5/oBHsQIsJPu6nX/rfGG/g7V+fGqKYVDwT7g/bTxR7DAjVUE1oWkTL2dfOu" +
+            "K2HXKu/yIgMZndFIAccCgYEA9+GghdabPd7LvKtcNrhXuXmUr7v6OuqC+VdMCz0H" +
+            "gmdRWVeOutRZT+ZxBxCBgLRJFnEj6EwoFhO3zwkyjMim4TwWeotUfI0o4KOuHiuz" +
+            "pnWRbqN/C/ohNWLx+2J6ASQ7zKTxvqhRkImog9/hWuWfBpKLZl6Ae1UlZAFMO/7P" +
+            "SSoCAgIABEICQAZYXnBHazxXUUdFP4NIf2Ipu7du0suJPZQKKff81wymi2zfCfHh" +
+            "uhe9gQ9xdm4GpzeNtrQ8/MzpTy+ZVrtd29Q=");
 
     public String getName()
     {
@@ -104,14 +109,14 @@ public class DHTest
     }
 
     private void testGP(
-        String      algName,
-        int         size,
-        int         privateValueSize,
-        BigInteger  g,
-        BigInteger  p)
+        String algName,
+        int size,
+        int privateValueSize,
+        BigInteger g,
+        BigInteger p)
         throws Exception
     {
-        DHParameterSpec             dhParams = new DHParameterSpec(p, g, privateValueSize);
+        DHParameterSpec dhParams = new DHParameterSpec(p, g, privateValueSize);
 
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algName, "BC");
 
@@ -124,11 +129,11 @@ public class DHTest
         //
         // public key encoding test
         //
-        byte[]              pubEnc = aKeyPair.getPublic().getEncoded();
-        KeyFactory          keyFac = KeyFactory.getInstance(algName, "BC");
-        X509EncodedKeySpec  pubX509 = new X509EncodedKeySpec(pubEnc);
-        DHPublicKey         pubKey = (DHPublicKey)keyFac.generatePublic(pubX509);
-        DHParameterSpec     spec = pubKey.getParams();
+        byte[] pubEnc = aKeyPair.getPublic().getEncoded();
+        KeyFactory keyFac = KeyFactory.getInstance(algName, "BC");
+        X509EncodedKeySpec pubX509 = new X509EncodedKeySpec(pubEnc);
+        DHPublicKey pubKey = (DHPublicKey)keyFac.generatePublic(pubX509);
+        DHParameterSpec spec = pubKey.getParams();
 
         if (!spec.getG().equals(dhParams.getG()) || !spec.getP().equals(dhParams.getP()))
         {
@@ -169,9 +174,9 @@ public class DHTest
         //
         // private key encoding test
         //
-        byte[]              privEnc = aKeyPair.getPrivate().getEncoded();
+        byte[] privEnc = aKeyPair.getPrivate().getEncoded();
         PKCS8EncodedKeySpec privPKCS8 = new PKCS8EncodedKeySpec(privEnc);
-        DHPrivateKey        privKey = (DHPrivateKey)keyFac.generatePrivate(privPKCS8);
+        DHPrivateKey privKey = (DHPrivateKey)keyFac.generatePrivate(privPKCS8);
 
         spec = privKey.getParams();
 
@@ -268,7 +273,7 @@ public class DHTest
     }
 
     private void testTwoParty(String algName, int size, int privateValueSize, KeyPairGenerator keyGen)
-            throws Exception
+        throws Exception
     {
         testTwoParty(algName, size, privateValueSize, keyGen.generateKeyPair(), keyGen.generateKeyPair());
     }
@@ -312,13 +317,13 @@ public class DHTest
     }
 
     private void testExplicitWrapping(
-        int         size,
-        int         privateValueSize,
-        BigInteger  g,
-        BigInteger  p)
+        int size,
+        int privateValueSize,
+        BigInteger g,
+        BigInteger p)
         throws Exception
     {
-        DHParameterSpec             dhParams = new DHParameterSpec(p, g, privateValueSize);
+        DHParameterSpec dhParams = new DHParameterSpec(p, g, privateValueSize);
 
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DH", "BC");
 
@@ -354,7 +359,7 @@ public class DHTest
 
         SecretKey k1 = aKeyAgree.generateSecret(PKCSObjectIdentifiers.id_alg_CMS3DESwrap.getId());
         SecretKey k2 = bKeyAgree.generateSecret(PKCSObjectIdentifiers.id_alg_CMS3DESwrap.getId());
-        
+
         // TODO Compare k1 and k2?
     }
 
@@ -386,7 +391,7 @@ public class DHTest
     }
 
     private void testRandom(
-        int         size)
+        int size)
         throws Exception
     {
         AlgorithmParameterGenerator a = AlgorithmParameterGenerator.getInstance("DH", "BC");
@@ -412,14 +417,14 @@ public class DHTest
     }
 
     private void testDefault(
-        int         privateValueSize,
-        BigInteger  g,
-        BigInteger  p)
+        int privateValueSize,
+        BigInteger g,
+        BigInteger p)
         throws Exception
     {
-        DHParameterSpec             dhParams = new DHParameterSpec(p, g, privateValueSize);
-        String                      algName = "DH";
-        int                         size = p.bitLength();
+        DHParameterSpec dhParams = new DHParameterSpec(p, g, privateValueSize);
+        String algName = "DH";
+        int size = p.bitLength();
 
         new BouncyCastleProvider().setParameter(ConfigurableProvider.DH_DEFAULT_PARAMS, dhParams);
 
@@ -436,11 +441,11 @@ public class DHTest
         //
         // public key encoding test
         //
-        byte[]              pubEnc = aKeyPair.getPublic().getEncoded();
-        KeyFactory          keyFac = KeyFactory.getInstance(algName, "BC");
-        X509EncodedKeySpec  pubX509 = new X509EncodedKeySpec(pubEnc);
-        DHPublicKey         pubKey = (DHPublicKey)keyFac.generatePublic(pubX509);
-        DHParameterSpec     spec = pubKey.getParams();
+        byte[] pubEnc = aKeyPair.getPublic().getEncoded();
+        KeyFactory keyFac = KeyFactory.getInstance(algName, "BC");
+        X509EncodedKeySpec pubX509 = new X509EncodedKeySpec(pubEnc);
+        DHPublicKey pubKey = (DHPublicKey)keyFac.generatePublic(pubX509);
+        DHParameterSpec spec = pubKey.getParams();
 
         if (!spec.getG().equals(dhParams.getG()) || !spec.getP().equals(dhParams.getP()))
         {
@@ -455,13 +460,13 @@ public class DHTest
         //
         // public key serialisation test
         //
-        ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-        ObjectOutputStream      oOut = new ObjectOutputStream(bOut);
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ObjectOutputStream oOut = new ObjectOutputStream(bOut);
 
         oOut.writeObject(aKeyPair.getPublic());
 
-        ByteArrayInputStream   bIn = new ByteArrayInputStream(bOut.toByteArray());
-        ObjectInputStream      oIn = new ObjectInputStream(bIn);
+        ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
+        ObjectInputStream oIn = new ObjectInputStream(bIn);
 
         pubKey = (DHPublicKey)oIn.readObject();
         spec = pubKey.getParams();
@@ -479,9 +484,9 @@ public class DHTest
         //
         // private key encoding test
         //
-        byte[]              privEnc = aKeyPair.getPrivate().getEncoded();
+        byte[] privEnc = aKeyPair.getPrivate().getEncoded();
         PKCS8EncodedKeySpec privPKCS8 = new PKCS8EncodedKeySpec(privEnc);
-        DHPrivateKey        privKey = (DHPrivateKey)keyFac.generatePrivate(privPKCS8);
+        DHPrivateKey privKey = (DHPrivateKey)keyFac.generatePrivate(privPKCS8);
 
         spec = privKey.getParams();
 
@@ -573,7 +578,7 @@ public class DHTest
     private void testECDH(String algorithm, String curveName, String cipher, int keyLen)
         throws Exception
     {
-        ECNamedCurveParameterSpec parameterSpec = ECNamedCurveTable.getParameterSpec("secp521r1");
+        ECNamedCurveParameterSpec parameterSpec = ECNamedCurveTable.getParameterSpec(curveName);
         KeyPairGenerator g = KeyPairGenerator.getInstance(algorithm, "BC");
 
         g.initialize(parameterSpec);
@@ -603,7 +608,7 @@ public class DHTest
         bKeyAgree.doPhase(aKeyPair.getPublic(), true);
 
         SecretKey k1 = aKeyAgree.generateSecret(cipher);
-        SecretKey k2 = bKeyAgree.generateSecret(cipher);
+        SecretKey k2 = bKeyAgree.generateSecret(cipher + "[" + keyLen + "]");  // explicit key-len
 
         if (!k1.equals(k2))
         {
@@ -619,18 +624,18 @@ public class DHTest
     private void testECDH(String algorithm)
         throws Exception
     {
-        KeyPairGenerator    g = KeyPairGenerator.getInstance(algorithm, "BC");
+        KeyPairGenerator g = KeyPairGenerator.getInstance(algorithm, "BC");
 
         EllipticCurve curve = new EllipticCurve(
-                new ECFieldFp(new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839")), // q
-                new BigInteger("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc", 16), // a
-                new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16)); // b
+            new ECFieldFp(new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839")), // q
+            new BigInteger("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc", 16), // a
+            new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16)); // b
 
         ECParameterSpec ecSpec = new ECParameterSpec(
-                curve,
-                ECPointUtil.decodePoint(curve, Hex.decode("020ffa963cdca8816ccc33b8642bedf905c3d358573d3f27fbbd3b3cb9aaaf")), // G
-                new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307"), // n
-                1); // h
+            curve,
+            ECPointUtil.decodePoint(curve, Hex.decode("020ffa963cdca8816ccc33b8642bedf905c3d358573d3f27fbbd3b3cb9aaaf")), // G
+            new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307"), // n
+            1); // h
 
         g.initialize(ecSpec, new SecureRandom());
 
@@ -658,8 +663,8 @@ public class DHTest
         aKeyAgree.doPhase(bKeyPair.getPublic(), true);
         bKeyAgree.doPhase(aKeyPair.getPublic(), true);
 
-        BigInteger  k1 = new BigInteger(aKeyAgree.generateSecret());
-        BigInteger  k2 = new BigInteger(bKeyAgree.generateSecret());
+        BigInteger k1 = new BigInteger(aKeyAgree.generateSecret());
+        BigInteger k2 = new BigInteger(bKeyAgree.generateSecret());
 
         if (!k1.equals(k2))
         {
@@ -669,10 +674,10 @@ public class DHTest
         //
         // public key encoding test
         //
-        byte[]              pubEnc = aKeyPair.getPublic().getEncoded();
-        KeyFactory          keyFac = KeyFactory.getInstance(algorithm, "BC");
-        X509EncodedKeySpec  pubX509 = new X509EncodedKeySpec(pubEnc);
-        ECPublicKey         pubKey = (ECPublicKey)keyFac.generatePublic(pubX509);
+        byte[] pubEnc = aKeyPair.getPublic().getEncoded();
+        KeyFactory keyFac = KeyFactory.getInstance(algorithm, "BC");
+        X509EncodedKeySpec pubX509 = new X509EncodedKeySpec(pubEnc);
+        ECPublicKey pubKey = (ECPublicKey)keyFac.generatePublic(pubX509);
 
         if (!pubKey.getW().equals(((ECPublicKey)aKeyPair.getPublic()).getW()))
         {
@@ -689,9 +694,9 @@ public class DHTest
         //
         // private key encoding test
         //
-        byte[]              privEnc = aKeyPair.getPrivate().getEncoded();
+        byte[] privEnc = aKeyPair.getPrivate().getEncoded();
         PKCS8EncodedKeySpec privPKCS8 = new PKCS8EncodedKeySpec(privEnc);
-        ECPrivateKey        privKey = (ECPrivateKey)keyFac.generatePrivate(privPKCS8);
+        ECPrivateKey privKey = (ECPrivateKey)keyFac.generatePrivate(privPKCS8);
 
         if (!privKey.getS().equals(((ECPrivateKey)aKeyPair.getPrivate()).getS()))
         {
@@ -705,6 +710,7 @@ public class DHTest
     }
 
     private void testExceptions()
+        throws Exception
     {
         try
         {
@@ -720,12 +726,39 @@ public class DHTest
         {
             fail("Unexpected exception: " + e, e);
         }
+
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC", "BC");
+
+        keyGen.initialize(256);
+
+        KeyPair kp = keyGen.generateKeyPair();
+        KeyAgreement agreement = KeyAgreement.getInstance("ECDH", "BC");
+
+        agreement.init(kp.getPrivate());
+        try
+        {
+            ECPoint fakePubPoint = new ECPoint(new BigInteger("12345"), new BigInteger("23457"));
+            ECPublicKeySpec fakePubSpec = new ECPublicKeySpec(fakePubPoint, ((ECPublicKey)kp.getPublic()).getParams());
+            KeyFactory kf = KeyFactory.getInstance("EC", "BC");
+            PublicKey fakePub = kf.generatePublic(fakePubSpec);
+            agreement.doPhase(fakePub, true);
+
+            fail("no exception on dud point");
+        }
+        catch (java.security.spec.InvalidKeySpecException e)
+        {
+            isTrue("wrong message", "invalid KeySpec: point not on curve".equals(e.getMessage()));
+        }
+        catch (java.security.InvalidKeyException e)
+        {
+            isTrue("wrong message", "calculation failed: Invalid point".equals(e.getMessage()));
+        }
     }
 
     private void testDESAndDESede(BigInteger g, BigInteger p)
         throws Exception
     {
-        DHParameterSpec             dhParams = new DHParameterSpec(p, g, 256);
+        DHParameterSpec dhParams = new DHParameterSpec(p, g, 256);
 
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DH", "BC");
 
@@ -791,13 +824,13 @@ public class DHTest
         DHPrivateKeySpec aPrivSpec = new DHPrivateKeySpec(
             new BigInteger("30a6ea4e2240a42867ad98bd3adbfd5b81aba48bd930f20a595983d807566f7cba4e766951efef2c6c0c1be3823f63d66e12c2a091d5ff3bbeb1ea6e335d072d", 16), p, g);
         DHPublicKeySpec aPubSpec = new DHPublicKeySpec(
-                    new BigInteger("694dfea1bfc8897e2fcbfd88033ab34f4581892d7d5cc362dc056e3d43955accda12222bd651ca31c85f008a05dea914de68828dfd83a54a340fa84f3bbe6caf", 16), p, g);
+            new BigInteger("694dfea1bfc8897e2fcbfd88033ab34f4581892d7d5cc362dc056e3d43955accda12222bd651ca31c85f008a05dea914de68828dfd83a54a340fa84f3bbe6caf", 16), p, g);
 
         DHPrivateKeySpec bPrivSpec = new DHPrivateKeySpec(
-                    new BigInteger("775b1e7e162190700e2212dd8e4aaacf8a2af92c9c108b81d5bf9a14548f494eaa86a6c4844b9512eb3e3f2f22ffec44c795c813edfea13f075b99bbdebb34bd", 16), p, g);
+            new BigInteger("775b1e7e162190700e2212dd8e4aaacf8a2af92c9c108b81d5bf9a14548f494eaa86a6c4844b9512eb3e3f2f22ffec44c795c813edfea13f075b99bbdebb34bd", 16), p, g);
 
         DHPublicKeySpec bPubSpec = new DHPublicKeySpec(
-                    new BigInteger("d8ddd4ff9246635eadbfa0bc2ef06d98a329b6e8cd2d1435d7b4921467570e697c9a9d3c172c684626a9d2b6b2fa0fc725d5b91f9a9625b717a4169bc714b064", 16), p, g);
+            new BigInteger("d8ddd4ff9246635eadbfa0bc2ef06d98a329b6e8cd2d1435d7b4921467570e697c9a9d3c172c684626a9d2b6b2fa0fc725d5b91f9a9625b717a4169bc714b064", 16), p, g);
 
         KeyFactory kFact = KeyFactory.getInstance("DH", "BC");
 
@@ -817,7 +850,7 @@ public class DHTest
     private void testEnc()
         throws Exception
     {
-        KeyFactory  kFact = KeyFactory.getInstance("DH", "BC");
+        KeyFactory kFact = KeyFactory.getInstance("DH", "BC");
 
         Key k = kFact.generatePrivate(new PKCS8EncodedKeySpec(samplePrivEnc));
 
@@ -858,9 +891,9 @@ public class DHTest
             384);
 
         DHParameterSpec dhSpec768 = new DHParameterSpec(
-             new BigInteger("e9e642599d355f37c97ffd3567120b8e25c9cd43e927b3a9670fbec5d890141922d2c3b3ad2480093799869d1e846aab49fab0ad26d2ce6a22219d470bce7d777d4a21fbe9c270b57f607002f3cef8393694cf45ee3688c11a8c56ab127a3daf", 16),
-             new BigInteger("30470ad5a005fb14ce2d9dcd87e38bc7d1b1c5facbaecbe95f190aa7a31d23c4dbbcbe06174544401a5b2c020965d8c2bd2171d3668445771f74ba084d2029d83c1c158547f3a9f1a2715be23d51ae4d3e5a1f6a7064f316933a346d3f529252", 16),
-             384);
+            new BigInteger("e9e642599d355f37c97ffd3567120b8e25c9cd43e927b3a9670fbec5d890141922d2c3b3ad2480093799869d1e846aab49fab0ad26d2ce6a22219d470bce7d777d4a21fbe9c270b57f607002f3cef8393694cf45ee3688c11a8c56ab127a3daf", 16),
+            new BigInteger("30470ad5a005fb14ce2d9dcd87e38bc7d1b1c5facbaecbe95f190aa7a31d23c4dbbcbe06174544401a5b2c020965d8c2bd2171d3668445771f74ba084d2029d83c1c158547f3a9f1a2715be23d51ae4d3e5a1f6a7064f316933a346d3f529252", 16),
+            384);
 
         DHParameterSpec dhSpec1024 = new DHParameterSpec(
             new BigInteger("fd7f53811d75122952df4a9c2eece4e7f611b7523cef4400c31e3f80b6512669455d402251fb593d8d58fabfc5f5ba30f6cb9b556cd7813b801d346ff26660b76b9950a5a49f9fe8047b1022c24fbba9d7feb7c61bf83b57e7c6a8a6150f04fb83f6d3c51ec3023554135a169132f675f3ae2b61d72aeff22203199dd14801c7", 16),
@@ -879,7 +912,7 @@ public class DHTest
             fail("config found when none expected");
         }
 
-        prov.setParameter(ConfigurableProvider.DH_DEFAULT_PARAMS, new DHParameterSpec[] { dhSpec512, dhSpec768, dhSpec1024 });
+        prov.setParameter(ConfigurableProvider.DH_DEFAULT_PARAMS, new DHParameterSpec[]{dhSpec512, dhSpec768, dhSpec1024});
 
         if (!dhSpec512.equals(BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(512)))
         {
@@ -920,7 +953,7 @@ public class DHTest
             fail("config found when none expected");
         }
 
-        prov.setParameter(ConfigurableProvider.THREAD_LOCAL_DH_DEFAULT_PARAMS, new DHParameterSpec[] { dhSpec512, dhSpec768, dhSpec1024 });
+        prov.setParameter(ConfigurableProvider.THREAD_LOCAL_DH_DEFAULT_PARAMS, new DHParameterSpec[]{dhSpec512, dhSpec768, dhSpec1024});
 
         if (!dhSpec512.equals(BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(512)))
         {
@@ -947,6 +980,109 @@ public class DHTest
         if (BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(768) != null)
         {
             fail("config found for 768 when none expected");
+        }
+    }
+
+    static final String MESSAGE = "Hello";
+
+    static final String PROVIDER_NAME = "BC";
+    static final SecureRandom rand = new SecureRandom();
+
+    public void setUp()
+    {
+        // Add BouncyCastle for testing.
+        Security.insertProviderAt(new BouncyCastleProvider(), 1);
+        System.out.println("WARNING: Using BouncyCastleProvider");
+    }
+
+    public DHParameterSpec ike2048()
+    {
+        final BigInteger p = new BigInteger(
+            "ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74"
+                + "020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f1437"
+                + "4fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7ed"
+                + "ee386bfb5a899fa5ae9f24117c4b1fe649286651ece45b3dc2007cb8a163bf05"
+                + "98da48361c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552bb"
+                + "9ed529077096966d670c354e4abc9804f1746c08ca18217c32905e462e36ce3b"
+                + "e39e772c180e86039b2783a2ec07a28fb5c55df06f4c52c9de2bcbf695581718"
+                + "3995497cea956ae515d2261898fa051015728e5a8aacaa68ffffffffffffffff", 16);
+        final BigInteger g = new BigInteger("2");
+        return new DHParameterSpec(p, g);
+    }
+
+    /**
+     * Tests whether a provider accepts invalid public keys that result in predictable shared secrets.
+     * This test is based on RFC 2785, Section 4 and NIST SP 800-56A,
+     * If an attacker can modify both public keys in an ephemeral-ephemeral key agreement scheme then
+     * it may be possible to coerce both parties into computing the same predictable shared key.
+     * <p/>
+     * Note: the test is quite whimsical. If the prime p is not a safe prime then the provider itself
+     * cannot prevent all small-subgroup attacks because of the missing parameter q in the
+     * Diffie-Hellman parameters. Implementations must add additional countermeasures such as the ones
+     * proposed in RFC 2785.
+     */
+    private void testSubgroupConfinement()
+        throws Exception
+    {
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DH", "BC");
+        DHParameterSpec params = ike2048();
+        final BigInteger p = params.getP();
+        final BigInteger g = params.getG();
+        keyGen.initialize(params);
+        PrivateKey priv = keyGen.generateKeyPair().getPrivate();
+        KeyAgreement ka = KeyAgreement.getInstance("DH", "BC");
+        BigInteger[] weakPublicKeys = {
+            BigInteger.ZERO, BigInteger.ONE, p.subtract(BigInteger.ONE), p,
+            p.add(BigInteger.ONE), BigInteger.ONE.negate()};
+        for (final BigInteger weakKey : weakPublicKeys)
+        {
+            DHPublicKeySpec weakSpec = new DHPublicKeySpec(weakKey, p, g);
+            KeyFactory kf = KeyFactory.getInstance("DH", "BC");
+            try
+            {
+                kf.generatePublic(weakSpec);
+                fail("Generated weak public key");
+            }
+            catch (GeneralSecurityException ex)
+            {
+                isTrue("wrong message (generate)", "invalid DH public key".equals(ex.getMessage()));
+            }
+            ka.init(priv);
+            try
+            {
+                ka.doPhase(new DHPublicKey()
+                {
+                    public BigInteger getY()
+                    {
+                        return weakKey;
+                    }
+
+                    public DHParameterSpec getParams()
+                    {
+                        return new DHParameterSpec(p, g);
+                    }
+
+                    public String getAlgorithm()
+                    {
+                        return null;
+                    }
+
+                    public String getFormat()
+                    {
+                        return null;
+                    }
+
+                    public byte[] getEncoded()
+                    {
+                        return new byte[0];
+                    }
+                }, true);
+                fail("Generated secrets with weak public key");
+            }
+            catch (GeneralSecurityException ex)
+            {
+                isTrue("wrong message (doPhase)", "Invalid DH PublicKey".equals(ex.getMessage()));
+            }
         }
     }
 
@@ -983,10 +1119,11 @@ public class DHTest
         testInitialise();
         testSmallSecret();
         testConfig();
+        testSubgroupConfinement();
     }
 
     public static void main(
-        String[]    args)
+        String[] args)
     {
         Security.addProvider(new BouncyCastleProvider());
 

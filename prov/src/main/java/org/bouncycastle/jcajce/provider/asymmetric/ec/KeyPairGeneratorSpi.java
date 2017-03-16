@@ -8,6 +8,7 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Hashtable;
+import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
@@ -181,7 +182,7 @@ public abstract class KeyPairGeneratorSpi
 
         protected ECKeyGenerationParameters createKeyGenParamsBC(ECParameterSpec p, SecureRandom r)
         {
-            return new ECKeyGenerationParameters(new ECDomainParameters(p.getCurve(), p.getG(), p.getN()), r);
+            return new ECKeyGenerationParameters(new ECDomainParameters(p.getCurve(), p.getG(), p.getN(), p.getH()), r);
         }
 
         protected ECKeyGenerationParameters createKeyGenParamsJCE(java.security.spec.ECParameterSpec p, SecureRandom r)
@@ -199,7 +200,7 @@ public abstract class KeyPairGeneratorSpi
         {
             // NOTE: Don't bother with custom curves here as the curve will be converted to JCE type shortly
 
-            X9ECParameters p = ECNamedCurveTable.getByName(curveName);
+            X9ECParameters p = ECUtils.getDomainParametersFromName(curveName);
             if (p == null)
             {
                 try
@@ -208,7 +209,14 @@ public abstract class KeyPairGeneratorSpi
                     p = ECNamedCurveTable.getByOID(new ASN1ObjectIdentifier(curveName));
                     if (p == null)
                     {
-                        throw new InvalidAlgorithmParameterException("unknown curve OID: " + curveName);
+                        Map extraCurves = configuration.getAdditionalECParameters();
+
+                        p = (X9ECParameters)extraCurves.get(new ASN1ObjectIdentifier(curveName));
+
+                        if (p == null)
+                        {
+                            throw new InvalidAlgorithmParameterException("unknown curve OID: " + curveName);
+                        }
                     }
                 }
                 catch (IllegalArgumentException ex)

@@ -63,6 +63,7 @@ import org.bouncycastle.jcajce.PBKDF1Key;
 import org.bouncycastle.jcajce.PBKDF1KeyWithParameters;
 import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
+import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
 import org.bouncycastle.jcajce.spec.RepeatedSecretKeySpec;
 import org.bouncycastle.util.Strings;
@@ -156,9 +157,9 @@ public class BaseBlockCipher
     protected BaseBlockCipher(
         AEADBlockCipher engine)
     {
-        baseEngine = engine.getUnderlyingCipher();
-        ivLength = baseEngine.getBlockSize();
-        cipher = new AEADGenericBlockCipher(engine);
+        this.baseEngine = engine.getUnderlyingCipher();
+        this.ivLength = baseEngine.getBlockSize();
+        this.cipher = new AEADGenericBlockCipher(engine);
     }
 
     protected BaseBlockCipher(
@@ -235,6 +236,18 @@ public class BaseBlockCipher
                     return null;
                 }
             }
+            else if (aeadParams != null)
+            {
+                try
+                {
+                    engineParams = createParametersInstance("GCM");
+                    engineParams.init(new GCMParameters(aeadParams.getNonce(), aeadParams.getMacSize() / 8).getEncoded());
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException(e.toString());
+                }
+            }
             else if (ivParam != null)
             {
                 String  name = cipher.getUnderlyingCipher().getAlgorithmName();
@@ -248,18 +261,6 @@ public class BaseBlockCipher
                 {
                     engineParams = createParametersInstance(name);
                     engineParams.init(ivParam.getIV());
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException(e.toString());
-                }
-            }
-            else if (aeadParams != null)
-            {
-                try
-                {
-                    engineParams = createParametersInstance("GCM");
-                    engineParams.init(new GCMParameters(aeadParams.getNonce(), aeadParams.getMacSize() / 8).getEncoded());
                 }
                 catch (Exception e)
                 {
@@ -341,12 +342,14 @@ public class BaseBlockCipher
             {
                 throw new IllegalArgumentException("Warning: SIC-Mode can become a twotime-pad if the blocksize of the cipher is too small. Use a cipher with a block size of at least 128 bits (e.g. AES)");
             }
+            fixedIv = false;
             cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
                         new SICBlockCipher(baseEngine)));
         }
         else if (modeName.startsWith("CTR"))
         {
             ivLength = baseEngine.getBlockSize();
+            fixedIv = false;
             cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
                         new SICBlockCipher(baseEngine)));
         }
@@ -478,7 +481,7 @@ public class BaseBlockCipher
         //
         if (!(key instanceof SecretKey))
         {
-            throw new InvalidKeyException("Key for algorithm " + key.getAlgorithm() + " not suitable for symmetric enryption.");
+            throw new InvalidKeyException("Key for algorithm " + ((key != null) ? key.getAlgorithm() : null) + " not suitable for symmetric enryption.");
         }
 
         //
@@ -511,14 +514,41 @@ public class BaseBlockCipher
 
             if (k instanceof PBEKey && pbeSpec == null)
             {
-                pbeSpec = new PBEParameterSpec(((PBEKey)k).getSalt(), ((PBEKey)k).getIterationCount());
+                PBEKey pbeKey = (PBEKey)k;
+                if (pbeKey.getSalt() == null)
+                {
+                    throw new InvalidAlgorithmParameterException("PBEKey requires parameters to specify salt");
+                }
+                pbeSpec = new PBEParameterSpec(pbeKey.getSalt(), pbeKey.getIterationCount());
             }
 
             if (pbeSpec == null && !(k instanceof PBEKey))
             {
                 throw new InvalidKeyException("Algorithm requires a PBE key");
             }
-            param = PBE.Util.makePBEParameters(k.getEncoded(), PKCS12, digest, keySizeInBits, ivLength * 8, pbeSpec, cipher.getAlgorithmName());
+
+            if (key instanceof BCPBEKey)
+            {
+                // PKCS#12 sets an IV, if we get a key that doesn't have ParametersWithIV we need to reject it. If the
+                // key has no parameters it means it's an old-school JCE PBE Key - we use getEncoded() on it.
+                CipherParameters pbeKeyParam = ((BCPBEKey)key).getParam();
+                if (pbeKeyParam instanceof ParametersWithIV)
+                {
+                    param = pbeKeyParam;
+                }
+                else if (pbeKeyParam == null)
+                {
+                    param = PBE.Util.makePBEParameters(k.getEncoded(), PKCS12, digest, keySizeInBits, ivLength * 8, pbeSpec, cipher.getAlgorithmName());
+                }
+                else
+                {
+                    throw new InvalidKeyException("Algorithm requires a PBE key suitable for PKCS12");
+                }
+            }
+            else
+            {
+                param = PBE.Util.makePBEParameters(k.getEncoded(), PKCS12, digest, keySizeInBits, ivLength * 8, pbeSpec, cipher.getAlgorithmName());
+            }
             if (param instanceof ParametersWithIV)
             {
                 ivParam = (ParametersWithIV)param;
@@ -603,7 +633,27 @@ public class BaseBlockCipher
             param = null;
         }
 
-        if (params instanceof IvParameterSpec)
+        if (params instanceof AEADParameterSpec)
+        {
+            if (!isAEADModeName(modeName) && !(cipher instanceof AEADGenericBlockCipher))
+            {
+                throw new InvalidAlgorithmParameterException("AEADParameterSpec can only be used with AEAD modes.");
+            }
+
+            AEADParameterSpec aeadSpec = (AEADParameterSpec)params;
+
+            KeyParameter keyParam;
+            if (param instanceof ParametersWithIV)
+            {
+                keyParam = (KeyParameter)((ParametersWithIV)param).getParameters();
+            }
+            else
+            {
+                keyParam = (KeyParameter)param;
+            }
+            param = aeadParams = new AEADParameters(keyParam, aeadSpec.getMacSizeInBits(), aeadSpec.getNonce(), aeadSpec.getAssociatedData());
+        }
+        else if (params instanceof IvParameterSpec)
         {
             if (ivLength != 0)
             {
@@ -766,6 +816,8 @@ public class BaseBlockCipher
             }
         }
 
+
+
         if (random != null && padded)
         {
             param = new ParametersWithRandom(param, random);
@@ -786,16 +838,17 @@ public class BaseBlockCipher
             default:
                 throw new InvalidParameterException("unknown opmode " + opmode + " passed");
             }
+
+            if (cipher instanceof AEADGenericBlockCipher && aeadParams == null)
+            {
+                AEADBlockCipher aeadCipher = ((AEADGenericBlockCipher)cipher).cipher;
+
+                aeadParams = new AEADParameters((KeyParameter)ivParam.getParameters(), aeadCipher.getMac().length * 8, ivParam.getIV());
+            }
         }
         catch (final Exception e)
         {
-            throw new InvalidKeyException(e.getMessage())
-            {
-                public Throwable getCause()
-                {
-                    return e;
-                }
-            };
+            throw new InvalidKeyOrParametersException(e.getMessage(), e);
         }
     }
 
@@ -962,7 +1015,7 @@ public class BaseBlockCipher
         int     outputOffset)
         throws ShortBufferException
     {
-        if (outputOffset + engineGetOutputSize(inputLen) > output.length)
+        if (outputOffset + cipher.getUpdateOutputSize(inputLen) > output.length)
         {
             throw new ShortBufferException("output buffer too short for input.");
         }
@@ -973,7 +1026,8 @@ public class BaseBlockCipher
         }
         catch (DataLengthException e)
         {
-            throw new ShortBufferException(e.getMessage());
+            // should never occur
+            throw new IllegalStateException(e.toString());
         }
     }
 
@@ -1038,7 +1092,7 @@ public class BaseBlockCipher
         }
         catch (OutputLengthException e)
         {
-            throw new ShortBufferException(e.getMessage());
+            throw new IllegalBlockSizeException(e.getMessage());
         }
         catch (DataLengthException e)
         {
@@ -1272,6 +1326,23 @@ public class BaseBlockCipher
                 }
                 throw new BadPaddingException(e.getMessage());
             }
+        }
+    }
+
+    private static class InvalidKeyOrParametersException
+        extends InvalidKeyException
+    {
+        private final Throwable cause;
+
+        InvalidKeyOrParametersException(String msg, Throwable cause)
+        {
+             super(msg);
+            this.cause = cause;
+        }
+
+        public Throwable getCause()
+        {
+            return cause;
         }
     }
 }

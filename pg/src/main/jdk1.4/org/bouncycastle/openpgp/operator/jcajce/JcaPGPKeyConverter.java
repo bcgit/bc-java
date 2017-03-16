@@ -112,10 +112,10 @@ public class JcaPGPKeyConverter
                 fact = helper.createKeyFactory("ElGamal");
 
                 return fact.generatePublic(elSpec);
-            case PublicKeyAlgorithmTags.EC:
+            case PublicKeyAlgorithmTags.ECDH:
                 ECDHPublicBCPGKey ecdhK = (ECDHPublicBCPGKey)publicPk.getKey();
-                X9ECParameters ecdhParams = PGPUtil.getX9Parameters(ecdhK.getCurveOID());
-                ECPoint ecdhPoint = PGPUtil.decodePoint(ecdhK.getEncodedPoint(), ecdhParams.getCurve());
+                X9ECParameters ecdhParams = JcaJcePGPUtil.getX9Parameters(ecdhK.getCurveOID());
+                ECPoint ecdhPoint = JcaJcePGPUtil.decodePoint(ecdhK.getEncodedPoint(), ecdhParams.getCurve());
                 ECPublicKeySpec   ecDhSpec = new ECPublicKeySpec(
                     ecdhPoint,
                     convertX9Parameters(ecdhK.getCurveOID(), ecdhParams));
@@ -124,8 +124,8 @@ public class JcaPGPKeyConverter
                 return fact.generatePublic(ecDhSpec);
             case PublicKeyAlgorithmTags.ECDSA:
                 ECDSAPublicBCPGKey ecdsaK = (ECDSAPublicBCPGKey)publicPk.getKey();
-                X9ECParameters ecdsaParams = PGPUtil.getX9Parameters(ecdsaK.getCurveOID());
-                ECPoint ecdsaPoint = PGPUtil.decodePoint(ecdsaK.getEncodedPoint(), ecdsaParams.getCurve());
+                X9ECParameters ecdsaParams = JcaJcePGPUtil.getX9Parameters(ecdsaK.getCurveOID());
+                ECPoint ecdsaPoint = JcaJcePGPUtil.decodePoint(ecdsaK.getEncodedPoint(), ecdsaParams.getCurve());
                 ECPublicKeySpec ecDsaSpec = new ECPublicKeySpec(
                     ecdsaPoint,
                     convertX9Parameters(ecdsaK.getCurveOID(), ecdsaParams));
@@ -195,7 +195,7 @@ public class JcaPGPKeyConverter
             ASN1OctetString key = new DEROctetString(keyInfo.getPublicKeyData().getBytes());
             X9ECPoint derQ = new X9ECPoint(params.getCurve(), key);
 
-            if (algorithm == PGPPublicKey.EC)
+            if (algorithm == PGPPublicKey.ECDH)
             {
                 PGPKdfParameters kdfParams = (PGPKdfParameters)algorithmParameters;
                 if (kdfParams == null)
@@ -353,7 +353,7 @@ public class JcaPGPKeyConverter
 
             privPk = new ElGamalSecretBCPGKey(esK.getX());
             break;
-        case PGPPublicKey.EC:
+        case PGPPublicKey.ECDH:
         case PGPPublicKey.ECDSA:
             ECPrivateKey ecK = (ECPrivateKey)privKey;
 

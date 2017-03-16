@@ -24,6 +24,7 @@ import org.bouncycastle.asn1.x509.TBSCertList;
 import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.x509.extension.X509ExtensionUtil;
 import org.bouncycastle.jce.X509Principal;
+import org.bouncycastle.util.Strings;
 
 /**
  * The following extensions are listed in RFC 2459 as relevant to CRL Entries

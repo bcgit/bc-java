@@ -37,6 +37,18 @@ public class GOST28147Test
             0xF,0xE,0xD,0xC,0xB,0xA,0x9,0x8,0x7,0x6,0x5,0x4,0x3,0x2,0x1,0x0
     };
 
+    static byte[] TestSBox_1 =
+    {
+         0xE, 0x3, 0xC, 0xD, 0x1, 0xF, 0xA, 0x9, 0xB, 0x6, 0x2, 0x7, 0x5, 0x0, 0x8, 0x4,
+         0xD, 0x9, 0x0, 0x4, 0x7, 0x1, 0x3, 0xB, 0x6, 0xC, 0x2, 0xA, 0xF, 0xE, 0x5, 0x8,
+         0x8, 0xB, 0xA, 0x7, 0x1, 0xD, 0x5, 0xC, 0x6, 0x3, 0x9, 0x0, 0xF, 0xE, 0x2, 0x4,
+         0xD, 0x7, 0xC, 0x9, 0xF, 0x0, 0x5, 0x8, 0xA, 0x2, 0xB, 0x6, 0x4, 0x3, 0x1, 0xE,
+         0xB, 0x4, 0x6, 0x5, 0x0, 0xF, 0x1, 0xC, 0x9, 0xE, 0xD, 0x8, 0x3, 0x7, 0xA, 0x2,
+         0xD, 0xF, 0x9, 0x4, 0x2, 0xC, 0x5, 0xA, 0x6, 0x0, 0x3, 0x8, 0x7, 0xE, 0x1, 0xB,
+         0xF, 0xE, 0x9, 0x5, 0xB, 0x2, 0x1, 0x8, 0x6, 0x0, 0xD, 0x3, 0x4, 0x7, 0xC, 0xA,
+         0xA, 0x3, 0xE, 0x2, 0x0, 0x1, 0x4, 0x6, 0xB, 0x8, 0xC, 0x7, 0xD, 0x5, 0xF, 0x9
+    };
+
     static SimpleTest[]   tests =
     {   new BlockCipherVectorTest(1, new GOST28147Engine(),
             new KeyParameter(Hex.decode("546d203368656c326973652073736e62206167796967747473656865202c3d73")),
@@ -128,7 +140,38 @@ public class GOST28147Test
                 Hex.decode("1234567890abcdef")), //IV
                 "bc350e71aa11345709acde",  //input message
                 "1bcc2282707c676fb656dc"), //encrypt message
-
+        new BlockCipherVectorTest(15, new GOFBBlockCipher(new GOST28147Engine()),
+            new ParametersWithIV(
+                new ParametersWithSBox(
+                    new KeyParameter(Hex.decode("0A43145BA8B9E9FF0AEA67D3F26AD87854CED8D9017B3D33ED81301F90FDF993")), //key
+                    TestSBox_1), //type, IV, S-box
+                Hex.decode("8001069080010690")),
+            "094C912C5EFDD703D42118971694580B", //input message
+            "2707B58DF039D1A64460735FFE76D55F"), //encrypt message
+        new BlockCipherVectorTest(16, new GOFBBlockCipher(new GOST28147Engine()),
+            new ParametersWithIV(
+                new ParametersWithSBox(
+                    new KeyParameter(Hex.decode("0A43145BA8B9E9FF0AEA67D3F26AD87854CED8D9017B3D33ED81301F90FDF993")), //key
+                    TestSBox_1), //type, S-box
+                    Hex.decode("800107A0800107A0")),
+            "FE780800E0690083F20C010CF00C0329", //input message
+            "9AF623DFF948B413B53171E8D546188D"), //encrypt message
+        new BlockCipherVectorTest(17, new GOFBBlockCipher(new GOST28147Engine()),
+            new ParametersWithIV(
+                new ParametersWithSBox(
+                    new KeyParameter(Hex.decode("0A43145BA8B9E9FF0AEA67D3F26AD87854CED8D9017B3D33ED81301F90FDF993")), //key
+                    TestSBox_1), //type, S-box
+                    Hex.decode("8001114080011140")),
+            "D1088FD8C0A86EE8F1DCD1088FE8C058", //input message
+            "62A6B64D12253BCD8241A4BB0CFD3E7C"), //encrypt message
+        new BlockCipherVectorTest(18, new GOFBBlockCipher(new GOST28147Engine()),
+            new ParametersWithIV(
+                new ParametersWithSBox(
+                    new KeyParameter(Hex.decode("0A43145BA8B9E9FF0AEA67D3F26AD87854CED8D9017B3D33ED81301F90FDF993")), //key
+                    TestSBox_1), //type, IV, S-box
+                    Hex.decode("80011A3080011A30")),
+            "D431FACD011C502C501B500A12921090", //input message
+            "07313C89D302FF73234B4A0506AB00F3"), //encrypt message
     };
 
     static private final int GOST28147_KEY_LENGTH = 32;

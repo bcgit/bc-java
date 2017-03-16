@@ -11,10 +11,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.PBEParametersGenerator;
 import org.bouncycastle.crypto.digests.GOST3411Digest;
 import org.bouncycastle.crypto.digests.MD2Digest;
-import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.TigerDigest;
 import org.bouncycastle.crypto.generators.OpenSSLPBEParametersGenerator;
 import org.bouncycastle.crypto.generators.PKCS12ParametersGenerator;
@@ -23,6 +20,7 @@ import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.params.DESParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.crypto.util.DigestFactory;
 
 public interface PBE
 {
@@ -36,6 +34,9 @@ public interface PBE
     static final int        SHA256       = 4;
     static final int        MD2          = 5;
     static final int        GOST3411     = 6;
+    static final int        SHA224       = 7;
+    static final int        SHA384       = 8;
+    static final int        SHA512       = 9;
 
     static final int        PKCS5S1      = 0;
     static final int        PKCS5S2      = 1;
@@ -63,10 +64,10 @@ public interface PBE
                     generator = new PKCS5S1ParametersGenerator(new MD2Digest());
                     break;
                 case MD5:
-                    generator = new PKCS5S1ParametersGenerator(new MD5Digest());
+                    generator = new PKCS5S1ParametersGenerator(DigestFactory.createMD5());
                     break;
                 case SHA1:
-                    generator = new PKCS5S1ParametersGenerator(new SHA1Digest());
+                    generator = new PKCS5S1ParametersGenerator(DigestFactory.createSHA1());
                     break;
                 default:
                     throw new IllegalStateException("PKCS5 scheme 1 only supports MD2, MD5 and SHA1.");
@@ -80,10 +81,10 @@ public interface PBE
                     generator = new PKCS5S2ParametersGenerator(new MD2Digest());
                     break;
                 case MD5:
-                    generator = new PKCS5S2ParametersGenerator(new MD5Digest());
+                    generator = new PKCS5S2ParametersGenerator(DigestFactory.createMD5());
                     break;
                 case SHA1:
-                    generator = new PKCS5S2ParametersGenerator(new SHA1Digest());
+                    generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA1());
                     break;
                 case RIPEMD160:
                     generator = new PKCS5S2ParametersGenerator(new RIPEMD160Digest());
@@ -92,10 +93,19 @@ public interface PBE
                     generator = new PKCS5S2ParametersGenerator(new TigerDigest());
                     break;
                 case SHA256:
-                    generator = new PKCS5S2ParametersGenerator(new SHA256Digest());
+                    generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA256());
                     break;
                 case GOST3411:
                     generator = new PKCS5S2ParametersGenerator(new GOST3411Digest());
+                    break;
+                case SHA224:
+                    generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA224());
+                    break;
+                case SHA384:
+                    generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA384());
+                    break;
+                case SHA512:
+                    generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA512());
                     break;
                 default:
                     throw new IllegalStateException("unknown digest scheme for PBE PKCS5S2 encryption.");
@@ -109,10 +119,10 @@ public interface PBE
                     generator = new PKCS12ParametersGenerator(new MD2Digest());
                     break;
                 case MD5:
-                    generator = new PKCS12ParametersGenerator(new MD5Digest());
+                    generator = new PKCS12ParametersGenerator(DigestFactory.createMD5());
                     break;
                 case SHA1:
-                    generator = new PKCS12ParametersGenerator(new SHA1Digest());
+                    generator = new PKCS12ParametersGenerator(DigestFactory.createSHA1());
                     break;
                 case RIPEMD160:
                     generator = new PKCS12ParametersGenerator(new RIPEMD160Digest());
@@ -121,10 +131,19 @@ public interface PBE
                     generator = new PKCS12ParametersGenerator(new TigerDigest());
                     break;
                 case SHA256:
-                    generator = new PKCS12ParametersGenerator(new SHA256Digest());
+                    generator = new PKCS12ParametersGenerator(DigestFactory.createSHA256());
                     break;
                 case GOST3411:
                     generator = new PKCS12ParametersGenerator(new GOST3411Digest());
+                    break;
+                case SHA224:
+                    generator = new PKCS12ParametersGenerator(DigestFactory.createSHA224());
+                    break;
+                case SHA384:
+                    generator = new PKCS12ParametersGenerator(DigestFactory.createSHA384());
+                    break;
+                case SHA512:
+                    generator = new PKCS12ParametersGenerator(DigestFactory.createSHA512());
                     break;
                 default:
                     throw new IllegalStateException("unknown digest scheme for PBE encryption.");
@@ -194,11 +213,6 @@ public interface PBE
                 }
             }
 
-            for (int i = 0; i != key.length; i++)
-            {
-                key[i] = 0;
-            }
-
             return param;
         }
 
@@ -253,11 +267,6 @@ public interface PBE
                 }
             }
 
-            for (int i = 0; i != key.length; i++)
-            {
-                key[i] = 0;
-            }
-
             return param;
         }
 
@@ -283,11 +292,6 @@ public interface PBE
             generator.init(key, pbeParam.getSalt(), pbeParam.getIterationCount());
 
             param = generator.generateDerivedMacParameters(pbeKey.getKeySize());
-    
-            for (int i = 0; i != key.length; i++)
-            {
-                key[i] = 0;
-            }
 
             return param;
         }

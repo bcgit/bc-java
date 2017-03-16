@@ -43,7 +43,6 @@ import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.modes.CFBBlockCipher;
 import org.bouncycastle.crypto.modes.CTSBlockCipher;
 import org.bouncycastle.crypto.modes.EAXBlockCipher;
-import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.modes.NISTCTSBlockCipher;
 import org.bouncycastle.crypto.modes.OCBBlockCipher;
 import org.bouncycastle.crypto.modes.OFBBlockCipher;
@@ -553,7 +552,8 @@ public class CipherStreamTest
         if (blockSize == 16)
         {
             testMode(new CCMBlockCipher(cipher1), new ParametersWithIV(key, new byte[7]));
-            testMode(new GCMBlockCipher(cipher1), withIv);
+            // TODO: need to have a GCM safe version of testMode.
+//            testMode(new GCMBlockCipher(cipher1), withIv);
             testMode(new OCBBlockCipher(cipher1, cipher2), new ParametersWithIV(key, new byte[15]));
         }
     }

@@ -590,14 +590,15 @@ public class IntegerPolynomial
 
         // Compute resultants modulo prime numbers. Continue until NUM_EQUAL_RESULTANTS consecutive modular resultants are equal.
         LinkedList<ModularResultant> modResultants = new LinkedList<ModularResultant>();
-        BigInteger prime = null;
         BigInteger pProd = Constants.BIGINT_ONE;
         BigInteger res = Constants.BIGINT_ONE;
         int numEqual = 1;   // number of consecutive modular resultants equal to each other
-        Iterator<BigInteger> primes = BIGINT_PRIMES.iterator();
+
+        PrimeGenerator primes = new PrimeGenerator();
+
         while (true)
         {
-            prime = primes.hasNext() ? primes.next() : prime.nextProbablePrime();
+            BigInteger prime = primes.nextPrime();
             ModularResultant crr = resultant(prime.intValue());
             modResultants.add(crr);
 
@@ -1353,6 +1354,26 @@ public class IntegerPolynomial
         public ModularResultant call()
         {
             return ModularResultant.combineRho(modRes1, modRes2);
+        }
+    }
+
+    private class PrimeGenerator
+    {
+        private int index = 0;
+        private BigInteger prime;
+
+        public BigInteger nextPrime()
+        {
+            if (index < BIGINT_PRIMES.size())
+            {
+                prime = (BigInteger)BIGINT_PRIMES.get(index++);
+            }
+            else
+            {
+                prime = prime.nextProbablePrime();
+            }
+
+            return prime;
         }
     }
 }

@@ -28,10 +28,15 @@ import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
  */
 public class PrivateKeyInfoFactory
 {
+    private PrivateKeyInfoFactory()
+    {
+
+    }
+
     /**
      * Create a PrivateKeyInfo representation of a private key.
      *
-     * @param privateKey the SubjectPublicKeyInfo encoding
+     * @param privateKey the key to be encoded into the info object.
      * @return the appropriate key parameter
      * @throws java.io.IOException on an error encoding the key
      */
@@ -65,7 +70,7 @@ public class PrivateKeyInfoFactory
             else if (domainParams instanceof ECNamedDomainParameters)
             {
                 params = new X962Parameters(((ECNamedDomainParameters)domainParams).getName());
-                orderBitLength = domainParams.getCurve().getOrder().bitLength();
+                orderBitLength = domainParams.getN().bitLength();
             }
             else
             {
@@ -77,7 +82,7 @@ public class PrivateKeyInfoFactory
                     domainParams.getSeed());
 
                 params = new X962Parameters(ecP);
-                orderBitLength = domainParams.getCurve().getOrder().bitLength();
+                orderBitLength = domainParams.getN().bitLength();
             }
 
             return new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), new ECPrivateKey(orderBitLength, priv.getD(), params));

@@ -21,13 +21,14 @@ public class BigSkippingCipherTest
     public void testAESCTR()
         throws Exception
     {
-        CipherParameters params = new ParametersWithIV(new KeyParameter(Hex.decode("5F060D3716B345C253F6749ABAC10917")), Hex.decode("00000000000000000000000000000000"));
+        CipherParameters externalCounterParams = new ParametersWithIV(new KeyParameter(Hex.decode("5F060D3716B345C253F6749ABAC10917")), Hex.decode("00000000000000000000000000000000"));
+        CipherParameters internalCounterParams = new ParametersWithIV(new KeyParameter(Hex.decode("5F060D3716B345C253F6749ABAC10917")), Hex.decode("00000000000000000000"));
         SICBlockCipher linearEngine = new SICBlockCipher(new AESEngine());
         SICBlockCipher skippingEngine = new SICBlockCipher(new AESEngine());
         Random random = new Random();
 
-        linearEngine.init(true, params);
-        skippingEngine.init(false, params);
+        linearEngine.init(true, externalCounterParams);
+        skippingEngine.init(false, internalCounterParams);
 
         testCipher(random, linearEngine, skippingEngine);
 
@@ -56,7 +57,7 @@ public class BigSkippingCipherTest
         byte[] linOut = new byte[512];
         byte[] skipOut = new byte[512];
 
-        linearEngine.init(true, params);
+        linearEngine.init(true, internalCounterParams);
 
         linearEngine.processBytes(buf, 0, buf.length, linOut, 0);
         skippingEngine.processBytes(buf, 0, buf.length, skipOut, 0);

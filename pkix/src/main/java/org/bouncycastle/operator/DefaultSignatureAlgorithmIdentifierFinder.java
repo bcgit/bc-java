@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
@@ -92,6 +93,9 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SHA256WITHCVC-ECDSA", EACObjectIdentifiers.id_TA_ECDSA_SHA_256);
         algorithms.put("SHA384WITHCVC-ECDSA", EACObjectIdentifiers.id_TA_ECDSA_SHA_384);
         algorithms.put("SHA512WITHCVC-ECDSA", EACObjectIdentifiers.id_TA_ECDSA_SHA_512);
+        algorithms.put("SHA3-512WITHSPHINCS256", BCObjectIdentifiers.sphincs256_with_SHA3_512);
+        algorithms.put("SHA512WITHSPHINCS256", BCObjectIdentifiers.sphincs256_with_SHA512);
+
         //
         // According to RFC 3279, the ASN.1 encoding SHALL (id-dsa-with-sha1) or MUST (ecdsa-with-SHA*) omit the parameters field.
         // The parameters field SHALL be NULL for RSA based signature algorithms.
@@ -112,6 +116,12 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         //
         noParams.add(CryptoProObjectIdentifiers.gostR3411_94_with_gostR3410_94);
         noParams.add(CryptoProObjectIdentifiers.gostR3411_94_with_gostR3410_2001);
+
+        //
+        // SPHINCS-256
+        //
+        noParams.add(BCObjectIdentifiers.sphincs256_with_SHA512);
+        noParams.add(BCObjectIdentifiers.sphincs256_with_SHA3_512);
 
         //
         // PKCS 1.5 encrypted  algorithms

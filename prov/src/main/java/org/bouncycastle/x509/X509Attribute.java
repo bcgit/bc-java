@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.x509.Attribute;
 
 /**
  * Class for carrying the values in an X.509 Attribute.
+ * @deprecated see X509CertificateHolder class in the PKIX package.
  */
 public class X509Attribute
     extends ASN1Object

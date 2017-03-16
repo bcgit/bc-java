@@ -436,6 +436,19 @@ public class ECPointTest extends TestCase
                 }
             }
         }
+        else if (ECAlgorithms.isF2mCurve(c))
+        {
+            int m = c.getFieldSize();
+            BigInteger x = new BigInteger(m, secRand);
+            ECFieldElement fe = c.fromBigInteger(x);
+            for (int i = 0; i < 100; ++i)
+            {
+                ECFieldElement sq = fe.square();
+                ECFieldElement check = sq.sqrt();
+                assertEquals(fe, check);
+                fe = sq;
+            }
+        }
     }
 
     private void implAddSubtractMultiplyTwiceEncodingTestAllCoords(X9ECParameters x9ECParameters)

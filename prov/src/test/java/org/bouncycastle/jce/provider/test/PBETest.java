@@ -1,8 +1,12 @@
 package org.bouncycastle.jce.provider.test;
 
 import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.Key;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.KeySpec;
 
@@ -25,8 +29,11 @@ import org.bouncycastle.crypto.generators.OpenSSLPBEParametersGenerator;
 import org.bouncycastle.crypto.generators.PKCS12ParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
+import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -456,6 +463,25 @@ public class PBETest
         }
     }
 
+    public void testNullSalt()
+        throws Exception
+    {
+        SecretKeyFactory skf = SecretKeyFactory.getInstance("PBEWITHSHAAND128BITAES-CBC-BC");
+        Key key = skf.generateSecret(new PBEKeySpec("secret".toCharArray()));
+
+        Cipher cipher = Cipher.getInstance("PBEWITHSHAAND128BITAES-CBC-BC");
+
+        try
+        {
+            cipher.init(Cipher.ENCRYPT_MODE, key, (AlgorithmParameterSpec)null);
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isTrue("wrong message", "PBEKey requires parameters to specify salt".equals(e.getMessage()));
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -600,6 +626,8 @@ public class PBETest
             openSSLTests[i].perform();
         }
 
+        testPKCS12Interop();
+
         testPBEHMac("PBEWithHMacSHA1", hMac1);
         testPBEHMac("PBEWithHMacRIPEMD160", hMac2);
 
@@ -610,6 +638,40 @@ public class PBETest
         testCipherNameWithWrap("PBEWITHSHAAND128BITRC4", "RC4");
 
         checkPBE("PBKDF2WithHmacSHA1", true, "f14687fc31a66e2f7cc01d0a65f687961bd27e20", "6f6579193d6433a3e4600b243bb390674f04a615");
+
+        testMixedKeyTypes();
+        testNullSalt();
+    }
+
+    private void testPKCS12Interop()
+        throws Exception
+    {
+        final String algorithm = "PBEWithSHA256And192BitAES-CBC-BC";
+
+        final PBEKeySpec keySpec = new PBEKeySpec("foo123".toCharArray(), Hex.decode("01020304050607080910"), 1024);
+        final SecretKeyFactory fact = SecretKeyFactory.getInstance(algorithm, "BC");
+
+        BCPBEKey bcpbeKey = (BCPBEKey)fact.generateSecret(keySpec);
+
+        Cipher c1 = Cipher.getInstance(algorithm, "BC");
+
+        c1.init(Cipher.ENCRYPT_MODE, new PKCS12KeyWithParameters("foo123".toCharArray(), Hex.decode("01020304050607080910"), 1024));
+
+        Cipher c2 = Cipher.getInstance("AES/CBC/PKCS7Padding", "BC");
+
+        c2.init(Cipher.DECRYPT_MODE, new SecretKeySpec(bcpbeKey.getEncoded(), "AES"), new IvParameterSpec(((ParametersWithIV)bcpbeKey.getParam()).getIV()));
+
+        if (!Arrays.areEqual(Hex.decode("deadbeef"), c2.doFinal(c1.doFinal(Hex.decode("deadbeef")))))
+        {
+            fail("new key failed");
+        }
+
+        c1.init(Cipher.ENCRYPT_MODE, bcpbeKey);
+
+        if (!Arrays.areEqual(Hex.decode("deadbeef"), c2.doFinal(c1.doFinal(Hex.decode("deadbeef")))))
+        {
+            fail("old key failed");
+        }
     }
 
     private void checkPBE(String baseAlg, boolean defIsUTF8, String utf8, String eightBit)
@@ -653,6 +715,32 @@ public class PBETest
         if (!Arrays.areEqual(ascK, f.generateSecret(ks2).getEncoded()))
         {
             fail(baseAlg + " wrong PBKDF2 k2 8bit key generated");
+        }
+    }
+
+    // for regression testing only - don't try this at home.
+    public void testMixedKeyTypes()
+        throws Exception
+    {
+        String provider = "BC";
+        SecretKeyFactory skf =
+            SecretKeyFactory.getInstance("PBKDF2WITHHMACSHA1", provider);
+        PBEKeySpec pbeks = new PBEKeySpec("password".toCharArray(), Strings.toByteArray("salt"), 100, 128);
+        SecretKey secretKey = skf.generateSecret(pbeks);
+        PBEParameterSpec paramSpec = new PBEParameterSpec(pbeks.getSalt(), pbeks.getIterationCount());
+
+        // in this case pbeSpec picked up from internal class representing key
+        Cipher cipher =
+            Cipher.getInstance("PBEWITHSHAAND128BITAES-CBC-BC", provider);
+
+        try
+        {
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            isTrue("wrong exception", "Algorithm requires a PBE key suitable for PKCS12".equals(e.getMessage()));
         }
     }
 

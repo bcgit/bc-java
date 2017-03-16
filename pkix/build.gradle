@@ -3,6 +3,8 @@ dependencies {
     compile project(':prov')
 }
 
+jar.baseName = "bcpkix-jdk15on"
+
 cobertura {
    coverageDirs = [
        "${rootProject.projectDir}/core/build/classes/main",

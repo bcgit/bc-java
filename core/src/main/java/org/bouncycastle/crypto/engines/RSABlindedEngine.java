@@ -110,6 +110,11 @@ public class RSABlindedEngine
 
                 BigInteger rInv = r.modInverse(m);
                 result = blindedResult.multiply(rInv).mod(m);
+                // defence against Arjen Lenstra’s CRT attack
+                if (!input.equals(result.modPow(e, m)))
+                {
+                    throw new IllegalStateException("RSA engine faulty decryption/signing detected");
+                }
             }
             else
             {

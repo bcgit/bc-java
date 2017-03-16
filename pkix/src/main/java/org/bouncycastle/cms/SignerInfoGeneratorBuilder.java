@@ -29,10 +29,11 @@ public class SignerInfoGeneratorBuilder
         this(digestProvider, new DefaultCMSSignatureEncryptionAlgorithmFinder());
     }
 
-        /**
-     *  Base constructor.
+    /**
+     * Base constructor with a particular finder for signature algorithms.
      *
-     * @param digestProvider  a provider of digest calculators for the algorithms required in the signature and attribute calculations.
+     * @param digestProvider a provider of digest calculators for the algorithms required in the signature and attribute calculations.
+     * @param sigEncAlgFinder finder for algorithm IDs to store for the signature encryption/signature algorithm field.
      */
     public SignerInfoGeneratorBuilder(DigestCalculatorProvider digestProvider, CMSSignatureEncryptionAlgorithmFinder sigEncAlgFinder)
     {

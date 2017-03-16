@@ -366,12 +366,12 @@ public class BCECGOST3410PrivateKey
                     curveOid = new ASN1ObjectIdentifier(((ECNamedCurveSpec)ecSpec).getName());
                 }
                 params = new X962Parameters(curveOid);
-                orderBitLength = ECUtil.getOrderBitLength(ecSpec.getOrder(), this.getS());
+                orderBitLength = ECUtil.getOrderBitLength(BouncyCastleProvider.CONFIGURATION, ecSpec.getOrder(), this.getS());
             }
             else if (ecSpec == null)
             {
                 params = new X962Parameters(DERNull.INSTANCE);
-                orderBitLength = ECUtil.getOrderBitLength(null, this.getS());
+                orderBitLength = ECUtil.getOrderBitLength(BouncyCastleProvider.CONFIGURATION, null, this.getS());
             }
             else
             {
@@ -385,7 +385,7 @@ public class BCECGOST3410PrivateKey
                     ecSpec.getCurve().getSeed());
 
                 params = new X962Parameters(ecP);
-                orderBitLength = ECUtil.getOrderBitLength(ecSpec.getOrder(), this.getS());
+                orderBitLength = ECUtil.getOrderBitLength(BouncyCastleProvider.CONFIGURATION, ecSpec.getOrder(), this.getS());
             }
 
             PrivateKeyInfo info;

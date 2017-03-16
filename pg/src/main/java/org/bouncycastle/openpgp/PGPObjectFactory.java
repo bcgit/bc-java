@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.PacketTags;
@@ -163,20 +164,28 @@ public class PGPObjectFactory
     {
         return new Iterator()
         {
-            private Object obj = getObject();
+            private boolean triedNext = false;
+            private Object obj = null;
 
             public boolean hasNext()
             {
+                if (!triedNext)
+                {
+                    triedNext = true;
+                    obj = getObject();
+                }
                 return obj != null;
             }
 
             public Object next()
             {
-                Object rv = obj;
+                if (!hasNext())
+                {
+                    throw new NoSuchElementException();
+                }
+                triedNext = false;
 
-                obj = getObject();;
-
-                return rv;
+                return obj;
             }
 
             public void remove()

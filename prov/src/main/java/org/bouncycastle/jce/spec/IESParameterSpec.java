@@ -33,24 +33,6 @@ public class IESParameterSpec
         this(derivation, encoding, macKeySize, -1, null, false);
     }
 
-
-    /**
-     * Set the IES engine parameters.
-     *
-     * @param derivation    the optional derivation vector for the KDF.
-     * @param encoding      the optional encoding vector for the KDF.
-     * @param macKeySize    the key size (in bits) for the MAC.
-     * @param cipherKeySize the key size (in bits) for the block cipher.
-     */
-    public IESParameterSpec(
-        byte[] derivation,
-        byte[] encoding,
-        int macKeySize,
-        int cipherKeySize)
-    {
-        this(derivation, encoding, macKeySize, cipherKeySize, null, false);
-    }
-
     /**
      * Set the IES engine parameters.
      *

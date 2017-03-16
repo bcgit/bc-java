@@ -9,9 +9,9 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
@@ -24,13 +24,14 @@ import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.ECNRSigner;
+import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.jcajce.provider.asymmetric.util.DSABase;
 import org.bouncycastle.jcajce.provider.asymmetric.util.DSAEncoder;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
-import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -45,34 +46,7 @@ public class SignatureSpi
     protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
     {
-        CipherParameters param;
-
-        if (publicKey instanceof ECPublicKey)
-        {
-            param = ECUtil.generatePublicKeyParameter(publicKey);
-        }
-        else
-        {
-            try
-            {
-                byte[] bytes = publicKey.getEncoded();
-
-                publicKey = BouncyCastleProvider.getPublicKey(SubjectPublicKeyInfo.getInstance(bytes));
-
-                if (publicKey instanceof ECPublicKey)
-                {
-                    param = ECUtil.generatePublicKeyParameter(publicKey);
-                }
-                else
-                {
-                    throw new InvalidKeyException("can't recognise key type in ECDSA based signer");
-                }
-            }
-            catch (Exception e)
-            {
-                throw new InvalidKeyException("can't recognise key type in ECDSA based signer");
-            }
-        }
+        CipherParameters param = ECUtils.generatePublicKeyParameter(publicKey);
 
         digest.reset();
 
@@ -151,6 +125,78 @@ public class SignatureSpi
         public ecDSA512()
         {
             super(new SHA512Digest(), new ECDSASigner(), new StdDSAEncoder());
+        }
+    }
+
+    static public class ecDSASha3_224
+        extends SignatureSpi
+    {
+        public ecDSASha3_224()
+        {
+            super(new SHA3Digest(224), new ECDSASigner(), new StdDSAEncoder());
+        }
+    }
+
+    static public class ecDetDSASha3_224
+        extends SignatureSpi
+    {
+        public ecDetDSASha3_224()
+        {
+            super(new SHA3Digest(224), new ECDSASigner(new HMacDSAKCalculator(new SHA3Digest(224))), new StdDSAEncoder());
+        }
+    }
+
+    static public class ecDSASha3_256
+        extends SignatureSpi
+    {
+        public ecDSASha3_256()
+        {
+            super(new SHA3Digest(256), new ECDSASigner(), new StdDSAEncoder());
+        }
+    }
+
+    static public class ecDetDSASha3_256
+        extends SignatureSpi
+    {
+        public ecDetDSASha3_256()
+        {
+            super(new SHA3Digest(256), new ECDSASigner(new HMacDSAKCalculator(new SHA3Digest(256))), new StdDSAEncoder());
+        }
+    }
+
+    static public class ecDSASha3_384
+        extends SignatureSpi
+    {
+        public ecDSASha3_384()
+        {
+            super(new SHA3Digest(384), new ECDSASigner(), new StdDSAEncoder());
+        }
+    }
+
+    static public class ecDetDSASha3_384
+        extends SignatureSpi
+    {
+        public ecDetDSASha3_384()
+        {
+            super(new SHA3Digest(384), new ECDSASigner(new HMacDSAKCalculator(new SHA3Digest(384))), new StdDSAEncoder());
+        }
+    }
+
+    static public class ecDSASha3_512
+        extends SignatureSpi
+    {
+        public ecDSASha3_512()
+        {
+            super(new SHA3Digest(512), new ECDSASigner(), new StdDSAEncoder());
+        }
+    }
+
+    static public class ecDetDSASha3_512
+        extends SignatureSpi
+    {
+        public ecDetDSASha3_512()
+        {
+            super(new SHA3Digest(512), new ECDSASigner(new HMacDSAKCalculator(new SHA3Digest(512))), new StdDSAEncoder());
         }
     }
 

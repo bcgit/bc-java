@@ -4,17 +4,17 @@ import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.Provider;
 import java.security.SecureRandom;
-import java.security.InvalidKeyException;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 
 import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -71,11 +71,7 @@ public class JceSymmetricKeyWrapper
 
             return keyEncryptionCipher.wrap(contentEncryptionKeySpec);
         }
-        catch (InvalidKeyException e)
-        {
-            throw new OperatorException("cannot wrap key: " + e.getMessage(), e);
-        }
-        catch (GeneralSecurityException e)
+        catch (Exception e)
         {
             throw new OperatorException("cannot wrap key: " + e.getMessage(), e);
         }
@@ -83,12 +79,14 @@ public class JceSymmetricKeyWrapper
 
     private static AlgorithmIdentifier determineKeyEncAlg(SecretKey key)
     {
-        String algorithm = key.getAlgorithm();
+        return determineKeyEncAlg(key.getAlgorithm(), key.getEncoded().length * 8);
+    }
 
-        if (algorithm.startsWith("DES"))
+    static AlgorithmIdentifier determineKeyEncAlg(String algorithm, int keySizeInBits)
+    {
+        if (algorithm.startsWith("DES") || algorithm.startsWith("TripleDES"))
         {
-            return new AlgorithmIdentifier(new ASN1ObjectIdentifier(
-                    "1.2.840.113549.1.9.16.3.6"), new DERNull());
+            return new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_CMS3DESwrap, DERNull.INSTANCE);
         }
         else if (algorithm.startsWith("RC2"))
         {
@@ -97,18 +95,17 @@ public class JceSymmetricKeyWrapper
         }
         else if (algorithm.startsWith("AES"))
         {
-            int length = key.getEncoded().length * 8;
             ASN1ObjectIdentifier wrapOid;
 
-            if (length == 128)
+            if (keySizeInBits == 128)
             {
                 wrapOid = NISTObjectIdentifiers.id_aes128_wrap;
             }
-            else if (length == 192)
+            else if (keySizeInBits == 192)
             {
                 wrapOid = NISTObjectIdentifiers.id_aes192_wrap;
             }
-            else if (length == 256)
+            else if (keySizeInBits == 256)
             {
                 wrapOid = NISTObjectIdentifiers.id_aes256_wrap;
             }
@@ -127,18 +124,17 @@ public class JceSymmetricKeyWrapper
         }
         else if (algorithm.startsWith("Camellia"))
         {
-            int length = key.getEncoded().length * 8;
             ASN1ObjectIdentifier wrapOid;
 
-            if (length == 128)
+            if (keySizeInBits == 128)
             {
                 wrapOid = NTTObjectIdentifiers.id_camellia128_wrap;
             }
-            else if (length == 192)
+            else if (keySizeInBits == 192)
             {
                 wrapOid = NTTObjectIdentifiers.id_camellia192_wrap;
             }
-            else if (length == 256)
+            else if (keySizeInBits == 256)
             {
                 wrapOid = NTTObjectIdentifiers.id_camellia256_wrap;
             }

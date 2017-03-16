@@ -1,10 +1,7 @@
 package org.bouncycastle.math.ec.custom.sec;
 
 import java.math.BigInteger;
-import java.util.Random;
 
-import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECCurve.AbstractF2m;
 import org.bouncycastle.math.ec.ECFieldElement;
@@ -75,102 +72,6 @@ public class SecT193R2Curve extends AbstractF2m
     public boolean isKoblitz()
     {
         return false;
-    }
-
-    /**
-     * Decompresses a compressed point P = (xp, yp) (X9.62 s 4.2.2).
-     *
-     * @param yTilde
-     *            ~yp, an indication bit for the decompression of yp.
-     * @param X1
-     *            The field element xp.
-     * @return the decompressed point.
-     */
-    protected ECPoint decompressPoint(int yTilde, BigInteger X1)
-    {
-        ECFieldElement x = fromBigInteger(X1), y = null;
-        if (x.isZero())
-        {
-            y = b.sqrt();
-        }
-        else
-        {
-            ECFieldElement beta = x.square().invert().multiply(b).add(a).add(x);
-            ECFieldElement z = solveQuadraticEquation(beta);
-            if (z != null)
-            {
-                if (z.testBitZero() != (yTilde == 1))
-                {
-                    z = z.addOne();
-                }
-
-                switch (this.getCoordinateSystem())
-                {
-                case COORD_LAMBDA_AFFINE:
-                case COORD_LAMBDA_PROJECTIVE:
-                {
-                    y = z.add(x);
-                    break;
-                }
-                default:
-                {
-                    y = z.multiply(x);
-                    break;
-                }
-                }
-            }
-        }
-
-        if (y == null)
-        {
-            throw new IllegalArgumentException("Invalid point compression");
-        }
-
-        return this.createRawPoint(x, y, true);
-    }
-
-    /**
-     * Solves a quadratic equation <code>z<sup>2</sup> + z = beta</code>(X9.62
-     * D.1.6) The other solution is <code>z + 1</code>.
-     *
-     * @param beta
-     *            The value to solve the quadratic equation for.
-     * @return the solution for <code>z<sup>2</sup> + z = beta</code> or
-     *         <code>null</code> if no solution exists.
-     */
-    private ECFieldElement solveQuadraticEquation(ECFieldElement beta)
-    {
-        if (beta.isZero())
-        {
-            return beta;
-        }
-
-        ECFieldElement zeroElement = fromBigInteger(ECConstants.ZERO);
-
-        ECFieldElement z = null;
-        ECFieldElement gamma = null;
-
-        Random rand = new Random();
-        do
-        {
-            ECFieldElement t = fromBigInteger(new BigInteger(193, rand));
-            z = zeroElement;
-            ECFieldElement w = beta;
-            for (int i = 1; i < 193; i++)
-            {
-                ECFieldElement w2 = w.square();
-                z = z.square().add(w2.multiply(t));
-                w = w2.add(beta);
-            }
-            if (!w.isZero())
-            {
-                return null;
-            }
-            gamma = z.square().add(z);
-        }
-        while (gamma.isZero());
-
-        return z;
     }
 
     public int getM()

@@ -41,16 +41,17 @@ public class KeyFlags
     
     public KeyFlags(
         boolean    critical,
+        boolean    isLongLength,
         byte[]     data)
     {
-        super(SignatureSubpacketTags.KEY_FLAGS, critical, data);
+        super(SignatureSubpacketTags.KEY_FLAGS, critical, isLongLength, data);
     }
     
     public KeyFlags(
         boolean    critical,
         int        flags)
     {
-        super(SignatureSubpacketTags.KEY_FLAGS, critical, intToByteArray(flags));
+        super(SignatureSubpacketTags.KEY_FLAGS, critical, false, intToByteArray(flags));
     }
 
     /**

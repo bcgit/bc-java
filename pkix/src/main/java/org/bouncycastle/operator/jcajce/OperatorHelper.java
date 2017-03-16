@@ -377,7 +377,7 @@ class OperatorHelper
         String name = MessageDigestUtils.getDigestName(oid);
 
         int dIndex = name.indexOf('-');
-        if (dIndex > 0)
+        if (dIndex > 0 && !name.startsWith("SHA3"))
         {
             return name.substring(0, dIndex) + name.substring(dIndex + 1);
         }
@@ -388,7 +388,6 @@ class OperatorHelper
     public X509Certificate convertCertificate(X509CertificateHolder certHolder)
         throws CertificateException
     {
-
         try
         {
             CertificateFactory certFact = helper.createCertificateFactory("X.509");

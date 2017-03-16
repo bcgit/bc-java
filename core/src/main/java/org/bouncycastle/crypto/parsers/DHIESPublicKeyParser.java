@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.KeyParser;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
+import org.bouncycastle.util.io.Streams;
 
 public class DHIESPublicKeyParser
     implements KeyParser
@@ -24,7 +25,7 @@ public class DHIESPublicKeyParser
     {
         byte[] V = new byte[(dhParams.getP().bitLength() + 7) / 8];
 
-        stream.read(V, 0, V.length);
+        Streams.readFully(stream, V, 0, V.length);
 
         return new DHPublicKeyParameters(new BigInteger(1, V), dhParams);
     }

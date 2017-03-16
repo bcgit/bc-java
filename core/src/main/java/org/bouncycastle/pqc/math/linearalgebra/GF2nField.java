@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.math.linearalgebra;
 
 
+import java.security.SecureRandom;
 import java.util.Vector;
 
 
@@ -15,6 +16,8 @@ import java.util.Vector;
  */
 public abstract class GF2nField
 {
+
+    protected final SecureRandom random;
 
     /**
      * the degree of this field
@@ -36,6 +39,11 @@ public abstract class GF2nField
      * the COB matrices
      */
     protected Vector matrices;
+
+    protected GF2nField(SecureRandom random)
+    {
+        this.random = random;
+    }
 
     /**
      * Returns the degree <i>n</i> of this field.

@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.math.linearalgebra;
 
 
+import java.security.SecureRandom;
 import java.util.Random;
 import java.util.Vector;
 
@@ -101,10 +102,13 @@ public class GF2nONBField
      * elements and characteristic 2.
      *
      * @param deg -the extention degree of this field
+     * @param random - a source of randomness for generating polynomials on the field.
      */
-    public GF2nONBField(int deg)
+    public GF2nONBField(int deg, SecureRandom random)
         throws RuntimeException
     {
+        super(random);
+
         if (deg < 3)
         {
             throw new IllegalArgumentException("k must be at least 3");
@@ -190,7 +194,7 @@ public class GF2nONBField
             do
             {
                 // 2.1 choose random u (element of) GF(2^m)
-                u = new GF2nONBElement(this, new Random());
+                u = new GF2nONBElement(this, random);
                 ut = new GF2nPolynomial(2, GF2nONBElement.ZERO(this));
                 // 2.2 Set c(t) <- ut
                 ut.set(1, u);

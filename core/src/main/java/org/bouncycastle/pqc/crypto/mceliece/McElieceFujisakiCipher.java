@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
@@ -23,8 +24,6 @@ import org.bouncycastle.pqc.math.linearalgebra.GF2Vector;
 public class McElieceFujisakiCipher
     implements MessageEncryptor
 {
-
-
     /**
      * The OID of the algorithm.
      */
@@ -42,13 +41,14 @@ public class McElieceFujisakiCipher
     private int n, k, t;
 
     McElieceCCA2KeyParameters key;
+    private boolean forEncryption;
 
 
-    public void init(boolean forSigning,
+    public void init(boolean forEncryption,
                      CipherParameters param)
     {
-
-        if (forSigning)
+        this.forEncryption = forEncryption;
+        if (forEncryption)
         {
             if (param instanceof ParametersWithRandom)
             {
@@ -71,7 +71,6 @@ public class McElieceFujisakiCipher
             this.key = (McElieceCCA2PrivateKeyParameters)param;
             this.initCipherDecrypt((McElieceCCA2PrivateKeyParameters)key);
         }
-
     }
 
 
@@ -82,7 +81,6 @@ public class McElieceFujisakiCipher
         if (key instanceof McElieceCCA2PublicKeyParameters)
         {
             return ((McElieceCCA2PublicKeyParameters)key).getN();
-
         }
         if (key instanceof McElieceCCA2PrivateKeyParameters)
         {
@@ -96,7 +94,7 @@ public class McElieceFujisakiCipher
     private void initCipherEncrypt(McElieceCCA2PublicKeyParameters pubKey)
     {
         this.sr = sr != null ? sr : new SecureRandom();
-        this.messDigest = pubKey.getParameters().getDigest();
+        this.messDigest = Utils.getDigest(pubKey.getDigest());
         n = pubKey.getN();
         k = pubKey.getK();
         t = pubKey.getT();
@@ -105,15 +103,18 @@ public class McElieceFujisakiCipher
 
     public void initCipherDecrypt(McElieceCCA2PrivateKeyParameters privKey)
     {
-        this.messDigest = privKey.getParameters().getDigest();
+        this.messDigest = Utils.getDigest(privKey.getDigest());
         n = privKey.getN();
         t = privKey.getT();
     }
 
 
     public byte[] messageEncrypt(byte[] input)
-        throws Exception
     {
+        if (!forEncryption)
+        {
+            throw new IllegalStateException("cipher initialised for decryption");
+        }
 
         // generate random vector r of length k bits
         GF2Vector r = new GF2Vector(k, sr);
@@ -157,8 +158,12 @@ public class McElieceFujisakiCipher
     }
 
     public byte[] messageDecrypt(byte[] input)
-        throws Exception
+        throws InvalidCipherTextException
     {
+        if (forEncryption)
+        {
+            throw new IllegalStateException("cipher initialised for decryption");
+        }
 
         int c1Len = (n + 7) >> 3;
         int c2Len = input.length - c1Len;
@@ -170,8 +175,7 @@ public class McElieceFujisakiCipher
 
         // decrypt c1 ...
         GF2Vector hrmVec = GF2Vector.OS2VP(n, c1);
-        GF2Vector[] decC1 = McElieceCCA2Primitives.decryptionPrimitive((McElieceCCA2PrivateKeyParameters)key,
-            hrmVec);
+        GF2Vector[] decC1 = McElieceCCA2Primitives.decryptionPrimitive((McElieceCCA2PrivateKeyParameters)key, hrmVec);
         byte[] rBytes = decC1[0].getEncoded();
         // ... and obtain error vector z
         GF2Vector z = decC1[1];
@@ -205,14 +209,10 @@ public class McElieceFujisakiCipher
         // check that Conv(H(m||r)) = z
         if (!hrmVec.equals(z))
         {
-
-            throw new Exception("Bad Padding: invalid ciphertext");
-
+            throw new InvalidCipherTextException("Bad Padding: invalid ciphertext");
         }
 
         // return plaintext m
         return mBytes;
     }
-
-
 }

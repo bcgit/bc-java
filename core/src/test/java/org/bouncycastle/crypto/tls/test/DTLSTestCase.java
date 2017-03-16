@@ -2,14 +2,12 @@ package org.bouncycastle.crypto.tls.test;
 
 import java.security.SecureRandom;
 
-import junit.framework.TestCase;
-
-import org.bouncycastle.crypto.tls.DTLSClientProtocol;
-import org.bouncycastle.crypto.tls.DTLSServerProtocol;
 import org.bouncycastle.crypto.tls.DTLSTransport;
 import org.bouncycastle.crypto.tls.DatagramTransport;
 import org.bouncycastle.crypto.tls.ProtocolVersion;
 import org.bouncycastle.util.Arrays;
+
+import junit.framework.TestCase;
 
 public class DTLSTestCase extends TestCase
 {
@@ -57,8 +55,8 @@ public class DTLSTestCase extends TestCase
 
         SecureRandom secureRandom = new SecureRandom();
 
-        DTLSClientProtocol clientProtocol = new DTLSClientProtocol(secureRandom);
-        DTLSServerProtocol serverProtocol = new DTLSServerProtocol(secureRandom);
+        DTLSTestClientProtocol clientProtocol = new DTLSTestClientProtocol(secureRandom, config);
+        DTLSTestServerProtocol serverProtocol = new DTLSTestServerProtocol(secureRandom, config);
 
         MockDatagramAssociation network = new MockDatagramAssociation(1500);
 
@@ -128,14 +126,14 @@ public class DTLSTestCase extends TestCase
     class ServerThread
         extends Thread
     {
-        private final DTLSServerProtocol serverProtocol;
+        private final DTLSTestServerProtocol serverProtocol;
         private final DatagramTransport serverTransport;
         private final TlsTestServerImpl serverImpl;
 
         private volatile boolean isShutdown = false;
         Exception caught = null;
 
-        ServerThread(DTLSServerProtocol serverProtocol, DatagramTransport serverTransport, TlsTestServerImpl serverImpl)
+        ServerThread(DTLSTestServerProtocol serverProtocol, DatagramTransport serverTransport, TlsTestServerImpl serverImpl)
         {
             this.serverProtocol = serverProtocol;
             this.serverTransport = serverTransport;

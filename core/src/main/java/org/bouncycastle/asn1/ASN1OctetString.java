@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -248,6 +249,6 @@ public abstract class ASN1OctetString
 
     public String toString()
     {
-      return "#"+new String(Hex.encode(string));
+      return "#"+ Strings.fromByteArray(Hex.encode(string));
     }
 }

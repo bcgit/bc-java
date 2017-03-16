@@ -25,16 +25,46 @@ public class TlsServerProtocol
     protected short clientCertificateType = -1;
     protected TlsHandshakeHash prepareFinishHash = null;
 
+    /**
+     * Constructor for blocking mode.
+     * @param input The stream of data from the client
+     * @param output The stream of data to the client
+     * @param secureRandom Random number generator for various cryptographic functions
+     */
     public TlsServerProtocol(InputStream input, OutputStream output, SecureRandom secureRandom)
     {
         super(input, output, secureRandom);
     }
 
     /**
-     * Receives a TLS handshake in the role of server
+     * Constructor for non-blocking mode.<br>
+     * <br>
+     * When data is received, use {@link #offerInput(java.nio.ByteBuffer)} to
+     * provide the received ciphertext, then use
+     * {@link #readInput(byte[], int, int)} to read the corresponding cleartext.<br>
+     * <br>
+     * Similarly, when data needs to be sent, use
+     * {@link #offerOutput(byte[], int, int)} to provide the cleartext, then use
+     * {@link #readOutput(byte[], int, int)} to get the corresponding
+     * ciphertext.
+     * 
+     * @param secureRandom
+     *            Random number generator for various cryptographic functions
+     */
+    public TlsServerProtocol(SecureRandom secureRandom)
+    {
+        super(secureRandom);
+    }
+
+    /**
+     * Receives a TLS handshake in the role of server.<br>
+     * <br>
+     * In blocking mode, this will not return until the handshake is complete.
+     * In non-blocking mode, use {@link TlsPeer#notifyHandshakeComplete()} to
+     * receive a callback when the handshake is complete.
      *
      * @param tlsServer
-     * @throws IOException If handshake was not successful.
+     * @throws IOException If in blocking mode and handshake was not successful.
      */
     public void accept(TlsServer tlsServer)
         throws IOException
@@ -63,7 +93,7 @@ public class TlsServerProtocol
 
         this.recordStream.setRestrictReadVersion(false);
 
-        completeHandshake();
+        blockForHandshake();
     }
 
     protected void cleanupHandshake()
@@ -168,6 +198,11 @@ public class TlsServerProtocol
                     this.certificateRequest = tlsServer.getCertificateRequest();
                     if (this.certificateRequest != null)
                     {
+                        if (TlsUtils.isTLSv12(getContext()) != (certificateRequest.getSupportedSignatureAlgorithms() != null))
+                        {
+                            throw new TlsFatalAlert(AlertDescription.internal_error);
+                        }
+
                         this.keyExchange.validateCertificateRequest(certificateRequest);
 
                         sendCertificateRequestMessage(certificateRequest);
@@ -339,6 +374,8 @@ public class TlsServerProtocol
                 sendFinishedMessage();
                 this.connection_state = CS_SERVER_FINISHED;
                 this.connection_state = CS_END;
+
+                completeHandshake();
                 break;
             }
             default:
@@ -441,6 +478,11 @@ public class TlsServerProtocol
     protected void receiveCertificateVerifyMessage(ByteArrayInputStream buf)
         throws IOException
     {
+        if (certificateRequest == null)
+        {
+            throw new IllegalStateException();
+        }
+
         DigitallySigned clientCertificateVerify = DigitallySigned.parse(getContext(), buf);
 
         assertEmpty(buf);
@@ -448,10 +490,13 @@ public class TlsServerProtocol
         // Verify the CertificateVerify message contains a correct signature.
         try
         {
+            SignatureAndHashAlgorithm signatureAlgorithm = clientCertificateVerify.getAlgorithm();
+
             byte[] hash;
             if (TlsUtils.isTLSv12(getContext()))
             {
-                hash = prepareFinishHash.getFinalHash(clientCertificateVerify.getAlgorithm().getHash());
+                TlsUtils.verifySupportedSignatureAlgorithm(certificateRequest.getSupportedSignatureAlgorithms(), signatureAlgorithm);
+                hash = prepareFinishHash.getFinalHash(signatureAlgorithm.getHash());
             }
             else
             {
@@ -464,11 +509,14 @@ public class TlsServerProtocol
 
             TlsSigner tlsSigner = TlsUtils.createTlsSigner(clientCertificateType);
             tlsSigner.init(getContext());
-            if (!tlsSigner.verifyRawSignature(clientCertificateVerify.getAlgorithm(),
-                clientCertificateVerify.getSignature(), publicKey, hash))
+            if (!tlsSigner.verifyRawSignature(signatureAlgorithm, clientCertificateVerify.getSignature(), publicKey, hash))
             {
                 throw new TlsFatalAlert(AlertDescription.decrypt_error);
             }
+        }
+        catch (TlsFatalAlert e)
+        {
+            throw e;
         }
         catch (Exception e)
         {
@@ -592,6 +640,9 @@ public class TlsServerProtocol
 
         if (clientExtensions != null)
         {
+            // NOTE: Validates the padding extension data, if present
+            TlsExtensionsUtils.getPaddingExtension(clientExtensions);
+
             tlsServer.processClientExtensions(clientExtensions);
         }
     }

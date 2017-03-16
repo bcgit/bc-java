@@ -22,6 +22,7 @@ import org.bouncycastle.bcpg.sig.RevocationKeyTags;
 import org.bouncycastle.bcpg.sig.RevocationReason;
 import org.bouncycastle.bcpg.sig.SignatureCreationTime;
 import org.bouncycastle.bcpg.sig.SignatureExpirationTime;
+import org.bouncycastle.bcpg.sig.SignatureTarget;
 import org.bouncycastle.bcpg.sig.SignerUserID;
 import org.bouncycastle.bcpg.sig.TrustSignature;
 
@@ -140,7 +141,7 @@ public class PGPSignatureSubpacketGenerator
             throw new IllegalArgumentException("attempt to set null SignerUserID");
         }
 
-        list.add(new SignerUserID(isCritical, rawUserID));
+        list.add(new SignerUserID(isCritical, false, rawUserID));
     }
 
     public void setEmbeddedSignature(boolean isCritical, PGPSignature pgpSignature)
@@ -160,7 +161,7 @@ public class PGPSignatureSubpacketGenerator
 
         System.arraycopy(sig, sig.length - data.length, data, 0, data.length);
 
-        list.add(new EmbeddedSignature(isCritical, data));
+        list.add(new EmbeddedSignature(isCritical, false, data));
     }
 
     public void setPrimaryUserID(boolean isCritical, boolean isPrimaryUserID)
@@ -192,11 +193,19 @@ public class PGPSignatureSubpacketGenerator
     }
 
     /**
-     * Sets issuer key sub packe
+     * Sets issuer key sub packet
      */
     public void setIssuerKeyID(boolean isCritical, long keyID)
     {
         list.add(new IssuerKeyID(isCritical, keyID));
+    }
+
+    /**
+     * Sets a signature target sub packet.
+     */
+    public void setSignatureTarget(boolean isCritical, int publicKeyAlgorithm, int hashAlgorithm, byte[] hashData)
+    {
+        list.add(new SignatureTarget(isCritical, publicKeyAlgorithm, hashAlgorithm, hashData));
     }
 
     public PGPSignatureSubpacketVector generate()

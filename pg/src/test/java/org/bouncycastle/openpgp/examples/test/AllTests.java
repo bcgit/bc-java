@@ -263,6 +263,8 @@ public class AllTests
     {
         createTestFile(clearSignedPublicKey, "test.txt");
 
+        RSAKeyPairGenerator.main(new String[] { "test", "password" });
+
         ClearSignedFileProcessor.main(new String[]{"-s", "test.txt", "secret.bpg", "password"});
     }
 
@@ -271,6 +273,8 @@ public class AllTests
     {
         createTestData("This is a test payload!" + Strings.lineSeparator(), "test.txt");
         createTestData("This is a test payload!" + Strings.lineSeparator(), "test.bak");
+
+        RSAKeyPairGenerator.main(new String[] { "test", "password" });
 
         ClearSignedFileProcessor.main(new String[]{"-s", "test.txt", "secret.bpg", "password"});
         ClearSignedFileProcessor.main(new String[]{"-v", "test.txt.asc", "pub.bpg"});
@@ -289,10 +293,19 @@ public class AllTests
     private void compareFile(String file1, String file2)
         throws Exception
     {
-        byte[] data1 = Streams.readAll(new FileInputStream(file1));
-        byte[] data2 = Streams.readAll(new FileInputStream(file2));
+        byte[] data1 = getFileContents(file1);
+        byte[] data2 = getFileContents(file2);
 
         assertTrue(Arrays.areEqual(data1, data2));
+    }
+
+    private byte[] getFileContents(String name)
+        throws IOException
+    {
+        FileInputStream fs = new FileInputStream(name);
+        byte[] contents = Streams.readAll(fs);
+        fs.close();
+        return contents;
     }
 
     private void checkClearSigned(String message)

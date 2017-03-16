@@ -88,7 +88,7 @@ public class SignedPublicKeyAndChallenge
 
         sOut.close();
 
-        return verifier.verify(spkacSeq.getSignature().getBytes());
+        return verifier.verify(spkacSeq.getSignature().getOctets());
     }
 
     /**
@@ -152,7 +152,7 @@ public class SignedPublicKeyAndChallenge
         try
         {
             DERBitString bStr = new DERBitString(subjectPKInfo);
-            X509EncodedKeySpec xspec = new X509EncodedKeySpec(bStr.getBytes());
+            X509EncodedKeySpec xspec = new X509EncodedKeySpec(bStr.getOctets());
             
 
             AlgorithmIdentifier keyAlg = subjectPKInfo.getAlgorithm();

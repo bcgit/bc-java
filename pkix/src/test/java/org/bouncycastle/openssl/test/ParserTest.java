@@ -37,7 +37,6 @@ import org.bouncycastle.openssl.PEMDecryptorProvider;
 import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.PasswordFinder;
 import org.bouncycastle.openssl.X509TrustedCertificateBlock;
 import org.bouncycastle.openssl.bc.BcPEMDecryptorProvider;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
@@ -54,23 +53,6 @@ import org.bouncycastle.util.test.SimpleTest;
 public class ParserTest
     extends SimpleTest
 {
-    private static class Password
-        implements PasswordFinder
-    {
-        char[]  password;
-
-        Password(
-            char[] word)
-        {
-            this.password = word;
-        }
-
-        public char[] getPassword()
-        {
-            return password;
-        }
-    }
-
     public String getName()
     {
         return "PEMParserTest";
@@ -278,7 +260,7 @@ public class ParserTest
         doDudPasswordTest("3ee7a8", 10, "DER length more than 4 bytes: 57");
         doDudPasswordTest("41af75", 11, "unknown tag 16 encountered");
         doDudPasswordTest("1704a5", 12, "corrupted stream detected");
-        doDudPasswordTest("1c5822", 13, "unknown object in getInstance: org.bouncycastle.asn1.DERUTF8String");
+        doDudPasswordTest("1c5822", 13, "Extra data detected in stream");
         doDudPasswordTest("5a3d16", 14, "corrupted stream detected");
         doDudPasswordTest("8d0c97", 15, "corrupted stream detected");
         doDudPasswordTest("bc0daf", 16, "corrupted stream detected");

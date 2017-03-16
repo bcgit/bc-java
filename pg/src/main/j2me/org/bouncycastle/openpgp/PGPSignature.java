@@ -104,6 +104,16 @@ public class PGPSignature
         return sigPck.getHashAlgorithm();
     }
 
+    /**
+     * Return true if this signature represents a certification.
+     *
+     * @return true if this signature represents a certification, false otherwise.
+     */
+    public boolean isCertification()
+    {
+        return isCertification(getSignatureType());
+    }
+
     public void init(PGPContentVerifierBuilderProvider verifierBuilderProvider, PGPPublicKey pubKey)
         throws PGPException
     {
@@ -117,7 +127,6 @@ public class PGPSignature
 
     public void update(
         byte    b)
-        throws PGPSignatureException
     {
         if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
         {
@@ -149,7 +158,6 @@ public class PGPSignature
         
     public void update(
         byte[]    bytes)
-        throws PGPSignatureException
     {
         this.update(bytes, 0, bytes.length);
     }
@@ -158,7 +166,6 @@ public class PGPSignature
         byte[]    bytes,
         int       off,
         int       length)
-        throws PGPSignatureException
     {
         if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
         {
@@ -176,7 +183,6 @@ public class PGPSignature
     }
 
     private void byteUpdate(byte b)
-        throws PGPSignatureException
     {
         try
         {
@@ -184,12 +190,11 @@ public class PGPSignature
         }
         catch (IOException e)
         {
-            throw new PGPSignatureException(e.getMessage(), e);
+            throw new PGPRuntimeOperationException(e.getMessage(), e);
         }
     }
 
     private void blockUpdate(byte[] block, int off, int len)
-        throws PGPSignatureException
     {
         try
         {
@@ -197,7 +202,7 @@ public class PGPSignature
         }
         catch (IOException e)
         {
-            throw new PGPSignatureException(e.getMessage(), e);
+            throw new PGPRuntimeOperationException(e.getMessage(), e);
         }
     }
 
@@ -212,7 +217,7 @@ public class PGPSignature
         }
         catch (IOException e)
         {
-            throw new PGPSignatureException(e.getMessage(), e);
+            throw new PGPException(e.getMessage(), e);
         }
 
         return verifier.verify(this.getSignature());
@@ -220,7 +225,6 @@ public class PGPSignature
 
 
     private void updateWithIdData(int header, byte[] idBytes)
-        throws PGPException
     {
         this.update((byte)header);
         this.update((byte)(idBytes.length >> 24));
@@ -317,6 +321,37 @@ public class PGPSignature
     }
 
     /**
+     * Verify the signature as certifying the passed in public key as associated
+     * with the passed in rawID.
+     *
+     * @param rawID id the key was stored under in its raw byte form.
+     * @param key the key to be verified.
+     * @return true if the signature matches, false otherwise.
+     * @throws PGPException
+     */
+    public boolean verifyCertification(
+        byte[]          rawID,
+        PGPPublicKey    key)
+        throws PGPException
+    {
+        if (verifier == null)
+        {
+            throw new PGPException("PGPSignature not initialised - call init().");
+        }
+
+        updateWithPublicKey(key);
+
+        //
+        // hash in the rawID
+        //
+        updateWithIdData(0xb4, rawID);
+
+        addTrailer();
+
+        return verifier.verify(this.getSignature());
+    }
+
+    /**
      * Verify a certification for the passed in key against the passed in
      * master key.
      * 
@@ -344,7 +379,6 @@ public class PGPSignature
     }
 
     private void addTrailer()
-        throws PGPSignatureException
     {
         try
         {
@@ -354,7 +388,7 @@ public class PGPSignature
         }
         catch (IOException e)
         {
-            throw new PGPSignatureException(e.getMessage(), e);
+            throw new PGPRuntimeOperationException(e.getMessage(), e);
         }
     }
 
@@ -375,7 +409,8 @@ public class PGPSignature
         }
 
         if (this.getSignatureType() != KEY_REVOCATION
-            && this.getSignatureType() != SUBKEY_REVOCATION)
+            && this.getSignatureType() != SUBKEY_REVOCATION
+            && this.getSignatureType() != DIRECT_KEY)
         {
             throw new PGPException("signature is not a key signature");
         }
@@ -491,9 +526,41 @@ public class PGPSignature
         
         return bOut.toByteArray();
     }
-    
+
+    /**
+     * Return an encoding of the signature, with trust packets stripped out if forTransfer is true.
+     *
+     * @param forTransfer if the purpose of encoding is to send key to other users.
+     * @return a encoded byte array representing the key.
+     * @throws IOException in case of encoding error.
+     */
+    public byte[] getEncoded(boolean forTransfer)
+        throws IOException
+    {
+        ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
+
+        this.encode(bOut, forTransfer);
+
+        return bOut.toByteArray();
+    }
+
     public void encode(
-        OutputStream    outStream) 
+        OutputStream    outStream)
+        throws IOException
+    {
+        encode(outStream, false);
+    }
+
+    /**
+     * Encode the signature to outStream, with trust packets stripped out if forTransfer is true.
+     *
+     * @param outStream stream to write the key encoding to.
+     * @param forTransfer if the purpose of encoding is to send key to other users.
+     * @throws IOException in case of encoding error.
+     */
+    public void encode(
+        OutputStream    outStream,
+        boolean         forTransfer)
         throws IOException
     {
         BCPGOutputStream    out;
@@ -508,7 +575,7 @@ public class PGPSignature
         }
 
         out.writePacket(sigPck);
-        if (trustPck != null)
+        if (!forTransfer && trustPck != null)
         {
             out.writePacket(trustPck);
         }
@@ -530,5 +597,19 @@ public class PGPSignature
         }
         
         return keyBytes;
+    }
+
+    /**
+     * Return true if the passed in signature type represents a certification, false if the signature type is not.
+     *
+     * @param signatureType
+     * @return true if signatureType is a certification, false otherwise.
+     */
+    public static boolean isCertification(int signatureType)
+    {
+        return PGPSignature.DEFAULT_CERTIFICATION == signatureType
+                || PGPSignature.NO_CERTIFICATION == signatureType
+                || PGPSignature.CASUAL_CERTIFICATION == signatureType
+                || PGPSignature.POSITIVE_CERTIFICATION == signatureType;
     }
 }

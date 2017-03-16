@@ -48,11 +48,7 @@ public class MockDTLSServer
         return Arrays.concatenate(super.getCipherSuites(),
             new int[]
             {
-                CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
-                CipherSuite.TLS_ECDHE_RSA_WITH_ESTREAM_SALSA20_SHA1,
-                CipherSuite.TLS_ECDHE_RSA_WITH_SALSA20_SHA1,
-                CipherSuite.TLS_RSA_WITH_ESTREAM_SALSA20_SHA1,
-                CipherSuite.TLS_RSA_WITH_SALSA20_SHA1,
+                CipherSuite.DRAFT_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
             });
     }
 
@@ -68,7 +64,7 @@ public class MockDTLSServer
         }
 
         Vector certificateAuthorities = new Vector();
-        certificateAuthorities.add(TlsTestUtils.loadCertificateResource("x509-ca.pem").getSubject());
+        certificateAuthorities.addElement(TlsTestUtils.loadCertificateResource("x509-ca.pem").getSubject());
 
         return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
     }

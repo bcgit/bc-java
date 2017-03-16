@@ -4,6 +4,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
+import java.security.NoSuchProviderException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.cert.CRLException;
@@ -12,6 +16,7 @@ import org.bouncycastle.jce.cert.CertPathValidatorException;
 import org.bouncycastle.jce.cert.CertStore;
 import org.bouncycastle.jce.cert.CertStoreException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
 import org.bouncycastle.jce.cert.PKIXParameters;
 import org.bouncycastle.jce.cert.PolicyQualifierInfo;
@@ -70,6 +75,7 @@ import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
+import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.StoreException;
@@ -715,7 +721,7 @@ class CertPathValidatorUtilities
 
                         for (int j = 0; j < genNames.length; j++)
                         {
-                            PKIXCRLStore store = (PKIXCRLStore)namedCRLStoreMap.get(genNames[i]);
+                            PKIXCRLStore store = (PKIXCRLStore)namedCRLStoreMap.get(genNames[j]);
                             if (store != null)
                             {
                                 stores.add(store);
@@ -901,11 +907,16 @@ class CertPathValidatorUtilities
                 return;
             }
 
-            X500Name certIssuer = X500Name.getInstance(((X509CRLEntryObject)crl_entry).getCertificateIssuer().getEncoded());
+            X509Principal cIssuer = ((X509CRLEntryObject)crl_entry).getCertificateIssuer();
 
-            if (certIssuer == null)
+            X500Name certIssuer;
+            if (cIssuer == null)
             {
                 certIssuer = PrincipalUtils.getIssuerPrincipal(crl);
+            }
+            else
+            {
+                certIssuer = X500Name.getInstance(cIssuer.getEncoded());
             }
 
             if (! PrincipalUtils.getEncodedIssuerPrincipal(cert).equals(certIssuer))
@@ -1326,7 +1337,7 @@ class CertPathValidatorUtilities
 
     protected static void verifyX509Certificate(X509Certificate cert, PublicKey publicKey,
                                                 String sigProvider)
-        throws GeneralSecurityException
+        throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, SignatureException, CertificateException
     {
         if (sigProvider == null)
         {

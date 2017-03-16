@@ -32,7 +32,7 @@ public class BaseSecretKeyFactory
     {
         if (keySpec instanceof SecretKeySpec)
         {
-            return (SecretKey)keySpec;
+            return new SecretKeySpec(((SecretKeySpec)keySpec).getEncoded(), algName);
         }
 
         throw new InvalidKeySpecException("Invalid KeySpec");

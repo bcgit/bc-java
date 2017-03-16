@@ -51,8 +51,7 @@ public class X931Signer
     private byte[]      block;
 
     /**
-     * Generate a signer for the with either implicit or explicit trailers
-     * for X9.31
+     * Generate a signer with either implicit or explicit trailers for X9.31
      *
      * @param cipher base cipher to use for signature creation/verification
      * @param digest digest to use.

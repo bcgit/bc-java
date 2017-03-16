@@ -83,7 +83,7 @@ public class SemanticsInformation
         GeneralName[] generalNames)
     {
         this.semanticsIdentifier = semanticsIdentifier;
-        this.nameRegistrationAuthorities = generalNames;
+        this.nameRegistrationAuthorities = cloneNames(generalNames);
     }
 
     public SemanticsInformation(ASN1ObjectIdentifier semanticsIdentifier)
@@ -95,7 +95,7 @@ public class SemanticsInformation
     public SemanticsInformation(GeneralName[] generalNames)
     {
         this.semanticsIdentifier = null;
-        this.nameRegistrationAuthorities = generalNames;
+        this.nameRegistrationAuthorities = cloneNames(generalNames);
     }        
     
     public ASN1ObjectIdentifier getSemanticsIdentifier()
@@ -105,7 +105,7 @@ public class SemanticsInformation
         
     public GeneralName[] getNameRegistrationAuthorities()
     {
-        return nameRegistrationAuthorities;
+        return cloneNames(nameRegistrationAuthorities);
     } 
     
     public ASN1Primitive toASN1Primitive()
@@ -127,5 +127,18 @@ public class SemanticsInformation
         }            
         
         return new DERSequence(seq);
-    }                   
+    }
+
+    private static GeneralName[] cloneNames(GeneralName[] names)
+    {
+        if (names != null)
+        {
+            GeneralName[] tmp = new GeneralName[names.length];
+
+            System.arraycopy(names, 0, tmp, 0, names.length);
+
+            return tmp;
+        }
+        return null;
+    }
 }

@@ -143,11 +143,11 @@ public class JcePGPDataEncryptorBuilder
                 {
                     byte[] iv = new byte[c.getBlockSize()];
 
-                    c.init(Cipher.ENCRYPT_MODE, PGPUtil.makeSymmetricKey(encAlgorithm, keyBytes), new IvParameterSpec(iv));
+                    c.init(Cipher.ENCRYPT_MODE, JcaJcePGPUtil.makeSymmetricKey(encAlgorithm, keyBytes), new IvParameterSpec(iv));
                 }
                 else
                 {
-                    c.init(Cipher.ENCRYPT_MODE, PGPUtil.makeSymmetricKey(encAlgorithm, keyBytes));
+                    c.init(Cipher.ENCRYPT_MODE, JcaJcePGPUtil.makeSymmetricKey(encAlgorithm, keyBytes));
                 }
             }
             catch (InvalidKeyException e)

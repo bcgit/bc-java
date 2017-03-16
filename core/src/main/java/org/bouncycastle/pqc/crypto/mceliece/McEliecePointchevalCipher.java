@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
@@ -38,12 +39,14 @@ public class McEliecePointchevalCipher
     private int n, k, t;
 
     McElieceCCA2KeyParameters key;
+    private boolean forEncryption;
 
-    public void init(boolean forSigning,
+    public void init(boolean forEncryption,
                      CipherParameters param)
     {
+        this.forEncryption = forEncryption;
 
-        if (forSigning)
+        if (forEncryption)
         {
             if (param instanceof ParametersWithRandom)
             {
@@ -108,7 +111,7 @@ public class McEliecePointchevalCipher
     public void initCipherEncrypt(McElieceCCA2PublicKeyParameters pubKey)
     {
         this.sr = sr != null ? sr : new SecureRandom();
-        this.messDigest = pubKey.getParameters().getDigest();
+        this.messDigest = Utils.getDigest(pubKey.getDigest());
         n = pubKey.getN();
         k = pubKey.getK();
         t = pubKey.getT();
@@ -116,15 +119,18 @@ public class McEliecePointchevalCipher
 
     public void initCipherDecrypt(McElieceCCA2PrivateKeyParameters privKey)
     {
-        this.messDigest = privKey.getParameters().getDigest();
+        this.messDigest = Utils.getDigest(privKey.getDigest());
         n = privKey.getN();
         k = privKey.getK();
         t = privKey.getT();
     }
 
     public byte[] messageEncrypt(byte[] input)
-        throws Exception
     {
+        if (!forEncryption)
+        {
+            throw new IllegalStateException("cipher initialised for decryption");
+        }
 
         int kDiv8 = k >> 3;
 
@@ -180,8 +186,12 @@ public class McEliecePointchevalCipher
     }
 
     public byte[] messageDecrypt(byte[] input)
-        throws Exception
+        throws InvalidCipherTextException
     {
+        if (forEncryption)
+        {
+            throw new IllegalStateException("cipher initialised for decryption");
+        }
 
         int c1Len = (n + 7) >> 3;
         int c2Len = input.length - c1Len;
@@ -226,7 +236,7 @@ public class McEliecePointchevalCipher
         // check that Conv(H(m||r)) = z
         if (!c1Vec.equals(z))
         {
-            throw new Exception("Bad Padding: Invalid ciphertext.");
+            throw new InvalidCipherTextException("Bad Padding: Invalid ciphertext.");
         }
 
         // split (m||r) to obtain m

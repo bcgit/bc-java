@@ -19,8 +19,10 @@ public class AllTests
     public static Test suite()
     {
         TestSuite suite = new TestSuite("JCAJCE Provider Tests");
-        
+
+        suite.addTestSuite(ECAlgorithmParametersTest.class);
         suite.addTestSuite(PrivateConstructorTest.class);
+        suite.addTestSuite(RandomTest.class);
 
         return new BCTestSetup(suite);
     }

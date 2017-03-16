@@ -20,8 +20,8 @@ import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.util.test.TestRandomData;
 
 public class PSSTest
     extends SimpleTest
@@ -148,6 +148,16 @@ public class PSSTest
             fail("PSS Sign test expected " + new String(Hex.encode(sig1b)) + " got " + new String(Hex.encode(sig)));
         }
 
+        AlgorithmParameters pParams = AlgorithmParameters.getInstance("PSS", "BC");
+
+        pParams.init(pss.getEncoded());
+
+        PSSParameterSpec spec = (PSSParameterSpec)pParams.getParameterSpec(PSSParameterSpec.class);
+
+        isTrue("Digest mismatch", "SHA-256".equals(spec.getDigestAlgorithm()));
+        isTrue("MGF alg mismatch", PSSParameterSpec.DEFAULT.getMGFAlgorithm().equals(spec.getMGFAlgorithm()));
+        isTrue("MGF Digest mismatch", "SHA-256".equals(((MGF1ParameterSpec)spec.getMGFParameters()).getDigestAlgorithm()));
+
         s = Signature.getInstance("SHA256withRSAandMGF1", "BC");
         
         s.setParameter(pss.getParameterSpec(PSSParameterSpec.class));
@@ -176,6 +186,16 @@ public class PSSTest
         {
             fail("PSS Sign test expected " + new String(Hex.encode(sig1c)) + " got " + new String(Hex.encode(sig)));
         }
+
+        pParams = AlgorithmParameters.getInstance("PSS", "BC");
+
+        pParams.init(pss.getEncoded());
+
+        spec = (PSSParameterSpec)pParams.getParameterSpec(PSSParameterSpec.class);
+
+        isTrue("Digest mismatch", "SHA-512".equals(spec.getDigestAlgorithm()));
+        isTrue("MGF alg mismatch", PSSParameterSpec.DEFAULT.getMGFAlgorithm().equals(spec.getMGFAlgorithm()));
+        isTrue("MGF Digest mismatch", "SHA-512".equals(((MGF1ParameterSpec)spec.getMGFParameters()).getDigestAlgorithm()));
 
         s = Signature.getInstance("SHA512withRSAandMGF1", "BC");
         
@@ -216,7 +236,7 @@ public class PSSTest
         byte[] fixedRandomBytes = new byte[saltLen];
         random.nextBytes(fixedRandomBytes);
 
-        normalSig.initSign(privKey, new FixedSecureRandom(fixedRandomBytes));
+        normalSig.initSign(privKey, new TestRandomData(fixedRandomBytes));
         normalSig.update(sampleMessage);
         byte[] normalResult = normalSig.sign();
 
@@ -228,7 +248,7 @@ public class PSSTest
         // Need to init the params explicitly to avoid having a 'raw' variety of every PSS algorithm
         rawSig.setParameter(spec);
 
-        rawSig.initSign(privKey, new FixedSecureRandom(fixedRandomBytes));
+        rawSig.initSign(privKey, new TestRandomData(fixedRandomBytes));
         rawSig.update(hash);
         byte[] rawResult = rawSig.sign();
 

@@ -22,6 +22,8 @@ import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHA512tDigest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 
@@ -360,6 +362,59 @@ public class PSSSignatureSpi
         }
     }
 
+    static public class SHA512_224withRSA
+        extends PSSSignatureSpi
+    {
+        public SHA512_224withRSA()
+        {
+            super("SHA512(224)withRSAandMGF1", new RSABlindedEngine(), new SHA512tDigest(224));
+        }
+    }
+
+    static public class SHA512_256withRSA
+        extends PSSSignatureSpi
+    {
+        public SHA512_256withRSA()
+        {
+            super("SHA512(256)withRSAandMGF1", new RSABlindedEngine(), new SHA512tDigest(256));
+        }
+    }
+
+    static public class SHA3_224withRSA
+        extends PSSSignatureSpi
+    {
+        public SHA3_224withRSA()
+        {
+            super("SHA3-224withRSAandMGF1", new RSABlindedEngine(), new SHA3Digest(224));
+        }
+    }
+
+    static public class SHA3_256withRSA
+        extends PSSSignatureSpi
+    {
+        public SHA3_256withRSA()
+        {
+            super("SHA3-256withRSAandMGF1", new RSABlindedEngine(), new SHA3Digest(256));
+        }
+    }
+
+    static public class SHA3_384withRSA
+        extends PSSSignatureSpi
+    {
+        public SHA3_384withRSA()
+        {
+            super("SHA3-384withRSAandMGF1", new RSABlindedEngine(), new SHA3Digest(384));
+        }
+    }
+
+    static public class SHA3_512withRSA
+        extends PSSSignatureSpi
+    {
+        public SHA3_512withRSA()
+        {
+            super("SHA3-512withRSAandMGF1", new RSABlindedEngine(), new SHA3Digest(512));
+        }
+    }
     private class NullPssDigest
         implements Digest
     {

@@ -3,7 +3,6 @@
 <project name="crypto.bcbuild" default="build" basedir=".">
 
     <property file="bc-build.properties" />
-
     <property environment="env" />
 
     <property name="target.name" value="${target.prefix}-${release.suffix}" />
@@ -43,6 +42,12 @@
     <property name="pg.target.src.dir" value="${pg.target.dir}/src" />
     <property name="pg.target.docs.dir" value="${pg.target.dir}/javadoc" />
     <property name="pg.target.src.zip" value="${pg.target.dir}/src.zip" />
+
+    <property name="tls.target" value="bctls-${target.name}" />
+    <property name="tls.target.dir" value="${artifacts.dir}/${tls.target}" />
+    <property name="tls.target.src.dir" value="${tls.target.dir}/src" />
+    <property name="tls.target.docs.dir" value="${tls.target.dir}/javadoc" />
+    <property name="tls.target.src.zip" value="${tls.target.dir}/src.zip" />
 
     <property name="lcrypto.target" value="lcrypto-${target.name}" />
     <property name="lcrypto.target.dir" value="${artifacts.dir}/${lcrypto.target}" />
@@ -101,7 +106,7 @@
                 <javac source="${bc.javac.source}" target="${bc.javac.target}"
                     srcdir="${artifacts.dir}/@{target}/src"
                     destdir="${build.dir}/@{target}/classes"
-                    debug="${release.debug}">
+                    debug="${release.debug}" fork="true">
                     <classpath>
                         <path refid="project.classpath" /> 
                         <fileset dir="${artifacts.jars.dir}">
@@ -159,6 +164,7 @@
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.csr" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.crl" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.cer" />
+                     <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.key" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.der" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.txt" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.rsp" />
@@ -191,6 +197,7 @@
                             <include name="**/*.message" />
                             <include name="**/*.txt" />
                             <include name="**/*.rsp" />
+                            <include name="**/*.key" />
                             <include name="**/*.gpg" />
                             <include name="**/*.pub" />
                             <include name="**/*.sec" />
@@ -310,6 +317,8 @@
                  <exclude name="org/bouncycastle/pkix/**" />
                  <exclude name="org/bouncycastle/dvcs/**" />
                  <exclude name="org/bouncycastle/eac/**" />
+                 <exclude name="org/bouncycastle/est/**" />
+                 <exclude name="org/bouncycastle/cmc/**" />
                  <exclude name="org/bouncycastle/mail/**" />
                  <exclude name="org/bouncycastle/openpgp/**" />
                  <exclude name="org/bouncycastle/openssl/**" />
@@ -319,6 +328,11 @@
                  <exclude name="org/bouncycastle/tsp/**" />
                  <exclude name="org/bouncycastle/voms/**" />
                  <exclude name="org/bouncycastle/apache/**" />
+                 <exclude name="org/bouncycastle/tls/**" />
+                 <exclude name="org/bouncycastle/jsse/**" />
+             </fileset>
+             <fileset dir="${src.dir}">
+                 <include name="org/bouncycastle/x509/CertPathReviewerMessages*.properties" />
              </fileset>
              <fileset dir="${src.dir}" includes="org/bouncycastle/util/test/*.java" />
         </copy>
@@ -400,7 +414,8 @@
                  <exclude name="org/bouncycastle/crypto/*/*Test.java" />
                  <exclude name="org/bouncycastle/util/*Test.java" />
                  <exclude name="**/*.crl" />
-                 <exclude name="org/bouncycastle/**/test/*.crt" />
+                 <exclude name="**/*.key" />
+                 <exclude name="org/bouncycastle/**.crt" />
                  <exclude name="org/bouncycastle/**/test/*.cer" />
                  <exclude name="org/bouncycastle/**/test/*.csr" />
                  <exclude name="org/bouncycastle/**/test/*.cvcert" />
@@ -415,6 +430,8 @@
                  <exclude name="org/bouncycastle/pkix/**" />
                  <exclude name="org/bouncycastle/dvcs/**" />
                  <exclude name="org/bouncycastle/eac/**" />
+                 <exclude name="org/bouncycastle/est/**" />
+                 <exclude name="org/bouncycastle/cmc/**" />
                  <exclude name="org/bouncycastle/cert/**" />
                  <exclude name="org/bouncycastle/pkcs/**" />
                  <exclude name="org/bouncycastle/operator/**" />
@@ -425,6 +442,8 @@
                  <exclude name="org/bouncycastle/mozilla/**" />
                  <exclude name="org/bouncycastle/bcpg/**" />
                  <exclude name="org/bouncycastle/voms/**" />
+                 <exclude name="org/bouncycastle/tls/**" />
+                 <exclude name="org/bouncycastle/jsse/**" />
                  <exclude name="org/apache/**/*.java" />
              </fileset>
              <fileset dir="${src.dir}" includes="org/bouncycastle/util/test/*.java" />
@@ -525,6 +544,50 @@
 
     </target>
 
+    <!--
+          TLS
+    -->
+    <target name="build-tls" depends="initMacros">
+        <mkdir dir="${tls.target.dir}" />
+
+        <copyStandardFiles toDir="${tls.target.dir}" />
+
+        <copy todir="${tls.target.src.dir}">
+             <fileset dir="${src.dir}">
+                 <exclude name="**/*Test.java" />
+                 <exclude name="**/*Tests.java" />
+                 <exclude name="**/test/*.java" />
+                 <include name="org/bouncycastle/tls/**/*.java" />
+                 <include name="org/bouncycastle/tls/**/*.properties" />
+                 <include name="org/bouncycastle/jsse/**/*.java" />
+                 <include name="org/bouncycastle/jsse/**/*.properties" />
+             </fileset>
+        </copy>
+
+        <compile target="${tls.target}">
+            <jarFileSet>
+                <include name="**/*.class"/>
+                <include name="**/*.properties"/>
+            </jarFileSet>
+            <manifestElements>
+                <attribute name="Manifest-Version" value="1.0" />
+                <attribute name="Extension-Name" value="org.bouncycastle.bctls" />
+                <attribute name="Specification-Vendor" value="BouncyCastle.org" />
+                <attribute name="Specification-Version" value="1.1" />
+                <attribute name="Implementation-Vendor-Id" value="org.bouncycastle" />
+                <attribute name="Implementation-Vendor" value="BouncyCastle.org" />
+                <attribute name="Implementation-Version" value="${release.version}.0" />
+                <attribute name="Application-Name" value="Bouncy Castle TLS API and Provider" />
+                <attribute name="Trusted-Library" value="true" />
+                <attribute name="Permissions" value="all-permissions" />
+                <attribute name="Codebase" value="*" />
+                <attribute name="Application-Library-Allowable-Codebase" value="*" />
+                <attribute name="Caller-Allowable-Codebase" value="*" />
+            </manifestElements>
+        </compile>
+
+    </target>
+
     <target name="build-pkix" depends="initMacros">
         <mkdir dir="${pkix.target.dir}" />
 
@@ -536,6 +599,8 @@
                  <include name="org/bouncycastle/pkix/**/*.java" />
                  <include name="org/bouncycastle/dvcs/**/*.java" />
                  <include name="org/bouncycastle/eac/**/*.java" />
+                 <include name="org/bouncycastle/est/**" />
+                 <include name="org/bouncycastle/cmc/**" />
                  <include name="org/bouncycastle/cert/**/*.java" />
                  <include name="org/bouncycastle/mozilla/**/*.java" />
                  <include name="org/bouncycastle/openssl/**/*.java" />
@@ -655,6 +720,7 @@
              <fileset dir="${src.dir}" includes="**/*.data" />
              <fileset dir="${src.dir}" includes="**/*.der" />
              <fileset dir="${src.dir}" includes="**/*.crt" />
+             <fileset dir="${src.dir}" includes="**/*.key" />
              <fileset dir="${src.dir}" includes="**/*.cer" />
              <fileset dir="${src.dir}" includes="**/*.crl" />
              <fileset dir="${src.dir}" includes="**/*.csr" />
@@ -667,6 +733,9 @@
              <fileset dir="${src.dir}" includes="**/*.properties" />
              <fileset dir="${src.dir}" includes="**/*.message" />
         </copy>
+
+        <delete file="${test.target.src.dir}/org/bouncycastle/x509/CertPathReviewerMessages_de.properties" />
+        <delete file="${test.target.src.dir}/org/bouncycastle/x509/CertPathReviewerMessages.properties" />
 
         <compile-test target="${test.target}">
             <manifestElements>
@@ -855,6 +924,34 @@
     </target>
 
     <!--
+          TLS JavaDoc
+    -->
+    <target name="javadoc-tls" depends="initMacros">
+        <copy todir="${tls.target.src.dir}">
+             <fileset dir="${src.dir}">
+                 <include name="org/bouncycastle/jsse/**/test/*.java" />
+                 <include name="org/bouncycastle/jsse/**/*.html" />
+                 <include name="org/bouncycastle/tls/**/test/*.java" />
+                 <include name="org/bouncycastle/tls/**/*.html" />
+             </fileset>
+        </copy>
+
+        <compile-doc srcDir="${tls.target.src.dir}" docsDir="${artifacts.docs.dir}/bctls">
+            <docElements>
+                <package name="org.bouncycastle.tls.*" />
+                <package name="org.bouncycastle.jsse.*" />
+                <group title="TLS/DTLS Packages" packages="org.bouncycastle.tls,org.bouncycastle.tls.crypto*" />
+                <group title="JSSE Provider Packages" packages="org.bouncycastle.jsse.provider" />
+                <group title="TLS/DTLS/JSSE Provider Test and Example Packages" packages="org.bouncycastle.jsse.provider.test*,org.bouncycastle.tls.test*" />
+            </docElements>
+        </compile-doc>
+
+        <copy todir="${tls.target.docs.dir}">
+             <fileset dir="${artifacts.docs.dir}/bctls" />
+        </copy>
+    </target>
+
+    <!--
           PKIX JavaDoc
     -->
     <target name="javadoc-pkix" depends="initMacros">
@@ -864,6 +961,8 @@
                  <include name="org/bouncycastle/pkix/**/test/*.java" />
                  <include name="org/bouncycastle/dvcs/**/test/*.java" />
                  <include name="org/bouncycastle/eac/**/test/*.java" />
+                 <include name="org/bouncycastle/est/**/test/*.java" />
+                 <include name="org/bouncycastle/cmc/**/test/*.java" />
                  <include name="org/bouncycastle/cert/**/test/*.java" />
                  <include name="org/bouncycastle/pkcs/**/test/*.java" />
                  <include name="org/bouncycastle/openssl/**/test/*.java" />
@@ -873,6 +972,8 @@
                  <include name="org/bouncycastle/pkix/**/*.html" />
                  <include name="org/bouncycastle/dvcs/**/*.html" />
                  <include name="org/bouncycastle/eac/**/*.html" />
+                 <include name="org/bouncycastle/est/**/*.html" />
+                 <include name="org/bouncycastle/cmc/**/*.html" />
                  <include name="org/bouncycastle/cert/**/*.html" />
                  <include name="org/bouncycastle/pkcs/**/*.html" />
                  <include name="org/bouncycastle/openssl/**/*.html" />
@@ -888,6 +989,7 @@
                 <package name="org.bouncycastle.cms.*" />
                 <package name="org.bouncycastle.dvcs.*" />
                 <package name="org.bouncycastle.eac.*" />
+                <package name="org.bouncycastle.est.*" />
                 <package name="org.bouncycastle.cert.*" />
                 <package name="org.bouncycastle.pkcs.*" />
                 <package name="org.bouncycastle.openssl.*" />
@@ -898,12 +1000,13 @@
                 <group title="Certificate Packages" packages="org.bouncycastle.cert*,org.bouncycastle.mozilla*" />
                 <group title="Cryptographic Operators" packages="org.bouncycastle.operator*" />
                 <group title="CMS Packages" packages="org.bouncycastle.cms*" />
+                <group title="EST Packages" packages="org.bouncycastle.est*" />
                 <group title="DVCS Packages" packages="org.bouncycastle.dvcs*" />
                 <group title="Extended Access Control Packages" packages="org.bouncycastle.eac*" />
                 <group title="PKCS Packages" packages="org.bouncycastle.pkcs*" />
                 <group title="OpenSSL and PEM Support Packages" packages="org.bouncycastle.openssl*" />
                 <group title="TSP Packages" packages="org.bouncycastle.tsp*" />
-                <group title="Test and Example Packages" packages="org.bouncycastle.openssl.test*,org.bouncycastle.mozilla.test*,org.bouncycastle.pkcs.test*,org.bouncycastle.cert.test*,org.bouncycastle.cert.path.test*,org.bouncycastle.cert.ocsp.test*,org.bouncycastle.cert.crmf.test*,org.bouncycastle.cert.cmp.test*,org.bouncycastle.eac.test*,org.bouncycastle.dvcs.test*,org.bouncycastle.cms.test*,org.bouncycastle.tsp.test*" />
+                <group title="Test and Example Packages" packages="org.bouncycastle.openssl.test*,org.bouncycastle.mozilla.test*,org.bouncycastle.pkcs.test*,org.bouncycastle.cert.test*,org.bouncycastle.cert.path.test*,org.bouncycastle.cert.ocsp.test*,org.bouncycastle.cert.crmf.test*,org.bouncycastle.cert.cmp.test*,org.bouncycastle.eac.test*,org.bouncycastle.dvcs.test*,org.bouncycastle.est.test*,org.bouncycastle.cms.test*,org.bouncycastle.tsp.test*,org.bouncycastle.operator.test*" />
             </docElements>
         </compile-doc>
 

@@ -10,6 +10,8 @@ public class SecT163Field
     private static final long M35 = -1L >>> 29;
     private static final long M55 = -1L >>> 9;
 
+    private static final long[] ROOT_Z = new long[]{ 0xB6DB6DB6DB6DB6B0L, 0x492492492492DB6DL, 0x492492492L };
+
     public static void add(long[] x, long[] y, long[] z)
     {
         z[0] = x[0] ^ y[0];
@@ -124,6 +126,25 @@ public class SecT163Field
         z[zOff + 2]  = z2 & M35;
     }
 
+    public static void sqrt(long[] x, long[] z)
+    {
+        long[] odd = Nat192.create64();
+
+        long u0, u1;
+        u0 = Interleave.unshuffle(x[0]); u1 = Interleave.unshuffle(x[1]);
+        long e0 = (u0 & 0x00000000FFFFFFFFL) | (u1 << 32);
+        odd[0]  = (u0 >>> 32) | (u1 & 0xFFFFFFFF00000000L);
+
+        u0 = Interleave.unshuffle(x[2]);
+        long e1 = (u0 & 0x00000000FFFFFFFFL);
+        odd[1]  = (u0 >>> 32);
+
+        multiply(odd, ROOT_Z, z);
+
+        z[0] ^= e0;
+        z[1] ^= e1;
+    }
+
     public static void square(long[] x, long[] z)
     {
         long[] tt = Nat192.createExt64();
@@ -151,6 +172,12 @@ public class SecT163Field
             implSquare(z, tt);
             reduce(tt, z);
         }
+    }
+
+    public static int trace(long[] x)
+    {
+        // Non-zero-trace bits: 0, 157
+        return (int)(x[0] ^ (x[2] >>> 29)) & 1;
     }
 
     protected static void implCompactExt(long[] zz)

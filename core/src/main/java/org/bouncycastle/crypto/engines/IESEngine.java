@@ -22,7 +22,6 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Pack;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Support class for constructing integrated encryption ciphers
@@ -68,8 +67,8 @@ public class IESEngine
 
 
     /**
-     * set up for use in conjunction with a block cipher to handle the
-     * message.
+     * Set up for use in conjunction with a block cipher to handle the
+     * message.It is <b>strongly</b> recommended that the cipher is not in ECB mode.
      *
      * @param agree  the key agreement used as the basis for the encryption
      * @param kdf    the key derivation function used for byte generation
@@ -270,15 +269,16 @@ public class IESEngine
         int inLen)
         throws InvalidCipherTextException
     {
-        byte[] M = null, K = null, K1 = null, K2 = null;
-        int len;
+        byte[] M, K, K1, K2;
+        int len = 0;
 
         // Ensure that the length of the input is greater than the MAC in bytes
-        if (inLen <= (param.getMacKeySize() / 8))
+        if (inLen < V.length + mac.getMacSize())
         {
-            throw new InvalidCipherTextException("Length of input must be greater than the MAC");
+            throw new InvalidCipherTextException("Length of input must be greater than the MAC and V combined");
         }
 
+        // note order is important: set up keys, do simple encryptions, check mac, do final encryption.
         if (cipher == null)
         {
             // Streaming mode.
@@ -299,14 +299,13 @@ public class IESEngine
                 System.arraycopy(K, K1.length, K2, 0, K2.length);
             }
 
+            // process the message
             M = new byte[K1.length];
 
             for (int i = 0; i != K1.length; i++)
             {
                 M[i] = (byte)(in_enc[inOff + V.length + i] ^ K1[i]);
             }
-
-            len = K1.length;
         }
         else
         {
@@ -326,14 +325,14 @@ public class IESEngine
             }
             else
             {
-                cipher.init(false, new KeyParameter(K1));    
+                cipher.init(false, new KeyParameter(K1));
             }
 
             M = new byte[cipher.getOutputSize(inLen - V.length - mac.getMacSize())];
-            len = cipher.processBytes(in_enc, inOff + V.length, inLen - V.length - mac.getMacSize(), M, 0);
-            len += cipher.doFinal(M, len);
-        }
 
+            // do initial processing
+            len = cipher.processBytes(in_enc, inOff + V.length, inLen - V.length - mac.getMacSize(), M, 0);
+        }
 
         // Convert the length of the encoding vector into a byte array.
         byte[] P2 = param.getEncodingV();
@@ -363,11 +362,19 @@ public class IESEngine
 
         if (!Arrays.constantTimeAreEqual(T1, T2))
         {
-            throw new InvalidCipherTextException("Invalid MAC.");
+            throw new InvalidCipherTextException("invalid MAC");
         }
 
-        // Output the message.
-        return Arrays.copyOfRange(M, 0, len);
+        if (cipher == null)
+        {
+            return M;
+        }
+        else
+        {
+            len += cipher.doFinal(M, len);
+
+            return Arrays.copyOfRange(M, 0, len);
+        }
     }
 
 
@@ -398,6 +405,10 @@ public class IESEngine
                     this.pubParam = keyParser.readKey(bIn);
                 }
                 catch (IOException e)
+                {
+                    throw new InvalidCipherTextException("unable to recover ephemeral public key: " + e.getMessage(), e);
+                }
+                catch (IllegalArgumentException e)
                 {
                     throw new InvalidCipherTextException("unable to recover ephemeral public key: " + e.getMessage(), e);
                 }

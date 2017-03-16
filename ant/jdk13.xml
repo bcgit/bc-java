@@ -54,6 +54,7 @@
                 <exclude name="**/provider/config/PKCS12StoreParameter.java" />
             </fileset>
             <fileset dir="prov/src/main/java">
+                <exclude name="**/ec/ECUtils.java" />
                 <exclude name="**/ECPointUtil.java" />
                 <exclude name="**/ECNamedCurveSpec.java" />
                 <exclude name="**/LDAP*.java" />
@@ -145,6 +146,7 @@
                 <exclude name="**/crypto/engines/test/AllTests.java" />
                 <exclude name="**/crypto/signers/test/AllTests.java" />
                 <exclude name="**/BcCertTest.java" />
+                <exclude name="**/AlgorithmParametersTest.java" />
                 <exclude name="**/provider/test/DSTU4145Test.java" />
                 <exclude name="**/PGPUnicodeTest.java" />
                 <exclude name="**/pqc/**/EncryptionKeyTest.java" />
@@ -163,6 +165,7 @@
                 <exclude name="**/SunProviderTest.java" />
                 <exclude name="**/NullProviderTest.java" />
                 <exclude name="**/CertPathLoopTest.java" />
+                <exclude name="**/TimeStampTokenInfoUnitTest.java" />
             </fileset>
             <fileset dir="mail/src/test/java">
                 <exclude name="**/SignedMailValidatorTest.java" />

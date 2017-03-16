@@ -12,6 +12,9 @@ public class SecT571Field
 
     private static final long RM = 0xEF7BDEF7BDEF7BDEL;
 
+    private static final long[] ROOT_Z = new long[]{ 0x2BE1195F08CAFB99L, 0x95F08CAF84657C23L, 0xCAF84657C232BE11L, 0x657C232BE1195F08L,
+        0xF84657C2308CAF84L, 0x7C232BE1195F08CAL, 0xBE1195F08CAF8465L, 0x5F08CAF84657C232L, 0x784657C232BE119L };
+
     public static void add(long[] x, long[] y, long[] z)
     {
         for (int i = 0; i < 9; ++i)
@@ -25,6 +28,14 @@ public class SecT571Field
         for (int i = 0; i < 9; ++i)
         {
             z[zOff + i] = x[xOff + i] ^ y[yOff + i];
+        }
+    }
+
+    public static void addBothTo(long[] x, long[] y, long[] z)
+    {
+        for (int i = 0; i < 9; ++i)
+        {
+            z[i] ^= x[i] ^ y[i];
         }
     }
 
@@ -127,6 +138,46 @@ public class SecT571Field
         addExt(zz, tt, zz);
     }
 
+    public static void multiplyPrecomp(long[] x, long[] precomp, long[] z)
+    {
+        long[] tt = Nat576.createExt64();
+        implMultiplyPrecomp(x, precomp, tt);
+        reduce(tt, z);
+    }
+
+    public static void multiplyPrecompAddToExt(long[] x, long[] precomp, long[] zz)
+    {
+        long[] tt = Nat576.createExt64();
+        implMultiplyPrecomp(x, precomp, tt);
+        addExt(zz, tt, zz);
+    }
+
+    public static long[] precompMultiplicand(long[] x)
+    {
+        /*
+         * Precompute table of all 4-bit products of x (first section)
+         */
+        int len = 9 << 4;
+        long[] t = new long[len << 1];
+        System.arraycopy(x, 0, t, 9, 9);
+//        reduce5(T0, 9);
+        int tOff = 0;
+        for (int i = 7; i > 0; --i)
+        {
+            tOff += 18;
+            Nat.shiftUpBit64(9, t, tOff >>> 1, 0L, t, tOff);
+            reduce5(t, tOff);
+            add(t, 9, t, tOff, t, tOff + 9);
+        }
+
+        /*
+         * Second section with all 4-bit products of B shifted 4 bits
+         */
+        Nat.shiftUpBits64(len, t, 0, 4, 0L, t, len);
+
+        return t;
+    }
+
     public static void reduce(long[] xx, long[] z)
     {
         long xx09 = xx[9];
@@ -159,6 +210,28 @@ public class SecT571Field
         z[zOff + 8]  = z8 & M59;
     }
 
+    public static void sqrt(long[] x, long[] z)
+    {
+        long[] evn = Nat576.create64(), odd = Nat576.create64();
+
+        int pos = 0;
+        for (int i = 0; i < 4; ++i)
+        {
+            long u0 = Interleave.unshuffle(x[pos++]);
+            long u1 = Interleave.unshuffle(x[pos++]);
+            evn[i] = (u0 & 0x00000000FFFFFFFFL) | (u1 << 32);
+            odd[i] = (u0 >>> 32) | (u1 & 0xFFFFFFFF00000000L);
+        }
+        {
+            long u0 = Interleave.unshuffle(x[pos]);
+            evn[4] = (u0 & 0x00000000FFFFFFFFL);
+            odd[4] = (u0 >>> 32);
+        }
+
+        multiply(odd, ROOT_Z, z);
+        add(z, evn, z);
+    }
+
     public static void square(long[] x, long[] z)
     {
         long[] tt = Nat576.createExt64();
@@ -188,6 +261,12 @@ public class SecT571Field
         }
     }
 
+    public static int trace(long[] x)
+    {
+        // Non-zero-trace bits: 0, 561, 569
+        return (int)(x[0] ^ (x[8] >>> 49) ^ (x[8] >>> 57)) & 1;
+    }
+
     protected static void implMultiply(long[] x, long[] y, long[] zz)
     {
 //        for (int i = 0; i < 9; ++i)
@@ -195,27 +274,13 @@ public class SecT571Field
 //            implMulwAcc(x, y[i], zz, i);
 //        }
 
-        /*
-         * Precompute table of all 4-bit products of y
-         */
-        long[] T0 = new long[9 << 4];
-        System.arraycopy(y, 0, T0, 9, 9);
-//        reduce5(T0, 9);
-        int tOff = 0;
-        for (int i = 7; i > 0; --i)
-        {
-            tOff += 18;
-            Nat.shiftUpBit64(9, T0, tOff >>> 1, 0L, T0, tOff);
-            reduce5(T0, tOff);
-            add(T0, 9, T0, tOff, T0, tOff + 9);
-        }
+        long[] precomp = precompMultiplicand(y);
+        
+        implMultiplyPrecomp(x, precomp, zz);
+    }
 
-        /*
-         * Second table with all 4-bit products of B shifted 4 bits
-         */
-        long[] T1 = new long[T0.length];
-        Nat.shiftUpBits64(T0.length, T0, 0, 4, 0L, T1, 0);
-
+    protected static void implMultiplyPrecomp(long[] x, long[] precomp, long[] zz)
+    {
         int MASK = 0xF;
 
         /*
@@ -229,7 +294,7 @@ public class SecT571Field
                 int aVal = (int)(x[j] >>> k);
                 int u = aVal & MASK;
                 int v = (aVal >>> 4) & MASK;
-                addBothTo(T0, 9 * u, T1, 9 * v, zz, j - 1);
+                addBothTo(precomp, 9 * u, precomp, 9 * (v + 16), zz, j - 1);
             }
             Nat.shiftUpBits64(16, zz, 0, 8, 0L);
         }
@@ -241,7 +306,7 @@ public class SecT571Field
                 int aVal = (int)(x[j] >>> k);
                 int u = aVal & MASK;
                 int v = (aVal >>> 4) & MASK;
-                addBothTo(T0, 9 * u, T1, 9 * v, zz, j);
+                addBothTo(precomp, 9 * u, precomp, 9 * (v + 16), zz, j);
             }
             if (k > 0)
             {

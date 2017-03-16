@@ -61,19 +61,29 @@ public class DTLSClientProtocol
         }
         catch (TlsFatalAlert fatalAlert)
         {
-            recordLayer.fail(fatalAlert.getAlertDescription());
+            abortClientHandshake(state, recordLayer, fatalAlert.getAlertDescription());
             throw fatalAlert;
         }
         catch (IOException e)
         {
-            recordLayer.fail(AlertDescription.internal_error);
+            abortClientHandshake(state, recordLayer, AlertDescription.internal_error);
             throw e;
         }
         catch (RuntimeException e)
         {
-            recordLayer.fail(AlertDescription.internal_error);
+            abortClientHandshake(state, recordLayer, AlertDescription.internal_error);
             throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
+        finally
+        {
+            securityParameters.clear();
+        }
+    }
+
+    protected void abortClientHandshake(ClientHandshakeState state, DTLSRecordLayer recordLayer, short alertDescription)
+    {
+        recordLayer.fail(alertDescription);
+        invalidateSession(state);
     }
 
     protected DTLSTransport clientHandshake(ClientHandshakeState state, DTLSRecordLayer recordLayer)
@@ -83,13 +93,16 @@ public class DTLSClientProtocol
         DTLSReliableHandshake handshake = new DTLSReliableHandshake(state.clientContext, recordLayer);
 
         byte[] clientHelloBody = generateClientHello(state, state.client);
+
+        recordLayer.setWriteVersion(ProtocolVersion.DTLSv10);
+
         handshake.sendMessage(HandshakeType.client_hello, clientHelloBody);
 
         DTLSReliableHandshake.Message serverMessage = handshake.receiveMessage();
 
         while (serverMessage.getType() == HandshakeType.hello_verify_request)
         {
-            ProtocolVersion recordLayerVersion = recordLayer.resetDiscoveredPeerVersion();
+            ProtocolVersion recordLayerVersion = recordLayer.getReadVersion();
             ProtocolVersion client_version = state.clientContext.getClientVersion();
 
             /*
@@ -103,6 +116,8 @@ public class DTLSClientProtocol
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
 
+            recordLayer.setReadVersion(null);
+
             byte[] cookie = processHelloVerifyRequest(state, serverMessage.getBody());
             byte[] patched = patchClientHelloWithCookie(clientHelloBody, cookie);
 
@@ -114,7 +129,9 @@ public class DTLSClientProtocol
 
         if (serverMessage.getType() == HandshakeType.server_hello)
         {
-            reportServerVersion(state, recordLayer.getDiscoveredPeerVersion());
+            ProtocolVersion recordLayerVersion = recordLayer.getReadVersion();
+            reportServerVersion(state, recordLayerVersion);
+            recordLayer.setWriteVersion(recordLayerVersion);
 
             processServerHello(state, serverMessage.getBody());
         }
@@ -439,10 +456,11 @@ public class DTLSClientProtocol
             }
 
             /*
-             * draft-ietf-tls-downgrade-scsv-00 4. If a client sends a ClientHello.client_version
-             * containing a lower value than the latest (highest-valued) version supported by the
-             * client, it SHOULD include the TLS_FALLBACK_SCSV cipher suite value in
-             * ClientHello.cipher_suites.
+             * RFC 7507 4. If a client sends a ClientHello.client_version containing a lower value
+             * than the latest (highest-valued) version supported by the client, it SHOULD include
+             * the TLS_FALLBACK_SCSV cipher suite value in ClientHello.cipher_suites [..]. (The
+             * client SHOULD put TLS_FALLBACK_SCSV after all cipher suites that it actually intends
+             * to negotiate.)
              */
             if (fallback && !Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV))
             {

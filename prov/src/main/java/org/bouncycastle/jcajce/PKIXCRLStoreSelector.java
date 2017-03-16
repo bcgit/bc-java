@@ -304,23 +304,44 @@ public class PKIXCRLStoreSelector<T extends CRL>
 
     public X509Certificate getCertificateChecking()
     {
-        return ((X509CRLSelector)baseSelector).getCertificateChecking();
+        if (baseSelector instanceof X509CRLSelector)
+        {
+            return ((X509CRLSelector)baseSelector).getCertificateChecking();
+        }
+
+        return null;
     }
 
     public static Collection<? extends CRL> getCRLs(final PKIXCRLStoreSelector selector, CertStore certStore)
         throws CertStoreException
     {
-        return certStore.getCRLs(new CRLSelector()
-        {
-            public boolean match(CRL crl)
-            {
-                return selector.match(crl);
-            }
+        return certStore.getCRLs(new SelectorClone(selector));
+    }
 
-            public Object clone()
+    private static class SelectorClone
+        extends X509CRLSelector
+    {
+        private final PKIXCRLStoreSelector selector;
+
+        SelectorClone(PKIXCRLStoreSelector selector)
+        {
+            this.selector = selector;
+
+            if (selector.baseSelector instanceof X509CRLSelector)
             {
-                return this;
+                X509CRLSelector baseSelector = (X509CRLSelector)selector.baseSelector;
+
+                this.setCertificateChecking(baseSelector.getCertificateChecking());
+                this.setDateAndTime(baseSelector.getDateAndTime());
+                this.setIssuers(baseSelector.getIssuers());
+                this.setMinCRLNumber(baseSelector.getMinCRL());
+                this.setMaxCRLNumber(baseSelector.getMaxCRL());
             }
-        });
+        }
+
+        public boolean match(CRL crl)
+        {
+            return (selector == null) ? (crl != null) : selector.match(crl);
+        }
     }
 }

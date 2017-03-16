@@ -23,9 +23,8 @@ package org.bouncycastle.crypto.digests;
         ---------------+--------+-----------+------+------------+
  */
 
-import java.util.Arrays;
-
 import org.bouncycastle.crypto.ExtendedDigest;
+import org.bouncycastle.util.Arrays;
 
 
 /**
@@ -112,9 +111,39 @@ public class Blake2bDigest
 
 	public Blake2bDigest()
 	{
+		this(512);
+	}
+
+	public Blake2bDigest(Blake2bDigest digest)
+	{
+		this.bufferPos = digest.bufferPos;
+		this.buffer = Arrays.clone(digest.buffer);
+		this.keyLength = digest.keyLength;
+		this.key = Arrays.clone(digest.key);
+		this.digestLength = digest.digestLength;
+		this.chainValue = Arrays.clone(digest.chainValue);
+		this.personalization = Arrays.clone(digest.personalization);
+		this.salt = Arrays.clone(digest.salt);
+		this.t0 = digest.t0;
+		this.t1 = digest.t1;
+		this.f0 = digest.f0;
+	}
+
+	/**
+	 * Basic sized constructor - size in bits.
+	 *
+	 * @param digestSize size of the digest in bits
+     */
+	public Blake2bDigest(int digestSize)
+	{
+		if (digestSize != 160 && digestSize != 256 && digestSize != 384 && digestSize != 512)
+		{
+			throw new IllegalArgumentException("Blake2b digest restricted to one of [160, 256, 384, 512]");
+		}
+
 		buffer = new byte[BLOCK_LENGTH_BYTES];
 		keyLength = 0;
-		digestLength = 64;
+		this.digestLength = digestSize / 8;
 		init();
 	}
 
@@ -149,61 +178,60 @@ public class Blake2bDigest
 	}
 
 	/**
-	 * Blake2b with key, required digest length, salt and personalization.
+	 * Blake2b with key, required digest length (in bytes), salt and personalization.
 	 * After calling the doFinal() method, the key, the salt and the personal string
 	 * will remain and might be used for further computations with this instance.
 	 * The key can be overwritten using the clearKey() method, the salt (pepper)
 	 * can be overwritten using the clearSalt() method.
 	 * 
-	 * @param _key A key up to 64 bytes or null
-	 * @param _digestLength from 1 up to 64 bytes
-	 * @param _salt up to 16 bytes or null
-	 * @param _personalization up to 16 bytes or null
+	 * @param key A key up to 64 bytes or null
+	 * @param digestLength from 1 up to 64 bytes
+	 * @param salt 16 bytes or null
+	 * @param personalization 16 bytes or null
 	 */
-	public Blake2bDigest(byte[] _key, int _digestLength, byte[] _salt,
-			byte[] _personalization)
+	public Blake2bDigest(byte[] key, int digestLength, byte[] salt, byte[] personalization)
 	{
 
 		buffer = new byte[BLOCK_LENGTH_BYTES];
-		if (_digestLength < 1 || digestLength > 64)
+		if (digestLength < 1 || digestLength > 64)
 		{
 			throw new IllegalArgumentException(
 					"Invalid digest length (required: 1 - 64)");
 		}
-		digestLength = _digestLength;
-		if (_salt != null)
+		this.digestLength = digestLength;
+		if (salt != null)
 		{
-			if (_salt.length != 16)
+			if (salt.length != 16)
 			{
 				throw new IllegalArgumentException(
 						"salt length must be exactly 16 bytes");
 			}
-			salt = new byte[16];
-			System.arraycopy(_salt, 0, salt, 0, _salt.length);
+			this.salt = new byte[16];
+			System.arraycopy(salt, 0, this.salt, 0, salt.length);
 		}
-		if (_personalization != null)
+		if (personalization != null)
 		{
-			if (_personalization.length != 16)
+			if (personalization.length != 16)
 			{
 				throw new IllegalArgumentException(
 						"personalization length must be exactly 16 bytes");
 			}
-			personalization = new byte[16];
-			System.arraycopy(_personalization, 0, personalization, 0,
-					_personalization.length);
+			this.personalization = new byte[16];
+			System.arraycopy(personalization, 0, this.personalization, 0,
+					personalization.length);
 		}
-		if (_key != null)
+		if (key != null)
 		{
-			key = new byte[_key.length];
-			System.arraycopy(_key, 0, key, 0, _key.length);
+			this.key = new byte[key.length];
+			System.arraycopy(key, 0, this.key, 0, key.length);
 			
-			if (_key.length > 64)
+			if (key.length > 64)
 			{
 				throw new IllegalArgumentException(
 						"Keys > 64 are not supported");
 			}
-			keyLength = _key.length;
-			System.arraycopy(_key, 0, buffer, 0, _key.length);
+			keyLength = key.length;
+			System.arraycopy(key, 0, buffer, 0, key.length);
 			bufferPos = BLOCK_LENGTH_BYTES; // zero padding
 		}
 		init();
@@ -277,7 +305,7 @@ public class Blake2bDigest
 				t1++;
 			}
 			compress(buffer, 0);
-			Arrays.fill(buffer, (byte) 0);// clear buffer
+			Arrays.fill(buffer, (byte)0);// clear buffer
 			buffer[0] = b;
 			bufferPos = 1;
 		} else
@@ -371,9 +399,18 @@ public class Blake2bDigest
 		Arrays.fill(buffer, (byte) 0);// Holds eventually the key if input is null
 		Arrays.fill(internalState, 0L);
 
-		for (int i = 0; i < chainValue.length; i++)
+		for (int i = 0; i < chainValue.length && (i * 8 < digestLength); i++)
 		{
-			System.arraycopy(long2bytes(chainValue[i]), 0, out, outOffset + i * 8, 8);
+            byte[] bytes = long2bytes(chainValue[i]);
+
+            if (i * 8 < digestLength - 8)
+            {
+                System.arraycopy(bytes, 0, out, outOffset + i * 8, 8);
+            }
+            else
+            {
+                System.arraycopy(bytes, 0, out, outOffset + i * 8, digestLength - (i * 8));
+            }
 		}
 
 		Arrays.fill(chainValue, 0L);
@@ -397,6 +434,7 @@ public class Blake2bDigest
 		chainValue = null;
 		if (key != null)
 		{
+			Arrays.fill(buffer, (byte) 0);
 			System.arraycopy(key, 0, buffer, 0, key.length);
 			bufferPos = BLOCK_LENGTH_BYTES; // zero padding
 		}

@@ -17,14 +17,17 @@ public class Features
         return data;
     }
 
-    public Features(boolean critical, byte[] data)
+    public Features(
+        boolean    critical,
+        boolean    isLongLength,
+        byte[]     data)
     {
-        super(SignatureSubpacketTags.FEATURES, critical, data);
+        super(SignatureSubpacketTags.FEATURES, critical, isLongLength, data);
     }
 
     public Features(boolean critical, byte feature)
     {
-        super(SignatureSubpacketTags.FEATURES, critical, featureToByteArray(feature));
+        super(SignatureSubpacketTags.FEATURES, critical, false, featureToByteArray(feature));
     }
 
     /**
@@ -34,16 +37,6 @@ public class Features
     {
         return supportsFeature(FEATURE_MODIFICATION_DETECTION);
     }
-
-
-//    /**  Class should be immutable.
-//     * Set modification detection support.
-//     */
-//    public void setSupportsModificationDetection(boolean support)
-//    {
-//        setSupportsFeature(FEATURE_MODIFICATION_DETECTION, support);
-//    }
-
 
     /**
      * Returns if a particular feature is supported.

@@ -399,12 +399,20 @@ public class AESTest
 
 
         String[] wrapOids = {
-                NISTObjectIdentifiers.id_aes128_wrap.getId(),
-                NISTObjectIdentifiers.id_aes192_wrap.getId(),
-                NISTObjectIdentifiers.id_aes256_wrap.getId()
+            NISTObjectIdentifiers.id_aes128_wrap.getId(),
+            NISTObjectIdentifiers.id_aes192_wrap.getId(),
+            NISTObjectIdentifiers.id_aes256_wrap.getId(),
         };
 
         wrapOidTest(wrapOids, "AESWrap");
+
+        wrapOids = new String[] {
+                NISTObjectIdentifiers.id_aes128_wrap_pad.getId(),
+                NISTObjectIdentifiers.id_aes192_wrap_pad.getId(),
+                NISTObjectIdentifiers.id_aes256_wrap_pad.getId()
+        };
+
+        wrapOidTest(wrapOids, "AESWrapPad");
 
         eaxTest();
         ccmTest();

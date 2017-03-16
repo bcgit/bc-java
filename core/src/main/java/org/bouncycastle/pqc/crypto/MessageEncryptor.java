@@ -2,7 +2,11 @@ package org.bouncycastle.pqc.crypto;
 
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 
+/**
+ * Base interface for a PQC encryption algorithm.
+ */
 public interface MessageEncryptor
 {
 
@@ -19,12 +23,13 @@ public interface MessageEncryptor
      * @param message the message to be signed.
      * @throws Exception 
      */
-    public byte[] messageEncrypt(byte[] message) throws Exception;
+    public byte[] messageEncrypt(byte[] message);
 
     /**
      *
      * @param cipher the cipher text of the message
      * @throws Exception 
      */
-    public byte[] messageDecrypt(byte[] cipher) throws Exception;
+    public byte[] messageDecrypt(byte[] cipher)
+        throws InvalidCipherTextException;
 }

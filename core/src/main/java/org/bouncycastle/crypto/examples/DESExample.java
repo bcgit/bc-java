@@ -271,7 +271,7 @@ public class DESExample extends Object
         }
         catch (IOException closing)
         {
-
+            System.err.println("exception closing resources: " + closing.getMessage());
         }
     }
         

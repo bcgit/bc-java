@@ -11,7 +11,7 @@ import org.bouncycastle.util.Arrays;
 public class ASN1Enumerated
     extends ASN1Primitive
 {
-    byte[]      bytes;
+    private final byte[] bytes;
 
     /**
      * return an enumerated from the passed in object
@@ -99,7 +99,18 @@ public class ASN1Enumerated
     public ASN1Enumerated(
         byte[]   bytes)
     {
-        this.bytes = bytes;
+        if (bytes.length > 1)
+        {
+            if (bytes[0] == 0 && (bytes[1] & 0x80) == 0)
+            {
+                throw new IllegalArgumentException("malformed enumerated");
+            }
+            if (bytes[0] == (byte)0xff && (bytes[1] & 0x80) != 0)
+            {
+                throw new IllegalArgumentException("malformed enumerated");
+            }
+        }
+        this.bytes = Arrays.clone(bytes);
     }
 
     public BigInteger getValue()
@@ -148,7 +159,7 @@ public class ASN1Enumerated
     {
         if (enc.length > 1)
         {
-            return new ASN1Enumerated(Arrays.clone(enc));
+            return new ASN1Enumerated(enc);
         }
 
         if (enc.length == 0)

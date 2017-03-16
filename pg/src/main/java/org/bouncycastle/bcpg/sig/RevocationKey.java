@@ -11,15 +11,15 @@ public class RevocationKey extends SignatureSubpacket
     // 1 octet of class, 
     // 1 octet of public-key algorithm ID, 
     // 20 octets of fingerprint
-    public RevocationKey(boolean isCritical, byte[] data)
+    public RevocationKey(boolean isCritical, boolean isLongLength, byte[] data)
     {
-        super(SignatureSubpacketTags.REVOCATION_KEY, isCritical, data);
+        super(SignatureSubpacketTags.REVOCATION_KEY, isCritical, isLongLength, data);
     }
 
     public RevocationKey(boolean isCritical, byte signatureClass, int keyAlgorithm,
         byte[] fingerprint)
     {
-        super(SignatureSubpacketTags.REVOCATION_KEY, isCritical, createData(signatureClass,
+        super(SignatureSubpacketTags.REVOCATION_KEY, isCritical, false, createData(signatureClass,
             (byte)(keyAlgorithm & 0xff), fingerprint));
     }
 

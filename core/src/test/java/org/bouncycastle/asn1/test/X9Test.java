@@ -18,7 +18,6 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class X9Test
@@ -117,7 +116,8 @@ public class X9Test
         //
         X962Parameters          params = new X962Parameters(X9ObjectIdentifiers.prime192v1);
 
-        PrivateKeyInfo          info = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), new ECPrivateKey(ecP.getCurve().getOrder().bitLength(), BigInteger.valueOf(10)));
+        PrivateKeyInfo          info = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params),
+            new ECPrivateKey(ecP.getN().bitLength(), BigInteger.valueOf(10)));
 
         if (!areEqual(info.getEncoded(), namedPriv))
         {
@@ -138,7 +138,8 @@ public class X9Test
 
         params = new X962Parameters(ecP);
         
-        info = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), new ECPrivateKey(ecP.getCurve().getOrder().bitLength(), BigInteger.valueOf(20)));
+        info = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params),
+            new ECPrivateKey(ecP.getN().bitLength(), BigInteger.valueOf(20)));
 
         if (!areEqual(info.getEncoded(), expPriv))
         {
@@ -164,7 +165,7 @@ public class X9Test
     {
         return "X9";
     }
-
+                                                      
     public static void main(
         String[]    args)
     {

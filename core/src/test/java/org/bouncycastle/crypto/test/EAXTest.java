@@ -4,7 +4,6 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.EAXBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
@@ -118,7 +117,7 @@ public class EAXTest
         checkVectors(10, K10, 128, N10, A10, P10, T10, C10);
         checkVectors(11, K11, 32, N11, A11, P11, T11, C11);
 
-        EAXBlockCipher eax = new EAXBlockCipher(new AESFastEngine());
+        EAXBlockCipher eax = new EAXBlockCipher(new AESEngine());
         ivParamTest(1, eax, K1, N1);
 
         //
@@ -195,8 +194,8 @@ public class EAXTest
         byte[] c)
         throws InvalidCipherTextException
     {
-        EAXBlockCipher encEax = new EAXBlockCipher(new AESFastEngine());
-        EAXBlockCipher decEax = new EAXBlockCipher(new AESFastEngine());
+        EAXBlockCipher encEax = new EAXBlockCipher(new AESEngine());
+        EAXBlockCipher decEax = new EAXBlockCipher(new AESEngine());
 
         AEADParameters parameters = new AEADParameters(new KeyParameter(k), macSize, n, a);
         encEax.init(true, parameters);
@@ -326,7 +325,7 @@ public class EAXTest
         srng.nextBytes(datIn);
         srng.nextBytes(key);
 
-        AESFastEngine engine = new AESFastEngine();
+        AESEngine engine = new AESEngine();
         KeyParameter sessKey = new KeyParameter(key);
         EAXBlockCipher eaxCipher = new EAXBlockCipher(engine);
 

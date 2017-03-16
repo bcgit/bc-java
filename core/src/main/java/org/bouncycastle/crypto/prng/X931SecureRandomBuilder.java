@@ -11,7 +11,6 @@ public class X931SecureRandomBuilder
     private SecureRandom random;          // JDK 1.1 complains on final.
     private EntropySourceProvider entropySourceProvider;
 
-    private BlockCipher engine;
     private byte[] dateTimeVector;
 
     /**
@@ -74,20 +73,10 @@ public class X931SecureRandomBuilder
      */
     public X931SecureRandom build(BlockCipher engine, KeyParameter key, boolean predictionResistant)
     {
-        this.engine = engine;
-
         if (dateTimeVector == null)
         {
-            if (engine.getBlockSize() == 8)
-            {
-                dateTimeVector = Pack.longToBigEndian(System.currentTimeMillis());
-            }
-            else
-            {
-                dateTimeVector = new byte[engine.getBlockSize()];
-                byte[] date = Pack.longToBigEndian(System.currentTimeMillis());
-                System.arraycopy(date, 0, dateTimeVector, 0, date.length);
-            }
+            dateTimeVector = new byte[engine.getBlockSize()];
+            Pack.longToBigEndian(System.currentTimeMillis(), dateTimeVector, 0);
         }
 
         engine.init(true, key);

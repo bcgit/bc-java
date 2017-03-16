@@ -61,7 +61,9 @@
                 <exclude name="**/GetInstanceTest.java" />
             </fileset>
             <fileset dir="pg/src/test/java" />
-            <fileset dir="pkix/src/test/java" />
+            <fileset dir="pkix/src/test/java" >
+                <exclude name="**/TimeStampTokenInfoUnitTest.java"/>
+            </fileset>
             <fileset dir="mail/src/test/java" />
             <fileset dir="prov/src/test/java">
                 <exclude name="**/AEADTest.java" />
@@ -73,6 +75,7 @@
                 <exclude name="**/X509StoreTest.java" />
                 <exclude name="**/MQVTest.java" />
                 <exclude name="**/pem/AllTests.java" />
+                <exclude name="**/AlgorithmParametersTest.java" />
                 <exclude name="**/ntru/**/*.java" />
                 <exclude name="**/NTRU*.java" />
                 <exclude name="**/crypto/engines/test/BitStringTest.java" />
@@ -85,7 +88,7 @@
 		<exclude name="**/jce/provider/test/JceTestUtil.java" />
             </fileset>
             <fileset dir="core/src/test/" includes="**/*.properties" />
-            <fileset dir="prov/src/main/" includes="**/*.properties" />
+            <fileset dir="prov/src/main/resources" includes="**/*.properties" />
             <fileset dir="pkix/src/test/resources" includes="**/*.*" />
             <fileset dir="prov/src/test/resources" includes="**/*.*" />
             <fileset dir="core/src/test/resources" includes="**/*.*" />

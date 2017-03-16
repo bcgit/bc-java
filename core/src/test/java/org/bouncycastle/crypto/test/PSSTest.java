@@ -322,6 +322,43 @@ public class PSSTest
         {
             fail("loop test failed - failures: " + failed);
         }
+
+        fixedSaltTest();
+    }
+
+    private void fixedSaltTest()
+        throws Exception
+    {
+        byte[] data = Hex.decode("010203040506070809101112131415");
+
+        PSSSigner eng = new PSSSigner(new RSAEngine(), new SHA256Digest(), new SHA1Digest(), Hex.decode("deadbeef"));
+
+        eng.init(true, prv8);
+
+        eng.update(data, 0, data.length);
+
+        byte[] s = eng.generateSignature();
+
+        eng.init(false, pub8);
+
+        eng.update(data, 0, data.length);
+
+        if (!eng.verifySignature(s))
+        {
+            fail("fixed salt failed");
+        }
+
+        // test failure
+        eng = new PSSSigner(new RSAEngine(), new SHA256Digest(), new SHA1Digest(), Hex.decode("beefbeef"));
+
+        eng.init(false, pub8);
+
+        eng.update(data, 0, data.length);
+
+        if (eng.verifySignature(s))
+        {
+            fail("fixed salt failure verfied");
+        }
     }
 
     public static void main(

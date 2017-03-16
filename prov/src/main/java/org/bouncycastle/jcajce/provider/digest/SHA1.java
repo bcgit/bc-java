@@ -1,24 +1,14 @@
 package org.bouncycastle.jcajce.provider.digest;
 
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.PBEKeySpec;
-
 import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.CipherKeyGenerator;
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
-import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
-import org.bouncycastle.jcajce.provider.symmetric.util.BaseSecretKeyFactory;
-import org.bouncycastle.jcajce.provider.symmetric.util.PBE;
 import org.bouncycastle.jcajce.provider.symmetric.util.PBESecretKeyFactory;
 
 public class SHA1
@@ -92,79 +82,6 @@ public class SHA1
         }
     }
 
-
-    public static class BasePBKDF2WithHmacSHA1
-        extends BaseSecretKeyFactory
-    {
-        private int scheme;
-
-        public BasePBKDF2WithHmacSHA1(String name, int scheme)
-        {
-            super(name, PKCSObjectIdentifiers.id_PBKDF2);
-
-            this.scheme = scheme;
-        }
-
-        protected SecretKey engineGenerateSecret(
-            KeySpec keySpec)
-            throws InvalidKeySpecException
-        {
-            if (keySpec instanceof PBEKeySpec)
-            {
-                PBEKeySpec pbeSpec = (PBEKeySpec)keySpec;
-
-                if (pbeSpec.getSalt() == null)
-                {
-                    throw new InvalidKeySpecException("missing required salt");
-                }
-
-                if (pbeSpec.getIterationCount() <= 0)
-                {
-                    throw new InvalidKeySpecException("positive iteration count required: "
-                        + pbeSpec.getIterationCount());
-                }
-
-                if (pbeSpec.getKeyLength() <= 0)
-                {
-                    throw new InvalidKeySpecException("positive key length required: "
-                        + pbeSpec.getKeyLength());
-                }
-
-                if (pbeSpec.getPassword().length == 0)
-                {
-                    throw new IllegalArgumentException("password empty");
-                }
-
-                int digest = SHA1;
-                int keySize = pbeSpec.getKeyLength();
-                int ivSize = -1;    // JDK 1,2 and earlier does not understand simplified version.
-                CipherParameters param = PBE.Util.makePBEMacParameters(pbeSpec, scheme, digest, keySize);
-
-                return new BCPBEKey(this.algName, this.algOid, scheme, digest, keySize, ivSize, pbeSpec, param);
-            }
-
-            throw new InvalidKeySpecException("Invalid KeySpec");
-        }
-    }
-
-    public static class PBKDF2WithHmacSHA1UTF8
-        extends BasePBKDF2WithHmacSHA1
-    {
-        public PBKDF2WithHmacSHA1UTF8()
-        {
-            super("PBKDF2WithHmacSHA1", PKCS5S2_UTF8);
-        }
-    }
-
-    public static class PBKDF2WithHmacSHA18BIT
-        extends BasePBKDF2WithHmacSHA1
-    {
-        public PBKDF2WithHmacSHA18BIT()
-        {
-            super("PBKDF2WithHmacSHA1And8bit", PKCS5S2);
-        }
-    }
-
     public static class Mappings
         extends DigestAlgorithmProvider
     {
@@ -192,11 +109,6 @@ public class SHA1
             provider.addAlgorithm("Alg.Alias.Mac." + OIWObjectIdentifiers.idSHA1, "PBEWITHHMACSHA");
 
             provider.addAlgorithm("SecretKeyFactory.PBEWITHHMACSHA1", PREFIX + "$PBEWithMacKeyFactory");
-            provider.addAlgorithm("SecretKeyFactory.PBKDF2WithHmacSHA1", PREFIX + "$PBKDF2WithHmacSHA1UTF8");
-            provider.addAlgorithm("Alg.Alias.SecretKeyFactory.PBKDF2WithHmacSHA1AndUTF8", "PBKDF2WithHmacSHA1");
-            provider.addAlgorithm("SecretKeyFactory.PBKDF2WithHmacSHA1And8BIT", PREFIX + "$PBKDF2WithHmacSHA18BIT");
-            provider.addAlgorithm("Alg.Alias.SecretKeyFactory.PBKDF2withASCII", "PBKDF2WithHmacSHA1And8BIT");
-            provider.addAlgorithm("Alg.Alias.SecretKeyFactory.PBKDF2with8BIT", "PBKDF2WithHmacSHA1And8BIT");
-        }
+          }
     }
 }

@@ -16,8 +16,15 @@ public class DANEEntrySelectorFactory
 
     /**
      * Base constructor.
+     * <p>
+     * At the moment you would call this as:
+     * <pre>
+     *     new DANEEntrySelectorFactory(new TruncatingDigestCalculator(new SHA256DigestCalculator()));
+     * </pre>
+     * or some equivalent.
+     * </p>
      *
-     * @param digestCalculator a calculator for the message digest to filter email addresses currently SHA-224.
+     * @param digestCalculator a calculator for the message digest to filter email addresses currently truncated SHA-256 (originally SHA-224).
      */
     public DANEEntrySelectorFactory(DigestCalculator digestCalculator)
     {

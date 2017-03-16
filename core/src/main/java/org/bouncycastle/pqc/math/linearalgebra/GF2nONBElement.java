@@ -2,7 +2,7 @@ package org.bouncycastle.pqc.math.linearalgebra;
 
 
 import java.math.BigInteger;
-import java.util.Random;
+import java.security.SecureRandom;
 
 /**
  * This class implements an element of the finite field <i>GF(2<sup>n </sup>)</i>.
@@ -126,7 +126,7 @@ public class GF2nONBElement
      * @param gf2n the field
      * @param rand the source of randomness
      */
-    public GF2nONBElement(GF2nONBField gf2n, Random rand)
+    public GF2nONBElement(GF2nONBField gf2n, SecureRandom rand)
     {
         mField = gf2n;
         mDegree = mField.getDegree();

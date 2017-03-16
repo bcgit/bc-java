@@ -1499,7 +1499,7 @@ public abstract class ECPoint
             }
 
             // Add -b
-            return add(b.negate());
+            return this.add(b.negate());
         }
 
         public ECPoint.AbstractF2m tau()

@@ -41,7 +41,7 @@ subprojects {
 
     sourceCompatibility = 1.5
     targetCompatibility = 1.5
-    version = '1.52'
+    version = '1.56-SNAPSHOT'
 
     test {
         systemProperty 'bc.test.data.home', bcTestDataHome
@@ -52,7 +52,7 @@ subprojects {
     }
 }
 
-test.dependsOn([':core:test', ':prov:test', ':pkix:test', ':mail:test', 'pg:test'])
+test.dependsOn([':core:test', ':prov:test', ':tls:test', ':pkix:test', ':mail:test', 'pg:test'])
 
 cobertura {
    coverageDirs = [
@@ -60,7 +60,8 @@ cobertura {
         "${rootProject.projectDir}/mail/build/classes/main",
         "${rootProject.projectDir}/pg/build/classes/main",
         "${rootProject.projectDir}/pkix/build/classes/main",
-        "${rootProject.projectDir}/prov/build/classes/main"
+        "${rootProject.projectDir}/prov/build/classes/main",
+        "${rootProject.projectDir}/tls/build/classes/main",
    ]
    coverageSourceDirs = [
         "${rootProject.projectDir}/core/src/main/java",
@@ -68,6 +69,7 @@ cobertura {
         "${rootProject.projectDir}/pg/src/main/java",
         "${rootProject.projectDir}/pkix/src/main/java",
         "${rootProject.projectDir}/prov/src/main/java",
+        "${rootProject.projectDir}/tls/src/main/java",
    ]
    coverageMergeDatafiles = [
           file("${rootProject.projectDir}/core/build/cobertura/cobertura.ser"),
@@ -75,6 +77,7 @@ cobertura {
           file("${rootProject.projectDir}/pg/build/cobertura/cobertura.ser"),
           file("${rootProject.projectDir}/pkix/build/cobertura/cobertura.ser"),
           file("${rootProject.projectDir}/prov/build/cobertura/cobertura.ser"),
+          file("${rootProject.projectDir}/tls/build/cobertura/cobertura.ser"),
    ]
    auxiliaryClasspath += files("${rootProject.projectDir}/core/build/classes/main")
    coverageFormats = ['html', 'xml']

@@ -168,6 +168,36 @@ public class SecT409Field
         z[zOff + 6]  = z6 & M25;
     }
 
+    public static void sqrt(long[] x, long[] z)
+    {
+        long u0, u1;
+        u0 = Interleave.unshuffle(x[0]); u1 = Interleave.unshuffle(x[1]);
+        long e0 = (u0 & 0x00000000FFFFFFFFL) | (u1 << 32);
+        long c0 = (u0 >>> 32) | (u1 & 0xFFFFFFFF00000000L);
+
+        u0 = Interleave.unshuffle(x[2]); u1 = Interleave.unshuffle(x[3]);
+        long e1 = (u0 & 0x00000000FFFFFFFFL) | (u1 << 32);
+        long c1 = (u0 >>> 32) | (u1 & 0xFFFFFFFF00000000L);
+
+        u0 = Interleave.unshuffle(x[4]); u1 = Interleave.unshuffle(x[5]);
+        long e2 = (u0 & 0x00000000FFFFFFFFL) | (u1 << 32);
+        long c2 = (u0 >>> 32) | (u1 & 0xFFFFFFFF00000000L);
+
+        u0 = Interleave.unshuffle(x[6]);
+        long e3 = (u0 & 0x00000000FFFFFFFFL);
+        long c3 = (u0 >>> 32);
+
+        z[0] = e0 ^ (c0 << 44);
+        z[1] = e1 ^ (c1 << 44) ^ (c0 >>> 20);
+        z[2] = e2 ^ (c2 << 44) ^ (c1 >>> 20);
+        z[3] = e3 ^ (c3 << 44) ^ (c2 >>> 20) ^ (c0 << 13);
+        z[4] =                   (c3 >>> 20) ^ (c1 << 13) ^ (c0 >>> 51);
+        z[5] =                                 (c2 << 13) ^ (c1 >>> 51);
+        z[6] =                                 (c3 << 13) ^ (c2 >>> 51);
+        
+//        assert (c3 >>> 51) == 0;
+    }
+
     public static void square(long[] x, long[] z)
     {
         long[] tt = Nat.create64(13);
@@ -195,6 +225,12 @@ public class SecT409Field
             implSquare(z, tt);
             reduce(tt, z);
         }
+    }
+
+    public static int trace(long[] x)
+    {
+        // Non-zero-trace bits: 0
+        return (int)(x[0]) & 1;
     }
 
     protected static void implCompactExt(long[] zz)

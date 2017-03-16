@@ -169,7 +169,9 @@ public class SecT283FieldElement extends ECFieldElement
 
     public ECFieldElement sqrt()
     {
-        return squarePow(getM() - 1);
+        long[] z = Nat320.create64();
+        SecT283Field.sqrt(x, z);
+        return new SecT283FieldElement(z);
     }
 
     public int getRepresentation()

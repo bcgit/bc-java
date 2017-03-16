@@ -5,6 +5,8 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 
 /**
  * an implementation of the AES (Rijndael), from FIPS-197.
@@ -278,59 +280,128 @@ private static final int[] Tinv0 =
      * AES specified a fixed block size of 128 bits and key sizes 128/192/256 bits
      * This code is written assuming those are the only possible values
      */
-    private int[][] generateWorkingKey(
-                                    byte[] key,
-                                    boolean forEncryption)
+    private int[][] generateWorkingKey(byte[] key, boolean forEncryption)
     {
-        int         KC = key.length / 4;  // key length in words
-        int         t;
-        
-        if (((KC != 4) && (KC != 6) && (KC != 8)) || ((KC * 4) != key.length))
+        int keyLen = key.length;
+        if (keyLen < 16 || keyLen > 32 || (keyLen & 7) != 0)
         {
             throw new IllegalArgumentException("Key length not 128/192/256 bits.");
         }
 
+        int KC = keyLen >>> 2;
         ROUNDS = KC + 6;  // This is not always true for the generalized Rijndael that allows larger block sizes
         int[][] W = new int[ROUNDS+1][4];   // 4 words in a block
-        
-        //
-        // copy the key into the round key array
-        //
-        
-        t = 0;
-        int i = 0;
-        while (i < key.length)
+
+        switch (KC)
+        {
+        case 4:
+        {
+            int t0 = Pack.littleEndianToInt(key,  0); W[0][0] = t0;
+            int t1 = Pack.littleEndianToInt(key,  4); W[0][1] = t1;
+            int t2 = Pack.littleEndianToInt(key,  8); W[0][2] = t2;
+            int t3 = Pack.littleEndianToInt(key, 12); W[0][3] = t3;
+
+            for (int i = 1; i <= 10; ++i)
             {
-                W[t >> 2][t & 3] = (key[i]&0xff) | ((key[i+1]&0xff) << 8) | ((key[i+2]&0xff) << 16) | (key[i+3] << 24);
-                i+=4;
-                t++;
+                int u = subWord(shift(t3, 8)) ^ rcon[i - 1];
+                t0 ^= u;  W[i][0] = t0;
+                t1 ^= t0; W[i][1] = t1;
+                t2 ^= t1; W[i][2] = t2;
+                t3 ^= t2; W[i][3] = t3;
             }
-        
-        //
-        // while not enough round key material calculated
-        // calculate new values
-        //
-        int k = (ROUNDS + 1) << 2;
-        for (i = KC; (i < k); i++)
+
+            break;
+        }
+        case 6:
+        {
+            int t0 = Pack.littleEndianToInt(key,  0); W[0][0] = t0;
+            int t1 = Pack.littleEndianToInt(key,  4); W[0][1] = t1;
+            int t2 = Pack.littleEndianToInt(key,  8); W[0][2] = t2;
+            int t3 = Pack.littleEndianToInt(key, 12); W[0][3] = t3;
+            int t4 = Pack.littleEndianToInt(key, 16); W[1][0] = t4;
+            int t5 = Pack.littleEndianToInt(key, 20); W[1][1] = t5;
+
+            int rcon = 1;
+            int u = subWord(shift(t5, 8)) ^ rcon; rcon <<= 1;
+            t0 ^= u;  W[1][2] = t0;
+            t1 ^= t0; W[1][3] = t1;
+            t2 ^= t1; W[2][0] = t2;
+            t3 ^= t2; W[2][1] = t3;
+            t4 ^= t3; W[2][2] = t4;
+            t5 ^= t4; W[2][3] = t5;
+
+            for (int i = 3; i < 12; i += 3)
             {
-                int temp = W[(i-1)>>2][(i-1)&3];
-                if ((i % KC) == 0)
-                {
-                    temp = subWord(shift(temp, 8)) ^ rcon[(i / KC)-1];
-                }
-                else if ((KC > 6) && ((i % KC) == 4))
-                {
-                    temp = subWord(temp);
-                }
-                
-                W[i>>2][i&3] = W[(i - KC)>>2][(i-KC)&3] ^ temp;
+                u = subWord(shift(t5, 8)) ^ rcon; rcon <<= 1;
+                t0 ^= u;  W[i    ][0] = t0;
+                t1 ^= t0; W[i    ][1] = t1;
+                t2 ^= t1; W[i    ][2] = t2;
+                t3 ^= t2; W[i    ][3] = t3;
+                t4 ^= t3; W[i + 1][0] = t4;
+                t5 ^= t4; W[i + 1][1] = t5;
+                u = subWord(shift(t5, 8)) ^ rcon; rcon <<= 1;
+                t0 ^= u;  W[i + 1][2] = t0;
+                t1 ^= t0; W[i + 1][3] = t1;
+                t2 ^= t1; W[i + 2][0] = t2;
+                t3 ^= t2; W[i + 2][1] = t3;
+                t4 ^= t3; W[i + 2][2] = t4;
+                t5 ^= t4; W[i + 2][3] = t5;
             }
+
+            u = subWord(shift(t5, 8)) ^ rcon;
+            t0 ^= u;  W[12][0] = t0;
+            t1 ^= t0; W[12][1] = t1;
+            t2 ^= t1; W[12][2] = t2;
+            t3 ^= t2; W[12][3] = t3;
+
+            break;
+        }
+        case 8:
+        {
+            int t0 = Pack.littleEndianToInt(key,  0); W[0][0] = t0;
+            int t1 = Pack.littleEndianToInt(key,  4); W[0][1] = t1;
+            int t2 = Pack.littleEndianToInt(key,  8); W[0][2] = t2;
+            int t3 = Pack.littleEndianToInt(key, 12); W[0][3] = t3;
+            int t4 = Pack.littleEndianToInt(key, 16); W[1][0] = t4;
+            int t5 = Pack.littleEndianToInt(key, 20); W[1][1] = t5;
+            int t6 = Pack.littleEndianToInt(key, 24); W[1][2] = t6;
+            int t7 = Pack.littleEndianToInt(key, 28); W[1][3] = t7;
+
+            int u, rcon = 1;
+
+            for (int i = 2; i < 14; i += 2)
+            {
+                u = subWord(shift(t7, 8)) ^ rcon; rcon <<= 1;
+                t0 ^= u;  W[i    ][0] = t0;
+                t1 ^= t0; W[i    ][1] = t1;
+                t2 ^= t1; W[i    ][2] = t2;
+                t3 ^= t2; W[i    ][3] = t3;
+                u = subWord(t3);
+                t4 ^= u;  W[i + 1][0] = t4;
+                t5 ^= t4; W[i + 1][1] = t5;
+                t6 ^= t5; W[i + 1][2] = t6;
+                t7 ^= t6; W[i + 1][3] = t7;
+            }
+
+            u = subWord(shift(t7, 8)) ^ rcon;
+            t0 ^= u;  W[14][0] = t0;
+            t1 ^= t0; W[14][1] = t1;
+            t2 ^= t1; W[14][2] = t2;
+            t3 ^= t2; W[14][3] = t3;
+
+            break;
+        }
+        default:
+        {
+            throw new IllegalStateException("Should never get here");
+        }
+        }
 
         if (!forEncryption)
         {
             for (int j = 1; j < ROUNDS; j++)
             {
-                for (i = 0; i < 4; i++)
+                for (int i = 0; i < 4; i++)
                 {
                     W[j][i] = inv_mcol(W[j][i]);
                 }
@@ -344,6 +415,8 @@ private static final int[] Tinv0 =
     private int[][]     WorkingKey = null;
     private int         C0, C1, C2, C3;
     private boolean     forEncryption;
+
+    private byte[]      s;
 
     private static final int BLOCK_SIZE = 16;
 
@@ -370,6 +443,14 @@ private static final int[] Tinv0 =
         {
             WorkingKey = generateWorkingKey(((KeyParameter)params).getKey(), forEncryption);
             this.forEncryption = forEncryption;
+            if (forEncryption)
+            {
+                s = Arrays.clone(S);
+            }
+            else
+            {
+                s = Arrays.clone(Si);
+            }
             return;
         }
 
@@ -508,10 +589,10 @@ private static final int[] Tinv0 =
 
         // the final round's table is a simple function of S so we don't use a whole other four tables for it
 
-        this.C0 = (S[r0&255]&255) ^ ((S[(r1>>8)&255]&255)<<8) ^ ((S[(r2>>16)&255]&255)<<16) ^ (S[(r3>>24)&255]<<24) ^ KW[r][0];
-        this.C1 = (S[r1&255]&255) ^ ((S[(r2>>8)&255]&255)<<8) ^ ((S[(r3>>16)&255]&255)<<16) ^ (S[(r0>>24)&255]<<24) ^ KW[r][1];
-        this.C2 = (S[r2&255]&255) ^ ((S[(r3>>8)&255]&255)<<8) ^ ((S[(r0>>16)&255]&255)<<16) ^ (S[(r1>>24)&255]<<24) ^ KW[r][2];
-        this.C3 = (S[r3&255]&255) ^ ((S[(r0>>8)&255]&255)<<8) ^ ((S[(r1>>16)&255]&255)<<16) ^ (S[(r2>>24)&255]<<24) ^ KW[r][3];
+        this.C0 = (S[r0&255]&255) ^ ((S[(r1>>8)&255]&255)<<8) ^ ((s[(r2>>16)&255]&255)<<16) ^ (s[(r3>>24)&255]<<24) ^ KW[r][0];
+        this.C1 = (s[r1&255]&255) ^ ((S[(r2>>8)&255]&255)<<8) ^ ((S[(r3>>16)&255]&255)<<16) ^ (s[(r0>>24)&255]<<24) ^ KW[r][1];
+        this.C2 = (s[r2&255]&255) ^ ((S[(r3>>8)&255]&255)<<8) ^ ((S[(r0>>16)&255]&255)<<16) ^ (S[(r1>>24)&255]<<24) ^ KW[r][2];
+        this.C3 = (s[r3&255]&255) ^ ((s[(r0>>8)&255]&255)<<8) ^ ((s[(r1>>16)&255]&255)<<16) ^ (S[(r2>>24)&255]<<24) ^ KW[r][3];
     }
 
     private void decryptBlock(int[][] KW)
@@ -540,9 +621,9 @@ private static final int[] Tinv0 =
         
         // the final round's table is a simple function of Si so we don't use a whole other four tables for it
 
-        this.C0 = (Si[r0&255]&255) ^ ((Si[(r3>>8)&255]&255)<<8) ^ ((Si[(r2>>16)&255]&255)<<16) ^ (Si[(r1>>24)&255]<<24) ^ KW[0][0];
-        this.C1 = (Si[r1&255]&255) ^ ((Si[(r0>>8)&255]&255)<<8) ^ ((Si[(r3>>16)&255]&255)<<16) ^ (Si[(r2>>24)&255]<<24) ^ KW[0][1];
-        this.C2 = (Si[r2&255]&255) ^ ((Si[(r1>>8)&255]&255)<<8) ^ ((Si[(r0>>16)&255]&255)<<16) ^ (Si[(r3>>24)&255]<<24) ^ KW[0][2];
-        this.C3 = (Si[r3&255]&255) ^ ((Si[(r2>>8)&255]&255)<<8) ^ ((Si[(r1>>16)&255]&255)<<16) ^ (Si[(r0>>24)&255]<<24) ^ KW[0][3];
+        this.C0 = (Si[r0&255]&255) ^ ((s[(r3>>8)&255]&255)<<8) ^ ((s[(r2>>16)&255]&255)<<16) ^ (Si[(r1>>24)&255]<<24) ^ KW[0][0];
+        this.C1 = (s[r1&255]&255) ^ ((s[(r0>>8)&255]&255)<<8) ^ ((Si[(r3>>16)&255]&255)<<16) ^ (s[(r2>>24)&255]<<24) ^ KW[0][1];
+        this.C2 = (s[r2&255]&255) ^ ((Si[(r1>>8)&255]&255)<<8) ^ ((Si[(r0>>16)&255]&255)<<16) ^ (s[(r3>>24)&255]<<24) ^ KW[0][2];
+        this.C3 = (Si[r3&255]&255) ^ ((s[(r2>>8)&255]&255)<<8) ^ ((s[(r1>>16)&255]&255)<<16) ^ (s[(r0>>24)&255]<<24) ^ KW[0][3];
     }
 }

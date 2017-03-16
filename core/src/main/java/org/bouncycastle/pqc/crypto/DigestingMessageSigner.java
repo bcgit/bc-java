@@ -8,7 +8,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 
 
 /**
- * Implements the sign and verify functions for a Signature Scheme which can use a hash function.
+ * Implements the sign and verify functions for a Signature Scheme using a hash function to allow processing of large messages.
  */
 public class DigestingMessageSigner
     implements Signer
@@ -65,34 +65,13 @@ public class DigestingMessageSigner
     {
         if (!forSigning)
         {
-            throw new IllegalStateException("RainbowDigestSigner not initialised for signature generation.");
+            throw new IllegalStateException("DigestingMessageSigner not initialised for signature generation.");
         }
 
         byte[] hash = new byte[messDigest.getDigestSize()];
         messDigest.doFinal(hash, 0);
 
         return messSigner.generateSignature(hash);
-    }
-
-    /**
-     * This function verifies the signature of the message that has been
-     * updated, with the aid of the public key.
-     *
-     * @param signature the signature of the message is given as a byte array.
-     * @return true if the signature has been verified, false otherwise.
-     */
-    public boolean verify(byte[] signature)
-    {
-        if (forSigning)
-        {
-            throw new IllegalStateException("RainbowDigestSigner not initialised for verification");
-        }
-
-        byte[] hash = new byte[messDigest.getDigestSize()];
-        messDigest.doFinal(hash, 0);
-
-        return messSigner.verifySignature(hash, signature);
-
     }
 
     public void update(byte b)
@@ -110,8 +89,23 @@ public class DigestingMessageSigner
         messDigest.reset();
     }
 
+    /**
+     * This function verifies the signature of the message that has been
+     * updated, with the aid of the public key.
+     *
+     * @param signature the signature of the message is given as a byte array.
+     * @return true if the signature has been verified, false otherwise.
+     */
     public boolean verifySignature(byte[] signature)
     {
-        return this.verify(signature);
+        if (forSigning)
+        {
+            throw new IllegalStateException("DigestingMessageSigner not initialised for verification");
+        }
+
+        byte[] hash = new byte[messDigest.getDigestSize()];
+        messDigest.doFinal(hash, 0);
+
+        return messSigner.verifySignature(hash, signature);
     }
 }

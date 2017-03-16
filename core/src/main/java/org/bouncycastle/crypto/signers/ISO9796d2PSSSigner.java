@@ -61,8 +61,7 @@ public class ISO9796d2PSSSigner
     private int preTLength;
 
     /**
-     * Generate a signer for the with either implicit or explicit trailers
-     * for ISO9796-2, scheme 2 or 3.
+     * Generate a signer with either implicit or explicit trailers for ISO9796-2, scheme 2 or 3.
      *
      * @param cipher     base cipher to use for signature creation/verification
      * @param digest     digest to use.
@@ -522,7 +521,14 @@ public class ISO9796d2PSSSigner
         digest.update(m2Hash, 0, m2Hash.length);
 
         // Update for the salt
-        digest.update(block, mStart + recoveredMessage.length, saltLength);
+        if (standardSalt != null)
+        {
+            digest.update(standardSalt, 0, standardSalt.length);
+        }
+        else
+        {
+            digest.update(block, mStart + recoveredMessage.length, saltLength);
+        }
 
         byte[] hash = new byte[digest.getDigestSize()];
         digest.doFinal(hash, 0);

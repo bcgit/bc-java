@@ -4,6 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -33,6 +35,7 @@ import javax.crypto.spec.RC5ParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestFailedException;
@@ -52,6 +55,8 @@ public class BlockCipherTest
         shortIvOkay.add("OCB");
         shortIvOkay.add("CCM");
         shortIvOkay.add("GCM");
+        shortIvOkay.add("SIC");
+        shortIvOkay.add("CTR");
     }
 
     static String[] cipherTests1 =
@@ -143,6 +148,8 @@ public class BlockCipherTest
         "Rijndael/CBC/PKCS7Padding",
         "cf87f4d8bb9d1abb36cdd9f44ead7d046db2f802d99e1ef0a5940f306079e08389a44c4a8cc1a47cbaee1128da55bbb7",
         "Serpent/CBC/PKCS7Padding",
+        "d8b971931de211cb2d31721773a5b1f9dc4e263efe0465f97c024daa26dd7d03473e9beb82ba809cf36071d4807e4706",
+        "Tnepres/CBC/PKCS7Padding",
         "f8940ca31aba8ce1e0693b1ae0b1e08daef6de03c80f019774280052f824ac44540bb8dd74dfad47f83f9c7ec268ca68",
         "CAST5/CBC/PKCS7Padding",
         "87b6dc0c5a1d23d42fa740b0548be0b298112000544610d889d6361994cf8e670a19d6af72d7289f",
@@ -169,6 +176,8 @@ public class BlockCipherTest
         "Rijndael/CTS/NoPadding",
         "6db2f802d99e1ef0a5940f306079e083cf87f4d8bb9d1abb36cdd9f44ead7d04",
         "Serpent/CTS/NoPadding",
+        "dc4e263efe0465f97c024daa26dd7d03d8b971931de211cb2d31721773a5b1f9",
+        "Tnepres/CTS/NoPadding",
         "aef6de03c80f019774280052f824ac44f8940ca31aba8ce1e0693b1ae0b1e08d",
         "CAST5/CTS/NoPadding",
         "87b6dc0c5a1d23d42fa740b0548be0b289d6361994cf8e6798112000544610d8",
@@ -197,6 +206,8 @@ public class BlockCipherTest
         "Rijndael/CBC/WithCTS",
         "6db2f802d99e1ef0a5940f306079e083cf87f4d8bb9d1abb36cdd9f44ead7d04",
         "Serpent/CBC/WithCTS",
+        "dc4e263efe0465f97c024daa26dd7d03d8b971931de211cb2d31721773a5b1f9",
+        "Tnepres/CBC/WithCTS",
         "aef6de03c80f019774280052f824ac44f8940ca31aba8ce1e0693b1ae0b1e08d",
         "CAST5/CBC/WithCTS",
         "87b6dc0c5a1d23d42fa740b0548be0b289d6361994cf8e6798112000544610d8",
@@ -210,6 +221,12 @@ public class BlockCipherTest
         "d4a96bf4e44f89fd91b46830bc95b130c44695633c07010f3a0d8f7ea046a642",
         "IDEA/CBC/WithCTS",
         "30cd990ebdae80fe12b6c6e4fcd1c06497351c8684e4c4d9a27d985c276b3d70",
+        "Blowfish/CTR/NoPadding",
+        "6cd6f7c5d2c65555d2b31f8614f54ec654f5e7888d515008d59302c3edfcc6cb",
+        "CAST5/CTR/NoPadding",
+        "9ef6c08987f02d3dc218513450cf0f8d6aa9eb15d0ad92dde14863731a7e39c2",
+        "Camellia/CTR/NoPadding",
+        "9132cee4b4f13574ed61c00997f8049e8b45f941f6394e333926a3245f11d759",
         "DES/OFB/NoPadding",
         "537572e480c1714f5c9a4f3b874df824dc6681b1fd6c11982debcad91e3f78b7",
         "DESede/OFB/NoPadding",
@@ -345,6 +362,8 @@ public class BlockCipherTest
         "SEED/EAX/NoPadding",
         "6780f18b2dd1f75a934b5a3e45e8fd44877fd3498a9b919b417b3d8a7c67c6021d74bbaef71841ef",
         "Serpent/EAX/NoPadding",
+        "13c2b1fec2bda74f5ccc8ca31b36a2e91ee024a215387219808640b2fc7a6a41e017aacee3ed893a",
+        "Tnepres/EAX/NoPadding",
         "8d5ac312ca0d436a0154d56568d39811ccf6bb970012398014fc8a49ed669b117443c0249b07ead8",
         "SM4/EAX/NoPadding",
         "e072a95da8e529b41199859482142b3fdfa6b7af27348e5ebf35445a099583dae882affde90ea4a4",
@@ -855,7 +874,7 @@ public class BlockCipherTest
 
                 if (!areEqual(out2, count, input))
                 {
-                    fail("" + algorithm + " failed decryption - expected " + new String(Hex.encode(input)) + " got " + new String(Hex.encode(out2)));
+                    fail("doFinal " + algorithm + " failed decryption - expected " + new String(Hex.encode(input)) + " got " + new String(Hex.encode(out2)));
                 }
             }
         }
@@ -867,7 +886,266 @@ public class BlockCipherTest
         {
             fail("" + algorithm + " failed short buffer decryption - " + e.toString());
         }
-    }
+
+        try
+        {
+            if (algorithm.indexOf("CCM") < 0 && algorithm.indexOf("Threefish") < 0 && algorithm.indexOf("PGPCFB") < 0)
+            {
+                //
+                // short buffer on update test
+                //
+                byte[] input2 = new byte[input.length * 8];
+
+                System.arraycopy(input, 0, input2, 0, input.length);
+                System.arraycopy(input, 0, input2, input.length, input.length);
+                System.arraycopy(input, 0, input2, input.length * 2, input.length);
+                System.arraycopy(input, 0, input2, input.length * 3, input.length);
+
+                byte[] output2 = out.doFinal(input2);
+
+                byte[] out1 = new byte[input2.length / 2 - out.getBlockSize() * 2 - 1];
+
+                try
+                {
+                    out.update(input2, 0, input2.length / 2, out1, 0);
+
+                    fail("ShortBufferException not triggered: " + algorithm + " " + input2.length);
+                }
+                catch (ShortBufferException e)
+                {
+                    byte[] out2 = new byte[out.getOutputSize(input2.length / 2)];
+
+                    System.arraycopy(input2, 0, out2, 0, out2.length);
+
+                    int count = out.update(out2, 0, out2.length, out2, 0);
+
+                    if (!areEqual(out2, count, Arrays.copyOfRange(output2, 0, count)))
+                    {
+                        fail("update " + algorithm + " failed decryption - expected " + new String(Hex.encode(output2)) + " got " + new String(Hex.encode(out2)));
+                    }
+                }
+            }
+
+            serialiseTest(algorithm, input, output);
+        }
+        catch (TestFailedException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            fail("" + algorithm + " failed short buffer decryption - " + e.toString());
+        }
+     }
+
+     private void serialiseTest(
+         String algorithm,
+         byte[] input,
+         byte[] output)
+         throws Exception
+     {
+         Key key = null;
+         KeyGenerator keyGen;
+         SecureRandom rand;
+         Cipher in = null;
+         Cipher out = null;
+         CipherInputStream cIn;
+         CipherOutputStream cOut;
+         ByteArrayInputStream bIn;
+         ByteArrayOutputStream bOut;
+
+         rand = new FixedSecureRandom();
+
+         String baseAlgorithm, mode;
+         int index = algorithm.indexOf('/');
+
+         if (index > 0)
+         {
+             baseAlgorithm = algorithm.substring(0, index);
+             mode = algorithm.substring(index + 1, algorithm.lastIndexOf('/'));
+         }
+         else
+         {
+             baseAlgorithm = algorithm;
+             mode = null;
+         }
+
+         keyGen = KeyGenerator.getInstance(baseAlgorithm, "BC");
+         if (!keyGen.getAlgorithm().equals(baseAlgorithm))
+         {
+             fail("wrong key generator returned!");
+         }
+         keyGen.init(rand);
+
+         key = keyGen.generateKey();
+
+         bOut = new ByteArrayOutputStream();
+         ObjectOutputStream oOut = new ObjectOutputStream(bOut);
+
+         oOut.writeObject(key);
+
+         bIn = new ByteArrayInputStream(bOut.toByteArray());
+         ObjectInputStream oIn = new ObjectInputStream(bIn);
+
+         in = Cipher.getInstance(algorithm, "BC");
+         out = Cipher.getInstance(algorithm, "BC");
+
+         key = (Key)oIn.readObject();
+
+         if (!in.getAlgorithm().startsWith(baseAlgorithm))
+         {
+             fail("wrong cipher returned!");
+         }
+
+         if (algorithm.startsWith("RC2"))
+         {
+             if (baseAlgorithm.equals(algorithm) || algorithm.indexOf("ECB") > 0)
+             {
+                 out.init(Cipher.ENCRYPT_MODE, key, new RC2ParameterSpec(rc2Spec.getEffectiveKeyBits()), rand);
+             }
+             else
+             {
+                 out.init(Cipher.ENCRYPT_MODE, key, rc2Spec, rand);
+             }
+         }
+         else if (algorithm.startsWith("RC5"))
+         {
+             if (algorithm.startsWith("RC5-64"))
+             {
+                 out.init(Cipher.ENCRYPT_MODE, key, rc564Spec, rand);
+             }
+             else
+             {
+                 out.init(Cipher.ENCRYPT_MODE, key, rc5Spec, rand);
+             }
+         }
+         else
+         {
+             out.init(Cipher.ENCRYPT_MODE, key, rand);
+         }
+
+         //
+         // grab the iv if there is one
+         //
+         if (algorithm.startsWith("RC2"))
+         {
+             if (baseAlgorithm.equals(algorithm) || algorithm.indexOf("ECB") > 0)
+             {
+                 in.init(Cipher.DECRYPT_MODE, key, new RC2ParameterSpec(rc2Spec.getEffectiveKeyBits()), rand);
+             }
+             else
+             {
+                 in.init(Cipher.DECRYPT_MODE, key, rc2Spec, rand);
+             }
+         }
+         else if (algorithm.startsWith("RC5"))
+         {
+             if (algorithm.startsWith("RC5-64"))
+             {
+                 in.init(Cipher.DECRYPT_MODE, key, rc564Spec, rand);
+             }
+             else
+             {
+                 in.init(Cipher.DECRYPT_MODE, key, rc5Spec, rand);
+             }
+         }
+         else
+         {
+             byte[] iv;
+
+             iv = out.getIV();
+             if (iv != null)
+             {
+                 if (!shortIvOkay.contains(mode))
+                 {
+                     try
+                     {
+                         byte[] nIv = new byte[iv.length - 1];
+
+                         in.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(nIv));
+                         fail("failed to pick up short IV");
+                     }
+                     catch (InvalidAlgorithmParameterException e)
+                     {
+                         // ignore - this is what we want...
+                     }
+                 }
+
+                 IvParameterSpec spec;
+
+                 spec = new IvParameterSpec(iv);
+
+                 in.init(Cipher.DECRYPT_MODE, key, spec);
+             }
+             else
+             {
+                 in.init(Cipher.DECRYPT_MODE, key);
+             }
+         }
+
+         //
+         // encryption pass
+         //
+         bOut = new ByteArrayOutputStream();
+
+         cOut = new CipherOutputStream(bOut, out);
+
+         try
+         {
+             for (int i = 0; i != input.length / 2; i++)
+             {
+                 cOut.write(input[i]);
+             }
+
+             cOut.write(input, input.length / 2, input.length - input.length / 2);
+             cOut.close();
+         }
+         catch (IOException e)
+         {
+             fail("" + algorithm + " failed encryption - " + e.toString());
+         }
+
+         byte[] bytes;
+
+         bytes = bOut.toByteArray();
+
+         if (!Arrays.areEqual(bytes, output))
+         {
+             fail("" + algorithm + " failed encryption - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(bytes)));
+         }
+
+         //
+         // decryption pass
+         //
+         bIn = new ByteArrayInputStream(bytes);
+
+         cIn = new CipherInputStream(bIn, in);
+
+         try
+         {
+             DataInputStream dIn = new DataInputStream(cIn);
+
+             bytes = new byte[input.length];
+
+             for (int i = 0; i != input.length / 2; i++)
+             {
+                 bytes[i] = (byte)dIn.read();
+             }
+             dIn.readFully(bytes, input.length / 2, bytes.length - input.length / 2);
+
+             dIn.close();
+         }
+         catch (Exception e)
+         {
+             fail("" + algorithm + " failed decryption - " + e.toString());
+         }
+
+         if (!Arrays.areEqual(bytes, input))
+         {
+             fail("" + algorithm + " failed decryption - expected " + new String(Hex.encode(input)) + " got " + new String(Hex.encode(bytes)));
+         }
+     }
+
 
     private boolean noIDEA()
     {

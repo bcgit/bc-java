@@ -6,6 +6,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.KeyEncoder;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
@@ -155,6 +156,115 @@ public class ECIESTest
         if (!areEqual(out2, message))
         {
             fail("twofish cipher test failed");
+        }
+    }
+
+    private void doShortTest(byte[] iv)
+        throws Exception
+    {
+        BigInteger n = new BigInteger("6277101735386680763835789423176059013767194773182842284081");
+
+        ECCurve.Fp curve = new ECCurve.Fp(
+            new BigInteger("6277101735386680763835789423207666416083908700390324961279"), // q
+            new BigInteger("fffffffffffffffffffffffffffffffefffffffffffffffc", 16), // a
+            new BigInteger("64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1", 16), // b
+            n, ECConstants.ONE);
+
+        ECDomainParameters params = new ECDomainParameters(
+                curve,
+                curve.decodePoint(Hex.decode("03188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012")), // G
+                n);
+
+        ECPrivateKeyParameters priKey = new ECPrivateKeyParameters(
+            new BigInteger("651056770906015076056810763456358567190100156695615665659"), // d
+            params);
+
+        ECPublicKeyParameters pubKey = new ECPublicKeyParameters(
+            curve.decodePoint(Hex.decode("0262b12d60690cdcf330babab6e69763b471f994dd702d16a5")), // Q
+            params);
+
+        AsymmetricCipherKeyPair  p1 = new AsymmetricCipherKeyPair(pubKey, priKey);
+        AsymmetricCipherKeyPair  p2 = new AsymmetricCipherKeyPair(pubKey, priKey);
+
+        //
+        // stream test - V 0
+        //
+        IESEngine i1 = new IESEngine(
+                                   new ECDHBasicAgreement(),
+                                   new KDF2BytesGenerator(new SHA1Digest()),
+                                   new HMac(new SHA1Digest()));
+        IESEngine i2 = new IESEngine(
+                                   new ECDHBasicAgreement(),
+                                   new KDF2BytesGenerator(new SHA1Digest()),
+                                   new HMac(new SHA1Digest()));
+        byte[]         d = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        byte[]         e = new byte[] { 8, 7, 6, 5, 4, 3, 2, 1 };
+        CipherParameters p = new IESParameters(d, e, 64);
+
+        i1.init(true, p1.getPrivate(), p2.getPublic(), p);
+        i2.init(false, p2.getPrivate(), p1.getPublic(), p);
+
+        byte[] message = new byte[0];
+
+        byte[]   out1 = i1.processBlock(message, 0, message.length);
+
+        byte[]   out2 = i2.processBlock(out1, 0, out1.length);
+
+        if (!areEqual(out2, message))
+        {
+            fail("stream cipher test failed");
+        }
+
+        try
+        {
+            i2.processBlock(out1, 0, out1.length - 1);
+            fail("no exception");
+        }
+        catch (InvalidCipherTextException ex)
+        {
+            if (!"Length of input must be greater than the MAC and V combined".equals(ex.getMessage()))
+            {
+                fail("wrong exception");
+            }
+        }
+
+        // with ephemeral key pair
+
+        // Generate the ephemeral key pair
+        ECKeyPairGenerator gen = new ECKeyPairGenerator();
+        gen.init(new ECKeyGenerationParameters(params, new SecureRandom()));
+
+        EphemeralKeyPairGenerator ephKeyGen = new EphemeralKeyPairGenerator(gen, new KeyEncoder()
+        {
+            public byte[] getEncoded(AsymmetricKeyParameter keyParameter)
+            {
+                return ((ECPublicKeyParameters)keyParameter).getQ().getEncoded(false);
+            }
+        });
+
+        i1.init(p2.getPublic(), p, ephKeyGen);
+        i2.init(p2.getPrivate(), p, new ECIESPublicKeyParser(params));
+
+        out1 = i1.processBlock(message, 0, message.length);
+
+        out2 = i2.processBlock(out1, 0, out1.length);
+
+        if (!areEqual(out2, message))
+        {
+            fail("V cipher test failed");
+        }
+
+        try
+        {
+            i2.processBlock(out1, 0, out1.length - 1);
+            fail("no exception");
+        }
+        catch (InvalidCipherTextException ex)
+        {
+            if (!"Length of input must be greater than the MAC and V combined".equals(ex.getMessage()))
+            {
+                fail("wrong exception");
+            }
         }
     }
 
@@ -341,6 +451,7 @@ public class ECIESTest
     {
         doStaticTest(null);
         doStaticTest(TWOFISH_IV);
+        doShortTest(null);
 
         BigInteger n = new BigInteger("6277101735386680763835789423176059013767194773182842284081");
 

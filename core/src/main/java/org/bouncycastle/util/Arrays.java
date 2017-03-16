@@ -103,6 +103,36 @@ public final class Arrays
         return true;
     }
 
+    public static boolean areEqual(
+        short[]  a,
+        short[]  b)
+    {
+        if (a == b)
+        {
+            return true;
+        }
+
+        if (a == null || b == null)
+        {
+            return false;
+        }
+
+        if (a.length != b.length)
+        {
+            return false;
+        }
+
+        for (int i = 0; i != a.length; i++)
+        {
+            if (a[i] != b[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /**
      * A constant time equals comparison - does not terminate early if
      * test will fail.
@@ -230,6 +260,44 @@ public final class Arrays
             }
         }
         return true;
+    }
+
+    public static int compareUnsigned(byte[] a, byte[] b)
+    {
+        if (a == b)
+        {
+            return 0;
+        }
+        if (a == null)
+        {
+            return -1;
+        }
+        if (b == null)
+        {
+            return 1;
+        }
+        int minLen = Math.min(a.length, b.length);
+        for (int i = 0; i < minLen; ++i)
+        {
+            int aVal = a[i] & 0xFF, bVal = b[i] & 0xFF;
+            if (aVal < bVal)
+            {
+                return -1;
+            }
+            if (aVal > bVal)
+            {
+                return 1;
+            }
+        }
+        if (a.length < b.length)
+        {
+            return -1;
+        }
+        if (a.length > b.length)
+        {
+            return 1;
+        }
+        return 0;
     }
 
     public static boolean contains(short[] a, short n)
@@ -876,6 +944,22 @@ public final class Arrays
         return result;
     }
 
+    public static String[] append(String[] a, String b)
+    {
+        if (a == null)
+        {
+            return new String[]{ b };
+        }
+
+        int length = a.length;
+        String[] result = new String[length + 1];
+        System.arraycopy(a, 0, result, 0, length);
+        result[length] = b;
+        return result;
+    }
+
+
+
     public static byte[] concatenate(byte[] a, byte[] b)
     {
         if (a != null && b != null)
@@ -908,6 +992,10 @@ public final class Arrays
             System.arraycopy(c, 0, rv, a.length + b.length, c.length);
 
             return rv;
+        }
+        else if (a == null)
+        {
+            return concatenate(b, c);
         }
         else if (b == null)
         {
@@ -948,6 +1036,26 @@ public final class Arrays
         {
             return concatenate(b, c, d);
         }
+    }
+
+    public static byte[] concatenate(byte[][] arrays)
+    {
+        int size = 0;
+        for (int i = 0; i != arrays.length; i++)
+        {
+            size += arrays[i].length;
+        }
+
+        byte[] rv = new byte[size];
+
+        int offSet = 0;
+        for (int i = 0; i != arrays.length; i++)
+        {
+            System.arraycopy(arrays[i], 0, rv, offSet, arrays[i].length);
+            offSet += arrays[i].length;
+        }
+
+        return rv;
     }
 
     public static int[] concatenate(int[] a, int[] b)

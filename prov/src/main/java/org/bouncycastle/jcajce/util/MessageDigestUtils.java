@@ -34,6 +34,10 @@ public class MessageDigestUtils
         digestOidMap.put(CryptoProObjectIdentifiers.gostR3411, "GOST3411");
         digestOidMap.put(GNUObjectIdentifiers.Tiger_192, "Tiger");
         digestOidMap.put(ISOIECObjectIdentifiers.whirlpool, "Whirlpool");
+        digestOidMap.put(NISTObjectIdentifiers.id_sha3_224, "SHA3-224");
+        digestOidMap.put(NISTObjectIdentifiers.id_sha3_256, "SHA3-256");
+        digestOidMap.put(NISTObjectIdentifiers.id_sha3_384, "SHA3-384");
+        digestOidMap.put(NISTObjectIdentifiers.id_sha3_512, "SHA3-512");
     }
 
     /**

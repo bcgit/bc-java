@@ -9,7 +9,6 @@ import javax.crypto.CipherOutputStream;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.PBEParameterSpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -115,7 +114,7 @@ public class JcePKCSPBEOutputEncryptorBuilder
 
         try
         {
-            if (algorithm.on(PKCSObjectIdentifiers.pkcs_12PbeIds))
+            if (isPKCS12(algorithm))
             {
                 cipher = helper.createCipher(algorithm.getId());
 
@@ -160,11 +159,11 @@ public class JcePKCSPBEOutputEncryptorBuilder
                 {
                     if (isPKCS12(encryptionAlg.getAlgorithm()))
                     {
-                        return new GenericKey(encryptionAlg, PKCS5PasswordToBytes(password));
+                        return new GenericKey(encryptionAlg, PKCS12PasswordToBytes(password));
                     }
                     else
                     {
-                        return new GenericKey(encryptionAlg, PKCS12PasswordToBytes(password));
+                        return new GenericKey(encryptionAlg, PKCS5PasswordToBytes(password));
                     }
                 }
             };

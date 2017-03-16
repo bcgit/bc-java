@@ -24,15 +24,19 @@ public class BCDSAPublicKey
     implements DSAPublicKey
 {
     private static final long serialVersionUID = 1752452449903495175L;
+    private static BigInteger ZERO = BigInteger.valueOf(0);
 
     private BigInteger      y;
-    private transient DSAParams       dsaSpec;
+
+    private transient DSAPublicKeyParameters lwKeyParams;
+    private transient DSAParams              dsaSpec;
 
     BCDSAPublicKey(
         DSAPublicKeySpec spec)
     {
         this.y = spec.getY();
         this.dsaSpec = new DSAParameterSpec(spec.getP(), spec.getQ(), spec.getG());
+        this.lwKeyParams = new DSAPublicKeyParameters(y, DSAUtil.toDSAParameters(dsaSpec));
     }
 
     BCDSAPublicKey(
@@ -40,27 +44,27 @@ public class BCDSAPublicKey
     {
         this.y = key.getY();
         this.dsaSpec = key.getParams();
+        this.lwKeyParams = new DSAPublicKeyParameters(y, DSAUtil.toDSAParameters(dsaSpec));
     }
 
     BCDSAPublicKey(
         DSAPublicKeyParameters params)
     {
         this.y = params.getY();
-        this.dsaSpec = new DSAParameterSpec(params.getParameters().getP(), params.getParameters().getQ(), params.getParameters().getG());
-    }
-
-    BCDSAPublicKey(
-        BigInteger y,
-        DSAParameterSpec dsaSpec)
-    {
-        this.y = y;
-        this.dsaSpec = dsaSpec;
+        if (params != null)
+        {
+            this.dsaSpec = new DSAParameterSpec(params.getParameters().getP(), params.getParameters().getQ(), params.getParameters().getG());
+        }
+        else
+        {
+            this.dsaSpec = null;
+        }
+        this.lwKeyParams = params;
     }
 
     public BCDSAPublicKey(
         SubjectPublicKeyInfo info)
     {
-
         ASN1Integer              derY;
 
         try
@@ -80,6 +84,12 @@ public class BCDSAPublicKey
             
             this.dsaSpec = new DSAParameterSpec(params.getP(), params.getQ(), params.getG());
         }
+        else
+        {
+            this.dsaSpec = null;
+        }
+
+        this.lwKeyParams = new DSAPublicKeyParameters(y, DSAUtil.toDSAParameters(dsaSpec));
     }
 
     private boolean isNotNull(ASN1Encodable parameters)
@@ -95,6 +105,11 @@ public class BCDSAPublicKey
     public String getFormat()
     {
         return "X.509";
+    }
+
+    DSAPublicKeyParameters engineGetKeyParameters()
+    {
+        return lwKeyParams;
     }
 
     public byte[] getEncoded()
@@ -130,8 +145,15 @@ public class BCDSAPublicKey
 
     public int hashCode()
     {
-        return this.getY().hashCode() ^ this.getParams().getG().hashCode() 
+        if (dsaSpec != null)
+        {
+            return this.getY().hashCode() ^ this.getParams().getG().hashCode()
                 ^ this.getParams().getP().hashCode() ^ this.getParams().getQ().hashCode();
+        }
+        else
+        {
+            return this.getY().hashCode();
+        }
     }
 
     public boolean equals(
@@ -143,11 +165,19 @@ public class BCDSAPublicKey
         }
         
         DSAPublicKey other = (DSAPublicKey)o;
-        
-        return this.getY().equals(other.getY()) 
-            && this.getParams().getG().equals(other.getParams().getG()) 
-            && this.getParams().getP().equals(other.getParams().getP()) 
-            && this.getParams().getQ().equals(other.getParams().getQ());
+
+        if (this.dsaSpec != null)
+        {
+            return this.getY().equals(other.getY())
+                && other.getParams() != null
+                && this.getParams().getG().equals(other.getParams().getG())
+                && this.getParams().getP().equals(other.getParams().getP())
+                && this.getParams().getQ().equals(other.getParams().getQ());
+        }
+        else
+        {
+            return this.getY().equals(other.getY()) && other.getParams() == null;
+        }
     }
 
     private void readObject(
@@ -156,7 +186,16 @@ public class BCDSAPublicKey
     {
         in.defaultReadObject();
 
-        this.dsaSpec = new DSAParameterSpec((BigInteger)in.readObject(), (BigInteger)in.readObject(), (BigInteger)in.readObject());
+        BigInteger p = (BigInteger)in.readObject();
+        if (p.equals(ZERO))
+        {
+            this.dsaSpec = null;
+        }
+        else
+        {
+            this.dsaSpec = new DSAParameterSpec(p, (BigInteger)in.readObject(), (BigInteger)in.readObject());
+        }
+        this.lwKeyParams = new DSAPublicKeyParameters(y, DSAUtil.toDSAParameters(dsaSpec));
     }
 
     private void writeObject(
@@ -165,8 +204,15 @@ public class BCDSAPublicKey
     {
         out.defaultWriteObject();
 
-        out.writeObject(dsaSpec.getP());
-        out.writeObject(dsaSpec.getQ());
-        out.writeObject(dsaSpec.getG());
+        if (dsaSpec == null)
+        {
+            out.writeObject(ZERO);
+        }
+        else
+        {
+            out.writeObject(dsaSpec.getP());
+            out.writeObject(dsaSpec.getQ());
+            out.writeObject(dsaSpec.getG());
+        }
     }
 }

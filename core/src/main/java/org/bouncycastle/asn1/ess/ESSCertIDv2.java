@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.IssuerSerial;
+import org.bouncycastle.util.Arrays;
 
 public class ESSCertIDv2
     extends ASN1Object
@@ -97,7 +98,7 @@ public class ESSCertIDv2
             this.hashAlgorithm = algId;
         }
 
-        this.certHash = certHash;
+        this.certHash = Arrays.clone(certHash);
         this.issuerSerial = issuerSerial;
     }
 
@@ -108,7 +109,7 @@ public class ESSCertIDv2
 
     public byte[] getCertHash()
     {
-        return certHash;
+        return Arrays.clone(certHash);
     }
 
     public IssuerSerial getIssuerSerial()

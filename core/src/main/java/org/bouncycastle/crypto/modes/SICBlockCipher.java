@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.SkippingStreamCipher;
 import org.bouncycastle.crypto.StreamBlockCipher;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -18,7 +19,7 @@ public class SICBlockCipher
 {
     private final BlockCipher     cipher;
     private final int             blockSize;
-    
+
     private byte[]          IV;
     private byte[]          counter;
     private byte[]          counterOut;
@@ -49,8 +50,19 @@ public class SICBlockCipher
         if (params instanceof ParametersWithIV)
         {
             ParametersWithIV ivParam = (ParametersWithIV)params;
-            byte[] iv = ivParam.getIV();
-            System.arraycopy(iv, 0, IV, 0, IV.length);
+            this.IV = Arrays.clone(ivParam.getIV());
+
+            if (blockSize < IV.length)
+            {
+                throw new IllegalArgumentException("CTR/SIC mode requires IV no greater than: " + blockSize + " bytes.");
+            }
+
+            int maxCounterSize = (8 > blockSize / 2) ? blockSize / 2 : 8;
+
+            if (blockSize - IV.length > maxCounterSize)
+            {
+                throw new IllegalArgumentException("CTR/SIC mode requires IV of at least: " + (blockSize - maxCounterSize) + " bytes.");
+            }
 
             // if null it's an IV changed only.
             if (ivParam.getParameters() != null)
@@ -62,7 +74,7 @@ public class SICBlockCipher
         }
         else
         {
-            throw new IllegalArgumentException("SIC mode requires ParametersWithIV");
+            throw new IllegalArgumentException("CTR/SIC mode requires ParametersWithIV");
         }
     }
 
@@ -100,18 +112,38 @@ public class SICBlockCipher
         {
             byteCount = 0;
 
-            incrementCounter();
+            incrementCounterAt(0);
+
+            checkCounter();
         }
 
         return rv;
     }
 
-    private void incrementCounterPow2(int pow2Div8)
+    private void checkCounter()
     {
-        // increment counter by 1 << 8 * pow2Div8
-        for (int i = counter.length - (1 + pow2Div8); i >= 0 && ++counter[i] == 0; i--)
+        // if the IV is the same as the blocksize we assume the user knows what they are doing
+        if (IV.length < blockSize)
         {
-            ; // do nothing - pre-increment and test for 0 in counter does the job.
+            for (int i = 0; i != IV.length; i++)
+            {
+                if (counter[i] != IV[i])
+                {
+                    throw new IllegalStateException("Counter in CTR/SIC mode out of range.");
+                }
+            }
+        }
+    }
+
+    private void incrementCounterAt(int pos)
+    {
+        int i = counter.length - pos;
+        while (--i >= 0)
+        {
+            if (++counter[i] != 0)
+            {
+                break;
+            }
         }
     }
 
@@ -123,70 +155,19 @@ public class SICBlockCipher
 
         if (old != 0 && counter[counter.length - 1] < old)
         {
-            incrementCounterPow2(1);
+            incrementCounterAt(1);
         }
     }
 
-    private void incrementCounter()
+    private void decrementCounterAt(int pos)
     {
-        // increment counter by 1.
-        for (int i = counter.length - 1; i >= 0 && ++counter[i] == 0; i--)
+        int i = counter.length - pos;
+        while (--i >= 0)
         {
-            ; // do nothing - pre-increment and test for 0 in counter does the job.
-        }
-    }
-
-    private void decrementCounterPow2(int pow2Div8)
-    {
-        if (counter[pow2Div8] == 0)
-        {
-            boolean nonZero = false;
-
-            for (int i = counter.length - (1 + pow2Div8); i > 0; i--)
+            if (--counter[i] != -1)
             {
-                if (counter[i] != 0)
-                {
-                    nonZero = true;
-                }
+                return;
             }
-
-            if (!nonZero)
-            {
-                throw new IllegalStateException("attempt to reduce counter past zero.");
-            }
-        }
-
-        // decrement counter by 1.
-        for (int i = counter.length - (1 + pow2Div8); i >= 0 && --counter[i] == -1; i--)
-        {
-            ;
-        }
-    }
-
-    private void decrementCounter()
-    {
-        if (counter[0] == 0)
-        {
-            boolean nonZero = false;
-
-            for (int i = counter.length - 1; i > 0; i--)
-            {
-                if (counter[i] != 0)
-                {
-                    nonZero = true;
-                }
-            }
-
-            if (!nonZero)
-            {
-                throw new IllegalStateException("attempt to reduce counter past zero.");
-            }
-        }
-
-        // decrement counter by 1.
-        for (int i = counter.length - 1; i >= 0 && --counter[i] == -1; i--)
-        {
-            ;
         }
     }
 
@@ -196,28 +177,21 @@ public class SICBlockCipher
         {
             long numBlocks = (n + byteCount) / blockSize;
 
-            if (numBlocks > 255)
+            long rem = numBlocks;
+            if (rem > 255)
             {
-                long gap = numBlocks;
-
                 for (int i = 5; i >= 1; i--)
                 {
                     long diff = 1L << (8 * i);
-
-                    while (gap >= diff)
+                    while (rem >= diff)
                     {
-                        incrementCounterPow2(i);
-
-                        gap -= diff;
+                        incrementCounterAt(i);
+                        rem -= diff;
                     }
                 }
+            }
 
-                incrementCounter((int)gap);
-            }
-            else
-            {
-                incrementCounter((int)numBlocks);
-            }
+            incrementCounter((int)rem);
 
             byteCount = (int)((n + byteCount) - (blockSize * numBlocks));
         }
@@ -225,33 +199,23 @@ public class SICBlockCipher
         {
             long numBlocks = (-n - byteCount) / blockSize;
 
-            if (numBlocks > 255)
+            long rem = numBlocks;
+            if (rem > 255)
             {
-                long gap = numBlocks;
-
                 for (int i = 5; i >= 1; i--)
                 {
                     long diff = 1L << (8 * i);
-
-                    while (gap > diff)
+                    while (rem > diff)
                     {
-                        decrementCounterPow2(i);
-
-                        gap -= diff;
+                        decrementCounterAt(i);
+                        rem -= diff;
                     }
                 }
-
-                for (long i = 0; i != gap; i++)
-                {
-                    decrementCounter();
-                }
             }
-            else
+
+            for (long i = 0; i != rem; i++)
             {
-                for (long i = 0; i != numBlocks; i++)
-                {
-                    decrementCounter();
-                }
+                decrementCounterAt(0);
             }
 
             int gap = (int)(byteCount + n + (blockSize * numBlocks));
@@ -262,7 +226,7 @@ public class SICBlockCipher
             }
             else
             {
-                decrementCounter();
+                decrementCounterAt(0);
                 byteCount =  blockSize + gap;
             }
         }
@@ -270,7 +234,8 @@ public class SICBlockCipher
 
     public void reset()
     {
-        System.arraycopy(IV, 0, counter, 0, counter.length);
+        Arrays.fill(counter, (byte)0);
+        System.arraycopy(IV, 0, counter, 0, IV.length);
         cipher.reset();
         this.byteCount = 0;
     }
@@ -278,6 +243,8 @@ public class SICBlockCipher
     public long skip(long numberOfBytes)
     {
         adjustCounter(numberOfBytes);
+
+        checkCounter();
 
         cipher.processBlock(counter, 0, counterOut, 0);
 
@@ -293,13 +260,21 @@ public class SICBlockCipher
 
     public long getPosition()
     {
-        byte[] res = new byte[IV.length];
+        byte[] res = new byte[counter.length];
 
         System.arraycopy(counter, 0, res, 0, res.length);
 
         for (int i = res.length - 1; i >= 1; i--)
         {
-            int v = (res[i] & 0xff) - (IV[i] & 0xff);
+            int v;
+            if (i < IV.length)
+            {
+                v = (res[i] & 0xff) - (IV[i] & 0xff);
+            }
+            else
+            {
+                v = (res[i] & 0xff);
+            }
 
             if (v < 0)
             {

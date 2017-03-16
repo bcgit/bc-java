@@ -1,6 +1,7 @@
 package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -10,9 +11,12 @@ import java.util.Iterator;
 
 import javax.crypto.Cipher;
 
+import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
 import org.bouncycastle.openpgp.PGPEncryptedData;
@@ -1536,7 +1540,47 @@ public class PGPKeyRingTest
             fail("wrong number of secret keyrings");
         }
     }
-    
+
+    public void shouldStripPreserveTrustPackets()
+        throws Exception
+    {
+        JcaPGPPublicKeyRingCollection pubRings = new JcaPGPPublicKeyRingCollection(pub2);
+
+        for (Iterator it = pubRings.getKeyRings(); it.hasNext();)
+        {
+            PGPPublicKeyRing pubRing = (PGPPublicKeyRing)it.next();
+
+            byte[] enc = pubRing.getEncoded(true);
+
+            if (trustPackets(enc) != 0)
+            {
+                fail("trust packet found");
+            }
+        }
+
+        byte[] ring = pubRings.getEncoded();
+
+        isTrue("trust packets missing", trustPackets(ring) == 10);
+    }
+
+    private int trustPackets(byte[] enc)
+        throws IOException
+    {
+        BCPGInputStream bIn = new BCPGInputStream(new ByteArrayInputStream(enc));
+
+        Packet packet;
+        int count = 0;
+        while ((packet = bIn.readPacket()) != null)
+        {
+            if (packet instanceof TrustPacket)
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
     public void test3()
         throws Exception
     {
@@ -2161,6 +2205,55 @@ public class PGPKeyRingTest
                 }
             }
         }
+
+        PGPSignature masterSig = null;
+        Iterator kIt = pubRing.getKeysWithSignaturesBy(vKey.getKeyID());
+        if (kIt.hasNext())
+        {
+            while (kIt.hasNext())
+            {
+                PGPPublicKey pub = (PGPPublicKey)kIt.next();
+
+                if (pub.isMasterKey())
+                {
+                    Iterator sigIt = pub.getSignaturesForKeyID(vKey.getKeyID());
+
+                    PGPSignature sig = (PGPSignature)sigIt.next();
+
+                    if (sig.getSignatureType() != PGPSignature.POSITIVE_CERTIFICATION || sigIt.hasNext())
+                    {
+                        fail("master sig check failed");
+                    }
+                    masterSig = sig;
+                }
+                else
+                {
+                    Iterator sigIt = pub.getSignaturesForKeyID(vKey.getKeyID());
+
+                    PGPSignature sig = (PGPSignature)sigIt.next();
+
+                    if (sig.getSignatureType() != PGPSignature.SUBKEY_BINDING || sigIt.hasNext())
+                    {
+                        fail("sub sig check failed");
+                    }
+                }
+            }
+        }
+        else
+        {
+            fail("no keys found in iterator");
+        }
+
+        // try remove certification by sig.
+        PGPPublicKey editedKey = PGPPublicKey.removeCertification(vKey, masterSig);
+
+        for (it = editedKey.getSignatures(); it.hasNext();)
+        {
+              if (masterSig.equals(it.next()))
+              {
+                  fail("signature found");
+              }
+        }
     }
 
     private void insertMasterTest()
@@ -2761,6 +2854,7 @@ public class PGPKeyRingTest
             testUmlaut();
             testBadUserID();
             testNoExportPrivateKey();
+            shouldStripPreserveTrustPackets();
         }
         catch (PGPException e)
         {

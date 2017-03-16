@@ -12,7 +12,6 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
-import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.Certificate;
@@ -20,27 +19,30 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.jcajce.util.AlgorithmParametersUtils;
-import org.bouncycastle.util.Strings;
 
 class CMSUtils
 {
     private static final Set mqvAlgs = new HashSet();
-    private static final Set<String> des = new HashSet<String>();
+    private static final Set ecAlgs = new HashSet();
 
     static
     {
-        des.add("DES");
-        des.add("DESEDE");
-        des.add(OIWObjectIdentifiers.desCBC.getId());
-        des.add(PKCSObjectIdentifiers.des_EDE3_CBC.getId());
-        des.add(PKCSObjectIdentifiers.des_EDE3_CBC.getId());
-        des.add(PKCSObjectIdentifiers.id_alg_CMS3DESwrap.getId());
-
         mqvAlgs.add(X9ObjectIdentifiers.mqvSinglePass_sha1kdf_scheme);
         mqvAlgs.add(SECObjectIdentifiers.mqvSinglePass_sha224kdf_scheme);
         mqvAlgs.add(SECObjectIdentifiers.mqvSinglePass_sha256kdf_scheme);
         mqvAlgs.add(SECObjectIdentifiers.mqvSinglePass_sha384kdf_scheme);
         mqvAlgs.add(SECObjectIdentifiers.mqvSinglePass_sha512kdf_scheme);
+
+        ecAlgs.add(X9ObjectIdentifiers.dhSinglePass_cofactorDH_sha1kdf_scheme);
+        ecAlgs.add(X9ObjectIdentifiers.dhSinglePass_stdDH_sha1kdf_scheme);
+        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_cofactorDH_sha224kdf_scheme);
+        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_stdDH_sha224kdf_scheme);
+        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_cofactorDH_sha256kdf_scheme);
+        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_stdDH_sha256kdf_scheme);
+        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_cofactorDH_sha384kdf_scheme);
+        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_stdDH_sha384kdf_scheme);
+        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_cofactorDH_sha512kdf_scheme);
+        ecAlgs.add(SECObjectIdentifiers.dhSinglePass_stdDH_sha512kdf_scheme);
     }
 
     static boolean isMQV(ASN1ObjectIdentifier algorithm)
@@ -48,11 +50,14 @@ class CMSUtils
         return mqvAlgs.contains(algorithm);
     }
 
-    static boolean isDES(String algorithmID)
+    static boolean isEC(ASN1ObjectIdentifier algorithm)
     {
-        String name = Strings.toUpperCase(algorithmID);
+        return ecAlgs.contains(algorithm);
+    }
 
-        return des.contains(name);
+    static boolean isRFC2631(ASN1ObjectIdentifier algorithm)
+    {
+        return algorithm.equals(PKCSObjectIdentifiers.id_alg_ESDH) || algorithm.equals(PKCSObjectIdentifiers.id_alg_SSDH);
     }
 
     static IssuerAndSerialNumber getIssuerAndSerialNumber(X509Certificate cert)
@@ -62,7 +67,6 @@ class CMSUtils
 
         return new IssuerAndSerialNumber(certStruct.getIssuer(), cert.getSerialNumber());
     }
-
 
     static byte[] getSubjectKeyId(X509Certificate cert)
     {

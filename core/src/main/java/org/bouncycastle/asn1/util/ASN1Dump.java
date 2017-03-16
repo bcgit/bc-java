@@ -3,6 +3,7 @@ package org.bouncycastle.asn1.util;
 import java.io.IOException;
 import java.util.Enumeration;
 
+import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Enumerated;
@@ -25,16 +26,21 @@ import org.bouncycastle.asn1.DERApplicationSpecific;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERExternal;
+import org.bouncycastle.asn1.DERGraphicString;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERT61String;
 import org.bouncycastle.asn1.DERUTF8String;
+import org.bouncycastle.asn1.DERVideotexString;
 import org.bouncycastle.asn1.DERVisibleString;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
+/**
+ * Utility class for dumping ASN.1 objects as (hopefully) human friendly strings.
+ */
 public class ASN1Dump
 {
     private static final String  TAB = "    ";
@@ -238,6 +244,14 @@ public class ASN1Dump
         {
             buf.append(indent + "T61String(" + ((DERT61String)obj).getString() + ") " + nl);
         }
+        else if (obj instanceof DERGraphicString)
+        {
+            buf.append(indent + "GraphicString(" + ((DERGraphicString)obj).getString() + ") " + nl);
+        }
+        else if (obj instanceof DERVideotexString)
+        {
+            buf.append(indent + "VideotexString(" + ((DERVideotexString)obj).getString() + ") " + nl);
+        }
         else if (obj instanceof ASN1UTCTime)
         {
             buf.append(indent + "UTCTime(" + ((ASN1UTCTime)obj).getTime() + ") " + nl);
@@ -287,7 +301,7 @@ public class ASN1Dump
     
     private static String outputApplicationSpecific(String type, String indent, boolean verbose, ASN1Primitive obj, String nl)
     {
-        DERApplicationSpecific app = (DERApplicationSpecific)obj;
+        ASN1ApplicationSpecific app = ASN1ApplicationSpecific.getInstance(obj);
         StringBuffer buf = new StringBuffer();
 
         if (app.isConstructed())
@@ -308,7 +322,7 @@ public class ASN1Dump
             return buf.toString();
         }
 
-        return indent + type + " ApplicationSpecific[" + app.getApplicationTag() + "] (" + new String(Hex.encode(app.getContents())) + ")" + nl;
+        return indent + type + " ApplicationSpecific[" + app.getApplicationTag() + "] (" + Strings.fromByteArray(Hex.encode(app.getContents())) + ")" + nl;
     }
 
     /**
@@ -365,7 +379,7 @@ public class ASN1Dump
             if (bytes.length - i > SAMPLE_SIZE)
             {
                 buf.append(indent);
-                buf.append(new String(Hex.encode(bytes, i, SAMPLE_SIZE)));
+                buf.append(Strings.fromByteArray(Hex.encode(bytes, i, SAMPLE_SIZE)));
                 buf.append(TAB);
                 buf.append(calculateAscString(bytes, i, SAMPLE_SIZE));
                 buf.append(nl);
@@ -373,7 +387,7 @@ public class ASN1Dump
             else
             {
                 buf.append(indent);
-                buf.append(new String(Hex.encode(bytes, i, bytes.length - i)));
+                buf.append(Strings.fromByteArray(Hex.encode(bytes, i, bytes.length - i)));
                 for (int j = bytes.length - i; j != SAMPLE_SIZE; j++)
                 {
                     buf.append("  ");

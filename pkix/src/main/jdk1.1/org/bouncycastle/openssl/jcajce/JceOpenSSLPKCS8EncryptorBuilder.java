@@ -5,18 +5,12 @@ import java.io.OutputStream;
 import java.security.AlgorithmParameterGenerator;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.InvalidKeyException;
 import java.security.Provider;
 import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
 import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.PBEParameterSpec;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -31,6 +25,7 @@ import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -64,7 +59,6 @@ public class JceOpenSSLPKCS8EncryptorBuilder
     private Cipher cipher;
     private SecureRandom random;
     private AlgorithmParameterGenerator paramGen;
-    private SecretKeyFactory secKeyFact;
     private char[] password;
 
     private SecretKey key;
@@ -133,20 +127,8 @@ public class JceOpenSSLPKCS8EncryptorBuilder
             {
                 this.paramGen = helper.createAlgorithmParameterGenerator(algOID.getId());
             }
-            else
-            {
-                this.secKeyFact = helper.createSecretKeyFactory(algOID.getId());
-            }
         }
-        catch (NoSuchAlgorithmException e)
-        {
-            throw new OperatorCreationException(algOID + " not available: " + e.getMessage(), e);
-        }
-        catch (NoSuchProviderException e)
-        {
-            throw new OperatorCreationException(algOID + " not available: " + e.getMessage(), e);
-        }
-        catch (GeneralSecurityException e)
+        catch (Exception e)
         {
             throw new OperatorCreationException(algOID + " not available: " + e.getMessage(), e);
         }
@@ -172,17 +154,13 @@ public class JceOpenSSLPKCS8EncryptorBuilder
                 throw new OperatorCreationException(e.getMessage(), e);
             }
 
-            key = PEMUtilities.generateSecretKeyForPKCS5Scheme2(helper, algOID.getId(), password, salt, iterationCount);
-
             try
             {
+                key = PEMUtilities.generateSecretKeyForPKCS5Scheme2(helper, algOID.getId(), password, salt, iterationCount);
+
                 cipher.init(Cipher.ENCRYPT_MODE, key, params);
             }
-            catch (InvalidKeyException e)
-            {
-                throw new OperatorCreationException(e.getMessage(), e);
-            }
-            catch (GeneralSecurityException e)
+            catch (Exception e)
             {
                 throw new OperatorCreationException(e.getMessage(), e);
             }
@@ -198,18 +176,9 @@ public class JceOpenSSLPKCS8EncryptorBuilder
 
             try
             {
-                PBEKeySpec pbeSpec = new PBEKeySpec(password);
-                PBEParameterSpec defParams = new PBEParameterSpec(salt, iterationCount);
-
-                key = secKeyFact.generateSecret(pbeSpec);
-
-                cipher.init(Cipher.ENCRYPT_MODE, key, defParams);
+                cipher.init(Cipher.ENCRYPT_MODE, new PKCS12KeyWithParameters(password, salt, iterationCount));
             }
-            catch (InvalidKeyException e)
-            {
-                throw new OperatorCreationException(e.getMessage(), e);
-            }
-            catch (GeneralSecurityException e)
+            catch (Exception e)
             {
                 throw new OperatorCreationException(e.getMessage(), e);
             }

@@ -1,5 +1,6 @@
 package org.bouncycastle.jce.provider.test;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -21,7 +22,9 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -1101,6 +1104,31 @@ public class CertTest
             "AGfsxfTyldQDEOVzD/Uq8Xh4gIHuSqki9mRSjMR19MQtTKRmI9TRHIeTdIZ6l3P7" +
             "jFfGJvTP0E9NYSolx+kM");
 
+    private final byte[] sha3Cert = Base64.decode(
+        "MIID8jCCAqagAwIBAgIICfBykpzUT+IwQQYJKoZIhvcNAQEKMDSgDzANBglg"
+      + "hkgBZQMEAggFAKEcMBoGCSqGSIb3DQEBCDANBglghkgBZQMEAggFAKIDAgEg"
+      + "MCwxCzAJBgNVBAYTAkRFMQ4wDAYDVQQKDAV4aXBraTENMAsGA1UEAwwEUkNB"
+      + "MTAeFw0xNjEwMTgxODQzMjhaFw0yNjEwMTgxODQzMjdaMCwxCzAJBgNVBAYT"
+      + "AkRFMQ4wDAYDVQQKDAV4aXBraTENMAsGA1UEAwwEUkNBMTCCASIwDQYJKoZI"
+      + "hvcNAQEBBQADggEPADCCAQoCggEBAK/pzm1RASDYDg3WBXyW3AnAESRF/+li"
+      + "qh0X8Y89m+JFJeOi1u89bOSPjsFfo5SbRSElyRXedh/d37KrONg39NEKIcC6"
+      + "iSuiNfXu0D6nlSzhrQzmvHIyfLnm8N2JtHDr/hZIprOcFO+lZTJIjjrOVe9y"
+      + "lFGgGDd/uQCEJk1Cmi5Ivi9odeiN3z8lVlGNeN9/Q5n47ijuYWr73z/FyyAK"
+      + "gAG3B5nhAYWs4ft0O3JWBc0QJZzShqsRjm3SNhAqMDnRoTq04PFgbDYizV8T"
+      + "ydz2kCne79TDwsY4MckYYaGoNcPoQXVS+9YjQjI72ktSlxiJxodL9WMFl+ED"
+      + "5ZLBRIRsDJECAwEAAaOBrzCBrDAPBgNVHRMBAf8EBTADAQH/MGoGCCsGAQUF"
+      + "BwEBBF4wXDAnBggrBgEFBQcwAoYbaHR0cDovL2V4YW1wbGUub3JnL1JDQTEu"
+      + "ZGVyMDEGCCsGAQUFBzABhiVodHRwOi8vbG9jYWxob3N0OjgwODAvb2NzcC9y"
+      + "ZXNwb25kZXIxMB0GA1UdDgQWBBRTXKdJI3P1kveLlRxPvzUfDnC8JjAOBgNV"
+      + "HQ8BAf8EBAMCAQYwQQYJKoZIhvcNAQEKMDSgDzANBglghkgBZQMEAggFAKEc"
+      + "MBoGCSqGSIb3DQEBCDANBglghkgBZQMEAggFAKIDAgEgA4IBAQCpSVaqOMKz"
+      + "6NT0+mivEhig9cKsglFhnWStKUtdhrG4HqOf6Qjny9Xvq1nE7x8e2xAoaZLd"
+      + "GMsNAWFCbwzoJrDL7Ct6itQ5ymxi2haN+Urc5UWJd/8C0R74OdP1uPCiljZ9"
+      + "DdjbNk/hS36UPYi+FT5r6Jr/1X/EqgL1MOUsSTEXdYlZH662zjbV4D9QSBzx"
+      + "ul9bYyWrqSZFKvKef4UQwUy8yXtChwiwp50mfJQBdVcIqPBYCgmLYclamjQx"
+      + "hlkk5VbZb4D/Cv4HxrdxpJfy/ewUZR7uHlzDx0/m4qjzNzWgq+sh3ZbveDrV"
+      + "wd/FDMFOxSIno9qgHtdfgXRwZJ+l07fF");
+
     private final String ecPemCert =
         "-----BEGIN CERTIFICATE-----\n" +
             "MIIB/jCCAYWgAwIBAgIIdJclisc/elQwCgYIKoZIzj0EAwMwRTELMAkGA1UEBhMC\n" +
@@ -1587,6 +1615,74 @@ public class CertTest
         }
     }
 
+    private void pemFileTest()
+        throws Exception
+    {
+        CertificateFactory certFact = CertificateFactory.getInstance("X.509", "BC");
+
+        Collection<Certificate> certs1 = (Collection<Certificate>)certFact.generateCertificates(this.getClass().getResourceAsStream("cert_chain.txt"));
+
+        isTrue("certs wrong <cr><nl>", 2 == certs1.size());
+
+        BufferedInputStream in = new BufferedInputStream(this.getClass().getResourceAsStream("cert_chain.txt"));
+
+        Set certs2 = new HashSet();
+        while ((in.available() > 0))
+        {
+            Certificate c = certFact.generateCertificate(in);
+
+            // this isn't strictly correct with the way it's defined in the Java JavaDoc - need it for backward
+            // compatibility.
+            if (c != null)
+            {
+                certs2.add(c);
+            }
+        }
+
+        isTrue("certs size <cr><nl>", certs1.size() == certs2.size());
+
+        for (Iterator it = certs1.iterator(); it.hasNext();)
+        {
+            certs2.remove(it.next());
+        }
+
+        isTrue("collection not empty", certs2.isEmpty());
+    }
+
+    private void pemFileTestWithNl()
+        throws Exception
+    {
+        CertificateFactory certFact = CertificateFactory.getInstance("X.509", "BC");
+
+        Collection<Certificate> certs1 = (Collection<Certificate>)certFact.generateCertificates(this.getClass().getResourceAsStream("cert_chain_nl.txt"));
+
+        isTrue("certs wrong <nl>", 2 == certs1.size());
+
+        BufferedInputStream in = new BufferedInputStream(this.getClass().getResourceAsStream("cert_chain_nl.txt"));
+
+        Set certs2 = new HashSet();
+        while ((in.available() > 0))
+        {
+            Certificate c = certFact.generateCertificate(in);
+
+            // this isn't strictly correct with the way it's defined in the Java JavaDoc - need it for backward
+            // compatibility.
+            if (c != null)
+            {
+                certs2.add(c);
+            }
+        }
+
+        isTrue("certs size <nl>", certs1.size() == certs2.size());
+
+        for (Iterator it = certs1.iterator(); it.hasNext();)
+        {
+            certs2.remove(it.next());
+        }
+
+        isTrue("collection not empty", certs2.isEmpty());
+    }
+
     public void performTest()
         throws Exception
     {
@@ -1630,9 +1726,13 @@ public class CertTest
             }
         }
 
+        checkSelfSignedCertificate(23, sha3Cert, "SHA3-256withRSAandMGF1");
+
         checkCRL(1, crl1);
 
         pemTest();
+        pemFileTest();
+        pemFileTestWithNl();
         pkcs7Test();
         rfc4491Test();
         

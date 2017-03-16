@@ -42,6 +42,8 @@ then
 
     (cd $target;
         rm src/org/bouncycastle/crypto/test/AllTests.java
+        rm src/org/bouncycastle/crypto/test/SHA3DigestTest.java
+        rm src/org/bouncycastle/crypto/test/SHAKEDigestTest.java
         rm src/org/bouncycastle/util/StreamParser.java
         rm src/org/bouncycastle/util/StreamParsingException.java
         rm src/org/bouncycastle/asn1/util/Dump.java
@@ -61,6 +63,8 @@ then
         rm src/org/bouncycastle/asn1/test/Iso4217CurrencyCodeUnitTest.java
         rm src/org/bouncycastle/asn1/test/KeyUsageTest.java
         rm src/org/bouncycastle/asn1/test/LDSSecurityObjectUnitTest.java
+        rm -rf src/org/bouncycastle/math/raw/test
+        rm -rf src/org/bouncycastle/math/test
         rm -rf src/org/bouncycastle/pqc/math/ntru
         rm -rf src/org/bouncycastle/pqc/crypto/test/ntru
         rm -rf src/org/bouncycastle/pqc/crypto/*/NTRU*
@@ -111,6 +115,7 @@ then
         rm src/org/bouncycastle/cert/test/BcAttrCertSelectorTest.java
         rm src/org/bouncycastle/cert/test/CertPathLoopTest.java
         rm src/org/bouncycastle/cert/test/DANETest.java
+        rm src/org/bouncycastle/cert/test/X509ExtensionUtilsTest.java
         rm src/org/bouncycastle/crypto/test/BigSkippingCipherTest.java
         rm -r src/org/bouncycastle/util/utiltest
         rm -r src/org/bouncycastle/openpgp/examples
@@ -125,6 +130,7 @@ then
         rm -r src/org/bouncycastle/openssl
         rm -r src/org/bouncycastle/apache
         rm -r src/org/bouncycastle/voms
+        rm -r src/org/bouncycastle/math/ec/tools
         rm src/org/bouncycastle/mozilla/SignedPublicKeyAndChallenge.java
     )
 

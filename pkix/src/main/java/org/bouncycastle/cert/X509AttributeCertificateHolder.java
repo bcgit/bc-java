@@ -279,7 +279,7 @@ public class X509AttributeCertificateHolder
      */
     public byte[] getSignature()
     {
-        return attrCert.getSignatureValue().getBytes();
+        return attrCert.getSignatureValue().getOctets();
     }
 
     /**
@@ -340,7 +340,7 @@ public class X509AttributeCertificateHolder
             throw new CertException("unable to process signature: " + e.getMessage(), e);
         }
 
-        return verifier.verify(attrCert.getSignatureValue().getBytes());
+        return verifier.verify(this.getSignature());
     }
 
     public boolean equals(

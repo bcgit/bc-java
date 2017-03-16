@@ -1,7 +1,6 @@
 package org.bouncycastle.pqc.jcajce.provider.mceliece;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyFactorySpi;
@@ -12,26 +11,21 @@ import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
-import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.pqc.asn1.McElieceCCA2PrivateKey;
 import org.bouncycastle.pqc.asn1.McElieceCCA2PublicKey;
-import org.bouncycastle.pqc.jcajce.spec.McElieceCCA2PrivateKeySpec;
-import org.bouncycastle.pqc.jcajce.spec.McElieceCCA2PublicKeySpec;
+import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
+import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2PrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2PublicKeyParameters;
 
 /**
  * This class is used to translate between McEliece CCA2 keys and key
  * specifications.
  *
  * @see BCMcElieceCCA2PrivateKey
- * @see McElieceCCA2PrivateKeySpec
  * @see BCMcElieceCCA2PublicKey
- * @see McElieceCCA2PublicKeySpec
  */
 public class McElieceCCA2KeyFactorySpi
     extends KeyFactorySpi
@@ -45,22 +39,17 @@ public class McElieceCCA2KeyFactorySpi
     /**
      * Converts, if possible, a key specification into a
      * {@link BCMcElieceCCA2PublicKey}. Currently, the following key
-     * specifications are supported: {@link McElieceCCA2PublicKeySpec},
+     * specifications are supported:
      * {@link X509EncodedKeySpec}.
      *
      * @param keySpec the key specification
      * @return the McEliece CCA2 public key
      * @throws InvalidKeySpecException if the key specification is not supported.
      */
-    public PublicKey generatePublic(KeySpec keySpec)
+    protected PublicKey engineGeneratePublic(KeySpec keySpec)
         throws InvalidKeySpecException
     {
-        if (keySpec instanceof McElieceCCA2PublicKeySpec)
-        {
-            return new BCMcElieceCCA2PublicKey(
-                (McElieceCCA2PublicKeySpec)keySpec);
-        }
-        else if (keySpec instanceof X509EncodedKeySpec)
+        if (keySpec instanceof X509EncodedKeySpec)
         {
             // get the DER-encoded Key according to X.509 from the spec
             byte[] encKey = ((X509EncodedKeySpec)keySpec).getEncoded();
@@ -79,27 +68,16 @@ public class McElieceCCA2KeyFactorySpi
 
             try
             {
-                // --- Build and return the actual key.
-                ASN1Primitive innerType = pki.parsePublicKey();
-                ASN1Sequence publicKey = (ASN1Sequence)innerType;
+                if (PQCObjectIdentifiers.mcElieceCca2.equals(pki.getAlgorithm().getAlgorithm()))
+                {
+                    McElieceCCA2PublicKey key = McElieceCCA2PublicKey.getInstance(pki.parsePublicKey());
 
-                // decode oidString (but we don't need it right now)
-                String oidString = ((ASN1ObjectIdentifier)publicKey.getObjectAt(0))
-                    .toString();
-
-                // decode <n>
-                BigInteger bigN = ((ASN1Integer)publicKey.getObjectAt(1)).getValue();
-                int n = bigN.intValue();
-
-                // decode <t>
-                BigInteger bigT = ((ASN1Integer)publicKey.getObjectAt(2)).getValue();
-                int t = bigT.intValue();
-
-                // decode <matrixG>
-                byte[] matrixG = ((ASN1OctetString)publicKey.getObjectAt(3)).getOctets();
-
-                return new BCMcElieceCCA2PublicKey(new McElieceCCA2PublicKeySpec(
-                    OID, n, t, matrixG));
+                    return new BCMcElieceCCA2PublicKey(new McElieceCCA2PublicKeyParameters(key.getN(), key.getT(), key.getG(), Utils.getDigest(key.getDigest()).getAlgorithmName()));
+                }
+                else
+                {
+                    throw new InvalidKeySpecException("Unable to recognise OID in McEliece private key");
+                }
             }
             catch (IOException cce)
             {
@@ -116,22 +94,17 @@ public class McElieceCCA2KeyFactorySpi
     /**
      * Converts, if possible, a key specification into a
      * {@link BCMcElieceCCA2PrivateKey}. Currently, the following key
-     * specifications are supported: {@link McElieceCCA2PrivateKeySpec},
+     * specifications are supported:
      * {@link PKCS8EncodedKeySpec}.
      *
      * @param keySpec the key specification
      * @return the McEliece CCA2 private key
      * @throws InvalidKeySpecException if the KeySpec is not supported.
      */
-    public PrivateKey generatePrivate(KeySpec keySpec)
+    protected PrivateKey engineGeneratePrivate(KeySpec keySpec)
         throws InvalidKeySpecException
     {
-        if (keySpec instanceof McElieceCCA2PrivateKeySpec)
-        {
-            return new BCMcElieceCCA2PrivateKey(
-                (McElieceCCA2PrivateKeySpec)keySpec);
-        }
-        else if (keySpec instanceof PKCS8EncodedKeySpec)
+        if (keySpec instanceof PKCS8EncodedKeySpec)
         {
             // get the DER-encoded Key according to PKCS#8 from the spec
             byte[] encKey = ((PKCS8EncodedKeySpec)keySpec).getEncoded();
@@ -150,47 +123,16 @@ public class McElieceCCA2KeyFactorySpi
 
             try
             {
-                // get the inner type inside the BIT STRING
-                ASN1Primitive innerType = pki.parsePrivateKey().toASN1Primitive();
-
-                // build and return the actual key
-                ASN1Sequence privKey = (ASN1Sequence)innerType;
-
-                // decode oidString (but we don't need it right now)
-                String oidString = ((ASN1ObjectIdentifier)privKey.getObjectAt(0))
-                    .toString();
-
-                // decode <n>
-                BigInteger bigN = ((ASN1Integer)privKey.getObjectAt(1)).getValue();
-                int n = bigN.intValue();
-
-                // decode <k>
-                BigInteger bigK = ((ASN1Integer)privKey.getObjectAt(2)).getValue();
-                int k = bigK.intValue();
-
-
-                // decode <fieldPoly>
-                byte[] encFieldPoly = ((ASN1OctetString)privKey.getObjectAt(3))
-                    .getOctets();
-                // decode <goppaPoly>
-                byte[] encGoppaPoly = ((ASN1OctetString)privKey.getObjectAt(4))
-                    .getOctets();
-                // decode <p>
-                byte[] encP = ((ASN1OctetString)privKey.getObjectAt(5)).getOctets();
-                // decode <h>
-                byte[] encH = ((ASN1OctetString)privKey.getObjectAt(6)).getOctets();
-                // decode <qInv>
-                ASN1Sequence qSeq = (ASN1Sequence)privKey.getObjectAt(7);
-                byte[][] encQInv = new byte[qSeq.size()][];
-                for (int i = 0; i < qSeq.size(); i++)
+                if (PQCObjectIdentifiers.mcElieceCca2.equals(pki.getPrivateKeyAlgorithm().getAlgorithm()))
                 {
-                    encQInv[i] = ((ASN1OctetString)qSeq.getObjectAt(i)).getOctets();
+                    McElieceCCA2PrivateKey key = McElieceCCA2PrivateKey.getInstance(pki.parsePrivateKey());
+
+                    return new BCMcElieceCCA2PrivateKey(new McElieceCCA2PrivateKeyParameters(key.getN(), key.getK(), key.getField(), key.getGoppaPoly(), key.getP(), Utils.getDigest(key.getDigest()).getAlgorithmName()));
                 }
-
-                return new BCMcElieceCCA2PrivateKey(
-                    new McElieceCCA2PrivateKeySpec(OID, n, k, encFieldPoly,
-                        encGoppaPoly, encP, encH, encQInv));
-
+                else
+                {
+                    throw new InvalidKeySpecException("Unable to recognise OID in McEliece public key");
+                }
             }
             catch (IOException cce)
             {
@@ -199,19 +141,12 @@ public class McElieceCCA2KeyFactorySpi
             }
         }
 
-        throw new InvalidKeySpecException("Unsupported key specification: "
-            + keySpec.getClass() + ".");
+        throw new InvalidKeySpecException("Unsupported key specification: " + keySpec.getClass() + ".");
     }
 
     /**
      * Converts, if possible, a given key into a key specification. Currently,
      * the following key specifications are supported:
-     * <ul>
-     * <li>for McElieceCCA2PublicKey: {@link X509EncodedKeySpec},
-     * {@link McElieceCCA2PublicKeySpec}</li>
-     * <li>for McElieceCCA2PrivateKey: {@link PKCS8EncodedKeySpec},
-     * {@link McElieceCCA2PrivateKeySpec}</li>.
-     * </ul>
      *
      * @param key     the key
      * @param keySpec the key specification
@@ -219,9 +154,7 @@ public class McElieceCCA2KeyFactorySpi
      * @throws InvalidKeySpecException if the key type or the key specification is not
      * supported.
      * @see BCMcElieceCCA2PrivateKey
-     * @see McElieceCCA2PrivateKeySpec
      * @see BCMcElieceCCA2PublicKey
-     * @see McElieceCCA2PublicKeySpec
      */
     public KeySpec getKeySpec(Key key, Class keySpec)
         throws InvalidKeySpecException
@@ -232,27 +165,12 @@ public class McElieceCCA2KeyFactorySpi
             {
                 return new PKCS8EncodedKeySpec(key.getEncoded());
             }
-            else if (McElieceCCA2PrivateKeySpec.class
-                .isAssignableFrom(keySpec))
-            {
-                BCMcElieceCCA2PrivateKey privKey = (BCMcElieceCCA2PrivateKey)key;
-                return new McElieceCCA2PrivateKeySpec(OID, privKey.getN(), privKey
-                    .getK(), privKey.getField(), privKey.getGoppaPoly(),
-                    privKey.getP(), privKey.getH(), privKey.getQInv());
-            }
         }
         else if (key instanceof BCMcElieceCCA2PublicKey)
         {
             if (X509EncodedKeySpec.class.isAssignableFrom(keySpec))
             {
                 return new X509EncodedKeySpec(key.getEncoded());
-            }
-            else if (McElieceCCA2PublicKeySpec.class
-                .isAssignableFrom(keySpec))
-            {
-                BCMcElieceCCA2PublicKey pubKey = (BCMcElieceCCA2PublicKey)key;
-                return new McElieceCCA2PublicKeySpec(OID, pubKey.getN(), pubKey
-                    .getT(), pubKey.getG());
             }
         }
         else
@@ -294,8 +212,8 @@ public class McElieceCCA2KeyFactorySpi
         try
         {
             ASN1Primitive innerType = pki.parsePublicKey();
-            McElieceCCA2PublicKey key = McElieceCCA2PublicKey.getInstance((ASN1Sequence)innerType);
-            return new BCMcElieceCCA2PublicKey(key.getOID().getId(), key.getN(), key.getT(), key.getG());
+            McElieceCCA2PublicKey key = McElieceCCA2PublicKey.getInstance(innerType);
+            return new BCMcElieceCCA2PublicKey(new McElieceCCA2PublicKeyParameters(key.getN(), key.getT(), key.getG(), Utils.getDigest(key.getDigest()).getAlgorithmName()));
         }
         catch (IOException cce)
         {
@@ -312,24 +230,12 @@ public class McElieceCCA2KeyFactorySpi
         {
             ASN1Primitive innerType = pki.parsePrivateKey().toASN1Primitive();
             McElieceCCA2PrivateKey key = McElieceCCA2PrivateKey.getInstance(innerType);
-            return new BCMcElieceCCA2PrivateKey(key.getOID().getId(), key.getN(), key.getK(), key.getField(), key.getGoppaPoly(), key.getP(), key.getH(), key.getQInv());
+            return new BCMcElieceCCA2PrivateKey(new McElieceCCA2PrivateKeyParameters(key.getN(), key.getK(), key.getField(), key.getGoppaPoly(), key.getP(), null));
         }
         catch (IOException cce)
         {
             throw new InvalidKeySpecException("Unable to decode PKCS8EncodedKeySpec");
         }
-    }
-
-    protected PublicKey engineGeneratePublic(KeySpec keySpec)
-        throws InvalidKeySpecException
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    protected PrivateKey engineGeneratePrivate(KeySpec keySpec)
-        throws InvalidKeySpecException
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     protected KeySpec engineGetKeySpec(Key key, Class tClass)

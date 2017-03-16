@@ -3,8 +3,10 @@ package org.bouncycastle.pqc.crypto.mceliece;
 
 import org.bouncycastle.pqc.math.linearalgebra.GF2Matrix;
 import org.bouncycastle.pqc.math.linearalgebra.GF2mField;
+import org.bouncycastle.pqc.math.linearalgebra.GoppaCode;
 import org.bouncycastle.pqc.math.linearalgebra.Permutation;
 import org.bouncycastle.pqc.math.linearalgebra.PolynomialGF2mSmallM;
+import org.bouncycastle.pqc.math.linearalgebra.PolynomialRingGF2m;
 
 /**
  *
@@ -14,10 +16,6 @@ import org.bouncycastle.pqc.math.linearalgebra.PolynomialGF2mSmallM;
 public class McElieceCCA2PrivateKeyParameters
     extends McElieceCCA2KeyParameters
 {
-
-    // the OID of the algorithm
-    private String oid;
-
     // the length of the code
     private int n;
 
@@ -47,56 +45,24 @@ public class McElieceCCA2PrivateKeyParameters
      * @param field  the finite field <tt>GF(2<sup>m</sup>)</tt>
      * @param gp     the irreducible Goppa polynomial
      * @param p      the permutation
-     * @param h      the canonical check matrix
-     * @param qInv   the matrix used to compute square roots in
-     *               <tt>(GF(2^m))^t</tt>
-     * @param params McElieceCCA2Parameters
+     * @param digest McElieceCCA2Parameters
      */
-    public McElieceCCA2PrivateKeyParameters(String oid, int n, int k, GF2mField field,
-                                            PolynomialGF2mSmallM gp, Permutation p, GF2Matrix h,
-                                            PolynomialGF2mSmallM[] qInv, McElieceCCA2Parameters params)
+    public McElieceCCA2PrivateKeyParameters(int n, int k, GF2mField field,
+                                            PolynomialGF2mSmallM gp, Permutation p, String digest)
     {
-        super(true, params);
-        this.oid = oid;
+        super(true, digest);
         this.n = n;
         this.k = k;
         this.field = field;
         this.goppaPoly = gp;
         this.p = p;
-        this.h = h;
-        this.qInv = qInv;
-    }
 
-    /**
-     * Constructor.
-     *
-     * @param n            the length of the code
-     * @param k            the dimension of the code
-     * @param encFieldPoly the encoded field polynomial defining the finite field
-     *                     <tt>GF(2<sup>m</sup>)</tt>
-     * @param encGoppaPoly the encoded irreducible Goppa polynomial
-     * @param encP         the encoded permutation
-     * @param encH         the encoded canonical check matrix
-     * @param encQInv      the encoded matrix used to compute square roots in
-     *                     <tt>(GF(2^m))^t</tt>
-     * @param params       McElieceCCA2Parameters
-     */
-    public McElieceCCA2PrivateKeyParameters(String oid, int n, int k, byte[] encFieldPoly,
-                                            byte[] encGoppaPoly, byte[] encP, byte[] encH, byte[][] encQInv, McElieceCCA2Parameters params)
-    {
-        super(true, params);
-        this.oid = oid;
-        this.n = n;
-        this.k = k;
-        field = new GF2mField(encFieldPoly);
-        goppaPoly = new PolynomialGF2mSmallM(field, encGoppaPoly);
-        p = new Permutation(encP);
-        h = new GF2Matrix(encH);
-        qInv = new PolynomialGF2mSmallM[encQInv.length];
-        for (int i = 0; i < encQInv.length; i++)
-        {
-            qInv[i] = new PolynomialGF2mSmallM(field, encQInv[i]);
-        }
+        this.h = GoppaCode.createCanonicalCheckMatrix(field, gp);
+
+        PolynomialRingGF2m ring = new PolynomialRingGF2m(field, gp);
+
+        // matrix for computing square roots in (GF(2^m))^t
+        this.qInv = ring.getSquareRootMatrix();
     }
 
     /**
@@ -162,11 +128,4 @@ public class McElieceCCA2PrivateKeyParameters
     {
         return qInv;
     }
-
-    public String getOIDString()
-    {
-        return oid;
-
-    }
-
 }

@@ -54,10 +54,6 @@ public class X931SecureRandom
 
     public byte[] generateSeed(int numBytes)
     {
-        byte[] bytes = new byte[numBytes];
-
-        this.nextBytes(bytes);
-
-        return bytes;
+        return EntropyUtil.generateSeed(drbg.getEntropySource(), numBytes);
     }
 }

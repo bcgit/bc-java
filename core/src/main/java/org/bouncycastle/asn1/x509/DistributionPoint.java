@@ -66,6 +66,9 @@ public class DistributionPoint
                 break;
             case 2:
                 cRLIssuer = GeneralNames.getInstance(t, false);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown tag encountered in structure: " + t.getTagNo());
             }
         }
     }

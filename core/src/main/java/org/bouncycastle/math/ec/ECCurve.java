@@ -104,6 +104,8 @@ public abstract class ECCurve
 
     public abstract ECFieldElement fromBigInteger(BigInteger x);
 
+    public abstract boolean isValidFieldElement(BigInteger x);
+
     public synchronized Config configure()
     {
         return new Config(this.coord, this.endomorphism, this.multiplier);
@@ -501,10 +503,15 @@ public abstract class ECCurve
             super(FiniteFields.getPrimeField(q));
         }
 
+        public boolean isValidFieldElement(BigInteger x)
+        {
+            return x != null && x.signum() >= 0 && x.compareTo(this.getField().getCharacteristic()) < 0;
+        }
+
         protected ECPoint decompressPoint(int yTilde, BigInteger X1)
         {
             ECFieldElement x = this.fromBigInteger(X1);
-            ECFieldElement rhs = x.square().add(a).multiply(x).add(b);
+            ECFieldElement rhs = x.square().add(this.a).multiply(x).add(this.b);
             ECFieldElement y = rhs.sqrt();
 
             /*
@@ -530,7 +537,7 @@ public abstract class ECCurve
      */
     public static class Fp extends AbstractFp
     {
-        private static final int FP_DEFAULT_COORDS = COORD_JACOBIAN_MODIFIED;
+        private static final int FP_DEFAULT_COORDS = ECCurve.COORD_JACOBIAN_MODIFIED;
 
         BigInteger q, r;
         ECPoint.Fp infinity;
@@ -577,17 +584,17 @@ public abstract class ECCurve
 
         protected ECCurve cloneCurve()
         {
-            return new Fp(q, r, a, b, order, cofactor);
+            return new Fp(this.q, this.r, this.a, this.b, this.order, this.cofactor);
         }
 
         public boolean supportsCoordinateSystem(int coord)
         {
             switch (coord)
             {
-            case COORD_AFFINE:
-            case COORD_HOMOGENEOUS:
-            case COORD_JACOBIAN:
-            case COORD_JACOBIAN_MODIFIED:
+            case ECCurve.COORD_AFFINE:
+            case ECCurve.COORD_HOMOGENEOUS:
+            case ECCurve.COORD_JACOBIAN:
+            case ECCurve.COORD_JACOBIAN_MODIFIED:
                 return true;
             default:
                 return false;
@@ -621,13 +628,13 @@ public abstract class ECCurve
 
         public ECPoint importPoint(ECPoint p)
         {
-            if (this != p.getCurve() && this.getCoordinateSystem() == COORD_JACOBIAN && !p.isInfinity())
+            if (this != p.getCurve() && this.getCoordinateSystem() == ECCurve.COORD_JACOBIAN && !p.isInfinity())
             {
                 switch (p.getCurve().getCoordinateSystem())
                 {
-                case COORD_JACOBIAN:
-                case COORD_JACOBIAN_CHUDNOVSKY:
-                case COORD_JACOBIAN_MODIFIED:
+                case ECCurve.COORD_JACOBIAN:
+                case ECCurve.COORD_JACOBIAN_CHUDNOVSKY:
+                case ECCurve.COORD_JACOBIAN_MODIFIED:
                     return new ECPoint.Fp(this,
                         fromBigInteger(p.x.toBigInteger()),
                         fromBigInteger(p.y.toBigInteger()),
@@ -696,16 +703,21 @@ public abstract class ECCurve
             super(buildField(m, k1, k2, k3));
         }
 
+        public boolean isValidFieldElement(BigInteger x)
+        {
+            return x != null && x.signum() >= 0 && x.bitLength() <= this.getFieldSize();
+        }
+
         public ECPoint createPoint(BigInteger x, BigInteger y, boolean withCompression)
         {
-            ECFieldElement X = fromBigInteger(x), Y = fromBigInteger(y);
+            ECFieldElement X = this.fromBigInteger(x), Y = this.fromBigInteger(y);
 
             int coord = this.getCoordinateSystem();
 
             switch (coord)
             {
-            case COORD_LAMBDA_AFFINE:
-            case COORD_LAMBDA_PROJECTIVE:
+            case ECCurve.COORD_LAMBDA_AFFINE:
+            case ECCurve.COORD_LAMBDA_PROJECTIVE:
             {
                 if (X.isZero())
                 {
@@ -738,7 +750,101 @@ public abstract class ECCurve
             }
             }
 
-            return createRawPoint(X, Y, withCompression);
+            return this.createRawPoint(X, Y, withCompression);
+        }
+
+        /**
+         * Decompresses a compressed point P = (xp, yp) (X9.62 s 4.2.2).
+         * 
+         * @param yTilde
+         *            ~yp, an indication bit for the decompression of yp.
+         * @param X1
+         *            The field element xp.
+         * @return the decompressed point.
+         */
+        protected ECPoint decompressPoint(int yTilde, BigInteger X1)
+        {
+            ECFieldElement x = this.fromBigInteger(X1), y = null;
+            if (x.isZero())
+            {
+                y = this.getB().sqrt();
+            }
+            else
+            {
+                ECFieldElement beta = x.square().invert().multiply(this.getB()).add(this.getA()).add(x);
+                ECFieldElement z = solveQuadraticEquation(beta);
+                if (z != null)
+                {
+                    if (z.testBitZero() != (yTilde == 1))
+                    {
+                        z = z.addOne();
+                    }
+
+                    switch (this.getCoordinateSystem())
+                    {
+                    case ECCurve.COORD_LAMBDA_AFFINE:
+                    case ECCurve.COORD_LAMBDA_PROJECTIVE:
+                    {
+                        y = z.add(x);
+                        break;
+                    }
+                    default:
+                    {
+                        y = z.multiply(x);
+                        break;
+                    }
+                    }
+                }
+            }
+
+            if (y == null)
+            {
+                throw new IllegalArgumentException("Invalid point compression");
+            }
+
+            return this.createRawPoint(x, y, true);
+        }
+
+        /**
+         * Solves a quadratic equation <code>z<sup>2</sup> + z = beta</code>(X9.62
+         * D.1.6) The other solution is <code>z + 1</code>.
+         * 
+         * @param beta
+         *            The value to solve the quadratic equation for.
+         * @return the solution for <code>z<sup>2</sup> + z = beta</code> or
+         *         <code>null</code> if no solution exists.
+         */
+        private ECFieldElement solveQuadraticEquation(ECFieldElement beta)
+        {
+            if (beta.isZero())
+            {
+                return beta;
+            }
+
+            ECFieldElement gamma, z, zeroElement = this.fromBigInteger(ECConstants.ZERO);
+
+            int m = this.getFieldSize();
+            Random rand = new Random();
+            do
+            {
+                ECFieldElement t = this.fromBigInteger(new BigInteger(m, rand));
+                z = zeroElement;
+                ECFieldElement w = beta;
+                for (int i = 1; i < m; i++)
+                {
+                    ECFieldElement w2 = w.square();
+                    z = z.square().add(w2.multiply(t));
+                    w = w2.add(beta);
+                }
+                if (!w.isZero())
+                {
+                    return null;
+                }
+                gamma = z.square().add(z);
+            }
+            while (gamma.isZero());
+
+            return z;
         }
 
         /**
@@ -761,7 +867,7 @@ public abstract class ECCurve
          */
         public boolean isKoblitz()
         {
-            return order != null && cofactor != null && b.isOne() && (a.isZero() || a.isOne());
+            return this.order != null && this.cofactor != null && this.b.isOne() && (this.a.isZero() || this.a.isOne());
         }
     }
 
@@ -771,7 +877,7 @@ public abstract class ECCurve
      */
     public static class F2m extends AbstractF2m
     {
-        private static final int F2M_DEFAULT_COORDS = COORD_LAMBDA_PROJECTIVE;
+        private static final int F2M_DEFAULT_COORDS = ECCurve.COORD_LAMBDA_PROJECTIVE;
 
         /**
          * The exponent <code>m</code> of <code>F<sub>2<sup>m</sup></sub></code>.
@@ -958,16 +1064,16 @@ public abstract class ECCurve
 
         protected ECCurve cloneCurve()
         {
-            return new F2m(m, k1, k2, k3, a, b, order, cofactor);
+            return new F2m(this.m, this.k1, this.k2, this.k3, this.a, this.b, this.order, this.cofactor);
         }
 
         public boolean supportsCoordinateSystem(int coord)
         {
             switch (coord)
             {
-            case COORD_AFFINE:
-            case COORD_HOMOGENEOUS:
-            case COORD_LAMBDA_PROJECTIVE:
+            case ECCurve.COORD_AFFINE:
+            case ECCurve.COORD_HOMOGENEOUS:
+            case ECCurve.COORD_LAMBDA_PROJECTIVE:
                 return true;
             default:
                 return false;
@@ -1009,102 +1115,6 @@ public abstract class ECCurve
             return infinity;
         }
 
-        /**
-         * Decompresses a compressed point P = (xp, yp) (X9.62 s 4.2.2).
-         * 
-         * @param yTilde
-         *            ~yp, an indication bit for the decompression of yp.
-         * @param X1
-         *            The field element xp.
-         * @return the decompressed point.
-         */
-        protected ECPoint decompressPoint(int yTilde, BigInteger X1)
-        {
-            ECFieldElement x = fromBigInteger(X1), y = null;
-            if (x.isZero())
-            {
-                y = b.sqrt();
-            }
-            else
-            {
-                ECFieldElement beta = x.square().invert().multiply(b).add(a).add(x);
-                ECFieldElement z = solveQuadraticEquation(beta);
-                if (z != null)
-                {
-                    if (z.testBitZero() != (yTilde == 1))
-                    {
-                        z = z.addOne();
-                    }
-
-                    switch (this.getCoordinateSystem())
-                    {
-                    case COORD_LAMBDA_AFFINE:
-                    case COORD_LAMBDA_PROJECTIVE:
-                    {
-                        y = z.add(x);
-                        break;
-                    }
-                    default:
-                    {
-                        y = z.multiply(x);
-                        break;
-                    }
-                    }
-                }
-            }
-
-            if (y == null)
-            {
-                throw new IllegalArgumentException("Invalid point compression");
-            }
-
-            return this.createRawPoint(x, y, true);
-        }
-
-        /**
-         * Solves a quadratic equation <code>z<sup>2</sup> + z = beta</code>(X9.62
-         * D.1.6) The other solution is <code>z + 1</code>.
-         * 
-         * @param beta
-         *            The value to solve the quadratic equation for.
-         * @return the solution for <code>z<sup>2</sup> + z = beta</code> or
-         *         <code>null</code> if no solution exists.
-         */
-        private ECFieldElement solveQuadraticEquation(ECFieldElement beta)
-        {
-            if (beta.isZero())
-            {
-                return beta;
-            }
-
-            ECFieldElement zeroElement = fromBigInteger(ECConstants.ZERO);
-
-            ECFieldElement z = null;
-            ECFieldElement gamma = null;
-
-            Random rand = new Random();
-            do
-            {
-                ECFieldElement t = fromBigInteger(new BigInteger(m, rand));
-                z = zeroElement;
-                ECFieldElement w = beta;
-                for (int i = 1; i < m; i++)
-                {
-                    ECFieldElement w2 = w.square();
-                    z = z.square().add(w2.multiply(t));
-                    w = w2.add(beta);
-                }
-                if (!w.isZero())
-                {
-                    return null;
-                }
-                gamma = z.square().add(z);
-            }
-            while (gamma.isZero());
-
-            return z;
-        }
-
         public int getM()
         {
             return m;
@@ -1140,7 +1150,7 @@ public abstract class ECCurve
          */
         public BigInteger getN()
         {
-            return order;
+            return this.order;
         }
 
         /**
@@ -1148,7 +1158,7 @@ public abstract class ECCurve
          */
         public BigInteger getH()
         {
-            return cofactor;
+            return this.cofactor;
         }
     }
 }
