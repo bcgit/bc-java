@@ -7,6 +7,8 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Set;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.X509KeyManager;
@@ -14,6 +16,7 @@ import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.DefaultTlsClient;
@@ -35,6 +38,8 @@ class ProvTlsClient
     extends DefaultTlsClient
     implements ProvTlsPeer
 {
+    private static Logger LOG = Logger.getLogger(ProvTlsClient.class.getName());
+
     protected final ProvTlsManager manager;
     protected final ProvSSLParameters sslParameters;
 
@@ -224,21 +229,42 @@ class ProvTlsClient
         return null;
     }
 
-//    @Override
-//    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
-//    {
-//        PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-//        out.println("JSSE client raised alert: " + AlertLevel.getText(alertLevel)
-//            + ", " + AlertDescription.getText(alertDescription));
-//        if (message != null)
-//        {
-//            out.println("> " + message);
-//        }
-//        if (cause != null)
-//        {
-//            cause.printStackTrace(out);
-//        }
-//    }
+    @Override
+    public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
+    {
+        super.notifyAlertRaised(alertLevel, alertDescription, message, cause);
+
+        Level level = alertLevel == AlertLevel.warning                      ? Level.FINE
+                    : alertDescription == AlertDescription.internal_error   ? Level.WARNING
+                    :                                                         Level.INFO;
+
+        if (LOG.isLoggable(level))
+        {
+            String msg = JsseUtils.getAlertLogMessage("Client raised", alertLevel, alertDescription);
+            if (message != null)
+            {
+                msg = msg + ": " + message;
+            }
+
+            LOG.log(level, msg, cause);
+        }
+    }
+
+    @Override
+    public void notifyAlertReceived(short alertLevel, short alertDescription)
+    {
+        super.notifyAlertReceived(alertLevel, alertDescription);
+
+        Level level = alertLevel == AlertLevel.warning  ? Level.FINE
+                    :                                     Level.INFO;
+
+        if (LOG.isLoggable(level))
+        {
+            String msg = JsseUtils.getAlertLogMessage("Client received", alertLevel, alertDescription);
+
+            LOG.log(level, msg);
+        }
+    }
 
     @Override
     public synchronized void notifyHandshakeComplete() throws IOException
@@ -252,13 +278,13 @@ class ProvTlsClient
         manager.notifyHandshakeComplete(connection);
     }
 
-//    @Override
-//    public void notifySelectedCipherSuite(int selectedCipherSuite)
-//    {
-//        super.notifySelectedCipherSuite(selectedCipherSuite);
-//
-//        System.out.println("Client notified of selected cipher suite: " + manager.getContext().getCipherSuiteString(selectedCipherSuite));
-//    }
+    @Override
+    public void notifySelectedCipherSuite(int selectedCipherSuite)
+    {
+        super.notifySelectedCipherSuite(selectedCipherSuite);
+
+        LOG.fine("Client notified of selected cipher suite: " + manager.getContext().getCipherSuiteString(selectedCipherSuite));
+    }
 
     @Override
     public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
@@ -270,6 +296,7 @@ class ProvTlsClient
             {
                 if (selected.equals(protocol))
                 {
+                    LOG.fine("Client notified of selected protocol version: " + selected);
                     return;
                 }
             }

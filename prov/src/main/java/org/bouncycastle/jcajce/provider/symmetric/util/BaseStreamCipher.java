@@ -5,6 +5,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
 import java.security.Key;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -119,10 +120,11 @@ public class BaseStreamCipher
      */
     protected void engineSetMode(
         String  mode)
+        throws NoSuchAlgorithmException
     {
         if (!mode.equalsIgnoreCase("ECB"))
         {
-            throw new IllegalArgumentException("can't support mode " + mode);
+            throw new NoSuchAlgorithmException("can't support mode " + mode);
         }
     }
 
