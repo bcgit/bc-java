@@ -119,13 +119,29 @@ class ProvSSLEngine
     public synchronized void closeInbound()
         throws SSLException
     {
-        throw new UnsupportedOperationException();
+        // TODO How to behave when protocol is still null?
+        try
+        {
+            protocol.closeInput();
+        }
+        catch (IOException e)
+        {
+            throw new SSLException(e);
+        }
     }
 
     @Override
     public synchronized void closeOutbound()
     {
-        throw new UnsupportedOperationException();
+        // TODO How to behave when protocol is still null?
+        try
+        {
+            protocol.close();
+        }
+        catch (IOException e)
+        {
+           // TODO[logging] 
+        }
     }
 
     public synchronized BCSSLConnection getConnection()
