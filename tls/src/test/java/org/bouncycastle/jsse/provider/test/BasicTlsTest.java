@@ -126,6 +126,9 @@ public class BasicTlsTest
                 sslSock.setUseClientMode(false);
     
                 TestProtocolUtil.doServerProtocol(sslSock, "World");
+                
+                sslSock.close();
+                sSock.close();
             }
             finally
             {

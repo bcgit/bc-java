@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.tls;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -184,7 +185,8 @@ public abstract class TlsProtocol
             {
                 if (this.closed)
                 {
-                    // TODO What kind of exception/alert?
+                    // NOTE: Any close during the handshake should have raised an exception.
+                    throw new TlsFatalAlert(AlertDescription.internal_error);
                 }
 
                 safeReadRecord();
@@ -406,14 +408,16 @@ public abstract class TlsProtocol
             }
             else
             {
-
                 /*
                  * RFC 5246 7.2.1. The other party MUST respond with a close_notify alert of its own
                  * and close down the connection immediately, discarding any pending writes.
                  */
-                // TODO Can close_notify be a fatal alert?
                 if (description == AlertDescription.close_notify)
                 {
+                    if (!appDataReady)
+                    {
+                        throw new TlsFatalAlert(AlertDescription.handshake_failure);
+                    }
                     handleClose(false);
                 }
 
@@ -541,6 +545,10 @@ public abstract class TlsProtocol
         {
             if (!recordStream.readRecord())
             {
+                if (!appDataReady)
+                {
+                    throw new TlsFatalAlert(AlertDescription.handshake_failure);
+                }
                 throw new TlsNoCloseNotifyException();
             }
         }
@@ -715,6 +723,34 @@ public abstract class TlsProtocol
     }
 
     /**
+     * Should be called in non-blocking mode when the input data reaches EOF.
+     */
+    public void closeInput() throws IOException
+    {
+        if (blocking)
+        {
+            throw new IllegalStateException("Cannot use closeInput() in blocking mode!");
+        }
+
+        if (closed)
+        {
+            return;
+        }
+
+        if (inputBuffers.available() > 0)
+        {
+            throw new EOFException();
+        }
+
+        if (!appDataReady)
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
+
+        throw new TlsNoCloseNotifyException();
+    }
+
+    /**
      * Offer input from an arbitrary source. Only allowed in non-blocking mode.<br>
      * <br>
      * After this method returns, the input buffer is "owned" by this object. Other code
@@ -761,6 +797,16 @@ public abstract class TlsProtocol
             }
 
             safeReadRecord();
+
+            if (closed)
+            {
+                if (connection_state != CS_END)
+                {
+                    // NOTE: Any close during the handshake should have raised an exception.
+                    throw new TlsFatalAlert(AlertDescription.internal_error);
+                }
+                break;
+            }
         }
     }
 
