@@ -51,6 +51,7 @@ public class TlsProtocolNonBlockingTest
         // close the connection
         clientProtocol.close();
         pumpData(clientProtocol, serverProtocol, fragment);
+        serverProtocol.closeInput();
         checkClosed(serverProtocol);
         checkClosed(clientProtocol);
     }

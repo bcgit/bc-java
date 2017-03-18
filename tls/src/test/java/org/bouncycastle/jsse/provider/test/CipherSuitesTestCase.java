@@ -160,6 +160,9 @@ public class CipherSuitesTestCase extends TestCase
                 this.tlsUnique = TestUtils.getChannelBinding(sslSock, "tls-unique");
 
                 TestProtocolUtil.doServerProtocol(sslSock, "World");
+                
+                sslSock.close();
+                sSock.close();
             }
             finally
             {
