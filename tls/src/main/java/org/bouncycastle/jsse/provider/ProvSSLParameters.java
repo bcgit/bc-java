@@ -23,6 +23,8 @@ class ProvSSLParameters
     private String[] protocols;
     private boolean needClientAuth;
     private boolean wantClientAuth;
+    private Object algorithmConstraints;      // object not introduced till 1.6
+    private String endpointIdentificationAlgorithm;
 
     public void setCipherSuites(String[] cipherSuites)
     {
@@ -90,5 +92,25 @@ class ProvSSLParameters
 
             return params;
         }
+    }
+
+    public Object getAlgorithmConstraints()
+    {
+        return algorithmConstraints;
+    }
+
+    public void setAlgorithmConstraints(Object algorithmConstraints)
+    {
+        this.algorithmConstraints = algorithmConstraints;
+    }
+
+    public String getEndpointIdentificationAlgorithm()
+    {
+        return endpointIdentificationAlgorithm;
+    }
+
+    public void setEndpointIdentificationAlgorithm(String endpointIdentificationAlgorithm)
+    {
+        this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
     }
 }
