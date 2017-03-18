@@ -12,6 +12,8 @@ class SSLParametersUtil
     private static final Method setAlgorithmConstraints;
     private static final Method getEndpointIdentificationAlgorithm;
     private static final Method setEndpointIdentificationAlgorithm;
+    private static final Method getUseCipherSuitesOrder;
+    private static final Method setUseCipherSuitesOrder;
 
     static
     {
@@ -88,6 +90,34 @@ class SSLParametersUtil
                        }
                    }
                });
+            getUseCipherSuitesOrder = AccessController.doPrivileged(new PrivilegedAction<Method>()
+               {
+                   public Method run()
+                   {
+                       try
+                       {
+                           return paramDef.getMethod("getUseCipherSuitesOrder");
+                       }
+                       catch (Exception e)
+                       {
+                           return null;
+                       }
+                   }
+               });
+            setUseCipherSuitesOrder = AccessController.doPrivileged(new PrivilegedAction<Method>()
+               {
+                   public Method run()
+                   {
+                       try
+                       {
+                           return paramDef.getMethod("setUseCipherSuitesOrder");
+                       }
+                       catch (Exception e)
+                       {
+                           return null;
+                       }
+                   }
+               });
         }
         else
         {
@@ -95,6 +125,8 @@ class SSLParametersUtil
             setAlgorithmConstraints = null;
             getEndpointIdentificationAlgorithm = null;
             setEndpointIdentificationAlgorithm = null;
+            getUseCipherSuitesOrder = null;
+            setUseCipherSuitesOrder = null;
         }
     }
 
@@ -143,8 +175,24 @@ class SSLParametersUtil
         // TODO[jsse] From JDK 1.8
 //        r.setServerNames(p.getServerNames());
 //        r.setSNIMatchers(p.getSNIMatchers());
-//        r.setUseCipherSuitesOrder(p.getUseCipherSuitesOrder());
-
+        if (setUseCipherSuitesOrder != null)
+        {
+              AccessController.doPrivileged(new PrivilegedAction<Object>()
+              {
+                  public Object run()
+                  {
+                      try
+                      {
+                          setUseCipherSuitesOrder.invoke(r, provSslParameters.getUseCipherSuitesOrder());
+                      }
+                      catch (Exception e)
+                      {
+                          // TODO: log?
+                      }
+                      return null;
+                  }
+              });
+        }
         // NOTE: The client-auth setters each clear the other client-auth property, so only one can be set
         if (provSslParameters.getNeedClientAuth())
         {
@@ -206,7 +254,24 @@ class SSLParametersUtil
         // TODO[jsse] From JDK 1.8
 //        r.setServerNames(p.getServerNames());
 //        r.setSNIMatchers(p.getSNIMatchers());
-//        r.setUseCipherSuitesOrder(p.getUseCipherSuitesOrder());
+        if (getUseCipherSuitesOrder != null)
+        {
+              r.setUseCipherSuitesOrder(AccessController.doPrivileged(new PrivilegedAction<Boolean>()
+              {
+                  public Boolean run()
+                  {
+                      try
+                      {
+                          return (Boolean)getUseCipherSuitesOrder.invoke(sslParameters);
+                      }
+                      catch (Exception e)
+                      {
+                          // TODO: log?
+                          return null;
+                      }
+                  }
+              }));
+        }
 
         // NOTE: The client-auth setters each clear the other client-auth property, so only one can be set
         if (sslParameters.getNeedClientAuth())

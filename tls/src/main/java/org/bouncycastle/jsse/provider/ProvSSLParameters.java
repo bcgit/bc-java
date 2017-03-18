@@ -25,6 +25,7 @@ class ProvSSLParameters
     private boolean wantClientAuth;
     private Object algorithmConstraints;      // object not introduced till 1.6
     private String endpointIdentificationAlgorithm;
+    private boolean useCipherSuitesOrder;
 
     public void setCipherSuites(String[] cipherSuites)
     {
@@ -66,6 +67,37 @@ class ProvSSLParameters
         return wantClientAuth;
     }
 
+
+    public Object getAlgorithmConstraints()
+    {
+        return algorithmConstraints;
+    }
+
+    public void setAlgorithmConstraints(Object algorithmConstraints)
+    {
+        this.algorithmConstraints = algorithmConstraints;
+    }
+
+    public String getEndpointIdentificationAlgorithm()
+    {
+        return endpointIdentificationAlgorithm;
+    }
+
+    public void setEndpointIdentificationAlgorithm(String endpointIdentificationAlgorithm)
+    {
+        this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
+    }
+
+    public boolean getUseCipherSuitesOrder()
+    {
+        return useCipherSuitesOrder;
+    }
+
+    public void setUseCipherSuitesOrder(boolean honorOrder)
+    {
+        this.useCipherSuitesOrder = honorOrder;
+    }
+
     static ProvSSLParameters extractDefaultParameters(ProvSSLContextSpi context)
     {
         if (hasSslParameters)
@@ -92,25 +124,5 @@ class ProvSSLParameters
 
             return params;
         }
-    }
-
-    public Object getAlgorithmConstraints()
-    {
-        return algorithmConstraints;
-    }
-
-    public void setAlgorithmConstraints(Object algorithmConstraints)
-    {
-        this.algorithmConstraints = algorithmConstraints;
-    }
-
-    public String getEndpointIdentificationAlgorithm()
-    {
-        return endpointIdentificationAlgorithm;
-    }
-
-    public void setEndpointIdentificationAlgorithm(String endpointIdentificationAlgorithm)
-    {
-        this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
     }
 }
