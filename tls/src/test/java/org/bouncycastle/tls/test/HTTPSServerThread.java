@@ -103,6 +103,7 @@ public class HTTPSServerThread
             sendResponse(sslSock.getOutputStream());
 
             sslSock.close();
+            sSock.close();
         }
         catch (Exception e)
         {

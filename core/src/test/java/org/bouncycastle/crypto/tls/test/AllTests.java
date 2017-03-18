@@ -23,9 +23,11 @@ public class AllTests
         suite.addTestSuite(DTLSProtocolTest.class);
         suite.addTestSuite(DTLSTestCase.class);
         suite.addTestSuite(TlsProtocolTest.class);
+        suite.addTestSuite(TlsProtocolNonBlockingTest.class);
         suite.addTestSuite(TlsPSKProtocolTest.class);
         suite.addTestSuite(TlsSRPProtocolTest.class);
         suite.addTestSuite(TlsTestCase.class);
+        suite.addTest(TlsTestSuite.suite());
 
         return new BCTestSetup(suite);
     }

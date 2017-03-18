@@ -173,6 +173,7 @@ public class BasicClientAuthTlsTest
                 TestProtocolUtil.doServerProtocol(sslSock, "World");
     
                 sslSock.close();
+                sSock.close();
             }
             finally
             {
