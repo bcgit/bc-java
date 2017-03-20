@@ -126,6 +126,9 @@ public class BasicTlsTest
                 sslSock.setUseClientMode(false);
     
                 TestProtocolUtil.doServerProtocol(sslSock, "World");
+                
+                sslSock.close();
+                sSock.close();
             }
             finally
             {
@@ -160,5 +163,32 @@ public class BasicTlsTest
         ts.setCertificateEntry("ca", caCert);
 
         TestProtocolUtil.runClientAndServer(new SimpleServer(ks, keyPass), new SimpleClient(ts));
+    }
+
+    public void testNullRandomJsseInit()
+        throws Exception
+    {
+        char[] keyPass = "keyPassword".toCharArray();
+
+        KeyPair caKeyPair = TestUtils.generateECKeyPair();
+
+        X509Certificate caCert = TestUtils.generateRootCert(caKeyPair);
+
+        KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(null, null);
+        ks.setKeyEntry("server", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
+
+        KeyStore ts = KeyStore.getInstance("JKS");
+        ts.load(null, null);
+        ts.setCertificateEntry("ca", caCert);
+
+        TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
+            BouncyCastleJsseProvider.PROVIDER_NAME);
+
+        trustMgrFact.init(ts);
+
+        SSLContext clientContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
+
+        clientContext.init(null, trustMgrFact.getTrustManagers(), null);
     }
 }
