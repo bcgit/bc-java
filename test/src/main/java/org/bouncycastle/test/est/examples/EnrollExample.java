@@ -202,7 +202,7 @@ public class EnrollExample
         SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getCertPathTrustManager(ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificate(trustAnchorFile)), null));
         sfcb.withTLSVersion(tlsVersion);
         sfcb.withProvider(tlsProvider);
-        sfcb.withSecureRandom(new SecureRandom());
+       // sfcb.withSecureRandom(new SecureRandom());
 
         if (clientKeyStoreFile != null)
         {
