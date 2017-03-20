@@ -29,13 +29,20 @@ public class TlsServerTest
         int port = 5556;
 
         ServerSocket ss = new ServerSocket(port, 16, address);
-        while (true)
+        try
         {
-            Socket s = ss.accept();
-            System.out.println("--------------------------------------------------------------------------------");
-            System.out.println("Accepted " + s);
-            ServerThread t = new ServerThread(s);
-            t.start();
+            while (true)
+            {
+                Socket s = ss.accept();
+                System.out.println("--------------------------------------------------------------------------------");
+                System.out.println("Accepted " + s);
+                ServerThread t = new ServerThread(s);
+                t.start();
+            }
+        }
+        finally
+        {
+            ss.close();
         }
     }
 
