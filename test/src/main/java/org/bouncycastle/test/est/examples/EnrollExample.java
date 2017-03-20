@@ -21,6 +21,7 @@ import org.bouncycastle.est.jcajce.JcaJceUtils;
 import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
 import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
@@ -50,8 +51,8 @@ public class EnrollExample
         String[] credentials = null;
         boolean reEnroll = false;
         String tlsVersion = "TLS";
-        String tlsProvider = "SunJSSE";
-        String tlsProviderClass = null;
+        String tlsProvider = "BCJSSE";
+        String tlsProviderClass = "org.bouncycastle.jsse.provider.BouncyCastleJsseProvider";
         boolean noNameVerifier = false;
         boolean pop = false;
         int timeout = 0;
@@ -201,6 +202,7 @@ public class EnrollExample
         SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getCertPathTrustManager(ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificate(trustAnchorFile)), null));
         sfcb.withTLSVersion(tlsVersion);
         sfcb.withProvider(tlsProvider);
+        sfcb.withSecureRandom(new SecureRandom());
 
         if (clientKeyStoreFile != null)
         {
