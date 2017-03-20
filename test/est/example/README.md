@@ -277,7 +277,7 @@ Signature Algorithm: org.bouncycastle.asn1.x509.AlgorithmIdentifier@ca7a8819
 ```
 
 #### Enrollment with PoP
-The Enrollment client defaults to use BCJSSE, as it supports the extraction of the TLS unique value required for PoP.
+The Enrollment client defaults to use BCJSSE for its TLS provider as it supports the extraction of the TLS unique value required for PoP. At the time of writing, extraction of the TLS unique value is not supported by the default JSSE provider.
 
 ---
 Unit Tests for Enrollment can be found in:
