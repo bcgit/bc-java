@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.tls;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -35,6 +36,7 @@ public class TlsDHKeyExchange
 
         switch (keyExchange)
         {
+        case KeyExchangeAlgorithm.DH_anon:
         case KeyExchangeAlgorithm.DH_RSA:
         case KeyExchangeAlgorithm.DH_DSS:
             this.tlsSigner = null;
@@ -65,12 +67,19 @@ public class TlsDHKeyExchange
     public void skipServerCredentials()
         throws IOException
     {
-        throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        if (keyExchange != KeyExchangeAlgorithm.DH_anon)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
     }
 
     public void processServerCertificate(Certificate serverCertificate)
         throws IOException
     {
+        if (keyExchange == KeyExchangeAlgorithm.DH_anon)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
         if (serverCertificate.isEmpty())
         {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
@@ -119,13 +128,43 @@ public class TlsDHKeyExchange
     {
         switch (keyExchange)
         {
+        case KeyExchangeAlgorithm.DH_anon:
         case KeyExchangeAlgorithm.DHE_DSS:
         case KeyExchangeAlgorithm.DHE_RSA:
-        case KeyExchangeAlgorithm.DH_anon:
             return true;
         default:
             return false;
         }
+    }
+
+    public byte[] generateServerKeyExchange() throws IOException
+    {
+        if (!requiresServerKeyExchange())
+        {
+            return null;
+        }
+
+        // DH_anon is handled here, DHE_* in a subclass
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        this.dhAgreePrivateKey = TlsDHUtils.generateEphemeralServerKeyExchange(context.getSecureRandom(),
+            this.dhParameters, buf);
+        return buf.toByteArray();
+    }
+
+    public void processServerKeyExchange(InputStream input) throws IOException
+    {
+        if (!requiresServerKeyExchange())
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        // DH_anon is handled here, DHE_* in a subclass
+
+        ServerDHParams dhParams = ServerDHParams.parse(input);
+
+        this.dhAgreePublicKey = TlsDHUtils.validateDHPublicKey(dhParams.getPublicKey());
+        this.dhParameters = validateDHParameters(dhAgreePublicKey.getParameters());
     }
 
     public void validateCertificateRequest(CertificateRequest certificateRequest)
@@ -151,6 +190,11 @@ public class TlsDHKeyExchange
     public void processClientCredentials(TlsCredentials clientCredentials)
         throws IOException
     {
+        if (keyExchange == KeyExchangeAlgorithm.DH_anon)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         if (clientCredentials instanceof TlsAgreementCredentials)
         {
             // TODO Validate client cert has matching parameters (see 'areCompatibleParameters')?
@@ -184,12 +228,13 @@ public class TlsDHKeyExchange
 
     public void processClientCertificate(Certificate clientCertificate) throws IOException
     {
-        // TODO Extract the public key and validate
+        if (keyExchange == KeyExchangeAlgorithm.DH_anon)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
 
-        /*
-         * TODO If the certificate is 'fixed', take the public key as dhAgreePublicKey and check
-         * that the parameters match the server's (see 'areCompatibleParameters').
-         */
+        // TODO Extract the public key
+        // TODO If the certificate is 'fixed', take the public key as dhAgreePublicKey
     }
 
     public void processClientKeyExchange(InputStream input) throws IOException
