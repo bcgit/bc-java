@@ -386,10 +386,19 @@ public class TlsClientProtocol
                 sendClientKeyExchangeMessage();
                 this.connection_state = CS_CLIENT_KEY_EXCHANGE;
 
+                if (TlsUtils.isSSL(getContext()))
+                {
+                    establishMasterSecret(getContext(), keyExchange);
+                }
+
                 TlsHandshakeHash prepareFinishHash = recordStream.prepareToFinish();
                 this.securityParameters.sessionHash = getCurrentPRFHash(getContext(), prepareFinishHash, null);
 
-                establishMasterSecret(getContext(), keyExchange);
+                if (!TlsUtils.isSSL(getContext()))
+                {
+                    establishMasterSecret(getContext(), keyExchange);
+                }
+
                 recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 
                 if (clientCreds != null && clientCreds instanceof TlsSignerCredentials)
