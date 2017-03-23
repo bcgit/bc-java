@@ -190,4 +190,24 @@ public class ByteQueue
         removeData(buf, 0, len, skip);
         return buf;
     }
+
+    public void shrink()
+    {
+        if (available == 0)
+        {
+            databuf = TlsUtils.EMPTY_BYTES;
+            skipped = 0;
+        }
+        else
+        {
+            int desiredSize = ByteQueue.nextTwoPow(available);
+            if (desiredSize < databuf.length)
+            {
+                byte[] tmp = new byte[desiredSize];
+                System.arraycopy(databuf, skipped, tmp, 0, available);
+                databuf = tmp;
+                skipped = 0;
+            }
+        }
+    }
 }
