@@ -11,7 +11,6 @@ import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
 import org.bouncycastle.est.jcajce.JsseDefaultHostnameAuthorizer;
 import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
-import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -53,14 +52,13 @@ public class TestHostNameAuthorizer
         try
         {
             int port = res.open(responseData.toByteArray());
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
+
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localtest.me:" + port + "/.well-known/est/", sfcb.build())
+                "https://localtest.me:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null))
                 .withHostNameAuthorizer(new JsseDefaultHostnameAuthorizer())
                 .addCipherSuites(res.getSupportedCipherSuites());
             ESTService est = builder.build();

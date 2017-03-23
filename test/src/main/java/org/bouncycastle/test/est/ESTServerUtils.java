@@ -12,7 +12,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
-import com.sun.jna.NativeLibrary;
 import com.sun.jna.Structure;
 
 public class ESTServerUtils
@@ -146,7 +145,8 @@ public class ESTServerUtils
         }
 
 
-        public void stopServer() throws Exception
+        public void stopServer()
+            throws Exception
         {
             server.stop_server();
             exited.await(60, TimeUnit.SECONDS);

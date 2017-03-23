@@ -36,7 +36,6 @@ import org.bouncycastle.est.jcajce.ChannelBindingProvider;
 import org.bouncycastle.est.jcajce.JcaHttpAuthBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
 import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
-import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -145,18 +144,15 @@ public class TestEnroll
         {
             serverInstance = startDefaultServerTLSAndBasicAuth(0, false);
 
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
 
             ESTService est = new JsseESTServiceBuilder(
-                "https://localhost:8443/.well-known/est/", sfcb.build()
+                "https://localhost:8443/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null)
             ).build();
 
 
-//            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/", ).build();
             //
             // Make certificate request.
             //
@@ -214,14 +210,11 @@ public class TestEnroll
         {
             serverInstance = startDefaultServerTLSAndBasicAuth(5, false);
 
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
-
             ESTService est = new JsseESTServiceBuilder(
-                "https://localhost:8443/.well-known/est/", sfcb.build()
+                "https://localhost:8443/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null)
             ).build();
 
             //
@@ -307,14 +300,11 @@ public class TestEnroll
             serverInstance = startDefaultServerWithDigestAuth();
 
 
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
-
             ESTService est = new JsseESTServiceBuilder(
-                "https://localhost:8443/.well-known/est/", sfcb.build()
+                "https://localhost:8443/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null)
             ).build();
             //
             // Make certificate request.
@@ -469,7 +459,6 @@ public class TestEnroll
             "estuser", // This is hardcoded into the test server.
             originalKeyPair.getPrivate(), clientKeyStorePass,
             new Certificate[]{
-                //  ESTTestUtils.toJavaX509Certificate(caCert),
                 clientTLSCert
             });
 
@@ -502,25 +491,17 @@ public class TestEnroll
                 ), null);
 
 
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
+            JsseESTServiceBuilder estBuilder = new JsseESTServiceBuilder(
+                "https://localhost:8443/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null)
+            );
+
+            estBuilder.withKeyManagers(JcaJceUtils.createKeyManagerFactory(KeyManagerFactory.getDefaultAlgorithm(), null, clientKeyStore, clientKeyStorePass).getKeyManagers());
 
 
-            sfcb.withKeyManagers(JcaJceUtils.createKeyManagerFactory(KeyManagerFactory.getDefaultAlgorithm(), null, clientKeyStore, clientKeyStorePass).getKeyManagers());
-
-
-            ESTService est = new JsseESTServiceBuilder(
-                "https://localhost:8443/.well-known/est/", sfcb.build()
-            ).build();
-
-
-//            ESTService est = new JcaESTServiceBuilder("https://localhost:8443/.well-known/est/", Collections.singleton(ta))
-//                .withClientKeystore(clientKeyStore, clientKeyStorePass)
-//                .build();
-
+            ESTService est = estBuilder.build();
 
             PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
                 new X500Name("CN=Test"),
@@ -664,13 +645,6 @@ public class TestEnroll
                 ), null);
 
 
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
-
-
             PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
                 new X500Name("CN=Test"),
                 enrollmentPair.getPublic());
@@ -678,12 +652,16 @@ public class TestEnroll
             PKCS10CertificationRequest csr = pkcs10Builder.build(
                 new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
 
-            sfcb.withKeyManagers(JcaJceUtils.createKeyManagerFactory(KeyManagerFactory.getDefaultAlgorithm(), null, clientKeyStore, clientKeyStorePass).getKeyManagers());
+            JsseESTServiceBuilder estServiceBuilder = new JsseESTServiceBuilder(
+                "https://localhost:8443/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null)
+            );
 
+            estServiceBuilder.withKeyManagers(JcaJceUtils.createKeyManagerFactory(KeyManagerFactory.getDefaultAlgorithm(), null, clientKeyStore, clientKeyStorePass).getKeyManagers());
 
-            ESTService est = new JsseESTServiceBuilder(
-                "https://localhost:8443/.well-known/est/", sfcb.build()
-            ).build();
+            ESTService est = estServiceBuilder.build();
 
 
             //
@@ -824,19 +802,17 @@ public class TestEnroll
             ChannelBindingProvider bcChannelBindingProvider = new BCChannelBindingProvider();
 
 
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
+            JsseESTServiceBuilder estServiceBuilder = new JsseESTServiceBuilder("https://localhost:8443/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null));
 
-            sfcb.withKeyManagers(JcaJceUtils.createKeyManagerFactory("X509", null, clientKeyStore, clientKeyStorePass).getKeyManagers())
+            estServiceBuilder.withKeyManagers(JcaJceUtils.createKeyManagerFactory("X509", null, clientKeyStore, clientKeyStorePass).getKeyManagers())
                 .withProvider(BouncyCastleJsseProvider.PROVIDER_NAME)
                 .withTLSVersion("TLS");
 
 
-            ESTService est = new JsseESTServiceBuilder("https://localhost:8443/.well-known/est/", sfcb.build())
-
+            ESTService est = estServiceBuilder
                 .withChannelBindingProvider(bcChannelBindingProvider)
 
                 .addCipherSuites(new String[]{
@@ -982,14 +958,11 @@ public class TestEnroll
 
             int port = res.open(responseData.toByteArray());
 
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
-
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null));
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1066,21 +1039,13 @@ public class TestEnroll
 
             int port = res.open(responseData.toByteArray());
 
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
-
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null));
 
-//            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-//                "https://localhost:" + port + "/.well-known/est/", ESTTestUtils.toTrustAnchor(
-//                ESTTestUtils.readPemCertificate(
-//                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-//                )));
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1157,15 +1122,13 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
 
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null));
 
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
@@ -1249,15 +1212,13 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
 
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null));
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1341,14 +1302,13 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
+
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null));
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1432,15 +1392,13 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
 
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null));
 
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
@@ -1525,14 +1483,13 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
+
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null));
 
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
@@ -1617,14 +1574,13 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
+
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null));
 
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
@@ -1709,15 +1665,13 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
 
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null));
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1801,15 +1755,12 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
-
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null));
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1893,15 +1844,13 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
 
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null));
 
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
@@ -1985,14 +1934,13 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
+
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null));
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -2078,14 +2026,13 @@ public class TestEnroll
             //
 
             int port = res.open(responseData.toByteArray());
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(
-                JcaJceUtils.getCertPathTrustManager(
-                    ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
-                        ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                    )), null));
+
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", sfcb.build());
+                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+                )), null));
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
             builder.withLabel("the_label");
