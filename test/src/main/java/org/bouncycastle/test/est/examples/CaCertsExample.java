@@ -8,13 +8,13 @@ import java.security.cert.TrustAnchor;
 import java.util.Set;
 
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.est.CACertsResponse;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
 import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
-import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
@@ -126,27 +126,26 @@ public class CaCertsExample
             Security.addProvider((Provider)Class.forName(tlsProviderClass).newInstance());
         }
 
-        SSLSocketFactoryCreatorBuilder sfcb = null;
+        //SSLSocketFactoryCreatorBuilder sfcb = null;
 
         //
         // Make est client builder
         //
+        X509TrustManager[] trustManagers = null;
         JsseESTServiceBuilder builder = null;
         if (trustAnchors != null && !trustAnchors.isEmpty())
         {
-            sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getCertPathTrustManager(trustAnchors, null));
+            trustManagers = JcaJceUtils.getCertPathTrustManager(trustAnchors, null);
         }
         else
         {
             // In this case we do not have trust anchors so create a builder for a client talking to an untrusted server.
-            sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
+
+            trustManagers = new X509TrustManager[]{JcaJceUtils.getTrustAllTrustManager()};
         }
 
-        sfcb.withTLSVersion(tlsVersion);
-        sfcb.withProvider(tlsProvider);
 
-
-        builder = new JsseESTServiceBuilder(serverRootUrl, sfcb.build());
+        builder = new JsseESTServiceBuilder(serverRootUrl, trustManagers);
 
         if (noNameVerifier)
         {
@@ -154,6 +153,8 @@ public class CaCertsExample
         }
         builder.withTimeout(timeout);
         builder.withLabel(label);
+        builder.withTLSVersion(tlsVersion);
+        builder.withProvider(tlsProvider);
         //
         // Make a client.
         //
