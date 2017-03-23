@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.bouncycastle.util.io.SimpleOutputStream;
+
 /**
  * An implementation of the TLS 1.0/1.1/1.2 record layer, allowing downgrade to SSLv3.
  */
@@ -25,6 +27,13 @@ class RecordStream
     private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
     private TlsHandshakeHash handshakeHash = null;
+    private SimpleOutputStream handshakeHashUpdater = new SimpleOutputStream()
+    {
+        public void write(byte[] buf, int off, int len) throws IOException
+        {
+            handshakeHash.update(buf, off, len);
+        }
+    };
 
     private ProtocolVersion readVersion = null, writeVersion = null;
     private boolean restrictReadVersion = true;
@@ -282,11 +291,6 @@ class RecordStream
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        if (type == ContentType.handshake)
-        {
-            updateHandshakeData(plaintext, plaintextOffset, plaintextLength);
-        }
-
         OutputStream cOut = writeCompression.compress(buffer);
 
         byte[] ciphertext;
@@ -333,16 +337,16 @@ class RecordStream
         return handshakeHash;
     }
 
+    OutputStream getHandshakeHashUpdater()
+    {
+        return handshakeHashUpdater;
+    }
+
     TlsHandshakeHash prepareToFinish()
     {
         TlsHandshakeHash result = handshakeHash;
         this.handshakeHash = handshakeHash.stopTracking();
         return result;
-    }
-
-    void updateHandshakeData(byte[] message, int offset, int len)
-    {
-        handshakeHash.update(message, offset, len);
     }
 
     void safeClose()

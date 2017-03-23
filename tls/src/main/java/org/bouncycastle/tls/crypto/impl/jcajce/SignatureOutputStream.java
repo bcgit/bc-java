@@ -6,6 +6,7 @@ import java.security.SignatureException;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.util.io.SimpleOutputStream;
 
 class SignatureOutputStream extends SimpleOutputStream
 {
