@@ -16,7 +16,7 @@ import javax.net.ssl.X509TrustManager;
 /**
  * A basic builder to allow configuration of an SSLContext used to create an SSLSocketFactory.
  */
-public class SSLSocketFactoryCreatorBuilder
+class SSLSocketFactoryCreatorBuilder
 {
     protected String tlsVersion = "TLS";
     protected Provider tlsProvider;

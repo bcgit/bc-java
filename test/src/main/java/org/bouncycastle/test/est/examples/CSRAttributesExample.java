@@ -7,12 +7,13 @@ import java.security.Security;
 import java.security.cert.TrustAnchor;
 import java.util.Set;
 
+import javax.net.ssl.X509TrustManager;
+
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.est.CSRRequestResponse;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
 import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
-import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
@@ -120,28 +121,30 @@ public class CSRAttributesExample
         }
 
 
-        SSLSocketFactoryCreatorBuilder sfcb = null;
+        //SSLSocketFactoryCreatorBuilder sfcb = null;
 
         //
         // Make est client builder
         //
         JsseESTServiceBuilder builder = null;
+
+        X509TrustManager[] trustManagers = null;
+
         if (trustAnchors != null && !trustAnchors.isEmpty())
         {
-            sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getCertPathTrustManager(trustAnchors, null));
+            trustManagers = JcaJceUtils.getCertPathTrustManager(trustAnchors, null);
         }
         else
         {
             // In this case we do not have trust anchors so create a builder for a client talking to an untrusted server.
-            sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
+            trustManagers = new X509TrustManager[]{JcaJceUtils.getTrustAllTrustManager()};
         }
 
-        sfcb.withTLSVersion(tlsVersion);
-        sfcb.withProvider(tlsProvider);
-
-        builder = new JsseESTServiceBuilder(serverRootUrl, sfcb.build());
+        builder = new JsseESTServiceBuilder(serverRootUrl, trustManagers);
         builder.withTimeout(timeout);
         builder.withLabel(label);
+        builder.withTLSVersion(tlsVersion);
+        builder.withProvider(tlsProvider);
 
         if (noNameVerifier)
         {

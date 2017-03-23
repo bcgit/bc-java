@@ -19,9 +19,7 @@ import org.bouncycastle.est.EnrollmentResponse;
 import org.bouncycastle.est.jcajce.JcaHttpAuthBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
 import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
-import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
@@ -197,12 +195,31 @@ public class EnrollExample
 
         ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(keyPair.getPrivate());
 
+//
+//        SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getCertPathTrustManager(ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificate(trustAnchorFile)), null));
+//        sfcb.withTLSVersion(tlsVersion);
+//        sfcb.withProvider(tlsProvider);
+//       // sfcb.withSecureRandom(new SecureRandom());
+//
+//        if (clientKeyStoreFile != null)
+//        {
+//            if (keyStoreType == null)
+//            {
+//                keyStoreType = "JKS";
+//            }
+//            KeyStore ks = KeyStore.getInstance(keyStoreType, "BC");
+//            ks.load(new FileInputStream(clientKeyStoreFile), clientKeyStoreFilePassword);
+//            sfcb.withKeyManagers(JcaJceUtils.createKeyManagerFactory("X509", null, ks, clientKeyStoreFilePassword).getKeyManagers());
+//        }
 
 
-        SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getCertPathTrustManager(ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificate(trustAnchorFile)), null));
-        sfcb.withTLSVersion(tlsVersion);
-        sfcb.withProvider(tlsProvider);
-       // sfcb.withSecureRandom(new SecureRandom());
+        JsseESTServiceBuilder est = new JsseESTServiceBuilder(serverRootUrl, JcaJceUtils.getCertPathTrustManager(ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificate(trustAnchorFile)), null));
+        est.withTimeout(timeout);
+        est.withLabel(label);
+
+        est.withTLSVersion(tlsVersion);
+        est.withProvider(tlsProvider);
+        // sfcb.withSecureRandom(new SecureRandom());
 
         if (clientKeyStoreFile != null)
         {
@@ -212,12 +229,9 @@ public class EnrollExample
             }
             KeyStore ks = KeyStore.getInstance(keyStoreType, "BC");
             ks.load(new FileInputStream(clientKeyStoreFile), clientKeyStoreFilePassword);
-            sfcb.withKeyManagers(JcaJceUtils.createKeyManagerFactory("X509", null, ks, clientKeyStoreFilePassword).getKeyManagers());
+            est.withKeyManagers(JcaJceUtils.createKeyManagerFactory("X509", null, ks, clientKeyStoreFilePassword).getKeyManagers());
         }
 
-        JsseESTServiceBuilder est = new JsseESTServiceBuilder(serverRootUrl, sfcb.build());
-        est.withTimeout(timeout);
-        est.withLabel(label);
 
         if (noNameVerifier)
         {

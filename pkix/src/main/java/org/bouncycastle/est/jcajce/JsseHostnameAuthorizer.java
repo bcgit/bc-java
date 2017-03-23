@@ -6,7 +6,6 @@ import javax.net.ssl.SSLSession;
 
 /**
  * Verify the host name is as expected after the SSL Handshake has been completed.
- *
  */
 public interface JsseHostnameAuthorizer
 {
@@ -17,5 +16,6 @@ public interface JsseHostnameAuthorizer
      * @param context context object to do the verification under.
      * @return true if name verified, false otherwise.
      */
-    boolean verified(String name, SSLSession context) throws IOException;
+    boolean verified(String name, SSLSession context)
+        throws IOException;
 }

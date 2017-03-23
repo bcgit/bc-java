@@ -412,6 +412,7 @@ public class ESTService
 
     /**
      * Handles the enroll response, deals with status codes and setting of delays.
+     *
      * @param resp The response.
      * @return An EnrollmentResponse.
      * @throws IOException
@@ -483,6 +484,7 @@ public class ESTService
 
     /**
      * Fetch he CSR Attributes from the server.
+     *
      * @return A CSRRequestResponse with the attributes.
      * @throws ESTException
      */

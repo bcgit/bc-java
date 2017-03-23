@@ -2,9 +2,15 @@ package org.bouncycastle.est.jcajce;
 
 
 import java.net.Socket;
+import java.security.NoSuchProviderException;
+import java.security.Provider;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.est.ESTClientProvider;
 import org.bouncycastle.est.ESTService;
@@ -17,13 +23,13 @@ import org.bouncycastle.est.ESTServiceBuilder;
 public class JsseESTServiceBuilder
     extends ESTServiceBuilder
 {
-    protected final SSLSocketFactoryCreator socketFactoryCreator;
+    protected SSLSocketFactoryCreator socketFactoryCreator;
     protected JsseHostnameAuthorizer hostNameAuthorizer = new JsseDefaultHostnameAuthorizer();
     protected int timeoutMillis = 0;
     protected ChannelBindingProvider bindingProvider;
     protected Set<String> supportedSuites = new HashSet<String>();
     protected Long absoluteLimit;
-
+    protected SSLSocketFactoryCreatorBuilder sslSocketFactoryCreatorBuilder;
 
 
     /**
@@ -37,10 +43,22 @@ public class JsseESTServiceBuilder
         super(server);
         if (socketFactoryCreator == null)
         {
-            throw new IllegalArgumentException("No socket factory creator.");
+            throw new NullPointerException("No socket factory creator.");
         }
         this.socketFactoryCreator = socketFactoryCreator;
 
+    }
+
+    public JsseESTServiceBuilder(String server, X509TrustManager trustManager)
+    {
+        super(server);
+        sslSocketFactoryCreatorBuilder = new SSLSocketFactoryCreatorBuilder(trustManager);
+    }
+
+    public JsseESTServiceBuilder(String server, X509TrustManager[] trustManager)
+    {
+        super(server);
+        sslSocketFactoryCreatorBuilder = new SSLSocketFactoryCreatorBuilder(trustManager);
     }
 
 
@@ -88,6 +106,91 @@ public class JsseESTServiceBuilder
         return this;
     }
 
+    public JsseESTServiceBuilder withTLSVersion(String tlsVersion)
+    {
+        if (this.socketFactoryCreator != null)
+        {
+            throw new IllegalStateException("Socket Factory Creator was defined in the constructor.");
+        }
+
+        this.sslSocketFactoryCreatorBuilder.withTLSVersion(tlsVersion);
+
+
+        return this;
+    }
+
+    public JsseESTServiceBuilder withSecureRandom(SecureRandom secureRandom)
+    {
+        if (this.socketFactoryCreator != null)
+        {
+            throw new IllegalStateException("Socket Factory Creator was defined in the constructor.");
+        }
+
+        this.sslSocketFactoryCreatorBuilder.withSecureRandom(secureRandom);
+
+
+        return this;
+    }
+
+    /**
+     * Configure this builder to use the provider with the passed in name.
+     *
+     * @param tlsProviderName the name JSSE Provider to use.
+     * @return the current builder instance.
+     * @throws NoSuchProviderException if the specified provider does not exist.
+     */
+    public JsseESTServiceBuilder withProvider(String tlsProviderName)
+        throws NoSuchProviderException
+    {
+        if (this.socketFactoryCreator != null)
+        {
+            throw new IllegalStateException("Socket Factory Creator was defined in the constructor.");
+        }
+
+        this.sslSocketFactoryCreatorBuilder.withProvider(tlsProviderName);
+
+        return this;
+    }
+
+    /**
+     * Configure this builder to use the passed in provider.
+     *
+     * @param tlsProvider the JSSE Provider to use.
+     * @return the current builder instance.
+     */
+    public JsseESTServiceBuilder withProvider(Provider tlsProvider)
+    {
+        if (this.socketFactoryCreator != null)
+        {
+            throw new IllegalStateException("Socket Factory Creator was defined in the constructor.");
+        }
+
+        this.sslSocketFactoryCreatorBuilder.withProvider(tlsProvider);
+        return this;
+    }
+
+    public JsseESTServiceBuilder withKeyManager(KeyManager keyManager)
+    {
+        if (this.socketFactoryCreator != null)
+        {
+            throw new IllegalStateException("Socket Factory Creator was defined in the constructor.");
+        }
+
+        this.sslSocketFactoryCreatorBuilder.withKeyManager(keyManager);
+        return this;
+    }
+
+    public JsseESTServiceBuilder withKeyManagers(KeyManager[] keyManagers)
+    {
+        if (this.socketFactoryCreator != null)
+        {
+            throw new IllegalStateException("Socket Factory Creator was defined in the constructor.");
+        }
+        this.sslSocketFactoryCreatorBuilder.withKeyManagers(keyManagers);
+        return this;
+    }
+
+
     public ESTService build()
     {
         if (bindingProvider == null)
@@ -105,6 +208,12 @@ public class JsseESTServiceBuilder
                 }
             };
         }
+
+        if (socketFactoryCreator == null)
+        {
+            socketFactoryCreator = sslSocketFactoryCreatorBuilder.build();
+        }
+
 
         if (clientProvider == null)
         {

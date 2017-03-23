@@ -5,8 +5,6 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.bouncycastle.util.Arrays;
-
 class HttpUtil
 {
 
@@ -256,7 +254,7 @@ class HttpUtil
     {
         if (a == null)
         {
-            return new String[]{ b };
+            return new String[]{b};
         }
 
         int length = a.length;

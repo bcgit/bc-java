@@ -12,9 +12,9 @@ import org.bouncycastle.est.CACertsResponse;
 import org.bouncycastle.est.CSRAttributesResponse;
 import org.bouncycastle.est.CSRRequestResponse;
 import org.bouncycastle.est.ESTServiceBuilder;
-import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
-import org.bouncycastle.est.jcajce.SSLSocketFactoryCreatorBuilder;
+import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
+import org.bouncycastle.est.jcajce.SSLSocketFactoryCreator;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 import org.junit.Assert;
@@ -38,20 +38,31 @@ public class TestESTServiceFails
         ESTTestUtils.runJUnit(TestESTServiceFails.class);
     }
 
-    @Test(expected = NullPointerException.class)
-    public void testEmptyTrustAnchors()
-        throws Exception
-    {
-        SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder((X509TrustManager)null);
-        ESTServiceBuilder b = new JsseESTServiceBuilder("", sfcb.build());
-    }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testSocketFactoryCreator()
         throws Exception
     {
-        ESTServiceBuilder b = new JsseESTServiceBuilder("", null);
+        SSLSocketFactoryCreator socketFactoryCreator = null;
+        ESTServiceBuilder b = new JsseESTServiceBuilder("", socketFactoryCreator);
     }
+
+    @Test(expected = NullPointerException.class)
+    public void testSocketFactoryCreator_1()
+        throws Exception
+    {
+        X509TrustManager socketFactoryCreator = null;
+        ESTServiceBuilder b = new JsseESTServiceBuilder("", socketFactoryCreator);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testSocketFactoryCreator_2()
+        throws Exception
+    {
+        X509TrustManager[] socketFactoryCreator = null;
+        ESTServiceBuilder b = new JsseESTServiceBuilder("", socketFactoryCreator);
+    }
+
 
     @Test
     public void testEnforceTrusting()
@@ -59,8 +70,7 @@ public class TestESTServiceFails
     {
         try
         {
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
-            ESTServiceBuilder b = new JsseESTServiceBuilder("",sfcb.build());
+            ESTServiceBuilder b = new JsseESTServiceBuilder("", JcaJceUtils.getTrustAllTrustManager());
             b.build().getCSRAttributes();
         }
         catch (Exception ex)
@@ -70,8 +80,7 @@ public class TestESTServiceFails
 
         try
         {
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
-            ESTServiceBuilder b = new JsseESTServiceBuilder("",sfcb.build());
+            ESTServiceBuilder b = new JsseESTServiceBuilder("", JcaJceUtils.getTrustAllTrustManager());
             b.build().simpleEnroll(null);
         }
         catch (Exception ex)
@@ -82,8 +91,7 @@ public class TestESTServiceFails
 
         try
         {
-            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
-            ESTServiceBuilder b = new JsseESTServiceBuilder("",sfcb.build());
+            ESTServiceBuilder b = new JsseESTServiceBuilder("", JcaJceUtils.getTrustAllTrustManager());
             b.build().simpleEnroll(false, null, null);
         }
         catch (Exception ex)
@@ -149,22 +157,25 @@ public class TestESTServiceFails
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testCSRRequestResponseNoCSRs() {
-        CSRRequestResponse rsp = new CSRRequestResponse(null,null);
-        TestCase.assertFalse("Must be false",rsp.hasAttributesResponse());
+    public void testCSRRequestResponseNoCSRs()
+    {
+        CSRRequestResponse rsp = new CSRRequestResponse(null, null);
+        TestCase.assertFalse("Must be false", rsp.hasAttributesResponse());
         rsp.getAttributesResponse();
         Assert.fail("Must throw exception");
     }
 
     @Test
-    public void testCSRAttributeResponsewithCSRs() throws Exception {
+    public void testCSRAttributeResponsewithCSRs()
+        throws Exception
+    {
         CSRRequestResponse rsp = new CSRRequestResponse(
-                new CSRAttributesResponse(
-                        Base64.decode("MFYGBysGAQEBARYGCSqGSIb3DQEJBwYJKyQDAwIIAQELBglghkgBZQMEAgIGCSqGSIb3DQEBAQYJKoZIhvcNAQEEBgkqhkiG9w0BAQUGCSqGSIb3DQEBBg==")),
-        null
+            new CSRAttributesResponse(
+                Base64.decode("MFYGBysGAQEBARYGCSqGSIb3DQEJBwYJKyQDAwIIAQELBglghkgBZQMEAgIGCSqGSIb3DQEBAQYJKoZIhvcNAQEEBgkqhkiG9w0BAQUGCSqGSIb3DQEBBg==")),
+            null
         );
 
-        TestCase.assertTrue("Response exists",rsp.hasAttributesResponse());
+        TestCase.assertTrue("Response exists", rsp.hasAttributesResponse());
 
         rsp.getAttributesResponse();
 
