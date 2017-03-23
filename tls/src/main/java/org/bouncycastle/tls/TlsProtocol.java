@@ -708,16 +708,26 @@ public abstract class TlsProtocol
 
     protected void writeHandshakeMessage(byte[] buf, int off, int len) throws IOException
     {
-        recordStream.getHandshakeHashUpdater().write(buf, off, len);
+        if (len < 4)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
 
-        while (len > 0)
+        short type = TlsUtils.readUint8(buf, off);
+        if (type != HandshakeType.hello_request)
+        {
+            recordStream.getHandshakeHashUpdater().write(buf, off, len);
+        }
+
+        int total = 0;
+        do
         {
             // Fragment data according to the current fragment limit.
-            int toWrite = Math.min(len, recordStream.getPlaintextLimit());
-            safeWriteRecord(ContentType.handshake, buf, off, toWrite);
-            off += toWrite;
-            len -= toWrite;
+            int toWrite = Math.min(len - total, recordStream.getPlaintextLimit());
+            safeWriteRecord(ContentType.handshake, buf, off + total, toWrite);
+            total += toWrite;
         }
+        while (total < len);
     }
 
     /**
