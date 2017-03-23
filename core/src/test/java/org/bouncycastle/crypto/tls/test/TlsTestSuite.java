@@ -25,6 +25,7 @@ public class TlsTestSuite extends TestSuite
         TlsTestSuite testSuite = new TlsTestSuite();
 
         addFallbackTests(testSuite);
+        addVersionTests(testSuite, ProtocolVersion.SSLv3);
         addVersionTests(testSuite, ProtocolVersion.TLSv10);
         addVersionTests(testSuite, ProtocolVersion.TLSv11);
         addVersionTests(testSuite, ProtocolVersion.TLSv12);
@@ -196,10 +197,10 @@ public class TlsTestSuite extends TestSuite
     private static TlsTestConfig createTlsTestConfig(ProtocolVersion version)
     {
         TlsTestConfig c = new TlsTestConfig();
-        c.clientMinimumVersion = ProtocolVersion.TLSv10;
+        c.clientMinimumVersion = ProtocolVersion.SSLv3;
         c.clientOfferVersion = ProtocolVersion.TLSv12;
         c.serverMaximumVersion = version;
-        c.serverMinimumVersion = ProtocolVersion.TLSv10;
+        c.serverMinimumVersion = ProtocolVersion.SSLv3;
         return c;
     }
 }
