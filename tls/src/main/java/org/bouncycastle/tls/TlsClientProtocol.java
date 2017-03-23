@@ -128,11 +128,9 @@ public class TlsClientProtocol
         return tlsClient;
     }
 
-    protected void handleHandshakeMessage(short type, byte[] data)
+    protected void handleHandshakeMessage(short type, ByteArrayInputStream buf)
         throws IOException
     {
-        ByteArrayInputStream buf = new ByteArrayInputStream(data);
-
         if (this.resumedSession)
         {
             if (type != HandshakeType.finished || this.connection_state != CS_SERVER_HELLO)

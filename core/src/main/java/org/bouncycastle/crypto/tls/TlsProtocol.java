@@ -122,7 +122,7 @@ public abstract class TlsProtocol
     {
     }
 
-    protected abstract void handleHandshakeMessage(short type, byte[] buf)
+    protected abstract void handleHandshakeMessage(short type, ByteArrayInputStream buf)
         throws IOException;
 
     protected void handleWarningMessage(short description)
@@ -313,18 +313,14 @@ public abstract class TlsProtocol
                 byte[] beginning = new byte[4];
                 handshakeQueue.read(beginning, 0, 4, 0);
                 short type = TlsUtils.readUint8(beginning, 0);
-                int len = TlsUtils.readUint24(beginning, 1);
+                int length = TlsUtils.readUint24(beginning, 1);
+                int totalLength = 4 + length;
 
                 /*
                  * Check if we have enough bytes in the buffer to read the full message.
                  */
-                if (handshakeQueue.available() >= (len + 4))
+                if (handshakeQueue.available() >= totalLength)
                 {
-                    /*
-                     * Read the message.
-                     */
-                    byte[] buf = handshakeQueue.removeData(len, 4);
-
                     checkReceivedChangeCipherSpec(connection_state == CS_END || type == HandshakeType.finished);
 
                     /*
@@ -348,10 +344,13 @@ public abstract class TlsProtocol
                         // NB: Fall through to next case label
                     }
                     default:
-                        recordStream.updateHandshakeData(beginning, 0, 4);
-                        recordStream.updateHandshakeData(buf, 0, len);
+                        handshakeQueue.copyTo(recordStream.getHandshakeHashUpdater(), totalLength);
                         break;
                     }
+
+                    handshakeQueue.removeData(4);
+
+                    ByteArrayInputStream buf = handshakeQueue.readFrom(length);
 
                     /*
                      * Now, parse the message.
@@ -684,6 +683,8 @@ public abstract class TlsProtocol
 
     protected void writeHandshakeMessage(byte[] buf, int off, int len) throws IOException
     {
+        recordStream.getHandshakeHashUpdater().write(buf, off, len);
+
         while (len > 0)
         {
             // Fragment data according to the current fragment limit.

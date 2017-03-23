@@ -1,9 +1,9 @@
-package org.bouncycastle.tls.crypto.impl.jcajce;
+package org.bouncycastle.util.io;
 
 import java.io.IOException;
 import java.io.OutputStream;
 
-abstract class SimpleOutputStream extends OutputStream
+public abstract class SimpleOutputStream extends OutputStream
 {
     public void close()
     {
