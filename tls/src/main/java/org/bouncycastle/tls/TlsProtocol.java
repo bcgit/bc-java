@@ -53,7 +53,7 @@ public abstract class TlsProtocol
     /*
      * Queues for data from some protocols.
      */
-    private ByteQueue applicationDataQueue = new ByteQueue();
+    private ByteQueue applicationDataQueue = new ByteQueue(0);
     private ByteQueue alertQueue = new ByteQueue(2);
     private ByteQueue handshakeQueue = new ByteQueue();
 //    private ByteQueue heartbeatQueue = new ByteQueue();
@@ -201,6 +201,11 @@ public abstract class TlsProtocol
     {
         try
         {
+            this.connection_state = CS_END;
+
+            this.alertQueue.shrink();
+            this.handshakeQueue.shrink();
+
             this.recordStream.finaliseHandshake();
 
             this.appDataSplitEnabled = !TlsUtils.isTLSv11(getContext());
