@@ -82,6 +82,7 @@ public abstract class DefaultTlsServer
         case KeyExchangeAlgorithm.DHE_DSS:
             return getDSASignerCredentials();
 
+        case KeyExchangeAlgorithm.DH_anon:
         case KeyExchangeAlgorithm.ECDH_anon:
             return null;
 
@@ -108,6 +109,7 @@ public abstract class DefaultTlsServer
 
         switch (keyExchangeAlgorithm)
         {
+        case KeyExchangeAlgorithm.DH_anon:
         case KeyExchangeAlgorithm.DH_DSS:
         case KeyExchangeAlgorithm.DH_RSA:
             return createDHKeyExchange(keyExchangeAlgorithm);

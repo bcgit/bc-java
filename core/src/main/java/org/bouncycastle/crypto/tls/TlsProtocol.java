@@ -281,24 +281,20 @@ public abstract class TlsProtocol
             processHandshake();
             break;
         }
-        case ContentType.heartbeat:
-        {
-            if (!appDataReady)
-            {
-                throw new TlsFatalAlert(AlertDescription.unexpected_message);
-            }
-            // TODO[RFC 6520]
-//            heartbeatQueue.addData(buf, offset, len);
-//            processHeartbeat();
-            break;
-        }
+//        case ContentType.heartbeat:
+//        {
+//            if (!appDataReady)
+//            {
+//                throw new TlsFatalAlert(AlertDescription.unexpected_message);
+//            }
+//            // TODO[RFC 6520]
+////            heartbeatQueue.addData(buf, offset, len);
+////            processHeartbeat();
+//            break;
+//        }
         default:
-            /*
-             * Uh, we don't know this protocol.
-             * 
-             * RFC2246 defines on page 13, that we should ignore this.
-             */
-            break;
+            // Record type should already have been checked
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
 
@@ -1359,6 +1355,9 @@ public abstract class TlsProtocol
 
         switch (ciphersuite)
         {
+        case CipherSuite.TLS_DH_anon_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_DH_anon_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_DH_anon_WITH_AES_256_CBC_SHA256:
         case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256:
         case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_128_GCM_SHA256:
         case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256:
@@ -1462,6 +1461,7 @@ public abstract class TlsProtocol
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
+        case CipherSuite.TLS_DH_anon_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_256_GCM_SHA384:
         case CipherSuite.TLS_DH_DSS_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_256_GCM_SHA384:
