@@ -148,7 +148,6 @@ public class TlsClientProtocol
 
             sendFinishedMessage();
             this.connection_state = CS_CLIENT_FINISHED;
-            this.connection_state = CS_END;
 
             completeHandshake();
             return;
@@ -244,7 +243,6 @@ public class TlsClientProtocol
             {
                 processFinishedMessage(buf);
                 this.connection_state = CS_SERVER_FINISHED;
-                this.connection_state = CS_END;
 
                 completeHandshake();
                 break;

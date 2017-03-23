@@ -371,7 +371,6 @@ public class TlsServerProtocol
 
                 sendFinishedMessage();
                 this.connection_state = CS_SERVER_FINISHED;
-                this.connection_state = CS_END;
 
                 completeHandshake();
                 break;
