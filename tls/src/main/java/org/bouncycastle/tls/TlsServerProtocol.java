@@ -112,11 +112,9 @@ public class TlsServerProtocol
         return tlsServer;
     }
 
-    protected void handleHandshakeMessage(short type, byte[] data)
+    protected void handleHandshakeMessage(short type, ByteArrayInputStream buf)
         throws IOException
     {
-        ByteArrayInputStream buf = new ByteArrayInputStream(data);
-
         switch (type)
         {
         case HandshakeType.client_hello:

@@ -1,5 +1,9 @@
 package org.bouncycastle.tls;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
 /**
  * A queue for bytes. This file could be more optimized.
  */
@@ -53,28 +57,6 @@ public class ByteQueue
     }
 
     /**
-     * Read data from the buffer.
-     *
-     * @param buf    The buffer where the read data will be copied to.
-     * @param offset How many bytes to skip at the beginning of buf.
-     * @param len    How many bytes to read at all.
-     * @param skip   How many bytes from our data to skip.
-     */
-    public void read(byte[] buf, int offset, int len, int skip)
-    {
-        if ((buf.length - offset) < len)
-        {
-            throw new IllegalArgumentException("Buffer size of " + buf.length
-                + " is too small for a read of " + len + " bytes");
-        }
-        if ((available - skip) < len)
-        {
-            throw new IllegalStateException("Not enough data to read");
-        }
-        System.arraycopy(databuf, skipped + skip, buf, offset, len);
-    }
-
-    /**
      * Add some data to our buffer.
      *
      * @param buf A byte-array to read data from.
@@ -101,6 +83,72 @@ public class ByteQueue
 
         System.arraycopy(buf, off, databuf, skipped + available, len);
         available += len;
+    }
+
+    /**
+     * @return The number of bytes which are available in this buffer.
+     */
+    public int available()
+    {
+        return available;
+    }
+
+    /**
+     * Copy some bytes from the beginning of the data to the provided {@link OutputStream}.
+     *
+     * @param output The {@link OutputStream} to copy the bytes to.
+     * @param length How many bytes to copy.
+     */
+    public void copyTo(OutputStream output, int length) throws IOException
+    {
+        if (length > available)
+        {
+            throw new IllegalStateException("Cannot copy " + length + " bytes, only got " + available);
+        }
+
+        output.write(databuf, skipped, length);
+    }
+
+    /**
+     * Read data from the buffer.
+     *
+     * @param buf    The buffer where the read data will be copied to.
+     * @param offset How many bytes to skip at the beginning of buf.
+     * @param len    How many bytes to read at all.
+     * @param skip   How many bytes from our data to skip.
+     */
+    public void read(byte[] buf, int offset, int len, int skip)
+    {
+        if ((buf.length - offset) < len)
+        {
+            throw new IllegalArgumentException("Buffer size of " + buf.length
+                + " is too small for a read of " + len + " bytes");
+        }
+        if ((available - skip) < len)
+        {
+            throw new IllegalStateException("Not enough data to read");
+        }
+        System.arraycopy(databuf, skipped + skip, buf, offset, len);
+    }
+
+    /**
+     * Return a {@link ByteArrayInputStream} over some bytes at the beginning of the data.
+     * @param length How many bytes will be readable.
+     * @return A {@link ByteArrayInputStream} over the data.
+     */
+    public ByteArrayInputStream readFrom(int length)
+    {
+        if (length > available)
+        {
+            throw new IllegalStateException("Cannot read " + length + " bytes, only got " + available);
+        }
+
+        int position = skipped;
+
+        available -= length;
+        skipped += length;
+
+        return new ByteArrayInputStream(databuf, position, length);
     }
 
     /**
@@ -141,21 +189,5 @@ public class ByteQueue
         byte[] buf = new byte[len];
         removeData(buf, 0, len, skip);
         return buf;
-    }
-    
-    /**
-     * @deprecated Use 'available' instead
-     */
-    public int size()
-    {
-        return available;
-    }
-
-    /**
-     * @return The number of bytes which are available in this buffer.
-     */
-    public int available()
-    {
-        return available;
     }
 }
