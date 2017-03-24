@@ -55,7 +55,7 @@ public abstract class TlsProtocol
      */
     private ByteQueue applicationDataQueue = new ByteQueue(0);
     private ByteQueue alertQueue = new ByteQueue(2);
-    private ByteQueue handshakeQueue = new ByteQueue();
+    private ByteQueue handshakeQueue = new ByteQueue(0);
 //    private ByteQueue heartbeatQueue = new ByteQueue();
 
     /*
@@ -252,7 +252,7 @@ public abstract class TlsProtocol
         }
     }
 
-    protected void processRecord(short protocol, byte[] buf, int offset, int len)
+    protected void processRecord(short protocol, byte[] buf, int off, int len)
         throws IOException
     {
         /*
@@ -262,8 +262,8 @@ public abstract class TlsProtocol
         {
         case ContentType.alert:
         {
-            alertQueue.addData(buf, offset, len);
-            processAlert();
+            alertQueue.addData(buf, off, len);
+            processAlertQueue();
             break;
         }
         case ContentType.application_data:
@@ -272,19 +272,32 @@ public abstract class TlsProtocol
             {
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
-            applicationDataQueue.addData(buf, offset, len);
-            processApplicationData();
+            applicationDataQueue.addData(buf, off, len);
+            processApplicationDataQueue();
             break;
         }
         case ContentType.change_cipher_spec:
         {
-            processChangeCipherSpec(buf, offset, len);
+            processChangeCipherSpec(buf, off, len);
             break;
         }
         case ContentType.handshake:
         {
-            handshakeQueue.addData(buf, offset, len);
-            processHandshake();
+            if (handshakeQueue.available() > 0)
+            {
+                handshakeQueue.addData(buf, off, len);
+                processHandshakeQueue(handshakeQueue);
+            }
+            else
+            {
+                ByteQueue tmpQueue = new ByteQueue(buf, off, len);
+                processHandshakeQueue(tmpQueue);
+                int remaining = tmpQueue.available();
+                if (remaining > 0)
+                {
+                    handshakeQueue.addData(buf, off + len - remaining, remaining);
+                }
+            }
             break;
         }
 //        case ContentType.heartbeat:
@@ -304,72 +317,67 @@ public abstract class TlsProtocol
         }
     }
 
-    private void processHandshake()
+    private void processHandshakeQueue(ByteQueue queue)
         throws IOException
     {
-        boolean read;
-        do
+        /*
+         * We need the first 4 bytes, they contain type and length of the message.
+         */
+        while (queue.available() >= 4)
         {
-            read = false;
+            byte[] beginning = new byte[4];
+            queue.read(beginning, 0, 4, 0);
+            short type = TlsUtils.readUint8(beginning, 0);
+            int length = TlsUtils.readUint24(beginning, 1);
+            int totalLength = 4 + length;
+
             /*
-             * We need the first 4 bytes, they contain type and length of the message.
+             * Check if we have enough bytes in the buffer to read the full message.
              */
-            if (handshakeQueue.available() >= 4)
+            if (queue.available() < totalLength)
             {
-                byte[] beginning = new byte[4];
-                handshakeQueue.read(beginning, 0, 4, 0);
-                short type = TlsUtils.readUint8(beginning, 0);
-                int length = TlsUtils.readUint24(beginning, 1);
-                int totalLength = 4 + length;
-
-                /*
-                 * Check if we have enough bytes in the buffer to read the full message.
-                 */
-                if (handshakeQueue.available() >= totalLength)
-                {
-                    checkReceivedChangeCipherSpec(connection_state == CS_END || type == HandshakeType.finished);
-
-                    /*
-                     * RFC 2246 7.4.9. The value handshake_messages includes all handshake messages
-                     * starting at client hello up to, but not including, this finished message.
-                     * [..] Note: [Also,] Hello Request messages are omitted from handshake hashes.
-                     */
-                    switch (type)
-                    {
-                    case HandshakeType.hello_request:
-                        break;
-                    case HandshakeType.finished:
-                    {
-                        TlsContext ctx = getContext();
-                        if (this.expected_verify_data == null
-                            && ctx.getSecurityParameters().getMasterSecret() != null)
-                        {
-                            this.expected_verify_data = createVerifyData(!ctx.isServer());
-                        }
-
-                        // NB: Fall through to next case label
-                    }
-                    default:
-                        handshakeQueue.copyTo(recordStream.getHandshakeHashUpdater(), totalLength);
-                        break;
-                    }
-
-                    handshakeQueue.removeData(4);
-
-                    ByteArrayInputStream buf = handshakeQueue.readFrom(length);
-
-                    /*
-                     * Now, parse the message.
-                     */
-                    handleHandshakeMessage(type, buf);
-                    read = true;
-                }
+                break;
             }
+
+            checkReceivedChangeCipherSpec(connection_state == CS_END || type == HandshakeType.finished);
+
+            /*
+             * RFC 2246 7.4.9. The value handshake_messages includes all handshake messages
+             * starting at client hello up to, but not including, this finished message.
+             * [..] Note: [Also,] Hello Request messages are omitted from handshake hashes.
+             */
+            switch (type)
+            {
+            case HandshakeType.hello_request:
+                break;
+            case HandshakeType.finished:
+            {
+                TlsContext ctx = getContext();
+                if (this.expected_verify_data == null
+                    && ctx.getSecurityParameters().getMasterSecret() != null)
+                {
+                    this.expected_verify_data = createVerifyData(!ctx.isServer());
+                }
+
+                // NB: Fall through to next case label
+            }
+            default:
+                queue.copyTo(recordStream.getHandshakeHashUpdater(), totalLength);
+                break;
+            }
+
+            queue.removeData(4);
+
+            ByteArrayInputStream buf = queue.readFrom(length);
+
+            /*
+             * Now, parse the message.
+             */
+            handleHandshakeMessage(type, buf);
         }
-        while (read);
     }
 
-    private void processApplicationData()
+    private void processApplicationDataQueue()
     {
         /*
          * There is nothing we need to do here.
@@ -378,7 +386,7 @@ public abstract class TlsProtocol
          */
     }
 
-    private void processAlert()
+    private void processAlertQueue()
         throws IOException
     {
         while (alertQueue.available() >= 2)
