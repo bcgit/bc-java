@@ -46,6 +46,8 @@ public class ByteQueue
      */
     private int available = 0;
 
+    private boolean readOnlyBuf = false;
+
     public ByteQueue()
     {
         this(DEFAULT_CAPACITY);
@@ -53,7 +55,15 @@ public class ByteQueue
 
     public ByteQueue(int capacity)
     {
-        databuf = new byte[capacity];
+        databuf = capacity == 0 ? TlsUtils.EMPTY_BYTES : new byte[capacity];
+    }
+
+    public ByteQueue(byte[] buf, int off, int len)
+    {
+        this.databuf = buf;
+        this.skipped = off;
+        this.available = len;
+        this.readOnlyBuf = true;
     }
 
     /**
@@ -65,6 +75,11 @@ public class ByteQueue
      */
     public void addData(byte[] buf, int off, int len)
     {
+        if (readOnlyBuf)
+        {
+            throw new IllegalStateException("Cannot add data to read-only buffer");
+        }
+
         if ((skipped + available + len) > databuf.length)
         {
             int desiredSize = ByteQueue.nextTwoPow(available + len);
