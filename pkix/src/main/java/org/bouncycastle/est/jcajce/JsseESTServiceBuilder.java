@@ -31,12 +31,11 @@ public class JsseESTServiceBuilder
     protected Long absoluteLimit;
     protected SSLSocketFactoryCreatorBuilder sslSocketFactoryCreatorBuilder;
 
-
     /**
-     * Create a builder for a client talking to a already trusted server.
+     * Create a builder for a client using a custom SSLSocketFactoryCreator.
      *
      * @param server               name of the server to talk to (URL format).
-     * @param socketFactoryCreator creator of socket factories.
+     * @param socketFactoryCreator a custom creator of socket factories.
      */
     public JsseESTServiceBuilder(String server, SSLSocketFactoryCreator socketFactoryCreator)
     {
@@ -49,18 +48,40 @@ public class JsseESTServiceBuilder
 
     }
 
+    /**
+     * Create a builder for a client talking to a server that is not yet trusted.
+     *
+     * @param server name of the server to talk to (URL format).
+     */
+    public JsseESTServiceBuilder(String server)
+    {
+        super(server);
+        sslSocketFactoryCreatorBuilder = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getTrustAllTrustManager());
+    }
+
+    /**
+     * Create a builder for a client talking to a trusted server.
+     *
+     * @param server name of the server to talk to (URL format).
+     * @param trustManager
+     */
     public JsseESTServiceBuilder(String server, X509TrustManager trustManager)
     {
         super(server);
         sslSocketFactoryCreatorBuilder = new SSLSocketFactoryCreatorBuilder(trustManager);
     }
 
+    /**
+     * Create a builder for a client talking to a trusted server.
+     *
+     * @param server name of the server to talk to (URL format).
+     * @param trustManager
+     */
     public JsseESTServiceBuilder(String server, X509TrustManager[] trustManager)
     {
         super(server);
         sslSocketFactoryCreatorBuilder = new SSLSocketFactoryCreatorBuilder(trustManager);
     }
-
 
     public JsseESTServiceBuilder withHostNameAuthorizer(JsseHostnameAuthorizer hostNameAuthorizer)
     {
