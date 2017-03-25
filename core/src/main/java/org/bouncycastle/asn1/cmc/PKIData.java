@@ -37,13 +37,12 @@ public class PKIData
         this.otherMsgSequence = otherMsgSequence;
     }
 
-    public PKIData(ASN1Sequence seq)
+    private PKIData(ASN1Sequence seq)
     {
         if (seq.size() != 4)
         {
             throw new IllegalArgumentException("Sequence not 4 elements.");
         }
-
 
         ASN1Sequence s = ((ASN1Sequence)seq.getObjectAt(0));
         controlSequence = new TaggedAttribute[s.size()];
@@ -54,7 +53,7 @@ public class PKIData
 
         s = ((ASN1Sequence)seq.getObjectAt(1));
         reqSequence = new TaggedRequest[s.size()];
-        for (int t = 0; t < controlSequence.length; t++)
+        for (int t = 0; t < reqSequence.length; t++)
         {
             reqSequence[t] = TaggedRequest.getInstance(s.getObjectAt(t));
         }
@@ -68,7 +67,7 @@ public class PKIData
 
         s = ((ASN1Sequence)seq.getObjectAt(3));
         otherMsgSequence = new OtherMsg[s.size()];
-        for (int t = 0; t < cmsSequence.length; t++)
+        for (int t = 0; t < otherMsgSequence.length; t++)
         {
             otherMsgSequence[t] = OtherMsg.getInstance(s.getObjectAt(t));
         }
