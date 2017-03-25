@@ -4,7 +4,6 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PushbackInputStream;
 import java.security.cert.CRL;
 import java.security.cert.CRLException;
 import java.security.cert.CertPath;
@@ -44,6 +43,7 @@ public class CertificateFactory
 
     private static final PEMUtil PEM_CERT_PARSER = new PEMUtil("CERTIFICATE");
     private static final PEMUtil PEM_CRL_PARSER = new PEMUtil("CRL");
+    private static final PEMUtil PEM_PKCS7_PARSER = new PEMUtil("PKCS7");
 
     private ASN1Set sData = null;
     private int                sDataObjectCount = 0;
@@ -57,8 +57,24 @@ public class CertificateFactory
         ASN1InputStream dIn)
         throws IOException, CertificateParsingException
     {
-        ASN1Sequence seq = (ASN1Sequence)dIn.readObject();
+        return getCertificate(ASN1Sequence.getInstance(dIn.readObject()));
+    }
 
+    private java.security.cert.Certificate readPEMCertificate(
+        InputStream in)
+        throws IOException, CertificateParsingException
+    {
+        return getCertificate(PEM_CERT_PARSER.readPEMObject(in));
+    }
+
+    private java.security.cert.Certificate getCertificate(ASN1Sequence seq)
+        throws CertificateParsingException
+    {
+        if (seq == null)
+        {
+            return null;
+        }
+        
         if (seq.size() > 1
                 && seq.getObjectAt(0) instanceof ASN1ObjectIdentifier)
         {
@@ -95,23 +111,9 @@ public class CertificateFactory
         return null;
     }
 
-    private java.security.cert.Certificate readPEMCertificate(
-        InputStream in)
-        throws IOException, CertificateParsingException
-    {
-        ASN1Sequence seq = PEM_CERT_PARSER.readPEMObject(in);
-
-        if (seq != null)
-        {
-            return new X509CertificateObject(bcHelper,
-                            Certificate.getInstance(seq));
-        }
-
-        return null;
-    }
 
     protected CRL createCRL(CertificateList c)
-    throws CRLException
+        throws CRLException
     {
         return new X509CRLObject(bcHelper, c);
     }
@@ -120,23 +122,19 @@ public class CertificateFactory
         InputStream in)
         throws IOException, CRLException
     {
-        ASN1Sequence seq = PEM_CRL_PARSER.readPEMObject(in);
-
-        if (seq != null)
-        {
-            return createCRL(
-                            CertificateList.getInstance(seq));
-        }
-
-        return null;
+        return getCRL(PEM_CRL_PARSER.readPEMObject(in));
     }
 
     private CRL readDERCRL(
         ASN1InputStream aIn)
         throws IOException, CRLException
     {
-        ASN1Sequence seq = (ASN1Sequence)aIn.readObject();
+        return getCRL(ASN1Sequence.getInstance(aIn.readObject()));
+    }
 
+    private CRL getCRL(ASN1Sequence seq)
+        throws CRLException
+    {
         if (seq.size() > 1
                 && seq.getObjectAt(0) instanceof ASN1ObjectIdentifier)
         {
@@ -144,7 +142,7 @@ public class CertificateFactory
             {
                 sCrlData = SignedData.getInstance(ASN1Sequence.getInstance(
                     (ASN1TaggedObject)seq.getObjectAt(1), true)).getCRLs();
-    
+
                 return getCRL();
             }
         }
