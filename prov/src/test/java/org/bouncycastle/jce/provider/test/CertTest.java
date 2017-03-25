@@ -1144,6 +1144,59 @@ public class CertTest
             "flc9nF9Ca/UHLbXwgpP5WW+uZPpY5Yse42O+tYHNbwKMeQ==\n" +
             "-----END CERTIFICATE-----";
 
+    private final String pemPKCS7 =
+        "-----BEGIN PKCS7-----\n"+
+        "MIIJDAYJKoZIhvcNAQcCoIII/TCCCPkCAQExADALBgkqhkiG9w0BBwGgggjfMIIF\n"+
+        "wTCCBKmgAwIBAgIJ+pQ4odKc8AABMA0GCSqGSIb3DQEBBQUAMGAxCzAJBgNVBAYT\n"+
+        "AlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMRIwEAYDVQQHEwlTYW4gTWF0ZW8xFzAV\n"+
+        "BgNVBAoTDkdlbml1cy5jb20gSW5jMQ8wDQYDVQQLEwZOZXRPcHMwHhcNMTQwMTI4\n"+
+        "MjE0MjE0WhcNMjQwMTI2MjE0MjE0WjBgMQswCQYDVQQGEwJVUzETMBEGA1UECBMK\n"+
+        "Q2FsaWZvcm5pYTESMBAGA1UEBxMJU2FuIE1hdGVvMRcwFQYDVQQKEw5HZW5pdXMu\n"+
+        "Y29tIEluYzEPMA0GA1UECxMGTmV0T3BzMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A\n"+
+        "MIIBCgKCAQEArfmkkDffJP6ODl13KnTaB8cwvB4anWw8+bGa8y9N7wPx7RWZWFMr\n"+
+        "fOac01p2fhq+oUIw3/uxRcDAQBQx0ZFLx3OFMuQkTpFbzHeSctsXi1Kk28pn4K3B\n"+
+        "K2CModRh8ir/qdhu0PG4SsXdyN8uT8H6bitmH4vpLaAMMi6aa1M6Ygio8a37UCQQ\n"+
+        "7fw2P7YVR61BsyqwsM/eYtgd2LqrObLwkkOvxTwpZPWDftHI4ucz1rgNnD9q0H3g\n"+
+        "kyGyGq9NBkBHJ25+CkMe+1q/eh4Xt2kt2ML4q5YZmQEwHm1eIR3/uGlb1+bueRMd\n"+
+        "hrueth/FsUiKPJ0gzmsxzQefgcLnctIx3wIDAQABo4ICfDCCAngwCQYDVR0TBAIw\n"+
+        "ADALBgNVHQ8EBAMCBeAwHQYDVR0OBBYEFJ/uU/wudzNDSI/SWkNNTXNLq2EIMIGS\n"+
+        "BgNVHSMEgYowgYeAFJ/uU/wudzNDSI/SWkNNTXNLq2EIoWSkYjBgMQswCQYDVQQG\n"+
+        "EwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTESMBAGA1UEBxMJU2FuIE1hdGVvMRcw\n"+
+        "FQYDVQQKEw5HZW5pdXMuY29tIEluYzEPMA0GA1UECxMGTmV0T3Bzggn6lDih0pzw\n"+
+        "AAEwHgYJYIZIAYb4QgENBBEWD1guNTA5IFVuaXQgVGVzdDCBwwYDVR0RBIG7MIG4\n"+
+        "oA4GAyoDBKAHDAV0ZXN0MYEQeDUwOUBleGFtcGxlLmNvbYIQeDUwOS5leGFtcGxl\n"+
+        "LmNvbaRQME4xCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1Bd2Vzb21lIER1ZGVzMRcw\n"+
+        "FQYDVQQLFA7DnGJlciBGcsOuZW5kczEOMAwGA1UEAxQF4oiGxpKGJWh0dHA6Ly93\n"+
+        "d3cuZXhhbXBsZS5jb20vP3E9YXdlc29tZW5lc3OHBMCoAAGIAyoDBDCBwwYDVR0S\n"+
+        "BIG7MIG4oA4GAyoDBKAHDAV0ZXN0MYEQeDUwOUBleGFtcGxlLmNvbYIQeDUwOS5l\n"+
+        "eGFtcGxlLmNvbaRQME4xCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1Bd2Vzb21lIER1\n"+
+        "ZGVzMRcwFQYDVQQLFA7DnGJlciBGcsOuZW5kczEOMAwGA1UEAxQF4oiGxpKGJWh0\n"+
+        "dHA6Ly93d3cuZXhhbXBsZS5jb20vP3E9YXdlc29tZW5lc3OHBMCoAAGIAyoDBDAN\n"+
+        "BgkqhkiG9w0BAQUFAAOCAQEAQK5jBzTq2lX1GpVD9RHxtTHJn/WkYOpMJYJruw8j\n"+
+        "HGfQwAkhlL9AqWgodTruoTnXgZbA7F3S8hx9gmUbHVjVeBvxZnGEJ8g7So1erFKv\n"+
+        "yQD1Ajtn7+uGXw6s0Dvde2ZVzV05pRk9ybg7kxKNXvVbKS3kyd6XoA27H5CSmzDu\n"+
+        "8cwHQkN4mJlwAiNCwMarpN4m4X0rQ+g1Ncfq+4sRjFLd8VVCbCpzD8UMBOVTpxxj\n"+
+        "kSyRPJZ7Db8SY0H2vcTUj2Yyog1RQ+RA/xp7Fgw+leEiveIE23Dq62hCHq6rU5Vj\n"+
+        "6L/LlLiKZ17lZT4z0fJ0lukPUpmVTynALKsKNm57+fOfnzCCAxYwggLWoAMCAQIC\n"+
+        "CQDcaK5WyhbztjAJBgcqhkjOOAQDMGAxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpD\n"+
+        "YWxpZm9ybmlhMRIwEAYDVQQHEwlTYW4gTWF0ZW8xFzAVBgNVBAoTDkdlbml1cy5j\n"+
+        "b20gSW5jMQ8wDQYDVQQLEwZOZXRPcHMwHhcNMTQwMTI4MjE0MjE1WhcNMTQwMjI3\n"+
+        "MjE0MjE1WjBgMQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTESMBAG\n"+
+        "A1UEBxMJU2FuIE1hdGVvMRcwFQYDVQQKEw5HZW5pdXMuY29tIEluYzEPMA0GA1UE\n"+
+        "CxMGTmV0T3BzMIIBtzCCASsGByqGSM44BAEwggEeAoGBAIiv42coWuyVXpYoyEwf\n"+
+        "7uevd4ILhylFuvKH5tRWRcZENuxPOmXfr3L43PCdbnJhXMg3RkkWgjaE7lBk5evx\n"+
+        "LKH6rU2a1GnGmoY34OIvVvGL3xi96uYTTvLIX3+6NXaAlNppIBSHXcYx8cMdtYIn\n"+
+        "3J6JGSHEPo36ay4rDZbfS1frAhUAxF6k+/9T00QMolE41R+6ytzrawkCgYA4soyt\n"+
+        "rrIrQq6gwm2HanT8coIChr3/Et8rMamj7gS1yT9kH8HNGf217XtE3f/LUZZWUkBq\n"+
+        "3PNOuxhprNmvSAdQ7ZzhWfRvOFHKaH/DtKvLeEC5I00DfYSI64/V869Jy7lnyY7M\n"+
+        "h7ShLIwOlwnBDIL5oluircfXTr20a/Jv9pS1AAOBhQACgYEAhg6lELBZAIHVkjm7\n"+
+        "bwVJ5G/ka+KCjXxWXo+BCbqo0LqfrKQoQwUcwDzuKdqWxYbyUd0cl5/9fX59/RT/\n"+
+        "9ULklGy+dTyUSc/hj85PCXLYly3G6WECiN29TK0QLhEMZfi+iSm3YxNX3rxvmrHb\n"+
+        "bfO2SMef4r6ujv9KscDg0zQ4AgajGjAYMAkGA1UdEwQCMAAwCwYDVR0PBAQDAgA3\n"+
+        "MAkGByqGSM44BAMDLwAwLAIUVcYZ1LNv22fDBiajZ99FpTn05SMCFCgMXzUGLdPy\n"+
+        "gY460q7tGpuydry+oQAxAA==\n"+
+        "-----END PKCS7-----\n";
+
     private PublicKey dudPublicKey = new PublicKey() 
     {
         public String getAlgorithm()
@@ -1480,6 +1533,8 @@ public class CertTest
         //
         InputStream in = new ByteArrayInputStream(pkcs7CrlProblem);
         Collection certCol = cf.generateCertificates(in);
+
+        in.reset();
         Collection crlCol = cf.generateCRLs(in);
 
         if (crlCol.size() != 0)
@@ -1488,6 +1543,22 @@ public class CertTest
         }
 
         if (certCol.size() != 4)
+        {
+            fail("wrong number of Certs: " + certCol.size());
+        }
+
+        in = new ByteArrayInputStream(pemPKCS7.getBytes("US-ASCII"));
+        certCol = cf.generateCertificates(in);
+
+        in.reset();
+        crlCol = cf.generateCRLs(in);
+
+        if (crlCol.size() != 0)
+        {
+            fail("wrong number of CRLs: " + crlCol.size());
+        }
+
+        if (certCol.size() != 2)
         {
             fail("wrong number of Certs: " + certCol.size());
         }
