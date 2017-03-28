@@ -3,7 +3,6 @@ package org.bouncycastle.tls.crypto;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.Set;
 
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.ProtocolVersion;
@@ -16,11 +15,11 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 public interface TlsCrypto
 {
     /**
-     * Return the set of supported curves that can be used with this TlsCrypto.
+     * Return true if this TlsCrypto supports the passed in curveID.
      *
-     * @return a set of curve IDs.
+     * @return true if this instance supports the passed in curveID, false otherwise.
      */
-    Set<Integer> getSupportedNamedCurves();
+    boolean hasNamedCurve(int curveID);
 
     /**
      * Return true if this TlsCrypto can perform raw signatures and verifications for all supported algorithms.

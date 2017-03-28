@@ -3,7 +3,6 @@ package org.bouncycastle.tls.crypto.impl.bc;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.Set;
 
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.crypto.BlockCipher;
@@ -56,10 +55,8 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.DefaultTlsCryptoCapabilities;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
-import org.bouncycastle.tls.crypto.TlsCryptoCapabilities;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
@@ -99,16 +96,9 @@ public class BcTlsCrypto
 {
     private final DigestRandomGenerator nonceGen;
     private final SecureRandom entropySource;
-    private final TlsCryptoCapabilities capabilities;
 
     public BcTlsCrypto(SecureRandom entropySource)
     {
-        this(new DefaultTlsCryptoCapabilities(), entropySource);
-    }
-    
-    public BcTlsCrypto(TlsCryptoCapabilities capabilities, SecureRandom entropySource)
-    {
-        this.capabilities = capabilities;
         this.entropySource = entropySource;
 
         Digest digest = createDigest(HashAlgorithm.sha256);
@@ -136,11 +126,6 @@ public class BcTlsCrypto
         nonceGen.nextBytes(nonce);
 
         return nonce;
-    }
-
-    public Set<Integer> getSupportedNamedCurves()
-    {
-        return capabilities.getSupportedNamedCurves();
     }
 
     public SecureRandom getSecureRandom()
@@ -261,6 +246,12 @@ public class BcTlsCrypto
                 }
             }
         };
+    }
+
+    public boolean hasNamedCurve(int curveID)
+    {
+        // TODO: at the moment we support everything
+        return true;
     }
 
     public boolean hasAllRawSignatureAlgorithms()
