@@ -23,6 +23,7 @@ import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 
 /**
@@ -63,7 +64,7 @@ public class JcaTlsCertificate
         }
         catch (GeneralSecurityException e)
         {
-            throw new IOException("unable to decode certificate: " + e.getMessage(), e);
+            throw new TlsCryptoException("unable to decode certificate: " + e.getMessage(), e);
         }
         this.helper = helper;
     }
@@ -160,7 +161,7 @@ public class JcaTlsCertificate
         }
         catch (CertificateEncodingException e)
         {
-            throw new IOException("unable to encode certificate: " + e.getMessage(), e);
+            throw new TlsCryptoException("unable to encode certificate: " + e.getMessage(), e);
         }
     }
 
