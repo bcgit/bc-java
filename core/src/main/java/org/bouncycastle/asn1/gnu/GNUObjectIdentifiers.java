@@ -59,10 +59,5 @@ public interface GNUObjectIdentifiers
     /** 1.3.6.1.4.1.11591.15 - ellipticCurve */
     public static final ASN1ObjectIdentifier ellipticCurve = new ASN1ObjectIdentifier("1.3.6.1.4.1.11591.15");
 
-    public static final ASN1ObjectIdentifier id_Curve25519   = ellipticCurve.branch("1");
-    public static final ASN1ObjectIdentifier id_Curve448     = ellipticCurve.branch("2");
-    public static final ASN1ObjectIdentifier id_Curve25519ph = ellipticCurve.branch("3");    // Curve25519 with pre-hashing
-    public static final ASN1ObjectIdentifier id_Curve448ph   = ellipticCurve.branch("4");    // Curve448 with pre-hashing
-
-
+    public static final ASN1ObjectIdentifier Ed25519   = ellipticCurve.branch("1");
 }
