@@ -8,6 +8,7 @@ import javax.crypto.interfaces.DHPrivateKey;
 import javax.crypto.interfaces.DHPublicKey;
 
 import org.bouncycastle.tls.crypto.TlsAgreement;
+import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
 /**
@@ -45,7 +46,7 @@ public class JceTlsDH
         }
         catch (GeneralSecurityException e)
         {
-            throw new IOException("cannot calculate secret", e);
+            throw new TlsCryptoException("cannot calculate secret", e);
         }
     }
 }
