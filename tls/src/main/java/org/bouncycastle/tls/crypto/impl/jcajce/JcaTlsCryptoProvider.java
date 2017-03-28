@@ -12,9 +12,7 @@ import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
-import org.bouncycastle.tls.crypto.DefaultTlsCryptoCapabilities;
 import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.tls.crypto.TlsCryptoCapabilities;
 import org.bouncycastle.tls.crypto.TlsCryptoProvider;
 
 /**
@@ -24,7 +22,6 @@ public class JcaTlsCryptoProvider
     implements TlsCryptoProvider
 {
     private JcaJceHelper helper = new DefaultJcaJceHelper();
-    private TlsCryptoCapabilities cryptoCapabilities = new DefaultTlsCryptoCapabilities();
 
     public JcaTlsCryptoProvider()
     {
@@ -57,16 +54,6 @@ public class JcaTlsCryptoProvider
     }
 
     /**
-     *
-     */
-    public JcaTlsCryptoProvider setCapabilities(TlsCryptoCapabilities cryptoCapabilities)
-    {
-        this.cryptoCapabilities = cryptoCapabilities;
-
-        return this;
-    }
-
-    /**
      * Create a new TlsCrypto using the current builder configuration and the passed in entropy source..
      *
      * @param random SecureRandom for generating key material and seeds for nonce generation.
@@ -78,10 +65,17 @@ public class JcaTlsCryptoProvider
         {
             if (random == null)
             {
-                SecureRandom keyRandom = helper.createSecureRandom("DEFAULT");
-                SecureRandom nonceRandom = helper.createSecureRandom("NONCEANDIV");
+                SecureRandom keyRandom;
+                if (helper instanceof DefaultJcaJceHelper)
+                {
+                    keyRandom = SecureRandom.getInstance("DEFAULT");
+                }
+                else
+                {
+                    keyRandom = SecureRandom.getInstance("DEFAULT", helper.createDigest("SHA-512").getProvider());
+                }
 
-                return create(keyRandom, nonceRandom);
+                return create(keyRandom, new NonceEntropySource(helper, keyRandom));
             }
 
             return create(random, new NonceEntropySource(helper, random));
@@ -101,7 +95,7 @@ public class JcaTlsCryptoProvider
      */
     public TlsCrypto create(SecureRandom keyRandom, SecureRandom nonceRandom)
     {
-        return new JcaTlsCrypto(cryptoCapabilities, helper, keyRandom, nonceRandom);
+        return new JcaTlsCrypto(helper, keyRandom, nonceRandom);
     }
 
     public Provider getPkixProvider()

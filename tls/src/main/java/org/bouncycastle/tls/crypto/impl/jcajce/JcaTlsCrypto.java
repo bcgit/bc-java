@@ -8,8 +8,6 @@ import java.security.SecureRandom;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
-import java.util.Iterator;
-import java.util.Set;
 
 import javax.crypto.Cipher;
 
@@ -28,7 +26,6 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.SRP6Group;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
-import org.bouncycastle.tls.crypto.TlsCryptoCapabilities;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
@@ -72,33 +69,18 @@ public class JcaTlsCrypto
     private final JcaJceHelper helper;
     private final SecureRandom entropySource;
     private final SecureRandom nonceEntropySource;
-    private final TlsCryptoCapabilities capabilites;
+
+    private final Boolean[]    supportedCurveIDs = new Boolean[28 + 1];  // current max curveID + 1
 
     /**
      * Base constructor.
      *
-     * @param capabilities desired capabilities for the TlsCrypto.
      * @param helper a JCA/JCE helper configured for the class's default provider.
      * @param entropySource primary entropy source, used for key generation.
      * @param nonceEntropySource secondary entropy source, used for nonce and IV generation.
      */
-    protected JcaTlsCrypto(TlsCryptoCapabilities capabilities, JcaJceHelper helper, SecureRandom entropySource, SecureRandom nonceEntropySource)
+    protected JcaTlsCrypto(JcaJceHelper helper, SecureRandom entropySource, SecureRandom nonceEntropySource)
     {
-        // check we support the requested curves, culling those we don't.
-        Set<Integer> curveCapSet = capabilities.getSupportedNamedCurves();
-        int[] curveSet = new int[curveCapSet.size()];
-        int index = 0;
-
-        for (Iterator it = curveCapSet.iterator(); it.hasNext();)
-        {
-             Integer curveID = (Integer)it.next();
-             if (checkCurve(curveID.intValue()))
-             {
-                 curveSet[index] = curveID;
-             }
-        }
-
-        this.capabilites = new TlsCryptoCapabilities(Arrays.copyOfRange(curveSet, 0, index));
         this.helper = helper;
         this.entropySource = entropySource;
         this.nonceEntropySource = nonceEntropySource;
@@ -112,16 +94,29 @@ public class JcaTlsCrypto
              return false;
         }
 
+        if (namedCurve < supportedCurveIDs.length && supportedCurveIDs[namedCurve] != null)
+        {
+            return supportedCurveIDs[namedCurve].booleanValue();
+        }
+
         try
         {
             AlgorithmParameters params = this.getHelper().createAlgorithmParameters("EC");
 
             params.init(new ECGenParameterSpec(curveName));
 
-            return params.getParameterSpec(ECParameterSpec.class) != null;
+            boolean supported = params.getParameterSpec(ECParameterSpec.class) != null;
+            if (namedCurve < supportedCurveIDs.length)
+            {
+                supportedCurveIDs[namedCurve] = Boolean.valueOf(supported);
+            }
+
+            return supported;
         }
         catch (Exception e)
         {
+            supportedCurveIDs[namedCurve] = Boolean.valueOf(false);
+
             return false;
         }
     }
@@ -155,11 +150,6 @@ public class JcaTlsCrypto
     public SecureRandom getSecureRandom()
     {
         return entropySource;
-    }
-
-    public Set<Integer> getSupportedNamedCurves()
-    {
-        return capabilites.getSupportedNamedCurves();
     }
 
     public TlsCertificate createCertificate(byte[] encoding)
@@ -345,6 +335,11 @@ public class JcaTlsCrypto
                 return verifierGenerator.generateVerifier(salt, identity, password);
             }
         };
+    }
+
+    public boolean hasNamedCurve(int curveID)
+    {
+        return checkCurve(curveID);
     }
 
     public boolean hasAllRawSignatureAlgorithms()
