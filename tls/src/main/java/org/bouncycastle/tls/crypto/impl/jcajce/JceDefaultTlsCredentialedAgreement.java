@@ -11,6 +11,7 @@ import javax.crypto.interfaces.DHPrivateKey;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.TlsCredentialedAgreement;
 import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
 /**
@@ -87,7 +88,7 @@ public class JceDefaultTlsCredentialedAgreement
         }
         catch (GeneralSecurityException e)
         {
-            throw new IOException("unable to perform agreement: " + e.getMessage(), e);
+            throw new TlsCryptoException("unable to perform agreement: " + e.getMessage(), e);
         }
     }
 }
