@@ -706,6 +706,16 @@ public class TlsUtils
         buf[offset + 1] = (byte)version.getMinorVersion();
     }
 
+    public static Vector getAllSignatureAlgorithms()
+    {
+        Vector v = new Vector(4);
+        v.addElement(SignatureAlgorithm.anonymous);
+        v.addElement(SignatureAlgorithm.rsa);
+        v.addElement(SignatureAlgorithm.dsa);
+        v.addElement(SignatureAlgorithm.ecdsa);
+        return v;
+    }
+
     public static Vector getDefaultDSSSignatureAlgorithms()
     {
         return vectorOfOne(new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.dsa));
@@ -2473,8 +2483,70 @@ public class TlsUtils
         return CipherType.stream == getCipherType(ciphersuite);
     }
 
+    public static boolean isValidCipherSuiteForSignatureAlgorithms(int cipherSuite, Vector sigAlgs)
+    {
+        int keyExchangeAlgorithm;
+        try
+        {
+            keyExchangeAlgorithm = getKeyExchangeAlgorithm(cipherSuite);
+        }
+        catch (IOException e)
+        {
+            return true;
+        }
+
+        switch (keyExchangeAlgorithm)
+        {
+        case KeyExchangeAlgorithm.DH_anon:
+        case KeyExchangeAlgorithm.DH_anon_EXPORT:
+        case KeyExchangeAlgorithm.ECDH_anon:
+            return sigAlgs.contains(SignatureAlgorithm.anonymous);
+
+        case KeyExchangeAlgorithm.DHE_RSA:
+        case KeyExchangeAlgorithm.DHE_RSA_EXPORT:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
+        case KeyExchangeAlgorithm.SRP_RSA:
+            return sigAlgs.contains(SignatureAlgorithm.rsa);
+
+        case KeyExchangeAlgorithm.DHE_DSS:
+        case KeyExchangeAlgorithm.DHE_DSS_EXPORT:
+        case KeyExchangeAlgorithm.SRP_DSS:
+            return sigAlgs.contains(SignatureAlgorithm.dsa);
+
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+            return sigAlgs.contains(SignatureAlgorithm.ecdsa);
+
+        default:
+            return true;
+        }
+    }
+
     public static boolean isValidCipherSuiteForVersion(int cipherSuite, ProtocolVersion serverVersion)
     {
         return getMinimumVersion(cipherSuite).isEqualOrEarlierVersionOf(serverVersion.getEquivalentTLSVersion());
+    }
+
+    public static Vector getUsableSignatureAlgorithms(Vector sigHashAlgs)
+    {
+        if (sigHashAlgs == null)
+        {
+            return getAllSignatureAlgorithms();
+        }
+
+        Vector v = new Vector(4);
+        v.addElement(SignatureAlgorithm.anonymous);
+        for (int i = 0; i < sigHashAlgs.size(); ++i)
+        {
+            SignatureAndHashAlgorithm sigHashAlg = (SignatureAndHashAlgorithm)sigHashAlgs.elementAt(i);
+//            if (sigHashAlg.getHash() >= MINIMUM_HASH_STRICT)
+            {
+                short sigAlg = sigHashAlg.getSignature();
+                if (!v.contains(sigAlg))
+                {
+                    v.addElement(sigAlg);
+                }
+            }
+        }
+        return v;
     }
 }
