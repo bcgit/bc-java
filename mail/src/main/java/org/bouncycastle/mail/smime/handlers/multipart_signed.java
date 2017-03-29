@@ -136,24 +136,29 @@ public class multipart_signed
 
         if (SMIMEUtil.isMultipartContent(mimePart))
         {
-            Multipart mp = (Multipart)mimePart.getContent();
-            ContentType contentType = new ContentType(mp.getContentType());
-            String boundary = "--" + contentType.getParameter("boundary");
+            Object content = mimePart.getContent();
 
-            LineOutputStream lOut = new LineOutputStream(out);
-
-            Enumeration headers = mimePart.getAllHeaderLines();
-            while (headers.hasMoreElements())
+            if (content instanceof Multipart)
             {
-                lOut.writeln((String)headers.nextElement());
+                Multipart mp = (Multipart)content;
+                ContentType contentType = new ContentType(mp.getContentType());
+                String boundary = "--" + contentType.getParameter("boundary");
+
+                LineOutputStream lOut = new LineOutputStream(out);
+
+                Enumeration headers = mimePart.getAllHeaderLines();
+                while (headers.hasMoreElements())
+                {
+                    lOut.writeln((String)headers.nextElement());
+                }
+
+                lOut.writeln();      // CRLF separator
+
+                outputPreamble(lOut, mimePart, boundary);
+
+                outputBodyPart(out, mp);
+                return;
             }
-
-            lOut.writeln();      // CRLF separator
-
-            outputPreamble(lOut, mimePart, boundary);
-
-            outputBodyPart(out, mp);
-            return;
         }
 
         mimePart.writeTo(out);
