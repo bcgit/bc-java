@@ -3,6 +3,8 @@ package org.bouncycastle.test.est.examples;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
@@ -10,6 +12,7 @@ import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.ECGenParameterSpec;
+import java.security.spec.PKCS8EncodedKeySpec;
 
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -18,14 +21,23 @@ import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.EnrollmentResponse;
 import org.bouncycastle.est.jcajce.JcaHttpAuthBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
+import org.bouncycastle.est.jcajce.JsseDefaultHostnameAuthorizer;
 import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PKCS8Generator;
+import org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
+import org.bouncycastle.openssl.jcajce.JcaPKCS8Generator;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 import org.bouncycastle.test.est.BCChannelBindingProvider;
+import org.bouncycastle.util.io.pem.PemGenerationException;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemObjectGenerator;
+import org.bouncycastle.util.io.pem.PemReader;
+import org.bouncycastle.util.io.pem.PemWriter;
 
 /**
  * Enroll example exercises the enrollment of a certificate.
@@ -55,6 +67,8 @@ public class EnrollExample
         boolean pop = false;
         int timeout = 0;
         String label = null;
+        String saveKeysToFile = null;
+        String keyFile = null;
         try
         {
             for (int t = 0; t < args.length; t++)
@@ -134,8 +148,13 @@ public class EnrollExample
                 {
                     label = ExampleUtils.nextArgAsString("CA Label", args, t);
                     t += 1;
-                }
-                else
+                } else if (args.equals("--save")) {
+                    saveKeysToFile = ExampleUtils.nextArgAsString("Save keys to file", args, t);
+                    t += 1;
+                } else if (args.equals("--load")) {
+                    keyFile = ExampleUtils.nextArgAsString("Load keys from file", args, t);
+                    t += 1;
+                } else
                 {
                     System.out.println(arg);
                     printArgs();
@@ -187,7 +206,26 @@ public class EnrollExample
         ECGenParameterSpec ecGenSpec = new ECGenParameterSpec("prime256v1");
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", "BC");
         kpg.initialize(ecGenSpec, new SecureRandom());
-        KeyPair keyPair = kpg.generateKeyPair();
+
+        KeyPair keyPair = null;
+
+        if (keyFile != null) {
+
+//            PemReader pr = new PemReader(new FileReader(keyFile));
+//             pr.readPemObject()
+
+//            PemWriter pw = new PemWriter(new FileWriter(saveKeysToFile));
+//            pw.writeObject(new JcaPKCS8Generator(keyPair.getPrivate(),null));
+//            pw.writeObject(new JcaMiscPEMGenerator(keyPair.getPublic(),null));
+//            pw.flush();
+//            pw.close();
+
+            keyPair = kpg.generateKeyPair();
+        } else {
+            keyPair = kpg.generateKeyPair();
+        }
+
+
 
         PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
             new X500Name("CN=" + cn),
@@ -215,10 +253,11 @@ public class EnrollExample
             est.withKeyManagers(JcaJceUtils.createKeyManagerFactory("X509", null, ks, clientKeyStoreFilePassword).getKeyManagers());
         }
 
-
         if (noNameVerifier)
         {
             est.withHostNameAuthorizer(null);
+        } else {
+            est.withHostNameAuthorizer(new JsseDefaultHostnameAuthorizer(SuffixList.publicSuffix));
         }
 
         ESTAuth auth = null;
@@ -242,9 +281,7 @@ public class EnrollExample
             }
         }
 
-
         est.withTimeout(timeout);
-
 
         EnrollmentResponse enrollmentResponse;
 
@@ -282,7 +319,6 @@ public class EnrollExample
         }
         while (!enrollmentResponse.isCompleted());
 
-
         for (X509CertificateHolder holder : ESTService.storeToArray(enrollmentResponse.getStore()))
         {
 
@@ -298,9 +334,16 @@ public class EnrollExample
             System.out.println("Not After: " + holder.getNotAfter());
             System.out.println();
             System.out.println(ExampleUtils.toJavaX509Certificate(holder));
-
-
         }
+
+        if (saveKeysToFile != null) {
+            PemWriter pw = new PemWriter(new FileWriter(saveKeysToFile));
+            pw.writeObject(new JcaPKCS8Generator(keyPair.getPrivate(),null));
+            pw.writeObject(new JcaMiscPEMGenerator(keyPair.getPublic(),null));
+            pw.flush();
+            pw.close();
+        }
+
 
     }
 
