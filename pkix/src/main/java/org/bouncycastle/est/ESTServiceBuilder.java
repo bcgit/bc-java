@@ -11,9 +11,9 @@ public class ESTServiceBuilder
     protected String label;
 
     /**
-     * With server url.
+     * With scheme and host..
      *
-     * @param server The server url.
+     * @param server The authority name, eg estserver.co.au
      */
     public ESTServiceBuilder(String server)
     {

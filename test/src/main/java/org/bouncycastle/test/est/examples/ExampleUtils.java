@@ -50,6 +50,7 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.MiscPEMGenerator;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.io.pem.PemWriter;
 
@@ -338,16 +339,34 @@ public class ExampleUtils
     }
 
 
-    public static X509CertificateHolder readPemCertificate(File path)
+//    public static X509CertificateHolder readPemCertificate(File path)
+//        throws Exception
+//    {
+//        FileReader fr = new FileReader(path);
+//        PemReader reader = new PemReader(fr);
+//        X509CertificateHolder fromFile = new X509CertificateHolder(reader.readPemObject().getContent());
+//        reader.close();
+//        fr.close();
+//        return fromFile;
+//    }
+
+    public static Object[] readPemCertificates(File path)
         throws Exception
     {
+        ArrayList<Object> certs = new ArrayList<Object>();
         FileReader fr = new FileReader(path);
         PemReader reader = new PemReader(fr);
-        X509CertificateHolder fromFile = new X509CertificateHolder(reader.readPemObject().getContent());
+        PemObject o;
+
+        while((o = reader.readPemObject()) != null )
+        {
+            certs.add(new X509CertificateHolder(o.getContent()));
+        }
         reader.close();
         fr.close();
-        return fromFile;
+        return certs.toArray(new Object[certs.size()]);
     }
+
 
     public static String readToString(File f)
         throws IOException

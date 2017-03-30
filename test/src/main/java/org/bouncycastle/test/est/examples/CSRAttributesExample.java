@@ -35,7 +35,6 @@ public class CSRAttributesExample
 
         File trustAnchorFile = null;
         String serverRootUrl = null;
-        boolean printTLSCerts = false;
         String tlsVersion = "TLS";
         String tlsProvider = "SunJSSE";
         String tlsProviderClass = null;
@@ -55,7 +54,7 @@ public class CSRAttributesExample
                 }
                 else if (arg.equals("-u"))
                 {
-                    serverRootUrl = ExampleUtils.nextArgAsString("Server URL", args, t);
+                    serverRootUrl = ExampleUtils.nextArgAsString("Server Hostname", args, t);
                     t += 1;
                 }
                 else if (arg.equals("--tls"))
@@ -112,7 +111,7 @@ public class CSRAttributesExample
         Set<TrustAnchor> trustAnchors = null;
         if (trustAnchorFile != null)
         {
-            trustAnchors = ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificate(trustAnchorFile));
+            trustAnchors = ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificates(trustAnchorFile));
         }
 
         if (tlsProviderClass != null)
@@ -184,7 +183,7 @@ public class CSRAttributesExample
     public void printArguments()
     {
         System.out.println("-t <file>                         Trust anchor file. (PEM)");
-        System.out.println("-u <url>                          Server URL");
+        System.out.println("-u <url>                          Server Hostname");
         System.out.println("--tls <version>                   Use this TLS version when creating socket factory, Eg TLSv1.2");
         System.out.println("--tlsProvider <provider> <class>  The JSSE Provider.");
         System.out.println("--to <milliseconds>               Timeout in milliseconds.");

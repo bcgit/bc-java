@@ -1,15 +1,130 @@
 dependencies {
-    compile project(':core')
-    compile project(':prov')
+  compile project(':core')
+  compile project(':prov')
 }
 
 jar.baseName = "bcpkix-jdk15on"
 
 cobertura {
-   coverageDirs = [
-       "${rootProject.projectDir}/core/build/classes/main",
-       "${rootProject.projectDir}/prov/build/classes/main",
-       "${rootProject.projectDir}/pkix/build/classes/main"
+  coverageDirs = [
+          "${rootProject.projectDir}/core/build/classes/main",
+          "${rootProject.projectDir}/prov/build/classes/main",
+          "${rootProject.projectDir}/pkix/build/classes/main"
   ]
 }
 
+
+task updateSuffixes {
+  URL url = new URL("https://www.publicsuffix.org/list/public_suffix_list.dat");
+  HttpURLConnection hurl = (HttpURLConnection)url.openConnection();
+  hurl.setDoInput(true);
+  if (hurl.getResponseCode() < 200 || hurl.getResponseCode() >= 300)
+  {
+    System.err.println("Got " + hurl.getResponseCode() + " " + hurl.getResponseMessage());
+    return;
+  }
+  String line = null;
+  BufferedReader bin = new BufferedReader(new InputStreamReader(hurl.getInputStream()));
+  ArrayList<String> suffixes = new ArrayList<>();
+
+  while ((line = bin.readLine()) != null)
+  {
+    if (line.isEmpty() || (line.startsWith("//") && !line.startsWith("// xn--")))
+    {
+      continue;
+    }
+
+    if (line.startsWith("!")) {
+      continue;
+    }
+
+    line = line.trim();
+    if (line.startsWith("// xn--"))
+    {
+      String[] j = line.split(" ");
+      suffixes.add(j[1]);
+    }
+    else
+    {
+      suffixes.add(line);
+    }
+  }
+
+  bin.close();
+  hurl.disconnect();
+
+  for (int t=0; t<suffixes.size(); t++) {
+    String j = suffixes.get(t);
+
+    if (!j.startsWith("*.")) {
+      j = "*."+j;
+    }
+
+    byte[] b = j.getBytes("UTF-8");
+
+    j = Arrays.toString(b);
+    j = j.substring(1,j.length()-1);
+
+    suffixes.set(t,j);
+  }
+
+
+
+
+    FileWriter fw = new FileWriter("${projectDir}/src/main/java/org/bouncycastle/est/jcajce/SuffixList.java");
+    PrintWriter pw = new PrintWriter(fw);
+
+    pw.println("package org.bouncycastle.est.jcajce;");
+    pw.println("");
+    pw.println("import java.util.Collections;\n" +
+            "import java.util.HashSet;\n" +
+            "import java.util.Set;");
+    pw.println("// This file is machine generated from gradle pkix:updateSuffixes");
+    pw.println("public class SuffixList {");
+
+      pw.println("private static String c = \"UTF-8\";");
+
+    int m = 0;
+
+  pw.println("private static void d"+(m++)+"(HashSet<String> s) throws Exception { ")
+  int i =0;
+  for (String s:suffixes) {
+
+    if ((++i % 20) == 0) {
+      pw.println("}");
+      pw.println("private static void  d"+(m++)+"(HashSet<String> s) throws Exception {");
+    }
+    pw.println("s.add(new String(new byte[]{"+s+"}, c));");
+  }
+
+  pw.println("}");
+
+
+
+
+    pw.println(" public static final Set<String> publicSuffix;\n" +
+            "    \n" +
+            "    static {\n" +
+            "        HashSet<String> s = new HashSet<String>();\n" +
+            "        \n");
+
+    pw.println("try {");
+
+    while(--m >=0) {
+      pw.println("d"+m+"(s);");
+    }
+
+  pw.println("} catch(Exception ex) { throw new RuntimeException(ex.getMessage(),ex);}");
+
+
+
+    pw.println(
+            "        publicSuffix = Collections.unmodifiableSet(s);\n" +
+                    "    }");
+
+    pw.println("}");
+
+  pw.flush();
+  pw.close();
+
+}
