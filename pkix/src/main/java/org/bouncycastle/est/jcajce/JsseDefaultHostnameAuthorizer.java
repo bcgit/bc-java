@@ -7,6 +7,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import javax.net.ssl.SSLSession;
 
@@ -24,6 +25,13 @@ import org.bouncycastle.util.Strings;
 public class JsseDefaultHostnameAuthorizer
     implements JsseHostnameAuthorizer
 {
+
+    private final Set<String> knownSuffixes;
+
+    public JsseDefaultHostnameAuthorizer(Set<String> knownSuffixes)
+    {
+        this.knownSuffixes = knownSuffixes;
+    }
 
     public boolean verified(String name, SSLSession context)
         throws IOException
@@ -64,7 +72,7 @@ public class JsseDefaultHostnameAuthorizer
                     switch (((Number)l.get(0)).intValue())
                     {
                     case 2:
-                        if (testName(name, l.get(1).toString()))
+                        if (testName(name, l.get(1).toString(), knownSuffixes ))
                         {
                             return true;
                         }
@@ -99,7 +107,7 @@ public class JsseDefaultHostnameAuthorizer
             {
                 if (atv.getType().equals(BCStyle.CN))
                 {
-                    return testName(name, rdn.getFirst().getValue().toString());
+                    return testName(name, rdn.getFirst().getValue().toString(), knownSuffixes);
                 }
             }
         }
@@ -107,7 +115,7 @@ public class JsseDefaultHostnameAuthorizer
     }
 
 
-    public static boolean testName(String name, String dnsName)
+    public static boolean testName(String name, String dnsName, Set<String> suffixes)
         throws IOException
     {
 
@@ -125,7 +133,7 @@ public class JsseDefaultHostnameAuthorizer
                     return false;
                 }
 
-                if (SuffixList.publicSuffix.contains(Strings.toLowerCase(dnsName)))
+                if (suffixes != null && suffixes.contains(Strings.toLowerCase(dnsName)))
                 {
                     throw new IOException("Wildcard `" + dnsName + "` is known public suffix.");
                 }

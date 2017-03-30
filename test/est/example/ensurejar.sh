@@ -31,6 +31,7 @@ popd
 
 cd $BCDIR
 
+gradle test:updateSuffixes
 gradle -x test clean jar
 
 cp $BCDIR/test/build/libs/test-*.jar $DIR/jars/test.jar

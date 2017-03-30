@@ -14,6 +14,7 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.est.CACertsResponse;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
+import org.bouncycastle.est.jcajce.JsseDefaultHostnameAuthorizer;
 import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -150,7 +151,11 @@ public class CaCertsExample
         if (noNameVerifier)
         {
             builder.withHostNameAuthorizer(null);
+        } else {
+            builder.withHostNameAuthorizer(new JsseDefaultHostnameAuthorizer(SuffixList.publicSuffix));
         }
+
+
         builder.withTimeout(timeout);
         builder.withLabel(label);
         builder.withTLSVersion(tlsVersion);
