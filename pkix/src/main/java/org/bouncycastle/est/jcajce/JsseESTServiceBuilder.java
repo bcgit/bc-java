@@ -62,7 +62,7 @@ public class JsseESTServiceBuilder
     /**
      * Create a builder for a client talking to a trusted server.
      *
-     * @param server name of the server to talk to (URL format).
+     * @param server       name of the server to talk to (URL format).
      * @param trustManager
      */
     public JsseESTServiceBuilder(String server, X509TrustManager trustManager)
@@ -74,7 +74,7 @@ public class JsseESTServiceBuilder
     /**
      * Create a builder for a client talking to a trusted server.
      *
-     * @param server name of the server to talk to (URL format).
+     * @param server       name of the server to talk to (URL format).
      * @param trustManager
      */
     public JsseESTServiceBuilder(String server, X509TrustManager[] trustManager)

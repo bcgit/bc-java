@@ -71,7 +71,7 @@ certificates from an EST server using the Bootstrapping procedure defined in RFC
 
 ```
 -t <file>                         Trust anchor file. (PEM)
--u <url>                          Server URL
+-u <url>                          Server Hostname
 --printTLS <url>                  Print TLS certificates as PEM format
 --tls <version>                   Use this TLS version when creating socket factory, Eg TLSv1.2
 --tlsProvider <provider> <class>  The JSSE Provider.
@@ -93,7 +93,7 @@ You will need to confirm by typing 'y [enter]' for each certificate:
 #
 # Run the following to get ca certs with bootstrapping.
 #
-./cacerts.sh -u https://testrfc7030.cisco.com:8443/.well-known/est
+./cacerts.sh -u testrfc7030.cisco.com:8443
 
 
 Subject: CN=testrfc7030.cisco.com, O="Cisco Systems, Inc.", L=San Jose, ST=CA, C=US
@@ -151,7 +151,7 @@ http://testrfc7030.cisco.com/
 In order to proceed you will need copy the last TLS certificate and use that as a trust anchor for the remaining examples:
 
 ```
-./cacerts.sh -u https://testrfc7030.cisco.com:8443/.well-known/est --printTLS
+./cacerts.sh -u testrfc7030.cisco.com:8443 --printTLS
 
 ```
 Answer the prompts as usual and at the very the TLS peer certificates will be printed PEM encoded.
@@ -209,7 +209,7 @@ return the CA cert, if the server cannot be validated with
 the trust anchor it will fail.
 
 ```
-./cacerts.sh -u https://testrfc7030.cisco.com:8443/.well-known/est -t server.ta.pem 
+./cacerts.sh -u testrfc7030.cisco.com:8443 -t server.ta.pem 
 
 Fetched CA Certs:
 
@@ -245,8 +245,8 @@ The enroll example has a number of options:
 
 -r                                     Re-enroll
 -t <file>                              Trust anchor file
--u <url>                               EST server url.
--c <common name>                       EST server url.
+-u <url>                               EST Hostname .
+-c <common name>                       CN.
 --keyStore <file>                      Optional Key Store.
 --keyStorePass <password>              Optional Key Store password.
 --keyStoreType <JKS>                   Optional Key Store type, defaults to JKS
@@ -264,7 +264,7 @@ The enroll example has a number of options:
 This following enrollment example will generate CSR internally but you an specify the common name, when enrollment is complete
 it will return a summary of the returned certificate.
 ```
-./enroll.sh -t server.ta.pem -u https://testrfc7030.cisco.com:8443/.well-known/est/ --auth estuser:estpwd -c BARRY
+./enroll.sh -t server.ta.pem -u testrfc7030.cisco.com:8443 --auth estuser:estpwd -c BARRY
 
 
 Subject: CN=BARRY
@@ -297,7 +297,7 @@ anchor for the server to make this call.
 #### Arguments
 ```
 -t <file>                         Trust anchor file. (PEM)
--u <url>                          Server URL
+-u <url>                          Server Hostname
 --tls <version>                   Use this TLS version when creating socket factory, Eg TLSv1.2
 --tlsProvider <provider> <class>  The JSSE Provider.
 --to <milliseconds>               Timeout in milliseconds.
@@ -310,7 +310,7 @@ anchor for the server to make this call.
 To fetch the attributes:
 
 ```
-./csrattrs.sh -t server.ta.pem -u https://testrfc7030.cisco.com:8443/.well-known/est/ 
+./csrattrs.sh -t server.ta.pem -u testrfc7030.cisco.com:8443
 
 1.2.840.113549.1.9.1
 1.3.132.0.34

@@ -81,7 +81,7 @@ public class TestGetCSRAttrs
 
 
             ESTService est = new JsseESTServiceBuilder(
-                "https://localhost:8443/.well-known/est/",
+                "localhost:8443",
                 JcaJceUtils.getCertPathTrustManager(
                     ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                         ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
@@ -131,7 +131,7 @@ public class TestGetCSRAttrs
 
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                "localhost:" + port, JcaJceUtils.getCertPathTrustManager(
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                 )), null));
@@ -196,7 +196,7 @@ public class TestGetCSRAttrs
 
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                "localhost:" + port , JcaJceUtils.getCertPathTrustManager(
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                 )), null));
@@ -261,7 +261,7 @@ public class TestGetCSRAttrs
 
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                "localhost:" + port, JcaJceUtils.getCertPathTrustManager(
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                 )), null));
@@ -352,7 +352,7 @@ public class TestGetCSRAttrs
 ////        {
 ////            int port = res.open(responseData.toByteArray());
 ////            JcaESTServiceBuilder builder = new JcaESTServiceBuilder(
-////                    "https://localhost:" + port + "/.well-known/est/",ESTTestUtils.toTrustAnchor(
+////                    "localhost:" + port + "/.well-known/est/",ESTTestUtils.toTrustAnchor(
 ////                    ESTTestUtils.readPemCertificate(
 ////                            ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
 ////                    )));
@@ -416,7 +416,7 @@ public class TestGetCSRAttrs
 
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                "localhost:" + port, JcaJceUtils.getCertPathTrustManager(
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                 )), null));
@@ -484,7 +484,7 @@ public class TestGetCSRAttrs
 
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                "localhost:" + port, JcaJceUtils.getCertPathTrustManager(
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                 )), null));
@@ -548,7 +548,7 @@ public class TestGetCSRAttrs
 
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                "localhost:" + port, JcaJceUtils.getCertPathTrustManager(
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                 )), null));
@@ -612,7 +612,7 @@ public class TestGetCSRAttrs
 
 
             JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-                "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+                "localhost:" + port, JcaJceUtils.getCertPathTrustManager(
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                 )), null));
@@ -659,7 +659,7 @@ public class TestGetCSRAttrs
 
 
         JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-            "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+            "localhost:" + port, JcaJceUtils.getCertPathTrustManager(
             ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             )), null));
@@ -714,7 +714,7 @@ public class TestGetCSRAttrs
         int port = res.open(responseData.toByteArray());
 
         JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
-            "https://localhost:" + port + "/.well-known/est/", JcaJceUtils.getCertPathTrustManager(
+            "localhost:" + port, JcaJceUtils.getCertPathTrustManager(
             ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                 ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
             )), null));

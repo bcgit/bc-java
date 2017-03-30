@@ -4,13 +4,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -35,43 +36,49 @@ import org.bouncycastle.util.encoders.Base64;
  */
 public class ESTService
 {
-    protected final String CACERTS = "/cacerts";
-    protected final String SIMPLE_ENROLL = "/simpleenroll";
-    protected final String SIMPLE_REENROLL = "/simplereenroll";
-    protected final String CSRATTRS = "/csrattrs";
+    protected static final String CACERTS = "/cacerts";
+    protected static final String SIMPLE_ENROLL = "/simpleenroll";
+    protected static final String SIMPLE_REENROLL = "/simplereenroll";
+    protected static final String FULLCMC = "/fullcmc";
+    protected static final String SERVERGEN = "/serverkeygen";
+    protected static final String CSRATTRS = "/csrattrs";
+
+    protected static final Set<String> illegalParts = new HashSet<String>();
+
+    static
+    {
+        illegalParts.add(CACERTS.substring(1));
+        illegalParts.add(SIMPLE_ENROLL.substring(1));
+        illegalParts.add(SIMPLE_REENROLL.substring(1));
+        illegalParts.add(FULLCMC.substring(1));
+        illegalParts.add(SERVERGEN.substring(1));
+        illegalParts.add(CSRATTRS.substring(1));
+    }
+
+
     private final String server;
-    private final String label;
     private final ESTClientProvider clientProvider;
 
+    private static final Pattern pathInvalid = Pattern.compile("^[a-zA-Z_\\-.~!$&'()*+,;=]+");
 
     ESTService(
-        String server, String label,
+        String serverAuthority, String label,
         ESTClientProvider clientProvider)
     {
-        this.clientProvider = clientProvider;
+
+        serverAuthority = verifyServer(serverAuthority);
 
         if (label != null)
         {
-            try
-            {
-                this.label = URLEncoder.encode(label, "UTF-8");
-            }
-            catch (UnsupportedEncodingException e)
-            {
-                throw new IllegalStateException(e.getMessage(), e);
-            }
+            label = verifyLabel(label);
+            server = "https://" + serverAuthority + "/.well-known/est/" + label;
         }
         else
         {
-            this.label = null;
+            server = "https://" + serverAuthority + "/.well-known/est";
         }
 
-
-        if (server.endsWith("/"))
-        {
-            server = server.substring(0, server.length() - 1); // Trim off trailing slash
-        }
-        this.server = server;
+        this.clientProvider = clientProvider;
     }
 
     /**
@@ -121,7 +128,7 @@ public class ESTService
         boolean failedBeforeClose = false;
         try
         {
-            url = new URL(makeLabeledURL() + CACERTS);
+            url = new URL(server + CACERTS);
 
             ESTClient client = clientProvider.makeClient();
             ESTRequest req = new ESTRequestBuilder("GET", url).withClient(client).build();
@@ -272,7 +279,7 @@ public class ESTService
         {
             final byte[] data = annotateRequest(certificationRequest.getEncoded()).getBytes();
 
-            URL url = new URL(makeLabeledURL() + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
+            URL url = new URL(server + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
 
 
             ESTClient client = clientProvider.makeClient();
@@ -336,7 +343,7 @@ public class ESTService
         ESTResponse resp = null;
         try
         {
-            URL url = new URL(makeLabeledURL() + (reEnroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
+            URL url = new URL(server + (reEnroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
             ESTClient client = clientProvider.makeClient();
 
             //
@@ -503,7 +510,7 @@ public class ESTService
         URL url = null;
         try
         {
-            url = new URL(makeLabeledURL() + CSRATTRS);
+            url = new URL(server + CSRATTRS);
 
             ESTClient client = clientProvider.makeClient();
             ESTRequest req = new ESTRequestBuilder("GET", url).withClient(client).build(); //    new ESTRequest("GET", url, null);
@@ -605,13 +612,71 @@ public class ESTService
         return sw.toString();
     }
 
-    private String makeLabeledURL()
+
+    private String verifyLabel(String label)
     {
-        if (label != null)
+        while (label.endsWith("/") && label.length() > 0)
         {
-            return server + "/" + label;
+            label = label.substring(0, label.length() - 1);
         }
-        return server;
+
+        while (label.startsWith("/") && label.length() > 0)
+        {
+            label = label.substring(1);
+        }
+
+        if (label.length() == 0)
+        {
+            throw new IllegalArgumentException("Label set but after trimming '/' is not zero length string.");
+        }
+
+        if (!pathInvalid.matcher(label).matches())
+        {
+            throw new IllegalArgumentException("Server path " + label + " contains invalid characters");
+        }
+
+        if (illegalParts.contains(label))
+        {
+            throw new IllegalArgumentException("Label " + label + " is a reserved path segment.");
+        }
+
+        return label;
+
     }
 
+
+    private String verifyServer(String server)
+    {
+        try
+        {
+
+            while (server.endsWith("/") && server.length() > 0)
+            {
+                server = server.substring(0, server.length() - 1);
+            }
+
+            if (server.contains("://"))
+            {
+                throw new IllegalArgumentException("Server contains scheme, must only be <dnsname/ipaddress>:port, https:// will be added arbitrarily.");
+            }
+
+            URL u = new URL("https://" + server);
+            if (u.getPath().length() == 0 || u.getPath().equals("/"))
+            {
+                return server;
+            }
+
+            throw new IllegalArgumentException("Server contains path, must only be <dnsname/ipaddress>:port, a path of '/.well-known/est/<label>' will be added arbitrarily.");
+
+        }
+        catch (Exception ex)
+        {
+            if (ex instanceof IllegalArgumentException)
+            {
+                throw (IllegalArgumentException)ex;
+            }
+            throw new IllegalArgumentException("Scheme and host is invalid: " + ex.getMessage(), ex);
+        }
+
+    }
 }

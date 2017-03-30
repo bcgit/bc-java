@@ -2,6 +2,7 @@ package org.bouncycastle.test.est;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
@@ -48,6 +49,7 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
@@ -113,7 +115,7 @@ public class ESTTestUtils
         HashSet<TrustAnchor> out = new HashSet<TrustAnchor>();
         for (Object o : oo)
         {
-            if (o instanceof X509CertificateHolder)
+             if (o instanceof X509CertificateHolder)
             {
                 out.add(new TrustAnchor((java.security.cert.X509Certificate)fac.generateCertificate(new ByteArrayInputStream(((X509CertificateHolder)o).getEncoded())), null));
             }
@@ -382,6 +384,25 @@ public class ESTTestUtils
         fr.close();
         return fromFile;
     }
+
+
+    public static Object[] readPemCertificates(File path)
+        throws Exception
+    {
+        ArrayList<Object> certs = new ArrayList<Object>();
+        FileReader fr = new FileReader(path);
+        PemReader reader = new PemReader(fr);
+        PemObject o;
+
+        while((o = reader.readPemObject()) != null )
+        {
+                certs.add(new X509CertificateHolder(o.getContent()));
+        }
+        reader.close();
+        fr.close();
+        return certs.toArray(new Object[certs.size()]);
+    }
+
 
     public static Object[] readCertAndKey(File path)
         throws Exception

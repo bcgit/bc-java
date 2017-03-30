@@ -24,6 +24,7 @@ import org.bouncycastle.util.Strings;
 public class JsseDefaultHostnameAuthorizer
     implements JsseHostnameAuthorizer
 {
+
     public boolean verified(String name, SSLSession context)
         throws IOException
     {
@@ -78,6 +79,12 @@ public class JsseDefaultHostnameAuthorizer
                         throw new RuntimeException("Unable to handle ");
                     }
                 }
+
+                //
+                // As we had subject alternative names, we must not attempt to match against the CN.
+                //
+
+                return false;
             }
         }
         catch (Exception ex)
@@ -100,19 +107,45 @@ public class JsseDefaultHostnameAuthorizer
     }
 
 
-    public boolean testName(String name, String dnsName)
+    public static boolean testName(String name, String dnsName)
+        throws IOException
     {
 
-        if (dnsName.startsWith("*"))
+        //
+        // Wild card matching.
+        //
+        if (dnsName.contains("*"))
         {
-            if (dnsName.endsWith("."))
+            // Only one astrix and it must be at the start of the wildcard.
+            if (dnsName.indexOf('*') == dnsName.lastIndexOf("*") && dnsName.indexOf('*') == 0)
             {
-                dnsName = dnsName.substring(0, dnsName.length() - 1);
+
+                if (dnsName.contains("..") || dnsName.equals("*"))
+                {
+                    return false;
+                }
+
+                if (SuffixList.publicSuffix.contains(Strings.toLowerCase(dnsName)))
+                {
+                    throw new IOException("Wildcard `" + dnsName + "` is known public suffix.");
+                }
+
+                String end = Strings.toLowerCase(dnsName.substring(1));
+                if (Strings.toLowerCase(name).equals(end))
+                {
+                    return false; // Must not match wild card exactly there must content to the left of the wildcard.
+                }
+
+                // Must be only one '*' and it must be at position 0.
+                return Strings.toLowerCase(name).endsWith(end);
             }
 
-            return Strings.toLowerCase(name).endsWith(Strings.toLowerCase(dnsName.substring(1)));
+            return false;
         }
 
+        //
+        // No wild card full equality but ignore case.
+        //
         return name.equalsIgnoreCase(dnsName);
     }
 }
