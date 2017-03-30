@@ -700,6 +700,16 @@ public class TlsUtils
         buf[offset + 1] = (byte)version.getMinorVersion();
     }
 
+    public static Vector getAllSignatureAlgorithms()
+    {
+        Vector v = new Vector(4);
+        v.addElement(SignatureAlgorithm.anonymous);
+        v.addElement(SignatureAlgorithm.rsa);
+        v.addElement(SignatureAlgorithm.dsa);
+        v.addElement(SignatureAlgorithm.ecdsa);
+        return v;
+    }
+
     public static Vector getDefaultDSSSignatureAlgorithms()
     {
         return vectorOfOne(new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.dsa));
@@ -715,7 +725,7 @@ public class TlsUtils
         return vectorOfOne(new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.rsa));
     }
 
-    public static Vector getDefaultSignatureAlgorithms(int signatureAlgorithm)
+    public static Vector getDefaultSignatureAlgorithms(short signatureAlgorithm)
     {
         switch (signatureAlgorithm)
         {
@@ -2629,38 +2639,68 @@ public class TlsUtils
         return CipherType.stream == getCipherType(cipherSuite);
     }
 
+    public static boolean isValidCipherSuiteForSignatureAlgorithms(int cipherSuite, Vector sigAlgs)
+    {
+        int keyExchangeAlgorithm = getKeyExchangeAlgorithm(cipherSuite);
+
+        switch (keyExchangeAlgorithm)
+        {
+        case KeyExchangeAlgorithm.DH_anon:
+        case KeyExchangeAlgorithm.DH_anon_EXPORT:
+        case KeyExchangeAlgorithm.ECDH_anon:
+            return sigAlgs.contains(SignatureAlgorithm.anonymous);
+
+        case KeyExchangeAlgorithm.DHE_RSA:
+        case KeyExchangeAlgorithm.DHE_RSA_EXPORT:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
+        case KeyExchangeAlgorithm.SRP_RSA:
+            return sigAlgs.contains(SignatureAlgorithm.rsa);
+
+        case KeyExchangeAlgorithm.DHE_DSS:
+        case KeyExchangeAlgorithm.DHE_DSS_EXPORT:
+        case KeyExchangeAlgorithm.SRP_DSS:
+            return sigAlgs.contains(SignatureAlgorithm.dsa);
+
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+            return sigAlgs.contains(SignatureAlgorithm.ecdsa);
+
+        default:
+            return true;
+        }
+    }
+
     public static boolean isValidCipherSuiteForVersion(int cipherSuite, ProtocolVersion serverVersion)
     {
         return getMinimumVersion(cipherSuite).isEqualOrEarlierVersionOf(serverVersion.getEquivalentTLSVersion());
     }
 
-    public static SignatureAndHashAlgorithm chooseSignatureAndHashAlgorithm(TlsContext context, Vector algs, int signatureAlgorithm)
+    public static SignatureAndHashAlgorithm chooseSignatureAndHashAlgorithm(TlsContext context, Vector sigHashAlgs, short signatureAlgorithm)
         throws IOException
     {
-        if (!TlsUtils.isTLSv12(context))
+        if (!isTLSv12(context))
         {
             return null;
         }
 
-        if (algs == null)
+        if (sigHashAlgs == null)
         {
-            algs = TlsUtils.getDefaultSignatureAlgorithms(signatureAlgorithm);
+            sigHashAlgs = getDefaultSignatureAlgorithms(signatureAlgorithm);
         }
 
         SignatureAndHashAlgorithm result = null;
-        for (int i = 0; i < algs.size(); ++i)
+        for (int i = 0; i < sigHashAlgs.size(); ++i)
         {
-            SignatureAndHashAlgorithm alg = (SignatureAndHashAlgorithm)algs.elementAt(i);
-            if (alg.getSignature() == signatureAlgorithm)
+            SignatureAndHashAlgorithm sigHashAlg = (SignatureAndHashAlgorithm)sigHashAlgs.elementAt(i);
+            if (sigHashAlg.getSignature() == signatureAlgorithm)
             {
-                short hash = alg.getHash();
+                short hash = sigHashAlg.getHash();
                 if (hash < MINIMUM_HASH_STRICT)
                 {
                     continue;
                 }
                 if (result == null)
                 {
-                    result = alg;
+                    result = sigHashAlg;
                     continue;
                 }
 
@@ -2669,14 +2709,14 @@ public class TlsUtils
                 {
                     if (hash > current)
                     {
-                        result = alg;
+                        result = sigHashAlg;
                     }
                 }
                 else
                 {
                     if (hash < current)
                     {
-                        result = alg;
+                        result = sigHashAlg;
                     }
                 }
             }
@@ -2686,6 +2726,30 @@ public class TlsUtils
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
         return result;
+    }
+
+    public static Vector getUsableSignatureAlgorithms(Vector sigHashAlgs)
+    {
+        if (sigHashAlgs == null)
+        {
+            return getAllSignatureAlgorithms();
+        }
+
+        Vector v = new Vector(4);
+        v.addElement(SignatureAlgorithm.anonymous);
+        for (int i = 0; i < sigHashAlgs.size(); ++i)
+        {
+            SignatureAndHashAlgorithm sigHashAlg = (SignatureAndHashAlgorithm)sigHashAlgs.elementAt(i);
+            if (sigHashAlg.getHash() >= MINIMUM_HASH_STRICT)
+            {
+                short sigAlg = sigHashAlg.getSignature();
+                if (!v.contains(sigAlg))
+                {
+                    v.addElement(sigAlg);
+                }
+            }
+        }
+        return v;
     }
 
     public static int[] getSupportedCipherSuites(TlsCrypto crypto, int[] baseCipherSuiteList)
@@ -2712,7 +2776,7 @@ public class TlsUtils
 
     public static boolean isSupportedCipherSuite(TlsCrypto crypto, int cipherSuite)
     {
-        int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(cipherSuite);
+        int keyExchangeAlgorithm = getKeyExchangeAlgorithm(cipherSuite);
 
         // TODO Probably want TlsCrypto.hasKeyExchangeAlgorithm
         switch (keyExchangeAlgorithm)
@@ -2729,8 +2793,8 @@ public class TlsUtils
         }
         }
 
-        int encryptionAlgorithm = TlsUtils.getEncryptionAlgorithm(cipherSuite);
-        int macAlgorithm = TlsUtils.getMACAlgorithm(cipherSuite);
+        int encryptionAlgorithm = getEncryptionAlgorithm(cipherSuite);
+        int macAlgorithm = getMACAlgorithm(cipherSuite);
 
         return crypto.hasEncryptionAlgorithm(encryptionAlgorithm) && crypto.hasMacAlgorithm(macAlgorithm);
     }
