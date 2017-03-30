@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.est.CSRRequestResponse;
 import org.bouncycastle.est.ESTService;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
+import org.bouncycastle.est.jcajce.JsseDefaultHostnameAuthorizer;
 import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -148,6 +149,8 @@ public class CSRAttributesExample
         if (noNameVerifier)
         {
             builder.withHostNameAuthorizer(null);
+        } else {
+            builder.withHostNameAuthorizer(new JsseDefaultHostnameAuthorizer(SuffixList.publicSuffix));
         }
 
         //

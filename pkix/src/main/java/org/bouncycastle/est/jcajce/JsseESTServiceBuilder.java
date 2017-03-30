@@ -24,7 +24,7 @@ public class JsseESTServiceBuilder
     extends ESTServiceBuilder
 {
     protected SSLSocketFactoryCreator socketFactoryCreator;
-    protected JsseHostnameAuthorizer hostNameAuthorizer = new JsseDefaultHostnameAuthorizer();
+    protected JsseHostnameAuthorizer hostNameAuthorizer  = null;
     protected int timeoutMillis = 0;
     protected ChannelBindingProvider bindingProvider;
     protected Set<String> supportedSuites = new HashSet<String>();
@@ -233,6 +233,10 @@ public class JsseESTServiceBuilder
         if (socketFactoryCreator == null)
         {
             socketFactoryCreator = sslSocketFactoryCreatorBuilder.build();
+        }
+
+        if (hostNameAuthorizer == null) {
+            hostNameAuthorizer = new JsseDefaultHostnameAuthorizer(null);
         }
 
 

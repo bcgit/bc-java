@@ -1,4 +1,4 @@
-package org.bouncycastle.est.jcajce;
+package org.bouncycastle.test.est.examples;
 
 import java.util.Collections;
 import java.util.HashSet;
