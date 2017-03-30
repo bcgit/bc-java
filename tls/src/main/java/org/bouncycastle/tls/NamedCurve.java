@@ -1,9 +1,5 @@
 package org.bouncycastle.tls;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
 /**
  * RFC 4492 5.1.1
  * <p>
