@@ -22,6 +22,11 @@ import java.util.Set;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
+import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.cert.X509CertificateHolder;
+
 
 /**
  * General utility methods for building common objects for supporting the JCA/JCE/JSSE.
@@ -61,11 +66,11 @@ public class JcaJceUtils
 
     public static X509TrustManager[] getCertPathTrustManager(final Set<TrustAnchor> anchors, final CRL[] revocationLists)
     {
-        final X509Certificate[] x509Certificates = new X509Certificate[anchors.size()];
+        final X509Certificate[] x509CertificateTrustAnchors = new X509Certificate[anchors.size()];
         int c = 0;
         for (TrustAnchor ta : anchors)
         {
-            x509Certificates[c++] = ta.getTrustedCert();
+            x509CertificateTrustAnchors[c++] = ta.getTrustedCert();
         }
 
         return new X509TrustManager[]{new X509TrustManager()
@@ -108,6 +113,13 @@ public class JcaJceUtils
                     }
 
                     PKIXCertPathValidatorResult result = (PKIXCertPathValidatorResult)pathBuilder.build(param);
+
+                    validateServerCertUsage(x509Certificates[0]);
+
+                }
+                catch (CertificateException e)
+                {
+                    throw e;
                 }
                 catch (GeneralSecurityException e)
                 {
@@ -117,10 +129,71 @@ public class JcaJceUtils
 
             public X509Certificate[] getAcceptedIssuers()
             {
-                return x509Certificates;
+                return x509CertificateTrustAnchors;
             }
         }
         };
+    }
+
+    private static void validateServerCertUsage(X509Certificate x509Certificate)
+        throws CertificateException
+    {
+        try
+        {
+            X509CertificateHolder cert = new X509CertificateHolder(x509Certificate.getEncoded());
+
+            KeyUsage keyUsage = KeyUsage.fromExtensions(cert.getExtensions());
+
+            if (keyUsage == null)
+            {
+                throw new CertificateException("Certificate has no key usage.");
+            }
+
+//                if (keyUsage.hasUsages(KeyUsage.digitalSignature))
+//                {
+//                    throw new CertificateException("Certificate has invalid key usage: DigitalSignature");
+//                }
+//
+//                if (keyUsage.hasUsages(KeyUsage.nonRepudiation))
+//                {
+//                    throw new CertificateException("Certificate has invalid key usage: NonRepudiation");
+//                }
+
+            if (keyUsage.hasUsages(KeyUsage.keyCertSign))
+            {
+                throw new CertificateException("Certificate has invalid key usage: KeyCertSign");
+            }
+
+            if (!keyUsage.hasUsages(KeyUsage.keyEncipherment))
+            {
+                throw new CertificateException("Certificate does not support: KeyEncipherment");
+            }
+
+
+            //
+            // Check extended key usage.
+            //
+            ExtendedKeyUsage extendedKeyUsage = ExtendedKeyUsage.fromExtensions(cert.getExtensions());
+
+            if (extendedKeyUsage != null)
+            {
+                if (!(extendedKeyUsage.hasKeyPurposeId(KeyPurposeId.id_kp_serverAuth) ||
+                    extendedKeyUsage.hasKeyPurposeId(KeyPurposeId.id_kp_msSGC) ||
+                    extendedKeyUsage.hasKeyPurposeId(KeyPurposeId.id_kp_nsSGC)))
+                {
+                    throw new CertificateException("Certificate extended key usage must include serverAuth, msSGC or nsSGC");
+                }
+            }
+
+        }
+        catch (CertificateException c)
+        {
+            throw c;
+        }
+        catch (Exception e)
+        {
+            throw new CertificateException(e.getMessage(), e);
+        }
     }
 
 

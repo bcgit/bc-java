@@ -57,7 +57,7 @@ public class CaCertsExample
                 }
                 else if (arg.equals("-u"))
                 {
-                    serverRootUrl = ExampleUtils.nextArgAsString("Server URL", args, t);
+                    serverRootUrl = ExampleUtils.nextArgAsString("Server Hostname", args, t);
                     t += 1;
                 }
                 else if (arg.equals("--printTLS"))
@@ -118,7 +118,7 @@ public class CaCertsExample
         Set<TrustAnchor> trustAnchors = null;
         if (trustAnchorFile != null)
         {
-            trustAnchors = ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificate(trustAnchorFile));
+            trustAnchors = ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificates(trustAnchorFile));
         }
 
         if (tlsProviderClass != null)
@@ -274,7 +274,7 @@ public class CaCertsExample
     public void printArguments()
     {
         System.out.println("-t <file>                         Trust anchor file. (PEM)");
-        System.out.println("-u <url>                          Server URL");
+        System.out.println("-u <url>                          Server Hostname.");
         System.out.println("--printTLS <url>                  Print TLS certificates as PEM format");
         System.out.println("--tls <version>                   Use this TLS version when creating socket factory, Eg TLSv1.2");
         System.out.println("--tlsProvider <provider> <class>  The JSSE Provider.");

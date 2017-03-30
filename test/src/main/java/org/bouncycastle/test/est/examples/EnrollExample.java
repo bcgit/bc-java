@@ -71,7 +71,7 @@ public class EnrollExample
                 }
                 else if (arg.equals("-u"))
                 {
-                    serverRootUrl = ExampleUtils.nextArgAsString("Server URL", args, t);
+                    serverRootUrl = ExampleUtils.nextArgAsString("Server Hostname", args, t);
                     t += 1;
                 }
                 else if (arg.equals("-c"))
@@ -195,25 +195,8 @@ public class EnrollExample
 
         ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(keyPair.getPrivate());
 
-//
-//        SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder(JcaJceUtils.getCertPathTrustManager(ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificate(trustAnchorFile)), null));
-//        sfcb.withTLSVersion(tlsVersion);
-//        sfcb.withProvider(tlsProvider);
-//       // sfcb.withSecureRandom(new SecureRandom());
-//
-//        if (clientKeyStoreFile != null)
-//        {
-//            if (keyStoreType == null)
-//            {
-//                keyStoreType = "JKS";
-//            }
-//            KeyStore ks = KeyStore.getInstance(keyStoreType, "BC");
-//            ks.load(new FileInputStream(clientKeyStoreFile), clientKeyStoreFilePassword);
-//            sfcb.withKeyManagers(JcaJceUtils.createKeyManagerFactory("X509", null, ks, clientKeyStoreFilePassword).getKeyManagers());
-//        }
 
-
-        JsseESTServiceBuilder est = new JsseESTServiceBuilder(serverRootUrl, JcaJceUtils.getCertPathTrustManager(ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificate(trustAnchorFile)), null));
+        JsseESTServiceBuilder est = new JsseESTServiceBuilder(serverRootUrl, JcaJceUtils.getCertPathTrustManager(ExampleUtils.toTrustAnchor(ExampleUtils.readPemCertificates(trustAnchorFile)), null));
         est.withTimeout(timeout);
         est.withLabel(label);
 
@@ -341,8 +324,8 @@ public class EnrollExample
     {
         System.out.println("-r                                     Re-enroll");
         System.out.println("-t <file>                              Trust anchor file");
-        System.out.println("-u <url>                               EST server url.");
-        System.out.println("-c <common name>                       EST server url.");
+        System.out.println("-u <url>                               EST hostname url.");
+        System.out.println("-c <common name>                       EST CN.");
         System.out.println("--keyStore <file>                      Optional Key Store.");
         System.out.println("--keyStorePass <password>              Optional Key Store password.");
         System.out.println("--keyStoreType <JKS>                   Optional Key Store type, defaults to JKS");
