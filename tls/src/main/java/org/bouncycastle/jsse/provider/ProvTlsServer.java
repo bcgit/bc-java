@@ -150,6 +150,9 @@ class ProvTlsServer
 
     public int[] getCipherSuites()
     {
+        /*
+         * TODO[jsse] Prune the returned cipher suites based on the available server credentials.
+         */
         return TlsUtils.getSupportedCipherSuites(manager.getContextData().getCrypto(),
             manager.getContext().convertCipherSuites(sslParameters.getCipherSuites()));
     }
