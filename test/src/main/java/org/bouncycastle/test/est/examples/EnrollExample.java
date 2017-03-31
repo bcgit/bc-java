@@ -8,13 +8,16 @@ import java.io.FileWriter;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.Provider;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.ECGenParameterSpec;
-import java.security.spec.PKCS8EncodedKeySpec;
 
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.est.ESTAuth;
 import org.bouncycastle.est.ESTService;
@@ -24,8 +27,8 @@ import org.bouncycastle.est.jcajce.JcaJceUtils;
 import org.bouncycastle.est.jcajce.JsseDefaultHostnameAuthorizer;
 import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PKCS8Generator;
 import org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcaPKCS8Generator;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -33,9 +36,7 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 import org.bouncycastle.test.est.BCChannelBindingProvider;
-import org.bouncycastle.util.io.pem.PemGenerationException;
 import org.bouncycastle.util.io.pem.PemObject;
-import org.bouncycastle.util.io.pem.PemObjectGenerator;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.io.pem.PemWriter;
 
@@ -148,15 +149,20 @@ public class EnrollExample
                 {
                     label = ExampleUtils.nextArgAsString("CA Label", args, t);
                     t += 1;
-                } else if (args.equals("--save")) {
+                }
+                else if (arg.equals("--save"))
+                {
                     saveKeysToFile = ExampleUtils.nextArgAsString("Save keys to file", args, t);
                     t += 1;
-                } else if (args.equals("--load")) {
+                }
+                else if (arg.equals("--load"))
+                {
                     keyFile = ExampleUtils.nextArgAsString("Load keys from file", args, t);
                     t += 1;
-                } else
+                }
+                else
                 {
-                    System.out.println(arg);
+                    System.out.println("Unknown argument: " + arg);
                     printArgs();
                     System.exit(0);
                 }
@@ -209,22 +215,48 @@ public class EnrollExample
 
         KeyPair keyPair = null;
 
-        if (keyFile != null) {
+        if (keyFile != null)
+        {
+            PemReader pr = new PemReader(new FileReader(keyFile));
 
-//            PemReader pr = new PemReader(new FileReader(keyFile));
-//             pr.readPemObject()
+            PemObject o = null;
+            JcaPEMKeyConverter foo = new JcaPEMKeyConverter().setProvider(new BouncyCastleProvider());
+            PrivateKey privateKey = null;
+            PublicKey publicKey = null;
 
-//            PemWriter pw = new PemWriter(new FileWriter(saveKeysToFile));
-//            pw.writeObject(new JcaPKCS8Generator(keyPair.getPrivate(),null));
-//            pw.writeObject(new JcaMiscPEMGenerator(keyPair.getPublic(),null));
-//            pw.flush();
-//            pw.close();
+            while ((o = pr.readPemObject()) != null)
+            {
+                if ("PRIVATE KEY".equals(o.getType()))
+                {
+                    privateKey = foo.getPrivateKey(PrivateKeyInfo.getInstance(o.getContent()));
+                }
+                else if ("PUBLIC KEY".equals(o.getType()))
+                {
+                    publicKey = foo.getPublicKey(SubjectPublicKeyInfo.getInstance(o.getContent()));
+                }
+                else
+                {
+                    System.err.println("Unrecognised type: " + o.getType());
+                    System.exit(1);
+                }
+            }
 
-            keyPair = kpg.generateKeyPair();
-        } else {
+            if (publicKey == null)
+            {
+                throw new IllegalArgumentException("No public key was found.");
+            }
+
+            if (privateKey == null)
+            {
+                throw new IllegalArgumentException("No private key was found.");
+            }
+
+            keyPair = new KeyPair(publicKey, privateKey);
+        }
+        else
+        {
             keyPair = kpg.generateKeyPair();
         }
-
 
 
         PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
@@ -256,7 +288,9 @@ public class EnrollExample
         if (noNameVerifier)
         {
             est.withHostNameAuthorizer(null);
-        } else {
+        }
+        else
+        {
             est.withHostNameAuthorizer(new JsseDefaultHostnameAuthorizer(SuffixList.publicSuffix));
         }
 
@@ -336,10 +370,11 @@ public class EnrollExample
             System.out.println(ExampleUtils.toJavaX509Certificate(holder));
         }
 
-        if (saveKeysToFile != null) {
+        if (saveKeysToFile != null)
+        {
             PemWriter pw = new PemWriter(new FileWriter(saveKeysToFile));
-            pw.writeObject(new JcaPKCS8Generator(keyPair.getPrivate(),null));
-            pw.writeObject(new JcaMiscPEMGenerator(keyPair.getPublic(),null));
+            pw.writeObject(new JcaPKCS8Generator(keyPair.getPrivate(), null));
+            pw.writeObject(new JcaMiscPEMGenerator(keyPair.getPublic(), null));
             pw.flush();
             pw.close();
         }
@@ -379,5 +414,7 @@ public class EnrollExample
         System.out.println("--to <milliseconds>                    Timeout in milliseconds.");
         System.out.println("--no-name-verifier                     No hostname verifier.");
         System.out.println("--label <ca label>                     CA Label.");
+        System.out.println("--save <path to file>                  Save generated public and private key to file, (PEM)");
+        System.out.println("--load <path to file>                  Load generated public and private key from a file, (PEM)");
     }
 }

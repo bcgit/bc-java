@@ -149,7 +149,9 @@ public class CSRAttributesExample
         if (noNameVerifier)
         {
             builder.withHostNameAuthorizer(null);
-        } else {
+        }
+        else
+        {
             builder.withHostNameAuthorizer(new JsseDefaultHostnameAuthorizer(SuffixList.publicSuffix));
         }
 
