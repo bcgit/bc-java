@@ -1362,7 +1362,7 @@ public class TestCACertsFetch
             catch (Exception ex)
             {
                 Assert.assertEquals("EST Exception", ESTException.class, ex.getClass());
-                Assert.assertEquals("", IOException.class, ex.getCause().getClass());
+                Assert.assertTrue("", ex.getCause() instanceof IOException);
                 Assert.assertTrue(ex.getMessage().contains("must not use NULL"));
             }
         }
@@ -1439,7 +1439,7 @@ public class TestCACertsFetch
             catch (Exception ex)
             {
                 Assert.assertEquals("EST Exception", ESTException.class, ex.getClass());
-                Assert.assertEquals("", IOException.class, ex.getCause().getClass());
+                Assert.assertTrue("",  ex.getCause() instanceof IOException);
                 Assert.assertTrue(ex.getMessage().contains("must not use anon"));
             }
         }
