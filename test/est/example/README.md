@@ -243,20 +243,22 @@ The enroll example has a number of options:
 ```
 ./enroll.sh
 
--r                                     Re-enroll
--t <file>                              Trust anchor file
--u <url>                               EST Hostname .
--c <common name>                       CN.
---keyStore <file>                      Optional Key Store.
---keyStorePass <password>              Optional Key Store password.
---keyStoreType <JKS>                   Optional Key Store type, defaults to JKS
---auth <realm:user:password>           Auth credentials, if real is not
---tls <version>                        Use this TLS version when creating socket factory, Eg TLSv1.2
---tlsProvider <provider> <class>       The JSSE Provider.
---pop                                  Turn on PoP
---to <milliseconds>                    Timeout in milliseconds.
---no-name-verifier                     No hostname verifier.
---label <ca label>                     CA Label.
+--r                                     Re-enroll
+ -t <file>                              Trust anchor file
+ -u <url>                               EST hostname url.
+ -c <common name>                       EST CN.
+ --keyStore <file>                      Optional Key Store.
+ --keyStorePass <password>              Optional Key Store password.
+ --keyStoreType <JKS>                   Optional Key Store type, defaults to JKS
+ --auth <realm:user:password>           Auth credentials, if real is not
+ --tls <version>                        Use this TLS version when creating socket factory, Eg TLSv1.2
+ --tlsProvider <provider> <class>       The JSSE Provider.
+ --pop                                  Turn on PoP
+ --to <milliseconds>                    Timeout in milliseconds.
+ --no-name-verifier                     No hostname verifier.
+ --label <ca label>                     CA Label.
+ --save <path to file>                  Save generated public and private key to file, (PEM)
+ --load <path to file>                  Load generated public and private key from a file, (PEM)
 
 ```
 
@@ -276,6 +278,7 @@ Signature Algorithm: org.bouncycastle.asn1.x509.AlgorithmIdentifier@ca7a8819
 
 ```
 
+
 #### Enrollment with PoP
 The Enrollment client defaults to use BCJSSE for its TLS provider as it supports the extraction of the TLS unique value required for PoP. At the time of writing, extraction of the TLS unique value is not supported by the default JSSE provider.
 
@@ -288,6 +291,12 @@ And for reenrollment:
 ```<bc-java>/test/src/test/java/org/bouncycastle/test/est/TestReEnroll.java```
 
 ---
+
+#### Loading and saving key pairs.
+
+Use the ```--load <file>``` and ```--save <file>``` to load and save the generated keys used with the CSR for enrollment.
+
+
 
 ### Fetching CSR Attributes
 The EST server may require that CSRs have a certain set of attributes. 
