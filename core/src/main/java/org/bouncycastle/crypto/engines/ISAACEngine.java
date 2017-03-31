@@ -16,7 +16,8 @@ public class ISAACEngine
 {
     // Constants
     private final int sizeL          = 8,
-                      stateArraySize = sizeL<<5; // 256
+                      stateArraySize = sizeL<<5, // 256
+                      resultInBytes = stateArraySize<<2; // 1024 - size of results expanded into bytes
     
     // Cipher's internal state
     private int[]   engineState   = null, // mm                
@@ -25,7 +26,7 @@ public class ISAACEngine
     
     // Engine state
     private int     index         = 0;
-    private byte[]  keyStream     = new byte[stateArraySize<<2], // results expanded into bytes
+    private byte[]  keyStream     = new byte[resultInBytes],
                     workingKey    = null;
     private boolean initialised   = false;
     
@@ -58,15 +59,14 @@ public class ISAACEngine
                     
     public byte returnByte(byte in)
     {
-        if (index == 0) 
+        if (index-- == 0)
         {
             isaac();
-            keyStream = Pack.intToBigEndian(results);
+            index = resultInBytes - 1;
+
+            keyStream = Pack.intToLittleEndian(results);
         }
-        byte out = (byte)(keyStream[index]^in);
-        index = (index + 1) & 1023;
-        
-        return out;
+        return (byte)(keyStream[index]^in);
     }
     
     public int processBytes(
@@ -93,13 +93,14 @@ public class ISAACEngine
         
         for (int i = 0; i < len; i++)
         {
-            if (index == 0) 
+            if (index-- == 0)
             {
                 isaac();
-                keyStream = Pack.intToBigEndian(results);
+                index = resultInBytes - 1;
+
+                keyStream = Pack.intToLittleEndian(results);
             }
             out[i+outOff] = (byte)(keyStream[index]^in[i+inOff]);
-            index = (index + 1) & 1023;
         }
 
         return len;
@@ -180,8 +181,6 @@ public class ISAACEngine
                 }
             }
         }
-        
-        isaac();
         
         initialised = true;
     }    
