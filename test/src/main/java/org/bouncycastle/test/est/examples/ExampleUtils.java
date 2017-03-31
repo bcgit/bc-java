@@ -358,7 +358,7 @@ public class ExampleUtils
         PemReader reader = new PemReader(fr);
         PemObject o;
 
-        while((o = reader.readPemObject()) != null )
+        while ((o = reader.readPemObject()) != null)
         {
             certs.add(new X509CertificateHolder(o.getContent()));
         }
