@@ -29,6 +29,8 @@ public class JsseDefaultHostnameAuthorizer
     private final Set<String> knownSuffixes;
 
     /**
+     * Base constructor.
+     * 
      * Known suffixes is a list of public domain suffixes that can't be used as wild cards for
      * example *.com, as a dns wildcard could match evert .com domain if a registrar were issue it.
      * If *.com is in the known suffixes list will not be allowed to match.
