@@ -109,6 +109,20 @@ public abstract class AbstractTlsServer
         return maxBits;
     }
 
+    protected boolean isSelectableCipherSuite(int cipherSuite, int availCurveBits, Vector sigAlgs)
+    {
+        return Arrays.contains(this.offeredCipherSuites, cipherSuite)
+            && TlsUtils.isValidCipherSuiteForVersion(cipherSuite, serverVersion)
+            && availCurveBits >= TlsECCUtils.getMinimumCurveBits(cipherSuite)
+            && TlsUtils.isValidCipherSuiteForSignatureAlgorithms(cipherSuite, sigAlgs);
+    }
+
+    protected boolean selectCipherSuite(int cipherSuite) throws IOException
+    {
+        this.selectedCipherSuite = cipherSuite;
+        return true;
+    }
+
     protected int selectCurve(int minimumCurveBits)
     {
         if (namedCurves == null)
@@ -288,13 +302,10 @@ public abstract class AbstractTlsServer
         for (int i = 0; i < cipherSuites.length; ++i)
         {
             int cipherSuite = cipherSuites[i];
-
-            if (Arrays.contains(this.offeredCipherSuites, cipherSuite)
-                && TlsUtils.isValidCipherSuiteForVersion(cipherSuite, serverVersion)
-                && availCurveBits >= TlsECCUtils.getMinimumCurveBits(cipherSuite)
-                && TlsUtils.isValidCipherSuiteForSignatureAlgorithms(cipherSuite, sigAlgs))
+            if (isSelectableCipherSuite(cipherSuite, availCurveBits, sigAlgs)
+                && selectCipherSuite(cipherSuite))
             {
-                return this.selectedCipherSuite = cipherSuite;
+                return cipherSuite;
             }
         }
         throw new TlsFatalAlert(AlertDescription.handshake_failure);

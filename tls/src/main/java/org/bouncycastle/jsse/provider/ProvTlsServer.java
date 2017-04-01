@@ -5,6 +5,8 @@ import java.net.Socket;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,6 +44,8 @@ class ProvTlsServer
     protected final ProvTlsManager manager;
     protected final ProvSSLParameters sslParameters;
 
+    protected Set<String> keyManagerMissCache = null;
+    protected TlsCredentials credentials = null;
     protected boolean handshakeComplete = false;
 
     ProvTlsServer(ProvTlsManager manager)
@@ -52,6 +56,16 @@ class ProvTlsServer
         this.sslParameters = manager.getProvSSLParameters();
     }
 
+    protected boolean selectCipherSuite(int cipherSuite) throws IOException
+    {
+        if (!selectCredentials(cipherSuite))
+        {
+            return false;
+        }
+
+        return super.selectCipherSuite(cipherSuite);
+    }
+
     public synchronized boolean isHandshakeComplete()
     {
         return handshakeComplete;
@@ -60,99 +74,11 @@ class ProvTlsServer
     public TlsCredentials getCredentials()
         throws IOException
     {
-        int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite);
-        switch (keyExchangeAlgorithm)
-        {
-        case KeyExchangeAlgorithm.DH_anon:
-        case KeyExchangeAlgorithm.ECDH_anon:
-            return null;
-
-        case KeyExchangeAlgorithm.DH_DSS:
-        case KeyExchangeAlgorithm.DH_RSA:
-        case KeyExchangeAlgorithm.DHE_DSS:
-        case KeyExchangeAlgorithm.DHE_RSA:
-        case KeyExchangeAlgorithm.ECDH_ECDSA:
-        case KeyExchangeAlgorithm.ECDH_RSA:
-        case KeyExchangeAlgorithm.ECDHE_ECDSA:
-        case KeyExchangeAlgorithm.ECDHE_RSA:
-        case KeyExchangeAlgorithm.RSA:
-            break;
-
-        default:
-            /* Note: internal error here; selected a key exchange we don't implement! */
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        X509KeyManager km = manager.getContextData().getKeyManager();
-        if (km == null)
-        {
-            return null;
-        }
-
-        String keyType = JsseUtils.getAuthType(keyExchangeAlgorithm);
-        // TODO[jsse] Is there some extension where the client can specify these (SNI maybe)?
-        Principal[] issuers = null;
-        // TODO[jsse] How is this used?
-        Socket socket = null;
-
-        String alias = km.chooseServerAlias(keyType, issuers, socket);
-        if (alias == null)
-        {
-            return null;
-        }
-
-        TlsCrypto crypto = getCrypto();
-        if (!(crypto instanceof JcaTlsCrypto))
-        {
-            // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
-            throw new UnsupportedOperationException();
-        }
-
-        PrivateKey privateKey = km.getPrivateKey(alias);
-        Certificate certificate = JsseUtils.getCertificateMessage(crypto, km.getCertificateChain(alias));
-
-        switch (keyExchangeAlgorithm)
-        {
-        case KeyExchangeAlgorithm.DH_DSS:
-        case KeyExchangeAlgorithm.DH_RSA:
-        case KeyExchangeAlgorithm.ECDH_ECDSA:
-        case KeyExchangeAlgorithm.ECDH_RSA:
-        {
-            // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
-            return new JceDefaultTlsCredentialedAgreement((JcaTlsCrypto)crypto, certificate, privateKey);
-        }
-
-        case KeyExchangeAlgorithm.DHE_DSS:
-        case KeyExchangeAlgorithm.DHE_RSA:
-        case KeyExchangeAlgorithm.ECDHE_ECDSA:
-        case KeyExchangeAlgorithm.ECDHE_RSA:
-        {
-            short signatureAlgorithm = TlsUtils.getSignatureAlgorithm(keyExchangeAlgorithm);
-            SignatureAndHashAlgorithm sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
-                supportedSignatureAlgorithms, signatureAlgorithm);
-
-            // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
-            return new JcaDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), (JcaTlsCrypto)crypto,
-                privateKey, certificate, sigAlg);
-        }
-
-        case KeyExchangeAlgorithm.RSA:
-        {
-            // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
-            return new JceDefaultTlsCredentialedDecryptor((JcaTlsCrypto)crypto, certificate, privateKey);
-        }
-
-        default:
-            /* Note: internal error here; selected a key exchange we don't implement! */
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
+        return credentials;
     }
 
     public int[] getCipherSuites()
     {
-        /*
-         * TODO[jsse] Prune the returned cipher suites based on the available server credentials.
-         */
         return TlsUtils.getSupportedCipherSuites(manager.getContextData().getCrypto(),
             manager.getContext().convertCipherSuites(sslParameters.getCipherSuites()));
     }
@@ -197,9 +123,13 @@ class ProvTlsServer
     @Override
     public int getSelectedCipherSuite() throws IOException
     {
+        keyManagerMissCache = new HashSet<String>();
+
         int selectedCipherSuite = super.getSelectedCipherSuite();
 
         LOG.fine("Server selected cipher suite: " + manager.getContext().getCipherSuiteString(selectedCipherSuite));
+
+        keyManagerMissCache = null;
 
         return selectedCipherSuite;
     }
@@ -303,5 +233,104 @@ class ProvTlsServer
         ProvSSLConnection connection = new ProvSSLConnection(context, session);
 
         manager.notifyHandshakeComplete(connection);
+    }
+
+    protected boolean selectCredentials(int cipherSuite) throws IOException
+    {
+        this.credentials = null;
+
+        int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(cipherSuite);
+        switch (keyExchangeAlgorithm)
+        {
+        case KeyExchangeAlgorithm.DH_anon:
+        case KeyExchangeAlgorithm.ECDH_anon:
+            return true;
+
+        case KeyExchangeAlgorithm.DH_DSS:
+        case KeyExchangeAlgorithm.DH_RSA:
+        case KeyExchangeAlgorithm.DHE_DSS:
+        case KeyExchangeAlgorithm.DHE_RSA:
+        case KeyExchangeAlgorithm.ECDH_ECDSA:
+        case KeyExchangeAlgorithm.ECDH_RSA:
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
+        case KeyExchangeAlgorithm.RSA:
+            break;
+
+        default:
+            return false;
+        }
+
+        X509KeyManager km = manager.getContextData().getKeyManager();
+        if (km == null)
+        {
+            return false;
+        }
+
+        String keyType = JsseUtils.getAuthType(keyExchangeAlgorithm);
+        if (keyManagerMissCache.contains(keyType))
+        {
+            return false;
+        }
+
+        // TODO[jsse] Is there some extension where the client can specify these (SNI maybe)?
+        Principal[] issuers = null;
+        // TODO[jsse] How is this used?
+        Socket socket = null;
+
+        String alias = km.chooseServerAlias(keyType, issuers, socket);
+        if (alias == null)
+        {
+            keyManagerMissCache.add(keyType);
+            return false;
+        }
+
+        TlsCrypto crypto = getCrypto();
+        if (!(crypto instanceof JcaTlsCrypto))
+        {
+            // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
+            throw new UnsupportedOperationException();
+        }
+
+        PrivateKey privateKey = km.getPrivateKey(alias);
+        Certificate certificate = JsseUtils.getCertificateMessage(crypto, km.getCertificateChain(alias));
+
+        switch (keyExchangeAlgorithm)
+        {
+        case KeyExchangeAlgorithm.DH_DSS:
+        case KeyExchangeAlgorithm.DH_RSA:
+        case KeyExchangeAlgorithm.ECDH_ECDSA:
+        case KeyExchangeAlgorithm.ECDH_RSA:
+        {
+            // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
+            this.credentials = new JceDefaultTlsCredentialedAgreement((JcaTlsCrypto)crypto, certificate, privateKey);
+            return true;
+        }
+
+        case KeyExchangeAlgorithm.DHE_DSS:
+        case KeyExchangeAlgorithm.DHE_RSA:
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
+        {
+            short signatureAlgorithm = TlsUtils.getSignatureAlgorithm(keyExchangeAlgorithm);
+            SignatureAndHashAlgorithm sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
+                supportedSignatureAlgorithms, signatureAlgorithm);
+
+            // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
+            this.credentials = new JcaDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), (JcaTlsCrypto)crypto,
+                privateKey, certificate, sigAlg);
+            return true;
+        }
+
+        case KeyExchangeAlgorithm.RSA:
+        {
+            // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
+            this.credentials = new JceDefaultTlsCredentialedDecryptor((JcaTlsCrypto)crypto, certificate, privateKey);
+            return true;
+        }
+
+        default:
+            return false;
+        }
     }
 }

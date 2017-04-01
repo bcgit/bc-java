@@ -85,9 +85,7 @@ public class BasicClientAuthTlsTest
     
                 SSLSocketFactory fact = clientContext.getSocketFactory();
                 SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, PORT_NO);
-    
-                SSLUtils.restrictKeyExchange(cSock, "ECDHE_ECDSA");
-    
+
                 SSLSession session = cSock.getSession();
     
                 assertNotNull(session.getCipherSuite());
