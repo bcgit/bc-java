@@ -17,11 +17,11 @@ popd
 pushd $DIR/jars
 
 if  type curl > /dev/null; then
-    curl -o bcprov.jar  https://downloads.bouncycastle.org/betas/bcprov-jdk15on-157b08.jar
-    curl -o bctls.jar https://downloads.bouncycastle.org/betas/bctls-jdk15on-157b08.jar
+    curl -o bcprov.jar  https://downloads.bouncycastle.org/betas/bcprov-jdk15on-157b11.jar
+    curl -o bctls.jar https://downloads.bouncycastle.org/betas/bctls-jdk15on-157b11.jar
 elif type wget > /dev/null ; then
-    wget -O bcprov.jar https://downloads.bouncycastle.org/betas/bcprov-jdk15on-157b08.jar
-    wget -O bctls.jar https://downloads.bouncycastle.org/betas/bctls-jdk15on-157b08.jar
+    wget -O bcprov.jar https://downloads.bouncycastle.org/betas/bcprov-jdk15on-157b11.jar
+    wget -O bctls.jar https://downloads.bouncycastle.org/betas/bctls-jdk15on-157b11.jar
 else
     echo "No wget or curl to download provider jar"
 fi
