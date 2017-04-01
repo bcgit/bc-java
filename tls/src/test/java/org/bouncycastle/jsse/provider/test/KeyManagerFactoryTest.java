@@ -230,8 +230,6 @@ public class KeyManagerFactoryTest
         SSLSocket c = (SSLSocket)f.createSocket("localhost", 8887);
         c.setUseClientMode(true);
 
-        SSLUtils.restrictKeyExchange(c, "RSA");   // 1.5 compatibility
-
         c.getOutputStream().write('!');
 
         c.getInputStream().read();
