@@ -1,5 +1,7 @@
 package org.bouncycastle.jcajce.provider.config;
 
+import java.util.Map;
+
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 
@@ -48,4 +50,6 @@ public interface ConfigurableProvider
     boolean hasAlgorithm(String type, String name);
 
     void addKeyInfoConverter(ASN1ObjectIdentifier oid, AsymmetricKeyInfoConverter keyInfoConverter);
+
+    void addAttribute(String key, Map<String, String> attributeMap);
 }

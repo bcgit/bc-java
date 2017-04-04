@@ -7,6 +7,7 @@ import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -140,6 +141,21 @@ public class BouncyCastlePQCProvider
         synchronized (keyInfoConverters)
         {
             keyInfoConverters.put(oid, keyInfoConverter);
+        }
+    }
+
+    public void addAttribute(String key, Map<String, String> attributeMap)
+    {
+        for (Iterator it = attributeMap.keySet().iterator(); it.hasNext();)
+        {
+            String attributeName = (String)it.next();
+            String attributeKey = key + " " + attributeName;
+            if (containsKey(attributeKey))
+            {
+                throw new IllegalStateException("duplicate provider attribute key (" + attributeKey + ") found");
+            }
+
+            put(attributeKey, attributeMap.get(attributeName));
         }
     }
 
