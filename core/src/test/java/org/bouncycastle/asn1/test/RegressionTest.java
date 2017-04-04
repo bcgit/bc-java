@@ -70,7 +70,8 @@ public class RegressionTest
         new ParsingTest(),
         new GeneralNameTest(),
         new ObjectIdentifierTest(),
-        new RFC4519Test()
+        new RFC4519Test(),
+        new PolicyConstraintsTest()
     };
 
     public static void main(
