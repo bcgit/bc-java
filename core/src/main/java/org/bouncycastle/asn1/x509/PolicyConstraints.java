@@ -93,12 +93,12 @@ public class PolicyConstraints
 
         if (requireExplicitPolicyMapping != null)
         {
-            v.add(new DERTaggedObject(0, new ASN1Integer(requireExplicitPolicyMapping)));
+            v.add(new DERTaggedObject(false,0, new ASN1Integer(requireExplicitPolicyMapping)));
         }
 
         if (inhibitPolicyMapping != null)
         {
-            v.add(new DERTaggedObject(1, new ASN1Integer(inhibitPolicyMapping)));
+            v.add(new DERTaggedObject(false, 1, new ASN1Integer(inhibitPolicyMapping)));
         }
 
         return new DERSequence(v);
