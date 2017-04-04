@@ -44,7 +44,31 @@ public class DHIESTest
 
     BigInteger g1024 = new BigInteger("2",16);
 
-    DHParameterSpec param = new DHParameterSpec(p1024, g1024);
+    BigInteger p2048 = new BigInteger("95475cf5d93e596c3fcd1d902add02f427f5f3c7210313bb45fb4d5b" +
+                                "b2e5fe1cbd678cd4bbdd84c9836be1f31c0777725aeb6c2fc38b85f4" +
+                                "8076fa76bcd8146cc89a6fb2f706dd719898c2083dc8d896f84062e2" +
+                                "c9c94d137b054a8d8096adb8d51952398eeca852a0af12df83e475aa" +
+                                "65d4ec0c38a9560d5661186ff98b9fc9eb60eee8b030376b236bc73b" +
+                                "e3acdbd74fd61c1d2475fa3077b8f080467881ff7e1ca56fee066d79" +
+                                "506ade51edbb5443a563927dbc4ba520086746175c8885925ebc64c6" +
+                                "147906773496990cb714ec667304e261faee33b3cbdf008e0c3fa906" +
+                                "50d97d3909c9275bf4ac86ffcb3d03e6dfc8ada5934242dd6d3bcca2" +
+                                "a406cb0b", 16);
+
+    BigInteger g2048 = new BigInteger("42debb9da5b3d88cc956e08787ec3f3a09bba5f48b889a74aaf53174" +
+                                "aa0fbe7e3c5b8fcd7a53bef563b0e98560328960a9517f4014d3325f" +
+                                "c7962bf1e049370d76d1314a76137e792f3f0db859d095e4a5b93202" +
+                                "4f079ecf2ef09c797452b0770e1350782ed57ddf794979dcef23cb96" +
+                                "f183061965c4ebc93c9c71c56b925955a75f94cccf1449ac43d586d0" +
+                                "beee43251b0b2287349d68de0d144403f13e802f4146d882e057af19" +
+                                "b6f6275c6676c8fa0e3ca2713a3257fd1b27d0639f695e347d8d1cf9" +
+                                "ac819a26ca9b04cb0eb9b7b035988d15bbac65212a55239cfc7e58fa" +
+                                "e38d7250ab9991ffbc97134025fe8ce04c4399ad96569be91a546f49" +
+                                "78693c7a", 16);
+
+    DHParameterSpec param1024 = new DHParameterSpec(p1024, g1024);
+
+    DHParameterSpec param2048 = new DHParameterSpec(p2048, g2048);
 
     DHIESTest()
     {
@@ -70,7 +94,7 @@ public class DHIESTest
         KeyPairGenerator    g = KeyPairGenerator.getInstance("DH", "BC");
         KeyPairGenerator    g512 = KeyPairGenerator.getInstance("DH", "BC");
 
-        g.initialize(param);
+        g.initialize(param1024);
 
         doTest("DHIES with default", g, "DHIES", params);
         
@@ -79,7 +103,7 @@ public class DHIESTest
         doTest("DHIES with 512-bit", g512, "DHIES", params);
 
         // Testing ECIES with 1024-bit prime in streaming mode 
-        g.initialize(param, new SecureRandom());
+        g.initialize(param1024, new SecureRandom());
         doTest("DHIES with 1024-bit", g, "DHIES", params);
 
         c1 = new IESCipher(new IESEngine(new DHBasicAgreement(), 
@@ -94,19 +118,21 @@ public class DHIESTest
     
         params = new IESParameterSpec(derivation, encoding, 128, 192, Hex.decode("0001020304050607"));
       
-        // Testing DHIES with default prime using DESEDE
+        // Testing DHIES with default prime (2048) using DESEDE
         g = KeyPairGenerator.getInstance("DH", "BC");
+        g.initialize(param2048, new SecureRandom());
+
         doTest("DHIESwithDES default", g, "DHIESwithDESEDE-CBC", params);
         
         // Testing DHIES with 512-bit prime using DESEDE
         doTest("DHIESwithDES 512-bit", g512, "DHIESwithDESEDE-CBC", params);
         
         // Testing DHIES with 1024-bit prime using DESEDE
-        g.initialize(param, new SecureRandom());
+        g.initialize(param1024, new SecureRandom());
         doTest("DHIESwithDES 1024-bit", g, "DHIESwithDESEDE-CBC", params);
 
         g = KeyPairGenerator.getInstance("DH", "BC");
-        g.initialize(param);
+        g.initialize(param1024);
 
         c1 = new IESCipher.IESwithAESCBC();
         c2 = new IESCipher.IESwithAESCBC();
@@ -119,7 +145,7 @@ public class DHIESTest
         doTest("DHIESwithAES 512-bit", g512, "DHIESwithAES-CBC", params);
         
         // Testing DHIES with 1024-bit prime using AES
-        g.initialize(param, new SecureRandom());
+        g.initialize(param1024, new SecureRandom());
         doTest("DHIESwithAES 1024-bit", g, "DHIESwithAES-CBC", params);
 
         KeyPair       keyPair = g.generateKeyPair();
