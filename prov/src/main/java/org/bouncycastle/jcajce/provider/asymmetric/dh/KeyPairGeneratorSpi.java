@@ -15,6 +15,7 @@ import org.bouncycastle.crypto.params.DHKeyGenerationParameters;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
+import org.bouncycastle.jcajce.provider.asymmetric.util.PrimeCertaintyCalculator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Integers;
 
@@ -26,8 +27,7 @@ public class KeyPairGeneratorSpi
 
     DHKeyGenerationParameters param;
     DHBasicKeyPairGenerator engine = new DHBasicKeyPairGenerator();
-    int strength = 1024;
-    int certainty = 20;
+    int strength = 2048;
     SecureRandom random = new SecureRandom();
     boolean initialised = false;
 
@@ -95,7 +95,7 @@ public class KeyPairGeneratorSpi
 
                             DHParametersGenerator pGen = new DHParametersGenerator();
 
-                            pGen.init(strength, certainty, random);
+                            pGen.init(strength, PrimeCertaintyCalculator.getDefaultCertainty(strength), random);
 
                             param = new DHKeyGenerationParameters(random, pGen.generateParameters());
 
