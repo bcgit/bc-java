@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.params.DSAParameterGenerationParameters;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
+import org.bouncycastle.jcajce.provider.asymmetric.util.PrimeCertaintyCalculator;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Properties;
 
@@ -28,8 +29,7 @@ public class KeyPairGeneratorSpi
 
     DSAKeyGenerationParameters param;
     DSAKeyPairGenerator engine = new DSAKeyPairGenerator();
-    int strength = 1024;
-    int certainty = 20;
+    int strength = 2048;
     SecureRandom random = new SecureRandom();
     boolean initialised = false;
 
@@ -93,6 +93,8 @@ public class KeyPairGeneratorSpi
                     {
                         DSAParametersGenerator pGen;
                         DSAParameterGenerationParameters dsaParams;
+
+                        int certainty = PrimeCertaintyCalculator.getDefaultCertainty(strength);
 
                         // Typical combination of keysize and size of q.
                         //     keysize = 1024, q's size = 160

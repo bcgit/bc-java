@@ -12,6 +12,7 @@ import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
 import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
+import org.bouncycastle.jcajce.provider.asymmetric.util.PrimeCertaintyCalculator;
 
 public class KeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
@@ -23,7 +24,6 @@ public class KeyPairGeneratorSpi
     }
 
     final static BigInteger defaultPublicExponent = BigInteger.valueOf(0x10001);
-    final static int defaultTests = 112;
 
     RSAKeyGenerationParameters param;
     RSAKeyPairGenerator engine;
@@ -34,7 +34,7 @@ public class KeyPairGeneratorSpi
 
         engine = new RSAKeyPairGenerator();
         param = new RSAKeyGenerationParameters(defaultPublicExponent,
-            new SecureRandom(), 2048, defaultTests);
+            new SecureRandom(), 2048, PrimeCertaintyCalculator.getDefaultCertainty(2048));
         engine.init(param);
     }
 
@@ -43,7 +43,7 @@ public class KeyPairGeneratorSpi
         SecureRandom random)
     {
         param = new RSAKeyGenerationParameters(defaultPublicExponent,
-            random, strength, defaultTests);
+            random, strength, PrimeCertaintyCalculator.getDefaultCertainty(strength));
 
         engine.init(param);
     }
@@ -61,7 +61,7 @@ public class KeyPairGeneratorSpi
 
         param = new RSAKeyGenerationParameters(
             rsaParams.getPublicExponent(),
-            random, rsaParams.getKeysize(), defaultTests);
+            random, rsaParams.getKeysize(), PrimeCertaintyCalculator.getDefaultCertainty(2048));
 
         engine.init(param);
     }
