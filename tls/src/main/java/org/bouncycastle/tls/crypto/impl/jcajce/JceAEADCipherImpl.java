@@ -72,8 +72,14 @@ public class JceAEADCipherImpl
                     }
                     return;
                 }
+                catch (GeneralSecurityException e)
+                {
+                    // no point in falling back if it's one of these
+                    throw e;
+                }
                 catch (Exception e)
                 {
+                    // we don't have the spec class, ignore.
                 }
             }
 
