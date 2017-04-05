@@ -832,7 +832,7 @@ public final class AES
             provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NISTObjectIdentifiers.id_aes192_CBC, "AES");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NISTObjectIdentifiers.id_aes256_CBC, "AES");
 
-            provider.addAttribute("Cipher.AES", generalAesAttributes);
+            provider.addAttributes("Cipher.AES", generalAesAttributes);
             provider.addAlgorithm("Cipher.AES", PREFIX + "$ECB");
             provider.addAlgorithm("Alg.Alias.Cipher." + wrongAES128, "AES");
             provider.addAlgorithm("Alg.Alias.Cipher." + wrongAES192, "AES");
@@ -850,14 +850,14 @@ public final class AES
             provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes192_CFB, PREFIX + "$CFB");
             provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes256_CFB, PREFIX + "$CFB");
 
-            provider.addAttribute("Cipher.AESWRAP", generalAesAttributes);
+            provider.addAttributes("Cipher.AESWRAP", generalAesAttributes);
             provider.addAlgorithm("Cipher.AESWRAP", PREFIX + "$Wrap");
             provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes128_wrap, "AESWRAP");
             provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes192_wrap, "AESWRAP");
             provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes256_wrap, "AESWRAP");
             provider.addAlgorithm("Alg.Alias.Cipher.AESKW", "AESWRAP");
 
-            provider.addAttribute("Cipher.AESWRAPPAD", generalAesAttributes);
+            provider.addAttributes("Cipher.AESWRAPPAD", generalAesAttributes);
             provider.addAlgorithm("Cipher.AESWRAPPAD", PREFIX + "$WrapPad");
             provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes128_wrap_pad, "AESWRAPPAD");
             provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes192_wrap_pad, "AESWRAPPAD");
@@ -872,7 +872,7 @@ public final class AES
             provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NISTObjectIdentifiers.id_aes192_CCM, "CCM");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NISTObjectIdentifiers.id_aes256_CCM, "CCM");
 
-            provider.addAttribute("Cipher.CCM", generalAesAttributes);
+            provider.addAttributes("Cipher.CCM", generalAesAttributes);
             provider.addAlgorithm("Cipher.CCM", PREFIX + "$CCM");
             provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes128_CCM, "CCM");
             provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes192_CCM, "CCM");
@@ -883,7 +883,7 @@ public final class AES
             provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NISTObjectIdentifiers.id_aes192_GCM, "GCM");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NISTObjectIdentifiers.id_aes256_GCM, "GCM");
 
-            provider.addAttribute("Cipher.GCM", generalAesAttributes);
+            provider.addAttributes("Cipher.GCM", generalAesAttributes);
             provider.addAlgorithm("Cipher.GCM", PREFIX + "$GCM");
             provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes128_GCM, "GCM");
             provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes192_GCM, "GCM");

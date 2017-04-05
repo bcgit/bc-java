@@ -144,7 +144,7 @@ public class BouncyCastlePQCProvider
         }
     }
 
-    public void addAttribute(String key, Map<String, String> attributeMap)
+    public void addAttributes(String key, Map<String, String> attributeMap)
     {
         for (Iterator it = attributeMap.keySet().iterator(); it.hasNext();)
         {

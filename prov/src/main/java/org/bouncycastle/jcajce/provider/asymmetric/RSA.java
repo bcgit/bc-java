@@ -1,5 +1,8 @@
 package org.bouncycastle.jcajce.provider.asymmetric;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -14,6 +17,14 @@ import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 public class RSA
 {
     private static final String PREFIX = "org.bouncycastle.jcajce.provider.asymmetric" + ".rsa.";
+
+    private static final Map<String, String> generalRsaAttributes = new HashMap<String, String>();
+
+    static
+    {
+        generalRsaAttributes.put("SupportedKeyClasses", "javax.crypto.interfaces.RSAPublicKey|javax.crypto.interfaces.RSAPrivateKey");
+        generalRsaAttributes.put("SupportedKeyFormats", "PKCS#8|X.509");
+    }
 
     public static class Mappings
         extends AsymmetricAlgorithmProvider
@@ -49,6 +60,7 @@ public class RSA
             provider.addAlgorithm("Alg.Alias.AlgorithmParameters.NONEWITHRSASSA-PSS", "PSS");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameters.NONEWITHRSAANDMGF1", "PSS");
 
+            provider.addAttributes("Cipher.RSA", generalRsaAttributes);
             provider.addAlgorithm("Cipher.RSA", PREFIX + "CipherSpi$NoPadding");
             provider.addAlgorithm("Cipher.RSA/RAW", PREFIX + "CipherSpi$NoPadding");
             provider.addAlgorithm("Cipher.RSA/PKCS1", PREFIX + "CipherSpi$PKCS1v1_5Padding");
