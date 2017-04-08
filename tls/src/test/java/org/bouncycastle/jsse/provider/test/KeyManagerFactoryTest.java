@@ -171,7 +171,7 @@ public class KeyManagerFactoryTest
     public void testRSAServer()
         throws Exception
     {
-        KeyStore ks = getRsaKeyStore(false);
+        KeyStore ks = getRsaKeyStore(true);
 
         KeyStore trustStore = KeyStore.getInstance("JKS");
 
@@ -194,6 +194,8 @@ public class KeyManagerFactoryTest
         SSLSocket c = (SSLSocket)f.createSocket("localhost", 8886);
         c.setUseClientMode(true);
 
+        SSLUtils.restrictKeyExchange(c, "RSA");
+
         c.getOutputStream().write('!');
 
         c.getInputStream().read();
@@ -203,23 +205,24 @@ public class KeyManagerFactoryTest
     public void testRSAServerWithClientAuth()
         throws Exception
     {
-        KeyStore ks = getRsaKeyStore(false);
+        KeyStore clientKS = getRsaKeyStore(false);
+        KeyStore serverKS = getRsaKeyStore(true);
 
-        KeyStore trustStore = KeyStore.getInstance("JKS");
+        KeyStore serverTS = KeyStore.getInstance("JKS");
+        serverTS.load(null, PASSWORD);
+        serverTS.setCertificateEntry("clientRoot", clientKS.getCertificate("root"));
 
-        trustStore.load(null, PASSWORD);
-
-        trustStore.setCertificateEntry("server", ks.getCertificate("root"));
-
-        SSLUtils.startServer(ks, PASSWORD, trustStore, true, 8887);
+        SSLUtils.startServer(serverKS, PASSWORD, serverTS, true, 8887);
 
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
+        keyManagerFactory.init(clientKS, PASSWORD);
 
-        keyManagerFactory.init(ks, PASSWORD);
+        KeyStore clientTS = KeyStore.getInstance("JKS");
+        clientTS.load(null, PASSWORD);
+        clientTS.setCertificateEntry("serverRoot", serverKS.getCertificate("root"));
 
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
-
-        trustManagerFactory.init(trustStore);
+        trustManagerFactory.init(clientTS);
 
         SSLContext context = SSLContext.getInstance("TLS");
 
@@ -229,6 +232,8 @@ public class KeyManagerFactoryTest
 
         SSLSocket c = (SSLSocket)f.createSocket("localhost", 8887);
         c.setUseClientMode(true);
+
+        SSLUtils.restrictKeyExchange(c, "RSA");
 
         c.getOutputStream().write('!');
 
