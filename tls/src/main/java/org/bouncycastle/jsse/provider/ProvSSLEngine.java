@@ -335,11 +335,11 @@ class ProvSSLEngine
             bytesConsumed += buf.length;
         }
 
-        int appDataAvailable = protocol.getAvailableInputBytes();
-        for (int dstIndex = 0; dstIndex < length && appDataAvailable > 0; ++dstIndex)
+        int inputAvailable = protocol.getAvailableInputBytes();
+        for (int dstIndex = 0; dstIndex < length && inputAvailable > 0; ++dstIndex)
         {
             ByteBuffer dst = dsts[dstIndex];
-            int count = Math.min(dst.remaining(), appDataAvailable);
+            int count = Math.min(dst.remaining(), inputAvailable);
 
             byte[] input = new byte[count];
             int numRead = protocol.readInput(input, 0, count);
@@ -348,11 +348,89 @@ class ProvSSLEngine
             dst.put(input);
 
             bytesProduced += count;
-            appDataAvailable -= count;
+            inputAvailable -= count;
         }
 
         Status returnStatus = Status.OK;
-        if (appDataAvailable > 0)
+        if (inputAvailable > 0)
+        {
+            returnStatus = Status.BUFFER_OVERFLOW;
+        }
+        else if (protocol.isClosed())
+        {
+            returnStatus = Status.CLOSED;
+        }
+        else if (bytesConsumed == 0)
+        {
+            returnStatus = Status.BUFFER_UNDERFLOW;
+        }
+
+        determineHandshakeStatus();
+
+        HandshakeStatus returnHandshakeStatus = handshakeStatus;
+        if (handshakeStatus == HandshakeStatus.NOT_HANDSHAKING && prevHandshakeStatus != HandshakeStatus.NOT_HANDSHAKING)
+        {
+            returnHandshakeStatus = HandshakeStatus.FINISHED;
+        }
+
+        return new SSLEngineResult(returnStatus, returnHandshakeStatus, bytesConsumed, bytesProduced);
+    }
+
+    @Override
+    public synchronized SSLEngineResult wrap(ByteBuffer[] srcs, int offset, int length, ByteBuffer dst)
+        throws SSLException
+    {
+        // TODO[jsse] Argument checks - see javadoc
+
+        if (!initialHandshakeBegun)
+        {
+            beginHandshake();
+        }
+
+        HandshakeStatus prevHandshakeStatus = handshakeStatus;
+        int bytesConsumed = 0, bytesProduced = 0;
+
+        if (!protocol.isClosed() && connection != null && handshakeStatus != HandshakeStatus.NEED_WRAP)
+        {
+            for (int srcIndex = 0; srcIndex < length; ++srcIndex)
+            {
+                ByteBuffer src = srcs[srcIndex];
+                int count = src.remaining();
+    
+                byte[] input = new byte[count];
+                src.get(input);
+
+                try
+                {
+                    protocol.writeApplicationData(input, 0, count);
+                }
+                catch (IOException e)
+                {
+                    // TODO[jsse] Throw a subclass of SSLException?
+                    throw new SSLException(e);
+                }
+
+                bytesConsumed += count;
+            }
+        }
+
+        int outputAvailable = protocol.getAvailableOutputBytes();
+        if (outputAvailable > 0)
+        {
+            int count = Math.min(dst.remaining(), outputAvailable);
+
+            byte[] output = new byte[count];
+            int numRead = protocol.readOutput(output, 0, count);
+            assert numRead == count;
+
+            dst.put(output);
+
+            bytesProduced += count;
+            outputAvailable -= count;
+        }
+
+        Status returnStatus = Status.OK;
+        if (outputAvailable > 0)
         {
             returnStatus = Status.BUFFER_OVERFLOW;
         }
@@ -372,18 +450,11 @@ class ProvSSLEngine
         return new SSLEngineResult(returnStatus, returnHandshakeStatus, bytesConsumed, bytesProduced);
     }
 
-    @Override
-    public synchronized SSLEngineResult wrap(ByteBuffer[] srcs, int offset, int length, ByteBuffer dst)
-        throws SSLException
-    {
-        throw new UnsupportedOperationException();
-    }
-
     protected void determineHandshakeStatus()
     {
         // NOTE: We currently never delegate tasks (will never have status HandshakeStatus.NEED_TASK)
 
-        if (!initialHandshakeBegun || protocolPeer.isHandshakeComplete())
+        if (!initialHandshakeBegun)
         {
             handshakeStatus = HandshakeStatus.NOT_HANDSHAKING;
         }
@@ -391,7 +462,7 @@ class ProvSSLEngine
         {
             handshakeStatus = HandshakeStatus.NEED_WRAP;
         }
-        else if (protocol.isClosed())
+        else if (protocol.isClosed() || protocolPeer.isHandshakeComplete())
         {
             handshakeStatus = HandshakeStatus.NOT_HANDSHAKING;
         }
