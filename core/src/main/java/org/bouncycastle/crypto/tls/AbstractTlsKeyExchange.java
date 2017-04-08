@@ -38,7 +38,7 @@ public abstract class AbstractTlsKeyExchange
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(clientVersion))
         {
             /*
-             * RFC 5264 7.4.1.4.1. If the client does not send the signature_algorithms extension,
+             * RFC 5246 7.4.1.4.1. If the client does not send the signature_algorithms extension,
              * the server MUST do the following:
              * 
              * - If the negotiated key exchange algorithm is one of (RSA, DHE_RSA, DH_RSA, RSA_PSK,
@@ -104,14 +104,14 @@ public abstract class AbstractTlsKeyExchange
         if (supportedSignatureAlgorithms == null)
         {
             /*
-             * TODO RFC 2264 7.4.2. Unless otherwise specified, the signing algorithm for the
+             * TODO RFC 2246 7.4.2. Unless otherwise specified, the signing algorithm for the
              * certificate must be the same as the algorithm for the certificate key.
              */
         }
         else
         {
             /*
-             * TODO RFC 5264 7.4.2. If the client provided a "signature_algorithms" extension, then
+             * TODO RFC 5246 7.4.2. If the client provided a "signature_algorithms" extension, then
              * all certificates provided by the server MUST be signed by a hash/signature algorithm
              * pair that appears in that extension.
              */
