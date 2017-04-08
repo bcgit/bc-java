@@ -1265,17 +1265,6 @@ public class TlsUtils
         }
     }
 
-    static short getClientCertificateType(TlsContext context, Certificate clientCertificate, Certificate serverCertificate)
-        throws IOException
-    {
-        if (clientCertificate.isEmpty())
-        {
-            return -1;
-        }
-
-        return clientCertificate.getCertificateAt(0).getClientCertificateType();
-    }
-
     static void trackHashAlgorithms(TlsHandshakeHash handshakeHash, Vector supportedSignatureAlgorithms)
     {
         if (supportedSignatureAlgorithms != null)
