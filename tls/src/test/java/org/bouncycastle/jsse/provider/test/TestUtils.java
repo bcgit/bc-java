@@ -304,7 +304,6 @@ class TestUtils
             caCertLw.getSerialNumber().getValue()));
         extGen.addExtension(Extension.subjectKeyIdentifier, false, new SubjectKeyIdentifier(getDigest(entityKey.getEncoded())));
         extGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
-//        extGen.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign | KeyUsage.cRLSign));
         extGen.addExtension(Extension.keyUsage, true, new KeyUsage(keyUsage));
 
         if (entityKey.getAlgorithm().equals("RSA"))
