@@ -40,7 +40,8 @@ class ProvSSLSession
 
     public int getApplicationBufferSize()
     {
-        throw new UnsupportedOperationException();
+        // TODO[jsse] See comments for getPacketBufferSize
+        return 1 << 14; 
     }
 
     public String getCipherSuite()
@@ -90,7 +91,13 @@ class ProvSSLSession
 
     public int getPacketBufferSize()
     {
-        throw new UnsupportedOperationException();
+        /*
+         * TODO[jsse] This is the maximum possible per RFC (but see jsse.SSLEngine.acceptLargeFragments System property).
+         * It would be nice to dynamically check with the underlying RecordStream, which might know a tighter limit, e.g.
+         * when the max_fragment_length extension has been negotiated, or when no compression was negotiated).
+         */
+        // Header size + Fragment length limit + Compression expansion + Cipher expansion
+        return 5 + (1 << 14) + 1024 + 1024; 
     }
 
     public javax.security.cert.X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException
