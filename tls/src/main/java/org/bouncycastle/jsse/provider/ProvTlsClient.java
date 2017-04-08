@@ -129,7 +129,6 @@ class ProvTlsClient
                 String alias = km.chooseClientAlias(keyTypes, issuers, socket);
                 if (alias == null)
                 {
-                    // TODO[jsse] Should sslParameters.getNeedClientAuth imply failing the handshake here?
                     return null;
                 }
 
@@ -141,8 +140,13 @@ class ProvTlsClient
                 }
 
                 PrivateKey privateKey = km.getPrivateKey(alias);
-                X509Certificate[] chain = km.getCertificateChain(alias);
-                Certificate certificate = JsseUtils.getCertificateMessage(crypto, chain);
+                Certificate certificate = JsseUtils.getCertificateMessage(crypto, km.getCertificateChain(alias));
+
+                if (privateKey == null || certificate.isEmpty())
+                {
+                    // TODO[jsse] Log the probable misconfigured keystore
+                    return null;
+                }
 
                 switch (keyExchangeAlgorithm)
                 {
@@ -161,7 +165,8 @@ class ProvTlsClient
                 case KeyExchangeAlgorithm.ECDHE_RSA:
                 case KeyExchangeAlgorithm.RSA:
                 {
-                    short signatureAlgorithm = TlsUtils.getSignatureAlgorithm(keyExchangeAlgorithm);
+                    short certificateType = certificate.getCertificateAt(0).getClientCertificateType();
+                    short signatureAlgorithm = TlsUtils.getSignatureAlgorithmClient(certificateType);
                     SignatureAndHashAlgorithm sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
                         supportedSignatureAlgorithms, signatureAlgorithm);
 
