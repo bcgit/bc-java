@@ -397,6 +397,8 @@ public class ISO9796d2Signer
         fullMessage = (header & 0x20) == 0;
         System.arraycopy(mBuf, 0, recoveredMessage, 0, recoveredMessage.length);
 
+        messageLength = 0;
+        
         clearBlock(mBuf);
         clearBlock(block);
 
@@ -579,11 +581,15 @@ public class ISO9796d2Signer
         clearBlock(mBuf);
         clearBlock(block);
 
+        messageLength = 0;
+
         return true;
     }
 
     private boolean returnFalse(byte[] block)
     {
+        messageLength = 0;
+
         clearBlock(mBuf);
         clearBlock(block);
 
