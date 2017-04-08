@@ -232,7 +232,7 @@ class RecordStream
         checkLength(decoded.length, compressedLimit, AlertDescription.record_overflow);
 
         /*
-         * TODO RFC5264 6.2.2. Implementation note: Decompression functions are responsible for
+         * TODO RFC 5246 6.2.2. Implementation note: Decompression functions are responsible for
          * ensuring that messages cannot cause internal buffer overflows.
          */
         OutputStream cOut = readCompression.decompress(buffer);
@@ -244,14 +244,14 @@ class RecordStream
         }
 
         /*
-         * RFC 5264 6.2.2. If the decompression function encounters a TLSCompressed.fragment that
+         * RFC 5246 6.2.2. If the decompression function encounters a TLSCompressed.fragment that
          * would decompress to a length in excess of 2^14 bytes, it should report a fatal
          * decompression failure error.
          */
         checkLength(decoded.length, plaintextLimit, AlertDescription.decompression_failure);
 
         /*
-         * RFC 5264 6.2.1 Implementations MUST NOT send zero-length fragments of Handshake, Alert,
+         * RFC 5246 6.2.1 Implementations MUST NOT send zero-length fragments of Handshake, Alert,
          * or ChangeCipherSpec content types.
          */
         if (decoded.length < 1 && type != ContentType.application_data)
@@ -272,18 +272,18 @@ class RecordStream
         }
 
         /*
-         * RFC 5264 6. Implementations MUST NOT send record types not defined in this document
+         * RFC 5246 6. Implementations MUST NOT send record types not defined in this document
          * unless negotiated by some extension.
          */
         checkType(type, AlertDescription.internal_error);
 
         /*
-         * RFC 5264 6.2.1 The length should not exceed 2^14.
+         * RFC 5246 6.2.1 The length should not exceed 2^14.
          */
         checkLength(plaintextLength, plaintextLimit, AlertDescription.internal_error);
 
         /*
-         * RFC 5264 6.2.1 Implementations MUST NOT send zero-length fragments of Handshake, Alert,
+         * RFC 5246 6.2.1 Implementations MUST NOT send zero-length fragments of Handshake, Alert,
          * or ChangeCipherSpec content types.
          */
         if (plaintextLength < 1 && type != ContentType.application_data)
@@ -305,7 +305,7 @@ class RecordStream
             byte[] compressed = getBufferContents();
 
             /*
-             * RFC5264 6.2.2. Compression must be lossless and may not increase the content length
+             * RFC 5246 6.2.2. Compression must be lossless and may not increase the content length
              * by more than 1024 bytes.
              */
             checkLength(compressed.length, plaintextLength + 1024, AlertDescription.internal_error);
@@ -314,7 +314,7 @@ class RecordStream
         }
 
         /*
-         * RFC 5264 6.2.3. The length may not exceed 2^14 + 2048.
+         * RFC 5246 6.2.3. The length may not exceed 2^14 + 2048.
          */
         checkLength(ciphertext.length, ciphertextLimit, AlertDescription.internal_error);
 

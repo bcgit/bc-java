@@ -57,7 +57,7 @@ public abstract class AbstractTlsKeyExchange
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(clientVersion))
         {
             /*
-             * RFC 5264 7.4.1.4.1. If the client does not send the signature_algorithms extension,
+             * RFC 5246 7.4.1.4.1. If the client does not send the signature_algorithms extension,
              * the server MUST do the following:
              * 
              * - If the negotiated key exchange algorithm is one of (RSA, DHE_RSA, DH_RSA, RSA_PSK,

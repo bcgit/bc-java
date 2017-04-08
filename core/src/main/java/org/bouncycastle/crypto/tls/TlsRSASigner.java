@@ -102,7 +102,7 @@ public class TlsRSASigner
     protected AsymmetricBlockCipher createRSAImpl()
     {
         /*
-         * RFC 5264 7.4.7.1. Implementation note: It is now known that remote timing-based attacks
+         * RFC 5246 7.4.7.1. Implementation note: It is now known that remote timing-based attacks
          * on TLS are possible, at least when the client and server are on the same LAN.
          * Accordingly, implementations that use static RSA keys MUST use RSA blinding or some other
          * anti-timing technique, as described in [TIMING].
