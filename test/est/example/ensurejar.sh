@@ -19,9 +19,11 @@ pushd $DIR/jars
 if  type curl > /dev/null; then
     curl -o bcprov.jar  https://downloads.bouncycastle.org/betas/bcprov-jdk15on-157b11.jar
     curl -o bctls.jar https://downloads.bouncycastle.org/betas/bctls-jdk15on-157b11.jar
+    curl -o suffixlist.dat  https://www.publicsuffix.org/list/public_suffix_list.dat
 elif type wget > /dev/null ; then
     wget -O bcprov.jar https://downloads.bouncycastle.org/betas/bcprov-jdk15on-157b11.jar
     wget -O bctls.jar https://downloads.bouncycastle.org/betas/bctls-jdk15on-157b11.jar
+    wget -O suffixlist.dat https://www.publicsuffix.org/list/public_suffix_list.dat
 else
     echo "No wget or curl to download provider jar"
 fi
@@ -31,7 +33,6 @@ popd
 
 cd $BCDIR
 
-gradle test:updateSuffixes
 gradle -x test clean jar
 
 cp $BCDIR/test/build/libs/test-*.jar $DIR/jars/test.jar

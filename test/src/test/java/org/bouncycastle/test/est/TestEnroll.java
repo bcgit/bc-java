@@ -8,14 +8,20 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLHandshakeException;
 
@@ -36,6 +42,7 @@ import org.bouncycastle.est.jcajce.ChannelBindingProvider;
 import org.bouncycastle.est.jcajce.JcaHttpAuthBuilder;
 import org.bouncycastle.est.jcajce.JcaJceUtils;
 import org.bouncycastle.est.jcajce.JsseESTServiceBuilder;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -150,7 +157,7 @@ public class TestEnroll
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificates(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/multicacerts.crt")
                 )) , null)
-            ).build();
+            ).withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS").build();
 
 
             //
@@ -214,7 +221,7 @@ public class TestEnroll
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                 )), null)
-            ).build();
+            ).withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS").build();
 
             //
             // Make certificate request.
@@ -304,7 +311,7 @@ public class TestEnroll
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                 )), null)
-            ).build();
+            ).withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS").build();
             //
             // Make certificate request.
             //
@@ -495,7 +502,7 @@ public class TestEnroll
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                 )), null)
-            );
+            ).withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS");
 
             estBuilder.withKeyManagers(JcaJceUtils.createKeyManagerFactory(KeyManagerFactory.getDefaultAlgorithm(), null, clientKeyStore, clientKeyStorePass).getKeyManagers());
 
@@ -656,7 +663,7 @@ public class TestEnroll
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                 )), null)
-            );
+            ).withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS");
 
             estServiceBuilder.withKeyManagers(JcaJceUtils.createKeyManagerFactory(KeyManagerFactory.getDefaultAlgorithm(), null, clientKeyStore, clientKeyStorePass).getKeyManagers());
 
@@ -707,7 +714,7 @@ public class TestEnroll
         throws Exception
     {
 
-        ESTTestUtils.ensureProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
+//        ESTTestUtils.ensureProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
         ESTTestUtils.ensureProvider();
 
         X509CertificateHolder caCert = ESTTestUtils.readPemCertificate(
@@ -807,8 +814,7 @@ public class TestEnroll
                 )), null));
 
             estServiceBuilder.withKeyManagers(JcaJceUtils.createKeyManagerFactory("X509", null, clientKeyStore, clientKeyStorePass).getKeyManagers())
-                .withProvider(BouncyCastleJsseProvider.PROVIDER_NAME)
-                .withTLSVersion("TLS");
+               .withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS");
 
 
             ESTService est = estServiceBuilder
@@ -961,7 +967,7 @@ public class TestEnroll
                 "localhost:" + port, JcaJceUtils.getCertPathTrustManager(
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                )), null));
+                )), null)).withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS");
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1043,7 +1049,7 @@ public class TestEnroll
                 "localhost:" + port, JcaJceUtils.getCertPathTrustManager(
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                )), null));
+                )), null)).withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS");
 
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
@@ -1127,7 +1133,7 @@ public class TestEnroll
                 "localhost:" + port, JcaJceUtils.getCertPathTrustManager(
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                )), null));
+                )), null)).withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS");
 
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
@@ -1217,7 +1223,7 @@ public class TestEnroll
                 "localhost:" + port, JcaJceUtils.getCertPathTrustManager(
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                )), null));
+                )), null)).withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS");
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1310,6 +1316,7 @@ public class TestEnroll
                 )), null));
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
+            builder.withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS");
 
 
             try
@@ -1399,6 +1406,7 @@ public class TestEnroll
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                 )), null));
 
+            builder.withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS");
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1488,7 +1496,7 @@ public class TestEnroll
                 "localhost:" + port, JcaJceUtils.getCertPathTrustManager(
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                )), null));
+                )), null)).withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS");
 
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
@@ -1579,7 +1587,7 @@ public class TestEnroll
                 "localhost:" + port, JcaJceUtils.getCertPathTrustManager(
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                )), null));
+                )), null)).withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS");
 
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
@@ -1670,7 +1678,7 @@ public class TestEnroll
                 "localhost:" + port, JcaJceUtils.getCertPathTrustManager(
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                )), null));
+                )), null)).withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS");
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1759,7 +1767,7 @@ public class TestEnroll
                 "localhost:" + port, JcaJceUtils.getCertPathTrustManager(
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                )), null));
+                )), null)).withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS");
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -1849,7 +1857,7 @@ public class TestEnroll
                 "localhost:" + port, JcaJceUtils.getCertPathTrustManager(
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                )), null));
+                )), null)).withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS");
 
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
@@ -1939,7 +1947,7 @@ public class TestEnroll
                 "localhost:" + port, JcaJceUtils.getCertPathTrustManager(
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                )), null));
+                )), null)).withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS");
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
 
@@ -2031,7 +2039,7 @@ public class TestEnroll
                 "localhost:" + port , JcaJceUtils.getCertPathTrustManager(
                 ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
-                )), null));
+                )), null)).withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS");
 
             builder.addCipherSuites(res.getSupportedCipherSuites());
             builder.withLabel("the_label");
@@ -2079,6 +2087,21 @@ public class TestEnroll
     public static void main(String[] args)
         throws Exception
     {
+
+////        Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
+////
+////        c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(new byte[16], "AES"), new GCMParameterSpec(32, new byte[16]));
+//        Security.addProvider(new BouncyCastleProvider());
+//        for (Iterator it = Security.getProvider("BC").getServices().iterator(); it.hasNext();)
+//        {
+//            Provider.Service s = (Provider.Service)it.next();
+//
+//            if (s.getAlgorithm().equals("AES"))
+//            {
+//                System.err.println(s.getAttribute("SupportedKeyFormats"));
+//            }
+//        }
+
         ESTTestUtils.ensureProvider();
         runTest(new TestEnroll());
     }
