@@ -72,33 +72,34 @@ public class ESTTestUtils
 
     public static void ensureProvider()
     {
-        ensureProvider("BC");
+       Security.addProvider(new BouncyCastleProvider());
+       Security.addProvider(new BouncyCastleJsseProvider());
     }
 
-    public static void ensureProvider(String name)
-    {
-        Provider[] pp = Security.getProviders();
-        for (Provider p : pp)
-        {
-            if (p.getName().equals(name))
-            {
-                return;
-            }
-        }
-
-        if (name.equals(BouncyCastleProvider.PROVIDER_NAME))
-        {
-            Security.addProvider(new BouncyCastleProvider());
-        }
-        else if (name.equals(BouncyCastleJsseProvider.PROVIDER_NAME))
-        {
-            Security.addProvider(new BouncyCastleJsseProvider());
-        }
-        else
-        {
-            throw new IllegalArgumentException("Unknown provider " + name + " perhaps you need to add it here.");
-        }
-    }
+//    public static void ensureProvider(String name)
+//    {
+//        Provider[] pp = Security.getProviders();
+//        for (Provider p : pp)
+//        {
+//            if (p.getName().equals(name))
+//            {
+//                return;
+//            }
+//        }
+//
+//        if (name.equals(BouncyCastleProvider.PROVIDER_NAME))
+//        {
+//            Security.addProvider(new BouncyCastleProvider());
+//        }
+//        else if (name.equals(BouncyCastleJsseProvider.PROVIDER_NAME))
+//        {
+//            Security.addProvider(new BouncyCastleJsseProvider());
+//        }
+//        else
+//        {
+//            throw new IllegalArgumentException("Unknown provider " + name + " perhaps you need to add it here.");
+//        }
+//    }
 
     /**
      * Convert (X509CertificateHolder, X509Certificate, javax X509Certificate) to trust anchors.
