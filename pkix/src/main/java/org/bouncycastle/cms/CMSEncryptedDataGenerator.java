@@ -18,14 +18,14 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.operator.OutputEncryptor;
 
 /**
- * General class for generating a CMS enveloped-data message.
+ * General class for generating a CMS encrypted-data message.
  *
  * A simple example of usage.
  *
  * <pre>
  *       CMSTypedData msg     = new CMSProcessableByteArray("Hello World!".getBytes());
  *
- *       CMSEncryptedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+ *       CMSEncryptedDataGenerator edGen = new CMSEncryptedDataGenerator();
  *
  *       CMSEncryptedData ed = edGen.generate(
  *                                       msg,
