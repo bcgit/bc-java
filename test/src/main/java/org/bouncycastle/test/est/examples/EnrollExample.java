@@ -70,6 +70,7 @@ public class EnrollExample
         String label = null;
         String saveKeysToFile = null;
         String keyFile = null;
+        String suffixList = null;
         try
         {
             for (int t = 0; t < args.length; t++)
@@ -159,6 +160,10 @@ public class EnrollExample
                 {
                     keyFile = ExampleUtils.nextArgAsString("Load keys from file", args, t);
                     t += 1;
+                } else if (arg.equals("--sl"))
+                {
+                    suffixList = ExampleUtils.nextArgAsString("Suffix List", args, t);
+                    t += 1;
                 }
                 else
                 {
@@ -204,6 +209,12 @@ public class EnrollExample
             Security.addProvider((Provider)Class.forName(tlsProviderClass).newInstance());
         }
 
+
+        if (suffixList == null)
+        {
+            System.err.println("Known Suffix List (--sl)  must be defined.");
+            System.exit(-1);
+        }
 
         //
         // Make a CSR here
@@ -291,7 +302,7 @@ public class EnrollExample
         }
         else
         {
-            est.withHostNameAuthorizer(new JsseDefaultHostnameAuthorizer(SuffixList.publicSuffix));
+            est.withHostNameAuthorizer(new JsseDefaultHostnameAuthorizer(SuffixList.loadSuffixes(suffixList)));
         }
 
         ESTAuth auth = null;
@@ -416,5 +427,6 @@ public class EnrollExample
         System.out.println("--label <ca label>                     CA Label.");
         System.out.println("--save <path to file>                  Save generated public and private key to file, (PEM)");
         System.out.println("--load <path to file>                  Load generated public and private key from a file, (PEM)");
+        System.out.println("--sl <file>                            List of known suffixes.");
     }
 }

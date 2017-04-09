@@ -9,4 +9,4 @@ $DIR/ensurejar.sh
 
 CP="$DIR/jars/pkix.jar:$DIR/jars/bcprov.jar:$DIR/jars/test.jar:$DIR/jars/bctls.jar"
 echo $CP
-java -classpath $CP org.bouncycastle.test.est.examples.EnrollExample $@
+java -classpath $CP org.bouncycastle.test.est.examples.EnrollExample --sl $DIR/jars/suffixlist.dat $@
