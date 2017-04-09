@@ -64,6 +64,34 @@ public class McElieceCCA2PrivateKeyParameters
         // matrix for computing square roots in (GF(2^m))^t
         this.qInv = ring.getSquareRootMatrix();
     }
+    
+    /**
+     * Constructor.
+     *
+     * @param n                         the length of the code
+     * @param k                         the dimension of the code
+     * @param field                     the finite field <tt>GF(2<sup>m</sup>)</tt>
+     * @param gp                        the irreducible Goppa polynomial
+     * @param canonicalCheckMatrix      the canonical check matrix
+     * @param p                         the permutation
+     * @param digest                    McElieceCCA2Parameters
+     */
+    public McElieceCCA2PrivateKeyParameters(int n, int k, GF2mField field, PolynomialGF2mSmallM gp, 
+                                            GF2Matrix canonicalCheckMatrix, Permutation p, String digest)
+    {
+        super(true, digest);
+        this.n = n;
+        this.k = k;
+        this.field = field;
+        this.goppaPoly = gp;
+        this.h = canonicalCheckMatrix;
+        this.p = p;
+        
+        PolynomialRingGF2m ring = new PolynomialRingGF2m(field, gp);
+
+        // matrix for computing square roots in (GF(2^m))^t
+        this.qInv = ring.getSquareRootMatrix();
+    }
 
     /**
      * @return the length of the code
