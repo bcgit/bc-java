@@ -42,6 +42,7 @@ public class CSRAttributesExample
         boolean noNameVerifier = false;
         int timeout = 0;
         String label = null;
+        String suffixList = null;
 
         try
         {
@@ -84,6 +85,11 @@ public class CSRAttributesExample
                     label = ExampleUtils.nextArgAsString("CA Label", args, t);
                     t += 1;
                 }
+                else if (arg.equals("--sl"))
+                {
+                    suffixList = ExampleUtils.nextArgAsString("Suffix List", args, t);
+                    t += 1;
+                }
                 else
                 {
                     throw new IllegalArgumentException("Unknown argument " + arg);
@@ -103,6 +109,12 @@ public class CSRAttributesExample
         if (serverRootUrl == null)
         {
             System.err.println("Server url (-u) must be defined.");
+            System.exit(-1);
+        }
+
+        if (suffixList == null)
+        {
+            System.err.println("Known Suffix List (--sl)  must be defined.");
             System.exit(-1);
         }
 
@@ -152,7 +164,7 @@ public class CSRAttributesExample
         }
         else
         {
-            builder.withHostNameAuthorizer(new JsseDefaultHostnameAuthorizer(SuffixList.publicSuffix));
+            builder.withHostNameAuthorizer(new JsseDefaultHostnameAuthorizer(SuffixList.loadSuffixes(suffixList)));
         }
 
         //
@@ -194,6 +206,7 @@ public class CSRAttributesExample
         System.out.println("--to <milliseconds>               Timeout in milliseconds.");
         System.out.println("--no-name-verifier                No hostname verifier.");
         System.out.println("--label <ca label>                CA Label.");
+        System.out.println("--sl <file>                       List of known suffixes.");
     }
 
 }

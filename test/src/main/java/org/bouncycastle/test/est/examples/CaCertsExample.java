@@ -45,7 +45,7 @@ public class CaCertsExample
         boolean noNameVerifier = false;
         String label = null;
         int timeout = 0;
-
+        String suffixList = null;
         try
         {
             for (int t = 0; t < args.length; t++)
@@ -90,6 +90,9 @@ public class CaCertsExample
                 {
                     label = ExampleUtils.nextArgAsString("CA Label", args, t);
                     t += 1;
+                } else if (arg.equals("--sl")) {
+                    suffixList = ExampleUtils.nextArgAsString("Suffix List", args, t);
+                    t += 1;
                 }
                 else
                 {
@@ -110,6 +113,11 @@ public class CaCertsExample
         if (serverRootUrl == null)
         {
             System.err.println("Server url (-u) must be defined.");
+            System.exit(-1);
+        }
+
+        if (suffixList == null) {
+            System.err.println("Known Suffix List (--sl)  must be defined.");
             System.exit(-1);
         }
 
@@ -154,7 +162,7 @@ public class CaCertsExample
         }
         else
         {
-            builder.withHostNameAuthorizer(new JsseDefaultHostnameAuthorizer(SuffixList.publicSuffix));
+            builder.withHostNameAuthorizer(new JsseDefaultHostnameAuthorizer(SuffixList.loadSuffixes(suffixList)));
         }
 
 
@@ -288,6 +296,7 @@ public class CaCertsExample
         System.out.println("--to <milliseconds>               Timeout in milliseconds.");
         System.out.println("--no-name-verifier                No hostname verifier.");
         System.out.println("--label <ca label>                CA Label.");
+        System.out.println("--sl <file>                       List of known suffixes.");
     }
 
 }
