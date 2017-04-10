@@ -28,14 +28,11 @@ public class BCJSSEClientTest
     public static void main(String[] args)
         throws Exception
     {
-        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
-        {
-            Security.addProvider(new BouncyCastleProvider());
-        }
-        if (Security.getProvider(BouncyCastleJsseProvider.PROVIDER_NAME) == null)
-        {
-            Security.addProvider(new BouncyCastleJsseProvider());
-        }
+        Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
+        Security.insertProviderAt(new BouncyCastleProvider(), 1);
+
+        Security.removeProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
+        Security.insertProviderAt(new BouncyCastleJsseProvider(), 2);
 
         /*
          * TEST CODE ONLY. If writing your own code based on this test case, you should configure
