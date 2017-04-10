@@ -6,8 +6,8 @@ import java.io.IOException;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.pqc.crypto.ntru.NTRUEncryptionKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.ntru.NTRUEncryptionKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.ntru.NTRUEncryptionKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.ntru.NTRUEncryptionPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUEncryptionPublicKeyParameters;
 
