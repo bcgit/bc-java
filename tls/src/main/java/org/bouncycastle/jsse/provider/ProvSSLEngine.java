@@ -95,6 +95,7 @@ class ProvSSLEngine
                 this.protocolPeer = client;
 
                 clientProtocol.connect(client);
+                this.handshakeStatus = HandshakeStatus.NEED_WRAP;
             }
             else
             {
@@ -105,14 +106,13 @@ class ProvSSLEngine
                 this.protocolPeer = server;
 
                 serverProtocol.accept(server);
+                this.handshakeStatus = HandshakeStatus.NEED_UNWRAP;
             }
         }
         catch (IOException e)
         {
             throw new SSLException(e);
         }
-
-        determineHandshakeStatus();
     }
 
     @Override
@@ -237,13 +237,13 @@ class ProvSSLEngine
     @Override
     public synchronized boolean isInboundDone()
     {
-        throw new UnsupportedOperationException();
+        return protocol != null && protocol.isClosed();
     }
 
     @Override
     public synchronized boolean isOutboundDone()
     {
-        throw new UnsupportedOperationException();
+        return protocol != null && protocol.isClosed() && protocol.getAvailableOutputBytes() < 1;
     }
 
     @Override
@@ -314,25 +314,35 @@ class ProvSSLEngine
             beginHandshake();
         }
 
-        HandshakeStatus prevHandshakeStatus = handshakeStatus;
         int bytesConsumed = 0, bytesProduced = 0;
 
         if (!protocol.isClosed())
         {
-            byte[] buf = new byte[src.remaining()];
-            src.get(buf);
-    
-            try
+            /*
+             * Limit the net data that we will process in one call
+             * TODO[jsse] Ideally, we'd be processing exactly one record at a time
+             */
+            int srcLimit = ProvSSLSession.NULL_SESSION.getApplicationBufferSize() + 5;
+
+            int count = Math.min(src.remaining(), srcLimit);
+            if (count > 0)
             {
-                protocol.offerInput(buf);
+                byte[] buf = new byte[count];
+                src.get(buf);
+
+                try
+                {
+                    protocol.offerInput(buf);
+                }
+                catch (IOException e)
+                {
+                    // TODO[jsse] Throw a subclass of SSLException?
+                    throw new SSLException(e);
+                }
+
+                bytesConsumed += count;
+                srcLimit -= count;
             }
-            catch (IOException e)
-            {
-                // TODO[jsse] Throw a subclass of SSLException?
-                throw new SSLException(e);
-            }
-    
-            bytesConsumed += buf.length;
         }
 
         int inputAvailable = protocol.getAvailableInputBytes();
@@ -351,29 +361,48 @@ class ProvSSLEngine
             inputAvailable -= count;
         }
 
-        Status returnStatus = Status.OK;
+        Status resultStatus = Status.OK;
         if (inputAvailable > 0)
         {
-            returnStatus = Status.BUFFER_OVERFLOW;
+            resultStatus = Status.BUFFER_OVERFLOW;
         }
         else if (protocol.isClosed())
         {
-            returnStatus = Status.CLOSED;
+            resultStatus = Status.CLOSED;
         }
         else if (bytesConsumed == 0)
         {
-            returnStatus = Status.BUFFER_UNDERFLOW;
+            resultStatus = Status.BUFFER_UNDERFLOW;
         }
 
-        determineHandshakeStatus();
-
-        HandshakeStatus returnHandshakeStatus = handshakeStatus;
-        if (handshakeStatus == HandshakeStatus.NOT_HANDSHAKING && prevHandshakeStatus != HandshakeStatus.NOT_HANDSHAKING)
+        /*
+         * We only ever change the handshakeStatus here if we started in NEED_UNWRAP
+         */
+        HandshakeStatus resultHandshakeStatus = handshakeStatus;
+        if (handshakeStatus == HandshakeStatus.NEED_UNWRAP)
         {
-            returnHandshakeStatus = HandshakeStatus.FINISHED;
+            if (protocol.getAvailableOutputBytes() > 0)
+            {
+                handshakeStatus = HandshakeStatus.NEED_WRAP;
+                resultHandshakeStatus = HandshakeStatus.NEED_WRAP;
+            }
+            else if (protocolPeer.isHandshakeComplete())
+            {
+                handshakeStatus = HandshakeStatus.NOT_HANDSHAKING;
+                resultHandshakeStatus = HandshakeStatus.FINISHED;
+            }
+            else if (protocol.isClosed())
+            {
+                handshakeStatus = HandshakeStatus.NOT_HANDSHAKING;
+                resultHandshakeStatus = HandshakeStatus.NOT_HANDSHAKING;
+            }
+            else
+            {
+                // Still NEED_UNWRAP
+            }
         }
 
-        return new SSLEngineResult(returnStatus, returnHandshakeStatus, bytesConsumed, bytesProduced);
+        return new SSLEngineResult(resultStatus, resultHandshakeStatus, bytesConsumed, bytesProduced);
     }
 
     @Override
@@ -387,89 +416,105 @@ class ProvSSLEngine
             beginHandshake();
         }
 
-        HandshakeStatus prevHandshakeStatus = handshakeStatus;
+        Status resultStatus = Status.OK;
         int bytesConsumed = 0, bytesProduced = 0;
 
-        if (!protocol.isClosed() && connection != null && handshakeStatus != HandshakeStatus.NEED_WRAP)
+        /*
+         * If handshake complete and the connection still open, send the application data in 'srcs'
+         */
+        if (handshakeStatus == HandshakeStatus.NOT_HANDSHAKING)
         {
-            for (int srcIndex = 0; srcIndex < length; ++srcIndex)
+            if (protocol.isClosed())
             {
-                ByteBuffer src = srcs[srcIndex];
-                int count = src.remaining();
-    
-                byte[] input = new byte[count];
-                src.get(input);
+                resultStatus = Status.CLOSED;
+            }
+            else
+            {
+                /*
+                 * Limit the app data that we will process in one call
+                 */
+                int srcLimit = ProvSSLSession.NULL_SESSION.getApplicationBufferSize();
 
-                try
+                for (int srcIndex = 0; srcIndex < length && srcLimit > 0; ++srcIndex)
                 {
-                    protocol.writeApplicationData(input, 0, count);
-                }
-                catch (IOException e)
-                {
-                    // TODO[jsse] Throw a subclass of SSLException?
-                    throw new SSLException(e);
-                }
+                    ByteBuffer src = srcs[srcIndex];
+                    int count = Math.min(src.remaining(), srcLimit);
+                    if (count > 0)
+                    {
+                        byte[] input = new byte[count];
+                        src.get(input);
+        
+                        try
+                        {
+                            protocol.writeApplicationData(input, 0, count);
+                        }
+                        catch (IOException e)
+                        {
+                            // TODO[jsse] Throw a subclass of SSLException?
+                            throw new SSLException(e);
+                        }
 
-                bytesConsumed += count;
+                        bytesConsumed += count;
+                        srcLimit -= count;
+                    }
+                }
             }
         }
 
+        /*
+         * Send any available output
+         */
         int outputAvailable = protocol.getAvailableOutputBytes();
         if (outputAvailable > 0)
         {
             int count = Math.min(dst.remaining(), outputAvailable);
+            if (count > 0)
+            {
+                byte[] output = new byte[count];
+                int numRead = protocol.readOutput(output, 0, count);
+                assert numRead == count;
+    
+                dst.put(output);
+    
+                bytesProduced += count;
+                outputAvailable -= count;
+            }
 
-            byte[] output = new byte[count];
-            int numRead = protocol.readOutput(output, 0, count);
-            assert numRead == count;
-
-            dst.put(output);
-
-            bytesProduced += count;
-            outputAvailable -= count;
+            if (outputAvailable > 0)
+            {
+                resultStatus = Status.BUFFER_OVERFLOW;
+            }
         }
 
-        Status returnStatus = Status.OK;
-        if (outputAvailable > 0)
+        /*
+         * We only ever change the handshakeStatus here if we started in NEED_WRAP
+         */
+        HandshakeStatus resultHandshakeStatus = handshakeStatus;
+        if (handshakeStatus == HandshakeStatus.NEED_WRAP)
         {
-            returnStatus = Status.BUFFER_OVERFLOW;
-        }
-        else if (protocol.isClosed())
-        {
-            returnStatus = Status.CLOSED;
+            if (outputAvailable > 0)
+            {
+                // Still NEED_WRAP
+            }
+            else if (protocolPeer.isHandshakeComplete())
+            {
+                handshakeStatus = HandshakeStatus.NOT_HANDSHAKING;
+                resultHandshakeStatus = HandshakeStatus.FINISHED;
+            }
+            else if (protocol.isClosed())
+            {
+                handshakeStatus = HandshakeStatus.NOT_HANDSHAKING;
+                resultHandshakeStatus = HandshakeStatus.NOT_HANDSHAKING;
+            }
+            else
+            {
+                handshakeStatus = HandshakeStatus.NEED_UNWRAP;
+                resultHandshakeStatus = HandshakeStatus.NEED_UNWRAP;
+                
+            }
         }
 
-        determineHandshakeStatus();
-
-        HandshakeStatus returnHandshakeStatus = handshakeStatus;
-        if (handshakeStatus == HandshakeStatus.NOT_HANDSHAKING && prevHandshakeStatus != HandshakeStatus.NOT_HANDSHAKING)
-        {
-            returnHandshakeStatus = HandshakeStatus.FINISHED;
-        }
-
-        return new SSLEngineResult(returnStatus, returnHandshakeStatus, bytesConsumed, bytesProduced);
-    }
-
-    protected void determineHandshakeStatus()
-    {
-        // NOTE: We currently never delegate tasks (will never have status HandshakeStatus.NEED_TASK)
-
-        if (!initialHandshakeBegun)
-        {
-            handshakeStatus = HandshakeStatus.NOT_HANDSHAKING;
-        }
-        else if (protocol.getAvailableOutputBytes() > 0)
-        {
-            handshakeStatus = HandshakeStatus.NEED_WRAP;
-        }
-        else if (protocol.isClosed() || protocolPeer.isHandshakeComplete())
-        {
-            handshakeStatus = HandshakeStatus.NOT_HANDSHAKING;
-        }
-        else
-        {
-            handshakeStatus = HandshakeStatus.NEED_UNWRAP;
-        }
+        return new SSLEngineResult(resultStatus, resultHandshakeStatus, bytesConsumed, bytesProduced);
     }
 
     public boolean isClientTrusted(X509Certificate[] chain, String authType)
