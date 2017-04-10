@@ -517,6 +517,11 @@ class ProvSSLEngine
         return new SSLEngineResult(resultStatus, resultHandshakeStatus, bytesConsumed, bytesProduced);
     }
 
+    public String getPeerHost()
+    {
+        return super.getPeerHost();
+    }
+
     public boolean isClientTrusted(X509Certificate[] chain, String authType)
     {
         // TODO[jsse] Consider X509ExtendedTrustManager and/or HostnameVerifier functionality
