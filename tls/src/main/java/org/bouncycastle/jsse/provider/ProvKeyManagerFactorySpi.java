@@ -1,5 +1,9 @@
 package org.bouncycastle.jsse.provider;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -19,24 +23,58 @@ class ProvKeyManagerFactorySpi
     // at the moment we're only accepting X.509/PKCS#8 key material so there is only one key manager needed
     KeyManager keyManager;
 
-    protected void engineInit(KeyStore keyStore, char[] passwd)
+    protected void engineInit(KeyStore ks, char[] ksPassword)
         throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException
     {
-        if (keyStore == null)
+        try
         {
-            keyManager = new ProvX509KeyManager(Collections.<KeyStore.Builder>emptyList());
+            if (ks == null)
+            {
+                ksPassword = null;
+
+                String ksType = PropertyUtils.getSystemProperty("javax.net.ssl.keyStoreType");
+                if (ksType == null)
+                {
+                    ksType = KeyStore.getDefaultType();
+                }
+
+                ks = KeyStore.getInstance(ksType);
+
+                String ksPath = null;
+
+                String ksPathProp = PropertyUtils.getSystemProperty("javax.net.ssl.keyStore");
+                if (ksPathProp != null)
+                {
+                    if (new File(ksPathProp).exists())
+                    {
+                        ksPath = ksPathProp;
+
+                        String ksPasswordProp = PropertyUtils.getSystemProperty("javax.net.ssl.keyStorePassword");
+                        if (ksPasswordProp != null)
+                        {
+                            ksPassword = ksPasswordProp.toCharArray();
+                        }
+                    }
+                }
+
+                if (ksPath == null)
+                {
+                    ks.load(null, null);
+                }
+                else
+                {
+                    InputStream tsInput = new BufferedInputStream(new FileInputStream(ksPath));
+                    ks.load(tsInput, ksPassword);
+                    tsInput.close();
+                }
+            }
+
+            KeyStore.Builder builder = KeyStore.Builder.newInstance(ks, new KeyStore.PasswordProtection(ksPassword));
+            keyManager = new ProvX509KeyManager(Collections.singletonList(builder));
         }
-        else
+        catch (Exception e)
         {
-            try
-            {
-                KeyStore.Builder builder = KeyStore.Builder.newInstance(keyStore, new KeyStore.PasswordProtection(passwd));
-                keyManager = new ProvX509KeyManager(Collections.singletonList(builder));
-            }
-            catch (RuntimeException e)
-            {
-                throw new KeyStoreException("initialization failed", e);
-            }
+            throw new KeyStoreException("initialization failed", e);
         }
     }
 
