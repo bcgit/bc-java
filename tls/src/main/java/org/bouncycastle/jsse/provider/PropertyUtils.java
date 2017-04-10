@@ -62,4 +62,15 @@ class PropertyUtils
 
         return null;
     }
+
+    static String getSystemProperty(final String propertyName)
+    {
+        return AccessController.doPrivileged(new PrivilegedAction<String>()
+        {
+            public String run()
+            {
+                return System.getProperty(propertyName);
+            }
+        });
+    }
 }

@@ -423,10 +423,7 @@ class ProvSSLContextSpi
                  * "[...] the installed security providers will be searched for the highest priority
                  * implementation of the appropriate factory."
                  */
-
-                // TODO[jsse] Is PKIX a reasonable algorithm to use here?
-                KeyManagerFactory kmf = KeyManagerFactory.getInstance("PKIX");
-                // TODO[jsse] Is this supported generally?
+                KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
                 kmf.init(null, null);
                 kms = kmf.getKeyManagers();
             }
@@ -449,10 +446,7 @@ class ProvSSLContextSpi
                  * "[...] the installed security providers will be searched for the highest priority
                  * implementation of the appropriate factory."
                  */
-
-                // TODO[jsse] Is PKIX a reasonable algorithm to use here?
-                TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
-                // TODO[jsse] Is this supported generally?
+                TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
                 tmf.init((KeyStore)null);
                 tms = tmf.getTrustManagers();
             }

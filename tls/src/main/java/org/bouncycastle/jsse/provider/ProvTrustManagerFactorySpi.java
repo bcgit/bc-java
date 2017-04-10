@@ -1,5 +1,9 @@
 package org.bouncycastle.jsse.provider;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -14,10 +18,12 @@ class ProvTrustManagerFactorySpi
     extends TrustManagerFactorySpi
 {
     static final boolean hasExtendedTrustManager;
+    static final String CACERTS_PATH;
+    static final String JSSECACERTS_PATH;
 
     static
     {
-        Class clazz = null;
+        Class<?> clazz = null;
         try
         {
             clazz = ProvSSLServerSocket.class.getClassLoader().loadClass("javax.net.ssl.X509ExtendedTrustManager");
@@ -28,6 +34,10 @@ class ProvTrustManagerFactorySpi
         }
 
         hasExtendedTrustManager = (clazz != null);
+
+        String javaHome = PropertyUtils.getSystemProperty("java.home");
+        CACERTS_PATH =  javaHome + "/lib/security/cacerts".replace('/', File.separatorChar);
+        JSSECACERTS_PATH =  javaHome + "/lib/security/jssecacerts".replace('/', File.separatorChar);
     }
 
     protected final Provider pkixProvider;
@@ -47,13 +57,68 @@ class ProvTrustManagerFactorySpi
     protected void engineInit(KeyStore ks)
         throws KeyStoreException
     {
-        if (hasExtendedTrustManager)
+        try
         {
-            trustManager = new ProvX509ExtendedTrustManager(new ProvX509TrustManager(pkixProvider, ks));
+            if (ks == null)
+            {
+                String tsType = PropertyUtils.getSystemProperty("javax.net.ssl.trustStoreType");
+                if (tsType == null)
+                {
+                    tsType = KeyStore.getDefaultType();
+                }
+
+                ks = KeyStore.getInstance(tsType);
+
+                String tsPath = null;
+                char[] tsPassword = null;
+
+                String tsPathProp = PropertyUtils.getSystemProperty("javax.net.ssl.trustStore");
+                if (tsPathProp != null)
+                {
+                    if (new File(tsPathProp).exists())
+                    {
+                        tsPath = tsPathProp;
+
+                        String tsPasswordProp = PropertyUtils.getSystemProperty("javax.net.ssl.trustStorePassword");
+                        if (tsPasswordProp != null)
+                        {
+                            tsPassword = tsPasswordProp.toCharArray();
+                        }
+                    }
+                }
+                else if (new File(JSSECACERTS_PATH).exists())
+                {
+                    tsPath = JSSECACERTS_PATH;
+                }
+                else if (new File(CACERTS_PATH).exists())
+                {
+                    tsPath = CACERTS_PATH;
+                }
+
+                if (tsPath == null)
+                {
+                    ks.load(null, null);
+                }
+                else
+                {
+                    InputStream tsInput = new BufferedInputStream(new FileInputStream(tsPath));
+                    ks.load(tsInput, tsPassword);
+                    tsInput.close();
+                }
+            }
+    
+            if (hasExtendedTrustManager)
+            {
+                trustManager = new ProvX509ExtendedTrustManager(new ProvX509TrustManager(pkixProvider, ks));
+            }
+            else
+            {
+                trustManager = new ProvX509TrustManager(pkixProvider, ks);
+            }
         }
-        else
+        catch (Exception e)
         {
-            trustManager = new ProvX509TrustManager(pkixProvider, ks);
+            throw new KeyStoreException("initialization failed", e);
         }
     }
 
