@@ -302,6 +302,21 @@ class ProvSSLSocketDirect
         }
     }
 
+    public String getPeerHost()
+    {
+        InetAddress peerAddress = getInetAddress();
+        if (peerAddress != null)
+        {
+            String peerHost = peerAddress.toString();
+            int pos = peerHost.lastIndexOf('/');
+            if (pos > 0)
+            {
+                return peerHost.substring(0,  pos);
+            }
+        }
+        return null;
+    }
+
     public boolean isClientTrusted(X509Certificate[] chain, String authType)
     {
         // TODO[jsse] Consider X509ExtendedTrustManager and/or HostnameVerifier functionality

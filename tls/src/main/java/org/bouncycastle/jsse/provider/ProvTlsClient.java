@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Hashtable;
 import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -21,10 +22,14 @@ import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
+import org.bouncycastle.tls.NameType;
 import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.ServerName;
+import org.bouncycastle.tls.ServerNameList;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentials;
+import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
@@ -33,6 +38,7 @@ import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedAgreement;
+import org.bouncycastle.util.IPAddress;
 
 class ProvTlsClient
     extends DefaultTlsClient
@@ -207,6 +213,26 @@ class ProvTlsClient
     {
         return TlsUtils.getSupportedCipherSuites(manager.getContextData().getCrypto(),
             manager.getContext().convertCipherSuites(sslParameters.getCipherSuites()));
+    }
+
+    @Override
+    public Hashtable getClientExtensions() throws IOException
+    {
+        Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
+
+        boolean enableSNIExtension = !"false".equals(PropertyUtils.getSystemProperty("jsse.enableSNIExtension"));
+        if (enableSNIExtension)
+        {
+            String peerHost = manager.getPeerHost();
+            if (peerHost != null && peerHost.indexOf('.') > 0 && !IPAddress.isValid(peerHost))
+            {
+                Vector serverNames = new Vector(1);
+                serverNames.addElement(new ServerName(NameType.host_name, peerHost));
+                TlsExtensionsUtils.addServerNameExtension(clientExtensions, new ServerNameList(serverNames));
+            }
+        }
+
+        return clientExtensions;
     }
 
 //    public TlsKeyExchange getKeyExchange() throws IOException
