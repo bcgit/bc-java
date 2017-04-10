@@ -184,21 +184,21 @@ public class BouncyCastleJsseProvider
                 return new ProvSSLContextSpi(baseCryptoProvider);
             }
         });
-        addAlgorithmImplementation("SSLContext.TLSv1", "org.bouncycastle.jsse.provider.SSLContext.TLSv1", new EngineCreator()
+        addAlgorithmImplementation("SSLContext.TLSV1", "org.bouncycastle.jsse.provider.SSLContext.TLSv1", new EngineCreator()
         {
             public Object createInstance(Object constructorParameter)
             {
                 return new ProvSSLContextSpi(baseCryptoProvider, new String[]{ "TLSv1", "TLSv1.1", "TLSv1.2" });
             }
         });
-        addAlgorithmImplementation("SSLContext.TLSv1.1", "org.bouncycastle.jsse.provider.SSLContext.TLSv1_1", new EngineCreator()
+        addAlgorithmImplementation("SSLContext.TLSV1.1", "org.bouncycastle.jsse.provider.SSLContext.TLSv1_1", new EngineCreator()
         {
             public Object createInstance(Object constructorParameter)
             {
                 return new ProvSSLContextSpi(baseCryptoProvider, new String[]{ "TLSv1.1", "TLSv1.2" });
             }
         });
-        addAlgorithmImplementation("SSLContext.TLSv1.2", "org.bouncycastle.jsse.provider.SSLContext.TLSv1_2", new EngineCreator()
+        addAlgorithmImplementation("SSLContext.TLSV1.2", "org.bouncycastle.jsse.provider.SSLContext.TLSv1_2", new EngineCreator()
         {
             public Object createInstance(Object constructorParameter)
             {
