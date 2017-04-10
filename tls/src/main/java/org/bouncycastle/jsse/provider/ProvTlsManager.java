@@ -10,6 +10,8 @@ interface ProvTlsManager
 
     ContextData getContextData();
 
+    String getPeerHost();
+
     boolean isClientTrusted(X509Certificate[] chain, String authType);
 
     boolean isServerTrusted(X509Certificate[] chain, String authType);
