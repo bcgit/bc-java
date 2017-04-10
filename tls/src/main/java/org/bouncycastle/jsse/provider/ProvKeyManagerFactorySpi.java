@@ -38,7 +38,10 @@ class ProvKeyManagerFactorySpi
                     ksType = KeyStore.getDefaultType();
                 }
 
-                ks = KeyStore.getInstance(ksType);
+                String ksProv = PropertyUtils.getSystemProperty("javax.net.ssl.keyStoreProvider");
+                ks = (ksProv == null || ksProv.length() < 1)
+                    ?   KeyStore.getInstance(ksType)
+                    :   KeyStore.getInstance(ksType, ksProv);
 
                 String ksPath = null;
 
