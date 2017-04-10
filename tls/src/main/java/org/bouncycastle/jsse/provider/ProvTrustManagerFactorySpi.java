@@ -67,7 +67,10 @@ class ProvTrustManagerFactorySpi
                     tsType = KeyStore.getDefaultType();
                 }
 
-                ks = KeyStore.getInstance(tsType);
+                String tsProv = PropertyUtils.getSystemProperty("javax.net.ssl.trustStoreProvider");
+                ks = (tsProv == null || tsProv.length() < 1)
+                    ?   KeyStore.getInstance(tsType)
+                    :   KeyStore.getInstance(tsType, tsProv);
 
                 String tsPath = null;
                 char[] tsPassword = null;
