@@ -1,11 +1,10 @@
 package org.bouncycastle.pqc.crypto.test;
 
-import org.bouncycastle.util.test.SimpleTestResult;
-
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.util.test.SimpleTestResult;
 
 public class AllTests
     extends TestCase
@@ -32,13 +31,13 @@ public class AllTests
         suite.addTestSuite(XMSSMTPrivateKeyTest.class);
         suite.addTestSuite(XMSSMTPublicKeyTest.class);
         suite.addTestSuite(XMSSMTSignatureTest.class);
-        suite.addTestSuite(XMSSMTTest.class);
+        //suite.addTestSuite(XMSSMTTest.class);
         suite.addTestSuite(XMSSOidTest.class);
         suite.addTestSuite(XMSSPrivateKeyTest.class);
         suite.addTestSuite(XMSSPublicKeyTest.class);
         suite.addTestSuite(XMSSReducedSignatureTest.class);
         suite.addTestSuite(XMSSSignatureTest.class);
-        suite.addTestSuite(XMSSTest.class);
+        //suite.addTestSuite(XMSSTest.class);
         suite.addTestSuite(XMSSUtilTest.class);
         suite.addTestSuite(AllTests.SimpleTestTest.class);
 

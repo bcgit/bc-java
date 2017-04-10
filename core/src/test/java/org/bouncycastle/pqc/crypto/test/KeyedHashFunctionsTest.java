@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.test;
 
 import java.util.Arrays;
 
+import junit.framework.TestCase;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
@@ -12,12 +13,9 @@ import org.bouncycastle.pqc.crypto.xmss.OTSHashAddress;
 import org.bouncycastle.pqc.crypto.xmss.XMSSAddress;
 import org.bouncycastle.util.encoders.Hex;
 
-import junit.framework.TestCase;
-
 /**
  * Test cases for KeyedHashFunctions class.
  * 
- * @author Sebastian Roland <seroland86@gmail.com>
  */
 public class KeyedHashFunctionsTest extends TestCase {
 
