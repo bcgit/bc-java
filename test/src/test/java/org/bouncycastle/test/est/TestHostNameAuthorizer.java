@@ -2,10 +2,8 @@ package org.bouncycastle.test.est;
 
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.cert.X509Certificate;
-import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.est.CSRRequestResponse;
@@ -62,7 +60,8 @@ public class TestHostNameAuthorizer
                     ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
                 )), null))
                 .withHostNameAuthorizer(new JsseDefaultHostnameAuthorizer(null))
-                .addCipherSuites(res.getSupportedCipherSuites());
+                .addCipherSuites(res.getSupportedCipherSuites())
+                .withTLSVersion("TLSv1.2");
             ESTService est = builder.build();
 
             CSRRequestResponse resp = est.getCSRAttributes();
@@ -180,49 +179,4 @@ public class TestHostNameAuthorizer
             ESTServerUtils.makeRelativeToServerHome("/san/cert_san_mismatch_wc.pem")));
         Assert.assertFalse("Not Match", new JsseDefaultHostnameAuthorizer(null).verify("localhost.me", cert));
     }
-
-    @Test
-    public void testWildcardMatcher() throws Exception {
-
-        Object[][] v = new Object[][]{
-         //   {"Too wide a match", "foo.com","*.com",false}, // too wide a match
-            {"Exact","a.foo.com","a.foo.com",true},
-            {"Left most","abacus.foo.com","*s.foo.com",true}, // Match the left most.
-          //  {"Invalid 1","localhost.cisco.com","localhost.*.com",false},
-            {"Invalid 2","localhost.cisco.com","localhost.cisco.*",false},
-          //  {"Invalid 3","localhost.cisco.com","*.com",false},
-            {"Invalid 4","localhost.cisco.com","*.localhost.cisco.com",false},
-            {"Invalid 5","localhost.cisco.com","*",false},
-            {"Invalid 6","localhost.cisco.com","localhost*.cisco.com",false},
-            {"Invalid 7","localhost.cisco.com","*localhost.cisco.com",false},
-            {"Invalid 8","localhost.cisco.com","local*host.cisco.com",false},
-            {"Invalid 9","localhost.cisco.com","localhost.c*.com",false},
-            {"Invalid 10","localhost.cisco.com","localhost.*o.com",false},
-            {"Invalid 11","localhost.cisco.com","localhost.c*o.com",false},
-            {"Invalid 11","localhost.cisco.com","*..com",false},
-        };
-
-        for (Object[] j : v) {
-            Assert.assertEquals(j[0].toString(),j[3],JsseDefaultHostnameAuthorizer.testName((String)j[1],(String)j[2],null) );
-        }
-    }
-
-    @Test(expected = IOException.class)
-    public void testWildcardPublicSuffix() throws Exception {
-
-        Object[][] v = new Object[][]{
-
-             {"Invalid 3","localhost.cisco.com","*.com",false},
-
-        };
-
-        HashSet<String> suf = new HashSet<String>();
-        suf.add("*.com");
-
-        for (Object[] j : v) {
-            Assert.assertEquals(j[0].toString(),j[3],JsseDefaultHostnameAuthorizer.testName((String)j[1],(String)j[2],suf) );
-        }
-    }
-
-
 }

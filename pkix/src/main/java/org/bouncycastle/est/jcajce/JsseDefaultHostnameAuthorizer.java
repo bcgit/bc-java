@@ -30,10 +30,14 @@ public class JsseDefaultHostnameAuthorizer
 
     /**
      * Base constructor.
-     * 
+     * <p>
+     * The authorizer attempts to perform matching (including the use of the wildcard) in accordance with RFC 6125.
+     * </p>
+     * <p>
      * Known suffixes is a list of public domain suffixes that can't be used as wild cards for
-     * example *.com, as a dns wildcard could match evert .com domain if a registrar were issue it.
+     * example *.com, or c*c.com, as a dns wildcard could match every/most .com domains if a registrar were issue it.
      * If *.com is in the known suffixes list will not be allowed to match.
+     * </p>
      * @param knownSuffixes a set of suffixes.
      */
     public JsseDefaultHostnameAuthorizer(Set<String> knownSuffixes)
@@ -80,7 +84,7 @@ public class JsseDefaultHostnameAuthorizer
                     switch (((Number)l.get(0)).intValue())
                     {
                     case 2:
-                        if (testName(name, l.get(1).toString(), knownSuffixes ))
+                        if (isValidNameMatch(name, l.get(1).toString(), knownSuffixes ))
                         {
                             return true;
                         }
@@ -115,7 +119,7 @@ public class JsseDefaultHostnameAuthorizer
             {
                 if (atv.getType().equals(BCStyle.CN))
                 {
-                    return testName(name, rdn.getFirst().getValue().toString(), knownSuffixes);
+                    return isValidNameMatch(name, rdn.getFirst().getValue().toString(), knownSuffixes);
                 }
             }
         }
@@ -123,7 +127,7 @@ public class JsseDefaultHostnameAuthorizer
     }
 
 
-    public static boolean testName(String name, String dnsName, Set<String> suffixes)
+    public static boolean isValidNameMatch(String name, String dnsName, Set<String> suffixes)
         throws IOException
     {
 
@@ -132,28 +136,55 @@ public class JsseDefaultHostnameAuthorizer
         //
         if (dnsName.contains("*"))
         {
-            // Only one astrix and it must be at the start of the wildcard.
-            if (dnsName.indexOf('*') == dnsName.lastIndexOf("*") && dnsName.indexOf('*') == 0)
+            // Only one astrix 
+            int wildIndex = dnsName.indexOf('*');
+            if (wildIndex == dnsName.lastIndexOf("*"))
             {
-
-                if (dnsName.contains("..") || dnsName.equals("*"))
+                if (dnsName.contains("..") || dnsName.charAt(dnsName.length() - 1) == '*')
                 {
                     return false;
                 }
 
-                if (suffixes != null && suffixes.contains(Strings.toLowerCase(dnsName)))
+                int dnsDotIndex = dnsName.indexOf('.', wildIndex);
+
+                if (suffixes != null && suffixes.contains(Strings.toLowerCase(dnsName.substring(dnsDotIndex))))
                 {
-                    throw new IOException("Wildcard `" + dnsName + "` is known public suffix.");
+                    throw new IOException("Wildcard `" + dnsName + "` matches known public suffix.");
                 }
 
-                String end = Strings.toLowerCase(dnsName.substring(1));
-                if (Strings.toLowerCase(name).equals(end))
+                String end = Strings.toLowerCase(dnsName.substring(wildIndex + 1));
+                String loweredName = Strings.toLowerCase(name);
+                
+                if (loweredName.equals(end))
                 {
                     return false; // Must not match wild card exactly there must content to the left of the wildcard.
                 }
 
+                if (end.length() > loweredName.length())
+                {
+                    return false;
+                }
+
+                if (wildIndex > 0)
+                {
+                    if (loweredName.startsWith(dnsName.substring(0, wildIndex - 1)) && loweredName.endsWith(end))
+                    {
+                        return loweredName.substring(wildIndex, loweredName.length() - end.length()).indexOf('.') < 0;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+
                 // Must be only one '*' and it must be at position 0.
-                return Strings.toLowerCase(name).endsWith(end);
+                String prefix = loweredName.substring(0, loweredName.length() - end.length());
+                if (prefix.indexOf('.') > 0)
+                {
+                    return false;
+                }
+
+                return loweredName.endsWith(end);
             }
 
             return false;
