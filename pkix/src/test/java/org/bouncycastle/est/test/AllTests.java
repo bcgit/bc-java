@@ -31,9 +31,10 @@ public class AllTests
     public static Test suite()
         throws Exception
     {
-        TestSuite suite = new TestSuite("EAC tests");
+        TestSuite suite = new TestSuite("EST tests");
 
         suite.addTestSuite(ESTParsingTest.class);
+        suite.addTestSuite(HostNameAuthorizerMatchTest.class);
 
         return new ESTTestSetup(suite);
     }
