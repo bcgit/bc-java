@@ -38,7 +38,7 @@ public class JsseDefaultHostnameAuthorizer
      * example *.com, or c*c.com, as a dns wildcard could match every/most .com domains if a registrar were issue it.
      * If *.com is in the known suffixes list will not be allowed to match.
      * </p>
-     * @param knownSuffixes a set of suffixes.
+     * @param knownSuffixes a set of suffixes that cannot be wild-carded, e.g. { ".com", ".net", ".org" }
      */
     public JsseDefaultHostnameAuthorizer(Set<String> knownSuffixes)
     {
