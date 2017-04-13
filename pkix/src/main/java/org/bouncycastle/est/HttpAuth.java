@@ -245,7 +245,8 @@ public class HttpAuth
             algorithm = "MD5";
         }
 
-        if (algorithm.length() == 0) {
+        if (algorithm.length() == 0)
+        {
             throw new ESTException("WWW-Authenticate no algorithm defined.");
         }
 
