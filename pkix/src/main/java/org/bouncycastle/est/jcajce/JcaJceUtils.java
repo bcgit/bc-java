@@ -135,7 +135,7 @@ public class JcaJceUtils
         };
     }
 
-    private static void validateServerCertUsage(X509Certificate x509Certificate)
+    public static void validateServerCertUsage(X509Certificate x509Certificate)
         throws CertificateException
     {
         try
@@ -144,29 +144,18 @@ public class JcaJceUtils
 
             KeyUsage keyUsage = KeyUsage.fromExtensions(cert.getExtensions());
 
-            if (keyUsage == null)
-            {
-                throw new CertificateException("Certificate has no key usage.");
-            }
 
-//                if (keyUsage.hasUsages(KeyUsage.digitalSignature))
-//                {
-//                    throw new CertificateException("Certificate has invalid key usage: DigitalSignature");
-//                }
-//
-//                if (keyUsage.hasUsages(KeyUsage.nonRepudiation))
-//                {
-//                    throw new CertificateException("Certificate has invalid key usage: NonRepudiation");
-//                }
-
-            if (keyUsage.hasUsages(KeyUsage.keyCertSign))
+            if (keyUsage != null)
             {
-                throw new CertificateException("Certificate has invalid key usage: KeyCertSign");
-            }
 
-            if (!keyUsage.hasUsages(KeyUsage.keyEncipherment))
-            {
-                throw new CertificateException("Certificate does not support: KeyEncipherment");
+                if (keyUsage.hasUsages(KeyUsage.keyCertSign)) {
+                    throw new CertificateException("Key usage must not contain keyCertSign");
+                }
+
+                if (!(keyUsage.hasUsages(KeyUsage.digitalSignature) || keyUsage.hasUsages(KeyUsage.keyEncipherment)))
+                {
+                    throw new CertificateException("Key usage must be none, digitalSignature or keyEncipherment");
+                }
             }
 
 

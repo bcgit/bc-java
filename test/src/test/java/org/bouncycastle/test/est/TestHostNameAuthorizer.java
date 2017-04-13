@@ -4,6 +4,7 @@ package org.bouncycastle.test.est;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.est.CSRRequestResponse;
