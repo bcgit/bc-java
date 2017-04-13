@@ -38,6 +38,7 @@ public class JsseDefaultHostnameAuthorizer
      * example *.com, or c*c.com, as a dns wildcard could match every/most .com domains if a registrar were issue it.
      * If *.com is in the known suffixes list will not be allowed to match.
      * </p>
+     *
      * @param knownSuffixes a set of suffixes that cannot be wild-carded, e.g. { ".com", ".net", ".org" }
      */
     public JsseDefaultHostnameAuthorizer(Set<String> knownSuffixes)
@@ -84,7 +85,7 @@ public class JsseDefaultHostnameAuthorizer
                     switch (((Number)l.get(0)).intValue())
                     {
                     case 2:
-                        if (isValidNameMatch(name, l.get(1).toString(), knownSuffixes ))
+                        if (isValidNameMatch(name, l.get(1).toString(), knownSuffixes))
                         {
                             return true;
                         }
@@ -154,7 +155,7 @@ public class JsseDefaultHostnameAuthorizer
 
                 String end = Strings.toLowerCase(dnsName.substring(wildIndex + 1));
                 String loweredName = Strings.toLowerCase(name);
-                
+
                 if (loweredName.equals(end))
                 {
                     return false; // Must not match wild card exactly there must content to the left of the wildcard.
