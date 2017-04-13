@@ -18,6 +18,11 @@ public class NHExchangePairGenerator
 
     public ExchangePair GenerateExchange(AsymmetricKeyParameter senderPublicKey)
     {
+        return generateExchange(senderPublicKey);
+    }
+
+    public ExchangePair generateExchange(AsymmetricKeyParameter senderPublicKey)
+    {
         NHPublicKeyParameters pubKey = (NHPublicKeyParameters)senderPublicKey;
 
         byte[] sharedValue = new byte[NewHope.AGREEMENT_SIZE];
