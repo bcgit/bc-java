@@ -101,7 +101,7 @@ public class NewHopeTest
 
             NHExchangePairGenerator exchGen = new NHExchangePairGenerator(bobRand);
 
-            ExchangePair bobExchPair = exchGen.GenerateExchange(aliceKp.getPublic());
+            ExchangePair bobExchPair = exchGen.generateExchange(aliceKp.getPublic());
 
             NHAgreement agreement = new NHAgreement();
 
