@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.xmss;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
@@ -154,7 +155,7 @@ public class BDS
     private int k;
     private XMSSNode root;
     private List<XMSSNode> authenticationPath;
-    private Map<Integer, Stack<XMSSNode>> retain;
+    private Map<Integer, LinkedList<XMSSNode>> retain;
     private Stack<XMSSNode> stack;
     private List<TreeHash> treeHashInstances;
     private Map<Integer, XMSSNode> keep;
@@ -176,7 +177,7 @@ public class BDS
             throw new IllegalArgumentException("illegal value for BDS parameter k");
         }
         authenticationPath = new ArrayList<XMSSNode>();
-        retain = new TreeMap<Integer, Stack<XMSSNode>>();
+        retain = new TreeMap<Integer, LinkedList<XMSSNode>>();
         stack = new Stack<XMSSNode>();
         initializeTreeHashInstances();
         keep = new TreeMap<Integer, XMSSNode>();
@@ -236,7 +237,7 @@ public class BDS
                 {
                     if (retain.get(node.getHeight()) == null)
                     {
-                        Stack<XMSSNode> queue = new Stack<XMSSNode>();
+                        LinkedList<XMSSNode> queue = new LinkedList<XMSSNode>();
                         queue.add(node.clone());
                         retain.put(node.getHeight(), queue);
                     }
@@ -257,7 +258,7 @@ public class BDS
         return root.clone();
     }
 
-    void nextAuthenticationPath(OTSHashAddress otsHashAddress)
+    protected void nextAuthenticationPath(OTSHashAddress otsHashAddress)
     {
         if (otsHashAddress == null)
         {
@@ -313,7 +314,7 @@ public class BDS
                 }
                 else
                 {
-                    authenticationPath.set(height, retain.get(height).pop());
+                    authenticationPath.set(height, retain.get(height).removeFirst());
                 }
             }
 			
