@@ -24,12 +24,13 @@ public class JsseESTServiceBuilder
     extends ESTServiceBuilder
 {
     protected SSLSocketFactoryCreator socketFactoryCreator;
-    protected JsseHostnameAuthorizer hostNameAuthorizer  = new JsseDefaultHostnameAuthorizer(null);
+    protected JsseHostnameAuthorizer hostNameAuthorizer = new JsseDefaultHostnameAuthorizer(null);
     protected int timeoutMillis = 0;
     protected ChannelBindingProvider bindingProvider;
     protected Set<String> supportedSuites = new HashSet<String>();
     protected Long absoluteLimit;
     protected SSLSocketFactoryCreatorBuilder sslSocketFactoryCreatorBuilder;
+    protected boolean filterCipherSuites = true;
 
     /**
      * Create a builder for a client using a custom SSLSocketFactoryCreator.
@@ -211,6 +212,17 @@ public class JsseESTServiceBuilder
         return this;
     }
 
+    /**
+     * Filter cipher suites with supported before passing to JSSE provider.
+     *
+     * @param filter true, supplied cipher suites will be filtered with supported before passing to the JSSE provider.
+     * @return this;
+     */
+    public JsseESTServiceBuilder withFilterCipherSuites(boolean filter)
+    {
+        this.filterCipherSuites = filter;
+        return this;
+    }
 
     public ESTService build()
     {
@@ -236,8 +248,6 @@ public class JsseESTServiceBuilder
         }
 
 
-
-
         if (clientProvider == null)
         {
             clientProvider = new DefaultESTHttpClientProvider(
@@ -246,7 +256,7 @@ public class JsseESTServiceBuilder
                 timeoutMillis,
                 bindingProvider,
                 supportedSuites,
-                absoluteLimit);
+                absoluteLimit, filterCipherSuites);
         }
 
         return super.build();

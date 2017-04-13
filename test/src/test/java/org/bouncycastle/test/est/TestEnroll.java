@@ -1425,6 +1425,7 @@ public class TestEnroll
             }
             catch (Exception t)
             {
+                t.printStackTrace();
                 Assert.assertEquals("Must be ESTException", t.getClass(), ESTException.class);
                 Assert.assertTrue("", t.getMessage().contains("banana"));
             }
