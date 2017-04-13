@@ -240,10 +240,13 @@ public class HttpAuth
         }
 
         // If an algorithm is not specified, default to MD5.
-        if (algorithm == null || algorithm.length() == 0)
+        if (algorithm == null)
         {
             algorithm = "MD5";
-//            throw new ESTException("WWW-Authenticate no algorithm defined.");
+        }
+
+        if (algorithm.length() == 0) {
+            throw new ESTException("WWW-Authenticate no algorithm defined.");
         }
 
         algorithm = Strings.toUpperCase(algorithm);
