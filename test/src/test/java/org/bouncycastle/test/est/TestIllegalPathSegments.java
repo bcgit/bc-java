@@ -92,6 +92,22 @@ public class TestIllegalPathSegments
         ESTService est = builder.build();
     }
 
+    @Test
+    public void testAllowsNumbers()
+        throws Exception
+    {
+        JsseESTServiceBuilder builder = new JsseESTServiceBuilder(
+            "127.0.0.1:23456", JcaJceUtils.getCertPathTrustManager(
+            ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificate(
+                ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+            )), null));
+
+        builder.withLabel("FAC51");
+
+        builder.withLabel("Fac73");
+        builder.build();
+    }
+
 
 
 

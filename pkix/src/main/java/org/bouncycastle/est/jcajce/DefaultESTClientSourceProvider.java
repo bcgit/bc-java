@@ -3,6 +3,9 @@ package org.bouncycastle.est.jcajce;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.net.ssl.SSLSocket;
@@ -22,13 +25,15 @@ class DefaultESTClientSourceProvider
     private final ChannelBindingProvider bindingProvider;
     private final Set<String> cipherSuites;
     private final Long absoluteLimit;
+    private final boolean filterSupportedSuites;
 
 
     public DefaultESTClientSourceProvider(
         SSLSocketFactory socketFactory,
         JsseHostnameAuthorizer hostNameAuthorizer,
         int timeout, ChannelBindingProvider bindingProvider,
-        Set<String> cipherSuites, Long absoluteLimit)
+        Set<String> cipherSuites, Long absoluteLimit,
+        boolean filterSupportedSuites)
         throws GeneralSecurityException
     {
         this.sslSocketFactory = socketFactory;
@@ -37,6 +42,7 @@ class DefaultESTClientSourceProvider
         this.bindingProvider = bindingProvider;
         this.cipherSuites = cipherSuites;
         this.absoluteLimit = absoluteLimit;
+        this.filterSupportedSuites = filterSupportedSuites;
     }
 
 
@@ -46,11 +52,39 @@ class DefaultESTClientSourceProvider
         SSLSocket sock = (SSLSocket)sslSocketFactory.createSocket(host, port);
         sock.setSoTimeout(timeout);
 
-
         if (cipherSuites != null && !cipherSuites.isEmpty())
         {
-            sock.setEnabledCipherSuites(cipherSuites.toArray(new String[cipherSuites.size()]));
+            // Filter supplied list with what is actually supported.
+            if (filterSupportedSuites)
+            {
+                HashSet<String> fs = new HashSet<String>();
+                for (String s : sock.getSupportedCipherSuites())
+                {
+                    fs.add(s);
+                }
+
+                List<String> j = new ArrayList<String>();
+                for (String s : cipherSuites)
+                {
+                    if (fs.contains(s))
+                    {
+                        j.add(s);
+                    }
+                }
+
+                if (j.isEmpty())
+                {
+                    throw new IllegalStateException("No supplied cipher suite is supported by the provider.");
+                }
+
+                sock.setEnabledCipherSuites(j.toArray(new String[j.size()]));
+            }
+            else
+            {
+                sock.setEnabledCipherSuites(cipherSuites.toArray(new String[cipherSuites.size()]));
+            }
         }
+
 
         sock.startHandshake();
 
@@ -82,7 +116,7 @@ class DefaultESTClientSourceProvider
             throw new IOException("EST clients must not use anon ciphers");
         }
 
-        // check for use of anon cipher and fail.
+        // check for use of export cipher.
         if (Strings.toLowerCase(sock.getSession().getCipherSuite()).contains("export"))
         {
             throw new IOException("EST clients must not use export ciphers");
