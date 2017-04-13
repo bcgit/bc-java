@@ -19,13 +19,14 @@ class DefaultESTHttpClientProvider
     private final ChannelBindingProvider bindingProvider;
     private final Set<String> cipherSuites;
     private final Long absoluteLimit;
+    private final boolean filterCipherSuites;
 
 
     public DefaultESTHttpClientProvider(
         JsseHostnameAuthorizer hostNameAuthorizer,
         SSLSocketFactoryCreator socketFactoryCreator, int timeout,
         ChannelBindingProvider bindingProvider,
-        Set<String> cipherSuites, Long absoluteLimit)
+        Set<String> cipherSuites, Long absoluteLimit, boolean filterCipherSuites)
     {
 
         this.hostNameAuthorizer = hostNameAuthorizer;
@@ -34,6 +35,7 @@ class DefaultESTHttpClientProvider
         this.bindingProvider = bindingProvider;
         this.cipherSuites = cipherSuites;
         this.absoluteLimit = absoluteLimit;
+        this.filterCipherSuites = filterCipherSuites;
     }
 
     public ESTClient makeClient()
@@ -43,7 +45,7 @@ class DefaultESTHttpClientProvider
         {
             SSLSocketFactory socketFactory = socketFactoryCreator.createFactory();
             return new DefaultESTClient(
-                new DefaultESTClientSourceProvider(socketFactory, hostNameAuthorizer, timeout, bindingProvider, cipherSuites, absoluteLimit));
+                new DefaultESTClientSourceProvider(socketFactory, hostNameAuthorizer, timeout, bindingProvider, cipherSuites, absoluteLimit, filterCipherSuites));
         }
         catch (Exception e)
         {

@@ -59,7 +59,7 @@ public class ESTService
     private final String server;
     private final ESTClientProvider clientProvider;
 
-    private static final Pattern pathInvalid = Pattern.compile("^[a-zA-Z_\\-.~!$&'()*+,;=]+");
+    private static final Pattern pathInvalid = Pattern.compile("^[0-9a-zA-Z_\\-.~!$&'()*+,;=]+");
 
     ESTService(
         String serverAuthority, String label,

@@ -48,6 +48,7 @@ import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.openssl.MiscPEMGenerator;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.pem.PemObject;
@@ -84,6 +85,16 @@ public class ExampleUtils
             }
         }
         Security.addProvider(new BouncyCastleProvider());
+
+        for (Provider p : pp)
+        {
+            if (p.getName().equals("BCJSSE"))
+            {
+                return;
+            }
+        }
+        Security.addProvider(new BouncyCastleJsseProvider());
+
     }
 
     /**
