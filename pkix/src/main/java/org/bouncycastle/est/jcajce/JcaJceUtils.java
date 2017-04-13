@@ -144,11 +144,10 @@ public class JcaJceUtils
 
             KeyUsage keyUsage = KeyUsage.fromExtensions(cert.getExtensions());
 
-
             if (keyUsage != null)
             {
-
-                if (keyUsage.hasUsages(KeyUsage.keyCertSign)) {
+                if (keyUsage.hasUsages(KeyUsage.keyCertSign))
+                {
                     throw new CertificateException("Key usage must not contain keyCertSign");
                 }
 
@@ -157,7 +156,6 @@ public class JcaJceUtils
                     throw new CertificateException("Key usage must be none, digitalSignature or keyEncipherment");
                 }
             }
-
 
             //
             // Check extended key usage.
@@ -209,35 +207,4 @@ public class JcaJceUtils
         keyManagerFactory.init(clientKeyStore, clientKeyStorePass);
         return keyManagerFactory;
     }
-
-
-//
-//                X509TrustManager tm = new X509TrustManager()
-//                {
-//                    public void checkClientTrusted(X509Certificate[] x509Certificates, String authType)
-//                        throws CertificateException
-//                    {
-//                        // For clients.
-//                    }
-//
-//                    public void checkServerTrusted(X509Certificate[] x509Certificates, String s)
-//                        throws CertificateException
-//                    {
-//                        if (trustManagers == null)
-//                        {
-//                            throw new CertificateException(
-//                                "No serverTLSAuthorizer specified, if you wish to have no validation then you must supply an instance that does nothing."
-//                            );
-//                        }
-//
-//                        trustManagers.authorize(x509Certificates, s, tlsTrustAnchors, revocationLists);
-//                    }
-//
-//                    public X509Certificate[] getAcceptedIssuers()
-//                    {
-//                        return acceptedIssuers;
-//                    }
-//                };
-
-
 }
