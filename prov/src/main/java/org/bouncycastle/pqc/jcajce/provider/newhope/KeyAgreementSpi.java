@@ -63,7 +63,7 @@ public class KeyAgreementSpi
 
         if (exchangePairGenerator != null)
         {
-            ExchangePair exchPair = exchangePairGenerator.GenerateExchange((AsymmetricKeyParameter)otherPartyKey.getKeyParams());
+            ExchangePair exchPair = exchangePairGenerator.generateExchange((AsymmetricKeyParameter)otherPartyKey.getKeyParams());
 
             shared = exchPair.getSharedValue();
 
