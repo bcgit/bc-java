@@ -3019,6 +3019,11 @@ public class PGPKeyRingTest
                 {
                     isTrue("wrong validity date", pubKey.getValidSeconds() == 432495);
                 }
+                // this key has 3 self signatures on it - the most recent key validity is for 4320173 seconds.
+                else if (0x89FCFA4B23363333L == pubKey.getKeyID())
+                {
+                    isTrue("wrong validity date", pubKey.getValidSeconds() == 4320173);
+                }
             }
         }
     }
