@@ -53,7 +53,7 @@ public class JcePKCSPBEOutputEncryptorBuilder
             this.keyEncAlgorithm = algorithm;
         }
     }
-
+    
     public JcePKCSPBEOutputEncryptorBuilder setProvider(Provider provider)
     {
         this.helper = new ProviderJcaJceHelper(provider);
@@ -64,6 +64,13 @@ public class JcePKCSPBEOutputEncryptorBuilder
     public JcePKCSPBEOutputEncryptorBuilder setProvider(String providerName)
     {
         this.helper = new NamedJcaJceHelper(providerName);
+
+        return this;
+    }
+    
+    public JcePKCSPBEOutputEncryptorBuilder setIterationCount(int iterationCount)
+    {
+        this.iterationCount = iterationCount;
 
         return this;
     }
