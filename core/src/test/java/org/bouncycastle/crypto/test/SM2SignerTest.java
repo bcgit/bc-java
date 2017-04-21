@@ -22,7 +22,7 @@ public class SM2SignerTest
 {
     public String getName()
     {
-        return "SM2";
+        return "SM2Signer";
     }
 
     private void doSignerTestFp()
