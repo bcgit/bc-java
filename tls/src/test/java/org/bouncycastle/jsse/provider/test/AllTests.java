@@ -27,7 +27,6 @@ public class AllTests
 
         if (hasClass("javax.net.ssl.CertPathTrustManagerParameters"))
         {
-            System.err.println("here");
             suite.addTestSuite(TrustManagerFactoryTest.class);
         }
 
