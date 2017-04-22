@@ -197,8 +197,14 @@ public class SM2KeyExchange
 
              digest.doFinal(buf, 0);
 
-             // TODO
-             System.arraycopy(buf, 0, rv, off, rv.length);
+             if (off + buf.length < rv.length)
+             {
+                 System.arraycopy(buf, 0, rv, off, buf.length);
+             }
+             else
+             {
+                 System.arraycopy(buf, 0, rv, off, rv.length - off);
+             }
 
              off += buf.length;
              ct++;
