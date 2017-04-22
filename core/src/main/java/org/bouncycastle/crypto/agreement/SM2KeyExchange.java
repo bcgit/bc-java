@@ -143,7 +143,7 @@ public class SM2KeyExchange
 
             byte[] s1 = S1(digest, U, inner);
 
-            if (!Arrays.areEqual(s1, confirmationTag))
+            if (!Arrays.constantTimeAreEqual(s1, confirmationTag))
             {
                 throw new IllegalStateException("confirmation tag mismatch");
             }
