@@ -1,20 +1,20 @@
 package org.bouncycastle.jsse.provider;
 
 import java.security.GeneralSecurityException;
-import java.security.KeyStore;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.Provider;
 import java.security.cert.CertPathBuilder;
 import java.security.cert.CertStore;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.PKIXCertPathValidatorResult;
+import java.security.cert.PKIXParameters;
+import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import javax.net.ssl.X509TrustManager;
@@ -23,12 +23,38 @@ class ProvX509TrustManager
     implements X509TrustManager
 {
     private final Provider pkixProvider;
-    private final KeyStore trustStore;
+    private final Set trustAnchors;
+    private final PKIXParameters baseParameters;
 
-    public ProvX509TrustManager(Provider pkixProvider, KeyStore trustStore)
+    public ProvX509TrustManager(Provider pkixProvider, Set trustAnchors)
+        throws InvalidAlgorithmParameterException
     {
         this.pkixProvider = pkixProvider;
-        this.trustStore = trustStore;
+        this.trustAnchors = trustAnchors;
+        this.baseParameters = new PKIXBuilderParameters(trustAnchors, new X509CertSelector());
+        this.baseParameters.setRevocationEnabled(false);
+    }
+
+    public ProvX509TrustManager(Provider pkixProvider, PKIXParameters baseParameters)
+        throws InvalidAlgorithmParameterException
+    {
+        this.pkixProvider = pkixProvider;
+        this.trustAnchors = baseParameters.getTrustAnchors();
+        if (baseParameters instanceof PKIXBuilderParameters)
+        {
+            this.baseParameters = baseParameters;
+        }
+        else
+        {
+            this.baseParameters = new PKIXBuilderParameters(baseParameters.getTrustAnchors(), baseParameters.getTargetCertConstraints());
+            this.baseParameters.setCertStores(baseParameters.getCertStores());
+            this.baseParameters.setRevocationEnabled(baseParameters.isRevocationEnabled());
+            this.baseParameters.setCertPathCheckers(baseParameters.getCertPathCheckers());
+            this.baseParameters.setDate(baseParameters.getDate());
+            this.baseParameters.setAnyPolicyInhibited(baseParameters.isAnyPolicyInhibited());
+            this.baseParameters.setPolicyMappingInhibited(baseParameters.isPolicyMappingInhibited());
+            this.baseParameters.setExplicitPolicyRequired(baseParameters.isExplicitPolicyRequired());
+        }
     }
 
     public void checkClientTrusted(X509Certificate[] x509Certificates, String authType)
@@ -52,20 +78,15 @@ class ProvX509TrustManager
     {
         try
         {
-            Set<X509Certificate> certs = new HashSet<X509Certificate>(trustStore.size());
-            for (Enumeration<String> en = trustStore.aliases(); en.hasMoreElements();)
+            X509Certificate[] certs = new X509Certificate[trustAnchors.size()];
+            int count = 0;
+
+            for (Iterator it = trustAnchors.iterator(); it.hasNext();)
             {
-                String alias = (String)en.nextElement();
-                if (trustStore.isCertificateEntry(alias))
-                {
-                    Certificate cert = trustStore.getCertificate(alias);
-                    if (cert instanceof X509Certificate)
-                    {
-                        certs.add((X509Certificate)cert);
-                    }
-                }
+                certs[count++] = ((TrustAnchor)it.next()).getTrustedCert();
             }
-            return certs.toArray(new X509Certificate[certs.size()]);
+
+            return certs;
         }
         catch (Exception e)
         {
@@ -83,13 +104,14 @@ class ProvX509TrustManager
 
             CertPathBuilder pathBuilder = CertPathBuilder.getInstance("PKIX", pkixProvider);
 
-            X509CertSelector constraints = new X509CertSelector();
+            X509CertSelector constraints = (X509CertSelector)baseParameters.getTargetCertConstraints().clone();
 
             constraints.setCertificate(x509Certificates[0]);
 
-            PKIXBuilderParameters param = new PKIXBuilderParameters(trustStore, constraints);
+            PKIXBuilderParameters param = (PKIXBuilderParameters)baseParameters.clone();
+
             param.addCertStore(certStore);
-            param.setRevocationEnabled(false);
+            param.setTargetCertConstraints(constraints);
 
             PKIXCertPathValidatorResult result = (PKIXCertPathValidatorResult)pathBuilder.build(param);
         }
