@@ -25,6 +25,12 @@ public class AllTests
         suite.addTestSuite(InstanceTest.class);
         suite.addTestSuite(KeyManagerFactoryTest.class);
 
+        if (hasClass("javax.net.ssl.CertPathTrustManagerParameters"))
+        {
+            System.err.println("here");
+            suite.addTestSuite(TrustManagerFactoryTest.class);
+        }
+
         suite.addTest(CipherSuitesTestSuite.suite());
 
         return new BCTestSetup(suite);
@@ -46,6 +52,19 @@ public class AllTests
         protected void tearDown()
         {
 
+        }
+    }
+
+    private static boolean hasClass(String name)
+    {
+        try
+        {
+            AllTests.class.getClassLoader().loadClass(name);
+            return true;
+        }
+        catch (Exception e)
+        {
+            return false;
         }
     }
 }
