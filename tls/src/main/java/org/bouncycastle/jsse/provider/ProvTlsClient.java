@@ -154,6 +154,12 @@ class ProvTlsClient
                     return null;
                 }
 
+                /*
+                 * TODO[jsse] Before proceeding with EC credentials, should we check (TLS 1.2+) that
+                 * the used curve was actually declared in the client's elliptic_curves/named_groups
+                 * extension?
+                 */
+
                 switch (keyExchangeAlgorithm)
                 {
                 case KeyExchangeAlgorithm.DH_DSS:
