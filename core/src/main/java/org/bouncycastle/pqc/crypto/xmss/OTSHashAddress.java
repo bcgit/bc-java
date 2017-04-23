@@ -1,80 +1,81 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
-import java.text.ParseException;
-
-import org.bouncycastle.util.Pack;
+import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
 
 /**
- * OTS Hash address.
+ * OTS hash address.
  *
  */
-public class OTSHashAddress
-    extends XMSSAddress
-{
+public final class OTSHashAddress extends XMSSAddress {
 
-    private static final int TYPE = 0x00;
-    private int otsAddress;
-    private int chainAddress;
-    private int hashAddress;
+	private static final int TYPE = 0x00;
 
-    public OTSHashAddress()
-    {
-        super(TYPE);
-    }
+	private final int otsAddress;
+	private final int chainAddress;
+	private final int hashAddress;
 
-    @Override
-    public void parseByteArray(byte[] address)
-        throws ParseException
-    {
-        int type = Pack.bigEndianToInt(address, 12);
-        if (type != TYPE)
-        {
-            throw new ParseException("type needs to be " + TYPE, 12);
-        }
-        setType(type);
-        otsAddress = Pack.bigEndianToInt(address, 16);
-        chainAddress = Pack.bigEndianToInt(address, 20);
-        hashAddress = Pack.bigEndianToInt(address, 24);
-        super.parseByteArray(address);
-    }
+	private OTSHashAddress(Builder builder) {
+		super(builder);
+		otsAddress = builder.otsAddress;
+		chainAddress = builder.chainAddress;
+		hashAddress = builder.hashAddress;
+	}
+	
+	protected static class Builder extends XMSSAddress.Builder<Builder> {
 
-    @Override
-    public byte[] toByteArray()
-    {
-        byte[] byteRepresentation = getByteRepresentation();
-        XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, otsAddress, 16);
-        XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, chainAddress, 20);
-        XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, hashAddress, 24);
-        return super.toByteArray();
-    }
+		/* optional */
+		private int otsAddress = 0;
+		private int chainAddress = 0;
+		private int hashAddress = 0;
 
-    public int getOTSAddress()
-    {
-        return otsAddress;
-    }
+		protected Builder() {
+			super(TYPE);
+		}
+		
+		protected Builder withOTSAddress(int val) {
+			otsAddress = val;
+			return this;
+		}
+		
+		protected Builder withChainAddress(int val) {
+			chainAddress = val;
+			return this;
+		}
+		
+		protected Builder withHashAddress(int val) {
+			hashAddress = val;
+			return this;
+		}
+		
+		@Override
+		protected XMSSAddress build() {
+			return new OTSHashAddress(this);
+		}
 
-    public void setOTSAddress(int otsAddress)
-    {
-        this.otsAddress = otsAddress;
-    }
+		@Override
+		protected Builder getThis() {
+			return this;
+		}
+	}
 
-    public int getChainAddress()
-    {
-        return chainAddress;
-    }
+	@Override
+	protected byte[] toByteArray() {
+		byte[] byteRepresentation = super.toByteArray();
+		XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, otsAddress, 16);
+		XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, chainAddress, 20);
+		XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, hashAddress, 24);
+		return byteRepresentation;
+	}
 
-    public void setChainAddress(int chainAddress)
-    {
-        this.chainAddress = chainAddress;
-    }
-
-    public int getHashAddress()
-    {
-        return hashAddress;
-    }
-
-    public void setHashAddress(int hashAddress)
-    {
-        this.hashAddress = hashAddress;
-    }
+	protected int getOTSAddress() {
+		return otsAddress;
+	}
+	
+	protected int getChainAddress() {
+		return chainAddress;
+	}
+	
+	protected int getHashAddress() {
+		return hashAddress;
+	}
 }
