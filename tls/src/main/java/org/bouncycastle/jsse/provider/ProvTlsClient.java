@@ -117,7 +117,7 @@ class ProvTlsClient
                 for (int i = 0; i < certTypes.length; ++i)
                 {
                     // TODO[jsse] Need to also take notice of certificateRequest.getSupportedSignatureAlgorithms(), if present
-                    keyTypes[i] = JsseUtils.getClientAuthType(certTypes[i]);
+                    keyTypes[i] = JsseUtils.getAuthTypeClient(certTypes[i]);
                 }
 
                 Principal[] issuers = null;
@@ -203,7 +203,7 @@ class ProvTlsClient
                 else
                 {
                     X509Certificate[] chain = JsseUtils.getX509CertificateChain(serverCertificate);
-                    String authType = JsseUtils.getAuthType(TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite));
+                    String authType = JsseUtils.getAuthTypeServer(TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite));
 
                     if (!manager.isServerTrusted(chain, authType))
                     {
