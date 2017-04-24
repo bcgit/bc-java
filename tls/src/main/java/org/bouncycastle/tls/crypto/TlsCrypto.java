@@ -15,18 +15,25 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 public interface TlsCrypto
 {
     /**
-     * Return true if this TlsCrypto supports the passed in curveID.
-     *
-     * @return true if this instance supports the passed in curveID, false otherwise.
-     */
-    boolean hasNamedCurve(int curveID);
-
-    /**
      * Return true if this TlsCrypto can perform raw signatures and verifications for all supported algorithms.
      *
      * @return true if this instance can perform raw signatures and verifications for all supported algorithms, false otherwise.
      */
     boolean hasAllRawSignatureAlgorithms();
+
+    /**
+     * Return true if this TlsCrypto can support DH key agreement.
+     *
+     * @return true if this instance can support DH key agreement, false otherwise.
+     */
+    boolean hasDHAgreement();
+
+    /**
+     * Return true if this TlsCrypto can support ECDH key agreement.
+     *
+     * @return true if this instance can support ECDH key agreement, false otherwise.
+     */
+    boolean hasECDHAgreement();
 
     /**
      * Return true if this TlsCrypto can support the passed in block/stream encryption algorithm.
@@ -53,6 +60,29 @@ public interface TlsCrypto
     boolean hasMacAlgorithm(int macAlgorithm);
 
     /**
+     * Return true if this TlsCrypto supports the passed in curveID.
+     *
+     * @return true if this instance supports the passed in curveID, false otherwise.
+     */
+    boolean hasNamedCurve(int curveID);
+
+    /**
+     * Return true if this TlsCrypto can support RSA encryption/decryption.
+     *
+     * @return true if this instance can support RSA encryption/decryption, false otherwise.
+     */
+    boolean hasRSAEncryption();
+
+    /**
+     * Return true if this TlsCrypto can support the passed in signature algorithm
+     * (not necessarily in combination with EVERY hash algorithm).
+     *
+     * @param signatureAlgorithm the algorithm of interest.
+     * @return true if signatureAlgorithm is supported, false otherwise.
+     */
+    boolean hasSignatureAlgorithm(int signatureAlgorithm);
+
+    /**
      * Return true if this TlsCrypto can support the passed in signature algorithm.
      *
      * @param sigAndHashAlgorithm the algorithm of interest.
@@ -61,11 +91,11 @@ public interface TlsCrypto
     boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm);
 
     /**
-     * Return true if this TlsCrypto can support RSA encryption/decryption.
+     * Return true if this TlsCrypto can support SRP authentication.
      *
-     * @return true if this instance can support RSA encryption/decryption, false otherwise.
+     * @return true if this instance can support SRP authentication, false otherwise.
      */
-    boolean hasRSAEncryption();
+    boolean hasSRPAuthentication();
 
     /**
      * Create a TlsSecret object based provided data.

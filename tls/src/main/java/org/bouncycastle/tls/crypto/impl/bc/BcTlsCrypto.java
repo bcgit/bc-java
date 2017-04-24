@@ -248,13 +248,17 @@ public class BcTlsCrypto
         };
     }
 
-    public boolean hasNamedCurve(int curveID)
+    public boolean hasAllRawSignatureAlgorithms()
     {
-        // TODO: at the moment we support everything
         return true;
     }
 
-    public boolean hasAllRawSignatureAlgorithms()
+    public boolean hasDHAgreement()
+    {
+        return true;
+    }
+
+    public boolean hasECDHAgreement()
     {
         return true;
     }
@@ -274,12 +278,28 @@ public class BcTlsCrypto
         return true;
     }
 
+    public boolean hasNamedCurve(int curveID)
+    {
+        // TODO: at the moment we support everything
+        return true;
+    }
+
+    public boolean hasRSAEncryption()
+    {
+        return true;
+    }
+
+    public boolean hasSignatureAlgorithm(int signatureAlgorithm)
+    {
+        return true;
+    }
+
     public boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm)
     {
         return true;
     }
 
-    public boolean hasRSAEncryption()
+    public boolean hasSRPAuthentication()
     {
         return true;
     }
