@@ -44,7 +44,25 @@ class JsseUtils
         return false;
     }
 
-    public static String getAuthType(int keyExchangeAlgorithm) throws IOException
+    public static String getAuthTypeClient(short clientCertificateType) throws IOException
+    {
+        switch (clientCertificateType)
+        {
+        case ClientCertificateType.dss_sign:
+            return "DSA";
+        case ClientCertificateType.ecdsa_sign:
+            return "EC";
+        case ClientCertificateType.rsa_sign:
+            return "RSA";
+
+        // TODO[jsse] "fixed" types and any others
+
+        default:
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
+    public static String getAuthTypeServer(int keyExchangeAlgorithm) throws IOException
     {
         switch (keyExchangeAlgorithm)
         {
@@ -109,25 +127,6 @@ class JsseUtils
         }
 
         return new Certificate(certificateList);
-    }
-
-    public static String getClientAuthType(short clientCertificateType) throws IOException
-    {
-        switch (clientCertificateType)
-        {
-        case ClientCertificateType.dss_sign:
-            return "DSA";
-        case ClientCertificateType.ecdsa_sign:
-            // TODO[jsse] Seems to be what SunJSSE forwards to KeyManager.chooseClientAlias
-            return "EC";
-        case ClientCertificateType.rsa_sign:
-            return "RSA";
-
-        // TODO[jsse] "fixed" types and any others
-
-        default:
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
     }
 
     public static X509Certificate[] getX509CertificateChain(Certificate certificateMessage)
