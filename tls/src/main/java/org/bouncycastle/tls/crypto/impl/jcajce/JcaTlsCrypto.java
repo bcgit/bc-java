@@ -337,14 +337,19 @@ public class JcaTlsCrypto
         };
     }
 
-    public boolean hasNamedCurve(int curveID)
-    {
-        return checkCurve(curveID);
-    }
-
     public boolean hasAllRawSignatureAlgorithms()
     {
         return !JcaUtils.isSunMSCAPIProviderActive();
+    }
+
+    public boolean hasDHAgreement()
+    {
+        return true;
+    }
+
+    public boolean hasECDHAgreement()
+    {
+        return true;
     }
 
     public boolean hasEncryptionAlgorithm(int encryptionAlgorithm)
@@ -406,6 +411,30 @@ public class JcaTlsCrypto
         return true;
     }
 
+    public boolean hasNamedCurve(int curveID)
+    {
+        return checkCurve(curveID);
+    }
+
+    public boolean hasRSAEncryption()
+    {
+        try
+        {
+            createRSAEncryptionCipher();
+            return true;
+        }
+        catch (GeneralSecurityException e)
+        {
+            return false;
+        }
+    }
+
+    public boolean hasSignatureAlgorithm(int signatureAlgorithm)
+    {
+        // TODO: expand
+        return true;
+    }
+
     public boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm)
     {
         /*
@@ -420,17 +449,9 @@ public class JcaTlsCrypto
         return true;
     }
 
-    public boolean hasRSAEncryption()
+    public boolean hasSRPAuthentication()
     {
-        try
-        {
-            createRSAEncryptionCipher();
-            return true;
-        }
-        catch (GeneralSecurityException e)
-        {
-            return false;
-        }
+        return true;
     }
 
     public TlsSecret createSecret(byte[] data)
