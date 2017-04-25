@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROutputStream;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -35,7 +34,7 @@ public class X509CertificateHolder
     {
         try
         {
-            return Certificate.getInstance(ASN1Primitive.fromByteArray(certEncoding));
+            return Certificate.getInstance(CertUtils.parseNonEmptyASN1(certEncoding));
         }
         catch (ClassCastException e)
         {

@@ -61,6 +61,7 @@ import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CRLEntryHolder;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -3042,6 +3043,37 @@ public class CertTest
         }
     }
 
+    private void zeroDataTest()
+        throws Exception
+    {
+        try
+        {
+            new X509CertificateHolder(new byte[0]);
+        }
+        catch (IOException e)
+        {
+            isTrue("no content found".equals(e.getMessage()));
+        }
+
+        try
+        {
+            new X509AttributeCertificateHolder(new byte[0]);
+        }
+        catch (IOException e)
+        {
+            isTrue("no content found".equals(e.getMessage()));
+        }
+
+        try
+        {
+            new X509CRLHolder(new byte[0]);
+        }
+        catch (IOException e)
+        {
+            isTrue("no content found".equals(e.getMessage()));
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -3109,6 +3141,8 @@ public class CertTest
         testNullDerNullCert();
 
         checkCertificate(18, emptyDNCert);
+
+        zeroDataTest();
     }
 
     private Extensions generateExtensions(Vector oids, Vector values)
