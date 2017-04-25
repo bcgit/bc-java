@@ -21,8 +21,14 @@ public class CMSContentInfoParser
         try
         {
             ASN1StreamParser in = new ASN1StreamParser(data);
-    
-            _contentInfo = new ContentInfoParser((ASN1SequenceParser)in.readObject());
+            ASN1SequenceParser seqParser = (ASN1SequenceParser)in.readObject();
+
+            if (seqParser == null)
+            {
+                throw new CMSException("No content found.");
+            }
+
+            _contentInfo = new ContentInfoParser(seqParser);
         }
         catch (IOException e)
         {
