@@ -255,7 +255,13 @@ class CMSUtils
     {
         try
         {
-            return ContentInfo.getInstance(in.readObject());
+            ContentInfo info = ContentInfo.getInstance(in.readObject());
+            if (info == null)
+            {
+                throw new CMSException("No content found.");
+            }
+
+            return info;
         }
         catch (IOException e)
         {
