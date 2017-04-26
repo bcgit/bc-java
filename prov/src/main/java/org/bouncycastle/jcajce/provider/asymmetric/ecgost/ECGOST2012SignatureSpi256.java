@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DSA;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.GOST3411Digest;
+import org.bouncycastle.crypto.digests.GOST3411_2012_256Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.ECGOST3410Signer;
@@ -25,16 +26,16 @@ import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 
-public class Signature12Spi
+public class ECGOST2012SignatureSpi256
     extends java.security.SignatureSpi
     implements PKCSObjectIdentifiers, X509ObjectIdentifiers
 {
     private Digest                  digest;
     private DSA                     signer;
 
-    public Signature12Spi()
+    public ECGOST2012SignatureSpi256()
     {
-        this.digest = new GOST3411Digest();
+        this.digest = new GOST3411_2012_256Digest();
         this.signer = new ECGOST3410Signer();
     }
 
