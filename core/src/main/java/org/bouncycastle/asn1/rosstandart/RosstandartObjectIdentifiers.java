@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.rosstandart;
 
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 
 public interface RosstandartObjectIdentifiers
@@ -7,6 +8,8 @@ public interface RosstandartObjectIdentifiers
     static final ASN1ObjectIdentifier rosstandart = new ASN1ObjectIdentifier("1.2.643.7");
 
     static final ASN1ObjectIdentifier id_tc26 = rosstandart.branch("1");
+
+    static final ASN1ObjectIdentifier id_tc26_constants = id_tc26.branch("2.1");
 
     static final ASN1ObjectIdentifier id_tc26_gost_3411_12_256 = id_tc26.branch("1.2.2");
 

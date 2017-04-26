@@ -6,24 +6,11 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
-import java.security.InvalidKeyException;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.security.Security;
-import java.security.Signature;
-import java.security.SignatureException;
-import java.security.UnrecoverableKeyException;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
@@ -358,6 +345,104 @@ public class GOST3410Test
         checkEquals(eck1, vKey);
     }
 
+
+    private void generationGost12Test() throws Exception {
+
+        byte[]                data = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
+
+        Signature s = Signature.getInstance("ECGOST3410-2012", "BC");
+        KeyPairGenerator g = KeyPairGenerator.getInstance("ECGOST3410-2012", "BC");
+
+        g.initialize(new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-256-paramSetA"), new SecureRandom());
+
+        KeyPair p = g.generateKeyPair();
+
+        PrivateKey sKey = p.getPrivate();
+        System.out.println(sKey);
+        PublicKey vKey = p.getPublic();
+        System.out.println(vKey);
+
+        s.initSign(sKey);
+
+        s.update(data);
+
+        byte [] sigBytes = s.sign();
+
+        s = Signature.getInstance("ECGOST3410-2012", "BC");
+//
+        s.initVerify(vKey);
+
+        s.update(data);
+
+        if (!s.verify(sigBytes))
+        {
+            fail("ECGOST3410-2012 verification failed");
+        }
+
+        //
+        // encoded test
+        //
+        KeyFactory f = KeyFactory.getInstance("ECGOST3410-2012", "BC");
+
+        X509EncodedKeySpec x509s = new X509EncodedKeySpec(vKey.getEncoded());
+        ECPublicKey eck1 = (ECPublicKey)f.generatePublic(x509s);
+
+        if (!eck1.getQ().equals(((ECPublicKey)vKey).getQ()))
+        {
+            fail("public number not decoded properly");
+        }
+
+        if (!eck1.getParameters().equals(((ECPublicKey)vKey).getParameters()))
+        {
+            fail("public parameters not decoded properly");
+        }
+
+        PKCS8EncodedKeySpec pkcs8 = new PKCS8EncodedKeySpec(sKey.getEncoded());
+        ECPrivateKey eck2 = (ECPrivateKey)f.generatePrivate(pkcs8);
+
+        if (!eck2.getD().equals(((ECPrivateKey)sKey).getD()))
+        {
+            fail("private number not decoded properly");
+        }
+
+        if (!eck2.getParameters().equals(((ECPrivateKey)sKey).getParameters()))
+        {
+            fail("private number not decoded properly");
+        }
+
+        eck2 = (ECPrivateKey)serializeDeserialize(sKey);
+        if (!eck2.getD().equals(((ECPrivateKey)sKey).getD()))
+        {
+            fail("private number not decoded properly");
+        }
+
+        if (!eck2.getParameters().equals(((ECPrivateKey)sKey).getParameters()))
+        {
+            fail("private number not decoded properly");
+        }
+
+        checkEquals(eck2, sKey);
+
+        if (!(eck2 instanceof PKCS12BagAttributeCarrier))
+        {
+            fail("private key not implementing PKCS12 attribute carrier");
+        }
+
+        eck1 = (ECPublicKey)serializeDeserialize(vKey);
+
+        if (!eck1.getQ().equals(((ECPublicKey)vKey).getQ()))
+        {
+            fail("public number not decoded properly");
+        }
+
+        if (!eck1.getParameters().equals(((ECPublicKey)vKey).getParameters()))
+        {
+            fail("public parameters not decoded properly");
+        }
+
+        checkEquals(eck1, vKey);
+    }
+
     private void keyStoreTest(PrivateKey sKey, PublicKey vKey)
         throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, NoSuchProviderException, SignatureException, InvalidKeyException, UnrecoverableKeyException
     {
@@ -501,9 +586,10 @@ public class GOST3410Test
     public void performTest()
         throws Exception
     {
-        ecGOST3410Test();
-        generationTest();
-        parametersTest();
+        generationGost12Test();
+//        ecGOST3410Test();
+//        generationTest();
+//        parametersTest();
     }
 
     public static void main(
