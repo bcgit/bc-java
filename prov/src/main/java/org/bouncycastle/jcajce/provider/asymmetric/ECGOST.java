@@ -52,16 +52,20 @@ public class ECGOST
             provider.addAlgorithm("Alg.Alias.KeyPairGenerator.ECGOST3410-2012", "ECGOST3410-2012");
             provider.addAlgorithm("Alg.Alias.KeyPairGenerator.GOST-3410-2012", "ECGOST3410-2012");
 
-            provider.addAlgorithm("Signature.ECGOST3410-2012", PREFIX + "Signature12Spi");
-            provider.addAlgorithm("Alg.Alias.Signature.ECGOST3410-2012", "ECGOST3410-2012");
-            provider.addAlgorithm("Alg.Alias.Signature.GOST-3410-2012", "ECGOST3410-2012");
+            provider.addAlgorithm("Signature.ECGOST3410-2012-256", PREFIX + "ECGOST2012SignatureSpi256");
+            provider.addAlgorithm("Alg.Alias.Signature.ECGOST3410-2012-256", "ECGOST3410-2012-256");
+            provider.addAlgorithm("Alg.Alias.Signature.GOST-3410-2012-256", "ECGOST3410-2012-256");
+
+            provider.addAlgorithm("Signature.ECGOST3410-2012-512", PREFIX + "ECGOST2012SignatureSpi512");
+            provider.addAlgorithm("Alg.Alias.Signature.ECGOST3410-2012-512", "ECGOST3410-2012-512");
+            provider.addAlgorithm("Alg.Alias.Signature.GOST-3410-2012-512", "ECGOST3410-2012-512");
 
             addSignatureAlgorithm(provider, "GOST3411-2012-256", "ECGOST3410-2012",
-                    PREFIX + "Signature12Spi",
+                    PREFIX + "ECGOST2012SignatureSpi256",
                     RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256);
 
             addSignatureAlgorithm(provider, "GOST3411-2012-512", "ECGOST3410-2012",
-                    PREFIX + "Signature12Spi",
+                    PREFIX + "ECGOST2012SignatureSpi512",
                     RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512);
 
 
