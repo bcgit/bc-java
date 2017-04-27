@@ -1,4 +1,4 @@
-package org.bouncycastle.jcajce.provider.asymmetric.ecgost;
+package org.bouncycastle.jcajce.provider.asymmetric.ecgost12;
 
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -6,12 +6,10 @@ import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DSA;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.GOST3411Digest;
 import org.bouncycastle.crypto.digests.GOST3411_2012_256Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.ECGOST3410Signer;
-import org.bouncycastle.jcajce.provider.asymmetric.ecgost.BCECGOST3410PublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.GOST3410Util;
 import org.bouncycastle.jce.interfaces.ECKey;
@@ -26,12 +24,17 @@ import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 
+/**
+ * Signature for GOST34.10 2012 256. Algorithm is the same as for GOST34.10 2001
+ */
 public class ECGOST2012SignatureSpi256
     extends java.security.SignatureSpi
     implements PKCSObjectIdentifiers, X509ObjectIdentifiers
 {
     private Digest                  digest;
     private DSA                     signer;
+    private int size = 64;
+    private int halfSize = 32;
 
     public ECGOST2012SignatureSpi256()
     {
@@ -125,27 +128,27 @@ public class ECGOST2012SignatureSpi256
 
         try
         {
-            byte[]          sigBytes = new byte[64];
+            byte[]          sigBytes = new byte[size];
             BigInteger[]    sig = signer.generateSignature(hash);
             byte[]          r = sig[0].toByteArray();
             byte[]          s = sig[1].toByteArray();
 
             if (s[0] != 0)
             {
-                System.arraycopy(s, 0, sigBytes, 32 - s.length, s.length);
+                System.arraycopy(s, 0, sigBytes, halfSize - s.length, s.length);
             }
             else
             {
-                System.arraycopy(s, 1, sigBytes, 32 - (s.length - 1), s.length - 1);
+                System.arraycopy(s, 1, sigBytes, halfSize - (s.length - 1), s.length - 1);
             }
             
             if (r[0] != 0)
             {
-                System.arraycopy(r, 0, sigBytes, 64 - r.length, r.length);
+                System.arraycopy(r, 0, sigBytes, size - r.length, r.length);
             }
             else
             {
-                System.arraycopy(r, 1, sigBytes, 64 - (r.length - 1), r.length - 1);
+                System.arraycopy(r, 1, sigBytes, size - (r.length - 1), r.length - 1);
             }
 
             return sigBytes;
@@ -168,12 +171,12 @@ public class ECGOST2012SignatureSpi256
 
         try
         {
-            byte[] r = new byte[32]; 
-            byte[] s = new byte[32];
+            byte[] r = new byte[halfSize];
+            byte[] s = new byte[halfSize];
 
-            System.arraycopy(sigBytes, 0, s, 0, 32);
+            System.arraycopy(sigBytes, 0, s, 0, halfSize);
 
-            System.arraycopy(sigBytes, 32, r, 0, 32);
+            System.arraycopy(sigBytes, halfSize, r, 0, halfSize);
             
             sig = new BigInteger[2];
             sig[0] = new BigInteger(1, r);
@@ -216,6 +219,6 @@ public class ECGOST2012SignatureSpi256
             PublicKey key)
     throws InvalidKeyException
     {
-        return (key instanceof BCECGOST3410PublicKey) ? ((BCECGOST3410PublicKey)key).engineGetKeyParameters() : ECUtil.generatePublicKeyParameter(key);
+        return (key instanceof BCECGOST3410_2012PublicKey) ? ((BCECGOST3410_2012PublicKey)key).engineGetKeyParameters() : ECUtil.generatePublicKeyParameter(key);
     }
 }
