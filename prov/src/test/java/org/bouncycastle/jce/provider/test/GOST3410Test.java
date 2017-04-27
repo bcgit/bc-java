@@ -15,7 +15,9 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
 
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
@@ -41,7 +43,7 @@ public class GOST3410Test
     private void ecGOST3410Test()
         throws Exception
     {
-        
+
         BigInteger r = new BigInteger("29700980915817952874371204983938256990422752107994319651632687982059210933395");
         BigInteger s = new BigInteger("46959264877825372965922731380059061821746083849389763294914877353246631700866");
 
@@ -345,12 +347,11 @@ public class GOST3410Test
         checkEquals(eck1, vKey);
     }
 
-
-    private void generationGost12Test() throws Exception {
+    private void generationGost12_256Test() throws Exception{
 
         byte[]                data = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
 
-        Signature s = Signature.getInstance("ECGOST3410-2012", "BC");
+        // 256
         KeyPairGenerator g = KeyPairGenerator.getInstance("ECGOST3410-2012", "BC");
 
         g.initialize(new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-256-paramSetA"), new SecureRandom());
@@ -358,9 +359,9 @@ public class GOST3410Test
         KeyPair p = g.generateKeyPair();
 
         PrivateKey sKey = p.getPrivate();
-        System.out.println(sKey);
         PublicKey vKey = p.getPublic();
-        System.out.println(vKey);
+
+        Signature s = Signature.getInstance("ECGOST3410-2012-256", "BC");
 
         s.initSign(sKey);
 
@@ -368,7 +369,12 @@ public class GOST3410Test
 
         byte [] sigBytes = s.sign();
 
-        s = Signature.getInstance("ECGOST3410-2012", "BC");
+        if(sigBytes.length != 64)
+        {
+            fail("ECGOST3410-2012-256 signature failed");
+        }
+
+        s = Signature.getInstance("ECGOST3410-2012-256", "BC");
 //
         s.initVerify(vKey);
 
@@ -376,15 +382,127 @@ public class GOST3410Test
 
         if (!s.verify(sigBytes))
         {
-            fail("ECGOST3410-2012 verification failed");
+            fail("ECGOST3410-2012-256 verification failed");
         }
 
         //
         // encoded test
         //
         KeyFactory f = KeyFactory.getInstance("ECGOST3410-2012", "BC");
-
         X509EncodedKeySpec x509s = new X509EncodedKeySpec(vKey.getEncoded());
+        ECPublicKey eck1 = (ECPublicKey)f.generatePublic(x509s);
+
+        if (!eck1.getQ().equals(((ECPublicKey)vKey).getQ()))
+        {
+            fail("public number not decoded properly");
+        }
+
+        if (!eck1.getParameters().equals(((ECPublicKey)vKey).getParameters()))
+        {
+            fail("public parameters not decoded properly");
+        }
+
+        PKCS8EncodedKeySpec pkcs8 = new PKCS8EncodedKeySpec(sKey.getEncoded());
+        ECPrivateKey eck2 = (ECPrivateKey)f.generatePrivate(pkcs8);
+
+        if (!eck2.getD().equals(((ECPrivateKey)sKey).getD()))
+        {
+            fail("private number not decoded properly");
+        }
+
+        if (!eck2.getParameters().equals(((ECPrivateKey)sKey).getParameters()))
+        {
+            fail("private number not decoded properly");
+        }
+
+        eck2 = (ECPrivateKey)serializeDeserialize(sKey);
+        if (!eck2.getD().equals(((ECPrivateKey)sKey).getD()))
+        {
+            fail("private number not decoded properly");
+        }
+
+        if (!eck2.getParameters().equals(((ECPrivateKey)sKey).getParameters()))
+        {
+            fail("private number not decoded properly");
+        }
+
+        checkEquals(eck2, sKey);
+
+        if (!(eck2 instanceof PKCS12BagAttributeCarrier))
+        {
+            fail("private key not implementing PKCS12 attribute carrier");
+        }
+
+        eck1 = (ECPublicKey)serializeDeserialize(vKey);
+
+        if (!eck1.getQ().equals(((ECPublicKey)vKey).getQ()))
+        {
+            fail("public number not decoded properly");
+        }
+
+        if (!eck1.getParameters().equals(((ECPublicKey)vKey).getParameters()))
+        {
+            fail("public parameters not decoded properly");
+        }
+
+        checkEquals(eck1, vKey);
+
+    }
+
+
+    private void generationGost12_512Test() throws Exception {
+
+        byte[]                data = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
+
+        KeyPairGenerator g = KeyPairGenerator.getInstance("ECGOST3410-2012", "BC");
+
+        g.initialize(new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-512-paramSetA"), new SecureRandom());
+
+        KeyPair p = g.generateKeyPair();
+
+        PrivateKey sKey = p.getPrivate();
+        PublicKey vKey = p.getPublic();
+
+        Signature s = Signature.getInstance("ECGOST3410-2012-512", "BC");
+
+        s.initSign(sKey);
+
+        s.update(data);
+
+        byte [] sigBytes = s.sign();
+        if(sigBytes.length != 128)
+        {
+            fail("ECGOST3410-2012-512 signature failed");
+        }
+
+        s = Signature.getInstance("ECGOST3410-2012-512", "BC");
+//
+        s.initVerify(vKey);
+
+        s.update(data);
+
+        if (!s.verify(sigBytes))
+        {
+            fail("ECGOST3410-2012-512 verification failed");
+        }
+
+        s = Signature.getInstance("ECGOST3410-2012-256", "BC");
+//
+        s.initVerify(vKey);
+
+        s.update(data);
+
+        if (s.verify(sigBytes))
+        {
+            fail("ECGOST3410-2012-256 verification failed");
+        }
+
+        //
+        // encoded test
+        //
+        KeyFactory f = KeyFactory.getInstance("ECGOST3410-2012", "BC");
+        byte[] encoded = vKey.getEncoded();
+        X509EncodedKeySpec x509s = new X509EncodedKeySpec(encoded);
         ECPublicKey eck1 = (ECPublicKey)f.generatePublic(x509s);
 
         if (!eck1.getQ().equals(((ECPublicKey)vKey).getQ()))
@@ -586,10 +704,11 @@ public class GOST3410Test
     public void performTest()
         throws Exception
     {
-        generationGost12Test();
-//        ecGOST3410Test();
-//        generationTest();
-//        parametersTest();
+        ecGOST3410Test();
+        generationTest();
+        generationGost12_256Test();
+        generationGost12_512Test();
+        parametersTest();
     }
 
     public static void main(
