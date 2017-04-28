@@ -20,6 +20,7 @@ import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.Extension;
@@ -53,6 +54,8 @@ public class TSPUtil
         digestLengths.put(TeleTrusTObjectIdentifiers.ripemd160.getId(), Integers.valueOf(20));
         digestLengths.put(TeleTrusTObjectIdentifiers.ripemd256.getId(), Integers.valueOf(32));
         digestLengths.put(CryptoProObjectIdentifiers.gostR3411.getId(), Integers.valueOf(32));
+        digestLengths.put(RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256.getId(), Integers.valueOf(32));
+        digestLengths.put(RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512.getId(), Integers.valueOf(64));
 
         digestNames.put(PKCSObjectIdentifiers.md5.getId(), "MD5");
         digestNames.put(OIWObjectIdentifiers.idSHA1.getId(), "SHA1");
@@ -69,6 +72,8 @@ public class TSPUtil
         digestNames.put(TeleTrusTObjectIdentifiers.ripemd160.getId(), "RIPEMD160");
         digestNames.put(TeleTrusTObjectIdentifiers.ripemd256.getId(), "RIPEMD256");
         digestNames.put(CryptoProObjectIdentifiers.gostR3411.getId(), "GOST3411");
+        digestNames.put(RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256.getId(), "GOST3411-2012-256");
+        digestNames.put(RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512.getId(), "GOST3411-2012-512");
     }
 
      /**
