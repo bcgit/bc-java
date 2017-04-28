@@ -347,6 +347,116 @@ public class GOST3410Test
         checkEquals(eck1, vKey);
     }
 
+
+    private void gost12Test() throws Exception {
+
+        KeyPairGenerator g = KeyPairGenerator.getInstance("ECGOST3410-2012", "BC");
+
+        g.initialize(new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-256-paramSetA"), new SecureRandom());
+
+        KeyPair p = g.generateKeyPair();
+
+        signatureTest("ECGOST3410-2012-256", 64, p);
+        encodedTest(p);
+
+
+    }
+
+    private void signatureTest(String signatureAlg, int expectedSignLen,  KeyPair p)
+            throws Exception {
+        byte[]                data = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
+
+        PrivateKey sKey = p.getPrivate();
+        PublicKey vKey = p.getPublic();
+        Signature s = Signature.getInstance(signatureAlg, "BC");
+        s.initSign(sKey);
+
+        s.update(data);
+
+        byte [] sigBytes = s.sign();
+
+        if(sigBytes.length != expectedSignLen)
+        {
+            fail(signatureAlg + " signature failed");
+        }
+
+        s = Signature.getInstance(signatureAlg, "BC");
+
+        s.initVerify(vKey);
+
+        s.update(data);
+
+        if (!s.verify(sigBytes))
+        {
+            fail(signatureAlg + " verification failed");
+        }
+
+    }
+
+    private void encodedTest(KeyPair p) throws Exception {
+        PrivateKey sKey = p.getPrivate();
+        PublicKey vKey = p.getPublic();
+
+        KeyFactory f = KeyFactory.getInstance("ECGOST3410-2012", "BC");
+        X509EncodedKeySpec x509s = new X509EncodedKeySpec(vKey.getEncoded());
+        ECPublicKey eck1 = (ECPublicKey)f.generatePublic(x509s);
+
+        if (!eck1.getQ().equals(((ECPublicKey)vKey).getQ()))
+        {
+            fail("public number not decoded properly");
+        }
+
+        if (!eck1.getParameters().equals(((ECPublicKey)vKey).getParameters()))
+        {
+            fail("public parameters not decoded properly");
+        }
+
+        PKCS8EncodedKeySpec pkcs8 = new PKCS8EncodedKeySpec(sKey.getEncoded());
+        ECPrivateKey eck2 = (ECPrivateKey)f.generatePrivate(pkcs8);
+
+        if (!eck2.getD().equals(((ECPrivateKey)sKey).getD()))
+        {
+            fail("private number not decoded properly");
+        }
+
+        if (!eck2.getParameters().equals(((ECPrivateKey)sKey).getParameters()))
+        {
+            fail("private number not decoded properly");
+        }
+
+        eck2 = (ECPrivateKey)serializeDeserialize(sKey);
+        if (!eck2.getD().equals(((ECPrivateKey)sKey).getD()))
+        {
+            fail("private number not decoded properly");
+        }
+
+        if (!eck2.getParameters().equals(((ECPrivateKey)sKey).getParameters()))
+        {
+            fail("private number not decoded properly");
+        }
+
+        checkEquals(eck2, sKey);
+
+        if (!(eck2 instanceof PKCS12BagAttributeCarrier))
+        {
+            fail("private key not implementing PKCS12 attribute carrier");
+        }
+
+        eck1 = (ECPublicKey)serializeDeserialize(vKey);
+
+        if (!eck1.getQ().equals(((ECPublicKey)vKey).getQ()))
+        {
+            fail("public number not decoded properly");
+        }
+
+        if (!eck1.getParameters().equals(((ECPublicKey)vKey).getParameters()))
+        {
+            fail("public parameters not decoded properly");
+        }
+
+        checkEquals(eck1, vKey);
+    }
+
     private void generationGost12_256Test() throws Exception{
 
         byte[]                data = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };

@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
@@ -70,6 +71,8 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  SHA512 = NISTObjectIdentifiers.id_sha512.intern();
     public static final ASN1ObjectIdentifier  MD5 = PKCSObjectIdentifiers.md5.intern();
     public static final ASN1ObjectIdentifier  GOST3411 = CryptoProObjectIdentifiers.gostR3411.intern();
+    public static final ASN1ObjectIdentifier  GOST3411_2012_256 = RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256.intern();
+    public static final ASN1ObjectIdentifier  GOST3411_2012_512 = RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512.intern();
     public static final ASN1ObjectIdentifier  RIPEMD128 = TeleTrusTObjectIdentifiers.ripemd128.intern();
     public static final ASN1ObjectIdentifier  RIPEMD160 = TeleTrusTObjectIdentifiers.ripemd160.intern();
     public static final ASN1ObjectIdentifier  RIPEMD256 = TeleTrusTObjectIdentifiers.ripemd256.intern();
