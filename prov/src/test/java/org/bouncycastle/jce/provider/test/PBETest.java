@@ -29,6 +29,7 @@ import org.bouncycastle.crypto.generators.OpenSSLPBEParametersGenerator;
 import org.bouncycastle.crypto.generators.PKCS12ParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -383,6 +384,46 @@ public class PBETest
         }
     }
 
+    public void testPKCS12HMac(
+        String  hmacName,
+        byte[]  output)
+    {
+        SecretKey           key;
+        byte[]              out;
+        Mac                 mac;
+
+        try
+        {
+            mac = Mac.getInstance(hmacName, "BC");
+        }
+        catch (Exception e)
+        {
+            fail("Failed - exception " + e.toString(), e);
+            return;
+        }
+
+        try
+        {
+            mac.init(new PKCS12Key("hello".toCharArray()), new PBEParameterSpec(new byte[20], 100));
+        }
+        catch (Exception e)
+        {
+            fail("Failed - exception " + e.toString(), e);
+            return;
+        }
+
+        mac.reset();
+
+        mac.update(message, 0, message.length);
+
+        out = mac.doFinal();
+
+        if (!Arrays.areEqual(out, output))
+        {
+            fail("Failed - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(out)));
+        }
+    }
+
     public void testPBEonSecretKeyHmac(
         String  hmacName,
         byte[]  output)
@@ -638,6 +679,24 @@ public class PBETest
         testCipherNameWithWrap("PBEWITHSHAAND128BITRC4", "RC4");
 
         checkPBE("PBKDF2WithHmacSHA1", true, "f14687fc31a66e2f7cc01d0a65f687961bd27e20", "6f6579193d6433a3e4600b243bb390674f04a615");
+
+        testPKCS12HMac("HMacSHA1", Hex.decode("bcc42174ccb04f425d9a5c8c4a95d6fd7c372911"));
+        testPKCS12HMac("HMacSHA256", Hex.decode("e1ae77e2d1dcc56a8befa3867ea3ff8c2163b01885504379412e525b120bf9ce"));
+        testPKCS12HMac("HMacSHA384", Hex.decode("1256a861351db2082f2ba827ca72cede54ee851f533962bba1fd97b500b6d6eb42aa4a51920aca0c817955feaf52d7f8"));
+        testPKCS12HMac("HMacSHA512", Hex.decode("9090898971914cb2e65eb1b083f1cad1ce9a9d386f963a2e2ede965fbce0a7121526b5f8aed83f81db60b97ced0bc4b0c27cf23407028cc2f289957f607cec98"));
+        testPKCS12HMac("HMacRIPEMD160", Hex.decode("cb1d8bdb6aca9e3fa8980d6eb41ab28a7eb2cfd6"));
+
+        try
+        {
+            Mac mac = Mac.getInstance("HMacRIPEMD256", "BC");
+
+            mac.init(new PKCS12Key("hello".toCharArray()), new PBEParameterSpec(new byte[20], 100));
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isTrue("wrong exception", "no PKCS12 mapping for HMAC: RIPEMD256/HMAC".equals(e.getMessage()));
+        }
 
         testMixedKeyTypes();
         testNullSalt();
