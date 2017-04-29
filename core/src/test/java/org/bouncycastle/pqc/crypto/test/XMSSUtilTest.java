@@ -9,6 +9,7 @@ import org.bouncycastle.util.Pack;
 
 /**
  * Test cases for XMSSUtil class.
+ * 
  */
 public class XMSSUtilTest
     extends TestCase
