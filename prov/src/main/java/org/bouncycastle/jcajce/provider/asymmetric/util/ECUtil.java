@@ -10,6 +10,7 @@ import java.util.Map;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.anssi.ANSSINamedCurves;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
+import org.bouncycastle.asn1.gm.GMNamedCurves;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
@@ -390,6 +391,10 @@ public class ECUtil
             if (params == null)
             {
                 params = TeleTrusTNamedCurves.getByOID(oid);
+            }
+            if (params == null)
+            {
+                params = GMNamedCurves.getByOID(oid);
             }
         }
 
