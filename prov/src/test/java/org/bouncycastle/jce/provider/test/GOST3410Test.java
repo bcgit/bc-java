@@ -356,13 +356,21 @@ public class GOST3410Test
 
         KeyPair p = g.generateKeyPair();
 
-        signatureTest("ECGOST3410-2012-256", 64, p);
-        encodedTest(p);
+        signatureGost12Test("ECGOST3410-2012-256", 64, p);
+        encodedGost12Test(p);
+
+
+        g.initialize(new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-512-paramSetA"), new SecureRandom());
+
+        p = g.generateKeyPair();
+
+        signatureGost12Test("ECGOST3410-2012-512", 128, p);
+        encodedGost12Test(p);
 
 
     }
 
-    private void signatureTest(String signatureAlg, int expectedSignLen,  KeyPair p)
+    private void signatureGost12Test(String signatureAlg, int expectedSignLen,  KeyPair p)
             throws Exception {
         byte[]                data = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
 
@@ -393,7 +401,7 @@ public class GOST3410Test
 
     }
 
-    private void encodedTest(KeyPair p) throws Exception {
+    private void encodedGost12Test(KeyPair p) throws Exception {
         PrivateKey sKey = p.getPrivate();
         PublicKey vKey = p.getPublic();
 
@@ -456,6 +464,8 @@ public class GOST3410Test
 
         checkEquals(eck1, vKey);
     }
+
+
 
     private void generationGost12_256Test() throws Exception{
 
@@ -814,11 +824,7 @@ public class GOST3410Test
     public void performTest()
         throws Exception
     {
-        ecGOST3410Test();
-        generationTest();
-        generationGost12_256Test();
-        generationGost12_512Test();
-        parametersTest();
+        gost12Test();
     }
 
     public static void main(

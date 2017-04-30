@@ -217,6 +217,10 @@ public class KeyFactorySpi
         }
     }
 
+    public static class ECGOST3410_2012 extends KeyFactorySpi{
+        public ECGOST3410_2012(){super("ECGOST3410-2012", BouncyCastleProvider.CONFIGURATION);}
+    }
+
     public static class ECDH
         extends KeyFactorySpi
     {
