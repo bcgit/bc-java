@@ -11,7 +11,7 @@ import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 
 /**
- * table of the available named parameters for GOST 3410-2001.
+ * table of the available named parameters for GOST 3410-2001 / 2012.
  */
 public class ECGOST3410NamedCurves
 {
