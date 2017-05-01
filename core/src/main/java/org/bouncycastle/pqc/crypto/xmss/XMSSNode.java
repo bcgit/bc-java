@@ -4,31 +4,35 @@ import java.io.Serializable;
 
 /**
  * Binary tree node.
- *
  */
-public final class XMSSNode implements Serializable {
+public final class XMSSNode
+    implements Serializable
+{
 
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	private final int height;
-	private final byte[] value;
+    private final int height;
+    private final byte[] value;
 
-	protected XMSSNode(int height, byte[] value) {
-		super();
-		this.height = height;
-		this.value = value;
-	}
+    protected XMSSNode(int height, byte[] value)
+    {
+        super();
+        this.height = height;
+        this.value = value;
+    }
 
-	public int getHeight() {
-		return height;
-	}
+    public int getHeight()
+    {
+        return height;
+    }
 
-	public byte[] getValue() {
-		return XMSSUtil.cloneArray(value);
-	}
+    public byte[] getValue()
+    {
+        return XMSSUtil.cloneArray(value);
+    }
 
-	@Override
-	protected XMSSNode clone() {
-		return new XMSSNode(getHeight(), getValue());
-	}
+    protected XMSSNode clone()
+    {
+        return new XMSSNode(getHeight(), getValue());
+    }
 }

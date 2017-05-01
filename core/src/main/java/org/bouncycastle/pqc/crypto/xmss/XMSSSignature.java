@@ -1,122 +1,140 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
 
-import org.bouncycastle.pqc.crypto.xmss.XMSSReducedSignature.Builder;
 import org.bouncycastle.util.Pack;
 
 /**
  * XMSS Signature.
- *
  */
-public final class XMSSSignature extends XMSSReducedSignature implements XMSSStoreableObjectInterface {
+public final class XMSSSignature
+    extends XMSSReducedSignature
+    implements XMSSStoreableObjectInterface
+{
 
-	private final int index;
-	private final byte[] random;
+    private final int index;
+    private final byte[] random;
 
-	private XMSSSignature(Builder builder) throws ParseException {
-		super(builder);
-		index = builder.index;
-		int n = getParams().getDigestSize();
-		byte[] tmpRandom = builder.random;
-		if (tmpRandom != null) {
-			if (tmpRandom.length != n) {
-				throw new IllegalArgumentException("size of random needs to be equal to size of digest");
-			}
-			random = tmpRandom;
-		} else {
-			random = new byte[n];
-		}
-	}
+    private XMSSSignature(Builder builder)
+        throws ParseException
+    {
+        super(builder);
+        index = builder.index;
+        int n = getParams().getDigestSize();
+        byte[] tmpRandom = builder.random;
+        if (tmpRandom != null)
+        {
+            if (tmpRandom.length != n)
+            {
+                throw new IllegalArgumentException("size of random needs to be equal to size of digest");
+            }
+            random = tmpRandom;
+        }
+        else
+        {
+            random = new byte[n];
+        }
+    }
 
-	public static class Builder extends XMSSReducedSignature.Builder {
-		
-		private final XMSSParameters params;
-		/* optional */
-		private int index = 0;
-		private byte[] random = null;
-		
-		public Builder(XMSSParameters params) {
-			super(params);
-			this.params = params;
-		}
-		
-		public Builder withIndex(int val) {
-			index = val;
-			return this;
-		}
-		
-		public Builder withRandom(byte[] val) {
-			random = XMSSUtil.cloneArray(val);
-			return this;
-		}
+    public static class Builder
+        extends XMSSReducedSignature.Builder
+    {
 
-		public Builder withSignature(byte[] val) {
-			if (val == null) {
-				throw new NullPointerException("signature == null");
-			}
-			int n = params.getDigestSize();
-			int len = params.getWOTSPlus().getParams().getLen();
-			int height = params.getHeight();
-			int indexSize = 4;
-			int randomSize = n;
-			int signatureSize = len * n;
-			int authPathSize = height * n;
-			int position = 0;
-			/* extract index */
-			index = Pack.bigEndianToInt(val, position);
-			position += indexSize;
+        private final XMSSParameters params;
+        /* optional */
+        private int index = 0;
+        private byte[] random = null;
+
+        public Builder(XMSSParameters params)
+        {
+            super(params);
+            this.params = params;
+        }
+
+        public Builder withIndex(int val)
+        {
+            index = val;
+            return this;
+        }
+
+        public Builder withRandom(byte[] val)
+        {
+            random = XMSSUtil.cloneArray(val);
+            return this;
+        }
+
+        public Builder withSignature(byte[] val)
+        {
+            if (val == null)
+            {
+                throw new NullPointerException("signature == null");
+            }
+            int n = params.getDigestSize();
+            int len = params.getWOTSPlus().getParams().getLen();
+            int height = params.getHeight();
+            int indexSize = 4;
+            int randomSize = n;
+            int signatureSize = len * n;
+            int authPathSize = height * n;
+            int position = 0;
+            /* extract index */
+            index = Pack.bigEndianToInt(val, position);
+            position += indexSize;
 			/* extract random */
-			random = XMSSUtil.extractBytesAtOffset(val, position, randomSize);
-			position += randomSize;
-			withReducedSignature(XMSSUtil.extractBytesAtOffset(val, position, signatureSize + authPathSize));
-			return this;
-		}
-		
-		public XMSSSignature build() throws ParseException {
-			return new XMSSSignature(this);
-		}
-	}
+            random = XMSSUtil.extractBytesAtOffset(val, position, randomSize);
+            position += randomSize;
+            withReducedSignature(XMSSUtil.extractBytesAtOffset(val, position, signatureSize + authPathSize));
+            return this;
+        }
 
-	@Override
-	public byte[] toByteArray() {
+        public XMSSSignature build()
+            throws ParseException
+        {
+            return new XMSSSignature(this);
+        }
+    }
+
+    public byte[] toByteArray()
+    {
 		/* index || random || signature || authentication path */
-		int n = getParams().getDigestSize();
-		int indexSize = 4;
-		int randomSize = n;
-		int signatureSize = getParams().getWOTSPlus().getParams().getLen() * n;
-		int authPathSize = getParams().getHeight() * n;
-		int totalSize = indexSize + randomSize + signatureSize + authPathSize;
-		byte[] out = new byte[totalSize];
-		int position = 0;
+        int n = getParams().getDigestSize();
+        int indexSize = 4;
+        int randomSize = n;
+        int signatureSize = getParams().getWOTSPlus().getParams().getLen() * n;
+        int authPathSize = getParams().getHeight() * n;
+        int totalSize = indexSize + randomSize + signatureSize + authPathSize;
+        byte[] out = new byte[totalSize];
+        int position = 0;
 		/* copy index */
-		XMSSUtil.intToBytesBigEndianOffset(out, index, position);
-		position += indexSize;
+        XMSSUtil.intToBytesBigEndianOffset(out, index, position);
+        position += indexSize;
 		/* copy random */
-		XMSSUtil.copyBytesAtOffset(out, random, position);
-		position += randomSize;
+        XMSSUtil.copyBytesAtOffset(out, random, position);
+        position += randomSize;
 		/* copy signature */
-		byte[][] signature = getWOTSPlusSignature().toByteArray();
-		for (int i = 0; i < signature.length; i++) {
-			XMSSUtil.copyBytesAtOffset(out, signature[i], position);
-			position += n;
-		}
+        byte[][] signature = getWOTSPlusSignature().toByteArray();
+        for (int i = 0; i < signature.length; i++)
+        {
+            XMSSUtil.copyBytesAtOffset(out, signature[i], position);
+            position += n;
+        }
 		/* copy authentication path */
-		for (int i = 0; i < getAuthPath().size(); i++) {
-			byte[] value = getAuthPath().get(i).getValue();
-			XMSSUtil.copyBytesAtOffset(out, value, position);
-			position += n;
-		}
-		return out;
-	}
+        for (int i = 0; i < getAuthPath().size(); i++)
+        {
+            byte[] value = getAuthPath().get(i).getValue();
+            XMSSUtil.copyBytesAtOffset(out, value, position);
+            position += n;
+        }
+        return out;
+    }
 
-	public int getIndex() {
-		return index;
-	}
+    public int getIndex()
+    {
+        return index;
+    }
 
-	public byte[] getRandom() {
-		return XMSSUtil.cloneArray(random);
-	}
+    public byte[] getRandom()
+    {
+        return XMSSUtil.cloneArray(random);
+    }
 }
