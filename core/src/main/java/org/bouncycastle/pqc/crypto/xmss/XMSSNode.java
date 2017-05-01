@@ -3,48 +3,32 @@ package org.bouncycastle.pqc.crypto.xmss;
 import java.io.Serializable;
 
 /**
- * Node of the binary tree.
+ * Binary tree node.
  *
  */
-public class XMSSNode
-    implements Serializable
-{
+public final class XMSSNode implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-    private int height;
-    private byte[] value;
+	private final int height;
+	private final byte[] value;
 
-    public XMSSNode(int height, byte[] value)
-    {
-        super();
-        this.height = height;
-        this.value = value;
-    }
+	protected XMSSNode(int height, byte[] value) {
+		super();
+		this.height = height;
+		this.value = value;
+	}
 
-    public int getHeight()
-    {
-        return height;
-    }
+	public int getHeight() {
+		return height;
+	}
 
-    public void setHeight(int height)
-    {
-        this.height = height;
-    }
+	public byte[] getValue() {
+		return XMSSUtil.cloneArray(value);
+	}
 
-    public byte[] getValue()
-    {
-        return XMSSUtil.cloneArray(value);
-    }
-
-    public void setValue(byte[] value)
-    {
-        this.value = value;
-    }
-
-    @Override
-    public XMSSNode clone()
-    {
-        return new XMSSNode(getHeight(), getValue());
-    }
+	@Override
+	protected XMSSNode clone() {
+		return new XMSSNode(getHeight(), getValue());
+	}
 }
