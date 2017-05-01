@@ -41,9 +41,9 @@ public class Properties
     {
         String[] p = System.getProperty(propertyName, "").split(",");
         HashSet<String> set = new HashSet<String>();
-        for (String j : p)
+        for (int i = 0; i != p.length; i++)
         {
-            set.add(Strings.toLowerCase(j).trim());
+            set.add(Strings.toLowerCase(p[i]).trim());
         }
         return Collections.unmodifiableSet(set);
     }
