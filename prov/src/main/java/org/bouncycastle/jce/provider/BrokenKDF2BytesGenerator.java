@@ -77,7 +77,7 @@ public class BrokenKDF2BytesGenerator
             throw new DataLengthException("output buffer too small");
         }
 
-        long    oBits = len * 8;
+        long    oBits = len * 8L;
 
         //
         // this is at odds with the standard implementation, the
