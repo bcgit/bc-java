@@ -77,15 +77,15 @@ public class BrokenKDF2BytesGenerator
             throw new DataLengthException("output buffer too small");
         }
 
-        long    oBits = len * 8;
+        long    oBits = len * 8L;
 
         //
         // this is at odds with the standard implementation, the
-        // maximum value should be hBits * (2^23 - 1) where hBits
+        // maximum value should be hBits * (2^32 - 1) where hBits
         // is the digest output size in bits. We can't have an
         // array with a long index at the moment...
         //
-        if (oBits > (digest.getDigestSize() * 8 * (2L^32 - 1)))
+        if (oBits > (digest.getDigestSize() * 8L * (1L<<32 - 1)))
         {
             new IllegalArgumentException("Output length to large");
         }
