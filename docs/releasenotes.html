@@ -29,6 +29,17 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2016, December 23
 <ul>
 <li>A class cast exception for master certification removal in PGPPublicKey.removeCertification() by certification has been fixed.</li>
 <li>GOST GOFB 28147-89 mode had an edge condition concerning the incorrect calculation of N4 (see section 6.1 of RFC 5830) affecting about 1% of IVs. This has been fixed.</li>
+<li>The X.509 PolicyConstraints class was using implicit rather than explicit tagging for the SkipCerts field. This has been fixed.</li>
+<li>Key expiration in the OpenPGP is now calculated for ambiguous self signatures using the most recently created self-signature, in line with GPG and the recommendation in RFC 4880.</li>
+</ul>
+<h3>2.2.3 Additional Features and Functionality</h3>
+<ul>
+<li>ARIA (RFC 5794) is now supported by the provider and the lightweight API.</li>
+<li>SM2 signatures, key exchange, and public key encryption has been added to the lightweight API.</li>
+</ul>
+<h3>2.1.3 Security Related Changes</h3>
+<ul>
+<li>The default parameter sizes for DH and DSA are now 2048. If you have been relying on key pair generation without passing in parameters generated keys will now be larger.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>

@@ -26,14 +26,14 @@ public class CMCStatusTest
 
     // From Page 68, CMC: Structures RFC 5272
     private static Object[][] types = new Object[][]{
-        {"success", 0L},
+        {"success", new Long(0L) },
         // -- reserved            (1),
-        {"failed", 2L},
-        {"pending", 3L},
-        {"noSupport", 4L},
-        {"confirmRequired", 5L},
-        {"popRequired", 6L},
-        {"partial", 7L}
+        {"failed", new Long(2L) },
+        {"pending", new Long(3L) },
+        {"noSupport", new Long(4L) },
+        {"confirmRequired", new Long(5L) },
+        {"popRequired", new Long(6L) },
+        {"partial", new Long(7L) }
     };
     private static Map typesMap = new HashMap();
 
@@ -66,7 +66,7 @@ public class CMCStatusTest
         for (Iterator rangeKeys = range.keySet().iterator(); rangeKeys.hasNext(); )
         {
             Object j = rangeKeys.next();
-            if (!typesMap.containsKey(((ASN1Integer)j).getValue().longValue()))
+            if (!typesMap.containsKey(new Long(((ASN1Integer)j).getValue().longValue())))
             {
                 fail("The 'range' map in CMCStatus contains a value not in the test ('typesMap') map, value was: " + j.toString());
             }
@@ -76,7 +76,7 @@ public class CMCStatusTest
         for (Iterator typeKeys = typesMap.keySet().iterator(); typeKeys.hasNext(); )
         {
             Object j = typeKeys.next();
-            if (!range.containsKey(new ASN1Integer((Long)j)))
+            if (!range.containsKey(new ASN1Integer(((Long)j).longValue())))
             {
                 fail("The 'typesMap' map in CMCStatusTest contains a value not in the CMCStatus ('range') map, value was: " + j.toString());
             }

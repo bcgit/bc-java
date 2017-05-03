@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -212,8 +213,9 @@ public class HttpAuth
             throw new IOException("unable to process URL in request: " + e.getMessage());
         }
 
-        for (String k : parts.keySet())
+        for (Iterator it = parts.keySet().iterator(); it.hasNext();)
         {
+            Object k = it.next();
             if (!validParts.contains(k))
             {
                 throw new ESTException("Unrecognised entry in WWW-Authenticate header: '" + k + "'");
@@ -261,14 +263,14 @@ public class HttpAuth
 
             qop = Strings.toLowerCase(qop);
             String[] s = qop.split(",");
-            for (String j : s)
+            for (int j = 0; j != s.length; j++)
             {
-                if (!j.equals("auth") && !j.equals("auth-int"))
+                if (!s[j].equals("auth") && !s[j].equals("auth-int"))
                 {
                     throw new ESTException("QoP value unknown: '" + j + "'");
                 }
 
-                String jt = j.trim();
+                String jt = s[j].trim();
                 if (qopMods.contains(jt))
                 {
                     continue;

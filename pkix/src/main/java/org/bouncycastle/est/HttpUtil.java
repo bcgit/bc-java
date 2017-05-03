@@ -3,6 +3,7 @@ package org.bouncycastle.est;
 
 import java.io.StringWriter;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 class HttpUtil
@@ -21,8 +22,10 @@ class HttpUtil
         sw.write(prefix);
         sw.write(' ');
         boolean comma = false;
-        for (Map.Entry<String, String> ent : kv.entrySet())
+        for (Iterator it = kv.entrySet().iterator(); it.hasNext();)
         {
+            Map.Entry<String, String> ent = (Map.Entry<String, String>)it.next();
+
             if (!comma)
             {
                 comma = true;
@@ -167,7 +170,7 @@ class HttpUtil
 
     }
 
-    public static class Headers
+    static class Headers
         extends HashMap<String, String[]>
     {
         public Headers()
@@ -202,8 +205,9 @@ class HttpUtil
                 return header;
             }
 
-            for (String k : keySet())
+            for (Iterator it = keySet().iterator(); it.hasNext();)
             {
+                String k = (String)it.next();
                 if (header.equalsIgnoreCase(k))
                 {
                     return k;
@@ -236,16 +240,26 @@ class HttpUtil
                 set(key, value);
             }
         }
-
-        @Override
+        
         public Object clone()
         {
             Headers n = new Headers();
-            for (Map.Entry<String, String[]> v : entrySet())
+            for (Iterator it = entrySet().iterator(); it.hasNext();)
             {
-                n.put(v.getKey(), v.getValue());
+                Map.Entry v = (Map.Entry)it.next();
+
+                n.put((String)v.getKey(), copy((String[])v.getValue()));
             }
             return n;
+        }
+
+        private String[] copy(String[] vs)
+        {
+            String[] rv = new String[vs.length];
+
+            System.arraycopy(vs, 0, rv, 0, rv.length);
+            
+            return rv;
         }
     }
 

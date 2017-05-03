@@ -3,6 +3,7 @@ package org.bouncycastle.est;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URL;
+import java.util.Map;
 
 /**
  * Implements a basic http request.
@@ -45,9 +46,9 @@ public class ESTRequest
         return url;
     }
 
-    public HttpUtil.Headers getHeaders()
+    public Map<String, String[]> getHeaders()
     {
-        return headers;
+        return (Map<String, String[]>)headers.clone();
     }
 
     public ESTHijacker getHijacker()
