@@ -185,22 +185,19 @@ public class CMSSignedDataParser
             {
                 ASN1OctetStringParser octs = (ASN1OctetStringParser)contentParser;
 
-                if (octs != null)
-                {
-                    CMSTypedStream ctStr = new CMSTypedStream(
-                        cont.getContentType(), octs.getOctetStream());
+                CMSTypedStream ctStr = new CMSTypedStream(
+                    cont.getContentType(), octs.getOctetStream());
 
-                    if (_signedContent == null)
-                    {
-                        _signedContent = ctStr;
-                    }
-                    else
-                    {
-                        //
-                        // content passed in, need to read past empty encapsulated content info object if present
-                        //
-                        ctStr.drain();
-                    }
+                if (_signedContent == null)
+                {
+                    _signedContent = ctStr;
+                }
+                else
+                {
+                    //
+                    // content passed in, need to read past empty encapsulated content info object if present
+                    //
+                    ctStr.drain();
                 }
             }
             else if (contentParser != null)
