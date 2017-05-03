@@ -50,6 +50,38 @@ public abstract class SimpleTest
     }
 
     protected void isEquals(
+        int a,
+        int b)
+    {
+        if (a != b)
+        {
+            throw new TestFailedException(SimpleTestResult.failed(this, "no message"));
+        }
+    }
+
+    protected void isEquals(
+        String message,
+        boolean a,
+        boolean b)
+    {
+        if (a != b)
+        {
+            throw new TestFailedException(SimpleTestResult.failed(this, message));
+        }
+    }
+
+    protected void isEquals(
+        String message,
+        long a,
+        long b)
+    {
+        if (a != b)
+        {
+            throw new TestFailedException(SimpleTestResult.failed(this, message));
+        }
+    }
+
+    protected void isEquals(
         String message,
         Object a,
         Object b)

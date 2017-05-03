@@ -53,11 +53,11 @@ public class RevokeRequestTest
             }
             if ((t & 2) == 2)
             {
-                passphrase = new DEROctetString(Pack.longToBigEndian(System.nanoTime()));
+                passphrase = new DEROctetString(Pack.longToBigEndian(System.currentTimeMillis()));
             }
             if ((t & 4) == 4)
             {
-                comment = new DERUTF8String(Long.toOctalString(System.nanoTime()));
+                comment = new DERUTF8String("T" + Long.toOctalString(System.currentTimeMillis()));
             }
 
             RevokeRequest rr = new RevokeRequest(

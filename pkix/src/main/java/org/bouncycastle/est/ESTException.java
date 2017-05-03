@@ -74,8 +74,7 @@ public class ESTException
     {
         return cause;
     }
-
-    @Override
+    
     public String getMessage()
     {
         return super.getMessage() + " HTTP Status Code: " + statusCode;
