@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -111,7 +112,6 @@ class DefaultESTClient
         Source socketSource = null;
         try
         {
-
             socketSource = sslSocketProvider.makeSource(c.getURL().getHost(), c.getURL().getPort());
             if (c.getListener() != null)
             {
@@ -135,46 +135,58 @@ class DefaultESTClient
 
             String req = c.getURL().getPath() + ((c.getURL().getQuery() != null) ? c.getURL().getQuery() : "");
 
-            c.getHeaders().ensureHeader("Connection", "close");
+            ESTRequestBuilder rb = new ESTRequestBuilder(c);
+
+            Map<String, String[]> headers = c.getHeaders();
+
+            if (!headers.containsKey("Connection"))
+            {
+                rb.addHeader("Connection",  "close" );
+            }
 
             // Replace host header.
             URL u = c.getURL();
             if (u.getPort() > -1)
             {
-                c.getHeaders().set("Host", String.format("%s:%d", u.getHost(), u.getPort()));
+                rb.setHeader("Host", String.format("%s:%d", u.getHost(), u.getPort()));
             }
             else
             {
-                c.getHeaders().set("Host", u.getHost());
+                rb.setHeader("Host", u.getHost());
             }
 
 
-            writeLine(os, c.getMethod() + " " + req + " HTTP/1.1");
+            ESTRequest rc = rb.build();
+
+            writeLine(os, rc.getMethod() + " " + req + " HTTP/1.1");
 
 
-            for (Map.Entry<String, String[]> ent : c.getHeaders().entrySet())
+            for (Iterator it = rc.getHeaders().entrySet().iterator(); it.hasNext();)
             {
-                for (String v : ent.getValue())
+                Map.Entry<String, String[]> ent = (Map.Entry<String, String[]>)it.next();
+                String[] vs = (String[])ent.getValue();
+
+                for (int i = 0; i != vs.length; i++)
                 {
-                    writeLine(os, ent.getKey() + ": " + v);
+                    writeLine(os, ent.getKey() + ": " + vs[i]);
                 }
             }
 
             os.write(CRLF);
             os.flush();
 
-            c.writeData(os);
+            rc.writeData(os);
 
             os.flush();
 
-            if (c.getHijacker() != null)
+            if (rc.getHijacker() != null)
             {
-                res = c.getHijacker().hijack(c, socketSource);
+                res = rc.getHijacker().hijack(rc, socketSource);
                 return res;
             }
             else
             {
-                res = new ESTResponse(c, socketSource);
+                res = new ESTResponse(rc, socketSource);
             }
 
             return res;
