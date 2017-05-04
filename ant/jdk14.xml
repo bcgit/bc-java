@@ -27,7 +27,9 @@
                 <exclude name="**/xmss/**/*.java" />
             </fileset>
             <fileset dir="pg/src/main/java" />
-            <fileset dir="pkix/src/main/java" />
+            <fileset dir="pkix/src/main/java" >
+                <exclude name="**/est/**/*.java" />
+            </fileset>
             <fileset dir="mail/src/main/java">
                 <exclude name="**/ValidateSignedMail.java"/>
             </fileset>
