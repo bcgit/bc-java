@@ -1178,7 +1178,7 @@ public class NewSMIMESignedTest
         verifySigners(s.getCertificates(), s.getSignerInfos());
     }
 
-    public void testPSSVarientSalt()
+    public void testPSSVariantSalt()
         throws Exception
     {
         MimeMessage message = loadMessage("openssl-signed-sha256-non-default-salt-length.eml");
