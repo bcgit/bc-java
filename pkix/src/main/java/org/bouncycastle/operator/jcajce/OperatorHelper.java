@@ -318,7 +318,7 @@ class OperatorHelper
         {
             ASN1Sequence seq = ASN1Sequence.getInstance(sigAlgId.getParameters());
           
-            if (seq != null && seq.size() != 0)
+            if (notDefaultPSSParams(seq))
             {
                 try
                 {
@@ -483,5 +483,32 @@ class OperatorHelper
         }
 
         return oid.getId();
+    }
+
+    // for our purposes default includes varient digest with salt the same size as digest
+    private boolean notDefaultPSSParams(ASN1Sequence seq)
+        throws GeneralSecurityException
+    {
+        if (seq == null || seq.size() == 0)
+        {
+            return false;
+        }
+
+        RSASSAPSSparams pssParams = RSASSAPSSparams.getInstance(seq);
+
+        if (!pssParams.getMaskGenAlgorithm().getAlgorithm().equals(PKCSObjectIdentifiers.id_mgf1))
+        {
+            return true;
+        }
+
+        // same digest for sig and MGF1
+        if (!pssParams.getHashAlgorithm().equals(AlgorithmIdentifier.getInstance(pssParams.getMaskGenAlgorithm().getParameters())))
+        {
+            return true;
+        }
+
+        MessageDigest digest = createDigest(pssParams.getHashAlgorithm());
+
+        return pssParams.getSaltLength().intValue() != digest.getDigestLength();
     }
 }

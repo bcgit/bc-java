@@ -68,6 +68,7 @@
             </fileset>
             <fileset dir="pg/src/test/java" />
             <fileset dir="pkix/src/test/java" >
+                <exclude name="**/est/**/*.java" />
                 <exclude name="**/TimeStampTokenInfoUnitTest.java"/>
             </fileset>
             <fileset dir="mail/src/test/java" />
