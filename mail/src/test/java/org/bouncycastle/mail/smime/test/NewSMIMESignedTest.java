@@ -1178,6 +1178,16 @@ public class NewSMIMESignedTest
         verifySigners(s.getCertificates(), s.getSignerInfos());
     }
 
+    public void testPSSVarientSalt()
+        throws Exception
+    {
+        MimeMessage message = loadMessage("openssl-signed-sha256-non-default-salt-length.eml");
+
+        SMIMESigned s = new SMIMESigned((MimeMultipart)message.getContent());
+
+        verifySigners(s.getCertificates(), s.getSignerInfos());
+    }
+
     public void testMultiAlternative()
         throws Exception
     {
