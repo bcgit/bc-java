@@ -23,6 +23,7 @@ import javax.crypto.Cipher;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
@@ -310,6 +311,27 @@ class OperatorHelper
             else
             {
                 throw e;
+            }
+        }
+
+        if (sigAlgId.getAlgorithm().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
+        {
+            ASN1Sequence seq = ASN1Sequence.getInstance(sigAlgId.getParameters());
+          
+            if (seq.size() != 0)
+            {
+                try
+                {
+                    AlgorithmParameters algParams = helper.createAlgorithmParameters("PSS");
+
+                    algParams.init(seq.getEncoded());
+
+                    sig.setParameter(algParams.getParameterSpec(PSSParameterSpec.class));
+                }
+                catch (IOException e)
+                {
+                    throw new GeneralSecurityException("unable to process PSS parameters", e);
+                }
             }
         }
 
