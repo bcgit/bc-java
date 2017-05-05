@@ -318,7 +318,7 @@ class OperatorHelper
         {
             ASN1Sequence seq = ASN1Sequence.getInstance(sigAlgId.getParameters());
           
-            if (seq.size() != 0)
+            if (seq != null && seq.size() != 0)
             {
                 try
                 {
@@ -330,7 +330,7 @@ class OperatorHelper
                 }
                 catch (IOException e)
                 {
-                    throw new GeneralSecurityException("unable to process PSS parameters", e);
+                    throw new GeneralSecurityException("unable to process PSS parameters: " + e.getMessage());
                 }
             }
         }
