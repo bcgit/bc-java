@@ -129,8 +129,6 @@ public class XMSS {
 	 *            XMSS private key.
 	 * @param publicKey
 	 *            XMSS public key.
-	 * @param bdsState
-	 *            BDS state.
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 */
@@ -288,7 +286,7 @@ public class XMSS {
 	 *            Left node.
 	 * @param right
 	 *            Right node.
-	 * @param hashTreeAddress
+	 * @param address
 	 *            Address.
 	 * @return Randomized hash of parent of left / right node.
 	 */
@@ -415,7 +413,7 @@ public class XMSS {
 	 *
 	 * @param messageDigest
 	 *            Message digest of length n.
-	 * @param address
+	 * @param otsHashAddress
 	 *            OTS hash address.
 	 * @return XMSS signature.
 	 */
@@ -502,8 +500,7 @@ public class XMSS {
 	 * Derive WOTS+ secret key for specific index as in XMSS ref impl Andreas
 	 * Huelsing.
 	 *
-	 * @param index
-	 *            Index.
+	 * @param otsHashAddress
 	 * @return WOTS+ secret key at index.
 	 */
 	protected byte[] getWOTSPlusSecretKey(OTSHashAddress otsHashAddress) {
