@@ -31,7 +31,7 @@ public class GMNamedCurves
     /*
      * SM2SysParams
      */
-    static X9ECParametersHolder SM2SysParams = new X9ECParametersHolder()
+    static X9ECParametersHolder sm2_P256 = new X9ECParametersHolder()
     {
         protected X9ECParameters createParameters()
         {
@@ -66,7 +66,7 @@ public class GMNamedCurves
 
     static
     {
-        defineCurve("SM2SysParams", GMObjectIdentifiers.SM2_Elliptic_Curve_Cryptography, SM2SysParams);
+        defineCurve("SM2-P256", GMObjectIdentifiers.sm2_Elliptic_Curve_Cryptography, sm2_P256);
     }
 
     public static X9ECParameters getByName(

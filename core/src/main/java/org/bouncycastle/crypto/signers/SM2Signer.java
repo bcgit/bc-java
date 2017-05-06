@@ -51,12 +51,21 @@ public class SM2Signer
 
         if (forSigning)
         {
-            ParametersWithRandom rParam = (ParametersWithRandom)baseParam;
+            if (baseParam instanceof ParametersWithRandom)
+            {
+                ParametersWithRandom rParam = (ParametersWithRandom)baseParam;
 
-            ecKey = (ECKeyParameters)rParam.getParameters();
-            ecParams = ecKey.getParameters();
+                ecKey = (ECKeyParameters)rParam.getParameters();
+                ecParams = ecKey.getParameters();
+                kCalculator.init(ecParams.getN(), rParam.getRandom());
+            }
+            else
+            {
+                ecKey = (ECKeyParameters)baseParam;
+                ecParams = ecKey.getParameters();
+                kCalculator.init(ecParams.getN(), new SecureRandom());
+            }
             pubPoint = ecParams.getG().multiply(((ECPrivateKeyParameters)ecKey).getD()).normalize();
-            kCalculator.init(ecParams.getN(), rParam.getRandom());
         }
         else
         {

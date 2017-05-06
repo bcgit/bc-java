@@ -82,6 +82,7 @@ import org.bouncycastle.jce.X509KeyUsage;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.interfaces.ECPointEncoder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
@@ -1698,6 +1699,72 @@ public class CertTest
         }
     }
 
+    /**
+     * we generate a self signed certificate for the sake of testing - DSA
+     */
+    public void checkSm3WithSm2Creation()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        PrivateKey privKey;
+        PublicKey pubKey;
+
+        try
+        {
+            KeyPairGenerator g = KeyPairGenerator.getInstance("EC", "BC");
+
+            g.initialize(new ECNamedCurveGenParameterSpec("SM2-P256"));
+
+            KeyPair p = g.generateKeyPair();
+
+            privKey = p.getPrivate();
+            pubKey = p.getPublic();
+        }
+        catch (Exception e)
+        {                               e.printStackTrace();
+            fail("error setting up keys - " + e.toString());
+            return;
+        }
+
+        //
+        // distinguished name table.
+        //
+        X500NameBuilder builder = createStdBuilder();
+
+        //
+        // extensions
+        //
+
+        //
+        // create the certificate - version 1
+        //
+
+        ContentSigner sigGen = new JcaContentSignerBuilder("SM3withSM2").setProvider(BC).build(privKey);
+        JcaX509v1CertificateBuilder certGen = new JcaX509v1CertificateBuilder(
+            builder.build(),
+            BigInteger.valueOf(1),
+            new Date(System.currentTimeMillis() - 50000),
+            new Date(System.currentTimeMillis() + 50000),
+            builder.build(),
+            pubKey);
+
+
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
+
+        cert.checkValidity(new Date());
+
+        cert.verify(pubKey);
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(cert.getEncoded());
+        CertificateFactory fact = CertificateFactory.getInstance("X.509", BC);
+
+        cert = (X509Certificate)fact.generateCertificate(bIn);
+
+        // System.out.println(cert);
+    }
+
     private void checkComparison(byte[] encCert)
         throws NoSuchProviderException, CertificateException
     {
@@ -3157,6 +3224,8 @@ public class CertTest
         checkCreation5();
 
         checkCreation6();
+
+        checkSm3WithSm2Creation();
 
         createECCert("SHA1withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA1);
         createECCert("SHA224withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA224);
