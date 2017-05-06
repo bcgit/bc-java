@@ -366,14 +366,9 @@ public final class BDS implements Serializable {
 		return ret;
 	}
 
-	protected void validate(boolean isStateForRootTree) {
+	protected void validate() {
 		if (treeHeight != xmss.getParams().getHeight()) {
 			throw new IllegalStateException("wrong height");
-		}
-		if (isStateForRootTree) {
-			if (!XMSSUtil.compareByteArray(root.getValue(), xmss.getRoot())) {
-				throw new IllegalStateException("root in BDS state does not match root of public / private key");
-			}
 		}
 		if (authenticationPath == null) {
 			throw new IllegalStateException("authenticationPath == null");
