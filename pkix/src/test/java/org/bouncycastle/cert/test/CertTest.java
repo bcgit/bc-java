@@ -1715,7 +1715,7 @@ public class CertTest
         {
             KeyPairGenerator g = KeyPairGenerator.getInstance("EC", "BC");
 
-            g.initialize(new ECNamedCurveGenParameterSpec("SM2-P256"));
+            g.initialize(new ECNamedCurveGenParameterSpec("sm2p256v1"));
 
             KeyPair p = g.generateKeyPair();
 
@@ -1723,7 +1723,7 @@ public class CertTest
             pubKey = p.getPublic();
         }
         catch (Exception e)
-        {                               e.printStackTrace();
+        {
             fail("error setting up keys - " + e.toString());
             return;
         }

@@ -28,10 +28,8 @@ public class GM
 
         public void configure(ConfigurableProvider provider)
         {
-
-            provider.addAlgorithm("Signature.SM3withSM2", PREFIX + "GMSignatureSpi$sm3WithSM2");
-
-            provider.addAlgorithm("Alg.Alias.Signature." + GMObjectIdentifiers.sm2_signing_with_SM3, "SM3withSM2");
+            provider.addAlgorithm("Signature.SM3WITHSM2", PREFIX + "GMSignatureSpi$sm3WithSM2");
+            provider.addAlgorithm("Alg.Alias.Signature." + GMObjectIdentifiers.sm2sign_with_sm3, "SM3WITHSM2");
         }
     }
 }
