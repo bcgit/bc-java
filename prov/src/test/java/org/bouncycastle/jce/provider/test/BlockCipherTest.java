@@ -901,8 +901,20 @@ public class BlockCipherTest
                 System.arraycopy(input, 0, input2, input.length * 2, input.length);
                 System.arraycopy(input, 0, input2, input.length * 3, input.length);
 
+                if (algorithm.indexOf("GCM") > 0)
+                {
+                    out = Cipher.getInstance(algorithm, "BC");
+                    out.init(Cipher.ENCRYPT_MODE, key, rand);
+                }
+
                 byte[] output2 = out.doFinal(input2);
 
+                if (algorithm.indexOf("GCM") > 0)
+                {
+                    out = Cipher.getInstance(algorithm, "BC");
+                    out.init(Cipher.ENCRYPT_MODE, key, rand);
+                }
+                
                 byte[] out1 = new byte[input2.length / 2 - out.getBlockSize() * 2 - 1];
 
                 try
