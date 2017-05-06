@@ -29,7 +29,8 @@ public class XMSSMTTest extends TestCase {
 		byte[] publicKey = xmssMT.exportPublicKey();
 		String expectedPrivateKey = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001f5bb70f454d7c7bda84d207c5a0d47211af7b489e839d2294cc8c9d5522a8ae";
 		String expectedPublicKey = "1f5bb70f454d7c7bda84d207c5a0d47211af7b489e839d2294cc8c9d5522a8ae0000000000000000000000000000000000000000000000000000000000000000";
-		assertEquals(true, XMSSUtil.compareByteArray(Hex.decode(expectedPrivateKey), privateKey));
+		byte[] strippedPrivateKey = XMSSUtil.extractBytesAtOffset(privateKey, 0, (Hex.decode(expectedPrivateKey).length));
+		assertEquals(true, XMSSUtil.compareByteArray(Hex.decode(expectedPrivateKey), strippedPrivateKey));
 		assertEquals(true, XMSSUtil.compareByteArray(Hex.decode(expectedPublicKey), publicKey));
 	}
 	
@@ -41,10 +42,10 @@ public class XMSSMTTest extends TestCase {
 		byte[] publicKey = xmssMT.exportPublicKey();
 		String expectedPrivateKey = "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e5a47fa691568971bdef45d4c9a7db69fe8a691df7f70a9341e33dba98a215fe9651933da16a3524124dc4c3f1baf35d6f03369ff3800346bbd8c2e179ae4abd";
 		String expectedPublicKey = "e5a47fa691568971bdef45d4c9a7db69fe8a691df7f70a9341e33dba98a215fe9651933da16a3524124dc4c3f1baf35d6f03369ff3800346bbd8c2e179ae4abd00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
-		assertEquals(true, XMSSUtil.compareByteArray(Hex.decode(expectedPrivateKey), privateKey));
+		byte[] strippedPrivateKey = XMSSUtil.extractBytesAtOffset(privateKey, 0, (Hex.decode(expectedPrivateKey).length));
+		assertEquals(true, XMSSUtil.compareByteArray(Hex.decode(expectedPrivateKey), strippedPrivateKey));
 		assertEquals(true, XMSSUtil.compareByteArray(Hex.decode(expectedPublicKey), publicKey));
 	}
-	
 	
 	public void testSignSHA256() {
 		XMSSMTParameters params = new XMSSMTParameters(20, 10, new SHA256Digest(), new NullPRNG());
@@ -321,13 +322,12 @@ public class XMSSMTTest extends TestCase {
 		byte[] signature2 = xmssMT1.sign(msg2);
 		byte[] exportedPrivateKey = xmssMT1.exportPrivateKey();
 		byte[] exportedPublicKey = xmssMT1.exportPublicKey();
-		byte[] exportedBDSState = xmssMT1.exportBDSState();
 		byte[] publicKey = xmssMT1.exportPublicKey();
 		byte[] signature3 = xmssMT1.sign(msg3);
 		
 		XMSSMT xmssMT2 = new XMSSMT(params);
 		try {
-			xmssMT2.importState(exportedPrivateKey, exportedPublicKey, exportedBDSState);
+			xmssMT2.importState(exportedPrivateKey, exportedPublicKey);
 		} catch (ParseException ex) {
 			ex.printStackTrace();
 			fail();
@@ -361,13 +361,12 @@ public class XMSSMTTest extends TestCase {
 		byte[] signature2 = xmssMT1.sign(msg2);
 		byte[] exportedPrivateKey = xmssMT1.exportPrivateKey();
 		byte[] exportedPublicKey = xmssMT1.exportPublicKey();
-		byte[] exportedBDSState = xmssMT1.exportBDSState();
 		byte[] publicKey = xmssMT1.exportPublicKey();
 		byte[] signature3 = xmssMT1.sign(msg3);
 		
 		XMSSMT xmssMT2 = new XMSSMT(params);
 		try {
-			xmssMT2.importState(exportedPrivateKey, exportedPublicKey, exportedBDSState);
+			xmssMT2.importState(exportedPrivateKey, exportedPublicKey);
 		} catch (ParseException ex) {
 			ex.printStackTrace();
 			fail();
@@ -408,7 +407,6 @@ public class XMSSMTTest extends TestCase {
 		assertTrue(XMSSUtil.compareByteArray(publicKey, xmss1.exportPublicKey()));
 		xmss1.sign(message);
 		byte[] privateKey7 = xmss1.exportPrivateKey();
-		byte[] bdsStates7 = xmss1.exportBDSState();
 		try {
 			xmss1.verifySignature(message, signature, publicKey);
 		} catch (ParseException e) {
@@ -419,7 +417,7 @@ public class XMSSMTTest extends TestCase {
 		byte[] signature7 = xmss1.sign(message);
 
 		try {
-			xmss1.importState(privateKey7, publicKey, bdsStates7);
+			xmss1.importState(privateKey7, publicKey);
 		} catch (ParseException e) {
 			e.printStackTrace();
 			fail();
@@ -441,7 +439,7 @@ public class XMSSMTTest extends TestCase {
 		
 		XMSSMT xmss3 = new XMSSMT(params);
 		try {
-			xmss3.importState(privateKey7, publicKey, bdsStates7);
+			xmss3.importState(privateKey7, publicKey);
 		} catch (ParseException e) {
 			e.printStackTrace();
 			fail();
@@ -463,11 +461,10 @@ public class XMSSMTTest extends TestCase {
 		mt2.generateKeys();
 		byte[] publicKey2 = mt2.exportPublicKey();
 		byte[] privateKey2 = mt2.exportPrivateKey();
-		byte[] bdsState2 = mt2.exportBDSState();
 		byte[] signature2 = mt2.sign(message);
 		
 		try {
-			mt2.importState(privateKey2, publicKey2, bdsState2);
+			mt2.importState(privateKey2, publicKey2);
 		} catch (ParseException e) {
 			e.printStackTrace();
 			fail();
@@ -490,36 +487,31 @@ public class XMSSMTTest extends TestCase {
 		xmss.sign(new byte[1024]);
 		byte[] exportedPrivateKey = xmss.exportPrivateKey();
 		byte[] exportedPublicKey = xmss.exportPublicKey();
-		byte[] exportedBDSState = xmss.exportBDSState();
 		try {
-			xmss.importState(exportedPrivateKey, exportedPublicKey, exportedBDSState);
+			xmss.importState(exportedPrivateKey, exportedPublicKey);
 		} catch (ParseException e) {
 			e.printStackTrace();
 		}
 		byte[] sig1 = xmss.sign(new byte[1024]);
 		try {
-			xmss.importState(exportedPrivateKey, exportedPublicKey, exportedBDSState);
+			xmss.importState(exportedPrivateKey, exportedPublicKey);
 		} catch (ParseException e) {
 			e.printStackTrace();
 		}
 		byte[] sig2 = xmss.sign(new byte[1024]);
 		assertEquals(true, XMSSUtil.compareByteArray(sig1, sig2));
-		byte[] exportedBDSState2 = xmss.exportBDSState();
 		try {
-			xmss.importState(exportedPrivateKey, exportedPublicKey, exportedBDSState2);
+			xmss.importState(exportedPrivateKey, exportedPublicKey);
 		} catch (Exception ex) { }
+		xmss.sign(new byte[1024]);
 		byte[] sig3 = xmss.sign(new byte[1024]);
 		assertEquals(false, XMSSUtil.compareByteArray(sig1, sig3));
 		try {
-			xmss.importState(null, exportedPublicKey, exportedBDSState);
+			xmss.importState(null, exportedPublicKey);
 			fail();
 		} catch (Exception ex) { }
 		try {
-			xmss.importState(exportedPrivateKey, null, exportedBDSState);
-			fail();
-		} catch (Exception ex) { }
-		try {
-			xmss.importState(exportedPrivateKey, exportedPublicKey, null);
+			xmss.importState(exportedPrivateKey, null);
 			fail();
 		} catch (Exception ex) { }
 	}
