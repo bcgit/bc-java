@@ -32,6 +32,7 @@ public class GCMBlockCipher
 
     // These fields are set by init and not modified by processing
     private boolean             forEncryption;
+    private boolean             initialised;
     private int                 macSize;
     private byte[]              lastKey;
     private byte[]              nonce;
@@ -94,6 +95,7 @@ public class GCMBlockCipher
     {
         this.forEncryption = forEncryption;
         this.macBlock = null;
+        this.initialised = true;
 
         KeyParameter keyParam;
         byte[] newNonce = null;
@@ -247,6 +249,7 @@ public class GCMBlockCipher
 
     public void processAADByte(byte in)
     {
+        checkStatus();
         atBlock[atBlockPos] = in;
         if (++atBlockPos == BLOCK_SIZE)
         {
@@ -296,6 +299,8 @@ public class GCMBlockCipher
     public int processByte(byte in, byte[] out, int outOff)
         throws DataLengthException
     {
+        checkStatus();
+        
         bufBlock[bufOff] = in;
         if (++bufOff == bufBlock.length)
         {
@@ -308,6 +313,8 @@ public class GCMBlockCipher
     public int processBytes(byte[] in, int inOff, int len, byte[] out, int outOff)
         throws DataLengthException
     {
+        checkStatus();
+
         if (in.length < (inOff + len))
         {
             throw new DataLengthException("Input buffer too short");
@@ -352,6 +359,8 @@ public class GCMBlockCipher
     public int doFinal(byte[] out, int outOff)
         throws IllegalStateException, InvalidCipherTextException
     {
+        checkStatus();
+
         if (totalLength == 0)
         {
             initCipher();
@@ -501,9 +510,16 @@ public class GCMBlockCipher
             macBlock = null;
         }
 
-        if (initialAssociatedText != null)
+        if (forEncryption)
         {
-            processAADBytes(initialAssociatedText, 0, initialAssociatedText.length);
+            initialised = false;
+        }
+        else
+        {
+            if (initialAssociatedText != null)
+            {
+                processAADBytes(initialAssociatedText, 0, initialAssociatedText.length);
+            }
         }
     }
 
@@ -570,5 +586,17 @@ public class GCMBlockCipher
         // TODO Sure would be nice if ciphers could operate on int[]
         cipher.processBlock(counter, 0, tmp, 0);
         return tmp;
+    }
+
+    private void checkStatus()
+    {
+        if (!initialised)
+        {
+            if (forEncryption)
+            {
+                throw new IllegalStateException("GCM cipher cannot be reused for encryption");
+            }
+            throw new IllegalStateException("GCM cipher needs to be initialised");
+        }
     }
 }
