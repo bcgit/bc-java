@@ -31,7 +31,7 @@ public class GM
 
             provider.addAlgorithm("Signature.SM3withSM2", PREFIX + "GMSignatureSpi$sm3WithSM2");
 
-            provider.addAlgorithm("Alg.Alias.Signature." + GMObjectIdentifiers.SM2_Signing_with_SM3, "SM3withSM2");
+            provider.addAlgorithm("Alg.Alias.Signature." + GMObjectIdentifiers.sm2_signing_with_SM3, "SM3withSM2");
         }
     }
 }

@@ -346,6 +346,10 @@ public class ECUtil
             {
                 oid = ANSSINamedCurves.getOID(name);
             }
+            if (oid == null)
+            {
+                oid = GMNamedCurves.getOID(name);
+            }
         }
 
         return oid;
@@ -420,6 +424,10 @@ public class ECUtil
             if (params == null)
             {
                 params = TeleTrusTNamedCurves.getByName(curveName);
+            }
+            if (params == null)
+            {
+                params = GMNamedCurves.getByName(curveName);
             }
         }
 
