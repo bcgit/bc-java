@@ -1,20 +1,24 @@
 package org.bouncycastle.pqc.crypto.test;
 
+import java.io.IOException;
 import java.text.ParseException;
 
-import junit.framework.TestCase;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.pqc.crypto.xmss.NullPRNG;
+import org.bouncycastle.pqc.crypto.xmss.XMSS;
 import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
 
+import junit.framework.TestCase;
+
 /**
  * Test cases for XMSSPrivateKey class.
+ * 
  */
 public class XMSSPrivateKeyTest extends TestCase {
 
-	public void testPrivateKeyParsing() {
+	public void testPrivateKeyParsing() throws ClassNotFoundException, IOException {
 		XMSSParameters params = new XMSSParameters(10, new SHA256Digest(), new NullPRNG());
 		byte[] root = { (byte) 0x00, (byte) 0x01, (byte) 0x02, (byte) 0x03, (byte) 0x04, (byte) 0x05, (byte) 0x06,
 				(byte) 0x07, (byte) 0x08, (byte) 0x09, (byte) 0x0a, (byte) 0x0b, (byte) 0x0c, (byte) 0x0d, (byte) 0x0e,
@@ -32,7 +36,7 @@ public class XMSSPrivateKeyTest extends TestCase {
 
 		XMSSPrivateKeyParameters privateKey2 = null;
 		try {
-			privateKey2 = new XMSSPrivateKeyParameters.Builder(params).withPrivateKey(export).build();
+			privateKey2 = new XMSSPrivateKeyParameters.Builder(params).withPrivateKey(export, new XMSS(params)).build();
 		} catch (ParseException ex) {
 			ex.printStackTrace();
 			fail();
@@ -42,21 +46,5 @@ public class XMSSPrivateKeyTest extends TestCase {
 		assertEquals(true, XMSSUtil.compareByteArray(privateKey.getSecretKeyPRF(), privateKey2.getSecretKeyPRF()));
 		assertEquals(true, XMSSUtil.compareByteArray(privateKey.getPublicSeed(), privateKey2.getPublicSeed()));
 		assertEquals(true, XMSSUtil.compareByteArray(privateKey.getRoot(), privateKey2.getRoot()));
-	}
-
-	public void testConstructor() {
-		XMSSParameters params = new XMSSParameters(10, new SHA256Digest(), new NullPRNG());
-		XMSSPrivateKeyParameters privateKey = null;
-		try {
-			privateKey = new XMSSPrivateKeyParameters.Builder(params).build();
-		} catch (ParseException ex) {
-			/* should not happen */
-			ex.printStackTrace();
-		}
-		byte[] pkByte = privateKey.toByteArray();
-		/* check everything is 0 */
-		for (int i = 0; i < pkByte.length; i++) {
-			assertEquals(0x00, pkByte[i]);
-		}
 	}
 }

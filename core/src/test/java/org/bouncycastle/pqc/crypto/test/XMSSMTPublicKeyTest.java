@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.crypto.test;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.text.ParseException;
 
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -19,21 +20,20 @@ import junit.framework.TestCase;
 public class XMSSMTPublicKeyTest extends TestCase {
 
 	public void testPublicKeyParsingSHA256() throws IOException, ClassNotFoundException {
-		XMSSMTParameters params = new XMSSMTParameters(20, 10, new SHA256Digest(), new NullPRNG());
+		XMSSMTParameters params = new XMSSMTParameters(20, 10, new SHA256Digest(), new SecureRandom());
 		XMSSMT mt = new XMSSMT(params);
 		mt.generateKeys();
 		byte[] privateKey = mt.exportPrivateKey();
 		byte[] publicKey = mt.exportPublicKey();
-		byte[] bdsStates = mt.exportBDSState();
-		
+
 		try {
-			mt.importState(privateKey, publicKey, bdsStates);
+			mt.importState(privateKey, publicKey);
 		} catch (ParseException e) {
 			e.printStackTrace();
 		}
 		assertTrue(XMSSUtil.compareByteArray(publicKey, mt.exportPublicKey()));
 	}
-	
+
 	public void testConstructor() {
 		XMSSMTParameters params = new XMSSMTParameters(20, 10, new SHA256Digest(), new NullPRNG());
 		XMSSMTPublicKeyParameters pk = null;

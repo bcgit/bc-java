@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
+import java.io.IOException;
 import java.text.ParseException;
 
 import org.bouncycastle.util.Pack;
@@ -35,8 +36,12 @@ public final class XMSSPrivateKeyParameters implements XMSSStoreableObjectInterf
 	 * Public root of binary tree.
 	 */
 	private final byte[] root;
+	/**
+	 * BDS state.
+	 */
+	private final BDS bdsState;
 
-	private XMSSPrivateKeyParameters(Builder builder) throws ParseException {
+	private XMSSPrivateKeyParameters(Builder builder) throws ParseException, ClassNotFoundException, IOException {
 		super();
 		params = builder.params;
 		if (params == null) {
@@ -45,6 +50,9 @@ public final class XMSSPrivateKeyParameters implements XMSSStoreableObjectInterf
 		int n = params.getDigestSize();
 		byte[] privateKey = builder.privateKey;
 		if (privateKey != null) {
+			if (builder.xmss == null) {
+				throw new NullPointerException("xmss == null");
+			}
 			/* import */
 			int height = params.getHeight();
 			int indexSize = 4;
@@ -52,10 +60,12 @@ public final class XMSSPrivateKeyParameters implements XMSSStoreableObjectInterf
 			int secretKeyPRFSize = n;
 			int publicSeedSize = n;
 			int rootSize = n;
+			/*
 			int totalSize = indexSize + secretKeySize + secretKeyPRFSize + publicSeedSize + rootSize;
 			if (privateKey.length != totalSize) {
 				throw new ParseException("private key has wrong size", 0);
 			}
+			*/
 			int position = 0;
 			index = Pack.bigEndianToInt(privateKey, position);
 			if (!XMSSUtil.isIndexValid(height, index)) {
@@ -69,6 +79,13 @@ public final class XMSSPrivateKeyParameters implements XMSSStoreableObjectInterf
 			publicSeed = XMSSUtil.extractBytesAtOffset(privateKey, position, publicSeedSize);
 			position += publicSeedSize;
 			root = XMSSUtil.extractBytesAtOffset(privateKey, position, rootSize);
+			position += rootSize;
+			/* import BDS state */
+			byte[] bdsStateBinary = XMSSUtil.extractBytesAtOffset(privateKey, position, privateKey.length - position);
+			BDS bdsImport = (BDS) XMSSUtil.deserialize(bdsStateBinary);
+			bdsImport.setXMSS(builder.xmss);
+			bdsImport.validate();
+			bdsState = bdsImport;
 		} else {
 			/* set */
 			index = builder.index;
@@ -108,6 +125,12 @@ public final class XMSSPrivateKeyParameters implements XMSSStoreableObjectInterf
 			} else {
 				root = new byte[n];
 			}
+			BDS tmpBDSState = builder.bdsState;
+			if (tmpBDSState != null) {
+				bdsState = tmpBDSState;
+			} else {
+				bdsState = new BDS(new XMSS(params));
+			}
 		}
 	}
 
@@ -121,7 +144,9 @@ public final class XMSSPrivateKeyParameters implements XMSSStoreableObjectInterf
 		private byte[] secretKeyPRF = null;
 		private byte[] publicSeed = null;
 		private byte[] root = null;
+		private BDS bdsState = null;
 		private byte[] privateKey = null;
+		private XMSS xmss = null;
 
 		public Builder(XMSSParameters params) {
 			super();
@@ -153,12 +178,18 @@ public final class XMSSPrivateKeyParameters implements XMSSStoreableObjectInterf
 			return this;
 		}
 
-		public Builder withPrivateKey(byte[] val) {
-			privateKey = XMSSUtil.cloneArray(val);
+		public Builder withBDSState(BDS valBDS) {
+			bdsState = valBDS;
 			return this;
 		}
 
-		public XMSSPrivateKeyParameters build() throws ParseException {
+		public Builder withPrivateKey(byte[] privateKeyVal, XMSS xmssVal) {
+			privateKey = XMSSUtil.cloneArray(privateKeyVal);
+			xmss = xmssVal;
+			return this;
+		}
+
+		public XMSSPrivateKeyParameters build() throws ParseException, ClassNotFoundException, IOException {
 			return new XMSSPrivateKeyParameters(this);
 		}
 	}
@@ -188,7 +219,15 @@ public final class XMSSPrivateKeyParameters implements XMSSStoreableObjectInterf
 		position += publicSeedSize;
 		/* copy root */
 		XMSSUtil.copyBytesAtOffset(out, root, position);
-		return out;
+		/* concatenate bdsState */
+		byte[] bdsStateOut = null;
+		try {
+			bdsStateOut = XMSSUtil.serialize(bdsState);
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException("error serializing bds state");
+		}
+		return XMSSUtil.concat(out, bdsStateOut);
 	}
 
 	public int getIndex() {
@@ -209,5 +248,9 @@ public final class XMSSPrivateKeyParameters implements XMSSStoreableObjectInterf
 
 	public byte[] getRoot() {
 		return XMSSUtil.cloneArray(root);
+	}
+	
+	public BDS getBDSState() {
+		return bdsState;
 	}
 }
