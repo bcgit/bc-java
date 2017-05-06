@@ -34,10 +34,6 @@ public class XMSS {
 	 * XMSS public key.
 	 */
 	private XMSSPublicKeyParameters publicKey;
-	/**
-	 * BDS.
-	 */
-	private BDS bdsState;
 
 	/**
 	 * XMSS constructor...
@@ -55,13 +51,18 @@ public class XMSS {
 		prng = params.getPRNG();
 		khf = wotsPlus.getKhf();
 		try {
-			privateKey = new XMSSPrivateKeyParameters.Builder(params).build();
+			privateKey = new XMSSPrivateKeyParameters.Builder(params).withBDSState(new BDS(this)).build();
 			publicKey = new XMSSPublicKeyParameters.Builder(params).build();
 		} catch (ParseException e) {
 			/* should not be possible */
 			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			/* should not be possible */
+			e.printStackTrace();
+		} catch (IOException e) {
+			/* should not be possible */
+			e.printStackTrace();
 		}
-		bdsState = new BDS(this);
 	}
 
 	/**
@@ -70,16 +71,23 @@ public class XMSS {
 	public void generateKeys() {
 		/* generate private key */
 		privateKey = generatePrivateKey();
-		XMSSNode root = bdsState.initialize((OTSHashAddress) new OTSHashAddress.Builder().build());
+		XMSSNode root = getBDSState().initialize((OTSHashAddress) new OTSHashAddress.Builder().build());
 		try {
 			privateKey = new XMSSPrivateKeyParameters.Builder(params).withIndex(privateKey.getIndex())
 					.withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
-					.withPublicSeed(privateKey.getPublicSeed()).withRoot(root.getValue()).build();
+					.withPublicSeed(privateKey.getPublicSeed()).withRoot(root.getValue()).withBDSState(getBDSState())
+					.build();
 			publicKey = new XMSSPublicKeyParameters.Builder(params).withRoot(root.getValue())
 					.withPublicSeed(getPublicSeed()).build();
 		} catch (ParseException ex) {
 			/* should not be possible */
 			ex.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			/* should not be possible */
+			e.printStackTrace();
+		} catch (IOException e) {
+			/* should not be possible */
+			e.printStackTrace();
 		}
 	}
 
@@ -100,8 +108,14 @@ public class XMSS {
 		XMSSPrivateKeyParameters privateKey = null;
 		try {
 			privateKey = new XMSSPrivateKeyParameters.Builder(params).withSecretKeySeed(secretKeySeed)
-					.withSecretKeyPRF(secretKeyPRF).withPublicSeed(publicSeed).build();
+					.withSecretKeyPRF(secretKeyPRF).withPublicSeed(publicSeed).withBDSState(getBDSState()).build();
 		} catch (ParseException e) {
+			/* should not be possible */
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			/* should not be possible */
+			e.printStackTrace();
+		} catch (IOException e) {
 			/* should not be possible */
 			e.printStackTrace();
 		}
@@ -120,7 +134,7 @@ public class XMSS {
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 */
-	public void importState(byte[] privateKey, byte[] publicKey, byte[] bdsState)
+	public void importState(byte[] privateKey, byte[] publicKey)
 			throws ParseException, ClassNotFoundException, IOException {
 		if (privateKey == null) {
 			throw new NullPointerException("privateKey == null");
@@ -128,29 +142,9 @@ public class XMSS {
 		if (publicKey == null) {
 			throw new NullPointerException("publicKey == null");
 		}
-		if (bdsState == null) {
-			throw new NullPointerException("bdsState == null");
-		}
 		/* import keys */
-		importKeys(privateKey, publicKey);
-
-		/* import BDS state */
-		BDS bdsImport = (BDS) XMSSUtil.deserialize(bdsState);
-		bdsImport.setXMSS(this);
-		bdsImport.validate(true);
-		this.bdsState = bdsImport;
-	}
-
-	protected void importKeys(byte[] privateKey, byte[] publicKey) throws ParseException {
-		if (privateKey == null) {
-			throw new NullPointerException("privateKey == null");
-		}
-		if (publicKey == null) {
-			throw new NullPointerException("publicKey == null");
-		}
-		/* validate private / public key */
-		XMSSPrivateKeyParameters tmpPrivateKey = new XMSSPrivateKeyParameters.Builder(params).withPrivateKey(privateKey)
-				.build();
+		XMSSPrivateKeyParameters tmpPrivateKey = new XMSSPrivateKeyParameters.Builder(params)
+				.withPrivateKey(privateKey, this).build();
 		XMSSPublicKeyParameters tmpPublicKey = new XMSSPublicKeyParameters.Builder(params).withPublicKey(publicKey)
 				.build();
 		if (!XMSSUtil.compareByteArray(tmpPrivateKey.getRoot(), tmpPublicKey.getRoot())) {
@@ -176,7 +170,7 @@ public class XMSS {
 		if (message == null) {
 			throw new NullPointerException("message == null");
 		}
-		if (bdsState.getAuthenticationPath().isEmpty()) {
+		if (getBDSState().getAuthenticationPath().isEmpty()) {
 			throw new IllegalStateException("not initialized");
 		}
 		int index = privateKey.getIndex();
@@ -196,7 +190,8 @@ public class XMSS {
 		XMSSSignature signature = null;
 		try {
 			signature = (XMSSSignature) new XMSSSignature.Builder(params).withIndex(index).withRandom(random)
-					.withWOTSPlusSignature(wotsPlusSignature).withAuthPath(bdsState.getAuthenticationPath()).build();
+					.withWOTSPlusSignature(wotsPlusSignature).withAuthPath(getBDSState().getAuthenticationPath())
+					.build();
 		} catch (ParseException ex) {
 			/* should not happen */
 			ex.printStackTrace();
@@ -205,7 +200,7 @@ public class XMSS {
 		/* prepare authentication path for next leaf */
 		int treeHeight = this.getParams().getHeight();
 		if (index < ((1 << treeHeight) - 1)) {
-			bdsState.nextAuthenticationPath((OTSHashAddress) new OTSHashAddress.Builder().build());
+			getBDSState().nextAuthenticationPath((OTSHashAddress) new OTSHashAddress.Builder().build());
 		}
 
 		/* update index */
@@ -287,16 +282,6 @@ public class XMSS {
 	}
 
 	/**
-	 * Export XMSS BDS state.
-	 *
-	 * @return XMSS BDS state.
-	 * @throws IOException
-	 */
-	public byte[] exportBDSState() throws IOException {
-		return XMSSUtil.serialize(bdsState);
-	}
-
-	/**
 	 * Randomization of nodes in binary tree.
 	 *
 	 * @param left
@@ -321,7 +306,7 @@ public class XMSS {
 			throw new NullPointerException("address == null");
 		}
 		byte[] publicSeed = getPublicSeed();
-		
+
 		if (address instanceof LTreeAddress) {
 			LTreeAddress tmpAddress = (LTreeAddress) address;
 			address = (LTreeAddress) new LTreeAddress.Builder().withLayerAddress(tmpAddress.getLayerAddress())
@@ -334,9 +319,9 @@ public class XMSS {
 					.withTreeAddress(tmpAddress.getTreeAddress()).withTreeHeight(tmpAddress.getTreeHeight())
 					.withTreeIndex(tmpAddress.getTreeIndex()).withKeyAndMask(0).build();
 		}
-		
+
 		byte[] key = khf.PRF(publicSeed, address.toByteArray());
-		
+
 		if (address instanceof LTreeAddress) {
 			LTreeAddress tmpAddress = (LTreeAddress) address;
 			address = (LTreeAddress) new LTreeAddress.Builder().withLayerAddress(tmpAddress.getLayerAddress())
@@ -364,7 +349,7 @@ public class XMSS {
 					.withTreeAddress(tmpAddress.getTreeAddress()).withTreeHeight(tmpAddress.getTreeHeight())
 					.withTreeIndex(tmpAddress.getTreeIndex()).withKeyAndMask(2).build();
 		}
-		
+
 		byte[] bitmask1 = khf.PRF(publicSeed, address.toByteArray());
 		int n = params.getDigestSize();
 		byte[] tmpMask = new byte[2 * n];
@@ -563,12 +548,18 @@ public class XMSS {
 		try {
 			privateKey = new XMSSPrivateKeyParameters.Builder(params).withIndex(privateKey.getIndex())
 					.withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
-					.withPublicSeed(getPublicSeed()).withRoot(root).build();
+					.withPublicSeed(getPublicSeed()).withRoot(root).withBDSState(getBDSState()).build();
 			publicKey = new XMSSPublicKeyParameters.Builder(params).withRoot(root).withPublicSeed(getPublicSeed())
 					.build();
 		} catch (ParseException ex) {
-			/* should not happen */
+			/* should not be possible */
 			ex.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			/* should not be possible */
+			e.printStackTrace();
+		} catch (IOException e) {
+			/* should not be possible */
+			e.printStackTrace();
 		}
 	}
 
@@ -585,10 +576,17 @@ public class XMSS {
 		try {
 			privateKey = new XMSSPrivateKeyParameters.Builder(params).withIndex(index)
 					.withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
-					.withPublicSeed(privateKey.getPublicSeed()).withRoot(privateKey.getRoot()).build();
+					.withPublicSeed(privateKey.getPublicSeed()).withRoot(privateKey.getRoot())
+					.withBDSState(getBDSState()).build();
 		} catch (ParseException ex) {
 			/* should not happen */
 			ex.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			/* should not be possible */
+			e.printStackTrace();
+		} catch (IOException e) {
+			/* should not be possible */
+			e.printStackTrace();
 		}
 	}
 
@@ -605,17 +603,23 @@ public class XMSS {
 		try {
 			privateKey = new XMSSPrivateKeyParameters.Builder(params).withIndex(privateKey.getIndex())
 					.withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
-					.withPublicSeed(publicSeed).withRoot(getRoot()).build();
+					.withPublicSeed(publicSeed).withRoot(getRoot()).withBDSState(getBDSState()).build();
 			publicKey = new XMSSPublicKeyParameters.Builder(params).withRoot(getRoot()).withPublicSeed(publicSeed)
 					.build();
 		} catch (ParseException ex) {
 			/* should not happen */
 			ex.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			/* should not be possible */
+			e.printStackTrace();
+		} catch (IOException e) {
+			/* should not be possible */
+			e.printStackTrace();
 		}
 		wotsPlus.importKeys(new byte[params.getDigestSize()], publicSeed);
 	}
 
-	protected BDS getBDS() {
-		return bdsState;
+	protected BDS getBDSState() {
+		return privateKey.getBDSState();
 	}
 }
