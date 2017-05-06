@@ -14,7 +14,6 @@ public final class XMSSMT {
 
 	private XMSSMTParameters params;
 	private XMSS xmss;
-	private Map<Integer, BDS> bdsState;
 	private SecureRandom prng;
 	private KeyedHashFunctions khf;
 	private XMSSMTPrivateKeyParameters privateKey;
@@ -27,20 +26,25 @@ public final class XMSSMT {
 		}
 		this.params = params;
 		xmss = params.getXMSS();
-		bdsState = new TreeMap<Integer, BDS>();
 		prng = params.getXMSS().getParams().getPRNG();
 		khf = xmss.getKhf();
 		try {
 			privateKey = new XMSSMTPrivateKeyParameters.Builder(params).build();
 			publicKey = new XMSSMTPublicKeyParameters.Builder(params).build();
-		} catch (ParseException ex) {
+		} catch (ParseException e) {
 			/* should not be possible */
-			ex.printStackTrace();
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			/* should not be possible */
+			e.printStackTrace();
+		} catch (IOException e) {
+			/* should not be possible */
+			e.printStackTrace();
 		}
 	}
 
 	public void generateKeys() {
-		/* generate private key */
+		/* generate XMSSMT private key */
 		privateKey = generatePrivateKey();
 
 		/* init global xmss */
@@ -49,18 +53,28 @@ public final class XMSSMT {
 		try {
 			xmssPrivateKey = new XMSSPrivateKeyParameters.Builder(xmss.getParams())
 					.withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
-					.withPublicSeed(privateKey.getPublicSeed()).build();
+					.withPublicSeed(privateKey.getPublicSeed()).withBDSState(new BDS(xmss)).build();
 			xmssPublicKey = new XMSSPublicKeyParameters.Builder(xmss.getParams()).withPublicSeed(getPublicSeed())
 					.build();
 		} catch (ParseException ex) {
-			/* should not happen */
+			/* should not be possible */
 			ex.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			/* should not be possible */
+			e.printStackTrace();
+		} catch (IOException e) {
+			/* should not be possible */
+			e.printStackTrace();
 		}
 
 		/* import to xmss */
 		try {
-			xmss.importKeys(xmssPrivateKey.toByteArray(), xmssPublicKey.toByteArray());
+			xmss.importState(xmssPrivateKey.toByteArray(), xmssPublicKey.toByteArray());
 		} catch (ParseException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 
@@ -72,19 +86,25 @@ public final class XMSSMT {
 		/* store BDS instance of root xmss instance */
 		BDS bdsRoot = new BDS(xmss);
 		XMSSNode root = bdsRoot.initialize(otsHashAddress);
-		bdsState.put(rootLayerIndex, bdsRoot);
+		getBDSState().put(rootLayerIndex, bdsRoot);
 		xmss.setRoot(root.getValue());
 
 		/* set XMSS^MT root / create public key */
 		try {
 			privateKey = new XMSSMTPrivateKeyParameters.Builder(params).withSecretKeySeed(privateKey.getSecretKeySeed())
 					.withSecretKeyPRF(privateKey.getSecretKeyPRF()).withPublicSeed(privateKey.getPublicSeed())
-					.withRoot(xmss.getRoot()).build();
+					.withRoot(xmss.getRoot()).withBDSState(getBDSState()).build();
 			publicKey = new XMSSMTPublicKeyParameters.Builder(params).withRoot(root.getValue())
 					.withPublicSeed(getPublicSeed()).build();
-		} catch (ParseException ex) {
-			/* should not happen */
-			ex.printStackTrace();
+		} catch (ParseException e) {
+			/* should not be possible */
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			/* should not be possible */
+			e.printStackTrace();
+		} catch (IOException e) {
+			/* should not be possible */
+			e.printStackTrace();
 		}
 	}
 
@@ -100,15 +120,21 @@ public final class XMSSMT {
 		XMSSMTPrivateKeyParameters privateKey = null;
 		try {
 			privateKey = new XMSSMTPrivateKeyParameters.Builder(params).withSecretKeySeed(secretKeySeed)
-					.withSecretKeyPRF(secretKeyPRF).withPublicSeed(publicSeed).build();
+					.withSecretKeyPRF(secretKeyPRF).withPublicSeed(publicSeed).withBDSState(getBDSState()).build();
 		} catch (ParseException ex) {
 			/* should not be possible */
 			ex.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			/* should not be possible */
+			e.printStackTrace();
+		} catch (IOException e) {
+			/* should not be possible */
+			e.printStackTrace();
 		}
 		return privateKey;
 	}
 
-	public void importState(byte[] privateKey, byte[] publicKey, byte[] bdsState)
+	public void importState(byte[] privateKey, byte[] publicKey)
 			throws ParseException, ClassNotFoundException, IOException {
 		if (privateKey == null) {
 			throw new NullPointerException("privateKey == null");
@@ -116,11 +142,8 @@ public final class XMSSMT {
 		if (publicKey == null) {
 			throw new NullPointerException("publicKey == null");
 		}
-		if (bdsState == null) {
-			throw new NullPointerException("bdsState == null");
-		}
 		XMSSMTPrivateKeyParameters xmssMTPrivateKey = new XMSSMTPrivateKeyParameters.Builder(params)
-				.withPrivateKey(privateKey).build();
+				.withPrivateKey(privateKey, xmss).build();
 		XMSSMTPublicKeyParameters xmssMTPublicKey = new XMSSMTPublicKeyParameters.Builder(params)
 				.withPublicKey(publicKey).build();
 		if (!XMSSUtil.compareByteArray(xmssMTPrivateKey.getRoot(), xmssMTPublicKey.getRoot())) {
@@ -134,38 +157,24 @@ public final class XMSSMT {
 		XMSSPrivateKeyParameters xmssPrivateKey = new XMSSPrivateKeyParameters.Builder(xmss.getParams())
 				.withSecretKeySeed(xmssMTPrivateKey.getSecretKeySeed())
 				.withSecretKeyPRF(xmssMTPrivateKey.getSecretKeyPRF()).withPublicSeed(xmssMTPrivateKey.getPublicSeed())
-				.withRoot(xmssMTPrivateKey.getRoot()).build();
+				.withRoot(xmssMTPrivateKey.getRoot()).withBDSState(new BDS(xmss)).build();
 		XMSSPublicKeyParameters xmssPublicKey = new XMSSPublicKeyParameters.Builder(xmss.getParams())
 				.withRoot(xmssMTPrivateKey.getRoot()).withPublicSeed(getPublicSeed()).build();
 
 		/* import to xmss */
-		xmss.importKeys(xmssPrivateKey.toByteArray(), xmssPublicKey.toByteArray());
+		xmss.importState(xmssPrivateKey.toByteArray(), xmssPublicKey.toByteArray());
 		this.privateKey = xmssMTPrivateKey;
 		this.publicKey = xmssMTPublicKey;
-
-		/* import BDS state */
-		@SuppressWarnings("unchecked")
-		Map<Integer, BDS> bdsStatesImport = (TreeMap<Integer, BDS>) XMSSUtil.deserialize(bdsState);
-		for (Integer key : bdsStatesImport.keySet()) {
-			BDS bds = bdsStatesImport.get(key);
-			bds.setXMSS(xmss);
-			if (key == (params.getLayers() - 1)) {
-				bds.validate(true);
-			} else {
-				bds.validate(false);
-			}
-		}
-		this.bdsState = bdsStatesImport;
 	}
 
 	public byte[] sign(byte[] message) {
 		if (message == null) {
 			throw new NullPointerException("message == null");
 		}
-		if (bdsState.isEmpty()) {
+		if (getBDSState().isEmpty()) {
 			throw new IllegalStateException("not initialized");
 		}
-		//privateKey.increaseIndex(this);
+		// privateKey.increaseIndex(this);
 		long globalIndex = getIndex();
 		int totalHeight = params.getHeight();
 		int xmssHeight = xmss.getParams().getHeight();
@@ -204,15 +213,15 @@ public final class XMSSMT {
 		/* sign message digest */
 		WOTSPlusSignature wotsPlusSignature = xmss.wotsSign(messageDigest, otsHashAddress);
 		/* get authentication path from BDS */
-		if (bdsState.get(0) == null || indexLeaf == 0) {
-			bdsState.put(0, new BDS(xmss));
-			bdsState.get(0).initialize(otsHashAddress);
+		if (getBDSState().get(0) == null || indexLeaf == 0) {
+			getBDSState().put(0, new BDS(xmss));
+			getBDSState().get(0).initialize(otsHashAddress);
 		}
 
 		XMSSReducedSignature reducedSignature = null;
 		try {
 			reducedSignature = new XMSSReducedSignature.Builder(xmss.getParams())
-					.withWOTSPlusSignature(wotsPlusSignature).withAuthPath(bdsState.get(0).getAuthenticationPath())
+					.withWOTSPlusSignature(wotsPlusSignature).withAuthPath(getBDSState().get(0).getAuthenticationPath())
 					.build();
 		} catch (ParseException ex) {
 			/* should never happen */
@@ -222,13 +231,13 @@ public final class XMSSMT {
 
 		/* prepare authentication path for next leaf */
 		if (indexLeaf < ((1 << xmssHeight) - 1)) {
-			bdsState.get(0).nextAuthenticationPath(otsHashAddress);
+			getBDSState().get(0).nextAuthenticationPath(otsHashAddress);
 		}
 
 		/* loop over remaining layers */
 		for (int layer = 1; layer < params.getLayers(); layer++) {
 			/* get root of layer - 1 */
-			XMSSNode root = bdsState.get(layer - 1).getRoot();
+			XMSSNode root = getBDSState().get(layer - 1).getRoot();
 
 			indexLeaf = XMSSUtil.getLeafIndex(indexTree, xmssHeight);
 			indexTree = XMSSUtil.getTreeIndex(indexTree, xmssHeight);
@@ -241,14 +250,14 @@ public final class XMSSMT {
 			/* sign root digest of layer - 1 */
 			wotsPlusSignature = xmss.wotsSign(root.getValue(), otsHashAddress);
 			/* get authentication path from BDS */
-			if (bdsState.get(layer) == null || XMSSUtil.isNewBDSInitNeeded(globalIndex, xmssHeight, layer)) {
-				bdsState.put(layer, new BDS(xmss));
-				bdsState.get(layer).initialize(otsHashAddress);
+			if (getBDSState().get(layer) == null || XMSSUtil.isNewBDSInitNeeded(globalIndex, xmssHeight, layer)) {
+				getBDSState().put(layer, new BDS(xmss));
+				getBDSState().get(layer).initialize(otsHashAddress);
 			}
 			try {
 				reducedSignature = new XMSSReducedSignature.Builder(xmss.getParams())
 						.withWOTSPlusSignature(wotsPlusSignature)
-						.withAuthPath(bdsState.get(layer).getAuthenticationPath()).build();
+						.withAuthPath(getBDSState().get(layer).getAuthenticationPath()).build();
 			} catch (ParseException ex) {
 				/* should never happen */
 				ex.printStackTrace();
@@ -258,7 +267,7 @@ public final class XMSSMT {
 			/* prepare authentication path for next leaf */
 			if (indexLeaf < ((1 << xmssHeight) - 1)
 					&& XMSSUtil.isNewAuthenticationPathNeeded(globalIndex, xmssHeight, layer)) {
-				bdsState.get(layer).nextAuthenticationPath(otsHashAddress);
+				getBDSState().get(layer).nextAuthenticationPath(otsHashAddress);
 			}
 		}
 
@@ -266,10 +275,16 @@ public final class XMSSMT {
 		try {
 			privateKey = new XMSSMTPrivateKeyParameters.Builder(params).withIndex(globalIndex + 1)
 					.withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
-					.withPublicSeed(privateKey.getPublicSeed()).withRoot(privateKey.getRoot()).build();
-		} catch (ParseException ex) {
+					.withPublicSeed(privateKey.getPublicSeed()).withRoot(privateKey.getRoot()).withBDSState(getBDSState()).build();
+		} catch (ParseException e) {
 			/* should not be possible */
-			ex.printStackTrace();
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			/* should not be possible */
+			e.printStackTrace();
+		} catch (IOException e) {
+			/* should not be possible */
+			e.printStackTrace();
 		}
 		return signature.toByteArray();
 	}
@@ -345,16 +360,6 @@ public final class XMSSMT {
 		return publicKey.toByteArray();
 	}
 
-	/**
-	 * Export XMSS^MT BDS state.
-	 *
-	 * @return XMSS^MT BDS state.
-	 * @throws IOException
-	 */
-	public byte[] exportBDSState() throws IOException {
-		return XMSSUtil.serialize(bdsState);
-	}
-
 	public XMSSMTParameters getParams() {
 		return params;
 	}
@@ -367,8 +372,8 @@ public final class XMSSMT {
 		return privateKey.getPublicSeed();
 	}
 
-	protected Map<Integer, BDS> getBDS() {
-		return bdsState;
+	protected Map<Integer, BDS> getBDSState() {
+		return privateKey.getBDSState();
 	}
 
 	protected XMSS getXMSS() {
