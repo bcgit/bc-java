@@ -96,7 +96,7 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SHA512WITHCVC-ECDSA", EACObjectIdentifiers.id_TA_ECDSA_SHA_512);
         algorithms.put("SHA3-512WITHSPHINCS256", BCObjectIdentifiers.sphincs256_with_SHA3_512);
         algorithms.put("SHA512WITHSPHINCS256", BCObjectIdentifiers.sphincs256_with_SHA512);
-        algorithms.put("SM3WITHSM2", GMObjectIdentifiers.sm2_signing_with_SM3);
+        algorithms.put("SM3WITHSM2", GMObjectIdentifiers.sm2sign_with_sm3);
         //
         // According to RFC 3279, the ASN.1 encoding SHALL (id-dsa-with-sha1) or MUST (ecdsa-with-SHA*) omit the parameters field.
         // The parameters field SHALL be NULL for RSA based signature algorithms.
@@ -127,7 +127,7 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         //
         // SM2
         //
-        noParams.add(GMObjectIdentifiers.sm2_signing_with_SM3);
+        noParams.add(GMObjectIdentifiers.sm2sign_with_sm3);
 
         //
         // PKCS 1.5 encrypted  algorithms

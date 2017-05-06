@@ -31,7 +31,7 @@ public class GMNamedCurves
     /*
      * SM2SysParams
      */
-    static X9ECParametersHolder sm2_P256 = new X9ECParametersHolder()
+    static X9ECParametersHolder sm2p256v1 = new X9ECParametersHolder()
     {
         protected X9ECParameters createParameters()
         {
@@ -52,7 +52,26 @@ public class GMNamedCurves
         }
     };
 
+    static X9ECParametersHolder wapip192v1 = new X9ECParametersHolder()
+    {
+        protected X9ECParameters createParameters()
+        {
+            BigInteger p = fromHex("BDB6F4FE3E8B1D9E0DA8C0D46F4C318CEFE4AFE3B6B8551F");
+            BigInteger a = fromHex("BB8E5E8FBC115E139FE6A814FE48AAA6F0ADA1AA5DF91985");
+            BigInteger b = fromHex("1854BEBDC31B21B7AEFC80AB0ECD10D5B1B3308E6DBF11C1");
+            byte[] S = null;
+            BigInteger n = fromHex("BDB6F4FE3E8B1D9E0DA8C0D40FC962195DFAE76F56564677");
+            BigInteger h = BigInteger.valueOf(1);
 
+            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            X9ECPoint G = new X9ECPoint(curve, Hex.decode("04"
+                + "4AD5F7048DE709AD51236DE6" + "5E4D4B482C836DC6E4106640"
+                + "02BB3A02D4AAADACAE24817A" + "4CA3A1B014B5270432DB27D2"));
+
+            return new X9ECParameters(curve, G, n, h, S);
+        }
+    };
+    
     static final Hashtable objIds = new Hashtable();
     static final Hashtable curves = new Hashtable();
     static final Hashtable names = new Hashtable();
@@ -66,7 +85,8 @@ public class GMNamedCurves
 
     static
     {
-        defineCurve("SM2-P256", GMObjectIdentifiers.sm2_Elliptic_Curve_Cryptography, sm2_P256);
+        defineCurve("wapip192v1", GMObjectIdentifiers.wapip192v1, wapip192v1);
+        defineCurve("sm2p256v1", GMObjectIdentifiers.sm2p256v1, sm2p256v1);
     }
 
     public static X9ECParameters getByName(
