@@ -3,6 +3,7 @@ package org.bouncycastle.jsse.provider;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.KeyStore.PrivateKeyEntry;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -110,12 +111,14 @@ class ProvX509KeyManager
 
     public X509Certificate[] getCertificateChain(String alias)
     {
-        return (X509Certificate[])keys.get(alias).getCertificateChain();
+        PrivateKeyEntry entry = getPrivateKeyEntry(alias);
+        return entry == null ? null : (X509Certificate[])entry.getCertificateChain();
     }
 
     public PrivateKey getPrivateKey(String alias)
     {
-        return keys.get(alias).getPrivateKey();
+        PrivateKeyEntry entry = getPrivateKeyEntry(alias);
+        return entry == null ? null : entry.getPrivateKey();
     }
 
     private List<String> findAliases(boolean forServer, String keyType, Set<X500Name> issuers)
@@ -191,6 +194,11 @@ class ProvX509KeyManager
         }
 
         return aliases;
+    }
+
+    private PrivateKeyEntry getPrivateKeyEntry(String alias)
+    {
+        return alias == null ? null : keys.get(alias);
     }
 
     private boolean isSuitableCertificate(boolean forServer, String keyType, Set<X500Name> issuers, X509Certificate c)
