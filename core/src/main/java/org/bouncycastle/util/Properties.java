@@ -6,6 +6,7 @@ import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 /**
  * Utility method for accessing system properties.
@@ -39,13 +40,16 @@ public class Properties
 
     public static Set<String> asKeySet(final String propertyName)
     {
-        String[] p = System.getProperty(propertyName, "").split(",");
-        HashSet<String> set = new HashSet<String>();
-        for (int i = 0; i != p.length; i++)
+        Set<String> set = new HashSet<String>();
+        String p = System.getProperty(propertyName);
+        if (p != null)
         {
-            set.add(Strings.toLowerCase(p[i]).trim());
+            StringTokenizer sTok = new StringTokenizer(p, ",");
+            while (sTok.hasMoreElements())
+            {
+                set.add(Strings.toLowerCase(sTok.nextToken()).trim());
+            }
         }
         return Collections.unmodifiableSet(set);
     }
-
 }
