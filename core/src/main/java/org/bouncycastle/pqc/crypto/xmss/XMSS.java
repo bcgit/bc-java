@@ -75,7 +75,7 @@ public class XMSS {
 		try {
 			privateKey = new XMSSPrivateKeyParameters.Builder(params).withIndex(privateKey.getIndex())
 					.withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
-					.withPublicSeed(privateKey.getPublicSeed()).withRoot(root.getValue()).withBDSState(getBDSState())
+					.withPublicSeed(privateKey.getPublicSeed()).withRoot(root.getValue()).withBDSState(privateKey.getBDSState())
 					.build();
 			publicKey = new XMSSPublicKeyParameters.Builder(params).withRoot(root.getValue())
 					.withPublicSeed(getPublicSeed()).build();
@@ -108,7 +108,7 @@ public class XMSS {
 		XMSSPrivateKeyParameters privateKey = null;
 		try {
 			privateKey = new XMSSPrivateKeyParameters.Builder(params).withSecretKeySeed(secretKeySeed)
-					.withSecretKeyPRF(secretKeyPRF).withPublicSeed(publicSeed).withBDSState(getBDSState()).build();
+					.withSecretKeyPRF(secretKeyPRF).withPublicSeed(publicSeed).withBDSState(this.privateKey.getBDSState()).build();
 		} catch (ParseException e) {
 			/* should not be possible */
 			e.printStackTrace();
@@ -545,7 +545,7 @@ public class XMSS {
 		try {
 			privateKey = new XMSSPrivateKeyParameters.Builder(params).withIndex(privateKey.getIndex())
 					.withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
-					.withPublicSeed(getPublicSeed()).withRoot(root).withBDSState(getBDSState()).build();
+					.withPublicSeed(getPublicSeed()).withRoot(root).withBDSState(privateKey.getBDSState()).build();
 			publicKey = new XMSSPublicKeyParameters.Builder(params).withRoot(root).withPublicSeed(getPublicSeed())
 					.build();
 		} catch (ParseException ex) {
@@ -574,7 +574,7 @@ public class XMSS {
 			privateKey = new XMSSPrivateKeyParameters.Builder(params).withIndex(index)
 					.withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
 					.withPublicSeed(privateKey.getPublicSeed()).withRoot(privateKey.getRoot())
-					.withBDSState(getBDSState()).build();
+					.withBDSState(privateKey.getBDSState()).build();
 		} catch (ParseException ex) {
 			/* should not happen */
 			ex.printStackTrace();
@@ -600,7 +600,7 @@ public class XMSS {
 		try {
 			privateKey = new XMSSPrivateKeyParameters.Builder(params).withIndex(privateKey.getIndex())
 					.withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
-					.withPublicSeed(publicSeed).withRoot(getRoot()).withBDSState(getBDSState()).build();
+					.withPublicSeed(publicSeed).withRoot(getRoot()).withBDSState(privateKey.getBDSState()).build();
 			publicKey = new XMSSPublicKeyParameters.Builder(params).withRoot(getRoot()).withPublicSeed(publicSeed)
 					.build();
 		} catch (ParseException ex) {
