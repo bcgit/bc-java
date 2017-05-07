@@ -30,3 +30,9 @@ g/private static final boolean/s/final//
 w
 q
 %
+
+ed org/bouncycastle/asn1/cmc/CertificationRequest.java <<%
+g/private final/s/final//
+w
+q
+%

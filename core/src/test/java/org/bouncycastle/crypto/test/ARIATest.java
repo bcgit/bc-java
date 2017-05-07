@@ -81,7 +81,7 @@ public class ARIATest
                 ce.processBlock(txt, 0, enc, 0);
                 cd.processBlock(enc, 0, dec, 0);
 
-                isTrue("", Arrays.areEqual(txt, dec));
+                isTrue(Arrays.areEqual(txt, dec));
 
                 System.arraycopy(enc, 0, txt, 0, enc.length);
             }
@@ -149,7 +149,7 @@ public class ARIATest
                 System.arraycopy(x, 0, y, 0, 16);
                 A(y);
                 A(y);
-                isTrue("", Arrays.areEqual(x, y));
+                ARIATest.this.isTrue(Arrays.areEqual(x, y));
             }
         }
 
@@ -159,11 +159,11 @@ public class ARIATest
             {
                 byte x = (byte)i;
 
-                isTrue("", x == SB1(SB3(x)));
-                isTrue("", x == SB3(SB1(x)));
+                ARIATest.this.isTrue(x == SB1(SB3(x)));
+                ARIATest.this.isTrue(x == SB3(SB1(x)));
 
-                isTrue("", x == SB2(SB4(x)));
-                isTrue("", x == SB4(SB2(x)));
+                ARIATest.this.isTrue(x == SB2(SB4(x)));
+                ARIATest.this.isTrue(x == SB4(SB2(x)));
             }
         }
     }
