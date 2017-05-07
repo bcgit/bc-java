@@ -44,69 +44,28 @@ class ProvX509KeyManager
         this.builders = builders;
     }
 
-    public String[] getClientAliases(String keyType, Principal[] issuers)
-    {
-        List<String> aliases = findAliases(false, keyType, JsseUtils.toX500Names(issuers));
-
-        return aliases.toArray(new String[aliases.size()]);
-    }
-
     public String chooseClientAlias(String[] keyTypes, Principal[] issuers, Socket socket)
     {
-        try
-        {
-            Set<X500Name> issuerNames = JsseUtils.toX500Names(issuers);
-
-            // TODO[jsse] Need to support the keyTypes that SunJSSE sends here
-            for (int i = 0; i != keyTypes.length; i++)
-            {
-				List<String> aliases = findAliases(false, keyTypes[i], issuerNames);
-                if (!aliases.isEmpty())
-                {
-                    return aliases.get(0);
-                }
-            }
-
-            return null;
-        }
-        catch (Exception e)
-        {
-            return null;
-        }
+        // TODO[jsse] Socket argument currently unused
+        return implChooseClientAlias(keyTypes, issuers);
     }
 
-    public String[] getServerAliases(String keyType, Principal[] issuers)
+    public String chooseEngineClientAlias(String[] keyType, Principal[] issuers, SSLEngine engine)
     {
-        List<String> aliases = findAliases(true, keyType, JsseUtils.toX500Names(issuers));
+        // TODO[jsse] SSLEngine argument currently unused
+        return implChooseClientAlias(keyType, issuers);
+    }
 
-        return aliases.toArray(new String[aliases.size()]);
+    public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine)
+    {
+        // TODO[jsse] SSLEngine argument currently unused
+        return implChooseServerAlias(keyType, issuers);
     }
 
     public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket)
     {
-        try
-        {
-            List<String> aliases = findAliases(true, keyType, JsseUtils.toX500Names(issuers));
-
-            if (aliases.isEmpty())
-            {
-                return null;
-            }
-
-            return aliases.get(0);
-        }
-        catch (Exception e)
-        {
-            return null;
-        }
-    }
-
-    public String chooseEngineClientAlias(String[] keyType, Principal[] issuers, SSLEngine engine) {
-        return null;
-    }
-
-    public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine) {
-        return null;
+        // TODO[jsse] Socket argument currently unused
+        return implChooseServerAlias(keyType, issuers);
     }
 
     public X509Certificate[] getCertificateChain(String alias)
@@ -115,10 +74,24 @@ class ProvX509KeyManager
         return entry == null ? null : (X509Certificate[])entry.getCertificateChain();
     }
 
+    public String[] getClientAliases(String keyType, Principal[] issuers)
+    {
+        List<String> aliases = findAliases(false, keyType, JsseUtils.toX500Names(issuers));
+
+        return aliases.toArray(new String[aliases.size()]);
+    }
+
     public PrivateKey getPrivateKey(String alias)
     {
         PrivateKeyEntry entry = getPrivateKeyEntry(alias);
         return entry == null ? null : entry.getPrivateKey();
+    }
+
+    public String[] getServerAliases(String keyType, Principal[] issuers)
+    {
+        List<String> aliases = findAliases(true, keyType, JsseUtils.toX500Names(issuers));
+
+        return aliases.toArray(new String[aliases.size()]);
     }
 
     private List<String> findAliases(boolean forServer, String keyType, Set<X500Name> issuers)
@@ -199,6 +172,49 @@ class ProvX509KeyManager
     private PrivateKeyEntry getPrivateKeyEntry(String alias)
     {
         return alias == null ? null : keys.get(alias);
+    }
+
+    private String implChooseClientAlias(String[] keyTypes, Principal[] issuers)
+    {
+        try
+        {
+            Set<X500Name> issuerNames = JsseUtils.toX500Names(issuers);
+
+            // TODO[jsse] Need to support the keyTypes that SunJSSE sends here
+            for (int i = 0; i != keyTypes.length; i++)
+            {
+                List<String> aliases = findAliases(false, keyTypes[i], issuerNames);
+                if (!aliases.isEmpty())
+                {
+                    return aliases.get(0);
+                }
+            }
+
+            return null;
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
+    }
+
+    private String implChooseServerAlias(String keyType, Principal[] issuers)
+    {
+        try
+        {
+            List<String> aliases = findAliases(true, keyType, JsseUtils.toX500Names(issuers));
+
+            if (aliases.isEmpty())
+            {
+                return null;
+            }
+
+            return aliases.get(0);
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
     }
 
     private boolean isSuitableCertificate(boolean forServer, String keyType, Set<X500Name> issuers, X509Certificate c)
