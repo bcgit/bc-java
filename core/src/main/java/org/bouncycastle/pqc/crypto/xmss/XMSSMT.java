@@ -93,7 +93,7 @@ public final class XMSSMT {
 		try {
 			privateKey = new XMSSMTPrivateKeyParameters.Builder(params).withSecretKeySeed(privateKey.getSecretKeySeed())
 					.withSecretKeyPRF(privateKey.getSecretKeyPRF()).withPublicSeed(privateKey.getPublicSeed())
-					.withRoot(xmss.getRoot()).withBDSState(getBDSState()).build();
+					.withRoot(xmss.getRoot()).withBDSState(privateKey.getBDSState()).build();
 			publicKey = new XMSSMTPublicKeyParameters.Builder(params).withRoot(root.getValue())
 					.withPublicSeed(getPublicSeed()).build();
 		} catch (ParseException e) {
@@ -120,7 +120,7 @@ public final class XMSSMT {
 		XMSSMTPrivateKeyParameters privateKey = null;
 		try {
 			privateKey = new XMSSMTPrivateKeyParameters.Builder(params).withSecretKeySeed(secretKeySeed)
-					.withSecretKeyPRF(secretKeyPRF).withPublicSeed(publicSeed).withBDSState(getBDSState()).build();
+					.withSecretKeyPRF(secretKeyPRF).withPublicSeed(publicSeed).withBDSState(this.privateKey.getBDSState()).build();
 		} catch (ParseException ex) {
 			/* should not be possible */
 			ex.printStackTrace();
@@ -275,7 +275,7 @@ public final class XMSSMT {
 		try {
 			privateKey = new XMSSMTPrivateKeyParameters.Builder(params).withIndex(globalIndex + 1)
 					.withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
-					.withPublicSeed(privateKey.getPublicSeed()).withRoot(privateKey.getRoot()).withBDSState(getBDSState()).build();
+					.withPublicSeed(privateKey.getPublicSeed()).withRoot(privateKey.getRoot()).withBDSState(privateKey.getBDSState()).build();
 		} catch (ParseException e) {
 			/* should not be possible */
 			e.printStackTrace();
