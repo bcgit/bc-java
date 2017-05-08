@@ -726,14 +726,10 @@ public class SignerInformation
             v = new ASN1EncodableVector();
         }
 
-        ASN1EncodableVector sigs = new ASN1EncodableVector();
-
         for (Iterator it = counterSigners.getSigners().iterator(); it.hasNext();)
         {
-            sigs.add(((SignerInformation)it.next()).toASN1Structure());
+            v.add(new Attribute(CMSAttributes.counterSignature, new DERSet(((SignerInformation)it.next()).toASN1Structure())));
         }
-
-        v.add(new Attribute(CMSAttributes.counterSignature, new DERSet(sigs)));
 
         return new SignerInformation(
                 new SignerInfo(sInfo.getSID(), sInfo.getDigestAlgorithm(),
