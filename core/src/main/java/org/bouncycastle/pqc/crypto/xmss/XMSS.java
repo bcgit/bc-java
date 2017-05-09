@@ -66,7 +66,8 @@ public class XMSS {
 	}
 
 	/**
-	 * Generate new keys.
+	 * Generate a new XMSS private key / public key pair.
+	 * 
 	 */
 	public void generateKeys() {
 		/* generate private key */
@@ -75,8 +76,8 @@ public class XMSS {
 		try {
 			privateKey = new XMSSPrivateKeyParameters.Builder(params).withIndex(privateKey.getIndex())
 					.withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
-					.withPublicSeed(privateKey.getPublicSeed()).withRoot(root.getValue()).withBDSState(getBDSState())
-					.build();
+					.withPublicSeed(privateKey.getPublicSeed()).withRoot(root.getValue())
+					.withBDSState(privateKey.getBDSState()).build();
 			publicKey = new XMSSPublicKeyParameters.Builder(params).withRoot(root.getValue())
 					.withPublicSeed(getPublicSeed()).build();
 		} catch (ParseException ex) {
@@ -108,7 +109,8 @@ public class XMSS {
 		XMSSPrivateKeyParameters privateKey = null;
 		try {
 			privateKey = new XMSSPrivateKeyParameters.Builder(params).withSecretKeySeed(secretKeySeed)
-					.withSecretKeyPRF(secretKeyPRF).withPublicSeed(publicSeed).withBDSState(getBDSState()).build();
+					.withSecretKeyPRF(secretKeyPRF).withPublicSeed(publicSeed)
+					.withBDSState(this.privateKey.getBDSState()).build();
 		} catch (ParseException e) {
 			/* should not be possible */
 			e.printStackTrace();
@@ -123,14 +125,15 @@ public class XMSS {
 	}
 
 	/**
-	 * Import state.
-	 *
+	 * Import XMSS private key / public key pair.
+	 * 
 	 * @param privateKey
 	 *            XMSS private key.
 	 * @param publicKey
 	 *            XMSS public key.
-	 * @throws IOException
+	 * @throws ParseException
 	 * @throws ClassNotFoundException
+	 * @throws IOException
 	 */
 	public void importState(byte[] privateKey, byte[] publicKey)
 			throws ParseException, ClassNotFoundException, IOException {
@@ -208,9 +211,8 @@ public class XMSS {
 	}
 
 	/**
-	 * Verify an XMSS signature using the corresponding XMSS public key and a
-	 * message.
-	 *
+	 * Verify an XMSS signature.
+	 * 
 	 * @param message
 	 *            Message.
 	 * @param signature
@@ -218,6 +220,7 @@ public class XMSS {
 	 * @param publicKey
 	 *            XMSS public key.
 	 * @return true if signature is valid false else.
+	 * @throws ParseException
 	 */
 	public boolean verifySignature(byte[] message, byte[] signature, byte[] publicKey) throws ParseException {
 		if (message == null) {
@@ -533,7 +536,7 @@ public class XMSS {
 	}
 
 	/**
-	 * Getter Root.
+	 * Getter XMSS root.
 	 *
 	 * @return Root of binary tree.
 	 */
@@ -545,7 +548,7 @@ public class XMSS {
 		try {
 			privateKey = new XMSSPrivateKeyParameters.Builder(params).withIndex(privateKey.getIndex())
 					.withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
-					.withPublicSeed(getPublicSeed()).withRoot(root).withBDSState(getBDSState()).build();
+					.withPublicSeed(getPublicSeed()).withRoot(root).withBDSState(privateKey.getBDSState()).build();
 			publicKey = new XMSSPublicKeyParameters.Builder(params).withRoot(root).withPublicSeed(getPublicSeed())
 					.build();
 		} catch (ParseException ex) {
@@ -561,7 +564,7 @@ public class XMSS {
 	}
 
 	/**
-	 * Getter index.
+	 * Getter XMSS index.
 	 *
 	 * @return Index.
 	 */
@@ -574,7 +577,7 @@ public class XMSS {
 			privateKey = new XMSSPrivateKeyParameters.Builder(params).withIndex(index)
 					.withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
 					.withPublicSeed(privateKey.getPublicSeed()).withRoot(privateKey.getRoot())
-					.withBDSState(getBDSState()).build();
+					.withBDSState(privateKey.getBDSState()).build();
 		} catch (ParseException ex) {
 			/* should not happen */
 			ex.printStackTrace();
@@ -588,7 +591,7 @@ public class XMSS {
 	}
 
 	/**
-	 * Getter public seed.
+	 * Getter XMSS public seed.
 	 *
 	 * @return Public seed.
 	 */
@@ -600,7 +603,7 @@ public class XMSS {
 		try {
 			privateKey = new XMSSPrivateKeyParameters.Builder(params).withIndex(privateKey.getIndex())
 					.withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
-					.withPublicSeed(publicSeed).withRoot(getRoot()).withBDSState(getBDSState()).build();
+					.withPublicSeed(publicSeed).withRoot(getRoot()).withBDSState(privateKey.getBDSState()).build();
 			publicKey = new XMSSPublicKeyParameters.Builder(params).withRoot(getRoot()).withPublicSeed(publicSeed)
 					.build();
 		} catch (ParseException ex) {

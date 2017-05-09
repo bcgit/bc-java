@@ -19,6 +19,12 @@ public final class XMSSMT {
 	private XMSSMTPrivateKeyParameters privateKey;
 	private XMSSMTPublicKeyParameters publicKey;
 
+	/**
+	 * XMSSMT constructor...
+	 *
+	 * @param params
+	 *            XMSSMTParameters.
+	 */
 	public XMSSMT(XMSSMTParameters params) {
 		super();
 		if (params == null) {
@@ -43,6 +49,10 @@ public final class XMSSMT {
 		}
 	}
 
+	/**
+	 * Generate a new XMSSMT private key / public key pair.
+	 * 
+	 */
 	public void generateKeys() {
 		/* generate XMSSMT private key */
 		privateKey = generatePrivateKey();
@@ -93,7 +103,7 @@ public final class XMSSMT {
 		try {
 			privateKey = new XMSSMTPrivateKeyParameters.Builder(params).withSecretKeySeed(privateKey.getSecretKeySeed())
 					.withSecretKeyPRF(privateKey.getSecretKeyPRF()).withPublicSeed(privateKey.getPublicSeed())
-					.withRoot(xmss.getRoot()).withBDSState(getBDSState()).build();
+					.withRoot(xmss.getRoot()).withBDSState(privateKey.getBDSState()).build();
 			publicKey = new XMSSMTPublicKeyParameters.Builder(params).withRoot(root.getValue())
 					.withPublicSeed(getPublicSeed()).build();
 		} catch (ParseException e) {
@@ -120,7 +130,8 @@ public final class XMSSMT {
 		XMSSMTPrivateKeyParameters privateKey = null;
 		try {
 			privateKey = new XMSSMTPrivateKeyParameters.Builder(params).withSecretKeySeed(secretKeySeed)
-					.withSecretKeyPRF(secretKeyPRF).withPublicSeed(publicSeed).withBDSState(getBDSState()).build();
+					.withSecretKeyPRF(secretKeyPRF).withPublicSeed(publicSeed)
+					.withBDSState(this.privateKey.getBDSState()).build();
 		} catch (ParseException ex) {
 			/* should not be possible */
 			ex.printStackTrace();
@@ -134,6 +145,17 @@ public final class XMSSMT {
 		return privateKey;
 	}
 
+	/**
+	 * Import XMSSMT private key / public key pair.
+	 * 
+	 * @param privateKey
+	 *            XMSSMT private key.
+	 * @param publicKey
+	 *            XMSSMT public key.
+	 * @throws ParseException
+	 * @throws ClassNotFoundException
+	 * @throws IOException
+	 */
 	public void importState(byte[] privateKey, byte[] publicKey)
 			throws ParseException, ClassNotFoundException, IOException {
 		if (privateKey == null) {
@@ -167,6 +189,13 @@ public final class XMSSMT {
 		this.publicKey = xmssMTPublicKey;
 	}
 
+	/**
+	 * Sign message.
+	 *
+	 * @param message
+	 *            Message to sign.
+	 * @return XMSSMT signature on digest of message.
+	 */
 	public byte[] sign(byte[] message) {
 		if (message == null) {
 			throw new NullPointerException("message == null");
@@ -275,7 +304,8 @@ public final class XMSSMT {
 		try {
 			privateKey = new XMSSMTPrivateKeyParameters.Builder(params).withIndex(globalIndex + 1)
 					.withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
-					.withPublicSeed(privateKey.getPublicSeed()).withRoot(privateKey.getRoot()).withBDSState(getBDSState()).build();
+					.withPublicSeed(privateKey.getPublicSeed()).withRoot(privateKey.getRoot())
+					.withBDSState(privateKey.getBDSState()).build();
 		} catch (ParseException e) {
 			/* should not be possible */
 			e.printStackTrace();
@@ -289,6 +319,18 @@ public final class XMSSMT {
 		return signature.toByteArray();
 	}
 
+	/**
+	 * Verify an XMSSMT signature.
+	 * 
+	 * @param message
+	 *            Message.
+	 * @param signature
+	 *            XMSSMT signature.
+	 * @param publicKey
+	 *            XMSSMT public key.
+	 * @return true if signature is valid false else.
+	 * @throws ParseException
+	 */
 	public boolean verifySignature(byte[] message, byte[] signature, byte[] publicKey) throws ParseException {
 		if (message == null) {
 			throw new NullPointerException("message == null");
@@ -343,31 +385,46 @@ public final class XMSSMT {
 	}
 
 	/**
-	 * Export XMSS^MT private key.
+	 * Export XMSSMT private key.
 	 *
-	 * @return XMSS^MT private key.
+	 * @return XMSSMT private key.
 	 */
 	public byte[] exportPrivateKey() {
 		return privateKey.toByteArray();
 	}
 
 	/**
-	 * Export XMSS^MT public key.
+	 * Export XMSSMT public key.
 	 *
-	 * @return XMSS^MT public key.
+	 * @return XMSSMT public key.
 	 */
 	public byte[] exportPublicKey() {
 		return publicKey.toByteArray();
 	}
 
+	/**
+	 * Getter XMSSMT params.
+	 *
+	 * @return XMSSMT params.
+	 */
 	public XMSSMTParameters getParams() {
 		return params;
 	}
 
+	/**
+	 * Getter XMSSMT index.
+	 *
+	 * @return XMSSMT index.
+	 */
 	public long getIndex() {
 		return privateKey.getIndex();
 	}
 
+	/**
+	 * Getter public seed.
+	 *
+	 * @return Public seed.
+	 */
 	public byte[] getPublicSeed() {
 		return privateKey.getPublicSeed();
 	}
