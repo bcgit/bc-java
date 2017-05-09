@@ -15,20 +15,20 @@ public class CMCFailInfoTest
 
     // From Page 68, CMC: Structures RFC 5272
     private static Object[][] types = new Object[][]{
-        {"badAlg", 0L},
-        {"badMessageCheck", 1L},
-        {"badRequest", 2L},
-        {"badTime", 3L},
-        {"badCertId", 4L},
-        {"unsupportedExt", 5L},
-        {"mustArchiveKeys", 6L},
-        {"badIdentity", 7L},
-        {"popRequired", 8L},
-        {"popFailed", 9L},
-        {"noKeyReuse", 10L},
-        {"internalCAError", 11L},
-        {"tryLater", 12L},
-        {"authDataFail", 13L}
+        {"badAlg", new Long(0L) },
+        {"badMessageCheck", new Long(1L) },
+        {"badRequest", new Long(2L) },
+        {"badTime", new Long(3L) },
+        {"badCertId", new Long(4L) },
+        {"unsupportedExt", new Long(5L) },
+        {"mustArchiveKeys", new Long(6L) },
+        {"badIdentity", new Long(7L) },
+        {"popRequired", new Long(8L) },
+        {"popFailed", new Long(9L) },
+        {"noKeyReuse", new Long(10L) },
+        {"internalCAError", new Long(11L) },
+        {"tryLater", new Long(12L) },
+        {"authDataFail", new Long(13L)}
     };
     private static Map typesMap = new HashMap();
 
@@ -60,7 +60,7 @@ public class CMCFailInfoTest
 
         for (Iterator rangeKeys = range.keySet().iterator(); rangeKeys.hasNext(); )
         {   Object j = rangeKeys.next();
-            if (!typesMap.containsKey(((ASN1Integer)j).getValue().longValue()))  {
+            if (!typesMap.containsKey(new Long(((ASN1Integer)j).getValue().longValue())))  {
                 fail("The 'range' map in CMCFailInfo contains a value not in the test ('typesMap') map, value was: "+j.toString());
             }
         }
@@ -68,7 +68,7 @@ public class CMCFailInfoTest
 
         for (Iterator typeKeys = typesMap.keySet().iterator(); typeKeys.hasNext(); )
         {   Object j = typeKeys.next();
-            if (!range.containsKey(new ASN1Integer((Long)j)))  {
+            if (!range.containsKey(new ASN1Integer(((Long)j).longValue())))  {
                 fail("The 'typesMap' map in CMCFailInfoTest contains a value not in the CMCFailInfo ('range') map, value was: "+j.toString());
             }
         }

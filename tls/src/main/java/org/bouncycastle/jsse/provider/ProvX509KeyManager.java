@@ -3,10 +3,10 @@ package org.bouncycastle.jsse.provider;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.KeyStore.PrivateKeyEntry;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.ECPublicKey;
@@ -43,14 +43,53 @@ class ProvX509KeyManager
         this.builders = builders;
     }
 
-    public String[] getClientAliases(String keyType, Principal[] issuers)
+    public String chooseClientAlias(String[] keyTypes, Principal[] issuers, Socket socket)
     {
-        List<String> aliases = findAliases(false, keyType, JsseUtils.toX500Names(issuers));
-
-        return aliases.toArray(new String[aliases.size()]);
+        // TODO[jsse] Socket argument currently unused
+        return chooseAlias(false, keyTypes, issuers);
     }
 
-    public String chooseClientAlias(String[] keyTypes, Principal[] issuers, Socket socket)
+    public String chooseEngineClientAlias(String[] keyTypes, Principal[] issuers, SSLEngine engine)
+    {
+        // TODO[jsse] SSLEngine argument currently unused
+        return chooseAlias(false, keyTypes, issuers);
+    }
+
+    public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine)
+    {
+        // TODO[jsse] SSLEngine argument currently unused
+        return chooseAlias(true, new String[]{ keyType }, issuers);
+    }
+
+    public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket)
+    {
+        // TODO[jsse] Socket argument currently unused
+        return chooseAlias(true, new String[]{ keyType }, issuers);
+    }
+
+    public X509Certificate[] getCertificateChain(String alias)
+    {
+        PrivateKeyEntry entry = getPrivateKeyEntry(alias);
+        return entry == null ? null : (X509Certificate[])entry.getCertificateChain();
+    }
+
+    public String[] getClientAliases(String keyType, Principal[] issuers)
+    {
+        return getAliases(false, keyType, issuers);
+    }
+
+    public PrivateKey getPrivateKey(String alias)
+    {
+        PrivateKeyEntry entry = getPrivateKeyEntry(alias);
+        return entry == null ? null : entry.getPrivateKey();
+    }
+
+    public String[] getServerAliases(String keyType, Principal[] issuers)
+    {
+        return getAliases(true, keyType, issuers);
+    }
+
+    private String chooseAlias(boolean forServer, String[] keyTypes, Principal[] issuers)
     {
         try
         {
@@ -59,63 +98,18 @@ class ProvX509KeyManager
             // TODO[jsse] Need to support the keyTypes that SunJSSE sends here
             for (int i = 0; i != keyTypes.length; i++)
             {
-				List<String> aliases = findAliases(false, keyTypes[i], issuerNames);
+                List<String> aliases = findAliases(forServer, keyTypes[i], issuerNames);
                 if (!aliases.isEmpty())
                 {
                     return aliases.get(0);
                 }
             }
-
-            return null;
         }
         catch (Exception e)
         {
-            return null;
         }
-    }
 
-    public String[] getServerAliases(String keyType, Principal[] issuers)
-    {
-        List<String> aliases = findAliases(true, keyType, JsseUtils.toX500Names(issuers));
-
-        return aliases.toArray(new String[aliases.size()]);
-    }
-
-    public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket)
-    {
-        try
-        {
-            List<String> aliases = findAliases(true, keyType, JsseUtils.toX500Names(issuers));
-
-            if (aliases.isEmpty())
-            {
-                return null;
-            }
-
-            return aliases.get(0);
-        }
-        catch (Exception e)
-        {
-            return null;
-        }
-    }
-
-    public String chooseEngineClientAlias(String[] keyType, Principal[] issuers, SSLEngine engine) {
         return null;
-    }
-
-    public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine) {
-        return null;
-    }
-
-    public X509Certificate[] getCertificateChain(String alias)
-    {
-        return (X509Certificate[])keys.get(alias).getCertificateChain();
-    }
-
-    public PrivateKey getPrivateKey(String alias)
-    {
-        return keys.get(alias).getPrivateKey();
     }
 
     private List<String> findAliases(boolean forServer, String keyType, Set<X500Name> issuers)
@@ -153,32 +147,15 @@ class ProvX509KeyManager
                 continue;
             }
 
-            Certificate[] chain = keyStore.getCertificateChain(eName);
+            X509Certificate[] chain = JsseUtils.getX509CertificateChain(keyStore.getCertificateChain(eName));
             if (chain == null || chain.length == 0)    // not an entry with a certificate
             {
                 continue;
             }
 
-            if (!(chain[0] instanceof X509Certificate))
-            {
-                continue;
-            }
-
-            // scan back along the list of certificates
-            boolean found = false;
-            for (int i = chain.length - 1; i >= 0; i--)
-            {
-                X509Certificate x509Cert = (X509Certificate)chain[i];
-                if (isSuitableCertificate(forServer, keyType, issuers, x509Cert))
-                {
-                    // TODO[jsse] Double-check the private key type here?
-                    found = true;
-                    break;
-                }
-            }
             // TODO: manage two key/certs in one store that matches
 
-            if (found)
+            if (isSuitableCredential(forServer, keyType, issuers, chain))
             {
                 KeyStore.PrivateKeyEntry kEntry = (KeyStore.PrivateKeyEntry)keyStore.getEntry(eName, storeBuilder.getProtectionParameter(eName));
 
@@ -193,13 +170,47 @@ class ProvX509KeyManager
         return aliases;
     }
 
-    private boolean isSuitableCertificate(boolean forServer, String keyType, Set<X500Name> issuers, X509Certificate c)
+    private String[] getAliases(boolean forServer, String keyType, Principal[] issuers)
     {
-        if (keyType == null || c == null)
+        List<String> aliases = findAliases(forServer, keyType, JsseUtils.toX500Names(issuers));
+        return aliases.toArray(new String[aliases.size()]);
+    }
+
+    private PrivateKeyEntry getPrivateKeyEntry(String alias)
+    {
+        return alias == null ? null : keys.get(alias);
+    }
+
+    private boolean hasSuitableIssuer(Set<X500Name> issuerNames, X509Certificate c)
+    {
+        return issuerNames.contains(JsseUtils.toX500Name(c.getIssuerX500Principal()));
+    }
+
+    private boolean isSuitableCredential(boolean forServer, String keyType, Set<X500Name> issuerNames,
+        X509Certificate[] certificateChain)
+    {
+        if (!isSuitableCertificate(forServer, keyType, certificateChain[0]))
         {
             return false;
         }
-        if (!isSuitableIssuer(issuers, c))
+        if (issuerNames == null || issuerNames.isEmpty())
+        {
+            return true;
+        }
+        int pos = certificateChain.length;
+        while (--pos >= 0)
+        {
+            if (hasSuitableIssuer(issuerNames, certificateChain[pos]))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isSuitableCertificate(boolean forServer, String keyType, X509Certificate c)
+    {
+        if (keyType == null || c == null)
         {
             return false;
         }
@@ -235,19 +246,6 @@ class ProvX509KeyManager
         }
         // TODO[jsse] Support other key exchanges (and client certificate types)
         return false;
-    }
-
-    private boolean isSuitableIssuer(Set<X500Name> issuers, X509Certificate c)
-    {
-        try
-        {
-            org.bouncycastle.asn1.x509.Certificate asn1Cert = org.bouncycastle.asn1.x509.Certificate.getInstance(c.getEncoded());
-            return issuers == null || issuers.isEmpty() || issuers.contains(asn1Cert.getIssuer());
-        }
-        catch (Exception e)
-        {
-            return false;
-        }
     }
 
     private boolean isSuitableKeyUsage(int keyUsageBits, X509Certificate c)

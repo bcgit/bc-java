@@ -5,6 +5,8 @@ package org.bouncycastle.math.ec;
  */
 public class FixedPointPreCompInfo implements PreCompInfo
 {
+    protected ECPoint offset = null;
+
     /**
      * Array holding the precomputed <code>ECPoint</code>s used for a fixed
      * point multiplication.
@@ -17,6 +19,16 @@ public class FixedPointPreCompInfo implements PreCompInfo
      * code should refer to the actual width.
      */
     protected int width = -1;
+
+    public ECPoint getOffset()
+    {
+        return offset;
+    }
+
+    public void setOffset(ECPoint offset)
+    {
+        this.offset = offset;
+    }
 
     public ECPoint[] getPreComp()
     {

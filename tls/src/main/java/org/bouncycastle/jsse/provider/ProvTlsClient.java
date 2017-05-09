@@ -117,7 +117,7 @@ class ProvTlsClient
                 for (int i = 0; i < certTypes.length; ++i)
                 {
                     // TODO[jsse] Need to also take notice of certificateRequest.getSupportedSignatureAlgorithms(), if present
-                    keyTypes[i] = JsseUtils.getClientAuthType(certTypes[i]);
+                    keyTypes[i] = JsseUtils.getAuthTypeClient(certTypes[i]);
                 }
 
                 Principal[] issuers = null;
@@ -153,6 +153,12 @@ class ProvTlsClient
                     // TODO[jsse] Log the probable misconfigured keystore
                     return null;
                 }
+
+                /*
+                 * TODO[jsse] Before proceeding with EC credentials, should we check (TLS 1.2+) that
+                 * the used curve was actually declared in the client's elliptic_curves/named_groups
+                 * extension?
+                 */
 
                 switch (keyExchangeAlgorithm)
                 {
@@ -197,7 +203,7 @@ class ProvTlsClient
                 else
                 {
                     X509Certificate[] chain = JsseUtils.getX509CertificateChain(serverCertificate);
-                    String authType = JsseUtils.getAuthType(TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite));
+                    String authType = JsseUtils.getAuthTypeServer(TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite));
 
                     if (!manager.isServerTrusted(chain, authType))
                     {

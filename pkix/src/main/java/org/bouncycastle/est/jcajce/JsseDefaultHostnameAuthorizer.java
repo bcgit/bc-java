@@ -6,6 +6,7 @@ import java.net.InetAddress;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -77,11 +78,12 @@ public class JsseDefaultHostnameAuthorizer
         //
         try
         {
-            Collection<List<?>> n = cert.getSubjectAlternativeNames();
+            Collection n = cert.getSubjectAlternativeNames();
             if (n != null)
             {
-                for (List l : n)
+                for (Iterator it = n.iterator(); it.hasNext();)
                 {
+                    List l = (List)it.next();
                     switch (((Number)l.get(0)).intValue())
                     {
                     case 2:
@@ -113,11 +115,21 @@ public class JsseDefaultHostnameAuthorizer
             throw new ESTException(ex.getMessage(), ex);
         }
 
-        // Common Name match only.
-        for (RDN rdn : X500Name.getInstance(cert.getSubjectX500Principal().getEncoded()).getRDNs())
+        // can't match - would need to check subjectAltName
+        if (cert.getSubjectX500Principal() == null)
         {
-            for (AttributeTypeAndValue atv : rdn.getTypesAndValues())
+            return false;
+        }
+
+        // Common Name match only.
+        RDN[] rdNs = X500Name.getInstance(cert.getSubjectX500Principal().getEncoded()).getRDNs();
+        for (int i = 0; i != rdNs.length; i++)
+        {
+            RDN rdn = rdNs[i];
+            AttributeTypeAndValue[] typesAndValues = rdn.getTypesAndValues();
+            for (int j = 0; j != typesAndValues.length; j++)
             {
+                AttributeTypeAndValue atv = typesAndValues[j];
                 if (atv.getType().equals(BCStyle.CN))
                 {
                     return isValidNameMatch(name, rdn.getFirst().getValue().toString(), knownSuffixes);

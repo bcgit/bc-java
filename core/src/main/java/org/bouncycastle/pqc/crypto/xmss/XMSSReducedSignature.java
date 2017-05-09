@@ -5,165 +5,133 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Reduced XMSS Signature for MT variant.
+ * Reduced XMSS Signature.
  *
  */
-public class XMSSReducedSignature
-    implements XMSSStoreableObjectInterface
-{
+public class XMSSReducedSignature implements XMSSStoreableObjectInterface {
 
-    /**
-     * XMSS object.
-     */
-    private XMSSParameters params;
-    /**
-     * WOTS+ signature.
-     */
-    private WOTSPlusSignature signature;
-    /**
-     * Authentication path.
-     */
-    private List<XMSSNode> authPath;
+	private final XMSSParameters params;
+	private final WOTSPlusSignature wotsPlusSignature;
+	private final List<XMSSNode> authPath;
 
-    /**
-     * Constructor...
-     *
-     * @param signature The WOTS+ signature.
-     * @param authPath  The authentication path.
-     */
-    public XMSSReducedSignature(XMSSParameters params)
-    {
-        super();
-        if (params == null)
-        {
-            throw new NullPointerException("params == null");
-        }
-        this.params = params;
-        signature = new WOTSPlusSignature(params.getWOTSPlus().getParams());
-        authPath = new ArrayList<XMSSNode>();
-    }
+	protected XMSSReducedSignature(Builder builder) throws ParseException {
+		super();
+		params = builder.params;
+		if (params == null) {
+			throw new NullPointerException("params == null");
+		}
+		int n = params.getDigestSize();
+		int len = params.getWOTSPlus().getParams().getLen();
+		int height = params.getHeight();
+		byte[] reducedSignature = builder.reducedSignature;
+		if (reducedSignature != null) {
+			/* import */
+			int signatureSize = len * n;
+			int authPathSize = height * n;
+			int totalSize = signatureSize + authPathSize;
+			if (reducedSignature.length != totalSize) {
+				throw new ParseException("signature has wrong size", 0);
+			}
+			int position = 0;
+			byte[][] wotsPlusSignature = new byte[len][];
+			for (int i = 0; i < wotsPlusSignature.length; i++) {
+				wotsPlusSignature[i] = XMSSUtil.extractBytesAtOffset(reducedSignature, position, n);
+				position += n;
+			}
+			this.wotsPlusSignature = new WOTSPlusSignature(params.getWOTSPlus().getParams(), wotsPlusSignature);
 
-    public byte[] toByteArray()
-    {
-        /* signature || authentication path */
-        int n = params.getDigestSize();
-        int signatureSize = params.getWOTSPlus().getParams().getLen() * n;
-        int authPathSize = params.getHeight() * n;
-        int totalSize = signatureSize + authPathSize;
-        byte[] out = new byte[totalSize];
-        int position = 0;
+			List<XMSSNode> nodeList = new ArrayList<XMSSNode>();
+			for (int i = 0; i < height; i++) {
+				nodeList.add(new XMSSNode(i, XMSSUtil.extractBytesAtOffset(reducedSignature, position, n)));
+				position += n;
+			}
+			authPath = nodeList;
+		} else {
+			/* set */
+			WOTSPlusSignature tmpSignature = builder.wotsPlusSignature;
+			if (tmpSignature != null) {
+				wotsPlusSignature = tmpSignature;
+			} else {
+				wotsPlusSignature = new WOTSPlusSignature(params.getWOTSPlus().getParams(), new byte[len][n]);
+			}
+			List<XMSSNode> tmpAuthPath = builder.authPath;
+			if (tmpAuthPath != null) {
+				if (tmpAuthPath.size() != height) {
+					throw new IllegalArgumentException("size of authPath needs to be equal to height of tree");
+				}
+				authPath = tmpAuthPath;
+			} else {
+				authPath = new ArrayList<XMSSNode>();
+			}
+		}
+	}
+	
+	public static class Builder {
+		
+		/* mandatory */
+		private final XMSSParameters params;
+		/* optional */
+		private WOTSPlusSignature wotsPlusSignature = null;
+		private List<XMSSNode> authPath = null;
+		private byte[] reducedSignature = null;
+		
+		public Builder(XMSSParameters params) {
+			super();
+			this.params = params;
+		}
+		
+		public Builder withWOTSPlusSignature(WOTSPlusSignature val) {
+			wotsPlusSignature = val;
+			return this;
+		}
+		
+		public Builder withAuthPath(List<XMSSNode> val) {
+			authPath = val;
+			return this;
+		}
+		
+		public Builder withReducedSignature(byte[] val) {
+			reducedSignature = XMSSUtil.cloneArray(val);
+			return this;
+		}
+		
+		public XMSSReducedSignature build() throws ParseException {
+			return new XMSSReducedSignature(this);
+		}
+	}
+
+	public byte[] toByteArray() {
+		/* signature || authentication path */
+		int n = params.getDigestSize();
+		int signatureSize = params.getWOTSPlus().getParams().getLen() * n;
+		int authPathSize = params.getHeight() * n;
+		int totalSize = signatureSize + authPathSize;
+		byte[] out = new byte[totalSize];
+		int position = 0;
 		/* copy signature */
-        byte[][] signature = this.signature.toByteArray();
-        for (int i = 0; i < signature.length; i++)
-        {
-            XMSSUtil.copyBytesAtOffset(out, signature[i], position);
-            position += n;
-        }
+		byte[][] signature = this.wotsPlusSignature.toByteArray();
+		for (int i = 0; i < signature.length; i++) {
+			XMSSUtil.copyBytesAtOffset(out, signature[i], position);
+			position += n;
+		}
 		/* copy authentication path */
-        for (int i = 0; i < authPath.size(); i++)
-        {
-            byte[] value = authPath.get(i).getValue();
-            XMSSUtil.copyBytesAtOffset(out, value, position);
-            position += n;
-        }
-        return out;
-    }
+		for (int i = 0; i < authPath.size(); i++) {
+			byte[] value = authPath.get(i).getValue();
+			XMSSUtil.copyBytesAtOffset(out, value, position);
+			position += n;
+		}
+		return out;
+	}
 
-    public void parseByteArray(byte[] in)
-        throws ParseException
-    {
-        if (in == null)
-        {
-            throw new NullPointerException("in == null");
-        }
-        int n = params.getDigestSize();
-        int len = params.getWOTSPlus().getParams().getLen();
-        int height = params.getHeight();
-        int signatureSize = len * n;
-        int authPathSize = height * n;
-        int totalSize = signatureSize + authPathSize;
-        if (in.length != totalSize)
-        {
-            throw new ParseException("signature has wrong size", 0);
-        }
-        int position = 0;
-        byte[][] wotsPlusSignature = new byte[len][];
-        for (int i = 0; i < wotsPlusSignature.length; i++)
-        {
-            wotsPlusSignature[i] = XMSSUtil.extractBytesAtOffset(in, position, n);
-            position += n;
-        }
-        signature = new WOTSPlusSignature(params.getWOTSPlus().getParams());
-        signature.setSignature(wotsPlusSignature);
+	public XMSSParameters getParams() {
+		return params;
+	}
 
-        List<XMSSNode> nodeList = new ArrayList<XMSSNode>();
-        for (int i = 0; i < height; i++)
-        {
-            nodeList.add(new XMSSNode(i, XMSSUtil.extractBytesAtOffset(in, position, n)));
-            position += n;
-        }
-        authPath = nodeList;
-    }
+	public WOTSPlusSignature getWOTSPlusSignature() {
+		return wotsPlusSignature;
+	}
 
-    /**
-     * Getter params.
-     *
-     * @return XMSS Parameters.
-     */
-    protected XMSSParameters getParams()
-    {
-        return params;
-    }
-
-    /**
-     * Getter signature.
-     *
-     * @return WOTS+ signature.
-     */
-    public WOTSPlusSignature getSignature()
-    {
-        return signature;
-    }
-
-    /**
-     * Setter WOTS+ signature
-     *
-     * @param signature WOTS+ signature.
-     */
-    public void setSignature(WOTSPlusSignature signature)
-    {
-        if (signature == null)
-        {
-            throw new NullPointerException("signature == null");
-        }
-        this.signature = signature;
-    }
-
-    /**
-     * Getter authentication path.
-     *
-     * @return Authentication path.
-     */
-    public List<XMSSNode> getAuthPath()
-    {
-        return authPath;
-    }
-
-    /**
-     * Setter authentication path.
-     *
-     * @param authPath Authentication path.
-     */
-    public void setAuthPath(List<XMSSNode> authPath)
-    {
-        if (authPath == null)
-        {
-            throw new NullPointerException("authPath == null");
-        }
-        if (authPath.size() != params.getHeight())
-        {
-            throw new IllegalArgumentException("size of authPath needs to be equal to height of tree");
-        }
-        this.authPath = authPath;
-    }
+	public List<XMSSNode> getAuthPath() {
+		return authPath;
+	}
 }

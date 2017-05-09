@@ -56,11 +56,7 @@ public class PKCS10CertificationRequestBuilder
         this.publicKeyInfo = original.publicKeyInfo;
         this.subject = original.subject;
         this.leaveOffEmpty = original.leaveOffEmpty;
-        this.attributes = new ArrayList();
-        for (Object a : original.attributes)
-        {
-            this.attributes.add(a);
-        }
+        this.attributes = new ArrayList(original.attributes);
     }
 
 

@@ -28,7 +28,7 @@ public class ControlsProcessedTest
         ControlsProcessed cp = new ControlsProcessed(new BodyPartReference[]{new BodyPartReference(new BodyPartID(12L)), new BodyPartReference(new BodyPartID(14L))});
         byte[] b = cp.getEncoded();
         ControlsProcessed cpResult = ControlsProcessed.getInstance(b);
-        isEquals(cpResult.getBodyList().length, cp.getBodyList().length);
+        isTrue(cpResult.getBodyList().length == cp.getBodyList().length);
         isEquals(cpResult.getBodyList()[0], cp.getBodyList()[0]);
         isEquals(cpResult.getBodyList()[1], cp.getBodyList()[1]);
 

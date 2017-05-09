@@ -4,54 +4,33 @@ package org.bouncycastle.pqc.crypto.xmss;
  * WOTS+ private key.
  *
  */
-public class WOTSPlusPrivateKeyParameters
-{
+public final class WOTSPlusPrivateKeyParameters {
 
-    private WOTSPlusParameters params;
-    private byte[][] privateKey;
+	private final byte[][] privateKey;
 
-    protected WOTSPlusPrivateKeyParameters(WOTSPlusParameters params)
-    {
-        super();
-        if (params == null)
-        {
-            throw new NullPointerException("params == null");
-        }
-        this.params = params;
-        privateKey = new byte[params.getLen()][params.getDigestSize()];
-    }
+	protected WOTSPlusPrivateKeyParameters(WOTSPlusParameters params, byte[][] privateKey) {
+		super();
+		if (params == null) {
+			throw new NullPointerException("params == null");
+		}
+		if (privateKey == null) {
+			throw new NullPointerException("privateKey == null");
+		}
+		if (XMSSUtil.hasNullPointer(privateKey)) {
+			throw new NullPointerException("privateKey byte array == null");
+		}
+		if (privateKey.length != params.getLen()) {
+			throw new IllegalArgumentException("wrong privateKey format");
+		}
+		for (int i = 0; i < privateKey.length; i++) {
+			if (privateKey[i].length != params.getDigestSize()) {
+				throw new IllegalArgumentException("wrong privateKey format");
+			}
+		}
+		this.privateKey = XMSSUtil.cloneArray(privateKey);
+	}
 
-    public byte[][] getPrivateKey()
-    {
-        return privateKey;
-    }
-
-    public void setPrivateKey(byte[][] privateKey)
-    {
-        if (privateKey == null)
-        {
-            throw new NullPointerException("privateKey == null");
-        }
-        if (XMSSUtil.hasNullPointer(privateKey))
-        {
-            throw new NullPointerException("privateKey byte array == null");
-        }
-        if (privateKey.length != params.getLen())
-        {
-            throw new IllegalArgumentException("wrong privateKey format");
-        }
-        for (int i = 0; i < privateKey.length; i++)
-        {
-            if (privateKey[i].length != params.getDigestSize())
-            {
-                throw new IllegalArgumentException("wrong privateKey format");
-            }
-        }
-        this.privateKey = privateKey;
-    }
-
-    public byte[][] toByteArray()
-    {
-        return XMSSUtil.cloneArray(privateKey);
-    }
+	protected byte[][] toByteArray() {
+		return XMSSUtil.cloneArray(privateKey);
+	}
 }

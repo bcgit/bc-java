@@ -292,6 +292,7 @@ public class PGPPublicKey
     {
         Iterator signatures = this.getSignaturesOfType(signatureType);
         long     expiryTime = -1;
+        long     lastDate = -1;
 
         while (signatures.hasNext())
         {
@@ -305,9 +306,20 @@ public class PGPPublicKey
                 {
                     long current = hashed.getKeyExpirationTime();
 
-                    if (current == 0 || current > expiryTime)
+                    if (sig.getKeyID() == this.getKeyID())
                     {
-                        expiryTime = current;
+                        if (sig.getCreationTime().getTime() > lastDate)
+                        {
+                            lastDate = sig.getCreationTime().getTime();
+                            expiryTime = current;
+                        }
+                    }
+                    else
+                    {
+                        if (current == 0 || current > expiryTime)
+                        {
+                            expiryTime = current;
+                        }
                     }
                 }
                 else

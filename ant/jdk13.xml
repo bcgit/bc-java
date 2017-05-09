@@ -49,6 +49,7 @@
                 <exclude name="**/NTRU*.java" />
                 <exclude name="**/IndexGenerator.java" />
                 <exclude name="**/ntru/**/*.java" />
+                <exclude name="**/xmss/**/*.java" />
                 <exclude name="**/asymmetric/DSTU*.java" />
                 <exclude name="**/asymmetric/dstu/*.java" />
                 <exclude name="**/provider/config/PKCS12StoreParameter.java" />
@@ -76,12 +77,14 @@
                 <exclude name="**/NTRU*.java" />
                 <exclude name="**/IndexGenerator.java" />
                 <exclude name="**/ntru/**/*.java" />
+                <exclude name="**/xmss/**/*.java" />
                 <exclude name="**/asymmetric/DSTU*.java" />
                 <exclude name="**/asymmetric/dstu/*.java" />
                 <exclude name="**/provider/config/PKCS12StoreParameter.java" />
             </fileset>
             <fileset dir="pkix/src/main/java">
                 <exclude name="**/cert/jcajce/JcaAttributeCertificateIssuer.java" />
+                <exclude name="**/est/**/*.java" />
             </fileset>
             <fileset dir="pg/src/main/java">
             </fileset>
@@ -107,6 +110,7 @@
                 <exclude name="**/GetInstanceTest.java" />
                 <exclude name="**/ntru/**/*.java" />
                 <exclude name="**/NTRU*.java" />
+                <exclude name="**/XMSS*.java" />
                 <exclude name="**/crypto/engines/test/BitStringTest.java" />
                 <exclude name="**/crypto/engines/test/AllTests.java" />
                 <exclude name="**/crypto/signers/test/AllTests.java" />
@@ -166,6 +170,7 @@
                 <exclude name="**/NullProviderTest.java" />
                 <exclude name="**/CertPathLoopTest.java" />
                 <exclude name="**/TimeStampTokenInfoUnitTest.java" />
+                <exclude name="**/est/**/*.java" />
             </fileset>
             <fileset dir="mail/src/test/java">
                 <exclude name="**/SignedMailValidatorTest.java" />

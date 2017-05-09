@@ -25,7 +25,6 @@ class CTEBase64InputStream
         this.src = src;
         this.dataOutputStream = new OutputStream()
         {
-            @Override
             public void write(int b)
                 throws IOException
             {
@@ -34,7 +33,6 @@ class CTEBase64InputStream
         };
         this.max = limit;
     }
-
 
     // Pulls a line from the source, decodes it and returns the decoded length.
     // Or returns -1 if there is nothing more to read and nothing was read in this pass.
@@ -82,7 +80,7 @@ class CTEBase64InputStream
             }
             catch (Exception ex)
             {
-                throw new IOException("Decode Base64 Content-Transfer-Encoding", ex);
+                throw new IOException("Decode Base64 Content-Transfer-Encoding: " + ex);
             }
         }
         else
@@ -112,11 +110,9 @@ class CTEBase64InputStream
         return data[rp++] & 0xFF;
     }
 
-    @Override
     public void close()
         throws IOException
     {
         src.close();
     }
-
 }
