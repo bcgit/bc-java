@@ -38,6 +38,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2016, December 23
 <li>Choosing an invalid mode on a stream cipher in the JCE could result in an IllegalArgumentException. This has now been corrected to throw a NoSuchAlgorithmException.</li>
 <li>Optional parameters for ECDSA public keys in CVCertificates were hard coded to non-optional. This has been fixed.</li>
 <li>Passing a PKCS12 key to a Mac in the BC JCE always resulted in SHA-1 being used to process the password regardless of the underlying MAC algorithm. This has been fixed. An unrecognised HMAC will also now result in an exception.</li>
+<li>The Base64 encoder now explicitly validates 2 character padding as being "==".</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
