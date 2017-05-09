@@ -8,7 +8,7 @@
 
 if [ "${JDKPATH}" = "" ] 
 then
-	JDKPATH=/usr/lib/jvm/java-7-openjdk-amd64
+	JDKPATH=/usr/lib/jvm/java-8-jdk
 fi
 
 JAVA_HOME=$JDKPATH
@@ -30,4 +30,3 @@ else
         ant -f ant/jdk15+.xml zip-src
     fi
 fi
-

@@ -65,14 +65,29 @@ public final class XMSSParameters {
 		return prng;
 	}
 
+	/**
+	 * Getter digest size.
+	 * 
+	 * @return Digest size.
+	 */
 	public int getDigestSize() {
 		return wotsPlus.getParams().getDigestSize();
 	}
 
+	/**
+	 * Getter Winternitz parameter.
+	 * 
+	 * @return Winternitz parameter.
+	 */
 	public int getWinternitzParameter() {
 		return wotsPlus.getParams().getWinternitzParameter();
 	}
 
+	/**
+	 * Getter height.
+	 * 
+	 * @return XMSS height.
+	 */
 	public int getHeight() {
 		return height;
 	}
