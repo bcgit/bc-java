@@ -57,6 +57,8 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/pqc/math/ntru
     rm -rf org/bouncycastle/pqc/crypto/ntru
     rm -rf org/bouncycastle/pqc/crypto/*/NTRU*
+    rm -rf org/bouncycastle/pqc/crypto/xmss
+    rm -rf org/bouncycastle/pqc/crypto/*/XMSS*
     rm -rf org/bouncycastle/pqc/crypto/*/EncryptionKey*
     rm -rf org/bouncycastle/pqc/crypto/*/BitStringT*
     rm -rf org/bouncycastle/crypto/*/test
@@ -126,6 +128,7 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/operator
     rm -rf org/bouncycastle/eac
     rm -rf org/bouncycastle/tsp
+    rm -r org/bouncycastle/est
     rm -rf org/bouncycastle/mozilla
     rm -rf org/bouncycastle/jcajce/provider/asymmetric/dstu
     rm -rf org/bouncycastle/jcajce/provider/asymmetric/DSTU*.java
@@ -340,16 +343,17 @@ then
 
     echo "compiling"
 
+    (cd src/javax/crypto; javac -d ../../../classes -classpath ../../../classes:../../../src *.java */*.java)
     (cd src/java/security/spec; javac -d ../../../../classes -classpath ../../../../classes *.java )
 
     (cd src/org/bouncycastle/jce/cert; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src *.java  )
-    (cd src/org/bouncycastle/jcajce/provider; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src [abcis]*/*.java [abcis]*/*/*.java )
+    (cd src/org/bouncycastle/jcajce/provider; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src [abcis]*/*.java )
+    (cd src/org/bouncycastle/jcajce/provider; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src [abcis]*/*/*.java )
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src *.java a*/*.java a*/*/*.java a*/*/*/*.java )
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src *.java [bci]*/*.java [bci]*/*/*.java [bci]*/*/*/*.java )
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src [jmop]*/*.java [jmop]*/*/*.java [jmop]*/*/*/*.java [jmop]*/*/*/*/*.java)
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src [tuvx]*/*.java [tuvx]*/*/*.java [tuvx]*/*/*/*.java)
 
-    (cd src/javax/crypto; javac -d ../../../classes -classpath ../../../classes:../../../src *.java */*.java)
 
 
     echo "provider regression test"
@@ -398,6 +402,7 @@ then
     rm -rf src/org/bouncycastle/eac/test
     rm -rf src/org/bouncycastle/pkcs/test
     rm -rf src/org/bouncycastle/tsp/test
+    rm -rf src/org/bouncycastle/est
     rm -rf src/org/bouncycastle/tsp/GenTimeAccuracyUnit*
     rm -rf src/org/bouncycastle/tsp/TimeStampTokenInfoUnit*
     rm src/org/bouncycastle/cert/dane/fetcher/JndiDANEFetcherFactory.java
@@ -488,6 +493,7 @@ then
     rm -rf src/org/bouncycastle/operator
     rm -rf src/org/bouncycastle/voms
     rm -rf src/org/bouncycastle/sasn1
+    rm -rf src/org/bouncycastle/est
     rm -rf src/org/bouncycastle/asn1/test
     rm -f src/org/bouncycastle/openpgp/test/DSA2Test.java
     rm -f src/org/bouncycastle/openpgp/test/PGPUnicodeTest.java
