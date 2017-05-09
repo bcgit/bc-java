@@ -39,6 +39,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2016, December 23
 <li>Optional parameters for ECDSA public keys in CVCertificates were hard coded to non-optional. This has been fixed.</li>
 <li>Passing a PKCS12 key to a Mac in the BC JCE always resulted in SHA-1 being used to process the password regardless of the underlying MAC algorithm. This has been fixed. An unrecognised HMAC will also now result in an exception.</li>
 <li>The Base64 encoder now explicitly validates 2 character padding as being "==".</li>
+<li>EC FixedPointCombMultiplier avoids 'infinity' point in lookup tables, reducing timing side-channels.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
@@ -47,6 +48,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2016, December 23
 <li>SM2 signatures, key exchange, and public key encryption has been added to the lightweight API.</li>
 <li>XMSS has been added to the lightweight PQ API. Note: this should be treated as beta code.</li>
 <li>API support for client side EST (RFC 7030), as well as some CMC (RFC 5273) has been added to the PKIX API. A full set of ASN.1 classes for both protocols has been added as well.</li>
+<li>The BCJSSE provider now supports SSLContext.getDefault(), with very similar behaviour to the SunJSSE provider, including checks of the relevant javax.net.ssl.* system properties and auto-loading of jssecacerts or cacerts as the default trust store.</li>
 </ul>
 <h3>2.1.3 Security Related Changes</h3>
 <ul>
