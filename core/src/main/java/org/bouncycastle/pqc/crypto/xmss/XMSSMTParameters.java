@@ -15,6 +15,18 @@ public final class XMSSMTParameters {
 	private final int height;
 	private final int layers;
 
+	/**
+	 * XMSSMT constructor...
+	 * 
+	 * @param height
+	 *            Height of tree.
+	 * @param layers
+	 *            Amount of layers.
+	 * @param digest
+	 *            Digest to use.
+	 * @param prng
+	 *            Secure random to use.
+	 */
 	public XMSSMTParameters(int height, int layers, Digest digest, SecureRandom prng) {
 		super();
 		this.height = height;
@@ -40,10 +52,20 @@ public final class XMSSMTParameters {
 		return height / layers;
 	}
 
+	/**
+	 * Getter height.
+	 * 
+	 * @return XMSSMT height.
+	 */
 	public int getHeight() {
 		return height;
 	}
 
+	/**
+	 * Getter layers.
+	 * 
+	 * @return XMSSMT layers.
+	 */
 	public int getLayers() {
 		return layers;
 	}
@@ -60,10 +82,20 @@ public final class XMSSMTParameters {
 		return xmss.getParams().getDigest();
 	}
 
+	/**
+	 * Getter digest size.
+	 * 
+	 * @return Digest size.
+	 */
 	public int getDigestSize() {
 		return xmss.getParams().getDigestSize();
 	}
 
+	/**
+	 * Getter Winternitz parameter.
+	 * 
+	 * @return Winternitz parameter.
+	 */
 	public int getWinternitzParameter() {
 		return xmss.getParams().getWinternitzParameter();
 	}
