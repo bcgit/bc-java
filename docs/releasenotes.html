@@ -29,6 +29,27 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2016, December 23
 <ul>
 <li>A class cast exception for master certification removal in PGPPublicKey.removeCertification() by certification has been fixed.</li>
 <li>GOST GOFB 28147-89 mode had an edge condition concerning the incorrect calculation of N4 (see section 6.1 of RFC 5830) affecting about 1% of IVs. This has been fixed.</li>
+<li>The X.509 PolicyConstraints class was using implicit rather than explicit tagging for the SkipCerts field. This has been fixed.</li>
+<li>Key expiration in the OpenPGP is now calculated for ambiguous self signatures using the most recently created self-signature, in line with GPG and the recommendation in RFC 4880.</li>
+<li>Multiple validity periods in PGP keys were resolved in an adhoc fashion, in line with GPG's approach the PGP has been changed to return the most recent validity period signed.</li>
+<li>An occassional class cast exception that could occur with nested multi-parts in the S/MIME API has been fixed.</li>
+<li>A couple of bogus aliases associated AlgorithmParameters that did not resolve in the provider have been removed.</li>
+<li>The CMS API will now correctly verify PSS signatures with odd length salts.</li>
+<li>Choosing an invalid mode on a stream cipher in the JCE could result in an IllegalArgumentException. This has now been corrected to throw a NoSuchAlgorithmException.</li>
+<li>Optional parameters for ECDSA public keys in CVCertificates were hard coded to non-optional. This has been fixed.</li>
+<li>Passing a PKCS12 key to a Mac in the BC JCE always resulted in SHA-1 being used to process the password regardless of the underlying MAC algorithm. This has been fixed. An unrecognised HMAC will also now result in an exception.</li>
+</ul>
+<h3>2.2.3 Additional Features and Functionality</h3>
+<ul>
+<li>ARIA (RFC 5794) is now supported by the provider and the lightweight API.</li>
+<li>ARIA Key Wrapping (RFC 5649 style) is now supported by the provider and the lightweight API.</li>
+<li>SM2 signatures, key exchange, and public key encryption has been added to the lightweight API.</li>
+<li>XMSS has been added to the lightweight PQ API. Note: this should be treated as beta code.</li>
+<li>API support for client side EST (RFC 7030), as well as some CMC (RFC 5273) has been added to the PKIX API. A full set of ASN.1 classes for both protocols has been added as well.</li>
+</ul>
+<h3>2.1.3 Security Related Changes</h3>
+<ul>
+<li>The default parameter sizes for DH and DSA are now 2048. If you have been relying on key pair generation without passing in parameters generated keys will now be larger.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>

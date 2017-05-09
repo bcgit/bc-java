@@ -210,7 +210,8 @@ class ProvTlsServer
         else
         {
             X509Certificate[] chain = JsseUtils.getX509CertificateChain(clientCertificate);
-            String authType = JsseUtils.getAuthType(TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite));
+            short clientCertificateType = clientCertificate.getCertificateAt(0).getClientCertificateType();
+            String authType = JsseUtils.getAuthTypeClient(clientCertificateType);
 
             if (!manager.isClientTrusted(chain, authType))
             {
@@ -267,7 +268,7 @@ class ProvTlsServer
             return false;
         }
 
-        String keyType = JsseUtils.getAuthType(keyExchangeAlgorithm);
+        String keyType = JsseUtils.getAuthTypeServer(keyExchangeAlgorithm);
         if (keyManagerMissCache.contains(keyType))
         {
             return false;
@@ -301,6 +302,12 @@ class ProvTlsServer
             return false;
         }
 
+        /*
+         * TODO[jsse] Before proceeding with EC credentials, should we check (TLS 1.2+) that the
+         * used curve is supported by the client according to the elliptic_curves/named_groups
+         * extension?
+         */
+        
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DH_DSS:

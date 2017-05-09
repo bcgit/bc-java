@@ -135,6 +135,11 @@ public class CertificateFactory
     private CRL getCRL(ASN1Sequence seq)
         throws CRLException
     {
+        if (seq == null)
+        {
+            return null;
+        }
+        
         if (seq.size() > 1
                 && seq.getObjectAt(0) instanceof ASN1ObjectIdentifier)
         {

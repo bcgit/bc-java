@@ -110,8 +110,9 @@ class SSLSocketFactoryCreatorBuilder
         {
             public boolean isTrusted()
             {
-                for (X509TrustManager tm : trustManagers)
+                for (int i = 0; i != trustManagers.length; i++)
                 {
+                    X509TrustManager tm = trustManagers[i];
                     if (tm.getAcceptedIssuers().length > 0)
                     {
                         return true;

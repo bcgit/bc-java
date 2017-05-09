@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.Security;
 
@@ -285,6 +286,34 @@ public class AESTest
         catch (NoSuchPaddingException e)
         {
             // expected
+        }
+
+
+        // reuse test
+        in = Cipher.getInstance("AES/GCM/NoPadding", "BC");
+        
+        in.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(N));
+
+        enc = in.doFinal(P);
+
+        try
+        {
+            in.doFinal(P);
+            fail("no exception on reuse");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("wrong message", e.getMessage().equals("GCM cipher cannot be reused for encryption"));
+        }
+
+        try
+        {
+            in.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(N));
+            fail("no exception on reuse");
+        }
+        catch (InvalidKeyException e)
+        {
+            isTrue("wrong message", e.getMessage().equals("cannot reuse nonce for GCM encryption"));
         }
     }
 

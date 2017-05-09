@@ -109,6 +109,9 @@ public class GMacTest extends SimpleTest
             mac.init(new ParametersWithIV(key, testCase.getIv()));
 
             testSingleByte(mac, testCase);
+
+            mac = new GMac(new GCMBlockCipher(new AESEngine()), testCase.getTag().length * 8);
+            mac.init(new ParametersWithIV(key, testCase.getIv()));
             testMultibyte(mac, testCase);
         }
 

@@ -24,9 +24,12 @@
         <copy todir="${src.dir}">
             <fileset dir="core/src/main/java">
                 <exclude name="**/ntru/**/*.java" />
+                <exclude name="**/xmss/**/*.java" />
             </fileset>
             <fileset dir="pg/src/main/java" />
-            <fileset dir="pkix/src/main/java" />
+            <fileset dir="pkix/src/main/java" >
+                <exclude name="**/est/**/*.java" />
+            </fileset>
             <fileset dir="mail/src/main/java">
                 <exclude name="**/ValidateSignedMail.java"/>
             </fileset>
@@ -42,6 +45,7 @@
                 <exclude name="**/NTRU*.java" />
                 <exclude name="**/IndexGenerator.java" />
                 <exclude name="**/ntru/**/*.java" />
+                <exclude name="**/xmss/**/*.java" />
                 <exclude name="**/asymmetric/DSTU*.java" />
                 <exclude name="**/asymmetric/dstu/*.java" />
 		<exclude name="**/provider/config/PKCS12StoreParameter.java" />
@@ -55,13 +59,16 @@
                 <exclude name="**/KDFDoublePipeline*.java" />
                 <exclude name="**/KDFCounterGener*.java" />
                 <exclude name="**/ntru/**/*.java" />
+                <exclude name="**/xmss/**/*.java" />
                 <exclude name="**/NTRU*.java" />
                 <exclude name="**/pqc/**/EncryptionKeyTest.java" />
                 <exclude name="**/pqc/**/BitStringTest.java" />
+                <exclude name="**/pqc/**/XMS*.java" />
                 <exclude name="**/GetInstanceTest.java" />
             </fileset>
             <fileset dir="pg/src/test/java" />
             <fileset dir="pkix/src/test/java" >
+                <exclude name="**/est/**/*.java" />
                 <exclude name="**/TimeStampTokenInfoUnitTest.java"/>
             </fileset>
             <fileset dir="mail/src/test/java" />

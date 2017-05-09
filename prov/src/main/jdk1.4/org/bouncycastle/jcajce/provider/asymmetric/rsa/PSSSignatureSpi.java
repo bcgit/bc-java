@@ -77,11 +77,11 @@ public class PSSSignatureSpi
         super(name);
 
         this.signer = signer;
-        this.mgfDigest = digest;
 
         if (digest != null)
         {
             this.saltLength = digest.getDigestSize();
+            this.mgfDigest = digest;
         }
         else
         {
@@ -107,11 +107,11 @@ public class PSSSignatureSpi
         super(name);
 
         this.signer = signer;
-        this.mgfDigest = digest;
-        
+
         if (digest != null)
         {
             this.saltLength = digest.getDigestSize();
+            this.mgfDigest = digest;
         }
         else
         {
@@ -137,6 +137,12 @@ public class PSSSignatureSpi
             throw new InvalidKeyException("Supplied key is not a RSAPublicKey instance");
         }
 
+        if (mgfDigest == null)
+        {
+            mgfDigest = new SHA1Digest();
+            setupContentDigest();
+        }
+
         pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, contentDigest, mgfDigest, saltLength);
         pss.init(false,
             RSAUtil.generatePublicKeyParameter((RSAPublicKey)publicKey));
@@ -152,6 +158,12 @@ public class PSSSignatureSpi
             throw new InvalidKeyException("Supplied key is not a RSAPrivateKey instance");
         }
 
+        if (mgfDigest == null)
+        {
+            mgfDigest = new SHA1Digest();
+            setupContentDigest();
+        }
+
         pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, contentDigest, mgfDigest, saltLength);
         pss.init(true, new ParametersWithRandom(RSAUtil.generatePrivateKeyParameter((RSAPrivateKey)privateKey), random));
     }
@@ -165,6 +177,12 @@ public class PSSSignatureSpi
             throw new InvalidKeyException("Supplied key is not a RSAPrivateKey instance");
         }
 
+        if (mgfDigest == null)
+        {
+            mgfDigest = new SHA1Digest();
+            setupContentDigest();
+        }
+        
         pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, contentDigest, mgfDigest, saltLength);
         pss.init(true, RSAUtil.generatePrivateKeyParameter((RSAPrivateKey)privateKey));
     }

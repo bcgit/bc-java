@@ -17,6 +17,7 @@ import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Set;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -68,8 +69,10 @@ public class JcaJceUtils
     {
         final X509Certificate[] x509CertificateTrustAnchors = new X509Certificate[anchors.size()];
         int c = 0;
-        for (TrustAnchor ta : anchors)
+        for (Iterator it = anchors.iterator(); it.hasNext();)
         {
+            TrustAnchor ta = (TrustAnchor)it.next();
+
             x509CertificateTrustAnchors[c++] = ta.getTrustedCert();
         }
 
@@ -129,7 +132,11 @@ public class JcaJceUtils
 
             public X509Certificate[] getAcceptedIssuers()
             {
-                return x509CertificateTrustAnchors;
+                X509Certificate[] rv = new X509Certificate[x509CertificateTrustAnchors.length];
+
+                System.arraycopy(x509CertificateTrustAnchors, 0, rv, 0, rv.length);
+
+                return rv;
             }
         }
         };
