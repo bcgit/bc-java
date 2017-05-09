@@ -72,8 +72,7 @@ class ProvKeyManagerFactorySpi
                 }
             }
 
-            KeyStore.Builder builder = KeyStore.Builder.newInstance(ks, new KeyStore.PasswordProtection(ksPassword));
-            keyManager = new ProvX509KeyManager(Collections.singletonList(builder));
+            keyManager = new ProvX509KeyManagerSimple(ks, ksPassword);
         }
         catch (Exception e)
         {
@@ -88,6 +87,7 @@ class ProvKeyManagerFactorySpi
         {
             List<KeyStore.Builder> builders = ((KeyStoreBuilderParameters)managerFactoryParameters).getParameters();
             keyManager = new ProvX509KeyManager(builders);
+            return;
         }
 
         throw new InvalidAlgorithmParameterException("Parameters must be instance of KeyStoreBuilderParameters");
