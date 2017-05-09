@@ -1781,6 +1781,17 @@ public class CertTest
         isTrue("collection not empty", certs2.isEmpty());
     }
 
+    private void invalidCRLs()
+        throws Exception
+    {
+        CertificateFactory certFact = CertificateFactory.getInstance("X.509", "BC");
+
+        Collection crls = certFact.generateCRLs(this.getClass().getResourceAsStream("cert_chain.txt"));
+        isTrue("multi crl", crls.isEmpty());
+        CRL crl = certFact.generateCRL(this.getClass().getResourceAsStream("cert_chain.txt"));
+        isTrue("single crl", crl == null);
+    }
+
     private void pemFileTestWithNl()
         throws Exception
     {
@@ -1868,7 +1879,9 @@ public class CertTest
         pemFileTestWithNl();
         pkcs7Test();
         rfc4491Test();
-        
+
+        invalidCRLs();
+
         testForgedSignature();
 
         checkCertificate(18, emptyDNCert);
