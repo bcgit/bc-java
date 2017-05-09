@@ -123,6 +123,12 @@ public class PSSSignatureSpi
             throw new InvalidKeyException("Supplied key is not a RSAPublicKey instance");
         }
 
+        if (mgfDigest == null)
+        {
+            mgfDigest = new SHA1Digest();
+            setupContentDigest();
+        }
+
         sigParams = RSAUtil.generatePublicKeyParameter((RSAPublicKey)publicKey);
 
         if (isRaw)
@@ -149,6 +155,12 @@ public class PSSSignatureSpi
 
         sigParams = new ParametersWithRandom(RSAUtil.generatePrivateKeyParameter((RSAPrivateKey)privateKey), random);
 
+        if (mgfDigest == null)
+        {
+            mgfDigest = new SHA1Digest();
+            setupContentDigest();
+        }
+
         if (isRaw)
         {
             bOut = new ByteArrayOutputStream();
@@ -171,6 +183,12 @@ public class PSSSignatureSpi
 
         sigParams = RSAUtil.generatePrivateKeyParameter((RSAPrivateKey)privateKey);
 
+        if (mgfDigest == null)
+        {
+            mgfDigest = new SHA1Digest();
+            setupContentDigest();
+        }
+        
         if (isRaw)
         {
             bOut = new ByteArrayOutputStream();

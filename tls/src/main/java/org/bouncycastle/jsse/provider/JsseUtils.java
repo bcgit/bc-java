@@ -155,6 +155,29 @@ class JsseUtils
         }
     }
 
+    public static X509Certificate[] getX509CertificateChain(java.security.cert.Certificate[] chain)
+    {
+        if (chain == null)
+        {
+            return null;
+        }
+        if (chain instanceof X509Certificate[])
+        {
+            return (X509Certificate[])chain;
+        }
+        X509Certificate[] x509Chain = new X509Certificate[chain.length];
+        for (int i = 0; i < chain.length; ++i)
+        {
+            java.security.cert.Certificate c = chain[i];
+            if (!(c instanceof X509Certificate))
+            {
+                return null;
+            }
+            x509Chain[i] = (X509Certificate)c;
+        }
+        return x509Chain;
+    }
+
     public static X500Principal getSubject(Certificate certificateMessage)
     {
         if (certificateMessage == null || certificateMessage.isEmpty())
@@ -224,6 +247,23 @@ class JsseUtils
         return principals;
     }
 
+    static X500Name toX500Name(Principal principal)
+    {
+        if (principal == null)
+        {
+            return null;
+        }
+        else if (principal instanceof X500Principal)
+        {
+            return X500Name.getInstance(((X500Principal)principal).getEncoded());
+        }
+        else
+        {
+            // TODO[jsse] Should we really be trying to support these?
+            return new X500Name(principal.getName());       // hope for the best
+        }
+    }
+
     static Set<X500Name> toX500Names(Principal[] principals)
     {
         if (principals == null || principals.length == 0)
@@ -235,15 +275,10 @@ class JsseUtils
 
         for (int i = 0; i != principals.length; i++)
         {
-            Principal principal = principals[i];
-            if (principal instanceof X500Principal)
+            X500Name name = toX500Name(principals[i]);
+            if (name != null)
             {
-                names.add(X500Name.getInstance(((X500Principal)principal).getEncoded()));
-            }
-            else if (principal != null)
-            {
-            	// TODO[jsse] Should we really be trying to support these?
-                names.add(new X500Name(principal.getName()));       // hope for the best
+                names.add(name);
             }
         }
 

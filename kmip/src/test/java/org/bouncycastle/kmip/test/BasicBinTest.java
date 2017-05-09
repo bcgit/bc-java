@@ -18,7 +18,7 @@ import org.bouncycastle.kmip.wire.KMIPItem;
 import org.bouncycastle.kmip.wire.KMIPLong;
 import org.bouncycastle.kmip.wire.KMIPStructure;
 import org.bouncycastle.kmip.wire.KMIPTextString;
-import org.bouncycastle.kmip.wire.bin.BinaryEncoder;
+import org.bouncycastle.kmip.wire.binary.BinaryEncoder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 

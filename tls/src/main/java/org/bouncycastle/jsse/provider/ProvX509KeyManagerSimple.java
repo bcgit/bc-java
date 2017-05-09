@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedKeyManager;
@@ -27,20 +26,31 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 
-class ProvX509KeyManager
+class ProvX509KeyManagerSimple
     extends X509ExtendedKeyManager
 {
-    private final List<KeyStore.Builder> builders;
+    private final Map<String, Credential> credentials = new HashMap<String, Credential>();
 
-    // TODO: does this need to be threadsafe? Will leak memory...
-    private final Map<String, KeyStore.PrivateKeyEntry> keys = new HashMap<String, KeyStore.PrivateKeyEntry>();
-
-    private final AtomicLong version = new AtomicLong();
-
-    public ProvX509KeyManager(List<KeyStore.Builder> builders)
+    ProvX509KeyManagerSimple(KeyStore ks, char[] password)
+        throws GeneralSecurityException
     {
-        // the builder list is processed on request so the key manager is dynamic.
-        this.builders = builders;
+        if (ks != null)
+        {
+            Enumeration<String> aliases = ks.aliases();
+            while (aliases.hasMoreElements())
+            {
+                String alias = aliases.nextElement();
+                if (ks.entryInstanceOf(alias, PrivateKeyEntry.class))
+                {
+                    PrivateKey privateKey = (PrivateKey)ks.getKey(alias, password);
+                    X509Certificate[] certificateChain = JsseUtils.getX509CertificateChain(ks.getCertificateChain(alias));
+                    if (certificateChain != null && certificateChain.length > 0)
+                    {
+                        credentials.put(alias, new Credential(privateKey, certificateChain));
+                    }
+                }
+            }
+        }
     }
 
     public String chooseClientAlias(String[] keyTypes, Principal[] issuers, Socket socket)
@@ -69,8 +79,8 @@ class ProvX509KeyManager
 
     public X509Certificate[] getCertificateChain(String alias)
     {
-        PrivateKeyEntry entry = getPrivateKeyEntry(alias);
-        return entry == null ? null : (X509Certificate[])entry.getCertificateChain();
+        Credential credential = getCredential(alias);
+        return credential == null ? null : credential.getCertificateChain().clone();
     }
 
     public String[] getClientAliases(String keyType, Principal[] issuers)
@@ -80,8 +90,8 @@ class ProvX509KeyManager
 
     public PrivateKey getPrivateKey(String alias)
     {
-        PrivateKeyEntry entry = getPrivateKeyEntry(alias);
-        return entry == null ? null : entry.getPrivateKey();
+        Credential credential = getCredential(alias);
+        return credential == null ? null : credential.getPrivateKey();
     }
 
     public String[] getServerAliases(String keyType, Principal[] issuers)
@@ -91,94 +101,41 @@ class ProvX509KeyManager
 
     private String chooseAlias(boolean forServer, String[] keyTypes, Principal[] issuers)
     {
-        try
-        {
-            Set<X500Name> issuerNames = JsseUtils.toX500Names(issuers);
+        // TODO[jsse] Need to support the keyTypes that SunJSSE sends here
 
-            // TODO[jsse] Need to support the keyTypes that SunJSSE sends here
-            for (int i = 0; i != keyTypes.length; i++)
+        Set<X500Name> issuerNames = JsseUtils.toX500Names(issuers);
+
+        for (String keyType : keyTypes)
+        {
+            for (Map.Entry<String, Credential> entry : credentials.entrySet())
             {
-                List<String> aliases = findAliases(forServer, keyTypes[i], issuerNames);
-                if (!aliases.isEmpty())
+                if (isSuitableCredential(forServer, keyType, issuerNames, entry.getValue()))
                 {
-                    return aliases.get(0);
+                    return entry.getKey();
                 }
             }
         }
-        catch (Exception e)
-        {
-        }
-
         return null;
-    }
-
-    private List<String> findAliases(boolean forServer, String keyType, Set<X500Name> issuers)
-    {
-        List<String> aliases = new ArrayList<String>();
-
-        for (int i = 0; i != builders.size(); i++)
-        {
-            KeyStore.Builder builder = builders.get(i);
-
-            try
-            {
-                aliases.addAll(findAliases(forServer, i, builder.getKeyStore(), builder, keyType, issuers));
-            }
-            catch (GeneralSecurityException e)
-            {
-                throw new IllegalStateException("unable to build key store: " + e.getMessage(), e);
-            }
-        }
-
-        return aliases;
-    }
-
-    private List<String> findAliases(boolean forServer, int index, KeyStore keyStore, KeyStore.Builder storeBuilder, String keyType, Set<X500Name> issuers)
-        throws GeneralSecurityException
-    {
-        List<String> aliases = new ArrayList<String>();
-
-        for (Enumeration<String> en = keyStore.aliases(); en.hasMoreElements();)
-        {
-            String eName = (String)en.nextElement();
-
-            if (!keyStore.isKeyEntry(eName))      // not a key entry
-            {
-                continue;
-            }
-
-            X509Certificate[] chain = JsseUtils.getX509CertificateChain(keyStore.getCertificateChain(eName));
-            if (chain == null || chain.length == 0)    // not an entry with a certificate
-            {
-                continue;
-            }
-
-            // TODO: manage two key/certs in one store that matches
-
-            if (isSuitableCredential(forServer, keyType, issuers, chain))
-            {
-                KeyStore.PrivateKeyEntry kEntry = (KeyStore.PrivateKeyEntry)keyStore.getEntry(eName, storeBuilder.getProtectionParameter(eName));
-
-                String alias = index + "." + eName + "." + version.getAndIncrement();
-
-                keys.put(alias, kEntry);
-
-                aliases.add(alias);
-            }
-        }
-
-        return aliases;
     }
 
     private String[] getAliases(boolean forServer, String keyType, Principal[] issuers)
     {
-        List<String> aliases = findAliases(forServer, keyType, JsseUtils.toX500Names(issuers));
+        Set<X500Name> issuerNames = JsseUtils.toX500Names(issuers);
+
+        List<String> aliases = new ArrayList<String>();
+        for (Map.Entry<String, Credential> entry : credentials.entrySet())
+        {
+            if (isSuitableCredential(forServer, keyType, issuerNames, entry.getValue()))
+            {
+                aliases.add(entry.getKey());
+            }
+        }
         return aliases.toArray(new String[aliases.size()]);
     }
 
-    private PrivateKeyEntry getPrivateKeyEntry(String alias)
+    private Credential getCredential(String alias)
     {
-        return alias == null ? null : keys.get(alias);
+        return alias == null ? null : credentials.get(alias);
     }
 
     private boolean hasSuitableIssuer(Set<X500Name> issuerNames, X509Certificate c)
@@ -186,9 +143,9 @@ class ProvX509KeyManager
         return issuerNames.contains(JsseUtils.toX500Name(c.getIssuerX500Principal()));
     }
 
-    private boolean isSuitableCredential(boolean forServer, String keyType, Set<X500Name> issuerNames,
-        X509Certificate[] certificateChain)
+    private boolean isSuitableCredential(boolean forServer, String keyType, Set<X500Name> issuerNames, Credential credential)
     {
+        X509Certificate[] certificateChain = credential.getCertificateChain();
         if (!isSuitableCertificate(forServer, keyType, certificateChain[0]))
         {
             return false;
@@ -271,5 +228,27 @@ class ProvX509KeyManager
             return false;
         }
         return true;
+    }
+
+    private static class Credential
+    {
+        private final PrivateKey privateKey;
+        private final X509Certificate[] certificateChain;
+
+        Credential(PrivateKey privateKey, X509Certificate[] certificateChain)
+        {
+            this.privateKey = privateKey;
+            this.certificateChain = certificateChain;
+        }
+
+        X509Certificate[] getCertificateChain()
+        {
+            return certificateChain;
+        }
+
+        PrivateKey getPrivateKey()
+        {
+            return privateKey;
+        }
     }
 }
