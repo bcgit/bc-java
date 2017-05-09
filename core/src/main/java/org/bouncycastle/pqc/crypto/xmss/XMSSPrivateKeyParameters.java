@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
+import java.io.IOException;
 import java.text.ParseException;
 
 import org.bouncycastle.util.Pack;
@@ -8,194 +9,248 @@ import org.bouncycastle.util.Pack;
  * XMSS Private Key.
  *
  */
-public class XMSSPrivateKeyParameters
-    implements XMSSStoreableObjectInterface
-{
+public final class XMSSPrivateKeyParameters implements XMSSStoreableObjectInterface {
 
-    /**
-     * XMSS parameters object.
-     */
-    private XMSSParameters params;
-    /**
-     * Index for WOTS+ keys (randomization factor).
-     */
-    private int index;
-    /**
-     * Secret for the derivation of WOTS+ secret keys.
-     */
-    private byte[] secretKeySeed;
-    /**
-     * Secret for the randomization of message digests during signature creation.
-     */
-    private byte[] secretKeyPRF;
-    /**
-     * Public seed for the randomization of hashes.
-     */
-    private byte[] publicSeed;
-    /**
-     * Public root of binary tree.
-     */
-    private byte[] root;
+	/**
+	 * XMSS parameters object.
+	 */
+	private final XMSSParameters params;
+	/**
+	 * Index for WOTS+ keys (randomization factor).
+	 */
+	private final int index;
+	/**
+	 * Secret for the derivation of WOTS+ secret keys.
+	 */
+	private final byte[] secretKeySeed;
+	/**
+	 * Secret for the randomization of message digests during signature
+	 * creation.
+	 */
+	private final byte[] secretKeyPRF;
+	/**
+	 * Public seed for the randomization of hashes.
+	 */
+	private final byte[] publicSeed;
+	/**
+	 * Public root of binary tree.
+	 */
+	private final byte[] root;
+	/**
+	 * BDS state.
+	 */
+	private final BDS bdsState;
 
-    public XMSSPrivateKeyParameters(XMSSParameters params)
-    {
-        super();
-        if (params == null)
-        {
-            throw new NullPointerException("params == null");
-        }
-        this.params = params;
-        index = 0;
-        int n = params.getDigestSize();
-        secretKeySeed = new byte[n];
-        secretKeyPRF = new byte[n];
-        publicSeed = new byte[n];
-        root = new byte[n];
-    }
+	private XMSSPrivateKeyParameters(Builder builder) throws ParseException, ClassNotFoundException, IOException {
+		super();
+		params = builder.params;
+		if (params == null) {
+			throw new NullPointerException("params == null");
+		}
+		int n = params.getDigestSize();
+		byte[] privateKey = builder.privateKey;
+		if (privateKey != null) {
+			if (builder.xmss == null) {
+				throw new NullPointerException("xmss == null");
+			}
+			/* import */
+			int height = params.getHeight();
+			int indexSize = 4;
+			int secretKeySize = n;
+			int secretKeyPRFSize = n;
+			int publicSeedSize = n;
+			int rootSize = n;
+			/*
+			int totalSize = indexSize + secretKeySize + secretKeyPRFSize + publicSeedSize + rootSize;
+			if (privateKey.length != totalSize) {
+				throw new ParseException("private key has wrong size", 0);
+			}
+			*/
+			int position = 0;
+			index = Pack.bigEndianToInt(privateKey, position);
+			if (!XMSSUtil.isIndexValid(height, index)) {
+				throw new ParseException("index out of bounds", 0);
+			}
+			position += indexSize;
+			secretKeySeed = XMSSUtil.extractBytesAtOffset(privateKey, position, secretKeySize);
+			position += secretKeySize;
+			secretKeyPRF = XMSSUtil.extractBytesAtOffset(privateKey, position, secretKeyPRFSize);
+			position += secretKeyPRFSize;
+			publicSeed = XMSSUtil.extractBytesAtOffset(privateKey, position, publicSeedSize);
+			position += publicSeedSize;
+			root = XMSSUtil.extractBytesAtOffset(privateKey, position, rootSize);
+			position += rootSize;
+			/* import BDS state */
+			byte[] bdsStateBinary = XMSSUtil.extractBytesAtOffset(privateKey, position, privateKey.length - position);
+			BDS bdsImport = (BDS) XMSSUtil.deserialize(bdsStateBinary);
+			bdsImport.setXMSS(builder.xmss);
+			bdsImport.validate();
+			bdsState = bdsImport;
+		} else {
+			/* set */
+			index = builder.index;
+			byte[] tmpSecretKeySeed = builder.secretKeySeed;
+			if (tmpSecretKeySeed != null) {
+				if (tmpSecretKeySeed.length != n) {
+					throw new IllegalArgumentException("size of secretKeySeed needs to be equal size of digest");
+				}
+				secretKeySeed = tmpSecretKeySeed;
+			} else {
+				secretKeySeed = new byte[n];
+			}
+			byte[] tmpSecretKeyPRF = builder.secretKeyPRF;
+			if (tmpSecretKeyPRF != null) {
+				if (tmpSecretKeyPRF.length != n) {
+					throw new IllegalArgumentException("size of secretKeyPRF needs to be equal size of digest");
+				}
+				secretKeyPRF = tmpSecretKeyPRF;
+			} else {
+				secretKeyPRF = new byte[n];
+			}
+			byte[] tmpPublicSeed = builder.publicSeed;
+			if (tmpPublicSeed != null) {
+				if (tmpPublicSeed.length != n) {
+					throw new IllegalArgumentException("size of publicSeed needs to be equal size of digest");
+				}
+				publicSeed = tmpPublicSeed;
+			} else {
+				publicSeed = new byte[n];
+			}
+			byte[] tmpRoot = builder.root;
+			if (tmpRoot != null) {
+				if (tmpRoot.length != n) {
+					throw new IllegalArgumentException("size of root needs to be equal size of digest");
+				}
+				root = tmpRoot;
+			} else {
+				root = new byte[n];
+			}
+			BDS tmpBDSState = builder.bdsState;
+			if (tmpBDSState != null) {
+				bdsState = tmpBDSState;
+			} else {
+				bdsState = new BDS(new XMSS(params));
+			}
+		}
+	}
 
-    public byte[] toByteArray()
-    {
-        /* index || secretKeySeed || secretKeyPRF || publicSeed || root */
-        int n = params.getDigestSize();
-        int indexSize = 4;
-        int secretKeySize = n;
-        int secretKeyPRFSize = n;
-        int publicSeedSize = n;
-        int rootSize = n;
-        int totalSize = indexSize + secretKeySize + secretKeyPRFSize + publicSeedSize + rootSize;
-        byte[] out = new byte[totalSize];
-        int position = 0;
+	public static class Builder {
+
+		/* mandatory */
+		private final XMSSParameters params;
+		/* optional */
+		private int index = 0;
+		private byte[] secretKeySeed = null;
+		private byte[] secretKeyPRF = null;
+		private byte[] publicSeed = null;
+		private byte[] root = null;
+		private BDS bdsState = null;
+		private byte[] privateKey = null;
+		private XMSS xmss = null;
+
+		public Builder(XMSSParameters params) {
+			super();
+			this.params = params;
+		}
+
+		public Builder withIndex(int val) {
+			index = val;
+			return this;
+		}
+
+		public Builder withSecretKeySeed(byte[] val) {
+			secretKeySeed = XMSSUtil.cloneArray(val);
+			return this;
+		}
+		
+		public Builder withSecretKeyPRF(byte[] val) {
+			secretKeyPRF = XMSSUtil.cloneArray(val);
+			return this;
+		}
+
+		public Builder withPublicSeed(byte[] val) {
+			publicSeed = XMSSUtil.cloneArray(val);
+			return this;
+		}
+
+		public Builder withRoot(byte[] val) {
+			root = XMSSUtil.cloneArray(val);
+			return this;
+		}
+
+		public Builder withBDSState(BDS valBDS) {
+			bdsState = valBDS;
+			return this;
+		}
+
+		public Builder withPrivateKey(byte[] privateKeyVal, XMSS xmssVal) {
+			privateKey = XMSSUtil.cloneArray(privateKeyVal);
+			xmss = xmssVal;
+			return this;
+		}
+
+		public XMSSPrivateKeyParameters build() throws ParseException, ClassNotFoundException, IOException {
+			return new XMSSPrivateKeyParameters(this);
+		}
+	}
+
+	public byte[] toByteArray() {
+		/* index || secretKeySeed || secretKeyPRF || publicSeed || root */
+		int n = params.getDigestSize();
+		int indexSize = 4;
+		int secretKeySize = n;
+		int secretKeyPRFSize = n;
+		int publicSeedSize = n;
+		int rootSize = n;
+		int totalSize = indexSize + secretKeySize + secretKeyPRFSize + publicSeedSize + rootSize;
+		byte[] out = new byte[totalSize];
+		int position = 0;
 		/* copy index */
-        XMSSUtil.intToBytesBigEndianOffset(out, index, position);
-        position += indexSize;
+		XMSSUtil.intToBytesBigEndianOffset(out, index, position);
+		position += indexSize;
 		/* copy secretKeySeed */
-        XMSSUtil.copyBytesAtOffset(out, secretKeySeed, position);
-        position += secretKeySize;
+		XMSSUtil.copyBytesAtOffset(out, secretKeySeed, position);
+		position += secretKeySize;
 		/* copy secretKeyPRF */
-        XMSSUtil.copyBytesAtOffset(out, secretKeyPRF, position);
-        position += secretKeyPRFSize;
+		XMSSUtil.copyBytesAtOffset(out, secretKeyPRF, position);
+		position += secretKeyPRFSize;
 		/* copy publicSeed */
-        XMSSUtil.copyBytesAtOffset(out, publicSeed, position);
-        position += publicSeedSize;
+		XMSSUtil.copyBytesAtOffset(out, publicSeed, position);
+		position += publicSeedSize;
 		/* copy root */
-        XMSSUtil.copyBytesAtOffset(out, root, position);
-        return out;
-    }
+		XMSSUtil.copyBytesAtOffset(out, root, position);
+		/* concatenate bdsState */
+		byte[] bdsStateOut = null;
+		try {
+			bdsStateOut = XMSSUtil.serialize(bdsState);
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException("error serializing bds state");
+		}
+		return XMSSUtil.concat(out, bdsStateOut);
+	}
 
-    public void parseByteArray(byte[] in)
-        throws ParseException
-    {
-        if (in == null)
-        {
-            throw new NullPointerException("in == null");
-        }
-        int n = params.getDigestSize();
-        int height = params.getHeight();
-        int indexSize = 4;
-        int secretKeySize = n;
-        int secretKeyPRFSize = n;
-        int publicSeedSize = n;
-        int rootSize = n;
-        int totalSize = indexSize + secretKeySize + secretKeyPRFSize + publicSeedSize + rootSize;
-        if (in.length != totalSize)
-        {
-            throw new ParseException("private key has wrong size", 0);
-        }
-        int position = 0;
-        index = Pack.bigEndianToInt(in, position);
-        if (!XMSSUtil.isIndexValid(height, index))
-        {
-            throw new ParseException("index out of bounds", 0);
-        }
-        position += indexSize;
-        secretKeySeed = XMSSUtil.extractBytesAtOffset(in, position, secretKeySize);
-        position += secretKeySize;
-        secretKeyPRF = XMSSUtil.extractBytesAtOffset(in, position, secretKeyPRFSize);
-        position += secretKeyPRFSize;
-        publicSeed = XMSSUtil.extractBytesAtOffset(in, position, publicSeedSize);
-        position += publicSeedSize;
-        root = XMSSUtil.extractBytesAtOffset(in, position, rootSize);
-    }
+	public int getIndex() {
+		return index;
+	}
 
-    public int getIndex()
-    {
-        return index;
-    }
+	public byte[] getSecretKeySeed() {
+		return XMSSUtil.cloneArray(secretKeySeed);
+	}
 
-    public void setIndex(int index)
-    {
-        this.index = index;
-    }
+	public byte[] getSecretKeyPRF() {
+		return XMSSUtil.cloneArray(secretKeyPRF);
+	}
 
-    public byte[] getSecretKeySeed()
-    {
-        return XMSSUtil.cloneArray(secretKeySeed);
-    }
+	public byte[] getPublicSeed() {
+		return XMSSUtil.cloneArray(publicSeed);
+	}
 
-    public void setSecretKeySeed(byte[] secretKeySeed)
-    {
-        if (secretKeySeed == null)
-        {
-            throw new NullPointerException("secretKeySeed == null");
-        }
-        if (secretKeySeed.length != params.getDigestSize())
-        {
-            throw new IllegalArgumentException("size of secretKeySeed needs to be equal size of digest");
-        }
-        this.secretKeySeed = secretKeySeed;
-    }
-
-    public byte[] getSecretKeyPRF()
-    {
-        return XMSSUtil.cloneArray(secretKeyPRF);
-    }
-
-    public void setSecretKeyPRF(byte[] secretKeyPRF)
-    {
-        if (secretKeyPRF == null)
-        {
-            throw new NullPointerException("secretKeyPRF == null");
-        }
-        if (secretKeyPRF.length != params.getDigestSize())
-        {
-            throw new IllegalArgumentException("size of secretKeyPRF needs to be equal size of digest");
-        }
-        this.secretKeyPRF = secretKeyPRF;
-    }
-
-    public byte[] getPublicSeed()
-    {
-        return XMSSUtil.cloneArray(publicSeed);
-    }
-
-    public void setPublicSeed(byte[] publicSeed)
-    {
-        if (publicSeed == null)
-        {
-            throw new NullPointerException("publicSeed == null");
-        }
-        if (publicSeed.length != params.getDigestSize())
-        {
-            throw new IllegalArgumentException("size of publicSeed needs to be equal size of digest");
-        }
-        this.publicSeed = publicSeed;
-    }
-
-    public byte[] getRoot()
-    {
-        return XMSSUtil.cloneArray(root);
-    }
-
-    public void setRoot(byte[] root)
-    {
-        if (root == null)
-        {
-            throw new NullPointerException("root == null");
-        }
-        if (root.length != params.getDigestSize())
-        {
-            throw new IllegalArgumentException("size of root needs to be equal size of digest");
-        }
-        this.root = root;
-    }
+	public byte[] getRoot() {
+		return XMSSUtil.cloneArray(root);
+	}
+	
+	public BDS getBDSState() {
+		return bdsState;
+	}
 }

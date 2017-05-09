@@ -4,11 +4,22 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.NoSuchProviderException;
 import java.security.Provider;
+import java.security.cert.CertPathParameters;
+import java.security.cert.Certificate;
+import java.security.cert.PKIXParameters;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509Certificate;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 
+import javax.net.ssl.CertPathTrustManagerParameters;
 import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactorySpi;
@@ -61,16 +72,7 @@ class ProvTrustManagerFactorySpi
         {
             if (ks == null)
             {
-                String tsType = PropertyUtils.getSystemProperty("javax.net.ssl.trustStoreType");
-                if (tsType == null)
-                {
-                    tsType = KeyStore.getDefaultType();
-                }
-
-                String tsProv = PropertyUtils.getSystemProperty("javax.net.ssl.trustStoreProvider");
-                ks = (tsProv == null || tsProv.length() < 1)
-                    ?   KeyStore.getInstance(tsType)
-                    :   KeyStore.getInstance(tsType, tsProv);
+                ks = createTrustStore();
 
                 String tsPath = null;
                 char[] tsPassword = null;
@@ -109,14 +111,15 @@ class ProvTrustManagerFactorySpi
                     tsInput.close();
                 }
             }
-    
+
+            Set<TrustAnchor> trustAnchors = getTrustAnchors(ks);
             if (hasExtendedTrustManager)
             {
-                trustManager = new ProvX509ExtendedTrustManager(new ProvX509TrustManager(pkixProvider, ks));
+                trustManager = new ProvX509ExtendedTrustManager(new ProvX509TrustManager(pkixProvider, trustAnchors));
             }
             else
             {
-                trustManager = new ProvX509TrustManager(pkixProvider, ks);
+                trustManager = new ProvX509TrustManager(pkixProvider, trustAnchors);
             }
         }
         catch (Exception e)
@@ -128,6 +131,83 @@ class ProvTrustManagerFactorySpi
     protected void engineInit(ManagerFactoryParameters spec)
         throws InvalidAlgorithmParameterException
     {
-        throw new UnsupportedOperationException();
+        if (spec instanceof CertPathTrustManagerParameters)
+        {
+            try
+            {
+                CertPathParameters param = ((CertPathTrustManagerParameters)spec).getParameters();
+
+                if (!(param instanceof PKIXParameters))
+                {
+                    throw new InvalidAlgorithmParameterException("parameters must inherit from PKIXParameters");
+                }
+
+                PKIXParameters pkixParam = (PKIXParameters)param;
+
+                if (hasExtendedTrustManager)
+                {
+                    trustManager = new ProvX509ExtendedTrustManager(new ProvX509TrustManager(pkixProvider, pkixParam));
+                }
+                else
+                {
+                    trustManager = new ProvX509TrustManager(pkixProvider, pkixParam);
+                }
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new InvalidAlgorithmParameterException("unable to process parameters: " + e.getMessage(), e);
+            }
+        }
+        else
+        {
+            if (spec == null)
+            {
+                throw new InvalidAlgorithmParameterException("spec cannot be null");
+            }
+            throw new InvalidAlgorithmParameterException("unknown spec: " + spec.getClass().getName());
+        }
+    }
+
+    private String getTrustStoreType()
+    {
+        String tsType = PropertyUtils.getSystemProperty("javax.net.ssl.trustStoreType");
+        if (tsType == null)
+        {
+            tsType = KeyStore.getDefaultType();
+        }
+
+        return tsType;
+    }
+
+    private KeyStore createTrustStore()
+        throws NoSuchProviderException, KeyStoreException
+    {
+        String tsType = getTrustStoreType();
+        String tsProv = PropertyUtils.getSystemProperty("javax.net.ssl.trustStoreProvider");
+        KeyStore ts = (tsProv == null || tsProv.length() < 1)
+            ?   KeyStore.getInstance(tsType)
+            :   KeyStore.getInstance(tsType, tsProv);
+
+        return ts;
+    }
+
+    private Set<TrustAnchor> getTrustAnchors(KeyStore trustStore)
+        throws KeyStoreException
+    {
+        Set<TrustAnchor> anchors = new HashSet<TrustAnchor>(trustStore.size());
+        for (Enumeration<String> en = trustStore.aliases(); en.hasMoreElements();)
+        {
+            String alias = (String)en.nextElement();
+            if (trustStore.isCertificateEntry(alias))
+            {
+                Certificate cert = trustStore.getCertificate(alias);
+                if (cert instanceof X509Certificate)
+                {
+                    anchors.add(new TrustAnchor((X509Certificate)cert, null));
+                }
+            }
+        }
+
+        return anchors;
     }
 }

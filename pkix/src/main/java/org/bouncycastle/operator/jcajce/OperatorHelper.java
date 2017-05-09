@@ -23,6 +23,7 @@ import javax.crypto.Cipher;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
@@ -313,6 +314,27 @@ class OperatorHelper
             }
         }
 
+        if (sigAlgId.getAlgorithm().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
+        {
+            ASN1Sequence seq = ASN1Sequence.getInstance(sigAlgId.getParameters());
+          
+            if (notDefaultPSSParams(seq))
+            {
+                try
+                {
+                    AlgorithmParameters algParams = helper.createAlgorithmParameters("PSS");
+
+                    algParams.init(seq.getEncoded());
+
+                    sig.setParameter(algParams.getParameterSpec(PSSParameterSpec.class));
+                }
+                catch (IOException e)
+                {
+                    throw new GeneralSecurityException("unable to process PSS parameters: " + e.getMessage());
+                }
+            }
+        }
+
         return sig;
     }
 
@@ -461,5 +483,32 @@ class OperatorHelper
         }
 
         return oid.getId();
+    }
+
+    // for our purposes default includes varient digest with salt the same size as digest
+    private boolean notDefaultPSSParams(ASN1Sequence seq)
+        throws GeneralSecurityException
+    {
+        if (seq == null || seq.size() == 0)
+        {
+            return false;
+        }
+
+        RSASSAPSSparams pssParams = RSASSAPSSparams.getInstance(seq);
+
+        if (!pssParams.getMaskGenAlgorithm().getAlgorithm().equals(PKCSObjectIdentifiers.id_mgf1))
+        {
+            return true;
+        }
+
+        // same digest for sig and MGF1
+        if (!pssParams.getHashAlgorithm().equals(AlgorithmIdentifier.getInstance(pssParams.getMaskGenAlgorithm().getParameters())))
+        {
+            return true;
+        }
+
+        MessageDigest digest = createDigest(pssParams.getHashAlgorithm());
+
+        return pssParams.getSaltLength().intValue() != digest.getDigestLength();
     }
 }

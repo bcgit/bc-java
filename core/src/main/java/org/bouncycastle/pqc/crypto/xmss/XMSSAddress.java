@@ -1,91 +1,80 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
-import java.text.ParseException;
-
-import org.bouncycastle.util.Pack;
+import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
 
 /**
- * XMSS Address.
+ * XMSS address.
  *
  */
-public abstract class XMSSAddress
-{
+public abstract class XMSSAddress {
 
-    private int layerAddress;
-    private long treeAddress;
-    private int type;
-    private int keyAndMask;
-    private byte[] byteRepresentation;
+	private final int layerAddress;
+	private final long treeAddress;
+	private final int type;
+	private final int keyAndMask;
 
-    protected XMSSAddress(int type)
-    {
-        this.type = type;
-        byteRepresentation = new byte[32];
-    }
+	protected XMSSAddress(Builder builder) {
+		layerAddress = builder.layerAddress;
+		treeAddress = builder.treeAddress;
+		type = builder.type;
+		keyAndMask = builder.keyAndMask;
+	}
 
-    protected void parseByteArray(byte[] address)
-        throws ParseException
-    {
-        if (address.length != 32)
-        {
-            throw new IllegalArgumentException("address needs to be 32 byte");
-        }
-        layerAddress = Pack.bigEndianToInt(address, 0);
-        treeAddress = Pack.bigEndianToLong(address, 4);
-        keyAndMask = Pack.bigEndianToInt(address, 28);
-    }
+	protected static abstract class Builder<T extends Builder> {
 
-    public byte[] toByteArray()
-    {
-        XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, layerAddress, 0);
-        XMSSUtil.longToBytesBigEndianOffset(byteRepresentation, treeAddress, 4);
-        XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, type, 12);
-        XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, keyAndMask, 28);
-        return byteRepresentation;
-    }
+		/* mandatory */
+		private final int type;
+		/* optional */
+		private int layerAddress = 0;
+		private long treeAddress = 0L;
+		private int keyAndMask = 0;
 
-    public int getLayerAddress()
-    {
-        return layerAddress;
-    }
+		protected Builder(int type) {
+			super();
+			this.type = type;
+		}
 
-    public void setLayerAddress(int layerAddress)
-    {
-        this.layerAddress = layerAddress;
-    }
+		protected T withLayerAddress(int val) {
+			layerAddress = val;
+			return getThis();
+		}
+		
+		protected T withTreeAddress(long val) {
+			treeAddress = val;
+			return getThis();
+		}
+		
+		protected T withKeyAndMask(int val) {
+			keyAndMask = val;
+			return getThis();
+		}
+		
+		protected abstract XMSSAddress build();
+		protected abstract T getThis();
+	}
 
-    public long getTreeAddress()
-    {
-        return treeAddress;
-    }
+	protected byte[] toByteArray() {
+		byte[] byteRepresentation = new byte[32];
+		XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, layerAddress, 0);
+		XMSSUtil.longToBytesBigEndianOffset(byteRepresentation, treeAddress, 4);
+		XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, type, 12);
+		XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, keyAndMask, 28);
+		return byteRepresentation;
+	}
 
-    public void setTreeAddress(long treeAddress)
-    {
-        this.treeAddress = treeAddress;
-    }
+	protected final int getLayerAddress() {
+		return layerAddress;
+	}
 
-    public int getType()
-    {
-        return type;
-    }
+	protected final long getTreeAddress() {
+		return treeAddress;
+	}
 
-    protected void setType(int type)
-    {
-        this.type = type;
-    }
+	public final int getType() {
+		return type;
+	}
 
-    public long getKeyAndMask()
-    {
-        return keyAndMask;
-    }
-
-    public void setKeyAndMask(int keyAndMask)
-    {
-        this.keyAndMask = keyAndMask;
-    }
-
-    protected byte[] getByteRepresentation()
-    {
-        return byteRepresentation;
-    }
+	public final int getKeyAndMask() {
+		return keyAndMask;
+	}
 }

@@ -2765,27 +2765,71 @@ public class TlsUtils
 
     public static boolean isSupportedCipherSuite(TlsCrypto crypto, int cipherSuite)
     {
-        int keyExchangeAlgorithm = getKeyExchangeAlgorithm(cipherSuite);
+        return isSupportedKeyExchange(crypto, getKeyExchangeAlgorithm(cipherSuite))
+            && crypto.hasEncryptionAlgorithm(getEncryptionAlgorithm(cipherSuite))
+            && crypto.hasMacAlgorithm(getMACAlgorithm(cipherSuite));
+    }
 
-        // TODO Probably want TlsCrypto.hasKeyExchangeAlgorithm
+    public static boolean isSupportedKeyExchange(TlsCrypto crypto, int keyExchangeAlgorithm)
+    {
         switch (keyExchangeAlgorithm)
         {
+        case KeyExchangeAlgorithm.DH_anon:
+        case KeyExchangeAlgorithm.DH_anon_EXPORT:
+        case KeyExchangeAlgorithm.DH_DSS:
+        case KeyExchangeAlgorithm.DH_DSS_EXPORT:
+        case KeyExchangeAlgorithm.DH_RSA:
+        case KeyExchangeAlgorithm.DH_RSA_EXPORT:
+        case KeyExchangeAlgorithm.DHE_PSK:
+            return crypto.hasDHAgreement();
+
+        case KeyExchangeAlgorithm.DHE_DSS:
+        case KeyExchangeAlgorithm.DHE_DSS_EXPORT:
+            return crypto.hasDHAgreement()
+                && crypto.hasSignatureAlgorithm(SignatureAlgorithm.dsa);
+
+        case KeyExchangeAlgorithm.DHE_RSA:
+        case KeyExchangeAlgorithm.DHE_RSA_EXPORT:
+            return crypto.hasDHAgreement()
+                && crypto.hasSignatureAlgorithm(SignatureAlgorithm.rsa);
+
+        case KeyExchangeAlgorithm.ECDH_anon:
+        case KeyExchangeAlgorithm.ECDH_ECDSA:
+        case KeyExchangeAlgorithm.ECDH_RSA:
+        case KeyExchangeAlgorithm.ECDHE_PSK:
+            return crypto.hasECDHAgreement();
+
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+            return crypto.hasECDHAgreement()
+                && crypto.hasSignatureAlgorithm(SignatureAlgorithm.ecdsa);
+
+        case KeyExchangeAlgorithm.ECDHE_RSA:
+            return crypto.hasECDHAgreement()
+                && crypto.hasSignatureAlgorithm(SignatureAlgorithm.rsa);
+
+        case KeyExchangeAlgorithm.NULL:
+        case KeyExchangeAlgorithm.PSK:
+            return true;
+
         case KeyExchangeAlgorithm.RSA:
         case KeyExchangeAlgorithm.RSA_EXPORT:
         case KeyExchangeAlgorithm.RSA_PSK:
-        {
-            if (!crypto.hasRSAEncryption())
-            {
-                return false;
-            }
-            break;
-        }
-        }
+            return crypto.hasRSAEncryption();
 
-        int encryptionAlgorithm = getEncryptionAlgorithm(cipherSuite);
-        int macAlgorithm = getMACAlgorithm(cipherSuite);
+        case KeyExchangeAlgorithm.SRP:
+            return crypto.hasSRPAuthentication();
 
-        return crypto.hasEncryptionAlgorithm(encryptionAlgorithm) && crypto.hasMacAlgorithm(macAlgorithm);
+        case KeyExchangeAlgorithm.SRP_DSS:
+            return crypto.hasSRPAuthentication()
+                && crypto.hasSignatureAlgorithm(SignatureAlgorithm.dsa);
+
+        case KeyExchangeAlgorithm.SRP_RSA:
+            return crypto.hasSRPAuthentication()
+                && crypto.hasSignatureAlgorithm(SignatureAlgorithm.rsa);
+
+        default:
+            return false;
+        }
     }
 
     static byte[] getCurrentPRFHash(TlsHandshakeHash handshakeHash)

@@ -96,7 +96,6 @@ public class JsseESTServiceBuilder
         return this;
     }
 
-
     public JsseESTServiceBuilder withTimeout(int timeoutMillis)
     {
         this.timeoutMillis = timeoutMillis;

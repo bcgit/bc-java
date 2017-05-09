@@ -743,6 +743,29 @@ public class NewSignedDataTest
         verifySignatures(s, null);
     }
 
+    public void testEmptyContent()
+        throws Exception
+    {
+        
+        try
+        {
+            new CMSSignedData(new byte[0]);
+        }
+        catch (CMSException e)
+        {
+            assertEquals("No content found.", e.getMessage());
+        }
+
+        try
+        {
+            new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().build(), new byte[0]);
+        }
+        catch (CMSException e)
+        {
+            assertEquals("No content found.", e.getMessage());
+        }
+    }
+
     public void testSHA1AndMD5WithRSAEncapsulatedRepeated()
         throws Exception
     {

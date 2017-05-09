@@ -1,11 +1,9 @@
 package org.bouncycastle.asn1.cmc;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -55,27 +53,15 @@ public class OtherStatusInfo
         }
         else if (obj instanceof byte[])
         {
-            ASN1InputStream ain = new ASN1InputStream(new ByteArrayInputStream((byte[])obj));
             try
             {
-                return getInstance(ain.readObject());
+                return getInstance(ASN1Primitive.fromByteArray((byte[])obj));
             }
-            catch (Exception e)
+            catch (IOException e)
             {
-                throw new IllegalArgumentException(e.getMessage(), e);
+                throw new IllegalArgumentException("parsing error: " + e.getMessage());
             }
-            finally
-            {
-                try
-                {
-                    ain.close();
-                }
-                catch (IOException e)
-                {
-                    throw new IllegalArgumentException(e.getMessage(), e);
-                }
-            }
-        }
+        }                          
         throw new IllegalArgumentException("unknown object in getInstance(): " + obj.getClass().getName());
     }
 

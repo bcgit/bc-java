@@ -47,7 +47,7 @@ public class FixedPointCombMultiplier extends AbstractECMultiplier
             R = R.twicePlus(lookupTable[index]);
         }
 
-        return R;
+        return R.add(info.getOffset());
     }
 
     protected int getWidthForCombSize(int combSize)

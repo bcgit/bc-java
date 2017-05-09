@@ -1,82 +1,76 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
-import java.text.ParseException;
-
-import org.bouncycastle.util.Pack;
+import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
 
 /**
- * XMSS Hash Tree address.
+ * Hash tree address.
  *
  */
-public class HashTreeAddress
-    extends XMSSAddress
-{
+public final class HashTreeAddress extends XMSSAddress {
 
-    private static final int TYPE = 0x02;
-    private static final int PADDING = 0x00;
+	private static final int TYPE = 0x02;
+	private static final int PADDING = 0x00;
 
-    private int padding;
-    private int treeHeight;
-    private int treeIndex;
+	private final int padding;
+	private final int treeHeight;
+	private final int treeIndex;
 
-    public HashTreeAddress()
-    {
-        super(TYPE);
-        padding = PADDING;
-    }
+	private HashTreeAddress(Builder builder) {
+		super(builder);
+		padding = PADDING;
+		treeHeight = builder.treeHeight;
+		treeIndex = builder.treeIndex;
+	}
+	
+	protected static class Builder extends XMSSAddress.Builder<Builder> {
 
-    @Override
-    public void parseByteArray(byte[] address)
-        throws ParseException
-    {
-        int type = Pack.bigEndianToInt(address, 12);
-        if (type != TYPE)
-        {
-            throw new ParseException("type needs to be " + TYPE, 12);
-        }
-        setType(type);
-        int padding = Pack.bigEndianToInt(address, 16);
-        if (padding != PADDING)
-        {
-            throw new ParseException("padding needs to be " + PADDING, 16);
-        }
-        treeHeight = Pack.bigEndianToInt(address, 20);
-        treeIndex = Pack.bigEndianToInt(address, 24);
-        super.parseByteArray(address);
-    }
+		/* optional */
+		private int treeHeight = 0;
+		private int treeIndex = 0;
 
-    @Override
-    public byte[] toByteArray()
-    {
-        byte[] byteRepresentation = getByteRepresentation();
-        XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, padding, 16);
-        XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, treeHeight, 20);
-        XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, treeIndex, 24);
-        return super.toByteArray();
-    }
+		protected Builder() {
+			super(TYPE);
+		}
+		
+		protected Builder withTreeHeight(int val) {
+			treeHeight = val;
+			return this;
+		}
+		
+		protected Builder withTreeIndex(int val) {
+			treeIndex = val;
+			return this;
+		}
+		
+		@Override
+		protected XMSSAddress build() {
+			return new HashTreeAddress(this);
+		}
 
-    public int getPadding()
-    {
-        return padding;
-    }
+		@Override
+		protected Builder getThis() {
+			return this;
+		}
+	}
 
-    public int getTreeHeight()
-    {
-        return treeHeight;
-    }
+	@Override
+	protected byte[] toByteArray() {
+		byte[] byteRepresentation = super.toByteArray();
+		XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, padding, 16);
+		XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, treeHeight, 20);
+		XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, treeIndex, 24);
+		return byteRepresentation;
+	}
 
-    public void setTreeHeight(int treeHeight)
-    {
-        this.treeHeight = treeHeight;
-    }
+	protected int getPadding() {
+		return padding;
+	}
 
-    public int getTreeIndex()
-    {
-        return treeIndex;
-    }
+	protected int getTreeHeight() {
+		return treeHeight;
+	}
 
-    public void setTreeIndex(int treeIndex)
-    {
-        this.treeIndex = treeIndex;
-    }
+	protected int getTreeIndex() {
+		return treeIndex;
+	}
 }

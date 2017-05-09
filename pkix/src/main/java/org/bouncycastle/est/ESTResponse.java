@@ -121,7 +121,6 @@ public class ESTResponse
 
             inputStream = new InputStream()
             {
-                @Override
                 public int read()
                     throws IOException
                 {
@@ -164,7 +163,6 @@ public class ESTResponse
     {
         return new InputStream()
         {
-            @Override
             public int read()
                 throws IOException
             {
@@ -180,7 +178,6 @@ public class ESTResponse
                 return i;
             }
 
-            @Override
             public void close()
                 throws IOException
             {
@@ -305,14 +302,12 @@ public class ESTResponse
             return i;
         }
 
-        @Override
         public int available()
             throws IOException
         {
             return src.available();
         }
 
-        @Override
         public void close()
             throws IOException
         {

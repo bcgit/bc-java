@@ -148,6 +148,9 @@ public class RegressionTest
         new Blake2bDigestTest(),
         new KeccakDigestTest(),
         new SHAKEDigestTest(),
+        new SM2EngineTest(),
+        new SM2KeyExchangeTest(),
+        new SM2SignerTest(),
         new SM4Test()
     };
 
