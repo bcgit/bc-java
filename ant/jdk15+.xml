@@ -37,10 +37,16 @@
             <fileset dir="prov/src/test/java" includes="**/*.java" />
             <fileset dir="prov/src/test/resources" includes="**/*.*" />
 
+            <fileset dir="tls/src/main/java" includes="**/*.java" />
+            <fileset dir="tls/src/main/javadoc" includes="**/*.html" />
+            <fileset dir="tls/src/test/java" includes="**/*.java" />
+            <fileset dir="tls/src/test/resources" includes="**/*.*" />
+
             <fileset dir="pkix/src/main/java" includes="**/*.java" />
             <fileset dir="pkix/src/main/javadoc" includes="**/*.html" />
             <fileset dir="pkix/src/main/java" includes="**/*.properties" />
             <fileset dir="pkix/src/test/java" includes="**/*.java" />
+            <fileset dir="pkix/src/test/javadoc" includes="**/*.html" />
             <fileset dir="pkix/src/test/resources" includes="**/*.*" />
 
             <fileset dir="pg/src/main/java" includes="**/*.java" />
@@ -86,15 +92,21 @@
     </target>
     
     <target name="build" depends="init">
+        <ant antfile="ant/bc+-build.xml" dir="." target="build-tls" />
         <ant antfile="ant/bc+-build.xml" dir="." />
+        <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-lw" />
+        <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-libraries" />
+        <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-tls" />
     </target>
 
     <target name="build-lw" depends="init">
         <ant antfile="ant/bc+-build.xml" dir="." target="build-lw" />
+        <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-lw" />
     </target>
 
     <target name="build-provider" depends="init, checkstyle-on, checkstyle-off">
         <ant antfile="ant/bc+-build.xml" dir="." target="build-provider" />
+        <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-provider" />
     </target>
 
     <target name="build-test" depends="init">
