@@ -289,6 +289,12 @@ used with the above modes.
 <tr><td><b>ElGamalEngine</b></td><td>any multiple of 8 large enough for the encoding.</td><td>&nbsp;</td></tr>
 <tr><td><b>NTRUEngine</b></td><td>any multiple of 8 large enough for the encoding.</td><td>&nbsp;</td></tr>
 </table>
+<p>The following asymmetric ciphers are also supported and allow variable block sizes:
+<ul>
+<li>IESEngine</li>
+<li>SM2Engine</li>
+</ul>
+</p>
 
 <h4>Digest</h4>
 
@@ -592,6 +598,8 @@ Note: default key sizes are in bold.
 <tr><th>Name</th><th>KeySizes (in bits) </th><th>Block Size</th><th>Notes</th></tr>
 <tr><td>AES</td><td>0 .. 256 <b>(192)</b></td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td>AESWrap</td><td>0 .. 256 <b>(192)</b></td><td>128 bit</td><td>A FIPS AES key wrapper</td></tr>
+<tr><td>ARIA</td><td>0 .. 256 <b>(192)</b></td><td>128 bit</td><td>&nbsp;</td></tr>
+<tr><td>ARIAWrap</td><td>0 .. 256 <b>(192)</b></td><td>128 bit</td><td>An ARIA key wrapper (based on RFC 5649)</td></tr>
 <tr><td>Blowfish</td><td>0 .. 448 <b>(448)</b></td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td>Camellia</td><td>128, 192, 256</td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td>CamelliaWrap</td><td>128, 192, 256</td><td>128 bit</td><td>&nbsp;</td></tr>
@@ -613,6 +621,7 @@ Note: default key sizes are in bold.
 <tr><td>SEEDWrap</td><td>128<b>(128)</b></td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td>Serpent</td><td>128, 192, 256 <b>(256)</b></td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td>Skipjack</td><td>0 .. 128 <b>(128)</b></td><td>64 bit</td><td>&nbsp;</td></tr>
+<tr><td>SM4</td><td>128<b>(128)</b></td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td>TEA</td><td>128 <b>(128)</b></td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td>Threefish-256</td><td>256</td><td>256 bit</td><td>&nbsp;</td></tr>
 <tr><td>Threefish-512</td><td>512</td><td>512 bit</td><td>&nbsp;</td></tr>
@@ -679,7 +688,7 @@ as;
 
 <p>
 Diffie-Hellman key agreement is supported using the "DH", "ECDH",
-"ECCDH" (EC cofactor DH) and "ECMQV" key agreement instances and their variations. Key exchange, which also uses the KeyAgreement API is supported by "NH" (the NewHope algorithm (BCPQC)).
+"ECCDH" (EC cofactor DH) and "ECMQV" key agreement instances and their variations. Key exchange, which also uses the KeyAgreement API is supported by "NH" (the NewHope algorithm (BCPQC)). SM2 key exchange is currently supported in the lightweight API.
 </p>
 <p>
 Support is provided for the standard SEC algorithm set for EC. Names appear
@@ -871,6 +880,7 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>WHIRLPOOLwithRSA/X9.31</li>
 <li>SHA512withSPHINCS256 (BCPQC)</li>
 <li>SHA3-512withSPHINCS256 (BCPQC)</li>
+<li>SM3withSM2</li>
 </ul>
 
 <h4>Password Hashing and PBE</h4>
