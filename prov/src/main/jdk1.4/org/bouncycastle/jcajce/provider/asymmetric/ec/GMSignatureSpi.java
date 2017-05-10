@@ -61,24 +61,6 @@ public class GMSignatureSpi
             signer.init(true, param);
         }
     }
-    
-    protected void engineInitSign(
-        PrivateKey privateKey)
-        throws InvalidKeyException
-    {
-        CipherParameters param = ECUtil.generatePrivateKeyParameter(privateKey);
-
-        digest.reset();
-
-        if (appRandom != null)
-        {
-            signer.init(true, new ParametersWithRandom(param, appRandom));
-        }
-        else
-        {
-            signer.init(true, param);
-        }
-    }
 
     static public class sm3WithSM2
         extends GMSignatureSpi
