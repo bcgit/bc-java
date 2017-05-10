@@ -40,6 +40,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2016, December 23
 <li>Passing a PKCS12 key to a Mac in the BC JCE always resulted in SHA-1 being used to process the password regardless of the underlying MAC algorithm. This has been fixed. An unrecognised HMAC will also now result in an exception.</li>
 <li>The Base64 encoder now explicitly validates 2 character padding as being "==".</li>
 <li>EC FixedPointCombMultiplier avoids 'infinity' point in lookup tables, reducing timing side-channels.</li>
+<li>Reuse of a Blake2b digest with a call to reset() rather than doFinal() could result in incorrect padding being introduced and the wrong digest result produced. This has been fixed.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>

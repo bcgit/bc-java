@@ -130,6 +130,18 @@ public class DigestTest
         {
             fail("Result object 5 not equal");
         }
+
+        // test six, check reset() method with longer message
+        digest.update(message);
+        digest.update(message);
+        digest.reset();
+
+        result2 = digest.digest(message);
+
+        if (!MessageDigest.isEqual(result, result2))
+        {
+            fail("Result object 6 not equal");
+        }
     }
 
     /**
