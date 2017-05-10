@@ -63,6 +63,10 @@ then
         rm src/org/bouncycastle/asn1/test/Iso4217CurrencyCodeUnitTest.java
         rm src/org/bouncycastle/asn1/test/KeyUsageTest.java
         rm src/org/bouncycastle/asn1/test/LDSSecurityObjectUnitTest.java
+        rm src/org/bouncycastle/asn1/test/CMCFailInfoTest.java
+        rm src/org/bouncycastle/asn1/test/CMCStatusTest.java
+        rm src/org/bouncycastle/asn1/test/PublishTrustAnchorsTest.java
+        rm src/org/bouncycastle/asn1/test/RevokeRequestTest.java
         rm -rf src/org/bouncycastle/math/raw/test
         rm -rf src/org/bouncycastle/math/test
         rm -rf src/org/bouncycastle/pqc/math/ntru
@@ -70,6 +74,8 @@ then
         rm -rf src/org/bouncycastle/pqc/crypto/*/NTRU*
         rm -rf src/org/bouncycastle/pqc/crypto/*/BitStringTest*
         rm -rf src/org/bouncycastle/pqc/crypto/*/IndexGenerator*
+        rm -rf src/org/bouncycastle/pqc/crypto/xmss
+        rm -rf src/org/bouncycastle/pqc/crypto/test/XMSS*
         rm src/org/bouncycastle/asn1/test/MonetaryValueUnitTest.java
         rm src/org/bouncycastle/asn1/test/NameOrPseudonymUnitTest.java
         rm src/org/bouncycastle/asn1/test/NetscapeCertTypeTest.java
