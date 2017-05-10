@@ -290,7 +290,7 @@ public class JcaTlsCertificate
         }
         catch (CertificateEncodingException e)
         {
-            throw new IOException("unable to parse certificate extensions: " + e.getMessage(), e);
+            throw new TlsCryptoException("unable to parse certificate extensions: " + e.getMessage(), e);
         }
 
         if (exts != null)
