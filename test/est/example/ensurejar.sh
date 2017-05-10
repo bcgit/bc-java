@@ -16,7 +16,8 @@ popd
 
 pushd $DIR/jars
 
-bcver="157b14";
+curl -o ver.index  https://downloads.bouncycastle.org/betas/index.html
+bcver=`fgrep bcprov-ext ver.index | fgrep .jar | sed -e "s:^.*bcprov-ext-jdk15on-::" | sed -e "s:.jar<.*$::"`
 
 if  type curl > /dev/null; then
     curl -o bcprov.jar  https://downloads.bouncycastle.org/betas/bcprov-jdk15on-$bcver.jar
