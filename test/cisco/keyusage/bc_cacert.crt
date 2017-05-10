@@ -1,0 +1,81 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 10521639203394691575 (0x92045f1c052a21f7)
+    Signature Algorithm: sha256WithRSAEncryption
+        Issuer: CN=est-EXTERNALCA
+        Validity
+            Not Before: Apr 20 12:25:18 2017 GMT
+            Not After : Apr 20 12:25:18 2037 GMT
+        Subject: CN=est-EXTERNALCA
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    00:be:d0:f5:87:7e:ad:1b:7e:f2:15:0f:cf:e6:0d:
+                    35:d7:40:c6:02:3d:a4:ba:43:18:27:90:16:c3:81:
+                    a0:bd:6e:93:ee:1f:47:a9:f1:7a:2c:8c:16:d2:96:
+                    c6:c7:9e:94:82:96:49:ee:a2:04:44:09:bf:07:0c:
+                    ef:46:ea:c8:4c:dc:a5:d1:19:d3:fd:13:05:10:38:
+                    d2:a8:f3:95:70:d7:f6:3f:87:c3:87:cd:cd:35:a8:
+                    c3:58:6a:4f:a0:f4:e8:bb:35:0b:8b:c4:df:97:f2:
+                    fb:73:59:3a:96:87:d5:0c:f6:cd:80:c1:a3:43:e9:
+                    b7:dc:68:a8:e1:4c:af:c9:66:05:13:61:dd:c8:ed:
+                    ab:90:54:77:0d:48:3f:3f:dd:1a:71:12:b1:86:7a:
+                    42:c6:5f:f0:1b:9f:5d:90:05:92:fa:aa:88:7f:66:
+                    12:00:21:5f:5e:5f:99:4b:73:8c:0f:e4:5b:d1:57:
+                    54:dc:6c:45:1d:fc:8f:c9:e6:88:cc:42:2e:c7:9e:
+                    17:28:ed:0f:2b:e9:42:7d:18:b3:6b:1c:c9:6f:30:
+                    b3:b3:dc:36:74:65:f7:ce:04:a0:ad:fc:b0:1f:ac:
+                    78:d6:ce:7a:2b:2c:b1:a7:cf:b7:43:6e:2e:6a:ed:
+                    17:e6:95:7e:c4:c3:c0:8e:29:41:4e:e9:0d:ba:4b:
+                    40:f7
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Basic Constraints: 
+                CA:TRUE
+            X509v3 Subject Key Identifier: 
+                98:61:D3:E9:0F:73:94:BD:C3:E4:FB:55:1D:11:B7:FB:09:35:C8:2F
+            X509v3 Subject Alternative Name: 
+                DNS:localhost, DNS:ip6-localhost, IP Address:127.0.0.1, IP Address:0:0:0:0:0:0:0:1
+            X509v3 CRL Distribution Points: 
+
+                Full Name:
+                  URI:http://example.com/crl.pem
+
+    Signature Algorithm: sha256WithRSAEncryption
+         5f:bb:fc:48:a6:7e:37:9f:0f:7f:6f:00:8c:72:30:59:1f:65:
+         ac:f1:92:fd:01:a7:08:5e:3b:b6:40:26:79:b1:bc:a6:5b:b6:
+         7c:d7:e2:2b:bd:2c:35:22:23:e7:b2:af:13:ce:26:84:c7:4e:
+         d5:7e:22:76:3f:10:13:bb:66:2a:59:b2:45:62:a3:bf:3f:d9:
+         35:bb:5e:b1:37:76:e3:09:35:7d:5c:96:dc:b2:ee:50:3e:1f:
+         29:6f:99:ab:4d:3f:4b:74:e1:8b:0c:f3:f3:60:d2:10:33:19:
+         d0:34:99:1b:32:56:6a:14:07:e2:77:f2:f4:9a:47:a9:b1:89:
+         4e:68:84:2e:e7:d0:e3:f3:e8:1c:64:7f:c3:94:b4:b1:b3:0d:
+         b0:a1:67:80:2a:9b:22:34:dc:81:1c:0d:36:65:48:87:7e:51:
+         d0:a8:8a:bd:f2:a8:9a:be:20:b4:53:d4:d7:b1:34:6a:b5:02:
+         e1:41:63:3e:39:7c:80:e5:44:e4:1d:dd:a3:f0:b3:2e:bd:04:
+         47:06:99:ec:be:54:e9:a9:1f:fb:a4:dd:1f:f2:ad:2a:5b:48:
+         84:a9:e3:1b:e5:6c:3e:02:34:4a:25:9c:4e:38:84:1b:c8:19:
+         33:cf:4c:97:90:06:42:f7:2f:7d:92:d7:ed:f0:3d:c6:0c:32:
+         9d:57:4c:1b
+-----BEGIN CERTIFICATE-----
+MIIDUDCCAjigAwIBAgIJAJIEXxwFKiH3MA0GCSqGSIb3DQEBCwUAMBkxFzAVBgNV
+BAMMDmVzdC1FWFRFUk5BTENBMB4XDTE3MDQyMDEyMjUxOFoXDTM3MDQyMDEyMjUx
+OFowGTEXMBUGA1UEAwwOZXN0LUVYVEVSTkFMQ0EwggEiMA0GCSqGSIb3DQEBAQUA
+A4IBDwAwggEKAoIBAQC+0PWHfq0bfvIVD8/mDTXXQMYCPaS6QxgnkBbDgaC9bpPu
+H0ep8XosjBbSlsbHnpSClknuogRECb8HDO9G6shM3KXRGdP9EwUQONKo85Vw1/Y/
+h8OHzc01qMNYak+g9Oi7NQuLxN+X8vtzWTqWh9UM9s2AwaND6bfcaKjhTK/JZgUT
+Yd3I7auQVHcNSD8/3RpxErGGekLGX/Abn12QBZL6qoh/ZhIAIV9eX5lLc4wP5FvR
+V1TcbEUd/I/J5ojMQi7Hnhco7Q8r6UJ9GLNrHMlvMLOz3DZ0ZffOBKCt/LAfrHjW
+znorLLGnz7dDbi5q7RfmlX7Ew8COKUFO6Q26S0D3AgMBAAGjgZowgZcwDAYDVR0T
+BAUwAwEB/zAdBgNVHQ4EFgQUmGHT6Q9zlL3D5PtVHRG3+wk1yC8wOwYDVR0RBDQw
+MoIJbG9jYWxob3N0gg1pcDYtbG9jYWxob3N0hwR/AAABhxAAAAAAAAAAAAAAAAAA
+AAABMCsGA1UdHwQkMCIwIKAeoByGGmh0dHA6Ly9leGFtcGxlLmNvbS9jcmwucGVt
+MA0GCSqGSIb3DQEBCwUAA4IBAQBfu/xIpn43nw9/bwCMcjBZH2Ws8ZL9AacIXju2
+QCZ5sbymW7Z81+IrvSw1IiPnsq8TziaEx07VfiJ2PxATu2YqWbJFYqO/P9k1u16x
+N3bjCTV9XJbcsu5QPh8pb5mrTT9LdOGLDPPzYNIQMxnQNJkbMlZqFAfid/L0mkep
+sYlOaIQu59Dj8+gcZH/DlLSxsw2woWeAKpsiNNyBHA02ZUiHflHQqIq98qiaviC0
+U9TXsTRqtQLhQWM+OXyA5UTkHd2j8LMuvQRHBpnsvlTpqR/7pN0f8q0qW0iEqeMb
+5Ww+AjRKJZxOOIQbyBkzz0yXkAZC9y99ktft8D3GDDKdV0wb
+-----END CERTIFICATE-----
