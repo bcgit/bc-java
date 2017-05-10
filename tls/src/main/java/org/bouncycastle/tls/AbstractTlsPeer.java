@@ -4,6 +4,9 @@ import java.io.IOException;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
 
+/**
+ * Base class for a TLS client or server.
+ */
 public abstract class AbstractTlsPeer
     implements TlsPeer
 {
