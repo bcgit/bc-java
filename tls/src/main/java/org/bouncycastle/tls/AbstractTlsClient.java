@@ -8,6 +8,9 @@ import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 
+/**
+ * Base class for a TLS client.
+ */
 public abstract class AbstractTlsClient
     extends AbstractTlsPeer
     implements TlsClient
