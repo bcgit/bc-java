@@ -14,16 +14,6 @@ public abstract class SimpleTest
         return SimpleTestResult.successful(this, "Okay");
     }
     
-    protected void isTrue(
-        String message,
-        boolean value)
-    {
-        if (!value)
-        {
-            throw new TestFailedException(SimpleTestResult.failed(this, message));
-        }
-    }
-
     protected void fail(
         String message)
     {
@@ -45,6 +35,91 @@ public abstract class SimpleTest
         throw new TestFailedException(SimpleTestResult.failed(this, message, expected, found));
     }
         
+protected void isTrue(
+        boolean value)
+    {
+        if (!value)
+        {
+            throw new TestFailedException(SimpleTestResult.failed(this, "no message"));
+        }
+    }
+
+    protected void isTrue(
+        String message,
+        boolean value)
+    {
+        if (!value)
+        {
+            throw new TestFailedException(SimpleTestResult.failed(this, message));
+        }
+    }
+
+    protected void isEquals(
+        Object a,
+        Object b)
+    {
+        if (!a.equals(b))
+        {
+            throw new TestFailedException(SimpleTestResult.failed(this, "no message"));
+        }
+    }
+
+    protected void isEquals(
+        int a,
+        int b)
+    {
+        if (a != b)
+        {
+            throw new TestFailedException(SimpleTestResult.failed(this, "no message"));
+        }
+    }
+
+    protected void isEquals(
+        String message,
+        boolean a,
+        boolean b)
+    {
+        if (a != b)
+        {
+            throw new TestFailedException(SimpleTestResult.failed(this, message));
+        }
+    }
+
+    protected void isEquals(
+        String message,
+        long a,
+        long b)
+    {
+        if (a != b)
+        {
+            throw new TestFailedException(SimpleTestResult.failed(this, message));
+        }
+    }
+
+    protected void isEquals(
+        String message,
+        Object a,
+        Object b)
+    {
+        if (a == null && b == null)
+        {
+            return;
+        }
+        else if (a == null)
+        {
+            throw new TestFailedException(SimpleTestResult.failed(this, message));
+        }
+        else if (b == null)
+        {
+            throw new TestFailedException(SimpleTestResult.failed(this, message));
+        }
+
+        if (!a.equals(b))
+        {
+            throw new TestFailedException(SimpleTestResult.failed(this, message));
+        }
+    }
+
     protected boolean areEqual(
         byte[] a,
         byte[] b)
