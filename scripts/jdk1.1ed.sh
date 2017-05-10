@@ -134,6 +134,42 @@ w
 q
 %
 
+ed org/bouncycastle/asn1/cmc/BodyPartID.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/cmc/CMCFailInfo.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/cmc/CMCStatus.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/cmc/CMCStatusInfo.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/cmc/OtherStatusInfo.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/cmc/TaggedRequest.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
 for i in mceliece/McElieceCCA2Parameters.java sphincs/HashFunctions.java 
 do
 ed org/bouncycastle/pqc/crypto/$i <<%
@@ -150,6 +186,18 @@ q
 %
 
 ed org/bouncycastle/crypto/signers/RSADigestSigner.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/agreement/SM2KeyExchange.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/engines/SM2Engine.java <<%
 g/private final .*;/s/final//
 w
 q

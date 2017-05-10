@@ -62,7 +62,9 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/crypto/test/ntru
     rm -rf org/bouncycastle/pqc/math/ntru
     rm -rf org/bouncycastle/pqc/crypto/ntru
+    rm -rf org/bouncycastle/pqc/crypto/xmss
     rm -rf org/bouncycastle/pqc/crypto/*/NTRU*
+    rm -rf org/bouncycastle/pqc/crypto/*/XMSS*
     rm -rf org/bouncycastle/pqc/crypto/*/EncryptionKey*
     rm -rf org/bouncycastle/pqc/crypto/*/BitStringT*
     rm -rf org/bouncycastle/crypto/*/test
@@ -132,6 +134,7 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -r org/bouncycastle/crypto/test/KDFFeedbackGeneratorTest.java
     rm -r org/bouncycastle/crypto/test/KDFDoublePipelineIteratorGeneratorTest.java
     rm -r org/bouncycastle/crypto/test/KDFCounterGeneratorTest.java
+    rm -r org/bouncycastle/crypto/test/ARIATest.java
     rm -r org/bouncycastle/math/test/PrimesTest.java
     rm -r org/bouncycastle/math/raw/test/InterleaveTest.java
     rm -rf org/bouncycastle/cert/jcajce/JcaAttributeCertificateIssuer.java
@@ -165,8 +168,11 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/eac/test
     rm -rf org/bouncycastle/cms/test
     rm -rf org/bouncycastle/tsp/test
+    rm -rf org/bouncycastle/est/test
     rm -rf org/bouncycastle/dvcs/test
     rm -rf org/bouncycastle/openssl/test/WriterTest.java
+    rm -rf org/bouncycastle/asn1/test/CMCFailInfoTest.java
+    rm -rf org/bouncycastle/asn1/test/CMCStatusTest.java
 
     sh ../../scripts/jdk1.2ed.sh > /dev/null 2>&1
     sh ../../scripts/jdk1.1ed.sh > /dev/null 2>&1
@@ -274,7 +280,7 @@ javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/li
         cp ../../../../core/src/test/resources/org/bouncycastle/crypto/test/*.txt classes/org/bouncycastle/crypto/test/
 
         echo "lightweight regression test"
-        java -mx512m -classpath classes:$JDK11PATH/lib/classes.zip -Dbc.test.data.home=/home/dgh/bc/java/crypto/test/data org.bouncycastle.crypto.test.RegressionTest
+        java -mx868m -classpath classes:$JDK11PATH/lib/classes.zip -Dbc.test.data.home=/home/dgh/bc/java/crypto/test/data org.bouncycastle.crypto.test.RegressionTest
         java -classpath classes:$JDK11PATH/lib/classes.zip -Dbc.test.data.home=/home/dgh/bc/java/crypto/test/data org.bouncycastle.asn1.test.RegressionTest
     )
     (2>&1 find $artifacts/lcrypto-jdk11-$base -name CVS -exec rm -rf \{\} \; ) > /dev/null
