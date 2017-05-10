@@ -86,7 +86,6 @@ public class TestCACertsFetch
 
     }
 
-
     /**
      * Test Fetch CA certs without doing any SSL TLS verification.
      * This is just a catch all to prove we can get some certificates back.
@@ -258,6 +257,8 @@ public class TestCACertsFetch
         }
 
     }
+
+
 
 
     /**
