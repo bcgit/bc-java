@@ -102,6 +102,60 @@ public class TestEnroll
 
     }
 
+    private ESTServerUtils.ServerInstance startDefaultServerTLSAndBasicAuthSpecial(int delay, boolean popOn)
+        throws Exception
+    {
+        final ESTServerUtils.EstServerConfig config = new ESTServerUtils.EstServerConfig();
+        config.serverCertPemFile = ESTServerUtils.makeRelativeToServerHome("keyusage/estservercertandkey.pem").getCanonicalPath();
+        config.serverKeyPemFile = ESTServerUtils.makeRelativeToServerHome("keyusage/estservercertandkey.pem").getCanonicalPath();
+        config.realm = "estreal";
+        config.verbose = true;
+        config.tcpPort = 8443;
+        config.useBasicAuth = true;
+        config.useDigestAuth = false;
+        config.estTRUSTEDCerts = ESTServerUtils.makeRelativeToServerHome("keyusage/trustedcerts.crt").getCanonicalPath();
+        config.estCACERTSResp = ESTServerUtils.makeRelativeToServerHome("keyusage/bc_cacert.crt").getCanonicalPath();
+        config.disableHTTPAuth = false;
+        config.enableCheckPOPtoTLSUID = popOn;
+        config.manualEnroll = delay;
+
+
+        //
+        // Read in openssl config, and adjust it with the correct path.
+        //
+
+        String cnf = ESTTestUtils.readToString(ESTServerUtils.makeRelativeToServerHome("/estExampleCA.cnf"));
+        cnf = cnf.replace("= ./estCA", "= " + ESTServerUtils.makeRelativeToServerHome("/estCA").getCanonicalPath());
+        config.openSSLConfigFile = cnf;
+
+        return ESTServerUtils.startServer(config);
+
+    }
+
+
+    /*
+      private ESTServerUtils.ServerInstance startSpecialServer()
+        throws Exception
+    {
+
+        final ESTServerUtils.EstServerConfig config = new ESTServerUtils.EstServerConfig();
+        config.serverCertPemFile = ESTServerUtils.makeRelativeToServerHome("keyusage/estservercertandkey.pem").getCanonicalPath();
+        config.serverKeyPemFile = ESTServerUtils.makeRelativeToServerHome("keyusage/estservercertandkey.pem").getCanonicalPath();
+        config.realm = "estreal";
+        config.verbose = true;
+        config.tcpPort = 8443;
+        config.useBasicAuth = true;
+        config.estTRUSTEDCerts = ESTServerUtils.makeRelativeToServerHome("keyusage/trustedcerts.crt").getCanonicalPath();
+        config.estCACERTSResp = ESTServerUtils.makeRelativeToServerHome("keyusage/bc_cacert.crt").getCanonicalPath();
+
+        return ESTServerUtils.startServer(config);
+
+    }
+
+     */
+
+
+
 
     /**
      * Test enrollment with digest auth.
@@ -1154,7 +1208,7 @@ public class TestEnroll
             catch (Exception t)
             {
                 Assert.assertEquals("Must be ESTException", t.getClass(), ESTException.class);
-                Assert.assertTrue("", t.getMessage().contains("'invalid'"));
+                Assert.assertTrue("", t.getMessage().contains("QoP value unknown: '0'"));
             }
         }
         catch (Exception ex)
@@ -2177,6 +2231,76 @@ public class TestEnroll
         res.getFinished().await(5, TimeUnit.SECONDS);
 
     }
+
+
+    @Test
+    public void testEnrollUsingBasicAuthWrongUsage()
+        throws Exception
+    {
+        ESTTestUtils.ensureProvider();
+        X509CertificateHolder[] theirCAs = null;
+        ESTServerUtils.ServerInstance serverInstance = null;
+
+        try
+        {
+            serverInstance = startDefaultServerTLSAndBasicAuthSpecial(0, false);
+
+
+            ESTService est = new JsseESTServiceBuilder(
+                "localhost:8443", JcaJceUtils.getCertPathTrustManager(
+                ESTTestUtils.toTrustAnchor(ESTTestUtils.readPemCertificates(
+                    ESTServerUtils.makeRelativeToServerHome("/estCA/multicacerts.crt")
+                )), null)
+            ).withProvider(BouncyCastleJsseProvider.PROVIDER_NAME).withTLSVersion("TLS").build();
+
+
+            //
+            // Make certificate request.
+            //
+
+            ECGenParameterSpec ecGenSpec = new ECGenParameterSpec("prime256v1");
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", "BC");
+            kpg.initialize(ecGenSpec, new SecureRandom());
+            KeyPair enrollmentPair = kpg.generateKeyPair();
+
+            PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(
+                new X500Name("CN=Test"),
+                enrollmentPair.getPublic());
+
+            PKCS10CertificationRequest csr = pkcs10Builder.build(
+                new JcaContentSignerBuilder("SHA256WITHECDSA").setProvider("BC").build(enrollmentPair.getPrivate()));
+
+            EnrollmentResponse enr = est.simpleEnroll(false, csr,
+                new JcaHttpAuthBuilder("estreal", "estuser", "estpwd".toCharArray())
+                    .setNonceGenerator(new SecureRandom()).setProvider("BC").build());
+            X509Certificate expectedCA = ESTTestUtils.toJavaX509Certificate(ESTTestUtils.readPemCertificate(
+                ESTServerUtils.makeRelativeToServerHome("/estCA/cacert.crt")
+            ));
+
+            X509CertificateHolder enrolledAsHolder = ESTService.storeToArray(enr.getStore())[0];
+
+            X509Certificate enrolled = ESTTestUtils.toJavaX509Certificate(enrolledAsHolder);
+
+            // Will fail if it does not verify.
+            enrolled.verify(expectedCA.getPublicKey(), "BC");
+
+
+        } catch (Throwable t) {
+            //
+            // Non-ideal for testing but the TLS library emits errors that can not accidentally be printed to
+            // a web page and aid an attacker.
+            //
+            Assert.assertTrue(t.getMessage().toLowerCase().contains("internal tls error"));
+        }
+        finally
+        {
+            if (serverInstance != null)
+            {
+                serverInstance.getServer().stop_server();
+            }
+        }
+    }
+
 
 
     public static void main(String[] args)
