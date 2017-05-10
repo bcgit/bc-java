@@ -93,7 +93,7 @@ You will need to confirm by typing 'y [enter]' for each certificate:
 #
 # Run the following to get ca certs with bootstrapping.
 #
-./cacerts.sh -u testrfc7030.cisco.com:8443
+./cacerts.sh -u testrfc7030.com:8443
 
 
 Subject: CN=testrfc7030.cisco.com, O="Cisco Systems, Inc.", L=San Jose, ST=CA, C=US
@@ -145,13 +145,13 @@ WmAvxibh
 
 As we are using the Cisco Test Server: 
 ```
-http://testrfc7030.cisco.com/
+http://testrfc7030.com/
 ```
 
 In order to proceed you will need copy the last TLS certificate and use that as a trust anchor for the remaining examples:
 
 ```
-./cacerts.sh -u testrfc7030.cisco.com:8443 --printTLS
+./cacerts.sh -u testrfc7030.com:8443 --printTLS
 
 ```
 Answer the prompts as usual and at the very the TLS peer certificates will be printed PEM encoded.
@@ -209,7 +209,7 @@ return the CA cert, if the server cannot be validated with
 the trust anchor it will fail.
 
 ```
-./cacerts.sh -u testrfc7030.cisco.com:8443 -t server.ta.pem 
+./cacerts.sh -u testrfc7030.com:8443 -t server.ta.pem 
 
 Fetched CA Certs:
 
@@ -266,7 +266,7 @@ The enroll example has a number of options:
 This following enrollment example will generate CSR internally but you an specify the common name, when enrollment is complete
 it will return a summary of the returned certificate.
 ```
-./enroll.sh -t server.ta.pem -u testrfc7030.cisco.com:8443 --auth estuser:estpwd -c BARRY
+./enroll.sh -t server.ta.pem -u testrfc7030.com:8443 --auth estuser:estpwd -c BARRY
 
 
 Subject: CN=BARRY
@@ -319,7 +319,7 @@ anchor for the server to make this call.
 To fetch the attributes:
 
 ```
-./csrattrs.sh -t server.ta.pem -u testrfc7030.cisco.com:8443
+./csrattrs.sh -t server.ta.pem -u testrfc7030.com:8443
 
 1.2.840.113549.1.9.1
 1.3.132.0.34
