@@ -32,7 +32,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2016, December 23
 <li>The X.509 PolicyConstraints class was using implicit rather than explicit tagging for the SkipCerts field. This has been fixed.</li>
 <li>Key expiration in the OpenPGP is now calculated for ambiguous self signatures using the most recently created self-signature, in line with GPG and the recommendation in RFC 4880.</li>
 <li>Multiple validity periods in PGP keys were resolved in an adhoc fashion, in line with GPG's approach the PGP has been changed to return the most recent validity period signed.</li>
-<li>An occassional class cast exception that could occur with nested multi-parts in the S/MIME API has been fixed.</li>
+<li>An occasional class cast exception that could occur with nested multi-parts in the S/MIME API has been fixed.</li>
 <li>A couple of bogus aliases associated AlgorithmParameters that did not resolve in the provider have been removed.</li>
 <li>The CMS API will now correctly verify PSS signatures with odd length salts.</li>
 <li>Choosing an invalid mode on a stream cipher in the JCE could result in an IllegalArgumentException. This has now been corrected to throw a NoSuchAlgorithmException.</li>
@@ -49,11 +49,13 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2016, December 23
 <li>SM2 signatures, key exchange, and public key encryption has been added to the lightweight API.</li>
 <li>XMSS has been added to the lightweight PQ API. Note: this should be treated as beta code.</li>
 <li>API support for client side EST (RFC 7030), as well as some CMC (RFC 5273) has been added to the PKIX API. A full set of ASN.1 classes for both protocols has been added as well.</li>
+<li>A test client for EST which will interop with the 7030 test server at http://testrfc7030.com/ has been added to the general test module in the current source tree.</li>
 <li>The BCJSSE provider now supports SSLContext.getDefault(), with very similar behaviour to the SunJSSE provider, including checks of the relevant javax.net.ssl.* system properties and auto-loading of jssecacerts or cacerts as the default trust store.</li>
 </ul>
 <h3>2.1.3 Security Related Changes</h3>
 <ul>
 <li>The default parameter sizes for DH and DSA are now 2048. If you have been relying on key pair generation without passing in parameters generated keys will now be larger.</li>
+<li>Further work has been done on preventing accidental re-use of a GCM cipher without first changing its key or iv.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
