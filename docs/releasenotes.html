@@ -52,7 +52,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2017, May 11
 <li>A test client for EST which will interop with the 7030 test server at http://testrfc7030.com/ has been added to the general test module in the current source tree.</li>
 <li>The BCJSSE provider now supports SSLContext.getDefault(), with very similar behaviour to the SunJSSE provider, including checks of the relevant javax.net.ssl.* system properties and auto-loading of jssecacerts or cacerts as the default trust store.</li>
 </ul>
-<h3>2.1.3 Security Related Changes</h3>
+<h3>2.1.4 Security Related Changes</h3>
 <ul>
 <li>The default parameter sizes for DH and DSA are now 2048. If you have been relying on key pair generation without passing in parameters generated keys will now be larger.</li>
 <li>Further work has been done on preventing accidental re-use of a GCM cipher without first changing its key or iv.</li>
