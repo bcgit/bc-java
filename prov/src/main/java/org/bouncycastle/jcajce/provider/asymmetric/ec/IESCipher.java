@@ -49,6 +49,7 @@ import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.jce.interfaces.IESKey;
 import org.bouncycastle.jce.spec.IESParameterSpec;
+import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.Strings;
 
 
@@ -167,7 +168,9 @@ public class IESCipher
 
         if (otherKeyParameter == null)
         {
-            len2 = 2 * (((ECKeyParameters)key).getParameters().getCurve().getFieldSize() + 7) / 8;
+            ECCurve c = ((ECKeyParameters)key).getParameters().getCurve();
+            int feSize = (c.getFieldSize() + 7) / 8; 
+            len2 = 2 * feSize;
         }
         else
         {
