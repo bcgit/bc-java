@@ -408,11 +408,54 @@ public class TlsUtils
         writeUint16Array(uints, buf, offset + 2);
     }
 
+    public static short decodeUint8(byte[] buf) throws IOException
+    {
+        if (buf == null)
+        {
+            throw new IllegalArgumentException("'buf' cannot be null");
+        }
+        if (buf.length != 1)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+        return TlsUtils.readUint8(buf, 0);
+    }
+
+    public static short[] decodeUint8ArrayWithUint8Length(byte[] buf) throws IOException
+    {
+        if (buf == null)
+        {
+            throw new IllegalArgumentException("'buf' cannot be null");
+        }
+
+        int count = readUint8(buf, 0);
+        if (buf.length != (count + 1))
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        short[] uints = new short[count];
+        for (int i = 0; i < count; ++i)
+        {
+            uints[i] = readUint8(buf, i + 1);
+        }
+        return uints;
+    }
+
     public static byte[] encodeOpaque8(byte[] buf)
         throws IOException
     {
         checkUint8(buf.length);
         return Arrays.prepend(buf, (byte)buf.length);
+    }
+
+    public static byte[] encodeUint8(short uint) throws IOException
+    {
+        TlsUtils.checkUint8(uint);
+
+        byte[] extensionData = new byte[1];
+        TlsUtils.writeUint8(uint, extensionData, 0);
+        return extensionData;
     }
 
     public static byte[] encodeUint8ArrayWithUint8Length(short[] uints) throws IOException
