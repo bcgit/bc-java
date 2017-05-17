@@ -12,6 +12,8 @@ import java.security.interfaces.RSAPublicKey;
 
 import javax.crypto.interfaces.DHPublicKey;
 
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.TBSCertificate;
@@ -55,7 +57,16 @@ public class JcaTlsCertificate
     {
         try
         {
-            ByteArrayInputStream input = new ByteArrayInputStream(encoding);
+            /*
+             * NOTE: We want to restrict 'encoding' to a binary BER encoding, but
+             * CertificateFactory.generateCertificate claims to require DER encoding, and also
+             * supports Base64 encodings (in PEM format), which we don't support.
+             * 
+             * Re-encoding validates as BER and produces DER.
+             */
+            byte[] derEncoding = Certificate.getInstance(encoding).getEncoded(ASN1Encoding.DER);
+
+            ByteArrayInputStream input = new ByteArrayInputStream(derEncoding);
             this.certificate = (X509Certificate)helper.createCertificateFactory("X.509").generateCertificate(input);
             if (input.available() != 0)
             {
