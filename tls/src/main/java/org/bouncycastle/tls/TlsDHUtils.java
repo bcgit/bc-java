@@ -211,48 +211,22 @@ public class TlsDHUtils
 
     public static byte[] createNegotiatedDHEGroupsServerExtension(short dheGroup) throws IOException
     {
-        TlsUtils.checkUint8(dheGroup);
-
-        byte[] extensionData = new byte[1];
-        TlsUtils.writeUint8(dheGroup, extensionData, 0);
-        return extensionData;
+        return TlsUtils.encodeUint8(dheGroup);
     }
 
     public static short[] readNegotiatedDHEGroupsClientExtension(byte[] extensionData) throws IOException
     {
-        if (extensionData == null)
-        {
-            throw new IllegalArgumentException("'extensionData' cannot be null");
-        }
-
-        ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
-
-        short length = TlsUtils.readUint8(buf);
-        if (length < 1)
+        short[] dheGroups = TlsUtils.decodeUint8ArrayWithUint8Length(extensionData);
+        if (dheGroups.length < 1)
         {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
-
-        short[] dheGroups = TlsUtils.readUint8Array(length, buf);
-
-        TlsProtocol.assertEmpty(buf);
-
         return dheGroups;
     }
 
     public static short readNegotiatedDHEGroupsServerExtension(byte[] extensionData) throws IOException
     {
-        if (extensionData == null)
-        {
-            throw new IllegalArgumentException("'extensionData' cannot be null");
-        }
-
-        if (extensionData.length != 1)
-        {
-            throw new TlsFatalAlert(AlertDescription.decode_error);
-        }
-
-        return TlsUtils.readUint8(extensionData, 0);
+        return TlsUtils.decodeUint8(extensionData);
     }
 
     public static DHGroup getParametersForDHEGroup(short dheGroup)

@@ -88,23 +88,7 @@ public class TlsECCUtils
 
     public static short[] readSupportedPointFormatsExtension(byte[] extensionData) throws IOException
     {
-        if (extensionData == null)
-        {
-            throw new IllegalArgumentException("'extensionData' cannot be null");
-        }
-
-        ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
-
-        short length = TlsUtils.readUint8(buf);
-        if (length < 1)
-        {
-            throw new TlsFatalAlert(AlertDescription.decode_error);
-        }
-
-        short[] ecPointFormats = TlsUtils.readUint8Array(length, buf);
-
-        TlsProtocol.assertEmpty(buf);
-
+        short[] ecPointFormats = TlsUtils.decodeUint8ArrayWithUint8Length(extensionData);
         if (!Arrays.contains(ecPointFormats, ECPointFormat.uncompressed))
         {
             /*
@@ -113,7 +97,6 @@ public class TlsECCUtils
              */
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
-
         return ecPointFormats;
     }
 

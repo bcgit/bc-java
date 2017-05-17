@@ -9,11 +9,13 @@ import org.bouncycastle.util.Integers;
 
 public class TlsExtensionsUtils
 {
+    public static final Integer EXT_client_certificate_type = Integers.valueOf(ExtensionType.client_certificate_type);
     public static final Integer EXT_encrypt_then_mac = Integers.valueOf(ExtensionType.encrypt_then_mac);
     public static final Integer EXT_extended_master_secret = Integers.valueOf(ExtensionType.extended_master_secret);
     public static final Integer EXT_heartbeat = Integers.valueOf(ExtensionType.heartbeat);
     public static final Integer EXT_max_fragment_length = Integers.valueOf(ExtensionType.max_fragment_length);
     public static final Integer EXT_padding = Integers.valueOf(ExtensionType.padding);
+    public static final Integer EXT_server_certificate_type = Integers.valueOf(ExtensionType.server_certificate_type);
     public static final Integer EXT_server_name = Integers.valueOf(ExtensionType.server_name);
     public static final Integer EXT_status_request = Integers.valueOf(ExtensionType.status_request);
     public static final Integer EXT_truncated_hmac = Integers.valueOf(ExtensionType.truncated_hmac);
@@ -21,6 +23,18 @@ public class TlsExtensionsUtils
     public static Hashtable ensureExtensionsInitialised(Hashtable extensions)
     {
         return extensions == null ? new Hashtable() : extensions;
+    }
+
+    public static void addClientCertificateTypeExtensionClient(Hashtable extensions, short[] certificateTypes)
+        throws IOException
+    {
+        extensions.put(EXT_client_certificate_type, createCertificateTypeExtensionClient(certificateTypes));
+    }
+
+    public static void addClientCertificateTypeExtensionServer(Hashtable extensions, short certificateType)
+        throws IOException
+    {
+        extensions.put(EXT_client_certificate_type, createCertificateTypeExtensionServer(certificateType));
     }
 
     public static void addEncryptThenMACExtension(Hashtable extensions)
@@ -51,6 +65,18 @@ public class TlsExtensionsUtils
         extensions.put(EXT_padding, createPaddingExtension(dataLength));
     }
 
+    public static void addServerCertificateTypeExtensionClient(Hashtable extensions, short[] certificateTypes)
+        throws IOException
+    {
+        extensions.put(EXT_server_certificate_type, createCertificateTypeExtensionClient(certificateTypes));
+    }
+
+    public static void addServerCertificateTypeExtensionServer(Hashtable extensions, short certificateType)
+        throws IOException
+    {
+        extensions.put(EXT_server_certificate_type, createCertificateTypeExtensionServer(certificateType));
+    }
+
     public static void addServerNameExtension(Hashtable extensions, ServerNameList serverNameList)
         throws IOException
     {
@@ -66,6 +92,20 @@ public class TlsExtensionsUtils
     public static void addTruncatedHMacExtension(Hashtable extensions)
     {
         extensions.put(EXT_truncated_hmac, createTruncatedHMacExtension());
+    }
+
+    public static short[] getClientCertificateTypeExtensionClient(Hashtable extensions)
+        throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_client_certificate_type);
+        return extensionData == null ? null : readCertificateTypeExtensionClient(extensionData);
+    }
+
+    public static short getClientCertificateTypeExtensionServer(Hashtable extensions)
+        throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_client_certificate_type);
+        return extensionData == null ? -1 : readCertificateTypeExtensionServer(extensionData);
     }
 
     public static HeartbeatExtension getHeartbeatExtension(Hashtable extensions)
@@ -87,6 +127,20 @@ public class TlsExtensionsUtils
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_padding);
         return extensionData == null ? -1 : readPaddingExtension(extensionData);
+    }
+
+    public static short[] getServerCertificateTypeExtensionClient(Hashtable extensions)
+        throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_server_certificate_type);
+        return extensionData == null ? null : readCertificateTypeExtensionClient(extensionData);
+    }
+
+    public static short getServerCertificateTypeExtensionServer(Hashtable extensions)
+        throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_server_certificate_type);
+        return extensionData == null ? -1 : readCertificateTypeExtensionServer(extensionData);
     }
 
     public static ServerNameList getServerNameExtension(Hashtable extensions)
@@ -119,6 +173,21 @@ public class TlsExtensionsUtils
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_truncated_hmac);
         return extensionData == null ? false : readTruncatedHMacExtension(extensionData);
+    }
+
+    public static byte[] createCertificateTypeExtensionClient(short[] certificateTypes) throws IOException
+    {
+        if (certificateTypes == null || certificateTypes.length < 1 || certificateTypes.length > 255)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return TlsUtils.encodeUint8ArrayWithUint8Length(certificateTypes);
+    }
+
+    public static byte[] createCertificateTypeExtensionServer(short certificateType) throws IOException
+    {
+        return TlsUtils.encodeUint8(certificateType);
     }
 
     public static byte[] createEmptyExtensionData()
@@ -154,11 +223,7 @@ public class TlsExtensionsUtils
     public static byte[] createMaxFragmentLengthExtension(short maxFragmentLength)
         throws IOException
     {
-        TlsUtils.checkUint8(maxFragmentLength);
-
-        byte[] extensionData = new byte[1];
-        TlsUtils.writeUint8(maxFragmentLength, extensionData, 0);
-        return extensionData;
+        return TlsUtils.encodeUint8(maxFragmentLength);
     }
 
     public static byte[] createPaddingExtension(int dataLength)
@@ -218,6 +283,21 @@ public class TlsExtensionsUtils
         return true;
     }
 
+    public static short[] readCertificateTypeExtensionClient(byte[] extensionData) throws IOException
+    {
+        short[] certificateTypes = TlsUtils.decodeUint8ArrayWithUint8Length(extensionData);
+        if (certificateTypes.length < 1)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+        return certificateTypes;
+    }
+
+    public static short readCertificateTypeExtensionServer(byte[] extensionData) throws IOException
+    {
+        return TlsUtils.decodeUint8(extensionData);
+    }
+
     public static boolean readEncryptThenMACExtension(byte[] extensionData) throws IOException
     {
         return readEmptyExtensionData(extensionData);
@@ -248,17 +328,7 @@ public class TlsExtensionsUtils
     public static short readMaxFragmentLengthExtension(byte[] extensionData)
         throws IOException
     {
-        if (extensionData == null)
-        {
-            throw new IllegalArgumentException("'extensionData' cannot be null");
-        }
-
-        if (extensionData.length != 1)
-        {
-            throw new TlsFatalAlert(AlertDescription.decode_error);
-        }
-
-        return TlsUtils.readUint8(extensionData, 0);
+        return TlsUtils.decodeUint8(extensionData);
     }
 
     public static int readPaddingExtension(byte[] extensionData)
