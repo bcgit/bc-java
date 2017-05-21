@@ -454,6 +454,10 @@ public class ECUtil
             {
                 name = ECGOST3410NamedCurves.getName(oid);
             }
+            if (name == null)
+            {
+                name = GMNamedCurves.getName(oid);
+            }
         }
 
         return name;

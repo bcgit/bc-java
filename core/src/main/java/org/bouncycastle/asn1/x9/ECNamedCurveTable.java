@@ -6,6 +6,7 @@ import java.util.Vector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.anssi.ANSSINamedCurves;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
+import org.bouncycastle.asn1.gm.GMNamedCurves;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.teletrust.TeleTrusTNamedCurves;
@@ -47,6 +48,11 @@ public class ECNamedCurveTable
             ecP = ANSSINamedCurves.getByName(name);
         }
 
+        if (ecP == null)
+        {
+            ecP = GMNamedCurves.getByName(name);
+        }
+
         return ecP;
     }
 
@@ -79,6 +85,11 @@ public class ECNamedCurveTable
         if (oid == null)
         {
             oid = ANSSINamedCurves.getOID(name);
+        }
+
+        if (oid == null)
+        {
+            oid = GMNamedCurves.getOID(name);
         }
 
         return oid;
@@ -116,6 +127,11 @@ public class ECNamedCurveTable
             name = ECGOST3410NamedCurves.getName(oid);
         }
 
+        if (name == null)
+        {
+            name = GMNamedCurves.getName(oid);
+        }
+
         return name;
     }
 
@@ -148,6 +164,11 @@ public class ECNamedCurveTable
             ecP = ANSSINamedCurves.getByOID(oid);
         }
 
+        if (ecP == null)
+        {
+            ecP = GMNamedCurves.getByOID(oid);
+        }
+
         return ecP;
     }
 
@@ -165,6 +186,7 @@ public class ECNamedCurveTable
         addEnumeration(v, NISTNamedCurves.getNames());
         addEnumeration(v, TeleTrusTNamedCurves.getNames());
         addEnumeration(v, ANSSINamedCurves.getNames());
+        addEnumeration(v, GMNamedCurves.getNames());
 
         return v.elements();
     }
