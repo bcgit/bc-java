@@ -53,9 +53,9 @@ public class Gost12Test extends SimpleTest {
     private final File publicKey = new File("C:\\Users\\Mike\\Desktop\\ssl-test\\pub.pem");
 
     public void performTest() throws Exception{
-//        alltest();
+        alltest();
 
-        signTest();
+//        signTest();
     }
 
     public void alltest() throws Exception {
