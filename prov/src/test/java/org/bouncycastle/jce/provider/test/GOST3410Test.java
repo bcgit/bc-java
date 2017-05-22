@@ -10,14 +10,11 @@ import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
 
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
@@ -348,7 +345,7 @@ public class GOST3410Test
     }
 
 
-    private void gost12Test() throws Exception {
+    private void ecGost2012Test() throws Exception {
 
         KeyPairGenerator g = KeyPairGenerator.getInstance("ECGOST3410-2012", "BC");
 
@@ -824,7 +821,10 @@ public class GOST3410Test
     public void performTest()
         throws Exception
     {
-        gost12Test();
+        ecGOST3410Test();
+        generationTest();
+        parametersTest();
+        ecGost2012Test();
     }
 
     public static void main(
