@@ -78,7 +78,7 @@ public class ECGOST
                     "ECGOST3410-2012-256");
 
 
-            addSignatureAlgorithm(provider, "GOST3411", "ECGOST3410-2012-256",
+            addSignatureAlgorithm(provider, "GOST3411-2012-256", "ECGOST3410-2012-256",
                     PREFIX_GOST_2012 + "ECGOST2012SignatureSpi256",
                     RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_256);
 
@@ -92,7 +92,7 @@ public class ECGOST
             provider.addAlgorithm("Alg.Alias.Signature.GOST-3410-2012-512",
                     "ECGOST3410-2012-512");
 
-            addSignatureAlgorithm(provider, "GOST3411", "ECGOST3410-2012-512",
+            addSignatureAlgorithm(provider, "GOST3411-2012-512", "ECGOST3410-2012-512",
                     PREFIX_GOST_2012 + "ECGOST2012SignatureSpi512",
                     RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_512);
 
