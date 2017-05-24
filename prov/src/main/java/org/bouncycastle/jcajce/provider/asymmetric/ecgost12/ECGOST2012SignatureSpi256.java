@@ -9,7 +9,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.GOST3411_2012_256Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.crypto.signers.ECGOST3410Signer;
+import org.bouncycastle.crypto.signers.ECGOST3410_2012Signer;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.GOST3410Util;
 import org.bouncycastle.jce.interfaces.ECKey;
@@ -34,12 +34,12 @@ public class ECGOST2012SignatureSpi256
     private Digest                  digest;
     private DSA                     signer;
     private int size = 64;
-    private int halfSize = 32;
+    private int halfSize = size/2;
 
     public ECGOST2012SignatureSpi256()
     {
         this.digest = new GOST3411_2012_256Digest();
-        this.signer = new ECGOST3410Signer();
+        this.signer = new ECGOST3410_2012Signer();
     }
 
     protected void engineInitVerify(
