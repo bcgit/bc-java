@@ -2,13 +2,18 @@ package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.DSAPrivateKey;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.RSAPrivateKey;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
 
+import javax.crypto.interfaces.DHPrivateKey;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -224,6 +229,39 @@ class JsseUtils
         addIfSupported(crypto, result, new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.dsa));
 
         return result;
+    }
+
+    public static boolean isUsableKeyForServer(int keyExchangeAlgorithm, PrivateKey privateKey) throws IOException
+    {
+        switch (keyExchangeAlgorithm)
+        {
+        case KeyExchangeAlgorithm.DH_DSS:
+        case KeyExchangeAlgorithm.DH_DSS_EXPORT:
+        case KeyExchangeAlgorithm.DH_RSA:
+        case KeyExchangeAlgorithm.DH_RSA_EXPORT:
+            return privateKey instanceof DHPrivateKey;
+
+        case KeyExchangeAlgorithm.ECDH_ECDSA:
+        case KeyExchangeAlgorithm.ECDH_RSA:
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+            return privateKey instanceof ECPrivateKey;
+
+        case KeyExchangeAlgorithm.DHE_DSS:
+        case KeyExchangeAlgorithm.DHE_DSS_EXPORT:
+        case KeyExchangeAlgorithm.SRP_DSS:
+            return privateKey instanceof DSAPrivateKey;
+
+        case KeyExchangeAlgorithm.DHE_RSA:
+        case KeyExchangeAlgorithm.DHE_RSA_EXPORT:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
+        case KeyExchangeAlgorithm.RSA:
+        case KeyExchangeAlgorithm.RSA_PSK:
+        case KeyExchangeAlgorithm.SRP_RSA:
+            return privateKey instanceof RSAPrivateKey;
+
+        default:
+            return false;
+        }
     }
 
     static Set<X500Principal> toX500Principals(X500Name[] names) throws IOException
