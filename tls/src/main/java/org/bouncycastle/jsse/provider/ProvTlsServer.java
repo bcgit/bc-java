@@ -296,7 +296,9 @@ class ProvTlsServer
         PrivateKey privateKey = km.getPrivateKey(alias);
         Certificate certificate = JsseUtils.getCertificateMessage(crypto, km.getCertificateChain(alias));
 
-        if (privateKey == null || certificate.isEmpty())
+        if (privateKey == null
+            || !JsseUtils.isUsableKeyForServer(keyExchangeAlgorithm, privateKey)
+            || certificate.isEmpty())
         {
             keyManagerMissCache.add(keyType);
             return false;
