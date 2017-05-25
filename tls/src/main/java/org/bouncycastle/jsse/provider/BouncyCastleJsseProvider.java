@@ -164,9 +164,6 @@ public class BouncyCastleJsseProvider
                     return new ProvSSLContextSpi(fipsMode, baseCryptoProvider, new String[]{ "TLSv1.2" });
                 }
             });
-        /*
-         * NOTE[fips]: TLS 1.0 is only usable by clients (NIST.SP.800-52r1). 
-         */
         addAlgorithmImplementation("SSLContext.TLSV1", "org.bouncycastle.jsse.provider.SSLContext.TLSv1",
             new EngineCreator()
             {
