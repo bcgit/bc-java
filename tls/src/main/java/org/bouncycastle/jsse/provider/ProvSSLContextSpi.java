@@ -35,6 +35,7 @@ class ProvSSLContextSpi
 
     private static Map<String, Integer> createSupportedCipherSuites()
     {
+        @SuppressWarnings("serial")
         final Map<String, Integer> cs = new HashMap<String, Integer>()
         {
             public Integer put(String key, Integer value)
@@ -118,6 +119,7 @@ class ProvSSLContextSpi
         return Collections.unmodifiableMap(ps);
     }
 
+    protected final boolean isInFipsMode;
     protected final TlsCryptoProvider cryptoProvider;
     protected final String[] defaultProtocols;
 
@@ -129,13 +131,9 @@ class ProvSSLContextSpi
     private ProvSSLSessionContext clientSessionContext;
     private ProvSSLSessionContext serverSessionContext;
 
-    ProvSSLContextSpi(TlsCryptoProvider cryptoProvider)
+    ProvSSLContextSpi(boolean isInFipsMode, TlsCryptoProvider cryptoProvider, String[] defaultProtocols)
     {
-        this(cryptoProvider, new String[]{ "TLSv1.2" });
-    }
-
-    ProvSSLContextSpi(TlsCryptoProvider cryptoProvider, String[] defaultProtocols)
-    {
+        this.isInFipsMode = isInFipsMode;
         this.cryptoProvider = cryptoProvider;
         this.defaultProtocols = defaultProtocols;
     }
