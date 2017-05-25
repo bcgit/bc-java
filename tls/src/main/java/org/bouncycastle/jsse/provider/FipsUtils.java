@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.bouncycastle.crypto.tls.NamedCurve;
+
 abstract class FipsUtils
 {
     private static final Set<String> FIPS_SUPPORTED_CIPHERSUITES = createFipsSupportedCipherSuites();
@@ -70,9 +72,27 @@ abstract class FipsUtils
         return Collections.unmodifiableSet(cs);
     }
 
+    static int getFipsMaximumCurveBits()
+    {
+        return 384;
+    }
+
     static boolean isFipsCipherSuite(String cipherSuite)
     {
         return cipherSuite != null && FIPS_SUPPORTED_CIPHERSUITES.contains(cipherSuite);
+    }
+
+    static boolean isFipsCurve(int namedCurve)
+    {
+        switch (namedCurve)
+        {
+        case NamedCurve.secp256r1:
+        case NamedCurve.secp384r1:
+            return true;
+
+        default:
+            return false;
+        }
     }
 
     static void removeNonFipsCipherSuites(Collection<String> cipherSuites)
