@@ -157,13 +157,22 @@ public class TlsBlockCipher
 
         int padding_length = blockSize - 1 - (enc_input_length % blockSize);
 
-        // TODO[DTLS] Consider supporting in DTLS (without exceeding send limit though)
-        if (!version.isDTLS() && !version.isSSL())
+        /*
+         * Don't use variable-length padding with truncated MACs.
+         * 
+         * See "Tag Size Does Matter: Attacks and Proofs for the TLS Record Protocol", Paterson,
+         * Ristenpart, Shrimpton.
+         */
+        if (encryptThenMAC || !cryptoParams.getSecurityParameters().isTruncatedHMac())
         {
-            // Add a random number of extra blocks worth of padding
-            int maxExtraPadBlocks = (255 - padding_length) / blockSize;
-            int actualExtraPadBlocks = chooseExtraPadBlocks(crypto.getSecureRandom(), maxExtraPadBlocks);
-            padding_length += actualExtraPadBlocks * blockSize;
+            // TODO[DTLS] Consider supporting in DTLS (without exceeding send limit though)
+            if (!version.isDTLS() && !version.isSSL())
+            {
+                // Add a random number of extra blocks worth of padding
+                int maxExtraPadBlocks = (255 - padding_length) / blockSize;
+                int actualExtraPadBlocks = chooseExtraPadBlocks(crypto.getSecureRandom(), maxExtraPadBlocks);
+                padding_length += actualExtraPadBlocks * blockSize;
+            }
         }
 
         int totalSize = len + macSize + padding_length + 1;
