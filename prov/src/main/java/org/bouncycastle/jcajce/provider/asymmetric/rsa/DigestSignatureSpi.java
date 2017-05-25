@@ -171,15 +171,14 @@ public class DigestSignatureSpi
         }
         else if (sig.length == expected.length - 2)  // NULL left out
         {
-            int sigOffset = sig.length - hash.length - 2;
-            int expectedOffset = expected.length - hash.length - 2;
-
             expected[1] -= 2;      // adjust lengths
             expected[3] -= 2;
 
+            int sigOffset = 4 + expected[3];
+            int expectedOffset = sigOffset + 2;
             int nonEqual = 0;
 
-            for (int i = 0; i < hash.length; i++)
+            for (int i = 0; i < expected.length - expectedOffset; i++)
             {
                 nonEqual |= (sig[sigOffset + i] ^ expected[expectedOffset + i]);
             }
