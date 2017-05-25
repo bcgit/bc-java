@@ -334,6 +334,18 @@ class ProvSSLContextSpi
         return true;
     }
 
+    void validateNegotiatedCipherSuite(int cipherSuite)
+    {
+        // NOTE: The redundancy among these various checks is intentional
+        String cs = getCipherSuiteString(cipherSuite);
+        if (cs == null
+            || !supportedCipherSuites.containsKey(cs)
+            || (isInFipsMode && !FipsUtils.isFipsCipherSuite(cs)))
+        {
+            throw new IllegalStateException("SSL connection negotiated unsupported ciphersuite: " + cipherSuite);
+        }
+    }
+
     protected void checkInitialized()
     {
         if (!initialized)
