@@ -14,15 +14,15 @@ abstract class FipsUtils
         final Set<String> cs = new HashSet<String>();
 
         // "shall support"
-        cs.add("TLS_RSA_WITH_3DES_EDE_CBC_SHA13");
-        cs.add("TLS_RSA_WITH_AES_128_CBC_SHA14");
+        cs.add("TLS_RSA_WITH_3DES_EDE_CBC_SHA");
+        cs.add("TLS_RSA_WITH_AES_128_CBC_SHA");
 
         // "shall support" (TLS 1.2)
 //        cs.add("TLS_RSA_WITH_AES_128_GCM_SHA256");
 
         // "should support"
         cs.add("TLS_RSA_WITH_AES_256_CBC_SHA");
-        cs.add("TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA15");
+        cs.add("TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA");
         cs.add("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA");
         cs.add("TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA");
         cs.add("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA");
@@ -68,6 +68,11 @@ abstract class FipsUtils
 //        cs.add("TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384");
 
         return Collections.unmodifiableSet(cs);
+    }
+
+    static boolean isFipsCipherSuite(String cipherSuite)
+    {
+        return cipherSuite != null && FIPS_SUPPORTED_CIPHERSUITES.contains(cipherSuite);
     }
 
     static void removeNonFipsCipherSuites(Collection<String> cipherSuites)

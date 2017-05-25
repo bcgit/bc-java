@@ -63,6 +63,8 @@ class ProvTlsServer
             return false;
         }
 
+        manager.getContext().validateNegotiatedCipherSuite(cipherSuite);
+
         return super.selectCipherSuite(cipherSuite);
     }
 
