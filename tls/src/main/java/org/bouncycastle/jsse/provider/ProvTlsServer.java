@@ -21,6 +21,7 @@ import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.ClientCertificateType;
+import org.bouncycastle.tls.CompressionMethod;
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.ProtocolVersion;
@@ -83,6 +84,14 @@ class ProvTlsServer
     {
         return TlsUtils.getSupportedCipherSuites(manager.getContextData().getCrypto(),
             manager.getContext().convertCipherSuites(sslParameters.getCipherSuites()));
+    }
+
+    @Override
+    protected short[] getCompressionMethods()
+    {
+        return manager.getContext().isFips()
+            ?   new short[]{ CompressionMethod._null }
+            :   super.getCompressionMethods();
     }
 
 //  public TlsKeyExchange getKeyExchange() throws IOException
