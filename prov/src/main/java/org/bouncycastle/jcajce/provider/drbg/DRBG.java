@@ -215,10 +215,12 @@ public class DRBG
         private final AtomicBoolean seedAvailable = new AtomicBoolean(false);
         private final AtomicInteger samples = new AtomicInteger(0);
         private final SecureRandom baseRandom = createInitialEntropySource();
+
         private final SP800SecureRandom drbg;
 
         HybridSecureRandom()
         {
+            super(null, null);
             drbg = new SP800SecureRandomBuilder(new EntropySourceProvider()
                 {
                     public EntropySource get(final int bitsRequired)
@@ -228,6 +230,22 @@ public class DRBG
                 })
                 .setPersonalizationString(Strings.toByteArray("Bouncy Castle Hybrid Entropy Source"))
                 .buildHMAC(new HMac(new SHA512Digest()), baseRandom.generateSeed(32), false);     // 32 byte nonce
+        }
+
+        public void setSeed(byte[] seed)
+        {
+            if (drbg != null)
+            {
+                drbg.setSeed(seed);
+            }
+        }
+
+        public void setSeed(long seed)
+        {
+            if (drbg != null)
+            {
+                drbg.setSeed(seed);
+            }
         }
 
         public byte[] generateSeed(int numBytes)
