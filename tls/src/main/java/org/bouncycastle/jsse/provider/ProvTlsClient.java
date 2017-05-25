@@ -20,6 +20,7 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
+import org.bouncycastle.tls.CompressionMethod;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.NameType;
@@ -219,6 +220,14 @@ class ProvTlsClient
     {
         return TlsUtils.getSupportedCipherSuites(manager.getContextData().getCrypto(),
             manager.getContext().convertCipherSuites(sslParameters.getCipherSuites()));
+    }
+
+    @Override
+    public short[] getCompressionMethods()
+    {
+        return manager.getContext().isFips()
+            ?   new short[]{ CompressionMethod._null }
+            :   super.getCompressionMethods();
     }
 
     @Override

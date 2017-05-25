@@ -21,8 +21,10 @@ import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.ClientCertificateType;
+import org.bouncycastle.tls.CompressionMethod;
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
+import org.bouncycastle.tls.NamedCurve;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsCredentials;
@@ -56,6 +58,39 @@ class ProvTlsServer
         this.sslParameters = manager.getProvSSLParameters();
     }
 
+    @Override
+    protected int getMaximumNegotiableCurveBits()
+    {
+        // NOTE: BC supports all the current set of point formats so we don't check them here
+
+        final boolean isFips = manager.getContext().isFips();
+
+        if (namedCurves == null)
+        {
+            /*
+             * RFC 4492 4. A client that proposes ECC cipher suites may choose not to include these
+             * extensions. In this case, the server is free to choose any one of the elliptic curves
+             * or point formats [...].
+             */
+            return isFips
+                ?   FipsUtils.getFipsMaximumCurveBits()
+                :   NamedCurve.getMaximumCurveBits();
+        }
+
+        int maxBits = 0;
+        for (int i = 0; i < namedCurves.length; ++i)
+        {
+            int namedCurve = namedCurves[i];
+
+            if (!isFips || FipsUtils.isFipsCurve(namedCurve))
+            {
+                maxBits = Math.max(maxBits, NamedCurve.getCurveBits(namedCurve));
+            }
+        }
+        return maxBits;
+    }
+
+    @Override
     protected boolean selectCipherSuite(int cipherSuite) throws IOException
     {
         if (!selectCredentials(cipherSuite))
@@ -66,6 +101,44 @@ class ProvTlsServer
         manager.getContext().validateNegotiatedCipherSuite(cipherSuite);
 
         return super.selectCipherSuite(cipherSuite);
+    }
+
+    @Override
+    protected int selectCurve(int minimumCurveBits)
+    {
+        if (namedCurves == null)
+        {
+            return selectDefaultCurve(minimumCurveBits);
+        }
+
+        final boolean isFips = manager.getContext().isFips();
+
+        // Try to find a supported named curve of the required size from the client's list.
+        for (int i = 0; i < namedCurves.length; ++i)
+        {
+            int namedCurve = namedCurves[i];
+            if (NamedCurve.getCurveBits(namedCurve) >= minimumCurveBits)
+            {
+                if (!isFips || FipsUtils.isFipsCurve(namedCurve))
+                {
+                    return namedCurve;
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    @Override
+    protected int selectDefaultCurve(int minimumCurveBits)
+    {
+        /*
+         * NOTE[fips]: These curves are recommended for FIPS. If any changes are made to how
+         * this is configured, FIPS considerations need to be accounted for in BCJSSE.
+         */
+        return minimumCurveBits <= 256 ? NamedCurve.secp256r1
+            :  minimumCurveBits <= 384 ? NamedCurve.secp384r1
+            :  -1;
     }
 
     public synchronized boolean isHandshakeComplete()
@@ -83,6 +156,14 @@ class ProvTlsServer
     {
         return TlsUtils.getSupportedCipherSuites(manager.getContextData().getCrypto(),
             manager.getContext().convertCipherSuites(sslParameters.getCipherSuites()));
+    }
+
+    @Override
+    protected short[] getCompressionMethods()
+    {
+        return manager.getContext().isFips()
+            ?   new short[]{ CompressionMethod._null }
+            :   super.getCompressionMethods();
     }
 
 //  public TlsKeyExchange getKeyExchange() throws IOException
