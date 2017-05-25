@@ -146,7 +146,13 @@ public abstract class AbstractTlsClient
              * TODO Could just add all the curves since we support them all, but users may not want
              * to use unnecessarily large fields. Need configuration options.
              */
+
+            /*
+             * NOTE[fips]: These curves are recommended for FIPS. If any changes are made to how
+             * this is configured, FIPS considerations need to be accounted for in BCJSSE.
+             */
             this.namedCurves = new int[]{ NamedCurve.secp256r1, NamedCurve.secp384r1 };
+
             this.clientECPointFormats = new short[]{ ECPointFormat.uncompressed,
                 ECPointFormat.ansiX962_compressed_prime, ECPointFormat.ansiX962_compressed_char2, };
 
