@@ -302,6 +302,11 @@ class ProvSSLContextSpi
         return supportedProtocols.keySet().toArray(new String[supportedProtocols.size()]);
     }
 
+    boolean isFips()
+    {
+        return isInFipsMode;
+    }
+
     boolean isSupportedCipherSuites(String[] suites)
     {
         if (suites == null)
