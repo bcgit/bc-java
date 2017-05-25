@@ -318,6 +318,8 @@ class ProvTlsClient
     @Override
     public void notifySelectedCipherSuite(int selectedCipherSuite)
     {
+        manager.getContext().validateNegotiatedCipherSuite(selectedCipherSuite);
+
         super.notifySelectedCipherSuite(selectedCipherSuite);
 
         LOG.fine("Client notified of selected cipher suite: " + manager.getContext().getCipherSuiteString(selectedCipherSuite));
