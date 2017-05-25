@@ -33,7 +33,7 @@ import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCertificate;
 
-class JsseUtils
+abstract class JsseUtils
 {
     protected static X509Certificate[] EMPTY_CHAIN = new X509Certificate[0];
 
