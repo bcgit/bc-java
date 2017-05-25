@@ -1320,6 +1320,30 @@ public class NewSignedDataTest
         }
     }
 
+    public void testRawSHA256MissingNull()
+        throws Exception
+    {
+        final byte[] document = getInput("rawsha256nonull.p7m");
+
+        final CMSSignedData s = new CMSSignedData(document);
+
+        final Store certStore = s.getCertificates();
+        final SignerInformation signerInformation = (SignerInformation)s.getSignerInfos().getSigners().iterator().next();
+
+        Collection          certCollection = certStore.getMatches(signerInformation.getSID());
+
+        Iterator        certIt = certCollection.iterator();
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate((X509CertificateHolder)certIt.next());
+
+        final SignerInformationVerifier signerInformationVerifier =
+            new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(cert.getPublicKey());
+
+        if (!signerInformation.verify(signerInformationVerifier))
+        {
+            fail("raw sig failed");
+        }
+    }
+
     public void testLwSHA1WithRSAAndAttributeTable()
         throws Exception
     {
