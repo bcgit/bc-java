@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Hashtable;
+import java.util.Vector;
 
 import org.bouncycastle.util.Integers;
 
@@ -19,6 +20,7 @@ public class TlsExtensionsUtils
     public static final Integer EXT_server_name = Integers.valueOf(ExtensionType.server_name);
     public static final Integer EXT_status_request = Integers.valueOf(ExtensionType.status_request);
     public static final Integer EXT_truncated_hmac = Integers.valueOf(ExtensionType.truncated_hmac);
+    public static final Integer EXT_trusted_ca_keys = Integers.valueOf(ExtensionType.trusted_ca_keys);
 
     public static Hashtable ensureExtensionsInitialised(Hashtable extensions)
     {
@@ -94,6 +96,17 @@ public class TlsExtensionsUtils
         extensions.put(EXT_truncated_hmac, createTruncatedHMacExtension());
     }
 
+    public static void addTrustedCAKeysExtensionClient(Hashtable extensions, Vector trustedAuthoritiesList)
+        throws IOException
+    {
+        extensions.put(EXT_trusted_ca_keys, createTrustedCAKeysExtensionClient(trustedAuthoritiesList));
+    }
+
+    public static void addTrustedCAKeysExtensionServer(Hashtable extensions)
+    {
+        extensions.put(EXT_trusted_ca_keys, createTrustedCAKeysExtensionServer());
+    }
+
     public static short[] getClientCertificateTypeExtensionClient(Hashtable extensions)
         throws IOException
     {
@@ -157,6 +170,13 @@ public class TlsExtensionsUtils
         return extensionData == null ? null : readStatusRequestExtension(extensionData);
     }
 
+    public static Vector getTrustedCAKeysExtensionClient(Hashtable extensions)
+        throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_trusted_ca_keys);
+        return extensionData == null ? null : readTrustedCAKeysExtensionClient(extensionData);
+    }
+
     public static boolean hasEncryptThenMACExtension(Hashtable extensions) throws IOException
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_encrypt_then_mac);
@@ -173,6 +193,12 @@ public class TlsExtensionsUtils
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_truncated_hmac);
         return extensionData == null ? false : readTruncatedHMacExtension(extensionData);
+    }
+
+    public static boolean hasTrustedCAKeysExtensionServer(Hashtable extensions) throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_trusted_ca_keys);
+        return extensionData == null ? false : readTrustedCAKeysExtensionServer(extensionData);
     }
 
     public static byte[] createCertificateTypeExtensionClient(short[] certificateTypes) throws IOException
@@ -264,6 +290,32 @@ public class TlsExtensionsUtils
     }
 
     public static byte[] createTruncatedHMacExtension()
+    {
+        return createEmptyExtensionData();
+    }
+
+    public static byte[] createTrustedCAKeysExtensionClient(Vector trustedAuthoritiesList)
+        throws IOException
+    {
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+        // Placeholder for length
+        TlsUtils.writeUint16(0, buf);
+
+        for (int i = 0; i < trustedAuthoritiesList.size(); ++i)
+        {
+            TrustedAuthority entry = (TrustedAuthority)trustedAuthoritiesList.elementAt(i);
+            entry.encode(buf);
+        }
+
+        int length = buf.size() - 2;
+        TlsUtils.checkUint16(length);
+        byte[] extensionData = buf.toByteArray();
+        TlsUtils.writeUint16(length, extensionData, 0);
+        return extensionData;
+    }
+
+    public static byte[] createTrustedCAKeysExtensionServer()
     {
         return createEmptyExtensionData();
     }
@@ -383,6 +435,35 @@ public class TlsExtensionsUtils
     }
 
     public static boolean readTruncatedHMacExtension(byte[] extensionData) throws IOException
+    {
+        return readEmptyExtensionData(extensionData);
+    }
+
+    public static Vector readTrustedCAKeysExtensionClient(byte[] extensionData) throws IOException
+    {
+        if (extensionData == null)
+        {
+            throw new IllegalArgumentException("'extensionData' cannot be null");
+        }
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
+
+        int length = TlsUtils.readUint16(buf);
+        if (length != (extensionData.length - 2))
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        Vector trusted_authorities_list = new Vector();
+        while (buf.available() > 0)
+        {
+            TrustedAuthority entry = TrustedAuthority.parse(buf);
+            trusted_authorities_list.addElement(entry);
+        }
+        return trusted_authorities_list;
+    }
+
+    public static boolean readTrustedCAKeysExtensionServer(byte[] extensionData) throws IOException
     {
         return readEmptyExtensionData(extensionData);
     }
