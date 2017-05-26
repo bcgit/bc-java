@@ -1,7 +1,6 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPrivateKey;
