@@ -418,7 +418,7 @@ public class TlsUtils
         {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
-        return TlsUtils.readUint8(buf, 0);
+        return readUint8(buf, 0);
     }
 
     public static short[] decodeUint8ArrayWithUint8Length(byte[] buf) throws IOException
@@ -451,10 +451,10 @@ public class TlsUtils
 
     public static byte[] encodeUint8(short uint) throws IOException
     {
-        TlsUtils.checkUint8(uint);
+        checkUint8(uint);
 
         byte[] extensionData = new byte[1];
-        TlsUtils.writeUint8(uint, extensionData, 0);
+        writeUint8(uint, extensionData, 0);
         return extensionData;
     }
 
@@ -1109,7 +1109,7 @@ public class TlsUtils
         String asciiLabel = isServer ? ExporterLabel.server_finished : ExporterLabel.client_finished;
         byte[] prfHash = getCurrentPRFHash(handshakeHash);
 
-        return TlsUtils.calculateTLSVerifyData(context, asciiLabel, prfHash);
+        return calculateTLSVerifyData(context, asciiLabel, prfHash);
     }
 
     static byte[] calculateTLSVerifyData(TlsContext context, String asciiLabel, byte[] prfHash)
@@ -1185,7 +1185,7 @@ public class TlsUtils
         /*
          * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
          */
-        SignatureAndHashAlgorithm signatureAndHashAlgorithm = TlsUtils.getSignatureAndHashAlgorithm(
+        SignatureAndHashAlgorithm signatureAndHashAlgorithm = getSignatureAndHashAlgorithm(
             context, credentialedSigner);
 
         byte[] signature;
@@ -1219,7 +1219,7 @@ public class TlsUtils
         try
         {
             TlsVerifier verifier = certificate.getCertificateAt(0)
-                .createVerifier(TlsUtils.getSignatureAlgorithmClient(certificateType));
+                .createVerifier(getSignatureAlgorithmClient(certificateType));
             TlsStreamVerifier streamVerifier = verifier.getStreamVerifier(certificateVerify);
 
             boolean verified;
@@ -1233,9 +1233,9 @@ public class TlsUtils
                 SignatureAndHashAlgorithm signatureAlgorithm = certificateVerify.getAlgorithm();
     
                 byte[] hash;
-                if (TlsUtils.isTLSv12(context))
+                if (isTLSv12(context))
                 {
-                    TlsUtils.verifySupportedSignatureAlgorithm(certificateRequest.getSupportedSignatureAlgorithms(), signatureAlgorithm);
+                    verifySupportedSignatureAlgorithm(certificateRequest.getSupportedSignatureAlgorithms(), signatureAlgorithm);
                     hash = handshakeHash.getFinalHash(signatureAlgorithm.getHash());
                 }
                 else
@@ -1267,7 +1267,7 @@ public class TlsUtils
         /*
          * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
          */
-        SignatureAndHashAlgorithm algorithm = TlsUtils.getSignatureAndHashAlgorithm(context, credentials);
+        SignatureAndHashAlgorithm algorithm = getSignatureAndHashAlgorithm(context, credentials);
         TlsStreamSigner streamSigner = credentials.getStreamSigner();
 
         byte[] signature;
@@ -1278,7 +1278,7 @@ public class TlsUtils
         }
         else
         {
-            byte[] hash = TlsUtils.calculateSignatureHash(context, algorithm, buf);
+            byte[] hash = calculateSignatureHash(context, algorithm, buf);
             signature = credentials.generateRawSignature(hash);
         }
 
@@ -1298,7 +1298,7 @@ public class TlsUtils
         }
         else
         {
-            byte[] hash = TlsUtils.calculateSignatureHash(context, signedParams.getAlgorithm(), buf);
+            byte[] hash = calculateSignatureHash(context, signedParams.getAlgorithm(), buf);
             verified = verifier.verifyRawSignature(signedParams, hash);
         }
 
