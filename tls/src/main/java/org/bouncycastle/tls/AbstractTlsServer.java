@@ -35,6 +35,7 @@ public abstract class AbstractTlsServer
     protected Vector supportedSignatureAlgorithms;
     protected int[] namedCurves;
     protected short[] clientECPointFormats, serverECPointFormats;
+    protected CertificateStatusRequest certificateStatusRequest;
 
     protected ProtocolVersion serverVersion;
     protected int selectedCipherSuite;
@@ -247,6 +248,8 @@ public abstract class AbstractTlsServer
 
             this.namedCurves = TlsECCUtils.getSupportedEllipticCurvesExtension(clientExtensions);
             this.clientECPointFormats = TlsECCUtils.getSupportedPointFormatsExtension(clientExtensions);
+
+            this.certificateStatusRequest = TlsExtensionsUtils.getStatusRequestExtension(clientExtensions);
         }
 
         /*
@@ -367,6 +370,16 @@ public abstract class AbstractTlsServer
                 ECPointFormat.ansiX962_compressed_prime, ECPointFormat.ansiX962_compressed_char2, };
 
             TlsECCUtils.addSupportedPointFormatsExtension(checkServerExtensions(), serverECPointFormats);
+        }
+
+        if (this.certificateStatusRequest != null)
+        {
+            /*
+             * RFC 6066 8. If a server returns a "CertificateStatus" message, then the server MUST
+             * have included an extension of type "status_request" with empty "extension_data" in
+             * the extended server hello.
+             */
+            checkServerExtensions().put(TlsExtensionsUtils.EXT_status_request, TlsExtensionsUtils.createEmptyExtensionData());
         }
 
         return serverExtensions;
