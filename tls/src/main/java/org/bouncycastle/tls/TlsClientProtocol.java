@@ -173,10 +173,12 @@ public class TlsClientProtocol
                     this.allowCertificateStatus = false;
                 }
 
-                this.keyExchange.processServerCertificate(this.peerCertificate);
-
                 this.authentication = tlsClient.getAuthentication();
-                this.authentication.notifyServerCertificate(new TlsServerCertificateImpl(this.peerCertificate, null));
+                if (this.authentication == null)
+                {
+                    throw new TlsFatalAlert(AlertDescription.internal_error);
+                }
+
                 break;
             }
             default:
@@ -205,8 +207,6 @@ public class TlsClientProtocol
                 this.certificateStatus = CertificateStatus.parse(buf);
 
                 assertEmpty(buf);
-
-                // TODO[RFC 3546] Figure out how to provide this to the client/authentication.
 
                 this.connection_state = CS_CERTIFICATE_STATUS;
                 break;
@@ -306,8 +306,6 @@ public class TlsClientProtocol
             }
             case CS_SERVER_SUPPLEMENTAL_DATA:
             {
-                // There was no server certificate message; check it's OK
-                this.keyExchange.skipServerCredentials();
                 this.authentication = null;
 
                 // NB: Fall through to next case label
@@ -315,6 +313,8 @@ public class TlsClientProtocol
             case CS_SERVER_CERTIFICATE:
             case CS_CERTIFICATE_STATUS:
             {
+                handleServerCertificate();
+
                 // There was no server key exchange message; check it's OK
                 this.keyExchange.skipServerKeyExchange();
 
@@ -429,8 +429,6 @@ public class TlsClientProtocol
             }
             case CS_SERVER_SUPPLEMENTAL_DATA:
             {
-                // There was no server certificate message; check it's OK
-                this.keyExchange.skipServerCredentials();
                 this.authentication = null;
 
                 // NB: Fall through to next case label
@@ -438,6 +436,8 @@ public class TlsClientProtocol
             case CS_SERVER_CERTIFICATE:
             case CS_CERTIFICATE_STATUS:
             {
+                handleServerCertificate();
+
                 this.keyExchange.processServerKeyExchange(buf);
 
                 assertEmpty(buf);
@@ -457,6 +457,8 @@ public class TlsClientProtocol
             case CS_SERVER_CERTIFICATE:
             case CS_CERTIFICATE_STATUS:
             {
+                handleServerCertificate();
+
                 // There was no server key exchange message; check it's OK
                 this.keyExchange.skipServerKeyExchange();
 
@@ -548,6 +550,23 @@ public class TlsClientProtocol
         case HandshakeType.hello_verify_request:
         default:
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+    }
+
+    protected void handleServerCertificate()
+        throws IOException
+    {
+        if (this.authentication == null)
+        {
+            // There was no server certificate message; check it's OK
+            this.keyExchange.skipServerCredentials();
+        }
+        else
+        {
+            this.keyExchange.processServerCertificate(this.peerCertificate);
+
+            this.authentication.notifyServerCertificate(
+                new TlsServerCertificateImpl(this.peerCertificate, this.certificateStatus));
         }
     }
 

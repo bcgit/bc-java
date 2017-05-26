@@ -198,7 +198,7 @@ public class DTLSClientProtocol
         else
         {
             // Okay, Certificate is optional
-            state.keyExchange.skipServerCredentials();
+            state.authentication = null;
         }
 
         // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus
@@ -215,6 +215,17 @@ public class DTLSClientProtocol
         else
         {
             // Okay, CertificateStatus is optional
+        }
+
+        if (state.authentication == null)
+        {
+            // There was no server certificate message; check it's OK
+            state.keyExchange.skipServerCredentials();
+        }
+        else
+        {
+            state.keyExchange.processServerCertificate(serverCertificate);
+            state.authentication.notifyServerCertificate(new TlsServerCertificateImpl(serverCertificate, state.certificateStatus));
         }
 
         if (serverMessage.getType() == HandshakeType.server_key_exchange)
@@ -539,8 +550,6 @@ public class DTLSClientProtocol
         state.certificateStatus = CertificateStatus.parse(buf);
 
         TlsProtocol.assertEmpty(buf);
-
-        // TODO[RFC 3546] Figure out how to provide this to the client/authentication.
     }
 
     protected byte[] processHelloVerifyRequest(ClientHandshakeState state, byte[] body)
@@ -593,9 +602,11 @@ public class DTLSClientProtocol
 
         TlsProtocol.assertEmpty(buf);
 
-        state.keyExchange.processServerCertificate(serverCertificate);
         state.authentication = state.client.getAuthentication();
-        state.authentication.notifyServerCertificate(new TlsServerCertificateImpl(serverCertificate, null));
+        if (state.authentication == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
 
         return serverCertificate;
     }
