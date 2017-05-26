@@ -14,7 +14,7 @@ public interface TlsAuthentication
      * @param serverCertificate the server certificate received
      * @throws IOException
      */
-    void notifyServerCertificate(Certificate serverCertificate)
+    void notifyServerCertificate(TlsServerCertificate serverCertificate)
         throws IOException;
 
     /**

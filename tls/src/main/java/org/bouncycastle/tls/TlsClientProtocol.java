@@ -176,8 +176,7 @@ public class TlsClientProtocol
                 this.keyExchange.processServerCertificate(this.peerCertificate);
 
                 this.authentication = tlsClient.getAuthentication();
-                this.authentication.notifyServerCertificate(this.peerCertificate);
-
+                this.authentication.notifyServerCertificate(new TlsServerCertificateImpl(this.peerCertificate, null));
                 break;
             }
             default:
