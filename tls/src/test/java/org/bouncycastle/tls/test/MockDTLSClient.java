@@ -17,6 +17,7 @@ import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsExtensionsUtils;
+import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
@@ -100,10 +101,10 @@ public class MockDTLSClient
     {
         return new TlsAuthentication()
         {
-            public void notifyServerCertificate(org.bouncycastle.tls.Certificate serverCertificate)
+            public void notifyServerCertificate(TlsServerCertificate serverCertificate)
                 throws IOException
             {
-                TlsCertificate[] chain = serverCertificate.getCertificateList();
+                TlsCertificate[] chain = serverCertificate.getCertificate().getCertificateList();
                 System.out.println("DTLS client received server certificate chain of length " + chain.length);
                 for (int i = 0; i != chain.length; i++)
                 {

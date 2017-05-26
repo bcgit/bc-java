@@ -32,6 +32,7 @@ import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCrypto;
@@ -194,16 +195,17 @@ class ProvTlsClient
                 }
             }
 
-            public void notifyServerCertificate(Certificate serverCertificate) throws IOException
+            public void notifyServerCertificate(TlsServerCertificate serverCertificate) throws IOException
             {
-                boolean noServerCert = serverCertificate == null || serverCertificate.isEmpty();
+                boolean noServerCert = serverCertificate == null || serverCertificate.getCertificate() == null
+                    || serverCertificate.getCertificate().isEmpty();
                 if (noServerCert)
                 {
                     throw new TlsFatalAlert(AlertDescription.handshake_failure);
                 }
                 else
                 {
-                    X509Certificate[] chain = JsseUtils.getX509CertificateChain(serverCertificate);
+                    X509Certificate[] chain = JsseUtils.getX509CertificateChain(serverCertificate.getCertificate());
                     String authType = JsseUtils.getAuthTypeServer(TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite));
 
                     if (!manager.isServerTrusted(chain, authType))
