@@ -27,6 +27,7 @@ public class AllTests
         suite.addTestSuite(TlsPSKProtocolTest.class);
         suite.addTestSuite(TlsSRPProtocolTest.class);
         suite.addTestSuite(TlsTestCase.class);
+        suite.addTestSuite(PRFTest.class);
         suite.addTest(TlsTestSuite.suite());
 
         return new BCTestSetup(suite);

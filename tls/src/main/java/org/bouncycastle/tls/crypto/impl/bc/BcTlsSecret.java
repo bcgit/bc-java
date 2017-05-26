@@ -9,6 +9,7 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsSecret;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 /**
  * BC light-weight support class for handling TLS secrets and deriving key material and other secrets from them.
@@ -48,9 +49,11 @@ public class BcTlsSecret
         return crypto.adoptLocalSecret(prf_SSL(seed, 3));
     }
 
-    public synchronized TlsSecret deriveUsingPRF(int prfAlgorithm, byte[] labelSeed, int length)
+    public synchronized TlsSecret deriveUsingPRF(int prfAlgorithm, String label, byte[] seed, int length)
     {
         checkAlive();
+
+        byte[] labelSeed = Arrays.concatenate(Strings.toByteArray(label), seed);
 
         byte[] result = (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
             ?   prf_1_0(data, labelSeed, length)

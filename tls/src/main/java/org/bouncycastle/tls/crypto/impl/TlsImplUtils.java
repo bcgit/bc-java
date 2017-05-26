@@ -6,7 +6,6 @@ import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
 
 /**
  * Useful utility methods.
@@ -60,12 +59,9 @@ public class TlsImplUtils
         {
             throw new IllegalStateException("No PRF available for SSLv3 session");
         }
-
-        byte[] label = Strings.toByteArray(asciiLabel);
-        byte[] labelSeed = Arrays.concatenate(label, seed);
-
+        
         int prfAlgorithm = cryptoParams.getSecurityParameters().getPrfAlgorithm();
 
-        return secret.deriveUsingPRF(prfAlgorithm, labelSeed, length);
+        return secret.deriveUsingPRF(prfAlgorithm, asciiLabel, seed, length);
     }
 }

@@ -26,7 +26,6 @@ import org.bouncycastle.tls.crypto.TlsStreamVerifier;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
-import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
 
 /**
@@ -1062,12 +1061,9 @@ public class TlsUtils
             throw new IllegalStateException("No PRF available for SSLv3 session");
         }
 
-        byte[] label = Strings.toByteArray(asciiLabel);
-        byte[] labelSeed = concat(label, seed);
-
         int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
 
-        return secret.deriveUsingPRF(prfAlgorithm, labelSeed, length);
+        return secret.deriveUsingPRF(prfAlgorithm, asciiLabel, seed, length);
     }
 
     static byte[] concat(byte[] a, byte[] b)

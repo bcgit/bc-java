@@ -31,11 +31,12 @@ public interface TlsSecret
      * Return a new secret based on applying a PRF to this one.
      *
      * @param prfAlgorithm PRF algorithm to use.
-     * @param labelSeed the appropriate concatenation of the label and seed details
+     * @param label the label details.
+     * @param seed the seed details.
      * @param length the size (in bytes) of the secret to generate.
      * @return the new secret.
      */
-    TlsSecret deriveUsingPRF(int prfAlgorithm, byte[] labelSeed, int length);
+    TlsSecret deriveUsingPRF(int prfAlgorithm, String label, byte[] seed, int length);
 
     /**
      * Create a cipher suite that matches the passed in encryption algorithm and mac algorithm.

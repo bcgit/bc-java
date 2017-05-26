@@ -12,6 +12,7 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsSecret;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 /**
  * JCE support class for handling TLS secrets and deriving key material and other secrets from them.
@@ -60,9 +61,11 @@ public class JceTlsSecret
         }
     }
 
-    public synchronized TlsSecret deriveUsingPRF(int prfAlgorithm, byte[] labelSeed, int length)
+    public synchronized TlsSecret deriveUsingPRF(int prfAlgorithm, String label, byte[] seed, int length)
     {
         checkAlive();
+
+        byte[] labelSeed = Arrays.concatenate(Strings.toByteArray(label), seed);
 
         try
         {
