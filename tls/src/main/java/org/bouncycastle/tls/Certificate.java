@@ -96,7 +96,10 @@ public class Certificate
     /**
      * Parse a {@link Certificate} from an {@link InputStream}.
      *
-     * @param input the {@link InputStream} to parse from.
+     * @param context
+     *            the {@link TlsContext} of the current connection.
+     * @param input
+     *            the {@link InputStream} to parse from.
      * @return a {@link Certificate} object.
      * @throws IOException
      */
