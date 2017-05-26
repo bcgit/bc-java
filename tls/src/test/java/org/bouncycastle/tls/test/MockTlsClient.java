@@ -19,6 +19,7 @@ import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
@@ -92,10 +93,10 @@ class MockTlsClient
     {
         return new TlsAuthentication()
         {
-            public void notifyServerCertificate(org.bouncycastle.tls.Certificate serverCertificate)
+            public void notifyServerCertificate(TlsServerCertificate serverCertificate)
                 throws IOException
             {
-                TlsCertificate[] chain = serverCertificate.getCertificateList();
+                TlsCertificate[] chain = serverCertificate.getCertificate().getCertificateList();
 
                 System.out.println("TLS client received server certificate chain of length " + chain.length);
                 for (int i = 0; i != chain.length; i++)
@@ -106,7 +107,8 @@ class MockTlsClient
                         + entry.getSubject() + ")");
                 }
 
-                boolean isEmpty = serverCertificate == null || serverCertificate.isEmpty();
+                boolean isEmpty = serverCertificate == null || serverCertificate.getCertificate() == null
+                    || serverCertificate.getCertificate().isEmpty();
                 if (isEmpty || !TlsTestUtils.isCertificateOneOf(context.getCrypto(), chain[0],
                     new String[]{ "x509-server.pem", "x509-server-dsa.pem", "x509-server-ecdsa.pem"}))
                 {

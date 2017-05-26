@@ -595,7 +595,7 @@ public class DTLSClientProtocol
 
         state.keyExchange.processServerCertificate(serverCertificate);
         state.authentication = state.client.getAuthentication();
-        state.authentication.notifyServerCertificate(serverCertificate);
+        state.authentication.notifyServerCertificate(new TlsServerCertificateImpl(serverCertificate, null));
 
         return serverCertificate;
     }

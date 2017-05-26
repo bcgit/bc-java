@@ -7,8 +7,6 @@ import java.io.PrintStream;
 import java.net.Socket;
 import java.security.SecureRandom;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
@@ -23,12 +21,16 @@ import org.bouncycastle.tls.TlsClientContext;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsKeyExchange;
+import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
+
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 public class BasicTlsTest
     extends TestCase
@@ -101,7 +103,7 @@ public class BasicTlsTest
         TlsClientProtocol protocol = new TlsClientProtocol(s.getInputStream(), s.getOutputStream());
         protocol.connect(new MyTlsClient(new ServerOnlyTlsAuthentication()
         {
-            public void notifyServerCertificate(Certificate serverCertificate) throws IOException
+            public void notifyServerCertificate(TlsServerCertificate serverCertificate) throws IOException
             {
                 // NOTE: In production code this MUST verify the certificate!
             }
