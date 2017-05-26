@@ -7,6 +7,7 @@ import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 
 import org.bouncycastle.tls.crypto.TlsAgreement;
+import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
 /**
@@ -44,7 +45,7 @@ public class JceTlsECDH
         }
         catch (GeneralSecurityException e)
         {
-            throw new IOException("cannot calculate secret", e);
+            throw new TlsCryptoException("cannot calculate secret", e);
         }
     }
 }
