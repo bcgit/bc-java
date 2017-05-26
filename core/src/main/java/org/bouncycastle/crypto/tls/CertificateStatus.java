@@ -99,7 +99,7 @@ public class CertificateStatus
         case CertificateStatusType.ocsp:
             return response instanceof OCSPResponse;
         default:
-            throw new IllegalArgumentException("'statusType' is an unsupported value");
+            throw new IllegalArgumentException("'statusType' is an unsupported CertificateStatusType");
         }
     }
 }

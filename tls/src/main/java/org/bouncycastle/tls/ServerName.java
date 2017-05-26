@@ -104,7 +104,7 @@ public class ServerName
         case NameType.host_name:
             return name instanceof String;
         default:
-            throw new IllegalArgumentException("'name' is an unsupported value");
+            throw new IllegalArgumentException("'nameType' is an unsupported NameType");
         }
     }
 }
