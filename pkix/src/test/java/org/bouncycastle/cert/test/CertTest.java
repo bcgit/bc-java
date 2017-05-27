@@ -1762,7 +1762,7 @@ public class CertTest
 
         cert = (X509Certificate)fact.generateCertificate(bIn);
 
-        // System.out.println(cert);
+        cert.getEncoded();
     }
 
     private void checkComparison(byte[] encCert)
@@ -2563,7 +2563,7 @@ public class CertTest
 
         isTrue("oid wrong", BCObjectIdentifiers.sphincs256_with_SHA512.getId().equals(baseCert.getSigAlgOID()));
         isTrue("params wrong", null == baseCert.getSigAlgParams());
-
+          
         //
         // copy certificate
         //
@@ -2575,9 +2575,12 @@ public class CertTest
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
         cert.checkValidity(new Date());
+        
+        cert.verify(cert.getPublicKey());
 
-        cert.verify(pubKey, "BCPQC");
-
+        // check encoded works
+        cert.getEncoded();
+        
         if (!areEqual(baseCert.getExtensionValue("2.5.29.15"), cert.getExtensionValue("2.5.29.15")))
         {
             fail("2.5.29.15 differs");
@@ -2602,6 +2605,28 @@ public class CertTest
         {
             // expected
         }
+
+        // certificate with NewHope key
+        kpGen = KeyPairGenerator.getInstance("NH", "BCPQC");
+
+        kpGen.initialize(1024, new SecureRandom());
+
+        KeyPair nhKp = kpGen.generateKeyPair();
+
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), nhKp.getPublic())
+            .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
+            .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
+
+        cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
+
+        cert.checkValidity(new Date());
+        
+        cert.verify(pubKey);
+
+        isTrue(nhKp.getPublic().equals(cert.getPublicKey()));
+
+        // check encoded works
+        cert.getEncoded();
     }
 
     private void testForgedSignature()
