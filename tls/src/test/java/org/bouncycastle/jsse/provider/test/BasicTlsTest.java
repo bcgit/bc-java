@@ -1,5 +1,6 @@
 package org.bouncycastle.jsse.provider.test;
 
+import java.net.Socket;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.SecureRandom;
@@ -7,6 +8,7 @@ import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.CountDownLatch;
 
+import javax.net.SocketFactory;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
@@ -15,9 +17,10 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
-import junit.framework.TestCase;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+
+import junit.framework.TestCase;
 
 public class BasicTlsTest
     extends TestCase
@@ -40,11 +43,13 @@ public class BasicTlsTest
     public static class SimpleClient
         implements TestProtocolUtil.BlockingCallable
     {
+        private final boolean layered;
         private final KeyStore trustStore;
         private final CountDownLatch latch;
 
-        public SimpleClient(KeyStore trustStore)
+        public SimpleClient(boolean layered, KeyStore trustStore)
         {
+            this.layered = layered;
             this.trustStore = trustStore;
             this.latch = new CountDownLatch(1);
         }
@@ -65,7 +70,17 @@ public class BasicTlsTest
                     SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
     
                 SSLSocketFactory fact = clientContext.getSocketFactory();
-                SSLSocket cSock = (SSLSocket)fact.createSocket(HOST, PORT_NO);
+
+                SSLSocket cSock;
+                if (layered)
+                {
+                    Socket s = SocketFactory.getDefault().createSocket(HOST, PORT_NO);
+                    cSock = (SSLSocket)fact.createSocket(s, HOST, PORT_NO, true);
+                }
+                else
+                {
+                    cSock = (SSLSocket)fact.createSocket(HOST, PORT_NO);
+                }
 
                 TestProtocolUtil.doClientProtocol(cSock, "Hello");
             }
@@ -146,21 +161,13 @@ public class BasicTlsTest
     public void testBasicTlsConnection()
         throws Exception
     {
-        char[] keyPass = "keyPassword".toCharArray();
+        runTestBasicTlsConnection(false);
+    }
 
-        KeyPair caKeyPair = TestUtils.generateECKeyPair();
-
-        X509Certificate caCert = TestUtils.generateRootCert(caKeyPair);
-
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(null, null);
-        ks.setKeyEntry("server", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
-
-        KeyStore ts = KeyStore.getInstance("JKS");
-        ts.load(null, null);
-        ts.setCertificateEntry("ca", caCert);
-
-        TestProtocolUtil.runClientAndServer(new SimpleServer(ks, keyPass), new SimpleClient(ts));
+    public void testBasicTlsConnectionLayered()
+        throws Exception
+    {
+        runTestBasicTlsConnection(true);
     }
 
     public void testNullRandomJsseInit()
@@ -188,5 +195,25 @@ public class BasicTlsTest
         SSLContext clientContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
 
         clientContext.init(null, trustMgrFact.getTrustManagers(), null);
+    }
+
+    protected void runTestBasicTlsConnection(boolean layered)
+        throws Exception
+    {
+        char[] keyPass = "keyPassword".toCharArray();
+
+        KeyPair caKeyPair = TestUtils.generateECKeyPair();
+
+        X509Certificate caCert = TestUtils.generateRootCert(caKeyPair);
+
+        KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(null, null);
+        ks.setKeyEntry("server", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
+
+        KeyStore ts = KeyStore.getInstance("JKS");
+        ts.load(null, null);
+        ts.setCertificateEntry("ca", caCert);
+
+        TestProtocolUtil.runClientAndServer(new SimpleServer(ks, keyPass), new SimpleClient(layered, ts));
     }
 }
