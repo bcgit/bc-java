@@ -75,11 +75,7 @@ class ProvSSLSocketFactory
     @Override
     public Socket createSocket(Socket s, String host, int port, boolean autoClose) throws IOException
     {
-        /*
-         * TODO[jsse]
-         * "Returns a socket layered over an existing socket connected to the named host, at the given port."
-         */
-        throw new UnsupportedOperationException();
+        return new ProvSSLSocketWrap(context, context.createContextData(), s, host, port, autoClose);
     }
 
     @Override

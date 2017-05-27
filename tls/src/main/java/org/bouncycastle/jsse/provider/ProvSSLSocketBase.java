@@ -99,4 +99,23 @@ abstract class ProvSSLSocketBase
             throw new UnsupportedOperationException("Urgent data not supported in TLS");
         }
     }
+    
+    @Override
+    public void shutdownInput() throws IOException
+    {
+        throw new UnsupportedOperationException("shutdownInput() not supported in TLS");
+    }
+
+    @Override
+    public void shutdownOutput() throws IOException
+    {
+        throw new UnsupportedOperationException("shutdownOutput() not supported in TLS");
+    }
+
+    // TODO[jsse] Proper toString for sockets
+//    @Override
+//    public String toString()
+//    {
+//        return super.toString();
+//    }
 }
