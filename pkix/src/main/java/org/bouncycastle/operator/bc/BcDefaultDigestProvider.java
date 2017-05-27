@@ -8,22 +8,11 @@ import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.ExtendedDigest;
-import org.bouncycastle.crypto.digests.GOST3411Digest;
-import org.bouncycastle.crypto.digests.MD2Digest;
-import org.bouncycastle.crypto.digests.MD4Digest;
-import org.bouncycastle.crypto.digests.MD5Digest;
-import org.bouncycastle.crypto.digests.RIPEMD128Digest;
-import org.bouncycastle.crypto.digests.RIPEMD160Digest;
-import org.bouncycastle.crypto.digests.RIPEMD256Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.digests.SHA224Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA384Digest;
-import org.bouncycastle.crypto.digests.SHA3Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.*;
 import org.bouncycastle.operator.OperatorCreationException;
 
 public class BcDefaultDigestProvider
@@ -124,6 +113,20 @@ public class BcDefaultDigestProvider
             public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
             {
                 return new GOST3411Digest();
+            }
+        });
+        table.put(RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new GOST3411_2012_256Digest();
+            }
+        });
+        table.put(RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new GOST3411_2012_512Digest();
             }
         });
         table.put(TeleTrusTObjectIdentifiers.ripemd128, new BcDigestProvider()
