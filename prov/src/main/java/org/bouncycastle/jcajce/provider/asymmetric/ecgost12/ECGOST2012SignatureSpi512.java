@@ -84,7 +84,7 @@ public class ECGOST2012SignatureSpi512
         }
         else
         {
-            throw new InvalidKeyException("cannot recognise key type in ECGOST-2012-256 signer");
+            throw new InvalidKeyException("cannot recognise key type in ECGOST-2012-512 signer");
         }
 
         digest.reset();
