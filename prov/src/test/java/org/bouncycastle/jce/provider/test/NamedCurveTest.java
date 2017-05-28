@@ -219,11 +219,33 @@ public class NamedCurveTest
     {
         ECGenParameterSpec     ecSpec = new ECGenParameterSpec(name);
 
-        KeyPairGenerator    g = KeyPairGenerator.getInstance("ECGOST3410", "BC");
+        KeyPairGenerator    g;
+        Signature           sgr;
+        String              keyAlgorithm;
+
+        if (name.startsWith("Tc26-Gost-3410"))
+        {
+            keyAlgorithm = "ECGOST3410-2012";
+            if (name.indexOf("256") > 0)
+            {
+                sgr = Signature.getInstance("ECGOST3410-2012-256", "BC");
+            }
+            else
+            {
+                sgr = Signature.getInstance("ECGOST3410-2012-512", "BC");
+            }
+        }
+        else
+        {
+            keyAlgorithm = "ECGOST3410";
+
+            sgr = Signature.getInstance("ECGOST3410", "BC");
+        }
+
+        g = KeyPairGenerator.getInstance(keyAlgorithm, "BC");
 
         g.initialize(ecSpec, new SecureRandom());
 
-        Signature sgr = Signature.getInstance("ECGOST3410", "BC");
         KeyPair   pair = g.generateKeyPair();
         PrivateKey sKey = pair.getPrivate();
         PublicKey vKey = pair.getPublic();
@@ -249,7 +271,7 @@ public class NamedCurveTest
         // public key encoding test
         //
         byte[]              pubEnc = vKey.getEncoded();
-        KeyFactory          keyFac = KeyFactory.getInstance("ECGOST3410", "BC");
+        KeyFactory          keyFac = KeyFactory.getInstance(keyAlgorithm, "BC");
         X509EncodedKeySpec  pubX509 = new X509EncodedKeySpec(pubEnc);
         ECPublicKey         pubKey = (ECPublicKey)keyFac.generatePublic(pubX509);
 

@@ -1,5 +1,12 @@
 package org.bouncycastle.jcajce.provider.asymmetric.ecgost12;
 
+import java.math.BigInteger;
+import java.security.InvalidKeyException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SignatureException;
+import java.security.spec.AlgorithmParameterSpec;
+
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
@@ -11,24 +18,17 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.ECGOST3410_2012Signer;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
-import org.bouncycastle.jcajce.provider.asymmetric.util.GOST3410Util;
 import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
-import org.bouncycastle.jce.interfaces.GOST3410Key;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
-import java.math.BigInteger;
-import java.security.InvalidKeyException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SignatureException;
-import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * Signature for GOST34.10 2012 512. Algorithm is the same as for GOST34.10 2001
  */
-public class ECGOST2012SignatureSpi512 extends java.security.SignatureSpi
-        implements PKCSObjectIdentifiers, X509ObjectIdentifiers {
+public class ECGOST2012SignatureSpi512
+    extends java.security.SignatureSpi
+    implements PKCSObjectIdentifiers, X509ObjectIdentifiers
+{
 
     private Digest digest;
     private DSA signer;
@@ -36,29 +36,35 @@ public class ECGOST2012SignatureSpi512 extends java.security.SignatureSpi
     private int halfSize = 64;
 
 
-    public ECGOST2012SignatureSpi512() {
+    public ECGOST2012SignatureSpi512()
+    {
         this.digest = new GOST3411_2012_512Digest();
         this.signer = new ECGOST3410_2012Signer();
     }
 
     protected void engineInitVerify(
-            PublicKey publicKey)
-            throws InvalidKeyException {
+        PublicKey publicKey)
+        throws InvalidKeyException
+    {
         CipherParameters param;
 
-        if (publicKey instanceof ECPublicKey) {
+        if (publicKey instanceof ECPublicKey)
+        {
             param = generatePublicKeyParameter(publicKey);
-        } else if (publicKey instanceof GOST3410Key) {
-            param = GOST3410Util.generatePublicKeyParameter(publicKey);
-        } else {
-            try {
+        }
+        else
+        {
+            try
+            {
                 byte[] bytes = publicKey.getEncoded();
 
                 publicKey = BouncyCastleProvider.getPublicKey(SubjectPublicKeyInfo.getInstance(bytes));
 
                 param = ECUtil.generatePublicKeyParameter(publicKey);
-            } catch (Exception e) {
-                throw new InvalidKeyException("can't recognise key type in DSA based signer");
+            }
+            catch (Exception e)
+            {
+                throw new InvalidKeyException("cannot recognise key type in ECGOST-2012-512 signer");
             }
         }
 
@@ -67,79 +73,100 @@ public class ECGOST2012SignatureSpi512 extends java.security.SignatureSpi
     }
 
     protected void engineInitSign(
-            PrivateKey privateKey)
-            throws InvalidKeyException {
+        PrivateKey privateKey)
+        throws InvalidKeyException
+    {
         CipherParameters param;
 
-        if (privateKey instanceof ECKey) {
+        if (privateKey instanceof ECKey)
+        {
             param = ECUtil.generatePrivateKeyParameter(privateKey);
-        } else {
-            param = GOST3410Util.generatePrivateKeyParameter(privateKey);
+        }
+        else
+        {
+            throw new InvalidKeyException("cannot recognise key type in ECGOST-2012-256 signer");
         }
 
         digest.reset();
 
-        if (appRandom != null) {
+        if (appRandom != null)
+        {
             signer.init(true, new ParametersWithRandom(param, appRandom));
-        } else {
+        }
+        else
+        {
             signer.init(true, param);
         }
     }
 
     protected void engineUpdate(
-            byte b)
-            throws SignatureException {
+        byte b)
+        throws SignatureException
+    {
         digest.update(b);
     }
 
     protected void engineUpdate(
-            byte[] b,
-            int off,
-            int len)
-            throws SignatureException {
+        byte[] b,
+        int off,
+        int len)
+        throws SignatureException
+    {
         digest.update(b, off, len);
     }
 
     protected byte[] engineSign()
-            throws SignatureException {
+        throws SignatureException
+    {
         byte[] hash = new byte[digest.getDigestSize()];
 
         digest.doFinal(hash, 0);
 
-        try {
+        try
+        {
             byte[] sigBytes = new byte[size];
             BigInteger[] sig = signer.generateSignature(hash);
             byte[] r = sig[0].toByteArray();
             byte[] s = sig[1].toByteArray();
 
-            if (s[0] != 0) {
+            if (s[0] != 0)
+            {
                 System.arraycopy(s, 0, sigBytes, halfSize - s.length, s.length);
-            } else {
+            }
+            else
+            {
                 System.arraycopy(s, 1, sigBytes, halfSize - (s.length - 1), s.length - 1);
             }
 
-            if (r[0] != 0) {
+            if (r[0] != 0)
+            {
                 System.arraycopy(r, 0, sigBytes, size - r.length, r.length);
-            } else {
+            }
+            else
+            {
                 System.arraycopy(r, 1, sigBytes, size - (r.length - 1), r.length - 1);
             }
 
             return sigBytes;
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             throw new SignatureException(e.toString());
         }
     }
 
     protected boolean engineVerify(
-            byte[] sigBytes)
-            throws SignatureException {
+        byte[] sigBytes)
+        throws SignatureException
+    {
         byte[] hash = new byte[digest.getDigestSize()];
 
         digest.doFinal(hash, 0);
 
         BigInteger[] sig;
 
-        try {
+        try
+        {
             byte[] r = new byte[halfSize];
             byte[] s = new byte[halfSize];
 
@@ -150,7 +177,9 @@ public class ECGOST2012SignatureSpi512 extends java.security.SignatureSpi
             sig = new BigInteger[2];
             sig[0] = new BigInteger(1, r);
             sig[1] = new BigInteger(1, s);
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             throw new SignatureException("error decoding signature bytes.");
         }
 
@@ -158,7 +187,8 @@ public class ECGOST2012SignatureSpi512 extends java.security.SignatureSpi
     }
 
     protected void engineSetParameter(
-            AlgorithmParameterSpec params) {
+        AlgorithmParameterSpec params)
+    {
         throw new UnsupportedOperationException("engineSetParameter unsupported");
     }
 
@@ -166,8 +196,9 @@ public class ECGOST2012SignatureSpi512 extends java.security.SignatureSpi
      * @deprecated replaced with <a href = "#engineSetParameter(java.security.spec.AlgorithmParameterSpec)">
      */
     protected void engineSetParameter(
-            String param,
-            Object value) {
+        String param,
+        Object value)
+    {
         throw new UnsupportedOperationException("engineSetParameter unsupported");
     }
 
@@ -175,13 +206,15 @@ public class ECGOST2012SignatureSpi512 extends java.security.SignatureSpi
      * @deprecated
      */
     protected Object engineGetParameter(
-            String param) {
+        String param)
+    {
         throw new UnsupportedOperationException("engineSetParameter unsupported");
     }
 
     static AsymmetricKeyParameter generatePublicKeyParameter(
-            PublicKey key)
-            throws InvalidKeyException {
-        return (key instanceof BCECGOST3410_2012PublicKey) ? ((BCECGOST3410_2012PublicKey) key).engineGetKeyParameters() : ECUtil.generatePublicKeyParameter(key);
+        PublicKey key)
+        throws InvalidKeyException
+    {
+        return (key instanceof BCECGOST3410_2012PublicKey) ? ((BCECGOST3410_2012PublicKey)key).engineGetKeyParameters() : ECUtil.generatePublicKeyParameter(key);
     }
 }
