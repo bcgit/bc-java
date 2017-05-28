@@ -1,5 +1,12 @@
 package org.bouncycastle.jcajce.provider.asymmetric.ecgost12;
 
+import java.math.BigInteger;
+import java.security.InvalidKeyException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SignatureException;
+import java.security.spec.AlgorithmParameterSpec;
+
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
@@ -11,18 +18,9 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.ECGOST3410_2012Signer;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
-import org.bouncycastle.jcajce.provider.asymmetric.util.GOST3410Util;
 import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
-import org.bouncycastle.jce.interfaces.GOST3410Key;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
-import java.math.BigInteger;
-import java.security.InvalidKeyException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SignatureException;
-import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * Signature for GOST34.10 2012 256. Algorithm is the same as for GOST34.10 2001
@@ -52,10 +50,6 @@ public class ECGOST2012SignatureSpi256
         {
             param = generatePublicKeyParameter(publicKey);
         }
-        else if (publicKey instanceof GOST3410Key)
-        {
-            param = GOST3410Util.generatePublicKeyParameter(publicKey);
-        }
         else
         {
             try
@@ -68,7 +62,7 @@ public class ECGOST2012SignatureSpi256
             }
             catch (Exception e)
             {
-                throw new InvalidKeyException("can't recognise key type in DSA based signer");
+                throw new InvalidKeyException("cannot recognise key type in ECGOST-2012-256 signer");
             }
         }
 
@@ -88,7 +82,7 @@ public class ECGOST2012SignatureSpi256
         }
         else
         {
-            param = GOST3410Util.generatePrivateKeyParameter(privateKey);
+            throw new InvalidKeyException("cannot recognise key type in ECGOST-2012-256 signer");
         }
 
         digest.reset();
