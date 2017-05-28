@@ -2629,6 +2629,71 @@ public class CertTest
         cert.getEncoded();
     }
 
+    /**
+     * we generate a self signed certificate for the sake of testing - GOST3410
+     */
+    public void checkCreation7()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        KeyPairGenerator g = KeyPairGenerator.getInstance("ECGOST3410-2012", BC);
+
+        BigInteger mod_p = new BigInteger("57896044618658097711785492504343953926634992332820282019728792003956564821041"); //p
+
+        ECCurve curve = new ECCurve.Fp(
+                mod_p, // p
+                new BigInteger("7"), // a
+                new BigInteger("43308876546767276905765904595650931995942111794451039583252968842033849580414")); // b
+
+        ECParameterSpec spec = new ECParameterSpec(
+                curve,
+                curve.createPoint(
+                        new BigInteger("2"), // x
+                        new BigInteger("4018974056539037503335449422937059775635739389905545080690979365213431566280")), // y
+                new BigInteger("57896044618658097711785492504343953927082934583725450622380973592137631069619")); // q
+
+        g.initialize(spec, new SecureRandom());
+
+        KeyPair p = g.generateKeyPair();
+
+        PrivateKey privKey = p.getPrivate();
+        PublicKey pubKey = p.getPublic();
+
+        //
+        // distinguished name table.
+        //
+        X500NameBuilder builder = createStdBuilder();
+
+        //
+        // create the certificate - version 3
+        //
+        ContentSigner sigGen = new JcaContentSignerBuilder("ECGOST3410-2012-512").setProvider(BC).build(privKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
+
+        cert.checkValidity(new Date());
+
+        //
+        // check verifies in general
+        //
+        cert.verify(pubKey);
+
+        //
+        // check verifies with contained key
+        //
+        cert.verify(cert.getPublicKey());
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(cert.getEncoded());
+        CertificateFactory fact = CertificateFactory.getInstance("X.509", BC);
+
+        cert = (X509Certificate)fact.generateCertificate(bIn);
+
+        //System.out.println(cert);
+    }
+
     private void testForgedSignature()
         throws Exception
     {
