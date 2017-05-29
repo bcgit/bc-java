@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.bouncycastle.crypto.tls.NamedCurve;
+import org.bouncycastle.tls.NamedCurve;
 
 abstract class FipsUtils
 {
