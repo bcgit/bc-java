@@ -1212,13 +1212,13 @@ public class TlsUtils
         short certificateType, DigitallySigned certificateVerify, TlsHandshakeHash handshakeHash) throws IOException
     {
         // Verify the CertificateVerify message contains a correct signature.
+        boolean verified;
         try
         {
             TlsVerifier verifier = certificate.getCertificateAt(0)
                 .createVerifier(getSignatureAlgorithmClient(certificateType));
             TlsStreamVerifier streamVerifier = verifier.getStreamVerifier(certificateVerify);
 
-            boolean verified;
             if (streamVerifier != null)
             {
                 handshakeHash.copyBufferTo(streamVerifier.getOutputStream());
@@ -1241,11 +1241,6 @@ public class TlsUtils
 
                 verified = verifier.verifyRawSignature(certificateVerify, hash);
             }
-
-            if (!verified)
-            {
-                throw new TlsFatalAlert(AlertDescription.decrypt_error);
-            }
         }
         catch (TlsFatalAlert e)
         {
@@ -1254,6 +1249,11 @@ public class TlsUtils
         catch (Exception e)
         {
             throw new TlsFatalAlert(AlertDescription.decrypt_error, e);
+        }
+
+        if (!verified)
+        {
+            throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
     }
 
