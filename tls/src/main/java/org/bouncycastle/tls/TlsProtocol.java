@@ -10,6 +10,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.crypto.tls.AlertDescription;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
@@ -19,8 +20,6 @@ public abstract class TlsProtocol
 {
     protected static final Integer EXT_RenegotiationInfo = Integers.valueOf(ExtensionType.renegotiation_info);
     protected static final Integer EXT_SessionTicket = Integers.valueOf(ExtensionType.session_ticket);
-
-    private static final String TLS_ERROR_MESSAGE = "Internal TLS error, this could be an attack";
 
     /*
      * Our Connection states
@@ -417,7 +416,7 @@ public abstract class TlsProtocol
                     cleanupHandshake();
                 }
 
-                throw new IOException(TLS_ERROR_MESSAGE);
+                throw new IOException("Fatal alert received from TLS peer: " + AlertDescription.getText(description));
             }
             else
             {
@@ -500,22 +499,12 @@ public abstract class TlsProtocol
 
         while (applicationDataQueue.available() == 0)
         {
-            /*
-             * We need to read some data.
-             */
             if (this.closed)
             {
                 if (this.failedWithError)
                 {
-                    /*
-                     * Something went terribly wrong, we should throw an IOException
-                     */
-                    throw new IOException(TLS_ERROR_MESSAGE);
+                    throw new IOException("Cannot read application data on failed TLS connection");
                 }
-
-                /*
-                 * Connection has been closed, there is no more data to read.
-                 */
                 return -1;
             }
             if (!appDataReady)
@@ -655,12 +644,7 @@ public abstract class TlsProtocol
     {
         if (this.closed)
         {
-            if (this.failedWithError)
-            {
-                throw new IOException(TLS_ERROR_MESSAGE);
-            }
-
-            throw new IOException("Sorry, connection has been closed, you cannot write more data");
+            throw new IOException("Cannot write application data on closed/failed TLS connection");
         }
         if (!appDataReady)
         {
@@ -986,7 +970,7 @@ public abstract class TlsProtocol
             }
         }
 
-        throw new IOException(TLS_ERROR_MESSAGE);
+        throw new IOException("TLS connection failed");
     }
 
     protected void invalidateSession()
