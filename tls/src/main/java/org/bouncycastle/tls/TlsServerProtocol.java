@@ -395,6 +395,8 @@ public class TlsServerProtocol
     protected void handleWarningMessage(short description)
         throws IOException
     {
+        super.handleWarningMessage(description);
+
         switch (description)
         {
         case AlertDescription.no_certificate:
@@ -403,16 +405,24 @@ public class TlsServerProtocol
              * SSL 3.0 If the server has sent a certificate request Message, the client must send
              * either the certificate message or a no_certificate alert.
              */
-            if (TlsUtils.isSSL(getContext()) && certificateRequest != null)
+            if (TlsUtils.isSSL(getContext()) && this.certificateRequest != null)
             {
-                notifyClientCertificate(Certificate.EMPTY_CHAIN);
+                switch (this.connection_state)
+                {
+                case CS_SERVER_HELLO_DONE:
+                {
+                    tlsServer.processClientSupplementalData(null);
+                    // NB: Fall through to next case label
+                }
+                case CS_CLIENT_SUPPLEMENTAL_DATA:
+                {
+                    notifyClientCertificate(Certificate.EMPTY_CHAIN);
+                    this.connection_state = CS_CLIENT_CERTIFICATE;
+                    return;
+                }
+                }
             }
-            break;
-        }
-        default:
-        {
-            super.handleWarningMessage(description);
-            break;
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
         }
     }
