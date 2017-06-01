@@ -220,7 +220,7 @@ public class TlsSRPKeyExchange
         // Check that val % N != 0
         if (val.equals(BigInteger.ZERO))
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter, new IllegalArgumentException("Invalid public value: 0"));
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
         return val;
