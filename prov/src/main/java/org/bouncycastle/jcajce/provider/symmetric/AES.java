@@ -1034,9 +1034,11 @@ public final class AES
     {
         try
         {
-            Class def = AES.class.getClassLoader().loadClass(className);
-
-            return def;
+            ClassLoader classLoader = AES.class.getClassLoader();
+            if (classLoader == null) {
+                classLoader = ClassLoader.getSystemClassLoader();
+            }
+            return classLoader.loadClass(className);
         }
         catch (Exception e)
         {
