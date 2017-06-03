@@ -6,12 +6,14 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.custom.djb.Curve25519;
+import org.bouncycastle.math.ec.custom.gm.SM2P256V1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP128R1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP160K1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP160R1Curve;
@@ -614,7 +616,22 @@ public class CustomNamedCurves
         }
     };
 
-    
+    /*
+     * sm2p256v1
+     */
+    static X9ECParametersHolder sm2p256v1 = new X9ECParametersHolder()
+    {
+        protected X9ECParameters createParameters()
+        {
+            byte[] S = null;
+            ECCurve curve = configureCurve(new SM2P256V1Curve());
+            X9ECPoint G = new X9ECPoint(curve, Hex.decode("04"
+                + "32C4AE2C1F1981195F9904466A39C9948FE30BBFF2660BE1715A4589334C74C7"
+                + "BC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0"));
+            return new X9ECParameters(curve, G, curve.getOrder(), curve.getCofactor(), S);
+        }
+    };
+
     static final Hashtable nameToCurve = new Hashtable();
     static final Hashtable nameToOID = new Hashtable();
     static final Hashtable oidToCurve = new Hashtable();
@@ -689,6 +706,8 @@ public class CustomNamedCurves
         defineCurveWithOID("sect409r1", SECObjectIdentifiers.sect409r1, sect409r1);
         defineCurveWithOID("sect571k1", SECObjectIdentifiers.sect571k1, sect571k1);
         defineCurveWithOID("sect571r1", SECObjectIdentifiers.sect571r1, sect571r1);
+
+        defineCurveWithOID("sm2p256v1", GMObjectIdentifiers.sm2p256v1, sm2p256v1);
 
         defineCurveAlias("B-163", SECObjectIdentifiers.sect163r2);
         defineCurveAlias("B-233", SECObjectIdentifiers.sect233r1);
