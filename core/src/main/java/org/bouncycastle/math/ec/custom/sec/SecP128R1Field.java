@@ -16,13 +16,13 @@ public class SecP128R1Field
         0xFFFFFFFF, 0x00000003, 0xFFFFFFFC };
     private static final int[] PExtInv = new int[]{ 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFB,
         0x00000001, 0x00000000, 0xFFFFFFFC, 0x00000003 };
-    private static final int P3 = 0xFFFFFFFD;
-    private static final int PExt7 = 0xFFFFFFFC;
+    private static final int P3s1 = 0xFFFFFFFD >>> 1;
+    private static final int PExt7s1 = 0xFFFFFFFC >>> 1;
 
     public static void add(int[] x, int[] y, int[] z)
     {
         int c = Nat128.add(x, y, z);
-        if (c != 0 || (z[3] == P3 && Nat128.gte(z, P)))
+        if (c != 0 || ((z[3] >>> 1) >= P3s1 && Nat128.gte(z, P)))
         {
             addPInvTo(z);
         }
@@ -31,7 +31,7 @@ public class SecP128R1Field
     public static void addExt(int[] xx, int[] yy, int[] zz)
     {
         int c = Nat256.add(xx, yy, zz);
-        if (c != 0 || (zz[7] == PExt7 && Nat256.gte(zz, PExt)))
+        if (c != 0 || ((zz[7] >>> 1) >= PExt7s1 && Nat256.gte(zz, PExt)))
         {
             Nat.addTo(PExtInv.length, PExtInv, zz);
         }
@@ -40,7 +40,7 @@ public class SecP128R1Field
     public static void addOne(int[] x, int[] z)
     {
         int c = Nat.inc(4, x, z);
-        if (c != 0 || (z[3] == P3 && Nat128.gte(z, P)))
+        if (c != 0 || ((z[3] >>> 1) >= P3s1 && Nat128.gte(z, P)))
         {
             addPInvTo(z);
         }
@@ -49,7 +49,7 @@ public class SecP128R1Field
     public static int[] fromBigInteger(BigInteger x)
     {
         int[] z = Nat128.fromBigInteger(x);
-        if (z[3] == P3 && Nat128.gte(z, P))
+        if ((z[3] >>> 1) >= P3s1 && Nat128.gte(z, P))
         {
             Nat128.subFrom(P, z);
         }
@@ -79,7 +79,7 @@ public class SecP128R1Field
     public static void multiplyAddToExt(int[] x, int[] y, int[] zz)
     {
         int c = Nat128.mulAddTo(x, y, zz);
-        if (c != 0 || (zz[7] == PExt7 && Nat256.gte(zz, PExt)))
+        if (c != 0 || ((zz[7] >>> 1) >= PExt7s1 && Nat256.gte(zz, PExt)))
         {
             Nat.addTo(PExtInv.length, PExtInv, zz);
         }
@@ -182,7 +182,7 @@ public class SecP128R1Field
     public static void twice(int[] x, int[] z)
     {
         int c = Nat.shiftUpBit(4, x, 0, z);
-        if (c != 0 || (z[3] == P3 && Nat128.gte(z, P)))
+        if (c != 0 || ((z[3] >>> 1) >= P3s1 && Nat128.gte(z, P)))
         {
             addPInvTo(z);
         }
