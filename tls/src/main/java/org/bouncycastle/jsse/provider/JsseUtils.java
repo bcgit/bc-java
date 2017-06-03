@@ -1,8 +1,10 @@
 package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
+import java.security.AccessController;
 import java.security.Principal;
 import java.security.PrivateKey;
+import java.security.PrivilegedAction;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
@@ -329,5 +331,42 @@ abstract class JsseUtils
         {
             v.addElement(alg);
         }
+    }
+
+    static Class loadClass(Class sourceClass, final String className)
+    {
+        try
+        {
+            ClassLoader loader = sourceClass.getClassLoader();
+            if (loader != null)
+            {
+                return loader.loadClass(className);
+            }
+            else
+            {
+                AccessController.doPrivileged(new PrivilegedAction<Class>()
+                {
+                    public Class run()
+                    {
+                        try
+                        {
+                            return Class.forName(className);
+                        }
+                        catch (Exception e)
+                        {
+                            // ignore - maybe log?
+                        }
+
+                        return null;
+                    }
+                });
+            }
+        }
+        catch (ClassNotFoundException e)
+        {
+            // ignore - maybe log?
+        }
+
+        return null;
     }
 }
