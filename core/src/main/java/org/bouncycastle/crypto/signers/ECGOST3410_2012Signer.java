@@ -55,18 +55,15 @@ public class ECGOST3410_2012Signer
         byte[] message)
     {
 
-        System.out.println("signature");
         byte[] mRev = new byte[message.length]; // conversion is little-endian
         for (int i = 0; i != mRev.length; i++)
         {
             mRev[i] = message[mRev.length - 1 - i];
         }
         BigInteger e = new BigInteger(1, mRev);
-        System.out.println("e = " + e.toString());
 
         ECDomainParameters ec = key.getParameters();
         BigInteger n = ec.getN();
-        System.out.println("q = " + n.toString());
         BigInteger d = ((ECPrivateKeyParameters)key).getD();
 
         BigInteger r, s;
@@ -90,15 +87,9 @@ public class ECGOST3410_2012Signer
             }
             while (r.equals(ECConstants.ZERO));
 
-            System.out.println("k = " + k.toString());
-
             s = (k.multiply(e)).add(d.multiply(r)).mod(n);
         }
         while (s.equals(ECConstants.ZERO));
-
-        System.out.println("r = " + r.toString());
-        System.out.println("s = " + s.toString());
-        System.out.println("verify");
 
         return new BigInteger[]{ r, s };
     }
@@ -121,10 +112,7 @@ public class ECGOST3410_2012Signer
             mRev[i] = message[mRev.length - 1 - i];
         }
         BigInteger e = new BigInteger(1, mRev);
-        System.out.println("e = " + e.toString());
         BigInteger n = key.getParameters().getN();
-        System.out.println("n = " + n.toString());
-
 
         // r in the range [1,n-1]
         if (r.compareTo(ECConstants.ONE) < 0 || r.compareTo(n) >= 0)
@@ -138,17 +126,10 @@ public class ECGOST3410_2012Signer
             return false;
         }
 
-        System.out.println("s = " + s.toString());
-
         BigInteger v = e.modInverse(n);
-
-        System.out.println("v = " + v.toString());
 
         BigInteger z1 = s.multiply(v).mod(n);
         BigInteger z2 = (n.subtract(r)).multiply(v).mod(n);
-
-        System.out.println("z1 = " + z1.toString());
-        System.out.println("z2 = " + z2.toString());
 
         ECPoint G = key.getParameters().getG(); // P
         ECPoint Q = ((ECPublicKeyParameters)key).getQ();
@@ -162,8 +143,6 @@ public class ECGOST3410_2012Signer
         }
 
         BigInteger R = point.getAffineXCoord().toBigInteger().mod(n);
-
-        System.out.println("R = " + R.toString());
 
         return R.equals(r);
     }
