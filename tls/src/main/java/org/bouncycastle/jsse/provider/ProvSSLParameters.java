@@ -9,7 +9,7 @@ class ProvSSLParameters
         Class clazz = null;
         try
         {
-            clazz = ProvSSLServerSocket.class.getClassLoader().loadClass("javax.net.ssl.SSLParameters");
+            clazz = JsseUtils.loadClass(ProvSSLServerSocket.class,"javax.net.ssl.SSLParameters");
         }
         catch (Exception e)
         {
