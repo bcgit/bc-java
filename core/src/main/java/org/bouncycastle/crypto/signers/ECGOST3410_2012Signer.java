@@ -55,7 +55,12 @@ public class ECGOST3410_2012Signer
         byte[] message)
     {
 
-        BigInteger e = new BigInteger(1, message);
+        byte[] mRev = new byte[message.length]; // conversion is little-endian
+        for (int i = 0; i != mRev.length; i++)
+        {
+            mRev[i] = message[mRev.length - 1 - i];
+        }
+        BigInteger e = new BigInteger(1, mRev);
 
         ECDomainParameters ec = key.getParameters();
         BigInteger n = ec.getN();
@@ -100,7 +105,13 @@ public class ECGOST3410_2012Signer
         BigInteger  s)
     {
 
-        BigInteger e = new BigInteger(1, message);
+
+        byte[] mRev = new byte[message.length]; // conversion is little-endian
+        for (int i = 0; i != mRev.length; i++)
+        {
+            mRev[i] = message[mRev.length - 1 - i];
+        }
+        BigInteger e = new BigInteger(1, mRev);
         BigInteger n = key.getParameters().getN();
 
         // r in the range [1,n-1]

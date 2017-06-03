@@ -312,7 +312,7 @@ public class GOST3410Test
     }
 
 
-    private void ecGOST34102012Test() throws Exception {
+    private void ecGOST34102012256Test() throws Exception {
 
         BigInteger r = new BigInteger("29700980915817952874371204983938256990422752107994319651632687982059210933395");
         BigInteger s = new BigInteger("574973400270084654178925310019147038455227042649098563933718999175515839552");
@@ -350,12 +350,17 @@ public class GOST3410Test
         PrivateKey sKey = f.generatePrivate(priKey);
         PublicKey vKey = f.generatePublic(pubKey);
 
+
         ECGOST3410_2012Signer signer = new ECGOST3410_2012Signer();
         CipherParameters param = ECUtil.generatePrivateKeyParameter(sKey);
 
         signer.init(true, new ParametersWithRandom(param, k));
 
-        byte[] message = e.toByteArray();
+        byte[] rev = e.toByteArray();
+        byte[] message = new byte[rev.length];
+        for (int i = 0; i != rev.length; i++) {
+            message[i] = rev[rev.length - 1 - i];
+        }
         BigInteger[] sig = signer.generateSignature(message);
 
         ECPublicKey ecPublicKey = (ECPublicKey)vKey;
@@ -401,6 +406,87 @@ public class GOST3410Test
 
 
     }
+
+    private void ecGOST34102012512Test() throws Exception {
+
+        BigInteger r = new BigInteger("2489204477031349265072864643032147753667451319282131444027498637357611092810221795101871412928823716805959828708330284243653453085322004442442534151761462");
+        BigInteger s = new BigInteger("864523221707669519038849297382936917075023735848431579919598799313385180564748877195639672460179421760770893278030956807690115822709903853682831835159370");
+
+        BigInteger e = new BigInteger("2897963881682868575562827278553865049173745197871825199562947419041388950970536661109553499954248733088719748844538964641281654463513296973827706272045964");
+
+        byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("359E7F4B1410FEACC570456C6801496946312120B39D019D455986E364F365886748ED7A44B3E794434006011842286212273A6D14CF70EA3AF71BB1AE679F1", 16));
+        SecureRandom k = new TestRandomBigInteger(kData);
+
+        BigInteger mod_p = new BigInteger("3623986102229003635907788753683874306021320925534678605086546150450856166624002482588482022271496854025090823603058735163734263822371964987228582907372403"); //p
+
+        ECCurve curve = new ECCurve.Fp(
+                mod_p, // p
+                new BigInteger("7"), // a
+                new BigInteger("1518655069210828534508950034714043154928747527740206436194018823352809982443793732829756914785974674866041605397883677596626326413990136959047435811826396")); // b
+
+        ECParameterSpec spec = new ECParameterSpec(
+                curve,
+                curve.createPoint(
+                        new BigInteger("1928356944067022849399309401243137598997786635459507974357075491307766592685835441065557681003184874819658004903212332884252335830250729527632383493573274"), // x
+                        new BigInteger("2288728693371972859970012155529478416353562327329506180314497425931102860301572814141997072271708807066593850650334152381857347798885864807605098724013854")), // y
+                        new BigInteger("3623986102229003635907788753683874306021320925534678605086546150450856166623969164898305032863068499961404079437936585455865192212970734808812618120619743")); // q
+
+        ECPrivateKeySpec priKey = new ECPrivateKeySpec(
+                new BigInteger("610081804136373098219538153239847583006845519069531562982388135354890606301782255383608393423372379057665527595116827307025046458837440766121180466875860"), // d
+                spec);
+
+        ECPublicKeySpec pubKey = new ECPublicKeySpec(
+                curve.createPoint(
+                        new BigInteger("909546853002536596556690768669830310006929272546556281596372965370312498563182320436892870052842808608262832456858223580713780290717986855863433431150561"), // x
+                        new BigInteger("2921457203374425620632449734248415455640700823559488705164895837509539134297327397380287741428246088626609329139441895016863758984106326600572476822372076")), // y
+                spec);
+
+        KeyFactory f = KeyFactory.getInstance("ECGOST3410-2012", "BC");
+        PrivateKey sKey = f.generatePrivate(priKey);
+        PublicKey vKey = f.generatePublic(pubKey);
+
+
+        ECGOST3410_2012Signer signer = new ECGOST3410_2012Signer();
+        CipherParameters param = ECUtil.generatePrivateKeyParameter(sKey);
+
+        signer.init(true, new ParametersWithRandom(param, k));
+
+        byte[] rev = e.toByteArray();
+        byte[] message = new byte[rev.length];
+        for (int i = 0; i != rev.length; i++) {
+            message[i] = rev[rev.length - 1 - i];
+        }
+        BigInteger[] sig = signer.generateSignature(message);
+
+        ECPublicKey ecPublicKey = (ECPublicKey)vKey;
+        param = new ECPublicKeyParameters(
+                ecPublicKey.getQ(),
+                new ECDomainParameters(spec.getCurve(), spec.getG(), spec.getN()));
+        signer.init(false, param );
+
+        if(!signer.verifySignature(message, sig[0], sig[1])){
+            fail("ECGOST3410 2012 verification failed");
+        }
+
+        if (!r.equals(sig[0])) {
+            fail(
+                    ": r component wrong." + Strings.lineSeparator()
+                            + " expecting: " + r + Strings.lineSeparator()
+                            + " got      : " + sig[0]);
+        }
+
+        if (!s.equals(sig[1])) {
+            fail(
+                    ": s component wrong." + Strings.lineSeparator()
+                            + " expecting: " + s + Strings.lineSeparator()
+                            + " got      : " + sig[1]);
+        }
+
+
+
+    }
+
+
 
     private void signatureGost12Test(String signatureAlg, int expectedSignLen, KeyPair p)
             throws Exception {
@@ -620,7 +706,8 @@ public class GOST3410Test
     public void performTest()
             throws Exception {
         ecGOST3410Test();
-        ecGOST34102012Test();
+        ecGOST34102012256Test();
+        ecGOST34102012512Test();
         generationTest();
         parametersTest();
 
