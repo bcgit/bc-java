@@ -1,7 +1,9 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.lang.reflect.Constructor;
+import java.security.AccessController;
 import java.security.GeneralSecurityException;
+import java.security.PrivilegedAction;
 import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.Cipher;
@@ -22,8 +24,21 @@ public class JceAEADCipherImpl
     {
         try
         {
-            Class<AlgorithmParameterSpec> clazz = (Class<AlgorithmParameterSpec>)
-                Class.forName("javax.crypto.spec.GCMParameterSpec", true, IvParameterSpec.class.getClassLoader());
+            Class<AlgorithmParameterSpec> clazz = AccessController.doPrivileged(new PrivilegedAction<Class<AlgorithmParameterSpec>>()
+            {
+                public Class<AlgorithmParameterSpec> run()
+                {
+                    try
+                    {
+                        return (Class<AlgorithmParameterSpec>)
+                            Class.forName("javax.crypto.spec.GCMParameterSpec", true, IvParameterSpec.class.getClassLoader());
+                    }
+                    catch (Exception e)
+                    {
+                        return null;
+                    }
+                }
+            });
             return clazz.getConstructor(int.class, byte[].class);
         }
         catch (Exception ignore)

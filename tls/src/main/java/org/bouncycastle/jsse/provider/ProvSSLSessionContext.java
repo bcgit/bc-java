@@ -28,7 +28,7 @@ class ProvSSLSessionContext
         Class clazz = null;
         try
         {
-            clazz = ProvSSLServerSocket.class.getClassLoader().loadClass("javax.net.ssl.ExtendedSSLSession");
+            clazz = JsseUtils.loadClass(ProvSSLServerSocket.class,"javax.net.ssl.ExtendedSSLSession");
         }
         catch (Exception e)
         {

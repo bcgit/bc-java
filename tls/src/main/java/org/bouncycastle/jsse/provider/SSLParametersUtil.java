@@ -23,7 +23,7 @@ abstract class SSLParametersUtil
             {
                 try
                 {
-                    return BouncyCastleJsseProvider.class.getClassLoader().loadClass("javax.net.ssl.SSLParameters");
+                    return JsseUtils.loadClass(BouncyCastleJsseProvider.class,"javax.net.ssl.SSLParameters");
                 }
                 catch (Exception e)
                 {
