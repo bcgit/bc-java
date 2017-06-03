@@ -350,49 +350,6 @@ public class GOST3410Test
         PrivateKey sKey = f.generatePrivate(priKey);
         PublicKey vKey = f.generatePublic(pubKey);
 
-//        System.out.println(Hex.toHexString(new BigInteger("7").toByteArray()));
-//        System.out.println(Hex.toHexString(new BigInteger("43308876546767276905765904595650931995942111794451039583252968842033849580414").toByteArray()));
-//        System.out.println(Hex.toHexString(new BigInteger("57896044618658097711785492504343953926634992332820282019728792003956564821041").toByteArray()));
-//        System.out.println(Hex.toHexString(new BigInteger("57896044618658097711785492504343953927082934583725450622380973592137631069619").toByteArray()));
-//        System.out.println(Hex.toHexString(new BigInteger("2").toByteArray()));
-//        System.out.println(Hex.toHexString(new BigInteger("4018974056539037503335449422937059775635739389905545080690979365213431566280").toByteArray()));
-//        System.out.println("public:");
-//        System.out.println(Hex.toHexString(pubKey.getQ().getEncoded(true)));
-//        System.out.println(Hex.toHexString(viceVersa(pubKey.getQ().getEncoded(true))));
-//
-//
-//        byte[]          sigBytes = new byte[64];
-//        int halfSize = 32;
-//        byte[]          rb = r.toByteArray();
-//        byte[]          sb = s.toByteArray();
-//
-//        if (sb[0] != 0)
-//        {
-//            System.arraycopy(sb, 0, sigBytes, halfSize - sb.length, sb.length);
-//        }
-//        else
-//        {
-//            System.arraycopy(sb, 1, sigBytes, halfSize - (sb.length - 1), sb.length - 1);
-//        }
-//
-//        if (rb[0] != 0)
-//        {
-//            System.arraycopy(rb, 0, sigBytes, 64 - rb.length, rb.length);
-//        }
-//        else
-//        {
-//            System.arraycopy(rb, 1, sigBytes, 64 - (rb.length - 1), rb.length - 1);
-//        }
-//
-////        System.out.println(Hex.toHexString(sigBytes));
-//
-//        Signature signature = Signature.getInstance("ECGOST3410-2012-256");
-//        signature.initSign(sKey);
-//        signature.update(e.toByteArray());
-//        System.out.println(Hex.toHexString(e.toByteArray()));
-//        byte[] ss = signature.sign();
-//        System.out.println(Hex.toHexString(ss));
-
 
         ECGOST3410_2012Signer signer = new ECGOST3410_2012Signer();
         CipherParameters param = ECUtil.generatePrivateKeyParameter(sKey);
@@ -748,11 +705,11 @@ public class GOST3410Test
 
     public void performTest()
             throws Exception {
-//        ecGOST3410Test();
-//        ecGOST34102012256Test();
+        ecGOST3410Test();
+        ecGOST34102012256Test();
         ecGOST34102012512Test();
-//        generationTest();
-//        parametersTest();
+        generationTest();
+        parametersTest();
 
     }
 
