@@ -16,6 +16,7 @@ import org.bouncycastle.crypto.prng.EntropySourceProvider;
 import org.bouncycastle.crypto.prng.SP800SecureRandom;
 import org.bouncycastle.crypto.prng.SP800SecureRandomBuilder;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
+import org.bouncycastle.jcajce.provider.symmetric.util.ClassUtil;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
@@ -93,7 +94,7 @@ public class DRBG
             {
                 try
                 {
-                    Class clazz = DRBG.class.getClassLoader().loadClass(sourceClass);
+                    Class clazz = ClassUtil.loadClass(DRBG.class, sourceClass);
 
                     return (EntropySourceProvider)clazz.newInstance();
                 }
