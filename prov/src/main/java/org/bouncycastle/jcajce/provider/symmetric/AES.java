@@ -50,8 +50,6 @@ import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 
 public final class AES
 {
-    private static final Class gcmSpecClass = lookup("javax.crypto.spec.GCMParameterSpec");
-
     private static final Map<String, String> generalAesAttributes = new HashMap<String, String>();
 
     static
@@ -1027,20 +1025,6 @@ public final class AES
 
             addGMacAlgorithm(provider, "AES", PREFIX + "$AESGMAC", PREFIX + "$KeyGen128");
             addPoly1305Algorithm(provider, "AES", PREFIX + "$Poly1305", PREFIX + "$Poly1305KeyGen");
-        }
-    }
-
-    private static Class lookup(String className)
-    {
-        try
-        {
-            Class def = AES.class.getClassLoader().loadClass(className);
-
-            return def;
-        }
-        catch (Exception e)
-        {
-            return null;
         }
     }
 }

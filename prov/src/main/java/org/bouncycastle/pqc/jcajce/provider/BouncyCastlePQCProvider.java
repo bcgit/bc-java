@@ -68,24 +68,7 @@ public class BouncyCastlePQCProvider
     {
         for (int i = 0; i != names.length; i++)
         {
-            Class clazz = null;
-            try
-            {
-                ClassLoader loader = this.getClass().getClassLoader();
-
-                if (loader != null)
-                {
-                    clazz = loader.loadClass(packageName + names[i] + "$Mappings");
-                }
-                else
-                {
-                    clazz = Class.forName(packageName + names[i] + "$Mappings");
-                }
-            }
-            catch (ClassNotFoundException e)
-            {
-                // ignore
-            }
+            Class clazz = loadClass(BouncyCastlePQCProvider.class, packageName + names[i] + "$Mappings");
 
             if (clazz != null)
             {
@@ -191,5 +174,42 @@ public class BouncyCastlePQCProvider
         }
 
         return converter.generatePrivate(privateKeyInfo);
+    }
+
+    static Class loadClass(Class sourceClass, final String className)
+    {
+        try
+        {
+            ClassLoader loader = sourceClass.getClassLoader();
+            if (loader != null)
+            {
+                return loader.loadClass(className);
+            }
+            else
+            {
+                AccessController.doPrivileged(new PrivilegedAction<Class>()
+                {
+                    public Class run()
+                    {
+                        try
+                        {
+                            return Class.forName(className);
+                        }
+                        catch (Exception e)
+                        {
+                            // ignore - maybe log?
+                        }
+
+                        return null;
+                    }
+                });
+            }
+        }
+        catch (ClassNotFoundException e)
+        {
+            // ignore - maybe log?
+        }
+
+        return null;
     }
 }
