@@ -241,6 +241,16 @@ public class CMSSignedDataParser
     {
         return _signedData.getVersion().getValue().intValue();
     }
+    
+    /**
+     * Return the digest algorithms for the SignedData object
+     *
+     * @return the set of digest algorithms
+     */
+    public Set<ASN1ObjectIdentifier> getDigestAlgorithms()
+    {
+        return digests.keySet();
+    }
 
     /**
      * Return the digest algorithm identifiers for the SignedData object
