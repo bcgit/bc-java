@@ -37,7 +37,7 @@ class ProvTrustManagerFactorySpi
         Class<?> clazz = null;
         try
         {
-            clazz = JsseUtils.loadClass(ProvSSLServerSocket.class,"javax.net.ssl.X509ExtendedTrustManager");
+            clazz = JsseUtils.loadClass(ProvTrustManagerFactorySpi.class,"javax.net.ssl.X509ExtendedTrustManager");
         }
         catch (Exception e)
         {

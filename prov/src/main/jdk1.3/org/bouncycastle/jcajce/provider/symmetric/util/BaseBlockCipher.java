@@ -70,7 +70,7 @@ public class BaseBlockCipher
     extends BaseWrapCipher
     implements PBE
 {
-    private static final Class gcmSpecClass = lookup("javax.crypto.spec.GCMParameterSpec");
+    private static final Class gcmSpecClass = ClassUtil.loadClass(BaseBlockCipher.class, "javax.crypto.spec.GCMParameterSpec");
 
     //
     // specs we can handle.
@@ -103,20 +103,6 @@ public class BaseBlockCipher
     private String                  pbeAlgorithm = null;
 
     private String                  modeName = null;
-
-    private static Class lookup(String className)
-    {
-        try
-        {
-            Class def = BaseBlockCipher.class.getClassLoader().loadClass(className);
-
-            return def;
-        }
-        catch (Exception e)
-        {
-            return null;
-        }
-    }
 
     protected BaseBlockCipher(
         BlockCipher engine)

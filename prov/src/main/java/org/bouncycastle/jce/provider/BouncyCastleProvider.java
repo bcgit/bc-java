@@ -15,6 +15,7 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
+import org.bouncycastle.jcajce.provider.symmetric.util.ClassUtil;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
@@ -210,24 +211,7 @@ public final class BouncyCastleProvider extends Provider
     {
         for (int i = 0; i != names.length; i++)
         {
-            Class clazz = null;
-            try
-            {
-                ClassLoader loader = this.getClass().getClassLoader();
-
-                if (loader != null)
-                {
-                    clazz = loader.loadClass(packageName + names[i] + "$Mappings");
-                }
-                else
-                {
-                    clazz = Class.forName(packageName + names[i] + "$Mappings");
-                }
-            }
-            catch (ClassNotFoundException e)
-            {
-                // ignore
-            }
+            Class clazz = ClassUtil.loadClass(BouncyCastleProvider.class, packageName + names[i] + "$Mappings");
 
             if (clazz != null)
             {
