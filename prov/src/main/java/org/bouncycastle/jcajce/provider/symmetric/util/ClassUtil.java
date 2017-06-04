@@ -10,7 +10,6 @@ public class ClassUtil
         try
         {
             ClassLoader loader = sourceClass.getClassLoader();
-            Class clazz = null;
 
             if (loader != null)
             {
