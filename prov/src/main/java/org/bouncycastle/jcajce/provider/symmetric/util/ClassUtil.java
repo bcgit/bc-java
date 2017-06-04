@@ -10,13 +10,15 @@ public class ClassUtil
         try
         {
             ClassLoader loader = sourceClass.getClassLoader();
+            Class clazz = null;
+
             if (loader != null)
             {
                 return loader.loadClass(className);
             }
             else
             {
-                AccessController.doPrivileged(new PrivilegedAction<Class>()
+                return AccessController.doPrivileged(new PrivilegedAction<Class>()
                 {
                     public Class run()
                     {
