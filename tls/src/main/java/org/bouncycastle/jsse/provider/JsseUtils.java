@@ -344,7 +344,7 @@ abstract class JsseUtils
             }
             else
             {
-                AccessController.doPrivileged(new PrivilegedAction<Class>()
+                return AccessController.doPrivileged(new PrivilegedAction<Class>()
                 {
                     public Class run()
                     {
