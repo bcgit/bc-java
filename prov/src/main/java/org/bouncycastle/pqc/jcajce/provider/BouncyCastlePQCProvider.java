@@ -187,7 +187,7 @@ public class BouncyCastlePQCProvider
             }
             else
             {
-                AccessController.doPrivileged(new PrivilegedAction<Class>()
+                return AccessController.doPrivileged(new PrivilegedAction<Class>()
                 {
                     public Class run()
                     {
