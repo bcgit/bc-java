@@ -19,7 +19,7 @@ public class ASN1ObjectIdentifier
     private byte[] body;
 
     /**
-     * return an OID from the passed in object
+     * Return an OID from the passed in object
      *
      * @param obj an ASN1ObjectIdentifier or an object that can be converted into one.
      * @return an ASN1ObjectIdentifier instance, or null.
@@ -55,7 +55,7 @@ public class ASN1ObjectIdentifier
     }
 
     /**
-     * return an Object Identifier from a tagged object.
+     * Return an OBJECT IDENTIFIER from a tagged object.
      *
      * @param obj      the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
@@ -217,7 +217,7 @@ public class ASN1ObjectIdentifier
     }
 
     /**
-     * Return  true if this oid is an extension of the passed in branch, stem.
+     * Return true if this oid is an extension of the passed in branch - stem.
      *
      * @param stem the arc or branch that is a possible parent.
      * @return true if the branch is on the passed in stem, false otherwise.

@@ -1,7 +1,7 @@
 package org.bouncycastle.asn1;
 
 /**
- * General interface implemented by ASN.1 STRING objects.
+ * General interface implemented by ASN.1 STRING objects for extracting the content String.
  */
 public interface ASN1String
 {

@@ -28,7 +28,7 @@ public class ASN1Boolean
     public static final ASN1Boolean TRUE  = new ASN1Boolean(true);
 
     /**
-     * return a boolean from the passed in object.
+     * Return a boolean from the passed in object.
      *
      * @param obj an ASN1Boolean or an object that can be converted into one.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -59,7 +59,7 @@ public class ASN1Boolean
     }
 
     /**
-     * return an ASN1Boolean from the passed in boolean.
+     * Return an ASN1Boolean from the passed in boolean.
      * @param value true or false depending on the ASN1Boolean wanted.
      * @return an ASN1Boolean instance.
      */
@@ -70,7 +70,7 @@ public class ASN1Boolean
     }
 
     /**
-     * return an ASN1Boolean from the passed in value.
+     * Return an ASN1Boolean from the passed in value.
      * @param value non-zero (true) or zero (false) depending on the ASN1Boolean wanted.
      * @return an ASN1Boolean instance.
      */
@@ -81,7 +81,7 @@ public class ASN1Boolean
     }
 
     /**
-     * return a Boolean from a tagged object.
+     * Return a Boolean from a tagged object.
      *
      * @param obj the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly

@@ -14,7 +14,20 @@ public class DERExternal
     private ASN1Primitive dataValueDescriptor;
     private int encoding;
     private ASN1Primitive externalContent;
-    
+
+    /**
+     * Construct a DER EXTERNAL object, the input encoding vector must have exactly two elements on it.
+     * <p>
+     * Acceptable input formats are:
+     * <ul>
+     * <li> {@link ASN1ObjectIdentifier} + data {@link DERTaggedObject} (direct reference form)</li>
+     * <li> {@link ASN1Integer} + data {@link DERTaggedObject} (indirect reference form)</li>
+     * <li> Anything but {@link DERTaggedObject} + data {@link DERTaggedObject} (data value form)</li>
+     * </ul>
+     * </p>
+     *
+     * @throws IllegalArgumentException if input size is wrong, or
+     */
     public DERExternal(ASN1EncodableVector vector)
     {
         int offset = 0;
