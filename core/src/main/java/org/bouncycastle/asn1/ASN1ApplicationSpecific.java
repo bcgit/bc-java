@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.bouncycastle.util.Arrays;
 
 /**
- * Base class for an application specific object
+ * Base class for an ASN.1 ApplicationSpecific object
  */
 public abstract class ASN1ApplicationSpecific
     extends ASN1Primitive

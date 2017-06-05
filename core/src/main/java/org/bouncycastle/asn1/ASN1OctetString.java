@@ -16,7 +16,6 @@ import org.bouncycastle.util.encoders.Hex;
  * DER form is always primitive single OCTET STRING, while
  * BER support includes the constructed forms.
  * </p>
- * <hr>
  * <p><b>X.690</b></p>
  * <p><b>8: Basic encoding rules</b></p>
  * <p><b>8.7 Encoding of an octetstring value</b></p>

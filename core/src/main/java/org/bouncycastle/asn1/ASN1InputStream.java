@@ -9,7 +9,7 @@ import java.io.InputStream;
 import org.bouncycastle.util.io.Streams;
 
 /**
- * a general purpose ASN.1 decoder - note: this class differs from the
+ * A general purpose ASN.1 decoder - note: this class differs from the
  * others in that it returns null after it has read the last object in
  * the stream. If an ASN.1 NULL is encountered a DER/BER Null object is
  * returned.
