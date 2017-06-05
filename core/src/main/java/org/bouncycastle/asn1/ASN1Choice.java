@@ -8,7 +8,6 @@ package org.bouncycastle.asn1;
  * If you use this interface your class should also implement the getInstance()
  * pattern which takes a tag object and the tagging mode used.
  * </p>
- * <hr>
  * <p><b>X.690</b></p>
  * <p><b>8: Basic encoding rules</b></p>
  * <p><b>8.13 Encoding of a choice value </b></p>

@@ -14,7 +14,7 @@ public class ASN1Integer
     private final byte[] bytes;
 
     /**
-     * return an integer from the passed in object
+     * Return an integer from the passed in object.
      *
      * @param obj an ASN1Integer or an object that can be converted into one.
      * @throws IllegalArgumentException if the object cannot be converted.
@@ -44,7 +44,7 @@ public class ASN1Integer
     }
 
     /**
-     * return an Integer from a tagged object.
+     * Return an Integer from a tagged object.
      *
      * @param obj      the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
@@ -69,18 +69,33 @@ public class ASN1Integer
         }
     }
 
+    /**
+     * Construct an INTEGER from the passed in long value.
+     *
+     * @param value the long representing the value desired.
+     */
     public ASN1Integer(
         long value)
     {
         bytes = BigInteger.valueOf(value).toByteArray();
     }
 
+    /**
+     * Construct an INTEGER from the passed in BigInteger value.
+     *
+     * @param value the BigInteger representing the value desired.
+     */
     public ASN1Integer(
         BigInteger value)
     {
         bytes = value.toByteArray();
     }
 
+    /**
+     * Construct an INTEGER from the passed in byte array.
+     *
+     * @param bytes the byte array representing a 2's complement encoding of a BigInteger.
+     */
     public ASN1Integer(
         byte[] bytes)
     {

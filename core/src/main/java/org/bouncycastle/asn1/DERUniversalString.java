@@ -6,7 +6,8 @@ import java.io.IOException;
 import org.bouncycastle.util.Arrays;
 
 /**
- * DER UniversalString object.
+ * DER UniversalString object - encodes UNICODE (ISO 10646) characters using 32-bit format. In Java we
+ * have no way of representing this directly so we rely on byte arrays to carry these.
  */
 public class DERUniversalString
     extends ASN1Primitive
@@ -16,7 +17,7 @@ public class DERUniversalString
     private final byte[] string;
     
     /**
-     * return a Universal String from the passed in object.
+     * Return a Universal String from the passed in object.
      *
      * @param obj a DERUniversalString or an object that can be converted into one.
      * @exception IllegalArgumentException if the object cannot be converted.
@@ -46,7 +47,7 @@ public class DERUniversalString
     }
 
     /**
-     * return a Universal String from a tagged object.
+     * Return a Universal String from a tagged object.
      *
      * @param obj the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
@@ -72,7 +73,7 @@ public class DERUniversalString
     }
 
     /**
-     * basic constructor - byte encoded string.
+     * Basic constructor - byte encoded string.
      *
      * @param string the byte encoding of the string to be carried in the UniversalString object,
      */

@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Parse for DER encoded OCTET STRINGS
+ * Parser for DER encoded OCTET STRINGS
  */
 public class DEROctetStringParser
     implements ASN1OctetStringParser

@@ -16,6 +16,30 @@ import org.bouncycastle.util.Strings;
  * <p>
  * The main difference between these and UTC time is a 4 digit year.
  * </p>
+ * <p>
+ * One second resolution date+time on UTC timezone (Z)
+ * with 4 digit year (valid from 0001 to 9999).
+ * </p><p>
+ * Timestamp format is:  yyyymmddHHMMSS'Z'
+ * </p><p>
+ * <h2>X.690</h2>
+ * This is what is called "restricted string",
+ * and it uses ASCII characters to encode digits and supplemental data.
+ *
+ * <h3>11: Restrictions on BER employed by both CER and DER</h3>
+ * <h4>11.7 GeneralizedTime </h4>
+ * <b>11.7.1</b> The encoding shall terminate with a "Z",
+ * as described in the ITU-T Rec. X.680 | ISO/IEC 8824-1 clause on
+ * GeneralizedTime.
+ * </p><p>
+ * <b>11.7.2</b> The seconds element shall always be present.
+ * </p>
+ * <p>
+ * <b>11.7.3</b> The fractional-seconds elements, if present,
+ * shall omit all trailing zeros; if the elements correspond to 0,
+ * they shall be wholly omitted, and the decimal point element also
+ * shall be omitted.
+ * </p>
  */
 public class ASN1GeneralizedTime
     extends ASN1Primitive

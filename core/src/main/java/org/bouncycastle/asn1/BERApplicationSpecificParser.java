@@ -3,7 +3,7 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 
 /**
- * A parser for indefinite-length application specific objects.
+ * A parser for indefinite-length ASN.1 ApplicationSpecific objects.
  */
 public class BERApplicationSpecificParser
     implements ASN1ApplicationSpecificParser

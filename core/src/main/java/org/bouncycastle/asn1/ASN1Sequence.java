@@ -50,9 +50,11 @@ import org.bouncycastle.util.Arrays;
  *
  * <p><b>11: Restrictions on BER employed by both CER and DER</b></p>
  * <p><b>11.5 Set and sequence components with default value</b></p>
+ * <p>
  * The encoding of a set value or sequence value shall not include
  * an encoding for any component value which is equal to
  * its default value.
+ * </p>
  */
 public abstract class ASN1Sequence
     extends ASN1Primitive
@@ -103,7 +105,7 @@ public abstract class ASN1Sequence
     }
 
     /**
-     * Return an ASN1 sequence from a tagged object. There is a special
+     * Return an ASN1 SEQUENCE from a tagged object. There is a special
      * case here, if an object appears to have been explicitly tagged on 
      * reading but we were expecting it to be implicitly tagged in the 
      * normal course of events it indicates that we lost the surrounding
@@ -163,14 +165,14 @@ public abstract class ASN1Sequence
     }
 
     /**
-     * Create an empty sequence
+     * Create an empty SEQUENCE
      */
     protected ASN1Sequence()
     {
     }
 
     /**
-     * Create a sequence containing one object
+     * Create a SEQUENCE containing one object.
      * @param obj the object to be put in the SEQUENCE.
      */
     protected ASN1Sequence(
@@ -180,8 +182,8 @@ public abstract class ASN1Sequence
     }
 
     /**
-     * Create a sequence containing a vector of objects.
-     * @param v the vector of objects to be put in the SEQUENCE
+     * Create a SEQUENCE containing a vector of objects.
+     * @param v the vector of objects to be put in the SEQUENCE.
      */
     protected ASN1Sequence(
         ASN1EncodableVector v)
@@ -192,8 +194,9 @@ public abstract class ASN1Sequence
         }
     }
 
-    /*
-     * Create a sequence containing a vector of objects.
+    /**
+     * Create a SEQUENCE containing an array of objects.
+     * @param array the array of objects to be put in the SEQUENCE.
      */
     protected ASN1Sequence(
         ASN1Encodable[]   array)
