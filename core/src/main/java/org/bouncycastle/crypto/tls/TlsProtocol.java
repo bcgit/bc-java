@@ -414,28 +414,26 @@ public abstract class TlsProtocol
                     cleanupHandshake();
                 }
 
-                throw new IOException("Fatal alert received from TLS peer: " + AlertDescription.getText(description));
+                throw new TlsFatalAlertReceived(description);
             }
-            else
-            {
-                /*
-                 * RFC 5246 7.2.1. The other party MUST respond with a close_notify alert of its own
-                 * and close down the connection immediately, discarding any pending writes.
-                 */
-                if (description == AlertDescription.close_notify)
-                {
-                    if (!appDataReady)
-                    {
-                        throw new TlsFatalAlert(AlertDescription.handshake_failure);
-                    }
-                    handleClose(false);
-                }
 
-                /*
-                 * If it is just a warning, we continue.
-                 */
-                handleWarningMessage(description);
+            /*
+             * RFC 5246 7.2.1. The other party MUST respond with a close_notify alert of its own
+             * and close down the connection immediately, discarding any pending writes.
+             */
+            if (description == AlertDescription.close_notify)
+            {
+                if (!appDataReady)
+                {
+                    throw new TlsFatalAlert(AlertDescription.handshake_failure);
+                }
+                handleClose(false);
             }
+
+            /*
+             * If it is just a warning, we continue.
+             */
+            handleWarningMessage(description);
         }
     }
 
