@@ -318,15 +318,15 @@ public class IESEngine
             System.arraycopy(K, 0, K1, 0, K1.length);
             System.arraycopy(K, K1.length, K2, 0, K2.length);
 
+            CipherParameters cp = new KeyParameter(K1);
+
             // If IV provide use it to initialize the cipher
             if (IV != null)
             {
-                cipher.init(false, new ParametersWithIV(new KeyParameter(K1), IV));
+                cp = new ParametersWithIV(cp, IV);
             }
-            else
-            {
-                cipher.init(false, new KeyParameter(K1));
-            }
+
+            cipher.init(false, cp);
 
             M = new byte[cipher.getOutputSize(inLen - V.length - mac.getMacSize())];
 
