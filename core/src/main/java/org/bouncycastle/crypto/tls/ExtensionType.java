@@ -97,6 +97,16 @@ public class ExtensionType
     public static final int extended_master_secret = 23;
 
     /*
+     * draft-ietf-tokbind-negotiation-08
+     */
+    public static final int DRAFT_token_binding = 24;
+
+    /*
+     * RFC 7924
+     */
+    public static final int cached_info = 25;
+
+    /*
      * RFC 5077 7.
      */
     public static final int session_ticket = 35;
