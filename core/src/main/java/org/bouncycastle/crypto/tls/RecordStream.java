@@ -23,7 +23,7 @@ class RecordStream
     private OutputStream output;
     private TlsCompression pendingCompression = null, readCompression = null, writeCompression = null;
     private TlsCipher pendingCipher = null, readCipher = null, writeCipher = null;
-    private long readSeqNo = 0, writeSeqNo = 0;
+    private SequenceNumber readSeqNo = new SequenceNumber(), writeSeqNo = new SequenceNumber();
     private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
     private TlsHandshakeHash handshakeHash = null;
@@ -113,7 +113,7 @@ class RecordStream
         }
         this.writeCompression = this.pendingCompression;
         this.writeCipher = this.pendingCipher;
-        this.writeSeqNo = 0;
+        this.writeSeqNo = new SequenceNumber();
     }
 
     void receivedReadCipherSpec()
@@ -125,7 +125,7 @@ class RecordStream
         }
         this.readCompression = this.pendingCompression;
         this.readCipher = this.pendingCipher;
-        this.readSeqNo = 0;
+        this.readSeqNo = new SequenceNumber();
     }
 
     void finaliseHandshake()
@@ -227,7 +227,9 @@ class RecordStream
         throws IOException
     {
         byte[] buf = TlsUtils.readFully(len, input);
-        byte[] decoded = readCipher.decodeCiphertext(readSeqNo++, type, buf, 0, buf.length);
+
+        long seqNo = readSeqNo.nextValue(AlertDescription.unexpected_message);
+        byte[] decoded = readCipher.decodeCiphertext(seqNo, type, buf, 0, buf.length);
 
         checkLength(decoded.length, compressedLimit, AlertDescription.record_overflow);
 
@@ -293,10 +295,12 @@ class RecordStream
 
         OutputStream cOut = writeCompression.compress(buffer);
 
+        long seqNo = writeSeqNo.nextValue(AlertDescription.internal_error);
+
         byte[] ciphertext;
         if (cOut == buffer)
         {
-            ciphertext = writeCipher.encodePlaintext(writeSeqNo++, type, plaintext, plaintextOffset, plaintextLength);
+            ciphertext = writeCipher.encodePlaintext(seqNo, type, plaintext, plaintextOffset, plaintextLength);
         }
         else
         {
@@ -310,7 +314,7 @@ class RecordStream
              */
             checkLength(compressed.length, plaintextLength + 1024, AlertDescription.internal_error);
 
-            ciphertext = writeCipher.encodePlaintext(writeSeqNo++, type, compressed, 0, compressed.length);
+            ciphertext = writeCipher.encodePlaintext(seqNo, type, compressed, 0, compressed.length);
         }
 
         /*
@@ -403,6 +407,26 @@ class RecordStream
         if (length > limit)
         {
             throw new TlsFatalAlert(alertDescription);
+        }
+    }
+
+    private static class SequenceNumber
+    {
+        private long value = 0L;
+        private boolean exhausted = false;
+
+        synchronized long nextValue(short alertDescription) throws TlsFatalAlert
+        {
+            if (exhausted)
+            {
+                throw new TlsFatalAlert(alertDescription);
+            }
+            long result = value;
+            if (++value == 0)
+            {
+                exhausted = true;
+            }
+            return result;
         }
     }
 }
