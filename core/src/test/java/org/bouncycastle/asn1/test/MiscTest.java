@@ -25,26 +25,6 @@ import org.bouncycastle.util.test.SimpleTest;
 public class MiscTest
     extends SimpleTest
 {
-    private boolean isSameAs(
-        byte[]  a,
-        byte[]  b)
-    {
-        if (a.length != b.length)
-        {
-            return false;
-        }
-        
-        for (int i = 0; i != a.length; i++)
-        {
-            if (a[i] != b[i])
-            {
-                return false;
-            }
-        }
-        
-        return true;
-    }
-
     public void shouldFailOnExtraData()
         throws Exception
     {
@@ -134,7 +114,7 @@ public class MiscTest
 
         ASN1Primitive[] readValues = new ASN1Primitive[values.length];
 
-        if (!isSameAs(bOut.toByteArray(), data))
+        if (!areEqual(bOut.toByteArray(), data))
         {
             fail("Failed data check");
         }
