@@ -340,7 +340,7 @@ public class ArmoredOutputStream
 
             if (headers.containsKey(VERSION_HDR))
             {
-                writeHeaderEntry(VERSION_HDR, (String)headers.get("Version"));
+                writeHeaderEntry(VERSION_HDR, (String)headers.get(VERSION_HDR));
             }
 
             Enumeration e = headers.keys();
