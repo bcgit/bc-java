@@ -91,8 +91,14 @@ public class DHAgreement
 
         BigInteger p = dhParams.getP();
 
-        BigInteger result = pub.getY().modPow(privateValue, p);
-        if (result.compareTo(ONE) == 0)
+        BigInteger peerY = pub.getY();
+        if (peerY == null || peerY.compareTo(ONE) <= 0 || peerY.compareTo(p.subtract(ONE)) >= 0)
+        {
+            throw new IllegalArgumentException("Diffie-Hellman public key is weak");
+        }
+
+        BigInteger result = peerY.modPow(privateValue, p);
+        if (result.equals(ONE))
         {
             throw new IllegalStateException("Shared key can't be 1");
         }

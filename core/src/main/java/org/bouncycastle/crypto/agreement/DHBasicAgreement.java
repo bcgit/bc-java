@@ -68,8 +68,16 @@ public class DHBasicAgreement
             throw new IllegalArgumentException("Diffie-Hellman public key has wrong parameters.");
         }
 
-        BigInteger result = pub.getY().modPow(key.getX(), dhParams.getP());
-        if (result.compareTo(ONE) == 0)
+        BigInteger p = dhParams.getP();
+
+        BigInteger peerY = pub.getY();
+        if (peerY == null || peerY.compareTo(ONE) <= 0 || peerY.compareTo(p.subtract(ONE)) >= 0)
+        {
+            throw new IllegalArgumentException("Diffie-Hellman public key is weak");
+        }
+
+        BigInteger result = peerY.modPow(key.getX(), p);
+        if (result.equals(ONE))
         {
             throw new IllegalStateException("Shared key can't be 1");
         }
