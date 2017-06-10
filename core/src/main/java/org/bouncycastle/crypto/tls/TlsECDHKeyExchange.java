@@ -172,6 +172,11 @@ public class TlsECDHKeyExchange extends AbstractTlsKeyExchange
 
     public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException
     {
+        if (keyExchange == KeyExchangeAlgorithm.ECDH_anon)
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
+
         /*
          * RFC 4492 3. [...] The ECDSA_fixed_ECDH and RSA_fixed_ECDH mechanisms are usable with
          * ECDH_ECDSA and ECDH_RSA. Their use with ECDHE_ECDSA and ECDHE_RSA is prohibited because

@@ -170,6 +170,11 @@ public class TlsDHKeyExchange
     public void validateCertificateRequest(CertificateRequest certificateRequest)
         throws IOException
     {
+        if (keyExchange == KeyExchangeAlgorithm.DH_anon)
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
+
         short[] types = certificateRequest.getCertificateTypes();
         for (int i = 0; i < types.length; ++i)
         {
