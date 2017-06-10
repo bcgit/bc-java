@@ -250,6 +250,7 @@ public class GCMBlockCipher
     public void processAADByte(byte in)
     {
         checkStatus();
+
         atBlock[atBlockPos] = in;
         if (++atBlockPos == BLOCK_SIZE)
         {
@@ -262,6 +263,8 @@ public class GCMBlockCipher
 
     public void processAADBytes(byte[] in, int inOff, int len)
     {
+        checkStatus();
+
         for (int i = 0; i < len; ++i)
         {
             atBlock[atBlockPos] = in[inOff + i];
@@ -300,7 +303,7 @@ public class GCMBlockCipher
         throws DataLengthException
     {
         checkStatus();
-        
+
         bufBlock[bufOff] = in;
         if (++bufOff == bufBlock.length)
         {
