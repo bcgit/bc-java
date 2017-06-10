@@ -55,10 +55,9 @@ public class EncryptionAlgorithm
     public static final int CAMELLIA_256_GCM = 20;
 
     /*
-     * draft-ietf-tls-chacha20-poly1305-04
+     * RFC 7905
      */
-    public static final int CHACHA20_POLY1305 = 102;
-    /** @deprecated */ public static final int AEAD_CHACHA20_POLY1305 = CHACHA20_POLY1305;
+    public static final int CHACHA20_POLY1305 = 21;
 
     /*
      * draft-zauner-tls-aes-ocb-04
