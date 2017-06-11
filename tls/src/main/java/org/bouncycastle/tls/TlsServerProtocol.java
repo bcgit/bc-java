@@ -392,12 +392,12 @@ public class TlsServerProtocol
         }
     }
 
-    protected void handleWarningMessage(short description)
+    protected void handleAlertWarningMessage(short alertDescription)
         throws IOException
     {
-        super.handleWarningMessage(description);
+        super.handleAlertWarningMessage(alertDescription);
 
-        switch (description)
+        switch (alertDescription)
         {
         case AlertDescription.no_certificate:
         {
