@@ -141,16 +141,7 @@ public class JcaTlsCrypto
 
     public TlsNonceGenerator createNonceGenerator(byte[] additionalSeedMaterial)
     {
-        // TODO[tls-jcajce] Implement per-call nonce generators
-        return new TlsNonceGenerator()
-        {
-            public byte[] generateNonce(int size)
-            {
-                byte[] nonce = new byte[size];
-                nonceEntropySource.nextBytes(nonce);
-                return nonce;
-            }
-        };
+        return new JcaNonceGenerator(nonceEntropySource, additionalSeedMaterial);
     }
 
     public SecureRandom getSecureRandom()
