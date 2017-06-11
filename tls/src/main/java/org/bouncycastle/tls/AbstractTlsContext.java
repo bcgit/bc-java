@@ -1,12 +1,33 @@
 package org.bouncycastle.tls;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.Times;
 
 abstract class AbstractTlsContext
     implements TlsContext
 {
+    private static long counter = Times.nanoTime();
+
+    private synchronized static long nextCounterValue()
+    {
+        return ++counter;
+    }
+
+    private static TlsNonceGenerator createNonceGenerator(TlsCrypto crypto, SecurityParameters securityParameters)
+    {
+        byte[] additionalSeedMaterial = new byte[16];
+        Pack.longToBigEndian(nextCounterValue(), additionalSeedMaterial, 0);
+        Pack.longToBigEndian(Times.nanoTime(), additionalSeedMaterial, 8);
+        additionalSeedMaterial[0] = (byte)securityParameters.entity;
+
+        return crypto.createNonceGenerator(additionalSeedMaterial);
+    }
+
     private TlsCrypto crypto;
+    private TlsNonceGenerator nonceGenerator;
     private SecurityParameters securityParameters;
 
     private ProtocolVersion clientVersion = null;
@@ -17,12 +38,18 @@ abstract class AbstractTlsContext
     AbstractTlsContext(TlsCrypto crypto, SecurityParameters securityParameters)
     {
         this.crypto = crypto;
+        this.nonceGenerator = createNonceGenerator(crypto, securityParameters);
         this.securityParameters = securityParameters;
     }
 
     public TlsCrypto getCrypto()
     {
         return crypto;
+    }
+
+    public TlsNonceGenerator getNonceGenerator()
+    {
+        return nonceGenerator;
     }
 
     public SecurityParameters getSecurityParameters()

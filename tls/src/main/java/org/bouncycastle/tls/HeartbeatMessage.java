@@ -49,7 +49,7 @@ public class HeartbeatMessage
         TlsUtils.writeUint16(payload.length, output);
         output.write(payload);
 
-        byte[] padding = context.getCrypto().createNonce(paddingLength);
+        byte[] padding = context.getNonceGenerator().generateNonce(paddingLength);
         output.write(padding);
     }
 

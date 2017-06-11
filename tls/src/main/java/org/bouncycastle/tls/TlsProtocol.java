@@ -1198,7 +1198,7 @@ public abstract class TlsProtocol
 
     protected static byte[] createRandomBlock(boolean useGMTUnixTime, TlsContext context)
     {
-        byte[] result = context.getCrypto().createNonce(32);
+        byte[] result = context.getNonceGenerator().generateNonce(32);
 
         if (useGMTUnixTime)
         {

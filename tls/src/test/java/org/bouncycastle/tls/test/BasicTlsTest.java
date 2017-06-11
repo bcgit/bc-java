@@ -25,6 +25,7 @@ import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -246,6 +247,11 @@ public class BasicTlsTest
         public TlsCrypto getCrypto()
         {
             return crypto;
+        }
+
+        public TlsNonceGenerator getNonceGenerator()
+        {
+            throw new UnsupportedOperationException();
         }
 
         public SecureRandom getSecureRandom()
