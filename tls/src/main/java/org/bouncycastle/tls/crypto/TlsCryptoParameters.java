@@ -40,4 +40,9 @@ public class TlsCryptoParameters
     {
         return context.isServer();
     }
+
+    public TlsNonceGenerator getNonceGenerator()
+    {
+        return context.getNonceGenerator();
+    }
 }

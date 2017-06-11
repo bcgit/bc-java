@@ -35,6 +35,7 @@ import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsMAC;
+import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.tls.crypto.TlsSRP6Client;
 import org.bouncycastle.tls.crypto.TlsSRP6Server;
 import org.bouncycastle.tls.crypto.TlsSRP6VerifierGenerator;
@@ -138,13 +139,18 @@ public class JcaTlsCrypto
         }
     }
 
-    public byte[] createNonce(int size)
+    public TlsNonceGenerator createNonceGenerator(byte[] additionalSeedMaterial)
     {
-        byte[] nonce = new byte[size];
-
-        nonceEntropySource.nextBytes(nonce);
-
-        return nonce;
+        // TODO[tls-jcajce] Implement per-call nonce generators
+        return new TlsNonceGenerator()
+        {
+            public byte[] generateNonce(int size)
+            {
+                byte[] nonce = new byte[size];
+                nonceEntropySource.nextBytes(nonce);
+                return nonce;
+            }
+        };
     }
 
     public SecureRandom getSecureRandom()

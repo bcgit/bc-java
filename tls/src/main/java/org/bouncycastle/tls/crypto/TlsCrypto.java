@@ -182,12 +182,15 @@ public interface TlsCrypto
         throws IOException;
 
     /**
-     * Create a nonce byte[] string.
+     * Create a nonce generator. Each call should construct a new generator, and the generator
+     * should be returned from this call only after automatically seeding from this
+     * {@link TlsCrypto}'s entropy source, and from the provided additional seed material. The
+     * output of each returned generator must be completely independent of the others.
      *
-     * @param size the length, in bytes, of the nonce to generate.
-     * @return the nonce value.
+     * @param additionalSeedMaterial context-specific seed material
+     * @return a {@link TlsNonceGenerator}
      */
-    byte[] createNonce(int size);
+    TlsNonceGenerator createNonceGenerator(byte[] additionalSeedMaterial);
 
     /**
      * Create an SRP-6 client.

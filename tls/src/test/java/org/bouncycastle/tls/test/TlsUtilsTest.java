@@ -15,6 +15,7 @@ import org.bouncycastle.tls.TlsServerContext;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 
 public class TlsUtilsTest
     extends TestCase
@@ -27,6 +28,11 @@ public class TlsUtilsTest
         TlsContext context = new TlsServerContext()
         {
             public TlsCrypto getCrypto()
+            {
+                return null;
+            }
+
+            public TlsNonceGenerator getNonceGenerator()
             {
                 return null;
             }

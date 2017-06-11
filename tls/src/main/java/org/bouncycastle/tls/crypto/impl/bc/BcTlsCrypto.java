@@ -65,6 +65,7 @@ import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsMAC;
+import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.tls.crypto.TlsSRP6Client;
 import org.bouncycastle.tls.crypto.TlsSRP6Server;
 import org.bouncycastle.tls.crypto.TlsSRP6VerifierGenerator;
@@ -82,7 +83,6 @@ import org.bouncycastle.tls.crypto.impl.TlsNullCipher;
 import org.bouncycastle.tls.crypto.impl.TlsStreamCipher;
 import org.bouncycastle.tls.crypto.impl.TlsStreamCipherImpl;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Times;
 
 /**
  * Class for providing cryptographic services for TLS based on implementations in the BC light-weight API.
@@ -94,38 +94,16 @@ import org.bouncycastle.util.Times;
 public class BcTlsCrypto
     extends AbstractTlsCrypto
 {
-    private final DigestRandomGenerator nonceGen;
     private final SecureRandom entropySource;
 
     public BcTlsCrypto(SecureRandom entropySource)
     {
         this.entropySource = entropySource;
-
-        Digest digest = createDigest(HashAlgorithm.sha256);
-
-        nonceGen = new DigestRandomGenerator(digest);
-
-        nonceGen.addSeedMaterial(nextCounterValue());
-        nonceGen.addSeedMaterial(Times.nanoTime());
-
-        byte[] seed = new byte[digest.getDigestSize()];
-        entropySource.nextBytes(seed);
-
-        nonceGen.addSeedMaterial(seed);
     }
 
     BcTlsSecret adoptLocalSecret(byte[] data)
     {
         return new BcTlsSecret(this, data);
-    }
-
-    public byte[] createNonce(int size)
-    {
-        byte[] nonce = new byte[size];
-
-        nonceGen.nextBytes(nonce);
-
-        return nonce;
     }
 
     public SecureRandom getSecureRandom()
@@ -244,6 +222,31 @@ public class BcTlsCrypto
                      */
                     throw new TlsFatalAlert(AlertDescription.internal_error, e);
                 }
+            }
+        };
+    }
+
+    public TlsNonceGenerator createNonceGenerator(byte[] additionalSeedMaterial)
+    {
+        final DigestRandomGenerator nonceGen = new DigestRandomGenerator(createDigest(HashAlgorithm.sha256));
+
+        if (additionalSeedMaterial != null && additionalSeedMaterial.length > 0)
+        {
+            nonceGen.addSeedMaterial(additionalSeedMaterial);
+        }
+
+        byte[] seed = new byte[createDigest(HashAlgorithm.sha256).getDigestSize()];
+        entropySource.nextBytes(seed);
+
+        nonceGen.addSeedMaterial(seed);
+
+        return new TlsNonceGenerator()
+        {
+            public byte[] generateNonce(int size)
+            {
+                byte[] nonce = new byte[size];
+                nonceGen.nextBytes(nonce);
+                return nonce;
             }
         };
     }
@@ -1034,12 +1037,5 @@ public class BcTlsCrypto
         {
             hmac.reset();
         }
-    }
-
-    private static long counter = Times.nanoTime();
-
-    private synchronized static long nextCounterValue()
-    {
-        return ++counter;
     }
 }
