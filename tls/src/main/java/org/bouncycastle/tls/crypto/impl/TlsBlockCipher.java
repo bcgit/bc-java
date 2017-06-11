@@ -36,7 +36,7 @@ public class TlsBlockCipher
     {
         this.cryptoParams = cryptoParams;
         this.crypto = crypto;
-        this.randomData = crypto.createNonce(256);
+        this.randomData = cryptoParams.getNonceGenerator().generateNonce(256);
 
         this.useExplicitIV = TlsImplUtils.isTLSv11(cryptoParams);
         this.encryptThenMAC = cryptoParams.getSecurityParameters().isEncryptThenMAC();
@@ -186,7 +186,7 @@ public class TlsBlockCipher
 
         if (useExplicitIV)
         {
-            byte[] explicitIV = crypto.createNonce(blockSize);
+            byte[] explicitIV = cryptoParams.getNonceGenerator().generateNonce(blockSize);
 
             encryptCipher.init(explicitIV);
 
