@@ -1,24 +1,15 @@
 package org.bouncycastle.tls.crypto;
 
-import java.io.IOException;
-
+import org.bouncycastle.tls.TlsException;
 
 /**
  * Basic exception class for crypto services to pass back a cause.
  */
 public class TlsCryptoException
-    extends IOException
+    extends TlsException
 {
-    private final Throwable cause;
-
     public TlsCryptoException(String msg, Throwable cause)
     {
-        super(msg);
-        this.cause = cause;
-    }
-
-    public Throwable getCause()
-    {
-        return cause;
+        super(msg, cause);
     }
 }
