@@ -89,24 +89,19 @@ public class TlsUtilsTest
         };
 
         short signatureAlgorithm = TlsUtils.getSignatureAlgorithm(keyExchangeAlgorithm);
+
         Vector supportedSignatureAlgorithms = getSignatureAlgorithms(false);
-
         SignatureAndHashAlgorithm sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
-                          supportedSignatureAlgorithms, signatureAlgorithm);
-
+            supportedSignatureAlgorithms, signatureAlgorithm);
         assertEquals(HashAlgorithm.sha256, sigAlg.getHash());
 
-        supportedSignatureAlgorithms = getSignatureAlgorithms(true);
-        sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
-                                  supportedSignatureAlgorithms, signatureAlgorithm);
-
-        assertEquals(HashAlgorithm.sha256, sigAlg.getHash());
-
-        supportedSignatureAlgorithms = getSignatureAlgorithms(true);
-        sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
-                                  supportedSignatureAlgorithms, signatureAlgorithm);
-
-        assertEquals(HashAlgorithm.sha256, sigAlg.getHash());
+        for (int count = 0; count < 10; ++count)
+        {
+            supportedSignatureAlgorithms = getSignatureAlgorithms(true);
+            sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context, supportedSignatureAlgorithms,
+                signatureAlgorithm);
+            assertEquals(HashAlgorithm.sha256, sigAlg.getHash());
+        }
     }
 
     private static Vector getSignatureAlgorithms(boolean randomise)
@@ -117,19 +112,26 @@ public class TlsUtilsTest
             SignatureAlgorithm.ecdsa };
 
         Vector result = new Vector();
-
-        int hOffset = (randomise) ? new Random().nextInt() & 0xff : 0;
-        int sOffset = (randomise) ? new Random().nextInt() & 0xff : 0;
         for (int i = 0; i < signatureAlgorithms.length; ++i)
         {
             for (int j = 0; j < hashAlgorithms.length; ++j)
             {
-                result.addElement(new SignatureAndHashAlgorithm(
-                    hashAlgorithms[(hOffset + j) % hashAlgorithms.length],
-                    signatureAlgorithms[(sOffset + i) % signatureAlgorithms.length]));
+                result.addElement(new SignatureAndHashAlgorithm(hashAlgorithms[j], signatureAlgorithms[i]));
+            }
+        }
+
+        Random r = new Random();
+        int count = result.size();
+        for (int src = 0; src < count; ++src)
+        {
+            int dst = r.nextInt(count);
+            if (src != dst)
+            {
+                Object a = result.elementAt(src), b = result.elementAt(dst);
+                result.setElementAt(a, dst);
+                result.setElementAt(b, src);
             }
         }
         return result;
     }
-
 }
