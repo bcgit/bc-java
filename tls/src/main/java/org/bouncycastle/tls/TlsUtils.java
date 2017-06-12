@@ -2740,7 +2740,7 @@ public class TlsUtils
                         result = sigHashAlg;
                     }
                 }
-                else
+                else if (hash >= MINIMUM_HASH_PREFERRED)
                 {
                     if (hash < current)
                     {
