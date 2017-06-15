@@ -1,7 +1,5 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
-import java.security.SecureRandom;
-
 import org.bouncycastle.crypto.Digest;
 
 /**
@@ -12,7 +10,7 @@ public final class XMSSParameters {
 
 	private final XMSSOid oid;
 	private final WOTSPlus wotsPlus;
-	private final SecureRandom prng;
+	//private final SecureRandom prng;
 	private final int height;
 	private final int k;
 
@@ -23,10 +21,8 @@ public final class XMSSParameters {
 	 *            Height of tree.
 	 * @param digest
 	 *            Digest to use.
-	 * @param prng
-	 *            Secure random to use.
 	 */
-	public XMSSParameters(int height, Digest digest, SecureRandom prng) {
+	public XMSSParameters(int height, Digest digest) {
 		super();
 		if (height < 2) {
 			throw new IllegalArgumentException("height must be >= 2");
@@ -34,11 +30,8 @@ public final class XMSSParameters {
 		if (digest == null) {
 			throw new NullPointerException("digest == null");
 		}
-		if (prng == null) {
-			throw new NullPointerException("prng == null");
-		}
+
 		wotsPlus = new WOTSPlus(new WOTSPlusParameters(digest));
-		this.prng = prng;
 		this.height = height;
 		this.k = determineMinK();
 		oid = DefaultXMSSOid.lookup(getDigest().getAlgorithmName(), getDigestSize(), getWinternitzParameter(),
@@ -59,10 +52,6 @@ public final class XMSSParameters {
 
 	protected Digest getDigest() {
 		return wotsPlus.getParams().getDigest();
-	}
-
-	protected SecureRandom getPRNG() {
-		return prng;
 	}
 
 	/**
