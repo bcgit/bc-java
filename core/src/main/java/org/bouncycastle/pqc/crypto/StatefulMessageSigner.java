@@ -1,7 +1,7 @@
 package org.bouncycastle.pqc.crypto;
 
 
-import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 
 /**
  * Base interface for a PQC stateful signature algorithm.
@@ -17,5 +17,5 @@ public interface StatefulMessageSigner
      * </p>
      * @return an updated private key object, which can be used for later signature generation.
      */
-    public CipherParameters getFinalPrivateKey();
+    public AsymmetricKeyParameter getFinalPrivateKey();
 }

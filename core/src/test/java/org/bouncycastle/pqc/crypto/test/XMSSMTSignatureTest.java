@@ -1,7 +1,5 @@
 package org.bouncycastle.pqc.crypto.test;
 
-import java.text.ParseException;
-
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.pqc.crypto.xmss.NullPRNG;
@@ -19,27 +17,21 @@ public class XMSSMTSignatureTest extends TestCase {
 		int totalHeight = 6;
 		int layers = 3;
 		byte[] message = new byte[1024];
-		XMSSMTParameters params = new XMSSMTParameters(totalHeight, layers, new SHA256Digest(), new NullPRNG());
-		XMSSMT xmssMT = new XMSSMT(params);
+		XMSSMTParameters params = new XMSSMTParameters(totalHeight, layers, new SHA256Digest());
+		XMSSMT xmssMT = new XMSSMT(params, new NullPRNG());
 		xmssMT.generateKeys();
 		byte[] signature1 = xmssMT.sign(message);
-		XMSSMTSignature mtSignature = null;
-		try {
-			mtSignature = new XMSSMTSignature.Builder(params).withSignature(signature1).build();
+		XMSSMTSignature mtSignature = new XMSSMTSignature.Builder(params).withSignature(signature1).build();
 			byte[] signature2 = mtSignature.toByteArray();
 			assertTrue(XMSSUtil.compareByteArray(signature1, signature2));
-		} catch (ParseException e) {
-			e.printStackTrace();
-			fail();
-		}
 	}
 
 	public void testConstructor() {
-		XMSSMTParameters params = new XMSSMTParameters(20, 10, new SHA256Digest(), new NullPRNG());
+		XMSSMTParameters params = new XMSSMTParameters(20, 10, new SHA256Digest());
 		XMSSMTSignature sig = null;
 		try {
 			sig = new XMSSMTSignature.Builder(params).build();
-		} catch (ParseException ex) {
+		} catch (IllegalArgumentException ex) {
 			ex.printStackTrace();
 		}
 		byte[] sigByte = sig.toByteArray();

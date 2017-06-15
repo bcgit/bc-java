@@ -1,7 +1,5 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
-import java.text.ParseException;
-
 import org.bouncycastle.util.Pack;
 
 /**
@@ -16,7 +14,6 @@ public final class XMSSSignature
     private final byte[] random;
 
     private XMSSSignature(Builder builder)
-        throws ParseException
     {
         super(builder);
         index = builder.index;
@@ -88,7 +85,6 @@ public final class XMSSSignature
         }
 
         public XMSSSignature build()
-            throws ParseException
         {
             return new XMSSSignature(this);
         }
