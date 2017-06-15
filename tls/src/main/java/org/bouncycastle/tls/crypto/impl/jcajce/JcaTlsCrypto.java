@@ -523,8 +523,18 @@ public class JcaTlsCrypto
                 try
                 {
                     Cipher c = createRSAEncryptionCipher();
-                    c.init(Cipher.ENCRYPT_MODE, pubKeyRSA, getSecureRandom());
-                    return c.doFinal(input, inOff, length);
+                    // try wrap mode first - strictly speaking this is the correct one to use.
+                    try
+                    {
+                        c.init(Cipher.WRAP_MODE, pubKeyRSA, getSecureRandom());
+                        return c.doFinal(input, inOff, length);
+                    }
+                    catch (Exception e)
+                    {
+                        // okay, maybe the provider does not support wrap mode.
+                        c.init(Cipher.ENCRYPT_MODE, pubKeyRSA, getSecureRandom());
+                        return c.doFinal(input, inOff, length);
+                    }
                 }
                 catch (GeneralSecurityException e)
                 {
