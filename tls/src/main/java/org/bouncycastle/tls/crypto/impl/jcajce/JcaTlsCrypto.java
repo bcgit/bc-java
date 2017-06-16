@@ -10,6 +10,7 @@ import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 
 import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -527,7 +528,7 @@ public class JcaTlsCrypto
                     try
                     {
                         c.init(Cipher.WRAP_MODE, pubKeyRSA, getSecureRandom());
-                        return c.doFinal(input, inOff, length);
+                        return c.wrap(new SecretKeySpec(input, inOff, length, "TLS"));
                     }
                     catch (Exception e)
                     {
