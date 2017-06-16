@@ -146,13 +146,13 @@ public class SM2P256V1FieldElement extends ECFieldElement
         int[] x2 = Nat256.create();
         SM2P256V1Field.square(x1, x2);
         SM2P256V1Field.multiply(x2, x1, x2);
-        int[] x3 = x2;
-        SM2P256V1Field.square(x2, x3);
-        SM2P256V1Field.multiply(x3, x1, x3);
+        int[] x4 = Nat256.create();
+        SM2P256V1Field.squareN(x2, 2, x4);
+        SM2P256V1Field.multiply(x4, x2, x4);
         int[] x6 = Nat256.create();
-        SM2P256V1Field.squareN(x3, 3, x6);
-        SM2P256V1Field.multiply(x6, x3, x6);
-        int[] x12 = x3;
+        SM2P256V1Field.squareN(x4, 2, x6);
+        SM2P256V1Field.multiply(x6, x2, x6);
+        int[] x12 = x2;
         SM2P256V1Field.squareN(x6, 6, x12);
         SM2P256V1Field.multiply(x12, x6, x12);
         int[] x24 = Nat256.create();
@@ -165,25 +165,23 @@ public class SM2P256V1FieldElement extends ECFieldElement
         SM2P256V1Field.square(x30, x31);
         SM2P256V1Field.multiply(x31, x1, x31);
 
-        int[] t1 = x31;
-        SM2P256V1Field.square(x31, t1);
+        int[] t1 = x24;
+        SM2P256V1Field.squareN(x31, 31, t1);
 
-        int[] x32 = x12;
-        SM2P256V1Field.multiply(t1, x1, x32);
+        int[] x62 = x30;
+        SM2P256V1Field.multiply(t1, x31, x62);
 
         SM2P256V1Field.squareN(t1, 32, t1);
-        SM2P256V1Field.multiply(t1, x32, t1);
+        SM2P256V1Field.multiply(t1, x62, t1);
+        SM2P256V1Field.squareN(t1, 62, t1);
+        SM2P256V1Field.multiply(t1, x62, t1);
+        SM2P256V1Field.squareN(t1, 4, t1);
+        SM2P256V1Field.multiply(t1, x4, t1);
+        SM2P256V1Field.squareN(t1, 32, t1);
+        SM2P256V1Field.multiply(t1, x1, t1);
+        SM2P256V1Field.squareN(t1, 62, t1);
 
-        int[] t2 = x24;
-        SM2P256V1Field.squareN(t1, 32, t2);
-        SM2P256V1Field.multiply(t2, x1, t2);
-        SM2P256V1Field.squareN(t2, 32, t2);
-        SM2P256V1Field.multiply(t2, t1, t2);
-        SM2P256V1Field.squareN(t2, 32, t2);
-        SM2P256V1Field.multiply(t2, x32, t2);
-        SM2P256V1Field.squareN(t2, 32, t2);
-        SM2P256V1Field.multiply(t2, x1, t2);
-        SM2P256V1Field.squareN(t2, 62, t1);
+        int[] t2 = x4;
         SM2P256V1Field.square(t1, t2);
 
         return Nat256.eq(x1, t2) ? new SM2P256V1FieldElement(t1) : null;
