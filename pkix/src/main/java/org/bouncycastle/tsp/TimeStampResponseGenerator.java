@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERBitString;
@@ -260,6 +261,8 @@ public class TimeStampResponseGenerator
         try
         {
             tstTokenContentInfo = tokenGenerator.generate(request, serialNumber, genTime, additionalExtensions).toCMSSignedData().toASN1Structure();
+            // ensure timestamp token is not re-ordered by original use of DER in TimeStampResp
+            tstTokenContentInfo = ContentInfo.getInstance(tstTokenContentInfo.getEncoded(ASN1Encoding.DL));
         }
         catch (TSPException e)
         {
