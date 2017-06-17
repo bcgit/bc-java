@@ -11,13 +11,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SimpleTimeZone;
 
 import junit.framework.TestCase;
-import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERUTF8String;
@@ -38,12 +38,15 @@ import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuerSerial;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cms.CMSAttributeTableGenerationException;
 import org.bouncycastle.cms.CMSAttributeTableGenerator;
+import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.DefaultSignedAttributeTableGenerator;
 import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
+import org.bouncycastle.cms.test.CMSTestUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -112,6 +115,55 @@ public class NewTSPTest
         testNoNonse(origKP.getPrivate(), origCert, certs);
         extensionTest(origKP.getPrivate(), origCert, certs);
         additionalExtensionTest(origKP.getPrivate(), origCert, certs);
+    }
+
+    public void testCertOrdering()
+        throws Exception
+    {
+        List            certList = new ArrayList();
+
+        String _origDN   = "O=Bouncy Castle, C=AU";
+        KeyPair _origKP   = CMSTestUtil.makeKeyPair();
+        X509Certificate _origCert = CMSTestUtil.makeCertificate(_origKP, _origDN, _origKP, _origDN);
+
+        String _signDN   = "CN=Bob, OU=Sales, O=Bouncy Castle, C=AU";
+        KeyPair _signKP   = CMSTestUtil.makeKeyPair();
+        X509Certificate _signCert = TSPTestUtil.makeCertificate(_signKP, _signDN, _origKP, _origDN);
+
+        KeyPair _signDsaKP   = CMSTestUtil.makeDsaKeyPair();
+        X509Certificate _signDsaCert = CMSTestUtil.makeCertificate(_signDsaKP, _signDN, _origKP, _origDN);
+
+        certList.add(_origCert);
+        certList.add(_signDsaCert);
+        certList.add(_signCert);
+
+        Store      certs = new JcaCertStore(certList);
+
+        TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(
+            new JcaSimpleSignerInfoGeneratorBuilder().build("SHA1withRSA", _signKP.getPrivate(), _signCert), new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2"));
+
+        tsTokenGen.addCertificates(certs);
+
+        TimeStampRequestGenerator reqGen = new TimeStampRequestGenerator();
+        
+        reqGen.setCertReq(true);
+
+        TimeStampRequest request = reqGen.generate(TSPAlgorithms.SHA1, new byte[20], BigInteger.valueOf(100));
+
+        TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
+
+        TimeStampResponse tsResp = tsRespGen.generateGrantedResponse(request, new BigInteger("23"), new Date());
+
+        tsResp = new TimeStampResponse(tsResp.getEncoded());
+
+        CMSSignedData sd = tsResp.getTimeStampToken().toCMSSignedData();
+
+        certs = sd.getCertificates();
+        Iterator it = certs.getMatches(null).iterator();
+
+        assertEquals(new JcaX509CertificateHolder(_origCert), it.next());
+        assertEquals(new JcaX509CertificateHolder(_signDsaCert), it.next());
+        assertEquals(new JcaX509CertificateHolder(_signCert), it.next());
     }
 
     private void basicTest(
