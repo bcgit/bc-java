@@ -2,14 +2,15 @@ package org.bouncycastle.pqc.crypto.xmss;
 
 import java.io.IOException;
 
-import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.util.Pack;
 
 /**
  * XMSS Private Key.
  */
 public final class XMSSPrivateKeyParameters
-    implements CipherParameters, XMSSStoreableObjectInterface
+    extends AsymmetricKeyParameter
+    implements XMSSStoreableObjectInterface
 {
 
     /**
@@ -44,7 +45,7 @@ public final class XMSSPrivateKeyParameters
 
     private XMSSPrivateKeyParameters(Builder builder)
     {
-        super();
+        super(true);
         params = builder.params;
         if (params == null)
         {
@@ -311,5 +312,10 @@ public final class XMSSPrivateKeyParameters
     public BDS getBDSState()
     {
         return bdsState;
+    }
+
+    public XMSSParameters getParameters()
+    {
+        return params;
     }
 }
