@@ -45,7 +45,7 @@ public class XMSSSigner
         {
             if (privateKey == null)
             {
-                throw new IllegalStateException("private key no longer usable");
+                throw new IllegalStateException("signer key no longer usable");
             }
         }
         else
