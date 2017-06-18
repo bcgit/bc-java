@@ -81,11 +81,11 @@ public final class XMSSParameters {
 		return height;
 	}
 
-	protected WOTSPlus getWOTSPlus() {
+	WOTSPlus getWOTSPlus() {
 		return wotsPlus;
 	}
 
-	protected int getK() {
+	int getK() {
 		return k;
 	}
 }

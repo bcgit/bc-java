@@ -2,7 +2,6 @@ package org.bouncycastle.pqc.crypto.test;
 
 import java.io.IOException;
 import java.security.SecureRandom;
-import java.text.ParseException;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -24,11 +23,8 @@ public class XMSSMTPublicKeyTest extends TestCase {
 		byte[] privateKey = mt.exportPrivateKey();
 		byte[] publicKey = mt.exportPublicKey();
 
-		try {
-			mt.importState(privateKey, publicKey);
-		} catch (ParseException e) {
-			e.printStackTrace();
-		}
+		mt.importState(privateKey, publicKey);
+
 		assertTrue(XMSSUtil.compareByteArray(publicKey, mt.exportPublicKey()));
 	}
 

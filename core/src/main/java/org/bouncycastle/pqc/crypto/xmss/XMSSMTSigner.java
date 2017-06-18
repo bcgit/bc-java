@@ -16,10 +16,15 @@ public class XMSSMTSigner
     private XMSS xmss;
     private KeyedHashFunctions khf;
 
+    private WOTSPlus wotsPlus;
+
+    private boolean initSign;
+
     public void init(boolean forSigning, CipherParameters param)
     {
         if (forSigning)
         {
+            initSign = true;
             privateKey = (XMSSMTPrivateKeyParameters)param;
 
             params = privateKey.getParameters();
@@ -28,12 +33,15 @@ public class XMSSMTSigner
         }
         else
         {
+            initSign = false;
             publicKey = (XMSSMTPublicKeyParameters)param;
 
             params = publicKey.getParameters();
             xmss = params.getXMSS();
             khf = xmss.getKhf();
         }
+
+        wotsPlus = new WOTSPlus(new WOTSPlusParameters(params.getDigest()));
     }
 
     public byte[] generateSignature(byte[] message)
@@ -41,6 +49,17 @@ public class XMSSMTSigner
         if (message == null)
         {
             throw new NullPointerException("message == null");
+        }
+        if (initSign)
+        {
+            if (privateKey == null)
+            {
+                throw new IllegalStateException("private key no longer usable");
+            }
+        }
+        else
+        {
+            throw new IllegalStateException("signer not initialized for signature generation");
         }
         if (privateKey.getBDSState().isEmpty())
         {
@@ -55,7 +74,7 @@ public class XMSSMTSigner
         int xmssHeight = xmss.getParams().getHeight();
         if (!XMSSUtil.isIndexValid(totalHeight, globalIndex))
         {
-            throw new IllegalArgumentException("index out of bounds");
+            throw new IllegalStateException("index out of bounds");
         }
 
       		/* compress message */
@@ -139,7 +158,7 @@ public class XMSSMTSigner
             }
         }
 
-      		/* update private key */
+        /* update private key */
         privateKey = new XMSSMTPrivateKeyParameters.Builder(params).withIndex(globalIndex + 1)
             .withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
             .withPublicSeed(privateKey.getPublicSeed()).withRoot(privateKey.getRoot())
@@ -175,29 +194,27 @@ public class XMSSMTSigner
         int indexLeaf = XMSSUtil.getLeafIndex(globalIndex, xmssHeight);
 
 		/* adjust xmss */
-        xmss.setIndex(indexLeaf);
-        xmss.setPublicSeed(publicKey.getPublicSeed());
-
+        wotsPlus.importKeys(new byte[params.getDigestSize()], publicKey.getPublicSeed());
+        
 		/* prepare addresses */
         OTSHashAddress otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder().withTreeAddress(indexTree)
             .withOTSAddress(indexLeaf).build();
 
 		/* get root node on layer 0 */
         XMSSReducedSignature xmssMTSignature = sig.getReducedSignatures().get(0);
-        XMSSNode rootNode = xmss.getRootNodeFromSignature(messageDigest, xmssMTSignature, otsHashAddress);
+        XMSSNode rootNode = XMSSVerifierUtil.getRootNodeFromSignature(wotsPlus, xmssHeight, messageDigest, xmssMTSignature, otsHashAddress, indexLeaf);
         for (int layer = 1; layer < params.getLayers(); layer++)
         {
             xmssMTSignature = sig.getReducedSignatures().get(layer);
             indexLeaf = XMSSUtil.getLeafIndex(indexTree, xmssHeight);
             indexTree = XMSSUtil.getTreeIndex(indexTree, xmssHeight);
-            xmss.setIndex(indexLeaf);
 
 			/* adjust address */
             otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder().withLayerAddress(layer)
                 .withTreeAddress(indexTree).withOTSAddress(indexLeaf).build();
 
 			/* get root node */
-            rootNode = xmss.getRootNodeFromSignature(rootNode.getValue(), xmssMTSignature, otsHashAddress);
+            rootNode = XMSSVerifierUtil.getRootNodeFromSignature(wotsPlus, xmssHeight, rootNode.getValue(), xmssMTSignature, otsHashAddress, indexLeaf);
         }
 
 		/* compare roots */
