@@ -114,7 +114,6 @@ public class XMSS
      * @throws IOException
      */
     public void importState(byte[] privateKey, byte[] publicKey)
-        throws ClassNotFoundException, IOException
     {
         if (privateKey == null)
         {
@@ -216,36 +215,12 @@ public class XMSS
         {
             throw new NullPointerException("publicKey == null");
         }
-		/* parse signature and public key */
-        XMSSSignature sig = new XMSSSignature.Builder(params).withSignature(signature).build();
-		/* generate public key */
-        XMSSPublicKeyParameters pubKey = new XMSSPublicKeyParameters.Builder(params).withPublicKey(publicKey).build();
 
-		/* save state */
-        int savedIndex = privateKey.getIndex();
-        byte[] savedPublicSeed = privateKey.getPublicSeed();
+        XMSSSigner signer = new XMSSSigner();
 
-		/* set index / public seed */
-        int index = sig.getIndex();
-        setIndex(index);
-        setPublicSeed(pubKey.getPublicSeed());
+        signer.init(false, new XMSSPublicKeyParameters.Builder(getParams()).withPublicKey(publicKey).build());
 
-		/* reinitialize WOTS+ object */
-        wotsPlus.importKeys(new byte[params.getDigestSize()], getPublicSeed());
-
-		/* create message digest */
-        byte[] concatenated = XMSSUtil.concat(sig.getRandom(), pubKey.getRoot(),
-            XMSSUtil.toBytesBigEndian(index, params.getDigestSize()));
-        byte[] messageDigest = khf.HMsg(concatenated, message);
-
-		/* get root from signature */
-        OTSHashAddress otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder().withOTSAddress(index).build();
-        XMSSNode rootNodeFromSignature = getRootNodeFromSignature(messageDigest, sig, otsHashAddress);
-
-		/* reset state */
-        setIndex(savedIndex);
-        setPublicSeed(savedPublicSeed);
-        return XMSSUtil.compareByteArray(rootNodeFromSignature.getValue(), pubKey.getRoot());
+        return signer.verifySignature(message, signature);
     }
 
     /**
@@ -266,152 +241,6 @@ public class XMSS
     public byte[] exportPublicKey()
     {
         return publicKey.toByteArray();
-    }
-
-    /**
-     * Randomization of nodes in binary tree.
-     *
-     * @param left    Left node.
-     * @param right   Right node.
-     * @param address Address.
-     * @return Randomized hash of parent of left / right node.
-     */
-    protected XMSSNode randomizeHash(XMSSNode left, XMSSNode right, XMSSAddress address)
-    {
-        if (left == null)
-        {
-            throw new NullPointerException("left == null");
-        }
-        if (right == null)
-        {
-            throw new NullPointerException("right == null");
-        }
-        if (left.getHeight() != right.getHeight())
-        {
-            throw new IllegalStateException("height of both nodes must be equal");
-        }
-        if (address == null)
-        {
-            throw new NullPointerException("address == null");
-        }
-        byte[] publicSeed = getPublicSeed();
-
-        if (address instanceof LTreeAddress)
-        {
-            LTreeAddress tmpAddress = (LTreeAddress)address;
-            address = (LTreeAddress)new LTreeAddress.Builder().withLayerAddress(tmpAddress.getLayerAddress())
-                .withTreeAddress(tmpAddress.getTreeAddress()).withLTreeAddress(tmpAddress.getLTreeAddress())
-                .withTreeHeight(tmpAddress.getTreeHeight()).withTreeIndex(tmpAddress.getTreeIndex())
-                .withKeyAndMask(0).build();
-        }
-        else if (address instanceof HashTreeAddress)
-        {
-            HashTreeAddress tmpAddress = (HashTreeAddress)address;
-            address = (HashTreeAddress)new HashTreeAddress.Builder().withLayerAddress(tmpAddress.getLayerAddress())
-                .withTreeAddress(tmpAddress.getTreeAddress()).withTreeHeight(tmpAddress.getTreeHeight())
-                .withTreeIndex(tmpAddress.getTreeIndex()).withKeyAndMask(0).build();
-        }
-
-        byte[] key = khf.PRF(publicSeed, address.toByteArray());
-
-        if (address instanceof LTreeAddress)
-        {
-            LTreeAddress tmpAddress = (LTreeAddress)address;
-            address = (LTreeAddress)new LTreeAddress.Builder().withLayerAddress(tmpAddress.getLayerAddress())
-                .withTreeAddress(tmpAddress.getTreeAddress()).withLTreeAddress(tmpAddress.getLTreeAddress())
-                .withTreeHeight(tmpAddress.getTreeHeight()).withTreeIndex(tmpAddress.getTreeIndex())
-                .withKeyAndMask(1).build();
-        }
-        else if (address instanceof HashTreeAddress)
-        {
-            HashTreeAddress tmpAddress = (HashTreeAddress)address;
-            address = (HashTreeAddress)new HashTreeAddress.Builder().withLayerAddress(tmpAddress.getLayerAddress())
-                .withTreeAddress(tmpAddress.getTreeAddress()).withTreeHeight(tmpAddress.getTreeHeight())
-                .withTreeIndex(tmpAddress.getTreeIndex()).withKeyAndMask(1).build();
-        }
-
-        byte[] bitmask0 = khf.PRF(publicSeed, address.toByteArray());
-
-        if (address instanceof LTreeAddress)
-        {
-            LTreeAddress tmpAddress = (LTreeAddress)address;
-            address = (LTreeAddress)new LTreeAddress.Builder().withLayerAddress(tmpAddress.getLayerAddress())
-                .withTreeAddress(tmpAddress.getTreeAddress()).withLTreeAddress(tmpAddress.getLTreeAddress())
-                .withTreeHeight(tmpAddress.getTreeHeight()).withTreeIndex(tmpAddress.getTreeIndex())
-                .withKeyAndMask(2).build();
-        }
-        else if (address instanceof HashTreeAddress)
-        {
-            HashTreeAddress tmpAddress = (HashTreeAddress)address;
-            address = (HashTreeAddress)new HashTreeAddress.Builder().withLayerAddress(tmpAddress.getLayerAddress())
-                .withTreeAddress(tmpAddress.getTreeAddress()).withTreeHeight(tmpAddress.getTreeHeight())
-                .withTreeIndex(tmpAddress.getTreeIndex()).withKeyAndMask(2).build();
-        }
-
-        byte[] bitmask1 = khf.PRF(publicSeed, address.toByteArray());
-        int n = params.getDigestSize();
-        byte[] tmpMask = new byte[2 * n];
-        for (int i = 0; i < n; i++)
-        {
-            tmpMask[i] = (byte)(left.getValue()[i] ^ bitmask0[i]);
-        }
-        for (int i = 0; i < n; i++)
-        {
-            tmpMask[i + n] = (byte)(right.getValue()[i] ^ bitmask1[i]);
-        }
-        byte[] out = khf.H(key, tmpMask);
-        return new XMSSNode(left.getHeight(), out);
-    }
-
-    /**
-     * Compresses a WOTS+ public key to a single n-byte string.
-     *
-     * @param publicKey WOTS+ public key to compress.
-     * @param address   Address.
-     * @return Compressed n-byte string of public key.
-     */
-    protected XMSSNode lTree(WOTSPlusPublicKeyParameters publicKey, LTreeAddress address)
-    {
-        if (publicKey == null)
-        {
-            throw new NullPointerException("publicKey == null");
-        }
-        if (address == null)
-        {
-            throw new NullPointerException("address == null");
-        }
-        int len = wotsPlus.getParams().getLen();
-		/* duplicate public key to XMSSNode Array */
-        byte[][] publicKeyBytes = publicKey.toByteArray();
-        XMSSNode[] publicKeyNodes = new XMSSNode[publicKeyBytes.length];
-        for (int i = 0; i < publicKeyBytes.length; i++)
-        {
-            publicKeyNodes[i] = new XMSSNode(0, publicKeyBytes[i]);
-        }
-        address = (LTreeAddress)new LTreeAddress.Builder().withLayerAddress(address.getLayerAddress())
-            .withTreeAddress(address.getTreeAddress()).withLTreeAddress(address.getLTreeAddress()).withTreeHeight(0)
-            .withTreeIndex(address.getTreeIndex()).withKeyAndMask(address.getKeyAndMask()).build();
-        while (len > 1)
-        {
-            for (int i = 0; i < (int)Math.floor(len / 2); i++)
-            {
-                address = (LTreeAddress)new LTreeAddress.Builder().withLayerAddress(address.getLayerAddress())
-                    .withTreeAddress(address.getTreeAddress()).withLTreeAddress(address.getLTreeAddress())
-                    .withTreeHeight(address.getTreeHeight()).withTreeIndex(i)
-                    .withKeyAndMask(address.getKeyAndMask()).build();
-                publicKeyNodes[i] = randomizeHash(publicKeyNodes[2 * i], publicKeyNodes[(2 * i) + 1], address);
-            }
-            if (len % 2 == 1)
-            {
-                publicKeyNodes[(int)Math.floor(len / 2)] = publicKeyNodes[len - 1];
-            }
-            len = (int)Math.ceil((double)len / 2);
-            address = (LTreeAddress)new LTreeAddress.Builder().withLayerAddress(address.getLayerAddress())
-                .withTreeAddress(address.getTreeAddress()).withLTreeAddress(address.getLTreeAddress())
-                .withTreeHeight(address.getTreeHeight() + 1).withTreeIndex(address.getTreeIndex())
-                .withKeyAndMask(address.getKeyAndMask()).build();
-        }
-        return publicKeyNodes[0];
     }
 
     /**
@@ -436,78 +265,6 @@ public class XMSS
         wotsPlus.importKeys(getWOTSPlusSecretKey(otsHashAddress), getPublicSeed());
 		/* create WOTS+ signature */
         return wotsPlus.sign(messageDigest, otsHashAddress);
-    }
-
-    /**
-     * Compute a root node from a tree signature.
-     *
-     * @param messageDigest Message digest.
-     * @param signature     XMSS signature.
-     * @return Root node calculated from signature.
-     */
-    protected XMSSNode getRootNodeFromSignature(byte[] messageDigest, XMSSReducedSignature signature,
-                                                OTSHashAddress otsHashAddress)
-    {
-        if (messageDigest.length != params.getDigestSize())
-        {
-            throw new IllegalArgumentException("size of messageDigest needs to be equal to size of digest");
-        }
-        if (signature == null)
-        {
-            throw new NullPointerException("signature == null");
-        }
-        if (otsHashAddress == null)
-        {
-            throw new NullPointerException("otsHashAddress == null");
-        }
-
-		/* prepare adresses */
-        LTreeAddress lTreeAddress = (LTreeAddress)new LTreeAddress.Builder()
-            .withLayerAddress(otsHashAddress.getLayerAddress()).withTreeAddress(otsHashAddress.getTreeAddress())
-            .withLTreeAddress(otsHashAddress.getOTSAddress()).build();
-        HashTreeAddress hashTreeAddress = (HashTreeAddress)new HashTreeAddress.Builder()
-            .withLayerAddress(otsHashAddress.getLayerAddress()).withTreeAddress(otsHashAddress.getTreeAddress())
-            .withTreeIndex(otsHashAddress.getOTSAddress()).build();
-		/*
-		 * calculate WOTS+ public key and compress to obtain original leaf hash
-		 */
-        WOTSPlusPublicKeyParameters wotsPlusPK = wotsPlus.getPublicKeyFromSignature(messageDigest,
-            signature.getWOTSPlusSignature(), otsHashAddress);
-        XMSSNode[] node = new XMSSNode[2];
-        node[0] = lTree(wotsPlusPK, lTreeAddress);
-
-        for (int k = 0; k < params.getHeight(); k++)
-        {
-            hashTreeAddress = (HashTreeAddress)new HashTreeAddress.Builder()
-                .withLayerAddress(hashTreeAddress.getLayerAddress())
-                .withTreeAddress(hashTreeAddress.getTreeAddress()).withTreeHeight(k)
-                .withTreeIndex(hashTreeAddress.getTreeIndex()).withKeyAndMask(hashTreeAddress.getKeyAndMask())
-                .build();
-            if (Math.floor(privateKey.getIndex() / (1 << k)) % 2 == 0)
-            {
-                hashTreeAddress = (HashTreeAddress)new HashTreeAddress.Builder()
-                    .withLayerAddress(hashTreeAddress.getLayerAddress())
-                    .withTreeAddress(hashTreeAddress.getTreeAddress())
-                    .withTreeHeight(hashTreeAddress.getTreeHeight())
-                    .withTreeIndex(hashTreeAddress.getTreeIndex() / 2)
-                    .withKeyAndMask(hashTreeAddress.getKeyAndMask()).build();
-                node[1] = randomizeHash(node[0], signature.getAuthPath().get(k), hashTreeAddress);
-                node[1] = new XMSSNode(node[1].getHeight() + 1, node[1].getValue());
-            }
-            else
-            {
-                hashTreeAddress = (HashTreeAddress)new HashTreeAddress.Builder()
-                    .withLayerAddress(hashTreeAddress.getLayerAddress())
-                    .withTreeAddress(hashTreeAddress.getTreeAddress())
-                    .withTreeHeight(hashTreeAddress.getTreeHeight())
-                    .withTreeIndex((hashTreeAddress.getTreeIndex() - 1) / 2)
-                    .withKeyAndMask(hashTreeAddress.getKeyAndMask()).build();
-                node[1] = randomizeHash(signature.getAuthPath().get(k), node[0], hashTreeAddress);
-                node[1] = new XMSSNode(node[1].getHeight() + 1, node[1].getValue());
-            }
-            node[0] = node[1];
-        }
-        return node[0];
     }
 
     /**

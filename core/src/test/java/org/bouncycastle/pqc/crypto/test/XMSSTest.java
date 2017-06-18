@@ -404,7 +404,7 @@ public class XMSSTest
         assertTrue(XMSSUtil.compareByteArray(privateKey7, xmss1.exportPrivateKey()));
         byte[] signature7 = xmss1.sign(message);
 
-            xmss1.importState(privateKey7, publicKey);
+        xmss1.importState(privateKey7, publicKey);
 
         byte[] signature7AfterImport = xmss1.sign(message);
         assertTrue(XMSSUtil.compareByteArray(signature7AfterImport, signature7));
@@ -441,11 +441,11 @@ public class XMSSTest
         byte[] exportedPrivateKey = xmss.exportPrivateKey();
         byte[] exportedPublicKey = xmss.exportPublicKey();
 
-            xmss.importState(exportedPrivateKey, exportedPublicKey);
+        xmss.importState(exportedPrivateKey, exportedPublicKey);
 
         byte[] sig1 = xmss.sign(new byte[1024]);
 
-            xmss.importState(exportedPrivateKey, exportedPublicKey);
+        xmss.importState(exportedPrivateKey, exportedPublicKey);
 
         byte[] sig2 = xmss.sign(new byte[1024]);
         assertEquals(true, XMSSUtil.compareByteArray(sig1, sig2));

@@ -17475,15 +17475,9 @@ public class XMSSMTTest
         byte[] signature3 = xmssMT1.sign(msg3);
 
         XMSSMT xmssMT2 = new XMSSMT(params, new NullPRNG());
-        try
-        {
-            xmssMT2.importState(exportedPrivateKey, exportedPublicKey);
-        }
-        catch (ParseException ex)
-        {
-            ex.printStackTrace();
-            fail();
-        }
+
+        xmssMT2.importState(exportedPrivateKey, exportedPublicKey);
+
         byte[] signature4 = xmssMT2.sign(msg3);
         assertEquals(true, XMSSUtil.compareByteArray(signature3, signature4));
         xmssMT2.generateKeys();
@@ -17522,15 +17516,9 @@ public class XMSSMTTest
         byte[] signature3 = xmssMT1.sign(msg3);
 
         XMSSMT xmssMT2 = new XMSSMT(params, new NullPRNG());
-        try
-        {
-            xmssMT2.importState(exportedPrivateKey, exportedPublicKey);
-        }
-        catch (ParseException ex)
-        {
-            ex.printStackTrace();
-            fail();
-        }
+
+        xmssMT2.importState(exportedPrivateKey, exportedPublicKey);
+
         byte[] signature4 = xmssMT2.sign(msg3);
         assertEquals(true, XMSSUtil.compareByteArray(signature3, signature4));
         xmssMT2.generateKeys();
@@ -17588,15 +17576,8 @@ public class XMSSMTTest
         assertTrue(XMSSUtil.compareByteArray(privateKey7, xmss1.exportPrivateKey()));
         byte[] signature7 = xmss1.sign(message);
 
-        try
-        {
-            xmss1.importState(privateKey7, publicKey);
-        }
-        catch (ParseException e)
-        {
-            e.printStackTrace();
-            fail();
-        }
+        xmss1.importState(privateKey7, publicKey);
+
         byte[] signature7AfterImport = xmss1.sign(message);
         assertTrue(XMSSUtil.compareByteArray(signature7AfterImport, signature7));
 
@@ -17616,15 +17597,9 @@ public class XMSSMTTest
         }
 
         XMSSMT xmss3 = new XMSSMT(params, new NullPRNG());
-        try
-        {
-            xmss3.importState(privateKey7, publicKey);
-        }
-        catch (ParseException e)
-        {
-            e.printStackTrace();
-            fail();
-        }
+
+        xmss3.importState(privateKey7, publicKey);
+
         byte[] signatureAgain = xmss3.sign(message);
         assertTrue(XMSSUtil.compareByteArray(signatureAgain, signature7));
     }
@@ -17646,15 +17621,8 @@ public class XMSSMTTest
         byte[] privateKey2 = mt2.exportPrivateKey();
         byte[] signature2 = mt2.sign(message);
 
-        try
-        {
-            mt2.importState(privateKey2, publicKey2);
-        }
-        catch (ParseException e)
-        {
-            e.printStackTrace();
-            fail();
-        }
+        mt2.importState(privateKey2, publicKey2);
+
         try
         {
             boolean isValid = mt2.verifySignature(message, signature1, publicKey1);
@@ -17678,23 +17646,13 @@ public class XMSSMTTest
         xmss.sign(new byte[1024]);
         byte[] exportedPrivateKey = xmss.exportPrivateKey();
         byte[] exportedPublicKey = xmss.exportPublicKey();
-        try
-        {
-            xmss.importState(exportedPrivateKey, exportedPublicKey);
-        }
-        catch (ParseException e)
-        {
-            e.printStackTrace();
-        }
+
+        xmss.importState(exportedPrivateKey, exportedPublicKey);
+
         byte[] sig1 = xmss.sign(new byte[1024]);
-        try
-        {
-            xmss.importState(exportedPrivateKey, exportedPublicKey);
-        }
-        catch (ParseException e)
-        {
-            e.printStackTrace();
-        }
+
+        xmss.importState(exportedPrivateKey, exportedPublicKey);
+
         byte[] sig2 = xmss.sign(new byte[1024]);
         assertEquals(true, XMSSUtil.compareByteArray(sig1, sig2));
         try
