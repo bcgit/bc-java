@@ -80,7 +80,7 @@ public class XMSSSigner
         int treeHeight = this.params.getHeight();
         if (index < ((1 << treeHeight) - 1))
         {
-            privateKey.getBDSState().nextAuthenticationPath((OTSHashAddress)new OTSHashAddress.Builder().build());
+            privateKey.getBDSState().nextAuthenticationPath(privateKey, (OTSHashAddress)new OTSHashAddress.Builder().build());
         }
 
         /* update index */
@@ -137,23 +137,8 @@ public class XMSSSigner
             throw new NullPointerException("otsHashAddress == null");
         }
         /* (re)initialize WOTS+ instance */
-        params.getWOTSPlus().importKeys(getWOTSPlusSecretKey(otsHashAddress), privateKey.getPublicSeed());
+        params.getWOTSPlus().importKeys(params.getWOTSPlus().getWOTSPlusSecretKey(privateKey.getSecretKeySeed(), otsHashAddress), privateKey.getPublicSeed());
 		/* create WOTS+ signature */
         return params.getWOTSPlus().sign(messageDigest, otsHashAddress);
-    }
-
-    /**
-     * Derive WOTS+ secret key for specific index as in XMSS ref impl Andreas
-     * Huelsing.
-     *
-     * @param otsHashAddress
-     * @return WOTS+ secret key at index.
-     */
-    private byte[] getWOTSPlusSecretKey(OTSHashAddress otsHashAddress)
-    {
-        otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder()
-            .withLayerAddress(otsHashAddress.getLayerAddress()).withTreeAddress(otsHashAddress.getTreeAddress())
-            .withOTSAddress(otsHashAddress.getOTSAddress()).build();
-        return khf.PRF(privateKey.getSecretKeySeed(), otsHashAddress.toByteArray());
     }
 }

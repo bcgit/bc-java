@@ -309,7 +309,7 @@ public final class XMSSPrivateKeyParameters
         return XMSSUtil.cloneArray(root);
     }
 
-    public BDS getBDSState()
+    BDS getBDSState()
     {
         return bdsState;
     }

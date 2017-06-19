@@ -1,12 +1,10 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
-import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
-
 /**
  * L-tree address.
  *
  */
-public final class LTreeAddress extends XMSSAddress {
+final class LTreeAddress extends XMSSAddress {
 
 	private static final int TYPE = 0x01;
 	
