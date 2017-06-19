@@ -1,7 +1,6 @@
 package org.bouncycastle.tls.test;
 
 import java.io.IOException;
-import java.security.SecureRandom;
 
 import org.bouncycastle.tls.DTLSClientProtocol;
 import org.bouncycastle.tls.DigitallySigned;
@@ -10,9 +9,9 @@ class DTLSTestClientProtocol extends DTLSClientProtocol
 {
     protected final TlsTestConfig config;
 
-    public DTLSTestClientProtocol(SecureRandom secureRandom, TlsTestConfig config)
+    public DTLSTestClientProtocol(TlsTestConfig config)
     {
-        super(secureRandom);
+        super();
 
         this.config = config;
     }
