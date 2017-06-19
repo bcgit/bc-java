@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.pqc.crypto.xmss.NullPRNG;
 import org.bouncycastle.pqc.crypto.xmss.XMSS;
 import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
