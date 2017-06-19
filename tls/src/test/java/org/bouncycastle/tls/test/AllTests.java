@@ -21,13 +21,12 @@ public class AllTests
 
         suite.addTestSuite(BasicTlsTest.class);
         suite.addTestSuite(DTLSProtocolTest.class);
-        suite.addTestSuite(DTLSTestCase.class);
+        suite.addTest(DTLSTestSuite.suite());
         suite.addTestSuite(PRFTest.class);
         suite.addTestSuite(TlsProtocolTest.class);
         suite.addTestSuite(TlsProtocolNonBlockingTest.class);
         suite.addTestSuite(TlsPSKProtocolTest.class);
         suite.addTestSuite(TlsSRPProtocolTest.class);
-        suite.addTestSuite(TlsTestCase.class);
         suite.addTest(TlsTestSuite.suite());
         suite.addTestSuite(TlsUtilsTest.class);
 
