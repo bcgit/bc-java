@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * WOTS+.
  */
-public final class WOTSPlus
+final class WOTSPlus
 {
 
     /**
@@ -153,7 +153,7 @@ public final class WOTSPlus
             throw new NullPointerException("otsHashAddress == null");
         }
         byte[][] tmpPublicKey = getPublicKeyFromSignature(messageDigest, signature, otsHashAddress).toByteArray();
-		/* compare values */
+        /* compare values */
         return XMSSUtil.compareByteArray(tmpPublicKey, getPublicKey(otsHashAddress).toByteArray()) ? true : false;
     }
 
@@ -310,6 +310,21 @@ public final class WOTSPlus
             }
         }
         return res;
+    }
+
+    /**
+     * Derive WOTS+ secret key for specific index as in XMSS ref impl Andreas
+     * Huelsing.
+     *
+     * @param otsHashAddress
+     * @return WOTS+ secret key at index.
+     */
+    protected byte[] getWOTSPlusSecretKey(byte[] secretKeySeed, OTSHashAddress otsHashAddress)
+    {
+        otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder()
+            .withLayerAddress(otsHashAddress.getLayerAddress()).withTreeAddress(otsHashAddress.getTreeAddress())
+            .withOTSAddress(otsHashAddress.getOTSAddress()).build();
+        return khf.PRF(secretKeySeed, otsHashAddress.toByteArray());
     }
 
     /**

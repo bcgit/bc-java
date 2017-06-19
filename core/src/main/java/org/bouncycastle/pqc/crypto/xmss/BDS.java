@@ -11,7 +11,7 @@ import java.util.TreeMap;
 /**
  * BDS.
  */
-public final class BDS
+final class BDS
     implements Serializable
 {
 
@@ -47,7 +47,7 @@ public final class BDS
             finished = false;
         }
 
-        private void update(OTSHashAddress otsHashAddress)
+        private void update(XMSSPrivateKeyParameters privateKey, OTSHashAddress otsHashAddress)
         {
             if (otsHashAddress == null)
             {
@@ -71,7 +71,7 @@ public final class BDS
                 .withTreeIndex(nextIndex).build();
 
 			/* calculate leaf node */
-            wotsPlus.importKeys(xmss.getWOTSPlusSecretKey(otsHashAddress), xmss.getPublicSeed());
+            wotsPlus.importKeys(wotsPlus.getWOTSPlusSecretKey(privateKey.getSecretKeySeed(), otsHashAddress), privateKey.getPublicSeed());
             WOTSPlusPublicKeyParameters wotsPlusPublicKey = wotsPlus.getPublicKey(otsHashAddress);
             XMSSNode node = XMSSNodeUtil.lTree(wotsPlus, wotsPlusPublicKey, lTreeAddress);
 
@@ -214,13 +214,13 @@ public final class BDS
         }
     }
 
-    protected XMSSNode initialize(OTSHashAddress otsHashAddress)
+    protected XMSSNode initialize(XMSSPrivateKeyParameters privateKey, OTSHashAddress otsHashAddress)
     {
         if (otsHashAddress == null)
         {
             throw new NullPointerException("otsHashAddress == null");
         }
-		/* prepare addresses */
+        /* prepare addresses */
         LTreeAddress lTreeAddress = (LTreeAddress)new LTreeAddress.Builder()
             .withLayerAddress(otsHashAddress.getLayerAddress()).withTreeAddress(otsHashAddress.getTreeAddress())
             .build();
@@ -241,7 +241,7 @@ public final class BDS
 			 * import WOTSPlusSecretKey as its needed to calculate the public
 			 * key on the fly
 			 */
-            wotsPlus.importKeys(xmss.getWOTSPlusSecretKey(otsHashAddress), xmss.getPublicSeed());
+            wotsPlus.importKeys(wotsPlus.getWOTSPlusSecretKey(privateKey.getSecretKeySeed(), otsHashAddress), privateKey.getPublicSeed());
             WOTSPlusPublicKeyParameters wotsPlusPublicKey = wotsPlus.getPublicKey(otsHashAddress);
             lTreeAddress = (LTreeAddress)new LTreeAddress.Builder().withLayerAddress(lTreeAddress.getLayerAddress())
                 .withTreeAddress(lTreeAddress.getTreeAddress()).withLTreeAddress(indexLeaf)
@@ -302,7 +302,7 @@ public final class BDS
         return root.clone();
     }
 
-    protected void nextAuthenticationPath(OTSHashAddress otsHashAddress)
+    protected void nextAuthenticationPath(XMSSPrivateKeyParameters privateKey, OTSHashAddress otsHashAddress)
     {
         if (otsHashAddress == null)
         {
@@ -340,7 +340,7 @@ public final class BDS
 			 * import WOTSPlusSecretKey as its needed to calculate the public
 			 * key on the fly
 			 */
-            wotsPlus.importKeys(xmss.getWOTSPlusSecretKey(otsHashAddress), xmss.getPublicSeed());
+            wotsPlus.importKeys(wotsPlus.getWOTSPlusSecretKey(privateKey.getSecretKeySeed(), otsHashAddress), privateKey.getPublicSeed());
             WOTSPlusPublicKeyParameters wotsPlusPublicKey = wotsPlus.getPublicKey(otsHashAddress);
             lTreeAddress = (LTreeAddress)new LTreeAddress.Builder().withLayerAddress(lTreeAddress.getLayerAddress())
                 .withTreeAddress(lTreeAddress.getTreeAddress()).withLTreeAddress(index)
@@ -392,7 +392,7 @@ public final class BDS
             TreeHash treeHash = getTreeHashInstanceForUpdate();
             if (treeHash != null)
             {
-                treeHash.update(otsHashAddress);
+                treeHash.update(privateKey, otsHashAddress);
             }
         }
         index++;

@@ -14,7 +14,6 @@ public class XMSSMTSigner
     private XMSSMTPublicKeyParameters publicKey;
     private XMSSMTParameters params;
     private XMSS xmss;
-    private KeyedHashFunctions khf;
 
     private WOTSPlus wotsPlus;
 
@@ -29,7 +28,6 @@ public class XMSSMTSigner
 
             params = privateKey.getParameters();
             xmss = params.getXMSS();
-            khf = xmss.getKhf();
         }
         else
         {
@@ -38,7 +36,6 @@ public class XMSSMTSigner
 
             params = publicKey.getParameters();
             xmss = params.getXMSS();
-            khf = xmss.getKhf();
         }
 
         wotsPlus = new WOTSPlus(new WOTSPlusParameters(params.getDigest()));
@@ -78,10 +75,10 @@ public class XMSSMTSigner
         }
 
       		/* compress message */
-        byte[] random = khf.PRF(privateKey.getSecretKeyPRF(), XMSSUtil.toBytesBigEndian(globalIndex, 32));
+        byte[] random = wotsPlus.getKhf().PRF(privateKey.getSecretKeyPRF(), XMSSUtil.toBytesBigEndian(globalIndex, 32));
         byte[] concatenated = XMSSUtil.concat(random, privateKey.getRoot(),
             XMSSUtil.toBytesBigEndian(globalIndex, params.getDigestSize()));
-        byte[] messageDigest = khf.HMsg(concatenated, message);
+        byte[] messageDigest = wotsPlus.getKhf().HMsg(concatenated, message);
 
         XMSSMTSignature signature = new XMSSMTSignature.Builder(params).withIndex(globalIndex).withRandom(random).build();
 
@@ -106,7 +103,7 @@ public class XMSSMTSigner
         if (bdsState.get(0) == null || indexLeaf == 0)
         {
             bdsState.put(0, new BDS(xmss));
-            bdsState.get(0).initialize(otsHashAddress);
+            bdsState.get(0).initialize(xmss.getPrivateKey(), otsHashAddress);
         }
 
         XMSSReducedSignature reducedSignature = new XMSSReducedSignature.Builder(xmss.getParams())
@@ -118,7 +115,7 @@ public class XMSSMTSigner
       		/* prepare authentication path for next leaf */
         if (indexLeaf < ((1 << xmssHeight) - 1))
         {
-            bdsState.get(0).nextAuthenticationPath(otsHashAddress);
+            bdsState.get(0).nextAuthenticationPath(xmss.getPrivateKey(), otsHashAddress);
         }
 
       		/* loop over remaining layers */
@@ -141,7 +138,7 @@ public class XMSSMTSigner
             if (bdsState.get(layer) == null || XMSSUtil.isNewBDSInitNeeded(globalIndex, xmssHeight, layer))
             {
                 bdsState.put(layer, new BDS(xmss));
-                bdsState.get(layer).initialize(otsHashAddress);
+                bdsState.get(layer).initialize(xmss.getPrivateKey(), otsHashAddress);
             }
 
             reducedSignature = new XMSSReducedSignature.Builder(xmss.getParams())
@@ -154,7 +151,7 @@ public class XMSSMTSigner
             if (indexLeaf < ((1 << xmssHeight) - 1)
                 && XMSSUtil.isNewAuthenticationPathNeeded(globalIndex, xmssHeight, layer))
             {
-                bdsState.get(layer).nextAuthenticationPath(otsHashAddress);
+                bdsState.get(layer).nextAuthenticationPath(xmss.getPrivateKey(), otsHashAddress);
             }
         }
 
@@ -186,7 +183,7 @@ public class XMSSMTSigner
 
         byte[] concatenated = XMSSUtil.concat(sig.getRandom(), publicKey.getRoot(),
             XMSSUtil.toBytesBigEndian(sig.getIndex(), params.getDigestSize()));
-        byte[] messageDigest = khf.HMsg(concatenated, message);
+        byte[] messageDigest = wotsPlus.getKhf().HMsg(concatenated, message);
 
         long globalIndex = sig.getIndex();
         int xmssHeight = xmss.getParams().getHeight();
