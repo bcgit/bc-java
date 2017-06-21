@@ -1,12 +1,11 @@
 package org.bouncycastle.tls.test;
 
-import java.security.SecureRandom;
-
-import junit.framework.TestCase;
 import org.bouncycastle.tls.DTLSTransport;
 import org.bouncycastle.tls.DatagramTransport;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.util.Arrays;
+
+import junit.framework.TestCase;
 
 public class DTLSTestCase extends TestCase
 {
@@ -52,10 +51,8 @@ public class DTLSTestCase extends TestCase
             return;
         }
 
-        SecureRandom secureRandom = new SecureRandom();
-
-        DTLSTestClientProtocol clientProtocol = new DTLSTestClientProtocol(secureRandom, config);
-        DTLSTestServerProtocol serverProtocol = new DTLSTestServerProtocol(secureRandom, config);
+        DTLSTestClientProtocol clientProtocol = new DTLSTestClientProtocol(config);
+        DTLSTestServerProtocol serverProtocol = new DTLSTestServerProtocol(config);
 
         MockDatagramAssociation network = new MockDatagramAssociation(1500);
 

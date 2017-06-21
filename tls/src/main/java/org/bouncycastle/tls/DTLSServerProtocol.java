@@ -3,7 +3,6 @@ package org.bouncycastle.tls;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.security.SecureRandom;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -14,9 +13,9 @@ public class DTLSServerProtocol
 {
     protected boolean verifyRequests = true;
 
-    public DTLSServerProtocol(SecureRandom secureRandom)
+    public DTLSServerProtocol()
     {
-        super(secureRandom);
+        super();
     }
 
     public boolean getVerifyRequests()
