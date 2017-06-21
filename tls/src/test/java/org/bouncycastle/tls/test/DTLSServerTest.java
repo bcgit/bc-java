@@ -23,12 +23,9 @@ public class DTLSServerTest
         throws Exception
     {
         int port = 5556;
-
         int mtu = 1500;
 
-        SecureRandom secureRandom = new SecureRandom();
-
-        DTLSServerProtocol serverProtocol = new DTLSServerProtocol(secureRandom);
+        DTLSServerProtocol serverProtocol = new DTLSServerProtocol();
 
         byte[] data = new byte[mtu];
         DatagramPacket packet = new DatagramPacket(data, mtu);
