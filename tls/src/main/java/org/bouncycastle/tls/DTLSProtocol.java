@@ -3,7 +3,6 @@ package org.bouncycastle.tls;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.security.SecureRandom;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -11,16 +10,8 @@ import org.bouncycastle.util.Arrays;
 
 public abstract class DTLSProtocol
 {
-    protected final SecureRandom secureRandom;
-
-    protected DTLSProtocol(SecureRandom secureRandom)
+    protected DTLSProtocol()
     {
-        if (secureRandom == null)
-        {
-            throw new IllegalArgumentException("'secureRandom' cannot be null");
-        }
-
-        this.secureRandom = secureRandom;
     }
 
     protected void processFinished(byte[] body, byte[] expected_verify_data)

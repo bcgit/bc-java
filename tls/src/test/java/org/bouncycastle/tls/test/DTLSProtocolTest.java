@@ -17,8 +17,8 @@ public class DTLSProtocolTest
     {
         SecureRandom secureRandom = new SecureRandom();
 
-        DTLSClientProtocol clientProtocol = new DTLSClientProtocol(secureRandom);
-        DTLSServerProtocol serverProtocol = new DTLSServerProtocol(secureRandom);
+        DTLSClientProtocol clientProtocol = new DTLSClientProtocol();
+        DTLSServerProtocol serverProtocol = new DTLSServerProtocol();
 
         MockDatagramAssociation network = new MockDatagramAssociation(1500);
 

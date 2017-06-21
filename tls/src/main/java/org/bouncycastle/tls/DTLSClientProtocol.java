@@ -3,7 +3,6 @@ package org.bouncycastle.tls;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.security.SecureRandom;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -14,9 +13,9 @@ import org.bouncycastle.util.Arrays;
 public class DTLSClientProtocol
     extends DTLSProtocol
 {
-    public DTLSClientProtocol(SecureRandom secureRandom)
+    public DTLSClientProtocol()
     {
-        super(secureRandom);
+        super();
     }
 
     public DTLSTransport connect(TlsClient client, DatagramTransport transport)

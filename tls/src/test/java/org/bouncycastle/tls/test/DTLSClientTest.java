@@ -74,7 +74,7 @@ public class DTLSClientTest
         transport = new UnreliableDatagramTransport(transport, secureRandom, 0, 0);
         transport = new LoggingDatagramTransport(transport, System.out);
 
-        DTLSClientProtocol protocol = new DTLSClientProtocol(secureRandom);
+        DTLSClientProtocol protocol = new DTLSClientProtocol();
 
         return protocol.connect(client, transport);
     }
