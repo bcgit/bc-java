@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.digests.DSTU7564Digest;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.Pack;
 
 /**
  * Implementation of DSTU7564 MAC mode
@@ -20,9 +21,8 @@ public class DSTU7564Mac
 
     private byte[] paddedKey;
     private byte[] invertedKey;
-    private byte[] paddedIn;
 
-    private int inputLength;
+    private long inputLength;
 
     public DSTU7564Mac(int macBitSize)
     {
@@ -32,7 +32,6 @@ public class DSTU7564Mac
 
         this.paddedKey = null;
         this.invertedKey = null;
-        this.paddedIn = null;
     }
 
     public void init(CipherParameters params)
@@ -120,21 +119,26 @@ public class DSTU7564Mac
         engine.reset();
     }
 
-    private byte[] pad()
+    private void pad()
     {
-        byte[] padded = new byte[engine.getByteLength() - (inputLength % engine.getByteLength())];
+        int extra = engine.getByteLength() - (int)(inputLength % engine.getByteLength());
+        if (extra < 12)
+        {
+            extra = engine.getByteLength();
+        }
+
+        byte[] padded = new byte[extra];
            
         padded[0] = (byte)0x80; // Defined in standard;
-        intToBytes(inputLength * BITS_IN_BYTE, padded, padded.length - 12); // Defined in standard;
+
+        // Defined in standard;
+        Pack.longToLittleEndian(inputLength * BITS_IN_BYTE, padded, padded.length - 12);
 
         engine.update(padded, 0, padded.length);
-        
-        return padded;
     }
 
     private byte[] padKey(byte[] in, int inOff, int len)
     {
-
         byte[] padded;
         if (len % engine.getByteLength() == 0)
         {
@@ -149,16 +153,8 @@ public class DSTU7564Mac
         System.arraycopy(in, inOff, padded, 0, len);
   
         padded[len] = (byte)0x80; // Defined in standard;
-        intToBytes(len * BITS_IN_BYTE, padded, padded.length - 12); // Defined in standard;
+        Pack.intToLittleEndian(len * BITS_IN_BYTE, padded, padded.length - 12); // Defined in standard;
 
         return padded;
-    }
-
-    private void intToBytes(int num, byte[] outBytes, int outOff)
-    {
-        outBytes[outOff + 3] = (byte)(num >> 24);
-        outBytes[outOff + 2] = (byte)(num >> 16);
-        outBytes[outOff + 1] = (byte)(num >> 8);
-        outBytes[outOff] = (byte)num;
     }
 }
