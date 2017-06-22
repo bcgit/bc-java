@@ -278,7 +278,9 @@ public class DSTU7564Digest
         state[0][0] = (byte)state.length;
 
         inputLength = 0;
-
+        bufOff = 0;
+        
+        Arrays.fill(buf, (byte)0);
         Arrays.fill(padded, (byte)0);
     }
 
@@ -485,7 +487,7 @@ public class DSTU7564Digest
     {
 
         byte[] padded;
-        if (blockSize - len < 12)
+        if (blockSize - len < 13)         // terminator byte + 96 bits of length
         {
             padded = new byte[2 * blockSize];
         }
