@@ -138,6 +138,42 @@ public class DSTU7564Test
                 + " got " + Hex.toHexString(digestBuf));
         }
 
+        expectedDigest = Hex.decode("6f8f0a3f8261af77581ab01cb89d4cb5ed87ca1d9954f11d5586e94b45c82fb8");
+
+        input = new byte[51];
+        for (int i = 0; i != input.length; i++)
+        {
+            input[i] = (byte)(i & 0xff);
+        }
+
+        digest.update(input, 0, input.length);
+        digest.doFinal(digestBuf, 0);
+
+        if (!Arrays.areEqual(expectedDigest, digestBuf))
+        {
+            return new SimpleTestResult(false, Name() + ": Failed overflow test 5 - expected "
+                + Hex.toHexString(expectedDigest)
+                + " got " + Hex.toHexString(digestBuf));
+        }
+
+        input = new byte[52];
+        for (int i = 0; i != input.length; i++)
+        {
+            input[i] = (byte)(i & 0xff);
+        }
+
+        expectedDigest = Hex.decode("2d60e14ead298848031a3321ebf9e8e5263228c498e2d8ba8a857d4979aca4b3");
+
+        digest.update(input, 0, input.length);
+        digest.doFinal(digestBuf, 0);
+
+        if (!Arrays.areEqual(expectedDigest, digestBuf))
+        {
+            return new SimpleTestResult(false, Name() + ": Failed overflow test 6 - expected "
+                + Hex.toHexString(expectedDigest)
+                + " got " + Hex.toHexString(digestBuf));
+        }
+
         return new SimpleTestResult(true, Name() + ": Okay");
     }
 
