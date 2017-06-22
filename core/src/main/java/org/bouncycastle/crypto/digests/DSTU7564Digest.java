@@ -49,7 +49,7 @@ public class DSTU7564Digest
 
     private long[] tempLongBuffer;
 
-    private int inputLength;
+    private long inputLength;
     private int bufOff;
     private byte[] buf;
 
@@ -263,6 +263,8 @@ public class DSTU7564Digest
 
         System.arraycopy(stateBuffer, stateBuffer.length - hashSize, out, outOff, hashSize);
 
+        reset();
+        
         return hashSize;
     }
 
@@ -274,6 +276,8 @@ public class DSTU7564Digest
         }
 
         state[0][0] = (byte)state.length;
+
+        inputLength = 0;
 
         Arrays.fill(padded, (byte)0);
     }
@@ -481,30 +485,22 @@ public class DSTU7564Digest
     {
 
         byte[] padded;
-        if (len % blockSize == 0)
+        if (blockSize - len < 12)
         {
-            padded = new byte[len + blockSize];
+            padded = new byte[2 * blockSize];
         }
         else
         {
-            int blocks = len / blockSize;
-            padded = new byte[(blocks * blockSize) + blockSize];
+            padded = new byte[blockSize];
         }
 
         System.arraycopy(in, inOff, padded, 0, len);
 
         padded[len] = (byte)0x80; // Defined in standard;
-        intToBytes(inputLength * BITS_IN_BYTE, padded, padded.length - 12); // Defined in standard;
+        // Defined in standard;
+        Pack.longToLittleEndian(inputLength * BITS_IN_BYTE, padded, padded.length - 12);
 
         return padded;
-    }
-
-    private void intToBytes(int num, byte[] outBytes, int outOff)
-    {
-        outBytes[outOff + 3] = (byte)(num >> 24);
-        outBytes[outOff + 2] = (byte)(num >> 16);
-        outBytes[outOff + 1] = (byte)(num >> 8);
-        outBytes[outOff] = (byte)num;
     }
 
     //region CONSTANTS
