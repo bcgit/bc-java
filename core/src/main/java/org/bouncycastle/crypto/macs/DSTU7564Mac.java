@@ -122,7 +122,7 @@ public class DSTU7564Mac
     private void pad()
     {
         int extra = engine.getByteLength() - (int)(inputLength % engine.getByteLength());
-        if (extra < 12)
+        if (extra < 13)  // terminator byte + 96 bits of length
         {
             extra = engine.getByteLength();
         }
