@@ -550,7 +550,17 @@ public class SMIMESignedGenerator
         {
             if (SMIMEUtil.isMultipartContent(bodyPart))
             {
-                Multipart mp = (Multipart)bodyPart.getContent();
+                Object content = bodyPart.getContent();
+                Multipart mp;
+                if (content instanceof Multipart)
+                {
+                    mp = (Multipart)content;
+                }
+                else
+                {
+                    mp = new MimeMultipart(bodyPart.getDataHandler().getDataSource());
+                }
+
                 ContentType contentType = new ContentType(mp.getContentType());
                 String boundary = "--" + contentType.getParameter("boundary");
 
@@ -572,7 +582,7 @@ public class SMIMESignedGenerator
                     writeBodyPart(out, (MimeBodyPart)mp.getBodyPart(i));
                     lOut.writeln();       // CRLF terminator
                 }
-                
+
                 lOut.writeln(boundary + "--");
             }
             else
