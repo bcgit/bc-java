@@ -151,7 +151,9 @@ public class RegressionTest
         new SM2EngineTest(),
         new SM2KeyExchangeTest(),
         new SM2SignerTest(),
-        new SM4Test()
+        new SM4Test(),
+        new DSTU7624Test(),
+        new DSTU7564Test()
     };
 
     public static void main(
