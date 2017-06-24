@@ -6,8 +6,6 @@ import org.bouncycastle.crypto.macs.DSTU7564Mac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.SimpleTestResult;
-import org.bouncycastle.util.test.TestResult;
 
 public class DSTU7564Test
     extends DigestTest
@@ -25,56 +23,21 @@ public class DSTU7564Test
 
     public static void main(String[] args)
     {
-        DigestTest test = new DSTU7564Test();
-        test.performTest();
+        runTest(new DSTU7564Test());
     }
 
 
     @Override
     public void performTest()
     {
-
-        TestResult result;
-
-        result = hash256Tests();
-        if (!result.isSuccessful())
-        {
-            System.out.println(result);
-            return;
-        }
-
-        result = hash384Tests();
-        if (!result.isSuccessful())
-        {
-            System.out.println(result);
-            return;
-        }
-
-        result = hash512Tests();
-        if (!result.isSuccessful())
-        {
-            System.out.println(result);
-            return;
-        }
-
-        result = macTests();
-        if (!result.isSuccessful())
-        {
-            System.out.println(result);
-            return;
-        }
-
-        result = overflowTest();
-        if (!result.isSuccessful())
-        {
-            System.out.println(result);
-            return;
-        }
-
-        System.out.println(result);
+        hash256Tests();
+        hash384Tests();
+        hash512Tests();
+        macTests();
+        overflowTest();
     }
 
-    private TestResult overflowTest()
+    private void overflowTest()
     {
         int macBitSize = 256;
         byte[] input = new byte[1024];
@@ -95,7 +58,7 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedMac, mac))
         {
-            return new SimpleTestResult(false, Name() + ": Failed overflow test 2 - expected "
+            fail("Failed overflow test 2 - expected "
                 + Hex.toHexString(expectedMac)
                 + " got " + Hex.toHexString(mac));
         }
@@ -119,7 +82,7 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedMac, mac))
         {
-            return new SimpleTestResult(false, Name() + ": Failed overflow test 3 - expected "
+            fail("Failed overflow test 3 - expected "
                 + Hex.toHexString(expectedMac)
                 + " got " + Hex.toHexString(mac));
         }
@@ -133,7 +96,7 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedDigest, digestBuf))
         {
-            return new SimpleTestResult(false, Name() + ": Failed overflow test 4 - expected "
+            fail("Failed overflow test 4 - expected "
                 + Hex.toHexString(expectedDigest)
                 + " got " + Hex.toHexString(digestBuf));
         }
@@ -151,7 +114,7 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedDigest, digestBuf))
         {
-            return new SimpleTestResult(false, Name() + ": Failed overflow test 5 - expected "
+            fail("Failed overflow test 5 - expected "
                 + Hex.toHexString(expectedDigest)
                 + " got " + Hex.toHexString(digestBuf));
         }
@@ -169,15 +132,13 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedDigest, digestBuf))
         {
-            return new SimpleTestResult(false, Name() + ": Failed overflow test 6 - expected "
+            fail("Failed overflow test 6 - expected "
                 + Hex.toHexString(expectedDigest)
                 + " got " + Hex.toHexString(digestBuf));
         }
-
-        return new SimpleTestResult(true, Name() + ": Okay");
     }
 
-    private TestResult macTests()
+    private void macTests()
     {
 
         //test1
@@ -196,7 +157,7 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedMac, mac))
         {
-            return new SimpleTestResult(false, Name() + ": Failed mac test 1 - expected "
+            fail("Failed mac test 1 - expected "
                 + Hex.toHexString(expectedMac)
                 + " got " + Hex.toHexString(mac));
         }
@@ -217,7 +178,7 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedMac, mac))
         {
-            return new SimpleTestResult(false, Name() + ": Failed mac test 2 - expected "
+            fail("Failed mac test 2 - expected "
                 + Hex.toHexString(expectedMac)
                 + " got " + Hex.toHexString(mac));
         }
@@ -238,15 +199,13 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedMac, mac))
         {
-            return new SimpleTestResult(false, Name() + ": Failed mac test 3 - expected "
+            fail("Failed mac test 3 - expected "
                 + Hex.toHexString(expectedMac)
                 + " got " + Hex.toHexString(mac));
         }
-
-        return new SimpleTestResult(true, Name() + ": Okay");
     }
 
-    private TestResult hash512Tests()
+    private void hash512Tests()
     {
 
         int hashBitSize = 512;
@@ -263,7 +222,7 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedHash, hash))
         {
-            return new SimpleTestResult(false, Name() + ": Failed hash-512 test 1 - expected "
+            fail("Failed hash-512 test 1 - expected "
                 + Hex.toHexString(expectedHash)
                 + " got " + Hex.toHexString(hash));
         }
@@ -280,7 +239,7 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedHash, hash))
         {
-            return new SimpleTestResult(false, Name() + ": Failed hash-512 test 2 - expected "
+            fail("Failed hash-512 test 2 - expected "
                 + Hex.toHexString(expectedHash)
                 + " got " + Hex.toHexString(hash));
         }
@@ -297,7 +256,7 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedHash, hash))
         {
-            return new SimpleTestResult(false, Name() + ": Failed hash-512 test 3 - expected "
+            fail("Failed hash-512 test 3 - expected "
                 + Hex.toHexString(expectedHash)
                 + " got " + Hex.toHexString(hash));
         }
@@ -314,7 +273,7 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedHash, hash))
         {
-            return new SimpleTestResult(false, Name() + ": Failed hash-512 test 4 - expected "
+            fail("Failed hash-512 test 4 - expected "
                 + Hex.toHexString(expectedHash)
                 + " got " + Hex.toHexString(hash));
         }
@@ -331,7 +290,7 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedHash, hash))
         {
-            return new SimpleTestResult(false, Name() + ": Failed hash-512 test 5 - expected "
+            fail("Failed hash-512 test 5 - expected "
                 + Hex.toHexString(expectedHash)
                 + " got " + Hex.toHexString(hash));
         }
@@ -349,16 +308,13 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedHash, hash))
         {
-            return new SimpleTestResult(false, Name() + ": Failed hash-512 test 6 - expected "
+            fail("Failed hash-512 test 6 - expected "
                 + Hex.toHexString(expectedHash)
                 + " got " + Hex.toHexString(hash));
         }
-
-
-        return new SimpleTestResult(true, Name() + ": Okay");
     }
 
-    private TestResult hash384Tests()
+    private void hash384Tests()
     {
 
         int hashBitSize = 384;
@@ -375,15 +331,13 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedHash, hash))
         {
-            return new SimpleTestResult(false, Name() + ": Failed hash-384 test 1 - expected "
+            fail("Failed hash-384 test 1 - expected "
                 + Hex.toHexString(expectedHash)
                 + " got " + Hex.toHexString(hash));
         }
-
-        return new SimpleTestResult(true, Name() + ": Okay");
     }
 
-    private TestResult hash256Tests()
+    private void hash256Tests()
     {
 
         int hashBitSize = 256;
@@ -400,7 +354,7 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedHash, hash))
         {
-            return new SimpleTestResult(false, Name() + ": Failed hash-256 test 1 - expected "
+            fail("Failed hash-256 test 1 - expected "
                 + Hex.toHexString(expectedHash)
                 + " got " + Hex.toHexString(hash));
         }
@@ -417,7 +371,7 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedHash, hash))
         {
-            return new SimpleTestResult(false, Name() + ": Failed hash-256 test 2 - expected "
+            fail("Failed hash-256 test 2 - expected "
                 + Hex.toHexString(expectedHash)
                 + " got " + Hex.toHexString(hash));
         }
@@ -433,7 +387,7 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedHash, hash))
         {
-            return new SimpleTestResult(false, Name() + ": Failed hash-256 test 3 - expected "
+            fail("Failed hash-256 test 3 - expected "
                 + Hex.toHexString(expectedHash)
                 + " got " + Hex.toHexString(hash));
         }
@@ -449,7 +403,7 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedHash, hash))
         {
-            return new SimpleTestResult(false, Name() + ": Failed hash-256 test 4 - expected "
+            fail("Failed hash-256 test 4 - expected "
                 + Hex.toHexString(expectedHash)
                 + " got " + Hex.toHexString(hash));
         }
@@ -465,7 +419,7 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedHash, hash))
         {
-            return new SimpleTestResult(false, Name() + ": Failed hash-256 test 5 - expected "
+            fail("Failed hash-256 test 5 - expected "
                 + Hex.toHexString(expectedHash)
                 + " got " + Hex.toHexString(hash));
         }
@@ -481,17 +435,9 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedHash, hash))
         {
-            return new SimpleTestResult(false, Name() + ": Failed hash-256 test 6 - expected "
+            fail("Failed hash-256 test 6 - expected "
                 + Hex.toHexString(expectedHash)
                 + " got " + Hex.toHexString(hash));
         }
-
-        return new SimpleTestResult(true, Name() + ": Okay");
     }
-
-    private String Name()
-    {
-        return "DSTU7564";
-    }
-
 }
