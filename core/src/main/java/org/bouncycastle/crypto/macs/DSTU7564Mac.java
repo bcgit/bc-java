@@ -117,6 +117,10 @@ public class DSTU7564Mac
     {
         inputLength = 0;
         engine.reset();
+        if (paddedKey != null)
+        {
+            engine.update(paddedKey, 0, paddedKey.length);
+        }
     }
 
     private void pad()
