@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -10,7 +11,7 @@ import org.bouncycastle.util.Pack;
  * https://github.com/Roman-Oliynykov/Kupyna-reference
  */
 public class DSTU7564Digest
-    implements ExtendedDigest
+    implements ExtendedDigest, Memoable
 {
 
     private static final int ROWS = 8;
@@ -52,6 +53,35 @@ public class DSTU7564Digest
     private long inputLength;
     private int bufOff;
     private byte[] buf;
+
+    public DSTU7564Digest(DSTU7564Digest digest)
+    {
+        copyIn(digest);
+    }
+
+    private void copyIn(DSTU7564Digest digest)
+    {
+        this.hashSize = digest.hashSize;
+        this.blockSize = digest.blockSize;
+
+        this.columns = digest.columns;
+        this.rounds = digest.rounds;
+
+        this.padded = Arrays.clone(digest.padded);
+        this.state = Arrays.clone(digest.state);
+
+        this.tempState1 = Arrays.clone(digest.tempState1);
+        this.tempState2 = Arrays.clone(digest.tempState2);
+
+        this.tempBuffer = Arrays.clone(digest.tempBuffer);
+        this.mixColumnsResult = Arrays.clone(digest.mixColumnsResult);
+
+        this.tempLongBuffer = Arrays.clone(digest.tempLongBuffer);
+
+        this.inputLength = digest.inputLength;
+        this.bufOff = digest.bufOff;
+        this.buf = Arrays.clone(digest.buf);
+    }
 
     public DSTU7564Digest(int hashSizeBits)
     {
@@ -286,7 +316,6 @@ public class DSTU7564Digest
 
     private void processBlock(byte[] input, int inOff)
     {
-
         for (int bufferIndex = 0; bufferIndex < state.length; bufferIndex++)
         {
             Arrays.fill(tempState1[bufferIndex], (byte)0);
@@ -485,7 +514,6 @@ public class DSTU7564Digest
 
     private byte[] pad(byte[] in, int inOff, int len)
     {
-
         byte[] padded;
         if (blockSize - len < 13)         // terminator byte + 96 bits of length
         {
@@ -592,5 +620,16 @@ public class DSTU7564Digest
                 (byte)0x64, (byte)0x6d, (byte)0xdc, (byte)0xf0, (byte)0x59, (byte)0xa9, (byte)0x4c, (byte)0x17, (byte)0x7f, (byte)0x91, (byte)0xb8, (byte)0xc9, (byte)0x57, (byte)0x1b, (byte)0xe0, (byte)0x61
             }
     };
-    //endregion
+
+    public Memoable copy()
+    {
+        return new DSTU7564Digest(this);
+    }
+
+    public void reset(Memoable other)
+    {
+        DSTU7564Digest d = (DSTU7564Digest)other;
+
+        copyIn(d);
+    }
 }
