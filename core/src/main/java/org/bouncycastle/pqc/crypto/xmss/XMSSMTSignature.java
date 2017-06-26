@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * XMSSMT Signature.
+ * XMSS^MT Signature.
  */
 public final class XMSSMTSignature
     implements XMSSStoreableObjectInterface

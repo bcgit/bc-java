@@ -5,7 +5,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 
 /**
- * XMSS-MT key-pair generation parameters.
+ * XMSS^MT key-pair generation parameters.
  */
 public final class XMSSMTKeyGenerationParameters
     extends KeyGenerationParameters

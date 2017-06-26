@@ -7,7 +7,7 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 
 /**
- * Key pair generator for XMSSMT keys.
+ * Key pair generator for XMSS^MT keys.
  */
 public final class XMSSMTKeyPairGenerator
 {

@@ -25,24 +25,14 @@ final class KeyedHashFunctions
 
     private byte[] coreDigest(int fixedValue, byte[] key, byte[] index)
     {
-        byte[] buffer = new byte[digestSize + key.length + index.length];
         byte[] in = XMSSUtil.toBytesBigEndian(fixedValue, digestSize);
         /* fill first n byte of out buffer */
-        for (int i = 0; i < in.length; i++)
-        {
-            buffer[i] = in[i];
-        }
+        digest.update(in, 0, in.length);
 		/* add key */
-        for (int i = 0; i < key.length; i++)
-        {
-            buffer[in.length + i] = key[i];
-        }
+        digest.update(key, 0, key.length);
 		/* add index */
-        for (int i = 0; i < index.length; i++)
-        {
-            buffer[in.length + key.length + i] = index[i];
-        }
-        digest.update(buffer, 0, buffer.length);
+        digest.update(index, 0, index.length);
+
         byte[] out = new byte[digestSize];
         if (digest instanceof Xof)
         {

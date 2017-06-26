@@ -17,5 +17,5 @@ public interface StatefulMessageSigner
      * </p>
      * @return an updated private key object, which can be used for later signature generation.
      */
-    public AsymmetricKeyParameter getFinalPrivateKey();
+    public AsymmetricKeyParameter getUpdatedPrivateKey();
 }

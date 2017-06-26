@@ -7,7 +7,7 @@ import java.util.TreeMap;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 
 /**
- * XMSSMT Private Key.
+ * XMSS^MT Private Key.
  */
 public final class XMSSMTPrivateKeyParameters
     extends AsymmetricKeyParameter
