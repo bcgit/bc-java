@@ -126,7 +126,7 @@ public class KCCMBlockCipher
 
     public String getAlgorithmName()
     {
-        return engine.getAlgorithmName() + "/CCM";
+        return engine.getAlgorithmName() + "/KCCM";
     }
 
     public BlockCipher getUnderlyingCipher()
@@ -338,7 +338,7 @@ public class KCCMBlockCipher
 
             System.arraycopy(buffer, 0, calculatedMac, 0, macSize);
 
-            if (!Arrays.areEqual(mac, calculatedMac))
+            if (!Arrays.constantTimeAreEqual(mac, calculatedMac))
             {
                 throw new InvalidCipherTextException("mac check failed");
             }

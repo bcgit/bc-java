@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.modes;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 
 import org.bouncycastle.crypto.BlockCipher;
@@ -7,13 +8,11 @@ import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Implementation of DSTU7624 GCM mode
@@ -56,6 +55,8 @@ public class KGCMBlockCipher
     private int lambda_o;
     private int lambda_c;
 
+    private ExposedByteArrayOutputStream associatedText = new ExposedByteArrayOutputStream();
+    private ExposedByteArrayOutputStream data = new ExposedByteArrayOutputStream();
 
     public KGCMBlockCipher(BlockCipher dstu7624Engine)
     {
@@ -131,13 +132,11 @@ public class KGCMBlockCipher
         this.macBlock = new byte[engine.getBlockSize()];
         ctrEngine.init(true, new ParametersWithIV(engineParam, this.iv));
         engine.init(true, engineParam);
-
-
     }
 
     public String getAlgorithmName()
     {
-        return engine.getAlgorithmName() + "/GCM";
+        return engine.getAlgorithmName() + "/KGCM";
     }
 
     public BlockCipher getUnderlyingCipher()
@@ -147,10 +146,15 @@ public class KGCMBlockCipher
 
     public void processAADByte(byte in)
     {
-        throw new NotImplementedException();
+        associatedText.write(in);
     }
 
-    public void processAADBytes(byte[] authText, int authOff, int len)
+    public void processAADBytes(byte[] in, int inOff, int len)
+    {
+        associatedText.write(in, inOff, len);
+    }
+
+    private void processAAD(byte[] authText, int authOff, int len)
     {
         lambda_o = len * BITS_IN_BYTE;
 
@@ -176,119 +180,69 @@ public class KGCMBlockCipher
 
             inOff_ += engine.getBlockSize();
         }
-
-
-    }
-
-    /* Processes without encryption */
-    public void processAADBytes(byte[] authText, int authOff, int len, byte[] mac, int macOff)
-    {
-        reset();
-
-        if (authText.length - authOff < len)
-        {
-            throw new DataLengthException("AuthText buffer too short");
-        }
-        if (mac.length - macOff < macSize)
-        {
-            throw new OutputLengthException("Mac buffer too short");
-        }
-
-        lambda_o = len * BITS_IN_BYTE;
-
-        engine.processBlock(H, 0, H, 0);
-
-        while (len > 0)
-        {
-            for (int byteIndex = 0; byteIndex < engine.getBlockSize(); byteIndex++)
-            {
-                b[byteIndex] ^= authText[authOff + byteIndex];
-            }
-
-            multiplyOverField(engine.getBlockSize() * BITS_IN_BYTE, b, H, temp);
-
-            temp = Arrays.reverse(temp);
-
-            System.arraycopy(temp, 0, b, 0, engine.getBlockSize());
-
-            len -= engine.getBlockSize();
-            authOff += engine.getBlockSize();
-        }
-
-        Arrays.fill(temp, (byte)0);
-
-        intToBytes(lambda_o, temp, 0);
-
-        for (int byteIndex = 0; byteIndex < engine.getBlockSize(); byteIndex++)
-        {
-            b[byteIndex] ^= temp[byteIndex];
-        }
-
-        engine.processBlock(b, 0, macBlock, 0);
-
-        System.arraycopy(macBlock, 0, mac, 0, macSize);
     }
 
     public int processByte(byte in, byte[] out, int outOff)
-        throws DataLengthException
+        throws DataLengthException, IllegalStateException
     {
-        throw new NotImplementedException();
+        data.write(in);
+
+        return 0;
     }
 
-    public int processBytes(byte[] in, int inOff, int len, byte[] out, int outOff)
-        throws DataLengthException
+    public int processBytes(byte[] in, int inOff, int inLen, byte[] out, int outOff)
+        throws DataLengthException, IllegalStateException
     {
-
-        if (out.length - outOff < len + macSize)
+        if (in.length < (inOff + inLen))
         {
-            throw new DataLengthException("Output buffer too short");
+            throw new DataLengthException("input buffer too short");
         }
+        data.write(in, inOff, inLen);
 
-        lambda_c = len * BITS_IN_BYTE;
-
-        //use alternative cipher to produce output
-        int resultLen;
-        if (forEncryption)
-        {
-            resultLen = ctrEngine.processBytes(in, inOff, len, out, outOff);
-            try
-            {
-                ctrEngine.doFinal(out, resultLen);
-            }
-            catch (InvalidCipherTextException e)
-            {
-                e.printStackTrace();
-            }
-
-            calculateMac(out, outOff, len);
-
-        }
-        else
-        {
-            calculateMac(in, inOff, len);
-
-            resultLen = ctrEngine.processBytes(in, inOff, len, out, outOff);
-            try
-            {
-                ctrEngine.doFinal(out, resultLen);
-            }
-            catch (InvalidCipherTextException e)
-            {
-                e.printStackTrace();
-            }
-
-        }
-
-        return resultLen;
+        return 0;
     }
 
     public int doFinal(byte[] out, int outOff)
         throws IllegalStateException, InvalidCipherTextException
     {
+        int len = data.size();
 
+        if (associatedText.size() > 0)
+        {
+            processAAD(associatedText.getBuffer(), 0, associatedText.size());
+        }
+        
+        //use alternative cipher to produce output
+        int resultLen;
+        if (forEncryption)
+        {
+            if (out.length - outOff < len + macSize)
+            {
+                throw new DataLengthException("Output buffer too short");
+            }
+
+            lambda_c = len * BITS_IN_BYTE;
+
+            resultLen = ctrEngine.processBytes(data.getBuffer(), 0, len, out, outOff);
+            resultLen += ctrEngine.doFinal(out, outOff + resultLen);
+
+            calculateMac(out, outOff, len);
+        }
+        else
+        {
+            lambda_c = (len - macSize) * BITS_IN_BYTE;
+
+            calculateMac(data.getBuffer(), 0, len - macSize);
+
+            resultLen = ctrEngine.processBytes(data.getBuffer(), 0, len - macSize, out, outOff);
+            resultLen += ctrEngine.doFinal(out, outOff + resultLen);
+        }
+
+        outOff += resultLen;
+        
         if (macBlock == null)
         {
-            throw new IllegalStateException("Mac is not calculated");
+            throw new IllegalStateException("mac is not calculated");
         }
 
         if (forEncryption)
@@ -297,34 +251,24 @@ public class KGCMBlockCipher
 
             reset();
 
-            return macSize;
+            return resultLen + macSize;
         }
         else
         {
             byte[] mac = new byte[macSize];
-            System.arraycopy(out, outOff, mac, 0, macSize);
+            System.arraycopy(data.getBuffer(), resultLen, mac, 0, macSize);
 
             byte[] calculatedMac = new byte[macSize];
             System.arraycopy(macBlock, 0, calculatedMac, 0, macSize);
 
-//            for (int i = 0; i<out.length; i++){
-//                System.out.printf("%02X", out[i]);
-//            }
-//            System.out.println();
-//
-//            for (int i = 0; i<macBlock.length; i++){
-//                System.out.printf("%02X", macBlock[i]);
-//            }
-//            System.out.println();
-
-            if (!Arrays.areEqual(mac, calculatedMac))
+            if (!Arrays.constantTimeAreEqual(mac, calculatedMac))
             {
-                throw new InvalidCipherTextException("Mac verification failed");
+                throw new InvalidCipherTextException("mac verification failed");
             }
 
             reset();
 
-            return 0;
+            return resultLen;
         }
     }
 
@@ -332,10 +276,6 @@ public class KGCMBlockCipher
     {
         byte[] mac = new byte[macSize];
 
-//        for (int i = 0; i<macBlock.length; i++){
-//            System.out.printf("%02X", macBlock[i]);
-//        }
-//        System.out.println();
         System.arraycopy(macBlock, 0, mac, 0, macSize);
 
         return mac;
@@ -366,17 +306,14 @@ public class KGCMBlockCipher
 
         this.lambda_c = 0;
         this.lambda_o = 0;
+
+        data.reset();
+        associatedText.reset();
     }
 
 
     private void calculateMac(byte[] input, int inOff, int len)
     {
-
-//        for (int i = 0; i<input.length; i++){
-//            System.out.printf("%02X", input[i]);
-//        }
-//        System.out.println();
-
         macBlock = new byte[engine.getBlockSize()];
 
         int totalLength = len;
@@ -408,22 +345,7 @@ public class KGCMBlockCipher
             b[byteIndex] ^= temp[byteIndex];
         }
 
-//        for (int i = 0; i<engine.getBlockSize(); i++){
-//            System.out.printf("%02X", b[i]);
-//        }
-//        System.out.println();
-//        for (int i = 0; i<engine.getBlockSize(); i++){
-//            System.out.printf("%02X", this.iv[i]);
-//        }
-//        System.out.println();
-
         engine.processBlock(b, 0, macBlock, 0);
-
-//        for (int i = 0; i<engine.getBlockSize(); i++){
-//            System.out.printf("%02X", macBlock[i]);
-//        }
-//        System.out.println();
-
     }
 
 
@@ -447,16 +369,6 @@ public class KGCMBlockCipher
     */
     private void multiplyOverField(int blockBitLength, byte[] x, byte[] y, byte[] x_mult_y)
     {
-
-//        for (int i = 0; i<x.length; i++){
-//            System.out.printf("%02X", x[i]);
-//        }
-//        System.out.println();
-//        for (int i = 0; i<y.length; i++){
-//            System.out.printf("%02X", y[i]);
-//        }
-//        System.out.println();
-
         byte[] fieldOperationBuffer1 = new byte[engine.getBlockSize()];
         byte[] fieldOperationBuffer2 = new byte[engine.getBlockSize()];
 
@@ -515,21 +427,22 @@ public class KGCMBlockCipher
             p2 = p2.shiftRight(1);
         }
 
-//        System.out.println(p.toString(16));
-//        System.out.println(p1.toString(16));
-//        System.out.println(p2.toString(16));
-
         byte[] got = BigIntegers.asUnsignedByteArray(p.and(mask2));
 
         Arrays.fill(x_mult_y, (byte)0);
         System.arraycopy(got, 0, x_mult_y, 0, got.length);
-
-//        for (int i = 0; i<x_mult_y.length; i++){
-//            System.out.printf("%02X", x_mult_y[i]);
-//        }
-//        System.out.println();
-//        System.out.println();
     }
 
+    private class ExposedByteArrayOutputStream
+        extends ByteArrayOutputStream
+    {
+        public ExposedByteArrayOutputStream()
+        {
+        }
 
+        public byte[] getBuffer()
+        {
+            return this.buf;
+        }
+    }
 }
