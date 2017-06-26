@@ -398,7 +398,7 @@ public class DSTU7624Test
         dstu7624ccm.setNb(4);
         dstu7624ccm.init(true, param);
 
-        dstu7624ccm.processAADBytes(authText, 0, input.length);
+        dstu7624ccm.processAADBytes(authText, 0, authText.length);
 
         len = dstu7624ccm.processBytes(input, 0, input.length, encrypted, 0);
 
@@ -423,7 +423,7 @@ public class DSTU7624Test
         dstu7624ccm.setNb(4);
         dstu7624ccm.init(false, param);
 
-        dstu7624ccm.processAADBytes(authText, 0, input.length);
+        dstu7624ccm.processAADBytes(authText, 0, authText.length);
 
         len = dstu7624ccm.processBytes(expectedEncrypted, 0, expectedEncrypted.length, decrypted, 0);
 
@@ -461,7 +461,7 @@ public class DSTU7624Test
         dstu7624ccm.setNb(6);
         dstu7624ccm.init(true, param);
 
-        dstu7624ccm.processAADBytes(authText, 0, input.length);
+        dstu7624ccm.processAADBytes(authText, 0, authText.length);
 
         len = dstu7624ccm.processBytes(input, 0, input.length, encrypted, 0);
 
@@ -486,7 +486,7 @@ public class DSTU7624Test
         dstu7624ccm.setNb(6);
         dstu7624ccm.init(false, param);
 
-        dstu7624ccm.processAADBytes(authText, 0, input.length);
+        dstu7624ccm.processAADBytes(authText, 0, authText.length);
 
         len = dstu7624ccm.processBytes(expectedEncrypted, 0, expectedEncrypted.length, decrypted, 0);
 
@@ -524,7 +524,7 @@ public class DSTU7624Test
         dstu7624ccm.setNb(8);
         dstu7624ccm.init(true, param);
 
-        dstu7624ccm.processAADBytes(authText, 0, input.length);
+        dstu7624ccm.processAADBytes(authText, 0, authText.length);
 
         len = dstu7624ccm.processBytes(input, 0, input.length, encrypted, 0);
 
@@ -549,7 +549,7 @@ public class DSTU7624Test
         dstu7624ccm.setNb(8);
         dstu7624ccm.init(false, param);
 
-        dstu7624ccm.processAADBytes(authText, 0, input.length);
+        dstu7624ccm.processAADBytes(authText, 0, authText.length);
 
         len = dstu7624ccm.processBytes(expectedEncrypted, 0, expectedEncrypted.length, decrypted, 0);
 
