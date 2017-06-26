@@ -815,7 +815,7 @@ public class DSTU7624Test
         dstu7624gcm.init(false, parameters);
         dstu7624gcm.processAADBytes(authText, 0, authText.length);
 
-        len = dstu7624gcm.processBytes(expectedOutput, 0, expectedOutput.length - expectedMac.length, decrypted, 0);
+        len = dstu7624gcm.processBytes(expectedOutput, 0, expectedOutput.length, decrypted, 0);
         dstu7624gcm.doFinal(decrypted, len);
 
 
@@ -895,7 +895,7 @@ public class DSTU7624Test
 
         dstu7624gcm.init(false, parameters);
         dstu7624gcm.processAADBytes(authText, 0, authText.length);
-        len = dstu7624gcm.processBytes(expectedOutput, 0, expectedOutput.length - expectedMac.length, decrypted, 0);
+        len = dstu7624gcm.processBytes(expectedOutput, 0, expectedOutput.length, decrypted, 0);
 
         dstu7624gcm.doFinal(decrypted, len);
 
@@ -975,7 +975,7 @@ public class DSTU7624Test
 
         dstu7624gcm.init(false, parameters);
         dstu7624gcm.processAADBytes(authText, 0, authText.length);
-        len = dstu7624gcm.processBytes(expectedOutput, 0, expectedOutput.length - expectedMac.length, decrypted, 0);
+        len = dstu7624gcm.processBytes(expectedOutput, 0, expectedOutput.length, decrypted, 0);
 
         dstu7624gcm.doFinal(decrypted, len);
 
@@ -1055,7 +1055,7 @@ public class DSTU7624Test
 
         dstu7624gcm.init(false, parameters);
         dstu7624gcm.processAADBytes(authText, 0, authText.length);
-        len = dstu7624gcm.processBytes(expectedOutput, 0, expectedOutput.length - expectedMac.length, decrypted, 0);
+        len = dstu7624gcm.processBytes(expectedOutput, 0, expectedOutput.length, decrypted, 0);
 
         dstu7624gcm.doFinal(decrypted, len);
 
@@ -1135,7 +1135,7 @@ public class DSTU7624Test
 
         dstu7624gcm.init(false, parameters);
         dstu7624gcm.processAADBytes(authText, 0, authText.length);
-        len = dstu7624gcm.processBytes(expectedOutput, 0, expectedOutput.length - expectedMac.length, decrypted, 0);
+        len = dstu7624gcm.processBytes(expectedOutput, 0, expectedOutput.length, decrypted, 0);
 
         dstu7624gcm.doFinal(decrypted, len);
 
@@ -1214,7 +1214,7 @@ public class DSTU7624Test
 
         dstu7624gcm.init(false, parameters);
         dstu7624gcm.processAADBytes(authText, 0, authText.length);
-        len = dstu7624gcm.processBytes(expectedOutput, 0, expectedOutput.length - expectedMac.length, decrypted, 0);
+        len = dstu7624gcm.processBytes(expectedOutput, 0, expectedOutput.length, decrypted, 0);
 
         dstu7624gcm.doFinal(decrypted, len);
 
@@ -1254,7 +1254,8 @@ public class DSTU7624Test
         dstu7624gcm = new KGCMBlockCipher(new DSTU7624Engine(128, 256));
 
         dstu7624gcm.init(true, parameters);
-        dstu7624gcm.processAADBytes(authText, 0, authText.length, mac, 0);
+        dstu7624gcm.processAADBytes(authText, 0, authText.length);
+        dstu7624gcm.doFinal(mac, 0);
 
         if (!Arrays.areEqual(mac, expectedMac))
         {
@@ -1277,8 +1278,8 @@ public class DSTU7624Test
         dstu7624gcm = new KGCMBlockCipher(new DSTU7624Engine(256, 256));
 
         dstu7624gcm.init(true, parameters);
-        dstu7624gcm.processAADBytes(authText, 0, authText.length, mac, 0);
-
+        dstu7624gcm.processAADBytes(authText, 0, authText.length);
+        dstu7624gcm.doFinal(mac, 0);
 
         if (!Arrays.areEqual(mac, expectedMac))
         {
@@ -1301,8 +1302,8 @@ public class DSTU7624Test
         dstu7624gcm = new KGCMBlockCipher(new DSTU7624Engine(256, 256));
 
         dstu7624gcm.init(true, parameters);
-        dstu7624gcm.processAADBytes(authText, 0, authText.length, mac, 0);
-
+        dstu7624gcm.processAADBytes(authText, 0, authText.length);
+        dstu7624gcm.doFinal(mac, 0);
 
         if (!Arrays.areEqual(mac, expectedMac))
         {
@@ -1325,8 +1326,8 @@ public class DSTU7624Test
         dstu7624gcm = new KGCMBlockCipher(new DSTU7624Engine(256, 512));
 
         dstu7624gcm.init(true, parameters);
-        dstu7624gcm.processAADBytes(authText, 0, authText.length, mac, 0);
-
+        dstu7624gcm.processAADBytes(authText, 0, authText.length);
+        dstu7624gcm.doFinal(mac, 0);
 
         if (!Arrays.areEqual(mac, expectedMac))
         {
@@ -1349,8 +1350,8 @@ public class DSTU7624Test
         dstu7624gcm = new KGCMBlockCipher(new DSTU7624Engine(512, 512));
 
         dstu7624gcm.init(true, parameters);
-        dstu7624gcm.processAADBytes(authText, 0, authText.length, mac, 0);
-
+        dstu7624gcm.processAADBytes(authText, 0, authText.length);
+        dstu7624gcm.doFinal(mac, 0);
 
         if (!Arrays.areEqual(mac, expectedMac))
         {
