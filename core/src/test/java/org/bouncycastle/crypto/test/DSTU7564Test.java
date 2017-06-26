@@ -12,20 +12,20 @@ public class DSTU7564Test
 {
 
     private static String[] messages =
-    {
-        "",
-        "a",
-        "abc",
-        "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"
-    };
+        {
+            "",
+            "a",
+            "abc",
+            "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"
+        };
 
     private static String[] digests =
-    {
-        "cd5101d1ccdf0d1d1f4ada56e888cd724ca1a0838a3521e7131d4fb78d0f5eb6",
-        "c51a1d639596fb613d86557314a150c40f8fff3de48bc93a3b03c161f4105ee4",
-        "0bd1b36109f1318411a0517315aa46b8839df06622a278676f5487996c9cfc04",
-        "02621dbb53f2c7001be64d7308ecb80d21ba7797c92e98d1efc240d41e4c414b"
-    };
+        {
+            "cd5101d1ccdf0d1d1f4ada56e888cd724ca1a0838a3521e7131d4fb78d0f5eb6",
+            "c51a1d639596fb613d86557314a150c40f8fff3de48bc93a3b03c161f4105ee4",
+            "0bd1b36109f1318411a0517315aa46b8839df06622a278676f5487996c9cfc04",
+            "02621dbb53f2c7001be64d7308ecb80d21ba7797c92e98d1efc240d41e4c414b"
+        };
 
     protected Digest cloneDigest(Digest digest)
     {
@@ -48,10 +48,10 @@ public class DSTU7564Test
     {
         super.performTest();
 
-//        hash256Tests();
-//        hash384Tests();
-//        hash512Tests();
-//        macTests();
+        hash256Tests();
+        hash384Tests();
+        hash512Tests();
+        macTests();
         overflowTest();
     }
 
@@ -69,17 +69,17 @@ public class DSTU7564Test
         byte[] mac = new byte[macBitSize / 8];
 
         DSTU7564Mac dstu7564mac = new DSTU7564Mac(macBitSize);
-//
-//        dstu7564mac.init(new KeyParameter(key));
-//        dstu7564mac.update(input, 0, input.length);
-//        dstu7564mac.doFinal(mac, 0);
-//
-//        if (!Arrays.areEqual(expectedMac, mac))
-//        {
-//            fail("Failed overflow test 2 - expected "
-//                + Hex.toHexString(expectedMac)
-//                + " got " + Hex.toHexString(mac));
-//        }
+
+        dstu7564mac.init(new KeyParameter(key));
+        dstu7564mac.update(input, 0, input.length);
+        dstu7564mac.doFinal(mac, 0);
+
+        if (!Arrays.areEqual(expectedMac, mac))
+        {
+            fail("Failed overflow test 1 - expected "
+                + Hex.toHexString(expectedMac)
+                + " got " + Hex.toHexString(mac));
+        }
 
         macBitSize = 256;
         input = new byte[1023];
@@ -100,13 +100,13 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedMac, mac))
         {
-            fail("Failed overflow test 3 - expected "
+            fail("Failed overflow test 2 - expected "
                 + Hex.toHexString(expectedMac)
                 + " got " + Hex.toHexString(mac));
         }
-               /*
+
         DSTU7564Digest digest = new DSTU7564Digest(macBitSize);
-        byte[] expectedDigest = Hex.decode("97e84ee3b7ca2e9b0148878e88da09152952de7dd66e45d1b50ec4640932f527");
+        byte[] expectedDigest = Hex.decode("6bfc5ec8c1f5963fbed89da115d86e9330634eca341dd42fd94a7007e4af7942");
         byte[] digestBuf = new byte[macBitSize / 8];
 
         digest.update(input, 0, input.length);
@@ -114,7 +114,7 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedDigest, digestBuf))
         {
-            fail("Failed overflow test 4 - expected "
+            fail("Failed overflow test 3 - expected "
                 + Hex.toHexString(expectedDigest)
                 + " got " + Hex.toHexString(digestBuf));
         }
@@ -132,7 +132,7 @@ public class DSTU7564Test
 
         if (!Arrays.areEqual(expectedDigest, digestBuf))
         {
-            fail("Failed overflow test 5 - expected "
+            fail("Failed overflow test 4 - expected "
                 + Hex.toHexString(expectedDigest)
                 + " got " + Hex.toHexString(digestBuf));
         }
@@ -143,7 +143,26 @@ public class DSTU7564Test
             input[i] = (byte)(i & 0xff);
         }
 
-        expectedDigest = Hex.decode("2d60e14ead298848031a3321ebf9e8e5263228c498e2d8ba8a857d4979aca4b3");
+        expectedDigest = Hex.decode("8b6fe2ba77e684b2a1ac82232f4efc49f681cd18c82a0cfff530186a2fc642d2");
+
+        digest.update(input, 0, input.length);
+        digest.doFinal(digestBuf, 0);
+
+        if (!Arrays.areEqual(expectedDigest, digestBuf))
+        {
+            fail("Failed overflow test 5 - expected "
+                + Hex.toHexString(expectedDigest)
+                + " got " + Hex.toHexString(digestBuf));
+        }
+
+
+        input = new byte[53];
+        for (int i = 0; i != input.length; i++)
+        {
+            input[i] = (byte)(i & 0xff);
+        }
+
+        expectedDigest = Hex.decode("837f2b0cbe39a4defdfcb44272288d4091cab850161c70695d7831fc5f00e171");
 
         digest.update(input, 0, input.length);
         digest.doFinal(digestBuf, 0);
@@ -153,7 +172,133 @@ public class DSTU7564Test
             fail("Failed overflow test 6 - expected "
                 + Hex.toHexString(expectedDigest)
                 + " got " + Hex.toHexString(digestBuf));
-        }         */
+        }
+
+        input = new byte[54];
+        for (int i = 0; i != input.length; i++)
+        {
+            input[i] = (byte)(i & 0xff);
+        }
+
+        expectedDigest = Hex.decode("21d423d5b8c7f18a0da42cdd95b36b66344125e2adc6edeab5899926442113bc");
+
+        digest.update(input, 0, input.length);
+        digest.doFinal(digestBuf, 0);
+
+        if (!Arrays.areEqual(expectedDigest, digestBuf))
+        {
+            fail("Failed overflow test 7 - expected "
+                + Hex.toHexString(expectedDigest)
+                + " got " + Hex.toHexString(digestBuf));
+        }
+
+        input = new byte[55];
+        for (int i = 0; i != input.length; i++)
+        {
+            input[i] = (byte)(i & 0xff);
+        }
+
+        expectedDigest = Hex.decode("0e7bf74464b81b3ae7d904170776d29f4b02a7227da578dd562d01027af7fd0e");
+
+        digest.update(input, 0, input.length);
+        digest.doFinal(digestBuf, 0);
+
+        if (!Arrays.areEqual(expectedDigest, digestBuf))
+        {
+            fail("Failed overflow test 8 - expected "
+                + Hex.toHexString(expectedDigest)
+                + " got " + Hex.toHexString(digestBuf));
+        }
+
+        input = new byte[56];
+        for (int i = 0; i != input.length; i++)
+        {
+            input[i] = (byte)(i & 0xff);
+        }
+
+        expectedDigest = Hex.decode("badea1f49cbcec94acec52b4c695acdddd786cca5a6763929f341a58c5134b3b");
+
+        digest.update(input, 0, input.length);
+        digest.doFinal(digestBuf, 0);
+
+        if (!Arrays.areEqual(expectedDigest, digestBuf))
+        {
+            fail("Failed overflow test 9 - expected "
+                + Hex.toHexString(expectedDigest)
+                + " got " + Hex.toHexString(digestBuf));
+        }
+
+        input = new byte[57];
+        for (int i = 0; i != input.length; i++)
+        {
+            input[i] = (byte)(i & 0xff);
+        }
+
+        expectedDigest = Hex.decode("a13b5f6f53ee043292ed65b66c1d49759be4d2fe0c2f6148f2416487965f7bde");
+
+        digest.update(input, 0, input.length);
+        digest.doFinal(digestBuf, 0);
+
+        if (!Arrays.areEqual(expectedDigest, digestBuf))
+        {
+            fail("Failed overflow test 10 - expected "
+                + Hex.toHexString(expectedDigest)
+                + " got " + Hex.toHexString(digestBuf));
+        }
+
+        input = new byte[63];
+        for (int i = 0; i != input.length; i++)
+        {
+            input[i] = (byte)(i & 0xff);
+        }
+
+        expectedDigest = Hex.decode("03a44a02c9ffafb43addb290bbcf3b8168f624e8cbd332dc6a9dc7df9d39cbc2");
+
+        digest.update(input, 0, input.length);
+        digest.doFinal(digestBuf, 0);
+
+        if (!Arrays.areEqual(expectedDigest, digestBuf))
+        {
+            fail("Failed overflow test 11 - expected "
+                + Hex.toHexString(expectedDigest)
+                + " got " + Hex.toHexString(digestBuf));
+        }
+
+        input = new byte[64];
+        for (int i = 0; i != input.length; i++)
+        {
+            input[i] = (byte)(i & 0xff);
+        }
+
+        expectedDigest = Hex.decode("08f4ee6f1be6903b324c4e27990cb24ef69dd58dbe84813ee0a52f6631239875");
+
+        digest.update(input, 0, input.length);
+        digest.doFinal(digestBuf, 0);
+
+        if (!Arrays.areEqual(expectedDigest, digestBuf))
+        {
+            fail("Failed overflow test 12 - expected "
+                + Hex.toHexString(expectedDigest)
+                + " got " + Hex.toHexString(digestBuf));
+        }
+
+        input = new byte[65];
+        for (int i = 0; i != input.length; i++)
+        {
+            input[i] = (byte)(i & 0xff);
+        }
+
+        expectedDigest = Hex.decode("a81c2fb92351f370050b7c36cd51736d5603a50ec1106cbd5fe1c9be2e5c77a6");
+
+        digest.update(input, 0, input.length);
+        digest.doFinal(digestBuf, 0);
+
+        if (!Arrays.areEqual(expectedDigest, digestBuf))
+        {
+            fail("Failed overflow test 13 - expected "
+                + Hex.toHexString(expectedDigest)
+                + " got " + Hex.toHexString(digestBuf));
+        }
     }
 
     private void macTests()

@@ -187,7 +187,15 @@ public class DSTU7564Digest
     {
         padded = pad(buf, 0, bufOff);
 
-        processBlock(padded, 0);
+        int paddedLen = padded.length;
+        int paddedOff = 0;
+
+        while (paddedLen != 0)
+        {
+            processBlock(padded, paddedOff);
+            paddedOff += blockSize;
+            paddedLen -= blockSize;
+        }
 
         byte[][] temp = new byte[STATE_BYTES_SIZE_1024][];
 
