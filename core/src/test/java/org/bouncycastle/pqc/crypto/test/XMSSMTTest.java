@@ -17371,7 +17371,7 @@ public class XMSSMTTest
 
             byte[] signature = signer.generateSignature(msg1);
 
-            privateKey = signer.getFinalPrivateKey();
+            privateKey = signer.getUpdatedPrivateKey();
 
             signer.init(false, kp.getPublic());
 
@@ -17442,7 +17442,7 @@ public class XMSSMTTest
 
             byte[] signature = signer.generateSignature(msg1);
 
-            privateKey = signer.getFinalPrivateKey();
+            privateKey = signer.getUpdatedPrivateKey();
 
             signer.init(false, kp.getPublic());
 
