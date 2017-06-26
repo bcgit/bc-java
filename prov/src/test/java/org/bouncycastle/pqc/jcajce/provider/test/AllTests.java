@@ -37,6 +37,8 @@ public class AllTests
         suite.addTestSuite(NewHopeKeyPairGeneratorTest.class);
         suite.addTestSuite(Sphincs256Test.class);
         suite.addTestSuite(Sphincs256KeyPairGeneratorTest.class);
+        suite.addTestSuite(XMSSTest.class);
+        suite.addTestSuite(XMSSMTTest.class);
 
         return new BCTestSetup(suite);
     }
