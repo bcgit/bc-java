@@ -3,7 +3,7 @@ package org.bouncycastle.pqc.crypto.xmss;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 
 /**
- * XMSSMT Public Key.
+ * XMSS^MT Public Key.
  */
 public final class XMSSMTPublicKeyParameters
     extends AsymmetricKeyParameter

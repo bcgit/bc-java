@@ -184,7 +184,7 @@ public class XMSS
 
         byte[] signature = signer.generateSignature(message);
 
-        privateKey = (XMSSPrivateKeyParameters)signer.getFinalPrivateKey();
+        privateKey = (XMSSPrivateKeyParameters)signer.getUpdatedPrivateKey();
 
         importState(privateKey, publicKey);
 
