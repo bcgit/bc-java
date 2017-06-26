@@ -1,6 +1,21 @@
 package org.bouncycastle.jcajce.provider.asymmetric.ecgost12;
 
-import org.bouncycastle.asn1.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.math.BigInteger;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
+import java.security.spec.ECPublicKeySpec;
+import java.security.spec.EllipticCurve;
+
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
@@ -21,17 +36,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.util.Strings;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.math.BigInteger;
-import java.security.interfaces.ECPublicKey;
-import java.security.spec.ECParameterSpec;
-import java.security.spec.ECPoint;
-import java.security.spec.ECPublicKeySpec;
-import java.security.spec.EllipticCurve;
 
 /**
  * Represent two kind of GOST34.10 2012 PublicKeys: with 256 and 512 size
@@ -41,7 +45,7 @@ public class BCECGOST3410_2012PublicKey
 {
     static final long serialVersionUID = 7026240464295649314L;
 
-    private String algorithm = "ECGOST3410_2012";
+    private String algorithm = "ECGOST3410-2012";
     private boolean withCompression;
 
     private transient ECPublicKeyParameters   ecPublicKey;
@@ -367,15 +371,7 @@ public class BCECGOST3410_2012PublicKey
 
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
-        String nl = Strings.lineSeparator();
-        org.bouncycastle.math.ec.ECPoint q = ecPublicKey.getQ();
-
-        buf.append("EC Public Key").append(nl);
-        buf.append("            X: ").append(q.getAffineXCoord().toBigInteger().toString(16)).append(nl);
-        buf.append("            Y: ").append(q.getAffineYCoord().toBigInteger().toString(16)).append(nl);
-
-        return buf.toString();
+        return ECUtil.publicKeyToString(algorithm, ecPublicKey.getQ(), engineGetSpec());
     }
 
     public void setPointFormat(String style)

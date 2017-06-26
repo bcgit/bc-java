@@ -25,7 +25,6 @@ import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
@@ -42,7 +41,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.util.Strings;
 
 public class BCECGOST3410PrivateKey
     implements ECPrivateKey, org.bouncycastle.jce.interfaces.ECPrivateKey, PKCS12BagAttributeCarrier, ECPointEncoder
@@ -506,14 +504,7 @@ public class BCECGOST3410PrivateKey
 
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
-        String nl = Strings.lineSeparator();
-
-        buf.append("EC Private Key").append(nl);
-        buf.append("             S: ").append(this.d.toString(16)).append(nl);
-
-        return buf.toString();
-
+        return ECUtil.privateKeyToString(algorithm, d, engineGetSpec());
     }
 
     private DERBitString getPublicKeyDetails(BCECGOST3410PublicKey pub)

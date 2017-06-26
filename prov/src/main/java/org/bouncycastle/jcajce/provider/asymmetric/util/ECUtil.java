@@ -32,6 +32,11 @@ import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECParameterSpec;
+import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Fingerprint;
+import org.bouncycastle.util.Strings;
 
 /**
  * utility class for converting jce/jca ECDSA, ECDH, and ECDHC
@@ -461,5 +466,51 @@ public class ECUtil
         }
 
         return name;
+    }
+
+    public static String privateKeyToString(String algorithm, BigInteger d, org.bouncycastle.jce.spec.ECParameterSpec spec)
+    {
+        StringBuffer buf = new StringBuffer();
+        String nl = Strings.lineSeparator();
+
+        org.bouncycastle.math.ec.ECPoint q = calculateQ(d, spec);
+
+        buf.append(algorithm);
+        buf.append(" Private Key [").append(ECUtil.generateKeyFingerprint(q, spec)).append("]").append(nl);
+        buf.append("            X: ").append(q.getAffineXCoord().toBigInteger().toString(16)).append(nl);
+        buf.append("            Y: ").append(q.getAffineYCoord().toBigInteger().toString(16)).append(nl);
+
+        return buf.toString();
+    }
+
+    private static org.bouncycastle.math.ec.ECPoint calculateQ(BigInteger d, org.bouncycastle.jce.spec.ECParameterSpec spec)
+    {
+        return spec.getG().multiply(d).normalize();
+    }
+
+    public static String publicKeyToString(String algorithm, org.bouncycastle.math.ec.ECPoint q, org.bouncycastle.jce.spec.ECParameterSpec spec)
+    {
+        StringBuffer buf = new StringBuffer();
+        String nl = Strings.lineSeparator();
+
+        buf.append(algorithm);
+        buf.append(" Public Key [").append(ECUtil.generateKeyFingerprint(q, spec)).append("]").append(nl);
+        buf.append("            X: ").append(q.getAffineXCoord().toBigInteger().toString(16)).append(nl);
+        buf.append("            Y: ").append(q.getAffineYCoord().toBigInteger().toString(16)).append(nl);
+
+        return buf.toString();
+    }
+
+    public static String generateKeyFingerprint(ECPoint publicPoint, org.bouncycastle.jce.spec.ECParameterSpec spec)
+    {
+        ECCurve curve = spec.getCurve();
+        ECPoint g = spec.getG();
+
+        if (curve != null)
+        {
+            return new Fingerprint(Arrays.concatenate(publicPoint.getEncoded(false), curve.getA().getEncoded(), curve.getB().getEncoded(), g.getEncoded(false))).toString();
+        }
+
+        return new Fingerprint(publicPoint.getEncoded(false)).toString();
     }
 }
