@@ -37,7 +37,7 @@ public class BouncyCastlePQCProvider
     private static final String ALGORITHM_PACKAGE = "org.bouncycastle.pqc.jcajce.provider.";
     private static final String[] ALGORITHMS =
         {
-            "Rainbow", "McEliece", "SPHINCS", "NH"
+            "Rainbow", "McEliece", "SPHINCS", "NH", "XMSS"
         };
 
     /**
