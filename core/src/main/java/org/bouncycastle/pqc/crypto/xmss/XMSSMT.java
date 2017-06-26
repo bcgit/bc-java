@@ -137,7 +137,7 @@ public final class XMSSMT
 
         byte[] signature = signer.generateSignature(message);
 
-        privateKey = (XMSSMTPrivateKeyParameters)signer.getFinalPrivateKey();
+        privateKey = (XMSSMTPrivateKeyParameters)signer.getUpdatedPrivateKey();
 
         importState(privateKey, publicKey);
 

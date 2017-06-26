@@ -7,6 +7,9 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.StatefulMessageSigner;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * XMSS^MT Signer class.
+ */
 public class XMSSMTSigner
     implements StatefulMessageSigner
 {
@@ -51,7 +54,7 @@ public class XMSSMTSigner
         {
             if (privateKey == null)
             {
-                throw new IllegalStateException("signer key no longer usable");
+                throw new IllegalStateException("signing key no longer usable");
             }
         }
         else
@@ -218,7 +221,7 @@ public class XMSSMTSigner
         return Arrays.constantTimeAreEqual(rootNode.getValue(), publicKey.getRoot());
     }
 
-    public AsymmetricKeyParameter getFinalPrivateKey()
+    public AsymmetricKeyParameter getUpdatedPrivateKey()
     {
         XMSSMTPrivateKeyParameters privKey = privateKey;
 

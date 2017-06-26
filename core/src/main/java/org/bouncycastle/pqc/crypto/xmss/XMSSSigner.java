@@ -45,7 +45,7 @@ public class XMSSSigner
         {
             if (privateKey == null)
             {
-                throw new IllegalStateException("signer key no longer usable");
+                throw new IllegalStateException("signing key no longer usable");
             }
         }
         else
@@ -117,7 +117,7 @@ public class XMSSSigner
         return Arrays.constantTimeAreEqual(rootNodeFromSignature.getValue(), publicKey.getRoot());
     }
 
-    public AsymmetricKeyParameter getFinalPrivateKey()
+    public AsymmetricKeyParameter getUpdatedPrivateKey()
     {
         XMSSPrivateKeyParameters privKey = privateKey;
 
