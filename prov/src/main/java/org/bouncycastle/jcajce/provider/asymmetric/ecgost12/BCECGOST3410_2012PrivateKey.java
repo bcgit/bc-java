@@ -1,7 +1,26 @@
 package org.bouncycastle.jcajce.provider.asymmetric.ecgost12;
 
-import org.bouncycastle.asn1.*;
-import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.math.BigInteger;
+import java.security.interfaces.ECPrivateKey;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
+import java.security.spec.ECPrivateKeySpec;
+import java.security.spec.EllipticCurve;
+import java.util.Enumeration;
+
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -22,18 +41,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.util.Strings;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.math.BigInteger;
-import java.security.interfaces.ECPrivateKey;
-import java.security.spec.ECParameterSpec;
-import java.security.spec.ECPoint;
-import java.security.spec.ECPrivateKeySpec;
-import java.security.spec.EllipticCurve;
-import java.util.Enumeration;
 
 /**
  * Represent two kind of GOST34.10 2012 PrivateKeys: with 256 and 512 size
@@ -506,14 +513,7 @@ public class BCECGOST3410_2012PrivateKey
 
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
-        String nl = Strings.lineSeparator();
-
-        buf.append("EC Private Key").append(nl);
-        buf.append("             S: ").append(this.d.toString(16)).append(nl);
-
-        return buf.toString();
-
+        return ECUtil.privateKeyToString(algorithm, d, engineGetSpec());
     }
 
     private DERBitString getPublicKeyDetails(BCECGOST3410_2012PublicKey pub)
