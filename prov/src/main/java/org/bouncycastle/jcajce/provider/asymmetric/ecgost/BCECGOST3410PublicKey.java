@@ -34,7 +34,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.util.Strings;
 
 public class BCECGOST3410PublicKey
     implements ECPublicKey, org.bouncycastle.jce.interfaces.ECPublicKey, ECPointEncoder
@@ -341,15 +340,7 @@ public class BCECGOST3410PublicKey
 
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
-        String nl = Strings.lineSeparator();
-        org.bouncycastle.math.ec.ECPoint q = ecPublicKey.getQ();
-
-        buf.append("EC Public Key").append(nl);
-        buf.append("            X: ").append(q.getAffineXCoord().toBigInteger().toString(16)).append(nl);
-        buf.append("            Y: ").append(q.getAffineYCoord().toBigInteger().toString(16)).append(nl);
-
-        return buf.toString();
+        return ECUtil.publicKeyToString(algorithm, ecPublicKey.getQ(), engineGetSpec());
     }
 
     public void setPointFormat(String style)

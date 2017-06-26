@@ -36,7 +36,6 @@ import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.util.Strings;
 
 public class BCDSTU4145PrivateKey
     implements ECPrivateKey, org.bouncycastle.jce.interfaces.ECPrivateKey, PKCS12BagAttributeCarrier, ECPointEncoder
@@ -424,14 +423,7 @@ public class BCDSTU4145PrivateKey
 
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
-        String nl = Strings.lineSeparator();
-
-        buf.append("EC Private Key").append(nl);
-        buf.append("             S: ").append(this.d.toString(16)).append(nl);
-
-        return buf.toString();
-
+        return ECUtil.privateKeyToString(algorithm, d, engineGetSpec());
     }
 
     private DERBitString getPublicKeyDetails(BCDSTU4145PublicKey pub)

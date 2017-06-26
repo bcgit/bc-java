@@ -1,5 +1,6 @@
 package org.bouncycastle.jcajce.provider.asymmetric.rsa;
 
+import java.math.BigInteger;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -9,6 +10,8 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Fingerprint;
 
 /**
  * utility class for converting java.security RSA objects into their
@@ -62,5 +65,10 @@ public class RSAUtil
 
             return new RSAKeyParameters(true, k.getModulus(), k.getPrivateExponent());
         }
+    }
+
+    static String generateKeyFingerprint(BigInteger modulus, BigInteger publicExponent)
+    {
+        return new Fingerprint(Arrays.concatenate(modulus.toByteArray(), publicExponent.toByteArray())).toString();
     }
 }
