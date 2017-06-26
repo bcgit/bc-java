@@ -8,12 +8,13 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Implementation of DSTU7624 KEY WRAP mode
  */
-public class DSTU7624WrapEngine implements Wrapper {
+public class DSTU7624WrapEngine
+    implements Wrapper
+{
 
     private static final int BYTES_IN_INTEGER = 4;
 
@@ -25,8 +26,8 @@ public class DSTU7624WrapEngine implements Wrapper {
     private ArrayList<byte[]> Btemp;
 
 
-
-    public DSTU7624WrapEngine(int blockBitLength, int keyBitLength) {
+    public DSTU7624WrapEngine(int blockBitLength, int keyBitLength)
+    {
 
         this.engine = new DSTU7624Engine(blockBitLength, keyBitLength);
         this.B = new byte[engine.getBlockSize() / 2];
@@ -37,34 +38,42 @@ public class DSTU7624WrapEngine implements Wrapper {
 
     }
 
-    public void init(boolean forWrapping, CipherParameters param) {
+    public void init(boolean forWrapping, CipherParameters param)
+    {
 
         this.forWrapping = forWrapping;
-        if (param instanceof KeyParameter){
+        if (param instanceof KeyParameter)
+        {
             engine.init(forWrapping, param);
         }
-        else{
-            throw new IllegalArgumentException("Invalid parameters passed to DSTU7624WrapEngine");
+        else
+        {
+            throw new IllegalArgumentException("invalid parameters passed to DSTU7624WrapEngine");
         }
 
     }
 
-    public String getAlgorithmName() {
+    public String getAlgorithmName()
+    {
         return "DSTU7624WrapEngine";
     }
 
-    public byte[] wrap(byte[] in, int inOff, int inLen) {
-        if (!forWrapping){
-            throw new IllegalStateException("Not set for wrapping");
+    public byte[] wrap(byte[] in, int inOff, int inLen)
+    {
+        if (!forWrapping)
+        {
+            throw new IllegalStateException("not set for wrapping");
         }
 
-        if ((in.length - inOff) % engine.getBlockSize() != 0){
+        if ((in.length - inOff) % engine.getBlockSize() != 0)
+        {
             //Partial blocks not supported
-            throw new NotImplementedException();
+            throw new DataLengthException("wrap data must be a multiple of " + engine.getBlockSize() + " bytes");
         }
 
-        if (inOff + inLen > in.length){
-            throw new DataLengthException("Input buffer too short");
+        if (inOff + inLen > in.length)
+        {
+            throw new DataLengthException("input buffer too short");
         }
 
         int n = 2 * (1 + inLen / engine.getBlockSize()); /* Defined in DSTU7624 standard */
@@ -78,7 +87,7 @@ public class DSTU7624WrapEngine implements Wrapper {
 
         Btemp.clear();
 
-        int bHalfBlocksLen = wrappedBuffer.length - engine.getBlockSize()  / 2;
+        int bHalfBlocksLen = wrappedBuffer.length - engine.getBlockSize() / 2;
         int bufOff = engine.getBlockSize() / 2;
         while (bHalfBlocksLen != 0)
         {
@@ -128,16 +137,18 @@ public class DSTU7624WrapEngine implements Wrapper {
 
     }
 
-    public byte[] unwrap(byte[] in, int inOff, int inLen) throws InvalidCipherTextException {
+    public byte[] unwrap(byte[] in, int inOff, int inLen)
+        throws InvalidCipherTextException
+    {
         if (forWrapping)
         {
-            throw new IllegalStateException("Not set for unwrapping");
+            throw new IllegalStateException("not set for unwrapping");
         }
 
         if ((in.length - inOff) % engine.getBlockSize() != 0)
         {
             //Partial blocks not supported
-            throw new NotImplementedException();
+            throw new DataLengthException("unwrap data must be a multiple of " + engine.getBlockSize() + " bytes");
         }
 
         int n = 2 * inLen / engine.getBlockSize();
@@ -167,7 +178,6 @@ public class DSTU7624WrapEngine implements Wrapper {
 
         for (int j = 0; j < V; j++)
         {
-
 
 
             System.arraycopy(Btemp.get(n - 2), 0, buffer, 0, engine.getBlockSize() / 2);
@@ -204,7 +214,7 @@ public class DSTU7624WrapEngine implements Wrapper {
         byte[] wrappedBuffer = new byte[buffer.length - engine.getBlockSize()];
         if (!Arrays.areEqual(checkSumArray, zeroArray))
         {
-            throw new InvalidCipherTextException("Checksum failed");
+            throw new InvalidCipherTextException("checksum failed");
         }
         else
         {
@@ -216,7 +226,8 @@ public class DSTU7624WrapEngine implements Wrapper {
     }
 
 
-    private void intToBytes(int number, byte[] outBytes, int outOff){
+    private void intToBytes(int number, byte[] outBytes, int outOff)
+    {
         outBytes[outOff + 3] = (byte)(number >> 24);
         outBytes[outOff + 2] = (byte)(number >> 16);
         outBytes[outOff + 1] = (byte)(number >> 8);
