@@ -307,6 +307,8 @@ public class KGCMBlockCipher
         this.lambda_c = 0;
         this.lambda_o = 0;
 
+        engine.reset();
+
         data.reset();
         associatedText.reset();
     }
