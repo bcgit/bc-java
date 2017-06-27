@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.Key;
-import java.security.KeyFactory;
 import java.security.KeyStoreException;
 import java.security.KeyStoreSpi;
 import java.security.NoSuchAlgorithmException;
@@ -978,7 +977,7 @@ public class BcKeyStoreSpi
     
             int         iterationCount = dIn.readInt();
     
-            if ((iterationCount < 0) || (iterationCount > 4 *  MIN_ITERATIONS))
+            if ((iterationCount < 0) || (iterationCount > 40 *  MIN_ITERATIONS))
             {
                 throw new IOException("Key store corrupted.");
             }
