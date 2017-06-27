@@ -17,7 +17,7 @@ public class XMSS
 
         public void configure(ConfigurableProvider provider)
         {
-            //provider.addAlgorithm("KeyFactory.XMSS", PREFIX + "XMSSKeyFactorySpi");
+            provider.addAlgorithm("KeyFactory.XMSS", PREFIX + "XMSSKeyFactorySpi");
             provider.addAlgorithm("KeyPairGenerator.XMSS", PREFIX + "XMSSKeyPairGeneratorSpi");
 
             addSignatureAlgorithm(provider, "SHA256", "XMSS", PREFIX + "XMSSSignatureSpi$withSha256", BCObjectIdentifiers.xmss_with_SHA256);

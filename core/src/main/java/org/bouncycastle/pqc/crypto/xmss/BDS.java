@@ -11,7 +11,7 @@ import java.util.TreeMap;
 /**
  * BDS.
  */
-final class BDS
+public final class BDS
     implements Serializable
 {
 

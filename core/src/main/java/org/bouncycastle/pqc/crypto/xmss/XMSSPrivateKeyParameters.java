@@ -278,9 +278,9 @@ public final class XMSSPrivateKeyParameters
         }
         catch (IOException e)
         {
-            e.printStackTrace();
-            throw new RuntimeException("error serializing bds state");
+            throw new RuntimeException("error serializing bds state: " + e.getMessage());
         }
+
         return XMSSUtil.concat(out, bdsStateOut);
     }
 

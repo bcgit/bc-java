@@ -2,15 +2,18 @@ package org.bouncycastle.pqc.jcajce.provider.xmss;
 
 import java.security.PrivateKey;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTPrivateKeyParameters;
 
 public class BCXMSSMTPrivateKey
     implements PrivateKey
 {
-    private final CipherParameters keyParams;
+    private final XMSSMTPrivateKeyParameters keyParams;
 
-    public BCXMSSMTPrivateKey(XMSSMTPrivateKeyParameters keyParams)
+    public BCXMSSMTPrivateKey(
+        ASN1ObjectIdentifier treeDigest,
+        XMSSMTPrivateKeyParameters keyParams)
     {
         this.keyParams = keyParams;
     }
@@ -30,7 +33,7 @@ public class BCXMSSMTPrivateKey
         return new byte[0];
     }
 
-    public CipherParameters getKeyParams()
+    CipherParameters getKeyParams()
     {
         return keyParams;
     }

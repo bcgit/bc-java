@@ -8,6 +8,7 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -30,6 +31,7 @@ public class XMSSSignatureSpi
     private Digest digest;
     private XMSSSigner signer;
     private SecureRandom random;
+    private ASN1ObjectIdentifier treeDigest;
 
     protected XMSSSignatureSpi(String sigName, Digest digest, XMSSSigner signer)
     {
@@ -69,6 +71,7 @@ public class XMSSSignatureSpi
         {
             CipherParameters param = ((BCXMSSPrivateKey)privateKey).getKeyParams();
 
+            treeDigest = ((BCXMSSPrivateKey)privateKey).getTreeDigestOID();
             if (random != null)
             {
                 param = new ParametersWithRandom(param, random);
@@ -150,7 +153,7 @@ public class XMSSSignatureSpi
 
     public PrivateKey getUpdatedPrivateKey()
     {
-        return new BCXMSSPrivateKey((XMSSPrivateKeyParameters)signer.getUpdatedPrivateKey());
+        return new BCXMSSPrivateKey(treeDigest, (XMSSPrivateKeyParameters)signer.getUpdatedPrivateKey());
     }
 
     static public class withSha256

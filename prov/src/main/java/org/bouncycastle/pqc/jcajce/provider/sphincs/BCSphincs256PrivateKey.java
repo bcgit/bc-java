@@ -46,13 +46,19 @@ public class BCSphincs256PrivateKey
      */
     public boolean equals(Object o)
     {
-        if (o == null || !(o instanceof BCSphincs256PrivateKey))
+        if (o == this)
         {
-            return false;
+            return true;
         }
-        BCSphincs256PrivateKey otherKey = (BCSphincs256PrivateKey)o;
 
-        return treeDigest.equals(otherKey.treeDigest) && Arrays.areEqual(params.getKeyData(), otherKey.params.getKeyData());
+        if (o instanceof BCSphincs256PrivateKey)
+        {
+            BCSphincs256PrivateKey otherKey = (BCSphincs256PrivateKey)o;
+
+            return treeDigest.equals(otherKey.treeDigest) && Arrays.areEqual(params.getKeyData(), otherKey.params.getKeyData());
+        }
+
+        return false;
     }
 
     public int hashCode()
