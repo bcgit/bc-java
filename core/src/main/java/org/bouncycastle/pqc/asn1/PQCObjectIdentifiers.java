@@ -54,4 +54,22 @@ public interface PQCObjectIdentifiers
     public static final ASN1ObjectIdentifier sphincs256_with_SHA3_512 = BCObjectIdentifiers.sphincs256_with_SHA3_512;
 
     public static final ASN1ObjectIdentifier newHope = BCObjectIdentifiers.newHope;
+
+    /**
+     * XMSS
+     */
+    public static final ASN1ObjectIdentifier xmss                      = BCObjectIdentifiers.xmss;
+    public static final ASN1ObjectIdentifier xmss_with_SHA256          = BCObjectIdentifiers.xmss_with_SHA256;
+    public static final ASN1ObjectIdentifier xmss_with_SHA512          = BCObjectIdentifiers.xmss_with_SHA512;
+    public static final ASN1ObjectIdentifier xmss_with_SHA3_256        = BCObjectIdentifiers.xmss_with_SHA3_256;
+    public static final ASN1ObjectIdentifier xmss_with_SHA3_512        = BCObjectIdentifiers.xmss_with_SHA3_512;
+
+    /**
+     * XMSS^MT
+     */
+    public static final ASN1ObjectIdentifier xmss_mt                      = BCObjectIdentifiers.xmss_mt;
+    public static final ASN1ObjectIdentifier xmss_mt_with_SHA256          = BCObjectIdentifiers.xmss_mt_with_SHA256;
+    public static final ASN1ObjectIdentifier xmss_mt_with_SHA512          = BCObjectIdentifiers.xmss_mt_with_SHA512;
+    public static final ASN1ObjectIdentifier xmss_mt_with_SHA3_256        = BCObjectIdentifiers.xmss_mt_with_SHA3_256;
+    public static final ASN1ObjectIdentifier xmss_mt_with_SHA3_512        = BCObjectIdentifiers.xmss_mt_with_SHA3_512;
 }
