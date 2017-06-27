@@ -5,6 +5,8 @@ import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
@@ -19,11 +21,12 @@ import org.bouncycastle.pqc.jcajce.spec.XMSSParameterSpec;
 public class XMSSKeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
 {
-    XMSSKeyGenerationParameters param;
-    XMSSKeyPairGenerator engine = new XMSSKeyPairGenerator();
+    private XMSSKeyGenerationParameters param;
+    private ASN1ObjectIdentifier treeDigest;
+    private XMSSKeyPairGenerator engine = new XMSSKeyPairGenerator();
 
-    SecureRandom random = new SecureRandom();
-    boolean initialised = false;
+    private SecureRandom random = new SecureRandom();
+    private boolean initialised = false;
 
     public XMSSKeyPairGeneratorSpi()
     {
@@ -51,18 +54,22 @@ public class XMSSKeyPairGeneratorSpi
 
         if (xmssParams.getTreeDigest().equals(XMSSParameterSpec.SHA256))
         {
+            treeDigest = NISTObjectIdentifiers.id_sha256;
             param = new XMSSKeyGenerationParameters(new XMSSParameters(xmssParams.getHeight(), new SHA256Digest()), random);
         }
         else if (xmssParams.getTreeDigest().equals(XMSSParameterSpec.SHA512))
         {
+            treeDigest = NISTObjectIdentifiers.id_sha512;
             param = new XMSSKeyGenerationParameters(new XMSSParameters(xmssParams.getHeight(), new SHA512Digest()), random);
         }
         else if (xmssParams.getTreeDigest().equals(XMSSParameterSpec.SHAKE128))
         {
+            treeDigest = NISTObjectIdentifiers.id_shake128;
             param = new XMSSKeyGenerationParameters(new XMSSParameters(xmssParams.getHeight(), new SHAKEDigest(128)), random);
         }
         else if (xmssParams.getTreeDigest().equals(XMSSParameterSpec.SHAKE256))
         {
+            treeDigest = NISTObjectIdentifiers.id_shake256;
             param = new XMSSKeyGenerationParameters(new XMSSParameters(xmssParams.getHeight(), new SHAKEDigest(256)), random);
         }
 
@@ -84,6 +91,6 @@ public class XMSSKeyPairGeneratorSpi
         XMSSPublicKeyParameters pub = (XMSSPublicKeyParameters)pair.getPublic();
         XMSSPrivateKeyParameters priv = (XMSSPrivateKeyParameters)pair.getPrivate();
 
-        return new KeyPair(new BCXMSSPublicKey(pub), new BCXMSSPrivateKey(priv));
+        return new KeyPair(new BCXMSSPublicKey(treeDigest, pub), new BCXMSSPrivateKey(treeDigest, priv));
     }
 }

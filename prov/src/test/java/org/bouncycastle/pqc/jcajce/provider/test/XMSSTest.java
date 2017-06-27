@@ -1,15 +1,20 @@
 package org.bouncycastle.pqc.jcajce.provider.test;
 
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
 import junit.framework.TestCase;
 import org.bouncycastle.pqc.jcajce.interfaces.StatefulSignature;
+import org.bouncycastle.pqc.jcajce.interfaces.XMSSKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.XMSSMTParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.XMSSParameterSpec;
@@ -54,6 +59,52 @@ public class XMSSTest
         xmssSig.update(msg, 0, msg.length);
 
         assertTrue(xmssSig.verify(s));
+    }
+
+    public void testXMSSSha256KeyFactory()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
+
+        kpg.initialize(new XMSSParameterSpec(10, XMSSParameterSpec.SHA256), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        KeyFactory keyFactory = KeyFactory.getInstance("XMSS", "BCPQC");
+        
+        XMSSKey privKey = (XMSSKey)keyFactory.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
+
+        assertEquals(kp.getPrivate(), privKey);
+
+        PublicKey pubKey = keyFactory.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
+
+        assertEquals(kp.getPublic(), pubKey);
+
+        assertEquals(10, privKey.getHeight());
+        assertEquals(XMSSParameterSpec.SHA256, privKey.getTreeDigest());
+    }
+
+    public void testXMSSSha512KeyFactory()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
+
+        kpg.initialize(new XMSSParameterSpec(10, XMSSParameterSpec.SHA512), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        KeyFactory keyFactory = KeyFactory.getInstance("XMSS", "BCPQC");
+
+        XMSSKey privKey = (XMSSKey)keyFactory.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
+
+        assertEquals(kp.getPrivate(), privKey);
+
+        PublicKey pubKey = keyFactory.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
+
+        assertEquals(kp.getPublic(), pubKey);
+
+        assertEquals(10, privKey.getHeight());
+        assertEquals(XMSSParameterSpec.SHA512, privKey.getTreeDigest());
     }
 
     public void testKeyExtraction()
