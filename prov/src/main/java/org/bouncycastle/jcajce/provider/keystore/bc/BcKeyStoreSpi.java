@@ -977,7 +977,7 @@ public class BcKeyStoreSpi
     
             int         iterationCount = dIn.readInt();
     
-            if ((iterationCount < 0) || (iterationCount > 40 *  MIN_ITERATIONS))
+            if ((iterationCount < 0) || (iterationCount > (MIN_ITERATIONS << 6)))
             {
                 throw new IOException("Key store corrupted.");
             }
