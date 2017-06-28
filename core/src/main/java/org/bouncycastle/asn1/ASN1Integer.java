@@ -167,7 +167,7 @@ public class ASN1Integer
      * Some ASN1Libraries fail to encode ASN1Integer properly and prepend
      * 0xFF or 0x00 bytes. In this test we check for up to 32 bits of
      * contiguous 0xFF or Ox00 if the passed in byte array starts with those
-     * values.
+     * values, or we allow 1 extra 0xff or 0x00 if it's not on a 32 bit boundary.
      *
      * @param bytes The raw encoding of the integer.
      * @return true if the (in)put fails this validation.
