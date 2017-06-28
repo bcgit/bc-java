@@ -10,6 +10,7 @@ public class RegressionTest
         new EqualsAndHashCodeTest(),
         new TagTest(),
         new SetTest(),
+        new ASN1IntegerTest(),
         new DERUTF8StringTest(),
         new CertificateTest(),
         new GenerationTest(),
