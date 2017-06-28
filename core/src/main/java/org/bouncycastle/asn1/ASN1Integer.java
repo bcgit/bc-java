@@ -195,6 +195,8 @@ public class ASN1Integer
                 {
                     return false;
                 }
+
+                return true;
             }
         }
 
