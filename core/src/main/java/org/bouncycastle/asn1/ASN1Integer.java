@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 
 /**
  * Class representing the ASN.1 INTEGER type.
@@ -17,8 +18,8 @@ public class ASN1Integer
      * Return an integer from the passed in object.
      *
      * @param obj an ASN1Integer or an object that can be converted into one.
-     * @throws IllegalArgumentException if the object cannot be converted.
      * @return an ASN1Integer instance.
+     * @throws IllegalArgumentException if the object cannot be converted.
      */
     public static ASN1Integer getInstance(
         Object obj)
@@ -49,9 +50,9 @@ public class ASN1Integer
      * @param obj      the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
      *                 tagged false otherwise.
+     * @return an ASN1Integer instance.
      * @throws IllegalArgumentException if the tagged object cannot
      * be converted.
-     * @return an ASN1Integer instance.
      */
     public static ASN1Integer getInstance(
         ASN1TaggedObject obj,
@@ -94,6 +95,23 @@ public class ASN1Integer
     /**
      * Construct an INTEGER from the passed in byte array.
      *
+     * <p>
+     * <b>NB: Strict Validation applied by default.</b>
+     * </p>
+     * <p>
+     * It has turned out that there are still a few applications that struggle with
+     * the ASN.1 BER encoding rules for an INTEGER as described in:
+     *
+     * @link https://www.itu.int/ITU-T/studygroups/com17/languages/X.690-0207.pdf
+     * Section 8.3.2.
+     * </p>
+     * <p>
+     * Users can set the 'org.bouncycastle.asn1.allow_unsafe_integer' to 'true'
+     * and a looser validation will be applied. Users must recognise that this is
+     * not ideal and may pave the way for an exploit based around a faulty encoding
+     * in the future.
+     * </p>
+     *
      * @param bytes the byte array representing a 2's complement encoding of a BigInteger.
      */
     public ASN1Integer(
@@ -104,18 +122,83 @@ public class ASN1Integer
 
     ASN1Integer(byte[] bytes, boolean clone)
     {
-        if (bytes.length > 1)
+        // Apply loose validation, see note in public constructor ANS1Integer(byte[])
+        if (Properties.isOverrideSet("org.bouncycastle.asn1.allow_unsafe_integer"))
         {
-            if (bytes[0] == 0 && (bytes[1] & 0x80) == 0)
+            if (isLooselyMalformed(bytes))
             {
                 throw new IllegalArgumentException("malformed integer");
             }
-            if (bytes[0] == (byte)0xff && (bytes[1] & 0x80) != 0)
+        }
+        else
+        {
+            if (isMalformed(bytes))
             {
                 throw new IllegalArgumentException("malformed integer");
             }
         }
         this.bytes = (clone) ? Arrays.clone(bytes) : bytes;
+    }
+
+    /**
+     * Apply the correct validation for an INTEGER primitive following the BER rules.
+     *
+     * @param bytes The raw encoding of the integer.
+     * @return true if the (in)put fails this validation.
+     */
+    static boolean isMalformed(byte[] bytes)
+    {
+        if (bytes.length > 1)
+        {
+            if (bytes[0] == 0 && (bytes[1] & 0x80) == 0)
+            {
+                return true;
+            }
+            if (bytes[0] == (byte)0xff && (bytes[1] & 0x80) != 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Some ASN1Libraries fail to encode ASN1Integer properly and prepend
+     * 0xFF or 0x00 bytes. In this test we check for up to 32 bits of
+     * contiguous 0xFF or Ox00 if the passed in byte array starts with those
+     * values.
+     *
+     * @param bytes The raw encoding of the integer.
+     * @return true if the (in)put fails this validation.
+     */
+    static boolean isLooselyMalformed(byte[] bytes)
+    {
+        if (bytes.length > 4)
+        {
+            if (bytes[0] == 0x00 || bytes[0] == (byte)0xFF)
+            {
+                if (bytes.length % 4 != 0)
+                {
+                    return true;
+                }
+
+                if (bytes[1] != bytes[0])
+                {
+                    return false;
+                }
+                if (bytes[2] != bytes[0])
+                {
+                    return false;
+                }
+                if (bytes[3] != bytes[0])
+                {
+                    return false;
+                }
+            }
+        }
+
+        return false;
     }
 
     public BigInteger getValue()
@@ -126,6 +209,7 @@ public class ASN1Integer
     /**
      * in some cases positive values get crammed into a space,
      * that's not quite big enough...
+     *
      * @return the BigInteger that results from treating this ASN.1 INTEGER as unsigned.
      */
     public BigInteger getPositiveValue()
