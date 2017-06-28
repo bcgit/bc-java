@@ -1,5 +1,7 @@
 package org.bouncycastle.asn1.test;
 
+import java.math.BigInteger;
+
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.util.encoders.Hex;
@@ -28,6 +30,7 @@ public class ASN1IntegerTest
         testLooseValidEncoding_FF_32BAligned();
         testLooseValidEncoding_FF_32BAligned_1not0();
         testLooseValidEncoding_FF_32BAligned_2not0();
+        testOversizedEncoding();
         
         System.setProperty("org.bouncycastle.asn1.allow_unsafe_integer", "true");
 
@@ -129,9 +132,9 @@ public class ASN1IntegerTest
             isEquals(i.getValue().intValue(), 4351);
             fail("Expecting illegal argument exception.");
         }
-        catch (Throwable t)
+        catch (IllegalArgumentException e)
         {
-            isEquals("Expected decoder exception.", IllegalArgumentException.class, t.getClass());
+            isEquals("malformed integer", e.getMessage());
         }
     }
 
@@ -145,9 +148,9 @@ public class ASN1IntegerTest
             ASN1Integer i = new ASN1Integer(rawInt);
             fail("Expecting illegal argument exception.");
         }
-        catch (Throwable t)
+        catch (IllegalArgumentException e)
         {
-            isEquals("Expected decoder exception.", IllegalArgumentException.class, t.getClass());
+            isEquals("malformed integer", e.getMessage());
         }
     }
 
@@ -165,9 +168,9 @@ public class ASN1IntegerTest
             isEquals(i.getValue().intValue(), 4351);
             fail("Expecting illegal argument exception.");
         }
-        catch (Throwable t)
+        catch (IllegalArgumentException e)
         {
-            isEquals("Expected decoder exception.", IllegalArgumentException.class, t.getClass());
+            isEquals("malformed integer", e.getMessage());
         }
     }
 
@@ -184,9 +187,9 @@ public class ASN1IntegerTest
             ASN1Integer i = new ASN1Integer(rawInt);
             fail("Expecting illegal argument exception.");
         }
-        catch (Throwable t)
+        catch (IllegalArgumentException e)
         {
-            isEquals("Expected decoder exception.", IllegalArgumentException.class, t.getClass());
+            isEquals("malformed integer", e.getMessage());
         }
     }
 
@@ -204,9 +207,9 @@ public class ASN1IntegerTest
             ASN1Integer i = new ASN1Integer(rawInt);
             fail("Expecting illegal argument exception.");
         }
-        catch (Throwable t)
+        catch (IllegalArgumentException e)
         {
-            isEquals("Expected decoder exception.", IllegalArgumentException.class, t.getClass());
+            isEquals("malformed integer", e.getMessage());
         }
     }
 
@@ -224,9 +227,9 @@ public class ASN1IntegerTest
             ASN1Integer i = new ASN1Integer(rawInt);
             fail("Expecting illegal argument exception.");
         }
-        catch (Throwable t)
+        catch (IllegalArgumentException e)
         {
-            isEquals("Expected decoder exception.", IllegalArgumentException.class, t.getClass());
+            isEquals("malformed integer", e.getMessage());
         }
     }
 
@@ -287,7 +290,30 @@ public class ASN1IntegerTest
         byte[] rawInt = Hex.decode("FFFFFE10FF000000");
         ASN1Integer i = new ASN1Integer(rawInt);
         isEquals(-2126025588736L, i.getValue().longValue());
+    }
 
+    public void testOversizedEncoding()
+        throws Exception
+    {
+        System.setProperty("org.bouncycastle.asn1.allow_unsafe_integer", "false");
+        //
+        // Should pass as loose validation permits 3 leading 0xFF bytes.
+        //
+
+        System.getProperties().put("org.bouncycastle.asn1.allow_unsafe_integer", "true");
+        byte[] rawInt = Hex.decode("FFFFFFFE10FF000000000000");
+        ASN1Integer i = new ASN1Integer(rawInt);
+        isEquals(new BigInteger(Hex.decode("FFFFFFFE10FF000000000000")), i.getValue());
+
+        rawInt = Hex.decode("FFFFFFFFFE10FF000000000000");
+        try
+        {
+            new ASN1Integer(rawInt);
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("malformed integer", e.getMessage());
+        }
     }
 
     public static void main(
