@@ -178,14 +178,13 @@ public class ASN1Integer
         {
             if (bytes[0] == 0x00 || bytes[0] == (byte)0xFF)
             {
-                if (bytes.length % 4 != 0)
-                {
-                    return true;
-                }
-
                 if (bytes[1] != bytes[0])
                 {
                     return false;
+                }
+                if (bytes.length % 4 != 0)
+                {
+                    return true;
                 }
                 if (bytes[2] != bytes[0])
                 {

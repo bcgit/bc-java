@@ -4,12 +4,18 @@ import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class ASN1IntegerTest
     extends SimpleTest
 {
+    private static final byte[] suspectKey = Base64.decode(
+        "MIGJAoGBAHNc+iExm94LUrJdPSJ4QJ9tDRuvaNmGVHpJ4X7a5zKI02v+2E7RotuiR2MHDJfVJkb9LUs2kb3XBlyENhtMLsbeH+3Muy3" +
+            "hGDlh/mLJSh1s4c5jDKBRYOHom7Uc8wP0P2+zBCA+OEdikNDFBaP5PbR2Xq9okG2kPh35M2quAiMTAgMBAAE=");
+
     public String getName()
     {
         return "ASN1Integer";
@@ -18,6 +24,10 @@ public class ASN1IntegerTest
     public void performTest()
         throws Exception
     {
+        System.setProperty("org.bouncycastle.asn1.allow_unsafe_integer", "true");
+
+        ASN1Sequence.getInstance(suspectKey);
+
         testValidEncodingSingleByte();
         testValidEncodingMultiByte();
         testInvalidEncoding_00();
@@ -38,6 +48,8 @@ public class ASN1IntegerTest
 
         new ASN1Enumerated(Hex.decode("ffda47bfc776bcd269da4832626ac332adfca6dd835e8ecd83cd1ebe7d709b0e"));
 
+        System.setProperty("org.bouncycastle.asn1.allow_unsafe_integer", "false");
+        
         try
         {
             new ASN1Integer(Hex.decode("ffda47bfc776bcd269da4832626ac332adfca6dd835e8ecd83cd1ebe7d709b"));
@@ -48,8 +60,17 @@ public class ASN1IntegerTest
         {
             isEquals("malformed integer", e.getMessage());
         }
+        
+        try
+        {
+            ASN1Sequence.getInstance(suspectKey);
 
-        System.setProperty("org.bouncycastle.asn1.allow_unsafe_integer", "false");
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        { 
+            isEquals("test 1", "failed to construct sequence from byte[]: corrupted stream detected", e.getMessage());
+        }
 
         try
         {
