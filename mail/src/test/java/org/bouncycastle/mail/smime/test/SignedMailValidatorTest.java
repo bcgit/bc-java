@@ -1,5 +1,6 @@
 package org.bouncycastle.mail.smime.test;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.security.KeyPair;
 import java.security.Security;
@@ -41,12 +42,67 @@ import org.bouncycastle.i18n.ErrorBundle;
 import org.bouncycastle.mail.smime.SMIMESignedGenerator;
 import org.bouncycastle.mail.smime.validator.SignedMailValidator;
 import org.bouncycastle.util.Store;
+import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.x509.PKIXCertPathReviewer;
 import org.bouncycastle.x509.extension.X509ExtensionUtil;
 
 public class SignedMailValidatorTest extends TestCase
 {
     static String TEST_TRUST_ACHOR = "validator.root.crt";
+
+    static byte[] multiEmailCert = Base64.decode(
+        "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUdmVENDQkdXZ0F3SUJB"
+      + "Z0lCR2pBTkJna3Foa2lHOXcwQkFRc0ZBRENCdnpFTE1Ba0dBMVVFQmhNQ1Ew"
+      + "Z3gKQ3pBSkJnTlZCQWdUQWxwSU1ROHdEUVlEVlFRSEV3WmFkWEpwWTJneEZ6"
+      + "QVZCZ05WQkFvVERsQnlhWFpoVTNCbwpaWEpsSUVGSE1SNHdIQVlEVlFRTERC"
+      + "VkVaWFpsYkc5d2JXVnVkQ0FtSUZSbGMzUnBibWN4TkRBeUJnTlZCQU1NCksx"
+      + "QnlhWFpoVTNCb1pYSmxJRWx1ZEdWeWJXVmthV0Z5ZVNCRFpYSjBhV1pwWTJG"
+      + "MFpTQmJWRVZUVkYweEl6QWgKQmdrcWhraUc5dzBCQ1FFV0ZHbHVabTlBY0hK"
+      + "cGRtRnpjR2hsY21VdVkyOXRNQjRYRFRFM01EWXlPREE0TkRjdwpNRm9YRFRN"
+      + "M01EWXlPREE0TkRjd01Gb3dnZDB4Q3pBSkJnTlZCQVlUQWtOSU1Rc3dDUVlE"
+      + "VlFRSUV3SmFTREVQCk1BMEdBMVVFQnhNR1duVnlhV05vTVJjd0ZRWURWUVFL"
+      + "RXc1UWNtbDJZVk53YUdWeVpTQkJSekVlTUJ3R0ExVUUKQ3d3VlJHVjJaV3h2"
+      + "Y0cxbGJuUWdKaUJVWlhOMGFXNW5NVGd3TmdZSktvWklodmNOQVFrQkZpbGti"
+      + "MjFoYVc0dApZMjl1Wm1sa1pXNTBhV0ZzYVhSNUxXRjFkR2h2Y21sMGVVQmla"
+      + "V3RpTG1Ob0lERTlNRHNHQ1NxR1NJYjNEUUVKCkFSWXVaRzl0WVdsdUxXTnZi"
+      + "bVpwWkdWdWRHbGhiR2wwZVMxaGRYUm9iM0pwZEhsQVptRnRhV3g1TFc1bGRD"
+      + "NWoKYURDQ0FpSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnSVBBRENDQWdvQ2dn"
+      + "SUJBTWJmNEh2a0lYUHpta1BTR09JbApxZ0FhdWlOYVVNdGNPSFlvWnBrS2dt"
+      + "ekVsdk4xNnk5enYyZUNkdThnTGNaT3FXT2ZNNmkzY0Z6T1N0bEIxL2lDClM4"
+      + "Vks2ekJmRUgrcDlBbFBCaFVKMDBrbjRESVNXSmRiV25pWXM2clo2cWtpTjZi"
+      + "aHV6V3k5YTVsZkM0c3Q2UisKN0lVcWJwaGxQSUU5OEhJbmQxV01ieTZKYWV0"
+      + "WHNZbW5Sb1Mxd29Fblg5U1BDdXBSK1dzbmtOemtRTFFhMGJYaApVZ3ZmR0Zh"
+      + "VTJwWXBLdXdvN3BsdHBZQzJjVENtVmFJR05rVmJWVGFsYktub0VoNVgrelRq"
+      + "U2oxSWJLaVdIVmNMCjJGTkxoS1hBS1loRGNXd2llVVd0S281T2JrWTZWRzVj"
+      + "dnU0OVozc1llUkkzNnZwY0NNTklvRzFJWlQ1bnhhVmYKKzlaRTM0WllOV3Y4"
+      + "RHZXOFdHZzc4RmkxS1dzanlCajN0SDk3Q3lIZnRsdFl3U3REVXllaGZHUytp"
+      + "aTBteUVWSwpzQ1BiQmwvOU82VHhISWZNRDVuTjlGeFZSZENrdTM5U1hmK29R"
+      + "K3pNdEE0eEtyc3JLVm9RUGZvNDhYaW5HMStICmxZWW1HL01SYTkzZHFCd1ov"
+      + "ZEUrRnZLZ2hmU003bVRPTEhPa0YxL0RzQnRJb0s4YmMrRDBIVHhZbWlsbFRj"
+      + "Vm0KbFkrVnArRHdtdStRVXlvOFU5UmU3Q0ZOOGs5RlVtc2hORTcyRDkvNytM"
+      + "NmI0Smt0ZTQvdXlzOGVIYnVoRXBnNQphTVMySHRjSkRJL25LbEE2TjFWZjVx"
+      + "aVlaVnIrUkRPZmxmS3ZHdnVGcFFMcjhWUUFONFUzalhOaVVIRGI2ek9rCms5"
+      + "UWdpV2REWDJrTFRTeldubnI5ZDFYTkFnTUJBQUdqWkRCaU1Bd0dBMVVkRXdF"
+      + "Qi93UUNNQUF3Q3dZRFZSMFAKQkFRREFnYkFNQk1HQTFVZEpRUU1NQW9HQ0Nz"
+      + "R0FRVUZCd01FTUJFR0NXQ0dTQUdHK0VJQkFRUUVBd0lGSURBZApCZ2xnaGtn"
+      + "Qmh2aENBUTBFRUJZT1VISnBkbUZUY0dobGNtVWdRMEV3RFFZSktvWklodmNO"
+      + "QVFFTEJRQURnZ0lCCkFONjF2Sy9taFhCc3NHZEpxTGszVjBOK3BJOFRRc3ps"
+      + "RU5pbzJTQ25kSTZyejhRRzFnUVBRZjRIaCtIZUNpWFYKNVlIcHAxMjdZVXlR"
+      + "Y1hiK3JYc3lSQXM0SWd6TWZyK3dmTWY5NVdianQ1QWRVR21XdFdwV2pkajBo"
+      + "YmlROGJmMwprU3Y4TnR6ZVhKTHBOYS9YK0NRYy9vRm1qeHZ1ZDJXczVzZG1S"
+      + "Uno2VUlKVFJoT2t4SFErTVlqL1NlTFFIQWU3CkQzaFV5NE9iVnlBU3VLaHpH"
+      + "MnExYm9mSnBKZHByZVNSMll2a2JQRW9FRlZSd2NQTXNPMFdGRmpCSGlHbVln"
+      + "aTEKd21qTnlzak8wZ0lwNnpMUzNSSUErd1llRHJVVnEzSnRya0RJZnZkL2tS"
+      + "T2UvcUFlcDB3THRReGFoSEFOSk80UAo5ZmxtV1F6bENMRlFoTUZibFl2Nis1"
+      + "NVVDeDhvRkVJTmUvaWF1VUlZME54WXZWclBMREwwVFhSR3grdVFsVVJaCkZi"
+      + "SUpBYzBTUW1SWXlHVkdnb1pUbVhHd0FjemNLWk5XZzd6NTk5TXBidW13ejJZ"
+      + "T2RTekRncjV0MHpGQUhDRG8KanRuUnRudVRYMkxvK1UwaWF6RlZhNVYrbDVs"
+      + "QjNIdFpXOWJkKy9ZSVo5K3YyZWpOS3M4UzZjQW1DRkFmVWpkUgpvWEJQUVdP"
+      + "Tmx6MjdGOXc3ajc5dmlNUHVES0ZtOU9LdmhQdVQvdWVaOGJCNmRYMlh3aTNw"
+      + "RTM1dWdRK05NT1crCnFUSkZSNDhyVzFvRkYxNTdxNXFzU2ovK3lqQlZpejRL"
+      + "YWlDakVKRDR4RE1UNzAzQytsTGZyamk3KzR2Z3ZIV0IKbHNCVS9jWkVoeFdu"
+      + "VjJQaHRsR3g2M2s2OThYeU03eWFCcDUvdHZuL2xSY0cKLS0tLS1FTkQgQ0VS"
+      + "VElGSUNBVEUtLS0tLQo=");
 
     public void testShortKey() throws Exception
     {
@@ -76,6 +132,16 @@ public class SignedMailValidatorTest extends TestCase
                 "The key usage extension of signer certificate does not permit using the key for email signatures.");
     }
 
+    public void testMultiEmail() throws Exception
+    {
+        CertificateFactory certFact = CertificateFactory.getInstance("X.509", "BC");
+
+        Set addresses = SignedMailValidator.getEmailAddresses((X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(multiEmailCert)));
+
+        assertTrue(addresses.contains("domain-confidentiality-authority@family-net.ch"));
+        assertTrue(addresses.contains("domain-confidentiality-authority@bekb.ch "));
+    }
+
     public void testExtKeyUsage() throws Exception
     {
         String message = "validator.extKeyUsage.eml";
@@ -101,7 +167,7 @@ public class SignedMailValidatorTest extends TestCase
         assertTrue(result.isVerifiedSignature());
         assertTrue(result.getCertPathReview().isValidCertPath());
         assertFalse(result.isValidSignature());
-        
+
         assertContainsMessage(
                 result.getErrors(),
                 "SignedMailValidator.noEmailInCert",
