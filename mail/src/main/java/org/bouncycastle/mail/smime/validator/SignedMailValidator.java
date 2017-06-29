@@ -26,7 +26,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Vector;
 
 import javax.mail.Address;
 import javax.mail.MessagingException;
@@ -39,6 +38,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DEROctetString;
@@ -47,10 +47,13 @@ import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.Time;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
+import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.cert.jcajce.JcaCertStoreBuilder;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
@@ -59,8 +62,6 @@ import org.bouncycastle.cms.jcajce.JcaX509CertSelectorConverter;
 import org.bouncycastle.i18n.ErrorBundle;
 import org.bouncycastle.i18n.filter.TrustedInput;
 import org.bouncycastle.i18n.filter.UntrustedInput;
-import org.bouncycastle.jce.PrincipalUtil;
-import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.mail.smime.SMIMESigned;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.x509.CertPathReviewerException;
@@ -414,16 +415,20 @@ public class SignedMailValidator
     {
         Set addresses = new HashSet();
 
-        X509Principal name = PrincipalUtil.getSubjectX509Principal(cert);
-        Vector oids = name.getOIDs();
-        Vector names = name.getValues();
-        for (int i = 0; i < oids.size(); i++)
+        TBSCertificate tbsCertificate = getTBSCert(cert);
+
+        RDN[] rdns = tbsCertificate.getSubject().getRDNs(PKCSObjectIdentifiers.pkcs_9_at_emailAddress);
+        for (int i = 0; i < rdns.length; i++)
         {
-            if (oids.get(i).equals(X509Principal.EmailAddress))
+            AttributeTypeAndValue[] atVs = rdns[i].getTypesAndValues();
+
+            for (int j = 0; j != atVs.length; j++)
             {
-                String email = ((String)names.get(i)).toLowerCase();
-                addresses.add(email);
-                break;
+                if (atVs[j].getType().equals(PKCSObjectIdentifiers.pkcs_9_at_emailAddress))
+                {
+                    String email = ((ASN1String)atVs[j].getValue()).getString().toLowerCase();
+                    addresses.add(email);
+                }
             }
         }
 
@@ -956,6 +961,12 @@ public class SignedMailValidator
                 return false;
             }
         }
+    }
 
+
+    private static TBSCertificate getTBSCert(X509Certificate cert)
+        throws CertificateEncodingException
+    {
+        return TBSCertificate.getInstance(cert.getTBSCertificate());
     }
 }
