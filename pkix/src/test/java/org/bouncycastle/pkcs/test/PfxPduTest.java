@@ -3,6 +3,8 @@ package org.bouncycastle.pkcs.test;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.AlgorithmParameters;
+import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
@@ -11,9 +13,16 @@ import java.security.PublicKey;
 import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.spec.KeySpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Date;
+
+import javax.crypto.Cipher;
+import javax.crypto.EncryptedPrivateKeyInfo;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -529,6 +538,30 @@ public class PfxPduTest
       + "LjAKBgYqhQMCAgkFAAQgIwD0CRCwva2Bjdlv5g970H2bCB1aafBNr/hxJLZE"
       + "Ey4ECAW3VYXJzJpYAgIIAA==");
 
+    private byte[] desWithSha1 = Base64.decode(
+        "MIIBgTAbBgkqhkiG9w0BBQowDgQId6NZWs1Be5wCAgQABIIBYLineU3" +
+            "SS0NCA6Olpt9VciMD4gUHsaqqKZ7tZK83ig66ic4U/CwFEcc6sozkkk" +
+            "3tGp1PJ9XOofcRZhrAegUshROPtexMYlsarIlYvL+1dUzY2BZXVV34Z" +
+            "SBdko8+QI0G84neTh7lL0x/MoE+MV2LHNxjMSj1oDIp5DJ43LQ6oTxa" +
+            "IjMEH8UZSK9Lr/oWtBO4Gfm2OBIDfVLfdVGTX5D7a/dXgzunraVkHMm" +
+            "zHUqPoqw0HZewSYTCdU0qf0H695K81S1OcMEpV53oyCxw/chzIinzDC" +
+            "L+OjxUmFEKh7exfUKPeV4J6R5Wa1Ec0Xff+TWQ9yiwGnByGkd8eWCyf" +
+            "WsduibO7akY1/XiPziEUPTvs8guTdBm3l625AJOaHMn5PtDMuMSj2dM" +
+            "KpDnyOgNj5xADOJyetmZMcoC6dzNWs1zBZAQAmJ2soC114k03xhLaID" +
+            "NfNqx9WueoGaZ3qXbSUawlR8=");
+
+    private byte[] desWithMD5 = Base64.decode(
+        "MIIBgTAbBgkqhkiG9w0BBQMwDgQInHiPrZGMtIICAgQABIIBYCXMfjp1" +
+            "75/XjHzihedgG1fRPQOn3sJSffEusr4uEGKlkjP+6RKuO0jtbi4dJO8Y" +
+            "EEywiTIaiAXXyMDDn3mSy/0ZzxYTejjOjNQmxSPo9Oxp0d4Ny3IQE+b3" +
+            "QiLB1jaZaLlcEOUwoprwQ2JyFCVxrBMYW3ldxhYH/8kB2ji2XGSOcbxo" +
+            "fwXn3zfA5bmFD4zCg1JM/iJcCwXlgXqwjppg9Y1tOfqwL9pCgxh8tmFn" +
+            "QbEwt/pyZptA7nvRZc8bYICh5GOqA3zr/MKGkBO98N6lTNMtRv2cvMIO" +
+            "caQMeaJJH/Y/ghpznquFyz/82MRzwcJa3JSJuR4swQXXxD3knU7mq8ys" +
+            "7+Gyv3Jze97me4vrbwsvlStJ19TooIgdjRZ+ouHQSuPXwnFKQBT1Tf1L" +
+            "2x+oAPL1el8NVxmxlIQy7Zd4StXUaM8/58vk6cVXb2MG6VAzFY5jpuPJ" +
+            "6f4jR3Msl1Otx+4=");
+
     /**
      * we generate the CA's certificate
      */
@@ -790,6 +823,44 @@ public class PfxPduTest
         PrivateKeyInfo info = priv.decryptPrivateKeyInfo(new JcePKCSPBEInputDecryptorProviderBuilder().setProvider("BC").build(passwd));
 
         assertTrue(Arrays.areEqual(info.getEncoded(), privKey.getEncoded()));
+    }
+
+    public void testEncryptedPrivateKeyInfoDESWithSHA1()
+        throws Exception
+    {
+        checkEncryptedPrivateKeyInfo("PKCS#5 Scheme 1".toCharArray(), desWithSha1);
+    }
+
+    public void testEncryptedPrivateKeyInfoDESWithMD5()
+        throws Exception
+    {
+        checkEncryptedPrivateKeyInfo("PKCS#5 Scheme 1".toCharArray(), desWithMD5);
+    }
+
+    private void checkEncryptedPrivateKeyInfo(char[] password, byte[] encodedEncPKInfo)
+        throws Exception
+    {
+        KeyFactory fact = KeyFactory.getInstance("RSA", BC);
+        PrivateKey privKey = fact.generatePrivate(privKeySpec);
+        EncryptedPrivateKeyInfo encPKInfo = new EncryptedPrivateKeyInfo(encodedEncPKInfo);
+
+        Cipher cipher = Cipher.getInstance(encPKInfo.getAlgName(), "BC");
+
+        PBEKeySpec pbeKeySpec = new PBEKeySpec(password);
+
+        SecretKeyFactory skFac = SecretKeyFactory.getInstance(encPKInfo.getAlgName(), "BC");
+
+        Key pbeKey = skFac.generateSecret(pbeKeySpec);
+
+        AlgorithmParameters algParams = encPKInfo.getAlgParameters();
+
+        cipher.init(Cipher.DECRYPT_MODE, pbeKey, algParams);
+
+        KeySpec pkcs8KeySpec = encPKInfo.getKeySpec(cipher);
+
+        RSAPrivateCrtKey rsaPriv = (RSAPrivateCrtKey)fact.generatePrivate(pkcs8KeySpec);
+
+        assertEquals(privKey, rsaPriv);
     }
 
     public void testKeyBag()
