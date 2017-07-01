@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.SimpleTimeZone;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERUTF8String;
@@ -152,11 +153,10 @@ public class NewTSPTest
 
         TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
 
-        TimeStampResponse tsResp = tsRespGen.generateGrantedResponse(request, new BigInteger("23"), new Date());
+        TimeStampResponse initResp = tsRespGen.generateGrantedResponse(request, new BigInteger("23"), new Date());
 
-        tsResp = new TimeStampResponse(tsResp.getEncoded());
-
-        CMSSignedData sd = tsResp.getTimeStampToken().toCMSSignedData();
+        // original CMS SignedData object
+        CMSSignedData sd = initResp.getTimeStampToken().toCMSSignedData();
 
         certs = sd.getCertificates();
         Iterator it = certs.getMatches(null).iterator();
@@ -164,6 +164,30 @@ public class NewTSPTest
         assertEquals(new JcaX509CertificateHolder(_origCert), it.next());
         assertEquals(new JcaX509CertificateHolder(_signDsaCert), it.next());
         assertEquals(new JcaX509CertificateHolder(_signCert), it.next());
+
+        // definite-length
+        TimeStampResponse dlResp = new TimeStampResponse(initResp.getEncoded(ASN1Encoding.DL));
+
+        sd = dlResp.getTimeStampToken().toCMSSignedData();
+
+        certs = sd.getCertificates();
+        it = certs.getMatches(null).iterator();
+
+        assertEquals(new JcaX509CertificateHolder(_origCert), it.next());
+        assertEquals(new JcaX509CertificateHolder(_signDsaCert), it.next());
+        assertEquals(new JcaX509CertificateHolder(_signCert), it.next());
+
+        // convert to DER - the default encoding
+        TimeStampResponse derResp = new TimeStampResponse(initResp.getEncoded());
+
+        sd = derResp.getTimeStampToken().toCMSSignedData();
+
+        certs = sd.getCertificates();
+        it = certs.getMatches(null).iterator();
+
+        assertEquals(new JcaX509CertificateHolder(_origCert), it.next());
+        assertEquals(new JcaX509CertificateHolder(_signCert), it.next());
+        assertEquals(new JcaX509CertificateHolder(_signDsaCert), it.next());
     }
 
     private void basicTest(
