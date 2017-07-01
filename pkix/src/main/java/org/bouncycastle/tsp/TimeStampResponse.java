@@ -4,11 +4,15 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.cmp.PKIFailureInfo;
 import org.bouncycastle.asn1.cmp.PKIFreeText;
 import org.bouncycastle.asn1.cmp.PKIStatus;
 import org.bouncycastle.asn1.cms.Attribute;
+import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.tsp.TimeStampResp;
 import org.bouncycastle.util.Arrays;
@@ -56,6 +60,24 @@ public class TimeStampResponse
         throws TSPException, IOException
     {
         this(readTimeStampResp(in));
+    }
+
+    TimeStampResponse(DLSequence dlSequence)
+        throws TSPException, IOException
+    {
+        try
+        {
+            resp = TimeStampResp.getInstance(dlSequence);
+            timeStampToken = new TimeStampToken(ContentInfo.getInstance(dlSequence.getObjectAt(1)));
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new TSPException("malformed timestamp response: " + e, e);
+        }
+        catch (ClassCastException e)
+        {
+            throw new TSPException("malformed timestamp response: " + e, e);
+        }
     }
 
     private static TimeStampResp readTimeStampResp(
@@ -185,5 +207,17 @@ public class TimeStampResponse
     public byte[] getEncoded() throws IOException
     {
         return resp.getEncoded();
+    }
+
+    /**
+     * return the ASN.1 encoded representation of this object.
+     */
+    public byte[] getEncoded(String encoding) throws IOException
+    {
+        if (ASN1Encoding.DL.equals(encoding))
+        {
+            return new DLSequence(new ASN1Encodable[] { resp.getStatus(), timeStampToken.toCMSSignedData().toASN1Structure() }).getEncoded(encoding);
+        }
+        return resp.getEncoded(encoding);
     }
 }
