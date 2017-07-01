@@ -31,6 +31,9 @@ public class DefaultSecretKeySizeProvider
         keySizes.put(PKCSObjectIdentifiers.id_alg_CMS3DESwrap, Integers.valueOf(192));
         keySizes.put(PKCSObjectIdentifiers.des_EDE3_CBC, Integers.valueOf(192));
 
+        keySizes.put(PKCSObjectIdentifiers.pbeWithSHA1AndDES_CBC, Integers.valueOf(64));
+        keySizes.put(PKCSObjectIdentifiers.pbeWithMD5AndDES_CBC, Integers.valueOf(64));
+
         keySizes.put(NISTObjectIdentifiers.id_aes128_CBC, Integers.valueOf(128));
         keySizes.put(NISTObjectIdentifiers.id_aes192_CBC, Integers.valueOf(192));
         keySizes.put(NISTObjectIdentifiers.id_aes256_CBC, Integers.valueOf(256));

@@ -17,6 +17,8 @@ import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.PasswordConverter;
+import org.bouncycastle.jcajce.PBKDF2Key;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameters;
@@ -144,7 +146,8 @@ public class PBEPBKDF2
 
                 if (pbeSpec.getSalt() == null)
                 {
-                    throw new InvalidKeySpecException("missing required salt");
+                    return new PBKDF2Key(((PBEKeySpec)keySpec).getPassword(),
+                        scheme == PKCS5S2 ? PasswordConverter.ASCII : PasswordConverter.UTF8);
                 }
 
                 if (pbeSpec.getIterationCount() <= 0)
