@@ -321,8 +321,15 @@ public final class DES
 
                 if (pbeSpec.getSalt() == null)
                 {
-                    return new PBKDF1Key(pbeSpec.getPassword(),
+                    if (scheme == PKCS5S1 || scheme == PKCS5S1_UTF8)
+                    {
+                        return new PBKDF1Key(pbeSpec.getPassword(),
                             scheme == PKCS5S1 ? PasswordConverter.ASCII : PasswordConverter.UTF8);
+                    }
+                    else
+                    {
+                        return new BCPBEKey(this.algName, this.algOid, scheme, digest, keySize, ivSize, pbeSpec, null);
+                    }
                 }
 
                 if (forCipher)
