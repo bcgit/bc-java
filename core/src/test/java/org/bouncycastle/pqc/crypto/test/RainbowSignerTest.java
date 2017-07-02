@@ -13,19 +13,12 @@ import org.bouncycastle.pqc.crypto.rainbow.RainbowKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowSigner;
 import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
 
 
 public class RainbowSignerTest
 extends SimpleTest
 {
-    byte[] keyData = Hex.decode("b5014e4b60ef2ba8b6211b4062ba3224e0427dd3");
-
-    SecureRandom keyRandom = new FixedSecureRandom(
-        new FixedSecureRandom.Source[] { new FixedSecureRandom.Data(keyData), new FixedSecureRandom.Data(keyData) });
-
     public String getName()
     {
         return "Rainbow";
@@ -36,7 +29,7 @@ extends SimpleTest
         RainbowParameters params = new RainbowParameters();
 
         RainbowKeyPairGenerator rainbowKeyGen = new RainbowKeyPairGenerator();
-        RainbowKeyGenerationParameters genParam = new RainbowKeyGenerationParameters(keyRandom, params);
+        RainbowKeyGenerationParameters genParam = new RainbowKeyGenerationParameters(new SecureRandom(), params);
 
         rainbowKeyGen.init(genParam);
 
