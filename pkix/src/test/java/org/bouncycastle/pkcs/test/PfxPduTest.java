@@ -551,16 +551,16 @@ public class PfxPduTest
             "NfNqx9WueoGaZ3qXbSUawlR8=");
 
     private byte[] desWithMD5 = Base64.decode(
-        "MIIBgTAbBgkqhkiG9w0BBQMwDgQInHiPrZGMtIICAgQABIIBYCXMfjp1" +
-            "75/XjHzihedgG1fRPQOn3sJSffEusr4uEGKlkjP+6RKuO0jtbi4dJO8Y" +
-            "EEywiTIaiAXXyMDDn3mSy/0ZzxYTejjOjNQmxSPo9Oxp0d4Ny3IQE+b3" +
-            "QiLB1jaZaLlcEOUwoprwQ2JyFCVxrBMYW3ldxhYH/8kB2ji2XGSOcbxo" +
-            "fwXn3zfA5bmFD4zCg1JM/iJcCwXlgXqwjppg9Y1tOfqwL9pCgxh8tmFn" +
-            "QbEwt/pyZptA7nvRZc8bYICh5GOqA3zr/MKGkBO98N6lTNMtRv2cvMIO" +
-            "caQMeaJJH/Y/ghpznquFyz/82MRzwcJa3JSJuR4swQXXxD3knU7mq8ys" +
-            "7+Gyv3Jze97me4vrbwsvlStJ19TooIgdjRZ+ouHQSuPXwnFKQBT1Tf1L" +
-            "2x+oAPL1el8NVxmxlIQy7Zd4StXUaM8/58vk6cVXb2MG6VAzFY5jpuPJ" +
-            "6f4jR3Msl1Otx+4=");
+        "MIIBgTAbBgkqhkiG9w0BBQMwDgQIdKRvcJb9DdgCAgQABIIBYEZ0Bpqy" +
+            "l/LNlzo/EhcPnGcgwvLdkh3mTwFxb5wOhDS+/cz82XrtFNosyvGUPo7V" +
+            "CyJjg0C05prNOOug4n5EEIcr0B/6p7ZKw9JLEq/gkfTUhVXS7tFsIzjD" +
+            "giVGc9T59fcqr4NWFtFAHxKb24ZESYL4BponDxWql465+s4oFLjEWob1" +
+            "AOA268q5PpWP1Og2BS0mBPuh6x/QOXzyfxaNRcJewT0uh0fCgCS05A+2" +
+            "wI7mJgQk1kEWdHPBMv/LAHiXgULa1gS+aLto8fISoHObY0H/KTTJ7rhY" +
+            "Epkjjw1khc0wrMBlpbcVJvqvxeMeelp26vPjqRL+08gUhHdzsJ3SokCD" +
+            "j5Z0Mmh1haduOXAALcdO5st6ZBqkA8o886bTqBYYRIFGzZIhJzOhe8iD" +
+            "GhHLM2yiA0RxlCtlnNMXruHKEvFYgzI3lVQov4jU5MIL1XjH0zPGyu9t" +
+            "/q8tpS4nbkRgGj8=");
 
     /**
      * we generate the CA's certificate
