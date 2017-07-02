@@ -42,9 +42,10 @@ extends SimpleTest
 
         AsymmetricCipherKeyPair pair = rainbowKeyGen.generateKeyPair();
 
-        ParametersWithRandom param = new ParametersWithRandom(pair.getPrivate(), keyRandom);
+        ParametersWithRandom param = new ParametersWithRandom(pair.getPrivate(), new SecureRandom());
 
         DigestingMessageSigner rainbowSigner = new DigestingMessageSigner(new RainbowSigner() , new SHA224Digest());
+
         rainbowSigner.init(true, param);
 
         byte[] message = BigIntegers.asUnsignedByteArray(new BigInteger("968236873715988614170569073515315707566766479517"));
@@ -53,6 +54,7 @@ extends SimpleTest
 
         rainbowSigner.init(false, pair.getPublic());
         rainbowSigner.update(message, 0, message.length);
+
         if (!rainbowSigner.verifySignature(sig))
         {
             fail("verification fails");
