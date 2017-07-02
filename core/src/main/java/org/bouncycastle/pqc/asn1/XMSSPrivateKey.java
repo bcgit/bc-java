@@ -26,7 +26,7 @@ import org.bouncycastle.util.Arrays;
  *            root          OCTET STRING
  *         }
  *         bdsState CHOICE {
- *            javaSerialization [0] OCTET STRING
+ *            platformSerialization [0] OCTET STRING
  *         }
  *    }
  * </pre>
