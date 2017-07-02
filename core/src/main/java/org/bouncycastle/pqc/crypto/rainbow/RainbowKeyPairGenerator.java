@@ -90,7 +90,7 @@ public class RainbowKeyPairGenerator
         this.rainbowParams = (RainbowKeyGenerationParameters)param;
 
         // set source of randomness
-        this.sr = new SecureRandom();
+        this.sr = rainbowParams.getRandom();
 
         // unmarshalling:
         this.vi = this.rainbowParams.getParameters().getVi();
