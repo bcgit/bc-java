@@ -159,7 +159,8 @@ public class X500NameTest
         // compatibility encoding
         testEncodingGeneralizedTime(BCStyle.DATE_OF_BIRTH, "20020122122220Z");
         testEncodingUTF8String(BCStyle.CN, "Mörsky");
-
+        testEncodingUTF8String(BCStyle.ORGANIZATION_IDENTIFIER, "Mörsky");
+        
         //
         // composite
         //

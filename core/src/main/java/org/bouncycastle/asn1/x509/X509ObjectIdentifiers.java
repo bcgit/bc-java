@@ -23,6 +23,8 @@ public interface X509ObjectIdentifiers
     /** Subject RDN components: name = 2.5.4.41 */
     static final ASN1ObjectIdentifier    id_at_name              = new ASN1ObjectIdentifier("2.5.4.41").intern();
 
+    static final ASN1ObjectIdentifier    id_at_organizationIdentifier = new ASN1ObjectIdentifier("2.5.4.97").intern();
+
     /**
      * id-SHA1 OBJECT IDENTIFIER ::=    
      *   {iso(1) identified-organization(3) oiw(14) secsig(3) algorithms(2) 26 }
