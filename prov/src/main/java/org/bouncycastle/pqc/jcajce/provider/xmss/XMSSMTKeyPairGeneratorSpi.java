@@ -92,6 +92,6 @@ public class XMSSMTKeyPairGeneratorSpi
         XMSSMTPublicKeyParameters pub = (XMSSMTPublicKeyParameters)pair.getPublic();
         XMSSMTPrivateKeyParameters priv = (XMSSMTPrivateKeyParameters)pair.getPrivate();
 
-        return new KeyPair(new BCXMSSMTPublicKey(pub), new BCXMSSMTPrivateKey(treeDigest, priv));
+        return new KeyPair(new BCXMSSMTPublicKey(treeDigest, pub), new BCXMSSMTPrivateKey(treeDigest, priv));
     }
 }
