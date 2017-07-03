@@ -1,7 +1,6 @@
 package org.bouncycastle.jsse.provider.test;
 
 import java.security.KeyStore;
-import java.security.Security;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 
@@ -60,16 +59,7 @@ class SSLUtils
             {
                 try
                 {
-                    KeyManagerFactory keyManagerFactory;
-
-                    if (Security.getProvider("IBMJSSE2") != null)
-                    {
-                        keyManagerFactory = KeyManagerFactory.getInstance("IBMX509");
-                    }
-                    else
-                    {
-                        keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
-                    }
+                    KeyManagerFactory keyManagerFactory = TestUtils.getSunX509KeyManagerFactory();
 
                     keyManagerFactory.init(keyStore, password);
 
