@@ -13,6 +13,7 @@ import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
@@ -26,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLSocket;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -336,6 +338,19 @@ class TestUtils
     public static X509Certificate createExceptionCertificate(boolean exceptionOnEncode)
     {
         return new ExceptionCertificate(exceptionOnEncode);
+    }
+
+    static KeyManagerFactory getSunX509KeyManagerFactory()
+        throws NoSuchAlgorithmException
+    {
+        if (Security.getProvider("IBMJSSE2") != null)
+        {
+            return KeyManagerFactory.getInstance("IBMX509");
+        }
+        else
+        {
+            return KeyManagerFactory.getInstance("SunX509");
+        }
     }
 
     private static class ExceptionCertificate
