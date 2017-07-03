@@ -13,7 +13,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import junit.framework.TestCase;
-import org.bouncycastle.pqc.jcajce.interfaces.StatefulSignature;
+import org.bouncycastle.pqc.jcajce.interfaces.StateAwareSignature;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.XMSSMTParameterSpec;
@@ -44,9 +44,9 @@ public class XMSSTest
 
         Signature sig = Signature.getInstance("SHA256withXMSS", "BCPQC");
 
-        assertTrue(sig instanceof StatefulSignature);
+        assertTrue(sig instanceof StateAwareSignature);
 
-        StatefulSignature xmssSig = (StatefulSignature)sig;
+        StateAwareSignature xmssSig = (StateAwareSignature)sig;
 
         xmssSig.initSign(kp.getPrivate());
 
@@ -121,9 +121,9 @@ public class XMSSTest
 
         Signature sig = Signature.getInstance("SHA256withXMSS", "BCPQC");
 
-        assertTrue(sig instanceof StatefulSignature);
+        assertTrue(sig instanceof StateAwareSignature);
 
-        StatefulSignature xmssSig = (StatefulSignature)sig;
+        StateAwareSignature xmssSig = (StateAwareSignature)sig;
 
         xmssSig.initSign(kp.getPrivate());
 

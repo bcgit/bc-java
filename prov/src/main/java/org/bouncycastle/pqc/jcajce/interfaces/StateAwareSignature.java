@@ -13,7 +13,7 @@ import java.security.cert.Certificate;
  * algorithm is one where the private key is updated for each signature generated. Examples of these
  * are algorithms such as GMSS, XMSS, and XMSS^MT.
  */
-public interface StatefulSignature
+public interface StateAwareSignature
 {
     void initVerify(PublicKey publicKey)
         throws InvalidKeyException;
