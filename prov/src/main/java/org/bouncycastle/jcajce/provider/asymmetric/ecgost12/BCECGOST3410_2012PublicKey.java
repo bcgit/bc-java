@@ -16,7 +16,6 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
@@ -48,7 +47,7 @@ public class BCECGOST3410_2012PublicKey
     private String algorithm = "ECGOST3410-2012";
     private boolean withCompression;
 
-    private transient ECPublicKeyParameters   ecPublicKey;
+    private transient ECPublicKeyParameters ecPublicKey;
     private transient ECParameterSpec ecSpec;
     private transient GOST3410PublicKeyAlgParameters gostParams;
 
@@ -96,7 +95,7 @@ public class BCECGOST3410_2012PublicKey
         ECPublicKeyParameters params,
         ECParameterSpec spec)
     {
-        ECDomainParameters      dp = params.getParameters();
+        ECDomainParameters dp = params.getParameters();
 
         this.algorithm = algorithm;
         this.ecPublicKey = params;
@@ -192,7 +191,8 @@ public class BCECGOST3410_2012PublicKey
 
         byte[] keyEnc = key.getOctets();
         int keySize = 64;
-        if(algOid.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512)){
+        if (algOid.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512))
+        {
             keySize = 128;
         }
         int arraySize = keySize / 2;
@@ -243,6 +243,13 @@ public class BCECGOST3410_2012PublicKey
         ASN1Encodable params;
         SubjectPublicKeyInfo info;
 
+//        ecPublicKey.getQ().
+        BigInteger bX = this.ecPublicKey.getQ().getAffineXCoord().toBigInteger();
+        BigInteger bY = this.ecPublicKey.getQ().getAffineYCoord().toBigInteger();
+
+        // need to detect key size
+        boolean is512 = (bX.bitLength() > 256);
+
         if (gostParams != null)
         {
             params = gostParams;
@@ -251,9 +258,18 @@ public class BCECGOST3410_2012PublicKey
         {
             if (ecSpec instanceof ECNamedCurveSpec)
             {
-                params = new GOST3410PublicKeyAlgParameters(
-                    ECGOST3410NamedCurves.getOID(((ECNamedCurveSpec)ecSpec).getName()),
-                    CryptoProObjectIdentifiers.gostR3411_94_CryptoProParamSet);
+                if (is512)
+                {
+                    params = new GOST3410PublicKeyAlgParameters(
+                        ECGOST3410NamedCurves.getOID(((ECNamedCurveSpec)ecSpec).getName()),
+                        RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512);
+                }
+                else
+                {
+                    params = new GOST3410PublicKeyAlgParameters(
+                        ECGOST3410NamedCurves.getOID(((ECNamedCurveSpec)ecSpec).getName()),
+                        RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256);
+                }
             }
             else
             {   // strictly speaking this may not be applicable...
@@ -270,21 +286,17 @@ public class BCECGOST3410_2012PublicKey
             }
         }
 
-//        ecPublicKey.getQ().
-        BigInteger bX = this.ecPublicKey.getQ().getAffineXCoord().toBigInteger();
-        BigInteger bY = this.ecPublicKey.getQ().getAffineYCoord().toBigInteger();
-
-        // need to detect key size
-        boolean is512 = (bX.bitLength() > 256);
         int encKeySize;
         int offset;
         ASN1ObjectIdentifier algIdentifier;
-        if(is512){
+        if (is512)
+        {
             encKeySize = 128;
             offset = 64;
             algIdentifier = RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512;
         }
-        else {
+        else
+        {
             encKeySize = 64;
             offset = 32;
             algIdentifier = RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256;
@@ -292,13 +304,13 @@ public class BCECGOST3410_2012PublicKey
 
         byte[] encKey = new byte[encKeySize];
 
-        extractBytes(encKey,encKeySize/2, 0, bX);
-        extractBytes(encKey,encKeySize/2, offset, bY);
+        extractBytes(encKey, encKeySize / 2, 0, bX);
+        extractBytes(encKey, encKeySize / 2, offset, bY);
 
         try
         {
             info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(algIdentifier, params),
-                    new DEROctetString(encKey));
+                new DEROctetString(encKey));
         }
         catch (IOException e)
         {
