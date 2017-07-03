@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  * <pre>
  *     XMMSKeyParams ::= SEQUENCE {
  *     version INTEGER -- 0
+ *     height INTEGER
  *     treeDigest AlgorithmIdentifier
  * }
  * </pre>
