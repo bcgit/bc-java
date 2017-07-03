@@ -48,6 +48,7 @@ public class XMSSSignatureSpi
         {
             CipherParameters param = ((BCXMSSPublicKey)publicKey).getKeyParams();
 
+            treeDigest = null;
             digest.reset();
             signer.init(false, param);
         }
@@ -153,7 +154,15 @@ public class XMSSSignatureSpi
 
     public PrivateKey getUpdatedPrivateKey()
     {
-        return new BCXMSSPrivateKey(treeDigest, (XMSSPrivateKeyParameters)signer.getUpdatedPrivateKey());
+        if (treeDigest == null)
+        {
+            throw new IllegalStateException("signature object not in a signing state");
+        }
+        PrivateKey rKey = new BCXMSSPrivateKey(treeDigest, (XMSSPrivateKeyParameters)signer.getUpdatedPrivateKey());
+
+        treeDigest = null;
+
+        return rKey;
     }
 
     static public class withSha256
