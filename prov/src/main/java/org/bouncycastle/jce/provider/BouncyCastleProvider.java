@@ -21,6 +21,8 @@ import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.jcajce.provider.newhope.NHKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sphincs.Sphincs256KeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSMTKeyFactorySpi;
 
 /**
  * To add the provider at runtime use:
@@ -232,6 +234,8 @@ public final class BouncyCastleProvider extends Provider
     {
         addKeyInfoConverter(PQCObjectIdentifiers.sphincs256, new Sphincs256KeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.newHope, new NHKeyFactorySpi());
+        addKeyInfoConverter(PQCObjectIdentifiers.xmss, new XMSSKeyFactorySpi());
+        addKeyInfoConverter(PQCObjectIdentifiers.xmss_mt, new XMSSMTKeyFactorySpi());
     }
 
     public void setParameter(String parameterName, Object parameter)

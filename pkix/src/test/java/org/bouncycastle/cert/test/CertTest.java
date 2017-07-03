@@ -99,6 +99,8 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCS256KeyGenParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.XMSSMTParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.XMSSParameterSpec;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
@@ -2750,6 +2752,108 @@ public class CertTest
         //System.out.println(cert);
     }
 
+    /**
+     * we generate a self signed certificate for the sake of testing - XMSS
+     */
+    public void checkCreation8()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
+
+        kpg.initialize(new XMSSParameterSpec(10, XMSSParameterSpec.SHA256), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        PrivateKey privKey = kp.getPrivate();
+        PublicKey pubKey = kp.getPublic();
+
+        //
+        // distinguished name table.
+        //
+        X500NameBuilder builder = createStdBuilder();
+
+        //
+        // create the certificate - version 3
+        //
+        ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withXMSS").setProvider("BCPQC").build(privKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
+
+        cert.checkValidity(new Date());
+
+        //
+        // check verifies in general
+        //
+        cert.verify(pubKey);
+
+        //
+        // check verifies with contained key
+        //
+        cert.verify(cert.getPublicKey());
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(cert.getEncoded());
+        CertificateFactory fact = CertificateFactory.getInstance("X.509", BC);
+
+        cert = (X509Certificate)fact.generateCertificate(bIn);
+
+        //System.out.println(cert);
+    }
+
+    /**
+     * we generate a self signed certificate for the sake of testing - XMSS
+     */
+    public void checkCreation9()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSSMT", "BCPQC");
+
+        kpg.initialize(new XMSSMTParameterSpec(10, 5, XMSSMTParameterSpec.SHAKE256), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        PrivateKey privKey = kp.getPrivate();
+        PublicKey pubKey = kp.getPublic();
+
+        //
+        // distinguished name table.
+        //
+        X500NameBuilder builder = createStdBuilder();
+
+        //
+        // create the certificate - version 3
+        //
+        ContentSigner sigGen = new JcaContentSignerBuilder("SHAKE256withXMSSMT").setProvider("BCPQC").build(privKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
+
+        cert.checkValidity(new Date());
+
+        //
+        // check verifies in general
+        //
+        cert.verify(pubKey);
+
+        //
+        // check verifies with contained key
+        //
+        cert.verify(cert.getPublicKey());
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(cert.getEncoded());
+        CertificateFactory fact = CertificateFactory.getInstance("X.509", BC);
+
+        cert = (X509Certificate)fact.generateCertificate(bIn);
+
+        //System.out.println(cert);
+    }
+
     private void testForgedSignature()
         throws Exception
     {
@@ -3372,6 +3476,8 @@ public class CertTest
 
         checkCreation6();
         checkCreation7();
+        checkCreation8();
+        checkCreation9();
 
         checkSm3WithSm2Creation();
 

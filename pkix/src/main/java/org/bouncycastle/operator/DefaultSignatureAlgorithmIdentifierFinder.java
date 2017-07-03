@@ -108,6 +108,17 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SHA3-512WITHSPHINCS256", BCObjectIdentifiers.sphincs256_with_SHA3_512);
         algorithms.put("SHA512WITHSPHINCS256", BCObjectIdentifiers.sphincs256_with_SHA512);
         algorithms.put("SM3WITHSM2", GMObjectIdentifiers.sm2sign_with_sm3);
+
+        algorithms.put("SHA256WITHXMSS", BCObjectIdentifiers.xmss_with_SHA256);
+        algorithms.put("SHA512WITHXMSS", BCObjectIdentifiers.xmss_with_SHA512);
+        algorithms.put("SHAKE128WITHXMSS", BCObjectIdentifiers.xmss_with_SHAKE128);
+        algorithms.put("SHAKE256WITHXMSS", BCObjectIdentifiers.xmss_with_SHAKE256);
+
+        algorithms.put("SHA256WITHXMSSMT", BCObjectIdentifiers.xmss_mt_with_SHA256);
+        algorithms.put("SHA512WITHXMSSMT", BCObjectIdentifiers.xmss_mt_with_SHA512);
+        algorithms.put("SHAKE128WITHXMSSMT", BCObjectIdentifiers.xmss_mt_with_SHAKE128);
+        algorithms.put("SHAKE256WITHXMSSMT", BCObjectIdentifiers.xmss_mt_with_SHAKE256);
+
         //
         // According to RFC 3279, the ASN.1 encoding SHALL (id-dsa-with-sha1) or MUST (ecdsa-with-SHA*) omit the parameters field.
         // The parameters field SHALL be NULL for RSA based signature algorithms.
@@ -136,6 +147,18 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         //
         noParams.add(BCObjectIdentifiers.sphincs256_with_SHA512);
         noParams.add(BCObjectIdentifiers.sphincs256_with_SHA3_512);
+
+        //
+        // XMSS
+        //
+        noParams.add(BCObjectIdentifiers.xmss_with_SHA256);
+        noParams.add(BCObjectIdentifiers.xmss_with_SHA512);
+        noParams.add(BCObjectIdentifiers.xmss_with_SHAKE128);
+        noParams.add(BCObjectIdentifiers.xmss_with_SHAKE256);
+        noParams.add(BCObjectIdentifiers.xmss_mt_with_SHA256);
+        noParams.add(BCObjectIdentifiers.xmss_mt_with_SHA512);
+        noParams.add(BCObjectIdentifiers.xmss_mt_with_SHAKE128);
+        noParams.add(BCObjectIdentifiers.xmss_mt_with_SHAKE256);
 
         //
         // SM2

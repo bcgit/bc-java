@@ -232,7 +232,7 @@ public final class XMSSMTPrivateKeyParameters
     {
 		/* index || secretKeySeed || secretKeyPRF || publicSeed || root */
         int n = params.getDigestSize();
-        int indexSize = (int)Math.ceil(params.getHeight() / (double)8);
+        int indexSize = 4;
         int secretKeySize = n;
         int secretKeyPRFSize = n;
         int publicSeedSize = n;
