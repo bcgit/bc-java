@@ -4,14 +4,14 @@ import java.util.Map;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.pqc.crypto.StatefulMessageSigner;
+import org.bouncycastle.pqc.crypto.StateAwareMessageSigner;
 import org.bouncycastle.util.Arrays;
 
 /**
  * XMSS^MT Signer class.
  */
 public class XMSSMTSigner
-    implements StatefulMessageSigner
+    implements StateAwareMessageSigner
 {
     private XMSSMTPrivateKeyParameters privateKey;
     private XMSSMTPublicKeyParameters publicKey;
