@@ -62,7 +62,7 @@ public class HTTPSServerThread
     SSLContext createSSLContext()
         throws Exception
     {
-        KeyManagerFactory mgrFact = KeyManagerFactory.getInstance("SunX509");
+        KeyManagerFactory mgrFact = TlsTestUtils.getSunX509KeyManagerFactory();
         KeyStore serverStore = KeyStore.getInstance("JKS");
 
         serverStore.load(new ByteArrayInputStream(KeyStores.server), SERVER_PASSWORD);
@@ -70,7 +70,7 @@ public class HTTPSServerThread
         mgrFact.init(serverStore, SERVER_PASSWORD);
 
         // set up a trust manager so we can recognize the server
-        TrustManagerFactory trustFact = TrustManagerFactory.getInstance("SunX509");
+        TrustManagerFactory trustFact = TlsTestUtils.getSunX509TrustManagerFactory();
         KeyStore trustStore = KeyStore.getInstance("JKS");
 
         trustStore.load(new ByteArrayInputStream(KeyStores.trustStore), TRUST_STORE_PASSWORD);

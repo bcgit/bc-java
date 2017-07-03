@@ -5,9 +5,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.Security;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.util.Vector;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
 
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -293,5 +298,31 @@ public class TlsTestUtils
             }
         }
         return false;
+    }
+
+    static TrustManagerFactory getSunX509TrustManagerFactory()
+        throws NoSuchAlgorithmException
+    {
+        if (Security.getProvider("IBMJSSE2") != null)
+        {
+            return TrustManagerFactory.getInstance("IBMX509");
+        }
+        else
+        {
+            return TrustManagerFactory.getInstance("SunX509");
+        }
+    }
+
+    static KeyManagerFactory getSunX509KeyManagerFactory()
+        throws NoSuchAlgorithmException
+    {
+        if (Security.getProvider("IBMJSSE2") != null)
+        {
+            return KeyManagerFactory.getInstance("IBMX509");
+        }
+        else
+        {
+            return KeyManagerFactory.getInstance("SunX509");
+        }
     }
 }
