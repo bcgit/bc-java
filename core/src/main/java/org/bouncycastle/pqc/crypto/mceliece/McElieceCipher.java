@@ -102,7 +102,7 @@ public class McElieceCipher
     }
 
 
-    public void initCipherEncrypt(McEliecePublicKeyParameters pubKey)
+    private void initCipherEncrypt(McEliecePublicKeyParameters pubKey)
     {
         this.sr = sr != null ? sr : new SecureRandom();
         n = pubKey.getN();
@@ -113,7 +113,7 @@ public class McElieceCipher
     }
 
 
-    public void initCipherDecrypt(McEliecePrivateKeyParameters privKey)
+    private void initCipherDecrypt(McEliecePrivateKeyParameters privKey)
     {
         n = privKey.getN();
         k = privKey.getK();
