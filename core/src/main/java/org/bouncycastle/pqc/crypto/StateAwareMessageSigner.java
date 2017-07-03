@@ -6,7 +6,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 /**
  * Base interface for a PQC stateful signature algorithm.
  */
-public interface StatefulMessageSigner
+public interface StateAwareMessageSigner
     extends MessageSigner
 {
     /**

@@ -2,11 +2,11 @@ package org.bouncycastle.pqc.crypto.xmss;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.pqc.crypto.StatefulMessageSigner;
+import org.bouncycastle.pqc.crypto.StateAwareMessageSigner;
 import org.bouncycastle.util.Arrays;
 
 public class XMSSSigner
-    implements StatefulMessageSigner
+    implements StateAwareMessageSigner
 {
     private XMSSPrivateKeyParameters privateKey;
     private XMSSPublicKeyParameters publicKey;

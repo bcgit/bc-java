@@ -17,11 +17,11 @@ import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSSigner;
-import org.bouncycastle.pqc.jcajce.interfaces.StatefulSignature;
+import org.bouncycastle.pqc.jcajce.interfaces.StateAwareSignature;
 
 public class XMSSSignatureSpi
     extends Signature
-    implements StatefulSignature
+    implements StateAwareSignature
 {
     protected XMSSSignatureSpi(String algorithm)
     {
