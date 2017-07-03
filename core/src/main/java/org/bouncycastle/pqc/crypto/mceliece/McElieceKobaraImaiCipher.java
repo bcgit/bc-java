@@ -109,7 +109,7 @@ public class McElieceKobaraImaiCipher
 
     }
 
-    public void initCipherDecrypt(McElieceCCA2PrivateKeyParameters privKey)
+    private void initCipherDecrypt(McElieceCCA2PrivateKeyParameters privKey)
     {
         this.messDigest = Utils.getDigest(privKey.getDigest());
         n = privKey.getN();
