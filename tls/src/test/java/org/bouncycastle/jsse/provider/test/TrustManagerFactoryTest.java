@@ -85,8 +85,16 @@ public class TrustManagerFactoryTest
         PKIXBuilderParameters params = new PKIXBuilderParameters(trust, targetConstraints);
         params.addCertStore(store);
         params.setDate(validDate);
-        params.setRevocationEnabled(true);
-        
+
+        if (Security.getProvider("IBMJSSE2") != null)
+        {
+            params.setRevocationEnabled(false);   // IBM cert path does not recognise setDate() fully.
+        }
+        else
+        {
+            params.setRevocationEnabled(true);
+        }
+
         TrustManagerFactory fact = TrustManagerFactory.getInstance("PKIX", "BCJSSE");
 
         fact.init(new CertPathTrustManagerParameters(params));
