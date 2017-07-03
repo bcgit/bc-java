@@ -36,7 +36,8 @@ public class JceTlsECDomain
 {
     protected JcaTlsCrypto crypto;
     protected TlsECConfig ecConfig;
-    protected AlgorithmParameters ecDomain;
+    protected ECGenParameterSpec ecGenSpec;
+    protected ECParameterSpec ecParameterSpec;
     protected ECCurve ecCurve;
 
     public JceTlsECDomain(JcaTlsCrypto crypto, TlsECConfig ecConfig)
@@ -71,12 +72,14 @@ public class JceTlsECDomain
         return new JceTlsECDH(this);
     }
 
-    public ECPoint decodePoint(byte[] encoding) throws IOException
+    public ECPoint decodePoint(byte[] encoding)
+        throws IOException
     {
         return ecCurve.decodePoint(encoding);
     }
 
-    public ECPublicKey decodePublicKey(byte[] encoding) throws IOException
+    public ECPublicKey decodePublicKey(byte[] encoding)
+        throws IOException
     {
         try
         {
@@ -84,7 +87,7 @@ public class JceTlsECDomain
             ECPoint point = decodePoint(encoding);
             ECPublicKeySpec keySpec = new ECPublicKeySpec(
                 new java.security.spec.ECPoint(point.getAffineXCoord().toBigInteger(), point.getAffineYCoord().toBigInteger()),
-                ecDomain.getParameterSpec(ECParameterSpec.class));
+                ecParameterSpec);
             // TODO Check RFCs for any validation that could/should be done here
 
             return (ECPublicKey)keyFact.generatePublic(keySpec);
@@ -95,12 +98,14 @@ public class JceTlsECDomain
         }
     }
 
-    public byte[] encodePoint(ECPoint point) throws IOException
+    public byte[] encodePoint(ECPoint point)
+        throws IOException
     {
         return point.getEncoded(ecConfig.getPointCompression());
     }
 
-    public byte[] encodePublicKey(ECPublicKey publicKey) throws IOException
+    public byte[] encodePublicKey(ECPublicKey publicKey)
+        throws IOException
     {
         java.security.spec.ECPoint w = publicKey.getW();
 
@@ -112,7 +117,7 @@ public class JceTlsECDomain
         try
         {
             KeyPairGenerator keyPairGenerator = crypto.getHelper().createKeyPairGenerator("EC");
-            keyPairGenerator.initialize(ecDomain.getParameterSpec(ECGenParameterSpec.class), crypto.getSecureRandom());
+            keyPairGenerator.initialize(ecGenSpec, crypto.getSecureRandom());
             return keyPairGenerator.generateKeyPair();
         }
         catch (GeneralSecurityException e)
@@ -129,23 +134,44 @@ public class JceTlsECDomain
     private void init(int namedCurve)
     {
         this.ecCurve = null;
-        this.ecDomain = null;
+        this.ecGenSpec = null;
+        this.ecParameterSpec = null;
 
         String curveName = NamedCurve.getNameOfSpecificCurve(namedCurve);
         if (curveName == null)
         {
-             return;
+            return;
         }
 
         try
         {
-            this.ecDomain  = crypto.getHelper().createAlgorithmParameters("EC");
+            AlgorithmParameters ecDomain = crypto.getHelper().createAlgorithmParameters("EC");
 
-            this.ecDomain.init(new ECGenParameterSpec(curveName));
-            // It's a bit inefficient to do this conversion every time
-            ECParameterSpec ecSpec = this.ecDomain.getParameterSpec(ECParameterSpec.class);
+            this.ecGenSpec = new ECGenParameterSpec(curveName);
 
-            this.ecCurve = convertCurve(ecSpec.getCurve(), ecSpec.getOrder(), ecSpec.getCofactor());
+            try
+            {
+                // Try the "modern" way
+                ecDomain.init(ecGenSpec);
+                // It's a bit inefficient to do this conversion every time
+                ECParameterSpec ecSpec = ecDomain.getParameterSpec(ECParameterSpec.class);
+
+                this.ecCurve = convertCurve(ecSpec.getCurve(), ecSpec.getOrder(), ecSpec.getCofactor());
+                this.ecParameterSpec = ecSpec;
+            }
+            catch (Exception e)
+            {
+                // Try a more round about way (the IBM JCE is an example of this)
+                KeyPairGenerator kpGen = crypto.getHelper().createKeyPairGenerator("EC");
+
+                kpGen.initialize(ecGenSpec, crypto.getSecureRandom());
+
+                KeyPair kp = kpGen.generateKeyPair();
+
+                ECParameterSpec ecSpec = ((ECPrivateKey)kp.getPrivate()).getParams();
+                this.ecCurve = convertCurve(ecSpec.getCurve(), ecSpec.getOrder(), ecSpec.getCofactor());
+                this.ecParameterSpec = ecSpec;
+            }
         }
         catch (GeneralSecurityException e)
         {
