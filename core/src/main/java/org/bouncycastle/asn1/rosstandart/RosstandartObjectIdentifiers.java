@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.rosstandart;
 
-import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 
 public interface RosstandartObjectIdentifiers
@@ -24,6 +23,12 @@ public interface RosstandartObjectIdentifiers
     static final ASN1ObjectIdentifier id_tc26_signwithdigest_gost_3410_12_256 = id_tc26.branch("1.3.2");
 
     static final ASN1ObjectIdentifier id_tc26_signwithdigest_gost_3410_12_512 = id_tc26.branch("1.3.3");
+
+    static final ASN1ObjectIdentifier id_tc26_agreement = id_tc26.branch("1.6");
+
+    static final ASN1ObjectIdentifier id_tc26_agreement_gost_3410_12_256 = id_tc26_agreement.branch("1");
+
+    static final ASN1ObjectIdentifier id_tc26_agreement_gost_3410_12_512  = id_tc26_agreement.branch("2");
 
     static final ASN1ObjectIdentifier id_tc26_gost_3410_12_256_paramSetA = id_tc26.branch("2.1.1.1");
 
