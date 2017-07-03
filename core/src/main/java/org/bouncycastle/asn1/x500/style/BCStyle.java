@@ -150,6 +150,12 @@ public class BCStyle
      */
     public static final ASN1ObjectIdentifier NAME = X509ObjectIdentifiers.id_at_name;
 
+
+    /**
+     * id-at-organizationIdentifier
+     */
+    public static final ASN1ObjectIdentifier ORGANIZATION_IDENTIFIER = X509ObjectIdentifiers.id_at_organizationIdentifier;
+
     /**
      * Email address (RSA PKCS#9 extension) - IA5String.
      * <p>Note: if you're trying to be ultra orthodox, don't use this! It shouldn't be in here.
@@ -222,6 +228,7 @@ public class BCStyle
         DefaultSymbols.put(BUSINESS_CATEGORY, "BusinessCategory");
         DefaultSymbols.put(TELEPHONE_NUMBER, "TelephoneNumber");
         DefaultSymbols.put(NAME, "Name");
+        DefaultSymbols.put(ORGANIZATION_IDENTIFIER, "organizationIdentifier");
 
         DefaultLookUp.put("c", C);
         DefaultLookUp.put("o", O);
@@ -257,6 +264,7 @@ public class BCStyle
         DefaultLookUp.put("businesscategory", BUSINESS_CATEGORY);
         DefaultLookUp.put("telephonenumber", TELEPHONE_NUMBER);
         DefaultLookUp.put("name", NAME);
+        DefaultLookUp.put("organizationidentifier", ORGANIZATION_IDENTIFIER);
     }
 
     /**
