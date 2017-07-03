@@ -117,7 +117,7 @@ public class BCXMSSMTPrivateKey
 
         int n = keyParams.getParameters().getDigestSize();
         int totalHeight = keyParams.getParameters().getHeight();
-        int indexSize = 4;
+        int indexSize = (totalHeight + 7) / 8;
         int secretKeySize = n;
         int secretKeyPRFSize = n;
         int publicSeedSize = n;
