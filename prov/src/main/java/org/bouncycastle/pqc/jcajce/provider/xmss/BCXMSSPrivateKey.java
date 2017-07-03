@@ -142,7 +142,7 @@ public class BCXMSSPrivateKey
         return new XMSSPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary);
     }
 
-    public ASN1ObjectIdentifier getTreeDigestOID()
+    ASN1ObjectIdentifier getTreeDigestOID()
     {
         return treeDigest;
     }

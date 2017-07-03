@@ -99,12 +99,15 @@ public class XMSSTest
 
         assertEquals(kp.getPrivate(), privKey);
 
-        PublicKey pubKey = keyFactory.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
+        XMSSKey pubKey = (XMSSKey)keyFactory.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
 
         assertEquals(kp.getPublic(), pubKey);
 
         assertEquals(10, privKey.getHeight());
         assertEquals(XMSSParameterSpec.SHA512, privKey.getTreeDigest());
+
+        assertEquals(10, pubKey.getHeight());
+        assertEquals(XMSSParameterSpec.SHA512, pubKey.getTreeDigest());
     }
 
     public void testKeyExtraction()
@@ -130,6 +133,8 @@ public class XMSSTest
 
         PrivateKey nKey = xmssSig.getUpdatedPrivateKey();
 
+        assertFalse(kp.getPrivate().equals(nKey));
+        
         xmssSig.update(msg, 0, msg.length);
 
         try
@@ -140,6 +145,16 @@ public class XMSSTest
         catch (SignatureException e)
         {
             assertEquals("signing key no longer usable", e.getMessage());
+        }
+
+        try
+        {
+            xmssSig.getUpdatedPrivateKey();
+            fail("no exception after key extraction");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("signature object not in a signing state", e.getMessage());
         }
 
         xmssSig.initSign(nKey);

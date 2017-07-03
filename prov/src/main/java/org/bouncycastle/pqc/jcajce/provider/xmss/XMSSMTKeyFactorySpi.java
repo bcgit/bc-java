@@ -16,7 +16,7 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 
-public class XMSSKeyFactorySpi
+public class XMSSMTKeyFactorySpi
     extends KeyFactorySpi
     implements AsymmetricKeyInfoConverter
 {
@@ -67,14 +67,14 @@ public class XMSSKeyFactorySpi
     public final KeySpec engineGetKeySpec(Key key, Class keySpec)
         throws InvalidKeySpecException
     {
-        if (key instanceof BCXMSSPrivateKey)
+        if (key instanceof BCXMSSMTPrivateKey)
         {
             if (PKCS8EncodedKeySpec.class.isAssignableFrom(keySpec))
             {
                 return new PKCS8EncodedKeySpec(key.getEncoded());
             }
         }
-        else if (key instanceof BCXMSSPublicKey)
+        else if (key instanceof BCXMSSMTPublicKey)
         {
             if (X509EncodedKeySpec.class.isAssignableFrom(keySpec))
             {
@@ -94,7 +94,7 @@ public class XMSSKeyFactorySpi
     public final Key engineTranslateKey(Key key)
         throws InvalidKeyException
     {
-        if (key instanceof BCXMSSPrivateKey || key instanceof BCXMSSPublicKey)
+        if (key instanceof BCXMSSMTPrivateKey || key instanceof BCXMSSMTPublicKey)
         {
             return key;
         }
@@ -105,12 +105,12 @@ public class XMSSKeyFactorySpi
     public PrivateKey generatePrivate(PrivateKeyInfo keyInfo)
         throws IOException
     {
-        return new BCXMSSPrivateKey(keyInfo);
+        return new BCXMSSMTPrivateKey(keyInfo);
     }
 
     public PublicKey generatePublic(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        return new BCXMSSPublicKey(keyInfo);
+        return new BCXMSSMTPublicKey(keyInfo);
     }
 }

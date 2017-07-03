@@ -48,6 +48,7 @@ public class XMSSMTSignatureSpi
         {
             CipherParameters param = ((BCXMSSMTPublicKey)publicKey).getKeyParams();
 
+            treeDigest = null;
             digest.reset();
             signer.init(false, param);
         }
@@ -71,6 +72,7 @@ public class XMSSMTSignatureSpi
         {
             CipherParameters param = ((BCXMSSMTPrivateKey)privateKey).getKeyParams();
 
+            treeDigest = ((BCXMSSMTPrivateKey)privateKey).getTreeDigestOID();
             if (random != null)
             {
                 param = new ParametersWithRandom(param, random);
@@ -128,7 +130,6 @@ public class XMSSMTSignatureSpi
 
     protected void engineSetParameter(AlgorithmParameterSpec params)
     {
-        // TODO
         throw new UnsupportedOperationException("engineSetParameter unsupported");
     }
 
@@ -152,7 +153,15 @@ public class XMSSMTSignatureSpi
 
     public PrivateKey getUpdatedPrivateKey()
     {
-        return new BCXMSSMTPrivateKey(treeDigest, (XMSSMTPrivateKeyParameters)signer.getUpdatedPrivateKey());
+        if (treeDigest == null)
+        {
+            throw new IllegalStateException("signature object not in a signing state");
+        }
+        PrivateKey rKey = new BCXMSSMTPrivateKey(treeDigest, (XMSSMTPrivateKeyParameters)signer.getUpdatedPrivateKey());
+
+        treeDigest = null;
+
+        return rKey;
     }
 
     static public class withSha256

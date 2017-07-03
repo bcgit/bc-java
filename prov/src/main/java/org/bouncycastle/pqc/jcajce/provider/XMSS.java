@@ -3,6 +3,9 @@ package org.bouncycastle.pqc.jcajce.provider;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
+import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
+import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSMTKeyFactorySpi;
 
 public class XMSS
 {
@@ -25,13 +28,16 @@ public class XMSS
             addSignatureAlgorithm(provider, "SHA512", "XMSS", PREFIX + "XMSSSignatureSpi$withSha512", BCObjectIdentifiers.xmss_with_SHA512);
             addSignatureAlgorithm(provider, "SHA3-512", "XMSS", PREFIX + "XMSSSignatureSpi$withSha3_512", BCObjectIdentifiers.xmss_with_SHA3_512);
 
-            //provider.addAlgorithm("KeyFactory.XMSSMT", PREFIX + "XMSSMTKeyFactorySpi");
+            provider.addAlgorithm("KeyFactory.XMSSMT", PREFIX + "XMSSMTKeyFactorySpi");
             provider.addAlgorithm("KeyPairGenerator.XMSSMT", PREFIX + "XMSSMTKeyPairGeneratorSpi");
 
             addSignatureAlgorithm(provider, "SHA256", "XMSSMT", PREFIX + "XMSSMTSignatureSpi$withSha256", BCObjectIdentifiers.xmss_mt_with_SHA256);
             addSignatureAlgorithm(provider, "SHA3-256", "XMSSMT", PREFIX + "XMSSMTSignatureSpi$withSha3_256", BCObjectIdentifiers.xmss_mt_with_SHA3_256);
             addSignatureAlgorithm(provider, "SHA512", "XMSSMT", PREFIX + "XMSSMTSignatureSpi$withSha512", BCObjectIdentifiers.xmss_mt_with_SHA512);
             addSignatureAlgorithm(provider, "SHA3-512", "XMSSMT", PREFIX + "XMSSMTSignatureSpi$withSha3_512", BCObjectIdentifiers.xmss_mt_with_SHA3_512);
+
+            registerOid(provider, PQCObjectIdentifiers.xmss, "XMSS", new XMSSKeyFactorySpi());
+            registerOid(provider, PQCObjectIdentifiers.xmss_mt, "XMSSMT", new XMSSMTKeyFactorySpi());
         }
     }
 }

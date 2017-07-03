@@ -12,10 +12,11 @@ import org.bouncycastle.pqc.asn1.XMSSKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSPublicKey;
 import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPublicKeyParameters;
+import org.bouncycastle.pqc.jcajce.interfaces.XMSSKey;
 import org.bouncycastle.util.Arrays;
 
 public class BCXMSSPublicKey
-    implements PublicKey
+    implements PublicKey, XMSSKey
 {
     private final XMSSPublicKeyParameters keyParams;
     private final ASN1ObjectIdentifier treeDigest;
@@ -98,4 +99,13 @@ public class BCXMSSPublicKey
         return treeDigest.hashCode() + 37 * Arrays.hashCode(keyParams.toByteArray());
     }
 
+    public int getHeight()
+    {
+        return keyParams.getParameters().getHeight();
+    }
+
+    public String getTreeDigest()
+    {
+        return DigestUtil.getXMSSDigestName(treeDigest);
+    }
 }
