@@ -40,7 +40,7 @@ public final class XMSSMTPrivateKeyParameters
             }
             /* import */
             int totalHeight = params.getHeight();
-            int indexSize = (int)Math.ceil(totalHeight / (double)8);
+            int indexSize = (totalHeight + 7) / 8;
             int secretKeySize = n;
             int secretKeyPRFSize = n;
             int publicSeedSize = n;
@@ -232,7 +232,7 @@ public final class XMSSMTPrivateKeyParameters
     {
 		/* index || secretKeySeed || secretKeyPRF || publicSeed || root */
         int n = params.getDigestSize();
-        int indexSize = 4;
+        int indexSize = (params.getHeight() + 7) / 8;
         int secretKeySize = n;
         int secretKeyPRFSize = n;
         int publicSeedSize = n;
