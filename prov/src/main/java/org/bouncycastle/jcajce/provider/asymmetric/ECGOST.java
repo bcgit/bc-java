@@ -52,10 +52,16 @@ public class ECGOST
             registerOid(provider, RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256,
                     "ECGOST3410-2012",
                     new org.bouncycastle.jcajce.provider.asymmetric.ecgost12.KeyFactorySpi());
+            registerOid(provider, RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_256,
+                             "ECGOST3410-2012",
+                             new org.bouncycastle.jcajce.provider.asymmetric.ecgost12.KeyFactorySpi());
             registerOidAlgorithmParameters(provider,
                     RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256, "ECGOST3410-2012");
 
             registerOid(provider, RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512,
+                    "ECGOST3410-2012",
+                    new org.bouncycastle.jcajce.provider.asymmetric.ecgost12.KeyFactorySpi());
+            registerOid(provider, RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_512,
                     "ECGOST3410-2012",
                     new org.bouncycastle.jcajce.provider.asymmetric.ecgost12.KeyFactorySpi());
             registerOidAlgorithmParameters(provider,

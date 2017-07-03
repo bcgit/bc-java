@@ -1,17 +1,5 @@
 package org.bouncycastle.jcajce.provider.asymmetric.ecgost12;
 
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
-import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jce.spec.ECParameterSpec;
-import org.bouncycastle.jce.spec.ECPrivateKeySpec;
-import org.bouncycastle.jce.spec.ECPublicKeySpec;
-
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -21,6 +9,17 @@ import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
+import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECParameterSpec;
+import org.bouncycastle.jce.spec.ECPrivateKeySpec;
+import org.bouncycastle.jce.spec.ECPublicKeySpec;
 
 public class KeyFactorySpi
     extends BaseKeyFactorySpi
@@ -140,8 +139,7 @@ public class KeyFactorySpi
     {
         ASN1ObjectIdentifier algOid = keyInfo.getPrivateKeyAlgorithm().getAlgorithm();
 
-        if (algOid.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256)
-                || algOid.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512) )
+        if (isValid(algOid))
         {
             return new BCECGOST3410_2012PrivateKey(keyInfo);
         }
@@ -156,8 +154,7 @@ public class KeyFactorySpi
     {
         ASN1ObjectIdentifier algOid = keyInfo.getAlgorithm().getAlgorithm();
 
-        if (algOid.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256)
-                || algOid.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512) )
+        if (isValid(algOid))
         {
             return new BCECGOST3410_2012PublicKey(keyInfo);
         }
@@ -165,5 +162,13 @@ public class KeyFactorySpi
         {
             throw new IOException("algorithm identifier " + algOid + " in key not recognised");
         }
+    }
+
+    private boolean isValid(ASN1ObjectIdentifier algOid)
+    {
+        return algOid.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256)
+            || algOid.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512)
+            || algOid.equals(RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_256)
+            || algOid.equals(RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_512);
     }
 }
