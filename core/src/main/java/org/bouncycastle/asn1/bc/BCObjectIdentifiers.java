@@ -86,8 +86,8 @@ public interface BCObjectIdentifiers
     public static final ASN1ObjectIdentifier xmss                      = bc_sig.branch("2");
     public static final ASN1ObjectIdentifier xmss_with_SHA256          = xmss.branch("1");
     public static final ASN1ObjectIdentifier xmss_with_SHA512          = xmss.branch("2");
-    public static final ASN1ObjectIdentifier xmss_with_SHA3_256        = xmss.branch("3");
-    public static final ASN1ObjectIdentifier xmss_with_SHA3_512        = xmss.branch("4");
+    public static final ASN1ObjectIdentifier xmss_with_SHAKE128        = xmss.branch("3");
+    public static final ASN1ObjectIdentifier xmss_with_SHAKE256        = xmss.branch("4");
 
     /**
      * XMSS^MT
@@ -95,8 +95,8 @@ public interface BCObjectIdentifiers
     public static final ASN1ObjectIdentifier xmss_mt                      = bc_sig.branch("3");
     public static final ASN1ObjectIdentifier xmss_mt_with_SHA256          = xmss_mt.branch("1");
     public static final ASN1ObjectIdentifier xmss_mt_with_SHA512          = xmss_mt.branch("2");
-    public static final ASN1ObjectIdentifier xmss_mt_with_SHA3_256        = xmss_mt.branch("3");
-    public static final ASN1ObjectIdentifier xmss_mt_with_SHA3_512        = xmss_mt.branch("4");
+    public static final ASN1ObjectIdentifier xmss_mt_with_SHAKE128        = xmss_mt.branch("3");
+    public static final ASN1ObjectIdentifier xmss_mt_with_SHAKE256        = xmss_mt.branch("4");
 
     /**
      * key_exchange(3) algorithms

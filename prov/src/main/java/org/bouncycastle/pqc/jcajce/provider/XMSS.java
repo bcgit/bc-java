@@ -24,17 +24,17 @@ public class XMSS
             provider.addAlgorithm("KeyPairGenerator.XMSS", PREFIX + "XMSSKeyPairGeneratorSpi");
 
             addSignatureAlgorithm(provider, "SHA256", "XMSS", PREFIX + "XMSSSignatureSpi$withSha256", BCObjectIdentifiers.xmss_with_SHA256);
-            addSignatureAlgorithm(provider, "SHA3-256", "XMSS", PREFIX + "XMSSSignatureSpi$withSha3_256", BCObjectIdentifiers.xmss_with_SHA3_256);
+            addSignatureAlgorithm(provider, "SHAKE128", "XMSS", PREFIX + "XMSSSignatureSpi$withSha3_256", BCObjectIdentifiers.xmss_with_SHAKE128);
             addSignatureAlgorithm(provider, "SHA512", "XMSS", PREFIX + "XMSSSignatureSpi$withSha512", BCObjectIdentifiers.xmss_with_SHA512);
-            addSignatureAlgorithm(provider, "SHA3-512", "XMSS", PREFIX + "XMSSSignatureSpi$withSha3_512", BCObjectIdentifiers.xmss_with_SHA3_512);
+            addSignatureAlgorithm(provider, "SHAKE256", "XMSS", PREFIX + "XMSSSignatureSpi$withSha3_512", BCObjectIdentifiers.xmss_with_SHAKE256);
 
             provider.addAlgorithm("KeyFactory.XMSSMT", PREFIX + "XMSSMTKeyFactorySpi");
             provider.addAlgorithm("KeyPairGenerator.XMSSMT", PREFIX + "XMSSMTKeyPairGeneratorSpi");
 
             addSignatureAlgorithm(provider, "SHA256", "XMSSMT", PREFIX + "XMSSMTSignatureSpi$withSha256", BCObjectIdentifiers.xmss_mt_with_SHA256);
-            addSignatureAlgorithm(provider, "SHA3-256", "XMSSMT", PREFIX + "XMSSMTSignatureSpi$withSha3_256", BCObjectIdentifiers.xmss_mt_with_SHA3_256);
+            addSignatureAlgorithm(provider, "SHAKE128", "XMSSMT", PREFIX + "XMSSMTSignatureSpi$withSha3_256", BCObjectIdentifiers.xmss_mt_with_SHAKE128);
             addSignatureAlgorithm(provider, "SHA512", "XMSSMT", PREFIX + "XMSSMTSignatureSpi$withSha512", BCObjectIdentifiers.xmss_mt_with_SHA512);
-            addSignatureAlgorithm(provider, "SHA3-512", "XMSSMT", PREFIX + "XMSSMTSignatureSpi$withSha3_512", BCObjectIdentifiers.xmss_mt_with_SHA3_512);
+            addSignatureAlgorithm(provider, "SHAKE256", "XMSSMT", PREFIX + "XMSSMTSignatureSpi$withSha3_512", BCObjectIdentifiers.xmss_mt_with_SHAKE256);
 
             registerOid(provider, PQCObjectIdentifiers.xmss, "XMSS", new XMSSKeyFactorySpi());
             registerOid(provider, PQCObjectIdentifiers.xmss_mt, "XMSSMT", new XMSSMTKeyFactorySpi());

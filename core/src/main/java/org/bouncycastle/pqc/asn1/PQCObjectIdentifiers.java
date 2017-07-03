@@ -61,8 +61,8 @@ public interface PQCObjectIdentifiers
     public static final ASN1ObjectIdentifier xmss                      = BCObjectIdentifiers.xmss;
     public static final ASN1ObjectIdentifier xmss_with_SHA256          = BCObjectIdentifiers.xmss_with_SHA256;
     public static final ASN1ObjectIdentifier xmss_with_SHA512          = BCObjectIdentifiers.xmss_with_SHA512;
-    public static final ASN1ObjectIdentifier xmss_with_SHA3_256        = BCObjectIdentifiers.xmss_with_SHA3_256;
-    public static final ASN1ObjectIdentifier xmss_with_SHA3_512        = BCObjectIdentifiers.xmss_with_SHA3_512;
+    public static final ASN1ObjectIdentifier xmss_with_SHAKE128        = BCObjectIdentifiers.xmss_with_SHAKE128;
+    public static final ASN1ObjectIdentifier xmss_with_SHAKE256        = BCObjectIdentifiers.xmss_with_SHAKE256;
 
     /**
      * XMSS^MT
@@ -70,6 +70,6 @@ public interface PQCObjectIdentifiers
     public static final ASN1ObjectIdentifier xmss_mt                      = BCObjectIdentifiers.xmss_mt;
     public static final ASN1ObjectIdentifier xmss_mt_with_SHA256          = BCObjectIdentifiers.xmss_mt_with_SHA256;
     public static final ASN1ObjectIdentifier xmss_mt_with_SHA512          = BCObjectIdentifiers.xmss_mt_with_SHA512;
-    public static final ASN1ObjectIdentifier xmss_mt_with_SHA3_256        = BCObjectIdentifiers.xmss_mt_with_SHA3_256;
-    public static final ASN1ObjectIdentifier xmss_mt_with_SHA3_512        = BCObjectIdentifiers.xmss_mt_with_SHA3_512;
+    public static final ASN1ObjectIdentifier xmss_mt_with_SHAKE128        = BCObjectIdentifiers.xmss_mt_with_SHAKE128;
+    public static final ASN1ObjectIdentifier xmss_mt_with_SHAKE256        = BCObjectIdentifiers.xmss_mt_with_SHAKE256;
 }
