@@ -9,9 +9,9 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
- * XMMSKeyParams
+ * XMSSKeyParams
  * <pre>
- *     XMMSKeyParams ::= SEQUENCE {
+ *     XMSSKeyParams ::= SEQUENCE {
  *     version INTEGER -- 0
  *     height INTEGER
  *     treeDigest AlgorithmIdentifier
