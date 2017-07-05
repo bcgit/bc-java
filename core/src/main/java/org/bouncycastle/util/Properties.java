@@ -51,25 +51,10 @@ public class Properties
      * Enable the specified override property for the current thread only.
      *
      * @param propertyName the property name for the override.
+     * @param enable true if the override should be enabled, false if it should be disabled.
      * @return true if the override was already set, false otherwise.
      */
-    public static boolean enableThreadOverride(String propertyName)
-    {
-        return setThreadOverride(propertyName, true);
-    }
-
-    /**
-     * Disable the specified override property for the current thread only.
-     *
-     * @param propertyName the property name for the override.
-     * @return true if the override was already set, false otherwise.
-     */
-    public static boolean disableThreadOverride(String propertyName)
-    {
-        return setThreadOverride(propertyName, false);
-    }
-
-    private static boolean setThreadOverride(String propertyName, boolean enable)
+    public static boolean setThreadOverride(String propertyName, boolean enable)
     {
         boolean isSet = isOverrideSet(propertyName);
 
@@ -82,6 +67,36 @@ public class Properties
         localProps.put(propertyName, enable ? "true" : "false");
 
         threadProperties.set(localProps);
+
+        return isSet;
+    }
+
+    /**
+     * Enable the specified override property in the current thread only.
+     *
+     * @param propertyName the property name for the override.
+     * @return true if the override set true in thread local, false otherwise.
+     */
+    public static boolean removeThreadOverride(String propertyName)
+    {
+        boolean isSet = isOverrideSet(propertyName);
+
+        Map localProps = (Map)threadProperties.get();
+        if (localProps == null)
+        {
+            return false;
+        }
+
+        localProps.remove(propertyName);
+
+        if (localProps.isEmpty())
+        {
+            threadProperties.remove();
+        }
+        else
+        {
+            threadProperties.set(localProps);
+        }
 
         return isSet;
     }
