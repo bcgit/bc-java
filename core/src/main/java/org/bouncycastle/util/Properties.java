@@ -4,7 +4,9 @@ import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -13,24 +15,31 @@ import java.util.StringTokenizer;
  */
 public class Properties
 {
-    public static boolean isOverrideSet(final String propertyName)
+    private Properties()
+    {
+
+    }
+
+    private static final ThreadLocal threadProperties = new ThreadLocal();
+                          
+    /**
+     * Return whether a particular override has been set to true.
+     *
+     * @param propertyName the property name for the override.
+     * @return true if the property is set to "true", false otherwise.
+     */
+    public static boolean isOverrideSet(String propertyName)
     {
         try
         {
-            return "true".equals(AccessController.doPrivileged(new PrivilegedAction()
-            {
-                // JDK 1.4 compatibility
-                public Object run()
-                {
-                    String value = System.getProperty(propertyName);
-                    if (value == null)
-                    {
-                        return null;
-                    }
+            String p = fetchProperty(propertyName);
 
-                    return Strings.toLowerCase(value);
-                }
-            }));
+            if (p != null)
+            {
+                return "true".equals(Strings.toLowerCase(p));
+            }
+
+            return false;
         }
         catch (AccessControlException e)
         {
@@ -38,10 +47,51 @@ public class Properties
         }
     }
 
-    public static Set<String> asKeySet(final String propertyName)
+    /**
+     * Enable the specified override property for the current thread only.
+     *
+     * @param propertyName the property name for the override.
+     * @return true if the override was already set, false otherwise.
+     */
+    public static boolean enableThreadOverride(String propertyName)
+    {
+        return setThreadOverride(propertyName, true);
+    }
+
+    /**
+     * Disable the specified override property for the current thread only.
+     *
+     * @param propertyName the property name for the override.
+     * @return true if the override was already set, false otherwise.
+     */
+    public static boolean disableThreadOverride(String propertyName)
+    {
+        return setThreadOverride(propertyName, false);
+    }
+
+    private static boolean setThreadOverride(String propertyName, boolean enable)
+    {
+        boolean isSet = isOverrideSet(propertyName);
+
+        Map localProps = (Map)threadProperties.get();
+        if (localProps == null)
+        {
+            localProps = new HashMap();
+        }
+
+        localProps.put(propertyName, enable ? "true" : "false");
+
+        threadProperties.set(localProps);
+
+        return isSet;
+    }
+
+    public static Set<String> asKeySet(String propertyName)
     {
         Set<String> set = new HashSet<String>();
-        String p = System.getProperty(propertyName);
+
+        String p = fetchProperty(propertyName);
+
         if (p != null)
         {
             StringTokenizer sTok = new StringTokenizer(p, ",");
@@ -50,6 +100,24 @@ public class Properties
                 set.add(Strings.toLowerCase(sTok.nextToken()).trim());
             }
         }
+
         return Collections.unmodifiableSet(set);
+    }
+
+    private static String fetchProperty(final String propertyName)
+    {
+        return (String)AccessController.doPrivileged(new PrivilegedAction()
+        {
+            public Object run()
+            {
+                Map localProps = (Map)threadProperties.get();
+                if (localProps != null)
+                {
+                    return localProps.get(propertyName);
+                }
+
+                return System.getProperty(propertyName);
+            }
+        });
     }
 }
