@@ -62,11 +62,11 @@ public class ASN1IntegerTest
             isEquals("malformed integer", e.getMessage());
         }
 
-        isTrue(!Properties.enableThreadOverride("org.bouncycastle.asn1.allow_unsafe_integer"));
+        isTrue(!Properties.setThreadOverride("org.bouncycastle.asn1.allow_unsafe_integer", true));
         
         new ASN1Integer(Hex.decode("ffda47bfc776bcd269da4832626ac332adfca6dd835e8ecd83cd1ebe7d709b"));
 
-        isTrue(Properties.disableThreadOverride("org.bouncycastle.asn1.allow_unsafe_integer"));
+        isTrue(Properties.removeThreadOverride("org.bouncycastle.asn1.allow_unsafe_integer"));
 
         try
         {
