@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -60,7 +61,13 @@ public class ASN1IntegerTest
         {
             isEquals("malformed integer", e.getMessage());
         }
+
+        isTrue(!Properties.enableThreadOverride("org.bouncycastle.asn1.allow_unsafe_integer"));
         
+        new ASN1Integer(Hex.decode("ffda47bfc776bcd269da4832626ac332adfca6dd835e8ecd83cd1ebe7d709b"));
+
+        isTrue(Properties.disableThreadOverride("org.bouncycastle.asn1.allow_unsafe_integer"));
+
         try
         {
             ASN1Sequence.getInstance(suspectKey);
