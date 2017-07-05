@@ -35,8 +35,8 @@ public class ASN1IntegerTest
         testInvalidEncoding_ff();
         testInvalidEncoding_00_32bits();
         testInvalidEncoding_ff_32bits();
-        testLooseInvalidValidEncoding_FF_32B();
-        testLooseInvalidValidEncoding_zero_32B();
+        //testLooseInvalidValidEncoding_FF_32B();
+        //testLooseInvalidValidEncoding_zero_32B();
         testLooseValidEncoding_zero_32BAligned();
         testLooseValidEncoding_FF_32BAligned();
         testLooseValidEncoding_FF_32BAligned_1not0();
@@ -221,6 +221,10 @@ public class ASN1IntegerTest
         }
     }
 
+    /*
+     Unfortunately it turns out that integers stored without sign bits that are assumed to be
+     unsigned.. this means a string of FF may occur and then the user will call getPositiveValue().
+     Sigh..
     public void testLooseInvalidValidEncoding_zero_32B()
         throws Exception
     {
@@ -260,6 +264,7 @@ public class ASN1IntegerTest
             isEquals("malformed integer", e.getMessage());
         }
     }
+    */
 
     public void testLooseValidEncoding_zero_32BAligned()
         throws Exception
@@ -281,8 +286,7 @@ public class ASN1IntegerTest
     {
         System.setProperty("org.bouncycastle.asn1.allow_unsafe_integer", "false");
         //
-        // Should pass as loose validation permits 3 leading 0xFF bytes.
-        //
+        // Should pass as loose validation permits 3
 
         System.getProperties().put("org.bouncycastle.asn1.allow_unsafe_integer", "true");
         byte[] rawInt = Hex.decode("FFFFFF10FF000000");

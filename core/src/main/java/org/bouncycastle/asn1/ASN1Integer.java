@@ -123,17 +123,10 @@ public class ASN1Integer
     ASN1Integer(byte[] bytes, boolean clone)
     {
         // Apply loose validation, see note in public constructor ANS1Integer(byte[])
-        if (Properties.isOverrideSet("org.bouncycastle.asn1.allow_unsafe_integer"))
-        {
-            if (isLooselyMalformed(bytes))
-            {
-                throw new IllegalArgumentException("malformed integer");
-            }
-        }
-        else
+        if (!Properties.isOverrideSet("org.bouncycastle.asn1.allow_unsafe_integer"))
         {
             if (isMalformed(bytes))
-            {
+            {                           
                 throw new IllegalArgumentException("malformed integer");
             }
         }
@@ -156,45 +149,6 @@ public class ASN1Integer
             }
             if (bytes[0] == (byte)0xff && (bytes[1] & 0x80) != 0)
             {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Some ASN1Libraries fail to encode ASN1Integer properly and prepend
-     * 0xFF or 0x00 bytes. In this test we check for up to 32 bits of
-     * contiguous 0xFF or Ox00 if the passed in byte array starts with those
-     * values, or we allow 1 extra 0xff or 0x00 if it's not on a 32 bit boundary.
-     *
-     * @param bytes The raw encoding of the integer.
-     * @return true if the (in)put fails this validation.
-     */
-    static boolean isLooselyMalformed(byte[] bytes)
-    {
-        if (bytes.length > 4)
-        {
-            if (bytes[0] == 0x00 || bytes[0] == (byte)0xFF)
-            {
-                if (bytes[1] != bytes[0])
-                {
-                    return false;
-                }
-                if (bytes.length % 4 != 0)
-                {
-                    return true;
-                }
-                if (bytes[2] != bytes[0])
-                {
-                    return false;
-                }
-                if (bytes[3] != bytes[0])
-                {
-                    return false;
-                }
-
                 return true;
             }
         }
