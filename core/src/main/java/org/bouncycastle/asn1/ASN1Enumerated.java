@@ -100,15 +100,7 @@ public class ASN1Enumerated
     public ASN1Enumerated(
         byte[]   bytes)
     {
-        // Apply loose validation, see note in public constructor ANS1Integer(byte[])
-        if (Properties.isOverrideSet("org.bouncycastle.asn1.allow_unsafe_integer"))
-        {
-            if (ASN1Integer.isLooselyMalformed(bytes))
-            {
-                throw new IllegalArgumentException("malformed enumerated");
-            }
-        }
-        else
+        if (!Properties.isOverrideSet("org.bouncycastle.asn1.allow_unsafe_integer"))
         {
             if (ASN1Integer.isMalformed(bytes))
             {
