@@ -1450,7 +1450,7 @@ public class CertTest
         certFact.generateCertificate(new ByteArrayInputStream(encoding));
     }
 
-    /**
+    /*
      * we generate a self signed certificate for the sake of testing - RSA
      */
     public void checkCreation1()
@@ -1676,7 +1676,7 @@ public class CertTest
         }
     }
 
-    /**
+    /*
      * we generate a self signed certificate for the sake of testing - DSA
      */
     public void checkCreation2()
@@ -1771,7 +1771,7 @@ public class CertTest
         }
     }
 
-    /**
+    /*
      * we generate a self signed certificate for the sake of testing - DSA
      */
     public void checkSm3WithSm2Creation()
@@ -1870,7 +1870,7 @@ public class CertTest
         return builder;
     }
 
-    /**
+    /*
      * we generate a self signed certificate for the sake of testing - ECDSA
      */
     public void checkCreation3()
@@ -2000,7 +2000,7 @@ public class CertTest
 
     }
 
-    /**
+    /*
      * we generate a self signed certificate for the sake of testing - SHA224withECDSA
      */
     private void createECCert(String algorithm, ASN1ObjectIdentifier algOid)
@@ -2441,7 +2441,7 @@ public class CertTest
         }
     }
 
-    /**
+    /*
      * we generate a self signed certificate for the sake of testing - GOST3410
      */
     public void checkCreation4()
@@ -2701,7 +2701,7 @@ public class CertTest
         cert.getEncoded();
     }
 
-    /**
+    /*
      * we generate a self signed certificate for the sake of testing - ECGOST3410-2012
      */
     public void checkCreation7()
@@ -2752,7 +2752,7 @@ public class CertTest
         //System.out.println(cert);
     }
 
-    /**
+    /*
      * we generate a self signed certificate for the sake of testing - XMSS
      */
     public void checkCreation8()
@@ -2803,7 +2803,7 @@ public class CertTest
         //System.out.println(cert);
     }
 
-    /**
+    /*
      * we generate a self signed certificate for the sake of testing - XMSS
      */
     public void checkCreation9()

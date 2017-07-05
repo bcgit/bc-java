@@ -562,7 +562,7 @@ public class PfxPduTest
             "GhHLM2yiA0RxlCtlnNMXruHKEvFYgzI3lVQov4jU5MIL1XjH0zPGyu9t" +
             "/q8tpS4nbkRgGj8=");
 
-    /**
+    /*
      * we generate the CA's certificate
      */
     public static X509Certificate createMasterCert(
@@ -596,7 +596,7 @@ public class PfxPduTest
         return new JcaX509CertificateConverter().setProvider(BC).getCertificate(cert);
     }
 
-    /**
+    /*
      * we generate an intermediate certificate signed by our CA
      */
     public static X509Certificate createIntermediateCert(
@@ -652,7 +652,7 @@ public class PfxPduTest
         return new JcaX509CertificateConverter().setProvider(BC).getCertificate(cert);
     }
 
-    /**
+    /*
      * we generate a certificate signed by our CA's intermediate certficate
      */
     public static X509Certificate createCert(
