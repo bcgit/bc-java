@@ -319,7 +319,11 @@ public class DSTU7564Digest
         bufOff = 0;
         
         Arrays.fill(buf, (byte)0);
-        Arrays.fill(padded, (byte)0);
+
+        if (padded != null)
+        {
+            Arrays.fill(padded, (byte)0);
+        }
     }
 
     private void processBlock(byte[] input, int inOff)

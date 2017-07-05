@@ -5,6 +5,7 @@ import java.security.Security;
 
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
+import org.bouncycastle.asn1.ua.UAObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -55,6 +56,12 @@ public class DigestTest
         { RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256.getId(), "4e2919cf137ed41ec4fb6270c61826cc4fffb660341e0af3688cd0626d23b481" },
         { "GOST3411-2012-512", "28156e28317da7c98f4fe2bed6b542d0dab85bb224445fcedaf75d46e26d7eb8d5997f3e0915dd6b7f0aab08d9c8beb0d8c64bae2ab8b3c8c6bc53b3bf0db728" },
         { RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512.getId(), "28156e28317da7c98f4fe2bed6b542d0dab85bb224445fcedaf75d46e26d7eb8d5997f3e0915dd6b7f0aab08d9c8beb0d8c64bae2ab8b3c8c6bc53b3bf0db728" },
+        { "DSTU7564-256", "0bd1b36109f1318411a0517315aa46b8839df06622a278676f5487996c9cfc04" },
+        { UAObjectIdentifiers.dstu7564digest_256.getId(), "0bd1b36109f1318411a0517315aa46b8839df06622a278676f5487996c9cfc04" },
+        { "DSTU7564-384", "72945012b0820c3132846ddc90da511f80bb7b70abd0cb1ab8df785d600c187b9d0ac567e8b6f76fde8a0b417a2ebf88" },
+        { UAObjectIdentifiers.dstu7564digest_384.getId(), "72945012b0820c3132846ddc90da511f80bb7b70abd0cb1ab8df785d600c187b9d0ac567e8b6f76fde8a0b417a2ebf88" },
+        { "DSTU7564-512", "9e5be7daf7b68b49d2ecbd04c7a5b3af72945012b0820c3132846ddc90da511f80bb7b70abd0cb1ab8df785d600c187b9d0ac567e8b6f76fde8a0b417a2ebf88" },
+        { UAObjectIdentifiers.dstu7564digest_512.getId(), "9e5be7daf7b68b49d2ecbd04c7a5b3af72945012b0820c3132846ddc90da511f80bb7b70abd0cb1ab8df785d600c187b9d0ac567e8b6f76fde8a0b417a2ebf88" },
     };
     
     public String getName()
