@@ -300,11 +300,8 @@ public class PGPDSATest
 
     char[] pass = { 'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd' };
 
-    /**
+    /*
      * Generated signature test
-     * 
-     * @param sKey
-     * @param pgpPrivKey
      */
     public void generateTest(
         PGPSecretKeyRing sKey,
