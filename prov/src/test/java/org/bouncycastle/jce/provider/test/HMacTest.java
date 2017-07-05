@@ -17,6 +17,7 @@ import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
+import org.bouncycastle.asn1.ua.UAObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -58,6 +59,10 @@ public class HMacTest
 
     static byte[] outputGost2012_256 = Hex.decode("f03422dfa37a507ca126ce01b8eba6b7fdda8f8a60dd8f2703e3a372120b8294");
     static byte[] outputGost2012_512 = Hex.decode("86b6a06bfa9f1974aff6ccd7fa3f835f0bd850395d6084efc47b9dda861a2cdf0dcaf959160733d5269f6567966dd7a9f932a77cd6f080012cd476f1c2cc31bb");
+
+    static byte[] outputDSTU7564_256 = Hex.decode("98ac67aa21eaf6e8666fb748d66cfc15d5d66f5194c87fffa647e406d3375cdb");
+    static byte[] outputDSTU7564_384 = Hex.decode("4e46a87e70fcd2ccfb4433a8eaec68991a96b11085c5d5484db71af51bac469c03f76e1f721843c8e8667708fe41a48d");
+    static byte[] outputDSTU7564_512 = Hex.decode("5b7acf633a7551b8410fa66a60c74a494e46a87e70fcd2ccfb4433a8eaec68991a96b11085c5d5484db71af51bac469c03f76e1f721843c8e8667708fe41a48d");
 
     public HMacTest()
     {
@@ -213,6 +218,10 @@ public class HMacTest
         testHMac("HMac-GOST3411-2012-256", 256, outputGost2012_256);
         testHMac("HMac-GOST3411-2012-512", 512, outputGost2012_512);
 
+        testHMac("HMac-DSTU7564-256", 256, outputDSTU7564_256);
+        testHMac("HMac-DSTU7564-384", 384, outputDSTU7564_384);
+        testHMac("HMac-DSTU7564-512", 512, outputDSTU7564_512);
+
         testHMac("HMac/SHA1", output1);
         testHMac("HMac/MD5", outputMD5);
         testHMac("HMac/MD4", outputMD4);
@@ -253,6 +262,10 @@ public class HMacTest
 
         testHMac(RosstandartObjectIdentifiers.id_tc26_hmac_gost_3411_12_256.getId(), 256, outputGost2012_256);
         testHMac(RosstandartObjectIdentifiers.id_tc26_hmac_gost_3411_12_512.getId(), 512, outputGost2012_512);
+
+        testHMac(UAObjectIdentifiers.dstu7564mac_256.getId(), 256, outputDSTU7564_256);
+        testHMac(UAObjectIdentifiers.dstu7564mac_384.getId(), 384, outputDSTU7564_384);
+        testHMac(UAObjectIdentifiers.dstu7564mac_512.getId(), 512, outputDSTU7564_512);
 
         // test for compatibility with broken HMac.
         testHMac("OldHMacSHA384", outputOld384);
