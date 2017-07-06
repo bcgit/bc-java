@@ -26,7 +26,7 @@ public class DSTU7624WrapEngine
     private ArrayList<byte[]> Btemp;
 
 
-    public DSTU7624WrapEngine(int blockBitLength, int keyBitLength)
+    public DSTU7624WrapEngine(int blockBitLength)
     {
 
         this.engine = new DSTU7624Engine(blockBitLength);
