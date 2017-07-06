@@ -26,7 +26,7 @@ public class DSTU7624Mac
 
     public DSTU7624Mac(int blockBitLength, int keyBitLength, int q)
     {
-        this.engine = new DSTU7624Engine(blockBitLength, keyBitLength);
+        this.engine = new DSTU7624Engine(blockBitLength);
         this.blockSize = blockBitLength / BITS_IN_BYTE;
         this.macSize = q / BITS_IN_BYTE;
         this.c = new byte[blockSize];
