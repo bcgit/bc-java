@@ -98,11 +98,11 @@ public class KCTRBlockCipher
     {
         if (in.length - inOff < getBlockSize())
         {
-            throw new DataLengthException("Input buffer too short");
+            throw new DataLengthException("input buffer too short");
         }
         if (out.length - outOff < getBlockSize())
         {
-            throw new DataLengthException("Output buffer too short");
+            throw new DataLengthException("output buffer too short");
         }
         
         processBytes(in, inOff, getBlockSize(), out, outOff);
