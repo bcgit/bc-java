@@ -29,7 +29,7 @@ public class DSTU7624WrapEngine
     public DSTU7624WrapEngine(int blockBitLength, int keyBitLength)
     {
 
-        this.engine = new DSTU7624Engine(blockBitLength, keyBitLength);
+        this.engine = new DSTU7624Engine(blockBitLength);
         this.B = new byte[engine.getBlockSize() / 2];
         this.checkSumArray = new byte[engine.getBlockSize()];
         this.zeroArray = new byte[engine.getBlockSize()];
