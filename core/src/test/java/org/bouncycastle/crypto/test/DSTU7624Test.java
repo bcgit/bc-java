@@ -107,7 +107,7 @@ public class DSTU7624Test
 
         byte[] mac = new byte[expectedMac.length];
 
-        DSTU7624Mac dstu7624Mac = new DSTU7624Mac(128, 128, 128);
+        DSTU7624Mac dstu7624Mac = new DSTU7624Mac(128, 128);
         dstu7624Mac.init(new KeyParameter(key));
         dstu7624Mac.update(authtext, 0, authtext.length);
         dstu7624Mac.doFinal(mac, 0);
@@ -137,7 +137,7 @@ public class DSTU7624Test
 
         expectedMac = Hex.decode("7279FA6BC8EF7525B2B35260D00A1743");
 
-        dstu7624Mac = new DSTU7624Mac(512, 512, 128);
+        dstu7624Mac = new DSTU7624Mac(512, 128);
         dstu7624Mac.init(new KeyParameter(key));
         dstu7624Mac.update(authtext, 0, authtext.length);
         dstu7624Mac.doFinal(mac, 0);
@@ -161,7 +161,7 @@ public class DSTU7624Test
 
         byte[] output;
 
-        DSTU7624WrapEngine wrapper = new DSTU7624WrapEngine(128, 128);
+        DSTU7624WrapEngine wrapper = new DSTU7624WrapEngine(128);
         wrapper.init(true, new KeyParameter(key));
         output = wrapper.wrap(textToWrap, 0, textToWrap.length);
 
@@ -221,7 +221,7 @@ public class DSTU7624Test
 
         output = new byte[expectedWrappedText.length];
 
-        wrapper = new DSTU7624WrapEngine(128, 256);
+        wrapper = new DSTU7624WrapEngine(128);
         wrapper.init(true, new KeyParameter(key));
         output = wrapper.wrap(textToWrap, 0, textToWrap.length);
 
@@ -251,7 +251,7 @@ public class DSTU7624Test
 
         output = new byte[expectedWrappedText.length];
 
-        wrapper = new DSTU7624WrapEngine(128, 256);
+        wrapper = new DSTU7624WrapEngine(128);
         wrapper.init(true, new KeyParameter(key));
         output = wrapper.wrap(textToWrap, 0, textToWrap.length);
 
@@ -281,7 +281,7 @@ public class DSTU7624Test
 
         output = new byte[expectedWrappedText.length];
 
-        wrapper = new DSTU7624WrapEngine(256, 256);
+        wrapper = new DSTU7624WrapEngine(256);
         wrapper.init(true, new KeyParameter(key));
         output = wrapper.wrap(textToWrap, 0, textToWrap.length);
 
