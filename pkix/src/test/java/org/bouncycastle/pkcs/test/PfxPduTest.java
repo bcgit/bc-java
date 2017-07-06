@@ -653,7 +653,7 @@ public class PfxPduTest
     }
 
     /*
-     * we generate a certificate signed by our CA's intermediate certficate
+     * we generate a certificate signed by our CA's intermediate certificate
      */
     public static X509Certificate createCert(
         PublicKey pubKey,
@@ -682,9 +682,6 @@ public class PfxPduTest
         subjectBuilder.addRDN(BCStyle.CN, "Eric H. Echidna");
         subjectBuilder.addRDN(BCStyle.EmailAddress, "feedback-crypto@bouncycastle.org");
 
-        //
-        // create the certificate - version 3
-        //
         //
         // create the certificate - version 3
         //
