@@ -1,7 +1,5 @@
 package org.bouncycastle.crypto.engines;
 
-import java.util.ArrayList;
-
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
@@ -48,65 +46,16 @@ public class DSTU7624Engine
     private byte[] internalStateBytes;
     private byte[] tempInternalStateBytes;
 
-    public DSTU7624Engine(int blockBitLength, int keyBitLength) throws IllegalArgumentException
+    public DSTU7624Engine(int blockBitLength) throws IllegalArgumentException
     {
         /* DSTU7624 supports 128 | 256 | 512 key/block sizes */
-        ArrayList<Integer> possibleSizes = new ArrayList<Integer>();
-        possibleSizes.add(128);
-        possibleSizes.add(256);
-        possibleSizes.add(512);
-
-        if (!possibleSizes.contains(keyBitLength) || !possibleSizes.contains(blockBitLength))
+        if (blockBitLength != 128 && blockBitLength != 256 && blockBitLength != 512)
         {
-            throw new IllegalArgumentException("Unsupported block or key length. Only 128/256/512 are allowed");
-        }
-
-        /* Limitations on key lengths depending on block lengths. See table 6.1 in standard */
-        if (blockBitLength == 128)
-        {
-            if (keyBitLength == 512)
-            {
-                throw new IllegalArgumentException("Unsupported key length");
-            }
-        }
-
-        if (blockBitLength == 256)
-        {
-            if (keyBitLength == 128)
-            {
-                throw new IllegalArgumentException("Unsupported key length");
-            }
-        }
-
-        if (blockBitLength == 512)
-        {
-            if (keyBitLength != 512)
-            {
-                throw new IllegalArgumentException("Unsupported key length");
-            }
-        }
-
-        switch (keyBitLength)
-        {
-            case 128: roundsAmount = ROUNDS_128; break;
-            case 256: roundsAmount = ROUNDS_256; break;
-            case 512: roundsAmount = ROUNDS_512; break;
+            throw new IllegalArgumentException("unsupported block length: only 128/256/512 are allowed");
         }
 
         wordsInBlock = blockBitLength / BITS_IN_WORD;
-        wordsInKey = keyBitLength / BITS_IN_WORD;
-
         internalState = new long[wordsInBlock];
-
-
-        /* +1 round key as defined in standard */
-        roundKeys = new long[roundsAmount + 1][];
-        for (int roundKeyIndex = 0; roundKeyIndex < roundKeys.length; roundKeyIndex++)
-        {
-            roundKeys[roundKeyIndex] = new long[wordsInBlock];
-        }
-
-        workingKey = null;
 
         internalStateBytes = new byte[internalState.length * Long.SIZE / BITS_IN_BYTE];
         tempInternalStateBytes = new byte[internalState.length * Long.SIZE / BITS_IN_BYTE];
@@ -119,6 +68,57 @@ public class DSTU7624Engine
             this.forEncryption = forEncryption;
 
             byte[] keyBytes = ((KeyParameter)params).getKey();
+            int keyBitLength = keyBytes.length * BITS_IN_BYTE;
+            int blockBitLength = wordsInBlock * BITS_IN_WORD;
+
+            if (keyBitLength != 128 && keyBitLength != 256 && keyBitLength != 512)
+            {
+                throw new IllegalArgumentException("unsupported key length: only 128/256/512 are allowed");
+            }
+
+            /* Limitations on key lengths depending on block lengths. See table 6.1 in standard */
+            if (blockBitLength == 128)
+            {
+                if (keyBitLength == 512)
+                {
+                    throw new IllegalArgumentException("Unsupported key length");
+                }
+            }
+
+            if (blockBitLength == 256)
+            {
+                if (keyBitLength == 128)
+                {
+                    throw new IllegalArgumentException("Unsupported key length");
+                }
+            }
+
+            if (blockBitLength == 512)
+            {
+                if (keyBitLength != 512)
+                {
+                    throw new IllegalArgumentException("Unsupported key length");
+                }
+            }
+
+            switch (keyBitLength)
+            {
+                case 128: roundsAmount = ROUNDS_128;
+                    break;
+                case 256: roundsAmount = ROUNDS_256;
+                    break;
+                case 512: roundsAmount = ROUNDS_512;
+                    break;
+            }
+
+            wordsInKey = keyBitLength / BITS_IN_WORD;
+
+            /* +1 round key as defined in standard */
+            roundKeys = new long[roundsAmount + 1][];
+            for (int roundKeyIndex = 0; roundKeyIndex < roundKeys.length; roundKeyIndex++)
+            {
+                roundKeys[roundKeyIndex] = new long[wordsInBlock];
+            }
 
             workingKey = new long[wordsInKey];
 
@@ -136,7 +136,6 @@ public class DSTU7624Engine
             workingKeyExpandKT(workingKey, tempKeys);
             workingKeyExpandEven(workingKey, tempKeys);
             workingKeyExpandOdd();
-
         }
         else
         {
