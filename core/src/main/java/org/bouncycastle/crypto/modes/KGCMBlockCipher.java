@@ -107,7 +107,6 @@ public class KGCMBlockCipher
             {
                 processAADBytes(initialAssociatedText, 0, initialAssociatedText.length);
             }
-
         }
         else if (params instanceof ParametersWithIV)
         {
@@ -311,6 +310,11 @@ public class KGCMBlockCipher
 
         data.reset();
         associatedText.reset();
+
+        if (initialAssociatedText != null)
+        {
+            processAADBytes(initialAssociatedText, 0, initialAssociatedText.length);
+        }
     }
 
 
