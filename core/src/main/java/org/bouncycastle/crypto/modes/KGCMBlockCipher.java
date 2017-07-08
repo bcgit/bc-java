@@ -105,7 +105,7 @@ public class KGCMBlockCipher
 
             if (initialAssociatedText != null)
             {
-                //ProcessAADBytes
+                processAADBytes(initialAssociatedText, 0, initialAssociatedText.length);
             }
 
         }
