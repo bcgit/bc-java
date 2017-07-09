@@ -1,6 +1,7 @@
 package org.bouncycastle.tls.crypto;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.ConnectionEnd;
@@ -24,6 +25,8 @@ public interface TlsCertificate
     short getClientCertificateType() throws IOException;
 
     byte[] getEncoded() throws IOException;
+
+    BigInteger getSerialNumber();
 
     /**
      * @param connectionEnd

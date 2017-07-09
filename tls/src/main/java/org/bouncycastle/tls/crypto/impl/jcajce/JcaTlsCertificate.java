@@ -2,6 +2,7 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.PublicKey;
 import java.security.cert.CertificateEncodingException;
@@ -174,6 +175,11 @@ public class JcaTlsCertificate
         {
             throw new TlsCryptoException("unable to encode certificate: " + e.getMessage(), e);
         }
+    }
+
+    public BigInteger getSerialNumber()
+    {
+        return certificate.getSerialNumber();
     }
 
     DHPublicKey getPubKeyDH() throws IOException
