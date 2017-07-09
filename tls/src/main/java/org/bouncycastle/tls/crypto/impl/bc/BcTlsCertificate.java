@@ -1,6 +1,7 @@
 package org.bouncycastle.tls.crypto.impl.bc;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.x509.Certificate;
@@ -21,6 +22,7 @@ import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 
 /**
@@ -58,7 +60,7 @@ public class BcTlsCertificate
         }
         catch (IllegalArgumentException e)
         {
-            throw new IOException("unable to decode certificate: " + e.getMessage(), e);
+            throw new TlsCryptoException("unable to decode certificate: " + e.getMessage(), e);
         }
     }
 
@@ -152,6 +154,11 @@ public class BcTlsCertificate
     public byte[] getEncoded() throws IOException
     {
         return certificate.getEncoded(ASN1Encoding.DER);
+    }
+
+    public BigInteger getSerialNumber()
+    {
+        return certificate.getSerialNumber().getValue();
     }
 
     protected DHPublicKeyParameters getPubKeyDH() throws IOException
