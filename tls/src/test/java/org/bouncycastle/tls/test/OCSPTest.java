@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.security.Security;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ocsp.BasicOCSPResponse;
@@ -54,14 +56,18 @@ public class OCSPTest
         public OCSPResponse[] getResponses(Certificate certs)
             throws IOException
         {
-            OCSPReqBuilder reqBuilder = new OCSPReqBuilder();
             TlsCertificate[] certList = certs.getCertificateList();
+            List<OCSPResponse> responses = new ArrayList<OCSPResponse>();
 
             for (int i = 0; i != certList.length; i++)
             {
                 try
                 {
+                    OCSPReqBuilder reqBuilder = new OCSPReqBuilder();
+                    
                     reqBuilder.addRequest(new CertificateID(digCalc, new X509CertificateHolder(caCert.getEncoded()), certList[i].getSerialNumber()));
+
+                    responses.add(server.respond(reqBuilder.build()).toASN1Structure());
                 }
                 catch (OCSPException e)
                 {
@@ -71,17 +77,13 @@ public class OCSPTest
                 {
                     throw new IOException("CA encoding issue: " + e.getMessage());
                 }
+                catch (Exception e)
+                {
+                    throw new IOException("OCSP response issue: " + e.getMessage());
+                }
             }
 
-            try
-            {
-                // in this case a single response contains all the status messages
-                return new OCSPResponse[] { server.respond(reqBuilder.build()).toASN1Structure() };
-            }
-            catch (Exception e)
-            {
-                throw new IOException("OCSP response issue: " + e.getMessage());
-            }
+            return responses.toArray(new OCSPResponse[responses.size()]);
         }
     }
 
@@ -111,7 +113,7 @@ public class OCSPTest
 
         OCSPResponse[] responses = responder.getResponses(certs);
 
-        assertEquals(1, responses.length);
+        assertEquals(2, responses.length);
 
         OCSPResponse response = responses[0];
 
@@ -122,11 +124,23 @@ public class OCSPTest
 
         SingleResp[] resps = basicResp.getResponses();
 
-        assertEquals(2, resps.length);
+        assertEquals(1, resps.length);
 
         assertEquals(resps[0].getCertID(), new JcaCertificateID(digCalc, caCert, cert1.getSerialNumber()));
         assertNull(resps[0].getCertStatus());        // OKAY
-        assertEquals(resps[1].getCertID(), new JcaCertificateID(digCalc, caCert, cert2.getSerialNumber()));
-        assertNotNull(resps[1].getCertStatus());     // revoked
+
+        response = responses[1];
+
+        assertEquals(OCSPResponseStatus.SUCCESSFUL, response.getResponseStatus().getValue().intValue());
+        assertEquals(OCSPObjectIdentifiers.id_pkix_ocsp_basic, response.getResponseBytes().getResponseType());
+
+        basicResp = new BasicOCSPResp(BasicOCSPResponse.getInstance(response.getResponseBytes().getResponse().getOctets()));
+
+        resps = basicResp.getResponses();
+
+        assertEquals(1, resps.length);
+
+        assertEquals(resps[0].getCertID(), new JcaCertificateID(digCalc, caCert, cert2.getSerialNumber()));
+        assertNotNull(resps[0].getCertStatus());
     }
 }
