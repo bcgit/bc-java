@@ -77,6 +77,11 @@ public class TestOCSPCertServer
         return rootCert;
     }
 
+    public X509Certificate getCACert()
+    {
+        return interCert;
+    }
+
     public PKIXIdentity issueClientCert(String subjectName, boolean markRevoked)
         throws Exception
     {
@@ -95,7 +100,7 @@ public class TestOCSPCertServer
             revocations.add(endEntityCert.getSerialNumber());
         }
 
-        return new PKIXIdentity(PrivateKeyInfo.getInstance(eeKP.getPrivate()),
+        return new PKIXIdentity(PrivateKeyInfo.getInstance(eeKP.getPrivate().getEncoded()),
             new X509CertificateHolder[] {
                 new X509CertificateHolder(endEntityCert.getEncoded()),
                 new X509CertificateHolder(interCert.getEncoded())});
