@@ -15,15 +15,21 @@ abstract class SSLParametersUtil
     private static final Method getUseCipherSuitesOrder;
     private static final Method setUseCipherSuitesOrder;
 
-    static
+    private static Class<?> getClassPrivileged(final String className)
     {
-        final Class<?> paramDef = AccessController.doPrivileged(new PrivilegedAction<Class<?>>()
+        return AccessController.doPrivileged(new PrivilegedAction<Class<?>>()
         {
             public Class<?> run()
             {
                 try
                 {
-                    return JsseUtils.loadClass(SSLParametersUtil.class,"javax.net.ssl.SSLParameters");
+                    ClassLoader loader = SSLParametersUtil.class.getClassLoader();
+                    if (loader != null)
+                    {
+                        return loader.loadClass(className);
+                    }
+
+                    return Class.forName(className);
                 }
                 catch (Exception e)
                 {
@@ -31,103 +37,79 @@ abstract class SSLParametersUtil
                 }
             }
         });
+    }
 
-        if (paramDef != null)
+    private static Method getMethodPrivileged(final Class<?> clazz, final String methodName)
+    {
+        if (clazz == null)
         {
-            getAlgorithmConstraints = AccessController.doPrivileged(new PrivilegedAction<Method>()
-            {
-                public Method run()
-                {
-                    try
-                    {
-                        return paramDef.getMethod("getAlgorithmConstraints");
-                    }
-                    catch (Exception e)
-                    {
-                        return null;
-                    }
-                }
-            });
-            setAlgorithmConstraints = AccessController.doPrivileged(new PrivilegedAction<Method>()
-            {
-                public Method run()
-                {
-                    try
-                    {
-                        return paramDef.getMethod("setAlgorithmConstraints");
-                    }
-                    catch (Exception e)
-                    {
-                        return null;
-                    }
-                }
-            });
-            getEndpointIdentificationAlgorithm = AccessController.doPrivileged(new PrivilegedAction<Method>()
-            {
-                public Method run()
-                {
-                    try
-                    {
-                        return paramDef.getMethod("getEndpointIdentificationAlgorithm");
-                    }
-                    catch (Exception e)
-                    {
-                        return null;
-                    }
-                }
-            });
-            setEndpointIdentificationAlgorithm = AccessController.doPrivileged(new PrivilegedAction<Method>()
-            {
-                public Method run()
-                {
-                    try
-                    {
-                        return paramDef.getMethod("setEndpointIdentificationAlgorithm");
-                    }
-                    catch (Exception e)
-                    {
-                        return null;
-                    }
-                }
-            });
-            getUseCipherSuitesOrder = AccessController.doPrivileged(new PrivilegedAction<Method>()
-            {
-                public Method run()
-                {
-                    try
-                    {
-                        return paramDef.getMethod("getUseCipherSuitesOrder");
-                    }
-                    catch (Exception e)
-                    {
-                        return null;
-                    }
-                }
-            });
-            setUseCipherSuitesOrder = AccessController.doPrivileged(new PrivilegedAction<Method>()
-            {
-                public Method run()
-                {
-                    try
-                    {
-                        return paramDef.getMethod("setUseCipherSuitesOrder");
-                    }
-                    catch (Exception e)
-                    {
-                        return null;
-                    }
-                }
-            });
+            return null;
         }
-        else
+
+        return AccessController.doPrivileged(new PrivilegedAction<Method>()
         {
-            getAlgorithmConstraints = null;
-            setAlgorithmConstraints = null;
-            getEndpointIdentificationAlgorithm = null;
-            setEndpointIdentificationAlgorithm = null;
-            getUseCipherSuitesOrder = null;
-            setUseCipherSuitesOrder = null;
-        }
+            public Method run()
+            {
+                try
+                {
+                    return clazz.getMethod(methodName);
+                }
+                catch (Exception e)
+                {
+                    return null;
+                }
+            }
+        });
+    }
+
+    private static Object invokeGetterPrivileged(final Object obj, final Method method)
+    {
+        return AccessController.doPrivileged(new PrivilegedAction<Object>()
+        {
+            public Object run()
+            {
+                try
+                {
+                    return method.invoke(obj);
+                }
+                catch (Exception e)
+                {
+                    // TODO: log?
+                    return null;
+                }
+            }
+        });
+    }
+
+    private static void invokeSetterPrivileged(final Object obj, final Method method, final Object arg)
+    {
+        AccessController.doPrivileged(new PrivilegedAction<Void>()
+        {
+            public Void run()
+            {
+                try
+                {
+                    method.invoke(obj, arg);
+                }
+                catch (Exception e)
+                {
+                    // TODO: log?
+                }
+                return null;
+            }
+        });
+    }
+
+    static
+    {
+        Class<?> sslParametersClazz = getClassPrivileged("javax.net.ssl.SSLParameters");
+
+        getAlgorithmConstraints = getMethodPrivileged(sslParametersClazz, "getAlgorithmConstraints");
+        setAlgorithmConstraints = getMethodPrivileged(sslParametersClazz, "setAlgorithmConstraints");
+        getEndpointIdentificationAlgorithm = getMethodPrivileged(sslParametersClazz, "getEndpointIdentificationAlgorithm");
+        setEndpointIdentificationAlgorithm = getMethodPrivileged(sslParametersClazz, "setEndpointIdentificationAlgorithm");
+        getUseCipherSuitesOrder = getMethodPrivileged(sslParametersClazz, "getUseCipherSuitesOrder");
+        setUseCipherSuitesOrder = getMethodPrivileged(sslParametersClazz, "setUseCipherSuitesOrder");
     }
 
     static SSLParameters toSSLParameters(final ProvSSLParameters provSslParameters)
@@ -138,62 +120,20 @@ abstract class SSLParametersUtil
         // From JDK 1.7
         if (setAlgorithmConstraints != null)
         {
-            AccessController.doPrivileged(new PrivilegedAction<Object>()
-            {
-                public Object run()
-                {
-                    try
-                    {
-                        setAlgorithmConstraints.invoke(r, provSslParameters.getAlgorithmConstraints());
-                    }
-                    catch (Exception e)
-                    {
-                        // TODO: log?
-                    }
-                    return null;
-                }
-            });
+            invokeSetterPrivileged(r, setAlgorithmConstraints, provSslParameters.getAlgorithmConstraints());
         }
         if (setEndpointIdentificationAlgorithm != null)
         {
-            AccessController.doPrivileged(new PrivilegedAction<Object>()
-            {
-                public Object run()
-                {
-                    try
-                    {
-                        setEndpointIdentificationAlgorithm.invoke(r,
-                            provSslParameters.getEndpointIdentificationAlgorithm());
-                    }
-                    catch (Exception e)
-                    {
-                        // TODO: log?
-                    }
-                    return null;
-                }
-            });
+            invokeSetterPrivileged(r, setEndpointIdentificationAlgorithm, provSslParameters.getEndpointIdentificationAlgorithm());
         }
         // TODO[jsse] From JDK 1.8
 //        r.setServerNames(p.getServerNames());
 //        r.setSNIMatchers(p.getSNIMatchers());
         if (setUseCipherSuitesOrder != null)
         {
-            AccessController.doPrivileged(new PrivilegedAction<Object>()
-            {
-                public Object run()
-                {
-                    try
-                    {
-                        setUseCipherSuitesOrder.invoke(r, provSslParameters.getUseCipherSuitesOrder());
-                    }
-                    catch (Exception e)
-                    {
-                        // TODO: log?
-                    }
-                    return null;
-                }
-            });
+            invokeSetterPrivileged(r, setUseCipherSuitesOrder, provSslParameters.getUseCipherSuitesOrder());
         }
+
         // NOTE: The client-auth setters each clear the other client-auth property, so only one can be set
         if (provSslParameters.getNeedClientAuth())
         {
@@ -218,60 +158,18 @@ abstract class SSLParametersUtil
         // From JDK 1.7
         if (getAlgorithmConstraints != null)
         {
-            r.setAlgorithmConstraints(AccessController.doPrivileged(new PrivilegedAction<Object>()
-            {
-                public Object run()
-                {
-                    try
-                    {
-                        return getAlgorithmConstraints.invoke(sslParameters);
-                    }
-                    catch (Exception e)
-                    {
-                        // TODO: log?
-                        return null;
-                    }
-                }
-            }));
+            r.setAlgorithmConstraints(invokeGetterPrivileged(sslParameters, getAlgorithmConstraints));
         }
         if (getEndpointIdentificationAlgorithm != null)
         {
-            r.setEndpointIdentificationAlgorithm(AccessController.doPrivileged(new PrivilegedAction<String>()
-            {
-                public String run()
-                {
-                    try
-                    {
-                        return (String)getEndpointIdentificationAlgorithm.invoke(sslParameters);
-                    }
-                    catch (Exception e)
-                    {
-                        // TODO: log?
-                        return null;
-                    }
-                }
-            }));
+            r.setEndpointIdentificationAlgorithm((String)invokeGetterPrivileged(sslParameters, getEndpointIdentificationAlgorithm));
         }
         // TODO[jsse] From JDK 1.8
 //        r.setServerNames(p.getServerNames());
 //        r.setSNIMatchers(p.getSNIMatchers());
         if (getUseCipherSuitesOrder != null)
         {
-            r.setUseCipherSuitesOrder(AccessController.doPrivileged(new PrivilegedAction<Boolean>()
-            {
-                public Boolean run()
-                {
-                    try
-                    {
-                        return (Boolean)getUseCipherSuitesOrder.invoke(sslParameters);
-                    }
-                    catch (Exception e)
-                    {
-                        // TODO: log?
-                        return null;
-                    }
-                }
-            }));
+            r.setUseCipherSuitesOrder((Boolean)invokeGetterPrivileged(sslParameters, getUseCipherSuitesOrder));
         }
 
         // NOTE: The client-auth setters each clear the other client-auth property, so only one can be set
