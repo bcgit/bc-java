@@ -1,5 +1,6 @@
 dependencies {
     compile project(':core')
+    compile project(':pkix')
     compile project(':prov')
 }
 
