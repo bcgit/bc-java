@@ -10,7 +10,9 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
@@ -22,12 +24,18 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jsse.BCSNIHostName;
+import org.bouncycastle.jsse.BCSNIMatcher;
+import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
+import org.bouncycastle.tls.NameType;
+import org.bouncycastle.tls.ServerName;
+import org.bouncycastle.tls.ServerNameList;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
@@ -367,6 +375,37 @@ abstract class JsseUtils
             // ignore - maybe log?
         }
 
+        return null;
+    }
+
+    static BCSNIServerName convertSNIServerName(ServerName serverName)
+    {
+        switch (serverName.getNameType())
+        {
+        case NameType.host_name:
+            return new BCSNIHostName(serverName.getHostName());
+        default:
+            return null;
+        }
+    }
+
+    static BCSNIServerName findMatchingSNIServerName(ServerNameList serverNameList,
+        Collection<BCSNIMatcher> sniMatchers)
+    {
+        Enumeration serverNames = serverNameList.getServerNameList().elements();
+        while (serverNames.hasMoreElements())
+        {
+            BCSNIServerName sniServerName = convertSNIServerName((ServerName)serverNames.nextElement());
+
+            for (BCSNIMatcher sniMatcher : sniMatchers)
+            {
+                if (sniMatcher != null && sniMatcher.getType() == sniServerName.getType()
+                    && sniMatcher.matches(sniServerName))
+                {
+                    return sniServerName;
+                }
+            }
+        }
         return null;
     }
 }

@@ -5,7 +5,9 @@ import java.net.Socket;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -16,6 +18,8 @@ import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.jsse.BCSNIMatcher;
+import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
@@ -26,8 +30,10 @@ import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.NamedCurve;
 import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.ServerNameList;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsCredentials;
+import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCrypto;
@@ -46,6 +52,7 @@ class ProvTlsServer
     protected final ProvTlsManager manager;
     protected final ProvSSLParameters sslParameters;
 
+    protected BCSNIServerName matchedSNIServerName = null;
     protected Set<String> keyManagerMissCache = null;
     protected TlsCredentials credentials = null;
     protected boolean handshakeComplete = false;
@@ -218,6 +225,23 @@ class ProvTlsServer
     }
 
     @Override
+    public Hashtable getServerExtensions() throws IOException
+    {
+        super.getServerExtensions();
+
+        /*
+         * TODO[jsse] RFC 6066 When resuming a session, the server MUST NOT include a server_name
+         * extension in the server hello.
+         */
+        if (matchedSNIServerName != null)
+        {
+            checkServerExtensions().put(TlsExtensionsUtils.EXT_server_name, TlsExtensionsUtils.createEmptyExtensionData());
+        }
+
+        return serverExtensions;
+    }
+
+    @Override
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
     {
         Level level = alertLevel == AlertLevel.warning                      ? Level.FINE
@@ -317,6 +341,33 @@ class ProvTlsServer
         ProvSSLConnection connection = new ProvSSLConnection(context, session);
 
         manager.notifyHandshakeComplete(connection);
+    }
+
+    @Override
+    public void processClientExtensions(Hashtable clientExtensions) throws IOException
+    {
+        super.processClientExtensions(clientExtensions);
+
+        if (clientExtensions != null)
+        {
+            /*
+             * TODO[jsse] RFC 6066 A server that implements this extension MUST NOT accept the
+             * request to resume the session if the server_name extension contains a different name.
+             */
+            Collection<BCSNIMatcher> sniMatchers = manager.getProvSSLParameters().getSNIMatchers();
+            if (sniMatchers != null && !sniMatchers.isEmpty())
+            {
+                ServerNameList serverNameList = TlsExtensionsUtils.getServerNameExtension(clientExtensions);
+                if (serverNameList != null)
+                {
+                    matchedSNIServerName = JsseUtils.findMatchingSNIServerName(serverNameList, sniMatchers);
+                    if (matchedSNIServerName == null)
+                    {
+                        throw new TlsFatalAlert(AlertDescription.unrecognized_name);
+                    }
+                }
+            }
+        }
     }
 
     protected boolean selectCredentials(int cipherSuite) throws IOException
