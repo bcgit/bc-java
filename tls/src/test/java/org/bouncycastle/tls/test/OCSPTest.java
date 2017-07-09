@@ -6,11 +6,17 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ocsp.BasicOCSPResponse;
+import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
+import org.bouncycastle.asn1.ocsp.OCSPResponseStatus;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.ocsp.BasicOCSPResp;
 import org.bouncycastle.cert.ocsp.CertificateID;
 import org.bouncycastle.cert.ocsp.OCSPException;
 import org.bouncycastle.cert.ocsp.OCSPReqBuilder;
+import org.bouncycastle.cert.ocsp.SingleResp;
+import org.bouncycastle.cert.ocsp.jcajce.JcaCertificateID;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -91,8 +97,9 @@ public class OCSPTest
         throws Exception
     {
         JcaJceHelper helper = new DefaultJcaJceHelper();
-
+        DigestCalculator digCalc = new JcaDigestCalculatorProviderBuilder().build().get(CertificateID.HASH_SHA1);
         TestOCSPCertServer server = new TestOCSPCertServer();
+        X509Certificate caCert = server.getCACert();
 
         X509CertificateHolder cert1 = server.issueClientCert("CN=Okay", false).getCertificate();
 
@@ -107,5 +114,19 @@ public class OCSPTest
         assertEquals(1, responses.length);
 
         OCSPResponse response = responses[0];
+
+        assertEquals(OCSPResponseStatus.SUCCESSFUL, response.getResponseStatus().getValue().intValue());
+        assertEquals(OCSPObjectIdentifiers.id_pkix_ocsp_basic, response.getResponseBytes().getResponseType());
+        
+        BasicOCSPResp basicResp = new BasicOCSPResp(BasicOCSPResponse.getInstance(response.getResponseBytes().getResponse().getOctets()));
+
+        SingleResp[] resps = basicResp.getResponses();
+
+        assertEquals(2, resps.length);
+
+        assertEquals(resps[0].getCertID(), new JcaCertificateID(digCalc, caCert, cert1.getSerialNumber()));
+        assertNull(resps[0].getCertStatus());        // OKAY
+        assertEquals(resps[1].getCertID(), new JcaCertificateID(digCalc, caCert, cert2.getSerialNumber()));
+        assertNotNull(resps[1].getCertStatus());     // revoked
     }
 }
