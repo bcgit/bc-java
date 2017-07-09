@@ -6,6 +6,7 @@ import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -16,6 +17,7 @@ import javax.net.ssl.X509KeyManager;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
@@ -240,11 +242,36 @@ class ProvTlsClient
         boolean enableSNIExtension = !"false".equals(PropertyUtils.getSystemProperty("jsse.enableSNIExtension"));
         if (enableSNIExtension)
         {
-            String peerHost = manager.getPeerHost();
-            if (peerHost != null && peerHost.indexOf('.') > 0 && !IPAddress.isValid(peerHost))
+            List<BCSNIServerName> sniServerNames = manager.getProvSSLParameters().getServerNames();
+            if (sniServerNames == null)
             {
-                Vector serverNames = new Vector(1);
-                serverNames.addElement(new ServerName(NameType.host_name, peerHost));
+                String peerHost = manager.getPeerHost();
+                if (peerHost != null && peerHost.indexOf('.') > 0 && !IPAddress.isValid(peerHost))
+                {
+                    Vector serverNames = new Vector(1);
+                    serverNames.addElement(new ServerName(NameType.host_name, peerHost));
+                    TlsExtensionsUtils.addServerNameExtension(clientExtensions, new ServerNameList(serverNames));
+                }
+            }
+            else if (sniServerNames.isEmpty())
+            {
+                // NOTE: We follow SunJSSE behaviour and disable SNI in this case
+            }
+            else
+            {
+                Vector serverNames = new Vector(sniServerNames.size());
+                for (BCSNIServerName sniServerName : sniServerNames)
+                {
+                    /*
+                     * TODO[jsse] Add support for constructing ServerName using
+                     * BCSNIServerName.getEncoded() directly, then remove the 'host_name' limitation
+                     * (although it's currently the only defined type).
+                     */
+                    if (sniServerName.getType() == NameType.host_name)
+                    {
+                        serverNames.addElement(new ServerName((short)sniServerName.getType(), new String(sniServerName.getEncoded(), "ASCII")));
+                    }
+                }
                 TlsExtensionsUtils.addServerNameExtension(clientExtensions, new ServerNameList(serverNames));
             }
         }

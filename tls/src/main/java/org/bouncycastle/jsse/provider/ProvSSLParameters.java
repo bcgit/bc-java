@@ -1,8 +1,29 @@
 package org.bouncycastle.jsse.provider;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+import org.bouncycastle.jsse.BCSNIMatcher;
+import org.bouncycastle.jsse.BCSNIServerName;
+
 class ProvSSLParameters
 {
     static final boolean hasSslParameters;
+
+    private static <T> List<T> copyList(List<T> list)
+    {
+        if (list == null)
+        {
+            return null;
+        }
+        if (list.isEmpty())
+        {
+            return Collections.emptyList();
+        }
+        return Collections.unmodifiableList(new ArrayList<T>(list));
+    }
 
     static
     {
@@ -26,6 +47,8 @@ class ProvSSLParameters
     private Object algorithmConstraints;      // object not introduced till 1.6
     private String endpointIdentificationAlgorithm;
     private boolean useCipherSuitesOrder;
+    private List<BCSNIMatcher> sniMatchers;
+    private List<BCSNIServerName> sniServerNames;
 
     public void setCipherSuites(String[] cipherSuites)
     {
@@ -96,6 +119,26 @@ class ProvSSLParameters
     public void setUseCipherSuitesOrder(boolean honorOrder)
     {
         this.useCipherSuitesOrder = honorOrder;
+    }
+
+    public List<BCSNIServerName> getServerNames()
+    {
+        return copyList(sniServerNames);
+    }
+
+    public void setServerNames(List<BCSNIServerName> serverNames)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public Collection<BCSNIMatcher> getSNIMatchers()
+    {
+        return copyList(sniMatchers);
+    }
+
+    public void setSNIMatchers(Collection<BCSNIMatcher> matchers)
+    {
+        throw new UnsupportedOperationException();
     }
 
     static ProvSSLParameters extractDefaultParameters(ProvSSLContextSpi context)
