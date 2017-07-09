@@ -25,7 +25,7 @@ class ProvSSLSessionContext
 
     static
     {
-        Class clazz = null;
+        Class<?> clazz = null;
         try
         {
             clazz = JsseUtils.loadClass(ProvSSLSessionContext.class,"javax.net.ssl.ExtendedSSLSession");

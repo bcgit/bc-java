@@ -6,7 +6,6 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 
@@ -69,6 +68,9 @@ class ProvSSLSocket
 
     public BCSSLConnection getConnection()
     {
+        /*
+         * TODO[jsse] This should actually block until handshake complete (and maybe start it)
+         */
         return engine.getConnection();
     }
 
