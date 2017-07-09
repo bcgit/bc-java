@@ -6,7 +6,7 @@ class ProvSSLParameters
 
     static
     {
-        Class clazz = null;
+        Class<?> clazz = null;
         try
         {
             clazz = JsseUtils.loadClass(ProvSSLParameters.class,"javax.net.ssl.SSLParameters");
