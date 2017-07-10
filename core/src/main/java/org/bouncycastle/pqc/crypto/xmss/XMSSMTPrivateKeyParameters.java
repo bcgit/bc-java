@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -347,5 +348,23 @@ public final class XMSSMTPrivateKeyParameters
     public XMSSMTParameters getParameters()
     {
         return params;
+    }
+
+    public XMSSMTPrivateKeyParameters getNextKey()
+    {
+        Map<Integer, BDS> newState = new TreeMap<Integer, BDS>();
+
+        for (Iterator it = bdsState.keySet().iterator(); it.hasNext();)
+        {
+            Integer key = (Integer)it.next();
+
+            BDS bds = bdsState.get(key);
+            newState.put(key, bds.isUsed() ? bds.getNextState() : bds);
+        }
+
+        return new XMSSMTPrivateKeyParameters.Builder(params).withIndex(index + 1)
+            .withSecretKeySeed(secretKeySeed).withSecretKeyPRF(secretKeyPRF)
+            .withPublicSeed(publicSeed).withRoot(root)
+            .withBDSState(newState).build();
     }
 }

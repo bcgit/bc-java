@@ -154,11 +154,7 @@ public class XMSSMTSigner
             }
         }
 
-        /* update private key */
-        privateKey = new XMSSMTPrivateKeyParameters.Builder(params).withIndex(globalIndex + 1)
-            .withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
-            .withPublicSeed(privateKey.getPublicSeed()).withRoot(privateKey.getRoot())
-            .withBDSState(privateKey.getBDSState()).build();
+        privateKey = privateKey.getNextKey();
 
         return signature.toByteArray();
     }

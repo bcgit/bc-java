@@ -18,10 +18,6 @@ public final class XMSSPrivateKeyParameters
      */
     private final XMSSParameters params;
     /**
-     * Index for WOTS+ keys (randomization factor).
-     */
-    private final int index;
-    /**
      * Secret for the derivation of WOTS+ secret keys.
      */
     private final byte[] secretKeySeed;
@@ -73,7 +69,7 @@ public final class XMSSPrivateKeyParameters
 			}
 			*/
             int position = 0;
-            index = Pack.bigEndianToInt(privateKey, position);
+            int index = Pack.bigEndianToInt(privateKey, position);
             if (!XMSSUtil.isIndexValid(height, index))
             {
                 throw new IllegalArgumentException("index out of bounds");
@@ -104,12 +100,15 @@ public final class XMSSPrivateKeyParameters
             }
             bdsImport.setXMSS(builder.xmss);
             bdsImport.validate();
+            if (bdsImport.getIndex() != index)
+            {
+                throw new IllegalStateException("serialized BDS has wrong index");
+            }
             bdsState = bdsImport;
         }
         else
         {
 			/* set */
-            index = builder.index;
             byte[] tmpSecretKeySeed = builder.secretKeySeed;
             if (tmpSecretKeySeed != null)
             {
@@ -257,7 +256,7 @@ public final class XMSSPrivateKeyParameters
         byte[] out = new byte[totalSize];
         int position = 0;
 		/* copy index */
-        XMSSUtil.intToBytesBigEndianOffset(out, index, position);
+        XMSSUtil.intToBytesBigEndianOffset(out, bdsState.getIndex(), position);
         position += indexSize;
 		/* copy secretKeySeed */
         XMSSUtil.copyBytesAtOffset(out, secretKeySeed, position);
@@ -286,7 +285,7 @@ public final class XMSSPrivateKeyParameters
 
     public int getIndex()
     {
-        return index;
+        return bdsState.getIndex();
     }
 
     public byte[] getSecretKeySeed()
@@ -318,4 +317,13 @@ public final class XMSSPrivateKeyParameters
     {
         return params;
     }
+
+    public XMSSPrivateKeyParameters getNextKey()
+    {
+        return new XMSSPrivateKeyParameters.Builder(params)
+                 .withSecretKeySeed(secretKeySeed).withSecretKeyPRF(secretKeyPRF)
+                 .withPublicSeed(publicSeed).withRoot(root)
+                 .withBDSState(bdsState.getNextState()).build();
+    }
+
 }

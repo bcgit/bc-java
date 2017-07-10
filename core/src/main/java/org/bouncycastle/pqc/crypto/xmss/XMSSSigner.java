@@ -9,18 +9,22 @@ public class XMSSSigner
     implements StateAwareMessageSigner
 {
     private XMSSPrivateKeyParameters privateKey;
+    private XMSSPrivateKeyParameters nextKeyGenerator;
     private XMSSPublicKeyParameters publicKey;
     private XMSSParameters params;
     private KeyedHashFunctions khf;
 
     private boolean initSign;
+    private boolean hasGenerated;
 
     public void init(boolean forSigning, CipherParameters param)
     {
         if (forSigning)
         {
             initSign = true;
+            hasGenerated = false;
             privateKey = (XMSSPrivateKeyParameters)param;
+            nextKeyGenerator = privateKey;
 
             params = privateKey.getParameters();
             khf = params.getWOTSPlus().getKhf();
@@ -83,11 +87,17 @@ public class XMSSSigner
             privateKey.getBDSState().nextAuthenticationPath(privateKey.getPublicSeed(), privateKey.getSecretKeySeed(), (OTSHashAddress)new OTSHashAddress.Builder().build());
         }
 
-        /* update index */
-        privateKey = new XMSSPrivateKeyParameters.Builder(params).withIndex(index + 1)
-            .withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
-            .withPublicSeed(privateKey.getPublicSeed()).withRoot(privateKey.getRoot())
-            .withBDSState(privateKey.getBDSState()).build();
+        hasGenerated = true;
+
+        if (nextKeyGenerator != null)
+        {
+            privateKey = nextKeyGenerator.getNextKey();
+            nextKeyGenerator = privateKey;
+        }
+        else
+        {
+            privateKey = null;
+        }
 
         return signature.toByteArray();
     }
@@ -119,11 +129,25 @@ public class XMSSSigner
 
     public AsymmetricKeyParameter getUpdatedPrivateKey()
     {
-        XMSSPrivateKeyParameters privKey = privateKey;
+        // if we've generated a signature return the last private key generated
+        // if we've only initialised leave it in place and return the next one instead.
+        if (hasGenerated)
+        {
+            XMSSPrivateKeyParameters privKey = privateKey;
 
-        privateKey = null;
+            privateKey = null;
+            nextKeyGenerator = null;
 
-        return privKey;
+            return privKey;
+        }
+        else
+        {
+            XMSSPrivateKeyParameters privKey = nextKeyGenerator.getNextKey();
+
+            nextKeyGenerator = null;
+
+            return privKey;
+        }
     }
 
     private WOTSPlusSignature wotsSign(byte[] messageDigest, OTSHashAddress otsHashAddress)
