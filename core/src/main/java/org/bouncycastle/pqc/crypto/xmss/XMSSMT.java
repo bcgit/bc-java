@@ -13,7 +13,7 @@ public final class XMSSMT
 {
 
     private XMSSMTParameters params;
-    private XMSS xmss;
+    private XMSSParameters xmssParams;
     private SecureRandom prng;
     private XMSSMTPrivateKeyParameters privateKey;
     private XMSSMTPublicKeyParameters publicKey;
@@ -31,7 +31,7 @@ public final class XMSSMT
             throw new NullPointerException("params == null");
         }
         this.params = params;
-        xmss = params.getXMSS();
+        xmssParams = params.getXMSSParameters();
         this.prng = prng;
 
         privateKey = new XMSSMTPrivateKeyParameters.Builder(params).build();
@@ -58,16 +58,16 @@ public final class XMSSMT
     private void importState(XMSSMTPrivateKeyParameters privateKey, XMSSMTPublicKeyParameters publicKey)
     {
 		/* init global xmss */
-        XMSSPrivateKeyParameters xmssPrivateKey = new XMSSPrivateKeyParameters.Builder(xmss.getParams())
+        XMSSPrivateKeyParameters xmssPrivateKey = new XMSSPrivateKeyParameters.Builder(xmssParams)
             .withSecretKeySeed(privateKey.getSecretKeySeed())
             .withSecretKeyPRF(privateKey.getSecretKeyPRF()).withPublicSeed(privateKey.getPublicSeed())
-            .withRoot(privateKey.getRoot()).withBDSState(new BDS(xmss.getParams())).build();
-        XMSSPublicKeyParameters xmssPublicKey = new XMSSPublicKeyParameters.Builder(xmss.getParams())
+            .withRoot(privateKey.getRoot()).withBDSState(new BDS(xmssParams)).build();
+        XMSSPublicKeyParameters xmssPublicKey = new XMSSPublicKeyParameters.Builder(xmssParams)
             .withRoot(privateKey.getRoot()).withPublicSeed(getPublicSeed()).build();
 
 		/* import to xmss */
-        xmss.importState(xmssPrivateKey.toByteArray(), xmssPublicKey.toByteArray());
-        
+        xmssParams.getWOTSPlus().importKeys(new byte[params.getDigestSize()], this.privateKey.getPublicSeed());
+
         this.privateKey = privateKey;
         this.publicKey = publicKey;
     }
@@ -92,7 +92,7 @@ public final class XMSSMT
             throw new NullPointerException("publicKey == null");
         }
         XMSSMTPrivateKeyParameters xmssMTPrivateKey = new XMSSMTPrivateKeyParameters.Builder(params)
-            .withPrivateKey(privateKey, xmss).build();
+            .withPrivateKey(privateKey, xmssParams).build();
         XMSSMTPublicKeyParameters xmssMTPublicKey = new XMSSMTPublicKeyParameters.Builder(params)
             .withPublicKey(publicKey).build();
         if (!XMSSUtil.compareByteArray(xmssMTPrivateKey.getRoot(), xmssMTPublicKey.getRoot()))
@@ -105,15 +105,16 @@ public final class XMSSMT
         }
 
 		/* init global xmss */
-        XMSSPrivateKeyParameters xmssPrivateKey = new XMSSPrivateKeyParameters.Builder(xmss.getParams())
+        XMSSPrivateKeyParameters xmssPrivateKey = new XMSSPrivateKeyParameters.Builder(xmssParams)
             .withSecretKeySeed(xmssMTPrivateKey.getSecretKeySeed())
             .withSecretKeyPRF(xmssMTPrivateKey.getSecretKeyPRF()).withPublicSeed(xmssMTPrivateKey.getPublicSeed())
-            .withRoot(xmssMTPrivateKey.getRoot()).withBDSState(new BDS(xmss.getParams())).build();
-        XMSSPublicKeyParameters xmssPublicKey = new XMSSPublicKeyParameters.Builder(xmss.getParams())
+            .withRoot(xmssMTPrivateKey.getRoot()).withBDSState(new BDS(xmssParams)).build();
+        XMSSPublicKeyParameters xmssPublicKey = new XMSSPublicKeyParameters.Builder(xmssParams)
             .withRoot(xmssMTPrivateKey.getRoot()).withPublicSeed(getPublicSeed()).build();
 
 		/* import to xmss */
-        xmss.importState(xmssPrivateKey.toByteArray(), xmssPublicKey.toByteArray());
+        xmssParams.getWOTSPlus().importKeys(new byte[params.getDigestSize()], xmssPrivateKey.getPublicSeed());
+
         this.privateKey = xmssMTPrivateKey;
         this.publicKey = xmssMTPublicKey;
     }
@@ -217,8 +218,8 @@ public final class XMSSMT
         return privateKey.getPublicSeed();
     }
 
-    protected XMSS getXMSS()
+    protected XMSSParameters getXMSS()
     {
-        return xmss;
+        return xmssParams;
     }
 }

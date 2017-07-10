@@ -9,7 +9,7 @@ public final class XMSSMTParameters
 {
 
     private final XMSSOid oid;
-    private final XMSS xmss;
+    private final XMSSParameters xmssParams;
     private final int height;
     private final int layers;
 
@@ -25,7 +25,7 @@ public final class XMSSMTParameters
         super();
         this.height = height;
         this.layers = layers;
-        this.xmss = new XMSS(new XMSSParameters(xmssTreeHeight(height, layers), digest), null);
+        this.xmssParams = new XMSSParameters(xmssTreeHeight(height, layers), digest);
         oid = DefaultXMSSMTOid.lookup(getDigest().getAlgorithmName(), getDigestSize(), getWinternitzParameter(),
             getLen(), getHeight(), layers);
         /*
@@ -71,19 +71,19 @@ public final class XMSSMTParameters
         return layers;
     }
 
-    protected XMSS getXMSS()
+    protected XMSSParameters getXMSSParameters()
     {
-        return xmss;
+        return xmssParams;
     }
 
     protected WOTSPlus getWOTSPlus()
     {
-        return xmss.getWOTSPlus();
+        return xmssParams.getWOTSPlus();
     }
 
     protected Digest getDigest()
     {
-        return xmss.getParams().getDigest();
+        return xmssParams.getDigest();
     }
 
     /**
@@ -93,7 +93,7 @@ public final class XMSSMTParameters
      */
     public int getDigestSize()
     {
-        return xmss.getParams().getDigestSize();
+        return xmssParams.getDigestSize();
     }
 
     /**
@@ -103,11 +103,11 @@ public final class XMSSMTParameters
      */
     public int getWinternitzParameter()
     {
-        return xmss.getParams().getWinternitzParameter();
+        return xmssParams.getWinternitzParameter();
     }
 
     protected int getLen()
     {
-        return xmss.getWOTSPlus().getParams().getLen();
+        return xmssParams.getWOTSPlus().getParams().getLen();
     }
 }

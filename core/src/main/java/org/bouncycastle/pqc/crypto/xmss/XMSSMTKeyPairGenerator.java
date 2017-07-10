@@ -13,8 +13,7 @@ public final class XMSSMTKeyPairGenerator
 {
     private XMSSMTParameters params;
     private XMSSParameters xmssParams;
-    
-    private XMSS xmss;
+
     private SecureRandom prng;
 
 
@@ -32,8 +31,7 @@ public final class XMSSMTKeyPairGenerator
 
         prng = parameters.getRandom();
         this.params = parameters.getParameters();
-        xmss = params.getXMSS();
-        this.xmssParams = xmss.getParams();
+        this.xmssParams = params.getXMSSParameters();
     }
 
     /**
@@ -56,7 +54,6 @@ public final class XMSSMTKeyPairGenerator
             .build();
 
             /* import to xmss */
-        xmss.importState(xmssPrivateKey, xmssPublicKey);
         xmssParams.getWOTSPlus().importKeys(new byte[params.getDigestSize()], xmssPrivateKey.getPublicSeed());
 
             /* get root */
@@ -68,7 +65,6 @@ public final class XMSSMTKeyPairGenerator
         BDS bdsRoot = new BDS(xmssParams, xmssPrivateKey.getPublicSeed(), xmssPrivateKey.getSecretKeySeed(), otsHashAddress);
         XMSSNode root = bdsRoot.getRoot();
         privateKey.getBDSState().put(rootLayerIndex, bdsRoot);
-        xmss.setRoot(root.getValue());
 
             /* set XMSS^MT root / create public key */
         privateKey = new XMSSMTPrivateKeyParameters.Builder(params).withSecretKeySeed(privateKey.getSecretKeySeed())
