@@ -36,7 +36,7 @@ public final class XMSSKeyPairGenerator
     {
         /* generate private key */
         XMSSPrivateKeyParameters privateKey = generatePrivateKey(params, prng);
-        XMSSNode root = privateKey.getBDSState().initialize(privateKey, (OTSHashAddress)new OTSHashAddress.Builder().build());
+        XMSSNode root = privateKey.getBDSState().getRoot();
 
         privateKey = new XMSSPrivateKeyParameters.Builder(params).withIndex(privateKey.getIndex())
             .withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
@@ -66,7 +66,7 @@ public final class XMSSKeyPairGenerator
 
         XMSSPrivateKeyParameters privateKey = new XMSSPrivateKeyParameters.Builder(params).withSecretKeySeed(secretKeySeed)
             .withSecretKeyPRF(secretKeyPRF).withPublicSeed(publicSeed)
-            .withBDSState(new BDS(new XMSS(params, prng))).build();
+            .withBDSState(new BDS(params, publicSeed, secretKeySeed, (OTSHashAddress)new OTSHashAddress.Builder().build())).build();
 
         return privateKey;
     }

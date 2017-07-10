@@ -169,7 +169,7 @@ public final class XMSSPrivateKeyParameters
             }
             else
             {
-                bdsState = new BDS(new XMSS(params, null));
+                bdsState = new BDS(params);
             }
         }
     }

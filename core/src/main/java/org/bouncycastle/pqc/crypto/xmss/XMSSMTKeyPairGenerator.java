@@ -12,6 +12,8 @@ import org.bouncycastle.crypto.KeyGenerationParameters;
 public final class XMSSMTKeyPairGenerator
 {
     private XMSSMTParameters params;
+    private XMSSParameters xmssParams;
+    
     private XMSS xmss;
     private SecureRandom prng;
 
@@ -31,6 +33,7 @@ public final class XMSSMTKeyPairGenerator
         prng = parameters.getRandom();
         this.params = parameters.getParameters();
         xmss = params.getXMSS();
+        this.xmssParams = xmss.getParams();
     }
 
     /**
@@ -46,14 +49,15 @@ public final class XMSSMTKeyPairGenerator
 
 
             /* init global xmss */
-        XMSSPrivateKeyParameters xmssPrivateKey = new XMSSPrivateKeyParameters.Builder(xmss.getParams())
+        XMSSPrivateKeyParameters xmssPrivateKey = new XMSSPrivateKeyParameters.Builder(xmssParams)
             .withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
-            .withPublicSeed(privateKey.getPublicSeed()).withBDSState(new BDS(xmss)).build();
-        XMSSPublicKeyParameters xmssPublicKey = new XMSSPublicKeyParameters.Builder(xmss.getParams()).withPublicSeed(privateKey.getPublicSeed())
+            .withPublicSeed(privateKey.getPublicSeed()).withBDSState(new BDS(xmssParams)).build();
+        XMSSPublicKeyParameters xmssPublicKey = new XMSSPublicKeyParameters.Builder(xmssParams).withPublicSeed(privateKey.getPublicSeed())
             .build();
 
             /* import to xmss */
         xmss.importState(xmssPrivateKey, xmssPublicKey);
+        xmssParams.getWOTSPlus().importKeys(new byte[params.getDigestSize()], xmssPrivateKey.getPublicSeed());
 
             /* get root */
         int rootLayerIndex = params.getLayers() - 1;
@@ -61,15 +65,15 @@ public final class XMSSMTKeyPairGenerator
             .build();
 
           		/* store BDS instance of root xmss instance */
-        BDS bdsRoot = new BDS(xmss);
-        XMSSNode root = bdsRoot.initialize(xmssPrivateKey, otsHashAddress);
+        BDS bdsRoot = new BDS(xmssParams, xmssPrivateKey.getPublicSeed(), xmssPrivateKey.getSecretKeySeed(), otsHashAddress);
+        XMSSNode root = bdsRoot.getRoot();
         privateKey.getBDSState().put(rootLayerIndex, bdsRoot);
         xmss.setRoot(root.getValue());
 
             /* set XMSS^MT root / create public key */
         privateKey = new XMSSMTPrivateKeyParameters.Builder(params).withSecretKeySeed(privateKey.getSecretKeySeed())
             .withSecretKeyPRF(privateKey.getSecretKeyPRF()).withPublicSeed(privateKey.getPublicSeed())
-            .withRoot(xmss.getRoot()).withBDSState(privateKey.getBDSState()).build();
+            .withRoot(root.getValue()).withBDSState(privateKey.getBDSState()).build();
         publicKey = new XMSSMTPublicKeyParameters.Builder(params).withRoot(root.getValue())
             .withPublicSeed(privateKey.getPublicSeed()).build();
 

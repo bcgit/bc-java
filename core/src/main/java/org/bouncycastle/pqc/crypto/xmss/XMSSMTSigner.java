@@ -16,6 +16,7 @@ public class XMSSMTSigner
     private XMSSMTPrivateKeyParameters privateKey;
     private XMSSMTPublicKeyParameters publicKey;
     private XMSSMTParameters params;
+    private XMSSParameters xmssParams;
     private XMSS xmss;
 
     private WOTSPlus wotsPlus;
@@ -41,6 +42,7 @@ public class XMSSMTSigner
             xmss = params.getXMSS();
         }
 
+        xmssParams = xmss.getParams();
         wotsPlus = new WOTSPlus(new WOTSPlusParameters(params.getDigest()));
     }
 
@@ -71,7 +73,7 @@ public class XMSSMTSigner
         // privateKey.increaseIndex(this);
         long globalIndex = privateKey.getIndex();
         int totalHeight = params.getHeight();
-        int xmssHeight = xmss.getParams().getHeight();
+        int xmssHeight = xmssParams.getHeight();
         if (!XMSSUtil.isIndexValid(totalHeight, globalIndex))
         {
             throw new IllegalStateException("index out of bounds");
@@ -105,8 +107,7 @@ public class XMSSMTSigner
       		/* get authentication path from BDS */
         if (bdsState.get(0) == null || indexLeaf == 0)
         {
-            bdsState.put(0, new BDS(xmss));
-            bdsState.get(0).initialize(xmss.getPrivateKey(), otsHashAddress);
+            bdsState.put(0, new BDS(xmssParams, xmss.getPrivateKey().getPublicSeed(), xmss.getPrivateKey().getSecretKeySeed(), otsHashAddress));
         }
 
         XMSSReducedSignature reducedSignature = new XMSSReducedSignature.Builder(xmss.getParams())
@@ -140,11 +141,10 @@ public class XMSSMTSigner
       			/* get authentication path from BDS */
             if (bdsState.get(layer) == null || XMSSUtil.isNewBDSInitNeeded(globalIndex, xmssHeight, layer))
             {
-                bdsState.put(layer, new BDS(xmss));
-                bdsState.get(layer).initialize(xmss.getPrivateKey(), otsHashAddress);
+                bdsState.put(layer, new BDS(xmssParams, xmss.getPrivateKey().getPublicSeed(), xmss.getPrivateKey().getSecretKeySeed(), otsHashAddress));
             }
 
-            reducedSignature = new XMSSReducedSignature.Builder(xmss.getParams())
+            reducedSignature = new XMSSReducedSignature.Builder(xmssParams)
                     .withWOTSPlusSignature(wotsPlusSignature)
                     .withAuthPath(bdsState.get(layer).getAuthenticationPath()).build();
 
