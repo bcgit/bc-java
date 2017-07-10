@@ -80,7 +80,8 @@ public class RegressionTest
         new ThreefishTest(),
         new SM4Test(),
         new TLSKDFTest(),
-        new BCFKSStoreTest()
+        new BCFKSStoreTest(),
+        new DSTU7624Test()
     };
 
     public static void main(

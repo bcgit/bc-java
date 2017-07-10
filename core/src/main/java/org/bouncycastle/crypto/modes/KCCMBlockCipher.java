@@ -282,6 +282,8 @@ public class KCCMBlockCipher
                 out[outOff + byteIndex] = (byte)(buffer[byteIndex] ^ macBlock[byteIndex]);
             }
 
+            System.arraycopy(macBlock, 0, mac, 0, macSize);
+            
             reset();
 
             return len + macSize;
@@ -345,7 +347,7 @@ public class KCCMBlockCipher
 
             reset();
 
-            return len;
+            return len - macSize;
         }
     }
 
@@ -394,7 +396,6 @@ public class KCCMBlockCipher
 
     public byte[] getMac()
     {
-        System.arraycopy(macBlock, 0, mac, 0, macSize);
         return Arrays.clone(mac);
     }
 
@@ -413,6 +414,7 @@ public class KCCMBlockCipher
         Arrays.fill(G1, (byte)0);
         Arrays.fill(buffer, (byte)0);
         Arrays.fill(counter, (byte)0);
+        Arrays.fill(macBlock, (byte)0);
         counter[0] = 0x01;
         data.reset();
         associatedText.reset();
