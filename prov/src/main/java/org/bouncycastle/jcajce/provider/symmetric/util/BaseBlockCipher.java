@@ -31,6 +31,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.engines.DSTU7624Engine;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
@@ -40,6 +41,9 @@ import org.bouncycastle.crypto.modes.EAXBlockCipher;
 import org.bouncycastle.crypto.modes.GCFBBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.modes.GOFBBlockCipher;
+import org.bouncycastle.crypto.modes.KCCMBlockCipher;
+import org.bouncycastle.crypto.modes.KCTRBlockCipher;
+import org.bouncycastle.crypto.modes.KGCMBlockCipher;
 import org.bouncycastle.crypto.modes.OCBBlockCipher;
 import org.bouncycastle.crypto.modes.OFBBlockCipher;
 import org.bouncycastle.crypto.modes.OpenPGPCFBBlockCipher;
@@ -336,8 +340,16 @@ public class BaseBlockCipher
         {
             ivLength = baseEngine.getBlockSize();
             fixedIv = false;
-            cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
-                        new SICBlockCipher(baseEngine)));
+            if (baseEngine instanceof DSTU7624Engine)
+            {
+                cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
+                                    new KCTRBlockCipher(baseEngine)));
+            }
+            else
+            {
+                cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
+                    new SICBlockCipher(baseEngine)));
+            }
         }
         else if (modeName.startsWith("GOFB"))
         {
@@ -359,7 +371,14 @@ public class BaseBlockCipher
         else if (modeName.startsWith("CCM"))
         {
             ivLength = 13; // CCM nonce 7..13 bytes
-            cipher = new AEADGenericBlockCipher(new CCMBlockCipher(baseEngine));
+            if (baseEngine instanceof DSTU7624Engine)
+            {
+                cipher = new AEADGenericBlockCipher(new KCCMBlockCipher(baseEngine));
+            }
+            else
+            {
+                cipher = new AEADGenericBlockCipher(new CCMBlockCipher(baseEngine));
+            }
         }
         else if (modeName.startsWith("OCB"))
         {
@@ -384,7 +403,14 @@ public class BaseBlockCipher
         else if (modeName.startsWith("GCM"))
         {
             ivLength = baseEngine.getBlockSize();
-            cipher = new AEADGenericBlockCipher(new GCMBlockCipher(baseEngine));
+            if (baseEngine instanceof DSTU7624Engine)
+            {
+                cipher = new AEADGenericBlockCipher(new KGCMBlockCipher(baseEngine));
+            }
+            else
+            {
+                cipher = new AEADGenericBlockCipher(new GCMBlockCipher(baseEngine));
+            }
         }
         else
         {
