@@ -1,7 +1,6 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
 import java.security.SecureRandom;
-import java.util.Map;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.KeyGenerationParameters;
@@ -76,7 +75,7 @@ public final class XMSSMTKeyPairGenerator
         return new AsymmetricCipherKeyPair(publicKey, privateKey);
     }
 
-    private XMSSMTPrivateKeyParameters generatePrivateKey(Map<Integer, BDS> bdsState)
+    private XMSSMTPrivateKeyParameters generatePrivateKey(BDSStateMap bdsState)
     {
         int n = params.getDigestSize();
         byte[] secretKeySeed = new byte[n];
