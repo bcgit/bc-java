@@ -17,6 +17,8 @@ public final class BDS
 
     private static final long serialVersionUID = 1L;
 
+
+
     private final class TreeHash
         implements Serializable
     {
@@ -170,7 +172,6 @@ public final class BDS
         }
     }
 
-    private transient XMSS xmss;
     private transient WOTSPlus wotsPlus;
     private final int treeHeight;
     private int k;
@@ -182,17 +183,27 @@ public final class BDS
     private Map<Integer, XMSSNode> keep;
     private int index;
 
-    protected BDS(XMSS xmss)
+    private BDS(XMSS xmss)
     {
-        super();
-        if (xmss == null)
-        {
-            throw new NullPointerException("xmss == null");
-        }
-        this.xmss = xmss;
-        wotsPlus = xmss.getWOTSPlus();
-        treeHeight = xmss.getParams().getHeight();
-        k = xmss.getParams().getK();
+        this(xmss.getWOTSPlus(), xmss.getParams().getHeight(), xmss.getParams().getK());
+    }
+
+    BDS(XMSSParameters params)
+    {
+        this(params.getWOTSPlus(), params.getHeight(), params.getK());
+    }
+
+    BDS(XMSSParameters params, byte[] publicSeed, byte[] secretKeySeed, OTSHashAddress otsHashAddress)
+    {
+        this(params);
+        this.initialize(publicSeed, secretKeySeed, otsHashAddress);
+    }
+
+    private BDS(WOTSPlus wotsPlus, int treeHeight, int k)
+    {
+        this.wotsPlus = wotsPlus;
+        this.treeHeight = treeHeight;
+        this.k = k;
         if (k > treeHeight || k < 2 || ((treeHeight - k) % 2) != 0)
         {
             throw new IllegalArgumentException("illegal value for BDS parameter k");
@@ -214,7 +225,7 @@ public final class BDS
         }
     }
 
-    protected XMSSNode initialize(XMSSPrivateKeyParameters privateKey, OTSHashAddress otsHashAddress)
+    private void initialize(byte[] publicSeed, byte[] secretSeed, OTSHashAddress otsHashAddress)
     {
         if (otsHashAddress == null)
         {
@@ -241,7 +252,7 @@ public final class BDS
 			 * import WOTSPlusSecretKey as its needed to calculate the public
 			 * key on the fly
 			 */
-            wotsPlus.importKeys(wotsPlus.getWOTSPlusSecretKey(privateKey.getSecretKeySeed(), otsHashAddress), privateKey.getPublicSeed());
+            wotsPlus.importKeys(wotsPlus.getWOTSPlusSecretKey(secretSeed, otsHashAddress), publicSeed);
             WOTSPlusPublicKeyParameters wotsPlusPublicKey = wotsPlus.getPublicKey(otsHashAddress);
             lTreeAddress = (LTreeAddress)new LTreeAddress.Builder().withLayerAddress(lTreeAddress.getLayerAddress())
                 .withTreeAddress(lTreeAddress.getTreeAddress()).withLTreeAddress(indexLeaf)
@@ -299,7 +310,6 @@ public final class BDS
             stack.push(node);
         }
         root = stack.pop();
-        return root.clone();
     }
 
     protected void nextAuthenticationPath(XMSSPrivateKeyParameters privateKey, OTSHashAddress otsHashAddress)
@@ -430,10 +440,6 @@ public final class BDS
 
     protected void validate()
     {
-        if (treeHeight != xmss.getParams().getHeight())
-        {
-            throw new IllegalStateException("wrong height");
-        }
         if (authenticationPath == null)
         {
             throw new IllegalStateException("authenticationPath == null");
@@ -482,7 +488,10 @@ public final class BDS
 
     protected void setXMSS(XMSS xmss)
     {
-        this.xmss = xmss;
+        if (treeHeight != xmss.getParams().getHeight())
+        {
+            throw new IllegalStateException("wrong height");
+        }
         this.wotsPlus = xmss.getWOTSPlus();
     }
 
