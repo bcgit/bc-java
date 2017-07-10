@@ -299,7 +299,7 @@ public class XMSS
 
     protected void setRoot(byte[] root)
     {
-        privateKey = new XMSSPrivateKeyParameters.Builder(params).withIndex(privateKey.getIndex())
+        privateKey = new XMSSPrivateKeyParameters.Builder(params)
             .withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
             .withPublicSeed(getPublicSeed()).withRoot(root).withBDSState(privateKey.getBDSState()).build();
         publicKey = new XMSSPublicKeyParameters.Builder(params).withRoot(root).withPublicSeed(getPublicSeed())
@@ -318,7 +318,7 @@ public class XMSS
 
     protected void setIndex(int index)
     {
-        privateKey = new XMSSPrivateKeyParameters.Builder(params).withIndex(index)
+        privateKey = new XMSSPrivateKeyParameters.Builder(params)
             .withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
             .withPublicSeed(privateKey.getPublicSeed()).withRoot(privateKey.getRoot())
             .withBDSState(privateKey.getBDSState()).build();
@@ -336,7 +336,7 @@ public class XMSS
 
     protected void setPublicSeed(byte[] publicSeed)
     {
-        privateKey = new XMSSPrivateKeyParameters.Builder(params).withIndex(privateKey.getIndex())
+        privateKey = new XMSSPrivateKeyParameters.Builder(params)
             .withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
             .withPublicSeed(publicSeed).withRoot(getRoot()).withBDSState(privateKey.getBDSState()).build();
         publicKey = new XMSSPublicKeyParameters.Builder(params).withRoot(getRoot()).withPublicSeed(publicSeed)

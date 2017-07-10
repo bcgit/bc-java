@@ -38,7 +38,7 @@ public final class XMSSKeyPairGenerator
         XMSSPrivateKeyParameters privateKey = generatePrivateKey(params, prng);
         XMSSNode root = privateKey.getBDSState().getRoot();
 
-        privateKey = new XMSSPrivateKeyParameters.Builder(params).withIndex(privateKey.getIndex())
+        privateKey = new XMSSPrivateKeyParameters.Builder(params)
             .withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
             .withPublicSeed(privateKey.getPublicSeed()).withRoot(root.getValue())
             .withBDSState(privateKey.getBDSState()).build();

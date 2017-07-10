@@ -16,162 +16,7 @@ public final class BDS
 {
 
     private static final long serialVersionUID = 1L;
-
-
-
-    private final class TreeHash
-        implements Serializable
-    {
-
-        private static final long serialVersionUID = 1L;
-
-        private XMSSNode tailNode;
-        private final int initialHeight;
-        private int height;
-        private int nextIndex;
-        private boolean initialized;
-        private boolean finished;
-
-        private TreeHash(int initialHeight)
-        {
-            super();
-            this.initialHeight = initialHeight;
-            initialized = false;
-            finished = false;
-        }
-
-        private void initialize(int nextIndex)
-        {
-            tailNode = null;
-            height = initialHeight;
-            this.nextIndex = nextIndex;
-            initialized = true;
-            finished = false;
-        }
-
-        private void update(byte[] publicSeed, byte[] secretSeed, OTSHashAddress otsHashAddress)
-        {
-            if (otsHashAddress == null)
-            {
-                throw new NullPointerException("otsHashAddress == null");
-            }
-            if (finished || !initialized)
-            {
-                throw new IllegalStateException("finished or not initialized");
-            }
-            /* prepare addresses */
-            otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder()
-                .withLayerAddress(otsHashAddress.getLayerAddress()).withTreeAddress(otsHashAddress.getTreeAddress())
-                .withOTSAddress(nextIndex).withChainAddress(otsHashAddress.getChainAddress())
-                .withHashAddress(otsHashAddress.getHashAddress()).withKeyAndMask(otsHashAddress.getKeyAndMask())
-                .build();
-            LTreeAddress lTreeAddress = (LTreeAddress)new LTreeAddress.Builder()
-                .withLayerAddress(otsHashAddress.getLayerAddress()).withTreeAddress(otsHashAddress.getTreeAddress())
-                .withLTreeAddress(nextIndex).build();
-            HashTreeAddress hashTreeAddress = (HashTreeAddress)new HashTreeAddress.Builder()
-                .withLayerAddress(otsHashAddress.getLayerAddress()).withTreeAddress(otsHashAddress.getTreeAddress())
-                .withTreeIndex(nextIndex).build();
-
-			/* calculate leaf node */
-            wotsPlus.importKeys(wotsPlus.getWOTSPlusSecretKey(secretSeed, otsHashAddress), publicSeed);
-            WOTSPlusPublicKeyParameters wotsPlusPublicKey = wotsPlus.getPublicKey(otsHashAddress);
-            XMSSNode node = XMSSNodeUtil.lTree(wotsPlus, wotsPlusPublicKey, lTreeAddress);
-
-            while (!stack.isEmpty() && stack.peek().getHeight() == node.getHeight()
-                && stack.peek().getHeight() != initialHeight)
-            {
-                hashTreeAddress = (HashTreeAddress)new HashTreeAddress.Builder()
-                    .withLayerAddress(hashTreeAddress.getLayerAddress())
-                    .withTreeAddress(hashTreeAddress.getTreeAddress())
-                    .withTreeHeight(hashTreeAddress.getTreeHeight())
-                    .withTreeIndex((hashTreeAddress.getTreeIndex() - 1) / 2)
-                    .withKeyAndMask(hashTreeAddress.getKeyAndMask()).build();
-                node = XMSSNodeUtil.randomizeHash(wotsPlus, stack.pop(), node, hashTreeAddress);
-                node = new XMSSNode(node.getHeight() + 1, node.getValue());
-                hashTreeAddress = (HashTreeAddress)new HashTreeAddress.Builder()
-                    .withLayerAddress(hashTreeAddress.getLayerAddress())
-                    .withTreeAddress(hashTreeAddress.getTreeAddress())
-                    .withTreeHeight(hashTreeAddress.getTreeHeight() + 1)
-                    .withTreeIndex(hashTreeAddress.getTreeIndex()).withKeyAndMask(hashTreeAddress.getKeyAndMask())
-                    .build();
-            }
-
-            if (tailNode == null)
-            {
-                tailNode = node;
-            }
-            else
-            {
-                if (tailNode.getHeight() == node.getHeight())
-                {
-                    hashTreeAddress = (HashTreeAddress)new HashTreeAddress.Builder()
-                        .withLayerAddress(hashTreeAddress.getLayerAddress())
-                        .withTreeAddress(hashTreeAddress.getTreeAddress())
-                        .withTreeHeight(hashTreeAddress.getTreeHeight())
-                        .withTreeIndex((hashTreeAddress.getTreeIndex() - 1) / 2)
-                        .withKeyAndMask(hashTreeAddress.getKeyAndMask()).build();
-                    node = XMSSNodeUtil.randomizeHash(wotsPlus, tailNode, node, hashTreeAddress);
-                    node = new XMSSNode(tailNode.getHeight() + 1, node.getValue());
-                    tailNode = node;
-                    hashTreeAddress = (HashTreeAddress)new HashTreeAddress.Builder()
-                        .withLayerAddress(hashTreeAddress.getLayerAddress())
-                        .withTreeAddress(hashTreeAddress.getTreeAddress())
-                        .withTreeHeight(hashTreeAddress.getTreeHeight() + 1)
-                        .withTreeIndex(hashTreeAddress.getTreeIndex())
-                        .withKeyAndMask(hashTreeAddress.getKeyAndMask()).build();
-                }
-                else
-                {
-                    stack.push(node);
-                }
-            }
-
-            if (tailNode.getHeight() == initialHeight)
-            {
-                finished = true;
-            }
-            else
-            {
-                height = node.getHeight();
-                nextIndex++;
-            }
-        }
-
-        private int getHeight()
-        {
-            if (!initialized || finished)
-            {
-                return Integer.MAX_VALUE;
-            }
-            return height;
-        }
-
-        private int getIndexLeaf()
-        {
-            return nextIndex;
-        }
-
-        private void setNode(XMSSNode node)
-        {
-            tailNode = node;
-            height = node.getHeight();
-            if (height == initialHeight)
-            {
-                finished = true;
-            }
-        }
-
-        private boolean isFinished()
-        {
-            return finished;
-        }
-
-        private boolean isInitialized()
-        {
-            return initialized;
-        }
-    }
-
+    
     private transient WOTSPlus wotsPlus;
     private final int treeHeight;
     private int k;
@@ -179,9 +24,10 @@ public final class BDS
     private List<XMSSNode> authenticationPath;
     private Map<Integer, LinkedList<XMSSNode>> retain;
     private Stack<XMSSNode> stack;
-    private List<TreeHash> treeHashInstances;
+    private List<BDSTreeHash> treeHashInstances;
     private Map<Integer, XMSSNode> keep;
     private int index;
+    private boolean used;
 
     BDS(XMSSParameters params)
     {
@@ -206,18 +52,43 @@ public final class BDS
         authenticationPath = new ArrayList<XMSSNode>();
         retain = new TreeMap<Integer, LinkedList<XMSSNode>>();
         stack = new Stack<XMSSNode>();
-        initializeTreeHashInstances();
+        initializeBDSTreeHashInstances();
         keep = new TreeMap<Integer, XMSSNode>();
         index = 0;
+        this.used = false;
     }
 
-    private void initializeTreeHashInstances()
+    private BDS(BDS last)
     {
-        treeHashInstances = new ArrayList<TreeHash>();
+        this.wotsPlus = last.wotsPlus;
+        this.treeHeight = last.treeHeight;
+        this.k = last.k;
+        this.root = last.root;
+        this.authenticationPath = last.authenticationPath;
+        this.retain = last.retain;
+        this.stack = last.stack;
+        this.treeHashInstances = last.treeHashInstances;
+        this.keep = last.keep;
+        this.index = last.index + 1;
+    }
+
+    public BDS getNextState()
+    {
+        return new BDS(this);
+    }
+
+    private void initializeBDSTreeHashInstances()
+    {
+        treeHashInstances = new ArrayList<BDSTreeHash>();
         for (int height = 0; height < (treeHeight - k); height++)
         {
-            treeHashInstances.add(new TreeHash(height));
+            treeHashInstances.add(new BDSTreeHash(height));
         }
+    }
+
+    private WOTSPlus getWOTSPlus()
+    {
+        return wotsPlus;
     }
 
     private void initialize(byte[] publicSeed, byte[] secretSeed, OTSHashAddress otsHashAddress)
@@ -313,6 +184,10 @@ public final class BDS
         {
             throw new NullPointerException("otsHashAddress == null");
         }
+        if (used)
+        {
+            throw new IllegalStateException("index already used");
+        }
         if (index > ((1 << treeHeight) - 2))
         {
             throw new IllegalStateException("index out of bounds");
@@ -371,7 +246,7 @@ public final class BDS
             {
                 if (height < (treeHeight - k))
                 {
-                    authenticationPath.set(height, treeHashInstances.get(height).tailNode.clone());
+                    authenticationPath.set(height, treeHashInstances.get(height).getTailNode());
                 }
                 else
                 {
@@ -390,23 +265,29 @@ public final class BDS
                 }
             }
         }
-
+ 
 		/* update treehash instances */
         for (int i = 0; i < (treeHeight - k) >> 1; i++)
         {
-            TreeHash treeHash = getTreeHashInstanceForUpdate();
+            BDSTreeHash treeHash = getBDSTreeHashInstanceForUpdate();
             if (treeHash != null)
             {
-                treeHash.update(publicSeed, secretSeed, otsHashAddress);
+                treeHash.update(stack, wotsPlus, publicSeed, secretSeed, otsHashAddress);
             }
         }
-        index++;
+
+        used = true;
     }
 
-    private TreeHash getTreeHashInstanceForUpdate()
+    boolean isUsed()
     {
-        TreeHash ret = null;
-        for (TreeHash treeHash : treeHashInstances)
+        return used;
+    }
+
+    private BDSTreeHash getBDSTreeHashInstanceForUpdate()
+    {
+        BDSTreeHash ret = null;
+        for (BDSTreeHash treeHash : treeHashInstances)
         {
             if (treeHash.isFinished() || !treeHash.isInitialized())
             {
@@ -487,6 +368,7 @@ public final class BDS
         {
             throw new IllegalStateException("wrong height");
         }
+
         this.wotsPlus = xmss.getWOTSPlus();
     }
 
