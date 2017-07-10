@@ -1,7 +1,5 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
-import java.util.Map;
-
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.StateAwareMessageSigner;
@@ -14,12 +12,14 @@ public class XMSSMTSigner
     implements StateAwareMessageSigner
 {
     private XMSSMTPrivateKeyParameters privateKey;
+    private XMSSMTPrivateKeyParameters nextKeyGenerator;
     private XMSSMTPublicKeyParameters publicKey;
     private XMSSMTParameters params;
     private XMSSParameters xmssParams;
 
     private WOTSPlus wotsPlus;
 
+    private boolean hasGenerated;
     private boolean initSign;
 
     public void init(boolean forSigning, CipherParameters param)
@@ -27,7 +27,9 @@ public class XMSSMTSigner
         if (forSigning)
         {
             initSign = true;
+            hasGenerated = false;
             privateKey = (XMSSMTPrivateKeyParameters)param;
+            nextKeyGenerator = privateKey;
 
             params = privateKey.getParameters();
             xmssParams = params.getXMSSParameters();
@@ -66,7 +68,11 @@ public class XMSSMTSigner
             throw new IllegalStateException("not initialized");
         }
 
-        Map<Integer, BDS> bdsState = privateKey.getBDSState();
+        // TODO: it might be the case that we can make this "thread safe" by synchronizing on the state map while signing
+        BDSStateMap bdsState = privateKey.getBDSState();
+
+        // make sure there are no used indexes
+        bdsState.update();
 
         // privateKey.increaseIndex(this);
         long globalIndex = privateKey.getIndex();
@@ -136,7 +142,7 @@ public class XMSSMTSigner
             wotsPlusSignature = wotsSign(root.getValue(), otsHashAddress);
       			/* get authentication path from BDS */
             if (bdsState.get(layer) == null || XMSSUtil.isNewBDSInitNeeded(globalIndex, xmssHeight, layer))
-            {
+            {          
                 bdsState.put(layer, new BDS(xmssParams, privateKey.getPublicSeed(), privateKey.getSecretKeySeed(), otsHashAddress));
             }
 
@@ -154,7 +160,17 @@ public class XMSSMTSigner
             }
         }
 
-        privateKey = privateKey.getNextKey();
+        hasGenerated = true;
+
+        if (nextKeyGenerator != null)
+        {
+            privateKey = nextKeyGenerator.getNextKey();
+            nextKeyGenerator = privateKey;
+        }
+        else
+        {
+            privateKey = null;
+        }
 
         return signature.toByteArray();
     }
@@ -231,10 +247,24 @@ public class XMSSMTSigner
 
     public AsymmetricKeyParameter getUpdatedPrivateKey()
     {
-        XMSSMTPrivateKeyParameters privKey = privateKey;
+        // if we've generated a signature return the last private key generated
+        // if we've only initialised leave it in place and return the next one instead.
+        if (hasGenerated)
+        {
+            XMSSMTPrivateKeyParameters privKey = privateKey;
 
-        privateKey = null;
+            privateKey = null;
+            nextKeyGenerator = null;
 
-        return privKey;
+            return privKey;
+        }
+        else
+        {
+            XMSSMTPrivateKeyParameters privKey = nextKeyGenerator.getNextKey();
+
+            nextKeyGenerator = null;
+
+            return privKey;
+        }
     }
 }

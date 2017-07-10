@@ -37,7 +37,7 @@ public class XMSSMTTest
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSSMT", "BCPQC");
 
-        kpg.initialize(new XMSSMTParameterSpec(20,10, XMSSMTParameterSpec.SHA256), new SecureRandom());
+        kpg.initialize(new XMSSMTParameterSpec(20, 10, XMSSMTParameterSpec.SHA256), new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -92,12 +92,12 @@ public class XMSSMTTest
         assertTrue(xmssSig.verify(s));
     }
 
-    public void testXMSSMTSha256SignatureMultiple()
+    public void testXMSSSha256SignatureMultiple()
         throws Exception
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSSMT", "BCPQC");
 
-        kpg.initialize(new XMSSMTParameterSpec(20,10, XMSSMTParameterSpec.SHA256), new SecureRandom());
+        kpg.initialize(new XMSSMTParameterSpec(20, 10, XMSSMTParameterSpec.SHA256), new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -109,17 +109,17 @@ public class XMSSMTTest
 
         sig1.initSign(kp.getPrivate());
 
+        sig2.initSign(sig1.getUpdatedPrivateKey());
+
+        sig3.initSign(sig2.getUpdatedPrivateKey());
+
         sig1.update(msg, 0, msg.length);
 
         byte[] s1 = sig1.sign();
 
-        sig2.initSign(sig1.getUpdatedPrivateKey());
-
         sig2.update(msg, 0, msg.length);
 
         byte[] s2 = sig2.sign();
-
-        sig3.initSign(sig2.getUpdatedPrivateKey());
 
         sig3.update(msg, 0, msg.length);
 
@@ -131,9 +131,6 @@ public class XMSSMTTest
 
         assertTrue(sig1.verify(s1));
 
-        sig1 = (StateAwareSignature)Signature.getInstance("SHA256withXMSSMT", "BCPQC");
-
-        sig1.initVerify(kp.getPublic());
         sig1.update(msg, 0, msg.length);
 
         assertTrue(sig1.verify(s2));
@@ -165,7 +162,7 @@ public class XMSSMTTest
         assertEquals(20, privKey.getHeight());
         assertEquals(10, privKey.getLayers());
         assertEquals(XMSSParameterSpec.SHA512, privKey.getTreeDigest());
-        
+
         assertEquals(20, pubKey.getHeight());
         assertEquals(10, pubKey.getLayers());
         assertEquals(XMSSParameterSpec.SHA512, pubKey.getTreeDigest());
@@ -176,7 +173,7 @@ public class XMSSMTTest
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSSMT", "BCPQC");
 
-        kpg.initialize(new XMSSMTParameterSpec(20,10, XMSSMTParameterSpec.SHA256), new SecureRandom());
+        kpg.initialize(new XMSSMTParameterSpec(20, 10, XMSSMTParameterSpec.SHA256), new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
