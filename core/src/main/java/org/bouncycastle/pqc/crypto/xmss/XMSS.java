@@ -149,7 +149,7 @@ public class XMSS
         }
         /* import keys */
         XMSSPrivateKeyParameters tmpPrivateKey = new XMSSPrivateKeyParameters.Builder(params)
-            .withPrivateKey(privateKey, this).build();
+            .withPrivateKey(privateKey, this.getParams()).build();
         XMSSPublicKeyParameters tmpPublicKey = new XMSSPublicKeyParameters.Builder(params).withPublicKey(publicKey)
             .build();
         if (!XMSSUtil.compareByteArray(tmpPrivateKey.getRoot(), tmpPublicKey.getRoot()))
