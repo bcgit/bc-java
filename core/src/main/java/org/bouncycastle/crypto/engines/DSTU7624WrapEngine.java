@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -40,6 +41,10 @@ public class DSTU7624WrapEngine
 
     public void init(boolean forWrapping, CipherParameters param)
     {
+        if (param instanceof ParametersWithRandom)
+        {
+            param = ((ParametersWithRandom)param).getParameters();
+        }
 
         this.forWrapping = forWrapping;
         if (param instanceof KeyParameter)
