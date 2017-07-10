@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.pqc.crypto.xmss.XMSS;
 import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
@@ -26,7 +25,7 @@ public class XMSSPrivateKeyTest extends TestCase {
 
 		byte[] export = privateKey.toByteArray();
 
-		XMSSPrivateKeyParameters privateKey2 = new XMSSPrivateKeyParameters.Builder(params).withPrivateKey(export, new XMSS(params, new NullPRNG())).build();
+		XMSSPrivateKeyParameters privateKey2 = new XMSSPrivateKeyParameters.Builder(params).withPrivateKey(export, params).build();
 
 		assertEquals(privateKey.getIndex(), privateKey2.getIndex());
 		assertEquals(true, XMSSUtil.compareByteArray(privateKey.getSecretKeySeed(), privateKey2.getSecretKeySeed()));
