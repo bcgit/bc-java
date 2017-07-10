@@ -183,11 +183,6 @@ public final class BDS
     private Map<Integer, XMSSNode> keep;
     private int index;
 
-    private BDS(XMSS xmss)
-    {
-        this(xmss.getWOTSPlus(), xmss.getParams().getHeight(), xmss.getParams().getK());
-    }
-
     BDS(XMSSParameters params)
     {
         this(params.getWOTSPlus(), params.getHeight(), params.getK());
