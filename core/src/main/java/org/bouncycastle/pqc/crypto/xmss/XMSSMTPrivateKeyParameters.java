@@ -171,7 +171,7 @@ public final class XMSSMTPrivateKeyParameters
         private byte[] root = null;
         private Map<Integer, BDS> bdsState = null;
         private byte[] privateKey = null;
-        private XMSS xmss = null;
+        private XMSSParameters xmss = null;
 
         public Builder(XMSSMTParameters params)
         {
@@ -215,7 +215,7 @@ public final class XMSSMTPrivateKeyParameters
             return this;
         }
 
-        public Builder withPrivateKey(byte[] privateKeyVal, XMSS xmssVal)
+        public Builder withPrivateKey(byte[] privateKeyVal, XMSSParameters xmssVal)
         {
             privateKey = XMSSUtil.cloneArray(privateKeyVal);
             xmss = xmssVal;

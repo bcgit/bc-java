@@ -80,7 +80,7 @@ public class XMSSSigner
         int treeHeight = this.params.getHeight();
         if (index < ((1 << treeHeight) - 1))
         {
-            privateKey.getBDSState().nextAuthenticationPath(privateKey, (OTSHashAddress)new OTSHashAddress.Builder().build());
+            privateKey.getBDSState().nextAuthenticationPath(privateKey.getPublicSeed(), privateKey.getSecretKeySeed(), (OTSHashAddress)new OTSHashAddress.Builder().build());
         }
 
         /* update index */
