@@ -21,7 +21,7 @@ public class XMSSPrivateKeyTest extends TestCase {
 				(byte) 0x0f, (byte) 0x10, (byte) 0x20, (byte) 0x30, (byte) 0x03, (byte) 0x40, (byte) 0x50, (byte) 0x60,
 				(byte) 0x70, (byte) 0x80, (byte) 0x90, (byte) 0xa0, (byte) 0xb0, (byte) 0xc0, (byte) 0xd0, (byte) 0xe0,
 				(byte) 0xf0 };
-		XMSSPrivateKeyParameters privateKey = new XMSSPrivateKeyParameters.Builder(params).withIndex(0xaa).withRoot(root).build();
+		XMSSPrivateKeyParameters privateKey = new XMSSPrivateKeyParameters.Builder(params).withRoot(root).build();
 
 		byte[] export = privateKey.toByteArray();
 
