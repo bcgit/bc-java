@@ -61,7 +61,7 @@ public final class XMSSMT
         XMSSPrivateKeyParameters xmssPrivateKey = new XMSSPrivateKeyParameters.Builder(xmss.getParams())
             .withSecretKeySeed(privateKey.getSecretKeySeed())
             .withSecretKeyPRF(privateKey.getSecretKeyPRF()).withPublicSeed(privateKey.getPublicSeed())
-            .withRoot(privateKey.getRoot()).withBDSState(new BDS(xmss)).build();
+            .withRoot(privateKey.getRoot()).withBDSState(new BDS(xmss.getParams())).build();
         XMSSPublicKeyParameters xmssPublicKey = new XMSSPublicKeyParameters.Builder(xmss.getParams())
             .withRoot(privateKey.getRoot()).withPublicSeed(getPublicSeed()).build();
 
@@ -108,7 +108,7 @@ public final class XMSSMT
         XMSSPrivateKeyParameters xmssPrivateKey = new XMSSPrivateKeyParameters.Builder(xmss.getParams())
             .withSecretKeySeed(xmssMTPrivateKey.getSecretKeySeed())
             .withSecretKeyPRF(xmssMTPrivateKey.getSecretKeyPRF()).withPublicSeed(xmssMTPrivateKey.getPublicSeed())
-            .withRoot(xmssMTPrivateKey.getRoot()).withBDSState(new BDS(xmss)).build();
+            .withRoot(xmssMTPrivateKey.getRoot()).withBDSState(new BDS(xmss.getParams())).build();
         XMSSPublicKeyParameters xmssPublicKey = new XMSSPublicKeyParameters.Builder(xmss.getParams())
             .withRoot(xmssMTPrivateKey.getRoot()).withPublicSeed(getPublicSeed()).build();
 
