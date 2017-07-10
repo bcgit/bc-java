@@ -49,7 +49,7 @@ public final class BDS
             finished = false;
         }
 
-        private void update(XMSSPrivateKeyParameters privateKey, OTSHashAddress otsHashAddress)
+        private void update(byte[] publicSeed, byte[] secretSeed, OTSHashAddress otsHashAddress)
         {
             if (otsHashAddress == null)
             {
@@ -73,7 +73,7 @@ public final class BDS
                 .withTreeIndex(nextIndex).build();
 
 			/* calculate leaf node */
-            wotsPlus.importKeys(wotsPlus.getWOTSPlusSecretKey(privateKey.getSecretKeySeed(), otsHashAddress), privateKey.getPublicSeed());
+            wotsPlus.importKeys(wotsPlus.getWOTSPlusSecretKey(secretSeed, otsHashAddress), publicSeed);
             WOTSPlusPublicKeyParameters wotsPlusPublicKey = wotsPlus.getPublicKey(otsHashAddress);
             XMSSNode node = XMSSNodeUtil.lTree(wotsPlus, wotsPlusPublicKey, lTreeAddress);
 
@@ -307,7 +307,7 @@ public final class BDS
         root = stack.pop();
     }
 
-    protected void nextAuthenticationPath(XMSSPrivateKeyParameters privateKey, OTSHashAddress otsHashAddress)
+    protected void nextAuthenticationPath(byte[] publicSeed, byte[] secretSeed, OTSHashAddress otsHashAddress)
     {
         if (otsHashAddress == null)
         {
@@ -345,7 +345,7 @@ public final class BDS
 			 * import WOTSPlusSecretKey as its needed to calculate the public
 			 * key on the fly
 			 */
-            wotsPlus.importKeys(wotsPlus.getWOTSPlusSecretKey(privateKey.getSecretKeySeed(), otsHashAddress), privateKey.getPublicSeed());
+            wotsPlus.importKeys(wotsPlus.getWOTSPlusSecretKey(secretSeed, otsHashAddress), publicSeed);
             WOTSPlusPublicKeyParameters wotsPlusPublicKey = wotsPlus.getPublicKey(otsHashAddress);
             lTreeAddress = (LTreeAddress)new LTreeAddress.Builder().withLayerAddress(lTreeAddress.getLayerAddress())
                 .withTreeAddress(lTreeAddress.getTreeAddress()).withLTreeAddress(index)
@@ -397,7 +397,7 @@ public final class BDS
             TreeHash treeHash = getTreeHashInstanceForUpdate();
             if (treeHash != null)
             {
-                treeHash.update(privateKey, otsHashAddress);
+                treeHash.update(publicSeed, secretSeed, otsHashAddress);
             }
         }
         index++;
@@ -481,9 +481,9 @@ public final class BDS
         return authenticationPath;
     }
 
-    protected void setXMSS(XMSS xmss)
+    protected void setXMSS(XMSSParameters xmss)
     {
-        if (treeHeight != xmss.getParams().getHeight())
+        if (treeHeight != xmss.getHeight())
         {
             throw new IllegalStateException("wrong height");
         }

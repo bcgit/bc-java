@@ -17,7 +17,6 @@ public class XMSSMTSigner
     private XMSSMTPublicKeyParameters publicKey;
     private XMSSMTParameters params;
     private XMSSParameters xmssParams;
-    private XMSS xmss;
 
     private WOTSPlus wotsPlus;
 
@@ -31,7 +30,7 @@ public class XMSSMTSigner
             privateKey = (XMSSMTPrivateKeyParameters)param;
 
             params = privateKey.getParameters();
-            xmss = params.getXMSS();
+            xmssParams = params.getXMSSParameters();
         }
         else
         {
@@ -39,10 +38,9 @@ public class XMSSMTSigner
             publicKey = (XMSSMTPublicKeyParameters)param;
 
             params = publicKey.getParameters();
-            xmss = params.getXMSS();
+            xmssParams = params.getXMSSParameters();
         }
-
-        xmssParams = xmss.getParams();
+        
         wotsPlus = new WOTSPlus(new WOTSPlusParameters(params.getDigest()));
     }
 
@@ -92,25 +90,23 @@ public class XMSSMTSigner
         long indexTree = XMSSUtil.getTreeIndex(globalIndex, xmssHeight);
         int indexLeaf = XMSSUtil.getLeafIndex(globalIndex, xmssHeight);
 
-      		/* reset xmss */
-        xmss.setIndex(indexLeaf);
-        xmss.setPublicSeed(privateKey.getPublicSeed());
+        /* reset xmss */
+        wotsPlus.importKeys(new byte[params.getDigestSize()], privateKey.getPublicSeed());
+        /* create signature with XMSS tree on layer 0 */
 
-      		/* create signature with XMSS tree on layer 0 */
-
-      		/* adjust addresses */
+        /* adjust addresses */
         OTSHashAddress otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder().withTreeAddress(indexTree)
             .withOTSAddress(indexLeaf).build();
 
       		/* sign message digest */
-        WOTSPlusSignature wotsPlusSignature = xmss.wotsSign(messageDigest, otsHashAddress);
+        WOTSPlusSignature wotsPlusSignature = wotsSign(messageDigest, otsHashAddress);
       		/* get authentication path from BDS */
         if (bdsState.get(0) == null || indexLeaf == 0)
         {
-            bdsState.put(0, new BDS(xmssParams, xmss.getPrivateKey().getPublicSeed(), xmss.getPrivateKey().getSecretKeySeed(), otsHashAddress));
+            bdsState.put(0, new BDS(xmssParams, privateKey.getPublicSeed(), privateKey.getSecretKeySeed(), otsHashAddress));
         }
 
-        XMSSReducedSignature reducedSignature = new XMSSReducedSignature.Builder(xmss.getParams())
+        XMSSReducedSignature reducedSignature = new XMSSReducedSignature.Builder(xmssParams)
                 .withWOTSPlusSignature(wotsPlusSignature).withAuthPath(bdsState.get(0).getAuthenticationPath())
                 .build();
 
@@ -119,7 +115,7 @@ public class XMSSMTSigner
       		/* prepare authentication path for next leaf */
         if (indexLeaf < ((1 << xmssHeight) - 1))
         {
-            bdsState.get(0).nextAuthenticationPath(xmss.getPrivateKey(), otsHashAddress);
+            bdsState.get(0).nextAuthenticationPath(privateKey.getPublicSeed(), privateKey.getSecretKeySeed(), otsHashAddress);
         }
 
       		/* loop over remaining layers */
@@ -130,18 +126,18 @@ public class XMSSMTSigner
 
             indexLeaf = XMSSUtil.getLeafIndex(indexTree, xmssHeight);
             indexTree = XMSSUtil.getTreeIndex(indexTree, xmssHeight);
-            xmss.setIndex(indexLeaf);
+            //xmss.setIndex(indexLeaf);
 
       			/* adjust addresses */
             otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder().withLayerAddress(layer)
                 .withTreeAddress(indexTree).withOTSAddress(indexLeaf).build();
 
       			/* sign root digest of layer - 1 */
-            wotsPlusSignature = xmss.wotsSign(root.getValue(), otsHashAddress);
+            wotsPlusSignature = wotsSign(root.getValue(), otsHashAddress);
       			/* get authentication path from BDS */
             if (bdsState.get(layer) == null || XMSSUtil.isNewBDSInitNeeded(globalIndex, xmssHeight, layer))
             {
-                bdsState.put(layer, new BDS(xmssParams, xmss.getPrivateKey().getPublicSeed(), xmss.getPrivateKey().getSecretKeySeed(), otsHashAddress));
+                bdsState.put(layer, new BDS(xmssParams, privateKey.getPublicSeed(), privateKey.getSecretKeySeed(), otsHashAddress));
             }
 
             reducedSignature = new XMSSReducedSignature.Builder(xmssParams)
@@ -154,7 +150,7 @@ public class XMSSMTSigner
             if (indexLeaf < ((1 << xmssHeight) - 1)
                 && XMSSUtil.isNewAuthenticationPathNeeded(globalIndex, xmssHeight, layer))
             {
-                bdsState.get(layer).nextAuthenticationPath(xmss.getPrivateKey(), otsHashAddress);
+                bdsState.get(layer).nextAuthenticationPath(privateKey.getPublicSeed(), privateKey.getSecretKeySeed(), otsHashAddress);
             }
         }
 
@@ -189,7 +185,7 @@ public class XMSSMTSigner
         byte[] messageDigest = wotsPlus.getKhf().HMsg(concatenated, message);
 
         long globalIndex = sig.getIndex();
-        int xmssHeight = xmss.getParams().getHeight();
+        int xmssHeight = xmssParams.getHeight();
         long indexTree = XMSSUtil.getTreeIndex(globalIndex, xmssHeight);
         int indexLeaf = XMSSUtil.getLeafIndex(globalIndex, xmssHeight);
 
@@ -219,6 +215,22 @@ public class XMSSMTSigner
 
 		/* compare roots */
         return Arrays.constantTimeAreEqual(rootNode.getValue(), publicKey.getRoot());
+    }
+
+    private WOTSPlusSignature wotsSign(byte[] messageDigest, OTSHashAddress otsHashAddress)
+    {
+        if (messageDigest.length != params.getDigestSize())
+        {
+            throw new IllegalArgumentException("size of messageDigest needs to be equal to size of digest");
+        }
+        if (otsHashAddress == null)
+        {
+            throw new NullPointerException("otsHashAddress == null");
+        }
+		/* (re)initialize WOTS+ instance */
+        wotsPlus.importKeys(wotsPlus.getWOTSPlusSecretKey(privateKey.getSecretKeySeed(), otsHashAddress), privateKey.getPublicSeed());
+		/* create WOTS+ signature */
+        return wotsPlus.sign(messageDigest, otsHashAddress);
     }
 
     public AsymmetricKeyParameter getUpdatedPrivateKey()
