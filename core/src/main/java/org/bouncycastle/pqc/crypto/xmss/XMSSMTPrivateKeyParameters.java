@@ -1,9 +1,6 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
 
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 
@@ -21,7 +18,7 @@ public final class XMSSMTPrivateKeyParameters
     private final byte[] secretKeyPRF;
     private final byte[] publicSeed;
     private final byte[] root;
-    private final Map<Integer, BDS> bdsState;
+    private final BDSStateMap bdsState;
 
     private XMSSMTPrivateKeyParameters(Builder builder)
     {
@@ -70,10 +67,10 @@ public final class XMSSMTPrivateKeyParameters
 			/* import BDS state */
             byte[] bdsStateBinary = XMSSUtil.extractBytesAtOffset(privateKey, position, privateKey.length - position);
 
-            Map<Integer, BDS> bdsImport = null;
+            BDSStateMap bdsImport = null;
             try
             {
-                bdsImport = (TreeMap<Integer, BDS>)XMSSUtil.deserialize(bdsStateBinary);
+                bdsImport = (BDSStateMap)XMSSUtil.deserialize(bdsStateBinary);
             }
             catch (IOException e)
             {
@@ -83,12 +80,7 @@ public final class XMSSMTPrivateKeyParameters
             {
                 e.printStackTrace();
             }
-            for (Integer key : bdsImport.keySet())
-            {
-                BDS bds = bdsImport.get(key);
-                bds.setXMSS(builder.xmss);
-                bds.validate();
-            }
+            bdsImport.setXMSS(builder.xmss);
             bdsState = bdsImport;
         }
         else
@@ -147,14 +139,14 @@ public final class XMSSMTPrivateKeyParameters
             {
                 root = new byte[n];
             }
-            Map<Integer, BDS> tmpBDSState = builder.bdsState;
+            BDSStateMap tmpBDSState = builder.bdsState;
             if (tmpBDSState != null)
             {
                 bdsState = tmpBDSState;
             }
             else
             {
-                bdsState = new TreeMap<Integer, BDS>();
+                bdsState = new BDSStateMap();
             }
         }
     }
@@ -170,7 +162,7 @@ public final class XMSSMTPrivateKeyParameters
         private byte[] secretKeyPRF = null;
         private byte[] publicSeed = null;
         private byte[] root = null;
-        private Map<Integer, BDS> bdsState = null;
+        private BDSStateMap bdsState = null;
         private byte[] privateKey = null;
         private XMSSParameters xmss = null;
 
@@ -210,7 +202,7 @@ public final class XMSSMTPrivateKeyParameters
             return this;
         }
 
-        public Builder withBDSState(Map<Integer, BDS> val)
+        public Builder withBDSState(BDSStateMap val)
         {
             bdsState = val;
             return this;
@@ -270,51 +262,6 @@ public final class XMSSMTPrivateKeyParameters
         return XMSSUtil.concat(out, bdsStateOut);
     }
 
-	/*
-	protected void increaseIndex(XMSSMT mt) {
-		if (mt == null) {
-			throw new NullPointerException("mt == null");
-		}
-		ZonedDateTime currentTime = ZonedDateTime.now(ZoneOffset.UTC);
-		long differenceHours = Duration.between(lastUsage, currentTime).toHours();
-		if (differenceHours >= 24) {
-			mt.getXMSS().setPublicSeed(getPublicSeed());
-
-			Map<Integer, BDS> bdsStates = mt.getBDS();
-			int xmssHeight = params.getXMSS().getParams().getHeight();
-			long keyIncreaseCount = differenceHours * indexIncreaseCountPerHour;
-			long oldGlobalIndex = getIndex();
-			long newGlobalIndex = oldGlobalIndex + keyIncreaseCount;
-			long oldIndexTree = XMSSUtil.getTreeIndex(oldGlobalIndex, xmssHeight);
-			long newIndexTree = XMSSUtil.getTreeIndex(newGlobalIndex, xmssHeight);
-			int newIndexLeaf = XMSSUtil.getLeafIndex(newGlobalIndex, xmssHeight);
-
-			// adjust bds instances
-			for (int layer = 0; layer < params.getLayers(); layer++) {
-				OTSHashAddress otsHashAddress = new OTSHashAddress();
-				otsHashAddress.setLayerAddress(layer);
-				otsHashAddress.setTreeAddress(newIndexTree);
-
-				if (newIndexLeaf != 0) {
-					if (oldIndexTree != newIndexTree || bdsStates.get(layer) == null) {
-						bdsStates.put(layer, new BDS(mt.getXMSS()));
-						bdsStates.get(layer).initialize(otsHashAddress);
-					}
-					for (int indexLeaf = bdsStates.get(layer).getIndex(); indexLeaf < newIndexLeaf; indexLeaf++) {
-						if (indexLeaf < ((1 << xmssHeight) - 1)) {
-							bdsStates.get(layer).nextAuthenticationPath(otsHashAddress);
-						}
-					}
-				}
-				oldIndexTree = XMSSUtil.getTreeIndex(oldIndexTree, xmssHeight);
-				newIndexLeaf = XMSSUtil.getLeafIndex(newIndexTree, xmssHeight);
-				newIndexTree = XMSSUtil.getTreeIndex(newIndexTree, xmssHeight);
-			}
-			setIndex(newGlobalIndex);
-		}
-	}
-	*/
-
     public long getIndex()
     {
         return index;
@@ -340,7 +287,7 @@ public final class XMSSMTPrivateKeyParameters
         return XMSSUtil.cloneArray(root);
     }
 
-    Map<Integer, BDS> getBDSState()
+    BDSStateMap getBDSState()
     {
         return bdsState;
     }
@@ -352,19 +299,9 @@ public final class XMSSMTPrivateKeyParameters
 
     public XMSSMTPrivateKeyParameters getNextKey()
     {
-        Map<Integer, BDS> newState = new TreeMap<Integer, BDS>();
-
-        for (Iterator it = bdsState.keySet().iterator(); it.hasNext();)
-        {
-            Integer key = (Integer)it.next();
-
-            BDS bds = bdsState.get(key);
-            newState.put(key, bds.isUsed() ? bds.getNextState() : bds);
-        }
-
         return new XMSSMTPrivateKeyParameters.Builder(params).withIndex(index + 1)
             .withSecretKeySeed(secretKeySeed).withSecretKeyPRF(secretKeyPRF)
             .withPublicSeed(publicSeed).withRoot(root)
-            .withBDSState(newState).build();
+            .withBDSState(bdsState).build();
     }
 }

@@ -2,7 +2,6 @@ package org.bouncycastle.pqc.jcajce.provider.xmss;
 
 import java.io.IOException;
 import java.security.PrivateKey;
-import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -12,7 +11,7 @@ import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTPrivateKey;
 import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
-import org.bouncycastle.pqc.crypto.xmss.BDS;
+import org.bouncycastle.pqc.crypto.xmss.BDSStateMap;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
@@ -50,7 +49,7 @@ public class BCXMSSMTPrivateKey
                 .withSecretKeyPRF(xmssMtPrivateKey.getSecretKeyPRF())
                 .withPublicSeed(xmssMtPrivateKey.getPublicSeed())
                 .withRoot(xmssMtPrivateKey.getRoot())
-                .withBDSState((Map<Integer, BDS>)XMSSUtil.deserialize(xmssMtPrivateKey.getBdsState())).build();
+                .withBDSState((BDSStateMap)XMSSUtil.deserialize(xmssMtPrivateKey.getBdsState())).build();
         }
         catch (ClassNotFoundException e)
         {
