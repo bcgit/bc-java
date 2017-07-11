@@ -68,6 +68,7 @@ import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.GOST28147Parameters;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.AuthenticatedSafe;
 import org.bouncycastle.asn1.pkcs.CertBag;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
@@ -143,6 +144,10 @@ public class PKCS12KeyStoreSpi
     private CertificateFactory certFact;
     private ASN1ObjectIdentifier keyAlgorithm;
     private ASN1ObjectIdentifier certAlgorithm;
+
+    private AlgorithmIdentifier macAlgorithm = new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE);
+    private int itCount = MIN_ITERATIONS;
+    private int saltLength = 20;
 
     private class CertId
     {
@@ -801,15 +806,16 @@ public class PKCS12KeyStoreSpi
         {
             MacData mData = bag.getMacData();
             DigestInfo dInfo = mData.getMac();
-            AlgorithmIdentifier algId = dInfo.getAlgorithmId();
+            macAlgorithm = dInfo.getAlgorithmId();
             byte[] salt = mData.getSalt();
-            int itCount = mData.getIterationCount().intValue();
+            itCount = mData.getIterationCount().intValue();
+            saltLength = salt.length;
 
             byte[] data = ((ASN1OctetString)info.getContent()).getOctets();
 
             try
             {
-                byte[] res = calculatePbeMac(algId.getAlgorithm(), salt, itCount, password, false, data);
+                byte[] res = calculatePbeMac(macAlgorithm.getAlgorithm(), salt, itCount, password, false, data);
                 byte[] dig = dInfo.getDigest();
 
                 if (!Arrays.constantTimeAreEqual(res, dig))
@@ -820,7 +826,7 @@ public class PKCS12KeyStoreSpi
                     }
 
                     // Try with incorrect zero length password
-                    res = calculatePbeMac(algId.getAlgorithm(), salt, itCount, password, true, data);
+                    res = calculatePbeMac(macAlgorithm.getAlgorithm(), salt, itCount, password, true, data);
 
                     if (!Arrays.constantTimeAreEqual(res, dig))
                     {
@@ -1615,8 +1621,7 @@ public class PKCS12KeyStoreSpi
         //
         // create the mac
         //
-        byte[] mSalt = new byte[20];
-        int itCount = MIN_ITERATIONS;
+        byte[] mSalt = new byte[saltLength];
 
         random.nextBytes(mSalt);
 
@@ -1626,10 +1631,9 @@ public class PKCS12KeyStoreSpi
 
         try
         {
-            byte[] res = calculatePbeMac(id_SHA1, mSalt, itCount, password, false, data);
+            byte[] res = calculatePbeMac(macAlgorithm.getAlgorithm(), mSalt, itCount, password, false, data);
 
-            AlgorithmIdentifier algId = new AlgorithmIdentifier(id_SHA1, DERNull.INSTANCE);
-            DigestInfo dInfo = new DigestInfo(algId, res);
+            DigestInfo dInfo = new DigestInfo(macAlgorithm, res);
 
             mData = new MacData(dInfo, mSalt, itCount);
         }
