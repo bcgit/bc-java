@@ -3,6 +3,8 @@ package org.bouncycastle.crypto.test;
 import org.bouncycastle.crypto.engines.DSTU7624Engine;
 import org.bouncycastle.crypto.engines.DSTU7624WrapEngine;
 import org.bouncycastle.crypto.macs.DSTU7624Mac;
+import org.bouncycastle.crypto.macs.KGMac;
+import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CFBBlockCipher;
 import org.bouncycastle.crypto.modes.KCCMBlockCipher;
@@ -63,7 +65,6 @@ public class DSTU7624Test
         };
 
 
-
     public DSTU7624Test()
     {
         super(tests, new DSTU7624Engine(128), new KeyParameter(new byte[16]));
@@ -73,19 +74,19 @@ public class DSTU7624Test
     {
         return "DSTU7624";
     }
-    
+
     public void performTest()
         throws Exception
     {
         super.performTest();
-        
+
         MacTests();
         KeyWrapTests();
         CCMModeTests();
         XTSModeTests();
         GCMModeTests();
     }
-    
+
     public static void main(
         String[] args)
     {
@@ -176,14 +177,14 @@ public class DSTU7624Test
 
         wrapper.init(false, new KeyParameter(key));
 
-            output = wrapper.unwrap(expectedWrappedText, 0, expectedWrappedText.length);
+        output = wrapper.unwrap(expectedWrappedText, 0, expectedWrappedText.length);
 
-            if (!Arrays.areEqual(output, textToWrap))
-            {
-                fail("Failed KW (unwrapping) test 1 - expected "
-                    + Hex.toHexString(textToWrap)
-                    + " got " + Hex.toHexString(output));
-            }
+        if (!Arrays.areEqual(output, textToWrap))
+        {
+            fail("Failed KW (unwrapping) test 1 - expected "
+                + Hex.toHexString(textToWrap)
+                + " got " + Hex.toHexString(output));
+        }
 
         //test 2
         key = Hex.decode("000102030405060708090A0B0C0D0E0F");
@@ -331,7 +332,6 @@ public class DSTU7624Test
 
         KCCMBlockCipher dstu7624ccm = new KCCMBlockCipher(new DSTU7624Engine(128));
 
-        dstu7624ccm.setNb(4);
         dstu7624ccm.init(true, param);
 
         dstu7624ccm.processAADBytes(authText, 0, authText.length);
@@ -357,7 +357,6 @@ public class DSTU7624Test
                 + " got " + Hex.toHexString(encrypted));
         }
 
-        dstu7624ccm.setNb(4);
         dstu7624ccm.init(false, param);
 
         dstu7624ccm.processAADBytes(authText, 0, authText.length);
@@ -395,7 +394,6 @@ public class DSTU7624Test
 
         dstu7624ccm = new KCCMBlockCipher(new DSTU7624Engine(256));
 
-        dstu7624ccm.setNb(4);
         dstu7624ccm.init(true, param);
 
         dstu7624ccm.processAADBytes(authText, 0, authText.length);
@@ -420,7 +418,6 @@ public class DSTU7624Test
                 + " got " + Hex.toHexString(encrypted));
         }
 
-        dstu7624ccm.setNb(4);
         dstu7624ccm.init(false, param);
 
         dstu7624ccm.processAADBytes(authText, 0, authText.length);
@@ -456,9 +453,8 @@ public class DSTU7624Test
 
         param = new AEADParameters(new KeyParameter(key), 256, iv);
 
-        dstu7624ccm = new KCCMBlockCipher(new DSTU7624Engine(256));
+        dstu7624ccm = new KCCMBlockCipher(new DSTU7624Engine(256), 6);
 
-        dstu7624ccm.setNb(6);
         dstu7624ccm.init(true, param);
 
         dstu7624ccm.processAADBytes(authText, 0, authText.length);
@@ -483,7 +479,6 @@ public class DSTU7624Test
                 + " got " + Hex.toHexString(encrypted));
         }
 
-        dstu7624ccm.setNb(6);
         dstu7624ccm.init(false, param);
 
         dstu7624ccm.processAADBytes(authText, 0, authText.length);
@@ -519,9 +514,8 @@ public class DSTU7624Test
 
         param = new AEADParameters(new KeyParameter(key), 512, iv);
 
-        dstu7624ccm = new KCCMBlockCipher(new DSTU7624Engine(512));
+        dstu7624ccm = new KCCMBlockCipher(new DSTU7624Engine(512), 8);
 
-        dstu7624ccm.setNb(8);
         dstu7624ccm.init(true, param);
 
         dstu7624ccm.processAADBytes(authText, 0, authText.length);
@@ -546,7 +540,6 @@ public class DSTU7624Test
                 + " got " + Hex.toHexString(encrypted));
         }
 
-        dstu7624ccm.setNb(8);
         dstu7624ccm.init(false, param);
 
         dstu7624ccm.processAADBytes(authText, 0, authText.length);
@@ -561,6 +554,8 @@ public class DSTU7624Test
                 + Hex.toHexString(expectedDecrypted)
                 + " got " + Hex.toHexString(decrypted));
         }
+
+        doFinalTest(new KCCMBlockCipher(new DSTU7624Engine(512), 8), key, iv, authText, input, expectedEncrypted);
     }
 
     private void XTSModeTests()
@@ -773,7 +768,6 @@ public class DSTU7624Test
         System.arraycopy(expectedEncrypted, 0, expectedOutput, 0, expectedEncrypted.length);
         System.arraycopy(expectedMac, 0, expectedOutput, expectedEncrypted.length, expectedMac.length);
 
-
         byte[] mac = new byte[expectedMac.length];
 
         byte[] encrypted = new byte[expectedEncrypted.length + mac.length];
@@ -783,7 +777,6 @@ public class DSTU7624Test
         System.arraycopy(expectedMac, 0, decrypted, plainText.length, mac.length);
 
         int len;
-
 
         AEADParameters parameters = new AEADParameters(new KeyParameter(key), 128, iv);
 
@@ -1358,6 +1351,73 @@ public class DSTU7624Test
             fail("Failed GCM/GMAC test 11 - expected mac: "
                 + Hex.toHexString(expectedMac)
                 + " got mac: " + Hex.toHexString(mac));
+        }
+
+        doFinalTest(new KGCMBlockCipher(new DSTU7624Engine(512)), key, new byte[32], authText, null, expectedMac);
+
+        //test 11 - as KGMac
+        key = Hex.decode("000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F202122232425262728292A2B2C2D2E2F303132333435363738393A3B3C3D3E3F");
+
+        authText = Hex.decode("808182838485868788898A8B8C8D8E8F909192939495969798999A9B9C9D9E9FA0A1A2A3A4A5A6A7A8A9AAABACADAEAFB0B1B2B3B4B5B6B7B8B9BABBBCBDBEBF");
+
+        expectedMac = Hex.decode("897C32E05E776FD988C5171FE70BB72949172E514E3308A871BA5BD898FB6EBD6E3897D2D55697D90D6428216C08052E3A5E7D4626F4DBBF1546CE21637357A3");
+
+        mac = new byte[expectedMac.length];
+
+        KGMac dstuGmac = new KGMac(new KGCMBlockCipher(new DSTU7624Engine(512)));
+
+        dstuGmac.init(new ParametersWithIV(new KeyParameter(key), new byte[32]));
+
+        dstuGmac.update(authText, 0, authText.length);
+
+        dstuGmac.doFinal(mac, 0);
+
+        if (!Arrays.areEqual(mac, expectedMac))
+        {
+            fail("Failed GCM/GMAC test 11 (mac) - expected mac: "
+                + Hex.toHexString(expectedMac)
+                + " got mac: " + Hex.toHexString(mac));
+        }
+    }
+
+    private void doFinalTest(AEADBlockCipher cipher, byte[] key, byte[] iv, byte[] authText, byte[] input, byte[] expected)
+        throws Exception
+    {
+        byte[] output = new byte[expected.length];
+
+        AEADParameters parameters = new AEADParameters(new KeyParameter(key), cipher.getUnderlyingCipher().getBlockSize() * 8, iv);
+
+        cipher.init(true, parameters);
+        cipher.processAADBytes(authText, 0, authText.length);
+
+        int off = 0;
+        if (input != null)
+        {
+            off = cipher.processBytes(input, 0, input.length, output, 0);
+        }
+
+        cipher.doFinal(output, off);
+
+        if (!Arrays.areEqual(output, expected))
+        {
+            System.err.println(Hex.toHexString(output));
+            System.err.println(Hex.toHexString(expected));
+            fail("Failed doFinal test - init: " + cipher.getAlgorithmName());
+        }
+
+        cipher.processAADBytes(authText, 0, authText.length);
+
+        off = 0;
+        if (input != null)
+        {
+            off = cipher.processBytes(input, 0, input.length, output, 0);
+        }
+
+        cipher.doFinal(output, off);
+
+        if (!Arrays.areEqual(output, expected))
+        {
+            fail("Failed doFinal test - after: " + cipher.getAlgorithmName());
         }
     }
 }

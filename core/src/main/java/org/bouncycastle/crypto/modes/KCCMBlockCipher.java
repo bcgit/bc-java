@@ -44,17 +44,10 @@ public class KCCMBlockCipher
     private ExposedByteArrayOutputStream associatedText = new ExposedByteArrayOutputStream();
     private ExposedByteArrayOutputStream data = new ExposedByteArrayOutputStream();
 
-    /*
-    *  Nb is a parameter specified in CCM mode of DSTU7624 standard.
-    *  This parameter specifies maximum possible length of input. It should
-    *  be calculated as follows: Nb = 1/8 * (-3 + log[2]Nmax) + 1,
-    *  where Nmax - length of input message in bits. For practical reasons
-    *  Nmax usually less than 4Gb, e.g. for Nmax = 2^32 - 1, Nb = 4.
-    *
-    */
+
     private int Nb_ = 4;
 
-    public void setNb(int Nb)
+    private void setNb(int Nb)
     {
         if (Nb == 4 || Nb == 6 || Nb == 8)
         {
@@ -66,7 +59,29 @@ public class KCCMBlockCipher
         }
     }
 
+    /**
+     * Base constructor. Nb value is set to 4.
+     *
+     * @param engine base cipher to use under CCM.
+     */
     public KCCMBlockCipher(BlockCipher engine)
+    {
+        this(engine, 4);
+    }
+
+    /**
+     * Constructor allowing Nb configuration.
+     * <p>
+     * Nb is a parameter specified in CCM mode of DSTU7624 standard.
+     * This parameter specifies maximum possible length of input. It should
+     * be calculated as follows: Nb = 1/8 * (-3 + log[2]Nmax) + 1,
+     * where Nmax - length of input message in bits. For practical reasons
+     * Nmax usually less than 4Gb, e.g. for Nmax = 2^32 - 1, Nb = 4.
+     * </p>
+     * @param engine base cipher to use under CCM.
+     * @param nB Nb value to use.
+     */
+    public KCCMBlockCipher(BlockCipher engine, int nB)
     {
         this.engine = engine;
         this.macSize = engine.getBlockSize();
@@ -78,6 +93,7 @@ public class KCCMBlockCipher
         this.buffer = new byte[engine.getBlockSize()];
         this.s = new byte[engine.getBlockSize()];
         this.counter = new byte[engine.getBlockSize()];
+        setNb(nB);
     }
 
     public void init(boolean forEncryption, CipherParameters params)
