@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.DSTU7624Engine;
 import org.bouncycastle.crypto.engines.DSTU7624WrapEngine;
+import org.bouncycastle.crypto.macs.KGMac;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CFBBlockCipher;
 import org.bouncycastle.crypto.modes.KCCMBlockCipher;
@@ -23,6 +24,7 @@ import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseWrapCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
@@ -302,6 +304,42 @@ public class DSTU7624
         }
     }
 
+    public static class GMAC
+        extends BaseMac
+    {
+        public GMAC()
+        {
+            super(new KGMac(new KGCMBlockCipher(new DSTU7624Engine(128)), 128));
+        }
+    }
+       // TODO: enforce key size restriction
+    public static class GMAC128
+        extends BaseMac
+    {
+        public GMAC128()
+        {
+            super(new KGMac(new KGCMBlockCipher(new DSTU7624Engine(128)), 128));
+        }
+    }
+
+    public static class GMAC256
+        extends BaseMac
+    {
+        public GMAC256()
+        {
+            super(new KGMac(new KGCMBlockCipher(new DSTU7624Engine(256)), 256));
+        }
+    }
+
+    public static class GMAC512
+        extends BaseMac
+    {
+        public GMAC512()
+        {
+            super(new KGMac(new KGCMBlockCipher(new DSTU7624Engine(512)), 512));
+        }
+    }
+
     public static class KeyGen
         extends BaseKeyGenerator
     {
@@ -477,10 +515,24 @@ public class DSTU7624
 
             provider.addAlgorithm("Cipher.DSTU7624KW", PREFIX + "$Wrap");
             provider.addAlgorithm("Alg.Alias.Cipher.DSTU7624WRAP", "DSTU7624KW");
-            provider.addAlgorithm("Cipher", UAObjectIdentifiers.dstu7624kw_128, PREFIX + "$Wrap128");
-            provider.addAlgorithm("Cipher", UAObjectIdentifiers.dstu7624kw_256, PREFIX + "$Wrap256");
-            provider.addAlgorithm("Cipher", UAObjectIdentifiers.dstu7624kw_512, PREFIX + "$Wrap512");
+            provider.addAlgorithm("Cipher.DSTU7624-128KW", PREFIX + "$Wrap128");
+            provider.addAlgorithm("Alg.Alias.Cipher." + UAObjectIdentifiers.dstu7624kw_128.getId(), "DSTU7624-128KW");
+            provider.addAlgorithm("Alg.Alias.Cipher.DSTU7624-128WRAP", "DSTU7624-128KW");
+            provider.addAlgorithm("Cipher.DSTU7624-256KW", PREFIX + "$Wrap256");
+            provider.addAlgorithm("Alg.Alias.Cipher." + UAObjectIdentifiers.dstu7624kw_256.getId(), "DSTU7624-256KW");
+            provider.addAlgorithm("Alg.Alias.Cipher.DSTU7624-256WRAP", "DSTU7624-256KW");
+            provider.addAlgorithm("Cipher.DSTU7624-512KW", PREFIX + "$Wrap512");
+            provider.addAlgorithm("Alg.Alias.Cipher." + UAObjectIdentifiers.dstu7624kw_512.getId(), "DSTU7624-512KW");
+            provider.addAlgorithm("Alg.Alias.Cipher.DSTU7624-512WRAP", "DSTU7624-512KW");
 
+            provider.addAlgorithm("Mac.DSTU7624GMAC", PREFIX + "$GMAC");
+            provider.addAlgorithm("Mac.DSTU7624-128GMAC", PREFIX + "$GMAC128");
+            provider.addAlgorithm("Alg.Alias.Mac." + UAObjectIdentifiers.dstu7624gmac_128.getId(), "DSTU7624-128GMAC");
+            provider.addAlgorithm("Mac.DSTU7624-256GMAC", PREFIX + "$GMAC256");
+            provider.addAlgorithm("Alg.Alias.Mac." + UAObjectIdentifiers.dstu7624gmac_256.getId(), "DSTU7624-256GMAC");
+            provider.addAlgorithm("Mac.DSTU7624-512GMAC", PREFIX + "$GMAC512");
+            provider.addAlgorithm("Alg.Alias.Mac." + UAObjectIdentifiers.dstu7624gmac_512.getId(), "DSTU7624-512GMAC");
+            
             provider.addAlgorithm("KeyGenerator.DSTU7624", PREFIX + "$KeyGen");
             provider.addAlgorithm("KeyGenerator", UAObjectIdentifiers.dstu7624kw_128, PREFIX + "$KeyGen128");
             provider.addAlgorithm("KeyGenerator", UAObjectIdentifiers.dstu7624kw_256, PREFIX + "$KeyGen256");
@@ -503,6 +555,9 @@ public class DSTU7624
             provider.addAlgorithm("KeyGenerator", UAObjectIdentifiers.dstu7624ccm_128, PREFIX + "$KeyGen128");
             provider.addAlgorithm("KeyGenerator", UAObjectIdentifiers.dstu7624ccm_256, PREFIX + "$KeyGen256");
             provider.addAlgorithm("KeyGenerator", UAObjectIdentifiers.dstu7624ccm_512, PREFIX + "$KeyGen512");
+            provider.addAlgorithm("KeyGenerator", UAObjectIdentifiers.dstu7624gmac_128, PREFIX + "$KeyGen128");
+            provider.addAlgorithm("KeyGenerator", UAObjectIdentifiers.dstu7624gmac_256, PREFIX + "$KeyGen256");
+            provider.addAlgorithm("KeyGenerator", UAObjectIdentifiers.dstu7624gmac_512, PREFIX + "$KeyGen512");
         }
     }
 }
