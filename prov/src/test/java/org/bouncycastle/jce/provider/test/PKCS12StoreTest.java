@@ -25,16 +25,20 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1StreamParser;
 import org.bouncycastle.asn1.DERBMPString;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequenceParser;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.EncryptedData;
 import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
+import org.bouncycastle.asn1.pkcs.MacData;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Pfx;
 import org.bouncycastle.asn1.pkcs.SafeBag;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jcajce.PKCS12StoreParameter;
 import org.bouncycastle.jce.PKCS12Util;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
@@ -633,6 +637,27 @@ public class PKCS12StoreTest
         {
             fail("key test failed in 2nd GOST store");
         }
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+        pkcs12.store(stream, "2".toCharArray());
+
+        // confirm mac details consistent
+        Pfx bag = Pfx.getInstance(stream.toByteArray());
+        MacData mData = bag.getMacData();
+
+        isEquals("mac alg not match", new AlgorithmIdentifier(CryptoProObjectIdentifiers.gostR3411, DERNull.INSTANCE), mData.getMac().getAlgorithmId());
+        isEquals(2048, mData.getIterationCount().intValue());
+        isEquals(8, mData.getSalt().length);
+
+        //confirm key recovery
+        pkcs12 = KeyStore.getInstance("PKCS12", "BC");
+
+        pkcs12.load(new ByteArrayInputStream(stream.toByteArray()), "2".toCharArray());
+
+        PrivateKey pk2 = (PrivateKey)pkcs12.getKey("cp_exported", null);
+
+        isEquals(pk, pk2);
     }
 
     public void testPKCS12Store()
