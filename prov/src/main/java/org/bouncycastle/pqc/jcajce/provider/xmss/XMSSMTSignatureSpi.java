@@ -12,8 +12,8 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTSigner;
@@ -102,8 +102,8 @@ public class XMSSMTSignatureSpi
     protected byte[] engineSign()
         throws SignatureException
     {
-        byte[] hash = new byte[digest.getDigestSize()];
-        digest.doFinal(hash, 0);
+        byte[] hash = DigestUtil.getDigestResult(digest);
+
         try
         {
             byte[] sig = signer.generateSignature(hash);
@@ -123,8 +123,8 @@ public class XMSSMTSignatureSpi
     protected boolean engineVerify(byte[] sigBytes)
         throws SignatureException
     {
-        byte[] hash = new byte[digest.getDigestSize()];
-        digest.doFinal(hash, 0);
+        byte[] hash = DigestUtil.getDigestResult(digest);
+
         return signer.verifySignature(hash, sigBytes);
     }
 
@@ -173,12 +173,12 @@ public class XMSSMTSignatureSpi
         }
     }
 
-    static public class withSha3_256
+    static public class withShake128
         extends XMSSMTSignatureSpi
     {
-        public withSha3_256()
+        public withShake128()
         {
-            super("SHA256withXMSSMT", new SHA3Digest(256), new XMSSMTSigner());
+            super("SHAKE128withXMSSMT", new SHAKEDigest(128), new XMSSMTSigner());
         }
     }
 
@@ -187,16 +187,16 @@ public class XMSSMTSignatureSpi
     {
         public withSha512()
         {
-            super("SHA256withXMSSMT", new SHA512Digest(), new XMSSMTSigner());
+            super("SHA512withXMSSMT", new SHA512Digest(), new XMSSMTSigner());
         }
     }
 
-    static public class withSha3_512
+    static public class withShake256
         extends XMSSMTSignatureSpi
     {
-        public withSha3_512()
+        public withShake256()
         {
-            super("SHA256withXMSSMT", new SHA3Digest(512), new XMSSMTSigner());
+            super("SHAKE256withXMSSMT", new SHAKEDigest(256), new XMSSMTSigner());
         }
     }
 }

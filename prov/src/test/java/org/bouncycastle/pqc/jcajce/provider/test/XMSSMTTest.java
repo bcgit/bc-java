@@ -173,11 +173,95 @@ public class XMSSMTTest
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSSMT", "BCPQC");
 
-        kpg.initialize(new XMSSMTParameterSpec(20, 10, XMSSMTParameterSpec.SHA256), new SecureRandom());
+        kpg.initialize(new XMSSMTParameterSpec(10, 5, XMSSMTParameterSpec.SHA256), new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
         Signature sig = Signature.getInstance("SHA256withXMSSMT", "BCPQC");
+
+        assertTrue(sig instanceof StateAwareSignature);
+
+        StateAwareSignature xmssSig = (StateAwareSignature)sig;
+
+        xmssSig.initSign(kp.getPrivate());
+
+        xmssSig.update(msg, 0, msg.length);
+
+        byte[] s = sig.sign();
+
+        xmssSig.initVerify(kp.getPublic());
+
+        xmssSig.update(msg, 0, msg.length);
+
+        assertTrue(xmssSig.verify(s));
+    }
+
+    public void testXMSSMTSha512Signature()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSSMT", "BCPQC");
+
+        kpg.initialize(new XMSSMTParameterSpec(10, 5, XMSSMTParameterSpec.SHA512), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        Signature sig = Signature.getInstance("SHA256withXMSSMT", "BCPQC");
+
+        assertTrue(sig instanceof StateAwareSignature);
+
+        StateAwareSignature xmssSig = (StateAwareSignature)sig;
+
+        xmssSig.initSign(kp.getPrivate());
+
+        xmssSig.update(msg, 0, msg.length);
+
+        byte[] s = sig.sign();
+
+        xmssSig.initVerify(kp.getPublic());
+
+        xmssSig.update(msg, 0, msg.length);
+
+        assertTrue(xmssSig.verify(s));
+    }
+
+    public void testXMSSMTShake128Signature()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSSMT", "BCPQC");
+
+        kpg.initialize(new XMSSMTParameterSpec(4, 2, XMSSMTParameterSpec.SHAKE128), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        Signature sig = Signature.getInstance("SHAKE128withXMSSMT", "BCPQC");
+
+        assertTrue(sig instanceof StateAwareSignature);
+
+        StateAwareSignature xmssSig = (StateAwareSignature)sig;
+
+        xmssSig.initSign(kp.getPrivate());
+
+        xmssSig.update(msg, 0, msg.length);
+
+        byte[] s = sig.sign();
+
+        xmssSig.initVerify(kp.getPublic());
+
+        xmssSig.update(msg, 0, msg.length);
+
+        assertTrue(xmssSig.verify(s));
+    }
+
+    public void testXMSSMTShake256Signature()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSSMT", "BCPQC");
+
+        kpg.initialize(new XMSSMTParameterSpec(4, 2, XMSSMTParameterSpec.SHAKE256), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        Signature sig = Signature.getInstance("SHAKE256withXMSSMT", "BCPQC");
 
         assertTrue(sig instanceof StateAwareSignature);
 
