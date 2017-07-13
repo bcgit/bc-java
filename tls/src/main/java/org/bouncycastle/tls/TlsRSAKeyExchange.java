@@ -11,7 +11,7 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.io.Streams;
 
 /**
- * (D)TLS and SSLv3 RSA key exchange.
+ * (D)TLS RSA key exchange.
  */
 public class TlsRSAKeyExchange
     extends AbstractTlsKeyExchange
@@ -91,16 +91,7 @@ public class TlsRSAKeyExchange
     public void processClientKeyExchange(InputStream input)
         throws IOException
     {
-        byte[] encryptedPreMasterSecret;
-        if (TlsUtils.isSSL(context))
-        {
-            // TODO Do any SSLv3 clients actually include the length?
-            encryptedPreMasterSecret = Streams.readAll(input);
-        }
-        else
-        {
-            encryptedPreMasterSecret = TlsUtils.readOpaque16(input);
-        }
+        byte[] encryptedPreMasterSecret = TlsUtils.readOpaque16(input);
 
         this.preMasterSecret = serverCredentials.decrypt(new TlsCryptoParameters(context), encryptedPreMasterSecret);
     }

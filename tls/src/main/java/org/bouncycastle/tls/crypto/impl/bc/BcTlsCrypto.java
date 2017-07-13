@@ -78,7 +78,6 @@ import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipher;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipherImpl;
 import org.bouncycastle.tls.crypto.impl.TlsEncryptor;
-import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
 import org.bouncycastle.tls.crypto.impl.TlsNullCipher;
 import org.bouncycastle.tls.crypto.impl.TlsStreamCipher;
 import org.bouncycastle.tls.crypto.impl.TlsStreamCipherImpl;
@@ -455,21 +454,21 @@ public class BcTlsCrypto
         throws IOException
     {
         return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createAESBlockCipher(), true), new BlockOperator(createAESBlockCipher(), false),
-            createMac(cryptoParams, macAlgorithm), createMac(cryptoParams, macAlgorithm), cipherKeySize);
+            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize);
     }
 
     protected TlsCipher createARIACipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
         return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createARIABlockCipher(), true), new BlockOperator(createARIABlockCipher(), false),
-            createMac(cryptoParams, macAlgorithm), createMac(cryptoParams, macAlgorithm), cipherKeySize);
+            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize);
     }
 
     protected TlsCipher createCamelliaCipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
         return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createCamelliaBlockCipher(), true), new BlockOperator(createCamelliaBlockCipher(), false),
-            createMac(cryptoParams, macAlgorithm), createMac(cryptoParams, macAlgorithm), cipherKeySize);
+            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize);
     }
 
     protected TlsCipher createChaCha20Poly1305(TlsCryptoParameters cryptoParams)
@@ -519,27 +518,27 @@ public class BcTlsCrypto
         throws IOException
     {
         return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createDESedeBlockCipher(), true), new BlockOperator(createDESedeBlockCipher(), false),
-            createMac(cryptoParams, macAlgorithm), createMac(cryptoParams, macAlgorithm), 24);
+            createMac(macAlgorithm), createMac(macAlgorithm), 24);
     }
 
     protected TlsNullCipher createNullCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException
     {
-        return new TlsNullCipher(cryptoParams, createMac(cryptoParams, macAlgorithm), createMac(cryptoParams, macAlgorithm));
+        return new TlsNullCipher(cryptoParams, createMac(macAlgorithm), createMac(macAlgorithm));
     }
 
     protected TlsStreamCipher createRC4Cipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
         return new TlsStreamCipher(cryptoParams, new StreamOperator(createRC4StreamCipher(), true), new StreamOperator(createRC4StreamCipher(), false),
-            createMac(cryptoParams, macAlgorithm), createMac(cryptoParams, macAlgorithm), cipherKeySize, false);
+            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize, false);
     }
 
     protected TlsBlockCipher createSEEDCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException
     {
         return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createSEEDBlockCipher(), true), new BlockOperator(createSEEDBlockCipher(), false),
-            createMac(cryptoParams, macAlgorithm), createMac(cryptoParams, macAlgorithm), 16);
+            createMac(macAlgorithm), createMac(macAlgorithm), 16);
     }
 
     protected BlockCipher createAESEngine()
@@ -615,17 +614,9 @@ public class BcTlsCrypto
         return new CBCBlockCipher(new SEEDEngine());
     }
 
-    private TlsHMAC createMac(TlsCryptoParameters cryptoParams, int macAlgorithm)
-        throws IOException
+    private TlsHMAC createMac(int macAlgorithm) throws IOException
     {
-        if (TlsImplUtils.isSSL(cryptoParams))
-        {
-            return createSSl3HMAC((short)macAlgorithm);
-        }
-        else
-        {
-            return createHMAC((short)macAlgorithm);
-        }
+        return createHMAC((short)macAlgorithm);
     }
 
     protected Digest createHMACDigest(int macAlgorithm)
@@ -741,28 +732,6 @@ public class BcTlsCrypto
                 return verifierGenerator.generateVerifier(salt, identity, password);
             }
         };
-    }
-
-    protected TlsHMAC createSSl3HMAC(int macAlgorithm)
-        throws IOException
-    {
-        switch (macAlgorithm)
-        {
-        case MACAlgorithm._null:
-            return null;
-        case MACAlgorithm.hmac_md5:
-            return new SSL3Mac(createDigest(HashAlgorithm.md5));
-        case MACAlgorithm.hmac_sha1:
-            return new SSL3Mac(createDigest(HashAlgorithm.sha1));
-        case MACAlgorithm.hmac_sha256:
-            return new SSL3Mac(createDigest(HashAlgorithm.sha256));
-        case MACAlgorithm.hmac_sha384:
-            return new SSL3Mac(createDigest(HashAlgorithm.sha384));
-        case MACAlgorithm.hmac_sha512:
-            return new SSL3Mac(createDigest(HashAlgorithm.sha512));
-        default:
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
     }
 
     public class CombinedPRF
