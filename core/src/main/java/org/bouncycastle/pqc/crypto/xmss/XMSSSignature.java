@@ -102,7 +102,7 @@ public final class XMSSSignature
         byte[] out = new byte[totalSize];
         int position = 0;
 		/* copy index */
-        XMSSUtil.intToBytesBigEndianOffset(out, index, position);
+        Pack.intToBigEndian(index, out, position);
         position += indexSize;
 		/* copy random */
         XMSSUtil.copyBytesAtOffset(out, random, position);

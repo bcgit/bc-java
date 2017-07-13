@@ -14,17 +14,18 @@ import java.util.TreeMap;
 public final class BDS
     implements Serializable
 {
-
     private static final long serialVersionUID = 1L;
     
     private transient WOTSPlus wotsPlus;
+
     private final int treeHeight;
+    private final List<BDSTreeHash> treeHashInstances;
     private int k;
     private XMSSNode root;
     private List<XMSSNode> authenticationPath;
     private Map<Integer, LinkedList<XMSSNode>> retain;
     private Stack<XMSSNode> stack;
-    private List<BDSTreeHash> treeHashInstances;
+
     private Map<Integer, XMSSNode> keep;
     private int index;
     private boolean used;
@@ -52,43 +53,39 @@ public final class BDS
         authenticationPath = new ArrayList<XMSSNode>();
         retain = new TreeMap<Integer, LinkedList<XMSSNode>>();
         stack = new Stack<XMSSNode>();
-        initializeBDSTreeHashInstances();
-        keep = new TreeMap<Integer, XMSSNode>();
-        index = 0;
-        this.used = false;
-    }
 
-    private BDS(BDS last)
-    {
-        this.wotsPlus = last.wotsPlus;
-        this.treeHeight = last.treeHeight;
-        this.k = last.k;
-        this.root = last.root;
-        this.authenticationPath = last.authenticationPath;
-        this.retain = last.retain;
-        this.stack = last.stack;
-        this.treeHashInstances = last.treeHashInstances;
-        this.keep = last.keep;
-        this.index = last.index + 1;
-    }
-
-    public BDS getNextState()
-    {
-        return new BDS(this);
-    }
-
-    private void initializeBDSTreeHashInstances()
-    {
         treeHashInstances = new ArrayList<BDSTreeHash>();
         for (int height = 0; height < (treeHeight - k); height++)
         {
             treeHashInstances.add(new BDSTreeHash(height));
         }
+
+        keep = new TreeMap<Integer, XMSSNode>();
+        index = 0;
+        this.used = false;
     }
 
-    private WOTSPlus getWOTSPlus()
+    private BDS(BDS last, byte[] publicSeed, byte[] secretKeySeed, OTSHashAddress otsHashAddress)
     {
-        return wotsPlus;
+        this.wotsPlus = last.wotsPlus;
+        this.treeHeight = last.treeHeight;
+        this.k = last.k;
+        this.root = last.root;
+        this.authenticationPath = new ArrayList<XMSSNode>(last.authenticationPath);
+        this.retain = last.retain;
+        this.stack = (Stack<XMSSNode>)last.stack.clone();
+        this.treeHashInstances = last.treeHashInstances;
+        this.keep = new TreeMap<Integer, XMSSNode>(last.keep);
+        this.index = last.index;
+
+        this.nextAuthenticationPath(publicSeed, secretKeySeed, otsHashAddress);
+
+        last.used = true;
+    }
+    
+    public BDS getNextState(byte[] publicSeed, byte[] secretKeySeed, OTSHashAddress otsHashAddress)
+    {
+        return new BDS(this, publicSeed, secretKeySeed, otsHashAddress);
     }
 
     private void initialize(byte[] publicSeed, byte[] secretSeed, OTSHashAddress otsHashAddress)
@@ -202,8 +199,7 @@ public final class BDS
 
 		/* determine tau */
         int tau = XMSSUtil.calculateTau(index, treeHeight);
-
-		/* parent of leaf on height tau+1 is a left node */
+    	/* parent of leaf on height tau+1 is a left node */
         if (((index >> (tau + 1)) & 1) == 0 && (tau < (treeHeight - 1)))
         {
             keep.put(tau, authenticationPath.get(tau).clone());
@@ -276,7 +272,7 @@ public final class BDS
             }
         }
 
-        used = true;
+        index++;
     }
 
     boolean isUsed()

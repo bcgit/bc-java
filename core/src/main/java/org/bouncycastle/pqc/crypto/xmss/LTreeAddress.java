@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
+import org.bouncycastle.util.Pack;
+
 /**
  * L-tree address.
  *
@@ -59,9 +61,9 @@ final class LTreeAddress extends XMSSAddress {
 	@Override
 	protected byte[] toByteArray() {
 		byte[] byteRepresentation = super.toByteArray();
-		XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, lTreeAddress, 16);
-		XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, treeHeight, 20);
-		XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, treeIndex, 24);
+		Pack.intToBigEndian(lTreeAddress, byteRepresentation, 16);
+		Pack.intToBigEndian(treeHeight, byteRepresentation, 20);
+		Pack.intToBigEndian(treeIndex, byteRepresentation, 24);
 		return byteRepresentation;
 	}
 
