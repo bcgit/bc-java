@@ -6,15 +6,19 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
@@ -2884,5 +2888,36 @@ public class TlsUtils
         }
 
         handshakeHash.sealHashAlgorithms();
+    }
+
+    static void checkTlsFeatures(Certificate serverCertificate, Hashtable clientExtensions, Hashtable serverExtensions) throws IOException
+    {
+        /*
+         * RFC 7633 4.3.3. A client MUST treat a certificate with a TLS feature extension as an
+         * invalid certificate if the features offered by the server do not contain all features
+         * present in both the client's ClientHello message and the TLS feature extension.
+         */
+        byte[] tlsFeatures = serverCertificate.getCertificateAt(0).getExtension(TlsObjectIdentifiers.id_pe_tlsfeature);
+        Enumeration tlsExtensions = ((ASN1Sequence)readDERObject(tlsFeatures)).getObjects();
+        while (tlsExtensions.hasMoreElements())
+        {
+            BigInteger tlsExtension = ((ASN1Integer)tlsExtensions.nextElement()).getPositiveValue();
+            if (tlsExtension.bitLength() <= 16)
+            {
+                Integer extensionType = Integers.valueOf(tlsExtension.intValue());
+                if (clientExtensions.containsKey(extensionType) && !serverExtensions.containsKey(extensionType))
+                {
+                    throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                }
+            }
+        }
+    }
+
+    static void processServerCertificate(Certificate serverCertificate, CertificateStatus serverCertificateStatus, TlsKeyExchange keyExchange,
+        TlsAuthentication clientAuthentication, Hashtable clientExtensions, Hashtable serverExtensions) throws IOException
+    {
+        checkTlsFeatures(serverCertificate, clientExtensions, serverExtensions);
+        keyExchange.processServerCertificate(serverCertificate);
+        clientAuthentication.notifyServerCertificate(new TlsServerCertificateImpl(serverCertificate, serverCertificateStatus));
     }
 }
