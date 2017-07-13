@@ -14,6 +14,9 @@ import java.security.interfaces.RSAPublicKey;
 import javax.crypto.interfaces.DHPublicKey;
 
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
@@ -175,6 +178,12 @@ public class JcaTlsCertificate
         {
             throw new TlsCryptoException("unable to encode certificate: " + e.getMessage(), e);
         }
+    }
+
+    public byte[] getExtension(ASN1ObjectIdentifier extensionOID) throws IOException
+    {
+        byte[] encoding = certificate.getExtensionValue(extensionOID.getId());
+        return encoding == null ? null : ((ASN1OctetString)ASN1Primitive.fromByteArray(encoding)).getOctets();
     }
 
     public BigInteger getSerialNumber()
