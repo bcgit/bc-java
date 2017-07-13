@@ -42,11 +42,6 @@ public final class ProtocolVersion
         return getMajorVersion() == 0xFE;
     }
 
-    public boolean isSSL()
-    {
-        return getFullVersion() == SSLv3.getFullVersion();
-    }
-
     public boolean isTLS()
     {
         return getMajorVersion() == 0x03;

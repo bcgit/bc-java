@@ -177,9 +177,14 @@ public class TlsUtils
         return true;
     }
 
-    public static boolean isSSL(TlsContext context)
+    public static boolean isTLSv10(ProtocolVersion version)
     {
-        return context.getServerVersion().isSSL();
+        return ProtocolVersion.TLSv10.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion());
+    }
+
+    public static boolean isTLSv10(TlsContext context)
+    {
+        return isTLSv10(context.getServerVersion());
     }
 
     public static boolean isTLSv11(ProtocolVersion version)
@@ -1058,13 +1063,6 @@ public class TlsUtils
 
     public static TlsSecret PRF(TlsContext context, TlsSecret secret, String asciiLabel, byte[] seed, int length)
     {
-        ProtocolVersion version = context.getServerVersion();
-
-        if (version.isSSL())
-        {
-            throw new IllegalStateException("No PRF available for SSLv3 session");
-        }
-
         int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
 
         return secret.deriveUsingPRF(prfAlgorithm, asciiLabel, seed, length);
@@ -1080,26 +1078,18 @@ public class TlsUtils
 
     static TlsSecret calculateMasterSecret(TlsContext context, TlsSecret preMasterSecret)
     {
-        SecurityParameters securityParameters = context.getSecurityParameters();
-
+        String asciiLabel;
         byte[] seed;
-        if (securityParameters.isExtendedMasterSecret())
+        if (context.getSecurityParameters().isExtendedMasterSecret())
         {
-            seed = securityParameters.getSessionHash();
+            asciiLabel = ExporterLabel.extended_master_secret;
+            seed = context.getSecurityParameters().getSessionHash();
         }
         else
         {
-            seed = concat(securityParameters.getClientRandom(), securityParameters.getServerRandom());
+            asciiLabel = ExporterLabel.master_secret;
+            seed = concat(context.getSecurityParameters().getClientRandom(), context.getSecurityParameters().getServerRandom());
         }
-
-        if (isSSL(context))
-        {
-            return preMasterSecret.deriveSSLMasterSecret(seed);
-        }
-
-        String asciiLabel = securityParameters.isExtendedMasterSecret()
-            ?   ExporterLabel.extended_master_secret
-            :   ExporterLabel.master_secret;
 
         return PRF(context, preMasterSecret, asciiLabel, seed, 48);
     }

@@ -13,7 +13,7 @@ import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.util.Arrays;
 
 /**
- * A generic TLS 1.0-1.2 / SSLv3 block cipher. This can be used for AES or 3DES for example.
+ * A generic TLS 1.0-1.2 block cipher. This can be used for AES or 3DES for example.
  */
 public class TlsBlockCipher
     implements TlsCipher
@@ -166,7 +166,7 @@ public class TlsBlockCipher
         if (encryptThenMAC || !cryptoParams.getSecurityParameters().isTruncatedHMac())
         {
             // TODO[DTLS] Consider supporting in DTLS (without exceeding send limit though)
-            if (!version.isDTLS() && !version.isSSL())
+            if (!version.isDTLS())
             {
                 // Add a random number of extra blocks worth of padding
                 int maxExtraPadBlocks = (255 - padding_length) / blockSize;
@@ -328,7 +328,7 @@ public class TlsBlockCipher
         int dummyIndex = 0;
         byte padDiff = 0;
 
-        if ((TlsImplUtils.isSSL(cryptoParams) && totalPad > blockSize) || (macSize + totalPad > len))
+        if (macSize + totalPad > len)
         {
             totalPad = 0;
         }

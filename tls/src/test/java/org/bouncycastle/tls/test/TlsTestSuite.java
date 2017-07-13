@@ -32,7 +32,6 @@ public class TlsTestSuite extends TestSuite
     private static void addAllTests(TestSuite testSuite, int clientCrypto, int serverCrypto)
     {
         addFallbackTests(testSuite, clientCrypto, serverCrypto);
-        addVersionTests(testSuite, ProtocolVersion.SSLv3, clientCrypto, serverCrypto);
         addVersionTests(testSuite, ProtocolVersion.TLSv10, clientCrypto, serverCrypto);
         addVersionTests(testSuite, ProtocolVersion.TLSv11, clientCrypto, serverCrypto);
         addVersionTests(testSuite, ProtocolVersion.TLSv12, clientCrypto, serverCrypto);
@@ -206,11 +205,11 @@ public class TlsTestSuite extends TestSuite
     {
         TlsTestConfig c = new TlsTestConfig();
         c.clientCrypto = clientCrypto;
-        c.clientMinimumVersion = ProtocolVersion.SSLv3;
+        c.clientMinimumVersion = ProtocolVersion.TLSv10;
         c.clientOfferVersion = ProtocolVersion.TLSv12;
         c.serverCrypto = serverCrypto;
         c.serverMaximumVersion = version;
-        c.serverMinimumVersion = ProtocolVersion.SSLv3;
+        c.serverMinimumVersion = ProtocolVersion.TLSv10;
         return c;
     }
 

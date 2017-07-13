@@ -1,7 +1,6 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -27,38 +26,6 @@ public class JceTlsSecret
         super(data);
 
         this.crypto = crypto;
-    }
-
-    public synchronized TlsSecret deriveSSLKeyBlock(byte[] seed, int length)
-    {
-        checkAlive();
-
-        try
-        {
-            int md5Count = (length + MD5_SIZE - 1) / MD5_SIZE;
-            byte[] md5Buf = prf_SSL(seed, md5Count);
-
-            TlsSecret result = crypto.adoptLocalSecret(Arrays.copyOfRange(md5Buf, 0, length));
-            Arrays.fill(md5Buf, (byte)0);
-            return result;
-        }
-        catch (GeneralSecurityException e)
-        {
-            throw new RuntimeException(); // TODO:
-        }
-    }
-
-    public synchronized TlsSecret deriveSSLMasterSecret(byte[] seed)
-    {
-        checkAlive();
-        try
-        {
-            return crypto.adoptLocalSecret(prf_SSL(seed, 3));
-        }
-        catch (GeneralSecurityException e)
-        {
-            throw new RuntimeException(); // TODO:
-        }
     }
 
     public synchronized TlsSecret deriveUsingPRF(int prfAlgorithm, String label, byte[] seed, int length)
@@ -107,37 +74,6 @@ public class JceTlsSecret
             mac.doFinal(b2, 0);
             System.arraycopy(b2, 0, output, (size * i), Math.min(size, output.length - (size * i)));
         }
-    }
-
-    protected byte[] prf_SSL(byte[] seed, int md5Count)
-        throws GeneralSecurityException
-    {
-        MessageDigest md5 = crypto.getHelper().createDigest("MD5");
-        MessageDigest sha1 = crypto.getHelper().createDigest("SHA-1");
-
-        int md5Size = md5.getDigestLength();
-        byte[] md5Buf = new byte[md5Size * md5Count];
-        int md5Pos = 0;
-
-        byte[] sha1Buf = new byte[sha1.getDigestLength()];
-
-        for (int i = 0; i < md5Count; ++i)
-        {
-            byte[] ssl3Const = SSL3_CONST[i];
-
-            sha1.update(ssl3Const, 0, ssl3Const.length);
-            sha1.update(data, 0, data.length);
-            sha1.update(seed, 0, seed.length);
-            sha1.digest(sha1Buf, 0, sha1Buf.length);
-
-            md5.update(data, 0, data.length);
-            md5.update(sha1Buf, 0, sha1Buf.length);
-            md5.digest(md5Buf, md5Pos, md5Size);
-
-            md5Pos += md5Size;
-        }
-
-        return md5Buf;
     }
 
     protected byte[] prf_1_0(byte[] secret, byte[] labelSeed, int length)
