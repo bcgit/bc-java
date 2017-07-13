@@ -68,16 +68,12 @@ public class XMSSMTSigner
             throw new IllegalStateException("not initialized");
         }
 
-        // TODO: it might be the case that we can make this "thread safe" by synchronizing on the state map while signing
         BDSStateMap bdsState = privateKey.getBDSState();
 
-        // make sure there are no used indexes
-        bdsState.update();
-
         // privateKey.increaseIndex(this);
-        long globalIndex = privateKey.getIndex();
-        int totalHeight = params.getHeight();
-        int xmssHeight = xmssParams.getHeight();
+        final long globalIndex = privateKey.getIndex();
+        final int totalHeight = params.getHeight();
+        final int xmssHeight = xmssParams.getHeight();
         if (!XMSSUtil.isIndexValid(totalHeight, globalIndex))
         {
             throw new IllegalStateException("index out of bounds");
@@ -85,7 +81,7 @@ public class XMSSMTSigner
 
       		/* compress message */
         byte[] random = wotsPlus.getKhf().PRF(privateKey.getSecretKeyPRF(), XMSSUtil.toBytesBigEndian(globalIndex, 32));
-        byte[] concatenated = XMSSUtil.concat(random, privateKey.getRoot(),
+        byte[] concatenated = Arrays.concatenate(random, privateKey.getRoot(),
             XMSSUtil.toBytesBigEndian(globalIndex, params.getDigestSize()));
         byte[] messageDigest = wotsPlus.getKhf().HMsg(concatenated, message);
 
@@ -104,26 +100,20 @@ public class XMSSMTSigner
         OTSHashAddress otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder().withTreeAddress(indexTree)
             .withOTSAddress(indexLeaf).build();
 
-      		/* sign message digest */
-        WOTSPlusSignature wotsPlusSignature = wotsSign(messageDigest, otsHashAddress);
       		/* get authentication path from BDS */
         if (bdsState.get(0) == null || indexLeaf == 0)
         {
             bdsState.put(0, new BDS(xmssParams, privateKey.getPublicSeed(), privateKey.getSecretKeySeed(), otsHashAddress));
         }
 
+        /* sign message digest */
+        WOTSPlusSignature wotsPlusSignature = wotsSign(messageDigest, otsHashAddress);
+        
         XMSSReducedSignature reducedSignature = new XMSSReducedSignature.Builder(xmssParams)
                 .withWOTSPlusSignature(wotsPlusSignature).withAuthPath(bdsState.get(0).getAuthenticationPath())
                 .build();
 
         signature.getReducedSignatures().add(reducedSignature);
-
-      		/* prepare authentication path for next leaf */
-        if (indexLeaf < ((1 << xmssHeight) - 1))
-        {
-            bdsState.get(0).nextAuthenticationPath(privateKey.getPublicSeed(), privateKey.getSecretKeySeed(), otsHashAddress);
-        }
-
       		/* loop over remaining layers */
         for (int layer = 1; layer < params.getLayers(); layer++)
         {
@@ -132,7 +122,6 @@ public class XMSSMTSigner
 
             indexLeaf = XMSSUtil.getLeafIndex(indexTree, xmssHeight);
             indexTree = XMSSUtil.getTreeIndex(indexTree, xmssHeight);
-            //xmss.setIndex(indexLeaf);
 
       			/* adjust addresses */
             otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder().withLayerAddress(layer)
@@ -151,13 +140,6 @@ public class XMSSMTSigner
                     .withAuthPath(bdsState.get(layer).getAuthenticationPath()).build();
 
             signature.getReducedSignatures().add(reducedSignature);
-
-      			/* prepare authentication path for next leaf */
-            if (indexLeaf < ((1 << xmssHeight) - 1)
-                && XMSSUtil.isNewAuthenticationPathNeeded(globalIndex, xmssHeight, layer))
-            {
-                bdsState.get(layer).nextAuthenticationPath(privateKey.getPublicSeed(), privateKey.getSecretKeySeed(), otsHashAddress);
-            }
         }
 
         hasGenerated = true;
@@ -192,7 +174,7 @@ public class XMSSMTSigner
 		/* (re)create compressed message */
         XMSSMTSignature sig = new XMSSMTSignature.Builder(params).withSignature(signature).build();
 
-        byte[] concatenated = XMSSUtil.concat(sig.getRandom(), publicKey.getRoot(),
+        byte[] concatenated = Arrays.concatenate(sig.getRandom(), publicKey.getRoot(),
             XMSSUtil.toBytesBigEndian(sig.getIndex(), params.getDigestSize()));
         byte[] messageDigest = wotsPlus.getKhf().HMsg(concatenated, message);
 

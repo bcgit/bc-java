@@ -27,7 +27,7 @@ import org.bouncycastle.util.Arrays;
  *         }
  *         bdsState CHOICE {
  *            platformSerialization [0] OCTET STRING
- *         }
+ *         } OPTIONAL
  *    }
  * </pre>
  */
@@ -58,6 +58,11 @@ public class XMSSPrivateKey
             throw new IllegalArgumentException("unknown version of sequence");
         }
 
+        if (seq.size() != 2 && seq.size() != 3)
+        {
+            throw new IllegalArgumentException("key sequence wrong size");
+        }
+
         ASN1Sequence keySeq = ASN1Sequence.getInstance(seq.getObjectAt(1));
 
         this.index = ASN1Integer.getInstance(keySeq.getObjectAt(0)).getValue().intValue();
@@ -66,7 +71,14 @@ public class XMSSPrivateKey
         this.publicSeed = Arrays.clone(DEROctetString.getInstance(keySeq.getObjectAt(3)).getOctets());
         this.root = Arrays.clone(DEROctetString.getInstance(keySeq.getObjectAt(4)).getOctets());
 
-        this.bdsState = Arrays.clone(DEROctetString.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(2)), true).getOctets());
+        if (seq.size() == 3)
+        {
+            this.bdsState = Arrays.clone(DEROctetString.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(2)), true).getOctets());
+        }
+        else
+        {
+            this.bdsState = null;
+        }
     }
 
     public static XMSSPrivateKey getInstance(Object o)

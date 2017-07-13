@@ -3,6 +3,7 @@ package org.bouncycastle.pqc.crypto.xmss;
 import java.io.IOException;
 
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.util.Arrays;
 
 /**
  * XMSS^MT Private Key.
@@ -44,7 +45,7 @@ public final class XMSSMTPrivateKeyParameters
             int publicSeedSize = n;
             int rootSize = n;
             /*
-			int totalSize = indexSize + secretKeySize + secretKeyPRFSize + publicSeedSize + rootSize;
+            int totalSize = indexSize + secretKeySize + secretKeyPRFSize + publicSeedSize + rootSize;
 			if (privateKey.length != totalSize) {
 				throw new ParseException("private key has wrong size", 0);
 			}
@@ -259,7 +260,7 @@ public final class XMSSMTPrivateKeyParameters
             e.printStackTrace();
             throw new RuntimeException("error serializing bds state");
         }
-        return XMSSUtil.concat(out, bdsStateOut);
+        return Arrays.concatenate(out, bdsStateOut);
     }
 
     public long getIndex()
@@ -299,9 +300,57 @@ public final class XMSSMTPrivateKeyParameters
 
     public XMSSMTPrivateKeyParameters getNextKey()
     {
+        final long globalIndex = this.getIndex();
+        final int xmssHeight = params.getXMSSParameters().getHeight();
+
+        //
+        // set up state for next signature
+        //
+        long indexTree = XMSSUtil.getTreeIndex(globalIndex, xmssHeight);
+        int indexLeaf = XMSSUtil.getLeafIndex(globalIndex, xmssHeight);
+
+        OTSHashAddress otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder().withTreeAddress(indexTree)
+            .withOTSAddress(indexLeaf).build();
+
+        BDSStateMap newState = new BDSStateMap(bdsState);
+
+        /* prepare authentication path for next leaf */
+        if (indexLeaf < ((1 << xmssHeight) - 1))
+        {
+            if (newState.get(0) == null || indexLeaf == 0)
+            {
+                newState.put(0, new BDS(params.getXMSSParameters(), publicSeed, secretKeySeed, otsHashAddress));
+            }
+
+            newState.update(0, publicSeed, secretKeySeed, otsHashAddress);
+        }
+
+        /* loop over remaining layers */
+        for (int layer = 1; layer < params.getLayers(); layer++)
+        {
+      			/* get root of layer - 1 */
+            indexLeaf = XMSSUtil.getLeafIndex(indexTree, xmssHeight);
+            indexTree = XMSSUtil.getTreeIndex(indexTree, xmssHeight);
+      			/* adjust addresses */
+            otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder().withLayerAddress(layer)
+                .withTreeAddress(indexTree).withOTSAddress(indexLeaf).build();
+
+      			/* prepare authentication path for next leaf */
+            if (indexLeaf < ((1 << xmssHeight) - 1)
+                && XMSSUtil.isNewAuthenticationPathNeeded(globalIndex, xmssHeight, layer))
+            {
+                if (newState.get(layer) == null)
+                {
+                    newState.put(layer, new BDS(params.getXMSSParameters(), publicSeed, secretKeySeed, otsHashAddress));
+                }
+
+                newState.update(layer, publicSeed, secretKeySeed, otsHashAddress);
+            }
+        }
+
         return new XMSSMTPrivateKeyParameters.Builder(params).withIndex(index + 1)
             .withSecretKeySeed(secretKeySeed).withSecretKeyPRF(secretKeyPRF)
             .withPublicSeed(publicSeed).withRoot(root)
-            .withBDSState(bdsState).build();
+            .withBDSState(newState).build();
     }
 }

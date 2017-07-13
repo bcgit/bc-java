@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
+import org.bouncycastle.util.Pack;
+
 /**
  * Hash tree address.
  */
@@ -64,9 +66,9 @@ final class HashTreeAddress
     protected byte[] toByteArray()
     {
         byte[] byteRepresentation = super.toByteArray();
-        XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, padding, 16);
-        XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, treeHeight, 20);
-        XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, treeIndex, 24);
+        Pack.intToBigEndian(padding, byteRepresentation,16);
+        Pack.intToBigEndian(treeHeight, byteRepresentation, 20);
+        Pack.intToBigEndian(treeIndex, byteRepresentation, 24);
         return byteRepresentation;
     }
 

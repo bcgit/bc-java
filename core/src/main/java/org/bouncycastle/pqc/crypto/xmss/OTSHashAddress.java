@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
+import org.bouncycastle.util.Pack;
+
 /**
  * OTS hash address.
  */
@@ -70,9 +72,9 @@ final class OTSHashAddress
     protected byte[] toByteArray()
     {
         byte[] byteRepresentation = super.toByteArray();
-        XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, otsAddress, 16);
-        XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, chainAddress, 20);
-        XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, hashAddress, 24);
+        Pack.intToBigEndian(otsAddress, byteRepresentation,16);
+        Pack.intToBigEndian(chainAddress, byteRepresentation, 20);
+        Pack.intToBigEndian(hashAddress, byteRepresentation, 24);
         return byteRepresentation;
     }
 

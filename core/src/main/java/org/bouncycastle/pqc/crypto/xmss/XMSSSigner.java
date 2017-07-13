@@ -68,7 +68,7 @@ public class XMSSSigner
 
 		/* create (randomized keyed) messageDigest of message */
         byte[] random = khf.PRF(privateKey.getSecretKeyPRF(), XMSSUtil.toBytesBigEndian(index, 32));
-        byte[] concatenated = XMSSUtil.concat(random, privateKey.getRoot(),
+        byte[] concatenated = Arrays.concatenate(random, privateKey.getRoot(),
             XMSSUtil.toBytesBigEndian(index, params.getDigestSize()));
         byte[] messageDigest = khf.HMsg(concatenated, message);
 
@@ -78,14 +78,6 @@ public class XMSSSigner
         XMSSSignature signature = (XMSSSignature)new XMSSSignature.Builder(params).withIndex(index).withRandom(random)
             .withWOTSPlusSignature(wotsPlusSignature).withAuthPath(privateKey.getBDSState().getAuthenticationPath())
             .build();
-
-
-		/* prepare authentication path for next leaf */
-        int treeHeight = this.params.getHeight();
-        if (index < ((1 << treeHeight) - 1))
-        {
-            privateKey.getBDSState().nextAuthenticationPath(privateKey.getPublicSeed(), privateKey.getSecretKeySeed(), (OTSHashAddress)new OTSHashAddress.Builder().build());
-        }
 
         hasGenerated = true;
 
@@ -113,7 +105,7 @@ public class XMSSSigner
         params.getWOTSPlus().importKeys(new byte[params.getDigestSize()], publicKey.getPublicSeed());
 
         		/* create message digest */
-        byte[] concatenated = XMSSUtil.concat(sig.getRandom(), publicKey.getRoot(),
+        byte[] concatenated = Arrays.concatenate(sig.getRandom(), publicKey.getRoot(),
             XMSSUtil.toBytesBigEndian(index, params.getDigestSize()));
         byte[] messageDigest = khf.HMsg(concatenated, message);
 

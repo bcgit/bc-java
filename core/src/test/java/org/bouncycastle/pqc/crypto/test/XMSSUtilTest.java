@@ -96,54 +96,12 @@ public class XMSSUtilTest
         assertEquals((byte)0x39, b[8]);
     }
 
-    public void testIntToBytesBigEndianOffsetException()
-    {
-        byte[] in = new byte[4];
-        try
-        {
-            XMSSUtil.intToBytesBigEndianOffset(in, 1, 1);
-            fail();
-        }
-        catch (Exception ex)
-        {
-        }
-    }
-
-    public void testIntToBytesBigEndianOffset()
-    {
-        byte[] in = new byte[32];
-        XMSSUtil.intToBytesBigEndianOffset(in, 12345, 5);
-        assertEquals((byte)0x00, in[0]);
-        assertEquals((byte)0x00, in[1]);
-        assertEquals((byte)0x00, in[2]);
-        assertEquals((byte)0x00, in[3]);
-        assertEquals((byte)0x00, in[4]);
-        assertEquals((byte)0x00, in[5]);
-        assertEquals((byte)0x00, in[6]);
-        assertEquals((byte)0x30, in[7]);
-        assertEquals((byte)0x39, in[8]);
-        for (int i = 9; i < in.length; i++)
-        {
-            assertEquals((byte)0x00, in[i]);
-        }
-        in = new byte[32];
-        XMSSUtil.intToBytesBigEndianOffset(in, 12345, 28);
-        for (int i = 0; i < 28; i++)
-        {
-            assertEquals((byte)0x00, in[i]);
-        }
-        assertEquals((byte)0x00, in[28]);
-        assertEquals((byte)0x00, in[29]);
-        assertEquals((byte)0x30, in[30]);
-        assertEquals((byte)0x39, in[31]);
-    }
-
     public void testLongToBytesBigEndianOffsetException()
     {
         try
         {
             byte[] in = new byte[8];
-            XMSSUtil.longToBytesBigEndianOffset(in, 1, 1);
+            Pack.longToBigEndian(1, in, 1);
             fail();
         }
         catch (Exception ex)
@@ -154,7 +112,7 @@ public class XMSSUtilTest
     public void testLongToBytesBigEndianOffset()
     {
         byte[] in = new byte[32];
-        XMSSUtil.longToBytesBigEndianOffset(in, 12345, 5);
+        Pack.longToBigEndian(12345, in, 5);
         assertEquals((byte)0x00, in[0]);
         assertEquals((byte)0x00, in[1]);
         assertEquals((byte)0x00, in[2]);
@@ -173,7 +131,7 @@ public class XMSSUtilTest
             assertEquals((byte)0x00, in[i]);
         }
         in = new byte[32];
-        XMSSUtil.longToBytesBigEndianOffset(in, 12345, 24);
+        Pack.longToBigEndian(12345, in, 24);
         for (int i = 0; i < 24; i++)
         {
             assertEquals((byte)0x00, in[i]);
