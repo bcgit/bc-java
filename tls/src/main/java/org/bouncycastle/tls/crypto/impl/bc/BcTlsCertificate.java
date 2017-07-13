@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -24,6 +26,7 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsVerifier;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Implementation class for a single X.509 certificate based on the BC light-weight API.
@@ -154,6 +157,20 @@ public class BcTlsCertificate
     public byte[] getEncoded() throws IOException
     {
         return certificate.getEncoded(ASN1Encoding.DER);
+    }
+
+    public byte[] getExtension(ASN1ObjectIdentifier extensionOID) throws IOException
+    {
+        Extensions extensions = certificate.getTBSCertificate().getExtensions();
+        if (extensions != null)
+        {
+            Extension extension = extensions.getExtension(extensionOID);
+            if (extension != null)
+            {
+                return Arrays.clone(extension.getExtnValue().getOctets());
+            }
+        }
+        return null;
     }
 
     public BigInteger getSerialNumber()
