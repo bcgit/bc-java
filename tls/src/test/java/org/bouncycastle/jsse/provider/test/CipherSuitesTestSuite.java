@@ -4,11 +4,13 @@ import java.security.AccessController;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.PrivilegedAction;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -89,19 +91,6 @@ public class CipherSuitesTestSuite extends TestSuite
 
         CipherSuitesTestSuite testSuite = new CipherSuitesTestSuite();
 
-        SSLContext sslContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
-        String[] cipherSuites;
-        if (hasSslParameters)
-        {
-            cipherSuites = sslContext.getSupportedSSLParameters().getCipherSuites();
-        }
-        else
-        {
-            cipherSuites = sslContext.getSocketFactory().getSupportedCipherSuites();
-        }
-        
-        Arrays.sort(cipherSuites);
-
         char[] serverPassword = "serverPassword".toCharArray();
 
         KeyPair caKeyPairDSA = TestUtils.generateDSAKeyPair();
@@ -123,6 +112,26 @@ public class CipherSuitesTestSuite extends TestSuite
         ts.setCertificateEntry("caDSA", caCertDSA);
         ts.setCertificateEntry("caEC", caCertEC);
         ts.setCertificateEntry("caRSA", caCertRSA);
+
+        SSLContext sslContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
+        String[] cipherSuites;
+        if (hasSslParameters)
+        {
+            cipherSuites = sslContext.getSupportedSSLParameters().getCipherSuites();
+        }
+        else
+        {
+            TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
+                      BouncyCastleJsseProvider.PROVIDER_NAME);
+
+            trustMgrFact.init(ts);
+
+            sslContext.init(null, trustMgrFact.getTrustManagers(),
+                 SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
+            cipherSuites = sslContext.getSocketFactory().getSupportedCipherSuites();
+        }
+
+        Arrays.sort(cipherSuites);
 
         for (String cipherSuite : cipherSuites)
         {
