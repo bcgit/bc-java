@@ -24,16 +24,7 @@ public abstract class TlsRSAUtils
         TlsSecret preMasterSecret = context.getCrypto().generateRSAPreMasterSecret(context.getClientVersion());
 
         byte[] encryptedPreMasterSecret = preMasterSecret.encrypt(certificate);
-
-        if (TlsUtils.isSSL(context))
-        {
-            // TODO Do any SSLv3 servers actually expect the length?
-            output.write(encryptedPreMasterSecret);
-        }
-        else
-        {
-            TlsUtils.writeOpaque16(encryptedPreMasterSecret, output);
-        }
+        TlsUtils.writeOpaque16(encryptedPreMasterSecret, output);
 
         return preMasterSecret;
     }

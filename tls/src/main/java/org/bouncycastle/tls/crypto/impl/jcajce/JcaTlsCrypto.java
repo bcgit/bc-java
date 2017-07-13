@@ -662,7 +662,7 @@ public class JcaTlsCrypto
     protected TlsNullCipher createNullCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
-        return new TlsNullCipher(cryptoParams, createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm));
+        return new TlsNullCipher(cryptoParams, createMAC(macAlgorithm), createMAC(macAlgorithm));
     }
 
     JcaJceHelper getHelper()
@@ -674,35 +674,35 @@ public class JcaTlsCrypto
         throws IOException, GeneralSecurityException
     {
         return new TlsBlockCipher(this, cryptoParams, createCBCBlockOperator(cryptoParams, "AES", true, cipherKeySize), createCBCBlockOperator(cryptoParams, "AES", false, cipherKeySize),
-            createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm), cipherKeySize);
+            createMAC(macAlgorithm), createMAC(macAlgorithm), cipherKeySize);
     }
 
     private TlsBlockCipher createARIACipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
         return new TlsBlockCipher(this, cryptoParams, createCBCBlockOperator(cryptoParams, "ARIA", true, cipherKeySize), createCBCBlockOperator(cryptoParams, "ARIA", false, cipherKeySize),
-            createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm), cipherKeySize);
+            createMAC(macAlgorithm), createMAC(macAlgorithm), cipherKeySize);
     }
 
     private TlsBlockCipher createCamelliaCipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
         return new TlsBlockCipher(this, cryptoParams, createCBCBlockOperator(cryptoParams, "Camellia", true, cipherKeySize), createCBCBlockOperator(cryptoParams, "Camellia", false, cipherKeySize),
-            createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm), cipherKeySize);
+            createMAC(macAlgorithm), createMAC(macAlgorithm), cipherKeySize);
     }
 
     private TlsBlockCipher createDESedeCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
         return new TlsBlockCipher(this, cryptoParams, createCBCBlockOperator(cryptoParams, "DESede", true, 24), createCBCBlockOperator(cryptoParams, "DESede", false, 24),
-            createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm), 24);
+            createMAC(macAlgorithm), createMAC(macAlgorithm), 24);
     }
 
     private TlsBlockCipher createSEEDCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException, GeneralSecurityException
     {
         return new TlsBlockCipher(this, cryptoParams, createCBCBlockOperator(cryptoParams, "SEED", true, 16), createCBCBlockOperator(cryptoParams, "SEED", false, 16),
-            createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm), 16);
+            createMAC(macAlgorithm), createMAC(macAlgorithm), 16);
     }
 
     private TlsBlockCipherImpl createCBCBlockOperator(TlsCryptoParameters cryptoParams, String algorithm, boolean forEncryption, int keySize)
@@ -720,17 +720,9 @@ public class JcaTlsCrypto
         }
     }
 
-    private TlsHMAC createMAC(TlsCryptoParameters cryptoParams, int macAlgorithm)
-        throws GeneralSecurityException, IOException
+    private TlsHMAC createMAC(int macAlgorithm) throws IOException
     {
-        if (TlsImplUtils.isSSL(cryptoParams))
-        {
-            return createSSL3HMAC(macAlgorithm);
-        }
-        else
-        {
-            return createHMAC(macAlgorithm);
-        }
+        return createHMAC(macAlgorithm);
     }
 
     private TlsCipher createChaCha20Poly1305(TlsCryptoParameters cryptoParams)
@@ -780,29 +772,7 @@ public class JcaTlsCrypto
         throws IOException, GeneralSecurityException
     {
         return new TlsStreamCipher(cryptoParams, createStreamCipher("RC4", "RC4", 128, true), createStreamCipher("RC4", "RC4", 128, false),
-            createMAC(cryptoParams, macAlgorithm), createMAC(cryptoParams, macAlgorithm), cipherKeySize, false);
-    }
-
-    private TlsHMAC createSSL3HMAC(int macAlgorithm)
-        throws IOException, GeneralSecurityException
-    {
-        switch (macAlgorithm)
-        {
-        case MACAlgorithm._null:
-            return null;
-        case MACAlgorithm.hmac_md5:
-            return new SSL3Mac(createHash(getDigestName(HashAlgorithm.md5)), 16, 64);
-        case MACAlgorithm.hmac_sha1:
-            return new SSL3Mac(createHash(getDigestName(HashAlgorithm.sha1)), 20, 64);
-        case MACAlgorithm.hmac_sha256:
-            return new SSL3Mac(createHash(getDigestName(HashAlgorithm.sha256)), 32, 64);
-        case MACAlgorithm.hmac_sha384:
-            return new SSL3Mac(createHash(getDigestName(HashAlgorithm.sha384)), 48, 128);
-        case MACAlgorithm.hmac_sha512:
-            return new SSL3Mac(createHash(getDigestName(HashAlgorithm.sha512)), 64, 128);
-        default:
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
+            createMAC(macAlgorithm), createMAC(macAlgorithm), cipherKeySize, false);
     }
 
     String getDigestName(short algorithm)
@@ -832,107 +802,5 @@ public class JcaTlsCrypto
             throw new IllegalArgumentException("unknown HashAlgorithm");
         }
         return digestName;
-    }
-
-    /**
-     * HMAC implementation based on original internet draft for HMAC (RFC 2104)
-     * <p/>
-     * The difference is that padding is concatenated versus XORed with the key
-     * <p/>
-     * H(K + opad, H(K + ipad, text))
-     */
-    private static class SSL3Mac
-        implements TlsHMAC
-    {
-        private static final byte IPAD_BYTE = (byte)0x36;
-        private static final byte OPAD_BYTE = (byte)0x5C;
-
-        private static final byte[] IPAD = genPad(IPAD_BYTE, 48);
-        private static final byte[] OPAD = genPad(OPAD_BYTE, 48);
-
-        private TlsHash digest;
-        private final int digestSize;
-        private final int internalBlockSize;
-        private int padLength;
-
-        private byte[] secret;
-
-        /**
-         * Base constructor for one of the standard digest algorithms that the byteLength of
-         * the algorithm is know for. Behaviour is undefined for digests other than MD5 or SHA1.
-         *
-         * @param digest            the digest.
-         * @param digestSize        the digest size.
-         * @param internalBlockSize the digest internal block size.
-         */
-        public SSL3Mac(TlsHash digest, int digestSize, int internalBlockSize)
-        {
-            this.digest = digest;
-            this.digestSize = digestSize;
-            this.internalBlockSize = internalBlockSize;
-
-            if (digestSize == 20)
-            {
-                this.padLength = 40;
-            }
-            else
-            {
-                this.padLength = 48;
-            }
-        }
-
-        public void setKey(byte[] key)
-        {
-            this.secret = key;
-
-            reset();
-        }
-
-        public void update(byte[] in, int inOff, int len)
-        {
-            digest.update(in, inOff, len);
-        }
-
-        public byte[] calculateMAC()
-        {
-            byte[] tmp = digest.calculateHash();
-
-            digest.update(secret, 0, secret.length);
-            digest.update(OPAD, 0, padLength);
-            digest.update(tmp, 0, tmp.length);
-
-            byte[] rv = digest.calculateHash();
-
-            reset();
-
-            return rv;
-        }
-
-        public int getInternalBlockSize()
-        {
-            return internalBlockSize;
-        }
-
-        public int getMacLength()
-        {
-            return digestSize;
-        }
-
-        /**
-         * Reset the mac generator.
-         */
-        public void reset()
-        {
-            digest.reset();
-            digest.update(secret, 0, secret.length);
-            digest.update(IPAD, 0, padLength);
-        }
-
-        private static byte[] genPad(byte b, int count)
-        {
-            byte[] padding = new byte[count];
-            Arrays.fill(padding, b);
-            return padding;
-        }
     }
 }

@@ -34,19 +34,6 @@ class TlsSuiteHMac
         this.digestBlockSize = mac.getInternalBlockSize();
         this.digestOverhead = digestBlockSize / 8;
 
-        if (TlsImplUtils.isSSL(cryptoParams))
-        {
-            // TODO This should check the actual algorithm, not assume based on the digest size
-            if (mac.getMacLength() == 20)
-            {
-                /*
-                 * NOTE: When SHA-1 is used with the SSL 3.0 MAC, the secret + input pad is not
-                 * digest block-aligned.
-                 */
-                this.digestOverhead = 4;
-            }
-        }
-
         // NOTE: The input pad for HMAC is always a full digest block
         this.mac = mac;
     }
@@ -93,15 +80,11 @@ class TlsSuiteHMac
     public byte[] calculateMac(long seqNo, short type, byte[] message, int offset, int length)
     {
         ProtocolVersion serverVersion = cryptoParams.getServerVersion();
-        boolean isSSL = serverVersion.isSSL();
 
-        byte[] macHeader = new byte[isSSL ? 11 : 13];
+        byte[] macHeader = new byte[13];
         TlsUtils.writeUint64(seqNo, macHeader, 0);
         TlsUtils.writeUint8(type, macHeader, 8);
-        if (!isSSL)
-        {
-            TlsUtils.writeVersion(serverVersion, macHeader, 9);
-        }
+        TlsUtils.writeVersion(serverVersion, macHeader, 9);
         TlsUtils.writeUint16(length, macHeader, macHeader.length - 2);
 
         mac.update(macHeader, 0, macHeader.length);
@@ -122,7 +105,7 @@ class TlsSuiteHMac
          * ...but ensure a constant number of complete digest blocks are processed (as many as would
          * be needed for 'fullLength' bytes of input).
          */
-        int headerLength = TlsImplUtils.isSSL(cryptoParams) ? 11 : 13;
+        int headerLength = 13;
 
         // How many extra full blocks do we need to calculate?
         int extra = getDigestBlockCount(headerLength + expectedLength) - getDigestBlockCount(headerLength + length);
