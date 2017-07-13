@@ -9,7 +9,7 @@ import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsNullNullCipher;
 
 /**
- * An implementation of the TLS 1.0/1.1/1.2 record layer, allowing downgrade to SSLv3.
+ * An implementation of the TLS 1.0/1.1/1.2 record layer.
  */
 class RecordStream
 {

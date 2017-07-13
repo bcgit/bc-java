@@ -294,13 +294,6 @@ public class TlsServerProtocol
                          */
                         throw new TlsFatalAlert(AlertDescription.unexpected_message);
                     }
-                    else if (TlsUtils.isSSL(getContext()))
-                    {
-                        if (this.peerCertificate == null)
-                        {
-                            throw new TlsFatalAlert(AlertDescription.unexpected_message);
-                        }
-                    }
                     else
                     {
                         notifyClientCertificate(Certificate.EMPTY_CHAIN);
@@ -401,27 +394,6 @@ public class TlsServerProtocol
         {
         case AlertDescription.no_certificate:
         {
-            /*
-             * SSL 3.0 If the server has sent a certificate request Message, the client must send
-             * either the certificate message or a no_certificate alert.
-             */
-            if (TlsUtils.isSSL(getContext()) && this.certificateRequest != null)
-            {
-                switch (this.connection_state)
-                {
-                case CS_SERVER_HELLO_DONE:
-                {
-                    tlsServer.processClientSupplementalData(null);
-                    // NB: Fall through to next case label
-                }
-                case CS_CLIENT_SUPPLEMENTAL_DATA:
-                {
-                    notifyClientCertificate(Certificate.EMPTY_CHAIN);
-                    this.connection_state = CS_CLIENT_CERTIFICATE;
-                    return;
-                }
-                }
-            }
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
         }
@@ -628,18 +600,10 @@ public class TlsServerProtocol
 
         assertEmpty(buf);
 
-        if (TlsUtils.isSSL(getContext()))
-        {
-            establishMasterSecret(getContext(), keyExchange);
-        }
-
         this.prepareFinishHash = recordStream.prepareToFinish();
         this.securityParameters.sessionHash = TlsUtils.getCurrentPRFHash(prepareFinishHash);
 
-        if (!TlsUtils.isSSL(getContext()))
-        {
-            establishMasterSecret(getContext(), keyExchange);
-        }
+        establishMasterSecret(getContext(), keyExchange);
 
         recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 

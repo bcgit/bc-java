@@ -165,7 +165,6 @@ class ProvSSLContextSpi
     private static Map<String, ProtocolVersion> createSupportedProtocols()
     {
         Map<String, ProtocolVersion> ps = new HashMap<String, ProtocolVersion>();
-//        ps.put("SSLv3", ProtocolVersion.SSLv3);
         ps.put("TLSv1", ProtocolVersion.TLSv10);
         ps.put("TLSv1.1", ProtocolVersion.TLSv11);
         ps.put("TLSv1.2", ProtocolVersion.TLSv12);

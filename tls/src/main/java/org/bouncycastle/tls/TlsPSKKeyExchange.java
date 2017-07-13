@@ -285,16 +285,7 @@ public class TlsPSKKeyExchange
         }
         else if (this.keyExchange == KeyExchangeAlgorithm.RSA_PSK)
         {
-            byte[] encryptedPreMasterSecret;
-            if (TlsUtils.isSSL(context))
-            {
-                // TODO Do any SSLv3 clients actually include the length?
-                encryptedPreMasterSecret = Streams.readAll(input);
-            }
-            else
-            {
-                encryptedPreMasterSecret = TlsUtils.readOpaque16(input);
-            }
+            byte[] encryptedPreMasterSecret = TlsUtils.readOpaque16(input);
 
             this.preMasterSecret = serverCredentials.decrypt(new TlsCryptoParameters(context), encryptedPreMasterSecret);
         }

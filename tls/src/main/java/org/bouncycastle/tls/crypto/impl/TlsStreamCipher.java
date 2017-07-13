@@ -11,7 +11,7 @@ import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.util.Arrays;
 
 /**
- * A generic TLS 1.0-1.2 / SSLv3 stream cipher.
+ * A generic TLS 1.0-1.2 stream cipher.
  */
 public class TlsStreamCipher
     implements TlsCipher

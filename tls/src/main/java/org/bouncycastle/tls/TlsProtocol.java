@@ -1041,21 +1041,6 @@ public abstract class TlsProtocol
             certificate = Certificate.EMPTY_CHAIN;
         }
 
-        if (certificate.isEmpty())
-        {
-            TlsContext context = getContext();
-            if (!context.isServer())
-            {
-                ProtocolVersion serverVersion = getContext().getServerVersion();
-                if (serverVersion.isSSL())
-                {
-                    String errorMessage = serverVersion.toString() + " client didn't provide credentials";
-                    raiseAlertWarning(AlertDescription.no_certificate, errorMessage);
-                    return;
-                }
-            }
-        }
-
         HandshakeMessage message = new HandshakeMessage(HandshakeType.certificate);
 
         certificate.encode(message);
@@ -1102,18 +1087,7 @@ public abstract class TlsProtocol
 
     protected byte[] createVerifyData(boolean isServer)
     {
-        TlsContext context = getContext();
-        TlsHandshakeHash handshakeHash = recordStream.getHandshakeHash();
-
-        if (TlsUtils.isSSL(context))
-        {
-            TlsHash prf = handshakeHash.forkPRFHash();
-            byte[] sslSender = isServer ? TlsUtils.SSL_SERVER : TlsUtils.SSL_CLIENT;
-            prf.update(sslSender, 0, sslSender.length);
-            return prf.calculateHash();
-        }
-
-        return TlsUtils.calculateTLSVerifyData(context, handshakeHash, isServer);
+        return TlsUtils.calculateTLSVerifyData(getContext(), recordStream.getHandshakeHash(), isServer);
     }
 
     /**
@@ -1157,15 +1131,6 @@ public abstract class TlsProtocol
 
     protected void refuseRenegotiation() throws IOException
     {
-        /*
-         * RFC 5746 4.5 SSLv3 clients that refuse renegotiation SHOULD use a fatal
-         * handshake_failure alert.
-         */
-        if (TlsUtils.isSSL(getContext()))
-        {
-            throw new TlsFatalAlert(AlertDescription.handshake_failure);
-        }
-
         raiseAlertWarning(AlertDescription.no_renegotiation, "Renegotiation not supported");
     }
 

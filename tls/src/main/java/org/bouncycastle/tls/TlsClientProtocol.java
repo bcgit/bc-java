@@ -384,18 +384,10 @@ public class TlsClientProtocol
                 sendClientKeyExchangeMessage();
                 this.connection_state = CS_CLIENT_KEY_EXCHANGE;
 
-                if (TlsUtils.isSSL(getContext()))
-                {
-                    establishMasterSecret(getContext(), keyExchange);
-                }
-
                 TlsHandshakeHash prepareFinishHash = recordStream.prepareToFinish();
                 this.securityParameters.sessionHash = TlsUtils.getCurrentPRFHash(prepareFinishHash);
 
-                if (!TlsUtils.isSSL(getContext()))
-                {
-                    establishMasterSecret(getContext(), keyExchange);
-                }
+                establishMasterSecret(getContext(), keyExchange);
 
                 recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 
@@ -563,10 +555,8 @@ public class TlsClientProtocol
         }
         else
         {
-            this.keyExchange.processServerCertificate(this.peerCertificate);
-
-            this.authentication.notifyServerCertificate(
-                new TlsServerCertificateImpl(this.peerCertificate, this.certificateStatus));
+            TlsUtils.processServerCertificate(peerCertificate, certificateStatus, keyExchange, authentication,
+                clientExtensions, serverExtensions);
         }
     }
 
@@ -595,7 +585,7 @@ public class TlsClientProtocol
     {
         {
             ProtocolVersion server_version = TlsUtils.readVersion(buf);
-            if (server_version.isDTLS())
+            if (!TlsUtils.isTLSv10(server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
@@ -840,7 +830,7 @@ public class TlsClientProtocol
         this.recordStream.setWriteVersion(this.tlsClient.getClientHelloRecordLayerVersion());
 
         ProtocolVersion client_version = this.tlsClient.getClientVersion();
-        if (client_version.isDTLS())
+        if (!TlsUtils.isTLSv10(client_version))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }

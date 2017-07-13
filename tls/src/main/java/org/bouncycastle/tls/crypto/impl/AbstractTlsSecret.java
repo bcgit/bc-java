@@ -16,22 +16,6 @@ public abstract class AbstractTlsSecret
 {
     protected static final int MD5_SIZE = 16;
 
-    // SSL3 magic mix constants ("A", "BB", "CCC", ...)
-    protected static final byte[][] SSL3_CONST = generateSSL3Constants();
-
-    private static byte[][] generateSSL3Constants()
-    {
-        int n = 10;
-        byte[][] arr = new byte[n][];
-        for (int i = 0; i < n; i++)
-        {
-            byte[] b = new byte[i + 1];
-            Arrays.fill(b, (byte)('A' + i));
-            arr[i] = b;
-        }
-        return arr;
-    }
-
     protected byte[] data;
 
     /**

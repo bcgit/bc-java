@@ -72,6 +72,11 @@ public abstract class AbstractTlsClient
         return new DefaultTlsECConfigVerifier(minimumCurveBits, namedCurves);
     }
 
+    protected CertificateStatusRequest getCertificateStatusRequest()
+    {
+        return new CertificateStatusRequest(CertificateStatusType.ocsp, new OCSPStatusRequest(null, null));
+    }
+
     protected Vector getSupportedSignatureAlgorithms()
     {
         return TlsUtils.getDefaultSupportedSignatureAlgorithms(context);
@@ -117,7 +122,16 @@ public abstract class AbstractTlsClient
     public Hashtable getClientExtensions()
         throws IOException
     {
-        Hashtable clientExtensions = null;
+        Hashtable clientExtensions = new Hashtable();
+
+        TlsExtensionsUtils.addEncryptThenMACExtension(clientExtensions);
+        TlsExtensionsUtils.addExtendedMasterSecretExtension(clientExtensions);
+
+        CertificateStatusRequest statusRequest = getCertificateStatusRequest();
+        if (statusRequest != null)
+        {
+            TlsExtensionsUtils.addStatusRequestExtension(clientExtensions, statusRequest);
+        }
 
         ProtocolVersion clientVersion = context.getClientVersion();
 

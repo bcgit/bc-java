@@ -11,23 +11,6 @@ import org.bouncycastle.tls.MACAlgorithm;
 public interface TlsSecret
 {
     /**
-     * Derive a new SSL key block using the passed in seed.
-     *
-     * @param seed the joint random value.
-     * @param length the length (in bytes) required.
-     * @return the newly derived secret.
-     */
-    TlsSecret deriveSSLKeyBlock(byte[] seed, int length);
-
-    /**
-     * Derive a new SSL master secret using the passed in seed.
-     *
-     * @param seed the session hash or joint random value.
-     * @return the newly derived secret.
-     */
-    TlsSecret deriveSSLMasterSecret(byte[] seed);
-
-    /**
      * Return a new secret based on applying a PRF to this one.
      *
      * @param prfAlgorithm PRF algorithm to use.
