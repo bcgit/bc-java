@@ -3,6 +3,7 @@ package org.bouncycastle.tls.crypto;
 import java.io.IOException;
 import java.math.BigInteger;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
@@ -25,6 +26,8 @@ public interface TlsCertificate
     short getClientCertificateType() throws IOException;
 
     byte[] getEncoded() throws IOException;
+
+    byte[] getExtension(ASN1ObjectIdentifier extensionOID) throws IOException;
 
     BigInteger getSerialNumber();
 

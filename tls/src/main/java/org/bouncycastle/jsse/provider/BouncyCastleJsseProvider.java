@@ -207,26 +207,6 @@ public class BouncyCastleJsseProvider
                 }
             });
 
-        if (!fipsMode)
-        {
-//            addAlgorithmImplementation("SSLContext.SSL", "org.bouncycastle.jsse.provider.SSLContext.SSL",
-//                new EngineCreator()
-//                {
-//                    public Object createInstance(Object constructorParameter)
-//                    {
-//                        return new ProvSSLContextSpi(baseCryptoProvider, new String[]{ "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2" });
-//                    }
-//                });
-//            addAlgorithmImplementation("SSLContext.SSLv3", "org.bouncycastle.jsse.provider.SSLContext.SSLv3",
-//                new EngineCreator()
-//                {
-//                    public Object createInstance(Object constructorParameter)
-//                    {
-//                        return new ProvSSLContextSpi(baseCryptoProvider, new String[]{ "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2" });
-//                    }
-//                });
-        }
-
         return fipsMode;
     }
 

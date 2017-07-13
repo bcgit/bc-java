@@ -223,8 +223,8 @@ public class DTLSClientProtocol
         }
         else
         {
-            state.keyExchange.processServerCertificate(serverCertificate);
-            state.authentication.notifyServerCertificate(new TlsServerCertificateImpl(serverCertificate, state.certificateStatus));
+            TlsUtils.processServerCertificate(serverCertificate, state.certificateStatus, state.keyExchange,
+                state.authentication, state.clientExtensions, state.serverExtensions);
         }
 
         if (serverMessage.getType() == HandshakeType.server_key_exchange)
