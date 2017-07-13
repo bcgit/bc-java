@@ -1,22 +1,76 @@
 package org.bouncycastle.jsse.provider.test;
 
+import java.security.AccessController;
 import java.security.KeyPair;
 import java.security.KeyStore;
+import java.security.PrivilegedAction;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
-
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
 public class CipherSuitesTestSuite extends TestSuite
 {
+    static final boolean hasSslParameters;
+
+    static
+    {
+        Class<?> clazz = null;
+        try
+        {
+            clazz = loadClass(CipherSuitesTestSuite.class,"javax.net.ssl.SSLParameters");
+        }
+        catch (Exception e)
+        {
+            clazz = null;
+        }
+
+        hasSslParameters = (clazz != null);
+    }
+
+    private static Class loadClass(Class sourceClass, final String className)
+    {
+        try
+        {
+            ClassLoader loader = sourceClass.getClassLoader();
+            if (loader != null)
+            {
+                return loader.loadClass(className);
+            }
+            else
+            {
+                return AccessController.doPrivileged(new PrivilegedAction<Class>()
+                {
+                    public Class run()
+                    {
+                        try
+                        {
+                            return Class.forName(className);
+                        }
+                        catch (Exception e)
+                        {
+                            // ignore - maybe log?
+                        }
+
+                        return null;
+                    }
+                });
+            }
+        }
+        catch (ClassNotFoundException e)
+        {
+            // ignore - maybe log?
+        }
+
+        return null;
+    }
+
     public CipherSuitesTestSuite()
     {
         super("CipherSuites");
@@ -36,8 +90,16 @@ public class CipherSuitesTestSuite extends TestSuite
         CipherSuitesTestSuite testSuite = new CipherSuitesTestSuite();
 
         SSLContext sslContext = SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME);
-        SSLParameters sslParameters = sslContext.getSupportedSSLParameters();
-        String[] cipherSuites = sslParameters.getCipherSuites();
+        String[] cipherSuites;
+        if (hasSslParameters)
+        {
+            cipherSuites = sslContext.getSupportedSSLParameters().getCipherSuites();
+        }
+        else
+        {
+            cipherSuites = sslContext.getSocketFactory().getSupportedCipherSuites();
+        }
+        
         Arrays.sort(cipherSuites);
 
         char[] serverPassword = "serverPassword".toCharArray();
