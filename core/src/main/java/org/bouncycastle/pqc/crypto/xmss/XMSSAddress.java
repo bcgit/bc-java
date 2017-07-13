@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
+import org.bouncycastle.util.Pack;
+
 /**
  * XMSS address.
  */
@@ -61,10 +63,10 @@ public abstract class XMSSAddress
     protected byte[] toByteArray()
     {
         byte[] byteRepresentation = new byte[32];
-        XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, layerAddress, 0);
-        XMSSUtil.longToBytesBigEndianOffset(byteRepresentation, treeAddress, 4);
-        XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, type, 12);
-        XMSSUtil.intToBytesBigEndianOffset(byteRepresentation, keyAndMask, 28);
+        Pack.intToBigEndian(layerAddress, byteRepresentation, 0);
+        Pack.longToBigEndian(treeAddress, byteRepresentation, 4);
+        Pack.intToBigEndian(type, byteRepresentation, 12);
+        Pack.intToBigEndian(keyAndMask, byteRepresentation, 28);
         return byteRepresentation;
     }
 

@@ -49,37 +49,10 @@ public class XMSSUtil
         return out;
     }
 
-    /**
-     * Copy int to byte array in big-endian at specific offset.
-     *
-     * @param Byte    array.
-     * @param Integer to put.
-     * @param Offset  in {@code in}.
-     */
-    public static void intToBytesBigEndianOffset(byte[] in, int value, int offset)
-    {
-        if (in == null)
-        {
-            throw new NullPointerException("in == null");
-        }
-        if ((in.length - offset) < 4)
-        {
-            throw new IllegalArgumentException("not enough space in array");
-        }
-        in[offset] = (byte)((value >> 24) & 0xff);
-        in[offset + 1] = (byte)((value >> 16) & 0xff);
-        in[offset + 2] = (byte)((value >> 8) & 0xff);
-        in[offset + 3] = (byte)((value) & 0xff);
-    }
-
-    /**
+    /*
      * Copy long to byte array in big-endian at specific offset.
-     *
-     * @param Byte   array.
-     * @param Long   to put.
-     * @param Offset in {@code in}.
      */
-    public static void longToBytesBigEndianOffset(byte[] in, long value, int offset)
+    public static void longToBigEndian(long value, byte[] in, int offset)
     {
         if (in == null)
         {
@@ -99,13 +72,8 @@ public class XMSSUtil
         in[offset + 7] = (byte)((value) & 0xff);
     }
 
-    /**
+    /*
      * Generic convert from big endian byte array to long.
-     *
-     * @param x-byte  array
-     * @param offset.
-     * @param size.
-     * @return Long.
      */
     public static long bytesToXBigEndian(byte[] in, int offset, int size)
     {
@@ -163,29 +131,6 @@ public class XMSSUtil
             }
         }
         return out;
-    }
-
-    /**
-     * Concatenates an arbitrary number of byte arrays.
-     *
-     * @param arrays Arrays that shall be concatenated.
-     * @return Concatenated array.
-     */
-    public static byte[] concat(byte[]... arrays)
-    {
-        int totalLength = 0;
-        for (int i = 0; i < arrays.length; i++)
-        {
-            totalLength += arrays[i].length;
-        }
-        byte[] result = new byte[totalLength];
-        int currentIndex = 0;
-        for (int i = 0; i < arrays.length; i++)
-        {
-            System.arraycopy(arrays[i], 0, result, currentIndex, arrays[i].length);
-            currentIndex += arrays[i].length;
-        }
-        return result;
     }
 
     /**

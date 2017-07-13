@@ -92,7 +92,7 @@ public class XMSSMTTest
         assertTrue(xmssSig.verify(s));
     }
 
-    public void testXMSSSha256SignatureMultiple()
+    public void testXMSSMTSha256SignatureMultiple()
         throws Exception
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSSMT", "BCPQC");

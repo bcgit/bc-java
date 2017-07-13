@@ -3,6 +3,7 @@ package org.bouncycastle.pqc.crypto.xmss;
 import java.io.IOException;
 
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -256,7 +257,7 @@ public final class XMSSPrivateKeyParameters
         byte[] out = new byte[totalSize];
         int position = 0;
 		/* copy index */
-        XMSSUtil.intToBytesBigEndianOffset(out, bdsState.getIndex(), position);
+        Pack.intToBigEndian(bdsState.getIndex(), out, position);
         position += indexSize;
 		/* copy secretKeySeed */
         XMSSUtil.copyBytesAtOffset(out, secretKeySeed, position);
@@ -280,7 +281,7 @@ public final class XMSSPrivateKeyParameters
             throw new RuntimeException("error serializing bds state: " + e.getMessage());
         }
 
-        return XMSSUtil.concat(out, bdsStateOut);
+        return Arrays.concatenate(out, bdsStateOut);
     }
 
     public int getIndex()
@@ -320,10 +321,23 @@ public final class XMSSPrivateKeyParameters
 
     public XMSSPrivateKeyParameters getNextKey()
     {
-        return new XMSSPrivateKeyParameters.Builder(params)
-                 .withSecretKeySeed(secretKeySeed).withSecretKeyPRF(secretKeyPRF)
-                 .withPublicSeed(publicSeed).withRoot(root)
-                 .withBDSState(bdsState.getNextState()).build();
+        /* prepare authentication path for next leaf */
+        int treeHeight = this.params.getHeight();
+        if (this.getIndex() < ((1 << treeHeight) - 1))
+        {
+            return new XMSSPrivateKeyParameters.Builder(params)
+                .withSecretKeySeed(secretKeySeed).withSecretKeyPRF(secretKeyPRF)
+                .withPublicSeed(publicSeed).withRoot(root)
+                .withBDSState(bdsState.getNextState(publicSeed, secretKeySeed, (OTSHashAddress)new OTSHashAddress.Builder().build())).build();
+        }
+        else
+        {
+            return new XMSSPrivateKeyParameters.Builder(params)
+                .withIndex(getIndex() + 1)
+                .withSecretKeySeed(secretKeySeed).withSecretKeyPRF(secretKeyPRF)
+                .withPublicSeed(publicSeed).withRoot(root)
+                .withBDSState(null).build();  // no more nodes left.
+        }
     }
 
 }

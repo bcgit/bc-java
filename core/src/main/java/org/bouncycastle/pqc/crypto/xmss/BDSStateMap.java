@@ -17,6 +17,16 @@ public class BDSStateMap
 
     }
 
+    public BDSStateMap(BDSStateMap stateMap)
+    {
+        for (Iterator it = stateMap.bdsState.keySet().iterator(); it.hasNext();)
+        {
+            Integer key = (Integer)it.next();
+
+            bdsState.put(key, stateMap.bdsState.get(key));
+        }
+    }
+
     void setXMSS(XMSSParameters xmss)
     {
         for (Iterator it = bdsState.keySet().iterator(); it.hasNext();)
@@ -29,20 +39,6 @@ public class BDSStateMap
         }
     }
 
-    void update()
-    {
-        for (Iterator it = bdsState.keySet().iterator(); it.hasNext();)
-        {
-            Integer key = (Integer)it.next();
-
-            BDS bds = bdsState.get(key);
-            if (bds.isUsed())
-            {
-                bdsState.put(key, bds.getNextState());
-            }
-        }
-    }
-
     public boolean isEmpty()
     {
         return bdsState.isEmpty();
@@ -51,6 +47,11 @@ public class BDSStateMap
     public BDS get(int index)
     {
         return bdsState.get(Integers.valueOf(index));
+    }
+
+    public BDS update(int index, byte[] publicSeed, byte[] secretKeySeed, OTSHashAddress otsHashAddress)
+    {
+        return bdsState.put(Integers.valueOf(index), bdsState.get(Integers.valueOf(index)).getNextState(publicSeed, secretKeySeed, otsHashAddress));
     }
 
     public void put(int index, BDS bds)
