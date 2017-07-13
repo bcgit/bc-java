@@ -563,10 +563,8 @@ public class TlsClientProtocol
         }
         else
         {
-            this.keyExchange.processServerCertificate(this.peerCertificate);
-
-            this.authentication.notifyServerCertificate(
-                new TlsServerCertificateImpl(this.peerCertificate, this.certificateStatus));
+            TlsUtils.processServerCertificate(peerCertificate, certificateStatus, keyExchange, authentication,
+                clientExtensions, serverExtensions);
         }
     }
 
