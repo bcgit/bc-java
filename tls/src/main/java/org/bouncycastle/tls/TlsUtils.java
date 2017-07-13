@@ -2898,16 +2898,19 @@ public class TlsUtils
          * present in both the client's ClientHello message and the TLS feature extension.
          */
         byte[] tlsFeatures = serverCertificate.getCertificateAt(0).getExtension(TlsObjectIdentifiers.id_pe_tlsfeature);
-        Enumeration tlsExtensions = ((ASN1Sequence)readDERObject(tlsFeatures)).getObjects();
-        while (tlsExtensions.hasMoreElements())
+        if (tlsFeatures != null)
         {
-            BigInteger tlsExtension = ((ASN1Integer)tlsExtensions.nextElement()).getPositiveValue();
-            if (tlsExtension.bitLength() <= 16)
+            Enumeration tlsExtensions = ((ASN1Sequence)readDERObject(tlsFeatures)).getObjects();
+            while (tlsExtensions.hasMoreElements())
             {
-                Integer extensionType = Integers.valueOf(tlsExtension.intValue());
-                if (clientExtensions.containsKey(extensionType) && !serverExtensions.containsKey(extensionType))
+                BigInteger tlsExtension = ((ASN1Integer)tlsExtensions.nextElement()).getPositiveValue();
+                if (tlsExtension.bitLength() <= 16)
                 {
-                    throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                    Integer extensionType = Integers.valueOf(tlsExtension.intValue());
+                    if (clientExtensions.containsKey(extensionType) && !serverExtensions.containsKey(extensionType))
+                    {
+                        throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                    }
                 }
             }
         }
