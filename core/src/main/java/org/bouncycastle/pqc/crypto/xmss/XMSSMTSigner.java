@@ -175,7 +175,7 @@ public class XMSSMTSigner
         XMSSMTSignature sig = new XMSSMTSignature.Builder(params).withSignature(signature).build();
 
         byte[] concatenated = Arrays.concatenate(sig.getRandom(), publicKey.getRoot(),
-            XMSSUtil.toBytesBigEndian(sig.getIndex(), params.getDigestSize()));
+                                         XMSSUtil.toBytesBigEndian(sig.getIndex(), params.getDigestSize()));
         byte[] messageDigest = wotsPlus.getKhf().HMsg(concatenated, message);
 
         long globalIndex = sig.getIndex();
