@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import java.text.ParseException;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.util.Arrays;
 
 /**
  * XMSS^MT.
@@ -87,11 +88,11 @@ public final class XMSSMT
             .withPrivateKey(privateKey, xmssParams).build();
         XMSSMTPublicKeyParameters xmssMTPublicKey = new XMSSMTPublicKeyParameters.Builder(params)
             .withPublicKey(publicKey).build();
-        if (!XMSSUtil.compareByteArray(xmssMTPrivateKey.getRoot(), xmssMTPublicKey.getRoot()))
+        if (!Arrays.areEqual(xmssMTPrivateKey.getRoot(), xmssMTPublicKey.getRoot()))
         {
             throw new IllegalStateException("root of private key and public key do not match");
         }
-        if (!XMSSUtil.compareByteArray(xmssMTPrivateKey.getPublicSeed(), xmssMTPublicKey.getPublicSeed()))
+        if (!Arrays.areEqual(xmssMTPrivateKey.getPublicSeed(), xmssMTPublicKey.getPublicSeed()))
         {
             throw new IllegalStateException("public seed of private key and public key do not match");
         }

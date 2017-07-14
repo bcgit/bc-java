@@ -5,7 +5,7 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Test cases for XMSSPublicKey class.
@@ -26,8 +26,8 @@ public class XMSSPublicKeyTest extends TestCase {
 
 		XMSSPublicKeyParameters publicKey2 = new XMSSPublicKeyParameters.Builder(params).withPublicKey(export).build();
 
-		assertEquals(true, XMSSUtil.compareByteArray(publicKey.getRoot(), publicKey2.getRoot()));
-		assertEquals(true, XMSSUtil.compareByteArray(publicKey.getPublicSeed(), publicKey2.getPublicSeed()));
+		assertEquals(true, Arrays.areEqual(publicKey.getRoot(), publicKey2.getRoot()));
+		assertEquals(true, Arrays.areEqual(publicKey.getPublicSeed(), publicKey2.getPublicSeed()));
 	}
 
 	public void testPublicKeyParsingSHA512() {
@@ -47,8 +47,8 @@ public class XMSSPublicKeyTest extends TestCase {
 
 		XMSSPublicKeyParameters publicKey2 = new XMSSPublicKeyParameters.Builder(params).withPublicKey(export).build();
 
-		assertEquals(true, XMSSUtil.compareByteArray(publicKey.getRoot(), publicKey2.getRoot()));
-		assertEquals(true, XMSSUtil.compareByteArray(publicKey.getPublicSeed(), publicKey2.getPublicSeed()));
+		assertEquals(true, Arrays.areEqual(publicKey.getRoot(), publicKey2.getRoot()));
+		assertEquals(true, Arrays.areEqual(publicKey.getPublicSeed(), publicKey2.getPublicSeed()));
 	}
 
 	public void testConstructor() {

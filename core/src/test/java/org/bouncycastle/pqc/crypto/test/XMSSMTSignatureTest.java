@@ -5,7 +5,7 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMT;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTSignature;
-import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Test cases for XMSS^MT signature class.
@@ -22,7 +22,7 @@ public class XMSSMTSignatureTest extends TestCase {
 		byte[] signature1 = xmssMT.sign(message);
 		XMSSMTSignature mtSignature = new XMSSMTSignature.Builder(params).withSignature(signature1).build();
 			byte[] signature2 = mtSignature.toByteArray();
-			assertTrue(XMSSUtil.compareByteArray(signature1, signature2));
+			assertTrue(Arrays.areEqual(signature1, signature2));
 	}
 
 	public void testConstructor() {

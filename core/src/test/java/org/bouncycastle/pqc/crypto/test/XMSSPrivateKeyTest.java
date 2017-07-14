@@ -6,7 +6,7 @@ import junit.framework.TestCase;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Test cases for XMSSPrivateKey class.
@@ -28,9 +28,9 @@ public class XMSSPrivateKeyTest extends TestCase {
 		XMSSPrivateKeyParameters privateKey2 = new XMSSPrivateKeyParameters.Builder(params).withPrivateKey(export, params).build();
 
 		assertEquals(privateKey.getIndex(), privateKey2.getIndex());
-		assertEquals(true, XMSSUtil.compareByteArray(privateKey.getSecretKeySeed(), privateKey2.getSecretKeySeed()));
-		assertEquals(true, XMSSUtil.compareByteArray(privateKey.getSecretKeyPRF(), privateKey2.getSecretKeyPRF()));
-		assertEquals(true, XMSSUtil.compareByteArray(privateKey.getPublicSeed(), privateKey2.getPublicSeed()));
-		assertEquals(true, XMSSUtil.compareByteArray(privateKey.getRoot(), privateKey2.getRoot()));
+		assertEquals(true, Arrays.areEqual(privateKey.getSecretKeySeed(), privateKey2.getSecretKeySeed()));
+		assertEquals(true, Arrays.areEqual(privateKey.getSecretKeyPRF(), privateKey2.getSecretKeyPRF()));
+		assertEquals(true, Arrays.areEqual(privateKey.getPublicSeed(), privateKey2.getPublicSeed()));
+		assertEquals(true, Arrays.areEqual(privateKey.getRoot(), privateKey2.getRoot()));
 	}
 }
