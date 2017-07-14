@@ -3,7 +3,6 @@ package org.bouncycastle.pqc.crypto.test;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.text.ParseException;
-import java.util.Arrays;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -16,6 +15,7 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSMTKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTSigner;
 import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -39,8 +39,8 @@ public class XMSSMTTest
         String expectedPublicKey = "1f5bb70f454d7c7bda84d207c5a0d47211af7b489e839d2294cc8c9d5522a8ae00000000"
             + "00000000000000000000000000000000000000000000000000000000";
         byte[] strippedPrivateKey = XMSSUtil.extractBytesAtOffset(privateKey, 0, (Hex.decode(expectedPrivateKey).length));
-        assertEquals(true, XMSSUtil.compareByteArray(Hex.decode(expectedPrivateKey), strippedPrivateKey));
-        assertEquals(true, XMSSUtil.compareByteArray(Hex.decode(expectedPublicKey), publicKey));
+        assertEquals(true, Arrays.areEqual(Hex.decode(expectedPrivateKey), strippedPrivateKey));
+        assertEquals(true, Arrays.areEqual(Hex.decode(expectedPublicKey), publicKey));
     }
 
     public void testGenKeyPairSHA512()
@@ -63,8 +63,8 @@ public class XMSSMTTest
             + "000000000000000000000000000000000000000000000000000000000000000000000000"
             + "0000000000000000000000000000000000000000";
         byte[] strippedPrivateKey = XMSSUtil.extractBytesAtOffset(privateKey, 0, (Hex.decode(expectedPrivateKey).length));
-        assertEquals(true, XMSSUtil.compareByteArray(Hex.decode(expectedPrivateKey), strippedPrivateKey));
-        assertEquals(true, XMSSUtil.compareByteArray(Hex.decode(expectedPublicKey), publicKey));
+        assertEquals(true, Arrays.areEqual(Hex.decode(expectedPrivateKey), strippedPrivateKey));
+        assertEquals(true, Arrays.areEqual(Hex.decode(expectedPublicKey), publicKey));
     }
 
     public void testSignSHA256()
@@ -1921,9 +1921,9 @@ public class XMSSMTTest
             + "1c1cfcb576332e0b1726b724c6dbe784b450d81d82afc417d288c25febc9a61c99f475f2"
             + "b7b788dd988fb929e2f4538436c08038cab0cb3770f6cec07074fa23e2b20204bc865114"
             + "203232b492e0681a31dfb3";
-        assertEquals(true, XMSSUtil.compareByteArray(Hex.decode(expectedSig1), sig1));
-        assertEquals(true, XMSSUtil.compareByteArray(Hex.decode(expectedSig2), sig2));
-        assertEquals(true, XMSSUtil.compareByteArray(Hex.decode(expectedSig3), sig3));
+        assertEquals(true, Arrays.areEqual(Hex.decode(expectedSig1), sig1));
+        assertEquals(true, Arrays.areEqual(Hex.decode(expectedSig2), sig2));
+        assertEquals(true, Arrays.areEqual(Hex.decode(expectedSig3), sig3));
     }
 
     public void testSignSHA256Complete1()
@@ -17303,9 +17303,9 @@ public class XMSSMTTest
             + "9878fad01be6bef1114be94b5ffc4fe087b9fe82c0558cd5f622dd18f4319f5ea54ef42f"
             + "14c70be5acb5dabbd09aee864d902185116e5bb5be2717fcdb5e9b7ed79bbce616babd83"
             + "78d8ac445c";
-        assertEquals(true, XMSSUtil.compareByteArray(Hex.decode(expectedSig1), sig1));
-        assertEquals(true, XMSSUtil.compareByteArray(Hex.decode(expectedSig2), sig2));
-        assertEquals(true, XMSSUtil.compareByteArray(Hex.decode(expectedSig3), sig3));
+        assertEquals(true, Arrays.areEqual(Hex.decode(expectedSig1), sig1));
+        assertEquals(true, Arrays.areEqual(Hex.decode(expectedSig2), sig2));
+        assertEquals(true, Arrays.areEqual(Hex.decode(expectedSig3), sig3));
     }
 
     public void testVerifySignatureSHA256()
@@ -17478,7 +17478,7 @@ public class XMSSMTTest
         xmssMT2.importState(exportedPrivateKey, exportedPublicKey);
 
         byte[] signature4 = xmssMT2.sign(msg3);
-        assertEquals(true, XMSSUtil.compareByteArray(signature3, signature4));
+        assertEquals(true, Arrays.areEqual(signature3, signature4));
         xmssMT2.generateKeys();
         try
         {
@@ -17519,7 +17519,7 @@ public class XMSSMTTest
         xmssMT2.importState(exportedPrivateKey, exportedPublicKey);
 
         byte[] signature4 = xmssMT2.sign(msg3);
-        assertEquals(true, XMSSUtil.compareByteArray(signature3, signature4));
+        assertEquals(true, Arrays.areEqual(signature3, signature4));
         xmssMT2.generateKeys();
         try
         {
@@ -17550,7 +17550,7 @@ public class XMSSMTTest
             xmss1.sign(message);
         }
         byte[] signature = xmss1.sign(message);
-        assertTrue(XMSSUtil.compareByteArray(publicKey, xmss1.exportPublicKey()));
+        assertTrue(Arrays.areEqual(publicKey, xmss1.exportPublicKey()));
         try
         {
             xmss1.verifySignature(message, signature, publicKey);
@@ -17560,7 +17560,7 @@ public class XMSSMTTest
             e.printStackTrace();
             fail();
         }
-        assertTrue(XMSSUtil.compareByteArray(publicKey, xmss1.exportPublicKey()));
+        assertTrue(Arrays.areEqual(publicKey, xmss1.exportPublicKey()));
         xmss1.sign(message);
         byte[] privateKey7 = xmss1.exportPrivateKey();
         try
@@ -17572,13 +17572,13 @@ public class XMSSMTTest
             e.printStackTrace();
             fail();
         }
-        assertTrue(XMSSUtil.compareByteArray(privateKey7, xmss1.exportPrivateKey()));
+        assertTrue(Arrays.areEqual(privateKey7, xmss1.exportPrivateKey()));
         byte[] signature7 = xmss1.sign(message);
 
         xmss1.importState(privateKey7, publicKey);
 
         byte[] signature7AfterImport = xmss1.sign(message);
-        assertTrue(XMSSUtil.compareByteArray(signature7AfterImport, signature7));
+        assertTrue(Arrays.areEqual(signature7AfterImport, signature7));
 
         XMSSMTParameters params2 = new XMSSMTParameters(20, 10, new SHA512Digest());
         XMSSMT xmss2 = new XMSSMT(params2, new NullPRNG());
@@ -17600,7 +17600,7 @@ public class XMSSMTTest
         xmss3.importState(privateKey7, publicKey);
 
         byte[] signatureAgain = xmss3.sign(message);
-        assertTrue(XMSSUtil.compareByteArray(signatureAgain, signature7));
+        assertTrue(Arrays.areEqual(signatureAgain, signature7));
     }
 
     public void testPublicSeed()
@@ -17633,7 +17633,7 @@ public class XMSSMTTest
             fail();
         }
         byte[] signature3 = mt2.sign(message);
-        assertTrue(XMSSUtil.compareByteArray(signature2, signature3));
+        assertTrue(Arrays.areEqual(signature2, signature3));
     }
 
     public void testBDSImport()
@@ -17653,7 +17653,7 @@ public class XMSSMTTest
         xmss.importState(exportedPrivateKey, exportedPublicKey);
 
         byte[] sig2 = xmss.sign(new byte[1024]);
-        assertEquals(true, XMSSUtil.compareByteArray(sig1, sig2));
+        assertEquals(true, Arrays.areEqual(sig1, sig2));
         try
         {
             xmss.importState(exportedPrivateKey, exportedPublicKey);
@@ -17663,7 +17663,7 @@ public class XMSSMTTest
         }
         xmss.sign(new byte[1024]);
         byte[] sig3 = xmss.sign(new byte[1024]);
-        assertEquals(false, XMSSUtil.compareByteArray(sig1, sig3));
+        assertEquals(false, Arrays.areEqual(sig1, sig3));
         try
         {
             xmss.importState(null, exportedPublicKey);

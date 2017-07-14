@@ -8,7 +8,7 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMT;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Test cases for XMSSMTPublicKey class.
@@ -25,7 +25,7 @@ public class XMSSMTPublicKeyTest extends TestCase {
 
 		mt.importState(privateKey, publicKey);
 
-		assertTrue(XMSSUtil.compareByteArray(publicKey, mt.exportPublicKey()));
+		assertTrue(Arrays.areEqual(publicKey, mt.exportPublicKey()));
 	}
 
 	public void testConstructor() {

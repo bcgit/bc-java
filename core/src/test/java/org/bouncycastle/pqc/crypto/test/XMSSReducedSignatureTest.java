@@ -8,7 +8,7 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSMTParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTSignature;
 import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSReducedSignature;
-import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Test cases for XMSSReducedSignature class.
@@ -30,7 +30,7 @@ public class XMSSReducedSignatureTest
         byte[] reducedSignatureBinary = reducedSignature1.toByteArray();
         XMSSReducedSignature reducedSignature2 = new XMSSReducedSignature.Builder(new XMSSParameters(4, new SHA256Digest())).withReducedSignature(reducedSignatureBinary).build();
 
-        assertTrue(XMSSUtil.compareByteArray(reducedSignatureBinary, reducedSignature2.toByteArray()));
+        assertTrue(Arrays.areEqual(reducedSignatureBinary, reducedSignature2.toByteArray()));
     }
 
     public void testSignatureParsingSHA512()
@@ -46,7 +46,7 @@ public class XMSSReducedSignatureTest
         byte[] reducedSignatureBinary = reducedSignature1.toByteArray();
         XMSSReducedSignature reducedSignature2 = new XMSSReducedSignature.Builder(new XMSSParameters(2, new SHA512Digest())).withReducedSignature(reducedSignatureBinary).build();
 
-        assertTrue(XMSSUtil.compareByteArray(reducedSignatureBinary, reducedSignature2.toByteArray()));
+        assertTrue(Arrays.areEqual(reducedSignatureBinary, reducedSignature2.toByteArray()));
     }
 
     public void testConstructor()

@@ -7,6 +7,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -134,40 +135,13 @@ public class XMSSUtil
     }
 
     /**
-     * Compares two byte arrays.
-     *
-     * @param a byte array 1.
-     * @param b byte array 2.
-     * @return true if all values in byte array are equal false else.
-     */
-    public static boolean compareByteArray(byte[] a, byte[] b)
-    {
-        if (a == null || b == null)
-        {
-            throw new NullPointerException("a or b == null");
-        }
-        if (a.length != b.length)
-        {
-            throw new IllegalArgumentException("size of a and b must be equal");
-        }
-        for (int i = 0; i < a.length; i++)
-        {
-            if (a[i] != b[i])
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
      * Compares two 2d-byte arrays.
      *
      * @param a 2d-byte array 1.
      * @param b 2d-byte array 2.
      * @return true if all values in 2d-byte array are equal false else.
      */
-    public static boolean compareByteArray(byte[][] a, byte[][] b)
+    public static boolean areEqual(byte[][] a, byte[][] b)
     {
         if (hasNullPointer(a) || hasNullPointer(b))
         {
@@ -175,7 +149,7 @@ public class XMSSUtil
         }
         for (int i = 0; i < a.length; i++)
         {
-            if (!compareByteArray(a[i], b[i]))
+            if (!Arrays.areEqual(a[i], b[i]))
             {
                 return false;
             }
