@@ -157,7 +157,7 @@ public final class Arrays
 
         if (a.length != b.length)
         {
-            return false;
+            return !((a.length > b.length) ? Arrays.constantTimeAreEqual(a, a) : Arrays.constantTimeAreEqual(b, b));
         }
 
         int nonEqual = 0;
