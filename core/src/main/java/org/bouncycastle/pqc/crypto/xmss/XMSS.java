@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import java.text.ParseException;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.util.Arrays;
 
 /**
  * XMSS.
@@ -114,11 +115,11 @@ public class XMSS
 
     void importState(XMSSPrivateKeyParameters privateKey, XMSSPublicKeyParameters publicKey)
     {
-        if (!XMSSUtil.compareByteArray(privateKey.getRoot(), publicKey.getRoot()))
+        if (!Arrays.areEqual(privateKey.getRoot(), publicKey.getRoot()))
         {
             throw new IllegalStateException("root of private key and public key do not match");
         }
-        if (!XMSSUtil.compareByteArray(privateKey.getPublicSeed(), publicKey.getPublicSeed()))
+        if (!Arrays.areEqual(privateKey.getPublicSeed(), publicKey.getPublicSeed()))
         {
             throw new IllegalStateException("public seed of private key and public key do not match");
         }
@@ -152,11 +153,11 @@ public class XMSS
             .withPrivateKey(privateKey, this.getParams()).build();
         XMSSPublicKeyParameters tmpPublicKey = new XMSSPublicKeyParameters.Builder(params).withPublicKey(publicKey)
             .build();
-        if (!XMSSUtil.compareByteArray(tmpPrivateKey.getRoot(), tmpPublicKey.getRoot()))
+        if (!Arrays.areEqual(tmpPrivateKey.getRoot(), tmpPublicKey.getRoot()))
         {
             throw new IllegalStateException("root of private key and public key do not match");
         }
-        if (!XMSSUtil.compareByteArray(tmpPrivateKey.getPublicSeed(), tmpPublicKey.getPublicSeed()))
+        if (!Arrays.areEqual(tmpPrivateKey.getPublicSeed(), tmpPublicKey.getPublicSeed()))
         {
             throw new IllegalStateException("public seed of private key and public key do not match");
         }

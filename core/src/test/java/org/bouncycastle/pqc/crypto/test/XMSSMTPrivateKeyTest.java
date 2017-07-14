@@ -7,7 +7,7 @@ import junit.framework.TestCase;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMT;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Test cases for XMSSMTPrivateKey class.
@@ -27,6 +27,6 @@ public class XMSSMTPrivateKeyTest
 
         mt.importState(privateKey, publicKey);
 
-        assertTrue(XMSSUtil.compareByteArray(privateKey, mt.exportPrivateKey()));
+        assertTrue(Arrays.areEqual(privateKey, mt.exportPrivateKey()));
     }
 }

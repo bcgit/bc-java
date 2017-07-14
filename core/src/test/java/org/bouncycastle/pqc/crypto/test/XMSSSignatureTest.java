@@ -6,7 +6,7 @@ import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.pqc.crypto.xmss.XMSS;
 import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSSignature;
-import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Test cases for XMSSSignature class.
@@ -25,7 +25,7 @@ public class XMSSSignatureTest
         XMSSSignature sig2 = new XMSSSignature.Builder(params).withSignature(sig1).build();
 
         byte[] sig3 = sig2.toByteArray();
-        assertEquals(true, XMSSUtil.compareByteArray(sig1, sig3));
+        assertEquals(true, Arrays.areEqual(sig1, sig3));
     }
 
     public void testSignatureParsingSHA512()
@@ -38,7 +38,7 @@ public class XMSSSignatureTest
         XMSSSignature sig2 = new XMSSSignature.Builder(params).withSignature(sig1).build();
 
         byte[] sig3 = sig2.toByteArray();
-        assertEquals(true, XMSSUtil.compareByteArray(sig1, sig3));
+        assertEquals(true, Arrays.areEqual(sig1, sig3));
     }
 
     public void testConstructor()
