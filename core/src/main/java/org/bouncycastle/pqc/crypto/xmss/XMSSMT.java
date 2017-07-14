@@ -57,14 +57,6 @@ public final class XMSSMT
 
     private void importState(XMSSMTPrivateKeyParameters privateKey, XMSSMTPublicKeyParameters publicKey)
     {
-		/* init global xmss */
-        XMSSPrivateKeyParameters xmssPrivateKey = new XMSSPrivateKeyParameters.Builder(xmssParams)
-            .withSecretKeySeed(privateKey.getSecretKeySeed())
-            .withSecretKeyPRF(privateKey.getSecretKeyPRF()).withPublicSeed(privateKey.getPublicSeed())
-            .withRoot(privateKey.getRoot()).withBDSState(new BDS(xmssParams)).build();
-        XMSSPublicKeyParameters xmssPublicKey = new XMSSPublicKeyParameters.Builder(xmssParams)
-            .withRoot(privateKey.getRoot()).withPublicSeed(getPublicSeed()).build();
-
 		/* import to xmss */
         xmssParams.getWOTSPlus().importKeys(new byte[params.getDigestSize()], this.privateKey.getPublicSeed());
 
@@ -103,17 +95,9 @@ public final class XMSSMT
         {
             throw new IllegalStateException("public seed of private key and public key do not match");
         }
-
-		/* init global xmss */
-        XMSSPrivateKeyParameters xmssPrivateKey = new XMSSPrivateKeyParameters.Builder(xmssParams)
-            .withSecretKeySeed(xmssMTPrivateKey.getSecretKeySeed())
-            .withSecretKeyPRF(xmssMTPrivateKey.getSecretKeyPRF()).withPublicSeed(xmssMTPrivateKey.getPublicSeed())
-            .withRoot(xmssMTPrivateKey.getRoot()).withBDSState(new BDS(xmssParams)).build();
-        XMSSPublicKeyParameters xmssPublicKey = new XMSSPublicKeyParameters.Builder(xmssParams)
-            .withRoot(xmssMTPrivateKey.getRoot()).withPublicSeed(getPublicSeed()).build();
-
+        
 		/* import to xmss */
-        xmssParams.getWOTSPlus().importKeys(new byte[params.getDigestSize()], xmssPrivateKey.getPublicSeed());
+        xmssParams.getWOTSPlus().importKeys(new byte[params.getDigestSize()], xmssMTPrivateKey.getPublicSeed());
 
         this.privateKey = xmssMTPrivateKey;
         this.publicKey = xmssMTPublicKey;

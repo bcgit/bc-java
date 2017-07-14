@@ -13,11 +13,16 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.pqc.jcajce.interfaces.StateAwareSignature;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.XMSSMTParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.XMSSParameterSpec;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 public class XMSSTest
@@ -300,6 +305,61 @@ public class XMSSTest
         xmssSig.update(msg, 0, msg.length);
 
         assertTrue(xmssSig.verify(s));
+    }
+
+    public void testKeyRebuild()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
+
+        kpg.initialize(new XMSSParameterSpec(10, XMSSMTParameterSpec.SHA256), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        Signature sig = Signature.getInstance("SHA256withXMSS", "BCPQC");
+
+        assertTrue(sig instanceof StateAwareSignature);
+
+        StateAwareSignature xmssSig = (StateAwareSignature)sig;
+
+        xmssSig.initSign(kp.getPrivate());
+
+        for (int i = 0; i != 5; i++)
+        {
+            xmssSig.update(msg, 0, msg.length);
+
+            xmssSig.sign();
+        }
+
+        PrivateKey pKey = xmssSig.getUpdatedPrivateKey();
+
+        PrivateKeyInfo pKeyInfo = PrivateKeyInfo.getInstance(pKey.getEncoded());
+
+        KeyFactory keyFactory = KeyFactory.getInstance("XMSS", "BCPQC");
+
+        ASN1Sequence seq = ASN1Sequence.getInstance(pKeyInfo.parsePrivateKey());
+
+        // create a new PrivateKeyInfo containing a key with no BDS state.
+        pKeyInfo = new PrivateKeyInfo(pKeyInfo.getPrivateKeyAlgorithm(),
+            new DERSequence(new ASN1Encodable[] { seq.getObjectAt(0), seq.getObjectAt(1) }));
+
+        XMSSKey privKey = (XMSSKey)keyFactory.generatePrivate(new PKCS8EncodedKeySpec(pKeyInfo.getEncoded()));
+
+        xmssSig.initSign(pKey);
+
+        xmssSig.update(msg, 0, msg.length);
+
+        byte[] sig1 = xmssSig.sign();
+
+        xmssSig.initSign((PrivateKey)privKey);
+
+        xmssSig.update(msg, 0, msg.length);
+
+        byte[] sig2 = xmssSig.sign();
+
+        // make sure we get the same signature as the two keys should now
+        // be in the same state.
+        assertTrue(Arrays.areEqual(sig1, sig2));
     }
 
 }

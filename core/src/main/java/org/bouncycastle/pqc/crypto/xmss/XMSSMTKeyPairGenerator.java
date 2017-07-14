@@ -44,16 +44,8 @@ public final class XMSSMTKeyPairGenerator
             /* generate XMSSMT private key */
         privateKey = generatePrivateKey(new XMSSMTPrivateKeyParameters.Builder(params).build().getBDSState());
 
-
-            /* init global xmss */
-        XMSSPrivateKeyParameters xmssPrivateKey = new XMSSPrivateKeyParameters.Builder(xmssParams)
-            .withSecretKeySeed(privateKey.getSecretKeySeed()).withSecretKeyPRF(privateKey.getSecretKeyPRF())
-            .withPublicSeed(privateKey.getPublicSeed()).withBDSState(new BDS(xmssParams)).build();
-        XMSSPublicKeyParameters xmssPublicKey = new XMSSPublicKeyParameters.Builder(xmssParams).withPublicSeed(privateKey.getPublicSeed())
-            .build();
-
             /* import to xmss */
-        xmssParams.getWOTSPlus().importKeys(new byte[params.getDigestSize()], xmssPrivateKey.getPublicSeed());
+        xmssParams.getWOTSPlus().importKeys(new byte[params.getDigestSize()], privateKey.getPublicSeed());
 
             /* get root */
         int rootLayerIndex = params.getLayers() - 1;
@@ -61,7 +53,7 @@ public final class XMSSMTKeyPairGenerator
             .build();
 
           		/* store BDS instance of root xmss instance */
-        BDS bdsRoot = new BDS(xmssParams, xmssPrivateKey.getPublicSeed(), xmssPrivateKey.getSecretKeySeed(), otsHashAddress);
+        BDS bdsRoot = new BDS(xmssParams, privateKey.getPublicSeed(), privateKey.getSecretKeySeed(), otsHashAddress);
         XMSSNode root = bdsRoot.getRoot();
         privateKey.getBDSState().put(rootLayerIndex, bdsRoot);
 
