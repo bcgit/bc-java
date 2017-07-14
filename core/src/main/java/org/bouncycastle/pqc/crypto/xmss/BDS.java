@@ -30,15 +30,53 @@ public final class BDS
     private int index;
     private boolean used;
 
-    BDS(XMSSParameters params)
+    /**
+     * Place holder BDS for when state is exhausted.
+     *
+     * @param params tree parameters
+     * @param index the index that has been reached.
+     */
+    BDS(XMSSParameters params, int index)
     {
         this(params.getWOTSPlus(), params.getHeight(), params.getK());
+        this.index = index;
+        this.used = true;
     }
 
+    /**
+     * Set up constructor.
+     *
+     * @param params tree parameters
+     * @param publicSeed public seed for tree
+     * @param secretKeySeed secret seed for tree
+     * @param otsHashAddress hash address
+     */
     BDS(XMSSParameters params, byte[] publicSeed, byte[] secretKeySeed, OTSHashAddress otsHashAddress)
     {
-        this(params);
+        this(params.getWOTSPlus(), params.getHeight(), params.getK());
         this.initialize(publicSeed, secretKeySeed, otsHashAddress);
+    }
+
+    /**
+     * Set up constructor for a tree where the original BDS state was lost.
+     *
+     * @param params tree parameters
+     * @param publicSeed public seed for tree
+     * @param secretKeySeed secret seed for tree
+     * @param otsHashAddress hash address
+     * @param index index counter for the state to be at.
+     */
+    BDS(XMSSParameters params, byte[] publicSeed, byte[] secretKeySeed, OTSHashAddress otsHashAddress, int index)
+    {
+        this(params.getWOTSPlus(), params.getHeight(), params.getK());
+
+        this.initialize(publicSeed, secretKeySeed, otsHashAddress);
+
+        while (this.index < index)
+        {
+            this.nextAuthenticationPath(publicSeed, secretKeySeed, otsHashAddress);
+            this.used = false;
+        }
     }
 
     private BDS(WOTSPlus wotsPlus, int treeHeight, int k)
@@ -175,7 +213,7 @@ public final class BDS
         root = stack.pop();
     }
 
-    protected void nextAuthenticationPath(byte[] publicSeed, byte[] secretSeed, OTSHashAddress otsHashAddress)
+    private void nextAuthenticationPath(byte[] publicSeed, byte[] secretSeed, OTSHashAddress otsHashAddress)
     {
         if (otsHashAddress == null)
         {
