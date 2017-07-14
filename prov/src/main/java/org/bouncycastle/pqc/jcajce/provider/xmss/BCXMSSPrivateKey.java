@@ -41,14 +41,20 @@ public class BCXMSSPrivateKey
 
         try
         {
-            this.keyParams = new XMSSPrivateKeyParameters
+            XMSSPrivateKeyParameters.Builder keyBuilder = new XMSSPrivateKeyParameters
                 .Builder(new XMSSParameters(keyParams.getHeight(), DigestUtil.getDigest(treeDigest)))
                 .withIndex(xmssPrivateKey.getIndex())
                 .withSecretKeySeed(xmssPrivateKey.getSecretKeySeed())
                 .withSecretKeyPRF(xmssPrivateKey.getSecretKeyPRF())
                 .withPublicSeed(xmssPrivateKey.getPublicSeed())
-                .withRoot(xmssPrivateKey.getRoot())
-                .withBDSState((BDS)XMSSUtil.deserialize(xmssPrivateKey.getBdsState())).build();
+                .withRoot(xmssPrivateKey.getRoot());
+
+            if (xmssPrivateKey.getBdsState() != null)
+            {
+                keyBuilder.withBDSState((BDS)XMSSUtil.deserialize(xmssPrivateKey.getBdsState()));
+            }
+
+            this.keyParams = keyBuilder.build();
         }
         catch (ClassNotFoundException e)
         {

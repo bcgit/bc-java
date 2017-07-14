@@ -169,7 +169,14 @@ public final class XMSSPrivateKeyParameters
             }
             else
             {
-                bdsState = new BDS(params);
+                if (builder.index < ((1 << params.getHeight()) - 2) && tmpPublicSeed != null && tmpSecretKeySeed != null)
+                {
+                    bdsState = new BDS(params, tmpPublicSeed, tmpSecretKeySeed, (OTSHashAddress)new OTSHashAddress.Builder().build(), builder.index);
+                }
+                else
+                {
+                    bdsState = new BDS(params, builder.index);
+                }
             }
         }
     }
@@ -333,10 +340,9 @@ public final class XMSSPrivateKeyParameters
         else
         {
             return new XMSSPrivateKeyParameters.Builder(params)
-                .withIndex(getIndex() + 1)
                 .withSecretKeySeed(secretKeySeed).withSecretKeyPRF(secretKeyPRF)
                 .withPublicSeed(publicSeed).withRoot(root)
-                .withBDSState(null).build();  // no more nodes left.
+                .withBDSState(new BDS(params, getIndex() + 1)).build();  // no more nodes left.
         }
     }
 
