@@ -42,14 +42,20 @@ public class BCXMSSMTPrivateKey
 
         try
         {
-            this.keyParams = new XMSSMTPrivateKeyParameters
+            XMSSMTPrivateKeyParameters.Builder keyBuilder = new XMSSMTPrivateKeyParameters
                 .Builder(new XMSSMTParameters(keyParams.getHeight(), keyParams.getLayers(), DigestUtil.getDigest(treeDigest)))
                 .withIndex(xmssMtPrivateKey.getIndex())
                 .withSecretKeySeed(xmssMtPrivateKey.getSecretKeySeed())
                 .withSecretKeyPRF(xmssMtPrivateKey.getSecretKeyPRF())
                 .withPublicSeed(xmssMtPrivateKey.getPublicSeed())
-                .withRoot(xmssMtPrivateKey.getRoot())
-                .withBDSState((BDSStateMap)XMSSUtil.deserialize(xmssMtPrivateKey.getBdsState())).build();
+                .withRoot(xmssMtPrivateKey.getRoot());
+
+            if (xmssMtPrivateKey.getBdsState() != null)
+            {
+                keyBuilder.withBDSState((BDSStateMap)XMSSUtil.deserialize(xmssMtPrivateKey.getBdsState()));
+            }
+
+            this.keyParams = keyBuilder.build();
         }
         catch (ClassNotFoundException e)
         {
