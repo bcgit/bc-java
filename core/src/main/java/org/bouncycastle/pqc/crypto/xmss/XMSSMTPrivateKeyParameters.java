@@ -147,7 +147,17 @@ public final class XMSSMTPrivateKeyParameters
             }
             else
             {
-                bdsState = new BDSStateMap();
+                long globalIndex = builder.index;
+                int totalHeight = params.getHeight();
+
+                if (XMSSUtil.isIndexValid(totalHeight, globalIndex) && tmpPublicSeed != null && tmpSecretKeySeed != null)
+                {
+                    bdsState = new BDSStateMap(params, builder.index, tmpPublicSeed, tmpSecretKeySeed);
+                }
+                else
+                {
+                    bdsState = new BDSStateMap();
+                }
             }
         }
     }
@@ -300,53 +310,7 @@ public final class XMSSMTPrivateKeyParameters
 
     public XMSSMTPrivateKeyParameters getNextKey()
     {
-        final long globalIndex = this.getIndex();
-        final int xmssHeight = params.getXMSSParameters().getHeight();
-
-        //
-        // set up state for next signature
-        //
-        long indexTree = XMSSUtil.getTreeIndex(globalIndex, xmssHeight);
-        int indexLeaf = XMSSUtil.getLeafIndex(globalIndex, xmssHeight);
-
-        OTSHashAddress otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder().withTreeAddress(indexTree)
-            .withOTSAddress(indexLeaf).build();
-
-        BDSStateMap newState = new BDSStateMap(bdsState);
-
-        /* prepare authentication path for next leaf */
-        if (indexLeaf < ((1 << xmssHeight) - 1))
-        {
-            if (newState.get(0) == null || indexLeaf == 0)
-            {
-                newState.put(0, new BDS(params.getXMSSParameters(), publicSeed, secretKeySeed, otsHashAddress));
-            }
-
-            newState.update(0, publicSeed, secretKeySeed, otsHashAddress);
-        }
-
-        /* loop over remaining layers */
-        for (int layer = 1; layer < params.getLayers(); layer++)
-        {
-      			/* get root of layer - 1 */
-            indexLeaf = XMSSUtil.getLeafIndex(indexTree, xmssHeight);
-            indexTree = XMSSUtil.getTreeIndex(indexTree, xmssHeight);
-      			/* adjust addresses */
-            otsHashAddress = (OTSHashAddress)new OTSHashAddress.Builder().withLayerAddress(layer)
-                .withTreeAddress(indexTree).withOTSAddress(indexLeaf).build();
-
-      			/* prepare authentication path for next leaf */
-            if (indexLeaf < ((1 << xmssHeight) - 1)
-                && XMSSUtil.isNewAuthenticationPathNeeded(globalIndex, xmssHeight, layer))
-            {
-                if (newState.get(layer) == null)
-                {
-                    newState.put(layer, new BDS(params.getXMSSParameters(), publicSeed, secretKeySeed, otsHashAddress));
-                }
-
-                newState.update(layer, publicSeed, secretKeySeed, otsHashAddress);
-            }
-        }
+        BDSStateMap newState = new BDSStateMap(bdsState, params, this.getIndex(), publicSeed, secretKeySeed);
 
         return new XMSSMTPrivateKeyParameters.Builder(params).withIndex(index + 1)
             .withSecretKeySeed(secretKeySeed).withSecretKeyPRF(secretKeyPRF)
