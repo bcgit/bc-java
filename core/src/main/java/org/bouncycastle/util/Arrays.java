@@ -139,24 +139,24 @@ public final class Arrays
      * as the first parameter.
      *
      * @param expected first array
-     * @param calculated second array
+     * @param supplied second array
      * @return true if arrays equal, false otherwise.
      */
     public static boolean constantTimeAreEqual(
         byte[]  expected,
-        byte[]  calculated)
+        byte[]  supplied)
     {
-        if (expected == calculated)
+        if (expected == supplied)
         {
             return true;
         }
 
-        if (expected == null || calculated == null)
+        if (expected == null || supplied == null)
         {
             return false;
         }
 
-        if (expected.length != calculated.length)
+        if (expected.length != supplied.length)
         {
             return !Arrays.constantTimeAreEqual(expected, expected);
         }
@@ -165,7 +165,7 @@ public final class Arrays
 
         for (int i = 0; i != expected.length; i++)
         {
-            nonEqual |= (expected[i] ^ calculated[i]);
+            nonEqual |= (expected[i] ^ supplied[i]);
         }
 
         return nonEqual == 0;
