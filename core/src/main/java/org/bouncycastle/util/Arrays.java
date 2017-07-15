@@ -135,36 +135,37 @@ public final class Arrays
 
     /**
      * A constant time equals comparison - does not terminate early if
-     * test will fail.
+     * test will fail. For best results always pass the expected value
+     * as the first parameter.
      *
-     * @param a first array
-     * @param b second array
+     * @param expected first array
+     * @param calculated second array
      * @return true if arrays equal, false otherwise.
      */
     public static boolean constantTimeAreEqual(
-        byte[]  a,
-        byte[]  b)
+        byte[]  expected,
+        byte[]  calculated)
     {
-        if (a == b)
+        if (expected == calculated)
         {
             return true;
         }
 
-        if (a == null || b == null)
+        if (expected == null || calculated == null)
         {
             return false;
         }
 
-        if (a.length != b.length)
+        if (expected.length != calculated.length)
         {
-            return !((a.length > b.length) ? Arrays.constantTimeAreEqual(a, a) : Arrays.constantTimeAreEqual(b, b));
+            return !Arrays.constantTimeAreEqual(expected, expected);
         }
 
         int nonEqual = 0;
 
-        for (int i = 0; i != a.length; i++)
+        for (int i = 0; i != expected.length; i++)
         {
-            nonEqual |= (a[i] ^ b[i]);
+            nonEqual |= (expected[i] ^ calculated[i]);
         }
 
         return nonEqual == 0;
