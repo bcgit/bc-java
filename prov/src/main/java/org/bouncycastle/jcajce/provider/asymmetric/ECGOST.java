@@ -28,6 +28,8 @@ public class ECGOST
 
             registerOid(provider, CryptoProObjectIdentifiers.gostR3410_2001,
                     "ECGOST3410", new KeyFactorySpi());
+            registerOid(provider, CryptoProObjectIdentifiers.gostR3410_2001DH,
+                    "ECGOST3410", new KeyFactorySpi());
             registerOidAlgorithmParameters(provider, CryptoProObjectIdentifiers.gostR3410_2001,
                     "ECGOST3410");
 
@@ -38,6 +40,15 @@ public class ECGOST
             provider.addAlgorithm("Signature.ECGOST3410", PREFIX + "SignatureSpi");
             provider.addAlgorithm("Alg.Alias.Signature.ECGOST-3410", "ECGOST3410");
             provider.addAlgorithm("Alg.Alias.Signature.GOST-3410-2001", "ECGOST3410");
+
+            provider.addAlgorithm("KeyAgreement.ECGOST3410", PREFIX + "KeyAgreementSpi$ECVKO");
+            provider.addAlgorithm("Alg.Alias.KeyAgreement." + CryptoProObjectIdentifiers.gostR3410_2001, "ECGOST3410");
+            provider.addAlgorithm("Alg.Alias.KeyAgreement.GOST-3410-2001", "ECGOST3410");
+
+            provider.addAlgorithm("Alg.Alias.KeyAgreement." + CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_ESDH, "ECGOST3410");
+            
+            provider.addAlgorithm("AlgorithmParameters.ECGOST3410", PREFIX + "AlgorithmParametersSpi");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters.GOST-3410-2001", "ECGOST3410");
 
             addSignatureAlgorithm(provider, "GOST3411",
                     "ECGOST3410", PREFIX + "SignatureSpi",
@@ -102,8 +113,11 @@ public class ECGOST
                     PREFIX_GOST_2012 + "ECGOST2012SignatureSpi512",
                     RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_512);
 
+            provider.addAlgorithm("KeyAgreement.ECGOST3410-2012-256", PREFIX_GOST_2012 + "KeyAgreementSpi$ECVKO256");
+            provider.addAlgorithm("KeyAgreement.ECGOST3410-2012-512", PREFIX_GOST_2012 + "KeyAgreementSpi$ECVKO512");
 
-
+            provider.addAlgorithm("Alg.Alias.KeyAgreement." + RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_256, "ECGOST3410-2012-256");
+            provider.addAlgorithm("Alg.Alias.KeyAgreement." + RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_512, "ECGOST3410-2012-512");
         }
     }
 }

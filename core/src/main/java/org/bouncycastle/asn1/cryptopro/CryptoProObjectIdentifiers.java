@@ -18,6 +18,9 @@ public interface CryptoProObjectIdentifiers
     /** Gost R3411 HMAC OID: 1.2.643.2.2.10 */
     static final ASN1ObjectIdentifier    gostR3411Hmac      = GOST_id.branch("10");
 
+    static final ASN1ObjectIdentifier    id_Gost28147_89_None_KeyWrap =  GOST_id.branch("13.0");
+    static final ASN1ObjectIdentifier    id_Gost28147_89_CryptoPro_KeyWrap =  GOST_id.branch("13.1");
+
     /** Gost R28147 OID: 1.2.643.2.2.21 */
     static final ASN1ObjectIdentifier    gostR28147_gcfb = GOST_id.branch("21");
 
@@ -101,4 +104,8 @@ public interface CryptoProObjectIdentifiers
     static final ASN1ObjectIdentifier    gost_ElSgDH3410_default    = GOST_id.branch("36.0");
     /** Gost R3410-ElSqDH3410-1 OID: 1.2.643.2.2.36.1 */
     static final ASN1ObjectIdentifier    gost_ElSgDH3410_1          = GOST_id.branch("36.1");
+
+    static final ASN1ObjectIdentifier    gostR3410_2001_CryptoPro_ESDH = GOST_id.branch("96");
+
+    static final ASN1ObjectIdentifier    gostR3410_2001DH = GOST_id.branch("98");
 }

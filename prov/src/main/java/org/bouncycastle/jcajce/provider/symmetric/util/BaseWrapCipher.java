@@ -33,6 +33,9 @@ import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.params.ParametersWithSBox;
+import org.bouncycastle.crypto.params.ParametersWithUKM;
+import org.bouncycastle.jcajce.spec.GOST28147WrapParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -47,10 +50,11 @@ public abstract class BaseWrapCipher
     //
     private Class[]                 availableSpecs =
                                     {
-                                        IvParameterSpec.class,
+                                        GOST28147WrapParameterSpec.class,
                                         PBEParameterSpec.class,
                                         RC2ParameterSpec.class,
-                                        RC5ParameterSpec.class
+                                        RC5ParameterSpec.class,
+                                        IvParameterSpec.class
                                     };
 
     protected int                     pbeType = PKCS12;
@@ -167,6 +171,18 @@ public abstract class BaseWrapCipher
         {
             IvParameterSpec iv = (IvParameterSpec) params;
             param = new ParametersWithIV(param, iv.getIV());
+        }
+
+        if (params instanceof GOST28147WrapParameterSpec)
+        {
+            GOST28147WrapParameterSpec spec = (GOST28147WrapParameterSpec) params;
+
+            byte[] sBox = spec.getSBox();
+            if (sBox != null)
+            {
+                param = new ParametersWithSBox(param, sBox);
+            }
+            param = new ParametersWithUKM(param, spec.getUKM());
         }
 
         if (param instanceof KeyParameter && ivSize != 0)

@@ -35,6 +35,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
@@ -74,6 +75,7 @@ public class EnvelopedDataHelper
         BASE_CIPHER_NAMES.put(CMSAlgorithm.CAMELLIA256_CBC, "Camellia");
         BASE_CIPHER_NAMES.put(CMSAlgorithm.SEED_CBC, "SEED");
         BASE_CIPHER_NAMES.put(PKCSObjectIdentifiers.rc4, "RC4");
+        BASE_CIPHER_NAMES.put(CryptoProObjectIdentifiers.gostR28147_gcfb, "GOST28147");
 
         CIPHER_ALG_NAMES.put(CMSAlgorithm.DES_CBC,  "DES/CBC/PKCS5Padding");
         CIPHER_ALG_NAMES.put(CMSAlgorithm.RC2_CBC,  "RC2/CBC/PKCS5Padding");
@@ -314,7 +316,7 @@ public class EnvelopedDataHelper
             return helper.createKeyAgreement(algorithm.getId());
         }
         catch (GeneralSecurityException e)
-        {
+        {                e.printStackTrace();
             throw new CMSException("cannot create key agreement: " + e.getMessage(), e);
         }
     }
