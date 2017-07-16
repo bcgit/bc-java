@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithSBox;
 
 /**
@@ -19,6 +20,7 @@ public class GOST28147Mac
     private byte[]              mac;
     private boolean             firstStep = true;
     private int[]               workingKey = null;
+    private byte[]              macIV = null;
 
     //
     // This is default S-box - E_A.
@@ -64,6 +66,7 @@ public class GOST28147Mac
     {
         reset();
         buf = new byte[blockSize];
+        macIV = null;
         if (params instanceof ParametersWithSBox)
         {
             ParametersWithSBox   param = (ParametersWithSBox)params;
@@ -84,6 +87,14 @@ public class GOST28147Mac
         else if (params instanceof KeyParameter)
         {
             workingKey = generateWorkingKey(((KeyParameter)params).getKey());
+        }
+        else if (params instanceof ParametersWithIV)
+        {
+            ParametersWithIV p = (ParametersWithIV)params;
+
+            workingKey = generateWorkingKey(((KeyParameter)p.getParameters()).getKey());
+            System.arraycopy(p.getIV(), 0, mac, 0, mac.length);
+            macIV = p.getIV(); // don't skip the initial CM5Func
         }
         else
         {
@@ -190,6 +201,10 @@ public class GOST28147Mac
             if (firstStep)
             {
                 firstStep = false;
+                if (macIV != null)
+                {
+                    sumbuf = CM5func(buf, 0, macIV);
+                }
             }
             else
             {
@@ -223,6 +238,10 @@ public class GOST28147Mac
                 if (firstStep)
                 {
                     firstStep = false;
+                    if (macIV != null)
+                    {
+                        sumbuf = CM5func(buf, 0, macIV);
+                    }
                 }
                 else
                 {
