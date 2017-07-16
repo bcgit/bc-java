@@ -316,7 +316,7 @@ public class EnvelopedDataHelper
             return helper.createKeyAgreement(algorithm.getId());
         }
         catch (GeneralSecurityException e)
-        {                e.printStackTrace();
+        {
             throw new CMSException("cannot create key agreement: " + e.getMessage(), e);
         }
     }

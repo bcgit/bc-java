@@ -4,19 +4,18 @@ import java.io.ByteArrayOutputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
 
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2KeyParameters;
@@ -84,33 +83,26 @@ public class McElieceKobaraImaiCipherSpi
         update(input, inOff, inLen);
         if (opMode == ENCRYPT_MODE)
         {
-
-            try
-            {
-                return cipher.messageEncrypt(this.pad());
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-
+            return cipher.messageEncrypt(this.pad());
         }
         else if (opMode == DECRYPT_MODE)
         {
-            byte[] inputOfDecr = buf.toByteArray();
-            buf.reset();
-
             try
             {
+                byte[] inputOfDecr = buf.toByteArray();
+                buf.reset();
+
                 return unpad(cipher.messageDecrypt(inputOfDecr));
             }
-            catch (Exception e)
+            catch (InvalidCipherTextException e)
             {
-                e.printStackTrace();
+                throw new BadPaddingException(e.getMessage());
             }
-
         }
-        return null;
+        else
+        {
+            throw new IllegalStateException("unknown mode in doFinal");
+        }
     }
 
     protected int encryptOutputSize(int inLen)
@@ -218,41 +210,6 @@ public class McElieceKobaraImaiCipherSpi
         System.arraycopy(pmBytes, 0, mBytes, 0, index);
         return mBytes;
     }
-
-
-    public byte[] messageEncrypt()
-        throws IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException
-    {
-        byte[] output = null;
-        try
-        {
-            output = cipher.messageEncrypt((this.pad()));
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-        return output;
-    }
-
-
-    public byte[] messageDecrypt()
-        throws IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException
-    {
-        byte[] output = null;
-        byte[] inputOfDecr = buf.toByteArray();
-        buf.reset();
-        try
-        {
-            output = unpad(cipher.messageDecrypt(inputOfDecr));
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-        return output;
-    }
-
 
     static public class McElieceKobaraImai
         extends McElieceKobaraImaiCipherSpi

@@ -244,7 +244,7 @@ class OperatorHelper
             parameters = helper.createAlgorithmParameters(cipherAlgId.getAlgorithm().getId());
         }
         catch (NoSuchAlgorithmException e)
-        {                               e.printStackTrace();
+        {
             return null;   // There's a good chance there aren't any!
         }
         catch (NoSuchProviderException e)
