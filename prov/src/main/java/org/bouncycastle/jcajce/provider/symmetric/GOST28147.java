@@ -30,7 +30,6 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseWrapCipher;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
-import org.bouncycastle.jcajce.spec.GOST28147WrapParameterSpec;
 
 public final class GOST28147
 {
@@ -340,88 +339,6 @@ public final class GOST28147
         }
     }
 
-    public static class WrapAlgParams
-        extends BaseAlgParams
-    {
-        private ASN1ObjectIdentifier sBox = CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_A_ParamSet;
-        private byte[] ukm;
-
-        protected byte[] localGetEncoded()
-            throws IOException
-        {
-            return new GOST28147Parameters(ukm, sBox).getEncoded();
-        }
-
-        protected AlgorithmParameterSpec localEngineGetParameterSpec(
-            Class paramSpec)
-            throws InvalidParameterSpecException
-        {
-            if (paramSpec == GOST28147WrapParameterSpec.class || paramSpec == AlgorithmParameterSpec.class)
-            {
-                return new GOST28147WrapParameterSpec(sBox, ukm);
-            }
-
-            throw new InvalidParameterSpecException("AlgorithmParameterSpec not recognized: " + paramSpec.getName());
-        }
-
-        protected void engineInit(
-            AlgorithmParameterSpec paramSpec)
-            throws InvalidParameterSpecException
-        {
-            if (paramSpec instanceof GOST28147WrapParameterSpec)
-            {
-                this.ukm = ((GOST28147WrapParameterSpec)paramSpec).getUKM();
-                try
-                {
-                    this.sBox = getSBoxOID((((GOST28147WrapParameterSpec)paramSpec).getSBox()));
-                }
-                catch (IllegalArgumentException e)
-                {
-                    throw new InvalidParameterSpecException(e.getMessage());
-                }
-            }
-            else
-            {
-                throw new InvalidParameterSpecException("GOST28147WrapParameterSpec required to initialise a Wrap parameters algorithm parameters object");
-            }
-        }
-
-        protected void localInit(
-            byte[] params)
-            throws IOException
-        {
-            ASN1Primitive asn1Params = ASN1Primitive.fromByteArray(params);
-
-            // can be either Gost2814789KeyWrapParameters or GostR3410TransportParameters
-            if (asn1Params instanceof ASN1Sequence)
-            {
-                ASN1Sequence gParams = ASN1Sequence.getInstance(asn1Params);
-
-                this.sBox = ASN1ObjectIdentifier.getInstance(gParams.getObjectAt(0));
-                if (gParams.size() > 1)
-                {
-                    if (gParams.size() == 2)
-                    {
-                        this.ukm = ASN1OctetString.getInstance(gParams.getObjectAt(1)).getOctets();
-                    }
-                    else if (gParams.size() == 3)
-                    {
-                        this.ukm = ASN1OctetString.getInstance(gParams.getObjectAt(2)).getOctets();
-                    }
-                }
-            }
-            else
-            {
-                throw new IOException("Unable to recognize parameters");
-            }
-        }
-
-        protected String engineToString()
-        {
-            return "GOST 28147 Wrap Parameters";
-        }
-    }
-
     public static class Mappings
         extends AlgorithmProvider
     {
@@ -447,9 +364,6 @@ public final class GOST28147
 
             provider.addAlgorithm("Cipher." + CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_KeyWrap, PREFIX + "$CryptoProWrap");
             provider.addAlgorithm("Cipher." + CryptoProObjectIdentifiers.id_Gost28147_89_None_KeyWrap, PREFIX + "$GostWrap");
-
-            provider.addAlgorithm("AlgorithmParameters." + CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_KeyWrap, PREFIX + "$WrapAlgParams");
-            provider.addAlgorithm("AlgorithmParameters." + CryptoProObjectIdentifiers.id_Gost28147_89_None_KeyWrap, PREFIX + "$WrapAlgParams");
 
             provider.addAlgorithm("Mac.GOST28147MAC", PREFIX + "$Mac");
             provider.addAlgorithm("Alg.Alias.Mac.GOST28147", "GOST28147MAC");
