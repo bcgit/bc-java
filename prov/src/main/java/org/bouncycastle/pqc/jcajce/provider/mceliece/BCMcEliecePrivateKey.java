@@ -203,7 +203,6 @@ public class BCMcEliecePrivateKey
         }
         catch (IOException e)
         {
-            e.printStackTrace();
             return null;
         }
         try
@@ -213,7 +212,6 @@ public class BCMcEliecePrivateKey
         }
         catch (IOException e)
         {
-            e.printStackTrace();
             return null;
         }
     }

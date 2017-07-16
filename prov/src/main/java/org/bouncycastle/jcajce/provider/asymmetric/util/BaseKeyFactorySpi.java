@@ -48,7 +48,7 @@ public abstract class BaseKeyFactorySpi
                 return generatePublic(SubjectPublicKeyInfo.getInstance(((X509EncodedKeySpec)keySpec).getEncoded()));
             }
             catch (Exception e)
-            {                       e.printStackTrace();
+            {
                 throw new InvalidKeySpecException("encoded key spec not recognized: " + e.getMessage());
             }
         }
