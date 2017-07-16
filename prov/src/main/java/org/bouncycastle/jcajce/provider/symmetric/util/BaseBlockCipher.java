@@ -86,9 +86,9 @@ public class BaseBlockCipher
                                         RC2ParameterSpec.class,
                                         RC5ParameterSpec.class,
                                         gcmSpecClass,
+                                        GOST28147ParameterSpec.class,
                                         IvParameterSpec.class,
-                                        PBEParameterSpec.class,
-                                        GOST28147ParameterSpec.class
+                                        PBEParameterSpec.class
                                     };
 
     private BlockCipher             baseEngine;
