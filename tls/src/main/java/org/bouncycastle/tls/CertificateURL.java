@@ -31,6 +31,10 @@ public class CertificateURL
         {
             throw new IllegalArgumentException("'urlAndHashList' must have length > 0");
         }
+        if (type == CertChainType.pkipath && urlAndHashList.size() != 1)
+        {
+            throw new IllegalArgumentException("'urlAndHashList' must contain exactly one entry when type is " + CertChainType.getText(type));
+        }
 
         this.type = type;
         this.urlAndHashList = urlAndHashList;
@@ -106,6 +110,11 @@ public class CertificateURL
         {
             URLAndHash url_and_hash = URLAndHash.parse(context, buf);
             url_and_hash_list.addElement(url_and_hash);
+        }
+
+        if (type == CertChainType.pkipath && url_and_hash_list.size() != 1)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
         }
 
         return new CertificateURL(type, url_and_hash_list);
