@@ -14,8 +14,8 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
+import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
@@ -143,6 +143,10 @@ public class KeyFactorySpi
         {
             return new BCECGOST3410PrivateKey(keyInfo);
         }
+        else if (algOid.equals(CryptoProObjectIdentifiers.gostR3410_2001DH))
+        {
+            return new BCECGOST3410PrivateKey(keyInfo);
+        }
         else
         {
             throw new IOException("algorithm identifier " + algOid + " in key not recognised");
@@ -155,6 +159,10 @@ public class KeyFactorySpi
         ASN1ObjectIdentifier algOid = keyInfo.getAlgorithm().getAlgorithm();
 
         if (algOid.equals(CryptoProObjectIdentifiers.gostR3410_2001))
+        {
+            return new BCECGOST3410PublicKey(keyInfo);
+        }
+        else if (algOid.equals(CryptoProObjectIdentifiers.gostR3410_2001DH))
         {
             return new BCECGOST3410PublicKey(keyInfo);
         }
