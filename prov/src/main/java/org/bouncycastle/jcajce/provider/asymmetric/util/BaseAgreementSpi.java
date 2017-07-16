@@ -79,6 +79,10 @@ public abstract class BaseAgreementSpi
         keySizes.put(PKCSObjectIdentifiers.des_EDE3_CBC.getId(), i192);
         keySizes.put(OIWObjectIdentifiers.desCBC.getId(), i64);
 
+        keySizes.put(CryptoProObjectIdentifiers.gostR28147_gcfb.getId(), i256);
+        keySizes.put(CryptoProObjectIdentifiers.id_Gost28147_89_None_KeyWrap.getId(), i256);
+        keySizes.put(CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_KeyWrap.getId(), i256);
+
         keySizes.put(PKCSObjectIdentifiers.id_hmacWithSHA1.getId(), Integers.valueOf(160));
         keySizes.put(PKCSObjectIdentifiers.id_hmacWithSHA256.getId(), i256);
         keySizes.put(PKCSObjectIdentifiers.id_hmacWithSHA384.getId(), Integers.valueOf(384));

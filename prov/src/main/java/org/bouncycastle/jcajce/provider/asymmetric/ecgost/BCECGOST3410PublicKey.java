@@ -11,6 +11,7 @@ import java.security.spec.ECPublicKeySpec;
 import java.security.spec.EllipticCurve;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERBitString;
@@ -45,7 +46,7 @@ public class BCECGOST3410PublicKey
 
     private transient ECPublicKeyParameters   ecPublicKey;
     private transient ECParameterSpec ecSpec;
-    private transient GOST3410PublicKeyAlgParameters gostParams;
+    private transient ASN1Encodable gostParams;
 
     public BCECGOST3410PublicKey(
         BCECGOST3410PublicKey key)
@@ -198,9 +199,22 @@ public class BCECGOST3410PublicKey
             y[i] = keyEnc[64 - 1 - i];
         }
 
-        gostParams = GOST3410PublicKeyAlgParameters.getInstance(info.getAlgorithm().getParameters());
+        ASN1ObjectIdentifier paramOID;
 
-        ECNamedCurveParameterSpec spec = ECGOST3410NamedCurveTable.getParameterSpec(ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet()));
+        if (info.getAlgorithm().getParameters() instanceof ASN1ObjectIdentifier)
+        {
+            paramOID = ASN1ObjectIdentifier.getInstance(info.getAlgorithm().getParameters());
+            gostParams = paramOID;
+        }
+        else
+        {
+            GOST3410PublicKeyAlgParameters params = GOST3410PublicKeyAlgParameters.getInstance(info.getAlgorithm().getParameters());
+            gostParams = params;
+            paramOID = params.getPublicKeyParamSet();
+
+        }
+
+        ECNamedCurveParameterSpec spec = ECGOST3410NamedCurveTable.getParameterSpec(ECGOST3410NamedCurves.getName(paramOID));
 
         ECCurve curve = spec.getCurve();
         EllipticCurve ellipticCurve = EC5Util.convertCurve(curve, spec.getSeed());
@@ -208,7 +222,7 @@ public class BCECGOST3410PublicKey
         this.ecPublicKey = new ECPublicKeyParameters(curve.createPoint(new BigInteger(1, x), new BigInteger(1, y)), ECUtil.getDomainParameters(null, spec));
 
         ecSpec = new ECNamedCurveSpec(
-            ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet()),
+            ECGOST3410NamedCurves.getName(paramOID),
             ellipticCurve,
             new ECPoint(
                 spec.getG().getAffineXCoord().toBigInteger(),
@@ -385,7 +399,7 @@ public class BCECGOST3410PublicKey
         out.writeObject(this.getEncoded());
     }
 
-    public GOST3410PublicKeyAlgParameters getGostParams()
+    ASN1Encodable getGostParams()
     {
         return gostParams;
     }
