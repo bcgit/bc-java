@@ -33,7 +33,7 @@ public class XMSSMTKeyFactorySpi
                 return generatePrivate(PrivateKeyInfo.getInstance(ASN1Primitive.fromByteArray(encKey)));
             }
             catch (Exception e)
-            {              e.printStackTrace();
+            {
                 throw new InvalidKeySpecException(e.toString());
             }
         }
