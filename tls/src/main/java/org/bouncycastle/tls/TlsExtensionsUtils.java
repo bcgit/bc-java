@@ -11,6 +11,7 @@ import org.bouncycastle.util.Integers;
 public class TlsExtensionsUtils
 {
     public static final Integer EXT_client_certificate_type = Integers.valueOf(ExtensionType.client_certificate_type);
+    public static final Integer EXT_client_certificate_url = Integers.valueOf(ExtensionType.client_certificate_url);
     public static final Integer EXT_encrypt_then_mac = Integers.valueOf(ExtensionType.encrypt_then_mac);
     public static final Integer EXT_extended_master_secret = Integers.valueOf(ExtensionType.extended_master_secret);
     public static final Integer EXT_heartbeat = Integers.valueOf(ExtensionType.heartbeat);
@@ -37,6 +38,11 @@ public class TlsExtensionsUtils
         throws IOException
     {
         extensions.put(EXT_client_certificate_type, createCertificateTypeExtensionServer(certificateType));
+    }
+
+    public static void addClientCertificateURLExtension(Hashtable extensions)
+    {
+        extensions.put(EXT_client_certificate_url, createClientCertificateURLExtension());
     }
 
     public static void addEncryptThenMACExtension(Hashtable extensions)
@@ -177,6 +183,12 @@ public class TlsExtensionsUtils
         return extensionData == null ? null : readTrustedCAKeysExtensionClient(extensionData);
     }
 
+    public static boolean hasClientCertificateURLExtension(Hashtable extensions) throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_client_certificate_url);
+        return extensionData == null ? false : readClientCertificateURLExtension(extensionData);
+    }
+
     public static boolean hasEncryptThenMACExtension(Hashtable extensions) throws IOException
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_encrypt_then_mac);
@@ -214,6 +226,11 @@ public class TlsExtensionsUtils
     public static byte[] createCertificateTypeExtensionServer(short certificateType) throws IOException
     {
         return TlsUtils.encodeUint8(certificateType);
+    }
+
+    public static byte[] createClientCertificateURLExtension()
+    {
+        return createEmptyExtensionData();
     }
 
     public static byte[] createEmptyExtensionData()
@@ -348,6 +365,11 @@ public class TlsExtensionsUtils
     public static short readCertificateTypeExtensionServer(byte[] extensionData) throws IOException
     {
         return TlsUtils.decodeUint8(extensionData);
+    }
+
+    public static boolean readClientCertificateURLExtension(byte[] extensionData) throws IOException
+    {
+        return readEmptyExtensionData(extensionData);
     }
 
     public static boolean readEncryptThenMACExtension(byte[] extensionData) throws IOException
