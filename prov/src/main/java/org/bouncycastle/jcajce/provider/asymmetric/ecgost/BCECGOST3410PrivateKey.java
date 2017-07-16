@@ -50,7 +50,7 @@ public class BCECGOST3410PrivateKey
     private String algorithm = "ECGOST3410";
     private boolean withCompression;
 
-    private transient GOST3410PublicKeyAlgParameters gostParams;
+    private transient ASN1Encodable gostParams;
     private transient BigInteger d;
     private transient ECParameterSpec ecSpec;
     private transient DERBitString publicKey;
@@ -204,15 +204,16 @@ public class BCECGOST3410PrivateKey
 
         if (p instanceof ASN1Sequence && (ASN1Sequence.getInstance(p).size() == 2 || ASN1Sequence.getInstance(p).size() == 3))
         {
-            gostParams = GOST3410PublicKeyAlgParameters.getInstance(info.getPrivateKeyAlgorithm().getParameters());
+            GOST3410PublicKeyAlgParameters gParams = GOST3410PublicKeyAlgParameters.getInstance(info.getPrivateKeyAlgorithm().getParameters());
+            gostParams = gParams;
 
-            ECNamedCurveParameterSpec spec = ECGOST3410NamedCurveTable.getParameterSpec(ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet()));
+            ECNamedCurveParameterSpec spec = ECGOST3410NamedCurveTable.getParameterSpec(ECGOST3410NamedCurves.getName(gParams.getPublicKeyParamSet()));
 
             ECCurve curve = spec.getCurve();
             EllipticCurve ellipticCurve = EC5Util.convertCurve(curve, spec.getSeed());
 
             ecSpec = new ECNamedCurveSpec(
-                ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet()),
+                ECGOST3410NamedCurves.getName(gParams.getPublicKeyParamSet()),
                 ellipticCurve,
                 new ECPoint(
                     spec.getG().getAffineXCoord().toBigInteger(),
