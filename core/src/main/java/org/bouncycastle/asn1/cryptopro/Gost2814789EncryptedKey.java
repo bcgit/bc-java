@@ -64,6 +64,18 @@ public class Gost2814789EncryptedKey
         return null;
     }
 
+    public Gost2814789EncryptedKey(byte[] encryptedKey, byte[] macKey)
+    {
+        this(encryptedKey, null, macKey);
+    }
+
+    public Gost2814789EncryptedKey(byte[] encryptedKey, byte[] maskKey, byte[] macKey)
+    {
+        this.encryptedKey = Arrays.clone(encryptedKey);
+        this.maskKey = Arrays.clone(maskKey);
+        this.macKey = Arrays.clone(macKey);
+    }
+
     public byte[] getEncryptedKey()
     {
         return encryptedKey;
