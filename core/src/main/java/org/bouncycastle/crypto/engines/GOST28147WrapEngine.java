@@ -49,9 +49,20 @@ public class GOST28147WrapEngine
         return "GOST28147Wrap";
     }
 
-    public byte[] wrap(byte[] in, int inOff, int inLen)
+    public byte[] wrap(byte[] input, int inOff, int inLen)
     {
-        return new byte[0];
+        mac.update(input, inOff, inLen);
+
+        byte[] wrappedKey = new byte[inLen + mac.getMacSize()];
+
+        cipher.processBlock(input, inOff, wrappedKey, 0);
+        cipher.processBlock(input, inOff + 8, wrappedKey, 8);
+        cipher.processBlock(input, inOff + 16, wrappedKey, 16);
+        cipher.processBlock(input, inOff + 24, wrappedKey, 24);
+
+        mac.doFinal(wrappedKey, inLen);
+
+        return wrappedKey;
     }
 
     public byte[] unwrap(byte[] input, int inOff, int inLen)
