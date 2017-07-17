@@ -157,7 +157,7 @@ public abstract class JceKeyTransRecipient
     protected Key extractSecretKey(AlgorithmIdentifier keyEncryptionAlgorithm, AlgorithmIdentifier encryptedKeyAlgorithm, byte[] encryptedEncryptionKey)
         throws CMSException
     {
-        if (keyEncryptionAlgorithm.getAlgorithm().equals(CryptoProObjectIdentifiers.gostR3410_2001))
+        if (CMSUtils.isGOST(keyEncryptionAlgorithm.getAlgorithm()))
         {
             try
             {
