@@ -8,6 +8,8 @@ import org.bouncycastle.asn1.cms.KeyAgreeRecipientInfo;
 import org.bouncycastle.asn1.cms.OriginatorIdentifierOrKey;
 import org.bouncycastle.asn1.cms.OriginatorPublicKey;
 import org.bouncycastle.asn1.cms.RecipientInfo;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.cryptopro.Gost2814789KeyWrapParameters;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -31,12 +33,16 @@ public abstract class KeyAgreeRecipientInfoGenerator
         throws CMSException
     {
         OriginatorIdentifierOrKey originator = new OriginatorIdentifierOrKey(
-                createOriginatorPublicKey(originatorKeyInfo));
+            createOriginatorPublicKey(originatorKeyInfo));
 
         AlgorithmIdentifier keyEncAlg;
         if (CMSUtils.isDES(keyEncryptionOID.getId()) || keyEncryptionOID.equals(PKCSObjectIdentifiers.id_alg_CMSRC2wrap))
         {
             keyEncAlg = new AlgorithmIdentifier(keyEncryptionOID, DERNull.INSTANCE);
+        }
+        else if (CMSUtils.isGOST(keyAgreementOID))
+        {
+            keyEncAlg = new AlgorithmIdentifier(keyEncryptionOID, new Gost2814789KeyWrapParameters(CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_A_ParamSet));
         }
         else
         {
@@ -51,8 +57,7 @@ public abstract class KeyAgreeRecipientInfoGenerator
         if (userKeyingMaterial != null)
         {
             return new RecipientInfo(new KeyAgreeRecipientInfo(originator, new DEROctetString(userKeyingMaterial),
-                    keyAgreeAlg, recipients));
-
+                keyAgreeAlg, recipients));
         }
         else
         {
