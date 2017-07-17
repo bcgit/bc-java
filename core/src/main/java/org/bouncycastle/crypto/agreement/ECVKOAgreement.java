@@ -11,6 +11,9 @@ import org.bouncycastle.crypto.params.ParametersWithUKM;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.BigIntegers;
 
+/**
+ * GOST VKO key agreement class - RFC 7836 Section 4.3
+ */
 public class ECVKOAgreement
 {
     private final Digest digest;
@@ -47,7 +50,7 @@ public class ECVKOAgreement
             throw new IllegalStateException("ECVKO public key has wrong domain parameters");
         }
         
-        BigInteger hd = ukm.multiply(key.getD()).mod(params.getN());
+        BigInteger hd = params.getH().multiply(ukm).multiply(key.getD()).mod(params.getN());
 
         ECPoint P = pub.getQ().multiply(hd).normalize();
 
