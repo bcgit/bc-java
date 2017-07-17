@@ -24,6 +24,7 @@ import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.RC2ParameterSpec;
 import javax.crypto.spec.RC5ParameterSpec;
 
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
@@ -250,7 +251,7 @@ public class BaseBlockCipher
                 try
                 {
                     engineParams = createParametersInstance(name);
-                    engineParams.init(ivParam.getIV());
+                    engineParams.init(new DEROctetString(ivParam.getIV()).getEncoded());
                 }
                 catch (Exception e)
                 {

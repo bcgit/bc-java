@@ -20,6 +20,7 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -30,11 +31,14 @@ import org.bouncycastle.asn1.cms.OriginatorPublicKey;
 import org.bouncycastle.asn1.cms.RecipientEncryptedKey;
 import org.bouncycastle.asn1.cms.RecipientKeyIdentifier;
 import org.bouncycastle.asn1.cms.ecc.MQVuserKeyingMaterial;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.cryptopro.Gost2814789EncryptedKey;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.KeyAgreeRecipientInfoGenerator;
+import org.bouncycastle.jcajce.spec.GOST28147WrapParameterSpec;
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
@@ -149,6 +153,7 @@ public class JceKeyAgreeRecipientInfoGenerator
             try
             {
                 AlgorithmParameterSpec agreementParamSpec;
+                ASN1ObjectIdentifier keyEncAlg = keyEncryptionAlgorithm.getAlgorithm();
 
                 if (CMSUtils.isMQV(keyAgreementOID))
                 {
@@ -156,7 +161,7 @@ public class JceKeyAgreeRecipientInfoGenerator
                 }
                 else if (CMSUtils.isEC(keyAgreementOID))
                 {
-                    byte[] ukmKeyingMaterial = ecc_cms_Generator.generateKDFMaterial(keyEncryptionAlgorithm, keySizeProvider.getKeySize(keyEncryptionAlgorithm.getAlgorithm()), userKeyingMaterial);
+                    byte[] ukmKeyingMaterial = ecc_cms_Generator.generateKDFMaterial(keyEncryptionAlgorithm, keySizeProvider.getKeySize(keyEncAlg), userKeyingMaterial);
 
                     agreementParamSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
                 }
@@ -175,6 +180,17 @@ public class JceKeyAgreeRecipientInfoGenerator
                         agreementParamSpec = null;
                     }
                 }
+                else if (CMSUtils.isGOST(keyAgreementOID))
+                {
+                    if (userKeyingMaterial != null)
+                    {
+                        agreementParamSpec = new UserKeyingMaterialSpec(userKeyingMaterial);
+                    }
+                    else
+                    {
+                        throw new CMSException("User keying material must be set for static keys.");
+                    }
+                }
                 else
                 {
                     throw new CMSException("Unknown key agreement algorithm: " + keyAgreementOID);
@@ -185,22 +201,43 @@ public class JceKeyAgreeRecipientInfoGenerator
                 keyAgreement.init(senderPrivateKey, agreementParamSpec, random);
                 keyAgreement.doPhase(recipientPublicKey, true);
 
-                SecretKey keyEncryptionKey = keyAgreement.generateSecret(keyEncryptionAlgorithm.getAlgorithm().getId());
+                SecretKey keyEncryptionKey = keyAgreement.generateSecret(keyEncAlg.getId());
 
                 // Wrap the content encryption key with the agreement key
-                Cipher keyEncryptionCipher = helper.createCipher(keyEncryptionAlgorithm.getAlgorithm());
+                Cipher keyEncryptionCipher = helper.createCipher(keyEncAlg);
+                ASN1OctetString encryptedKey;
 
-                keyEncryptionCipher.init(Cipher.WRAP_MODE, keyEncryptionKey, random);
+                if (keyEncAlg.equals(CryptoProObjectIdentifiers.id_Gost28147_89_None_KeyWrap)
+                    || keyEncAlg.equals(CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_KeyWrap))
+                {
+                    keyEncryptionCipher.init(Cipher.WRAP_MODE, keyEncryptionKey, new GOST28147WrapParameterSpec(CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_A_ParamSet, userKeyingMaterial));
 
-                byte[] encryptedKeyBytes = keyEncryptionCipher.wrap(helper.getJceKey(contentEncryptionKey));
+                    byte[] encKeyBytes = keyEncryptionCipher.wrap(helper.getJceKey(contentEncryptionKey));
 
-                ASN1OctetString encryptedKey = new DEROctetString(encryptedKeyBytes);
+                    Gost2814789EncryptedKey encKey = new Gost2814789EncryptedKey(
+                        Arrays.copyOfRange(encKeyBytes, 0, encKeyBytes.length - 4),
+                        Arrays.copyOfRange(encKeyBytes, encKeyBytes.length - 4, encKeyBytes.length));
+
+                    encryptedKey = new DEROctetString(encKey.getEncoded(ASN1Encoding.DER));
+                }
+                else
+                {
+                    keyEncryptionCipher.init(Cipher.WRAP_MODE, keyEncryptionKey, random);
+
+                    byte[] encryptedKeyBytes = keyEncryptionCipher.wrap(helper.getJceKey(contentEncryptionKey));
+
+                    encryptedKey = new DEROctetString(encryptedKeyBytes);
+                }
 
                 recipientEncryptedKeys.add(new RecipientEncryptedKey(karId, encryptedKey));
             }
             catch (GeneralSecurityException e)
             {
-                throw new CMSException("Cannot perform agreement step: " + e.getMessage(), e);
+                throw new CMSException("cannot perform agreement step: " + e.getMessage(), e);
+            }
+            catch (IOException e)
+            {
+                throw new CMSException("unable to encode wrapped key: " + e.getMessage(), e);
             }
         }
 
