@@ -28,7 +28,7 @@ public class JCERSAPrivateKey
     protected BigInteger modulus;
     protected BigInteger privateExponent;
 
-    private PKCS12BagAttributeCarrierImpl attrCarrier = new PKCS12BagAttributeCarrierImpl();
+    private transient PKCS12BagAttributeCarrierImpl attrCarrier = new PKCS12BagAttributeCarrierImpl();
 
     protected JCERSAPrivateKey()
     {
