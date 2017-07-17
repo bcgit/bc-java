@@ -70,7 +70,6 @@ public class KeccakDigest
             x = newX;
             y = newY;
         }
-
         return keccakRhoOffsets;
     }
 
@@ -384,9 +383,9 @@ public class KeccakDigest
     {
         for (int i = 0; i < (1600 / 64); i++)
         {
-            stateAsWords[i] = 0;
             int index = i * (64 / 8);
-            for (int j = 0; j < (64 / 8); j++)
+            stateAsWords[i] = (long)state[index + 0] & 0xff;
+            for (int j = 1; j < (64 / 8); j++)
             {
                 stateAsWords[i] |= ((long)state[index + j] & 0xff) << ((8 * j));
             }
@@ -400,7 +399,7 @@ public class KeccakDigest
             int index = i * (64 / 8);
             for (int j = 0; j < (64 / 8); j++)
             {
-                state[index + j] = (byte)((stateAsWords[i] >>> ((8 * j))) & 0xFF);
+                state[index + j] = (byte)(stateAsWords[i] >>> (8 * j));
             }
         }
     }
@@ -459,37 +458,67 @@ public class KeccakDigest
         }
     }
 
+    private long rRotate(long v, int r)
+    {
+        return (v << r) | (v >>> -r);
+    }
+
     long[] C = new long[5];
 
     private void theta(long[] A)
     {
         for (int x = 0; x < 5; x++)
         {
-            C[x] = 0;
-            for (int y = 0; y < 5; y++)
-            {
-                C[x] ^= A[x + 5 * y];
-            }
+            C[x] = A[x + 0] ^ A[x + 5] ^ A[x + 10] ^ A[x + 15] ^ A[x + 20];
         }
-        for (int x = 0; x < 5; x++)
-        {
-            long dX = ((((C[(x + 1) % 5]) << 1) ^ ((C[(x + 1) % 5]) >>> (64 - 1)))) ^ C[(x + 4) % 5];
-            for (int y = 0; y < 5; y++)
-            {
-                A[x + 5 * y] ^= dX;
-            }
-        }
+
+        long dX = rRotate(C[1], 1) ^ C[4];
+
+        A[0] ^= dX;
+        A[5] ^= dX;
+        A[10] ^= dX;
+        A[15] ^= dX;
+        A[20] ^= dX;
+
+        dX = rRotate(C[2], 1) ^ C[0];
+
+        A[1] ^= dX;
+        A[6] ^= dX;
+        A[11] ^= dX;
+        A[16] ^= dX;
+        A[21] ^= dX;
+
+        dX = rRotate(C[3], 1) ^ C[1];
+
+        A[2] ^= dX;
+        A[7] ^= dX;
+        A[12] ^= dX;
+        A[17] ^= dX;
+        A[22] ^= dX;
+
+        dX = rRotate(C[4], 1) ^ C[2];
+
+        A[3] ^= dX;
+        A[8] ^= dX;
+        A[13] ^= dX;
+        A[18] ^= dX;
+        A[23] ^= dX;
+
+        dX = rRotate(C[0], 1) ^ C[3];
+
+        A[4] ^= dX;
+        A[9] ^= dX;
+        A[14] ^= dX;
+        A[19] ^= dX;
+        A[24] ^= dX;
     }
 
     private void rho(long[] A)
     {
-        for (int x = 0; x < 5; x++)
+        // KeccakRhoOffsets[0] == 0
+        for (int x = 1; x < 25; x++)
         {
-            for (int y = 0; y < 5; y++)
-            {
-                int index = x + 5 * y;
-                A[index] = ((KeccakRhoOffsets[index] != 0) ? (((A[index]) << KeccakRhoOffsets[index]) ^ ((A[index]) >>> (64 - KeccakRhoOffsets[index]))) : A[index]);
-            }
+            A[x] = rRotate(A[x], KeccakRhoOffsets[x]);
         }
     }
 
@@ -499,13 +528,35 @@ public class KeccakDigest
     {
         System.arraycopy(A, 0, tempA, 0, tempA.length);
 
-        for (int x = 0; x < 5; x++)
-        {
-            for (int y = 0; y < 5; y++)
-            {
-                A[y + 5 * ((2 * x + 3 * y) % 5)] = tempA[x + 5 * y];
-            }
-        }
+        A[0 + 5 * ((0 * 1 + 3 * 0) % 5)] = tempA[0 + 5 * 0];
+        A[1 + 5 * ((0 * 1 + 3 * 1) % 5)] = tempA[0 + 5 * 1];
+        A[2 + 5 * ((0 * 1 + 3 * 2) % 5)] = tempA[0 + 5 * 2];
+        A[3 + 5 * ((0 * 1 + 3 * 3) % 5)] = tempA[0 + 5 * 3];
+        A[4 + 5 * ((0 * 1 + 3 * 4) % 5)] = tempA[0 + 5 * 4];
+
+        A[0 + 5 * ((2 * 1 + 3 * 0) % 5)] = tempA[1 + 5 * 0];
+        A[1 + 5 * ((2 * 1 + 3 * 1) % 5)] = tempA[1 + 5 * 1];
+        A[2 + 5 * ((2 * 1 + 3 * 2) % 5)] = tempA[1 + 5 * 2];
+        A[3 + 5 * ((2 * 1 + 3 * 3) % 5)] = tempA[1 + 5 * 3];
+        A[4 + 5 * ((2 * 1 + 3 * 4) % 5)] = tempA[1 + 5 * 4];
+
+        A[0 + 5 * ((2 * 2 + 3 * 0) % 5)] = tempA[2 + 5 * 0];
+        A[1 + 5 * ((2 * 2 + 3 * 1) % 5)] = tempA[2 + 5 * 1];
+        A[2 + 5 * ((2 * 2 + 3 * 2) % 5)] = tempA[2 + 5 * 2];
+        A[3 + 5 * ((2 * 2 + 3 * 3) % 5)] = tempA[2 + 5 * 3];
+        A[4 + 5 * ((2 * 2 + 3 * 4) % 5)] = tempA[2 + 5 * 4];
+
+        A[0 + 5 * ((2 * 3 + 3 * 0) % 5)] = tempA[3 + 5 * 0];
+        A[1 + 5 * ((2 * 3 + 3 * 1) % 5)] = tempA[3 + 5 * 1];
+        A[2 + 5 * ((2 * 3 + 3 * 2) % 5)] = tempA[3 + 5 * 2];
+        A[3 + 5 * ((2 * 3 + 3 * 3) % 5)] = tempA[3 + 5 * 3];
+        A[4 + 5 * ((2 * 3 + 3 * 4) % 5)] = tempA[3 + 5 * 4];
+
+        A[0 + 5 * ((2 * 4 + 3 * 0) % 5)] = tempA[4 + 5 * 0];
+        A[1 + 5 * ((2 * 4 + 3 * 1) % 5)] = tempA[4 + 5 * 1];
+        A[2 + 5 * ((2 * 4 + 3 * 2) % 5)] = tempA[4 + 5 * 2];
+        A[3 + 5 * ((2 * 4 + 3 * 3) % 5)] = tempA[4 + 5 * 3];
+        A[4 + 5 * ((2 * 4 + 3 * 4) % 5)] = tempA[4 + 5 * 4];
     }
 
     long[] chiC = new long[5];
@@ -514,10 +565,11 @@ public class KeccakDigest
     {
         for (int y = 0; y < 5; y++)
         {
-            for (int x = 0; x < 5; x++)
-            {
-                chiC[x] = A[x + 5 * y] ^ ((~A[(((x + 1) % 5) + 5 * y)]) & A[(((x + 2) % 5) + 5 * y)]);
-            }
+            chiC[0] = A[0 + 5 * y] ^ ((~A[(((0 + 1) % 5) + 5 * y)]) & A[(((0 + 2) % 5) + 5 * y)]);
+            chiC[1] = A[1 + 5 * y] ^ ((~A[(((1 + 1) % 5) + 5 * y)]) & A[(((1 + 2) % 5) + 5 * y)]);
+            chiC[2] = A[2 + 5 * y] ^ ((~A[(((2 + 1) % 5) + 5 * y)]) & A[(((2 + 2) % 5) + 5 * y)]);
+            chiC[3] = A[3 + 5 * y] ^ ((~A[(((3 + 1) % 5) + 5 * y)]) & A[(((3 + 2) % 5) + 5 * y)]);
+            chiC[4] = A[4 + 5 * y] ^ ((~A[(((4 + 1) % 5) + 5 * y)]) & A[(((4 + 2) % 5) + 5 * y)]);
             for (int x = 0; x < 5; x++)
             {
                 A[x + 5 * y] = chiC[x];
