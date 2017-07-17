@@ -404,9 +404,10 @@ public class KeccakDigest
         }
     }
 
+    private final long[] longState = new long[state.length / 8];
+
     private void keccakPermutation(byte[] state)
     {
-        long[] longState = new long[state.length / 8];
 
         fromBytesToWords(longState, state);
 
@@ -463,16 +464,15 @@ public class KeccakDigest
         return (v << r) | (v >>> -r);
     }
 
-    long[] C = new long[5];
-
     private void theta(long[] A)
     {
-        for (int x = 0; x < 5; x++)
-        {
-            C[x] = A[x + 0] ^ A[x + 5] ^ A[x + 10] ^ A[x + 15] ^ A[x + 20];
-        }
+        long C0 = A[0 + 0] ^ A[0 + 5] ^ A[0 + 10] ^ A[0 + 15] ^ A[0 + 20];
+        long C1 = A[1 + 0] ^ A[1 + 5] ^ A[1 + 10] ^ A[1 + 15] ^ A[1 + 20];
+        long C2 = A[2 + 0] ^ A[2 + 5] ^ A[2 + 10] ^ A[2 + 15] ^ A[2 + 20];
+        long C3 = A[3 + 0] ^ A[3 + 5] ^ A[3 + 10] ^ A[3 + 15] ^ A[3 + 20];
+        long C4 = A[4 + 0] ^ A[4 + 5] ^ A[4 + 10] ^ A[4 + 15] ^ A[4 + 20];
 
-        long dX = rRotate(C[1], 1) ^ C[4];
+        long dX = rRotate(C1, 1) ^ C4;
 
         A[0] ^= dX;
         A[5] ^= dX;
@@ -480,7 +480,7 @@ public class KeccakDigest
         A[15] ^= dX;
         A[20] ^= dX;
 
-        dX = rRotate(C[2], 1) ^ C[0];
+        dX = rRotate(C2, 1) ^ C0;
 
         A[1] ^= dX;
         A[6] ^= dX;
@@ -488,7 +488,7 @@ public class KeccakDigest
         A[16] ^= dX;
         A[21] ^= dX;
 
-        dX = rRotate(C[3], 1) ^ C[1];
+        dX = rRotate(C3, 1) ^ C1;
 
         A[2] ^= dX;
         A[7] ^= dX;
@@ -496,7 +496,7 @@ public class KeccakDigest
         A[17] ^= dX;
         A[22] ^= dX;
 
-        dX = rRotate(C[4], 1) ^ C[2];
+        dX = rRotate(C4, 1) ^ C2;
 
         A[3] ^= dX;
         A[8] ^= dX;
@@ -504,7 +504,7 @@ public class KeccakDigest
         A[18] ^= dX;
         A[23] ^= dX;
 
-        dX = rRotate(C[0], 1) ^ C[3];
+        dX = rRotate(C0, 1) ^ C3;
 
         A[4] ^= dX;
         A[9] ^= dX;
@@ -522,7 +522,7 @@ public class KeccakDigest
         }
     }
 
-    long[] tempA = new long[25];
+    private final long[] tempA = new long[25];
 
     private void pi(long[] A)
     {
@@ -559,7 +559,7 @@ public class KeccakDigest
         A[4 + 5 * ((2 * 4 + 3 * 4) % 5)] = tempA[4 + 5 * 4];
     }
 
-    long[] chiC = new long[5];
+    private final long[] chiC = new long[5];
 
     private void chi(long[] A)
     {
