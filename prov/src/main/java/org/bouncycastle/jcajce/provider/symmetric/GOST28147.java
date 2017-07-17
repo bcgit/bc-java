@@ -1,6 +1,9 @@
 package org.bouncycastle.jcajce.provider.symmetric;
 
 import java.io.IOException;
+import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.HashMap;
@@ -23,6 +26,7 @@ import org.bouncycastle.crypto.macs.GOST28147Mac;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.GCFBBlockCipher;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameters;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
@@ -122,6 +126,52 @@ public final class GOST28147
         public KeyGen(int keySize)
         {
             super("GOST28147", keySize, new CipherKeyGenerator());
+        }
+    }
+
+    public static class AlgParamGen
+        extends BaseAlgorithmParameterGenerator
+    {
+        byte[] iv = new byte[8];
+        byte[] sBox = GOST28147Engine.getSBox("E-A");
+
+        protected void engineInit(
+            AlgorithmParameterSpec genParamSpec,
+            SecureRandom random)
+            throws InvalidAlgorithmParameterException
+        {
+            if (genParamSpec instanceof GOST28147ParameterSpec)
+            {
+                  this.sBox = ((GOST28147ParameterSpec)genParamSpec).getSBox();
+            }
+            else
+            {
+                throw new InvalidAlgorithmParameterException("parameter spec not supported");
+            }
+        }
+
+        protected AlgorithmParameters engineGenerateParameters()
+        {
+            if (random == null)
+            {
+                random = new SecureRandom();
+            }
+
+            random.nextBytes(iv);
+
+            AlgorithmParameters params;
+
+            try
+            {
+                params = createParametersInstance("GOST28147");
+                params.init(new GOST28147ParameterSpec(sBox, iv));
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e.getMessage());
+            }
+
+            return params;
         }
     }
 
@@ -360,7 +410,11 @@ public final class GOST28147
             provider.addAlgorithm("Alg.Alias.KeyGenerator.GOST-28147", "GOST28147");
             provider.addAlgorithm("Alg.Alias.KeyGenerator." + CryptoProObjectIdentifiers.gostR28147_gcfb, "GOST28147");
 
-            provider.addAlgorithm("AlgorithmParameters." + CryptoProObjectIdentifiers.gostR28147_gcfb, PREFIX + "$AlgParams");
+            provider.addAlgorithm("AlgorithmParameters." + "GOST28147", PREFIX + "$AlgParams");
+            provider.addAlgorithm("AlgorithmParameterGenerator." + "GOST28147", PREFIX + "$AlgParamGen");
+
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + CryptoProObjectIdentifiers.gostR28147_gcfb, "GOST28147");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + CryptoProObjectIdentifiers.gostR28147_gcfb, "GOST28147");
 
             provider.addAlgorithm("Cipher." + CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_KeyWrap, PREFIX + "$CryptoProWrap");
             provider.addAlgorithm("Cipher." + CryptoProObjectIdentifiers.id_Gost28147_89_None_KeyWrap, PREFIX + "$GostWrap");

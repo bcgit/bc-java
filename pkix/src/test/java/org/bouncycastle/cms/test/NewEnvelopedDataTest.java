@@ -12,6 +12,7 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateFactory;
@@ -316,6 +317,62 @@ public class NewEnvelopedDataTest
             "JAAGByqFAwICHgEDQwAEQOeSFV7jo7EvygKSgHH79eel7sgWu0yW4swAK81Pw8jHMazuL6SpTUqUWNPW1jf4aFFHQAQmrxWV" +
             "maCQn7gSJl8ECFgM3TO2P26NMDgGCSqGSIb3DQEHATAdBgYqhQMCAhUwEwQIC4ytWGecO5AGByqFAwICHwGADIzrpurLkuk0" +
             "xGGidg=="
+    );
+
+    public byte[] gost2001_Rand_Sender_Cert = Base64.decode(
+        "MIIERTCCA/SgAwIBAgIEUu7tIDAIBgYqhQMCAgMwgdExCzAJBgNVBAYTAlJVMSAwHgYDVQQIDBfQoS7Qn9C40YLQtdGA0LHR" +
+            "g9GA0LPRijEfMB0GA1UECgwW0KHQvtCy0YDQtdC80LXQvdC90LjQujEoMCYGA1UECwwf0JTQtdC50YHRgtCy0YPRjtGJ0LjQ" +
+            "tSDQu9C40YbQsDEtMCsGA1UEDAwk0KTQuNC70L7RgdC+0LIg0Lgg0L/Rg9Cx0LvQuNGG0LjRgdGCMSYwJAYDVQQDDB3QldCy" +
+            "0LPQtdC90ZbQuSDQntC90aPQs9C40L3RijAeFw0xNzA3MTYxNDAwMDBaFw0zNzA3MTYxNDAwMDBaMIHRMQswCQYDVQQGEwJS" +
+            "VTEgMB4GA1UECAwX0KEu0J/QuNGC0LXRgNCx0YPRgNCz0YoxHzAdBgNVBAoMFtCh0L7QstGA0LXQvNC10L3QvdC40LoxKDAm" +
+            "BgNVBAsMH9CU0LXQudGB0YLQstGD0Y7RidC40LUg0LvQuNGG0LAxLTArBgNVBAwMJNCk0LjQu9C+0YHQvtCyINC4INC/0YPQ" +
+            "sdC70LjRhtC40YHRgjEmMCQGA1UEAwwd0JXQstCz0LXQvdGW0Lkg0J7QvdGj0LPQuNC90YowYzAcBgYqhQMCAhMwEgYHKoUD" +
+            "AgIkAAYHKoUDAgIeAQNDAARAM++vMY04j9Bvcn71wM9atNkRo4lCixrOR82HncQbwnyBS6R0BqRmL+Q32TzEYpslzRkQnj/z" +
+            "yORa31QVSRghQaOCAa4wggGqMA4GA1UdDwEB/wQEAwIB/jBjBgNVHSUEXDBaBggrBgEFBQcDAQYIKwYBBQUHAwIGCCsGAQUF" +
+            "BwMDBggrBgEFBQcDBAYIKwYBBQUHAwUGCCsGAQUFBwMGBggrBgEFBQcDBwYIKwYBBQUHAwgGCCsGAQUFBwMJMA8GA1UdEwEB" +
+            "/wQFMAMBAf8wHQYDVR0OBBYEFCLkv9o8dmaV1StuS8QFO64FJXXXMIIBAQYDVR0jBIH5MIH2gBQi5L/aPHZmldUrbkvEBTuu" +
+            "BSV116GB16SB1DCB0TELMAkGA1UEBhMCUlUxIDAeBgNVBAgMF9ChLtCf0LjRgtC10YDQsdGD0YDQs9GKMR8wHQYDVQQKDBbQ" +
+            "odC+0LLRgNC10LzQtdC90L3QuNC6MSgwJgYDVQQLDB/QlNC10LnRgdGC0LLRg9GO0YnQuNC1INC70LjRhtCwMS0wKwYDVQQM" +
+            "DCTQpNC40LvQvtGB0L7QsiDQuCDQv9GD0LHQu9C40YbQuNGB0YIxJjAkBgNVBAMMHdCV0LLQs9C10L3RltC5INCe0L3Ro9Cz" +
+            "0LjQvdGKggRS7u0gMAgGBiqFAwICAwNBAIMLOOeDFPnrGkC/QG/pvLRZhEeiVkGVgy/h5WJancJDouHzedhI+mJqBFEYRoIy" +
+            "4KP5Q93Bf1NClXwIfnTOxWo="
+    );
+
+    public byte[] gost2001_Rand_Sender_Key = Base64.decode(
+        "MEUCAQAwHAYGKoUDAgJiMBIGByqFAwICJAAGByqFAwICHgEEIgQgGmpna37puqaRGBZjUAX5UfWaL67C9rvxCpOIexI0KUM="
+    );
+
+    public byte[] gost2001_Rand_Reci_Cert = Base64.decode(
+        "MIIELDCCA9ugAwIBAgIERMAcpzAIBgYqhQMCAgMwgckxCzAJBgNVBAYTAlJVMSAwHgYDVQQIDBfQoS7Qn9C40YLQtdGA0LHR" +
+            "g9GA0LPRijEfMB0GA1UECgwW0KHQvtCy0YDQtdC80LXQvdC90LjQujEfMB0GA1UECwwW0KDRg9C60L7QstC+0LTRgdGC0LLQ" +
+            "vjEZMBcGA1UEDAwQ0KDQtdC00LDQutGC0L7RgDE7MDkGA1UEAwwy0J/Rg9GI0LrQuNC9INCQ0LvQtdC60YHQsNC90LTRgCDQ" +
+            "odC10YDQs9C10LXQstC40YcwHhcNMTcwNzE2MTQwMDAwWhcNMzcwNzE2MTQwMDAwWjCByTELMAkGA1UEBhMCUlUxIDAeBgNV" +
+            "BAgMF9ChLtCf0LjRgtC10YDQsdGD0YDQs9GKMR8wHQYDVQQKDBbQodC+0LLRgNC10LzQtdC90L3QuNC6MR8wHQYDVQQLDBbQ" +
+            "oNGD0LrQvtCy0L7QtNGB0YLQstC+MRkwFwYDVQQMDBDQoNC10LTQsNC60YLQvtGAMTswOQYDVQQDDDLQn9GD0YjQutC40L0g" +
+            "0JDQu9C10LrRgdCw0L3QtNGAINCh0LXRgNCz0LXQtdCy0LjRhzBjMBwGBiqFAwICEzASBgcqhQMCAiQABgcqhQMCAh4BA0MA" +
+            "BEA6Dzd7VQJA7712CfHiH4L0TVcaH+iLJ6vHkfdgAvS+8mGt/L2H9qQP7O41SgDKQqtfrr+tHDig7/ft5Bl1TFNoo4IBpTCC" +
+            "AaEwDgYDVR0PAQH/BAQDAgH+MGMGA1UdJQRcMFoGCCsGAQUFBwMBBggrBgEFBQcDAgYIKwYBBQUHAwMGCCsGAQUFBwMEBggr" +
+            "BgEFBQcDBQYIKwYBBQUHAwYGCCsGAQUFBwMHBggrBgEFBQcDCAYIKwYBBQUHAwkwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4E" +
+            "FgQU8ZLn4r4PajaqWCwLYW6XauO3XsgwgfkGA1UdIwSB8TCB7oAU8ZLn4r4PajaqWCwLYW6XauO3Xsihgc+kgcwwgckxCzAJ" +
+            "BgNVBAYTAlJVMSAwHgYDVQQIDBfQoS7Qn9C40YLQtdGA0LHRg9GA0LPRijEfMB0GA1UECgwW0KHQvtCy0YDQtdC80LXQvdC9" +
+            "0LjQujEfMB0GA1UECwwW0KDRg9C60L7QstC+0LTRgdGC0LLQvjEZMBcGA1UEDAwQ0KDQtdC00LDQutGC0L7RgDE7MDkGA1UE" +
+            "Awwy0J/Rg9GI0LrQuNC9INCQ0LvQtdC60YHQsNC90LTRgCDQodC10YDQs9C10LXQstC40YeCBETAHKcwCAYGKoUDAgIDA0EA" +
+            "Ul4Y7XAhFUEoTUwdue+wbyxk86SpIFwC6NuVjTSIF3F9ACxfz2N6iwHaRv6GTVRIAEjj5G/rhdxRivvC8hU4QQ=="
+    );
+
+    public byte[] gost2001_Rand_Reci_Key = Base64.decode(
+        "MEUCAQAwHAYGKoUDAgJiMBIGByqFAwICJAAGByqFAwICHgEEIgQg5oDAn/BdWX4RSfHeqZyHAo/CNAy+2a0Jq3Z922cYeSQ="
+    );
+
+    public byte[] gost2001_Rand_Gen_Msg = Base64.decode(
+        "MIICAQYJKoZIhvcNAQcDoIIB8jCCAe4CAQAxggGtoYIBqQIBA6BloWMwHAYGKoUDAgITMBIGByqFAwICJAAGByqFAwICHgED" +
+            "QwAEQDPvrzGNOI/Qb3J+9cDPWrTZEaOJQosazkfNh53EG8J8gUukdAakZi/kN9k8xGKbJc0ZEJ4/88jkWt9UFUkYIUGhCgQI" +
+            "SQHkq1IzGZ8wKAYGKoUDAgJgMB4GByqFAwICDQEwEwYHKoUDAgIfAQQISQHkq1IzGZ8wggEFMIIBATCB0jCByTELMAkGA1UE" +
+            "BhMCUlUxIDAeBgNVBAgMF9ChLtCf0LjRgtC10YDQsdGD0YDQs9GKMR8wHQYDVQQKDBbQodC+0LLRgNC10LzQtdC90L3QuNC6" +
+            "MR8wHQYDVQQLDBbQoNGD0LrQvtCy0L7QtNGB0YLQstC+MRkwFwYDVQQMDBDQoNC10LTQsNC60YLQvtGAMTswOQYDVQQDDDLQ" +
+            "n9GD0YjQutC40L0g0JDQu9C10LrRgdCw0L3QtNGAINCh0LXRgNCz0LXQtdCy0LjRhwIERMAcpwQqMCgEIA4jC8qro8xNnn+R" +
+            "JTNYpV8dSdw82e/pnqnyo21o+qZkBAT9DaUDMDgGCSqGSIb3DQEHATAdBgYqhQMCAhUwEwQIziBZysW+ewMGByqFAwICHwGA" +
+            "DFKaSCs2xd4ef/khFQ=="
     );
 
     public byte[] gost2012_Sender_Cert = Base64.decode(
@@ -2149,6 +2206,48 @@ public class NewEnvelopedDataTest
         assertTrue(collection.iterator().next() instanceof RecipientInformation);
     }
 
+    public void testGost3410_2001_KeyAgreeRand()
+        throws Exception
+    {
+        KeyFactory keyFact = KeyFactory.getInstance("ECGOST3410", BC);
+
+        PrivateKey privKey = keyFact.generatePrivate(new PKCS8EncodedKeySpec(gost2001_Rand_Reci_Key));
+
+        CMSEnvelopedData ed = new CMSEnvelopedData(gost2001_Rand_Gen_Msg);
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+
+        assertEquals(ed.getEncryptionAlgOID(), CryptoProObjectIdentifiers.gostR28147_gcfb.getId());
+
+        Collection c = recipients.getRecipients();
+
+        assertEquals(1, c.size());
+
+        Iterator it = c.iterator();
+
+        while (it.hasNext())
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+
+            assertEquals(recipient.getKeyEncryptionAlgOID(), CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_ESDH.getId());
+
+            byte[] recData = recipient.getContent(new JceKeyAgreeEnvelopedRecipient(privKey).setProvider(BC));
+
+            assertEquals("Hello World!", Strings.fromByteArray(recData));
+        }
+
+        CertificateFactory certFact = CertificateFactory.getInstance("X.509", BC);
+
+        RecipientId id = new JceKeyAgreeRecipientId((X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(gost2001_Rand_Reci_Cert)));
+
+        Collection collection = recipients.getRecipients(id);
+        if (collection.size() != 1)
+        {
+            fail("recipients not matched using general recipient ID.");
+        }
+        assertTrue(collection.iterator().next() instanceof RecipientInformation);
+    }
+
     public void testGost3410_2012_KeyAgree()
         throws Exception
     {
@@ -2224,6 +2323,195 @@ public class NewEnvelopedDataTest
         CertificateFactory certFact = CertificateFactory.getInstance("X.509", BC);
 
         RecipientId id = new JceKeyAgreeRecipientId((X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(gost2012_512_Reci_Cert)));
+
+        Collection collection = recipients.getRecipients(id);
+        if (collection.size() != 1)
+        {
+            fail("recipients not matched using general recipient ID.");
+        }
+        assertTrue(collection.iterator().next() instanceof RecipientInformation);
+    }
+
+    public void testGost3410_2001_KeyAgree_Creation()
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+        CertificateFactory certFact = CertificateFactory.getInstance("X.509", BC);
+
+        X509Certificate senderCert = (X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(gost2001_Rand_Sender_Cert));
+        X509Certificate reciCert = (X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(gost2001_Rand_Reci_Cert));
+
+        byte[] data = Strings.toByteArray("Hello World! Hello World!");
+        KeyFactory keyFact = KeyFactory.getInstance("ECGOST3410", BC);
+
+        PrivateKey senderKey = keyFact.generatePrivate(new PKCS8EncodedKeySpec(gost2001_Rand_Sender_Key));
+        PrivateKey reciKey = keyFact.generatePrivate(new PKCS8EncodedKeySpec(gost2001_Rand_Reci_Key));
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        JceKeyAgreeRecipientInfoGenerator recipientGenerator = new JceKeyAgreeRecipientInfoGenerator(CMSAlgorithm.ECDHGOST3410_2012_256,
+           senderKey, senderCert.getPublicKey(), CMSAlgorithm.GOST28147_CRYPTOPRO_WRAP).setProvider(BC);
+
+        byte[] ukm = new byte[8];
+        random.nextBytes(ukm);
+
+        recipientGenerator.addRecipient(reciCert);
+        recipientGenerator.setUserKeyingMaterial(ukm);
+
+        edGen.addRecipientInfoGenerator(recipientGenerator);
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.GOST28147_GCFB).setProvider(BC).build());
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+
+        assertEquals(ed.getEncryptionAlgOID(), CryptoProObjectIdentifiers.gostR28147_gcfb.getId());
+
+        Collection c = recipients.getRecipients();
+
+        assertEquals(1, c.size());
+
+        Iterator it = c.iterator();
+
+        while (it.hasNext())
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+
+            assertEquals(recipient.getKeyEncryptionAlgOID(), RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_256.getId());
+
+            byte[] recData = recipient.getContent(new JceKeyAgreeEnvelopedRecipient(reciKey).setProvider(BC));
+
+            assertEquals("Hello World! Hello World!", Strings.fromByteArray(recData));
+        }
+
+        RecipientId id = new JceKeyAgreeRecipientId(reciCert);
+
+        Collection collection = recipients.getRecipients(id);
+        if (collection.size() != 1)
+        {
+            fail("recipients not matched using general recipient ID.");
+        }
+        assertTrue(collection.iterator().next() instanceof RecipientInformation);
+    }
+
+    public void testGost3410_2012_256_KeyAgree_Creation()
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+        CertificateFactory certFact = CertificateFactory.getInstance("X.509", BC);
+
+        X509Certificate senderCert = (X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(gost2012_Sender_Cert));
+        X509Certificate reciCert = (X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(gost2012_Reci_Cert));
+
+        byte[] data = Strings.toByteArray("Hello World!");
+        KeyFactory keyFact = KeyFactory.getInstance("ECGOST3410-2012", BC);
+
+        PrivateKey senderKey = keyFact.generatePrivate(new PKCS8EncodedKeySpec(gost2012_Sender_Key));
+        PrivateKey reciKey = keyFact.generatePrivate(new PKCS8EncodedKeySpec(gost2012_Reci_Key));
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        JceKeyAgreeRecipientInfoGenerator recipientGenerator = new JceKeyAgreeRecipientInfoGenerator(CMSAlgorithm.ECDHGOST3410_2012_256,
+           senderKey, senderCert.getPublicKey(), CMSAlgorithm.GOST28147_CRYPTOPRO_WRAP).setProvider(BC);
+
+        byte[] ukm = new byte[8];
+        random.nextBytes(ukm);
+
+        recipientGenerator.addRecipient(reciCert);
+        recipientGenerator.setUserKeyingMaterial(ukm);
+
+        edGen.addRecipientInfoGenerator(recipientGenerator);
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.GOST28147_GCFB).setProvider(BC).build());
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+
+        assertEquals(ed.getEncryptionAlgOID(), CryptoProObjectIdentifiers.gostR28147_gcfb.getId());
+
+        Collection c = recipients.getRecipients();
+
+        assertEquals(1, c.size());
+
+        Iterator it = c.iterator();
+
+        while (it.hasNext())
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+
+            assertEquals(recipient.getKeyEncryptionAlgOID(), RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_256.getId());
+
+            byte[] recData = recipient.getContent(new JceKeyAgreeEnvelopedRecipient(reciKey).setProvider(BC));
+
+            assertEquals("Hello World!", Strings.fromByteArray(recData));
+        }
+
+        RecipientId id = new JceKeyAgreeRecipientId(reciCert);
+
+        Collection collection = recipients.getRecipients(id);
+        if (collection.size() != 1)
+        {
+            fail("recipients not matched using general recipient ID.");
+        }
+        assertTrue(collection.iterator().next() instanceof RecipientInformation);
+    }
+
+    public void testGost3410_2012_512_KeyAgree_Creation()
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+        CertificateFactory certFact = CertificateFactory.getInstance("X.509", BC);
+
+        X509Certificate senderCert = (X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(gost2012_512_Sender_Cert));
+        X509Certificate reciCert = (X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(gost2012_512_Reci_Cert));
+
+        byte[] data = Strings.toByteArray("Hello World!");
+        KeyFactory keyFact = KeyFactory.getInstance("ECGOST3410-2012", BC);
+
+        PrivateKey senderKey = keyFact.generatePrivate(new PKCS8EncodedKeySpec(gost2012_512_Sender_Key));
+        PrivateKey reciKey = keyFact.generatePrivate(new PKCS8EncodedKeySpec(gost2012_512_Reci_Key));
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        JceKeyAgreeRecipientInfoGenerator recipientGenerator = new JceKeyAgreeRecipientInfoGenerator(CMSAlgorithm.ECDHGOST3410_2012_512,
+           senderKey, senderCert.getPublicKey(), CMSAlgorithm.GOST28147_CRYPTOPRO_WRAP).setProvider(BC);
+
+        byte[] ukm = new byte[8];
+        random.nextBytes(ukm);
+
+        recipientGenerator.addRecipient(reciCert);
+        recipientGenerator.setUserKeyingMaterial(ukm);
+
+        edGen.addRecipientInfoGenerator(recipientGenerator);
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.GOST28147_GCFB).setProvider(BC).build());
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+
+        assertEquals(ed.getEncryptionAlgOID(), CryptoProObjectIdentifiers.gostR28147_gcfb.getId());
+
+        Collection c = recipients.getRecipients();
+
+        assertEquals(1, c.size());
+
+        Iterator it = c.iterator();
+
+        while (it.hasNext())
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+
+            assertEquals(recipient.getKeyEncryptionAlgOID(), RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_512.getId());
+
+            byte[] recData = recipient.getContent(new JceKeyAgreeEnvelopedRecipient(reciKey).setProvider(BC));
+
+            assertEquals("Hello World!", Strings.fromByteArray(recData));
+        }
+
+        RecipientId id = new JceKeyAgreeRecipientId(reciCert);
 
         Collection collection = recipients.getRecipients(id);
         if (collection.size() != 1)

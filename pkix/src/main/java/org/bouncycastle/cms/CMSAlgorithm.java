@@ -33,6 +33,7 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  CAMELLIA128_CBC = NTTObjectIdentifiers.id_camellia128_cbc.intern();
     public static final ASN1ObjectIdentifier  CAMELLIA192_CBC = NTTObjectIdentifiers.id_camellia192_cbc.intern();
     public static final ASN1ObjectIdentifier  CAMELLIA256_CBC = NTTObjectIdentifiers.id_camellia256_cbc.intern();
+    public static final ASN1ObjectIdentifier  GOST28147_GCFB  = CryptoProObjectIdentifiers.gostR28147_gcfb.intern();
     public static final ASN1ObjectIdentifier  SEED_CBC        = KISAObjectIdentifiers.id_seedCBC.intern();
 
     public static final ASN1ObjectIdentifier  DES_EDE3_WRAP   = PKCSObjectIdentifiers.id_alg_CMS3DESwrap.intern();
@@ -43,6 +44,9 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  CAMELLIA192_WRAP = NTTObjectIdentifiers.id_camellia192_wrap.intern();
     public static final ASN1ObjectIdentifier  CAMELLIA256_WRAP = NTTObjectIdentifiers.id_camellia256_wrap.intern();
     public static final ASN1ObjectIdentifier  SEED_WRAP       = KISAObjectIdentifiers.id_npki_app_cmsSeed_wrap.intern();
+
+    public static final ASN1ObjectIdentifier  GOST28147_WRAP  = CryptoProObjectIdentifiers.id_Gost28147_89_None_KeyWrap.intern();
+    public static final ASN1ObjectIdentifier  GOST28147_CRYPTOPRO_WRAP  = CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_KeyWrap.intern();
 
     public static final ASN1ObjectIdentifier  ECDH_SHA1KDF    = X9ObjectIdentifiers.dhSinglePass_stdDH_sha1kdf_scheme.intern();
     public static final ASN1ObjectIdentifier  ECCDH_SHA1KDF    = X9ObjectIdentifiers.dhSinglePass_cofactorDH_sha1kdf_scheme.intern();
@@ -63,6 +67,10 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  ECDH_SHA512KDF    = SECObjectIdentifiers.dhSinglePass_stdDH_sha512kdf_scheme.intern();
     public static final ASN1ObjectIdentifier  ECCDH_SHA512KDF    = SECObjectIdentifiers.dhSinglePass_cofactorDH_sha512kdf_scheme.intern();
     public static final ASN1ObjectIdentifier  ECMQV_SHA512KDF   = SECObjectIdentifiers.mqvSinglePass_sha512kdf_scheme.intern();
+
+    public static final ASN1ObjectIdentifier  ECDHGOST3410_2001    = CryptoProObjectIdentifiers.gostR3410_2001.intern();
+    public static final ASN1ObjectIdentifier  ECDHGOST3410_2012_256 = RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_256.intern();
+    public static final ASN1ObjectIdentifier  ECDHGOST3410_2012_512 = RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_512.intern();
 
     public static final ASN1ObjectIdentifier  SHA1 = OIWObjectIdentifiers.idSHA1.intern();
     public static final ASN1ObjectIdentifier  SHA224 = NISTObjectIdentifiers.id_sha224.intern();
