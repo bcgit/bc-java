@@ -497,6 +497,39 @@ public class NewEnvelopedDataTest
             "HwGADFMeOJyH3t7YSNgxsA=="
     );
 
+    public byte[] gost2012_KeyTrans_Reci_Cert = Base64.decode(
+        "MIIEMzCCA+CgAwIBAgIEBSqgszAKBggqhQMHAQEDAjCByTELMAkGA1UEBhMCUlUxIDAeBgNVBAgMF9ChLtCf0LjRgtC10YDQ" +
+        "sdGD0YDQs9GKMR8wHQYDVQQKDBbQodC+0LLRgNC10LzQtdC90L3QuNC6MR8wHQYDVQQLDBbQoNGD0LrQvtCy0L7QtNGB0YLQ" +
+        "stC+MRkwFwYDVQQMDBDQoNC10LTQsNC60YLQvtGAMTswOQYDVQQDDDLQn9GD0YjQutC40L0g0JDQu9C10LrRgdCw0L3QtNGA" +
+        "INCh0LXRgNCz0LXQtdCy0LjRhzAeFw0xNzA3MTYxNDAwMDBaFw0zNzA3MTYxNDAwMDBaMIHJMQswCQYDVQQGEwJSVTEgMB4G" +
+        "A1UECAwX0KEu0J/QuNGC0LXRgNCx0YPRgNCz0YoxHzAdBgNVBAoMFtCh0L7QstGA0LXQvNC10L3QvdC40LoxHzAdBgNVBAsM" +
+        "FtCg0YPQutC+0LLQvtC00YHRgtCy0L4xGTAXBgNVBAwMENCg0LXQtNCw0LrRgtC+0YAxOzA5BgNVBAMMMtCf0YPRiNC60LjQ" +
+        "vSDQkNC70LXQutGB0LDQvdC00YAg0KHQtdGA0LPQtdC10LLQuNGHMGYwHwYIKoUDBwEBAQEwEwYHKoUDAgIkAAYIKoUDBwEB" +
+        "AgIDQwAEQEG5/wUY0LkiqETYAZY6o5mrjwWQNBYbSIKghYgKzLgSv1RCuTEFXRIJQcMG0V80auKVZNty9kcvn9P0IcJpGfGj" +
+        "ggGlMIIBoTAOBgNVHQ8BAf8EBAMCAf4wYwYDVR0lBFwwWgYIKwYBBQUHAwEGCCsGAQUFBwMCBggrBgEFBQcDAwYIKwYBBQUH" +
+        "AwQGCCsGAQUFBwMFBggrBgEFBQcDBgYIKwYBBQUHAwcGCCsGAQUFBwMIBggrBgEFBQcDCTAPBgNVHRMBAf8EBTADAQH/MB0G" +
+        "A1UdDgQWBBQJwiUIQOJNbB0Fzh6ucd3uRE9QzDCB+QYDVR0jBIHxMIHugBQJwiUIQOJNbB0Fzh6ucd3uRE9QzKGBz6SBzDCB" +
+        "yTELMAkGA1UEBhMCUlUxIDAeBgNVBAgMF9ChLtCf0LjRgtC10YDQsdGD0YDQs9GKMR8wHQYDVQQKDBbQodC+0LLRgNC10LzQ" +
+        "tdC90L3QuNC6MR8wHQYDVQQLDBbQoNGD0LrQvtCy0L7QtNGB0YLQstC+MRkwFwYDVQQMDBDQoNC10LTQsNC60YLQvtGAMTsw" +
+        "OQYDVQQDDDLQn9GD0YjQutC40L0g0JDQu9C10LrRgdCw0L3QtNGAINCh0LXRgNCz0LXQtdCy0LjRh4IEBSqgszAKBggqhQMH" +
+        "AQEDAgNBAKLmdCiVR9MWeoC+MNudXGny3l2uDBBttvhTli0gDEaQLnBFyvD+cfSLgsheoz8vwhyqD/6W3ATBMRiGjqNJjQE=");
+
+    public byte[] gost2012_KeyTrans_Reci_Key = Base64.decode(
+        "MEgCAQAwHwYIKoUDBwEBBgEwEwYHKoUDAgIkAAYIKoUDBwEBAgIEIgQgy+dPu0sLqJ/Fokomiu69lRA48HaPNkP7kmzDHOxP" +
+            "QFc="
+    );
+    
+    public byte[] gost2012_KeyTrans_Msg = Base64.decode(
+        "MIIB/gYJKoZIhvcNAQcDoIIB7zCCAesCAQAxggGqMIIBpgIBADCB0jCByTELMAkGA1UEBhMCUlUxIDAeBgNVBAgMF9ChLtCf" +
+            "0LjRgtC10YDQsdGD0YDQs9GKMR8wHQYDVQQKDBbQodC+0LLRgNC10LzQtdC90L3QuNC6MR8wHQYDVQQLDBbQoNGD0LrQvtCy" +
+            "0L7QtNGB0YLQstC+MRkwFwYDVQQMDBDQoNC10LTQsNC60YLQvtGAMTswOQYDVQQDDDLQn9GD0YjQutC40L0g0JDQu9C10LrR" +
+            "gdCw0L3QtNGAINCh0LXRgNCz0LXQtdCy0LjRhwIEBSqgszAfBggqhQMHAQEBATATBgcqhQMCAiQABggqhQMHAQECAgSBqjCB" +
+            "pzAoBCBnHA+9wEUh7KIkYlboGbtxRfrTL1oPGU3Tzaw8/khaWgQE+N56jaB7BgcqhQMCAh8BoGYwHwYIKoUDBwEBAQEwEwYH" +
+            "KoUDAgIkAAYIKoUDBwEBAgIDQwAEQMbb4wVWm1EWIIXKDseCNE6JHmS+4fNh2uB+10Isg7g8/1Wvdh66IFir6fyp8NRwwMkU" +
+            "QM0dmAfcpN6M2RSj83wECMCTi+FRlTafMDgGCSqGSIb3DQEHATAdBgYqhQMCAhUwEwQIzZlyAleTrCEGByqFAwICHwGADIO7" +
+            "l43OVnBpGM+FjQ=="
+    );
+
     public NewEnvelopedDataTest()
     {
     }
@@ -2111,6 +2144,48 @@ public class NewEnvelopedDataTest
         CertificateFactory certFact = CertificateFactory.getInstance("X.509", BC);
 
         RecipientId id = new JceKeyTransRecipientId((X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(gost3410_RecipCert)));
+
+        Collection collection = recipients.getRecipients(id);
+        if (collection.size() != 1)
+        {
+            fail("recipients not matched using general recipient ID.");
+        }
+        assertTrue(collection.iterator().next() instanceof RecipientInformation);
+    }
+
+    public void testGost3410_2012_KeyTrans()
+        throws Exception
+    {
+        KeyFactory keyFact = KeyFactory.getInstance("ECGOST3410-2012", BC);
+
+        PrivateKey privKey = keyFact.generatePrivate(new PKCS8EncodedKeySpec(gost2012_KeyTrans_Reci_Key));
+
+        CMSEnvelopedData ed = new CMSEnvelopedData(gost2012_KeyTrans_Msg);
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+
+        assertEquals(ed.getEncryptionAlgOID(), CryptoProObjectIdentifiers.gostR28147_gcfb.getId());
+
+        Collection c = recipients.getRecipients();
+
+        assertEquals(1, c.size());
+
+        Iterator it = c.iterator();
+
+        while (it.hasNext())
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+
+            assertEquals(recipient.getKeyEncryptionAlgOID(), RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256.getId());
+
+            byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(privKey).setProvider(BC));
+
+            assertEquals("Hello World!", Strings.fromByteArray(recData));
+        }
+
+        CertificateFactory certFact = CertificateFactory.getInstance("X.509", BC);
+
+        RecipientId id = new JceKeyTransRecipientId((X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(gost2012_KeyTrans_Reci_Cert)));
 
         Collection collection = recipients.getRecipients(id);
         if (collection.size() != 1)

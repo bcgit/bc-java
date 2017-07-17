@@ -48,8 +48,11 @@ class CMSUtils
         ecAlgs.add(SECObjectIdentifiers.dhSinglePass_stdDH_sha512kdf_scheme);
 
         gostAlgs.add(CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_ESDH);
+        gostAlgs.add(CryptoProObjectIdentifiers.gostR3410_2001);
         gostAlgs.add(RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_256);
         gostAlgs.add(RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_512);
+        gostAlgs.add(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256);
+        gostAlgs.add(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512);
     }
 
     static boolean isMQV(ASN1ObjectIdentifier algorithm)
