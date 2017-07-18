@@ -230,15 +230,13 @@ public class KeccakDigest
 
     private void absorbQueue()
     {
-        KeccakAbsorb(state, dataQueue, rate / 8);
+        KeccakAbsorb(state, dataQueue,rate / 8);
 
         bitsInQueue = 0;
     }
 
     protected void absorb(byte[] data, int off, long databitlen)
     {
-        long i, j, wholeBlocks;
-
         if ((bitsInQueue % 8) != 0)
         {
             throw new IllegalStateException("attempt to absorb with odd length queue");
@@ -248,20 +246,21 @@ public class KeccakDigest
             throw new IllegalStateException("attempt to absorb while squeezing");
         }
 
-        i = 0;
+        long i = 0;
         while (i < databitlen)
         {
             if ((bitsInQueue == 0) && (databitlen >= rate) && (i <= (databitlen - rate)))
             {
-                wholeBlocks = (databitlen - i) / rate;
-
-                for (j = 0; j < wholeBlocks; j++)
+                int wholeBlocks = (int)((databitlen - i) / rate);
+                int offSet = off + (int)(i/8);
+                for (int j = 0; j < wholeBlocks; j++)
                 {
-                    System.arraycopy(data, (int)(off + (i / 8) + (j * chunk.length)), chunk, 0, chunk.length);
+                    System.arraycopy(data, offSet, chunk, 0, chunk.length);
 
 //                            displayIntermediateValues.displayBytes(1, "Block to be absorbed", curData, rate / 8);
 
                     KeccakAbsorb(state, chunk, chunk.length);
+                    offSet += chunk.length;
                 }
 
                 i += wholeBlocks * rate;
@@ -275,6 +274,7 @@ public class KeccakDigest
                 }
                 int partialByte = partialBlock % 8;
                 partialBlock -= partialByte;
+
                 System.arraycopy(data, off + (int)(i / 8), dataQueue, bitsInQueue / 8, partialBlock / 8);
 
                 bitsInQueue += partialBlock;
