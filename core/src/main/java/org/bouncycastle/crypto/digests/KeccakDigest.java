@@ -379,32 +379,53 @@ public class KeccakDigest
         }
     }
 
-    private void fromBytesToWords(long[] stateAsWords, byte[] state)
+    private void KeccakAbsorb(byte[] byteState, byte[] data, int dataInBytes)
+    {
+        keccakPermutationAfterXor(byteState, data, dataInBytes);
+    }
+
+    private static void fromBytesToWords(long[] stateAsWords, byte[] state)
     {
         for (int i = 0; i < (1600 / 64); i++)
         {
-            int index = i * (64 / 8);
-            stateAsWords[i] = (long)state[index + 0] & 0xff;
-            for (int j = 1; j < (64 / 8); j++)
-            {
-                stateAsWords[i] |= ((long)state[index + j] & 0xff) << ((8 * j));
-            }
+            stateAsWords[i] = bytesToWord(state, i * 8);
         }
     }
 
-    private void fromWordsToBytes(byte[] state, long[] stateAsWords)
+    private static long bytesToWord(byte[] state, int off)
+    {
+        return ((long)state[off + 0] & 0xff)
+            | (((long)state[off + 1] & 0xff) << 8)
+            | (((long)state[off + 2] & 0xff) << 16)
+            | (((long)state[off + 3] & 0xff) << 24)
+            | (((long)state[off + 4] & 0xff) << 32)
+            | (((long)state[off + 5] & 0xff) << 40)
+            | (((long)state[off + 6] & 0xff) << 48)
+            | (((long)state[off + 7]) << 56);
+    }
+
+    private static void fromWordsToBytes(byte[] state, long[] stateAsWords)
     {
         for (int i = 0; i < (1600 / 64); i++)
         {
-            int index = i * (64 / 8);
-            for (int j = 0; j < (64 / 8); j++)
-            {
-                state[index + j] = (byte)(stateAsWords[i] >>> (8 * j));
-            }
+            wordToBytes(stateAsWords[i], state, i * 8);
         }
+    }
+
+    private static void wordToBytes(long word, byte[] state, int off)
+    {
+        state[off + 0] = (byte)(word);
+        state[off + 1] = (byte)(word >>> (8 * 1));
+        state[off + 2] = (byte)(word >>> (8 * 2));
+        state[off + 3] = (byte)(word >>> (8 * 3));
+        state[off + 4] = (byte)(word >>> (8 * 4));
+        state[off + 5] = (byte)(word >>> (8 * 5));
+        state[off + 6] = (byte)(word >>> (8 * 6));
+        state[off + 7] = (byte)(word >>> (8 * 7));
     }
 
     private final long[] longState = new long[state.length / 8];
+    private final long[] tempA = new long[state.length / 8];
 
     private void keccakPermutation(byte[] state)
     {
@@ -422,9 +443,7 @@ public class KeccakDigest
 
     private void keccakPermutationAfterXor(byte[] state, byte[] data, int dataLengthInBytes)
     {
-        int i;
-
-        for (i = 0; i < dataLengthInBytes; i++)
+        for (int i = 0; i < dataLengthInBytes; i++)
         {
             state[i] ^= data[i];
         }
@@ -434,11 +453,9 @@ public class KeccakDigest
 
     private void keccakPermutationOnWords(long[] state)
     {
-        int i;
-
 //        displayIntermediateValues.displayStateAs64bitWords(3, "Same, with lanes as 64-bit words", state);
 
-        for (i = 0; i < 24; i++)
+        for (int i = 0; i < 24; i++)
         {
 //            displayIntermediateValues.displayRoundNumber(3, i);
 
@@ -448,7 +465,7 @@ public class KeccakDigest
             rho(state);
 //            displayIntermediateValues.displayStateAs64bitWords(3, "After rho", state);
 
-            pi(state);
+            pi(state, tempA);
 //            displayIntermediateValues.displayStateAs64bitWords(3, "After pi", state);
 
             chi(state);
@@ -459,12 +476,12 @@ public class KeccakDigest
         }
     }
 
-    private long leftRotate(long v, int r)
+    private static long leftRotate(long v, int r)
     {
         return (v << r) | (v >>> -r);
     }
 
-    private void theta(long[] A)
+    private static void theta(long[] A)
     {
         long C0 = A[0 + 0] ^ A[0 + 5] ^ A[0 + 10] ^ A[0 + 15] ^ A[0 + 20];
         long C1 = A[1 + 0] ^ A[1 + 5] ^ A[1 + 10] ^ A[1 + 15] ^ A[1 + 20];
@@ -513,7 +530,7 @@ public class KeccakDigest
         A[24] ^= dX;
     }
 
-    private void rho(long[] A)
+    private static void rho(long[] A)
     {
         // KeccakRhoOffsets[0] == 0
         for (int x = 1; x < 25; x++)
@@ -522,9 +539,7 @@ public class KeccakDigest
         }
     }
 
-    private final long[] tempA = new long[25];
-
-    private void pi(long[] A)
+    private static void pi(long[] A, long[] tempA)
     {
         System.arraycopy(A, 0, tempA, 0, tempA.length);
 
@@ -559,7 +574,7 @@ public class KeccakDigest
         A[4 + 5 * ((2 * 4 + 3 * 4) % 5)] = tempA[4 + 5 * 4];
     }
 
-    private void chi(long[] A)
+    private static void chi(long[] A)
     {
         long chiC0, chiC1, chiC2, chiC3, chiC4;
 
@@ -579,24 +594,18 @@ public class KeccakDigest
         }
     }
 
-    private void iota(long[] A, int indexRound)
+    private static void iota(long[] A, int indexRound)
     {
         A[(((0) % 5) + 5 * ((0) % 5))] ^= KeccakRoundConstants[indexRound];
     }
 
-    private void KeccakAbsorb(byte[] byteState, byte[] data, int dataInBytes)
-    {
-        keccakPermutationAfterXor(byteState, data, dataInBytes);
-    }
-
-
-    private void KeccakExtract1024bits(byte[] byteState, byte[] data)
+    private static void KeccakExtract1024bits(byte[] byteState, byte[] data)
     {
         System.arraycopy(byteState, 0, data, 0, 128);
     }
 
 
-    private void KeccakExtract(byte[] byteState, byte[] data, int laneCount)
+    private static void KeccakExtract(byte[] byteState, byte[] data, int laneCount)
     {
         System.arraycopy(byteState, 0, data, 0, laneCount * 8);
     }
