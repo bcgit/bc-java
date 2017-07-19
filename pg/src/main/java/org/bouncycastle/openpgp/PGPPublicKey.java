@@ -301,30 +301,27 @@ public class PGPPublicKey
             if (!selfSigned || sig.getKeyID() == this.getKeyID())
             {
                 PGPSignatureSubpacketVector hashed = sig.getHashedSubPackets();
-                
-                if (hashed != null)
+                if (hashed == null)
                 {
-                    long current = hashed.getKeyExpirationTime();
+                    continue;
+                }
 
-                    if (sig.getKeyID() == this.getKeyID())
+                long current = hashed.getKeyExpirationTime();
+
+                if (sig.getKeyID() == this.getKeyID())
+                {
+                    if (sig.getCreationTime().getTime() > lastDate)
                     {
-                        if (sig.getCreationTime().getTime() > lastDate)
-                        {
-                            lastDate = sig.getCreationTime().getTime();
-                            expiryTime = current;
-                        }
-                    }
-                    else
-                    {
-                        if (current == 0 || current > expiryTime)
-                        {
-                            expiryTime = current;
-                        }
+                        lastDate = sig.getCreationTime().getTime();
+                        expiryTime = current;
                     }
                 }
                 else
                 {
-                    return 0;
+                    if (current == 0 || current > expiryTime)
+                    {
+                        expiryTime = current;
+                    }
                 }
             }
         }
