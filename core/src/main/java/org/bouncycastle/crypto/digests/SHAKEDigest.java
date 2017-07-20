@@ -61,7 +61,7 @@ public class SHAKEDigest
     {
         if (!squeezing)
         {
-            absorb(new byte[]{0x0F}, 0, 4);
+            absorbBits(0x0F, 4);
         }
 
         squeeze(out, outOff, ((long)outLen) * 8);
@@ -92,16 +92,14 @@ public class SHAKEDigest
 
         if (finalBits >= 8)
         {
-            oneByte[0] = (byte)finalInput;
-            absorb(oneByte, 0, 8);
+            absorb(new byte[]{ (byte)finalInput }, 0, 1);
             finalBits -= 8;
             finalInput >>>= 8;
         }
 
         if (finalBits > 0)
         {
-            oneByte[0] = (byte)finalInput;
-            absorb(oneByte, 0, finalBits);
+            absorbBits(finalInput, finalBits);
         }
 
         squeeze(out, outOff, ((long)outLen) * 8);
