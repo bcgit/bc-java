@@ -37,6 +37,10 @@ public interface PBE
     static final int        SHA224       = 7;
     static final int        SHA384       = 8;
     static final int        SHA512       = 9;
+    static final int        SHA3_224     = 10;
+    static final int        SHA3_256     = 11;
+    static final int        SHA3_384     = 12;
+    static final int        SHA3_512     = 13;
 
     static final int        PKCS5S1      = 0;
     static final int        PKCS5S2      = 1;
@@ -106,6 +110,18 @@ public interface PBE
                     break;
                 case SHA512:
                     generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA512());
+                    break;
+                case SHA3_224:
+                    generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA3_224());
+                    break;
+                case SHA3_256:
+                     generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA3_256());
+                     break;
+                case SHA3_384:
+                    generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA3_384());
+                    break;
+                case SHA3_512:
+                    generator = new PKCS5S2ParametersGenerator(DigestFactory.createSHA3_512());
                     break;
                 default:
                     throw new IllegalStateException("unknown digest scheme for PBE PKCS5S2 encryption.");

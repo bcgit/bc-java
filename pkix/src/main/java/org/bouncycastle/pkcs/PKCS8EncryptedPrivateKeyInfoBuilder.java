@@ -27,6 +27,11 @@ public class PKCS8EncryptedPrivateKeyInfoBuilder
 {
     private PrivateKeyInfo privateKeyInfo;
 
+    public PKCS8EncryptedPrivateKeyInfoBuilder(byte[] privateKeyInfo)
+    {
+        this(PrivateKeyInfo.getInstance(privateKeyInfo));
+    }
+
     public PKCS8EncryptedPrivateKeyInfoBuilder(PrivateKeyInfo privateKeyInfo)
     {
         this.privateKeyInfo = privateKeyInfo;
