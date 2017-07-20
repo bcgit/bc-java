@@ -18,6 +18,7 @@ public class AllTests
         
         suite.addTestSuite(PfxPduTest.class);
         suite.addTestSuite(PKCS10Test.class);
+        suite.addTestSuite(PKCS8Test.class);
 
         return new BCTestSetup(suite);
     }
