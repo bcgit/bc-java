@@ -44,7 +44,7 @@ public class SHA3Digest
 
     public int doFinal(byte[] out, int outOff)
     {
-        absorb(new byte[]{ 0x02 }, 0, 2);
+        absorbBits(0x02, 2);
         
         return super.doFinal(out,  outOff);
     }
@@ -64,8 +64,7 @@ public class SHA3Digest
 
         if (finalBits >= 8)
         {
-            oneByte[0] = (byte)finalInput;
-            absorb(oneByte, 0, 8);
+            absorb(new byte[]{ (byte)finalInput }, 0, 1);
             finalBits -= 8;
             finalInput >>>= 8;
         }
