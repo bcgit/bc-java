@@ -1,7 +1,10 @@
 package org.bouncycastle.cert;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.List;
@@ -24,10 +27,12 @@ import org.bouncycastle.util.Encodable;
  * Holding class for an X.509 Certificate structure.
  */
 public class X509CertificateHolder
-    implements Encodable
+    implements Encodable, Serializable
 {
-    private Certificate x509Certificate;
-    private Extensions  extensions;
+    private static final long serialVersionUID = 20170722001L;
+
+    private transient Certificate x509Certificate;
+    private transient Extensions  extensions;
 
     private static Certificate parseBytes(byte[] certEncoding)
         throws IOException
@@ -64,6 +69,11 @@ public class X509CertificateHolder
      * @param x509Certificate an ASN.1 Certificate structure.
      */
     public X509CertificateHolder(Certificate x509Certificate)
+    {
+        init(x509Certificate);
+    }
+
+    private void init(Certificate x509Certificate)
     {
         this.x509Certificate = x509Certificate;
         this.extensions = x509Certificate.getTBSCertificate().getExtensions();
@@ -324,5 +334,23 @@ public class X509CertificateHolder
         throws IOException
     {
         return x509Certificate.getEncoded();
+    }
+
+    private void readObject(
+        ObjectInputStream in)
+        throws IOException, ClassNotFoundException
+    {
+        in.defaultReadObject();
+
+        init(Certificate.getInstance(in.readObject()));
+    }
+
+    private void writeObject(
+        ObjectOutputStream out)
+        throws IOException
+    {
+        out.defaultWriteObject();
+
+        out.writeObject(this.getEncoded());
     }
 }

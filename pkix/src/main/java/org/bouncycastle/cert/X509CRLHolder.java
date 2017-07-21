@@ -3,7 +3,10 @@ package org.bouncycastle.cert;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,12 +34,14 @@ import org.bouncycastle.util.Encodable;
  * Holding class for an X.509 CRL structure.
  */
 public class X509CRLHolder
-    implements Encodable
+    implements Encodable, Serializable
 {
-    private CertificateList x509CRL;
-    private boolean isIndirect;
-    private Extensions extensions;
-    private GeneralNames issuerName;
+    private static final long serialVersionUID = 20170722001L;
+    
+    private transient CertificateList x509CRL;
+    private transient boolean isIndirect;
+    private transient Extensions extensions;
+    private transient GeneralNames issuerName;
 
     private static CertificateList parseStream(InputStream stream)
         throws IOException
@@ -102,6 +107,11 @@ public class X509CRLHolder
      * @param x509CRL an ASN.1 CertificateList structure.
      */
     public X509CRLHolder(CertificateList x509CRL)
+    {
+        init(x509CRL);
+    }
+
+    private void init(CertificateList x509CRL)
     {
         this.x509CRL = x509CRL;
         this.extensions = x509CRL.getTBSCertList().getExtensions();
@@ -321,5 +331,23 @@ public class X509CRLHolder
     public int hashCode()
     {
         return this.x509CRL.hashCode();
+    }
+
+    private void readObject(
+        ObjectInputStream in)
+        throws IOException, ClassNotFoundException
+    {
+        in.defaultReadObject();
+
+        init(CertificateList.getInstance(in.readObject()));
+    }
+
+    private void writeObject(
+        ObjectOutputStream out)
+        throws IOException
+    {
+        out.defaultWriteObject();
+
+        out.writeObject(this.getEncoded());
     }
 }
