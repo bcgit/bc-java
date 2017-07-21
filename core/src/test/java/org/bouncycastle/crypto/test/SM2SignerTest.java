@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithID;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.SM2Signer;
+import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Strings;
@@ -106,11 +107,43 @@ public class SM2SignerTest
         isTrue("F2m verification failed", signer.verifySignature(Strings.toByteArray("message digest"), rs[0], rs[1]));
     }
 
+    private void doVerifyBoundsCheck()
+    {
+        BigInteger SM2_ECC_A = new BigInteger("00", 16);
+        BigInteger SM2_ECC_B = new BigInteger("E78BCD09746C202378A7E72B12BCE00266B9627ECB0B5A25367AD1AD4CC6242B", 16);
+        BigInteger SM2_ECC_N = new BigInteger("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBC972CF7E6B6F900945B3C6A0CF6161D", 16);
+        BigInteger SM2_ECC_GX = new BigInteger("00CDB9CA7F1E6B0441F658343F4B10297C0EF9B6491082400A62E7A7485735FADD", 16);
+        BigInteger SM2_ECC_GY = new BigInteger("013DE74DA65951C4D76DC89220D5F7777A611B1C38BAE260B175951DC8060C2B3E", 16);
+
+        ECCurve curve = new ECCurve.F2m(257, 12, SM2_ECC_A, SM2_ECC_B);
+
+        ECPoint g = curve.createPoint(SM2_ECC_GX, SM2_ECC_GY);
+        ECDomainParameters domainParams = new ECDomainParameters(curve, g, SM2_ECC_N);
+
+        ECKeyGenerationParameters keyGenerationParams = new ECKeyGenerationParameters(domainParams, new TestRandomBigInteger("771EF3DBFF5F1CDC32B9C572930476191998B2BF7CB981D7F5B39202645F0931", 16));
+        ECKeyPairGenerator keyPairGenerator = new ECKeyPairGenerator();
+
+        keyPairGenerator.init(keyGenerationParams);
+        AsymmetricCipherKeyPair kp = keyPairGenerator.generateKeyPair();
+
+        ECPublicKeyParameters ecPub = (ECPublicKeyParameters)kp.getPublic();
+
+        SM2Signer signer = new SM2Signer();
+
+        signer.init(false, ecPub);
+
+        isTrue(!signer.verifySignature(new byte[20], ECConstants.ZERO, ECConstants.EIGHT));
+        isTrue(!signer.verifySignature(new byte[20], ECConstants.EIGHT, ECConstants.ZERO));
+        isTrue(!signer.verifySignature(new byte[20], SM2_ECC_N, ECConstants.EIGHT));
+        isTrue(!signer.verifySignature(new byte[20], ECConstants.EIGHT, SM2_ECC_N));
+    }
+
     public void performTest()
         throws Exception
     {
         doSignerTestFp();
         doSignerTestF2m();
+        doVerifyBoundsCheck();
     }
 
     public static void main(String[] args)

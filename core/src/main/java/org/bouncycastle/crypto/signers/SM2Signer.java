@@ -133,13 +133,13 @@ public class SM2Signer
 
         // 5.3.1 Draft RFC:  SM2 Public Key Algorithms
         // B1
-        if (r.compareTo(ONE) < 0 || r.compareTo(n) > 0)
+        if (r.compareTo(ONE) < 0 || r.compareTo(n) >= 0)
         {
             return false;
         }
 
         // B2
-        if (s.compareTo(ONE) < 0 || s.compareTo(n) > 0)
+        if (s.compareTo(ONE) < 0 || s.compareTo(n) >= 0)
         {
             return false;
         }
