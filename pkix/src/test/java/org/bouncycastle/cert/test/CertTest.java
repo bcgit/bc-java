@@ -1,7 +1,11 @@
 package org.bouncycastle.cert.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.KeyFactory;
@@ -101,6 +105,7 @@ import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCS256KeyGenParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.XMSSMTParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.XMSSParameterSpec;
+import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
@@ -1138,7 +1143,7 @@ public class CertTest
             + "RRsRsjse3i2/KClFVd6YLZ+7K1BE0WxFyY2bbytkwQJSxvv3vLSuweFUbhNxutb68wl/yW4GLy4b"
             + "1QdyswNxrNDXTuu5ILKhRDDuWeocz83aG2KGtr3JlFyr3biWGEyn5WUOE6tbONoQDJ0oPYgI6CAc"
             + "EHdUp0lioOCt6UOw7Cs=");
-
+    
     private final byte[] gostRFC4491_94 = Base64.decode(
         "MIICCzCCAboCECMO42BGlSTOxwvklBgufuswCAYGKoUDAgIEMGkxHTAbBgNVBAMM" +
             "FEdvc3RSMzQxMC05NCBleGFtcGxlMRIwEAYDVQQKDAlDcnlwdG9Qcm8xCzAJBgNV" +
@@ -3432,6 +3437,40 @@ public class CertTest
         }
     }
 
+    private void checkSerialisation()
+        throws Exception
+    {
+        X509CertificateHolder crtHolder = new X509CertificateHolder(cert1);
+
+        doSerialize(crtHolder);
+
+        X509CRLHolder crlHolder = new X509CRLHolder(crl1);
+
+        doSerialize(crlHolder);
+
+        X509AttributeCertificateHolder attrHolder = new X509AttributeCertificateHolder(AttrCertTest.attrCert);
+
+        doSerialize(attrHolder);
+    }
+
+    private void doSerialize(Serializable encodable)
+        throws Exception
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ObjectOutputStream oOut = new ObjectOutputStream(bOut);
+
+        oOut.writeObject(encodable);
+
+        oOut.close();
+
+        ObjectInputStream oIn = new ObjectInputStream(new ByteArrayInputStream(bOut.toByteArray()));
+
+        Encodable obj = (Encodable)oIn.readObject();
+
+        isEquals(encodable, obj);
+        isEquals(encodable.hashCode(), obj.hashCode());
+    }
+
     public void performTest()
         throws Exception
     {
@@ -3507,6 +3546,8 @@ public class CertTest
         checkCertificate(18, emptyDNCert);
 
         zeroDataTest();
+
+        checkSerialisation();
     }
 
     private Extensions generateExtensions(Vector oids, Vector values)
