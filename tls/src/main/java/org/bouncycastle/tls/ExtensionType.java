@@ -29,7 +29,7 @@ public class ExtensionType
     public static final int cert_type = 9;
 
     /*
-     * RFC 4492 5.1. (elliptic_curves) and draft-ietf-tls-negotiated-ff-dhe-10
+     * RFC 7919 (originally 'elliptic_curves' from RFC 4492)
      */
     public static final int supported_groups = 10;
 
@@ -108,13 +108,6 @@ public class ExtensionType
      * RFC 5077 7.
      */
     public static final int session_ticket = 35;
-
-    /*
-     * draft-ietf-tls-negotiated-ff-dhe-01
-     * 
-     * WARNING: Placeholder value; the real value is TBA
-     */
-    public static final int negotiated_ff_dhe_groups = 101;
 
     /*
      * RFC 5746 3.2.

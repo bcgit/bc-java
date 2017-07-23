@@ -10,7 +10,7 @@ import org.bouncycastle.tls.crypto.TlsDHConfig;
 public class DefaultTlsDHConfigVerifier
     implements TlsDHConfigVerifier
 {
-    public static final int DEFAULT_MINIMUM_PRIME_BITS = 1024;
+    public static final int DEFAULT_MINIMUM_PRIME_BITS = 2048;
 
     protected static final Vector DEFAULT_GROUPS = new Vector();
 
@@ -21,15 +21,18 @@ public class DefaultTlsDHConfigVerifier
 
     static
     {
+        addDefaultGroup(DHStandardGroups.rfc7919_ffdhe2048);
+        addDefaultGroup(DHStandardGroups.rfc7919_ffdhe3072);
+        addDefaultGroup(DHStandardGroups.rfc7919_ffdhe4096);
+        addDefaultGroup(DHStandardGroups.rfc7919_ffdhe6144);
+        addDefaultGroup(DHStandardGroups.rfc7919_ffdhe8192);
+
         addDefaultGroup(DHStandardGroups.rfc3526_1536);
         addDefaultGroup(DHStandardGroups.rfc3526_2048);
         addDefaultGroup(DHStandardGroups.rfc3526_3072);
         addDefaultGroup(DHStandardGroups.rfc3526_4096);
         addDefaultGroup(DHStandardGroups.rfc3526_6144);
         addDefaultGroup(DHStandardGroups.rfc3526_8192);
-
-        addDefaultGroup(DHStandardGroups.rfc5996_768);
-        addDefaultGroup(DHStandardGroups.rfc5996_1024);
     }
 
     // Vector is (TlsDHConfig)
