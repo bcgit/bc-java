@@ -14,7 +14,9 @@ import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
 
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.crypto.DHGroup;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
@@ -26,6 +28,18 @@ import org.bouncycastle.util.BigIntegers;
 public class JceTlsDHDomain
     implements TlsDHDomain
 {
+    public static DHParameterSpec getParameters(TlsDHConfig dhConfig)
+    {
+        DHGroup dhGroup = TlsDHUtils.getDHGroup(dhConfig);
+        if (dhGroup == null)
+        {
+            throw new IllegalStateException("No DH configuration provided");
+        }
+
+        // NOTE: dhGroup.getQ() is ignored here
+        return new DHParameterSpec(dhGroup.getP(), dhGroup.getG(), dhGroup.getL());
+    }
+
     protected JcaTlsCrypto crypto;
     protected TlsDHConfig dhConfig;
     protected DHParameterSpec dhDomain;
@@ -108,18 +122,5 @@ public class JceTlsDHDomain
     public JcaTlsCrypto getCrypto()
     {
         return crypto;
-    }
-
-    public DHParameterSpec getParameters(TlsDHConfig dhConfig)
-    {
-        // TODO There's a draft RFC for negotiated (named) groups
-
-        BigInteger[] pg = dhConfig.getExplicitPG();
-        if (pg != null)
-        {
-            return new DHParameterSpec(pg[0], pg[1]);
-        }
-
-        throw new IllegalStateException("No DH configuration provided");
     }
 }

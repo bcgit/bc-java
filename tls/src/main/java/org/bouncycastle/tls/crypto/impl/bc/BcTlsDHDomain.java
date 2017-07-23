@@ -11,7 +11,9 @@ import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.crypto.DHGroup;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsDHDomain;
@@ -22,6 +24,17 @@ import org.bouncycastle.util.BigIntegers;
  */
 public class BcTlsDHDomain implements TlsDHDomain
 {
+    public static DHParameters getParameters(TlsDHConfig dhConfig)
+    {
+        DHGroup dhGroup = TlsDHUtils.getDHGroup(dhConfig);
+        if (dhGroup == null)
+        {
+            throw new IllegalStateException("No DH configuration provided");
+        }
+
+        return new DHParameters(dhGroup.getP(), dhGroup.getG(), dhGroup.getQ(), dhGroup.getL());
+    }
+
     protected BcTlsCrypto crypto;
     protected TlsDHConfig dhConfig;
     protected DHParameters dhDomain;
@@ -92,18 +105,5 @@ public class BcTlsDHDomain implements TlsDHDomain
     public BcTlsCrypto getCrypto()
     {
         return crypto;
-    }
-
-    public DHParameters getParameters(TlsDHConfig dhConfig)
-    {
-        // TODO There's a draft RFC for negotiated (named) groups
-
-        BigInteger[] pg = dhConfig.getExplicitPG();
-        if (pg != null)
-        {
-            return new DHParameters(pg[0], pg[1]);
-        }
-
-        throw new IllegalStateException("No DH configuration provided");
     }
 }
