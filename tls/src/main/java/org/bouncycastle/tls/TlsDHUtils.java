@@ -12,8 +12,6 @@ import org.bouncycastle.util.BigIntegers;
 
 public class TlsDHUtils
 {
-    private static final BigInteger TWO = BigInteger.valueOf(2);
-
     public static boolean containsDHCipherSuites(int[] cipherSuites)
     {
         for (int i = 0; i < cipherSuites.length; ++i)
@@ -99,16 +97,6 @@ public class TlsDHUtils
     public static BigInteger readDHParameter(InputStream input) throws IOException
     {
         return new BigInteger(1, TlsUtils.readOpaque16(input));
-    }
-
-    public static void validateDHPublicValues(BigInteger y, BigInteger p) throws IOException
-    {
-        if (y.compareTo(TWO) < 0 || y.compareTo(p.subtract(TWO)) > 0)
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-
-        // TODO See RFC 2631 for more discussion of Diffie-Hellman validation
     }
 
     public static void writeDHConfig(TlsDHConfig dhConfig, OutputStream output)

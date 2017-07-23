@@ -5,7 +5,6 @@ import java.io.IOException;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
-import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
@@ -31,11 +30,7 @@ public class BcTlsDH implements TlsAgreement
 
     public void receivePeerValue(byte[] peerValue) throws IOException
     {
-        DHPublicKeyParameters dhKey = domain.decodePublicKey(peerValue);
-
-        TlsDHUtils.validateDHPublicValues(dhKey.getY(), dhKey.getParameters().getP());
-
-        this.peerPublicKey = dhKey;
+        this.peerPublicKey = domain.decodePublicKey(peerValue);
     }
 
     public TlsSecret calculateSecret() throws IOException

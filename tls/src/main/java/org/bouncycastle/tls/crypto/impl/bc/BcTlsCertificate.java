@@ -21,7 +21,6 @@ import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
-import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
@@ -180,17 +179,14 @@ public class BcTlsCertificate
 
     protected DHPublicKeyParameters getPubKeyDH() throws IOException
     {
-        DHPublicKeyParameters pubKeyDH;
         try
         {
-            pubKeyDH = (DHPublicKeyParameters)getPublicKey();
+            return (DHPublicKeyParameters)getPublicKey();
         }
-        catch (ClassCastException e)
+        catch (RuntimeException e)
         {
             throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
         }
-
-        return validatePubKeyDH(pubKeyDH);
     }
 
     public DSAPublicKeyParameters getPubKeyDSS() throws IOException
@@ -305,13 +301,6 @@ public class BcTlsCertificate
                 }
             }
         }
-    }
-
-    protected DHPublicKeyParameters validatePubKeyDH(DHPublicKeyParameters pubKeyDH) throws IOException
-    {
-        TlsDHUtils.validateDHPublicValues(pubKeyDH.getY(), pubKeyDH.getParameters().getP());
-
-        return pubKeyDH;
     }
 
     protected DSAPublicKeyParameters validatePubKeyDSS(DSAPublicKeyParameters pubKeyDSS) throws IOException
