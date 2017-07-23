@@ -114,7 +114,7 @@ public class JceTlsDHDomain
         try
         {
             KeyPairGenerator keyPairGenerator = crypto.getHelper().createKeyPairGenerator("DH");
-            keyPairGenerator.initialize(getParameters(dhConfig), crypto.getSecureRandom());
+            keyPairGenerator.initialize(dhDomain, crypto.getSecureRandom());
             return keyPairGenerator.generateKeyPair();
         }
         catch (GeneralSecurityException e)
