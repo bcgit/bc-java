@@ -7,20 +7,8 @@ import java.math.BigInteger;
  */
 public class DHGroup
 {
-    private final BigInteger p;
-    private final BigInteger q;
-    private final BigInteger g;
-
-    /**
-     * Base constructor.
-     *
-     * @param p the prime modulus.
-     * @param g the base generator.
-     */
-    public DHGroup(BigInteger p, BigInteger g)
-    {
-        this(p, null, g);
-    }
+    private final BigInteger g, p, q;
+    private final int l;
 
     /**
      * Base constructor with the prime factor of (p - 1).
@@ -29,16 +17,22 @@ public class DHGroup
      * @param q specifies the prime factor of (p - 1).
      * @param g the base generator.
      */
-    public DHGroup(BigInteger p, BigInteger q, BigInteger g)
+    public DHGroup(BigInteger p, BigInteger q, BigInteger g, int l)
     {
         this.p = p;
         this.g = g;
         this.q = q;
+        this.l = l;
     }
 
     public BigInteger getG()
     {
         return g;
+    }
+
+    public int getL()
+    {
+        return l;
     }
 
     public BigInteger getP()

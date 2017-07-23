@@ -161,25 +161,6 @@ public class NamedGroup
         }
     }
 
-    public static int getFiniteFieldShortExponentBits(int namedGroup)
-    {
-        switch (namedGroup)
-        {
-        case ffdhe2048:
-            return 225;
-        case ffdhe3072:
-            return 275;
-        case ffdhe4096:
-            return 325;
-        case ffdhe6144:
-            return 375;
-        case ffdhe8192:
-            return 400;
-        default:
-            return -1;
-        }
-    }
-
     public static int getMaximumCurveBits()
     {
         return 571;
