@@ -11,12 +11,6 @@ package org.bouncycastle.tls;
  */
 public class NamedCurve
 {
-    private static final String[] CURVE_NAMES = new String[] { "sect163k1", "sect163r1", "sect163r2", "sect193r1",
-        "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1", "sect283r1", "sect409k1", "sect409r1",
-        "sect571k1", "sect571r1", "secp160k1", "secp160r1", "secp160r2", "secp192k1", "secp192r1", "secp224k1",
-        "secp224r1", "secp256k1", "secp256r1", "secp384r1", "secp521r1",
-        "brainpoolP256r1", "brainpoolP384r1", "brainpoolP512r1"};
-
     public static final int sect163k1 = 1;
     public static final int sect163r1 = 2;
     public static final int sect163r2 = 3;
@@ -56,6 +50,12 @@ public class NamedCurve
 
     public static final int arbitrary_explicit_prime_curves = 0xFF01;
     public static final int arbitrary_explicit_char2_curves = 0xFF02;
+
+    private static final String[] CURVE_NAMES = new String[] { "sect163k1", "sect163r1", "sect163r2", "sect193r1",
+        "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1", "sect283r1", "sect409k1", "sect409r1",
+        "sect571k1", "sect571r1", "secp160k1", "secp160r1", "secp160r2", "secp192k1", "secp192r1", "secp224k1",
+        "secp224r1", "secp256k1", "secp256r1", "secp384r1", "secp521r1",
+        "brainpoolP256r1", "brainpoolP384r1", "brainpoolP512r1"};
 
     public static int getCurveBits(int namedCurve)
     {
@@ -129,9 +129,14 @@ public class NamedCurve
 
     public static String getName(int namedCurve)
     {
-        if (!isValid(namedCurve))
+        if ((namedCurve & 0xFFFFFF00) == 0xFE00)
         {
-            return null;
+            return "PRIVATE";
+        }
+
+        if (namedCurve >= sect163k1 && namedCurve <= brainpoolP512r1)
+        {
+            return CURVE_NAMES[namedCurve - sect163k1];
         }
 
         switch (namedCurve)
@@ -141,7 +146,7 @@ public class NamedCurve
         case arbitrary_explicit_char2_curves:
             return "arbitrary_explicit_char2_curves";
         default:
-            return CURVE_NAMES[namedCurve - 1];
+            return "UNKNOWN";
         }
     }
 
@@ -155,19 +160,27 @@ public class NamedCurve
         return CURVE_NAMES[namedCurve - 1];
     }
 
+    public static String getText(int namedCurve)
+    {
+        return getName(namedCurve) + "(" + namedCurve + ")";
+    }
+
     public static boolean isChar2(int namedCurve)
     {
-        return (namedCurve >= sect163k1 && namedCurve <= sect571r1);
+        return (namedCurve >= sect163k1 && namedCurve <= sect571r1)
+            || (namedCurve == arbitrary_explicit_char2_curves);
     }
 
     public static boolean isPrime(int namedCurve)
     {
-        return (namedCurve >= secp160k1 && namedCurve <= brainpoolP512r1);
+        return (namedCurve >= secp160k1 && namedCurve <= brainpoolP512r1)
+            || (namedCurve == arbitrary_explicit_prime_curves);
     }
 
     public static boolean isValid(int namedCurve)
     {
         return (namedCurve >= sect163k1 && namedCurve <= brainpoolP512r1)
+            || ((namedCurve & 0xFF00) == 0xFE00)
             || (namedCurve >= arbitrary_explicit_prime_curves && namedCurve <= arbitrary_explicit_char2_curves);
     }
 
