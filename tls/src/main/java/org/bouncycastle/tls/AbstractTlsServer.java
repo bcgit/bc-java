@@ -158,7 +158,7 @@ public abstract class AbstractTlsServer
 
     protected TlsDHConfig selectDHConfig()
     {
-        return TlsDHUtils.selectDHConfig(getDHParameters()); 
+        return new TlsDHConfig(getDHParameters()); 
     }
 
     protected TlsECConfig selectECConfig() throws IOException

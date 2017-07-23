@@ -1,31 +1,32 @@
 package org.bouncycastle.tls.crypto;
 
-import java.math.BigInteger;
-
 /**
  * Basic config for Diffie-Hellman.
  */
 public class TlsDHConfig
 {
-    protected BigInteger[] explicitPG;
+    protected final DHGroup explicitGroup;
+    protected final int namedGroup;
 
-    /**
-     * Return the (p, g) values used in Diffie-Hellman.
-     *
-     * @return (p, g) as a BigInteger array (p=[0], g =[1]).
-     */
-    public BigInteger[] getExplicitPG()
+    public TlsDHConfig(DHGroup explicitGroup)
     {
-        return explicitPG.clone();
+        this.explicitGroup = explicitGroup;
+        this.namedGroup = -1;
     }
 
-    /**
-     * Set the (p, g) values used in Diffie-Hellman.
-     *
-     * @param explicitPG (p, g) as a BigInteger array (p=[0], g =[1]).
-     */
-    public void setExplicitPG(BigInteger[] explicitPG)
+    public TlsDHConfig(int namedGroup)
     {
-        this.explicitPG = explicitPG.clone();
+        this.explicitGroup = null;
+        this.namedGroup = namedGroup;
+    }
+
+    public DHGroup getExplicitGroup()
+    {
+        return explicitGroup;
+    }
+
+    public int getNamedGroup()
+    {
+        return namedGroup;
     }
 }
