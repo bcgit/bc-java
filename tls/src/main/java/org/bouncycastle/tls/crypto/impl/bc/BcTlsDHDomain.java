@@ -71,17 +71,20 @@ public class BcTlsDHDomain implements TlsDHDomain
 
     public DHPublicKeyParameters decodePublicKey(byte[] encoding) throws IOException
     {
+        /*
+         * RFC 7919 3. [..] the client MUST verify that dh_Ys is in the range 1 < dh_Ys < dh_p - 1.
+         * If dh_Ys is not in this range, the client MUST terminate the connection with a fatal
+         * handshake_failure(40) alert.
+         */
         try
         {
             BigInteger y = decodeParameter(encoding);
-
-            // TODO Check RFCs for any validation that could/should be done here
 
             return new DHPublicKeyParameters(y, dhDomain);
         }
         catch (RuntimeException e)
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
+            throw new TlsFatalAlert(AlertDescription.handshake_failure, e);
         }
     }
 
