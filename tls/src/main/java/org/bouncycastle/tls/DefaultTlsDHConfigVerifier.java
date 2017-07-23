@@ -14,9 +14,9 @@ public class DefaultTlsDHConfigVerifier
 
     protected static final Vector DEFAULT_GROUPS = new Vector();
 
-    private static void addDefaultGroup(DHGroup dhParameters)
+    private static void addDefaultGroup(DHGroup dhGroup)
     {
-        DEFAULT_GROUPS.addElement(TlsDHUtils.selectDHConfig(dhParameters));
+        DEFAULT_GROUPS.addElement(dhGroup);
     }
 
     static
@@ -35,12 +35,12 @@ public class DefaultTlsDHConfigVerifier
         addDefaultGroup(DHStandardGroups.rfc3526_8192);
     }
 
-    // Vector is (TlsDHConfig)
+    // Vector is (DHGroup)
     protected Vector groups;
     protected int minimumPrimeBits;
 
     /**
-     * Accept only various standard DH groups with 'P' at least {@link #DEFAULT_MINIMUM_PRIME_BITS} bits.
+     * Accept named groups and various standard DH groups with 'P' at least {@link #DEFAULT_MINIMUM_PRIME_BITS} bits.
      */
     public DefaultTlsDHConfigVerifier()
     {
@@ -48,7 +48,7 @@ public class DefaultTlsDHConfigVerifier
     }
 
     /**
-     * Accept only various standard DH groups with 'P' at least the specified number of bits.
+     * Accept named groups and various standard DH groups with 'P' at least the specified number of bits.
      */
     public DefaultTlsDHConfigVerifier(int minimumPrimeBits)
     {
@@ -56,9 +56,9 @@ public class DefaultTlsDHConfigVerifier
     }
 
     /**
-     * Specify a custom set of acceptable group parameters, and a minimum bitlength for 'P'
+     * Accept named groups and a custom set of group parameters, subject to a minimum bitlength for 'P'.
      * 
-     * @param groups a {@link Vector} of acceptable {@link TlsDHConfig}
+     * @param groups a {@link Vector} of acceptable {@link DHGroup}s.
      */
     public DefaultTlsDHConfigVerifier(Vector groups, int minimumPrimeBits)
     {
@@ -68,13 +68,20 @@ public class DefaultTlsDHConfigVerifier
 
     public boolean accept(TlsDHConfig dhConfig)
     {
-        if (dhConfig.getExplicitPG()[0].bitLength() < getMinimumPrimeBits())
+        int namedGroup = dhConfig.getNamedGroup();
+        if (namedGroup >= 0)
+        {
+            return NamedGroup.getFiniteFieldBits(namedGroup) >= getMinimumPrimeBits();
+        }
+
+        DHGroup explicitGroup = dhConfig.getExplicitGroup();
+        if (explicitGroup.getP().bitLength() < getMinimumPrimeBits())
         {
             return false;
         }
         for (int i = 0; i < groups.size(); ++i)
         {
-            if (areGroupsEqual(dhConfig, (TlsDHConfig)groups.elementAt(i)))
+            if (areGroupsEqual(explicitGroup, (DHGroup)groups.elementAt(i)))
             {
                 return true;
             }
@@ -87,14 +94,9 @@ public class DefaultTlsDHConfigVerifier
         return minimumPrimeBits;
     }
 
-    protected boolean areGroupsEqual(TlsDHConfig a, TlsDHConfig b)
+    protected boolean areGroupsEqual(DHGroup a, DHGroup b)
     {
-        return a == b || (areParametersEqual(a.getExplicitPG(), b.getExplicitPG()));
-    }
-
-    protected boolean areParametersEqual(BigInteger[] pgA, BigInteger[] pgB)
-    {
-        return pgA == pgB || (areParametersEqual(pgA[0], pgB[0]) && areParametersEqual(pgA[1], pgB[1]));
+        return a == b || (areParametersEqual(a.getP(), b.getP()) && areParametersEqual(a.getG(), b.getG()));
     }
 
     protected boolean areParametersEqual(BigInteger a, BigInteger b)
