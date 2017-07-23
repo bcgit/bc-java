@@ -78,7 +78,7 @@ public abstract class AbstractTlsServer
 
     protected DHGroup getDHParameters()
     {
-        return DHStandardGroups.rfc3526_2048;
+        return DHStandardGroups.rfc7919_ffdhe2048;
     }
 
     protected ProtocolVersion getMaximumVersion()
@@ -257,8 +257,7 @@ public abstract class AbstractTlsServer
          * does not propose any ECC cipher suites.
          * 
          * NOTE: This was overly strict as there may be ECC cipher suites that we don't recognize.
-         * Also, draft-ietf-tls-negotiated-ff-dhe will be overloading the 'elliptic_curves'
-         * extension to explicitly allow FFDHE (i.e. non-ECC) groups.
+         * Also, RFC 7919 overloads the 'elliptic_curves' extension to explicitly allow FFDHE (i.e. non-ECC) groups.
          */
 //        if (!this.eccCipherSuitesOffered && (this.namedCurves != null || this.clientECPointFormats != null))
 //        {
