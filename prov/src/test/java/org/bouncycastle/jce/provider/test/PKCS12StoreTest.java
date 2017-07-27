@@ -2,6 +2,7 @@ package org.bouncycastle.jce.provider.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.Key;
 import java.security.KeyFactory;
@@ -1395,6 +1396,27 @@ public class PKCS12StoreTest
         }
     }
 
+    private void testIterationCount()
+        throws Exception
+    {
+        System.setProperty("org.bouncycastle.pkcs12.max_it_count", "10");
+
+        ByteArrayInputStream stream = new ByteArrayInputStream(pkcs12StorageIssue);
+        KeyStore store = KeyStore.getInstance("PKCS12", "BC");
+
+        try
+        {
+            store.load(stream, storagePassword);
+            fail("no exception");
+        }
+        catch (IOException e)
+        {
+            isTrue(e.getMessage().endsWith("iteration count 2000 greater than 10"));
+        }
+
+        System.clearProperty("org.bouncycastle.pkcs12.max_it_count");
+    }
+
     public String getName()
     {
         return "PKCS12Store";
@@ -1403,6 +1425,7 @@ public class PKCS12StoreTest
     public void performTest()
         throws Exception
     {
+        testIterationCount();
         testPKCS12Store();
         testGOSTStore();
         testChainCycle();
