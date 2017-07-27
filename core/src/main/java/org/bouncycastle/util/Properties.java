@@ -1,5 +1,6 @@
 package org.bouncycastle.util;
 
+import java.math.BigInteger;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -99,6 +100,18 @@ public class Properties
         }
 
         return isSet;
+    }
+
+    public static BigInteger asBigInteger(String propertyName)
+    {
+        String p = fetchProperty(propertyName);
+
+        if (p != null)
+        {
+            return new BigInteger(p);
+        }
+
+        return null;
     }
 
     public static Set<String> asKeySet(String propertyName)
