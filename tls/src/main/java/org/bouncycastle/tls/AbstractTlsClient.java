@@ -19,8 +19,8 @@ public abstract class AbstractTlsClient
 
     protected TlsClientContext context;
 
+    protected Vector supportedGroups;
     protected Vector supportedSignatureAlgorithms;
-    protected int[] namedCurves;
     protected short[] clientECPointFormats, serverECPointFormats;
 
     protected int selectedCipherSuite;
@@ -49,7 +49,7 @@ public abstract class AbstractTlsClient
              * Supported Elliptic Curves Extension is clearly intended to be client-only. If
              * present, we still require that it is a valid EllipticCurveList.
              */
-            TlsECCUtils.readSupportedEllipticCurvesExtension(extensionData);
+            TlsExtensionsUtils.readSupportedGroupsExtension(extensionData);
             return true;
         default:
             return false;
@@ -69,7 +69,7 @@ public abstract class AbstractTlsClient
     protected TlsECConfigVerifier createECConfigVerifier()
     {
         int minimumCurveBits = TlsECCUtils.getMinimumCurveBits(selectedCipherSuite);
-        return new DefaultTlsECConfigVerifier(minimumCurveBits, namedCurves);
+        return new DefaultTlsECConfigVerifier(minimumCurveBits, supportedGroups);
     }
 
     protected CertificateStatusRequest getCertificateStatusRequest()
@@ -148,7 +148,10 @@ public abstract class AbstractTlsClient
             TlsUtils.addSignatureAlgorithmsExtension(clientExtensions, supportedSignatureAlgorithms);
         }
 
-        if (TlsECCUtils.containsECCipherSuites(getCipherSuites()))
+        int[] cipherSuites = getCipherSuites();
+        Vector supportedGroups = new Vector();
+
+        if (TlsECCUtils.containsECCipherSuites(cipherSuites))
         {
             /*
              * RFC 4492 5.1. A client that proposes ECC cipher suites in its ClientHello message
@@ -156,24 +159,43 @@ public abstract class AbstractTlsClient
              * and the point formats it can parse. Clients SHOULD send both the Supported Elliptic
              * Curves Extension and the Supported Point Formats Extension.
              */
-            /*
-             * TODO Could just add all the curves since we support them all, but users may not want
-             * to use unnecessarily large fields. Need configuration options.
-             */
 
             /*
              * NOTE[fips]: These curves are recommended for FIPS. If any changes are made to how
              * this is configured, FIPS considerations need to be accounted for in BCJSSE.
+             *
+             * TODO Could just add all the EC groups since we support them all, but users may not
+             * want to use unnecessarily large groups. Need configuration options.
              */
-            this.namedCurves = new int[]{ NamedCurve.secp256r1, NamedCurve.secp384r1 };
+            supportedGroups.addElement(NamedGroup.secp256r1);
+            supportedGroups.addElement(NamedGroup.secp384r1);
 
             this.clientECPointFormats = new short[]{ ECPointFormat.uncompressed,
                 ECPointFormat.ansiX962_compressed_prime, ECPointFormat.ansiX962_compressed_char2, };
 
             clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(clientExtensions);
 
-            TlsECCUtils.addSupportedEllipticCurvesExtension(clientExtensions, namedCurves);
             TlsECCUtils.addSupportedPointFormatsExtension(clientExtensions, clientECPointFormats);
+        }
+
+        if (TlsDHUtils.containsDHECipherSuites(cipherSuites))
+        {
+            /*
+             * TODO Could just add all the FFDHE groups since we support them all, but users may not
+             * want to use unnecessarily large groups. Need configuration options.
+             */
+            supportedGroups.addElement(NamedGroup.ffdhe2048);
+            supportedGroups.addElement(NamedGroup.ffdhe3072);
+            supportedGroups.addElement(NamedGroup.ffdhe4096);
+        }
+
+        if (!supportedGroups.isEmpty())
+        {
+            this.supportedGroups = supportedGroups;
+
+            clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(clientExtensions);
+
+            TlsExtensionsUtils.addSupportedGroupsExtension(clientExtensions, supportedGroups);
         }
 
         return clientExtensions;
@@ -227,7 +249,7 @@ public abstract class AbstractTlsClient
              */
             checkForUnexpectedServerExtension(serverExtensions, TlsUtils.EXT_signature_algorithms);
 
-            checkForUnexpectedServerExtension(serverExtensions, TlsECCUtils.EXT_elliptic_curves);
+            checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_supported_groups);
 
             if (TlsECCUtils.isECCipherSuite(this.selectedCipherSuite))
             {

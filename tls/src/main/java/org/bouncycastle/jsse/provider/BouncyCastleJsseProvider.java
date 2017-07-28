@@ -383,7 +383,7 @@ public class BouncyCastleJsseProvider
 //    {
 //        public FipsCapabilities()
 //        {
-//            super(new int[]{ NamedCurve.secp256r1, NamedCurve.secp384r1 });
+//            super(new int[]{ NamedGroup.secp256r1, NamedGroup.secp384r1 });
 //        }
 //    }
 }

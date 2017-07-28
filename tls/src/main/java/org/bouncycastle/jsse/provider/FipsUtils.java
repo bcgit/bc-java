@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.bouncycastle.tls.NamedCurve;
+import org.bouncycastle.tls.NamedGroup;
 
 abstract class FipsUtils
 {
@@ -82,12 +82,12 @@ abstract class FipsUtils
         return cipherSuite != null && FIPS_SUPPORTED_CIPHERSUITES.contains(cipherSuite);
     }
 
-    static boolean isFipsCurve(int namedCurve)
+    static boolean isFipsCurve(int namedGroup)
     {
-        switch (namedCurve)
+        switch (namedGroup)
         {
-        case NamedCurve.secp256r1:
-        case NamedCurve.secp384r1:
+        case NamedGroup.secp256r1:
+        case NamedGroup.secp384r1:
             return true;
 
         default:
