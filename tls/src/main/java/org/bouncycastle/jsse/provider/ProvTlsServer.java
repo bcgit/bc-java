@@ -28,7 +28,7 @@ import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.CompressionMethod;
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
-import org.bouncycastle.tls.NamedCurve;
+import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.ServerNameList;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
@@ -72,7 +72,7 @@ class ProvTlsServer
 
         final boolean isFips = manager.getContext().isFips();
 
-        if (namedCurves == null)
+        if (clientSupportedGroups == null)
         {
             /*
              * RFC 4492 4. A client that proposes ECC cipher suites may choose not to include these
@@ -81,17 +81,17 @@ class ProvTlsServer
              */
             return isFips
                 ?   FipsUtils.getFipsMaximumCurveBits()
-                :   NamedCurve.getMaximumCurveBits();
+                :   NamedGroup.getMaximumCurveBits();
         }
 
         int maxBits = 0;
-        for (int i = 0; i < namedCurves.length; ++i)
+        for (int i = 0; i < clientSupportedGroups.length; ++i)
         {
-            int namedCurve = namedCurves[i];
+            int namedGroup = clientSupportedGroups[i];
 
-            if (!isFips || FipsUtils.isFipsCurve(namedCurve))
+            if (!isFips || FipsUtils.isFipsCurve(namedGroup))
             {
-                maxBits = Math.max(maxBits, NamedCurve.getCurveBits(namedCurve));
+                maxBits = Math.max(maxBits, NamedGroup.getCurveBits(namedGroup));
             }
         }
         return maxBits;
@@ -113,22 +113,22 @@ class ProvTlsServer
     @Override
     protected int selectCurve(int minimumCurveBits)
     {
-        if (namedCurves == null)
+        if (clientSupportedGroups == null)
         {
             return selectDefaultCurve(minimumCurveBits);
         }
 
         final boolean isFips = manager.getContext().isFips();
 
-        // Try to find a supported named curve of the required size from the client's list.
-        for (int i = 0; i < namedCurves.length; ++i)
+        // Try to find a supported named group of the required size from the client's list.
+        for (int i = 0; i < clientSupportedGroups.length; ++i)
         {
-            int namedCurve = namedCurves[i];
-            if (NamedCurve.getCurveBits(namedCurve) >= minimumCurveBits)
+            int namedGroup = clientSupportedGroups[i];
+            if (NamedGroup.getCurveBits(namedGroup) >= minimumCurveBits)
             {
-                if (!isFips || FipsUtils.isFipsCurve(namedCurve))
+                if (!isFips || FipsUtils.isFipsCurve(namedGroup))
                 {
-                    return namedCurve;
+                    return namedGroup;
                 }
             }
         }
@@ -143,8 +143,8 @@ class ProvTlsServer
          * NOTE[fips]: These curves are recommended for FIPS. If any changes are made to how
          * this is configured, FIPS considerations need to be accounted for in BCJSSE.
          */
-        return minimumCurveBits <= 256 ? NamedCurve.secp256r1
-            :  minimumCurveBits <= 384 ? NamedCurve.secp384r1
+        return minimumCurveBits <= 256 ? NamedGroup.secp256r1
+            :  minimumCurveBits <= 384 ? NamedGroup.secp384r1
             :  -1;
     }
 

@@ -33,7 +33,7 @@ public abstract class AbstractTlsServer
     protected short maxFragmentLengthOffered;
     protected boolean truncatedHMacOffered;
     protected Vector supportedSignatureAlgorithms;
-    protected int[] namedCurves;
+    protected int[] clientSupportedGroups;
     protected short[] clientECPointFormats, serverECPointFormats;
     protected CertificateStatusRequest certificateStatusRequest;
 
@@ -95,20 +95,20 @@ public abstract class AbstractTlsServer
     {
         // NOTE: BC supports all the current set of point formats so we don't check them here
 
-        if (namedCurves == null)
+        if (clientSupportedGroups == null)
         {
             /*
              * RFC 4492 4. A client that proposes ECC cipher suites may choose not to include these
              * extensions. In this case, the server is free to choose any one of the elliptic curves
              * or point formats [...].
              */
-            return NamedCurve.getMaximumCurveBits();
+            return NamedGroup.getMaximumCurveBits();
         }
 
         int maxBits = 0;
-        for (int i = 0; i < namedCurves.length; ++i)
+        for (int i = 0; i < clientSupportedGroups.length; ++i)
         {
-            maxBits = Math.max(maxBits, NamedCurve.getCurveBits(namedCurves[i]));
+            maxBits = Math.max(maxBits, NamedGroup.getCurveBits(clientSupportedGroups[i]));
         }
         return maxBits;
     }
@@ -129,18 +129,18 @@ public abstract class AbstractTlsServer
 
     protected int selectCurve(int minimumCurveBits)
     {
-        if (namedCurves == null)
+        if (clientSupportedGroups == null)
         {
             return selectDefaultCurve(minimumCurveBits);
         }
 
-        // Try to find a supported named curve of the required size from the client's list.
-        for (int i = 0; i < namedCurves.length; ++i)
+        // Try to find a supported named group of the required size from the client's list.
+        for (int i = 0; i < clientSupportedGroups.length; ++i)
         {
-            int namedCurve = namedCurves[i];
-            if (NamedCurve.getCurveBits(namedCurve) >= minimumCurveBits)
+            int namedGroup = clientSupportedGroups[i];
+            if (NamedGroup.getCurveBits(namedGroup) >= minimumCurveBits)
             {
-                return namedCurve;
+                return namedGroup;
             }
         }
 
@@ -150,9 +150,9 @@ public abstract class AbstractTlsServer
     protected int selectDefaultCurve(int minimumCurveBits)
     {
         // Note: this must all have a co-factor of 1 to qualify for FIPS ECDH.
-        return minimumCurveBits <= 256 ? NamedCurve.secp256r1
-            :  minimumCurveBits <= 384 ? NamedCurve.secp384r1
-            :  minimumCurveBits <= 521 ? NamedCurve.secp521r1
+        return minimumCurveBits <= 256 ? NamedGroup.secp256r1
+            :  minimumCurveBits <= 384 ? NamedGroup.secp384r1
+            :  minimumCurveBits <= 521 ? NamedGroup.secp521r1
             :  -1;
     }
 
@@ -165,16 +165,16 @@ public abstract class AbstractTlsServer
     {
         int minimumCurveBits = TlsECCUtils.getMinimumCurveBits(selectedCipherSuite);
 
-        int namedCurve = selectCurve(minimumCurveBits);
-        if (namedCurve < 0)
+        int namedGroup = selectCurve(minimumCurveBits);
+        if (namedGroup < 0)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        boolean compressed = TlsECCUtils.isCompressionPreferred(clientECPointFormats, namedCurve);
+        boolean compressed = TlsECCUtils.isCompressionPreferred(clientECPointFormats, namedGroup);
 
         TlsECConfig ecConfig = new TlsECConfig();
-        ecConfig.setNamedCurve(namedCurve);
+        ecConfig.setNamedGroup(namedGroup);
         ecConfig.setPointCompression(compressed);
         return ecConfig;
     }
@@ -246,7 +246,7 @@ public abstract class AbstractTlsServer
                 }
             }
 
-            this.namedCurves = TlsECCUtils.getSupportedEllipticCurvesExtension(clientExtensions);
+            this.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientExtensions);
             this.clientECPointFormats = TlsECCUtils.getSupportedPointFormatsExtension(clientExtensions);
 
             this.certificateStatusRequest = TlsExtensionsUtils.getStatusRequestExtension(clientExtensions);
@@ -257,9 +257,12 @@ public abstract class AbstractTlsServer
          * does not propose any ECC cipher suites.
          * 
          * NOTE: This was overly strict as there may be ECC cipher suites that we don't recognize.
-         * Also, RFC 7919 overloads the 'elliptic_curves' extension to explicitly allow FFDHE (i.e. non-ECC) groups.
+         * Also, RFC 7919 renamed 'elliptic_curves' to 'supported_groups' and now allows FFDHE (i.e.
+         * non-ECC) groups. If ec_point_formats are unnecessarily present, it doesn't seem worth
+         * failing the handshake over.
          */
-//        if (!this.eccCipherSuitesOffered && (this.namedCurves != null || this.clientECPointFormats != null))
+//        if ((this.clientSupportedGroups != null || this.clientECPointFormats != null)
+//            && !TlsECCUtils.containsECCipherSuites(offeredCipherSuites))
 //        {
 //            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
 //        }

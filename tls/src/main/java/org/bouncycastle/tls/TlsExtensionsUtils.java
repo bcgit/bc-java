@@ -20,6 +20,7 @@ public class TlsExtensionsUtils
     public static final Integer EXT_server_certificate_type = Integers.valueOf(ExtensionType.server_certificate_type);
     public static final Integer EXT_server_name = Integers.valueOf(ExtensionType.server_name);
     public static final Integer EXT_status_request = Integers.valueOf(ExtensionType.status_request);
+    public static final Integer EXT_supported_groups = Integers.valueOf(ExtensionType.supported_groups);
     public static final Integer EXT_truncated_hmac = Integers.valueOf(ExtensionType.truncated_hmac);
     public static final Integer EXT_trusted_ca_keys = Integers.valueOf(ExtensionType.trusted_ca_keys);
 
@@ -95,6 +96,11 @@ public class TlsExtensionsUtils
         throws IOException
     {
         extensions.put(EXT_status_request, createStatusRequestExtension(statusRequest));
+    }
+
+    public static void addSupportedGroupsExtension(Hashtable extensions, Vector namedGroups) throws IOException
+    {
+        extensions.put(EXT_supported_groups, createSupportedGroupsExtension(namedGroups));
     }
 
     public static void addTruncatedHMacExtension(Hashtable extensions)
@@ -174,6 +180,12 @@ public class TlsExtensionsUtils
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_status_request);
         return extensionData == null ? null : readStatusRequestExtension(extensionData);
+    }
+
+    public static int[] getSupportedGroupsExtension(Hashtable extensions) throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_supported_groups);
+        return extensionData == null ? null : readSupportedGroupsExtension(extensionData);
     }
 
     public static Vector getTrustedCAKeysExtensionClient(Hashtable extensions)
@@ -304,6 +316,23 @@ public class TlsExtensionsUtils
         statusRequest.encode(buf);
 
         return buf.toByteArray();
+    }
+
+    public static byte[] createSupportedGroupsExtension(Vector namedGroups) throws IOException
+    {
+        if (namedGroups == null || namedGroups.isEmpty())
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        int count = namedGroups.size();
+        int[] values = new int[count];
+        for (int i = 0; i < count; ++i)
+        {
+            values[i] = ((Integer)namedGroups.elementAt(i)).intValue();
+        }
+
+        return TlsUtils.encodeUint16ArrayWithUint16Length(values);
     }
 
     public static byte[] createTruncatedHMacExtension()
@@ -454,6 +483,28 @@ public class TlsExtensionsUtils
         TlsProtocol.assertEmpty(buf);
 
         return statusRequest;
+    }
+
+    public static int[] readSupportedGroupsExtension(byte[] extensionData) throws IOException
+    {
+        if (extensionData == null)
+        {
+            throw new IllegalArgumentException("'extensionData' cannot be null");
+        }
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
+
+        int length = TlsUtils.readUint16(buf);
+        if (length < 2 || (length & 1) != 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        int[] namedGroups = TlsUtils.readUint16Array(length / 2, buf);
+
+        TlsProtocol.assertEmpty(buf);
+
+        return namedGroups;
     }
 
     public static boolean readTruncatedHMacExtension(byte[] extensionData) throws IOException

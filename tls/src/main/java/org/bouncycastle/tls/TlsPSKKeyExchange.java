@@ -351,7 +351,7 @@ public class TlsPSKKeyExchange
 
     protected void processEphemeralECDH(short[] localECPointFormats, byte[] point) throws IOException
     {
-        TlsECCUtils.checkPointEncoding(localECPointFormats, ecConfig.getNamedCurve(), point);
+        TlsECCUtils.checkPointEncoding(localECPointFormats, ecConfig.getNamedGroup(), point);
 
         this.agreement.receivePeerValue(point);
     }

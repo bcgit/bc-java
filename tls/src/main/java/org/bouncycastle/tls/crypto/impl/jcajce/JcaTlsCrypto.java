@@ -8,6 +8,7 @@ import java.security.SecureRandom;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
+import java.util.Hashtable;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -19,7 +20,7 @@ import org.bouncycastle.tls.CombinedHash;
 import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
-import org.bouncycastle.tls.NamedCurve;
+import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
@@ -57,6 +58,7 @@ import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6Client;
 import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6Server;
 import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6VerifierGenerator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 
 /**
  * Class for providing cryptographic services for TLS based on implementations in the JCA/JCE.
@@ -72,7 +74,7 @@ public class JcaTlsCrypto
     private final SecureRandom entropySource;
     private final SecureRandom nonceEntropySource;
 
-    private final Boolean[]    supportedCurveIDs = new Boolean[28 + 1];  // current max curveID + 1
+    private final Hashtable supportedGroups = new Hashtable();
 
     /**
      * Base constructor.
@@ -86,41 +88,6 @@ public class JcaTlsCrypto
         this.helper = helper;
         this.entropySource = entropySource;
         this.nonceEntropySource = nonceEntropySource;
-    }
-
-    private boolean checkCurve(int namedCurve)
-    {
-        String curveName = NamedCurve.getNameOfSpecificCurve(namedCurve);
-        if (curveName == null)
-        {
-             return false;
-        }
-
-        if (namedCurve < supportedCurveIDs.length && supportedCurveIDs[namedCurve] != null)
-        {
-            return supportedCurveIDs[namedCurve].booleanValue();
-        }
-
-        try
-        {
-            AlgorithmParameters params = this.getHelper().createAlgorithmParameters("EC");
-
-            params.init(new ECGenParameterSpec(curveName));
-
-            boolean supported = params.getParameterSpec(ECParameterSpec.class) != null;
-            if (namedCurve < supportedCurveIDs.length)
-            {
-                supportedCurveIDs[namedCurve] = Boolean.valueOf(supported);
-            }
-
-            return supported;
-        }
-        catch (Exception e)
-        {
-            supportedCurveIDs[namedCurve] = Boolean.valueOf(false);
-
-            return false;
-        }
     }
 
     JceTlsSecret adoptLocalSecret(byte[] data)
@@ -409,9 +376,44 @@ public class JcaTlsCrypto
         return true;
     }
 
-    public boolean hasNamedCurve(int curveID)
+    public boolean hasNamedGroup(int namedGroup)
     {
-        return checkCurve(curveID);
+        // TODO[tls] Actually check for DH support for the individual groups
+        if (NamedGroup.refersToASpecificFiniteField(namedGroup))
+        {
+            return true;
+        }
+
+        if (!NamedGroup.refersToASpecificCurve(namedGroup))
+        {
+            return false;
+        }
+
+        String curveName = NamedGroup.getName(namedGroup);
+        if (curveName == null)
+        {
+            return false;
+        }
+
+        int key = Integers.valueOf(namedGroup);
+
+        synchronized (supportedGroups)
+        {
+            Boolean cached = (Boolean)supportedGroups.get(key);
+            if (cached != null)
+            {
+                return cached.booleanValue();
+            }
+        }
+
+        boolean result = isCurveSupported(curveName);
+
+        synchronized (supportedGroups)
+        {
+            supportedGroups.put(key, Boolean.valueOf(result));
+        }
+
+        return result;
     }
 
     public boolean hasRSAEncryption()
@@ -663,6 +665,24 @@ public class JcaTlsCrypto
         throws IOException, GeneralSecurityException
     {
         return new TlsNullCipher(cryptoParams, createMAC(macAlgorithm), createMAC(macAlgorithm));
+    }
+
+    protected boolean isCurveSupported(String curveName)
+    {
+        try
+        {
+            AlgorithmParameters params = getHelper().createAlgorithmParameters("EC");
+            params.init(new ECGenParameterSpec(curveName));
+            if (params.getParameterSpec(ECParameterSpec.class) != null)
+            {
+                return true;
+            }
+        }
+        catch (Exception e)
+        {
+        }
+
+        return false;
     }
 
     JcaJceHelper getHelper()
