@@ -50,6 +50,7 @@ import org.bouncycastle.tls.CombinedHash;
 import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
+import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
@@ -280,10 +281,9 @@ public class BcTlsCrypto
         return true;
     }
 
-    public boolean hasNamedCurve(int curveID)
+    public boolean hasNamedGroup(int namedGroup)
     {
-        // TODO: at the moment we support everything
-        return true;
+        return NamedGroup.refersToASpecificGroup(namedGroup);
     }
 
     public boolean hasRSAEncryption()

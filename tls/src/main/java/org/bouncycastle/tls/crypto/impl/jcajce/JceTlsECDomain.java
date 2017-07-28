@@ -22,7 +22,7 @@ import javax.crypto.KeyAgreement;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.NamedCurve;
+import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsECConfig;
@@ -45,7 +45,7 @@ public class JceTlsECDomain
         this.crypto = crypto;
         this.ecConfig = ecConfig;
 
-        init(ecConfig.getNamedCurve());
+        init(ecConfig.getNamedGroup());
     }
 
     public byte[] calculateECDHAgreement(ECPublicKey publicKey, ECPrivateKey privateKey)
@@ -131,13 +131,18 @@ public class JceTlsECDomain
         return crypto;
     }
 
-    private void init(int namedCurve)
+    private void init(int namedGroup)
     {
         this.ecCurve = null;
         this.ecGenSpec = null;
         this.ecParameterSpec = null;
 
-        String curveName = NamedCurve.getNameOfSpecificCurve(namedCurve);
+        if (!NamedGroup.refersToASpecificCurve(namedGroup))
+        {
+            return;
+        }
+
+        String curveName = NamedGroup.getName(namedGroup);
         if (curveName == null)
         {
             return;

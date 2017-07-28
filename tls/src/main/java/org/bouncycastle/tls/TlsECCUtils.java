@@ -12,13 +12,7 @@ import org.bouncycastle.util.Integers;
 
 public class TlsECCUtils
 {
-    public static final Integer EXT_elliptic_curves = Integers.valueOf(ExtensionType.supported_groups);
     public static final Integer EXT_ec_point_formats = Integers.valueOf(ExtensionType.ec_point_formats);
-
-    public static void addSupportedEllipticCurvesExtension(Hashtable extensions, int[] namedCurves) throws IOException
-    {
-        extensions.put(EXT_elliptic_curves, createSupportedEllipticCurvesExtension(namedCurves));
-    }
 
     public static void addSupportedPointFormatsExtension(Hashtable extensions, short[] ecPointFormats)
         throws IOException
@@ -26,26 +20,10 @@ public class TlsECCUtils
         extensions.put(EXT_ec_point_formats, createSupportedPointFormatsExtension(ecPointFormats));
     }
 
-    public static int[] getSupportedEllipticCurvesExtension(Hashtable extensions) throws IOException
-    {
-        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_elliptic_curves);
-        return extensionData == null ? null : readSupportedEllipticCurvesExtension(extensionData);
-    }
-
     public static short[] getSupportedPointFormatsExtension(Hashtable extensions) throws IOException
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_ec_point_formats);
         return extensionData == null ? null : readSupportedPointFormatsExtension(extensionData);
-    }
-
-    public static byte[] createSupportedEllipticCurvesExtension(int[] namedCurves) throws IOException
-    {
-        if (namedCurves == null || namedCurves.length < 1)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        return TlsUtils.encodeUint16ArrayWithUint16Length(namedCurves);
     }
 
     public static byte[] createSupportedPointFormatsExtension(short[] ecPointFormats) throws IOException
@@ -62,28 +40,6 @@ public class TlsECCUtils
         }
 
         return TlsUtils.encodeUint8ArrayWithUint8Length(ecPointFormats);
-    }
-
-    public static int[] readSupportedEllipticCurvesExtension(byte[] extensionData) throws IOException
-    {
-        if (extensionData == null)
-        {
-            throw new IllegalArgumentException("'extensionData' cannot be null");
-        }
-
-        ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
-
-        int length = TlsUtils.readUint16(buf);
-        if (length < 2 || (length & 1) != 0)
-        {
-            throw new TlsFatalAlert(AlertDescription.decode_error);
-        }
-
-        int[] namedCurves = TlsUtils.readUint16Array(length / 2, buf);
-
-        TlsProtocol.assertEmpty(buf);
-
-        return namedCurves;
     }
 
     public static short[] readSupportedPointFormatsExtension(byte[] extensionData) throws IOException
@@ -156,22 +112,22 @@ public class TlsECCUtils
         }
     }
 
-    public static short getCompressionFormat(int namedCurve) throws IOException
+    public static short getCompressionFormat(int namedGroup) throws IOException
     {
-        if (NamedCurve.isPrime(namedCurve))
+        if (NamedGroup.isPrimeCurve(namedGroup))
         {
             return ECPointFormat.ansiX962_compressed_prime;
         }
-        if (NamedCurve.isChar2(namedCurve))
+        if (NamedGroup.isChar2Curve(namedGroup))
         {
             return ECPointFormat.ansiX962_compressed_char2;
         }
         throw new TlsFatalAlert(AlertDescription.illegal_parameter);
     }
 
-    public static boolean isCompressionPreferred(short[] peerECPointFormats, int namedCurve) throws IOException
+    public static boolean isCompressionPreferred(short[] peerECPointFormats, int namedGroup) throws IOException
     {
-        return isCompressionPreferred(peerECPointFormats, getCompressionFormat(namedCurve));
+        return isCompressionPreferred(peerECPointFormats, getCompressionFormat(namedGroup));
     }
 
     public static boolean isCompressionPreferred(short[] peerECPointFormats, short compressionFormat)
@@ -195,14 +151,14 @@ public class TlsECCUtils
         return false;
     }
 
-    public static void checkPointEncoding(short[] localECPointFormats, int namedCurve, byte[] encoding) throws IOException
+    public static void checkPointEncoding(short[] localECPointFormats, int namedGroup, byte[] encoding) throws IOException
     {
         if (encoding == null || encoding.length < 1)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        short actualFormat = getActualFormat(namedCurve, encoding);
+        short actualFormat = getActualFormat(namedGroup, encoding);
         checkActualFormat(localECPointFormats, actualFormat);
     }
 
@@ -215,14 +171,14 @@ public class TlsECCUtils
         }
     }
 
-    public static short getActualFormat(int namedCurve, byte[] encoding) throws IOException
+    public static short getActualFormat(int namedGroup, byte[] encoding) throws IOException
     {
         switch (encoding[0])
         {
         case 0x02: // compressed
         case 0x03: // compressed
         {
-            return getCompressionFormat(namedCurve);
+            return getCompressionFormat(namedGroup);
         }
         case 0x04: // uncompressed
         {
@@ -245,8 +201,8 @@ public class TlsECCUtils
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
 
-        int namedCurve = TlsUtils.readUint16(input);
-        if (!NamedCurve.refersToASpecificNamedCurve(namedCurve))
+        int namedGroup = TlsUtils.readUint16(input);
+        if (!NamedGroup.refersToASpecificCurve(namedGroup))
         {
             /*
              * RFC 4492 5.4. All those values of NamedCurve are allowed that refer to a
@@ -256,10 +212,10 @@ public class TlsECCUtils
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        boolean compressed = isCompressionPreferred(peerECPointFormats, namedCurve);
+        boolean compressed = isCompressionPreferred(peerECPointFormats, namedGroup);
 
         TlsECConfig result = new TlsECConfig();
-        result.setNamedCurve(namedCurve);
+        result.setNamedGroup(namedGroup);
         result.setPointCompression(compressed);
         return result;
     }
@@ -277,12 +233,12 @@ public class TlsECCUtils
 
     public static void writeECConfig(TlsECConfig ecConfig, OutputStream output) throws IOException
     {
-        writeNamedECParameters(ecConfig.getNamedCurve(), output);
+        writeNamedECParameters(ecConfig.getNamedGroup(), output);
     }
 
-    public static void writeNamedECParameters(int namedCurve, OutputStream output) throws IOException
+    public static void writeNamedECParameters(int namedGroup, OutputStream output) throws IOException
     {
-        if (!NamedCurve.refersToASpecificNamedCurve(namedCurve))
+        if (!NamedGroup.refersToASpecificCurve(namedGroup))
         {
             /*
              * RFC 4492 5.4. All those values of NamedCurve are allowed that refer to a specific
@@ -293,7 +249,7 @@ public class TlsECCUtils
         }
 
         TlsUtils.writeUint8(ECCurveType.named_curve, output);
-        TlsUtils.checkUint16(namedCurve);
-        TlsUtils.writeUint16(namedCurve, output);
+        TlsUtils.checkUint16(namedGroup);
+        TlsUtils.writeUint16(namedGroup, output);
     }
 }

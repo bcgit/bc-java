@@ -15,7 +15,7 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.NamedCurve;
+import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsECConfig;
@@ -35,7 +35,7 @@ public class BcTlsECDomain implements TlsECDomain
     {
         this.crypto = crypto;
         this.ecConfig = ecConfig;
-        this.ecDomain = getParameters(ecConfig);
+        this.ecDomain = getDomainParameters(ecConfig);
     }
 
     public byte[] calculateECDHAgreement(ECPublicKeyParameters publicKey, ECPrivateKeyParameters privateKey)
@@ -100,14 +100,19 @@ public class BcTlsECDomain implements TlsECDomain
         return crypto;
     }
 
-    public ECDomainParameters getParameters(TlsECConfig ecConfig)
+    public ECDomainParameters getDomainParameters(TlsECConfig ecConfig)
     {
-        return getParametersForNamedCurve(ecConfig.getNamedCurve());
+        return getDomainParameters(ecConfig.getNamedGroup());
     }
 
-    public ECDomainParameters getParametersForNamedCurve(int namedCurve)
+    public ECDomainParameters getDomainParameters(int namedGroup)
     {
-        String curveName = NamedCurve.getNameOfSpecificCurve(namedCurve);
+        if (!NamedGroup.refersToASpecificCurve(namedGroup))
+        {
+            return null;
+        }
+
+        String curveName = NamedGroup.getName(namedGroup);
         if (curveName == null)
         {
             return null;

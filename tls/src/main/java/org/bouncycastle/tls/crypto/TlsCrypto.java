@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.tls.MACAlgorithm;
+import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 
@@ -60,11 +61,11 @@ public interface TlsCrypto
     boolean hasMacAlgorithm(int macAlgorithm);
 
     /**
-     * Return true if this TlsCrypto supports the passed in curveID.
+     * Return true if this TlsCrypto supports the passed in {@link NamedGroup named group} value.
      *
-     * @return true if this instance supports the passed in curveID, false otherwise.
+     * @return true if this instance supports the passed in {@link NamedGroup named group} value.
      */
-    boolean hasNamedCurve(int curveID);
+    boolean hasNamedGroup(int namedGroup);
 
     /**
      * Return true if this TlsCrypto can support RSA encryption/decryption.

@@ -204,16 +204,21 @@ public class NamedGroup
         return getName(namedGroup) + "(" + namedGroup + ")";
     }
 
-    public static boolean isChar2(int namedGroup)
+    public static boolean isChar2Curve(int namedGroup)
     {
         return (namedGroup >= sect163k1 && namedGroup <= sect571r1)
             || (namedGroup == arbitrary_explicit_char2_curves);
     }
 
-    public static boolean isPrime(int namedGroup)
+    public static boolean isPrimeCurve(int namedGroup)
     {
         return (namedGroup >= secp160k1 && namedGroup <= brainpoolP512r1)
             || (namedGroup == arbitrary_explicit_prime_curves);
+    }
+
+    public static boolean isPrivate(int namedGroup)
+    {
+        return (namedGroup & 0xFFFFFF00) == 0xFE00;
     }
 
     public static boolean isValid(int namedGroup)
@@ -225,20 +230,17 @@ public class NamedGroup
 
     public static boolean refersToASpecificCurve(int namedGroup)
     {
-        return (namedGroup >= sect163k1 && namedGroup <= brainpoolP512r1)
-            || ((namedGroup & 0xFFFFFF00) == 0xFE00);
+        return namedGroup >= sect163k1 && namedGroup <= brainpoolP512r1;
     }
 
     public static boolean refersToASpecificFiniteField(int namedGroup)
     {
-        return (namedGroup >= ffdhe2048 && namedGroup <= ffdhe8192)
-            || ((namedGroup & 0xFFFFFF00) == 0xFE00);
+        return namedGroup >= ffdhe2048 && namedGroup <= ffdhe8192;
     }
 
     public static boolean refersToASpecificGroup(int namedGroup)
     {
         return (namedGroup >= sect163k1 && namedGroup <= brainpoolP512r1)
-            || (namedGroup >= ffdhe2048 && namedGroup <= ffdhe8192)
-            || ((namedGroup & 0xFFFFFF00) == 0xFE00);
+            || (namedGroup >= ffdhe2048 && namedGroup <= ffdhe8192);
     }
 }

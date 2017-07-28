@@ -12,11 +12,11 @@ import org.bouncycastle.util.BigIntegers;
 
 public class TlsDHUtils
 {
-    public static boolean containsDHCipherSuites(int[] cipherSuites)
+    public static boolean containsDHECipherSuites(int[] cipherSuites)
     {
         for (int i = 0; i < cipherSuites.length; ++i)
         {
-            if (isDHCipherSuite(cipherSuites[i]))
+            if (isDHECipherSuite(cipherSuites[i]))
             {
                 return true;
             }
@@ -54,16 +54,10 @@ public class TlsDHUtils
         }
     }
 
-    public static boolean isDHCipherSuite(int cipherSuite)
+    public static boolean isDHECipherSuite(int cipherSuite)
     {
         switch (TlsUtils.getKeyExchangeAlgorithm(cipherSuite))
         {
-        case KeyExchangeAlgorithm.DH_anon:
-        case KeyExchangeAlgorithm.DH_anon_EXPORT:
-        case KeyExchangeAlgorithm.DH_DSS:
-        case KeyExchangeAlgorithm.DH_DSS_EXPORT:
-        case KeyExchangeAlgorithm.DH_RSA:
-        case KeyExchangeAlgorithm.DH_RSA_EXPORT:
         case KeyExchangeAlgorithm.DHE_DSS:
         case KeyExchangeAlgorithm.DHE_DSS_EXPORT:
         case KeyExchangeAlgorithm.DHE_PSK:

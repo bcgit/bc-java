@@ -1,31 +1,33 @@
 package org.bouncycastle.tls.crypto;
 
+import org.bouncycastle.tls.NamedGroup;
+
 /**
  * Carrier class for Elliptic Curve parameter configuration.
  */
 public class TlsECConfig
 {
-    protected int namedCurve;
+    protected int namedGroup;
     protected boolean pointCompression;
 
     /**
-     * Return the TLS identifier of the named curve associated with this config.
+     * Return the group used.
      *
-     * @return the TLS ID for the curve this config is for.
+     * @return the {@link NamedGroup named group} used.
      */
-    public int getNamedCurve()
+    public int getNamedGroup()
     {
-        return namedCurve;
+        return namedGroup;
     }
 
     /**
-     * Set the curve to use.
+     * Set the group to use.
      *
-     * @param namedCurve the TLS ID for the curve to use.
+     * @param namedGroup the {@link NamedGroup named group} to use.
      */
-    public void setNamedCurve(int namedCurve)
+    public void setNamedGroup(int namedGroup)
     {
-        this.namedCurve = namedCurve;
+        this.namedGroup = namedGroup;
     }
 
     /**
