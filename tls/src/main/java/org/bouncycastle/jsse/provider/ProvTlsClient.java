@@ -1,6 +1,7 @@
 package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.security.Principal;
 import java.security.PrivateKey;
@@ -64,6 +65,55 @@ class ProvTlsClient
 
         this.manager = manager;
         this.sslParameters = manager.getProvSSLParameters();
+    }
+
+    @Override
+    protected Vector getSNIServerNames()
+    {
+        if (provEnableSNIExtension)
+        {
+            List<BCSNIServerName> sniServerNames = manager.getProvSSLParameters().getServerNames();
+            if (sniServerNames == null)
+            {
+                String peerHost = manager.getPeerHost();
+                if (peerHost != null && peerHost.indexOf('.') > 0 && !IPAddress.isValid(peerHost))
+                {
+                    Vector serverNames = new Vector(1);
+                    serverNames.addElement(new ServerName(NameType.host_name, peerHost));
+                    return serverNames;
+                }
+            }
+            else
+            {
+                Vector serverNames = new Vector(sniServerNames.size());
+                for (BCSNIServerName sniServerName : sniServerNames)
+                {
+                    /*
+                     * TODO[jsse] Add support for constructing ServerName using
+                     * BCSNIServerName.getEncoded() directly, then remove the 'host_name' limitation
+                     * (although it's currently the only defined type).
+                     */
+                    if (sniServerName.getType() == NameType.host_name)
+                    {
+                        try
+                        {
+                            serverNames.addElement(new ServerName((short)sniServerName.getType(), new String(sniServerName.getEncoded(), "ASCII")));
+                        }
+                        catch (UnsupportedEncodingException e)
+                        {
+                            LOG.log(Level.WARNING, "Unable to include SNI server name", e);
+                        }
+                    }
+                }
+
+                // NOTE: We follow SunJSSE behaviour and disable SNI if there are no server names to send
+                if (!sniServerNames.isEmpty())
+                {
+                    return serverNames;
+                }
+            }
+        }
+        return null;
     }
 
     @Override
