@@ -114,7 +114,7 @@ class ProvTlsClient
                 }
 
                 // NOTE: We follow SunJSSE behaviour and disable SNI if there are no server names to send
-                if (!sniServerNames.isEmpty())
+                if (!serverNames.isEmpty())
                 {
                     return serverNames;
                 }
