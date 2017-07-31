@@ -24,6 +24,7 @@ import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.CompressionMethod;
 import org.bouncycastle.tls.DefaultTlsClient;
+import org.bouncycastle.tls.DefaultTlsKeyExchangeFactory;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.NameType;
 import org.bouncycastle.tls.ProtocolVersion;
@@ -50,6 +51,8 @@ class ProvTlsClient
 {
     private static Logger LOG = Logger.getLogger(ProvTlsClient.class.getName());
 
+    private static final boolean provEnableSNIExtension = PropertyUtils.getBooleanSystemProperty("jsse.enableSNIExtension", true);
+
     protected final ProvTlsManager manager;
     protected final ProvSSLParameters sslParameters;
 
@@ -57,7 +60,7 @@ class ProvTlsClient
 
     ProvTlsClient(ProvTlsManager manager)
     {
-        super(manager.getContextData().getCrypto());
+        super(manager.getContextData().getCrypto(), new DefaultTlsKeyExchangeFactory(), new ProvDHConfigVerifier());
 
         this.manager = manager;
         this.sslParameters = manager.getProvSSLParameters();
@@ -239,8 +242,7 @@ class ProvTlsClient
     {
         Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
 
-        boolean enableSNIExtension = !"false".equals(PropertyUtils.getSystemProperty("jsse.enableSNIExtension"));
-        if (enableSNIExtension)
+        if (provEnableSNIExtension)
         {
             List<BCSNIServerName> sniServerNames = manager.getProvSSLParameters().getServerNames();
             if (sniServerNames == null)

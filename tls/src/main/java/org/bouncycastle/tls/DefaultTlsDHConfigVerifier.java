@@ -68,25 +68,7 @@ public class DefaultTlsDHConfigVerifier
 
     public boolean accept(TlsDHConfig dhConfig)
     {
-        int namedGroup = dhConfig.getNamedGroup();
-        if (namedGroup >= 0)
-        {
-            return NamedGroup.getFiniteFieldBits(namedGroup) >= getMinimumPrimeBits();
-        }
-
-        DHGroup explicitGroup = dhConfig.getExplicitGroup();
-        if (explicitGroup.getP().bitLength() < getMinimumPrimeBits())
-        {
-            return false;
-        }
-        for (int i = 0; i < groups.size(); ++i)
-        {
-            if (areGroupsEqual(explicitGroup, (DHGroup)groups.elementAt(i)))
-            {
-                return true;
-            }
-        }
-        return false;
+        return checkMinimumPrimeBits(dhConfig) && checkGroup(dhConfig);
     }
 
     public int getMinimumPrimeBits()
@@ -102,5 +84,37 @@ public class DefaultTlsDHConfigVerifier
     protected boolean areParametersEqual(BigInteger a, BigInteger b)
     {
         return a == b || a.equals(b);
+    }
+
+    protected boolean checkGroup(TlsDHConfig dhConfig)
+    {
+        if (NamedGroup.refersToASpecificFiniteField(dhConfig.getNamedGroup()))
+        {
+            return true;
+        }
+
+        DHGroup explicitGroup = dhConfig.getExplicitGroup();
+        for (int i = 0; i < groups.size(); ++i)
+        {
+            if (areGroupsEqual(explicitGroup, (DHGroup)groups.elementAt(i)))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected boolean checkMinimumPrimeBits(TlsDHConfig dhConfig)
+    {
+        int bits = getMinimumPrimeBits();
+
+        int namedGroup = dhConfig.getNamedGroup();
+        if (namedGroup >= 0)
+        {
+            return NamedGroup.getFiniteFieldBits(namedGroup) >= bits;
+        }
+
+        DHGroup explicitGroup = dhConfig.getExplicitGroup();
+        return explicitGroup.getP().bitLength() >= bits;
     }
 }
