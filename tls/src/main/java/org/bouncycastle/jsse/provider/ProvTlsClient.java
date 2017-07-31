@@ -23,6 +23,7 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
+import org.bouncycastle.tls.CertificateStatusRequest;
 import org.bouncycastle.tls.CompressionMethod;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.DefaultTlsKeyExchangeFactory;
@@ -65,6 +66,12 @@ class ProvTlsClient
 
         this.manager = manager;
         this.sslParameters = manager.getProvSSLParameters();
+    }
+
+    @Override
+    protected CertificateStatusRequest getCertificateStatusRequest()
+    {
+        return null;
     }
 
     @Override
