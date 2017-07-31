@@ -77,6 +77,11 @@ public abstract class AbstractTlsClient
         return new CertificateStatusRequest(CertificateStatusType.ocsp, new OCSPStatusRequest(null, null));
     }
 
+    protected Vector getSNIServerNames()
+    {
+        return null;
+    }
+
     protected Vector getSupportedSignatureAlgorithms()
     {
         return TlsUtils.getDefaultSupportedSignatureAlgorithms(context);
@@ -127,6 +132,12 @@ public abstract class AbstractTlsClient
         TlsExtensionsUtils.addEncryptThenMACExtension(clientExtensions);
         TlsExtensionsUtils.addExtendedMasterSecretExtension(clientExtensions);
 
+        Vector sniServerNames = getSNIServerNames();
+        if (sniServerNames != null)
+        {
+            TlsExtensionsUtils.addServerNameExtension(clientExtensions, new ServerNameList(sniServerNames));
+        }
+
         CertificateStatusRequest statusRequest = getCertificateStatusRequest();
         if (statusRequest != null)
         {
@@ -142,8 +153,6 @@ public abstract class AbstractTlsClient
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(clientVersion))
         {
             this.supportedSignatureAlgorithms = getSupportedSignatureAlgorithms();
-
-            clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(clientExtensions);
 
             TlsUtils.addSignatureAlgorithmsExtension(clientExtensions, supportedSignatureAlgorithms);
         }
@@ -173,8 +182,6 @@ public abstract class AbstractTlsClient
             this.clientECPointFormats = new short[]{ ECPointFormat.uncompressed,
                 ECPointFormat.ansiX962_compressed_prime, ECPointFormat.ansiX962_compressed_char2, };
 
-            clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(clientExtensions);
-
             TlsECCUtils.addSupportedPointFormatsExtension(clientExtensions, clientECPointFormats);
         }
 
@@ -192,8 +199,6 @@ public abstract class AbstractTlsClient
         if (!supportedGroups.isEmpty())
         {
             this.supportedGroups = supportedGroups;
-
-            clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(clientExtensions);
 
             TlsExtensionsUtils.addSupportedGroupsExtension(clientExtensions, supportedGroups);
         }
