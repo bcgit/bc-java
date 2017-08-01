@@ -403,6 +403,10 @@ public class ECUtil
             }
             if (params == null)
             {
+                params = ANSSINamedCurves.getByOID(oid);
+            }
+            if (params == null)
+            {
                 params = GMNamedCurves.getByOID(oid);
             }
         }
@@ -432,6 +436,10 @@ public class ECUtil
             }
             if (params == null)
             {
+                params = ANSSINamedCurves.getByName(curveName);
+            }
+            if (params == null)
+            {
                 params = GMNamedCurves.getByName(curveName);
             }
         }
@@ -458,6 +466,10 @@ public class ECUtil
             if (name == null)
             {
                 name = ECGOST3410NamedCurves.getName(oid);
+            }
+            if (name == null)
+            {
+                name = ANSSINamedCurves.getName(oid);
             }
             if (name == null)
             {

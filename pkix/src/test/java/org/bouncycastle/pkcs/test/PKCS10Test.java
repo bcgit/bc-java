@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.Security;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 
@@ -12,14 +13,24 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.pkcs.CertificationRequest;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
+import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequest;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
+import org.bouncycastle.util.encoders.Base64;
 
 public class PKCS10Test
     extends TestCase
 {
+    private static final byte[] anssiPkcs10 = Base64.decode(
+        "MIHLMHMCAQAwDzENMAsGA1UEAwwEYmx1YjBbMBUGByqGSM49AgEGCiqBegGB"
+          + "X2WCAAEDQgAEB9POXLIasfF55GSxY9vshIIEnvv47B9jGZgZFN6VFHPvqe8G"
+          + "j+6UpLjP0vvoInC8uu/X3JJJTsrgGrxbfOOG1KAAMAoGCCqGSM49BAMCA0gA"
+          + "MEUCIQCgTdLV3IS5NuL9CHMDPOj6BumAQPdjzbgkGZghoY/wJAIgcEgF/2f4"
+          + "5wYlIELOq18Uxksc0sOkbZm/nRXs1VX4rsM=");
+
      //
     // personal keys
     //
@@ -36,6 +47,11 @@ public class PKCS10Test
         new BigInteger("b54bb9edff22051d9ee60f9351a48591b6500a319429c069a3e335a1d6171391", 16),
         new BigInteger("d3d83daf2a0cecd3367ae6f8ae1aeb82e9ac2f816c6fc483533d8297dd7884cd", 16),
         new BigInteger("b8f52fc6f38593dabb661d3f50f8897f8106eee68b1bce78a95b132b4e5b5d19", 16));
+
+    public void setUp()
+    {
+        Security.addProvider(new BouncyCastleProvider());
+    }
 
     public void testLeaveOffEmpty()
         throws Exception
@@ -64,6 +80,14 @@ public class PKCS10Test
 
         assertEquals(0, request.getAttributes().length);
         assertNotNull(CertificationRequest.getInstance(request.getEncoded()).getCertificationRequestInfo().getAttributes());
+    }
+
+    public void testRequest()
+        throws Exception
+    {
+        JcaPKCS10CertificationRequest req = new JcaPKCS10CertificationRequest(anssiPkcs10);
+        
+        assertTrue(req.getPublicKey().toString().startsWith("EC Public Key [de:a5:34:0e:c9:70:91:7e:29:55:52:a9:71:d2:80:ea:6e:e8:0f:a6]"));
     }
 
     public static void main(String args[])
