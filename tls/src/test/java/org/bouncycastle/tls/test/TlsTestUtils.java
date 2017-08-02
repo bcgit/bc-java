@@ -8,13 +8,20 @@ import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Security;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.util.Vector;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
+import org.bouncycastle.asn1.sec.ECPrivateKey;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
@@ -244,16 +251,27 @@ public class TlsTestUtils
         throws IOException
     {
         PemObject pem = loadPemResource(resource);
-        if (pem.getType().endsWith("RSA PRIVATE KEY"))
+        if (pem.getType().equals("PRIVATE KEY"))
+        {
+            return PrivateKeyFactory.createKey(pem.getContent());
+        }
+        if (pem.getType().equals("ENCRYPTED PRIVATE KEY"))
+        {
+            throw new UnsupportedOperationException("Encrypted PKCS#8 keys not supported");
+        }
+        if (pem.getType().equals("RSA PRIVATE KEY"))
         {
             RSAPrivateKey rsa = RSAPrivateKey.getInstance(pem.getContent());
             return new RSAPrivateCrtKeyParameters(rsa.getModulus(), rsa.getPublicExponent(),
                 rsa.getPrivateExponent(), rsa.getPrime1(), rsa.getPrime2(), rsa.getExponent1(),
                 rsa.getExponent2(), rsa.getCoefficient());
         }
-        if (pem.getType().endsWith("PRIVATE KEY"))
+        if (pem.getType().equals("EC PRIVATE KEY"))
         {
-            return PrivateKeyFactory.createKey(pem.getContent());
+            ECPrivateKey pKey = ECPrivateKey.getInstance(pem.getContent());
+            AlgorithmIdentifier algId = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, pKey.getParameters());
+            PrivateKeyInfo privInfo = new PrivateKeyInfo(algId, pKey);
+            return PrivateKeyFactory.createKey(privInfo);
         }
         throw new IllegalArgumentException("'resource' doesn't specify a valid private key");
     }
@@ -261,27 +279,61 @@ public class TlsTestUtils
     static PrivateKey loadJcaPrivateKeyResource(String resource)
         throws IOException
     {
-        PemObject pem = loadPemResource(resource);
-        if (pem.getType().endsWith("RSA PRIVATE KEY"))
+        Throwable cause = null;
+        try
         {
-            RSAPrivateKey rsa = RSAPrivateKey.getInstance(pem.getContent());
-            try
+            PemObject pem = loadPemResource(resource);
+            if (pem.getType().equals("PRIVATE KEY"))
             {
-                KeyFactory keyFact = KeyFactory.getInstance("RSA", new BouncyCastleProvider());
-                return keyFact.generatePrivate(new RSAPrivateCrtKeySpec(rsa.getModulus(), rsa.getPublicExponent(),
-                    rsa.getPrivateExponent(), rsa.getPrime1(), rsa.getPrime2(), rsa.getExponent1(),
-                    rsa.getExponent2(), rsa.getCoefficient()));
+                return loadJcaPkcs8PrivateKey(pem.getContent());
             }
-            catch (GeneralSecurityException e)
+            if (pem.getType().equals("ENCRYPTED PRIVATE KEY"))
             {
-                throw new IllegalArgumentException("'resource' doesn't specify a valid private key", e);
+                throw new UnsupportedOperationException("Encrypted PKCS#8 keys not supported");
+            }
+            if (pem.getType().equals("RSA PRIVATE KEY"))
+            {
+                RSAPrivateKey rsa = RSAPrivateKey.getInstance(pem.getContent());
+                    KeyFactory keyFact = KeyFactory.getInstance("RSA", BouncyCastleProvider.PROVIDER_NAME);
+                    return keyFact.generatePrivate(new RSAPrivateCrtKeySpec(rsa.getModulus(), rsa.getPublicExponent(),
+                        rsa.getPrivateExponent(), rsa.getPrime1(), rsa.getPrime2(), rsa.getExponent1(),
+                        rsa.getExponent2(), rsa.getCoefficient()));
             }
         }
-        if (pem.getType().endsWith("PRIVATE KEY"))
+        catch (GeneralSecurityException e)
         {
-            return null; // TODO:
+            cause = e;
         }
-        throw new IllegalArgumentException("'resource' doesn't specify a valid private key");
+        throw new IllegalArgumentException("'resource' doesn't specify a valid private key", cause);
+    }
+
+    static PrivateKey loadJcaPkcs8PrivateKey(byte[] encoded) throws GeneralSecurityException
+    {
+        PrivateKeyInfo pki = PrivateKeyInfo.getInstance(encoded);
+        AlgorithmIdentifier algID = pki.getPrivateKeyAlgorithm();
+        ASN1ObjectIdentifier oid = algID.getAlgorithm();
+
+        String name;
+        if (X9ObjectIdentifiers.id_dsa.equals(oid))
+        {
+            name = "DSA";
+        }
+        else if (X9ObjectIdentifiers.id_ecPublicKey.equals(oid))
+        {
+            // TODO Try ECDH/ECDSA according to intended use?
+            name = "EC";
+        }
+        else if (PKCSObjectIdentifiers.rsaEncryption.equals(oid))
+        {
+            name = "RSA";
+        }
+        else
+        {
+            name = oid.getId();
+        }
+
+        KeyFactory kf = KeyFactory.getInstance(name, BouncyCastleProvider.PROVIDER_NAME);
+        return kf.generatePrivate(new PKCS8EncodedKeySpec(encoded));
     }
 
     static PemObject loadPemResource(String resource)
