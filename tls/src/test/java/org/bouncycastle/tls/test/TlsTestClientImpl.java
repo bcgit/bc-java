@@ -197,7 +197,7 @@ class TlsTestClientImpl
                 boolean isEmpty = serverCertificate == null || serverCertificate.getCertificate() == null
                     || serverCertificate.getCertificate().isEmpty();
                 if (isEmpty || !TlsTestUtils.isCertificateOneOf(context.getCrypto(), chain[0],
-                    new String[]{ "x509-server.pem", "x509-server-dsa.pem", "x509-server-ecdsa.pem"}))
+                    new String[]{ "x509-server-dsa.pem", "x509-server-ecdsa.pem", "x509-server-rsa-enc.pem", "x509-server-rsa-sign.pem" }))
                 {
                     throw new TlsFatalAlert(AlertDescription.bad_certificate);
                 }
@@ -229,7 +229,7 @@ class TlsTestClientImpl
                 }
 
                 final TlsCredentialedSigner signerCredentials = TlsTestUtils.loadSignerCredentials(context,
-                    supportedSigAlgs, SignatureAlgorithm.rsa, "x509-client.pem", "x509-client-key.pem");
+                    supportedSigAlgs, SignatureAlgorithm.rsa, "x509-client-rsa.pem", "x509-client-key-rsa.pem");
 
                 if (config.clientAuth == TlsTestConfig.CLIENT_AUTH_VALID)
                 {
