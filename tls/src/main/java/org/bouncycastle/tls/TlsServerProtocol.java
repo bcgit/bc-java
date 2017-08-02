@@ -18,7 +18,6 @@ public class TlsServerProtocol
     protected TlsCredentials serverCredentials = null;
     protected CertificateRequest certificateRequest = null;
 
-    protected short clientCertificateType = -1;
     protected TlsHandshakeHash prepareFinishHash = null;
 
     /**
@@ -427,8 +426,6 @@ public class TlsServerProtocol
              * issued by one of the listed CAs.
              */
 
-            this.clientCertificateType = clientCertificate.getCertificateAt(0).getClientCertificateType();
-
             this.keyExchange.processClientCertificate(clientCertificate);
         }
 
@@ -466,8 +463,8 @@ public class TlsServerProtocol
 
         assertEmpty(buf);
 
-        TlsUtils.verifyCertificateVerify(context, certificateRequest, peerCertificate, clientCertificateType,
-            clientCertificateVerify, prepareFinishHash);
+        TlsUtils.verifyCertificateVerify(context, certificateRequest, peerCertificate, clientCertificateVerify,
+            prepareFinishHash);
     }
 
     protected void receiveClientHelloMessage(ByteArrayInputStream buf)
@@ -796,6 +793,6 @@ public class TlsServerProtocol
 
     protected boolean expectCertificateVerifyMessage()
     {
-        return clientCertificateType >= 0 && TlsUtils.hasSigningCapability(clientCertificateType);
+        return peerCertificate != null && !peerCertificate.isEmpty() && keyExchange.requiresCertificateVerify();
     }
 }
