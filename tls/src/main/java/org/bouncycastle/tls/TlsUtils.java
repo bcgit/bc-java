@@ -1203,8 +1203,10 @@ public class TlsUtils
     }
 
     static void verifyCertificateVerify(TlsContext context, CertificateRequest certificateRequest, Certificate certificate,
-        short certificateType, DigitallySigned certificateVerify, TlsHandshakeHash handshakeHash) throws IOException
+        DigitallySigned certificateVerify, TlsHandshakeHash handshakeHash) throws IOException
     {
+        short certificateType = certificate.getCertificateAt(0).getClientCertificateType();
+
         // Verify the CertificateVerify message contains a correct signature.
         boolean verified;
         try
@@ -2801,6 +2803,23 @@ public class TlsUtils
         return isSupportedKeyExchange(crypto, getKeyExchangeAlgorithm(cipherSuite))
             && crypto.hasEncryptionAlgorithm(getEncryptionAlgorithm(cipherSuite))
             && crypto.hasMacAlgorithm(getMACAlgorithm(cipherSuite));
+    }
+
+    public static boolean isStaticKeyAgreement(int keyExchangeAlgorithm)
+    {
+        switch (keyExchangeAlgorithm)
+        {
+        case KeyExchangeAlgorithm.DH_DSS:
+        case KeyExchangeAlgorithm.DH_DSS_EXPORT:
+        case KeyExchangeAlgorithm.DH_RSA:
+        case KeyExchangeAlgorithm.DH_RSA_EXPORT:
+        case KeyExchangeAlgorithm.ECDH_ECDSA:
+        case KeyExchangeAlgorithm.ECDH_RSA:
+            return true;
+
+        default:
+            return false;
+        }
     }
 
     public static boolean isSupportedKeyExchange(TlsCrypto crypto, int keyExchangeAlgorithm)

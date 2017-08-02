@@ -510,8 +510,6 @@ public class DTLSServerProtocol
              * issued by one of the listed CAs.
              */
 
-            state.clientCertificateType = clientCertificate.getCertificateAt(0).getClientCertificateType();
-
             state.keyExchange.processClientCertificate(clientCertificate);
         }
 
@@ -553,7 +551,7 @@ public class DTLSServerProtocol
 
         TlsProtocol.assertEmpty(buf);
 
-        TlsUtils.verifyCertificateVerify(context, state.certificateRequest, state.clientCertificate, state.clientCertificateType,
+        TlsUtils.verifyCertificateVerify(context, state.certificateRequest, state.clientCertificate,
             clientCertificateVerify, prepareFinishHash);
     }
 
@@ -703,7 +701,8 @@ public class DTLSServerProtocol
 
     protected boolean expectCertificateVerifyMessage(ServerHandshakeState state)
     {
-        return state.clientCertificateType >= 0 && TlsUtils.hasSigningCapability(state.clientCertificateType);
+        Certificate c = state.clientCertificate;
+        return c != null && !c.isEmpty() && state.keyExchange.requiresCertificateVerify();
     }
 
     protected static class ServerHandshakeState
@@ -724,7 +723,6 @@ public class DTLSServerProtocol
         TlsKeyExchange keyExchange = null;
         TlsCredentials serverCredentials = null;
         CertificateRequest certificateRequest = null;
-        short clientCertificateType = -1;
         Certificate clientCertificate = null;
     }
 }
