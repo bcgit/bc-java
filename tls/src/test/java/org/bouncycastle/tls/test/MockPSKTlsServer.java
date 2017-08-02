@@ -71,8 +71,8 @@ class MockPSKTlsServer
 
     protected TlsCredentialedDecryptor getRSAEncryptionCredentials() throws IOException
     {
-        return TlsTestUtils.loadEncryptionCredentials(context, new String[]{ "x509-server.pem", "x509-ca.pem" },
-            "x509-server-key.pem");
+        return TlsTestUtils.loadEncryptionCredentials(context, new String[]{ "x509-server-rsa-enc.pem", "x509-ca-rsa.pem" },
+            "x509-server-key-rsa-enc.pem");
     }
 
     static class MyIdentityManager

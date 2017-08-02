@@ -123,7 +123,7 @@ public class MockDTLSClient
                 }
 
                 return TlsTestUtils.loadSignerCredentials(context, certificateRequest.getSupportedSignatureAlgorithms(),
-                    SignatureAlgorithm.rsa, "x509-client.pem", "x509-client-key.pem");
+                    SignatureAlgorithm.rsa, "x509-client-rsa.pem", "x509-client-key-rsa.pem");
             }
         };
     }

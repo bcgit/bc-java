@@ -14,12 +14,12 @@
 <ul>
 <li>TLS:
 <pre>
-    gnutls-serv --http --x509cafile x509-ca.pem --x509keyfile x509-server-key.pem --x509certfile x509-server.pem
+    gnutls-serv --http --x509cafile x509-ca-rsa.pem --x509keyfile x509-server-key-rsa-sign.pem --x509certfile x509-server-rsa-sign.pem
 </pre>
 </li>
 <li> DTLS:
 <pre>
-    gnutls-serv --echo --udp --mtu 1500 --x509cafile x509-ca.pem --x509keyfile x509-server-key.pem --x509certfile x509-server.pem
+    gnutls-serv --echo --udp --mtu 1500 --x509cafile x509-ca-rsa.pem --x509keyfile x509-server-key-rsa-sign.pem --x509certfile x509-server-rsa-sign.pem
 </pre>
 </li>
 </ul>
