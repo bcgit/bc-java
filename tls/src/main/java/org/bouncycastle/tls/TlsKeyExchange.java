@@ -51,6 +51,8 @@ public interface TlsKeyExchange
     void processClientKeyExchange(InputStream input)
         throws IOException;
 
+    boolean requiresCertificateVerify();
+
     TlsSecret generatePreMasterSecret()
         throws IOException;
 }
