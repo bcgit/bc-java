@@ -20,12 +20,15 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.Certificate;
+import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsCredentialedAgreement;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
 import org.bouncycastle.tls.TlsCredentialedSigner;
+import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
@@ -94,6 +97,21 @@ public class TlsTestUtils
         byte[] result = new byte[d.getDigestSize()];
         d.doFinal(result, 0);
         return result;
+    }
+
+    static String getCACertResource(short signatureAlgorithm) throws IOException
+    {
+        switch (signatureAlgorithm)
+        {
+        case SignatureAlgorithm.dsa:
+            return "x509-ca-dsa.pem";
+        case SignatureAlgorithm.ecdsa:
+            return "x509-ca-ecdsa.pem";
+        case SignatureAlgorithm.rsa:
+            return "x509-ca-rsa.pem";
+        default:
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
     }
 
     static TlsCredentialedAgreement loadAgreementCredentials(TlsContext context, String[] certResources,
@@ -185,7 +203,7 @@ public class TlsTestUtils
             return null;
         }
 
-        return loadSignerCredentials(context, new String[]{ certResource, "x509-ca.pem" },
+        return loadSignerCredentials(context, new String[]{ certResource, getCACertResource(signatureAlgorithm) },
             keyResource, signatureAndHashAlgorithm);
     }
 

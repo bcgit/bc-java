@@ -14,15 +14,15 @@
 <li>
 TLS:
 <pre>
-    openssl s_client -connect localhost:5556 -debug -msg -state -tls1_2 -CAfile x509-ca.pem -cert x509-client.pem -key x509-client-key.pem -verify 0
-    openssl s_server -accept 5556 -debug -msg -state -tls1_2 -www -CAfile x509-ca.pem -cert x509-server.pem -key x509-server-key.pem -verify 0
+    openssl s_client -connect localhost:5556 -debug -msg -state -tls1_2 -CAfile x509-ca-rsa.pem -cert x509-client-rsa.pem -key x509-client-key-rsa.pem -verify 0
+    openssl s_server -accept 5556 -debug -msg -state -tls1_2 -www -CAfile x509-ca-rsa.pem -cert x509-server-rsa-sign.pem -key x509-server-key-rsa-sign.pem -verify 0
 </pre>
 </li>
 <li>
 DTLS:
 <pre>
-    openssl s_client -connect localhost:5556 -mtu 1500 -debug -msg -state -dtls1_2 -CAfile x509-ca.pem -cert x509-client.pem -key x509-client-key.pem -verify 0
-    openssl s_server -accept 5556 -mtu 1500 -debug -msg -state -dtls1_2 -CAfile x509-ca.pem -cert x509-server.pem -key x509-server-key.pem -verify 0
+    openssl s_client -connect localhost:5556 -mtu 1500 -debug -msg -state -dtls1_2 -CAfile x509-ca-rsa.pem -cert x509-client-rsa.pem -key x509-client-key-rsa.pem -verify 0
+    openssl s_server -accept 5556 -mtu 1500 -debug -msg -state -dtls1_2 -CAfile x509-ca-rsa.pem -cert x509-server-rsa-sign.pem -key x509-server-key-rsa-sign.pem -verify 0
 </pre>
 </li>
 </ul>
