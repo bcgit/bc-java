@@ -1,7 +1,10 @@
 package org.bouncycastle.tls.test;
 
+import java.security.Security;
+
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.ProtocolVersion;
@@ -21,6 +24,11 @@ public class TlsTestSuite extends TestSuite
 
     public static Test suite()
     {
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+
         TlsTestSuite testSuite = new TlsTestSuite();
         addAllTests(testSuite, TlsTestConfig.CRYPTO_BC, TlsTestConfig.CRYPTO_BC);
         addAllTests(testSuite, TlsTestConfig.CRYPTO_JCA, TlsTestConfig.CRYPTO_BC);
