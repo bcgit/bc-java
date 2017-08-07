@@ -36,6 +36,8 @@ import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.DHGroup;
+import org.bouncycastle.tls.crypto.DHStandardGroups;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaDefaultTlsCredentialedSigner;
@@ -48,6 +50,8 @@ class ProvTlsServer
     implements ProvTlsPeer
 {
     private static Logger LOG = Logger.getLogger(ProvTlsServer.class.getName());
+
+    private static final int provEphemeralDHKeySize = PropertyUtils.getIntegerSystemProperty("jdk.tls.ephemeralDHKeySize", 2048, 1024, 8192);
 
     protected final ProvTlsManager manager;
     protected final ProvSSLParameters sslParameters;
@@ -63,6 +67,41 @@ class ProvTlsServer
 
         this.manager = manager;
         this.sslParameters = manager.getProvSSLParameters();
+    }
+
+    @Override
+    protected DHGroup getDHParameters()
+    {
+        if (provEphemeralDHKeySize <= 1024)
+        {
+            return DHStandardGroups.rfc2409_1024;
+        }
+        if (provEphemeralDHKeySize <= 1536)
+        {
+            return DHStandardGroups.rfc3526_1536;
+        }
+        if (provEphemeralDHKeySize <= 2048)
+        {
+            return DHStandardGroups.rfc7919_ffdhe2048;
+        }
+        if (provEphemeralDHKeySize <= 3072)
+        {
+            return DHStandardGroups.rfc7919_ffdhe3072;
+        }
+        if (provEphemeralDHKeySize <= 4096)
+        {
+            return DHStandardGroups.rfc7919_ffdhe4096;
+        }
+        if (provEphemeralDHKeySize <= 6144)
+        {
+            return DHStandardGroups.rfc7919_ffdhe6144;
+        }
+        if (provEphemeralDHKeySize <= 8192)
+        {
+            return DHStandardGroups.rfc7919_ffdhe8192;
+        }
+
+        throw new IllegalStateException("Ephemeral DH key size has unexpected value: " + provEphemeralDHKeySize);
     }
 
     @Override
