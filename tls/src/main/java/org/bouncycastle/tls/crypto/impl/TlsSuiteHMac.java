@@ -2,7 +2,6 @@ package org.bouncycastle.tls.crypto.impl;
 
 import java.io.IOException;
 
-import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsHMAC;
@@ -15,7 +14,6 @@ class TlsSuiteHMac
     implements TlsSuiteMac
 {
     protected TlsCryptoParameters cryptoParams;
-    protected byte[] secret;
     protected TlsHMAC mac;
     protected int digestBlockSize;
     protected int digestOverhead;
@@ -38,26 +36,15 @@ class TlsSuiteHMac
         this.mac = mac;
     }
 
-    public void setKey(byte[] key)
-        throws IOException
+    public void setKey(byte[] key) throws IOException
     {
-        this.secret = Arrays.clone(key);
-
-        this.mac.setKey(secret);
+        this.mac.setKey(key);
 
         this.macLength = mac.getMacLength();
         if (cryptoParams.getSecurityParameters().isTruncatedHMac())
         {
             this.macLength = Math.min(this.macLength, 10);
         }
-    }
-
-    /**
-     * @return the MAC write secret
-     */
-    public byte[] getMACSecret()
-    {
-        return this.secret;
     }
 
     /**
@@ -72,34 +59,32 @@ class TlsSuiteHMac
      * Calculate the MAC for some given data.
      *
      * @param type    The message type of the message.
-     * @param message A byte-buffer containing the message.
-     * @param offset  The number of bytes to skip, before the message starts.
-     * @param length  The length of the message.
+     * @param msg     A byte-buffer containing the message.
+     * @param msgOff  The number of bytes to skip, before the message starts.
+     * @param msgLen  The length of the message.
      * @return A new byte-buffer containing the MAC value.
      */
-    public byte[] calculateMac(long seqNo, short type, byte[] message, int offset, int length)
+    public byte[] calculateMac(long seqNo, short type, byte[] msg, int msgOff, int msgLen)
     {
-        ProtocolVersion serverVersion = cryptoParams.getServerVersion();
-
         byte[] macHeader = new byte[13];
         TlsUtils.writeUint64(seqNo, macHeader, 0);
         TlsUtils.writeUint8(type, macHeader, 8);
-        TlsUtils.writeVersion(serverVersion, macHeader, 9);
-        TlsUtils.writeUint16(length, macHeader, macHeader.length - 2);
+        TlsUtils.writeVersion(cryptoParams.getServerVersion(), macHeader, 9);
+        TlsUtils.writeUint16(msgLen, macHeader, macHeader.length - 2);
 
         mac.update(macHeader, 0, macHeader.length);
-        mac.update(message, offset, length);
+        mac.update(msg, msgOff, msgLen);
 
         return truncate(mac.calculateMAC());
     }
 
-    public byte[] calculateMacConstantTime(long seqNo, short type, byte[] message, int offset, int length,
-                                           int expectedLength, byte[] dummyData)
+    public byte[] calculateMacConstantTime(long seqNo, short type, byte[] msg, int msgOff, int msgLen,
+        int fullLength, byte[] dummyData)
     {
         /*
          * Actual MAC only calculated on 'length' bytes...
          */
-        byte[] result = calculateMac(seqNo, type, message, offset, length);
+        byte[] result = calculateMac(seqNo, type, msg, msgOff, msgLen);
 
         /*
          * ...but ensure a constant number of complete digest blocks are processed (as many as would
@@ -108,7 +93,7 @@ class TlsSuiteHMac
         int headerLength = 13;
 
         // How many extra full blocks do we need to calculate?
-        int extra = getDigestBlockCount(headerLength + expectedLength) - getDigestBlockCount(headerLength + length);
+        int extra = getDigestBlockCount(headerLength + fullLength) - getDigestBlockCount(headerLength + msgLen);
 
         while (--extra >= 0)
         {

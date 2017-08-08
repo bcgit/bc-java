@@ -50,7 +50,6 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.NamedGroup;
-import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
@@ -413,17 +412,6 @@ public class BcTlsCrypto
         }
     }
 
-    public Digest createPRFHash(int prfAlgorithm)
-    {
-        switch (prfAlgorithm)
-        {
-        case PRFAlgorithm.tls_prf_legacy:
-            return new CombinedPRF();
-        default:
-            return createDigest(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
-        }
-    }
-
     protected TlsCipher createAESCipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
@@ -665,72 +653,6 @@ public class BcTlsCrypto
                 return verifierGenerator.generateVerifier(salt, identity, password);
             }
         };
-    }
-
-    public class CombinedPRF
-        implements Digest
-    {
-        private final MD5Digest md5;
-        private final SHA1Digest sha1;
-
-        CombinedPRF()
-        {
-            this.md5 = new MD5Digest();
-            this.sha1 = new SHA1Digest();
-        }
-
-        /**
-         * @see org.bouncycastle.crypto.Digest#getAlgorithmName()
-         */
-        public String getAlgorithmName()
-        {
-            return md5.getAlgorithmName() + " and " + sha1.getAlgorithmName();
-        }
-
-        /**
-         * @see org.bouncycastle.crypto.Digest#getDigestSize()
-         */
-        public int getDigestSize()
-        {
-            return md5.getDigestSize() + sha1.getDigestSize();
-        }
-
-        /**
-         * @see org.bouncycastle.crypto.Digest#update(byte)
-         */
-        public void update(byte input)
-        {
-            md5.update(input);
-            sha1.update(input);
-        }
-
-        /**
-         * @see org.bouncycastle.crypto.Digest#update(byte[], int, int)
-         */
-        public void update(byte[] input, int inOff, int len)
-        {
-            md5.update(input, inOff, len);
-            sha1.update(input, inOff, len);
-        }
-
-        /**
-         * @see org.bouncycastle.crypto.Digest#doFinal(byte[], int)
-         */
-        public int doFinal(byte[] output, int outOff)
-        {
-            int i1 = md5.doFinal(output, outOff);
-            int i2 = sha1.doFinal(output, outOff + i1);
-            return i1 + i2;
-        }
-
-        /**
-         * @see org.bouncycastle.crypto.Digest#reset()
-         */
-        public void reset()
-        {
-            md5.reset();
-            sha1.reset();
-        }
     }
 
     private class BlockOperator
