@@ -21,15 +21,15 @@ public class BcDefaultTlsCredentialedSigner
         TlsSigner signer;
         if (privateKey instanceof RSAKeyParameters)
         {
-            signer = new BcTlsRSASigner(crypto, privateKey);
+            signer = new BcTlsRSASigner(crypto, (RSAKeyParameters)privateKey);
         }
         else if (privateKey instanceof DSAPrivateKeyParameters)
         {
-            signer = new BcTlsDSASigner(crypto, privateKey);
+            signer = new BcTlsDSASigner(crypto, (DSAPrivateKeyParameters)privateKey);
         }
         else if (privateKey instanceof ECPrivateKeyParameters)
         {
-            signer = new BcTlsECDSASigner(crypto, privateKey);
+            signer = new BcTlsECDSASigner(crypto, (ECPrivateKeyParameters)privateKey);
         }
         else
         {

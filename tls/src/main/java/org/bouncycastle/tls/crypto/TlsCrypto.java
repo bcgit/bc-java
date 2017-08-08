@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolVersion;
@@ -156,20 +157,15 @@ public interface TlsCrypto
     TlsSecret adoptSecret(TlsSecret secret);
 
     /**
-     * Create a suitable hash for the signature algorithm identifier passed in.
-     *
-     * @param sidAlgorithm the signature algorithm the hash needs to match.
-     * @return a TlsHash.
-     */
-    TlsHash createHash(SignatureAndHashAlgorithm sidAlgorithm);
-
-    /**
      * Create a suitable hash for the hash algorithm identifier passed in.
+     * <p>
+     * See enumeration class {@link HashAlgorithm} for appropriate argument values.
+     * </p>
      *
-     * @param algorithm the hash algorithm the hash needs to implement.
-     * @return a TlsHash.
+     * @param hashAlgorithm the hash algorithm the hash needs to implement.
+     * @return a {@link TlsHash}.
      */
-    TlsHash createHash(short algorithm);
+    TlsHash createHash(short hashAlgorithm);
 
     /**
      * Create a suitable HMAC for the MAC algorithm identifier passed in.
@@ -177,10 +173,9 @@ public interface TlsCrypto
      * See enumeration class {@link MACAlgorithm} for appropriate argument values.
      * </p>
      * @param macAlgorithm the MAC algorithm the HMAC needs to match.
-     * @return a TlsHMAC.
+     * @return a {@link TlsHMAC}.
      */
-    TlsHMAC createHMAC(int macAlgorithm)
-        throws IOException;
+    TlsHMAC createHMAC(int macAlgorithm);
 
     /**
      * Create a nonce generator. Each call should construct a new generator, and the generator

@@ -20,4 +20,45 @@ public class MACAlgorithm
     public static final int hmac_sha256 = 3;
     public static final int hmac_sha384 = 4;
     public static final int hmac_sha512 = 5;
+
+    public static String getName(int macAlgorithm)
+    {
+        switch (macAlgorithm)
+        {
+        case _null:
+            return "null";
+        case hmac_md5:
+            return "hmac_md5";
+        case hmac_sha1:
+            return "hmac_sha1";
+        case hmac_sha256:
+            return "hmac_sha256";
+        case hmac_sha384:
+            return "hmac_sha384";
+        case hmac_sha512:
+            return "hmac_sha512";
+        default:
+            return "UNKNOWN";
+        }
+    }
+
+    public static String getText(int macAlgorithm)
+    {
+        return getName(macAlgorithm) + "(" + macAlgorithm + ")";
+    }
+
+    public static boolean isHMAC(int macAlgorithm)
+    {
+        switch (macAlgorithm)
+        {
+        case hmac_md5:
+        case hmac_sha1:
+        case hmac_sha256:
+        case hmac_sha384:
+        case hmac_sha512:
+            return true;
+        default:
+            return false;
+        }
+    }
 }

@@ -12,9 +12,9 @@ import org.bouncycastle.tls.SignatureAlgorithm;
 public class BcTlsDSAVerifier
     extends BcTlsDSSVerifier
 {
-    public BcTlsDSAVerifier(BcTlsCrypto crypto, DSAPublicKeyParameters pubKeyDSA)
+    public BcTlsDSAVerifier(BcTlsCrypto crypto, DSAPublicKeyParameters publicKey)
     {
-        super(crypto, pubKeyDSA);
+        super(crypto, publicKey);
     }
 
     protected DSA createDSAImpl(short hashAlgorithm)

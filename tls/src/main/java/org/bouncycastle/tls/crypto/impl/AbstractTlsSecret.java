@@ -28,11 +28,20 @@ public abstract class AbstractTlsSecret
         this.data = data;
     }
 
-    public synchronized byte[] encrypt(TlsCertificate certificate) throws IOException
+    protected void checkAlive()
     {
-        checkAlive();
+        if (data == null)
+        {
+            throw new IllegalStateException("Secret has already been extracted or destroyed");
+        }
+    }
 
-        return getCrypto().createEncryptor(certificate).encrypt(data, 0, data.length);
+    protected abstract AbstractTlsCrypto getCrypto();
+
+    public TlsCipher createCipher(TlsCryptoParameters contextParams, int encryptionAlgorithm, int macAlgorithm)
+        throws IOException
+    {
+        return getCrypto().createCipher(contextParams, encryptionAlgorithm, macAlgorithm);
     }
 
     public synchronized void destroy()
@@ -45,6 +54,13 @@ public abstract class AbstractTlsSecret
         }
     }
 
+    public synchronized byte[] encrypt(TlsCertificate certificate) throws IOException
+    {
+        checkAlive();
+
+        return getCrypto().createEncryptor(certificate).encrypt(data, 0, data.length);
+    }
+
     public synchronized byte[] extract()
     {
         checkAlive();
@@ -54,24 +70,8 @@ public abstract class AbstractTlsSecret
         return result;
     }
 
-    public TlsCipher createCipher(TlsCryptoParameters contextParams, int encryptionAlgorithm, int macAlgorithm)
-        throws IOException
-    {
-        return getCrypto().createCipher(contextParams, encryptionAlgorithm, macAlgorithm);
-    }
-
-    byte[] copyData()
+    synchronized byte[] copyData()
     {
         return Arrays.clone(data);
     }
-
-    protected void checkAlive()
-    {
-        if (data == null)
-        {
-            throw new IllegalStateException("Secret has already been extracted or destroyed");
-        }
-    }
-
-    protected abstract AbstractTlsCrypto getCrypto();
 }

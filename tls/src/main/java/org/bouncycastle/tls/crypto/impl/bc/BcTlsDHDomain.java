@@ -29,7 +29,7 @@ public class BcTlsDHDomain implements TlsDHDomain
         DHGroup dhGroup = TlsDHUtils.getDHGroup(dhConfig);
         if (dhGroup == null)
         {
-            throw new IllegalStateException("No DH configuration provided");
+            throw new IllegalArgumentException("No DH configuration provided");
         }
 
         return new DHParameters(dhGroup.getP(), dhGroup.getG(), dhGroup.getQ(), dhGroup.getL());
