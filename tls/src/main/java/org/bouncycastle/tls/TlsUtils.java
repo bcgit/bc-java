@@ -787,7 +787,7 @@ public class TlsUtils
         case SignatureAlgorithm.rsa:
             return getDefaultRSASignatureAlgorithms();
         default:
-            throw new IllegalArgumentException("unknown SignatureAlgorithm");
+            throw new IllegalArgumentException("unknown SignatureAlgorithm: " + SignatureAlgorithm.getText(signatureAlgorithm));
         }
     }
 
@@ -1111,6 +1111,25 @@ public class TlsUtils
         return PRF(context, master_secret, asciiLabel, prfHash, verify_data_length).extract();
     }
 
+    public static short getHashAlgorithmForHMACAlgorithm(int macAlgorithm)
+    {
+        switch (macAlgorithm)
+        {
+        case MACAlgorithm.hmac_md5:
+            return HashAlgorithm.md5;
+        case MACAlgorithm.hmac_sha1:
+            return HashAlgorithm.sha1;
+        case MACAlgorithm.hmac_sha256:
+            return HashAlgorithm.sha256;
+        case MACAlgorithm.hmac_sha384:
+            return HashAlgorithm.sha384;
+        case MACAlgorithm.hmac_sha512:
+            return HashAlgorithm.sha512;
+        default:
+            throw new IllegalArgumentException("specified MACAlgorithm not an HMAC: " + MACAlgorithm.getText(macAlgorithm));
+        }
+    }
+
     public static short getHashAlgorithmForPRFAlgorithm(int prfAlgorithm)
     {
         switch (prfAlgorithm)
@@ -1122,7 +1141,7 @@ public class TlsUtils
         case PRFAlgorithm.tls_prf_sha384:
             return HashAlgorithm.sha384;
         default:
-            throw new IllegalArgumentException("unknown PRFAlgorithm");
+            throw new IllegalArgumentException("unknown PRFAlgorithm: " + PRFAlgorithm.getText(prfAlgorithm));
         }
     }
 
@@ -1143,13 +1162,17 @@ public class TlsUtils
         case HashAlgorithm.sha512:
             return NISTObjectIdentifiers.id_sha512;
         default:
-            throw new IllegalArgumentException("unknown HashAlgorithm");
+            throw new IllegalArgumentException("unknown HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
         }
     }
 
     static byte[] calculateSignatureHash(TlsContext context, SignatureAndHashAlgorithm algorithm, DigestInputBuffer buf)
     {
-        TlsHash h = context.getCrypto().createHash(algorithm);
+        TlsCrypto crypto = context.getCrypto();
+
+        TlsHash h = algorithm == null
+            ? new CombinedHash(crypto)
+            : crypto.createHash(algorithm.getHash());
 
         SecurityParameters securityParameters = context.getSecurityParameters();
         h.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);

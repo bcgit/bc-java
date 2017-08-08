@@ -16,7 +16,6 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.CombinedHash;
 import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
@@ -199,32 +198,24 @@ public class JcaTlsCrypto
         }
     }
 
-    public final TlsHMAC createHMAC(int macAlgorithm)
-        throws IOException
+    public TlsHMAC createHMAC(int macAlgorithm)
     {
-        try
+        switch (macAlgorithm)
         {
-            switch (macAlgorithm)
-            {
-            case MACAlgorithm._null:
-                return null;
-            case MACAlgorithm.hmac_md5:
-                return createHMAC("HmacMD5");
-            case MACAlgorithm.hmac_sha1:
-                return createHMAC("HmacSHA1");
-            case MACAlgorithm.hmac_sha256:
-                return createHMAC("HmacSHA256");
-            case MACAlgorithm.hmac_sha384:
-                return createHMAC("HmacSHA384");
-            case MACAlgorithm.hmac_sha512:
-                return createHMAC("HmacSHA512");
-            default:
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-        }
-        catch (GeneralSecurityException e)
-        {
-            throw new TlsCryptoException("cannot create HMAC: " + e.getMessage(), e);
+        case MACAlgorithm._null:
+            return null;
+        case MACAlgorithm.hmac_md5:
+            return createHMAC("HmacMD5");
+        case MACAlgorithm.hmac_sha1:
+            return createHMAC("HmacSHA1");
+        case MACAlgorithm.hmac_sha256:
+            return createHMAC("HmacSHA256");
+        case MACAlgorithm.hmac_sha384:
+            return createHMAC("HmacSHA384");
+        case MACAlgorithm.hmac_sha512:
+            return createHMAC("HmacSHA512");
+        default:
+            throw new IllegalArgumentException("unknown MACAlgorithm: " + MACAlgorithm.getText(macAlgorithm));
         }
     }
 
@@ -490,16 +481,6 @@ public class JcaTlsCrypto
         }
     }
 
-    public TlsHash createHash(final SignatureAndHashAlgorithm signatureAndHashAlgorithm)
-    {
-        if (signatureAndHashAlgorithm == null)
-        {
-            return new CombinedHash(this);
-        }
-
-        return createHash(signatureAndHashAlgorithm.getHash());
-    }
-
     public TlsDHDomain createDHDomain(TlsDHConfig dhConfig)
     {
         return new JceTlsDHDomain(this, dhConfig);
@@ -622,9 +603,15 @@ public class JcaTlsCrypto
      * @throws GeneralSecurityException in case of failure.
      */
     protected TlsHMAC createHMAC(String hmacName)
-        throws GeneralSecurityException
     {
-        return new JceTlsHMAC(helper.createMac(hmacName), hmacName);
+        try
+        {
+            return new JceTlsHMAC(helper.createMac(hmacName), hmacName);
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new RuntimeException("cannot create HMAC: " + hmacName, e);
+        }
     }
 
     /**
@@ -795,10 +782,10 @@ public class JcaTlsCrypto
             createMAC(macAlgorithm), createMAC(macAlgorithm), cipherKeySize, false);
     }
 
-    String getDigestName(short algorithm)
+    String getDigestName(short hashAlgorithm)
     {
         String digestName;
-        switch (algorithm)
+        switch (hashAlgorithm)
         {
         case HashAlgorithm.md5:
             digestName = "MD5";
@@ -819,7 +806,7 @@ public class JcaTlsCrypto
             digestName = "SHA-512";
             break;
         default:
-            throw new IllegalArgumentException("unknown HashAlgorithm");
+            throw new IllegalArgumentException("unknown HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
         }
         return digestName;
     }
