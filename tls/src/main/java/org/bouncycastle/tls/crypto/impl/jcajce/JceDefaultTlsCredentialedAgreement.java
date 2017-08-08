@@ -3,9 +3,10 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.interfaces.ECPrivateKey;
 
-import javax.crypto.KeyAgreement;
+import javax.crypto.SecretKey;
 import javax.crypto.interfaces.DHPrivateKey;
 
 import org.bouncycastle.tls.Certificate;
@@ -20,10 +21,24 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 public class JceDefaultTlsCredentialedAgreement
     implements TlsCredentialedAgreement
 {
+    public static String getAgreementAlgorithm(PrivateKey privateKey)
+    {
+        if (privateKey instanceof DHPrivateKey)
+        {
+            return "DH";
+        }
+        if (privateKey instanceof ECPrivateKey)
+        {
+            return "ECDH";
+        }
+
+        throw new IllegalArgumentException("'privateKey' type not supported: " + privateKey.getClass().getName());
+    }
+
     private final JcaTlsCrypto crypto;
-    private final String algorithm;
     private final Certificate certificate;
     private final PrivateKey privateKey;
+    private final String agreementAlgorithm;
 
     public JceDefaultTlsCredentialedAgreement(JcaTlsCrypto crypto, Certificate certificate, PrivateKey privateKey)
     {
@@ -47,20 +62,7 @@ public class JceDefaultTlsCredentialedAgreement
         this.crypto = crypto;
         this.certificate = certificate;
         this.privateKey = privateKey;
-
-        if (privateKey instanceof DHPrivateKey)
-        {
-            algorithm = "DH";
-        }
-        else if (privateKey instanceof ECPrivateKey)
-        {
-            algorithm = "ECDH";
-        }
-        else
-        {
-            throw new IllegalArgumentException("'privateKey' type not supported: "
-                + privateKey.getClass().getName());
-        }
+        this.agreementAlgorithm = getAgreementAlgorithm(privateKey);
     }
 
     public Certificate getCertificate()
@@ -73,22 +75,28 @@ public class JceDefaultTlsCredentialedAgreement
     {
         try
         {
-            KeyAgreement agreement = crypto.getHelper().createKeyAgreement(algorithm);
+            /*
+             * RFC 4492 5.10. Note that this octet string (Z in IEEE 1363 terminology) as output by
+             * FE2OSP, the Field Element to Octet String Conversion Primitive, has constant length
+             * for any given field; leading zeros found in this octet string MUST NOT be truncated.
+             *
+             * RFC 5246 8.1.2. Leading bytes of Z that contain all zero bits are stripped before it
+             * is used as the pre_master_secret.
+             * 
+             * We use the convention established by the JSSE to signal these requirements by asking
+             * for "TlsPremasterSecret".
+             */
+            PublicKey publicKey = JcaTlsCertificate.convert(crypto, peerCertificate).getPublicKey();
 
-            agreement.init(privateKey);
+            SecretKey secretKey = crypto.calculateKeyAgreement(agreementAlgorithm, privateKey, publicKey, "TlsPremasterSecret");
 
-            agreement.doPhase(JcaTlsCertificate.convert(peerCertificate, crypto.getHelper()).getPublicKey(), true);
+            // TODO Need to consider cases where SecretKey may not be encodable
 
-        /*
-         * RFC 5246 8.1.2. Leading bytes of Z that contain all zero bits are stripped before it is
-         * used as the pre_master_secret. We use the convention established by the JSSE to signal this
-         * by asking for "TlsPremasterSecret".
-         */
-            return new JceTlsSecret(crypto, agreement.generateSecret("TlsPremasterSecret").getEncoded());
+            return crypto.adoptLocalSecret(secretKey.getEncoded());
         }
         catch (GeneralSecurityException e)
         {
-            throw new TlsCryptoException("unable to perform agreement: " + e.getMessage(), e);
+            throw new TlsCryptoException("unable to perform agreement", e);
         }
     }
 }

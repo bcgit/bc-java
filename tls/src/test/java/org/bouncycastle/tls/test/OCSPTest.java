@@ -1,13 +1,13 @@
 package org.bouncycastle.tls.test;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 
-import junit.framework.TestCase;
 import org.bouncycastle.asn1.ocsp.BasicOCSPResponse;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
@@ -19,15 +19,16 @@ import org.bouncycastle.cert.ocsp.OCSPException;
 import org.bouncycastle.cert.ocsp.OCSPReqBuilder;
 import org.bouncycastle.cert.ocsp.SingleResp;
 import org.bouncycastle.cert.ocsp.jcajce.JcaCertificateID;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCertificate;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoProvider;
+
+import junit.framework.TestCase;
 
 public class OCSPTest
     extends TestCase
@@ -98,7 +99,8 @@ public class OCSPTest
     public void testOCSPResponder()
         throws Exception
     {
-        JcaJceHelper helper = new DefaultJcaJceHelper();
+        JcaTlsCrypto crypto = (JcaTlsCrypto)new JcaTlsCryptoProvider().create(new SecureRandom());
+
         DigestCalculator digCalc = new JcaDigestCalculatorProviderBuilder().build().get(CertificateID.HASH_SHA1);
         TestOCSPCertServer server = new TestOCSPCertServer();
         X509Certificate caCert = server.getCACert();
@@ -109,7 +111,9 @@ public class OCSPTest
 
         OCSPResponder responder = new TestOCSPResponderImpl(server);
 
-        Certificate certs = new Certificate(new TlsCertificate[] { new JcaTlsCertificate(cert1.getEncoded(), helper), new JcaTlsCertificate(cert2.getEncoded(), helper) });
+        Certificate certs = new Certificate(new TlsCertificate[] {
+            crypto.createCertificate(cert1.getEncoded()),
+            crypto.createCertificate(cert2.getEncoded())});
 
         OCSPResponse[] responses = responder.getResponses(certs);
 

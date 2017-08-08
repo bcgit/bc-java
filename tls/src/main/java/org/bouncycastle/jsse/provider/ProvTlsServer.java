@@ -355,7 +355,7 @@ class ProvTlsServer
         }
         else
         {
-            X509Certificate[] chain = JsseUtils.getX509CertificateChain(clientCertificate);
+            X509Certificate[] chain = JsseUtils.getX509CertificateChain(manager.getContextData().getCrypto(), clientCertificate);
             short clientCertificateType = clientCertificate.getCertificateAt(0).getClientCertificateType();
             String authType = JsseUtils.getAuthTypeClient(clientCertificateType);
 
