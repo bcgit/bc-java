@@ -19,7 +19,7 @@ import org.bouncycastle.util.Strings;
 public class JceTlsSecret
     extends AbstractTlsSecret
 {
-    private final JcaTlsCrypto crypto;
+    protected final JcaTlsCrypto crypto;
 
     public JceTlsSecret(JcaTlsCrypto crypto, byte[] data)
     {

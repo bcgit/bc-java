@@ -44,8 +44,20 @@ public class BcTlsCertificate
         return new BcTlsCertificate(crypto, certificate.getEncoded());
     }
 
-    private final BcTlsCrypto crypto;
+    public static Certificate parseCertificate(byte[] encoding)
+        throws IOException
+    {
+        try
+        {
+            return Certificate.getInstance(encoding);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new TlsCryptoException("unable to decode certificate: " + e.getMessage(), e);
+        }
+    }
 
+    protected final BcTlsCrypto crypto;
     protected final Certificate certificate;
 
     protected DHPublicKeyParameters pubKeyDH = null;
@@ -55,15 +67,13 @@ public class BcTlsCertificate
     public BcTlsCertificate(BcTlsCrypto crypto, byte[] encoding)
         throws IOException
     {
+        this(crypto, parseCertificate(encoding));
+    }
+
+    public BcTlsCertificate(BcTlsCrypto crypto, Certificate certificate)
+    {
         this.crypto = crypto;
-        try
-        {
-            this.certificate = Certificate.getInstance(encoding);
-        }
-        catch (IllegalArgumentException e)
-        {
-            throw new TlsCryptoException("unable to decode certificate: " + e.getMessage(), e);
-        }
+        this.certificate = certificate;
     }
 
     public TlsVerifier createVerifier(short signatureAlgorithm) throws IOException
@@ -73,13 +83,13 @@ public class BcTlsCertificate
         switch (signatureAlgorithm)
         {
         case SignatureAlgorithm.dsa:
-            return new BcTlsDSAVerifier(this.crypto, getPubKeyDSS());
+            return new BcTlsDSAVerifier(crypto, getPubKeyDSS());
 
         case SignatureAlgorithm.ecdsa:
-            return new BcTlsECDSAVerifier(this.crypto, getPubKeyEC());
+            return new BcTlsECDSAVerifier(crypto, getPubKeyEC());
 
         case SignatureAlgorithm.rsa:
-            return new BcTlsRSAVerifier(getPubKeyRSA());
+            return new BcTlsRSAVerifier(crypto, getPubKeyRSA());
 
         default:
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);

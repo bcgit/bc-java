@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.agreement.srp.SRP6Client;
 import org.bouncycastle.crypto.agreement.srp.SRP6Server;
 import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
 import org.bouncycastle.crypto.digests.MD5Digest;
+import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -46,10 +47,8 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.CombinedHash;
 import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
-import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.ProtocolVersion;
@@ -330,25 +329,12 @@ public class BcTlsCrypto
         return adoptLocalSecret(data);
     }
 
-//    public byte[] calculateKeyBlock(TlsContext context, int length)
-//    {
-//        SecurityParameters securityParameters = context.getSecurityParameters();
-//        byte[] master_secret = securityParameters.getMasterSecret();
-//        byte[] seed = concat(securityParameters.getServerRandom(), securityParameters.getClientRandom());
-//
-//        if (isSSL(context))
-//        {
-//            return context.getCrypto().createSecret(master_secret).deriveSSLKeyBlock(seed, length).extract();
-//        }
-//
-//        return PRF(context, master_secret, ExporterLabel.key_expansion, seed, length);
-//    }
-
-    // TODO[tls-ops] Shouldn't be static, need to pass BcTlsCrypto instance to callers
-    static Digest createDigest(short hashAlgorithm)
+    public Digest createDigest(short hashAlgorithm)
     {
         switch (hashAlgorithm)
         {
+        case HashAlgorithm.none:
+            return new NullDigest();
         case HashAlgorithm.md5:
             return new MD5Digest();
         case HashAlgorithm.sha1:
@@ -362,18 +348,8 @@ public class BcTlsCrypto
         case HashAlgorithm.sha512:
             return new SHA512Digest();
         default:
-            throw new IllegalArgumentException("unknown HashAlgorithm");
+            throw new IllegalArgumentException("unknown HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
         }
-    }
-
-    public TlsHash createHash(final SignatureAndHashAlgorithm signatureAndHashAlgorithm)
-    {
-        if (signatureAndHashAlgorithm == null)
-        {
-            return new CombinedHash(this);
-        }
-
-        return new BcTlsHash(signatureAndHashAlgorithm.getHash(), createDigest(signatureAndHashAlgorithm.getHash()));
     }
 
     public TlsHash createHash(short algorithm)
@@ -401,9 +377,7 @@ public class BcTlsCrypto
         public byte[] calculateHash()
         {
             byte[] rv = new byte[digest.getDigestSize()];
-
             digest.doFinal(rv, 0);
-
             return rv;
         }
 
@@ -435,7 +409,7 @@ public class BcTlsCrypto
         case HashAlgorithm.sha512:
             return new SHA512Digest((SHA512Digest)hash);
         default:
-            throw new IllegalArgumentException("unknown HashAlgorithm");
+            throw new IllegalArgumentException("unknown HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
         }
     }
 
@@ -454,21 +428,21 @@ public class BcTlsCrypto
         throws IOException
     {
         return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createAESBlockCipher(), true), new BlockOperator(createAESBlockCipher(), false),
-            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize);
+            createHMAC(macAlgorithm), createHMAC(macAlgorithm), cipherKeySize);
     }
 
     protected TlsCipher createARIACipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
         return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createARIABlockCipher(), true), new BlockOperator(createARIABlockCipher(), false),
-            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize);
+            createHMAC(macAlgorithm), createHMAC(macAlgorithm), cipherKeySize);
     }
 
     protected TlsCipher createCamelliaCipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
         return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createCamelliaBlockCipher(), true), new BlockOperator(createCamelliaBlockCipher(), false),
-            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize);
+            createHMAC(macAlgorithm), createHMAC(macAlgorithm), cipherKeySize);
     }
 
     protected TlsCipher createChaCha20Poly1305(TlsCryptoParameters cryptoParams)
@@ -518,27 +492,27 @@ public class BcTlsCrypto
         throws IOException
     {
         return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createDESedeBlockCipher(), true), new BlockOperator(createDESedeBlockCipher(), false),
-            createMac(macAlgorithm), createMac(macAlgorithm), 24);
+            createHMAC(macAlgorithm), createHMAC(macAlgorithm), 24);
     }
 
     protected TlsNullCipher createNullCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException
     {
-        return new TlsNullCipher(cryptoParams, createMac(macAlgorithm), createMac(macAlgorithm));
+        return new TlsNullCipher(cryptoParams, createHMAC(macAlgorithm), createHMAC(macAlgorithm));
     }
 
     protected TlsStreamCipher createRC4Cipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
         throws IOException
     {
         return new TlsStreamCipher(cryptoParams, new StreamOperator(createRC4StreamCipher(), true), new StreamOperator(createRC4StreamCipher(), false),
-            createMac(macAlgorithm), createMac(macAlgorithm), cipherKeySize, false);
+            createHMAC(macAlgorithm), createHMAC(macAlgorithm), cipherKeySize, false);
     }
 
     protected TlsBlockCipher createSEEDCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
         throws IOException
     {
         return new TlsBlockCipher(this, cryptoParams, new BlockOperator(createSEEDBlockCipher(), true), new BlockOperator(createSEEDBlockCipher(), false),
-            createMac(macAlgorithm), createMac(macAlgorithm), 16);
+            createHMAC(macAlgorithm), createHMAC(macAlgorithm), 16);
     }
 
     protected BlockCipher createAESEngine()
@@ -614,50 +588,9 @@ public class BcTlsCrypto
         return new CBCBlockCipher(new SEEDEngine());
     }
 
-    private TlsHMAC createMac(int macAlgorithm) throws IOException
+    public TlsHMAC createHMAC(int macAlgorithm)
     {
-        return createHMAC((short)macAlgorithm);
-    }
-
-    protected Digest createHMACDigest(int macAlgorithm)
-        throws IOException
-    {
-        switch (macAlgorithm)
-        {
-        case MACAlgorithm._null:
-            return null;
-        case MACAlgorithm.hmac_md5:
-            return createDigest(HashAlgorithm.md5);
-        case MACAlgorithm.hmac_sha1:
-            return createDigest(HashAlgorithm.sha1);
-        case MACAlgorithm.hmac_sha256:
-            return createDigest(HashAlgorithm.sha256);
-        case MACAlgorithm.hmac_sha384:
-            return createDigest(HashAlgorithm.sha384);
-        case MACAlgorithm.hmac_sha512:
-            return createDigest(HashAlgorithm.sha512);
-        default:
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-    }
-
-    public TlsHMAC createHMAC(int hashAlgorithm)
-    {
-        switch (hashAlgorithm)
-        {
-        case MACAlgorithm.hmac_md5:
-            return new HMacOperator(createDigest(HashAlgorithm.md5));
-        case MACAlgorithm.hmac_sha1:
-            return new HMacOperator(createDigest(HashAlgorithm.sha1));
-        case MACAlgorithm.hmac_sha256:
-            return new HMacOperator(createDigest(HashAlgorithm.sha256));
-        case MACAlgorithm.hmac_sha384:
-            return new HMacOperator(createDigest(HashAlgorithm.sha384));
-        case MACAlgorithm.hmac_sha512:
-            return new HMacOperator(createDigest(HashAlgorithm.sha512));
-        default:
-            throw new IllegalArgumentException("unknown HashAlgorithm");
-        }
+        return new HMacOperator(createDigest(TlsUtils.getHashAlgorithmForHMACAlgorithm(macAlgorithm)));
     }
 
     public TlsSRP6Client createSRP6Client(TlsSRPConfig srpConfig)
