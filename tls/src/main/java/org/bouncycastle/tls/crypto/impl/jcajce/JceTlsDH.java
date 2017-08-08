@@ -1,14 +1,12 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 
 import javax.crypto.interfaces.DHPrivateKey;
 import javax.crypto.interfaces.DHPublicKey;
 
 import org.bouncycastle.tls.crypto.TlsAgreement;
-import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
 /**
@@ -17,7 +15,8 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 public class JceTlsDH
     implements TlsAgreement
 {
-    protected JceTlsDHDomain domain;
+    protected final JceTlsDHDomain domain;
+
     protected KeyPair localKeyPair;
     protected DHPublicKey peerPublicKey;
 
@@ -39,14 +38,6 @@ public class JceTlsDH
 
     public TlsSecret calculateSecret() throws IOException
     {
-        try
-        {
-            byte[] data = domain.calculateDHAgreement(peerPublicKey, (DHPrivateKey)localKeyPair.getPrivate());
-            return domain.getCrypto().adoptLocalSecret(data);
-        }
-        catch (GeneralSecurityException e)
-        {
-            throw new TlsCryptoException("cannot calculate secret", e);
-        }
+        return domain.calculateDHAgreement((DHPrivateKey)localKeyPair.getPrivate(), peerPublicKey);
     }
 }

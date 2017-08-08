@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECGenParameterSpec;
@@ -11,6 +13,8 @@ import java.security.spec.ECParameterSpec;
 import java.util.Hashtable;
 
 import javax.crypto.Cipher;
+import javax.crypto.KeyAgreement;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.x509.KeyUsage;
@@ -116,10 +120,19 @@ public class JcaTlsCrypto
         return entropySource;
     }
 
+    public SecretKey calculateKeyAgreement(String agreementAlgorithm, PrivateKey privateKey, PublicKey publicKey, String secretAlgorithm)
+        throws GeneralSecurityException
+    {
+        KeyAgreement agreement = helper.createKeyAgreement(agreementAlgorithm);
+        agreement.init(privateKey);
+        agreement.doPhase(publicKey, true);
+        return agreement.generateSecret(secretAlgorithm);
+    }
+
     public TlsCertificate createCertificate(byte[] encoding)
         throws IOException
     {
-        return new JcaTlsCertificate(encoding, helper);
+        return new JcaTlsCertificate(this, encoding);
     }
 
     protected TlsCipher createCipher(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
@@ -494,7 +507,7 @@ public class JcaTlsCrypto
     public TlsEncryptor createEncryptor(TlsCertificate certificate)
         throws IOException
     {
-        JcaTlsCertificate jcaCert = JcaTlsCertificate.convert(certificate, this.getHelper());
+        JcaTlsCertificate jcaCert = JcaTlsCertificate.convert(this, certificate);
         jcaCert.validateKeyUsage(KeyUsage.keyEncipherment);
 
         final RSAPublicKey pubKeyRSA = jcaCert.getPubKeyRSA();

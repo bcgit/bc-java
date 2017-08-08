@@ -1,19 +1,16 @@
 package org.bouncycastle.tls.crypto.impl.bc;
 
 import java.io.IOException;
-import java.math.BigInteger;
 
-import org.bouncycastle.crypto.BasicAgreement;
-import org.bouncycastle.crypto.agreement.DHBasicAgreement;
-import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
+import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.TlsCredentialedAgreement;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSecret;
-import org.bouncycastle.util.BigIntegers;
 
 /**
  * Credentialed class generating agreed secrets from a peer's public key for our end of the TLS connection using the BC light-weight API.
@@ -48,11 +45,11 @@ public class BcDefaultTlsCredentialedAgreement
 
         if (privateKey instanceof DHPrivateKeyParameters)
         {
-            agreementCredentials = new DHCredentialedAgreement(crypto, privateKey, certificate);
+            agreementCredentials = new DHCredentialedAgreement(crypto, certificate, (DHPrivateKeyParameters)privateKey);
         }
         else if (privateKey instanceof ECPrivateKeyParameters)
         {
-            agreementCredentials = new ECCredentialedAgreement(crypto, privateKey, certificate);
+            agreementCredentials = new ECCredentialedAgreement(crypto, certificate, (ECPrivateKeyParameters)privateKey);
         }
         else
         {
@@ -75,26 +72,21 @@ public class BcDefaultTlsCredentialedAgreement
     private class DHCredentialedAgreement
         implements TlsCredentialedAgreement
     {
-        private final Certificate certificate;
-        private final BcTlsCrypto crypto;
-        protected AsymmetricKeyParameter privateKey;
+        final BcTlsCrypto crypto;
+        final Certificate certificate;
+        final DHPrivateKeyParameters privateKey;
 
-        protected BasicAgreement basicAgreement = new DHBasicAgreement();
-
-        public DHCredentialedAgreement(BcTlsCrypto crypto, AsymmetricKeyParameter privateKey, Certificate certificate)
+        DHCredentialedAgreement(BcTlsCrypto crypto, Certificate certificate, DHPrivateKeyParameters privateKey)
         {
             this.crypto = crypto;
-            this.privateKey = privateKey;
             this.certificate = certificate;
+            this.privateKey = privateKey;
         }
 
-        public TlsSecret generateAgreement(TlsCertificate peerCertificate)
-            throws IOException
+        public TlsSecret generateAgreement(TlsCertificate peerCertificate) throws IOException
         {
-            AsymmetricKeyParameter peerPublicKey = BcTlsCertificate.convert(crypto, peerCertificate).getPublicKey();
-            basicAgreement.init(privateKey);
-            BigInteger agreementValue = basicAgreement.calculateAgreement(peerPublicKey);
-            return crypto.adoptLocalSecret(BigIntegers.asUnsignedByteArray(agreementValue));
+            DHPublicKeyParameters peerPublicKey = BcTlsCertificate.convert(crypto, peerCertificate).getPubKeyDH();
+            return crypto.adoptLocalSecret(BcTlsDHDomain.calculateBasicAgreement(privateKey, peerPublicKey));
         }
 
         public Certificate getCertificate()
@@ -106,26 +98,21 @@ public class BcDefaultTlsCredentialedAgreement
     private class ECCredentialedAgreement
         implements TlsCredentialedAgreement
     {
-        private final Certificate certificate;
-        private final BcTlsCrypto crypto;
-        private final AsymmetricKeyParameter privateKey;
+        final BcTlsCrypto crypto;
+        final Certificate certificate;
+        final ECPrivateKeyParameters privateKey;
 
-        protected BasicAgreement basicAgreement = new ECDHBasicAgreement();
-
-        public ECCredentialedAgreement(BcTlsCrypto crypto, AsymmetricKeyParameter privateKey, Certificate certificate)
+        ECCredentialedAgreement(BcTlsCrypto crypto, Certificate certificate, ECPrivateKeyParameters privateKey)
         {
             this.crypto = crypto;
-            this.privateKey = privateKey;
             this.certificate = certificate;
+            this.privateKey = privateKey;
         }
 
-        public TlsSecret generateAgreement(TlsCertificate peerCertificate)
-            throws IOException
+        public TlsSecret generateAgreement(TlsCertificate peerCertificate) throws IOException
         {
-            AsymmetricKeyParameter peerPublicKey = BcTlsCertificate.convert(crypto, peerCertificate).getPublicKey();
-            basicAgreement.init(privateKey);
-            BigInteger agreementValue = basicAgreement.calculateAgreement(peerPublicKey);
-            return crypto.adoptLocalSecret(BigIntegers.asUnsignedByteArray(basicAgreement.getFieldSize(), agreementValue));
+            ECPublicKeyParameters peerPublicKey = BcTlsCertificate.convert(crypto, peerCertificate).getPubKeyEC();
+            return crypto.adoptLocalSecret(BcTlsECDomain.calculateBasicAgreement(privateKey, peerPublicKey));
         }
 
         public Certificate getCertificate()

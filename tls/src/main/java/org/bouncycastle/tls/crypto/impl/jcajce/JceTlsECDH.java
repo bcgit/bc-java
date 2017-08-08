@@ -1,13 +1,11 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 
 import org.bouncycastle.tls.crypto.TlsAgreement;
-import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
 /**
@@ -16,7 +14,8 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 public class JceTlsECDH
     implements TlsAgreement
 {
-    protected JceTlsECDomain domain;
+    protected final JceTlsECDomain domain;
+
     protected KeyPair localKeyPair;
     protected ECPublicKey peerPublicKey;
 
@@ -28,6 +27,7 @@ public class JceTlsECDH
     public byte[] generateEphemeral() throws IOException
     {
         this.localKeyPair = domain.generateKeyPair();
+
         return domain.encodePublicKey((ECPublicKey)localKeyPair.getPublic());
     }
 
@@ -38,14 +38,6 @@ public class JceTlsECDH
 
     public TlsSecret calculateSecret() throws IOException
     {
-        try
-        {
-            byte[] data = domain.calculateECDHAgreement(peerPublicKey, (ECPrivateKey)localKeyPair.getPrivate());
-            return domain.getCrypto().adoptLocalSecret(data);
-        }
-        catch (GeneralSecurityException e)
-        {
-            throw new TlsCryptoException("cannot calculate secret", e);
-        }
+        return domain.calculateECDHAgreement((ECPrivateKey)localKeyPair.getPrivate(), peerPublicKey);
     }
 }

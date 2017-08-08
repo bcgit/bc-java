@@ -24,6 +24,19 @@ import org.bouncycastle.util.BigIntegers;
  */
 public class BcTlsDHDomain implements TlsDHDomain
 {
+    public static byte[] calculateBasicAgreement(DHPrivateKeyParameters privateKey, DHPublicKeyParameters publicKey)
+    {
+        DHBasicAgreement basicAgreement = new DHBasicAgreement();
+        basicAgreement.init(privateKey);
+        BigInteger agreementValue = basicAgreement.calculateAgreement(publicKey);
+
+        /*
+         * RFC 5246 8.1.2. Leading bytes of Z that contain all zero bits are stripped before it is
+         * used as the pre_master_secret.
+         */
+        return BigIntegers.asUnsignedByteArray(agreementValue);
+    }
+
     public static DHParameters getParameters(TlsDHConfig dhConfig)
     {
         DHGroup dhGroup = TlsDHUtils.getDHGroup(dhConfig);
@@ -37,26 +50,18 @@ public class BcTlsDHDomain implements TlsDHDomain
 
     protected BcTlsCrypto crypto;
     protected TlsDHConfig dhConfig;
-    protected DHParameters dhDomain;
+    protected DHParameters dhParameters;
 
     public BcTlsDHDomain(BcTlsCrypto crypto, TlsDHConfig dhConfig)
     {
         this.crypto = crypto;
         this.dhConfig = dhConfig;
-        this.dhDomain = getParameters(dhConfig);
+        this.dhParameters = getParameters(dhConfig);
     }
 
-    public byte[] calculateDHAgreement(DHPublicKeyParameters publicKey, DHPrivateKeyParameters privateKey)
+    public BcTlsSecret calculateDHAgreement(DHPrivateKeyParameters privateKey, DHPublicKeyParameters publicKey)
     {
-        DHBasicAgreement basicAgreement = new DHBasicAgreement();
-        basicAgreement.init(privateKey);
-        BigInteger agreementValue = basicAgreement.calculateAgreement(publicKey);
-
-        /*
-         * RFC 5246 8.1.2. Leading bytes of Z that contain all zero bits are stripped before it is
-         * used as the pre_master_secret.
-         */
-        return BigIntegers.asUnsignedByteArray(agreementValue);
+        return crypto.adoptLocalSecret(calculateBasicAgreement(privateKey, publicKey));
     }
 
     public TlsAgreement createDH()
@@ -64,7 +69,7 @@ public class BcTlsDHDomain implements TlsDHDomain
         return new BcTlsDH(this);
     }
 
-    public static BigInteger decodeParameter(byte[] encoding) throws IOException
+    public BigInteger decodeParameter(byte[] encoding) throws IOException
     {
         return new BigInteger(1, encoding);
     }
@@ -80,7 +85,7 @@ public class BcTlsDHDomain implements TlsDHDomain
         {
             BigInteger y = decodeParameter(encoding);
 
-            return new DHPublicKeyParameters(y, dhDomain);
+            return new DHPublicKeyParameters(y, dhParameters);
         }
         catch (RuntimeException e)
         {
@@ -101,12 +106,7 @@ public class BcTlsDHDomain implements TlsDHDomain
     public AsymmetricCipherKeyPair generateKeyPair()
     {
         DHBasicKeyPairGenerator keyPairGenerator = new DHBasicKeyPairGenerator();
-        keyPairGenerator.init(new DHKeyGenerationParameters(crypto.getSecureRandom(), dhDomain));
+        keyPairGenerator.init(new DHKeyGenerationParameters(crypto.getSecureRandom(), dhParameters));
         return keyPairGenerator.generateKeyPair();
-    }
-
-    public BcTlsCrypto getCrypto()
-    {
-        return crypto;
     }
 }

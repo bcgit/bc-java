@@ -17,7 +17,7 @@ import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.EllipticCurve;
 
-import javax.crypto.KeyAgreement;
+import javax.crypto.SecretKey;
 
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
@@ -25,6 +25,7 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsAgreement;
+import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 
@@ -34,8 +35,9 @@ import org.bouncycastle.tls.crypto.TlsECDomain;
 public class JceTlsECDomain
     implements TlsECDomain
 {
-    protected JcaTlsCrypto crypto;
-    protected TlsECConfig ecConfig;
+    protected final JcaTlsCrypto crypto;
+    protected final TlsECConfig ecConfig;
+
     protected ECGenParameterSpec ecGenSpec;
     protected ECParameterSpec ecParameterSpec;
     protected ECCurve ecCurve;
@@ -48,23 +50,28 @@ public class JceTlsECDomain
         init(ecConfig.getNamedGroup());
     }
 
-    public byte[] calculateECDHAgreement(ECPublicKey publicKey, ECPrivateKey privateKey)
-        throws GeneralSecurityException
+    public JceTlsSecret calculateECDHAgreement(ECPrivateKey privateKey, ECPublicKey publicKey)
+        throws IOException
     {
-        KeyAgreement agreement = crypto.getHelper().createKeyAgreement("ECDH");
+        try
+        {
+            /*
+             * RFC 4492 5.10. Note that this octet string (Z in IEEE 1363 terminology) as output by
+             * FE2OSP, the Field Element to Octet String Conversion Primitive, has constant length for
+             * any given field; leading zeros found in this octet string MUST NOT be truncated.
+             *
+             * We use the convention established by the JSSE to signal this by asking for "TlsPremasterSecret".
+             */
+            SecretKey secretKey = crypto.calculateKeyAgreement("ECDH", privateKey, publicKey, "TlsPremasterSecret");
 
-        agreement.init(privateKey);
+            // TODO Need to consider cases where SecretKey may not be encodable
 
-        agreement.doPhase(publicKey, true);
-
-        /*
-         * RFC 4492 5.10. Note that this octet string (Z in IEEE 1363 terminology) as output by
-         * FE2OSP, the Field Element to Octet String Conversion Primitive, has constant length for
-         * any given field; leading zeros found in this octet string MUST NOT be truncated.
-         *
-         * We use the convention established by the JSSE to signal this by asking for "TlsPremasterSecret".
-         */
-        return agreement.generateSecret("TlsPremasterSecret").getEncoded();
+            return crypto.adoptLocalSecret(secretKey.getEncoded());
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new TlsCryptoException("cannot calculate secret", e);
+        }
     }
 
     public TlsAgreement createECDH()
@@ -88,8 +95,6 @@ public class JceTlsECDomain
             ECPublicKeySpec keySpec = new ECPublicKeySpec(
                 new java.security.spec.ECPoint(point.getAffineXCoord().toBigInteger(), point.getAffineYCoord().toBigInteger()),
                 ecParameterSpec);
-            // TODO Check RFCs for any validation that could/should be done here
-
             return (ECPublicKey)keyFact.generatePublic(keySpec);
         }
         catch (Exception e)
@@ -124,11 +129,6 @@ public class JceTlsECDomain
         {
             throw new IllegalStateException("unable to create key pair: " + e.getMessage(), e);
         }
-    }
-
-    public JcaTlsCrypto getCrypto()
-    {
-        return crypto;
     }
 
     private void init(int namedGroup)
@@ -184,10 +184,7 @@ public class JceTlsECDomain
         }
     }
 
-    private static ECCurve convertCurve(
-        EllipticCurve ec,
-        BigInteger order,
-        int cofactor)
+    private static ECCurve convertCurve(EllipticCurve ec, BigInteger order, int cofactor)
     {
         ECField field = ec.getField();
         BigInteger a = ec.getA();
@@ -195,9 +192,7 @@ public class JceTlsECDomain
 
         if (field instanceof ECFieldFp)
         {
-            ECCurve.Fp curve = new ECCurve.Fp(((ECFieldFp)field).getP(), a, b, order, BigInteger.valueOf(cofactor));
-
-            return curve;
+            return new ECCurve.Fp(((ECFieldFp)field).getP(), a, b, order, BigInteger.valueOf(cofactor));
         }
         else
         {
@@ -208,8 +203,7 @@ public class JceTlsECDomain
         }
     }
 
-    private static int[] convertMidTerms(
-        int[] k)
+    private static int[] convertMidTerms(int[] k)
     {
         int[] res = new int[3];
 
@@ -270,5 +264,4 @@ public class JceTlsECDomain
 
         return res;
     }
-
 }
