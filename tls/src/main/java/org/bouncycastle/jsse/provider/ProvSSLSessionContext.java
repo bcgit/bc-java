@@ -12,6 +12,7 @@ import javax.net.ssl.SSLSessionContext;
 
 import org.bouncycastle.tls.SessionID;
 import org.bouncycastle.tls.TlsSession;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 
 /*
  * TODO[jsse]
@@ -41,17 +42,24 @@ class ProvSSLSessionContext
     protected final Map<SessionID, ProvSSLSession> sessionMap = Collections.synchronizedMap(new HashMap<SessionID, ProvSSLSession>());
 
     protected final ProvSSLContextSpi sslContext;
+    protected final TlsCrypto crypto;
     protected int sessionCacheSize = 0;
     protected int sessionTimeout = 0;
 
-    ProvSSLSessionContext(ProvSSLContextSpi sslContext)
+    ProvSSLSessionContext(ProvSSLContextSpi sslContext, TlsCrypto crypto)
     {
         this.sslContext = sslContext;
+        this.crypto = crypto;
     }
 
     ProvSSLContextSpi getSSLContext()
     {
         return sslContext;
+    }
+
+    TlsCrypto getCrypto()
+    {
+        return crypto;
     }
 
     SSLSession reportSession(TlsSession tlsSession)

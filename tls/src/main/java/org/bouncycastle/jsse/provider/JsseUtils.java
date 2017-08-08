@@ -22,8 +22,6 @@ import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
@@ -42,6 +40,7 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCertificate;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 
 abstract class JsseUtils
 {
@@ -144,22 +143,19 @@ abstract class JsseUtils
         return new Certificate(certificateList);
     }
 
-    public static X509Certificate[] getX509CertificateChain(Certificate certificateMessage)
+    public static X509Certificate[] getX509CertificateChain(TlsCrypto crypto, Certificate certificateMessage)
     {
         if (certificateMessage == null || certificateMessage.isEmpty())
         {
             return EMPTY_CHAIN;
         }
 
-        // TODO[jsse] Consider provider-related issues
-        JcaJceHelper helper = new DefaultJcaJceHelper();
-
         try
         {
             X509Certificate[] chain = new X509Certificate[certificateMessage.getLength()];
             for (int i = 0; i < chain.length; ++i)
             {
-                chain[i] = JcaTlsCertificate.convert(certificateMessage.getCertificateAt(i), helper).getX509Certificate();
+                chain[i] = JcaTlsCertificate.convert((JcaTlsCrypto)crypto, certificateMessage.getCertificateAt(i)).getX509Certificate();
             }
             return chain;
         }
@@ -193,19 +189,16 @@ abstract class JsseUtils
         return x509Chain;
     }
 
-    public static X500Principal getSubject(Certificate certificateMessage)
+    public static X500Principal getSubject(TlsCrypto crypto, Certificate certificateMessage)
     {
         if (certificateMessage == null || certificateMessage.isEmpty())
         {
             return null;
         }
 
-        // TODO[jsse] Consider provider-related issues
-        JcaJceHelper helper = new DefaultJcaJceHelper();
-
         try
         {
-            return JcaTlsCertificate.convert(certificateMessage.getCertificateAt(0), helper).getX509Certificate()
+            return JcaTlsCertificate.convert((JcaTlsCrypto)crypto, certificateMessage.getCertificateAt(0)).getX509Certificate()
                 .getSubjectX500Principal();
         }
         catch (IOException e)

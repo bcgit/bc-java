@@ -27,18 +27,7 @@ import org.bouncycastle.util.BigIntegers;
  */
 public class BcTlsECDomain implements TlsECDomain
 {
-    protected BcTlsCrypto crypto;
-    protected TlsECConfig ecConfig;
-    protected ECDomainParameters ecDomain;
-
-    public BcTlsECDomain(BcTlsCrypto crypto, TlsECConfig ecConfig)
-    {
-        this.crypto = crypto;
-        this.ecConfig = ecConfig;
-        this.ecDomain = getDomainParameters(ecConfig);
-    }
-
-    public byte[] calculateECDHAgreement(ECPublicKeyParameters publicKey, ECPrivateKeyParameters privateKey)
+    public static byte[] calculateBasicAgreement(ECPrivateKeyParameters privateKey, ECPublicKeyParameters publicKey)
     {
         ECDHBasicAgreement basicAgreement = new ECDHBasicAgreement();
         basicAgreement.init(privateKey);
@@ -52,60 +41,12 @@ public class BcTlsECDomain implements TlsECDomain
         return BigIntegers.asUnsignedByteArray(basicAgreement.getFieldSize(), agreementValue);
     }
 
-    public TlsAgreement createECDH()
-    {
-        return new BcTlsECDH(this);
-    }
-
-    public ECPoint decodePoint(byte[] encoding) throws IOException
-    {
-        return ecDomain.getCurve().decodePoint(encoding);
-    }
-
-    public ECPublicKeyParameters decodePublicKey(byte[] encoding) throws IOException
-    {
-        try
-        {
-            ECPoint point = decodePoint(encoding);
-
-            // TODO Check RFCs for any validation that could/should be done here
-
-            return new ECPublicKeyParameters(point, ecDomain);
-        }
-        catch (RuntimeException e)
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
-        }
-    }
-
-    public byte[] encodePoint(ECPoint point) throws IOException
-    {
-        return point.getEncoded(ecConfig.getPointCompression());
-    }
-
-    public byte[] encodePublicKey(ECPublicKeyParameters publicKey) throws IOException
-    {
-        return encodePoint(publicKey.getQ());
-    }
-
-    public AsymmetricCipherKeyPair generateKeyPair()
-    {
-        ECKeyPairGenerator keyPairGenerator = new ECKeyPairGenerator();
-        keyPairGenerator.init(new ECKeyGenerationParameters(ecDomain, crypto.getSecureRandom()));
-        return keyPairGenerator.generateKeyPair();
-    }
-
-    public BcTlsCrypto getCrypto()
-    {
-        return crypto;
-    }
-
-    public ECDomainParameters getDomainParameters(TlsECConfig ecConfig)
+    public static ECDomainParameters getDomainParameters(TlsECConfig ecConfig)
     {
         return getDomainParameters(ecConfig.getNamedGroup());
     }
 
-    public ECDomainParameters getDomainParameters(int namedGroup)
+    public static ECDomainParameters getDomainParameters(int namedGroup)
     {
         if (!NamedGroup.refersToASpecificCurve(namedGroup))
         {
@@ -132,5 +73,62 @@ public class BcTlsECDomain implements TlsECDomain
 
         // It's a bit inefficient to do this conversion every time
         return new ECDomainParameters(ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(), ecP.getSeed());
+    }
+    
+    protected final BcTlsCrypto crypto;
+    protected final TlsECConfig ecConfig;
+    protected final ECDomainParameters ecDomainParameters;
+
+    public BcTlsECDomain(BcTlsCrypto crypto, TlsECConfig ecConfig)
+    {
+        this.crypto = crypto;
+        this.ecConfig = ecConfig;
+        this.ecDomainParameters = getDomainParameters(ecConfig);
+    }
+
+    public BcTlsSecret calculateECDHAgreement(ECPrivateKeyParameters privateKey, ECPublicKeyParameters publicKey)
+    {
+        return crypto.adoptLocalSecret(calculateBasicAgreement(privateKey, publicKey));
+    }
+
+    public TlsAgreement createECDH()
+    {
+        return new BcTlsECDH(this);
+    }
+
+    public ECPoint decodePoint(byte[] encoding) throws IOException
+    {
+        return ecDomainParameters.getCurve().decodePoint(encoding);
+    }
+
+    public ECPublicKeyParameters decodePublicKey(byte[] encoding) throws IOException
+    {
+        try
+        {
+            ECPoint point = decodePoint(encoding);
+
+            return new ECPublicKeyParameters(point, ecDomainParameters);
+        }
+        catch (RuntimeException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
+        }
+    }
+
+    public byte[] encodePoint(ECPoint point) throws IOException
+    {
+        return point.getEncoded(ecConfig.getPointCompression());
+    }
+
+    public byte[] encodePublicKey(ECPublicKeyParameters publicKey) throws IOException
+    {
+        return encodePoint(publicKey.getQ());
+    }
+
+    public AsymmetricCipherKeyPair generateKeyPair()
+    {
+        ECKeyPairGenerator keyPairGenerator = new ECKeyPairGenerator();
+        keyPairGenerator.init(new ECKeyGenerationParameters(ecDomainParameters, crypto.getSecureRandom()));
+        return keyPairGenerator.generateKeyPair();
     }
 }

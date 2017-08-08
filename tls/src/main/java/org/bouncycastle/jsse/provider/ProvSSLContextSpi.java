@@ -208,7 +208,7 @@ class ProvSSLContextSpi
 
     ProvSSLSessionContext createSSLSessionContext()
     {
-        return new ProvSSLSessionContext(this);
+        return new ProvSSLSessionContext(this, crypto);
     }
 
     String getCipherSuiteString(int suite)

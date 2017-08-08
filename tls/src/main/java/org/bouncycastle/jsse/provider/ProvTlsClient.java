@@ -267,7 +267,7 @@ class ProvTlsClient
                 }
                 else
                 {
-                    X509Certificate[] chain = JsseUtils.getX509CertificateChain(serverCertificate.getCertificate());
+                    X509Certificate[] chain = JsseUtils.getX509CertificateChain(manager.getContextData().getCrypto(), serverCertificate.getCertificate());
                     String authType = JsseUtils.getAuthTypeServer(TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite));
 
                     if (!manager.isServerTrusted(chain, authType))

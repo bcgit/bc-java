@@ -13,7 +13,8 @@ import org.bouncycastle.tls.crypto.TlsSecret;
  */
 public class BcTlsECDH implements TlsAgreement
 {
-    protected BcTlsECDomain domain;
+    protected final BcTlsECDomain domain;
+
     protected AsymmetricCipherKeyPair localKeyPair;
     protected ECPublicKeyParameters peerPublicKey;
 
@@ -25,6 +26,7 @@ public class BcTlsECDH implements TlsAgreement
     public byte[] generateEphemeral() throws IOException
     {
         this.localKeyPair = domain.generateKeyPair();
+
         return domain.encodePublicKey((ECPublicKeyParameters)localKeyPair.getPublic());
     }
 
@@ -35,7 +37,6 @@ public class BcTlsECDH implements TlsAgreement
 
     public TlsSecret calculateSecret() throws IOException
     {
-        byte[] data = domain.calculateECDHAgreement(peerPublicKey, (ECPrivateKeyParameters)localKeyPair.getPrivate());
-        return domain.getCrypto().adoptLocalSecret(data);
+        return domain.calculateECDHAgreement((ECPrivateKeyParameters)localKeyPair.getPrivate(), peerPublicKey);
     }
 }

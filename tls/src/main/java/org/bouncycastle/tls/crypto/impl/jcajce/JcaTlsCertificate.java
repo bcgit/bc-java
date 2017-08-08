@@ -38,25 +38,17 @@ import org.bouncycastle.tls.crypto.TlsVerifier;
 public class JcaTlsCertificate
     implements TlsCertificate
 {
-    private final JcaJceHelper helper;
-
-    public static JcaTlsCertificate convert(TlsCertificate certificate, JcaJceHelper helper) throws IOException
+    public static JcaTlsCertificate convert(JcaTlsCrypto crypto, TlsCertificate certificate) throws IOException
     {
         if (certificate instanceof JcaTlsCertificate)
         {
             return (JcaTlsCertificate)certificate;
         }
 
-        return new JcaTlsCertificate(certificate.getEncoded(), helper);
+        return new JcaTlsCertificate(crypto, certificate.getEncoded());
     }
 
-    protected final X509Certificate certificate;
-
-    protected DHPublicKey pubKeyDH = null;
-    protected ECPublicKey pubKeyEC = null;
-    protected RSAPublicKey pubKeyRSA = null;
-
-    public JcaTlsCertificate(byte[] encoding, JcaJceHelper helper)
+    public static X509Certificate parseCertificate(JcaJceHelper helper, byte[] encoding)
         throws IOException
     {
         try
@@ -71,17 +63,36 @@ public class JcaTlsCertificate
             byte[] derEncoding = Certificate.getInstance(encoding).getEncoded(ASN1Encoding.DER);
 
             ByteArrayInputStream input = new ByteArrayInputStream(derEncoding);
-            this.certificate = (X509Certificate)helper.createCertificateFactory("X.509").generateCertificate(input);
+            X509Certificate certificate = (X509Certificate)helper.createCertificateFactory("X.509").generateCertificate(input);
             if (input.available() != 0)
             {
                 throw new IOException("Extra data detected in stream");
             }
+            return certificate;
         }
         catch (GeneralSecurityException e)
         {
-            throw new TlsCryptoException("unable to decode certificate: " + e.getMessage(), e);
+            throw new TlsCryptoException("unable to decode certificate", e);
         }
-        this.helper = helper;
+    }
+
+    protected final JcaTlsCrypto crypto;
+    protected final X509Certificate certificate;
+
+    protected DHPublicKey pubKeyDH = null;
+    protected ECPublicKey pubKeyEC = null;
+    protected RSAPublicKey pubKeyRSA = null;
+
+    public JcaTlsCertificate(JcaTlsCrypto crypto, byte[] encoding)
+        throws IOException
+    {
+        this(crypto, parseCertificate(crypto.getHelper(), encoding));
+    }
+
+    public JcaTlsCertificate(JcaTlsCrypto crypto, X509Certificate certificate)
+    {
+        this.crypto = crypto;
+        this.certificate = certificate;
     }
 
     public TlsVerifier createVerifier(short signatureAlgorithm) throws IOException
@@ -91,13 +102,13 @@ public class JcaTlsCertificate
         switch (signatureAlgorithm)
         {
         case SignatureAlgorithm.dsa:
-            return new JcaTlsDSAVerifier(getPubKeyDSS(), helper);
+            return new JcaTlsDSAVerifier(getPubKeyDSS(), crypto.getHelper());
 
         case SignatureAlgorithm.ecdsa:
-            return new JcaTlsECDSAVerifier(getPubKeyEC(), helper);
+            return new JcaTlsECDSAVerifier(getPubKeyEC(), crypto.getHelper());
 
         case SignatureAlgorithm.rsa:
-            return new JcaTlsRSAVerifier(getPubKeyRSA(), helper);
+            return new JcaTlsRSAVerifier(getPubKeyRSA(), crypto.getHelper());
 
         default:
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);

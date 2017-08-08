@@ -72,7 +72,7 @@ class ProvSSLSession
     {
         if (sessionParameters != null)
         {
-            X509Certificate[] chain = JsseUtils.getX509CertificateChain(sessionParameters.getLocalCertificate());
+            X509Certificate[] chain = JsseUtils.getX509CertificateChain(sslSessionContext.getCrypto(), sessionParameters.getLocalCertificate());
             if (chain != null && chain.length > 0)
             {
                 return chain;
@@ -86,7 +86,7 @@ class ProvSSLSession
     {
         return sessionParameters == null
             ?   null
-            :   JsseUtils.getSubject(sessionParameters.getLocalCertificate());
+            :   JsseUtils.getSubject(sslSessionContext.getCrypto(), sessionParameters.getLocalCertificate());
     }
 
     public int getPacketBufferSize()
@@ -113,7 +113,7 @@ class ProvSSLSession
     {
         if (sessionParameters != null)
         {
-            X509Certificate[] chain = JsseUtils.getX509CertificateChain(sessionParameters.getPeerCertificate());
+            X509Certificate[] chain = JsseUtils.getX509CertificateChain(sslSessionContext.getCrypto(), sessionParameters.getPeerCertificate());
             if (chain != null && chain.length > 0)
             {
                 return chain;
@@ -139,7 +139,7 @@ class ProvSSLSession
     {
         if (sessionParameters != null)
         {
-            X500Principal principal = JsseUtils.getSubject(sessionParameters.getPeerCertificate());
+            X500Principal principal = JsseUtils.getSubject(sslSessionContext.getCrypto(), sessionParameters.getPeerCertificate());
             if (principal != null)
             {
                 return principal;
