@@ -78,7 +78,6 @@ import org.bouncycastle.tls.crypto.impl.TlsBlockCipher;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipherImpl;
 import org.bouncycastle.tls.crypto.impl.TlsEncryptor;
 import org.bouncycastle.tls.crypto.impl.TlsNullCipher;
-import org.bouncycastle.tls.crypto.impl.TlsStreamCipher;
 import org.bouncycastle.tls.crypto.impl.TlsStreamCipherImpl;
 import org.bouncycastle.util.Arrays;
 
@@ -175,8 +174,6 @@ public class BcTlsCrypto
             return createChaCha20Poly1305(cryptoParams);
         case EncryptionAlgorithm.NULL:
             return createNullCipher(cryptoParams, macAlgorithm);
-        case EncryptionAlgorithm.RC4_128:
-            return createRC4Cipher(cryptoParams, 16, macAlgorithm);
         case EncryptionAlgorithm.SEED_CBC:
             return createSEEDCipher(cryptoParams, macAlgorithm);
         default:
@@ -266,7 +263,19 @@ public class BcTlsCrypto
 
     public boolean hasEncryptionAlgorithm(int encryptionAlgorithm)
     {
-        return true;
+        switch (encryptionAlgorithm)
+        {
+        case EncryptionAlgorithm.DES40_CBC:
+        case EncryptionAlgorithm.DES_CBC:
+        case EncryptionAlgorithm.IDEA_CBC:
+        case EncryptionAlgorithm.RC2_CBC_40:
+        case EncryptionAlgorithm.RC4_128:
+        case EncryptionAlgorithm.RC4_40:
+            return false;
+
+        default:
+            return true;
+        }
     }
 
     public boolean hasHashAlgorithm(short hashAlgorithm)
@@ -487,13 +496,6 @@ public class BcTlsCrypto
         throws IOException
     {
         return new TlsNullCipher(cryptoParams, createHMAC(macAlgorithm), createHMAC(macAlgorithm));
-    }
-
-    protected TlsStreamCipher createRC4Cipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
-        throws IOException
-    {
-        return new TlsStreamCipher(cryptoParams, new StreamOperator(createRC4StreamCipher(), true), new StreamOperator(createRC4StreamCipher(), false),
-            createHMAC(macAlgorithm), createHMAC(macAlgorithm), cipherKeySize, false);
     }
 
     protected TlsBlockCipher createSEEDCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
@@ -717,16 +719,9 @@ public class BcTlsCrypto
             this.key = new KeyParameter(key, keyOff, keyLen);
         }
 
-        public void init(byte[] iv)
+        public void init(byte[] iv, int ivOff, int ivLen)
         {
-            if (iv != null)
-            {
-                cipher.init(isEncrypting, new ParametersWithIV(this.key, iv));
-            }
-            else
-            {
-                cipher.init(isEncrypting, this.key);
-            }
+            cipher.init(isEncrypting, new ParametersWithIV(this.key, iv, ivOff, ivLen));
         }
 
         public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)

@@ -55,7 +55,6 @@ import org.bouncycastle.tls.crypto.impl.TlsBlockCipherImpl;
 import org.bouncycastle.tls.crypto.impl.TlsEncryptor;
 import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
 import org.bouncycastle.tls.crypto.impl.TlsNullCipher;
-import org.bouncycastle.tls.crypto.impl.TlsStreamCipher;
 import org.bouncycastle.tls.crypto.impl.TlsStreamCipherImpl;
 import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6Client;
 import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6Server;
@@ -197,8 +196,6 @@ public class JcaTlsCrypto
                 return createChaCha20Poly1305(cryptoParams);
             case EncryptionAlgorithm.NULL:
                 return createNullCipher(cryptoParams, macAlgorithm);
-            case EncryptionAlgorithm.RC4_128:
-                return createRC4Cipher(cryptoParams, 16, macAlgorithm);
             case EncryptionAlgorithm.SEED_CBC:
                 return createSEEDCipher(cryptoParams, macAlgorithm);
             default:
@@ -359,6 +356,14 @@ public class JcaTlsCrypto
                 helper.createCipher("CAMELLIA/GCM/NoPadding");
                 break;
             }
+
+            case EncryptionAlgorithm.DES40_CBC:
+            case EncryptionAlgorithm.DES_CBC:
+            case EncryptionAlgorithm.IDEA_CBC:
+            case EncryptionAlgorithm.RC2_CBC_40:
+            case EncryptionAlgorithm.RC4_128:
+            case EncryptionAlgorithm.RC4_40:
+                return false;
             }
         }
         catch (GeneralSecurityException e)
@@ -786,13 +791,6 @@ public class JcaTlsCrypto
     {
         return new TlsAEADCipher(cryptoParams, createAEADCipher("Camellia/GCM/NoPadding", "Camellia", cipherKeySize, true), createAEADCipher("Camellia/GCM/NoPadding", "Camellia", cipherKeySize, false),
             cipherKeySize, macSize);
-    }
-
-    private TlsStreamCipher createRC4Cipher(TlsCryptoParameters cryptoParams, int cipherKeySize, int macAlgorithm)
-        throws IOException, GeneralSecurityException
-    {
-        return new TlsStreamCipher(cryptoParams, createStreamCipher("RC4", "RC4", 128, true), createStreamCipher("RC4", "RC4", 128, false),
-            createMAC(macAlgorithm), createMAC(macAlgorithm), cipherKeySize, false);
     }
 
     String getDigestName(short hashAlgorithm)
