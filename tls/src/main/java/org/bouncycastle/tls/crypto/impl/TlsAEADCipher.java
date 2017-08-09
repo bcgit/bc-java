@@ -20,28 +20,27 @@ public class TlsAEADCipher
     public static final int NONCE_RFC5288 = 1;
     public static final int NONCE_RFC7905 = 2;
 
-    protected TlsCryptoParameters context;
-    protected int macSize;
+    protected final TlsCryptoParameters cryptoParams;
+    protected final int macSize;
     // TODO SecurityParameters.record_iv_length
-    protected int record_iv_length;
+    protected final int record_iv_length;
 
-    protected TlsAEADCipherImpl encryptor;
-    protected TlsAEADCipherImpl decryptor;
+    protected final TlsAEADCipherImpl decryptCipher, encryptCipher;
 
-    protected byte[] encryptImplicitNonce, decryptImplicitNonce;
+    protected final byte[] encryptImplicitNonce, decryptImplicitNonce;
 
-    protected int nonceMode;
+    protected final int nonceMode;
 
-    public TlsAEADCipher(TlsCryptoParameters context, TlsAEADCipherImpl encryptor, TlsAEADCipherImpl decryptor,
+    public TlsAEADCipher(TlsCryptoParameters cryptoParams, TlsAEADCipherImpl encryptCipher, TlsAEADCipherImpl decryptCipher,
         int cipherKeySize, int macSize) throws IOException
     {
-        this(context, encryptor, decryptor, cipherKeySize, macSize, NONCE_RFC5288);
+        this(cryptoParams, encryptCipher, decryptCipher, cipherKeySize, macSize, NONCE_RFC5288);
     }
 
-    public TlsAEADCipher(TlsCryptoParameters context, TlsAEADCipherImpl encryptor, TlsAEADCipherImpl decryptor,
+    public TlsAEADCipher(TlsCryptoParameters cryptoParams, TlsAEADCipherImpl encryptCipher, TlsAEADCipherImpl decryptCipher,
         int cipherKeySize, int macSize, int nonceMode) throws IOException
     {
-        if (!TlsImplUtils.isTLSv12(context))
+        if (!TlsImplUtils.isTLSv12(cryptoParams))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -65,19 +64,35 @@ public class TlsAEADCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        this.context = context;
+        this.cryptoParams = cryptoParams;
         this.macSize = macSize;
+
+        this.encryptCipher = encryptCipher;
+        this.decryptCipher = decryptCipher;
+
+        TlsAEADCipherImpl clientCipher, serverCipher;
+        if (cryptoParams.isServer())
+        {
+            clientCipher = decryptCipher;
+            serverCipher = encryptCipher;
+        }
+        else
+        {
+            clientCipher = encryptCipher;
+            serverCipher = decryptCipher;
+        }
 
         int key_block_size = (2 * cipherKeySize) + (2 * fixed_iv_length);
 
-        byte[] key_block = TlsImplUtils.calculateKeyBlock(context, key_block_size);
+        byte[] key_block = TlsImplUtils.calculateKeyBlock(cryptoParams, key_block_size);
 
         int offset = 0;
 
-        byte[] client_write_key = Arrays.copyOfRange(key_block, offset, offset + cipherKeySize);
+        clientCipher.setKey(key_block, offset, cipherKeySize);
         offset += cipherKeySize;
-        byte[] server_write_key = Arrays.copyOfRange(key_block, offset, offset + cipherKeySize);
+        serverCipher.setKey(key_block, offset, cipherKeySize);
         offset += cipherKeySize;
+
         byte[] client_write_IV = Arrays.copyOfRange(key_block, offset, offset + fixed_iv_length);
         offset += fixed_iv_length;
         byte[] server_write_IV = Arrays.copyOfRange(key_block, offset, offset + fixed_iv_length);
@@ -88,27 +103,21 @@ public class TlsAEADCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        this.encryptor = encryptor;
-        this.decryptor = decryptor;
-        if (context.isServer())
+        if (cryptoParams.isServer())
         {
             this.encryptImplicitNonce = server_write_IV;
             this.decryptImplicitNonce = client_write_IV;
-            encryptor.setKey(server_write_key);
-            decryptor.setKey(client_write_key);
         }
         else
         {
             this.encryptImplicitNonce = client_write_IV;
             this.decryptImplicitNonce = server_write_IV;
-            encryptor.setKey(client_write_key);
-            decryptor.setKey(server_write_key);
         }
 
         byte[] dummyNonce = new byte[fixed_iv_length + record_iv_length];
 
-        this.encryptor.init(dummyNonce, macSize, null);
-        this.decryptor.init(dummyNonce, macSize, null);
+        this.encryptCipher.init(dummyNonce, macSize, null);
+        this.decryptCipher.init(dummyNonce, macSize, null);
     }
 
     public int getPlaintextLimit(int ciphertextLimit)
@@ -142,7 +151,7 @@ public class TlsAEADCipher
 
         int plaintextOffset = offset;
         int plaintextLength = len;
-        int ciphertextLength = encryptor.getOutputSize(plaintextLength);
+        int ciphertextLength = encryptCipher.getOutputSize(plaintextLength);
 
         byte[] output = new byte[record_iv_length + ciphertextLength];
         if (record_iv_length != 0)
@@ -155,8 +164,8 @@ public class TlsAEADCipher
 
         try
         {
-            encryptor.init(nonce, macSize, additionalData);
-            outputPos += encryptor.doFinal(plaintext, plaintextOffset, plaintextLength, output, outputPos);
+            encryptCipher.init(nonce, macSize, additionalData);
+            outputPos += encryptCipher.doFinal(plaintext, plaintextOffset, plaintextLength, output, outputPos);
         }
         catch (Exception e)
         {
@@ -201,7 +210,7 @@ public class TlsAEADCipher
 
         int ciphertextOffset = offset + record_iv_length;
         int ciphertextLength = len - record_iv_length;
-        int plaintextLength = decryptor.getOutputSize(ciphertextLength);
+        int plaintextLength = decryptCipher.getOutputSize(ciphertextLength);
 
         byte[] output = new byte[plaintextLength];
         int outputPos = 0;
@@ -210,8 +219,8 @@ public class TlsAEADCipher
 
         try
         {
-            decryptor.init(nonce, macSize, additionalData);
-            outputPos += decryptor.doFinal(ciphertext, ciphertextOffset, ciphertextLength, output, outputPos);
+            decryptCipher.init(nonce, macSize, additionalData);
+            outputPos += decryptCipher.doFinal(ciphertext, ciphertextOffset, ciphertextLength, output, outputPos);
         }
         catch (Exception e)
         {
@@ -238,7 +247,7 @@ public class TlsAEADCipher
         byte[] additional_data = new byte[13];
         TlsUtils.writeUint64(seqNo, additional_data, 0);
         TlsUtils.writeUint8(type, additional_data, 8);
-        TlsUtils.writeVersion(context.getServerVersion(), additional_data, 9);
+        TlsUtils.writeVersion(cryptoParams.getServerVersion(), additional_data, 9);
         TlsUtils.writeUint16(len, additional_data, 11);
 
         return additional_data;

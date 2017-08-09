@@ -19,26 +19,38 @@ public class ChaCha20Poly1305Cipher
 {
     private static final byte[] ZEROES = new byte[15];
 
-    protected TlsCryptoParameters context;
+    protected final TlsCryptoParameters cryptoParams;
+    protected final TlsMAC readMac, writeMac;
+    protected final TlsStreamCipherImpl decryptCipher, encryptCipher;
+    protected final byte[] encryptIV, decryptIV;
 
-    protected TlsMAC writeMac;
-    protected TlsMAC readMac;
-
-    protected TlsStreamCipherImpl encryptCipher;
-    protected TlsStreamCipherImpl decryptCipher;
-
-    protected byte[] encryptIV, decryptIV;
-
-    public ChaCha20Poly1305Cipher(TlsCryptoParameters context, TlsStreamCipherImpl encryptCipher, TlsStreamCipherImpl decryptCipher,
-                                       TlsMAC writeMac, TlsMAC readMac)
-        throws IOException
+    public ChaCha20Poly1305Cipher(TlsCryptoParameters cryptoParams, TlsStreamCipherImpl encryptCipher,
+        TlsStreamCipherImpl decryptCipher, TlsMAC writeMac, TlsMAC readMac) throws IOException
     {
-        if (!TlsImplUtils.isTLSv12(context))
+        if (!TlsImplUtils.isTLSv12(cryptoParams))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        this.context = context;
+        this.cryptoParams = cryptoParams;
+
+        this.writeMac = writeMac;
+        this.readMac = readMac;
+
+        this.encryptCipher = encryptCipher;
+        this.decryptCipher = decryptCipher;
+
+        TlsStreamCipherImpl clientCipher, serverCipher;
+        if (cryptoParams.isServer())
+        {
+            clientCipher = decryptCipher;
+            serverCipher = encryptCipher;
+        }
+        else
+        {
+            clientCipher = encryptCipher;
+            serverCipher = decryptCipher;
+        }
 
         int cipherKeySize = 32;
         // TODO SecurityParameters.fixed_iv_length
@@ -47,14 +59,15 @@ public class ChaCha20Poly1305Cipher
 
         int key_block_size = (2 * cipherKeySize) + (2 * fixed_iv_length);
 
-        byte[] key_block = TlsImplUtils.calculateKeyBlock(context, key_block_size);
+        byte[] key_block = TlsImplUtils.calculateKeyBlock(cryptoParams, key_block_size);
 
         int offset = 0;
 
-        byte[] client_write_key = Arrays.copyOfRange(key_block, offset, offset + cipherKeySize);
+        clientCipher.setKey(key_block, offset, cipherKeySize);
         offset += cipherKeySize;
-        byte[] server_write_key = Arrays.copyOfRange(key_block, offset, offset + cipherKeySize);
+        serverCipher.setKey(key_block, offset, cipherKeySize);
         offset += cipherKeySize;
+
         byte[] client_write_IV = Arrays.copyOfRange(key_block, offset, offset + fixed_iv_length);
         offset += fixed_iv_length;
         byte[] server_write_IV = Arrays.copyOfRange(key_block, offset, offset + fixed_iv_length);
@@ -65,30 +78,18 @@ public class ChaCha20Poly1305Cipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        this.writeMac = writeMac;
-        this.readMac = readMac;
-        this.encryptCipher = encryptCipher;
-        this.decryptCipher = decryptCipher;
-
-        byte[] encryptKey, decryptKey;
-        if (context.isServer())
+        if (cryptoParams.isServer())
         {
-            encryptKey = server_write_key;
-            decryptKey = client_write_key;
             this.encryptIV = server_write_IV;
             this.decryptIV = client_write_IV;
         }
         else
         {
-            encryptKey = client_write_key;
-            decryptKey = server_write_key;
             this.encryptIV = client_write_IV;
             this.decryptIV = server_write_IV;
         }
 
-        this.encryptCipher.setKey(encryptKey);
         this.encryptCipher.init(encryptIV);
-        this.decryptCipher.setKey(decryptKey);
         this.decryptCipher.init(decryptIV);
     }
 
@@ -107,13 +108,11 @@ public class ChaCha20Poly1305Cipher
 
         encryptCipher.doFinal(cipherOut, 0, cipherOut.length, cipherOut, 0);
 
-        byte[] output = new byte[len + 16];
-        byte[] macKey = Arrays.copyOfRange(cipherOut, 0, 32);
+        byte[] output = new byte[len + writeMac.getMacLength()];
+        writeMac.setKey(cipherOut, 0, 32);
         System.arraycopy(cipherOut, 64, output, 0, len);
 
         Arrays.fill(cipherOut, (byte)0);
-
-        writeMac.setKey(macKey);
 
         byte[] additionalData = getAdditionalData(seqNo, type, len);
         byte[] mac = calculateRecordMAC(writeMac, additionalData, output, 0, len);
@@ -124,13 +123,13 @@ public class ChaCha20Poly1305Cipher
 
     public byte[] decodeCiphertext(long seqNo, short type, byte[] ciphertext, int offset, int len) throws IOException
     {
-        if (getPlaintextLimit(len) < 0)
+        int plaintextLength = len - 16;
+        if (plaintextLength < 0)
         {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
 
         initRecord(decryptCipher, seqNo, decryptIV);
-        int plaintextLength = len - 16;
 
         // MAC key is from the zeros at the front.
         byte[] cipherOut = new byte[64 + plaintextLength];
@@ -138,8 +137,7 @@ public class ChaCha20Poly1305Cipher
 
         decryptCipher.doFinal(cipherOut, 0, cipherOut.length, cipherOut, 0);
 
-        byte[] macKey = Arrays.copyOfRange(cipherOut, 0, 32);
-        readMac.setKey(macKey);
+        readMac.setKey(cipherOut, 0, 32);
 
         byte[] additionalData = getAdditionalData(seqNo, type, plaintextLength);
         byte[] calculatedMAC = calculateRecordMAC(readMac, additionalData, ciphertext, offset, plaintextLength);
@@ -214,7 +212,7 @@ public class ChaCha20Poly1305Cipher
         byte[] additional_data = new byte[13];
         TlsUtils.writeUint64(seqNo, additional_data, 0);
         TlsUtils.writeUint8(type, additional_data, 8);
-        TlsUtils.writeVersion(context.getServerVersion(), additional_data, 9);
+        TlsUtils.writeVersion(cryptoParams.getServerVersion(), additional_data, 9);
         TlsUtils.writeUint16(len, additional_data, 11);
 
         return additional_data;

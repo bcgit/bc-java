@@ -29,16 +29,16 @@ public class JceBlockCipherImpl
         this.cipherMode = (isEncrypting) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
     }
 
-    public void setKey(byte[] key)
+    public void setKey(byte[] key, int keyOff, int keyLen)
     {
-        this.key = new SecretKeySpec(key, algorithm);
+        this.key = new SecretKeySpec(key, keyOff, keyLen, algorithm);
     }
 
-    public void init(byte[] iv)
+    public void init(byte[] iv, int ivOff, int ivLen)
     {
         try
         {
-            cipher.init(cipherMode, key, new IvParameterSpec(iv));
+            cipher.init(cipherMode, key, new IvParameterSpec(iv, ivOff, ivLen));
         }
         catch (GeneralSecurityException e)
         {

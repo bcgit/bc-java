@@ -64,9 +64,9 @@ public class JceAEADCipherImpl
         this.cipherMode = (isEncrypting) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
     }
 
-    public void setKey(byte[] key)
+    public void setKey(byte[] key, int keyOff, int keyLen)
     {
-        this.key = new SecretKeySpec(key, algorithm);
+        this.key = new SecretKeySpec(key, keyOff, keyLen, algorithm);
     }
 
     public void init(byte[] nonce, int macSize, byte[] additionalData)

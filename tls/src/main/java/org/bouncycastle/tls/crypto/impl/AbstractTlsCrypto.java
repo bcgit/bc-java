@@ -24,6 +24,7 @@ public abstract class AbstractTlsCrypto
      */
     public TlsSecret adoptSecret(TlsSecret secret)
     {
+        // TODO[tls] Need an alternative that doesn't require AbstractTlsSecret (which holds literal data)
         if (secret instanceof AbstractTlsSecret)
         {
             AbstractTlsSecret sec = (AbstractTlsSecret)secret;
