@@ -20,7 +20,6 @@ public class JceStreamCipherImpl
     private final String baseAlgorithm;
 
     private SecretKey key;
-    private boolean hasNoIv;
 
     public JceStreamCipherImpl(Cipher cipher, String algorithm, boolean isEncrypting)
         throws GeneralSecurityException
@@ -35,20 +34,11 @@ public class JceStreamCipherImpl
         this.key = new SecretKeySpec(key, keyOff, keyLen, baseAlgorithm);
     }
 
-    public void init(byte[] iv)
+    public void init(byte[] iv, int ivOff, int ivLen)
     {
         try
         {
-            if (iv != null)
-            {
-                hasNoIv = false;
-                cipher.init(cipherMode, key, new IvParameterSpec(iv));
-            }
-            else
-            {
-                hasNoIv = true;
-                cipher.init(cipherMode, key);
-            }
+            cipher.init(cipherMode, key, new IvParameterSpec(iv, ivOff, ivLen));
         }
         catch (GeneralSecurityException e)
         {
@@ -60,19 +50,7 @@ public class JceStreamCipherImpl
     {
         try
         {
-            if (hasNoIv)
-            {
-                // note: this assumes no internal buffering will take place - fine for BC but with others not so sure..
-                int len = cipher.update(input, inputOffset, inputLength, output, outputOffset);
-
-                return len;
-            }
-            else
-            {
-                int len = cipher.doFinal(input, inputOffset, inputLength, output, outputOffset);
-
-                return len;
-            }
+            return cipher.doFinal(input, inputOffset, inputLength, output, outputOffset);
         }
         catch (GeneralSecurityException e)
         {
