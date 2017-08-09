@@ -27,13 +27,11 @@ import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.ARIAEngine;
 import org.bouncycastle.crypto.engines.CamelliaEngine;
-import org.bouncycastle.crypto.engines.ChaCha7539Engine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.engines.SEEDEngine;
 import org.bouncycastle.crypto.macs.HMac;
-import org.bouncycastle.crypto.macs.Poly1305;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
@@ -71,14 +69,12 @@ import org.bouncycastle.tls.crypto.TlsSRP6VerifierGenerator;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
-import org.bouncycastle.tls.crypto.impl.ChaCha20Poly1305Cipher;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipher;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipherImpl;
 import org.bouncycastle.tls.crypto.impl.TlsEncryptor;
 import org.bouncycastle.tls.crypto.impl.TlsNullCipher;
-import org.bouncycastle.tls.crypto.impl.TlsStreamCipherImpl;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -445,9 +441,7 @@ public class BcTlsCrypto
     protected TlsCipher createChaCha20Poly1305(TlsCryptoParameters cryptoParams)
         throws IOException
     {
-        return new ChaCha20Poly1305Cipher(cryptoParams,
-                new StreamOperator(new ChaCha7539Engine(), true), new StreamOperator(new ChaCha7539Engine(), false),
-            new MacOperator(new Poly1305()), new MacOperator(new Poly1305()));
+        return new TlsAEADCipher(cryptoParams, new BcChaCha20Poly1305(true), new BcChaCha20Poly1305(false), 32, 16, TlsAEADCipher.NONCE_RFC7905);
     }
 
     protected TlsAEADCipher createCipher_AES_CCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
@@ -700,36 +694,6 @@ public class BcTlsCrypto
         }
     }
 
-    private class StreamOperator
-        implements TlsStreamCipherImpl
-    {
-        private final boolean isEncrypting;
-        private final StreamCipher cipher;
-
-        private KeyParameter key;
-
-        StreamOperator(StreamCipher cipher, boolean isEncrypting)
-        {
-            this.cipher = cipher;
-            this.isEncrypting = isEncrypting;
-        }
-
-        public void setKey(byte[] key, int keyOff, int keyLen)
-        {
-            this.key = new KeyParameter(key, keyOff, keyLen);
-        }
-
-        public void init(byte[] iv, int ivOff, int ivLen)
-        {
-            cipher.init(isEncrypting, new ParametersWithIV(this.key, iv, ivOff, ivLen));
-        }
-
-        public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
-        {
-            return cipher.processBytes(input, inputOffset, inputLength, output, outputOffset);
-        }
-    }
-
     public class AeadOperator
         implements TlsAEADCipherImpl
     {
@@ -770,47 +734,8 @@ public class BcTlsCrypto
             catch (InvalidCipherTextException e)
             {
                 // TODO:
-                e.printStackTrace(); throw new RuntimeCryptoException(e.toString());
+                throw new RuntimeCryptoException(e.toString());
             }
-        }
-    }
-
-    private class MacOperator implements TlsMAC
-    {
-        private final Mac mac;
-
-        MacOperator(Mac mac)
-        {
-            this.mac = mac;
-        }
-
-        public void setKey(byte[] key, int keyOff, int keyLen)
-        {
-            mac.init(new KeyParameter(key, keyOff, keyLen));
-        }
-
-        public void update(byte[] input, int inOff, int length)
-        {
-            mac.update(input, inOff, length);
-        }
-
-        public byte[] calculateMAC()
-        {
-            byte[] rv = new byte[mac.getMacSize()];
-
-            mac.doFinal(rv, 0);
-
-            return rv;
-        }
-
-        public int getMacLength()
-        {
-            return mac.getMacSize();
-        }
-
-        public void reset()
-        {
-            mac.reset();
         }
     }
 
