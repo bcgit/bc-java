@@ -47,7 +47,6 @@ import org.bouncycastle.tls.crypto.TlsSRP6VerifierGenerator;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
-import org.bouncycastle.tls.crypto.impl.ChaCha20Poly1305Cipher;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipher;
@@ -55,7 +54,6 @@ import org.bouncycastle.tls.crypto.impl.TlsBlockCipherImpl;
 import org.bouncycastle.tls.crypto.impl.TlsEncryptor;
 import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
 import org.bouncycastle.tls.crypto.impl.TlsNullCipher;
-import org.bouncycastle.tls.crypto.impl.TlsStreamCipherImpl;
 import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6Client;
 import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6Server;
 import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6VerifierGenerator;
@@ -598,22 +596,6 @@ public class JcaTlsCrypto
     }
 
     /**
-     * If you want to create your own versions of stream ciphers, override this method.
-     *
-     * @param cipherName   the full name of the cipher (algorithm/mode/padding)
-     * @param algorithm    the base algorithm name
-     * @param keySize      keySize (in bytes) for the cipher key.
-     * @param isEncrypting true if the cipher is for encryption, false otherwise.
-     * @return a block cipher.
-     * @throws GeneralSecurityException in case of failure.
-     */
-    protected TlsStreamCipherImpl createStreamCipher(String cipherName, String algorithm, int keySize, boolean isEncrypting)
-        throws GeneralSecurityException
-    {
-        return new JceStreamCipherImpl(helper.createCipher(cipherName), algorithm, isEncrypting);
-    }
-
-    /**
      * If you want to create your own versions of HMACs, override this method.
      *
      * @param hmacName the name of the HMAC required.
@@ -630,19 +612,6 @@ public class JcaTlsCrypto
         {
             throw new RuntimeException("cannot create HMAC: " + hmacName, e);
         }
-    }
-
-    /**
-     * If you want to create your own versions of MACs, override this method.
-     *
-     * @param macName the name of the MAC required.
-     * @return a MAC calculator.
-     * @throws GeneralSecurityException in case of failure.
-     */
-    protected TlsMAC createMAC(String macName)
-        throws GeneralSecurityException
-    {
-        return new JceTlsMAC(helper.createMac(macName), macName);
     }
 
     /**
@@ -753,9 +722,8 @@ public class JcaTlsCrypto
     private TlsCipher createChaCha20Poly1305(TlsCryptoParameters cryptoParams)
         throws IOException, GeneralSecurityException
     {
-        return new ChaCha20Poly1305Cipher(cryptoParams,
-            createStreamCipher("ChaCha7539", "ChaCha7539", 32, true), createStreamCipher("ChaCha7539", "ChaCha7539", 32, false),
-            createMAC("Poly1305"), createMAC("Poly1305"));
+        return new TlsAEADCipher(cryptoParams, new JceChaCha20Poly1305(helper, true),
+            new JceChaCha20Poly1305(helper, false), 32, 16, TlsAEADCipher.NONCE_RFC7905);
     }
 
     private TlsAEADCipher createCipher_AES_CCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
