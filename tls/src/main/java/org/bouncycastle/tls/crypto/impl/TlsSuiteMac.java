@@ -1,21 +1,10 @@
 package org.bouncycastle.tls.crypto.impl;
 
-import java.io.IOException;
-
 /**
  * Base interface for a generic TLS MAC implementation for use with a cipher suite.
  */
 public interface TlsSuiteMac
 {
-    /**
-     * Set the key to be used with the MAC.
-     *
-     * @param macKey the bytes representing the key.
-     * @throws IOException an initialization exception.
-     */
-    void setKey(byte[] macKey)
-        throws IOException;
-
     /**
      * Return the output length (in bytes) of this MAC.
      *

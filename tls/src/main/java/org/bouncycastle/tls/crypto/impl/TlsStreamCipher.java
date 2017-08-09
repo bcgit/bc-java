@@ -16,19 +16,14 @@ import org.bouncycastle.util.Arrays;
 public class TlsStreamCipher
     implements TlsCipher
 {
-    protected TlsCryptoParameters cryptoParams;
-
-    protected TlsStreamCipherImpl encryptCipher;
-    protected TlsStreamCipherImpl decryptCipher;
-
-    protected TlsSuiteMac writeMac;
-    protected TlsSuiteMac readMac;
-
-    protected boolean usesNonce;
+    protected final TlsCryptoParameters cryptoParams;
+    protected final TlsStreamCipherImpl decryptCipher, encryptCipher;
+    protected final TlsSuiteMac readMac, writeMac;
+    protected final boolean usesNonce;
 
     public TlsStreamCipher(TlsCryptoParameters cryptoParams, TlsStreamCipherImpl encryptCipher,
-                                TlsStreamCipherImpl decryptCipher, TlsHMAC clientWriteDigest, TlsHMAC serverWriteDigest,
-                                int cipherKeySize, boolean usesNonce) throws IOException
+        TlsStreamCipherImpl decryptCipher, TlsHMAC clientMac, TlsHMAC serverMac, int cipherKeySize, boolean usesNonce)
+        throws IOException
     {
         boolean isServer = cryptoParams.isServer();
 
@@ -38,25 +33,34 @@ public class TlsStreamCipher
         this.encryptCipher = encryptCipher;
         this.decryptCipher = decryptCipher;
 
-        int key_block_size = (2 * cipherKeySize) + clientWriteDigest.getMacLength()
-            + serverWriteDigest.getMacLength();
+        TlsStreamCipherImpl clientCipher, serverCipher;
+        if (cryptoParams.isServer())
+        {
+            clientCipher = decryptCipher;
+            serverCipher = encryptCipher;
+        }
+        else
+        {
+            clientCipher = encryptCipher;
+            serverCipher = decryptCipher;
+        }
+
+        int key_block_size = (2 * cipherKeySize) + clientMac.getMacLength() + serverMac.getMacLength();
 
         byte[] key_block = TlsImplUtils.calculateKeyBlock(cryptoParams, key_block_size);
 
         int offset = 0;
 
         // Init MACs
-        TlsSuiteMac clientWriteMac = new TlsSuiteHMac(cryptoParams, clientWriteDigest);
-        clientWriteMac.setKey(Arrays.copyOfRange(key_block, offset, offset + clientWriteDigest.getMacLength()));
-        offset += clientWriteDigest.getMacLength();
-        TlsSuiteMac serverWriteMac = new TlsSuiteHMac(cryptoParams, serverWriteDigest);
-        serverWriteMac.setKey(Arrays.copyOfRange(key_block, offset, offset + serverWriteDigest.getMacLength()));
-        offset += serverWriteDigest.getMacLength();
+        clientMac.setKey(key_block, offset, clientMac.getMacLength());
+        offset += clientMac.getMacLength();
+        serverMac.setKey(key_block, offset, serverMac.getMacLength());
+        offset += serverMac.getMacLength();
 
         // Build keys
-        byte[] clientWriteKey = Arrays.copyOfRange(key_block, offset, offset + cipherKeySize);
+        clientCipher.setKey(key_block, offset, cipherKeySize);
         offset += cipherKeySize;
-        byte[] serverWriteKey = Arrays.copyOfRange(key_block, offset, offset + cipherKeySize);
+        serverCipher.setKey(key_block, offset, cipherKeySize);
         offset += cipherKeySize;
 
         if (offset != key_block_size)
@@ -64,34 +68,20 @@ public class TlsStreamCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        byte[] encryptParams, decryptParams;
+        byte[] initialNonce = usesNonce ? new byte[8] : null;
+
+        clientCipher.init(initialNonce);
+        serverCipher.init(initialNonce);
+
         if (isServer)
         {
-            this.writeMac = serverWriteMac;
-            this.readMac = clientWriteMac;
-            encryptParams = serverWriteKey;
-            decryptParams = clientWriteKey;
+            this.writeMac = new TlsSuiteHMac(cryptoParams, serverMac);
+            this.readMac = new TlsSuiteHMac(cryptoParams, clientMac);
         }
         else
         {
-            this.writeMac = clientWriteMac;
-            this.readMac = serverWriteMac;
-            encryptParams = clientWriteKey;
-            decryptParams = serverWriteKey;
-        }
-
-        this.encryptCipher.setKey(encryptParams);
-        this.decryptCipher.setKey(decryptParams);
-        if (usesNonce)
-        {
-            byte[] dummyNonce = new byte[8];
-            this.encryptCipher.init(dummyNonce);
-            this.decryptCipher.init(dummyNonce);
-        }
-        else
-        {
-            this.encryptCipher.init(null);
-            this.decryptCipher.init(null);
+            this.writeMac = new TlsSuiteHMac(cryptoParams, clientMac);
+            this.readMac = new TlsSuiteHMac(cryptoParams, serverMac);
         }
     }
 

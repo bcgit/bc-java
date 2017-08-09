@@ -1,10 +1,9 @@
 package org.bouncycastle.tls.crypto.impl;
 
-import java.io.IOException;
-
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsHMAC;
+import org.bouncycastle.tls.crypto.TlsMAC;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -13,11 +12,21 @@ import org.bouncycastle.util.Arrays;
 class TlsSuiteHMac
     implements TlsSuiteMac
 {
-    protected TlsCryptoParameters cryptoParams;
-    protected TlsHMAC mac;
-    protected int digestBlockSize;
-    protected int digestOverhead;
-    protected int macLength;
+    static int getMacSize(TlsCryptoParameters cryptoParams, TlsMAC mac)
+    {
+        int macSize = mac.getMacLength();
+        if (cryptoParams.getSecurityParameters().isTruncatedHMac())
+        {
+            macSize = Math.min(macSize, 10);
+        }
+        return macSize;
+    }
+
+    protected final TlsCryptoParameters cryptoParams;
+    protected final TlsHMAC mac;
+    protected final int digestBlockSize;
+    protected final int digestOverhead;
+    protected final int macSize;
 
     /**
      * Generate a new instance of an TlsMac.
@@ -28,23 +37,10 @@ class TlsSuiteHMac
     public TlsSuiteHMac(TlsCryptoParameters cryptoParams, TlsHMAC mac)
     {
         this.cryptoParams = cryptoParams;
-
+        this.mac = mac;
+        this.macSize = getMacSize(cryptoParams, mac);
         this.digestBlockSize = mac.getInternalBlockSize();
         this.digestOverhead = digestBlockSize / 8;
-
-        // NOTE: The input pad for HMAC is always a full digest block
-        this.mac = mac;
-    }
-
-    public void setKey(byte[] key) throws IOException
-    {
-        this.mac.setKey(key);
-
-        this.macLength = mac.getMacLength();
-        if (cryptoParams.getSecurityParameters().isTruncatedHMac())
-        {
-            this.macLength = Math.min(this.macLength, 10);
-        }
     }
 
     /**
@@ -52,7 +48,7 @@ class TlsSuiteHMac
      */
     public int getSize()
     {
-        return macLength;
+        return macSize;
     }
 
     /**
@@ -109,17 +105,19 @@ class TlsSuiteHMac
 
     protected int getDigestBlockCount(int inputLength)
     {
+        // NOTE: The input pad for HMAC is always a full digest block
+
         // NOTE: This calculation assumes a minimum of 1 pad byte
         return (inputLength + digestOverhead) / digestBlockSize;
     }
 
     protected byte[] truncate(byte[] bs)
     {
-        if (bs.length <= macLength)
+        if (bs.length <= macSize)
         {
             return bs;
         }
 
-        return Arrays.copyOf(bs, macLength);
+        return Arrays.copyOf(bs, macSize);
     }
 }

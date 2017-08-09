@@ -14,8 +14,6 @@ import org.bouncycastle.util.Arrays;
 public abstract class AbstractTlsSecret
     implements TlsSecret
 {
-    protected static final int MD5_SIZE = 16;
-
     protected byte[] data;
 
     /**
@@ -38,10 +36,10 @@ public abstract class AbstractTlsSecret
 
     protected abstract AbstractTlsCrypto getCrypto();
 
-    public TlsCipher createCipher(TlsCryptoParameters contextParams, int encryptionAlgorithm, int macAlgorithm)
+    public TlsCipher createCipher(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)
         throws IOException
     {
-        return getCrypto().createCipher(contextParams, encryptionAlgorithm, macAlgorithm);
+        return getCrypto().createCipher(cryptoParams, encryptionAlgorithm, macAlgorithm);
     }
 
     public synchronized void destroy()

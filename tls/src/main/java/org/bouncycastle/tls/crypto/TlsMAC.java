@@ -8,9 +8,11 @@ public interface TlsMAC
     /**
      * Set the key to be used by the MAC implementation supporting this service.
      *
-     * @param key the MAC key.
+     * @param key array holding the MAC key.
+     * @param keyOff offset into the array the key starts at.
+     * @param keyLen length of the key in the array.
      */
-    void setKey(byte[] key);
+    void setKey(byte[] key, int keyOff, int keyLen);
 
     /**
      * Update the MAC with the passed in input.
