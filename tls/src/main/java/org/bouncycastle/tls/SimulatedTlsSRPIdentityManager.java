@@ -32,7 +32,7 @@ public class SimulatedTlsSRPIdentityManager
     {
         TlsMAC mac = crypto.createHMAC(MACAlgorithm.hmac_sha1);
 
-        mac.setKey(seedKey);
+        mac.setKey(seedKey, 0, seedKey.length);
 
         TlsSRPConfig srpConfig = new TlsSRPConfig();
 

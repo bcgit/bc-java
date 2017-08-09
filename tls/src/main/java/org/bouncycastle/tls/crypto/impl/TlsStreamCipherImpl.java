@@ -10,9 +10,11 @@ public interface TlsStreamCipherImpl
     /**
      * Set the key to be used by the stream cipher implementation supporting this service.
      *
-     * @param key the stream cipher key.
+     * @param key array holding the stream cipher key.
+     * @param keyOff offset into the array the key starts at.
+     * @param keyLen length of the key in the array.
      */
-    void setKey(byte[] key) throws IOException;
+    void setKey(byte[] key, int keyOff, int keyLen) throws IOException;
 
     /**
      * Initialise the parameters for stream cipher.

@@ -26,13 +26,13 @@ public interface TlsSecret
      * <p>
      * See enumeration classes {@link EncryptionAlgorithm}, {@link MACAlgorithm} for appropriate argument values.
      * </p>
-     * @param contextParams context specific parameters.
+     * @param cryptoParams context specific parameters.
      * @param encryptionAlgorithm the encryption algorithm to be employed by the cipher suite.
      * @param macAlgorithm  the MAC algorithm to be employed by the cipher suite.
      * @return a TlsCipherSuite supporting the encryption and mac algorithm.
      * @throws IOException
      */
-    TlsCipher createCipher(TlsCryptoParameters contextParams, int encryptionAlgorithm, int macAlgorithm) throws IOException;
+    TlsCipher createCipher(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm) throws IOException;
 
     /**
      * Destroy the internal state of the secret. After this call, any attempt to use the

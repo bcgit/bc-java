@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.security.SecureRandom;
 
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
@@ -18,64 +17,80 @@ import org.bouncycastle.util.Arrays;
 public class TlsBlockCipher
     implements TlsCipher
 {
-    protected TlsCryptoParameters cryptoParams;
-    private final TlsCrypto crypto;
-    protected byte[] randomData;
-    protected boolean useExplicitIV;
-    protected boolean encryptThenMAC;
+    protected final TlsCrypto crypto;
+    protected final TlsCryptoParameters cryptoParams;
+    protected final byte[] randomData;
+    protected final boolean encryptThenMAC;
+    protected final boolean useExplicitIV;
+    protected final boolean useExtraPadding;
 
-    protected TlsBlockCipherImpl encryptCipher;
-    protected TlsBlockCipherImpl decryptCipher;
+    protected final TlsBlockCipherImpl decryptCipher, encryptCipher;
+    protected final TlsSuiteMac readMac, writeMac;
 
-    protected TlsSuiteMac writeMac;
-    protected TlsSuiteMac readMac;
-
-    public TlsBlockCipher(TlsCrypto crypto, TlsCryptoParameters cryptoParams, TlsBlockCipherImpl encryptCipher, TlsBlockCipherImpl decryptCipher,
-                               TlsHMAC writeMac, TlsHMAC readMac, int cipherKeySize)
-        throws IOException
+    public TlsBlockCipher(TlsCrypto crypto, TlsCryptoParameters cryptoParams, TlsBlockCipherImpl encryptCipher,
+        TlsBlockCipherImpl decryptCipher, TlsHMAC clientMac, TlsHMAC serverMac, int cipherKeySize) throws IOException
     {
         this.cryptoParams = cryptoParams;
         this.crypto = crypto;
         this.randomData = cryptoParams.getNonceGenerator().generateNonce(256);
 
-        this.useExplicitIV = TlsImplUtils.isTLSv11(cryptoParams);
         this.encryptThenMAC = cryptoParams.getSecurityParameters().isEncryptThenMAC();
+        this.useExplicitIV = TlsImplUtils.isTLSv11(cryptoParams);
 
-        int key_block_size = (2 * cipherKeySize) + writeMac.getMacLength() + readMac.getMacLength();
+        /*
+         * Don't use variable-length padding with truncated MACs.
+         * 
+         * See "Tag Size Does Matter: Attacks and Proofs for the TLS Record Protocol", Paterson,
+         * Ristenpart, Shrimpton.
+         *
+         * TODO[DTLS] Consider supporting in DTLS (without exceeding send limit though)
+         */
+        this.useExtraPadding = !cryptoParams.getServerVersion().isDTLS()
+            && (encryptThenMAC || !cryptoParams.getSecurityParameters().isTruncatedHMac());
 
-        // From TLS 1.1 onwards, block ciphers don't need client_write_IV
+        this.encryptCipher = encryptCipher;
+        this.decryptCipher = decryptCipher;
+
+        TlsBlockCipherImpl clientCipher, serverCipher;
+        if (cryptoParams.isServer())
+        {
+            clientCipher = decryptCipher;
+            serverCipher = encryptCipher;
+        }
+        else
+        {
+            clientCipher = encryptCipher;
+            serverCipher = decryptCipher;
+        }
+
+        int key_block_size = (2 * cipherKeySize) + clientMac.getMacLength() + serverMac.getMacLength();
+
+        // From TLS 1.1 onwards, block ciphers don't need IVs from the key_block
         if (!useExplicitIV)
         {
-            key_block_size += encryptCipher.getBlockSize() + decryptCipher.getBlockSize();
+            key_block_size += clientCipher.getBlockSize() + serverCipher.getBlockSize();
         }
 
         byte[] key_block = TlsImplUtils.calculateKeyBlock(cryptoParams, key_block_size);
 
         int offset = 0;
 
-        byte[] clientMacKey = Arrays.copyOfRange(key_block, offset, offset + writeMac.getMacLength());
-        offset += clientMacKey.length;
-        byte[] serverMacKey = Arrays.copyOfRange(key_block, offset, offset + writeMac.getMacLength());
-        offset += serverMacKey.length;
+        clientMac.setKey(key_block, offset, clientMac.getMacLength());
+        offset += clientMac.getMacLength();
+        serverMac.setKey(key_block, offset, serverMac.getMacLength());
+        offset += serverMac.getMacLength();
 
-        byte[] client_write_key = Arrays.copyOfRange(key_block, offset, offset + cipherKeySize);
+        clientCipher.setKey(key_block, offset, cipherKeySize);
         offset += cipherKeySize;
-        byte[] server_write_key = Arrays.copyOfRange(key_block, offset, offset + cipherKeySize);
+        serverCipher.setKey(key_block, offset, cipherKeySize);
         offset += cipherKeySize;
 
-        byte[] server_IV, client_IV;
-
-        if (useExplicitIV)
+        if (!useExplicitIV)
         {
-            client_IV = new byte[encryptCipher.getBlockSize()];
-            server_IV = new byte[encryptCipher.getBlockSize()];
-        }
-        else
-        {
-            client_IV = Arrays.copyOfRange(key_block, offset, offset + encryptCipher.getBlockSize());
-            offset += encryptCipher.getBlockSize();
-            server_IV = Arrays.copyOfRange(key_block, offset, offset + encryptCipher.getBlockSize());
-            offset += encryptCipher.getBlockSize();
+            clientCipher.init(key_block, offset, clientCipher.getBlockSize());
+            offset += clientCipher.getBlockSize();
+            serverCipher.init(key_block, offset, serverCipher.getBlockSize());
+            offset += serverCipher.getBlockSize();
         }
 
         if (offset != key_block_size)
@@ -83,30 +98,15 @@ public class TlsBlockCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        this.readMac = new TlsSuiteHMac(cryptoParams, readMac);
-        this.writeMac = new TlsSuiteHMac(cryptoParams, writeMac);
-        this.encryptCipher = encryptCipher;
-        this.decryptCipher = decryptCipher;
-
         if (cryptoParams.isServer())
         {
-            this.writeMac.setKey(serverMacKey);
-            this.readMac.setKey(clientMacKey);
-
-            this.encryptCipher.setKey(server_write_key);
-            this.decryptCipher.setKey(client_write_key);
-            this.encryptCipher.init(server_IV);
-            this.decryptCipher.init(client_IV);
+            this.writeMac = new TlsSuiteHMac(cryptoParams, serverMac);
+            this.readMac = new TlsSuiteHMac(cryptoParams, clientMac);
         }
         else
         {
-            this.writeMac.setKey(clientMacKey);
-            this.readMac.setKey(serverMacKey);
-
-            this.encryptCipher.setKey(client_write_key);
-            this.decryptCipher.setKey(server_write_key);
-            this.encryptCipher.init(client_IV);
-            this.decryptCipher.init(server_IV);
+            this.writeMac = new TlsSuiteHMac(cryptoParams, clientMac);
+            this.readMac = new TlsSuiteHMac(cryptoParams, serverMac);
         }
     }
 
@@ -147,8 +147,6 @@ public class TlsBlockCipher
         int blockSize = encryptCipher.getBlockSize();
         int macSize = writeMac.getSize();
 
-        ProtocolVersion version = cryptoParams.getServerVersion();
-
         int enc_input_length = len;
         if (!encryptThenMAC)
         {
@@ -156,23 +154,12 @@ public class TlsBlockCipher
         }
 
         int padding_length = blockSize - 1 - (enc_input_length % blockSize);
-
-        /*
-         * Don't use variable-length padding with truncated MACs.
-         * 
-         * See "Tag Size Does Matter: Attacks and Proofs for the TLS Record Protocol", Paterson,
-         * Ristenpart, Shrimpton.
-         */
-        if (encryptThenMAC || !cryptoParams.getSecurityParameters().isTruncatedHMac())
+        if (useExtraPadding)
         {
-            // TODO[DTLS] Consider supporting in DTLS (without exceeding send limit though)
-            if (!version.isDTLS())
-            {
-                // Add a random number of extra blocks worth of padding
-                int maxExtraPadBlocks = (255 - padding_length) / blockSize;
-                int actualExtraPadBlocks = chooseExtraPadBlocks(crypto.getSecureRandom(), maxExtraPadBlocks);
-                padding_length += actualExtraPadBlocks * blockSize;
-            }
+            // Add a random number of extra blocks worth of padding
+            int maxExtraPadBlocks = (255 - padding_length) / blockSize;
+            int actualExtraPadBlocks = chooseExtraPadBlocks(crypto.getSecureRandom(), maxExtraPadBlocks);
+            padding_length += actualExtraPadBlocks * blockSize;
         }
 
         int totalSize = len + macSize + padding_length + 1;
@@ -188,7 +175,7 @@ public class TlsBlockCipher
         {
             byte[] explicitIV = cryptoParams.getNonceGenerator().generateNonce(blockSize);
 
-            encryptCipher.init(explicitIV);
+            encryptCipher.init(explicitIV, 0, blockSize);
 
             System.arraycopy(explicitIV, 0, outBuf, outOff, blockSize);
             outOff += blockSize;
@@ -284,7 +271,7 @@ public class TlsBlockCipher
 
         if (useExplicitIV)
         {
-            decryptCipher.init(Arrays.copyOfRange(ciphertext, offset, offset + blockSize));
+            decryptCipher.init(ciphertext, offset, blockSize);
 
             offset += blockSize;
             blocks_length -= blockSize;

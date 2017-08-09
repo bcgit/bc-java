@@ -669,15 +669,15 @@ public class BcTlsCrypto
             this.isEncrypting = isEncrypting;
         }
 
-        public void setKey(byte[] key)
+        public void setKey(byte[] key, int keyOff, int keyLen)
         {
-            this.key = new KeyParameter(key);
+            this.key = new KeyParameter(key, keyOff, keyLen);
             cipher.init(isEncrypting, new ParametersWithIV(this.key, new byte[cipher.getBlockSize()]));
         }
 
-        public void init(byte[] iv)
+        public void init(byte[] iv, int ivOff, int ivLen)
         {
-            cipher.init(isEncrypting, new ParametersWithIV(null, iv));
+            cipher.init(isEncrypting, new ParametersWithIV(null, iv, ivOff, ivLen));
         }
 
         public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
@@ -712,9 +712,9 @@ public class BcTlsCrypto
             this.isEncrypting = isEncrypting;
         }
 
-        public void setKey(byte[] key)
+        public void setKey(byte[] key, int keyOff, int keyLen)
         {
-            this.key = new KeyParameter(key);
+            this.key = new KeyParameter(key, keyOff, keyLen);
         }
 
         public void init(byte[] iv)
@@ -749,9 +749,9 @@ public class BcTlsCrypto
             this.isEncrypting = isEncrypting;
         }
 
-        public void setKey(byte[] key)
+        public void setKey(byte[] key, int keyOff, int keyLen)
         {
-            this.key = new KeyParameter(key);
+            this.key = new KeyParameter(key, keyOff, keyLen);
         }
 
         public void init(byte[] nonce, int macSize, byte[] additionalData)
@@ -789,9 +789,9 @@ public class BcTlsCrypto
             this.mac = mac;
         }
 
-        public void setKey(byte[] key)
+        public void setKey(byte[] key, int keyOff, int keyLen)
         {
-            mac.init(new KeyParameter(key));
+            mac.init(new KeyParameter(key, keyOff, keyLen));
         }
 
         public void update(byte[] input, int inOff, int length)
@@ -828,9 +828,9 @@ public class BcTlsCrypto
             this.hmac = new HMac(digest);
         }
 
-        public void setKey(byte[] key)
+        public void setKey(byte[] key, int keyOff, int keyLen)
         {
-            hmac.init(new KeyParameter(key));
+            hmac.init(new KeyParameter(key, keyOff, keyLen));
         }
 
         public void update(byte[] input, int inOff, int length)

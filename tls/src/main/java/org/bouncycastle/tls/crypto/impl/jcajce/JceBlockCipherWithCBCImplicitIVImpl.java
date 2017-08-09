@@ -32,19 +32,19 @@ public class JceBlockCipherWithCBCImplicitIVImpl
         this.isEncrypting = isEncrypting;
     }
 
-    public void setKey(byte[] key)
+    public void setKey(byte[] key, int keyOff, int keyLen)
     {
-        this.key = new SecretKeySpec(key, algorithm);
+        this.key = new SecretKeySpec(key, keyOff, keyLen, algorithm);
     }
 
-    public void init(byte[] iv)
+    public void init(byte[] iv, int ivOff, int ivLen)
     {
         if (nextIV != null)
         {
             throw new IllegalStateException("unexpected reinitialization of an implicit-IV cipher");
         }
 
-        nextIV = iv;
+        nextIV = Arrays.copyOfRange(iv, ivOff, ivOff + ivLen);
     }
 
     public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)

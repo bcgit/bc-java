@@ -30,9 +30,9 @@ public class JceStreamCipherImpl
         this.cipherMode = (isEncrypting) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
     }
 
-    public void setKey(byte[] key)
+    public void setKey(byte[] key, int keyOff, int keyLen)
     {
-        this.key = new SecretKeySpec(key, baseAlgorithm);
+        this.key = new SecretKeySpec(key, keyOff, keyLen, baseAlgorithm);
     }
 
     public void init(byte[] iv)

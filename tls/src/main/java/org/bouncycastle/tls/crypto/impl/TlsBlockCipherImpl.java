@@ -10,17 +10,21 @@ public interface TlsBlockCipherImpl
     /**
      * Set the key to be used by the block cipher implementation supporting this service.
      *
-     * @param key the block cipher key.
+     * @param key array holding the block cipher key.
+     * @param keyOff offset into the array the key starts at.
+     * @param keyLen length of the key in the array.
      */
-    void setKey(byte[] key) throws IOException;
+    void setKey(byte[] key, int keyOff, int keyLen) throws IOException;
 
     /**
      * Initialise the parameters for operator.
      *
-     * @param iv the initialization vector.
+     * @param iv array holding the initialization vector (IV).
+     * @param ivOff offset into the array the IV starts at.
+     * @param ivLen length of the IV in the array.
      * @throws IOException if the parameters are inappropriate.
      */
-    void init(byte[] iv) throws IOException;
+    void init(byte[] iv, int ivOff, int ivLen) throws IOException;
 
     /**
      * Perform the cipher encryption/decryption returning the output in output.

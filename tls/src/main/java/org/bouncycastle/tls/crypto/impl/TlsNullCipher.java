@@ -15,10 +15,8 @@ import org.bouncycastle.util.Arrays;
 public class TlsNullCipher
     implements TlsCipher
 {
-    protected TlsCryptoParameters cryptoParameters;
-
-    protected TlsSuiteHMac writeMac;
-    protected TlsSuiteHMac readMac;
+    protected final TlsCryptoParameters cryptoParameters;
+    protected final TlsSuiteHMac readMac, writeMac;
 
     public TlsNullCipher(TlsCryptoParameters cryptoParameters, TlsHMAC clientMac, TlsHMAC serverMac)
         throws IOException
@@ -30,10 +28,10 @@ public class TlsNullCipher
 
         int offset = 0;
 
-        byte[] clientMacKey = Arrays.copyOfRange(key_block, offset, offset + clientMac.getMacLength());
-        offset += clientMacKey.length;
-        byte[] serverMacKey = Arrays.copyOfRange(key_block, offset, offset + serverMac.getMacLength());
-        offset += serverMacKey.length;
+        clientMac.setKey(key_block, offset, clientMac.getMacLength());
+        offset += clientMac.getMacLength();
+        serverMac.setKey(key_block, offset, serverMac.getMacLength());
+        offset += serverMac.getMacLength();
 
         if (offset != key_block_size)
         {
@@ -44,18 +42,11 @@ public class TlsNullCipher
         {
             writeMac = new TlsSuiteHMac(cryptoParameters, serverMac);
             readMac = new TlsSuiteHMac(cryptoParameters, clientMac);
-
-            writeMac.setKey(serverMacKey);
-            readMac.setKey(clientMacKey);
-
         }
         else
         {
             writeMac = new TlsSuiteHMac(cryptoParameters, clientMac);
             readMac = new TlsSuiteHMac(cryptoParameters, serverMac);
-
-            writeMac.setKey(clientMacKey);
-            readMac.setKey(serverMacKey);
         }
     }
 
