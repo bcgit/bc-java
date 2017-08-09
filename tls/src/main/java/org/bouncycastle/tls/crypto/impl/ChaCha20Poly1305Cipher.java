@@ -89,8 +89,8 @@ public class ChaCha20Poly1305Cipher
             this.decryptIV = server_write_IV;
         }
 
-        this.encryptCipher.init(encryptIV);
-        this.decryptCipher.init(decryptIV);
+        this.encryptCipher.init(encryptIV, 0, encryptIV.length);
+        this.decryptCipher.init(decryptIV, 0, decryptIV.length);
     }
 
     public int getPlaintextLimit(int ciphertextLimit)
@@ -160,7 +160,8 @@ public class ChaCha20Poly1305Cipher
         throws IOException
     {
         byte[] nonce = calculateNonce(seqNo, iv);
-        cipher.init(nonce);
+
+        cipher.init(nonce, 0, nonce.length);
     }
 
     protected byte[] calculateNonce(long seqNo, byte[] iv)
