@@ -49,6 +49,11 @@ class DTLSRecordLayer
         this.plaintextLimit = plaintextLimit;
     }
 
+    int getReadEpoch()
+    {
+        return readEpoch.getEpoch();
+    }
+
     ProtocolVersion getReadVersion()
     {
         return readVersion;
