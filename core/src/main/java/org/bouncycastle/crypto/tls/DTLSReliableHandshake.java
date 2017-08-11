@@ -10,7 +10,8 @@ import org.bouncycastle.util.Integers;
 
 class DTLSReliableHandshake
 {
-    private final static int MAX_RECEIVE_AHEAD = 10;
+    private final static int MAX_RECEIVE_AHEAD = 16;
+    private static final int MESSAGE_HEADER_LENGTH = 12;
 
     /*
      * No 'final' modifiers so that it works in earlier JDKs
@@ -88,21 +89,7 @@ class DTLSReliableHandshake
         if (sending)
         {
             sending = false;
-            prepareInboundFlight();
-        }
-
-        // Check if we already have the next message waiting
-        {
-            DTLSReassembler next = (DTLSReassembler)currentInboundFlight.get(Integers.valueOf(next_receive_seq));
-            if (next != null)
-            {
-                byte[] body = next.getBodyIfComplete();
-                if (body != null)
-                {
-                    previousInboundFlight = null;
-                    return updateHandshakeMessagesDigest(new Message(next_receive_seq++, next.getMsgType(), body));
-                }
-            }
+            prepareInboundFlight(new Hashtable());
         }
 
         byte[] buf = null;
@@ -112,96 +99,32 @@ class DTLSReliableHandshake
 
         for (;;)
         {
-            int receiveLimit = recordLayer.getReceiveLimit();
-            if (buf == null || buf.length < receiveLimit)
-            {
-                buf = new byte[receiveLimit];
-            }
-
-            // TODO Handle records containing multiple handshake messages
-
             try
             {
-                for (; ; )
+                for (;;)
                 {
+                    Message pending = getPendingMessage();
+                    if (pending != null)
+                    {
+                        return pending;
+                    }
+
+                    int receiveLimit = recordLayer.getReceiveLimit();
+                    if (buf == null || buf.length < receiveLimit)
+                    {
+                        buf = new byte[receiveLimit];
+                    }
+
                     int received = recordLayer.receive(buf, 0, receiveLimit, readTimeoutMillis);
                     if (received < 0)
                     {
                         break;
                     }
-                    if (received < 12)
-                    {
-                        continue;
-                    }
-                    int fragment_length = TlsUtils.readUint24(buf, 9);
-                    if (received != (fragment_length + 12))
-                    {
-                        continue;
-                    }
-                    int seq = TlsUtils.readUint16(buf, 4);
-                    if (seq > (next_receive_seq + MAX_RECEIVE_AHEAD))
-                    {
-                        continue;
-                    }
-                    short msg_type = TlsUtils.readUint8(buf, 0);
-                    int length = TlsUtils.readUint24(buf, 1);
-                    int fragment_offset = TlsUtils.readUint24(buf, 6);
-                    if (fragment_offset + fragment_length > length)
-                    {
-                        continue;
-                    }
 
-                    if (seq < next_receive_seq)
+                    boolean resentOutbound = processRecord(MAX_RECEIVE_AHEAD, recordLayer.getReadEpoch(), buf, 0, received);
+                    if (resentOutbound)
                     {
-                        /*
-                         * NOTE: If we receive the previous flight of incoming messages in full
-                         * again, retransmit our last flight
-                         */
-                        if (previousInboundFlight != null)
-                        {
-                            DTLSReassembler reassembler = (DTLSReassembler)previousInboundFlight.get(Integers
-                                .valueOf(seq));
-                            if (reassembler != null)
-                            {
-                                reassembler.contributeFragment(msg_type, length, buf, 12, fragment_offset,
-                                    fragment_length);
-
-                                if (checkAll(previousInboundFlight))
-                                {
-                                    resendOutboundFlight();
-
-                                    /*
-                                     * TODO[DTLS] implementations SHOULD back off handshake packet
-                                     * size during the retransmit backoff.
-                                     */
-                                    readTimeoutMillis = Math.min(readTimeoutMillis * 2, 60000);
-
-                                    resetAll(previousInboundFlight);
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        DTLSReassembler reassembler = (DTLSReassembler)currentInboundFlight.get(Integers.valueOf(seq));
-                        if (reassembler == null)
-                        {
-                            reassembler = new DTLSReassembler(msg_type, length);
-                            currentInboundFlight.put(Integers.valueOf(seq), reassembler);
-                        }
-
-                        reassembler.contributeFragment(msg_type, length, buf, 12, fragment_offset, fragment_length);
-
-                        if (seq == next_receive_seq)
-                        {
-                            byte[] body = reassembler.getBodyIfComplete();
-                            if (body != null)
-                            {
-                                previousInboundFlight = null;
-                                return updateHandshakeMessagesDigest(new Message(next_receive_seq++,
-                                    reassembler.getMsgType(), body));
-                            }
-                        }
+                        readTimeoutMillis = backOff(readTimeoutMillis);
                     }
                 }
             }
@@ -211,12 +134,7 @@ class DTLSReliableHandshake
             }
 
             resendOutboundFlight();
-
-            /*
-             * TODO[DTLS] implementations SHOULD back off handshake packet size during the
-             * retransmit backoff.
-             */
-            readTimeoutMillis = Math.min(readTimeoutMillis * 2, 60000);
+            readTimeoutMillis = backOff(readTimeoutMillis);
         }
     }
 
@@ -227,67 +145,27 @@ class DTLSReliableHandshake
         {
             checkInboundFlight();
         }
-        else if (currentInboundFlight != null)
+        else
         {
-            /*
-             * RFC 6347 4.2.4. In addition, for at least twice the default MSL defined for [TCP],
-             * when in the FINISHED state, the node that transmits the last flight (the server in an
-             * ordinary handshake or the client in a resumed handshake) MUST respond to a retransmit
-             * of the peer's last flight with a retransmit of the last flight.
-             */
-            retransmit = new DTLSHandshakeRetransmit()
+            prepareInboundFlight(null);
+
+            if (previousInboundFlight != null)
             {
-                public void receivedHandshakeRecord(int epoch, byte[] buf, int off, int len)
-                    throws IOException
+                /*
+                 * RFC 6347 4.2.4. In addition, for at least twice the default MSL defined for [TCP],
+                 * when in the FINISHED state, the node that transmits the last flight (the server in an
+                 * ordinary handshake or the client in a resumed handshake) MUST respond to a retransmit
+                 * of the peer's last flight with a retransmit of the last flight.
+                 */
+                retransmit = new DTLSHandshakeRetransmit()
                 {
-                    /*
-                     * TODO Need to handle the case where the previous inbound flight contains
-                     * messages from two epochs.
-                     */
-                    if (len < 12)
+                    public void receivedHandshakeRecord(int epoch, byte[] buf, int off, int len)
+                        throws IOException
                     {
-                        return;
+                        processRecord(0, epoch, buf, off, len);
                     }
-                    int fragment_length = TlsUtils.readUint24(buf, off + 9);
-                    if (len != (fragment_length + 12))
-                    {
-                        return;
-                    }
-                    int seq = TlsUtils.readUint16(buf, off + 4);
-                    if (seq >= next_receive_seq)
-                    {
-                        return;
-                    }
-
-                    short msg_type = TlsUtils.readUint8(buf, off);
-
-                    // TODO This is a hack that only works until we try to support renegotiation
-                    int expectedEpoch = msg_type == HandshakeType.finished ? 1 : 0;
-                    if (epoch != expectedEpoch)
-                    {
-                        return;
-                    }
-
-                    int length = TlsUtils.readUint24(buf, off + 1);
-                    int fragment_offset = TlsUtils.readUint24(buf, off + 6);
-                    if (fragment_offset + fragment_length > length)
-                    {
-                        return;
-                    }
-
-                    DTLSReassembler reassembler = (DTLSReassembler)currentInboundFlight.get(Integers.valueOf(seq));
-                    if (reassembler != null)
-                    {
-                        reassembler.contributeFragment(msg_type, length, buf, off + 12, fragment_offset,
-                            fragment_length);
-                        if (checkAll(currentInboundFlight))
-                        {
-                            resendOutboundFlight();
-                            resetAll(currentInboundFlight);
-                        }
-                    }
-                }
-            };
+                };
+            }
         }
 
         recordLayer.handshakeSuccessful(retransmit);
@@ -296,6 +174,15 @@ class DTLSReliableHandshake
     void resetHandshakeMessagesDigest()
     {
         handshakeHash.reset();
+    }
+
+    private int backOff(int timeoutMillis)
+    {
+        /*
+         * TODO[DTLS] implementations SHOULD back off handshake packet size during the
+         * retransmit backoff.
+         */
+        return Math.min(timeoutMillis * 2, 60000);
     }
 
     /**
@@ -314,11 +201,111 @@ class DTLSReliableHandshake
         }
     }
 
-    private void prepareInboundFlight()
+    private Message getPendingMessage() throws IOException
+    {
+        DTLSReassembler next = (DTLSReassembler)currentInboundFlight.get(Integers.valueOf(next_receive_seq));
+        if (next != null)
+        {
+            byte[] body = next.getBodyIfComplete();
+            if (body != null)
+            {
+                previousInboundFlight = null;
+                return updateHandshakeMessagesDigest(new Message(next_receive_seq++, next.getMsgType(), body));
+            }
+        }
+        return null;
+    }
+
+    private void prepareInboundFlight(Hashtable nextFlight)
     {
         resetAll(currentInboundFlight);
         previousInboundFlight = currentInboundFlight;
-        currentInboundFlight = new Hashtable();
+        currentInboundFlight = nextFlight;
+    }
+
+    private boolean processRecord(int windowSize, int epoch, byte[] buf, int off, int len) throws IOException
+    {
+        boolean checkPreviousFlight = false;
+
+        int originalOff = off;
+
+        while (len >= MESSAGE_HEADER_LENGTH)
+        {
+            if (off > originalOff)
+            {
+                System.err.println("MULTI-BALL!");
+            }
+            int fragment_length = TlsUtils.readUint24(buf, off + 9);
+            int message_length = fragment_length + MESSAGE_HEADER_LENGTH;
+            if (len < message_length)
+            {
+                // NOTE: Truncated message - ignore it
+                break;
+            }
+
+            int length = TlsUtils.readUint24(buf, off + 1);
+            int fragment_offset = TlsUtils.readUint24(buf, off + 6);
+            if (fragment_offset + fragment_length > length)
+            {
+                // NOTE: Malformed fragment - ignore it and the rest of the record
+                break;
+            }
+
+            /*
+             * NOTE: This very simple epoch check will only work until we want to support
+             * renegotiation (and we're not likely to do that anyway).
+             */
+            short msg_type = TlsUtils.readUint8(buf, off + 0);
+            int expectedEpoch = msg_type == HandshakeType.finished ? 1 : 0;
+            if (epoch != expectedEpoch)
+            {
+                break;
+            }
+
+            int message_seq = TlsUtils.readUint16(buf, off + 4);
+            if (message_seq >= (next_receive_seq + windowSize))
+            {
+                // NOTE: Too far ahead - ignore
+            }
+            else if (message_seq >= next_receive_seq)
+            {
+                DTLSReassembler reassembler = (DTLSReassembler)currentInboundFlight.get(Integers.valueOf(message_seq));
+                if (reassembler == null)
+                {
+                    reassembler = new DTLSReassembler(msg_type, length);
+                    currentInboundFlight.put(Integers.valueOf(message_seq), reassembler);
+                }
+
+                reassembler.contributeFragment(msg_type, length, buf, off + MESSAGE_HEADER_LENGTH, fragment_offset,
+                    fragment_length);
+            }
+            else if (previousInboundFlight != null)
+            {
+                /*
+                 * NOTE: If we receive the previous flight of incoming messages in full again,
+                 * retransmit our last flight
+                 */
+
+                DTLSReassembler reassembler = (DTLSReassembler)previousInboundFlight.get(Integers.valueOf(message_seq));
+                if (reassembler != null)
+                {
+                    reassembler.contributeFragment(msg_type, length, buf, off + MESSAGE_HEADER_LENGTH, fragment_offset,
+                        fragment_length);
+                    checkPreviousFlight = true;
+                }
+            }
+
+            off += message_length;
+            len -= message_length;
+        }
+
+        boolean result = checkPreviousFlight && checkAll(previousInboundFlight);
+        if (result)
+        {
+            resendOutboundFlight();
+            resetAll(previousInboundFlight);
+        }
+        return result;
     }
 
     private void resendOutboundFlight()
@@ -337,7 +324,7 @@ class DTLSReliableHandshake
         if (message.getType() != HandshakeType.hello_request)
         {
             byte[] body = message.getBody();
-            byte[] buf = new byte[12];
+            byte[] buf = new byte[MESSAGE_HEADER_LENGTH];
             TlsUtils.writeUint8(message.getType(), buf, 0);
             TlsUtils.writeUint24(body.length, buf, 1);
             TlsUtils.writeUint16(message.getSeq(), buf, 4);
@@ -353,7 +340,7 @@ class DTLSReliableHandshake
         throws IOException
     {
         int sendLimit = recordLayer.getSendLimit();
-        int fragmentLimit = sendLimit - 12;
+        int fragmentLimit = sendLimit - MESSAGE_HEADER_LENGTH;
 
         // TODO Support a higher minimum fragment size?
         if (fragmentLimit < 1)
@@ -378,7 +365,7 @@ class DTLSReliableHandshake
     private void writeHandshakeFragment(Message message, int fragment_offset, int fragment_length)
         throws IOException
     {
-        RecordLayerBuffer fragment = new RecordLayerBuffer(12 + fragment_length);
+        RecordLayerBuffer fragment = new RecordLayerBuffer(MESSAGE_HEADER_LENGTH + fragment_length);
         TlsUtils.writeUint8(message.getType(), fragment);
         TlsUtils.writeUint24(message.getBody().length, fragment);
         TlsUtils.writeUint16(message.getSeq(), fragment);
