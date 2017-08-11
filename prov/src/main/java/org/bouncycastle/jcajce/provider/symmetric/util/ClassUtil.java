@@ -17,9 +17,9 @@ public class ClassUtil
             }
             else
             {
-                return AccessController.doPrivileged(new PrivilegedAction<Class>()
+                return (Class)AccessController.doPrivileged(new PrivilegedAction()
                 {
-                    public Class run()
+                    public Object run()
                     {
                         try
                         {

@@ -60,7 +60,6 @@ public class KXTSBlockCipher
         this.counter = 0;
     }
 
-    @Override
     public void init(boolean forEncryption, CipherParameters parameters)
     {
         if (parameters instanceof ParametersWithIV)
@@ -96,7 +95,6 @@ public class KXTSBlockCipher
         cipher.init(forEncryption, parameters);
     }
 
-    @Override
     public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
     {
         if (input.length - inOff < len)
@@ -151,7 +149,6 @@ public class KXTSBlockCipher
         }
     }
 
-    @Override
     public int doFinal(byte[] output, int outOff)
     {
 
@@ -160,7 +157,6 @@ public class KXTSBlockCipher
         return 0;
     }
 
-    @Override
     public void reset()
     {
         super.reset();

@@ -126,7 +126,7 @@ public class DERApplicationSpecific
 
     public String toString()
     {
-        StringBuilder sb = new StringBuilder();
+        StringBuffer sb = new StringBuffer();
         sb.append("[");
         if (isConstructed())
         {
