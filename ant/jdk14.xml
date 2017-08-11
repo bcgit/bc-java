@@ -43,11 +43,13 @@
                 <exclude name="**/PKCS12StoreParameter.java" />
                 <exclude name="**/JDKPKCS12StoreParameter.java" />
                 <exclude name="**/NTRU*.java" />
+                <exclude name="**/XMS*.java" />
                 <exclude name="**/IndexGenerator.java" />
                 <exclude name="**/ntru/**/*.java" />
                 <exclude name="**/xmss/**/*.java" />
                 <exclude name="**/asymmetric/DSTU*.java" />
                 <exclude name="**/asymmetric/dstu/*.java" />
+                <exclude name="**/asymmetric/ecgost12/*.java" />
 		<exclude name="**/provider/config/PKCS12StoreParameter.java" />
             </fileset>
 	    <fileset dir="prov/src/main/resources" includes="**/*.properties" />

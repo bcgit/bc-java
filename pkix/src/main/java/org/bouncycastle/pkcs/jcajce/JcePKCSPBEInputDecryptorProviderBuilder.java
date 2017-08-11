@@ -15,11 +15,15 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.cryptopro.GOST28147Parameters;
+import org.bouncycastle.asn1.pkcs.PBEParameter;
 import org.bouncycastle.asn1.pkcs.PBES2Parameters;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.crypto.CharToByteConverter;
+import org.bouncycastle.crypto.PasswordConverter;
+import org.bouncycastle.jcajce.PBKDF1Key;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
 import org.bouncycastle.jcajce.spec.PBKDF2KeySpec;
@@ -137,6 +141,20 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
 
                             cipher.init(Cipher.DECRYPT_MODE, key, new GOST28147ParameterSpec(gParams.getEncryptionParamSet(), gParams.getIV()));
                         }
+                    }
+                    else if (algorithm.equals(PKCSObjectIdentifiers.pbeWithMD5AndDES_CBC)
+                        || algorithm.equals(PKCSObjectIdentifiers.pbeWithSHA1AndDES_CBC))
+                    {
+                        PBEParameter pbeParams = PBEParameter.getInstance(algorithmIdentifier.getParameters());
+
+                        cipher = helper.createCipher(algorithm.getId());
+
+                        cipher.init(Cipher.DECRYPT_MODE, new PBKDF1Key(password, PasswordConverter.ASCII),
+                                new PBEParameterSpec(pbeParams.getSalt(), pbeParams.getIterationCount().intValue()));
+                    }
+                    else
+                    {
+                        throw new OperatorCreationException("unable to create InputDecryptor: algorithm " + algorithm + " unknown.");
                     }
                 }
                 catch (Exception e)
