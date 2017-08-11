@@ -249,8 +249,8 @@ class TestUtils
 
         crlGen.addCRLEntry(serialNumber, now, CRLReason.privilegeWithdrawn);
 
-        crlGen.addExtension(X509Extensions.AuthorityKeyIdentifier, false, new AuthorityKeyIdentifierStructure(caCert));
-        crlGen.addExtension(X509Extensions.CRLNumber, false, new CRLNumber(BigInteger.valueOf(1)));
+        crlGen.addExtension(Extension.authorityKeyIdentifier, false, new AuthorityKeyIdentifierStructure(caCert));
+        crlGen.addExtension(Extension.cRLNumber, false, new CRLNumber(BigInteger.valueOf(1)));
 
         return crlGen.generate(caKey, "BC");
     }

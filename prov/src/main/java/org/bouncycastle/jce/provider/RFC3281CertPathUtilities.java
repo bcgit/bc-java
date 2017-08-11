@@ -5,7 +5,6 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Principal;
-import java.security.Provider;
 import java.security.PublicKey;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
@@ -14,7 +13,6 @@ import java.security.cert.CertPathBuilderResult;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertPathValidatorResult;
-import java.security.cert.CertSelector;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.TrustAnchor;
@@ -36,6 +34,7 @@ import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.DistributionPoint;
 import org.bouncycastle.asn1.x509.DistributionPointName;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.TargetInformation;
@@ -43,10 +42,9 @@ import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.jcajce.PKIXCRLStore;
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
+import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
-import org.bouncycastle.x509.ExtendedPKIXBuilderParameters;
-import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.x509.PKIXAttrCertChecker;
 import org.bouncycastle.x509.X509AttributeCertificate;
 import org.bouncycastle.x509.X509CertStoreSelector;
@@ -54,16 +52,16 @@ import org.bouncycastle.x509.X509CertStoreSelector;
 class RFC3281CertPathUtilities
 {
 
-    private static final String TARGET_INFORMATION = X509Extensions.TargetInformation
+    private static final String TARGET_INFORMATION = Extension.targetInformation
         .getId();
 
-    private static final String NO_REV_AVAIL = X509Extensions.NoRevAvail
+    private static final String NO_REV_AVAIL = Extension.noRevAvail
         .getId();
 
-    private static final String CRL_DISTRIBUTION_POINTS = X509Extensions.CRLDistributionPoints
+    private static final String CRL_DISTRIBUTION_POINTS = Extension.cRLDistributionPoints
         .getId();
 
-    private static final String AUTHORITY_INFO_ACCESS = X509Extensions.AuthorityInfoAccess
+    private static final String AUTHORITY_INFO_ACCESS = Extension.authorityInfoAccess
         .getId();
 
     protected static void processAttrCert7(X509AttributeCertificate attrCert,

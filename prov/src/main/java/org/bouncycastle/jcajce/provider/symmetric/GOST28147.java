@@ -287,7 +287,7 @@ public final class GOST28147
 
         protected static ASN1ObjectIdentifier getSBoxOID(String name)
         {
-            ASN1ObjectIdentifier oid = nameMappings.get(name);
+            ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)nameMappings.get(name);
 
             if (oid == null)
             {

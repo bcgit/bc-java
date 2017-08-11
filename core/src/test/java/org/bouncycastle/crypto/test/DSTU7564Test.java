@@ -42,8 +42,6 @@ public class DSTU7564Test
         runTest(new DSTU7564Test());
     }
 
-
-    @Override
     public void performTest()
     {
         super.performTest();

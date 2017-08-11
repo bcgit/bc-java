@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.text.ParseException;
 import java.util.Date;
-import java.util.Hashtable;
-import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
@@ -41,8 +39,6 @@ import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.V1TBSCertificateGenerator;
 import org.bouncycastle.asn1.x509.V2TBSCertListGenerator;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
-import org.bouncycastle.asn1.x509.X509Extension;
-import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.util.Arrays;
@@ -171,18 +167,11 @@ public class GenerationTest
         //
         // add extensions
         //
-        Vector          order = new Vector();
-        Hashtable       extensions = new Hashtable();
-
-        order.addElement(X509Extension.authorityKeyIdentifier);
-        order.addElement(X509Extension.subjectKeyIdentifier);
-        order.addElement(X509Extension.keyUsage);
-
-        extensions.put(X509Extension.authorityKeyIdentifier, new X509Extension(true, new DEROctetString(createAuthorityKeyId(info, new X500Name("CN=AU,O=Bouncy Castle,OU=Test 2"), 2))));
-        extensions.put(X509Extension.subjectKeyIdentifier, new X509Extension(true, new DEROctetString(new SubjectKeyIdentifier(getDigest(info)))));
-        extensions.put(X509Extension.keyUsage, new X509Extension(false, new DEROctetString(new KeyUsage(KeyUsage.dataEncipherment))));
-
-        X509Extensions  ex = new X509Extensions(order, extensions);
+        Extensions ex = new Extensions(new Extension[] {
+            new Extension(Extension.authorityKeyIdentifier, true, new DEROctetString(createAuthorityKeyId(info, new X500Name("CN=AU,O=Bouncy Castle,OU=Test 2"), 2))),
+            new Extension(Extension.subjectKeyIdentifier, true, new DEROctetString(new SubjectKeyIdentifier(getDigest(info)))),
+            new Extension(Extension.keyUsage, false, new DEROctetString(new KeyUsage(KeyUsage.dataEncipherment)))
+        });
 
         gen.setExtensions(ex);
 
@@ -250,14 +239,9 @@ public class GenerationTest
         //
         // add extensions
         //
-        Vector          order = new Vector();
-        Hashtable       extensions = new Hashtable();
 
-        order.addElement(X509Extension.subjectAlternativeName);
-
-        extensions.put(X509Extension.subjectAlternativeName, new X509Extension(true, new DEROctetString(new GeneralNames(new GeneralName(new X500Name("CN=AU,O=Bouncy Castle,OU=Test 2"))))));
-
-        X509Extensions  ex = new X509Extensions(order, extensions);
+        Extensions ex = new Extensions(new Extension(Extension.subjectAlternativeName, true,
+            new DEROctetString(new GeneralNames(new GeneralName(new X500Name("CN=AU,O=Bouncy Castle,OU=Test 2"))))));
 
         gen.setExtensions(ex);
 

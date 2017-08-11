@@ -55,13 +55,13 @@ import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.DistributionPoint;
 import org.bouncycastle.asn1.x509.DistributionPointName;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.GeneralSubtree;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.NameConstraints;
 import org.bouncycastle.asn1.x509.PolicyInformation;
-import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.asn1.x509.qualified.Iso4217CurrencyCode;
 import org.bouncycastle.asn1.x509.qualified.MonetaryValue;
 import org.bouncycastle.asn1.x509.qualified.QCStatement;
@@ -75,7 +75,6 @@ import org.bouncycastle.jce.provider.PKIXNameConstraintValidator;
 import org.bouncycastle.jce.provider.PKIXNameConstraintValidatorException;
 import org.bouncycastle.jce.provider.PKIXPolicyNode;
 import org.bouncycastle.util.Integers;
-import org.bouncycastle.x509.extension.X509ExtensionUtil;
 
 /**
  * PKIXCertPathReviewer<br>
@@ -84,9 +83,9 @@ import org.bouncycastle.x509.extension.X509ExtensionUtil;
 public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 {
     
-    private static final String QC_STATEMENT = X509Extensions.QCStatements.getId();
-    private static final String CRL_DIST_POINTS = X509Extensions.CRLDistributionPoints.getId();
-    private static final String AUTH_INFO_ACCESS = X509Extensions.AuthorityInfoAccess.getId();
+    private static final String QC_STATEMENT = Extension.qCStatements.getId();
+    private static final String CRL_DIST_POINTS = Extension.cRLDistributionPoints.getId();
+    private static final String AUTH_INFO_ACCESS = Extension.authorityInfoAccess.getId();
     
     private static final String RESOURCE_NAME = "org.bouncycastle.x509.CertPathReviewerMessages";
     
@@ -894,29 +893,22 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             {
                 ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.NoIssuerPublicKey");
                 // if there is an authority key extension add the serial and issuer of the missing certificate
-                byte[] akiBytes = cert.getExtensionValue(X509Extensions.AuthorityKeyIdentifier.getId());
+                byte[] akiBytes = cert.getExtensionValue(Extension.authorityKeyIdentifier.getId());
                 if (akiBytes != null)
                 {
-                    try
+                    AuthorityKeyIdentifier aki = AuthorityKeyIdentifier.getInstance(
+                        DEROctetString.getInstance(akiBytes).getOctets());
+                    GeneralNames issuerNames = aki.getAuthorityCertIssuer();
+                    if (issuerNames != null)
                     {
-                        AuthorityKeyIdentifier aki = AuthorityKeyIdentifier.getInstance(
-                            X509ExtensionUtil.fromExtensionValue(akiBytes));
-                        GeneralNames issuerNames = aki.getAuthorityCertIssuer();
-                        if (issuerNames != null)
+                        GeneralName name = issuerNames.getNames()[0];
+                        BigInteger serial = aki.getAuthorityCertSerialNumber();
+                        if (serial != null)
                         {
-                            GeneralName name = issuerNames.getNames()[0];
-                            BigInteger serial = aki.getAuthorityCertSerialNumber(); 
-                            if (serial != null)
-                            {
-                                Object[] extraArgs = {new LocaleString(RESOURCE_NAME, "missingIssuer"), " \"", name , 
-                                        "\" ", new LocaleString(RESOURCE_NAME, "missingSerial") , " ", serial};
-                                msg.setExtraArguments(extraArgs);
-                            }
+                            Object[] extraArgs = {new LocaleString(RESOURCE_NAME, "missingIssuer"), " \"", name ,
+                                    "\" ", new LocaleString(RESOURCE_NAME, "missingSerial") , " ", serial};
+                            msg.setExtraArguments(extraArgs);
                         }
-                    }
-                    catch (IOException e)
-                    {
-                        // ignore
                     }
                 }
                 addError(msg,index);
@@ -2208,7 +2200,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     ASN1Enumerated reasonCode;
                     try
                     {
-                        reasonCode = ASN1Enumerated.getInstance(getExtensionValue(crl_entry, X509Extensions.ReasonCode.getId()));
+                        reasonCode = ASN1Enumerated.getInstance(getExtensionValue(crl_entry, Extension.reasonCode.getId()));
                     }
                     catch (AnnotatedException ae)
                     {
@@ -2497,7 +2489,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         try
         {
             certSelectX509.setSubject(getEncodedIssuerPrincipal(cert).getEncoded());
-            byte[] ext = cert.getExtensionValue(X509Extensions.AuthorityKeyIdentifier.getId());
+            byte[] ext = cert.getExtensionValue(Extension.authorityKeyIdentifier.getId());
 
             if (ext != null)
             {

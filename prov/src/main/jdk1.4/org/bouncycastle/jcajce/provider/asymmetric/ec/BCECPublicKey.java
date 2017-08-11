@@ -32,6 +32,7 @@ import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 
 public class BCECPublicKey
     implements ECPublicKey, ECPointEncoder
@@ -66,8 +67,7 @@ public class BCECPublicKey
         if (spec.getParams() != null)
         {
             this.ecSpec = spec.getParams();
-            this.ecPublicKey = new ECPublicKeyParameters(spec.getQ(), ECUtil.getDomainParameters(configuration, spec.getParams()));
-
+            this.ecPublicKey = new ECPublicKeyParameters(ecSpec.getCurve().createPoint(spec.getQ().getAffineXCoord().toBigInteger(), spec.getQ().getAffineYCoord().toBigInteger()), ECUtil.getDomainParameters(configuration, spec.getParams()));
         }
         else
         {
@@ -258,16 +258,11 @@ public class BCECPublicKey
     
     public org.bouncycastle.math.ec.ECPoint getQ()
     {
+        org.bouncycastle.math.ec.ECPoint q = ecPublicKey.getQ();
+        
         if (ecSpec == null)
         {
-            if (ecPublicKey.getQ() instanceof org.bouncycastle.math.ec.ECPoint.Fp)
-            {
-                return new org.bouncycastle.math.ec.ECPoint.Fp(null, ecPublicKey.getQ().getX(), ecPublicKey.getQ().getY());
-            }
-            else
-            {
-                return new org.bouncycastle.math.ec.ECPoint.F2m(null, ecPublicKey.getQ().getX(), ecPublicKey.getQ().getY());
-            }
+            return q.getDetachedPoint();
         }
 
         return ecPublicKey.getQ();
@@ -280,14 +275,7 @@ public class BCECPublicKey
 
     public String toString()
     {
-        StringBuffer    buf = new StringBuffer();
-        String          nl = Strings.lineSeparator();
-
-        buf.append("EC Public Key").append(nl);
-        buf.append("            X: ").append(this.getQ().getX().toBigInteger().toString(16)).append(nl);
-        buf.append("            Y: ").append(this.getQ().getY().toBigInteger().toString(16)).append(nl);
-
-        return buf.toString();
+        return ECUtil.publicKeyToString("EC", ecPublicKey.getQ(), engineGetSpec());
     }
 
     public void setPointFormat(String style)
@@ -314,12 +302,12 @@ public class BCECPublicKey
 
         BCECPublicKey other = (BCECPublicKey)o;
 
-        return getQ().equals(other.getQ()) && (engineGetSpec().equals(other.engineGetSpec()));
+        return ecPublicKey.getQ().equals(other.ecPublicKey.getQ()) && (engineGetSpec().equals(other.engineGetSpec()));
     }
 
     public int hashCode()
     {
-        return getQ().hashCode() ^ engineGetSpec().hashCode();
+        return ecPublicKey.getQ().hashCode() ^ engineGetSpec().hashCode();
     }
 
     private void readObject(
