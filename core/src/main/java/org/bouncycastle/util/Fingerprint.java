@@ -24,7 +24,7 @@ public class Fingerprint
 
     public String toString()
     {
-        StringBuilder sb = new StringBuilder();
+        StringBuffer sb = new StringBuffer();
         for (int i = 0; i != fingerprint.length; i++)
         {
             if (i > 0)

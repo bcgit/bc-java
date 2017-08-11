@@ -21,7 +21,8 @@ public class DSTU7624Engine
 
     private static final int BITS_IN_WORD = 64;
     private static final int BITS_IN_BYTE = 8;
-
+    private static final int BITS_IN_LONG = 64;
+    
     private static final int REDUCTION_POLYNOMIAL = 0x011d; /* x^8 + x^4 + x^3 + x^2 + 1 */
 
     private long [] internalState;
@@ -57,8 +58,8 @@ public class DSTU7624Engine
         wordsInBlock = blockBitLength / BITS_IN_WORD;
         internalState = new long[wordsInBlock];
 
-        internalStateBytes = new byte[internalState.length * Long.SIZE / BITS_IN_BYTE];
-        tempInternalStateBytes = new byte[internalState.length * Long.SIZE / BITS_IN_BYTE];
+        internalStateBytes = new byte[internalState.length * BITS_IN_LONG / BITS_IN_BYTE];
+        tempInternalStateBytes = new byte[internalState.length * BITS_IN_LONG / BITS_IN_BYTE];
     }
 
     public void init(boolean forEncryption, CipherParameters params) throws IllegalArgumentException
@@ -447,15 +448,15 @@ public class DSTU7624Engine
 
         Pack.longToLittleEndian(internalState, internalStateBytes, 0);
 
-        for (row = 0; row < Long.SIZE / BITS_IN_BYTE; row++)
+        for (row = 0; row < BITS_IN_LONG / BITS_IN_BYTE; row++)
         {
-            if (row % (Long.SIZE / BITS_IN_BYTE / wordsInBlock) == 0)
+            if (row % (BITS_IN_LONG / BITS_IN_BYTE / wordsInBlock) == 0)
             {
                 shift += 1;
             }
             for (col = 0; col < wordsInBlock; col++)
             {
-                tempInternalStateBytes[row + ((col + shift) % wordsInBlock) * Long.SIZE / BITS_IN_BYTE] = internalStateBytes[row + col * Long.SIZE / BITS_IN_BYTE];
+                tempInternalStateBytes[row + ((col + shift) % wordsInBlock) * BITS_IN_LONG / BITS_IN_BYTE] = internalStateBytes[row + col * BITS_IN_LONG / BITS_IN_BYTE];
             }
         }
 
@@ -469,13 +470,13 @@ public class DSTU7624Engine
 
         Pack.longToLittleEndian(internalState, internalStateBytes, 0);
 
-        for (row = 0; row < Long.SIZE / BITS_IN_BYTE; row++){
-            if (row % (Long.SIZE / BITS_IN_BYTE / wordsInBlock) == 0) {
+        for (row = 0; row < BITS_IN_LONG / BITS_IN_BYTE; row++){
+            if (row % (BITS_IN_LONG / BITS_IN_BYTE / wordsInBlock) == 0) {
                 shift += 1;
             }
             for (col = 0; col < wordsInBlock; col++)
             {
-                tempInternalStateBytes[row + col * Long.SIZE / BITS_IN_BYTE] = internalStateBytes[row + ((col + shift) % wordsInBlock) * Long.SIZE / BITS_IN_BYTE];
+                tempInternalStateBytes[row + col * BITS_IN_LONG / BITS_IN_BYTE] = internalStateBytes[row + ((col + shift) % wordsInBlock) * BITS_IN_LONG / BITS_IN_BYTE];
             }
         }
 
@@ -496,14 +497,14 @@ public class DSTU7624Engine
             result = 0;
             shift = 0xFF00000000000000L;
 
-            for (row = Long.SIZE / BITS_IN_BYTE - 1; row >= 0; --row)
+            for (row = BITS_IN_LONG / BITS_IN_BYTE - 1; row >= 0; --row)
             {
                 product = 0;
-                for (b = Long.SIZE / BITS_IN_BYTE - 1; b >= 0; --b) {
-                    product ^= MultiplyGF(internalStateBytes[b + col * Long.SIZE / BITS_IN_BYTE], matrix[row][b]);
+                for (b = BITS_IN_LONG / BITS_IN_BYTE - 1; b >= 0; --b) {
+                    product ^= MultiplyGF(internalStateBytes[b + col * BITS_IN_LONG / BITS_IN_BYTE], matrix[row][b]);
                 }
 
-                result |= ((long)product << (row * Long.SIZE / BITS_IN_BYTE) & shift);
+                result |= ((long)product << (row * BITS_IN_LONG / BITS_IN_BYTE) & shift);
                 shift >>>= 8;
 
             }
@@ -559,7 +560,7 @@ public class DSTU7624Engine
         int rotateBytesLength = 2 * value.length + 3;
         int bytesLength = value.length * (BITS_IN_WORD / BITS_IN_BYTE);
 
-        byte[] bytes = new byte[value.length * Long.SIZE / BITS_IN_BYTE];
+        byte[] bytes = new byte[value.length * BITS_IN_LONG / BITS_IN_BYTE];
         Pack.longToLittleEndian(value, bytes, 0);
 
         byte[] buffer = new byte[rotateBytesLength];

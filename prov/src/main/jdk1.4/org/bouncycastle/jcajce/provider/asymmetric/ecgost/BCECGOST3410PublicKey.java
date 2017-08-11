@@ -12,7 +12,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
@@ -38,7 +37,7 @@ import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.util.Strings;
+import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 
 public class BCECGOST3410PublicKey
     implements ECPublicKey, ECPointEncoder
@@ -396,15 +395,7 @@ public class BCECGOST3410PublicKey
 
     public String toString()
     {
-        StringBuffer    buf = new StringBuffer();
-        String          nl = Strings.lineSeparator();
-
-        buf.append("EC Public Key").append(nl);
-        buf.append("            X: ").append(this.getQ().getX().toBigInteger().toString(16)).append(nl);
-        buf.append("            Y: ").append(this.getQ().getY().toBigInteger().toString(16)).append(nl);
-
-        return buf.toString();
-
+        return ECUtil.publicKeyToString(algorithm, ecPublicKey.getQ(), engineGetSpec());
     }
 
     public void setPointFormat(String style)
