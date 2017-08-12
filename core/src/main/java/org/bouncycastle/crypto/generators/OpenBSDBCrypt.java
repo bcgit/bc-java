@@ -1,6 +1,8 @@
 package org.bouncycastle.crypto.generators;
 
 import java.io.ByteArrayOutputStream;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.util.Arrays;
@@ -32,10 +34,16 @@ public class OpenBSDBCrypt
      * set up the decoding table.
      */
     private static final byte[] decodingTable = new byte[128];
-    private static final String version = "2a"; // previous version was not UTF-8
+    private static final String defaultVersion = "2y";
+    private static final Set<String> allowedVersions = new HashSet<String>();
 
     static
     {
+        // Presently just the Bcrypt versions.
+        allowedVersions.add("2a");
+        allowedVersions.add("2y");
+        allowedVersions.add("2b");
+
         for (int i = 0; i < decodingTable.length; i++)
         {
             decodingTable[i] = (byte)0xff;
@@ -56,16 +64,22 @@ public class OpenBSDBCrypt
      * Creates a 60 character Bcrypt String, including
      * version, cost factor, salt and hash, separated by '$'
      *
+     * @param version  the version, 2y,2b or 2a. (2a is not backwards compatible.)
      * @param cost     the cost factor, treated as an exponent of 2
      * @param salt     a 16 byte salt
      * @param password the password
      * @return a 60 character Bcrypt String
      */
-    private static String createBcryptString(
-        byte[] password,
-        byte[] salt,
-        int cost)
+    private static String createBcryptString(String version,
+                                             byte[] password,
+                                             byte[] salt,
+                                             int cost)
     {
+        if (!allowedVersions.contains(version))
+        {
+            throw new IllegalArgumentException("Version " + version + " is not accepted by this implementation.");
+        }
+
         StringBuffer sb = new StringBuffer(60);
         sb.append('$');
         sb.append(version);
@@ -83,7 +97,8 @@ public class OpenBSDBCrypt
 
     /**
      * Creates a 60 character Bcrypt String, including
-     * version, cost factor, salt and hash, separated by '$'
+     * version, cost factor, salt and hash, separated by '$' using version
+     * '2y'.
      *
      * @param cost     the cost factor, treated as an exponent of 2
      * @param salt     a 16 byte salt
@@ -95,6 +110,31 @@ public class OpenBSDBCrypt
         byte[] salt,
         int cost)
     {
+        return generate(defaultVersion, password, salt, cost);
+    }
+
+
+    /**
+     * Creates a 60 character Bcrypt String, including
+     * version, cost factor, salt and hash, separated by '$'
+     *
+     * @param version  the version, may be 2b, 2y or 2a. (2a is not backwards compatible.)
+     * @param cost     the cost factor, treated as an exponent of 2
+     * @param salt     a 16 byte salt
+     * @param password the password
+     * @return a 60 character Bcrypt String
+     */
+    public static String generate(
+        String version,
+        char[] password,
+        byte[] salt,
+        int cost)
+    {
+        if (!allowedVersions.contains(version))
+        {
+            throw new IllegalArgumentException("Version " + version + " is not accepted by this implementation.");
+        }
+
         if (password == null)
         {
             throw new IllegalArgumentException("Password required.");
@@ -129,7 +169,7 @@ public class OpenBSDBCrypt
 
         Arrays.fill(psw, (byte)0);
 
-        String rv = createBcryptString(tmp, salt, cost);
+        String rv = createBcryptString(version, tmp, salt, cost);
 
         Arrays.fill(tmp, (byte)0);
 
@@ -156,16 +196,21 @@ public class OpenBSDBCrypt
             throw new DataLengthException("Bcrypt String length: "
                 + bcryptString.length() + ", 60 required.");
         }
+
         if (bcryptString.charAt(0) != '$'
             || bcryptString.charAt(3) != '$'
             || bcryptString.charAt(6) != '$')
         {
             throw new IllegalArgumentException("Invalid Bcrypt String format.");
         }
-        if (!bcryptString.substring(1, 3).equals(version))
+
+        String version = bcryptString.substring(1, 3);
+
+        if (!allowedVersions.contains(version))
         {
-            throw new IllegalArgumentException("Wrong Bcrypt version, 2a expected.");
+            throw new IllegalArgumentException("Bcrypt version '" + bcryptString.substring(1, 3) + "' is not supported by this implementation");
         }
+
         int cost = 0;
         try
         {
@@ -190,7 +235,7 @@ public class OpenBSDBCrypt
             bcryptString.substring(bcryptString.lastIndexOf('$') + 1,
                 bcryptString.length() - 31));
 
-        String newBcryptString = generate(password, salt, cost);
+        String newBcryptString = generate(version, password, salt, cost);
 
         return bcryptString.equals(newBcryptString);
     }
