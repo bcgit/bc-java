@@ -425,15 +425,12 @@ public class CipherSuite
     public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_256_OCB = 0xFF15;
 
     /*
-     * draft-ietf-tls-ecdhe-psk-aead-00 (code points TBD)
+     * draft-ietf-tls-ecdhe-psk-aead-05 (code points TBD)
      */
-    public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256 = 0xFE00;
-    public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_256_GCM_SHA384 = 0xFE01;
-    public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_128_CCM_8_SHA256 = 0xFE02;
-    // TODO[draft-ietf-tls-ecdhe-psk-aead-00] Possibly should be ..._SHA384
-    public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_256_CCM_8_SHA256 = 0xFE03;
-    public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_128_CCM_SHA256 = 0xFE04;
-    public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_256_CCM_SHA384 = 0xFE05;
+    public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256 = 0xD001;
+    public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_256_GCM_SHA384 = 0xD002;
+    public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_128_CCM_8_SHA256 = 0xD003;
+    public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_128_CCM_SHA256 = 0xD005;
 
     public static boolean isSCSV(int cipherSuite)
     {
