@@ -30,6 +30,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.engines.DSTU7624Engine;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
@@ -39,6 +40,9 @@ import org.bouncycastle.crypto.modes.EAXBlockCipher;
 import org.bouncycastle.crypto.modes.GCFBBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.modes.GOFBBlockCipher;
+import org.bouncycastle.crypto.modes.KCCMBlockCipher;
+import org.bouncycastle.crypto.modes.KCTRBlockCipher;
+import org.bouncycastle.crypto.modes.KGCMBlockCipher;
 import org.bouncycastle.crypto.modes.OCBBlockCipher;
 import org.bouncycastle.crypto.modes.OFBBlockCipher;
 import org.bouncycastle.crypto.modes.OpenPGPCFBBlockCipher;
@@ -62,6 +66,7 @@ import org.bouncycastle.jcajce.PBKDF1Key;
 import org.bouncycastle.jcajce.PBKDF1KeyWithParameters;
 import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
+import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
 import org.bouncycastle.jcajce.spec.RepeatedSecretKeySpec;
 import org.bouncycastle.util.Strings;
@@ -80,9 +85,9 @@ public class BaseBlockCipher
                                         RC2ParameterSpec.class,
                                         RC5ParameterSpec.class,
                                         gcmSpecClass,
+                                        GOST28147ParameterSpec.class,
                                         IvParameterSpec.class,
-                                        PBEParameterSpec.class,
-                                        GOST28147ParameterSpec.class
+                                        PBEParameterSpec.class
                                     };
 
     private BlockCipher             baseEngine;
@@ -141,9 +146,9 @@ public class BaseBlockCipher
     protected BaseBlockCipher(
         AEADBlockCipher engine)
     {
-        baseEngine = engine.getUnderlyingCipher();
-        ivLength = baseEngine.getBlockSize();
-        cipher = new AEADGenericBlockCipher(engine);
+        this.baseEngine = engine.getUnderlyingCipher();
+        this.ivLength = baseEngine.getBlockSize();
+        this.cipher = new AEADGenericBlockCipher(engine);
     }
 
     protected BaseBlockCipher(
@@ -220,6 +225,18 @@ public class BaseBlockCipher
                     return null;
                 }
             }
+            else if (aeadParams != null)
+            {
+                try
+                {
+                    engineParams = createParametersInstance("GCM");
+                    engineParams.init(new GCMParameters(aeadParams.getNonce(), aeadParams.getMacSize() / 8).getEncoded());
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException(e.toString());
+                }
+            }
             else if (ivParam != null)
             {
                 String  name = cipher.getUnderlyingCipher().getAlgorithmName();
@@ -232,19 +249,7 @@ public class BaseBlockCipher
                 try
                 {
                     engineParams = createParametersInstance(name);
-                    engineParams.init(ivParam.getIV());
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException(e.toString());
-                }
-            }
-            else if (aeadParams != null)
-            {
-                try
-                {
-                    engineParams = createParametersInstance("GCM");
-                    engineParams.init(new GCMParameters(aeadParams.getNonce(), aeadParams.getMacSize() / 8).getEncoded());
+                    engineParams.init(new IvParameterSpec(ivParam.getIV()));
                 }
                 catch (Exception e)
                 {
@@ -334,8 +339,16 @@ public class BaseBlockCipher
         {
             ivLength = baseEngine.getBlockSize();
             fixedIv = false;
-            cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
-                        new SICBlockCipher(baseEngine)));
+            if (baseEngine instanceof DSTU7624Engine)
+            {
+                cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
+                                    new KCTRBlockCipher(baseEngine)));
+            }
+            else
+            {
+                cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
+                    new SICBlockCipher(baseEngine)));
+            }
         }
         else if (modeName.startsWith("GOFB"))
         {
@@ -357,7 +370,14 @@ public class BaseBlockCipher
         else if (modeName.startsWith("CCM"))
         {
             ivLength = 13; // CCM nonce 7..13 bytes
-            cipher = new AEADGenericBlockCipher(new CCMBlockCipher(baseEngine));
+            if (baseEngine instanceof DSTU7624Engine)
+            {
+                cipher = new AEADGenericBlockCipher(new KCCMBlockCipher(baseEngine));
+            }
+            else
+            {
+                cipher = new AEADGenericBlockCipher(new CCMBlockCipher(baseEngine));
+            }
         }
         else if (modeName.startsWith("OCB"))
         {
@@ -382,7 +402,14 @@ public class BaseBlockCipher
         else if (modeName.startsWith("GCM"))
         {
             ivLength = baseEngine.getBlockSize();
-            cipher = new AEADGenericBlockCipher(new GCMBlockCipher(baseEngine));
+            if (baseEngine instanceof DSTU7624Engine)
+            {
+                cipher = new AEADGenericBlockCipher(new KGCMBlockCipher(baseEngine));
+            }
+            else
+            {
+                cipher = new AEADGenericBlockCipher(new GCMBlockCipher(baseEngine));
+            }
         }
         else
         {
@@ -465,7 +492,7 @@ public class BaseBlockCipher
         //
         if (!(key instanceof SecretKey))
         {
-            throw new InvalidKeyException("Key for algorithm " + key.getAlgorithm() + " not suitable for symmetric enryption.");
+            throw new InvalidKeyException("Key for algorithm " + ((key != null) ? key.getAlgorithm() : null) + " not suitable for symmetric enryption.");
         }
 
         //
@@ -617,7 +644,27 @@ public class BaseBlockCipher
             param = null;
         }
 
-        if (params instanceof IvParameterSpec)
+        if (params instanceof AEADParameterSpec)
+        {
+            if (!isAEADModeName(modeName) && !(cipher instanceof AEADGenericBlockCipher))
+            {
+                throw new InvalidAlgorithmParameterException("AEADParameterSpec can only be used with AEAD modes.");
+            }
+
+            AEADParameterSpec aeadSpec = (AEADParameterSpec)params;
+
+            KeyParameter keyParam;
+            if (param instanceof ParametersWithIV)
+            {
+                keyParam = (KeyParameter)((ParametersWithIV)param).getParameters();
+            }
+            else
+            {
+                keyParam = (KeyParameter)param;
+            }
+            param = aeadParams = new AEADParameters(keyParam, aeadSpec.getMacSizeInBits(), aeadSpec.getNonce(), aeadSpec.getAssociatedData());
+        }
+        else if (params instanceof IvParameterSpec)
         {
             if (ivLength != 0)
             {
@@ -780,6 +827,8 @@ public class BaseBlockCipher
             }
         }
 
+
+
         if (random != null && padded)
         {
             param = new ParametersWithRandom(param, random);
@@ -800,16 +849,17 @@ public class BaseBlockCipher
             default:
                 throw new InvalidParameterException("unknown opmode " + opmode + " passed");
             }
+
+            if (cipher instanceof AEADGenericBlockCipher && aeadParams == null)
+            {
+                AEADBlockCipher aeadCipher = ((AEADGenericBlockCipher)cipher).cipher;
+
+                aeadParams = new AEADParameters((KeyParameter)ivParam.getParameters(), aeadCipher.getMac().length * 8, ivParam.getIV());
+            }
         }
         catch (final Exception e)
         {
-            throw new InvalidKeyException(e.getMessage())
-            {
-                public Throwable getCause()
-                {
-                    return e;
-                }
-            };
+            throw new InvalidKeyOrParametersException(e.getMessage(), e);
         }
     }
 
@@ -1177,7 +1227,7 @@ public class BaseBlockCipher
         private static final Constructor aeadBadTagConstructor;
 
         static {
-            Class aeadBadTagClass = lookup("javax.crypto.AEADBadTagException");
+            Class aeadBadTagClass = ClassUtil.loadClass(BaseBlockCipher.class, "javax.crypto.AEADBadTagException");
             if (aeadBadTagClass != null)
             {
                 aeadBadTagConstructor = findExceptionConstructor(aeadBadTagClass);
@@ -1280,6 +1330,23 @@ public class BaseBlockCipher
                 }
                 throw new BadPaddingException(e.getMessage());
             }
+        }
+    }
+
+    private static class InvalidKeyOrParametersException
+        extends InvalidKeyException
+    {
+        private final Throwable cause;
+
+        InvalidKeyOrParametersException(String msg, Throwable cause)
+        {
+             super(msg);
+            this.cause = cause;
+        }
+
+        public Throwable getCause()
+        {
+            return cause;
         }
     }
 }
