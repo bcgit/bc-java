@@ -51,7 +51,7 @@ import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSMTKeyFactorySpi;
 public final class BouncyCastleProvider extends Provider
     implements ConfigurableProvider
 {
-    private static String info = "BouncyCastle Security Provider v1.58b";
+    private static String info = "BouncyCastle Security Provider v1.58";
 
     public static final String PROVIDER_NAME = "BC";
 
@@ -134,7 +134,7 @@ public final class BouncyCastleProvider extends Provider
      */
     public BouncyCastleProvider()
     {
-        super(PROVIDER_NAME, 1.5705, info);
+        super(PROVIDER_NAME, 1.58, info);
 
         AccessController.doPrivileged(new PrivilegedAction()
         {
