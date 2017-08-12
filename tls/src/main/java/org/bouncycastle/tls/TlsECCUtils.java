@@ -70,29 +70,12 @@ public class TlsECCUtils
 
     public static int getMinimumCurveBits(int cipherSuite)
     {
-        switch (cipherSuite)
-        {
-        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_128_CCM_8_SHA256:
-        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_128_CCM_SHA256:
-        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256:
-            return 255;
-
-        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_256_CCM_8_SHA256:
-        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_256_CCM_SHA384:
-        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_256_GCM_SHA384:
-            return 384;
-
-        default:
-        {
-            if (!isECCipherSuite(cipherSuite))
-            {
-                return 0;
-            }
-
-            // TODO Is there a de facto rule to require a curve of similar size to the PRF hash?
-            return 1;
-        }
-        }
+        /*
+         * NOTE: This mechanism was added to support a minimum bit-size requirement mooted in
+         * draft-ietf-tls-ecdhe-psk-aead-00. This requirement was removed in later drafts, so this
+         * mechanism is currently somewhat trivial.
+         */
+        return isECCipherSuite(cipherSuite) ? 1 : 0;
     }
 
     public static boolean isECCipherSuite(int cipherSuite)
