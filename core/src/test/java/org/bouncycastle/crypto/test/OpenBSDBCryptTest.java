@@ -167,8 +167,8 @@ public class OpenBSDBCryptTest
 
         for (int i = 0; i < twoBVec.length; i++)
         {
-            password = twoYVec[i][0];
-            encoded = twoYVec[i][1];
+            password = twoBVec[i][0];
+            encoded = twoBVec[i][1];
 
             if (!OpenBSDBCrypt.checkPassword(encoded, password.toCharArray()))
             {
