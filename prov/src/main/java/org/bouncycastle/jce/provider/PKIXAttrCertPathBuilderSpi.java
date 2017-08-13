@@ -236,8 +236,8 @@ public class PKIXAttrCertPathBuilderSpi
         try
         {
             // check whether the issuer of <tbvCert> is a TrustAnchor
-            if (CertPathValidatorUtilities.findTrustAnchor(tbvCert, pkixParams.getBaseParameters().getTrustAnchors(),
-                pkixParams.getBaseParameters().getSigProvider()) != null)
+            if (CertPathValidatorUtilities.isIssuerTrustAnchor(tbvCert, pkixParams.getBaseParameters().getTrustAnchors(),
+                pkixParams.getBaseParameters().getSigProvider()))
             {
                 CertPath certPath;
                 PKIXCertPathValidatorResult result;

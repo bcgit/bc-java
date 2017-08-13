@@ -187,8 +187,8 @@ public class PKIXCertPathBuilderSpi
         try
         {
             // check whether the issuer of <tbvCert> is a TrustAnchor
-            if (CertPathValidatorUtilities.findTrustAnchor(tbvCert, pkixParams.getBaseParameters().getTrustAnchors(),
-                pkixParams.getBaseParameters().getSigProvider()) != null)
+            if (CertPathValidatorUtilities.isIssuerTrustAnchor(tbvCert, pkixParams.getBaseParameters().getTrustAnchors(),
+                pkixParams.getBaseParameters().getSigProvider()))
             {
                 // exception message from possibly later tried certification
                 // chains
