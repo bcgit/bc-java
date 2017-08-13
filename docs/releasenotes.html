@@ -29,6 +29,26 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2017, May 11
 <ul>
 <li>NewHope and SPHINCS keys are now correctly created off certificates by the BC provider.</li>
 <li>Use of the seeded constructor with SecureRandom() and the BC provider in first position could cause a stack overflow error. This has been fixed.</li>
+<li>The boolean flag on ECDSAPublicKey in CVCertficate was hard coded. This has been fixed.</li>
+<li>An edge condition in IV processing for GOFB mode has been found and fixed.</li>
+<li>ANSSI named EC curves were not being recognised in PKCS#10 and certificate parsing. This has been fixed.</li>
+<li>BaseStreamCipher.engineSetMode() could sometimes throw an IllegalArgumentException rather than a NoSuchAlgorithmException. This has been fixed.</li>
+<li>Some class resolving used by the provider would fail if the BC jar was loaded on the boot class path. This has been fixed.</li>
+<li>An off-by-one range check in SM2Signer has been fixed.</li>
+<li>Retrieving an SM2 key from a certificate could result in a NullPointerException due to a problem with the curve lookup. This has been fixed.</li> 
+</ul>
+<h3>2.2.3 Additional Features and Functionality</h3>
+<ul>
+<li>An implementation of GOST3410-2012 has been added to light weight API and the JCA provider.</li>
+<li>Support for ECDH GOST3410-2012 and GOST3410-2001 have been added. The CMS API can also handle reading ECDH GOST3410 key transport messages.</li>
+<li>Additional mappings have been added for a range of CVC-ECDSA algorithms.</li>
+<li>XMMS and XMSSMT are now available via the BCPQC provider. Support has been added for using these keys in certificates as well.</li>
+<li>A new system property org.bouncycastle.asn1.allow_unsafe_integer has been added to allow parsing of malformed ASN.1 integers in a similar fashion to what BC 1.56 did. The default behavior remains as reject malformed integers.</li>
+<li>SignedMailValidtor would only pick up the first email address in a DN, even when there was more than one. This has been fixed.</li>
+<li>PEMParser will now support a broader range of PBKDFs in encrypted private key files.</li>
+<li>Work has been done on speeding up the SHA-3 family. The functions are now 3 to 4 times faster.</li>
+<li>Some EC aliases in the provider had no corresponding implementations. These have been cleaned up.</li>
+<li>TimeStampResponses now support definite-length encoding to allow the preservation of order in certificates sets for legacy responses.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
