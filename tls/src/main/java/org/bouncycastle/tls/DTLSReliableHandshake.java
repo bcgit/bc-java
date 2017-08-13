@@ -226,14 +226,8 @@ class DTLSReliableHandshake
     {
         boolean checkPreviousFlight = false;
 
-        int originalOff = off;
-
         while (len >= MESSAGE_HEADER_LENGTH)
         {
-            if (off > originalOff)
-            {
-                System.err.println("MULTI-BALL!");
-            }
             int fragment_length = TlsUtils.readUint24(buf, off + 9);
             int message_length = fragment_length + MESSAGE_HEADER_LENGTH;
             if (len < message_length)
