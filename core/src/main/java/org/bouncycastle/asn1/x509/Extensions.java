@@ -56,6 +56,11 @@ public class Extensions
         {
             Extension ext = Extension.getInstance(e.nextElement());
 
+            if (extensions.containsKey(ext.getExtnId()))
+            {
+                throw new IllegalArgumentException("repeated extension found: " + ext.getExtnId());
+            }
+            
             extensions.put(ext.getExtnId(), ext);
             ordering.addElement(ext.getExtnId());
         }
