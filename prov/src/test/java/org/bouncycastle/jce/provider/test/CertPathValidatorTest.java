@@ -386,6 +386,7 @@ public class CertPathValidatorTest
         List certchain = new ArrayList();
         certchain.add(finalCert);
         certchain.add(interCert);
+      
         CertPath cp = CertificateFactory.getInstance("X.509", "BC").generateCertPath(certchain);
         Set trust = new HashSet();
         trust.add(new TrustAnchor(rootCert, null));
@@ -412,6 +413,25 @@ public class CertPathValidatorTest
             fail("wrong public key returned");
         }
 
+        isTrue(result.getTrustAnchor().getTrustedCert().equals(rootCert));
+
+        // try a path with trust anchor included.
+        certchain.clear();
+        certchain.add(finalCert);
+        certchain.add(interCert);
+        certchain.add(rootCert);
+
+        cp = CertificateFactory.getInstance("X.509", "BC").generateCertPath(certchain);
+
+        cpv = CertPathValidator.getInstance("PKIX", "BC");
+        param = new PKIXParameters(trust);
+        param.addCertStore(store);
+        param.setDate(validDate);
+
+        result = (PKIXCertPathValidatorResult)cpv.validate(cp, param);
+
+        isTrue(result.getTrustAnchor().getTrustedCert().equals(rootCert));
+        
         //
         // invalid path containing a valid one test
         //
@@ -435,6 +455,7 @@ public class CertPathValidatorTest
             certchain = new ArrayList();
             certchain.add(finalCert);
             certchain.add(interCert);
+     
             cp = CertificateFactory.getInstance("X.509", "BC").generateCertPath(certchain);
             trust = new HashSet();
             trust.add(new TrustAnchor(rootCert, null));
