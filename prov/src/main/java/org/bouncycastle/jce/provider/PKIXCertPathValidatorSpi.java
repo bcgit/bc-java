@@ -325,11 +325,15 @@ public class PKIXCertPathValidatorSpi
             //
             // 6.1.4
             //
-
             if (i != n)
             {
                 if (cert != null && cert.getVersion() == 1)
                 {
+                    // we've found the trust anchor at the top of the path, ignore and keep going
+                    if ((i == 1) && cert.equals(trust.getTrustedCert()))
+                    {
+                        continue;
+                    }
                     throw new CertPathValidatorException("Version 1 certificates can't be used as CA ones.", null,
                             certPath, index);
                 }
