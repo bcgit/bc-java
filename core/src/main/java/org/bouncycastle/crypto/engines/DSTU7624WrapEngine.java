@@ -70,7 +70,7 @@ public class DSTU7624WrapEngine
             throw new IllegalStateException("not set for wrapping");
         }
 
-        if ((in.length - inOff) % engine.getBlockSize() != 0)
+        if ((inLen % engine.getBlockSize()) != 0)
         {
             //Partial blocks not supported
             throw new DataLengthException("wrap data must be a multiple of " + engine.getBlockSize() + " bytes");
@@ -85,8 +85,8 @@ public class DSTU7624WrapEngine
         int V = (n - 1) * 6; /* Defined in DSTU7624 standard */
 
 
-        byte[] wrappedBuffer = new byte[in.length - inOff + engine.getBlockSize()];
-        System.arraycopy(in, inOff, wrappedBuffer, 0, in.length - inOff);
+        byte[] wrappedBuffer = new byte[inLen + engine.getBlockSize()];
+        System.arraycopy(in, inOff, wrappedBuffer, 0, inLen);
 
         System.arraycopy(wrappedBuffer, 0, B, 0, engine.getBlockSize() / 2);
 
@@ -150,7 +150,7 @@ public class DSTU7624WrapEngine
             throw new IllegalStateException("not set for unwrapping");
         }
 
-        if ((in.length - inOff) % engine.getBlockSize() != 0)
+        if ((inLen % engine.getBlockSize()) != 0)
         {
             //Partial blocks not supported
             throw new DataLengthException("unwrap data must be a multiple of " + engine.getBlockSize() + " bytes");
@@ -160,8 +160,8 @@ public class DSTU7624WrapEngine
 
         int V = (n - 1) * 6;
 
-        byte[] buffer = new byte[in.length - inOff];
-        System.arraycopy(in, inOff, buffer, 0, in.length - inOff);
+        byte[] buffer = new byte[inLen];
+        System.arraycopy(in, inOff, buffer, 0, inLen);
 
         byte[] B = new byte[engine.getBlockSize() / 2];
         System.arraycopy(buffer, 0, B, 0, engine.getBlockSize() / 2);
@@ -183,8 +183,6 @@ public class DSTU7624WrapEngine
 
         for (int j = 0; j < V; j++)
         {
-
-
             System.arraycopy(Btemp.get(n - 2), 0, buffer, 0, engine.getBlockSize() / 2);
             System.arraycopy(B, 0, buffer, engine.getBlockSize() / 2, engine.getBlockSize() / 2);
             intToBytes(V - j, intArray, 0);
