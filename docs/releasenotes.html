@@ -43,6 +43,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2017, May 11
 <li>Support for ECDH GOST3410-2012 and GOST3410-2001 have been added. The CMS API can also handle reading ECDH GOST3410 key transport messages.</li>
 <li>Additional mappings have been added for a range of CVC-ECDSA algorithms.</li>
 <li>XMMS and XMSSMT are now available via the BCPQC provider. Support has been added for using these keys in certificates as well.</li>
+<li>Support has been added for DSTU-7564 message digest and the DSTU-7624 ciphers, together with their associated modes.</li>
 <li>A new system property org.bouncycastle.asn1.allow_unsafe_integer has been added to allow parsing of malformed ASN.1 integers in a similar fashion to what BC 1.56 did. The default behavior remains as reject malformed integers.</li>
 <li>SignedMailValidtor would only pick up the first email address in a DN, even when there was more than one. This has been fixed.</li>
 <li>PEMParser will now support a broader range of PBKDFs in encrypted private key files.</li>
