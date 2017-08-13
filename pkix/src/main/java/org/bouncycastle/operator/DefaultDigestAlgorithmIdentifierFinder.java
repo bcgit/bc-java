@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -92,6 +93,8 @@ public class DefaultDigestAlgorithmIdentifierFinder
         digestOids.put(BCObjectIdentifiers.sphincs256_with_SHA3_512, NISTObjectIdentifiers.id_sha3_512);
         digestOids.put(BCObjectIdentifiers.sphincs256_with_SHA512, NISTObjectIdentifiers.id_sha512);
 
+        digestOids.put(GMObjectIdentifiers.sm2sign_with_sm3, GMObjectIdentifiers.sm3);
+        
         digestNameToOids.put("SHA-1", OIWObjectIdentifiers.idSHA1);
         digestNameToOids.put("SHA-224", NISTObjectIdentifiers.id_sha224);
         digestNameToOids.put("SHA-256", NISTObjectIdentifiers.id_sha256);
@@ -127,6 +130,8 @@ public class DefaultDigestAlgorithmIdentifierFinder
         digestNameToOids.put("RIPEMD128", TeleTrusTObjectIdentifiers.ripemd128);
         digestNameToOids.put("RIPEMD160", TeleTrusTObjectIdentifiers.ripemd160);
         digestNameToOids.put("RIPEMD256", TeleTrusTObjectIdentifiers.ripemd256);
+
+        digestNameToOids.put("SM3", GMObjectIdentifiers.sm3);
     }
 
     public AlgorithmIdentifier find(AlgorithmIdentifier sigAlgId)

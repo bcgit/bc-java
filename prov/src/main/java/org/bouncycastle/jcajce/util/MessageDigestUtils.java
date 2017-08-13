@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
 import org.bouncycastle.asn1.iso.ISOIECObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -38,6 +39,7 @@ public class MessageDigestUtils
         digestOidMap.put(NISTObjectIdentifiers.id_sha3_256, "SHA3-256");
         digestOidMap.put(NISTObjectIdentifiers.id_sha3_384, "SHA3-384");
         digestOidMap.put(NISTObjectIdentifiers.id_sha3_512, "SHA3-512");
+        digestOidMap.put(GMObjectIdentifiers.sm3, "SM3");
     }
 
     /**
