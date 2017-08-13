@@ -241,6 +241,22 @@ class CertPathValidatorUtilities
         return trust;
     }
 
+    static boolean isIssuerTrustAnchor(
+        X509Certificate cert,
+        Set trustAnchors,
+        String sigProvider)
+        throws AnnotatedException
+    {
+        try
+        {
+            return findTrustAnchor(cert, trustAnchors, sigProvider) != null;
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
+    }
+
     static List<PKIXCertStore> getAdditionalStoresFromAltNames(
         byte[] issuerAlternativeName,
         Map<GeneralName, PKIXCertStore> altNameCertStoreMap)

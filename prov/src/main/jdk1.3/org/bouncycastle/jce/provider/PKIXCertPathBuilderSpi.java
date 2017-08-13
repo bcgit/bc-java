@@ -65,7 +65,6 @@ public class PKIXCertPathBuilderSpi
             {
                 ExtendedPKIXBuilderParameters extPKIX = (ExtendedPKIXBuilderParameters)params;
 
- ;
                 for (Iterator it = extPKIX.getAdditionalStores().iterator(); it.hasNext();)
                 {
                      paramsPKIXBldr.addCertificateStore((PKIXCertStore)it.next());
@@ -191,8 +190,8 @@ public class PKIXCertPathBuilderSpi
         try
         {
             // check whether the issuer of <tbvCert> is a TrustAnchor
-            if (CertPathValidatorUtilities.findTrustAnchor(tbvCert, pkixParams.getBaseParameters().getTrustAnchors(),
-                pkixParams.getBaseParameters().getSigProvider()) != null)
+            if (CertPathValidatorUtilities.isIssuerTrustAnchor(tbvCert, pkixParams.getBaseParameters().getTrustAnchors(),
+                pkixParams.getBaseParameters().getSigProvider()))
             {
                 // exception message from possibly later tried certification
                 // chains
