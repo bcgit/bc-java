@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.engines;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.TweakableBlockCipherParameters;
 
@@ -286,14 +287,13 @@ public class ThreefishEngine
         throws DataLengthException,
         IllegalStateException
     {
-        if ((outOff + blocksizeBytes) > out.length)
-        {
-            throw new DataLengthException("Output buffer too short");
-        }
-
         if ((inOff + blocksizeBytes) > in.length)
         {
             throw new DataLengthException("Input buffer too short");
+        }
+        if ((outOff + blocksizeBytes) > out.length)
+        {
+            throw new OutputLengthException("Output buffer too short");
         }
 
         for (int i = 0; i < blocksizeBytes; i += 8)
@@ -332,7 +332,7 @@ public class ThreefishEngine
         }
         if (out.length != blocksizeWords)
         {
-            throw new DataLengthException("Output buffer too short");
+            throw new OutputLengthException("Output buffer too short");
         }
 
         if (forEncryption)

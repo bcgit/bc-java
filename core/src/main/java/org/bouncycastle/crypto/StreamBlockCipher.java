@@ -32,14 +32,13 @@ public abstract class StreamBlockCipher
     public int processBytes(byte[] in, int inOff, int len, byte[] out, int outOff)
         throws DataLengthException
     {
-        if (outOff + len > out.length)
-        {
-            throw new DataLengthException("output buffer too short");
-        }
-
         if (inOff + len > in.length)
         {
             throw new DataLengthException("input buffer too small");
+        }
+        if (outOff + len > out.length)
+        {
+            throw new OutputLengthException("output buffer too short");
         }
 
         int inStart = inOff;

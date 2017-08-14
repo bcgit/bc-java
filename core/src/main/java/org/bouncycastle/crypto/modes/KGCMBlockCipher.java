@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -217,7 +218,7 @@ public class KGCMBlockCipher
         {
             if (out.length - outOff < len + macSize)
             {
-                throw new DataLengthException("Output buffer too short");
+                throw new OutputLengthException("Output buffer too short");
             }
 
             lambda_c = len * BITS_IN_BYTE;
