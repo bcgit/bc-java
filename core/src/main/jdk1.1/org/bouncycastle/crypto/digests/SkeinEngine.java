@@ -5,6 +5,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.engines.ThreefishEngine;
 import org.bouncycastle.crypto.macs.SkeinMac;
 import org.bouncycastle.crypto.params.SkeinParameters;
@@ -757,7 +758,7 @@ public class SkeinEngine
         checkInitialised();
         if (out.length < (outOff + outputSizeBytes))
         {
-            throw new DataLengthException("Output buffer is too short to hold output of " + outputSizeBytes + " bytes");
+            throw new OutputLengthException("Output buffer is too short to hold output of " + outputSizeBytes + " bytes");
         }
 
         // Finalise message block

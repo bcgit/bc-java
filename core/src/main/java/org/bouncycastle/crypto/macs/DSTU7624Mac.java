@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.macs;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Mac;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.engines.DSTU7624Engine;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
@@ -127,7 +128,7 @@ public class DSTU7624Mac
 
         if (macSize + outOff > out.length)
         {
-            throw new DataLengthException("output buffer too short");
+            throw new OutputLengthException("output buffer too short");
         }
 
         System.arraycopy(c, 0, out, outOff, macSize);

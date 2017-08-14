@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.test.speedy;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.TweakableBlockCipherParameters;
 
@@ -162,7 +163,7 @@ public class ThreefishReferenceEngine
 
         if ((outOff + blocksize) > out.length)
         {
-            throw new DataLengthException("Output buffer too short");
+            throw new OutputLengthException("Output buffer too short");
         }
 
         if (forEncryption)

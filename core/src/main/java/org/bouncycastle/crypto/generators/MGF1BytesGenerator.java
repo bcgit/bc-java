@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.crypto.DerivationParameters;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.MGFParameters;
 
 /**
@@ -74,7 +75,7 @@ public class MGF1BytesGenerator
     {
         if ((out.length - len) < outOff)
         {
-            throw new DataLengthException("output buffer too small");
+            throw new OutputLengthException("output buffer too small");
         }
         
         byte[]  hashBuf = new byte[hLen];
