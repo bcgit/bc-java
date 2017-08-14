@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
@@ -101,10 +102,9 @@ public class KXTSBlockCipher
         {
             throw new DataLengthException("Input buffer too short");
         }
-
         if (output.length - inOff < len)
         {
-            throw new DataLengthException("Output buffer too short");
+            throw new OutputLengthException("Output buffer too short");
         }
         if (len % cipher.getBlockSize() != 0)
         {

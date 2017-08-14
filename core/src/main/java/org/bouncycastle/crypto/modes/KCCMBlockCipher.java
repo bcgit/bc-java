@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
@@ -247,12 +248,11 @@ public class KCCMBlockCipher
     {
         if (in.length - inOff < len)
         {
-            throw new IllegalArgumentException("input buffer too short");
+            throw new DataLengthException("input buffer too short");
         }
-
         if (out.length - outOff < len)
         {
-            throw new IllegalArgumentException("output buffer too short");
+            throw new OutputLengthException("output buffer too short");
         }
 
         if (associatedText.size() > 0)

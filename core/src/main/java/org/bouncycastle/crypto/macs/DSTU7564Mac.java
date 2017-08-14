@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.macs;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Mac;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.digests.DSTU7564Digest;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Pack;
@@ -95,13 +96,13 @@ public class DSTU7564Mac
     public int doFinal(byte[] out, int outOff)
         throws DataLengthException, IllegalStateException
     {
-        if (out.length - outOff < macSize)
-        {
-            throw new DataLengthException("Output buffer too short");
-        }
         if (paddedKey == null)
         {
             throw new IllegalStateException(getAlgorithmName() + " not initialised");
+        }
+        if (out.length - outOff < macSize)
+        {
+            throw new OutputLengthException("Output buffer too short");
         }
 
         pad();

@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.OutputLengthException;
 
 /**
  * A Cipher Text Stealing (CTS) mode cipher. CTS allows block ciphers to
@@ -138,7 +139,7 @@ public class OldCTSBlockCipher
         {
             if ((outOff + length) > out.length)
             {
-                throw new DataLengthException("output buffer too short");
+                throw new OutputLengthException("output buffer too short");
             }
         }
 
@@ -195,7 +196,7 @@ public class OldCTSBlockCipher
     {
         if (bufOff + outOff > out.length)
         {
-            throw new DataLengthException("output buffer to small in doFinal");
+            throw new OutputLengthException("output buffer to small in doFinal");
         }
 
         int     blockSize = cipher.getBlockSize();

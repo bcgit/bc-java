@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.modes;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.OutputLengthException;
 
 /**
  * Implements OpenPGP's rather strange version of Cipher-FeedBack (CFB) mode
@@ -166,10 +167,9 @@ public class OpenPGPCFBBlockCipher
         {
             throw new DataLengthException("input buffer too short");
         }
-
         if ((outOff + blockSize) > out.length)
         {
-            throw new DataLengthException("output buffer too short");
+            throw new OutputLengthException("output buffer too short");
         }
         
         if (count > blockSize)
@@ -244,10 +244,9 @@ public class OpenPGPCFBBlockCipher
         {
             throw new DataLengthException("input buffer too short");
         }
-
         if ((outOff + blockSize) > out.length)
         {
-            throw new DataLengthException("output buffer too short");
+            throw new OutputLengthException("output buffer too short");
         }
         
         if (count > blockSize)
