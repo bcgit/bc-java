@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.test;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.engines.DSTU7624Engine;
 import org.bouncycastle.crypto.engines.DSTU7624WrapEngine;
 import org.bouncycastle.crypto.macs.DSTU7624Mac;
@@ -22,6 +24,15 @@ import org.bouncycastle.util.test.SimpleTest;
 public class DSTU7624Test
     extends CipherTest
 {
+    private static final SecureRandom RANDOM = new SecureRandom();
+    
+    private static byte[] randomBytes(int min, int max)
+    {
+        int count = min + RANDOM.nextInt(max - min);
+        byte[] result = new byte[count];
+        RANDOM.nextBytes(result);
+        return result;
+    }
 
     static SimpleTest[] tests =
         {
@@ -154,18 +165,22 @@ public class DSTU7624Test
     private void KeyWrapTests()
         throws Exception
     {
-
         //test 1
-        byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
-        byte[] textToWrap = Hex.decode("101112131415161718191A1B1C1D1E1F");
-        byte[] expectedWrappedText = Hex.decode("1DC91DC6E52575F6DBED25ADDA95A1B6AD3E15056E489738972C199FB9EE2913");
+        /*
+         * Initial implementation had bugs handling offset and length correctly, so for
+         * this first test case we embed the input inside a larger buffer.
+         */
+        byte[] textA = randomBytes(1, 64);
+        byte[] textB = randomBytes(1, 64);
+        byte[] textToWrap = Arrays.concatenate(new byte[][]{ textA, Hex.decode("101112131415161718191A1B1C1D1E1F"), textB });
 
-        byte[] output;
+        byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
+        byte[] expectedWrappedText = Hex.decode("1DC91DC6E52575F6DBED25ADDA95A1B6AD3E15056E489738972C199FB9EE2913");
+        byte[] output = new byte[expectedWrappedText.length];
 
         DSTU7624WrapEngine wrapper = new DSTU7624WrapEngine(128);
         wrapper.init(true, new KeyParameter(key));
-        output = wrapper.wrap(textToWrap, 0, textToWrap.length);
-
+        output = wrapper.wrap(textToWrap, textA.length, textToWrap.length - textA.length - textB.length);
 
         if (!Arrays.areEqual(output, expectedWrappedText))
         {
@@ -174,15 +189,16 @@ public class DSTU7624Test
                 + " got " + Hex.toHexString(output));
         }
 
+        output = Arrays.concatenate(new byte[][]{ textB, output, textA });
 
         wrapper.init(false, new KeyParameter(key));
+        output = wrapper.unwrap(output, textB.length, output.length - textB.length - textA.length);
 
-        output = wrapper.unwrap(expectedWrappedText, 0, expectedWrappedText.length);
-
-        if (!Arrays.areEqual(output, textToWrap))
+        byte[] expected = Arrays.copyOfRange(textToWrap, textA.length, textToWrap.length - textB.length);
+        if (!Arrays.areEqual(output, expected))
         {
             fail("Failed KW (unwrapping) test 1 - expected "
-                + Hex.toHexString(textToWrap)
+                + Hex.toHexString(expected)
                 + " got " + Hex.toHexString(output));
         }
 
