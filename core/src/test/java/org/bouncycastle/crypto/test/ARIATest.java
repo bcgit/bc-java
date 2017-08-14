@@ -43,14 +43,11 @@ public class ARIATest
     public void performTest() throws Exception
     {
         checkTestVectors_RFC5794();
-        long before = System.currentTimeMillis();
-        for (int i = 0; i < 10000; ++i)
+
+        for (int i = 0; i < 100; ++i)
         {
-        checkRandomRoundtrips();
+            checkRandomRoundtrips();
         }
-        long after = System.currentTimeMillis();
-        long elapsed = after - before;
-        System.out.println("Elapsed: " + elapsed + "ms.");
 
         new MyARIAEngine().checkImplementation();
     }
