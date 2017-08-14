@@ -25,7 +25,7 @@ public class DSTU7624Engine
     private static final int BITS_IN_BYTE = 8;
     private static final int BITS_IN_LONG = 64;
 
-    private static final int REDUCTION_POLYNOMIAL = 0x011d; /* x^8 + x^4 + x^3 + x^2 + 1 */
+//    private static final int REDUCTION_POLYNOMIAL = 0x011d; /* x^8 + x^4 + x^3 + x^2 + 1 */
 
     private long[] internalState;
     private long[] workingKey;
@@ -541,34 +541,27 @@ public class DSTU7624Engine
             }
 
             internalState[col] = result;
-
         }
-
     }
 
     private byte MultiplyGF(byte x, byte y)
     {
-        byte r = 0;
-        int hbit;
+        int u = x & 0xFF, v = y & 0xFF;
+        int r = u & -(v & 1);
 
-        for (int i = 0; i < BITS_IN_BYTE; i++)
+        for (int i = 1; i < BITS_IN_BYTE; i++)
         {
-            if ((y & 0x01) == 1)
-            {
-                r ^= x;
-            }
-
-            hbit = x & 0x80;
-
-            x <<= 1;
-
-            if (hbit == 0x80)
-            {
-                x = (byte)((int)x ^ REDUCTION_POLYNOMIAL);
-            }
-            y >>= 1;
+            u <<= 1;
+            v >>>= 1;
+            r ^= u & -(v & 1);
         }
-        return r;
+
+        int hi = r & 0xFF00;
+        r ^= hi ^ (hi >>> 4) ^ (hi >>> 5) ^ (hi >>> 6) ^ (hi >>> 8);
+        hi = r & 0x0F00;
+        r ^= hi ^ (hi >>> 4) ^ (hi >>> 5) ^ (hi >>> 6) ^ (hi >>> 8);
+
+        return (byte)r;
     }
 
     private void ShiftLeft(long[] value)
