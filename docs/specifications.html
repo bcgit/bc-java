@@ -304,6 +304,7 @@ implementations
 <p>
 <table cellpadding=5 cellspacing=0 border=1 width=80%>
 <tr><th>Name</th><th>Output (in bits)</th><th>Notes</th></tr>
+<tr><td><b>DSTU7564Digest</b></td><td>256, 384, 512</td><td></td></tr>
 <tr><td><b>KeccakDigest</b></td><td>224, 256, 288, 384, 512</td><td></td></tr>
 <tr><td><b>MD2Digest</b></td><td>128</td><td>&nbsp;</td></tr>
 <tr><td><b>MD4Digest</b></td><td>128</td><td>&nbsp;</td></tr>
@@ -343,6 +344,8 @@ implementations
 <tr><td><b>GOST28147Mac</b></td><td>32 bits</td><td>&nbsp;</td></tr>
 <tr><td><b>ISO9797Alg3Mac</b></td><td>multiple of 8 bits up to underlying cipher size.</td><td>&nbsp;</td></tr>
 <tr><td><b>HMac</b></td><td>digest length</td><td>&nbsp;</td></tr>
+<tr><td><b>DSTU7564</b></td><td>256, 384, 512 bits</td><td>&nbsp;</td></tr>
+<tr><td><b>DSTU7624</b></td><td>128, 256, 512 bits</td><td>&nbsp;</td></tr>
 <tr><td><b>Poly1305</b></td><td>128 bits</td><td>Usable with 128 bit block ciphers. Use Poly1305KeyGenerator to generate keys.</td></tr>
 <tr><td><b>SkeinMac</b></td><td>any byte length</td><td>256 bit, 512 bit and 1024 state size variants. Additional parameterisation using SkeinParameters.</td></tr>
 <tr><td><b>SipHash</b></td><td>64 bits</td><td>&nbsp;</td></tr>
@@ -419,7 +422,7 @@ sub-classes
 
 <h4>Signers</h4>
 <p>
-DSA, ECDSA, ISO-9796-2, GOST-3410-94, GOST-3410-2001, DSTU-4145-2002, and RSA-PSS are supported by the <b>org.bouncycastle.crypto.signers</b>
+DSA, ECDSA, ISO-9796-2, GOST-3410-94, GOST-3410-2001, GOST-3410-2012, DSTU-4145-2002, and RSA-PSS are supported by the <b>org.bouncycastle.crypto.signers</b>
 package. Note: as these are light weight classes, if you need to use SHA1 or GOST-3411
 (as defined in the relevant standards) you'll also need to make use of the appropriate
 digest class in conjunction with these.
@@ -608,6 +611,8 @@ Note: default key sizes are in bold.
 <tr><td>DES</td><td>64</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td>DESede</td><td>128, 192</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td>DESedeWrap</td><td>128, 192</td><td>128 bit</td><td>A Draft IETF DESede key wrapper</td></tr>
+<tr><td>DSTU7624</td><td>128, 256, 512</td><td>128/256/512 bit</td><td>DSTU7624 Block Cipher</td></tr>
+<tr><td>DSTU7624Wrap</td><td>128, 256, 512</td><td>128/256/512 bit</td><td>DSTU7624 key wrapper</td></tr>
 <tr><td>GCM</td><td>128, 192, 256<b>(192)</b></td><td>AEAD Mode Cipher</td><td>Galois/Counter Mode, as defined in NIST Special Publication SP 800-38D.</td></tr>
 <tr><td>GOST28147</td><td>256</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td>IDEA</td><td>128 <b>(128)</b></td><td>64 bit</td><td>&nbsp;</td></tr>
@@ -881,6 +886,14 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>SHA512withSPHINCS256 (BCPQC)</li>
 <li>SHA3-512withSPHINCS256 (BCPQC)</li>
 <li>SM3withSM2</li>
+<li>SHA256withXMSS</li>
+<li>SHA512withXMSS</li>
+<li>SHAKE128withXMSS</li>
+<li>SHAKE256withXMSS</li>
+<li>SHA256withXMSSMT</li>
+<li>SHA512withXMSSMT</li>
+<li>SHAKE128withXMSSMT</li>
+<li>SHAKE256withXMSSMT</li>
 </ul>
 
 <h4>Password Hashing and PBE</h4>
@@ -908,6 +921,15 @@ Defined in Bouncy Castle JCE Provider
 <tr><td>PBKDF2WithHmacSHA1</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
 <tr><td>PBKDF2WithHmacSHA1AndUTF8</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
 <tr><td>PBKDF2WithHmacSHA1And8bit</td><td>PKCS5 Scheme 2</td><td>variable</td><td>8 bit chars</td></tr>
+<tr><td>PBKDF2WithHmacSHA224</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
+<tr><td>PBKDF2WithHmacSHA256</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
+<tr><td>PBKDF2WithHmacSHA384</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
+<tr><td>PBKDF2WithHmacSHA512</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
+<tr><td>PBKDF2WithHmacSHA3-224</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
+<tr><td>PBKDF2WithHmacSHA3-256</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
+<tr><td>PBKDF2WithHmacSHA3-384</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
+<tr><td>PBKDF2WithHmacSHA3-512</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
+<tr><td>PBKDF2WithHmacGOST3411</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
 <tr><td>PBEWithSHAAnd2-KeyTripleDES-CBC</td><td>PKCS12</td><td>128</td><td>16 bit chars</td></tr>
 <tr><td>PBEWithSHAAnd3-KeyTripleDES-CBC</td><td>PKCS12</td><td>192</td><td>16 bit chars</td></tr>
 <tr><td>PBEWithSHAAnd128BitRC2-CBC</td><td>PKCS12</td><td>128</td><td>16 bit chars</td></tr>
@@ -1028,4 +1050,8 @@ The BouncyCastle S/MIME handlers may be set in JavaMail two ways.
     </li>
     </ul>
 </body>
+<li>SHA256withXMSS</li>
+<li>SHA512withXMSS</li>
+<li>SHAKE128withXMSS</li>
+<li>SHAKE256withXMSS</li>
 </html>
