@@ -28,7 +28,7 @@ public class DSTU7624Test
     
     private static byte[] randomBytes(int min, int max)
     {
-        int count = min + RANDOM.nextInt(max - min);
+        int count = min + RNGUtils.nextInt(RANDOM,max - min);
         byte[] result = new byte[count];
         RANDOM.nextBytes(result);
         return result;
