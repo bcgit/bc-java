@@ -75,9 +75,11 @@
                 <exclude name="**/CertPathValidatorUtilities.java" />
                 <exclude name="**/JDKPKCS12StoreParameter.java" />
                 <exclude name="**/NTRU*.java" />
+                <exclude name="**/XMSS*.java" />
                 <exclude name="**/IndexGenerator.java" />
                 <exclude name="**/ntru/**/*.java" />
                 <exclude name="**/xmss/**/*.java" />
+                <exclude name="**/ecgost12/**/*.java" />
                 <exclude name="**/asymmetric/DSTU*.java" />
                 <exclude name="**/asymmetric/dstu/*.java" />
                 <exclude name="**/provider/config/PKCS12StoreParameter.java" />
