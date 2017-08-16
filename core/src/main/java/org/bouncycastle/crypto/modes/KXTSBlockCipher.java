@@ -106,7 +106,7 @@ public class KXTSBlockCipher
         /*
          * TODO This class isn't really behaving like a BufferedBlockCipher yet
          */
-        throw new UnsupportedOperationException();
+        throw new IllegalStateException("unsupported operation");
     }
 
     public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)

@@ -1045,6 +1045,26 @@ public final class Arrays
         return result;
     }
 
+    public static byte[] concatenate(byte[][] arrays)
+    {
+        int size = 0;
+        for (int i = 0; i != arrays.length; i++)
+        {
+            size += arrays[i].length;
+        }
+
+        byte[] rv = new byte[size];
+
+        int offSet = 0;
+        for (int i = 0; i != arrays.length; i++)
+        {
+            System.arraycopy(arrays[i], 0, rv, offSet, arrays[i].length);
+            offSet += arrays[i].length;
+        }
+
+        return rv;
+    }
+    
     /**
      * Iterator backed by a specific array.
      */
