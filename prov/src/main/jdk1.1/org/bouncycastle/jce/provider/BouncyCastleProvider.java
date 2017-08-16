@@ -43,7 +43,7 @@ import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 public final class BouncyCastleProvider extends Provider
     implements ConfigurableProvider
 {
-    private static String info = "BouncyCastle Security Provider v1.57";
+    private static String info = "BouncyCastle Security Provider v1.58";
 
     public static final String PROVIDER_NAME = "BC";
 
@@ -107,7 +107,7 @@ public final class BouncyCastleProvider extends Provider
     private static final String KEYSTORE_PACKAGE = "org.bouncycastle.jcajce.provider.keystore.";
     private static final String[] KEYSTORES =
     {
-        "BC", "PKCS12"
+        "BC", "BCFKS", "PKCS12"
     };
 
     /**
@@ -117,7 +117,7 @@ public final class BouncyCastleProvider extends Provider
      */
     public BouncyCastleProvider()
     {
-        super(PROVIDER_NAME, 1.57, info);
+        super(PROVIDER_NAME, 1.58, info);
 
         setup();
     }
