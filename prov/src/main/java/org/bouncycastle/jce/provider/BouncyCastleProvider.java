@@ -19,7 +19,9 @@ import org.bouncycastle.jcajce.provider.symmetric.util.ClassUtil;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
+import org.bouncycastle.pqc.jcajce.provider.mceliece.McElieceKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.newhope.NHKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.rainbow.RainbowKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sphincs.Sphincs256KeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSMTKeyFactorySpi;
@@ -236,6 +238,9 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(PQCObjectIdentifiers.newHope, new NHKeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.xmss, new XMSSKeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.xmss_mt, new XMSSMTKeyFactorySpi());
+        addKeyInfoConverter(PQCObjectIdentifiers.mcEliece, new McElieceKeyFactorySpi());
+        addKeyInfoConverter(PQCObjectIdentifiers.mcElieceCca2, new McElieceKeyFactorySpi());
+        addKeyInfoConverter(PQCObjectIdentifiers.rainbow, new RainbowKeyFactorySpi());
     }
 
     public void setParameter(String parameterName, Object parameter)
