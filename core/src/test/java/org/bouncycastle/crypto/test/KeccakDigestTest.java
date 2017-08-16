@@ -1,18 +1,12 @@
 package org.bouncycastle.crypto.test;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.digests.KeccakDigest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
-import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.encoders.UrlBase64;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
@@ -364,13 +358,7 @@ public class KeccakDigestTest
     
     public static void main(
         String[]    args)
-        throws NoSuchAlgorithmException
     {
-        MessageDigest md5 = MessageDigest.getInstance("MD5");
-
-        System.err.println(Strings.fromByteArray(UrlBase64.encode(
-            md5.digest(Arrays.concatenate(Strings.toByteArray("thesecretpasword"), Strings.toByteArray("SaltSalt"),
-                Strings.toByteArray("thesecretpasword"))))));
-       // runTest(new KeccakDigestTest());
+        runTest(new KeccakDigestTest());
     }
 }
