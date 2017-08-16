@@ -1,7 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
+import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Iterator;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
@@ -373,9 +373,9 @@ public class GOST28147Engine
 
     public static String getSBoxName(byte[] sBox)
     {
-        for (Iterator it = sBoxes.keySet().iterator(); it.hasNext();)
+        for (Enumeration en = sBoxes.keys(); en.hasMoreElements();)
         {
-            String name = (String)it.next();
+            String name = (String)en.nextElement();
             byte[] sb = (byte[])sBoxes.get(name);
             if (Arrays.areEqual(sb, sBox))
             {

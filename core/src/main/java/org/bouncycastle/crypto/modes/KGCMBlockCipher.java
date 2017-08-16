@@ -21,6 +21,8 @@ import org.bouncycastle.util.BigIntegers;
 public class KGCMBlockCipher
     implements AEADBlockCipher
 {
+    private static final BigInteger ZERO = BigInteger.valueOf(0);
+    private static final BigInteger ONE = BigInteger.valueOf(1);
 
     /* Constants for GF(2^m) operations */
     private static final BigInteger MASK_1_128 = new BigInteger("340282366920938463463374607431768211456", 10);
@@ -414,20 +416,20 @@ public class KGCMBlockCipher
             break;
         }
 
-        BigInteger p = BigInteger.ZERO;
+        BigInteger p = ZERO;
         BigInteger p1 = new BigInteger(1, fieldOperationBuffer1);
         BigInteger p2 = new BigInteger(1, fieldOperationBuffer2);
 
-        while (!p2.equals(BigInteger.ZERO))
+        while (!p2.equals(ZERO))
         {
-            if (p2.and(BigInteger.ONE).equals(BigInteger.ONE))
+            if (p2.and(ONE).equals(ONE))
             {
                 p = p.xor(p1);
             }
 
             p1 = p1.shiftLeft(1);
 
-            if (!p1.and(mask1).equals(BigInteger.ZERO))
+            if (!p1.and(mask1).equals(ZERO))
             {
                 p1 = p1.xor(polyred);
             }
