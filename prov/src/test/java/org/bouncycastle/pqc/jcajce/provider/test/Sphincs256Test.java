@@ -21,6 +21,9 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 
+/**
+ * Test cases for the use of SPHINCS-256 with the BCPQC provider.
+ */
 public class Sphincs256Test
     extends TestCase
 {

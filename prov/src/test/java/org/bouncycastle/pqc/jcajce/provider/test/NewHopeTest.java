@@ -13,6 +13,9 @@ import junit.framework.TestCase;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Test cases for the use of NewHope (NH) with the BCPQC provider.
+ */
 public class NewHopeTest
     extends TestCase
 {

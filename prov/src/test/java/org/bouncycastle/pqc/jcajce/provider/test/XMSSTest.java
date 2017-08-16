@@ -24,6 +24,9 @@ import org.bouncycastle.pqc.jcajce.spec.XMSSParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
+/**
+ * Test cases for the use of XMSS with the BCPQC provider.
+ */
 public class XMSSTest
     extends TestCase
 {
