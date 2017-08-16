@@ -3,6 +3,9 @@ package org.bouncycastle.tls;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/**
+ * OutputStream based on a ByteQueue implementation.
+ */
 public class ByteQueueOutputStream
     extends OutputStream
 {

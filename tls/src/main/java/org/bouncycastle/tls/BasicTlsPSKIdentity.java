@@ -3,6 +3,9 @@ package org.bouncycastle.tls;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
+/**
+ * A basic PSK Identity holder.
+ */
 public class BasicTlsPSKIdentity
     implements TlsPSKIdentity
 {

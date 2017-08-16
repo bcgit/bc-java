@@ -8,6 +8,9 @@ import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCS256KeyGenParameterSpec;
 
 
+/**
+ * KeyFactory/KeyPairGenerator tests for SPHINCS-256 with the BCPQC provider.
+ */
 public class Sphincs256KeyPairGeneratorTest
     extends KeyPairGeneratorTest
 {
