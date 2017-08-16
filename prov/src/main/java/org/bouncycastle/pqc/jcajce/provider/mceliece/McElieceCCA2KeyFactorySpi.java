@@ -14,6 +14,7 @@ import java.security.spec.X509EncodedKeySpec;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.pqc.asn1.McElieceCCA2PrivateKey;
 import org.bouncycastle.pqc.asn1.McElieceCCA2PublicKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
@@ -29,6 +30,7 @@ import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2PublicKeyParameters;
  */
 public class McElieceCCA2KeyFactorySpi
     extends KeyFactorySpi
+    implements AsymmetricKeyInfoConverter
 {
 
     /**
@@ -204,49 +206,35 @@ public class McElieceCCA2KeyFactorySpi
 
     }
 
-
     public PublicKey generatePublic(SubjectPublicKeyInfo pki)
-        throws InvalidKeySpecException
+        throws IOException
     {
         // get the inner type inside the BIT STRING
-        try
-        {
-            ASN1Primitive innerType = pki.parsePublicKey();
-            McElieceCCA2PublicKey key = McElieceCCA2PublicKey.getInstance(innerType);
-            return new BCMcElieceCCA2PublicKey(new McElieceCCA2PublicKeyParameters(key.getN(), key.getT(), key.getG(), Utils.getDigest(key.getDigest()).getAlgorithmName()));
-        }
-        catch (IOException cce)
-        {
-            throw new InvalidKeySpecException("Unable to decode X509EncodedKeySpec");
-        }
+        ASN1Primitive innerType = pki.parsePublicKey();
+        McElieceCCA2PublicKey key = McElieceCCA2PublicKey.getInstance(innerType);
+        return new BCMcElieceCCA2PublicKey(new McElieceCCA2PublicKeyParameters(key.getN(), key.getT(), key.getG(), Utils.getDigest(key.getDigest()).getAlgorithmName()));
     }
 
-
     public PrivateKey generatePrivate(PrivateKeyInfo pki)
-        throws InvalidKeySpecException
+        throws IOException
     {
         // get the inner type inside the BIT STRING
-        try
-        {
-            ASN1Primitive innerType = pki.parsePrivateKey().toASN1Primitive();
-            McElieceCCA2PrivateKey key = McElieceCCA2PrivateKey.getInstance(innerType);
-            return new BCMcElieceCCA2PrivateKey(new McElieceCCA2PrivateKeyParameters(key.getN(), key.getK(), key.getField(), key.getGoppaPoly(), key.getP(), null));
-        }
-        catch (IOException cce)
-        {
-            throw new InvalidKeySpecException("Unable to decode PKCS8EncodedKeySpec");
-        }
+        ASN1Primitive innerType = pki.parsePrivateKey().toASN1Primitive();
+        McElieceCCA2PrivateKey key = McElieceCCA2PrivateKey.getInstance(innerType);
+        return new BCMcElieceCCA2PrivateKey(new McElieceCCA2PrivateKeyParameters(key.getN(), key.getK(), key.getField(), key.getGoppaPoly(), key.getP(), null));
     }
 
     protected KeySpec engineGetKeySpec(Key key, Class tClass)
         throws InvalidKeySpecException
     {
+        // TODO:
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     protected Key engineTranslateKey(Key key)
         throws InvalidKeyException
     {
+        // TODO:
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 }
