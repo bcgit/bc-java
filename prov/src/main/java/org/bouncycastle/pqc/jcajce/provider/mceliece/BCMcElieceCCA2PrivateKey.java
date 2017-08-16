@@ -110,14 +110,15 @@ public class BCMcElieceCCA2PrivateKey
     /**
      * @return a human readable form of the key
      */
-    public String toString()
-    {
-        String result = "";
-        result += " extension degree of the field      : " + getN() + "\n";
-        result += " dimension of the code              : " + getK() + "\n";
-        result += " irreducible Goppa polynomial       : " + getGoppaPoly() + "\n";
-        return result;
-    }
+    // TODO:
+//    public String toString()
+//    {
+//        String result = "";
+//        result += " extension degree of the field      : " + getN() + "\n";
+//        result += " dimension of the code              : " + getK() + "\n";
+//        result += " irreducible Goppa polynomial       : " + getGoppaPoly() + "\n";
+//        return result;
+//    }
 
     /**
      * Compare this key with another object.

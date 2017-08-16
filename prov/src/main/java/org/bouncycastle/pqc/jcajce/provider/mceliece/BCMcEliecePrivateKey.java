@@ -15,7 +15,6 @@ import org.bouncycastle.pqc.math.linearalgebra.GF2Matrix;
 import org.bouncycastle.pqc.math.linearalgebra.GF2mField;
 import org.bouncycastle.pqc.math.linearalgebra.Permutation;
 import org.bouncycastle.pqc.math.linearalgebra.PolynomialGF2mSmallM;
-import org.bouncycastle.util.Strings;
 
 /**
  * This class implements a McEliece private key and is usually instantiated by
@@ -122,16 +121,17 @@ public class BCMcEliecePrivateKey
     /**
      * @return a human readable form of the key
      */
-    public String toString()
-    {
-        String result = " length of the code          : " + getN() + Strings.lineSeparator();
-        result += " dimension of the code       : " + getK() + Strings.lineSeparator();
-        result += " irreducible Goppa polynomial: " + getGoppaPoly() + Strings.lineSeparator();
-        result += " permutation P1              : " + getP1() + Strings.lineSeparator();
-        result += " permutation P2              : " + getP2() + Strings.lineSeparator();
-        result += " (k x k)-matrix S^-1         : " + getSInv();
-        return result;
-    }
+    // TODO:
+//    public String toString()
+//    {
+//        String result = " length of the code          : " + getN() + Strings.lineSeparator();
+//        result += " dimension of the code       : " + getK() + Strings.lineSeparator();
+//        result += " irreducible Goppa polynomial: " + getGoppaPoly() + Strings.lineSeparator();
+//        result += " permutation P1              : " + getP1() + Strings.lineSeparator();
+//        result += " permutation P2              : " + getP2() + Strings.lineSeparator();
+//        result += " (k x k)-matrix S^-1         : " + getSInv();
+//        return result;
+//    }
 
     /**
      * Compare this key with another object.
