@@ -36,6 +36,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2017, August 18
 <li>Some class resolving used by the provider would fail if the BC jar was loaded on the boot class path. This has been fixed.</li>
 <li>An off-by-one range check in SM2Signer has been fixed.</li>
 <li>Retrieving an SM2 key from a certificate could result in a NullPointerException due to a problem with the curve lookup. This has been fixed.</li> 
+<li>DTLS now supports records containing multiple handshake messages.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
@@ -51,6 +52,16 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2017, August 18
 <li>Some EC aliases in the provider had no corresponding implementations. These have been cleaned up.</li>
 <li>TimeStampResponses now support definite-length encoding to allow the preservation of order in certificates sets for legacy responses.</li>
 <li>The TSP API now supports SM2withSM3.</li>
+<li>The BCJSSE provider now has a FIPS mode.</li>
+<li>The BCJSSE provider now supports layered sockets.</li>
+<li>The new TLS API now has protocol/API support for the status_request extension (OCSP stapling).</li>
+<li>The new TLS API now supports RFC 7633 - X.509v3 TLS Feature Extension (e.g. "must staple"), enabled in default clients.</li>
+<li>TLS exceptions have been made more directly informative.</li>
+</ul>
+<h3>2.2.4 Removed Features and Functionality</h3>
+<ul>
+<li>Per RFC 7465, removed support for RC4 in the new TLS API.</li>
+<li>Per RFC 7568, removed support for SSLv3 in the new TLS API.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
