@@ -48,6 +48,7 @@ then
         rm src/org/bouncycastle/util/StreamParsingException.java
         rm src/org/bouncycastle/asn1/util/Dump.java
         rm src/org/bouncycastle/asn1/test/AllTests.java
+        rm src/org/bouncycastle/asn1/test/ASN1IntegerTest.java
         rm src/org/bouncycastle/asn1/test/ASN1SequenceParserTest.java
         rm src/org/bouncycastle/asn1/test/AttributeTableUnitTest.java
         rm src/org/bouncycastle/asn1/test/BiometricDataUnitTest.java
@@ -105,6 +106,7 @@ then
         rm src/org/bouncycastle/crypto/test/GCMReorderTest.java
         rm -r src/org/bouncycastle/pqc/crypto/test
         rm src/org/bouncycastle/cert/test/BcCertTest.java
+        rm src/org/bouncycastle/cert/test/GOST3410_2012CMSTest.java
         rm src/org/bouncycastle/crypto/test/SCryptTest.java
         rm src/org/bouncycastle/crypto/examples/DESExample.java
         rm src/org/bouncycastle/pqc/crypto/test/EncryptionKeyTest.java
