@@ -1,7 +1,7 @@
 package org.bouncycastle.tls;
 
-/*
- * RFC 3546 3.3.
+/**
+ * Implementation of the RFC 3546 3.3. CertChainType.
  */
 public class CertChainType
 {

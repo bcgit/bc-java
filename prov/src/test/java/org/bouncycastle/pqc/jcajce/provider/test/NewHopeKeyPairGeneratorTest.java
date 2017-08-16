@@ -7,6 +7,9 @@ import java.security.SecureRandom;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 
 
+/**
+ * KeyFactory/KeyPairGenerator tests for NewHope (NH) with the BCPQC provider.
+ */
 public class NewHopeKeyPairGeneratorTest
     extends KeyPairGeneratorTest
 {

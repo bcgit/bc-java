@@ -2,6 +2,9 @@ package org.bouncycastle.tls;
 
 import java.io.InputStream;
 
+/**
+ * InputStream based on a ByteQueue implementation.
+ */
 public class ByteQueueInputStream
     extends InputStream
 {

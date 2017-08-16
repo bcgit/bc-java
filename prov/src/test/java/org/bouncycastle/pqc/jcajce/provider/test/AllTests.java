@@ -8,6 +8,9 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 
+/**
+ * Full test suite for the BCPQC provider.
+ */
 public class AllTests
     extends TestCase
 {

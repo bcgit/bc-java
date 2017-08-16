@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+/**
+ * Implementation of the RFC 3546 3.6. CertificateStatusRequest.
+ */
 public class CertificateStatusRequest
 {
     protected short statusType;
