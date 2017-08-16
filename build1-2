@@ -58,6 +58,8 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/pqc/crypto/ntru
     rm -rf org/bouncycastle/pqc/crypto/*/NTRU*
     rm -rf org/bouncycastle/pqc/crypto/xmss
+    rm -rf org/bouncycastle/pqc/jcajce/provider/xmss
+    rm -rf org/bouncycastle/pqc/jcajce/provider/XMSS*
     rm -rf org/bouncycastle/pqc/crypto/*/XMSS*
     rm -rf org/bouncycastle/pqc/crypto/*/EncryptionKey*
     rm -rf org/bouncycastle/pqc/crypto/*/BitStringT*
@@ -84,6 +86,8 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/jce/provider/EC5*.java
     rm -rf org/bouncycastle/jce/provider/JCEEC*.java
     rm -rf org/bouncycastle/jcajce/provider/asymmetric/ec/EC5Util.java
+    rm -rf org/bouncycastle/jcajce/provider/asymmetric/ecgost12
+    rm -rf org/bouncycastle/jcajce/provider/test
     rm -rf org/bouncycastle/jce/provider/asymmetric/ec/EC5*.java
     rm -rf org/bouncycastle/jce/provider/test/ECDSA5Test.java
     rm -rf org/bouncycastle/jce/provider/test/CRL5Test.java
@@ -347,7 +351,9 @@ then
     (cd src/java/security/spec; javac -d ../../../../classes -classpath ../../../../classes *.java )
 
     (cd src/org/bouncycastle/jce/cert; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src *.java  )
-    (cd src/org/bouncycastle/jcajce/provider; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src [abcis]*/*.java )
+    (cd src/org/bouncycastle/jcajce/provider; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src a*/*.java )
+    (cd src/org/bouncycastle/jcajce/provider; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src b*/*.java )
+    (cd src/org/bouncycastle/jcajce/provider; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src [cis]*/*.java )
     (cd src/org/bouncycastle/jcajce/provider; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src [abcis]*/*/*.java )
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src *.java a*/*.java a*/*/*.java a*/*/*/*.java )
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src *.java [bci]*/*.java [bci]*/*/*.java [bci]*/*/*/*.java )

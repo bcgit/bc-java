@@ -232,3 +232,15 @@ g/private final .*;/s/final//
 w
 q
 %
+
+ed org/bouncycastle/asn1/cryptopro/Gost2814789KeyWrapParameters.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/cryptopro/Gost2814789EncryptedKey.java <<%
+g/private final .*;/s/final//
+w
+q
+%
