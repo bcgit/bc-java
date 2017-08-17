@@ -91,7 +91,7 @@ The Bouncy Castle provider can make use of the following two system properties:
 		<li>Signers</li>
 	</ul></li>
 <li> JCE compatible framework for a Bouncy Castle provider "BC".</li>
-li> JCE compatible framework for a Bouncy Castle post-quantum provider "BCPQC".</li>
+<li> JCE compatible framework for a Bouncy Castle post-quantum provider "BCPQC".</li>
 </ul>
 
 <h2>5.0 Light-weight API</h2>
@@ -155,13 +155,12 @@ be operated in.
 <tr><td><b>BufferedBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 <tr><td><b>CBCBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 <tr><td><b>CFBBlockCipher</b></td><td>BlockCipher, block size (in bits)</td><td>&nbsp;</td></tr>
-<tr><td><b>CCMBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - requires all data up front.</td></tr>
-<tr><td><b>GCMBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - NIST SP 800-38D.</td></tr>
 <tr><td><b>GCFBlockCipher</b></td><td>BlockCipher</td><td>GOST CFB mode with CryptoPro key meshing.</td></tr>
 <tr><td><b>EAXBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 <tr><td><b>OCBBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 <tr><td><b>OFBBlockCipher</b></td><td>BlockCipher, block size (in bits)</td><td>&nbsp;</td></tr>
 <tr><td><b>SICBlockCipher</b></td><td>BlockCipher, block size (in bits)</td><td>Also known as CTR mode</td></tr>
+<tr><td><b>KCTRBlockCipher</b></td><td>BlockCipher, block size (in bits)</td><td>DSTU7624 CTR mode</td></tr>
 <tr><td><b>OpenPGPCFBBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 <tr><td><b>GOFBBlockCipher</b></td><td>BlockCipher</td><td>GOST OFB mode</td></tr>
 </table>
@@ -174,7 +173,9 @@ and has the following implemenations.
 <tr><th>Name</th><th>Constructor</th><th>Notes</th></tr>
 <tr><td><b>CCMBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - requires all data up front.</td></tr>
 <tr><td><b>EAXBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
+<tr><td><b>CCMBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - requires all data up front.</td></tr>
 <tr><td><b>GCMBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - NIST SP 800-38D.</td></tr>
+<tr><td><b>KCCMBlockCipher</b></td><td>BlockCipher</td><td>DSTU 7624 Packet mode - requires all data up front.</td></tr>
 <tr><td><b>OCBBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 </table>
 </p>
@@ -186,6 +187,7 @@ and has the following implemenations.
 <tr><th>Name</th><th>Constructor</th><th>Notes</th></tr>
 <tr><td><b>PaddedBufferedBlockCipher</b></td><td>BlockCipher</td><td>a buffered block cipher that can use padding - default PKCS5/7 padding</td></tr>
 <tr><td><b>CTSBlockCipher</b></td><td>BlockCipher</td><td>Cipher Text Stealing</td></tr>
+<tr><td><b>NISTCTSBlockCipher</b></td><td>BlockCipher</td><td>Cipher Text Stealing - NIST mode set.</td></tr>
 </table>
 
 <p>The following paddings can be used with the PaddedBufferedBlockCipher.
@@ -214,6 +216,8 @@ used with the above modes.
 <tr><td><b>DESEngine</b></td><td>64</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>DESedeEngine</b></td><td>128, 192</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>DESedeWrapEngine</b></td><td>128, 192</td><td>64 bit</td><td>Implements Draft IETF DESede key wrapping</td></tr>
+<tr><td><b>DSTU7624Engine</b></td><td>128, 256, 512</td><td>128/256/512 bit</td><td>DSTU7624 Block Cipher</td></tr>
+<tr><td><b>DSTU7624WrapEngine</b></td><td>128, 256, 512</td><td>128/256/512 bit</td><td>DSTU7624 key wrapper</td></tr>
 <tr><td><b>GOST28147Engine</b></td><td>256</td><td>64 bit</td><td>Has a range of S-boxes</td></tr>
 <tr><td><b>IDEAEngine</b></td><td>128</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>NoekeonEngine</b></td><td>128</td><td>128 bit</td><td>&nbsp;</td></tr>
@@ -227,6 +231,7 @@ used with the above modes.
 <tr><td><b>Shacal2Engine</b></td><td>512</td><td>256 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>SerpentEngine</b></td><td>128, 192, 256 </td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>SkipjackEngine</b></td><td>0 .. 128 </td><td>64 bit</td><td>&nbsp;</td></tr>
+<tr><td><b>SM4Engine</b></td><td>128</td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>TEAEngine</b></td><td>128</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>ThreefishEngine</b></td><td>256/512/1024 </td><td>256 bit/512 bit/1024 bit</td><td>Tweakable block cipher</td></tr>
 <tr><td><b>TwofishEngine</b></td><td>128, 192, 256 </td><td>128 bit</td><td>&nbsp;</td></tr>
