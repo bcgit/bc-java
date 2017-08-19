@@ -69,7 +69,7 @@ For those who are interested, there are 2 mailing lists for participation in thi
 
 If you want to provide feedback directly to the members of **The Legion** then please use [feedback-crypto@bouncycastle.org](mailto:feedback-crypto@bouncycastle.org), if you want to help this project survive please consider [donating](https://www.bouncycastle.org/donate).
 
-For bug reporting/requests you can report issues here on github, via feedback-crypto if required, and we also have a [Jira issue tracker](http://www.bouncycastle.org/jira). We will accept pull requests based on this repository as well.
+For bug reporting/requests you can report issues here on github, or via feedback-crypto if required. We will accept pull requests based on this repository as well.
 
 ## Finally
 
