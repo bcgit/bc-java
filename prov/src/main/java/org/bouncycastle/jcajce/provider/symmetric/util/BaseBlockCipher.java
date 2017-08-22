@@ -370,7 +370,7 @@ public class BaseBlockCipher
         }
         else if (modeName.startsWith("CCM"))
         {
-            ivLength = 13; // CCM nonce 7..13 bytes
+            ivLength = 12; // CCM nonce 7..13 bytes
             if (baseEngine instanceof DSTU7624Engine)
             {
                 cipher = new AEADGenericBlockCipher(new KCCMBlockCipher(baseEngine));
