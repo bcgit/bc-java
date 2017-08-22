@@ -37,6 +37,8 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.PBEParametersGenerator;
@@ -441,9 +443,9 @@ public class BcKeyStoreSpi
             switch (keyType)
             {
             case KEY_PRIVATE:
-                return helper.createKeyFactory(algorithm).generatePrivate(spec);
+                return BouncyCastleProvider.getPrivateKey(PrivateKeyInfo.getInstance(enc));
             case KEY_PUBLIC:
-                return  helper.createKeyFactory(algorithm).generatePublic(spec);
+                return  BouncyCastleProvider.getPublicKey(SubjectPublicKeyInfo.getInstance(enc));
             case KEY_SECRET:
                 return  helper.createSecretKeyFactory(algorithm).generateSecret(spec);
             default:
