@@ -22,24 +22,7 @@ import org.bouncycastle.tls.crypto.TlsCrypto;
 class ProvSSLSessionContext
     implements SSLSessionContext
 {
-    static final boolean hasExtendedSSLSession;
-
-    static
-    {
-        Class<?> clazz = null;
-        try
-        {
-            clazz = JsseUtils.loadClass(ProvSSLSessionContext.class,"javax.net.ssl.ExtendedSSLSession");
-        }
-        catch (Exception e)
-        {
-            clazz = null;
-        }
-
-        hasExtendedSSLSession = (clazz != null);
-    }
-
-    protected final Map<SessionID, ProvSSLSession> sessionMap = Collections.synchronizedMap(new HashMap<SessionID, ProvSSLSession>());
+    protected final Map<SessionID, ProvSSLSessionImpl> sessionMap = Collections.synchronizedMap(new HashMap<SessionID, ProvSSLSessionImpl>());
 
     protected final ProvSSLContextSpi sslContext;
     protected final TlsCrypto crypto;
@@ -62,18 +45,13 @@ class ProvSSLSessionContext
         return crypto;
     }
 
-    SSLSession reportSession(TlsSession tlsSession)
+    ProvSSLSessionImpl reportSession(TlsSession tlsSession)
     {
         // TODO[jsse] Check for existing session with same ID
 
-        ProvSSLSession sslSession = new ProvSSLSession(this, tlsSession);
+        ProvSSLSessionImpl sslSession = new ProvSSLSessionImpl(this, tlsSession);
 
         // TODO[jsse] Register session for re-use
-
-        if (hasExtendedSSLSession)
-        {
-             return new ProvExtendedSSLSession(sslSession);
-        }
 
         return sslSession;
     }
@@ -96,7 +74,7 @@ class ProvSSLSessionContext
     public SSLSession getSession(byte[] sessionId)
     {
         SessionID key = new SessionID(sessionId);
-        ProvSSLSession session = sessionMap.get(key);
+        ProvSSLSessionImpl session = sessionMap.get(key);
 
         // TODO[jsse] Should we return a session if it's been invalidated/timed-out?
 

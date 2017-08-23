@@ -13,7 +13,6 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
@@ -376,7 +375,7 @@ class ProvTlsServer
         this.handshakeComplete = true;
 
         ProvSSLSessionContext sessionContext = manager.getContextData().getServerSessionContext();
-        SSLSession session = sessionContext.reportSession(context.getSession());
+        ProvSSLSessionImpl session = sessionContext.reportSession(context.getSession());
         ProvSSLConnection connection = new ProvSSLConnection(context, session);
 
         manager.notifyHandshakeComplete(connection);

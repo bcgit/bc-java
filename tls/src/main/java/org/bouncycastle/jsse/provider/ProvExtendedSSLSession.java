@@ -2,24 +2,21 @@ package org.bouncycastle.jsse.provider;
 
 import java.security.Principal;
 import java.security.cert.Certificate;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.net.ssl.ExtendedSSLSession;
+import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSessionContext;
+
+import org.bouncycastle.jsse.BCSNIServerName;
 
 // TODO[jsse] Serializable ?
 class ProvExtendedSSLSession
     extends ExtendedSSLSession
 {
-    // TODO[jsse] Ensure this behaves according to the javadoc for SSLSocket.getSession and SSLEngine.getSession
-    protected final static ProvExtendedSSLSession NULL_SESSION = new ProvExtendedSSLSession(ProvSSLSession.NULL_SESSION);
-
-    protected final Map<String, Object> valueMap = Collections.synchronizedMap(new HashMap<String, Object>());
-
     private final ProvSSLSession sslSession;
 
     ProvExtendedSSLSession(ProvSSLSession sslSession)
@@ -65,7 +62,7 @@ class ProvExtendedSSLSession
     @Override
     public String[] getLocalSupportedSignatureAlgorithms()
     {
-        throw new UnsupportedOperationException();
+        return sslSession.getLocalSupportedSignatureAlgorithms();
     }
 
     public int getPacketBufferSize()
@@ -100,7 +97,7 @@ class ProvExtendedSSLSession
 
     public String[] getPeerSupportedSignatureAlgorithms()
     {
-        throw new UnsupportedOperationException();
+        return sslSession.getPeerSupportedSignatureAlgorithms();
     }
 
     public String getProtocol()
@@ -108,10 +105,26 @@ class ProvExtendedSSLSession
         return sslSession.getProtocol();
     }
 
-    // TODO: SNIServerName post 1.7
-    public List getRequestedServerNames()
+    public List<SNIServerName> getRequestedServerNames()
     {
-        throw new UnsupportedOperationException();
+        List<BCSNIServerName> serverNames = sslSession.getRequestedServerNames();
+        if (serverNames != null)
+        {
+            ArrayList<SNIServerName> result = new ArrayList<SNIServerName>(serverNames.size());
+            for (BCSNIServerName serverName : serverNames)
+            {
+                SNIServerName exported = JsseUtilsv18.exportSNIServerName(serverName);
+                if (exported != null)
+                {
+                    result.add(exported);
+                }
+            }
+            if (!result.isEmpty())
+            {
+                return Collections.unmodifiableList(result);
+            }
+        }
+        return Collections.emptyList();
     }
 
     public SSLSessionContext getSessionContext()
