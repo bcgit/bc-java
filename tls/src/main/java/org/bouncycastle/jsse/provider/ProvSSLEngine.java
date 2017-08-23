@@ -198,7 +198,7 @@ class ProvSSLEngine
     @Override
     public synchronized SSLSession getSession()
     {
-        return connection == null ? ProvSSLSession.NULL_SESSION : connection.getSession();
+        return connection == null ? ProvSSLSessionImpl.NULL_SESSION.getExportSession() : connection.getSession();
     }
 
     @Override
@@ -324,7 +324,7 @@ class ProvSSLEngine
              * Limit the net data that we will process in one call
              * TODO[jsse] Ideally, we'd be processing exactly one record at a time
              */
-            int srcLimit = ProvSSLSession.NULL_SESSION.getApplicationBufferSize() + 5;
+            int srcLimit = ProvSSLSessionImpl.NULL_SESSION.getApplicationBufferSize() + 5;
 
             int count = Math.min(src.remaining(), srcLimit);
             if (count > 0)
@@ -459,7 +459,7 @@ class ProvSSLEngine
                 /*
                  * Limit the app data that we will process in one call
                  */
-                int srcLimit = ProvSSLSession.NULL_SESSION.getApplicationBufferSize();
+                int srcLimit = ProvSSLSessionImpl.NULL_SESSION.getApplicationBufferSize();
 
                 for (int srcIndex = 0; srcIndex < length && srcLimit > 0; ++srcIndex)
                 {

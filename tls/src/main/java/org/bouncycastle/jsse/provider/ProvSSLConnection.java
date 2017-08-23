@@ -10,12 +10,17 @@ class ProvSSLConnection
     implements BCSSLConnection
 {
     protected final TlsContext tlsContext;
-    protected final SSLSession session; 
+    protected final ProvSSLSessionImpl sessionImpl; 
 
-    ProvSSLConnection(TlsContext tlsContext, SSLSession session)
+    ProvSSLConnection(TlsContext tlsContext, ProvSSLSessionImpl sessionImpl)
     {
         this.tlsContext = tlsContext;
-        this.session = session;
+        this.sessionImpl = sessionImpl;
+    }
+
+    ProvSSLSessionImpl getSessionImpl()
+    {
+        return sessionImpl;
     }
 
     public byte[] getChannelBinding(String channelBinding)
@@ -30,6 +35,6 @@ class ProvSSLConnection
 
     public SSLSession getSession()
     {
-        return session;
+        return sessionImpl.getExportSession();
     }
 }
