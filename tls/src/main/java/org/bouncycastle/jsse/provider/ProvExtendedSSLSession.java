@@ -29,7 +29,7 @@ class ProvExtendedSSLSession
 
     public int getApplicationBufferSize()
     {
-        throw new UnsupportedOperationException();
+        return sslSession.getApplicationBufferSize();
     }
 
     public String getCipherSuite()
@@ -108,7 +108,7 @@ class ProvExtendedSSLSession
         return sslSession.getProtocol();
     }
 
-    // TODO: SSNIServerName post 1.7
+    // TODO: SNIServerName post 1.7
     public List getRequestedServerNames()
     {
         throw new UnsupportedOperationException();
