@@ -262,13 +262,13 @@ public class BCECGOST3410_2012PublicKey
                 {
                     params = new GOST3410PublicKeyAlgParameters(
                         ECGOST3410NamedCurves.getOID(((ECNamedCurveSpec)ecSpec).getName()),
-                        RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512);
+                        RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512);
                 }
                 else
                 {
                     params = new GOST3410PublicKeyAlgParameters(
                         ECGOST3410NamedCurves.getOID(((ECNamedCurveSpec)ecSpec).getName()),
-                        RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256);
+                        RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256);
                 }
             }
             else
