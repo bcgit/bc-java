@@ -29,6 +29,11 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
 
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
@@ -405,7 +410,6 @@ public class GOST3410Test
         PrivateKey sKey = f.generatePrivate(priKey);
         PublicKey vKey = f.generatePublic(pubKey);
 
-
         ECGOST3410_2012Signer signer = new ECGOST3410_2012Signer();
         CipherParameters param = ECUtil.generatePrivateKeyParameter(sKey);
 
@@ -462,8 +466,63 @@ public class GOST3410Test
 
         signatureGost12Test("ECGOST3410-2012-512", 128, p);
         encodedGost12Test(p);
+    }
 
+    private void ecGOST2012NameCurveGenerationTest()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("ECGOST3410-2012", "BC");
 
+        kpGen.initialize(new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-256-paramSetA"));
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        AlgorithmIdentifier expectedAlgId = new AlgorithmIdentifier(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256,
+                    new GOST3410PublicKeyAlgParameters(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetA, RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256));
+
+        checkKeyPairAlgId(kp, expectedAlgId);
+
+        kpGen.initialize(new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-512-paramSetA"));
+
+        kp = kpGen.generateKeyPair();
+
+        expectedAlgId = new AlgorithmIdentifier(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512,
+                    new GOST3410PublicKeyAlgParameters(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512_paramSetA, RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512));
+
+        checkKeyPairAlgId(kp, expectedAlgId);
+
+        kpGen.initialize(new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-512-paramSetB"));
+
+        kp = kpGen.generateKeyPair();
+
+        expectedAlgId = new AlgorithmIdentifier(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512,
+                    new GOST3410PublicKeyAlgParameters(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512_paramSetB, RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512));
+
+        checkKeyPairAlgId(kp, expectedAlgId);
+
+        kpGen.initialize(new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-512-paramSetC"));
+
+        kp = kpGen.generateKeyPair();
+
+        expectedAlgId = new AlgorithmIdentifier(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512,
+                    new GOST3410PublicKeyAlgParameters(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512_paramSetC, RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512));
+
+        checkKeyPairAlgId(kp, expectedAlgId);
+    }
+
+    private void checkKeyPairAlgId(KeyPair kp, AlgorithmIdentifier expectedAlgId)
+    {
+        SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded());
+
+        AlgorithmIdentifier algId = info.getAlgorithm();
+
+        isEquals(expectedAlgId, algId);
+
+        PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
+
+        algId = privInfo.getPrivateKeyAlgorithm();
+
+        isEquals(expectedAlgId, algId);
     }
 
     private void ecGOST34102012512Test()
@@ -798,6 +857,7 @@ public class GOST3410Test
         {
             ecGOST34102012256Test();
             ecGOST34102012512Test();
+            ecGOST2012NameCurveGenerationTest();
         }
         
         generationTest();
