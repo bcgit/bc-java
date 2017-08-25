@@ -110,6 +110,8 @@ public class BCECGOST3410_2012PublicKey
         {
             this.ecSpec = spec;
         }
+
+
     }
 
     public BCECGOST3410_2012PublicKey(
@@ -250,11 +252,9 @@ public class BCECGOST3410_2012PublicKey
         // need to detect key size
         boolean is512 = (bX.bitLength() > 256);
 
-        if (gostParams != null)
-        {
-            params = gostParams;
-        }
-        else
+        params = getGostParams();
+
+        if (params == null)
         {
             if (ecSpec instanceof ECNamedCurveSpec)
             {
@@ -430,6 +430,25 @@ public class BCECGOST3410_2012PublicKey
 
     public GOST3410PublicKeyAlgParameters getGostParams()
     {
+        if (gostParams == null && ecSpec instanceof ECNamedCurveSpec)
+        {
+            BigInteger bX = this.ecPublicKey.getQ().getAffineXCoord().toBigInteger();
+
+            // need to detect key size
+            boolean is512 = (bX.bitLength() > 256);
+            if (is512)
+            {
+                this.gostParams = new GOST3410PublicKeyAlgParameters(
+                    ECGOST3410NamedCurves.getOID(((ECNamedCurveSpec)ecSpec).getName()),
+                    RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512);
+            }
+            else
+            {
+                this.gostParams = new GOST3410PublicKeyAlgParameters(
+                    ECGOST3410NamedCurves.getOID(((ECNamedCurveSpec)ecSpec).getName()),
+                    RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256);
+            }
+        }
         return gostParams;
     }
 }
