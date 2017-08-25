@@ -518,16 +518,9 @@ public class BCECGOST3410_2012PrivateKey
 
     private DERBitString getPublicKeyDetails(BCECGOST3410_2012PublicKey pub)
     {
-        try
-        {
-            SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(ASN1Primitive.fromByteArray(pub.getEncoded()));
+        SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(pub.getEncoded());
 
-            return info.getPublicKeyData();
-        }
-        catch (IOException e)
-        {   // should never happen
-            return null;
-        }
+        return info.getPublicKeyData();
     }
 
     private void readObject(
