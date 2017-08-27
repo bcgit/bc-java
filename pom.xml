@@ -1,43 +1,52 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  
-  <parent>
-    <groupId>com.github.gv2011</groupId>
-    <artifactId>parent</artifactId>
-    <version>0.0.3-SNAPSHOT</version>
-  </parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
 
-  <artifactId>asn1</artifactId>
+	<parent>
+		<groupId>com.github.gv2011</groupId>
+		<artifactId>parent</artifactId>
+		<version>0.0.3-SNAPSHOT</version>
+	</parent>
 
-  <name>Vinz ASN.1</name>
-  <description>ASN.1 implementation extracted from Bouncy Castle</description>
-  <url>https://github.com/gv2011/asn1</url>
-  
-  <licenses>
-    <license>
-      <name>MIT License</name>
-      <url>https://opensource.org/licenses/MIT</url>
-    </license>
-  </licenses>
+	<artifactId>asn1</artifactId>
 
-  <developers>
-    <developer>
-      <id>gv2011</id>
-      <name>Vinz</name>
-      <url>https://github.com/gv2011</url>
-    </developer>
-    <developer>
-      <id>bouncycastle</id>
-      <name>The Legion of the Bouncy Castle Inc.</name>
-      <url>http://www.bouncycastle.org</url>
-    </developer>
-  </developers>
+	<name>Vinz ASN.1</name>
+	<description>ASN.1 implementation extracted from Bouncy Castle</description>
+	<url>https://github.com/gv2011/asn1</url>
 
-  <scm>
-    <connection>scm:git:git@github.com:gv2011/asn1.git</connection>
-    <developerConnection>scm:git:git@github.com:gv2011/asn1.git</developerConnection>
-    <url>https://github.com/gv2011/asn1</url>
-    <tag>HEAD</tag>
-  </scm>
-  
+	<licenses>
+		<license>
+			<name>MIT License</name>
+			<url>https://opensource.org/licenses/MIT</url>
+		</license>
+	</licenses>
+
+	<developers>
+		<developer>
+			<id>gv2011</id>
+			<name>Vinz</name>
+			<url>https://github.com/gv2011</url>
+		</developer>
+		<developer>
+			<id>bouncycastle</id>
+			<name>The Legion of the Bouncy Castle Inc.</name>
+			<url>http://www.bouncycastle.org</url>
+		</developer>
+	</developers>
+
+	<scm>
+		<connection>scm:git:git@github.com:gv2011/asn1.git</connection>
+		<developerConnection>scm:git:git@github.com:gv2011/asn1.git</developerConnection>
+		<url>https://github.com/gv2011/asn1</url>
+		<tag>HEAD</tag>
+	</scm>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.github.gv2011</groupId>
+			<artifactId>util-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
 </project>
