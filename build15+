@@ -8,7 +8,7 @@
 
 if [ "${JDKPATH}" = "" ] 
 then
-	JDKPATH=/usr/lib/jvm/java-7-openjdk-amd64
+	JDKPATH=/usr/lib/jvm/java-8-openjdk-amd64
 fi
 
 JAVA_HOME=$JDKPATH
