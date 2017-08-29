@@ -32,7 +32,7 @@ class ProvSSLEngine
     protected final ContextData contextData;
 
     protected ProvSSLParameters sslParameters;
-    protected boolean enableSessionCreation = false;
+    protected boolean enableSessionCreation = true;
     protected boolean useClientMode = true;
 
     protected boolean initialHandshakeBegun = false;
@@ -110,6 +110,10 @@ class ProvSSLEngine
                 serverProtocol.accept(server);
                 this.handshakeStatus = HandshakeStatus.NEED_UNWRAP;
             }
+        }
+        catch (SSLException e)
+        {
+            throw e;
         }
         catch (IOException e)
         {

@@ -17,7 +17,7 @@ class ProvSSLServerSocket
     protected final ContextData contextData;
 
     protected ProvSSLParameters sslParameters;
-    protected boolean enableSessionCreation = false;
+    protected boolean enableSessionCreation = true;
     protected boolean useClientMode = false;
 
     protected ProvSSLServerSocket(ProvSSLContextSpi context, ContextData contextData)
