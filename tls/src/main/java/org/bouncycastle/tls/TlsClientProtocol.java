@@ -583,8 +583,9 @@ public class TlsClientProtocol
     protected void receiveServerHelloMessage(ByteArrayInputStream buf)
         throws IOException
     {
+        ProtocolVersion server_version = TlsUtils.readVersion(buf);
+
         {
-            ProtocolVersion server_version = TlsUtils.readVersion(buf);
             if (!TlsUtils.isTLSv10(server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
@@ -742,7 +743,8 @@ public class TlsClientProtocol
         if (this.resumedSession)
         {
             if (selectedCipherSuite != this.sessionParameters.getCipherSuite()
-                || selectedCompressionMethod != this.sessionParameters.getCompressionAlgorithm())
+                || selectedCompressionMethod != this.sessionParameters.getCompressionAlgorithm()
+                || !server_version.equals(this.sessionParameters.getNegotiatedVersion()))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
