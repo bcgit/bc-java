@@ -44,7 +44,9 @@ import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedAgreement;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.IPAddress;
+import org.bouncycastle.util.encoders.Hex;
 
 class ProvTlsClient
     extends DefaultTlsClient
@@ -57,6 +59,7 @@ class ProvTlsClient
     protected final ProvTlsManager manager;
     protected final ProvSSLParameters sslParameters;
 
+    protected TlsSession tlsSession = null;
     protected boolean handshakeComplete = false;
 
     ProvTlsClient(ProvTlsManager manager)
@@ -359,7 +362,10 @@ class ProvTlsClient
     public TlsSession getSessionToResume()
     {
         // TODO[jsse] Search for a suitable session in the client session context
-        return null;
+        //ProvSSLSessionContext sessionContext = manager.getContextData().getClientSessionContext();
+        //this.tlsSession = sessionContext.chooseSession???
+
+        return tlsSession;
     }
 
     @Override
@@ -437,5 +443,24 @@ class ProvTlsClient
             }
         }
         throw new TlsFatalAlert(AlertDescription.protocol_version);
+    }
+
+    @Override
+    public void notifySessionID(byte[] sessionID)
+    {
+        super.notifySessionID(sessionID);
+
+        if (sessionID == null || sessionID.length == 0)
+        {
+            LOG.fine("Server did not specify a session ID");
+        }
+        else if (tlsSession != null && Arrays.areEqual(sessionID, tlsSession.getSessionID()))
+        {
+            LOG.fine("Server resumed session: " + Hex.toHexString(sessionID));
+        }
+        else
+        {
+            LOG.fine("Server specified new session: " + Hex.toHexString(sessionID));
+        }
     }
 }
