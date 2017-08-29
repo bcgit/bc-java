@@ -365,6 +365,11 @@ class ProvTlsClient
         //ProvSSLSessionContext sessionContext = manager.getContextData().getClientSessionContext();
         //this.tlsSession = sessionContext.chooseSession???
 
+        if (tlsSession == null && !manager.getEnableSessionCreation())
+        {
+            throw new IllegalStateException("No resumable sessions and session creation is disabled");
+        }
+
         return tlsSession;
     }
 
@@ -457,6 +462,10 @@ class ProvTlsClient
         else if (tlsSession != null && Arrays.areEqual(sessionID, tlsSession.getSessionID()))
         {
             LOG.fine("Server resumed session: " + Hex.toHexString(sessionID));
+        }
+        else if (!manager.getEnableSessionCreation())
+        {
+            throw new IllegalStateException("Server did not resume session and session creation is disabled");
         }
         else
         {

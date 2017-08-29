@@ -6,6 +6,8 @@ interface ProvTlsManager
 {
     ProvSSLContextSpi getContext();
 
+    boolean getEnableSessionCreation();
+
     ProvSSLParameters getProvSSLParameters();
 
     ContextData getContextData();
