@@ -17,6 +17,7 @@ import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -56,6 +57,7 @@ public class TSPUtil
         digestLengths.put(CryptoProObjectIdentifiers.gostR3411.getId(), Integers.valueOf(32));
         digestLengths.put(RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256.getId(), Integers.valueOf(32));
         digestLengths.put(RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512.getId(), Integers.valueOf(64));
+        digestLengths.put(GMObjectIdentifiers.sm3.getId(), Integers.valueOf(32));
 
         digestNames.put(PKCSObjectIdentifiers.md5.getId(), "MD5");
         digestNames.put(OIWObjectIdentifiers.idSHA1.getId(), "SHA1");
@@ -74,6 +76,7 @@ public class TSPUtil
         digestNames.put(CryptoProObjectIdentifiers.gostR3411.getId(), "GOST3411");
         digestNames.put(RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256.getId(), "GOST3411-2012-256");
         digestNames.put(RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512.getId(), "GOST3411-2012-512");
+        digestNames.put(GMObjectIdentifiers.sm3.getId(), "SM3");
     }
 
      /**
