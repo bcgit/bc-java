@@ -259,7 +259,7 @@ public class DRBG
                 if (seedAvailable.getAndSet(false))
                 {
                     samples.set(0);
-                    drbg.reseed(null);
+                    drbg.reseed((byte[])null);    // need for Java 1.9
                 }
             }
 
