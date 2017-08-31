@@ -552,6 +552,11 @@ class ProvSSLEngine
         return super.getPeerHost();
     }
 
+    public int getPeerPort()
+    {
+        return super.getPeerPort();
+    }
+
     public boolean isClientTrusted(X509Certificate[] chain, String authType)
     {
         // TODO[jsse] Consider X509ExtendedTrustManager and/or HostnameVerifier functionality
