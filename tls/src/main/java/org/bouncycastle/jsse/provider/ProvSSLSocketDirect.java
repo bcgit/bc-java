@@ -317,6 +317,11 @@ class ProvSSLSocketDirect
         return null;
     }
 
+    public int getPeerPort()
+    {
+        return getPort();
+    }
+
     public boolean isClientTrusted(X509Certificate[] chain, String authType)
     {
         // TODO[jsse] Consider X509ExtendedTrustManager and/or HostnameVerifier functionality

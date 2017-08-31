@@ -381,7 +381,7 @@ class ProvTlsServer
         this.handshakeComplete = true;
 
         ProvSSLSessionContext sessionContext = manager.getContextData().getServerSessionContext();
-        ProvSSLSessionImpl session = sessionContext.reportSession(context.getSession());
+        ProvSSLSessionImpl session = sessionContext.reportSession(context.getSession(), null, -1);
         ProvSSLConnection connection = new ProvSSLConnection(context, session);
 
         manager.notifyHandshakeComplete(connection);

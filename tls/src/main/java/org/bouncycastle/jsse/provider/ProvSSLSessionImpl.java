@@ -42,26 +42,45 @@ class ProvSSLSessionImpl
     }
 
     // TODO[jsse] Ensure this behaves according to the javadoc for SSLSocket.getSession and SSLEngine.getSession
-    protected final static ProvSSLSessionImpl NULL_SESSION = new ProvSSLSessionImpl(null, null);
+    protected final static ProvSSLSessionImpl NULL_SESSION = new ProvSSLSessionImpl(null, null, null, -1);
 
     protected final Map<String, Object> valueMap = Collections.synchronizedMap(new HashMap<String, Object>());
 
     protected final ProvSSLSessionContext sslSessionContext;
     protected final TlsSession tlsSession;
+    protected final String peerHost;
+    protected final int peerPort;
     protected final SessionParameters sessionParameters;
     protected final SSLSession exportSession;
+    protected final long creationTime;
 
-    ProvSSLSessionImpl(ProvSSLSessionContext sslSessionContext, TlsSession tlsSession)
+    protected long lastAccessedTime;
+
+    ProvSSLSessionImpl(ProvSSLSessionContext sslSessionContext, TlsSession tlsSession, String peerHost, int peerPort)
     {
         this.sslSessionContext = sslSessionContext;
         this.tlsSession = tlsSession;
+        this.peerHost = peerHost;
+        this.peerPort = peerPort;
         this.sessionParameters = tlsSession == null ? null : tlsSession.exportSessionParameters();
         this.exportSession = hasExtendedSSLSession ? new ProvExtendedSSLSession(this) : this;
+        this.creationTime = System.currentTimeMillis();
+        this.lastAccessedTime = creationTime;
     }
 
     SSLSession getExportSession()
     {
         return exportSession;
+    }
+
+    TlsSession getTlsSession()
+    {
+        return tlsSession;
+    }
+
+    synchronized void accessedAt(long accessTime)
+    {
+        this.lastAccessedTime = Math.max(lastAccessedTime, accessTime);
     }
 
     public int getApplicationBufferSize()
@@ -79,7 +98,7 @@ class ProvSSLSessionImpl
 
     public long getCreationTime()
     {
-        throw new UnsupportedOperationException();
+        return creationTime;
     }
 
     public byte[] getId()
@@ -91,7 +110,7 @@ class ProvSSLSessionImpl
 
     public long getLastAccessedTime()
     {
-        throw new UnsupportedOperationException();
+        return lastAccessedTime;
     }
 
     public Certificate[] getLocalCertificates()
@@ -169,14 +188,12 @@ class ProvSSLSessionImpl
 
     public String getPeerHost()
     {
-        // TODO[jsse] "It is mainly used as a hint for SSLSession caching strategies."
-        return null;
+        return peerHost;
     }
 
     public int getPeerPort()
     {
-        // TODO[jsse] "It is mainly used as a hint for SSLSession caching strategies."
-        return -1;
+        return peerPort;
     }
 
     public Principal getPeerPrincipal() throws SSLPeerUnverifiedException
