@@ -16,7 +16,8 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DSA;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SM3Digest;
+import org.bouncycastle.crypto.digests.NullDigest;
+import org.bouncycastle.crypto.params.ParametersWithID;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.SM2Signer;
 import org.bouncycastle.jcajce.provider.asymmetric.util.DSABase;
@@ -27,6 +28,11 @@ import org.bouncycastle.util.Arrays;
 public class GMSignatureSpi
     extends DSABase
 {
+    private final static byte[] DEFAULT_SM2_USERID = new byte[] {
+            0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
+            0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38
+    };
+
     GMSignatureSpi(Digest digest, DSA signer, DSAEncoder encoder)
     {
         super("SM2", digest, signer, encoder);
@@ -37,8 +43,10 @@ public class GMSignatureSpi
     {
         CipherParameters param = ECUtils.generatePublicKeyParameter(publicKey);
 
+        ParametersWithID parametersWithID = new ParametersWithID(param, DEFAULT_SM2_USERID);
+
         digest.reset();
-        signer.init(false, param);
+        signer.init(false, parametersWithID);
     }
 
     protected void doEngineInitSign(
@@ -67,7 +75,7 @@ public class GMSignatureSpi
     {
         public sm3WithSM2()
         {
-            super(new SM3Digest(), new SM2Signer(), new StdDSAEncoder());
+            super(new NullDigest(), new SM2Signer(), new StdDSAEncoder());
         }
     }
     
