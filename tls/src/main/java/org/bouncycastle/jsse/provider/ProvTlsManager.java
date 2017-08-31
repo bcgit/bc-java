@@ -14,6 +14,8 @@ interface ProvTlsManager
 
     String getPeerHost();
 
+    int getPeerPort();
+
     boolean isClientTrusted(X509Certificate[] chain, String authType);
 
     boolean isServerTrusted(X509Certificate[] chain, String authType);
