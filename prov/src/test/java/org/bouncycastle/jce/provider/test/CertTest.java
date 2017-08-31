@@ -1215,47 +1215,36 @@ public class CertTest
             "CW5mjbgCIC9cAyuVV91ygLWk14PDuIAPFWKm6rJPXbiZL6KzwHQA");
 
     private static byte[] sm_ca = Base64.decode(
-         "MIIC/TCCAqKgAwIBAgIIIBYDKQETeGQwCgYIKoEcz1UBg3UwgccxCzAJBgNVBAYT" +
-             "AkNOMRIwEAYDVQQIDAnmsZ/oi4/nnIExEjAQBgNVBAcMCeWNl+S6rOW4gjE8MDoG" +
-             "A1UECgwz5rGf6IuP55yB55S15a2Q5ZWG5Yqh5pyN5Yqh5Lit5b+D5pyJ6ZmQ6LSj" +
-             "5Lu75YWs5Y+4MTwwOgYDVQQLDDPmsZ/oi4/nnIHnlLXlrZDllYbliqHmnI3liqHk" +
-             "uK3lv4PmnInpmZDotKPku7vlhazlj7gxFDASBgNVBAMMC0pTQ0FfQ0FfU00yMB4X" +
-             "DTE2MDMyOTA3MzQxOVoXDTIxMDMyOTA3MzQxOVowejENMAsGA1UEAxMEaG9zdDEL" +
-             "MAkGA1UECxMCMTExETAPBgNVBAoTCEFCQyBsdGQuMQswCQYDVQQHEwJOSjELMAkG" +
-             "A1UECBMCSlMxIjAgBgRVBC0RExhEOURGQThBN0NFMDg5QTg0Q0Q4Q0RCQjYxCzAJ" +
-             "BgNVBAYTAkNOMFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAEaTG1mpejjdsNRr2q" +
-             "p3ZC0pPXuBO19sNhIJEG6cMSi/kE1hNDosCBRhpr2gOqKP9bXHrIhVGe41Z9Ci8L" +
-             "jf/hpaOBwzCBwDAJBgNVHRMEAjAAMAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggr" +
-             "BgEFBQcDAgYIKwYBBQUHAwQwHwYDVR0jBBgwFoAU/9NocgiO5XrE+eYsU0VOkaSx" +
-             "egMwRwYIKwYBBQUHAQEEOzA5MDcGCCsGAQUFBzAChitodHRwOi8vMTAuMTA4LjUu" +
-             "Mjo4ODgwL2Rvd25sb2FkL0pTQ0FfQ0EuY2VyMB0GA1UdDgQWBBQQ80pId+SJS9uP" +
-             "aZaItbNdEE2C0zAKBggqgRzPVQGDdQNJADBGAiEAogpBxL3Cc4P4v+FvQsnCgCZs" +
-             "oSdFZLZDB4uDlOIqU9wCIQDXmE1iiCsWi1RmdoY+/ics2ZlY8vyHWBJnZ+XFy1Jb" +
-             "fA==");
+            "MIICDTCCAbGgAwIBAgIEHPP3OTAMBggqgRzPVQGDdQUAMFoxCzAJBgNVBAYTAkNO"
+            + "MTAwLgYDVQQKDCdDaGluYSBGaW5hbmNpYWwgQ2VydGlmaWNhdGlvbiBBdXRob3Jp"
+            + "dHkxGTAXBgNVBAMMEENGQ0EgRVYgU00yIFJPT1QwHhcNMTIwODA4MDMwNjMwWhcN"
+            + "MjkxMjMxMDMwNjMwWjBaMQswCQYDVQQGEwJDTjEwMC4GA1UECgwnQ2hpbmEgRmlu"
+            + "YW5jaWFsIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MRkwFwYDVQQDDBBDRkNBIEVW"
+            + "IFNNMiBST09UMFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAE/9xokvYPq1PPsvqh"
+            + "wzc1OvhRJyqfm+FeefW522OMUJeSqmaYRcwAaEC1IH03etyYEOD4R4HQG+ovJr4z"
+            + "PLZzUqNjMGEwHwYDVR0jBBgwFoAUXxyJKUK15hS66W6X7kBqaMo9lLgwDwYDVR0T"
+            + "AQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFF8ciSlCteYUuulu"
+            + "l+5AamjKPZS4MAwGCCqBHM9VAYN1BQADSAAwRQIgbE/XnzWMMQItSfz/LH6CyNz1"
+            + "OxFwvI6WcgcqGGUdCiMCIQDRFwF7M4Cvo7KqGMNuSiByFNUX9PJYXByjxqPart9U"
+            + "tw==");
 
     private static byte[] sm_sign = Base64.decode(
-        "MIID9zCCA5ygAwIBAgIIIBcEJwKSCCMwCgYIKoEcz1UBg3UwgccxCzAJBgNVBAYT" +
-        "AkNOMRIwEAYDVQQIDAnmsZ/oi4/nnIExEjAQBgNVBAcMCeWNl+S6rOW4gjE8MDoG" +
-        "A1UECgwz5rGf6IuP55yB55S15a2Q5ZWG5Yqh5pyN5Yqh5Lit5b+D5pyJ6ZmQ6LSj" +
-        "5Lu75YWs5Y+4MTwwOgYDVQQLDDPmsZ/oi4/nnIHnlLXlrZDllYbliqHmnI3liqHk" +
-        "uK3lv4PmnInpmZDotKPku7vlhazlj7gxFDASBgNVBAMMC0pTQ0FfQ0FfU00yMB4X" +
-        "DTE3MDQyNzAwMzkwNVoXDTE4MDQyNzAwMzkwNVowggEdMQ4wDAYDVQRYDAUwMDAw" +
-        "MTESMBAGA1UEGgwJ5biC6L6W5Yy6MRswGQYDVQQBDBIzMjAxMTIxOTgxMDUxMTAw" +
-        "MTQxDTALBgRVBIhYDAM0NTYxDTALBgRVBIhXDAMxMjMxEjAQBgNVBC0MCXVzZXJD" +
-        "ZXJ0MjELMAkGA1UEBhMCQ04xEjAQBgNVBAgMCeaxn+iLj+ecgTESMBAGA1UEBwwJ" +
-        "5Y2X5Lqs5biCMQwwCgYDVQQLDAMwMDgxHzAdBgkqhkiG9w0BCQEWEDMyNzMyMTU2" +
-        "OEBxcS5jb20xITAfBgNVBCoMGOa1i+ivlee9keWFs1NNMueul+azlTEyMzEhMB8G" +
-        "A1UEAwwY5rWL6K+V572R5YWzU00y566X5rOVMTIzMFkwEwYHKoZIzj0CAQYIKoEc" +
-        "z1UBgi0DQgAEdbrBzy2y8Gz4grOF23iaDipPhRPQRApAMIAP0cAuL1tATFjFuWJs" +
-        "pBc1cnCZmsOJnVpV4W7VF8hNOaqv3Tq4NqOCARcwggETMAkGA1UdEwQCMAAwCwYD" +
-        "VR0PBAQDAgbAMB0GA1UdDgQWBBRsWSOQDniy75t7UEvTXugwfq0HpzAfBgNVHSME" +
-        "GDAWgBT/02hyCI7lesT55ixTRU6RpLF6AzAxBgNVHSUEKjAoBggrBgEFBQcDAgYI" +
-        "KwYBBQUHAwgGCCsGAQUFBwMEBggrBgEFBQcDCDA9BgNVHR8ENjA0MDKgMKAuhixo" +
-        "dHRwOi8vY3JsLmpzY2EuY29tLmNuL2NybC9TTTJDUkxfRU5USVRZLmNybDBHBggr" +
-        "BgEFBQcBAQQ7MDkwNwYIKwYBBQUHMAKBK2h0dHA6Ly8xMC4xMDguNS4yOjg4ODAv" +
-        "ZG93bmxvYWQvSlNDQV9DQS5jZXIwCgYIKoEcz1UBg3UDSQAwRgIhALFoMoA1+uO4" +
-        "tXfmoyePz1pmv0CWPBgEP1EfDeS6FPitAiEAjHJYq7ryHKULqpRg6ph9r+xUDoWd" +
-        "0TPMOQ9jj4XJPO4=");
+            "MIICzTCCAnKgAwIBAgIGAIgmba9KMAwGCCqBHM9VAYN1BQAwWjELMAkGA1UEBhMC"
+            + "Q04xMDAuBgNVBAoMJ0NoaW5hIEZpbmFuY2lhbCBDZXJ0aWZpY2F0aW9uIEF1dGhv"
+            + "cml0eTEZMBcGA1UEAwwQQ0ZDQSBFViBTTTIgUk9PVDAeFw0xMjA4MDgwNTU2Mjda"
+            + "Fw0yOTEyMjkwNTU2MjdaMFkxCzAJBgNVBAYTAkNOMTAwLgYDVQQKDCdDaGluYSBG"
+            + "aW5hbmNpYWwgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxGDAWBgNVBAMMD0NGQ0Eg"
+            + "RVYgU00yIE9DQTBZMBMGByqGSM49AgEGCCqBHM9VAYItA0IABG6sjKVpVukkQpY1"
+            + "nokr6wmp44hwkVnzmdXvuBbq/VtwB/8V+awkIfpz4THaSjPGzSGh+hwFcka0NCFK"
+            + "TQ7y8rqjggEhMIIBHTA4BggrBgEFBQcBAQQsMCowKAYIKwYBBQUHMAGGHGh0dHA6"
+            + "Ly9vY3NwLmNmY2EuY29tLmNuL29jc3AwHwYDVR0jBBgwFoAUXxyJKUK15hS66W6X"
+            + "7kBqaMo9lLgwDwYDVR0TAQH/BAUwAwEB/zBEBgNVHSAEPTA7MDkGBFUdIAAwMTAv"
+            + "BggrBgEFBQcCARYjaHR0cDovL3d3dy5jZmNhLmNvbS5jbi91cy91cy0xMi5odG0w"
+            + "OgYDVR0fBDMwMTAvoC2gK4YpaHR0cDovL2NybC5jZmNhLmNvbS5jbi9ldnJjYS9T"
+            + "TTIvY3JsMS5jcmwwDgYDVR0PAQH/BAQDAgEGMB0GA1UdDgQWBBTDJFfnVXuTdN3s"
+            + "yIha7AIm0b8vWTAMBggqgRzPVQGDdQUAA0cAMEQCIBgrKO75mE5lfONElZZzkAWh"
+            + "eb0R0ai6/J7nj7SCZ3jJAiAE2dKJIv9ROkN17bhZpXsVrOtyYULW7YzQePqnNN58"
+            + "MA==");
 
     private PublicKey dudPublicKey = new PublicKey() 
     {
@@ -1871,6 +1860,7 @@ public class CertTest
         }
 
         checkSelfSignedCertificate(23, sha3Cert, "SHA3-256withRSAandMGF1");
+        checkSelfSignedCertificate(24, sm_ca, "SM3WITHSM2");
 
         checkCRL(1, crl1);
 
