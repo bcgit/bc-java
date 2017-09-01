@@ -153,9 +153,7 @@ public class BCDSTU4145PublicKey
     {
         return new ECParameterSpec(
             ellipticCurve,
-            new ECPoint(
-                dp.getG().getAffineXCoord().toBigInteger(),
-                dp.getG().getAffineYCoord().toBigInteger()),
+            EC5Util.convertPoint(dp.getG()),
             dp.getN(),
             dp.getH().intValue());
     }
@@ -237,19 +235,17 @@ public class BCDSTU4145PublicKey
             ecSpec = new ECNamedCurveSpec(
                 dstuParams.getNamedCurve().getId(),
                 ellipticCurve,
-                new ECPoint(
-                    spec.getG().getAffineXCoord().toBigInteger(),
-                    spec.getG().getAffineYCoord().toBigInteger()),
-                spec.getN(), spec.getH());
+                EC5Util.convertPoint(spec.getG()),
+                spec.getN(),
+                spec.getH());
         }
         else
         {
             ecSpec = new ECParameterSpec(
                 ellipticCurve,
-                new ECPoint(
-                    spec.getG().getAffineXCoord().toBigInteger(),
-                    spec.getG().getAffineYCoord().toBigInteger()),
-                spec.getN(), spec.getH().intValue());
+                EC5Util.convertPoint(spec.getG()),
+                spec.getN(),
+                spec.getH().intValue());
         }
 
         //this.q = curve.createPoint(new BigInteger(1, x), new BigInteger(1, y), false);
@@ -339,9 +335,7 @@ public class BCDSTU4145PublicKey
 
     public ECPoint getW()
     {
-        org.bouncycastle.math.ec.ECPoint q = ecPublicKey.getQ();
-
-        return new ECPoint(q.getAffineXCoord().toBigInteger(), q.getAffineYCoord().toBigInteger());
+        return EC5Util.convertPoint(ecPublicKey.getQ());
     }
 
     public org.bouncycastle.math.ec.ECPoint getQ()
@@ -357,9 +351,9 @@ public class BCDSTU4145PublicKey
     }
 
     ECPublicKeyParameters engineGetKeyParameters()
-       {
-           return ecPublicKey;
-       }
+    {
+        return ecPublicKey;
+    }
 
     org.bouncycastle.jce.spec.ECParameterSpec engineGetSpec()
     {

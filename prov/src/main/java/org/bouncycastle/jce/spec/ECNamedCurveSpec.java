@@ -7,6 +7,7 @@ import java.security.spec.ECFieldFp;
 import java.security.spec.ECPoint;
 import java.security.spec.EllipticCurve;
 
+import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.field.FiniteField;
@@ -46,21 +47,14 @@ public class ECNamedCurveSpec
             return new ECFieldF2m(poly.getDegree(), ks);
         }
     }
-    
-    private static ECPoint convertPoint(
-        org.bouncycastle.math.ec.ECPoint  g)
-    {
-        g = g.normalize();
-        return new ECPoint(g.getAffineXCoord().toBigInteger(), g.getAffineYCoord().toBigInteger());
-    }
-    
+
     public ECNamedCurveSpec(
         String                              name,
         ECCurve                             curve,
         org.bouncycastle.math.ec.ECPoint    g,
         BigInteger                          n)
     {
-        super(convertCurve(curve, null), convertPoint(g), n, 1);
+        super(convertCurve(curve, null), EC5Util.convertPoint(g), n, 1);
 
         this.name = name;
     }
@@ -83,7 +77,7 @@ public class ECNamedCurveSpec
         BigInteger                          n,
         BigInteger                          h)
     {
-        super(convertCurve(curve, null), convertPoint(g), n, h.intValue());
+        super(convertCurve(curve, null), EC5Util.convertPoint(g), n, h.intValue());
 
         this.name = name;
     }
@@ -108,8 +102,8 @@ public class ECNamedCurveSpec
         BigInteger                          h,
         byte[]                              seed)
     {
-        super(convertCurve(curve, seed), convertPoint(g), n, h.intValue());
-        
+        super(convertCurve(curve, seed), EC5Util.convertPoint(g), n, h.intValue());
+
         this.name = name;
     }
 

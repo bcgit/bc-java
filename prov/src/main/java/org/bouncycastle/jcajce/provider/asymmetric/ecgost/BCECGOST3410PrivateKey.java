@@ -6,7 +6,6 @@ import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.security.interfaces.ECPrivateKey;
 import java.security.spec.ECParameterSpec;
-import java.security.spec.ECPoint;
 import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.EllipticCurve;
 import java.util.Enumeration;
@@ -113,20 +112,17 @@ public class BCECGOST3410PrivateKey
         BCECGOST3410PublicKey pubKey,
         ECParameterSpec spec)
     {
-        ECDomainParameters dp = params.getParameters();
-
         this.algorithm = algorithm;
         this.d = params.getD();
 
         if (spec == null)
         {
+            ECDomainParameters dp = params.getParameters();
             EllipticCurve ellipticCurve = EC5Util.convertCurve(dp.getCurve(), dp.getSeed());
 
             this.ecSpec = new ECParameterSpec(
                 ellipticCurve,
-                new ECPoint(
-                    dp.getG().getAffineXCoord().toBigInteger(),
-                    dp.getG().getAffineYCoord().toBigInteger()),
+                EC5Util.convertPoint(dp.getG()),
                 dp.getN(),
                 dp.getH().intValue());
         }
@@ -146,20 +142,17 @@ public class BCECGOST3410PrivateKey
         BCECGOST3410PublicKey pubKey,
         org.bouncycastle.jce.spec.ECParameterSpec spec)
     {
-        ECDomainParameters dp = params.getParameters();
-
         this.algorithm = algorithm;
         this.d = params.getD();
 
         if (spec == null)
         {
+            ECDomainParameters dp = params.getParameters();
             EllipticCurve ellipticCurve = EC5Util.convertCurve(dp.getCurve(), dp.getSeed());
 
             this.ecSpec = new ECParameterSpec(
                 ellipticCurve,
-                new ECPoint(
-                    dp.getG().getAffineXCoord().toBigInteger(),
-                    dp.getG().getAffineYCoord().toBigInteger()),
+                EC5Util.convertPoint(dp.getG()),
                 dp.getN(),
                 dp.getH().intValue());
         }
@@ -169,9 +162,7 @@ public class BCECGOST3410PrivateKey
 
             this.ecSpec = new ECParameterSpec(
                 ellipticCurve,
-                new ECPoint(
-                    spec.getG().getAffineXCoord().toBigInteger(),
-                    spec.getG().getAffineYCoord().toBigInteger()),
+                EC5Util.convertPoint(spec.getG()),
                 spec.getN(),
                 spec.getH().intValue());
         }
@@ -200,11 +191,13 @@ public class BCECGOST3410PrivateKey
     private void populateFromPrivKeyInfo(PrivateKeyInfo info)
         throws IOException
     {
-        ASN1Primitive p = info.getPrivateKeyAlgorithm().getParameters().toASN1Primitive();
+        AlgorithmIdentifier pkAlg = info.getPrivateKeyAlgorithm(); 
+        ASN1Encodable pkParams = pkAlg.getParameters();
+        ASN1Primitive p = pkParams.toASN1Primitive();
 
         if (p instanceof ASN1Sequence && (ASN1Sequence.getInstance(p).size() == 2 || ASN1Sequence.getInstance(p).size() == 3))
         {
-            GOST3410PublicKeyAlgParameters gParams = GOST3410PublicKeyAlgParameters.getInstance(info.getPrivateKeyAlgorithm().getParameters());
+            GOST3410PublicKeyAlgParameters gParams = GOST3410PublicKeyAlgParameters.getInstance(pkParams);
             gostParams = gParams;
 
             ECNamedCurveParameterSpec spec = ECGOST3410NamedCurveTable.getParameterSpec(ECGOST3410NamedCurves.getName(gParams.getPublicKeyParamSet()));
@@ -215,9 +208,7 @@ public class BCECGOST3410PrivateKey
             ecSpec = new ECNamedCurveSpec(
                 ECGOST3410NamedCurves.getName(gParams.getPublicKeyParamSet()),
                 ellipticCurve,
-                new ECPoint(
-                    spec.getG().getAffineXCoord().toBigInteger(),
-                    spec.getG().getAffineYCoord().toBigInteger()),
+                EC5Util.convertPoint(spec.getG()),
                 spec.getN(), spec.getH());
 
             ASN1Encodable privKey = info.parsePrivateKey();
@@ -242,40 +233,34 @@ public class BCECGOST3410PrivateKey
         else
         {
             // for backwards compatibility
-            X962Parameters params = X962Parameters.getInstance(info.getPrivateKeyAlgorithm().getParameters());
+            X962Parameters params = X962Parameters.getInstance(pkParams);
 
             if (params.isNamedCurve())
             {
                 ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(params.getParameters());
                 X9ECParameters ecP = ECUtil.getNamedCurveByOid(oid);
 
+                String curveName;
                 if (ecP == null) // GOST Curve
                 {
                     ECDomainParameters gParam = ECGOST3410NamedCurves.getByOID(oid);
-                    EllipticCurve ellipticCurve = EC5Util.convertCurve(gParam.getCurve(), gParam.getSeed());
+                    ecP = new X9ECParameters(gParam.getCurve(), gParam.getG(), gParam.getN(), gParam.getH(), gParam.getSeed());
 
-                    ecSpec = new ECNamedCurveSpec(
-                        ECGOST3410NamedCurves.getName(oid),
-                        ellipticCurve,
-                        new ECPoint(
-                            gParam.getG().getAffineXCoord().toBigInteger(),
-                            gParam.getG().getAffineYCoord().toBigInteger()),
-                        gParam.getN(),
-                        gParam.getH());
+                    curveName = ECGOST3410NamedCurves.getName(oid);
                 }
                 else
                 {
-                    EllipticCurve ellipticCurve = EC5Util.convertCurve(ecP.getCurve(), ecP.getSeed());
-
-                    ecSpec = new ECNamedCurveSpec(
-                        ECUtil.getCurveName(oid),
-                        ellipticCurve,
-                        new ECPoint(
-                            ecP.getG().getAffineXCoord().toBigInteger(),
-                            ecP.getG().getAffineYCoord().toBigInteger()),
-                        ecP.getN(),
-                        ecP.getH());
+                    curveName = ECUtil.getCurveName(oid);
                 }
+
+                EllipticCurve ellipticCurve = EC5Util.convertCurve(ecP.getCurve(), ecP.getSeed());
+
+                ecSpec = new ECNamedCurveSpec(
+                    curveName,
+                    ellipticCurve,
+                    EC5Util.convertPoint(ecP.getG()),
+                    ecP.getN(),
+                    ecP.getH());
             }
             else if (params.isImplicitlyCA())
             {
@@ -288,9 +273,7 @@ public class BCECGOST3410PrivateKey
 
                 this.ecSpec = new ECParameterSpec(
                     ellipticCurve,
-                    new ECPoint(
-                        ecP.getG().getAffineXCoord().toBigInteger(),
-                        ecP.getG().getAffineYCoord().toBigInteger()),
+                    EC5Util.convertPoint(ecP.getG()),
                     ecP.getN(),
                     ecP.getH().intValue());
             }
