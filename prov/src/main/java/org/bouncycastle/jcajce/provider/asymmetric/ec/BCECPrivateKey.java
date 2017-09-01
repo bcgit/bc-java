@@ -119,30 +119,27 @@ public class BCECPrivateKey
         ECParameterSpec spec,
         ProviderConfiguration configuration)
     {
-        ECDomainParameters      dp = params.getParameters();
-
         this.algorithm = algorithm;
         this.d = params.getD();
         this.configuration = configuration;
 
         if (spec == null)
         {
+            ECDomainParameters dp = params.getParameters();
             EllipticCurve ellipticCurve = EC5Util.convertCurve(dp.getCurve(), dp.getSeed());
 
             this.ecSpec = new ECParameterSpec(
-                            ellipticCurve,
-                            new ECPoint(
-                                    dp.getG().getAffineXCoord().toBigInteger(),
-                                    dp.getG().getAffineYCoord().toBigInteger()),
-                            dp.getN(),
-                            dp.getH().intValue());
+                ellipticCurve,
+                EC5Util.convertPoint(dp.getG()),
+                dp.getN(),
+                dp.getH().intValue());
         }
         else
         {
             this.ecSpec = spec;
         }
 
-        publicKey = getPublicKeyDetails(pubKey);
+        this.publicKey = getPublicKeyDetails(pubKey);
     }
 
     public BCECPrivateKey(
@@ -152,23 +149,20 @@ public class BCECPrivateKey
         org.bouncycastle.jce.spec.ECParameterSpec spec,
         ProviderConfiguration configuration)
     {
-        ECDomainParameters      dp = params.getParameters();
-
         this.algorithm = algorithm;
         this.d = params.getD();
         this.configuration = configuration;
 
         if (spec == null)
         {
+            ECDomainParameters dp = params.getParameters();
             EllipticCurve ellipticCurve = EC5Util.convertCurve(dp.getCurve(), dp.getSeed());
 
             this.ecSpec = new ECParameterSpec(
-                            ellipticCurve,
-                            new ECPoint(
-                                    dp.getG().getAffineXCoord().toBigInteger(),
-                                    dp.getG().getAffineYCoord().toBigInteger()),
-                            dp.getN(),
-                            dp.getH().intValue());
+                ellipticCurve,
+                EC5Util.convertPoint(dp.getG()),
+                dp.getN(),
+                dp.getH().intValue());
         }
         else
         {
@@ -179,11 +173,11 @@ public class BCECPrivateKey
 
         try
         {
-            publicKey = getPublicKeyDetails(pubKey);
+            this.publicKey = getPublicKeyDetails(pubKey);
         }
         catch (Exception e)
         {
-            publicKey = null; // not all curves are encodable
+            this.publicKey = null; // not all curves are encodable
         }
     }
 

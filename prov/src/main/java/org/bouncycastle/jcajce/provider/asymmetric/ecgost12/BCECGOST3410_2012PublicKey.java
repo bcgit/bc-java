@@ -154,9 +154,7 @@ public class BCECGOST3410_2012PublicKey
     {
         return new ECParameterSpec(
             ellipticCurve,
-            new ECPoint(
-                dp.getG().getAffineXCoord().toBigInteger(),
-                dp.getG().getAffineYCoord().toBigInteger()),
+            EC5Util.convertPoint(dp.getG()),
             dp.getN(),
             dp.getH().intValue());
     }
@@ -192,41 +190,36 @@ public class BCECGOST3410_2012PublicKey
         }
 
         byte[] keyEnc = key.getOctets();
-        int keySize = 64;
+
+        int fieldSize = 32;
         if (algOid.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512))
         {
-            keySize = 128;
+            fieldSize = 64;
         }
-        int arraySize = keySize / 2;
 
-        byte[] x = new byte[arraySize];
-        byte[] y = new byte[arraySize];
+        int keySize = 2 * fieldSize;
 
-        for (int i = 0; i != x.length; i++)
+        byte[] x9Encoding = new byte[1 + keySize];
+        x9Encoding[0] = 0x04;
+        for (int i = 1; i <= fieldSize; ++i)
         {
-            x[i] = keyEnc[arraySize - 1 - i];
+            x9Encoding[i            ] = keyEnc[fieldSize - i];
+            x9Encoding[i + fieldSize] = keyEnc[keySize - i];
         }
 
-        for (int i = 0; i != y.length; i++)
-        {
-            y[i] = keyEnc[keySize - 1 - i];
-        }
-
-        gostParams = GOST3410PublicKeyAlgParameters.getInstance(info.getAlgorithm().getParameters());
+        this.gostParams = GOST3410PublicKeyAlgParameters.getInstance(info.getAlgorithm().getParameters());
 
         ECNamedCurveParameterSpec spec = ECGOST3410NamedCurveTable.getParameterSpec(ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet()));
 
         ECCurve curve = spec.getCurve();
         EllipticCurve ellipticCurve = EC5Util.convertCurve(curve, spec.getSeed());
 
-        this.ecPublicKey = new ECPublicKeyParameters(curve.createPoint(new BigInteger(1, x), new BigInteger(1, y)), ECUtil.getDomainParameters(null, spec));
+        this.ecPublicKey = new ECPublicKeyParameters(curve.decodePoint(x9Encoding), ECUtil.getDomainParameters(null, spec));
 
-        ecSpec = new ECNamedCurveSpec(
+        this.ecSpec = new ECNamedCurveSpec(
             ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet()),
             ellipticCurve,
-            new ECPoint(
-                spec.getG().getAffineXCoord().toBigInteger(),
-                spec.getG().getAffineYCoord().toBigInteger()),
+            EC5Util.convertPoint(spec.getG()),
             spec.getN(), spec.getH());
     }
 
@@ -353,7 +346,7 @@ public class BCECGOST3410_2012PublicKey
 
     public ECPoint getW()
     {
-        return new ECPoint(ecPublicKey.getQ().getAffineXCoord().toBigInteger(), ecPublicKey.getQ().getAffineYCoord().toBigInteger());
+        return EC5Util.convertPoint(ecPublicKey.getQ());
     }
 
     public org.bouncycastle.math.ec.ECPoint getQ()

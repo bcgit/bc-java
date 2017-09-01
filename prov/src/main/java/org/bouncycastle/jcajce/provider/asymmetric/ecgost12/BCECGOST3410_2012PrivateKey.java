@@ -6,7 +6,6 @@ import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.security.interfaces.ECPrivateKey;
 import java.security.spec.ECParameterSpec;
-import java.security.spec.ECPoint;
 import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.EllipticCurve;
 import java.util.Enumeration;
@@ -127,9 +126,7 @@ public class BCECGOST3410_2012PrivateKey
 
             this.ecSpec = new ECParameterSpec(
                 ellipticCurve,
-                new ECPoint(
-                    dp.getG().getAffineXCoord().toBigInteger(),
-                    dp.getG().getAffineYCoord().toBigInteger()),
+                EC5Util.convertPoint(dp.getG()),
                 dp.getN(),
                 dp.getH().intValue());
         }
@@ -160,9 +157,7 @@ public class BCECGOST3410_2012PrivateKey
 
             this.ecSpec = new ECParameterSpec(
                 ellipticCurve,
-                new ECPoint(
-                    dp.getG().getAffineXCoord().toBigInteger(),
-                    dp.getG().getAffineYCoord().toBigInteger()),
+                EC5Util.convertPoint(dp.getG()),
                 dp.getN(),
                 dp.getH().intValue());
         }
@@ -172,9 +167,7 @@ public class BCECGOST3410_2012PrivateKey
 
             this.ecSpec = new ECParameterSpec(
                 ellipticCurve,
-                new ECPoint(
-                    spec.getG().getAffineXCoord().toBigInteger(),
-                    spec.getG().getAffineYCoord().toBigInteger()),
+                EC5Util.convertPoint(spec.getG()),
                 spec.getN(),
                 spec.getH().intValue());
         }
@@ -217,9 +210,7 @@ public class BCECGOST3410_2012PrivateKey
             ecSpec = new ECNamedCurveSpec(
                 ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet()),
                 ellipticCurve,
-                new ECPoint(
-                    spec.getG().getAffineXCoord().toBigInteger(),
-                    spec.getG().getAffineYCoord().toBigInteger()),
+                EC5Util.convertPoint(spec.getG()),
                 spec.getN(), spec.getH());
 
             ASN1Encodable privKey = info.parsePrivateKey();
@@ -259,9 +250,7 @@ public class BCECGOST3410_2012PrivateKey
                     ecSpec = new ECNamedCurveSpec(
                         ECGOST3410NamedCurves.getName(oid),
                         ellipticCurve,
-                        new ECPoint(
-                            gParam.getG().getAffineXCoord().toBigInteger(),
-                            gParam.getG().getAffineYCoord().toBigInteger()),
+                        EC5Util.convertPoint(gParam.getG()),
                         gParam.getN(),
                         gParam.getH());
                 }
@@ -272,9 +261,7 @@ public class BCECGOST3410_2012PrivateKey
                     ecSpec = new ECNamedCurveSpec(
                         ECUtil.getCurveName(oid),
                         ellipticCurve,
-                        new ECPoint(
-                            ecP.getG().getAffineXCoord().toBigInteger(),
-                            ecP.getG().getAffineYCoord().toBigInteger()),
+                        EC5Util.convertPoint(ecP.getG()),
                         ecP.getN(),
                         ecP.getH());
                 }
@@ -290,9 +277,7 @@ public class BCECGOST3410_2012PrivateKey
 
                 this.ecSpec = new ECParameterSpec(
                     ellipticCurve,
-                    new ECPoint(
-                        ecP.getG().getAffineXCoord().toBigInteger(),
-                        ecP.getG().getAffineYCoord().toBigInteger()),
+                    EC5Util.convertPoint(ecP.getG()),
                     ecP.getN(),
                     ecP.getH().intValue());
             }
