@@ -30,6 +30,11 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <li>Issues with using PQC based keys with the provided BC KeyStores have now been fixed.</li>
 <li>ECGOST-2012 public keys were being encoded with the wrong OID for the digest parameter in the algorithm parameter set. This has been fixed.</li>
 <li>SM3 has now been added as an acceptable algorithm for TSP timestamps.</li>
+<li>SM2 signatures were using the wrong default identity value. This has now been fixed.</li>
+</ul>
+<h3>2.2.3 Additional Features and Functionality</h3>
+<ul>
+<li>GOST3410-94 private keys encoded using ASN.1 INTEGER are now accepted in private key info objects.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
