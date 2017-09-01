@@ -111,6 +111,15 @@ public class BCECGOST3410PublicKey
     }
 
     public BCECGOST3410PublicKey(
+            String algorithm,
+            ECPublicKeyParameters params,
+            ECParameterSpec spec, ASN1Encodable gostParams)
+    {
+        this(algorithm, params, spec);
+        this.gostParams = gostParams;
+    }
+
+    public BCECGOST3410PublicKey(
         String algorithm,
         ECPublicKeyParameters params,
         org.bouncycastle.jce.spec.ECParameterSpec spec)

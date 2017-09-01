@@ -1,6 +1,9 @@
 package org.bouncycastle.jcajce.provider.asymmetric.ecgost12;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
+import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
+import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -179,8 +182,20 @@ public class KeyPairGeneratorSpi
         else
         {
             java.security.spec.ECParameterSpec p = (java.security.spec.ECParameterSpec)ecParams;
-
-            BCECGOST3410_2012PublicKey pubKey = new BCECGOST3410_2012PublicKey(algorithm, pub, p);
+            BCECGOST3410_2012PublicKey pubKey;
+            if(ecParams instanceof ECNamedCurveSpec){
+                ECNamedCurveSpec namedCurveSpec = (ECNamedCurveSpec) ecParams;
+                ASN1ObjectIdentifier oid = ECGOST3410NamedCurves.getOID(namedCurveSpec.getName());
+                ASN1ObjectIdentifier digestOid = (oid.on(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSet)) ?
+                        RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256:
+                        RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512;
+                GOST3410PublicKeyAlgParameters algParameters = new GOST3410PublicKeyAlgParameters(oid,
+                        digestOid);
+                pubKey = new BCECGOST3410_2012PublicKey(algorithm, pub, p, algParameters);
+            }
+            else {
+                pubKey = new BCECGOST3410_2012PublicKey(algorithm, pub, p);
+            }
 
             return new KeyPair(pubKey, new BCECGOST3410_2012PrivateKey(algorithm, priv, pubKey, p));
         }

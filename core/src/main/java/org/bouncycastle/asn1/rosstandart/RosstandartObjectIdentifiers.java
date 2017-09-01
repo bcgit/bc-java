@@ -30,13 +30,17 @@ public interface RosstandartObjectIdentifiers
 
     static final ASN1ObjectIdentifier id_tc26_agreement_gost_3410_12_512  = id_tc26_agreement.branch("2");
 
-    static final ASN1ObjectIdentifier id_tc26_gost_3410_12_256_paramSetA = id_tc26.branch("2.1.1.1");
+    static final ASN1ObjectIdentifier id_tc26_gost_3410_12_256_paramSet = id_tc26.branch("2.1.1");
 
-    static final ASN1ObjectIdentifier id_tc26_gost_3410_12_512_paramSetA = id_tc26.branch("2.1.2.1");
+    static final ASN1ObjectIdentifier id_tc26_gost_3410_12_512_paramSet = id_tc26.branch("2.1.2");
 
-    static final ASN1ObjectIdentifier id_tc26_gost_3410_12_512_paramSetB = id_tc26.branch("2.1.2.2");
+    static final ASN1ObjectIdentifier id_tc26_gost_3410_12_256_paramSetA = id_tc26_gost_3410_12_256_paramSet.branch("1");
 
-    static final ASN1ObjectIdentifier id_tc26_gost_3410_12_512_paramSetC = id_tc26.branch("2.1.2.3");
+    static final ASN1ObjectIdentifier id_tc26_gost_3410_12_512_paramSetA = id_tc26_gost_3410_12_512_paramSet.branch("1");
+
+    static final ASN1ObjectIdentifier id_tc26_gost_3410_12_512_paramSetB = id_tc26_gost_3410_12_512_paramSet.branch("2");
+
+    static final ASN1ObjectIdentifier id_tc26_gost_3410_12_512_paramSetC = id_tc26_gost_3410_12_512_paramSet.branch("3");
 
     static final ASN1ObjectIdentifier id_tc26_gost_28147_param_Z = id_tc26.branch("2.5.1.1");
 }

@@ -8,7 +8,10 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECGenParameterSpec;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
+import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -175,9 +178,19 @@ public class KeyPairGeneratorSpi
         }
         else
         {
+            BCECGOST3410PublicKey pubKey;
             java.security.spec.ECParameterSpec p = (java.security.spec.ECParameterSpec)ecParams;
 
-            BCECGOST3410PublicKey pubKey = new BCECGOST3410PublicKey(algorithm, pub, p);
+            if(ecParams instanceof ECNamedCurveSpec){
+                ECNamedCurveSpec namedCurveSpec = (ECNamedCurveSpec) ecParams;
+                ASN1ObjectIdentifier oid = ECGOST3410NamedCurves.getOID(namedCurveSpec.getName());
+                GOST3410PublicKeyAlgParameters algParameters = new GOST3410PublicKeyAlgParameters(oid,
+                        CryptoProObjectIdentifiers.gostR3411);
+                pubKey = new BCECGOST3410PublicKey(algorithm, pub, p, algParameters);
+            }
+            else {
+                pubKey = new BCECGOST3410PublicKey(algorithm, pub, p);
+            }
 
             return new KeyPair(pubKey, new BCECGOST3410PrivateKey(algorithm, priv, pubKey, p));
         }
