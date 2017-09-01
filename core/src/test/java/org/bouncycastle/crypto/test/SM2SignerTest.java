@@ -1,7 +1,12 @@
 package org.bouncycastle.crypto.test;
 
+import java.io.IOException;
 import java.math.BigInteger;
 
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -57,14 +62,22 @@ public class SM2SignerTest
                     new TestRandomBigInteger("6CB28D99385C175C94F94E934817663FC176D925DD72B727260DBAAE1FB2F96F", 16)),
                 Strings.toByteArray("ALICE123@YAHOO.COM")));
 
-        BigInteger[] rs = signer.generateSignature(Strings.toByteArray("message digest"));
+        byte[] msg = Strings.toByteArray("message digest");
+
+        signer.update(msg, 0, msg.length);
+
+        byte[] sig = signer.generateSignature();
+
+        BigInteger[] rs = decode(sig);
 
         isTrue("r wrong", rs[0].equals(new BigInteger("40F1EC59F793D9F49E09DCEF49130D4194F79FB1EED2CAA55BACDB49C4E755D1", 16)));
         isTrue("s wrong", rs[1].equals(new BigInteger("6FC6DAC32C5D5CF10C77DFB20F7C2EB667A457872FB09EC56327A67EC7DEEBE7", 16)));
 
         signer.init(false, new ParametersWithID(ecPub, Strings.toByteArray("ALICE123@YAHOO.COM")));
 
-        isTrue("verification failed", signer.verifySignature(Strings.toByteArray("message digest"), rs[0], rs[1]));
+        signer.update(msg, 0, msg.length);
+
+        isTrue("verification failed", signer.verifySignature(sig));
     }
 
     private void doSignerTestF2m()
@@ -97,17 +110,26 @@ public class SM2SignerTest
                     new TestRandomBigInteger("36CD79FC8E24B7357A8A7B4A46D454C397703D6498158C605399B341ADA186D6", 16)),
                 Strings.toByteArray("ALICE123@YAHOO.COM")));
 
-        BigInteger[] rs = signer.generateSignature(Strings.toByteArray("message digest"));
+        byte[] msg = Strings.toByteArray("message digest");
+
+        signer.update(msg, 0, msg.length);
+
+        byte[] sig = signer.generateSignature();
+
+        BigInteger[] rs = decode(sig);
 
         isTrue("F2m r wrong", rs[0].equals(new BigInteger("6D3FBA26EAB2A1054F5D198332E335817C8AC453ED26D3391CD4439D825BF25B", 16)));
         isTrue("F2m s wrong", rs[1].equals(new BigInteger("3124C5688D95F0A10252A9BED033BEC84439DA384621B6D6FAD77F94B74A9556", 16)));
 
         signer.init(false, new ParametersWithID(ecPub, Strings.toByteArray("ALICE123@YAHOO.COM")));
 
-        isTrue("F2m verification failed", signer.verifySignature(Strings.toByteArray("message digest"), rs[0], rs[1]));
+        signer.update(msg, 0, msg.length);
+
+        isTrue("verification failed", signer.verifySignature(sig));
     }
 
     private void doVerifyBoundsCheck()
+        throws IOException
     {
         BigInteger SM2_ECC_A = new BigInteger("00", 16);
         BigInteger SM2_ECC_B = new BigInteger("E78BCD09746C202378A7E72B12BCE00266B9627ECB0B5A25367AD1AD4CC6242B", 16);
@@ -132,10 +154,17 @@ public class SM2SignerTest
 
         signer.init(false, ecPub);
 
-        isTrue(!signer.verifySignature(new byte[20], ECConstants.ZERO, ECConstants.EIGHT));
-        isTrue(!signer.verifySignature(new byte[20], ECConstants.EIGHT, ECConstants.ZERO));
-        isTrue(!signer.verifySignature(new byte[20], SM2_ECC_N, ECConstants.EIGHT));
-        isTrue(!signer.verifySignature(new byte[20], ECConstants.EIGHT, SM2_ECC_N));
+        signer.update(new byte[20], 0, 20);
+        isTrue(!signer.verifySignature(encode(ECConstants.ZERO, ECConstants.EIGHT)));
+
+        signer.update(new byte[20], 0, 20);
+        isTrue(!signer.verifySignature(encode(ECConstants.EIGHT, ECConstants.ZERO)));
+
+        signer.update(new byte[20], 0, 20);
+        isTrue(!signer.verifySignature(encode(SM2_ECC_N, ECConstants.EIGHT)));
+
+        signer.update(new byte[20], 0, 20);
+        isTrue(!signer.verifySignature(encode(ECConstants.EIGHT, SM2_ECC_N)));
     }
 
     public void performTest()
@@ -144,6 +173,20 @@ public class SM2SignerTest
         doSignerTestFp();
         doSignerTestF2m();
         doVerifyBoundsCheck();
+    }
+
+    private static BigInteger[] decode(byte[] sig)
+    {
+        ASN1Sequence s = ASN1Sequence.getInstance(sig);
+
+        return new BigInteger[] { ASN1Integer.getInstance(s.getObjectAt(0)).getValue(),
+            ASN1Integer.getInstance(s.getObjectAt(1)).getValue() };
+    }
+
+    private static byte[] encode(BigInteger r, BigInteger s)
+        throws IOException
+    {
+        return new DERSequence(new ASN1Encodable[] { new ASN1Integer(r), new ASN1Integer(s)}).getEncoded();
     }
 
     public static void main(String[] args)
