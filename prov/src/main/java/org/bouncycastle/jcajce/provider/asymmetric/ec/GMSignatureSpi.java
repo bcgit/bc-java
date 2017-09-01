@@ -1,34 +1,36 @@
 package org.bouncycastle.jcajce.provider.asymmetric.ec;
 
-import java.io.IOException;
-import java.math.BigInteger;
+import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SignatureException;
+import java.security.spec.AlgorithmParameterSpec;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.DSA;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SM3Digest;
+import org.bouncycastle.crypto.CryptoException;
+import org.bouncycastle.crypto.params.ParametersWithID;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.SM2Signer;
-import org.bouncycastle.jcajce.provider.asymmetric.util.DSABase;
-import org.bouncycastle.jcajce.provider.asymmetric.util.DSAEncoder;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
-import org.bouncycastle.util.Arrays;
+import org.bouncycastle.jcajce.spec.SM2ParameterSpec;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 
 public class GMSignatureSpi
-    extends DSABase
+    extends java.security.SignatureSpi
 {
-    GMSignatureSpi(Digest digest, DSA signer, DSAEncoder encoder)
+    private final JcaJceHelper helper = new BCJcaJceHelper();
+
+    private AlgorithmParameters engineParams;
+    private SM2ParameterSpec paramSpec;
+
+    private final SM2Signer signer;
+
+    GMSignatureSpi(SM2Signer signer)
     {
-        super(digest, signer, encoder);
+        this.signer = signer;
     }
 
     protected void engineInitVerify(PublicKey publicKey)
@@ -36,7 +38,11 @@ public class GMSignatureSpi
     {
         CipherParameters param = ECUtils.generatePublicKeyParameter(publicKey);
 
-        digest.reset();
+        if (paramSpec != null)
+        {
+            param = new ParametersWithID(param, paramSpec.getID());
+        }
+
         signer.init(false, param);
     }
 
@@ -46,11 +52,14 @@ public class GMSignatureSpi
     {
         CipherParameters param = ECUtil.generatePrivateKeyParameter(privateKey);
 
-        digest.reset();
-
         if (appRandom != null)
         {
-            signer.init(true, new ParametersWithRandom(param, appRandom));
+            param = new ParametersWithRandom(param, appRandom);
+        }
+
+        if (paramSpec != null)
+        {
+            signer.init(true, new ParametersWithID(param, paramSpec.getID()));
         }
         else
         {
@@ -58,52 +67,91 @@ public class GMSignatureSpi
         }
     }
 
+    protected void engineUpdate(byte b)
+        throws SignatureException
+    {
+        signer.update(b);
+    }
+
+    protected void engineUpdate(byte[] bytes, int off, int length)
+        throws SignatureException
+    {
+        signer.update(bytes, off, length);
+    }
+
+    protected byte[] engineSign()
+        throws SignatureException
+    {
+        try
+        {
+            return signer.generateSignature();
+        }
+        catch (CryptoException e)
+        {
+            throw new SignatureException("unable to create signature: " + e.getMessage());
+        }
+    }
+
+    protected boolean engineVerify(byte[] bytes)
+        throws SignatureException
+    {
+        return signer.verifySignature(bytes);
+    }
+
+    protected void engineSetParameter(
+        AlgorithmParameterSpec params)
+        throws InvalidAlgorithmParameterException
+    {
+        if (params instanceof SM2ParameterSpec)
+        {
+            paramSpec = (SM2ParameterSpec)params;
+        }
+        else
+        {
+            throw new InvalidAlgorithmParameterException("only SM2ParameterSpec supported");
+        }
+    }
+
+    protected AlgorithmParameters engineGetParameters()
+    {
+        if (engineParams == null)
+        {
+            if (paramSpec != null)
+            {
+                try
+                {
+                    engineParams = helper.createAlgorithmParameters("PSS");
+                    engineParams.init(paramSpec);
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException(e.toString());
+                }
+            }
+        }
+
+        return engineParams;
+    }
+
+    protected void engineSetParameter(
+        String param,
+        Object value)
+    {
+        throw new UnsupportedOperationException("engineSetParameter unsupported");
+    }
+
+    protected Object engineGetParameter(
+        String param)
+    {
+        throw new UnsupportedOperationException("engineGetParameter unsupported");
+    }
+
     static public class sm3WithSM2
         extends GMSignatureSpi
     {
         public sm3WithSM2()
         {
-            super(new SM3Digest(), new SM2Signer(), new StdDSAEncoder());
-        }
-    }
-    
-    private static class StdDSAEncoder
-        implements DSAEncoder
-    {
-        public byte[] encode(
-            BigInteger r,
-            BigInteger s)
-            throws IOException
-        {
-            ASN1EncodableVector v = new ASN1EncodableVector();
-
-            v.add(new ASN1Integer(r));
-            v.add(new ASN1Integer(s));
-
-            return new DERSequence(v).getEncoded(ASN1Encoding.DER);
-        }
-
-        public BigInteger[] decode(
-            byte[] encoding)
-            throws IOException
-        {
-            ASN1Sequence s = (ASN1Sequence)ASN1Primitive.fromByteArray(encoding);
-            if (s.size() != 2)
-            {
-                throw new IOException("malformed signature");
-            }
-            if (!Arrays.areEqual(encoding, s.getEncoded(ASN1Encoding.DER)))
-            {
-                throw new IOException("malformed signature");
-            }
-
-            BigInteger[] sig = new BigInteger[2];
-
-
-            sig[0] = ASN1Integer.getInstance(s.getObjectAt(0)).getValue();
-            sig[1] = ASN1Integer.getInstance(s.getObjectAt(1)).getValue();
-
-            return sig;
+            super(new SM2Signer());
         }
     }
 }

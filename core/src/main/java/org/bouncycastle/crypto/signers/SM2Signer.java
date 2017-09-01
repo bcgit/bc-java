@@ -1,11 +1,19 @@
 package org.bouncycastle.crypto.signers;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.DSA;
+import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.digests.SM3Digest;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyParameters;
@@ -18,13 +26,15 @@ import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * The SM2 Digital Signature algorithm.
  */
 public class SM2Signer
-    implements DSA, ECConstants
+    implements Signer, ECConstants
 {
     private final DSAKCalculator kCalculator = new RandomDSAKCalculator();
     private final SM3Digest digest = new SM3Digest();
@@ -48,7 +58,7 @@ public class SM2Signer
         else
         {
             baseParam = param;
-            userID = new byte[0];
+            userID = Hex.decode("31323334353637383132333435363738"); // the default value
         }
 
         if (forSigning)
@@ -79,15 +89,55 @@ public class SM2Signer
         curveLength = (ecParams.getCurve().getFieldSize() + 7) / 8;
 
         z = getZ(userID);
+
+        reset();
     }
 
-    public BigInteger[] generateSignature(byte[] message)
+    public void update(byte b)
     {
-        SM3Digest digest = new SM3Digest();
+        digest.update(b);
+    }
 
+    public void update(byte[] in, int off, int len)
+    {
+        digest.update(in, off, len);
+    }
+
+    public boolean verifySignature(byte[] signature)
+    {
+        try
+        {
+            ASN1Sequence s = ASN1Sequence.getInstance(ASN1Primitive.fromByteArray(signature));
+            if (s.size() != 2)
+            {
+                return false;
+            }
+            if (!Arrays.constantTimeAreEqual(signature, s.getEncoded(ASN1Encoding.DER)))
+            {
+                return false;
+            }
+
+            return verifySignature(ASN1Integer.getInstance(s.getObjectAt(0)).getValue(),
+                ASN1Integer.getInstance(s.getObjectAt(1)).getValue());
+        }
+        catch (IOException e)
+        {
+            Arrays.constantTimeAreEqual(signature, signature);
+
+            // TODO: maybe introduce arithmetic delay?
+            return false;
+        }
+    }
+
+    public void reset()
+    {
+        digest.reset();
         digest.update(z, 0, z.length);
-        digest.update(message, 0, message.length);
+    }
 
+    public byte[] generateSignature()
+        throws CryptoException
+    {
         byte[] eHash = new byte[digest.getDigestSize()];
 
         digest.doFinal(eHash, 0);
@@ -126,10 +176,23 @@ public class SM2Signer
         while (s.equals(ZERO));
 
         // A7
-        return new BigInteger[]{ r, s };
+
+        ASN1EncodableVector v = new ASN1EncodableVector();
+
+        v.add(new ASN1Integer(r));
+        v.add(new ASN1Integer(s));
+
+        try
+        {
+            return new DERSequence(v).getEncoded(ASN1Encoding.DER);
+        }
+        catch (IOException ex)
+        {
+            throw new CryptoException("unable to encode signature: " + ex.getMessage(), ex);
+        }
     }
 
-    public boolean verifySignature(byte[] message, BigInteger r, BigInteger s)
+    private boolean verifySignature(BigInteger r, BigInteger s)
     {
         BigInteger n = ecParams.getN();
 
@@ -147,9 +210,6 @@ public class SM2Signer
         }
 
         ECPoint q = ((ECPublicKeyParameters)ecKey).getQ();
-
-        digest.update(z, 0, z.length);
-        digest.update(message, 0, message.length);
 
         byte[] eHash = new byte[digest.getDigestSize()];
 

@@ -78,6 +78,7 @@ public class RegressionTest
         new Shacal2Test(),
         new DetDSATest(),
         new ThreefishTest(),
+        new SM2SignatureTest(),
         new SM4Test(),
         new TLSKDFTest(),
         new BCFKSStoreTest(),
