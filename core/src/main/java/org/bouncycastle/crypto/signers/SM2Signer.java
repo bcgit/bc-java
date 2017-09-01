@@ -20,23 +20,25 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.util.BigIntegers;
 
+/**
+ * The SM2 Digital Signature algorithm.
+ */
 public class SM2Signer
     implements DSA, ECConstants
 {
     private final DSAKCalculator kCalculator = new RandomDSAKCalculator();
-
-    private byte[] userID;
+    private final SM3Digest digest = new SM3Digest();
 
     private int curveLength;
     private ECDomainParameters ecParams;
     private ECPoint pubPoint;
     private ECKeyParameters ecKey;
-
-    private SecureRandom random;
+    private byte[] z;
 
     public void init(boolean forSigning, CipherParameters param)
     {
         CipherParameters baseParam;
+        byte[] userID;
 
         if (param instanceof ParametersWithID)
         {
@@ -75,13 +77,13 @@ public class SM2Signer
         }
 
         curveLength = (ecParams.getCurve().getFieldSize() + 7) / 8;
+
+        z = getZ(userID);
     }
 
     public BigInteger[] generateSignature(byte[] message)
     {
         SM3Digest digest = new SM3Digest();
-
-        byte[] z = getZ(digest);
 
         digest.update(z, 0, z.length);
         digest.update(message, 0, message.length);
@@ -146,10 +148,6 @@ public class SM2Signer
 
         ECPoint q = ((ECPublicKeyParameters)ecKey).getQ();
 
-        SM3Digest digest = new SM3Digest();
-
-        byte[] z = getZ(digest);
-
         digest.update(z, 0, z.length);
         digest.update(message, 0, message.length);
 
@@ -178,7 +176,7 @@ public class SM2Signer
         }
     }
 
-    private byte[] getZ(Digest digest)
+    private byte[] getZ(byte[] userID)
     {
         addUserID(digest, userID);
 
