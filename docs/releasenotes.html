@@ -31,6 +31,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <li>ECGOST-2012 public keys were being encoded with the wrong OID for the digest parameter in the algorithm parameter set. This has been fixed.</li>
 <li>SM3 has now been added as an acceptable algorithm for TSP timestamps.</li>
 <li>SM2 signatures were using the wrong default identity value. This has now been fixed.</li>
+<li>An edge condition in Blake2b for hashes on data with a length in the range of 2**64 - 127 to 2**64 has been identifed and fixed.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
