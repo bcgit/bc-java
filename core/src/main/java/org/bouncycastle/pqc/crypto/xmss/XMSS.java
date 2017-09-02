@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
-import java.io.IOException;
 import java.security.SecureRandom;
 import java.text.ParseException;
 
@@ -135,8 +134,6 @@ public class XMSS
      *
      * @param privateKey XMSS private key.
      * @param publicKey  XMSS public key.
-     * @throws ClassNotFoundException
-     * @throws IOException
      */
     public void importState(byte[] privateKey, byte[] publicKey)
     {

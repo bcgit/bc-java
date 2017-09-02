@@ -28,6 +28,7 @@ import org.bouncycastle.util.Strings;
  *
  * <h3>11: Restrictions on BER employed by both CER and DER</h3>
  * <h4>11.7 GeneralizedTime </h4>
+ * <p>
  * <b>11.7.1</b> The encoding shall terminate with a "Z",
  * as described in the ITU-T Rec. X.680 | ISO/IEC 8824-1 clause on
  * GeneralizedTime.
@@ -39,7 +40,6 @@ import org.bouncycastle.util.Strings;
  * shall omit all trailing zeros; if the elements correspond to 0,
  * they shall be wholly omitted, and the decimal point element also
  * shall be omitted.
- * </p>
  */
 public class ASN1GeneralizedTime
     extends ASN1Primitive
@@ -185,7 +185,6 @@ public class ASN1GeneralizedTime
      * </pre>
      * To read in the time and get a date which is compatible with our local
      * time zone.
-     * </p>
      * @return a String representation of the time.
      */
     public String getTime()

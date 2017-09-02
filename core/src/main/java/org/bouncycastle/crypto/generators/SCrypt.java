@@ -23,7 +23,7 @@ public class SCrypt
      * @param S the salt to use for this invocation.
      * @param N CPU/Memory cost parameter. Must be larger than 1, a power of 2 and less than
      *            <code>2^(128 * r / 8)</code>.
-     * @param r the block size, must be >= 1.
+     * @param r the block size, must be &gt;= 1.
      * @param p Parallelization parameter. Must be a positive integer less than or equal to
      *            <code>Integer.MAX_VALUE / (128 * r * 8)</code>.
      * 

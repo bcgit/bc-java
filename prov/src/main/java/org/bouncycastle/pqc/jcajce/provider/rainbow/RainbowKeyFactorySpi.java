@@ -39,6 +39,7 @@ public class RainbowKeyFactorySpi
      * are supported: {@link RainbowPrivateKeySpec}, {@link PKCS8EncodedKeySpec}.
      * <p>
      * The ASN.1 definition of the key structure is
+     * </p>
      * <pre>
      *   RainbowPrivateKey ::= SEQUENCE {
      *     oid        OBJECT IDENTIFIER         -- OID identifying the algorithm
@@ -58,7 +59,6 @@ public class RainbowKeyFactorySpi
      *     eta        OCTET
      *   }
      * </pre>
-     * </p>
      *
      * @param keySpec the key specification
      * @return the Rainbow private key
@@ -96,7 +96,7 @@ public class RainbowKeyFactorySpi
      * supported:{@link X509EncodedKeySpec}.
      * <p>
      * The ASN.1 definition of a public key's structure is
-     * <pre>
+     * </p><pre>
      *    RainbowPublicKey ::= SEQUENCE {
      *      oid            OBJECT IDENTIFIER        -- OID identifying the algorithm
      *      docLength      Integer                  -- length of signable msg
@@ -105,7 +105,6 @@ public class RainbowKeyFactorySpi
      *      coeffscalar       OCTET STRING             -- scalar coefficients
      *       }
      * </pre>
-     * </p>
      *
      * @param keySpec the key specification
      * @return the Rainbow public key
@@ -141,8 +140,8 @@ public class RainbowKeyFactorySpi
      * Converts a given key into a key specification, if possible. Currently the
      * following specs are supported:
      * <ul>
-     * <li>for RainbowPublicKey: X509EncodedKeySpec, RainbowPublicKeySpec
-     * <li>for RainbowPrivateKey: PKCS8EncodedKeySpec, RainbowPrivateKeySpec
+     * <li>for RainbowPublicKey: X509EncodedKeySpec, RainbowPublicKeySpec</li>
+     * <li>for RainbowPrivateKey: PKCS8EncodedKeySpec, RainbowPrivateKeySpec</li>
      * </ul>
      *
      * @param key     the key

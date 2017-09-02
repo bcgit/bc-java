@@ -15,11 +15,11 @@ package org.bouncycastle.asn1;
  * The encoding of a choice value shall be the same as the encoding of a value of the chosen type.
  * <blockquote>
  * NOTE 1 &mdash; The encoding may be primitive or constructed depending on the chosen type.
- * <br />
+ * </blockquote>
+ * <blockquote>
  * NOTE 2 &mdash; The tag used in the identifier octets is the tag of the chosen type,
  * as specified in the ASN.1 definition of the choice type.
  * </blockquote>
- * </p>
  */
 public interface ASN1Choice
 {

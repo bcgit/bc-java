@@ -440,6 +440,7 @@ public abstract class ECPoint
 
     /**
      * @deprecated per-point compression property will be removed, refer {@link #getEncoded(boolean)}
+     * @return a byte encoding.
      */
     public byte[] getEncoded()
     {

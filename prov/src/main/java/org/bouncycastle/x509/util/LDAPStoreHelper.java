@@ -61,7 +61,6 @@ import org.bouncycastle.x509.X509CertificatePair;
  * href="http://www3.ietf.org/proceedings/01mar/I-D/pkix-ldap-schema-01.txt">Internet
  * X.509 Public Key Infrastructure Additional LDAP Schema for PKIs and PMIs</a>
  * </ul>
- * </p>
  */
 public class LDAPStoreHelper
 {
@@ -814,7 +813,7 @@ public class LDAPStoreHelper
 
     /**
      * Returns end certificates.
-     * <p/>
+     * <p>
      * The attributeDescriptorCertificate is self signed by a source of
      * authority and holds a description of the privilege and its delegation
      * rules.

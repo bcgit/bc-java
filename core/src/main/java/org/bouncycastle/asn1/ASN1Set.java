@@ -37,6 +37,7 @@ import org.bouncycastle.util.Arrays;
  * and places no constraints on the order during transfer
  * </blockquote>
  * <h4>8.12 Encoding of a set-of value</h4>
+ * <p>
  * <b>8.12.1</b> The encoding of a set-of value shall be constructed.
  * </p><p>
  * <b>8.12.2</b> The text of 8.10.2 applies:
@@ -83,7 +84,7 @@ import org.bouncycastle.util.Arrays;
  * an encoding for any component value which is equal to
  * its default value.
  * <h4>11.6 Set-of components </h4>
- * </p><p>
+ * <p>
  * The encodings of the component values of a set-of value
  * shall appear in ascending order, the encodings being compared
  * as octet strings with the shorter components being padded at
@@ -92,7 +93,6 @@ import org.bouncycastle.util.Arrays;
  * NOTE &mdash; The padding octets are for comparison purposes only
  * and do not appear in the encodings.
  * </blockquote>
- * </p>
  */
 public abstract class ASN1Set
     extends ASN1Primitive

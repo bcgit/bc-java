@@ -23,10 +23,6 @@ import org.bouncycastle.pqc.math.linearalgebra.PolynomialGF2mSmallM;
 public class BCMcEliecePrivateKey
     implements CipherParameters, PrivateKey
 {
-
-    /**
-     *
-     */
     private static final long serialVersionUID = 1L;
 
     private McEliecePrivateKeyParameters params;
@@ -118,7 +114,7 @@ public class BCMcEliecePrivateKey
         return params.getQInv();
     }
 
-    /**
+    /*
      * @return a human readable form of the key
      */
     // TODO:
@@ -174,7 +170,7 @@ public class BCMcEliecePrivateKey
      * Return the key data to encode in the SubjectPublicKeyInfo structure.
      * <p>
      * The ASN.1 definition of the key structure is
-     * <p>
+     * </p>
      * <pre>
      *   McEliecePrivateKey ::= SEQUENCE {
      *     n          INTEGER                   -- length of the code
@@ -188,7 +184,6 @@ public class BCMcEliecePrivateKey
      *     qInv       SEQUENCE OF OCTET STRING  -- matrix used to compute square roots
      *   }
      * </pre>
-     * </p>
      *
      * @return the key data to encode in the SubjectPublicKeyInfo structure
      */

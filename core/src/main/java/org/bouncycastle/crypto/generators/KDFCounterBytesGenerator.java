@@ -20,14 +20,13 @@ import org.bouncycastle.crypto.params.KeyParameter;
  * <li>3b: K(i) := PRF( KI, Label || 0x00 || [i]_2 || [L]_2 || Context ) OR:</li>
  * <li>3c: K(i) := PRF( KI, Label || [i]_2 || 0x00 || Context || [L]_2 ) etc... with the counter somewhere in the 'middle' of the fixedInputData.</li>
  * </ul>
- * </p>
- * <p>
  * This function must be called with the following KDFCounterParameters():
- *  - KI      <br/>
- *  - The part of the fixedInputData that comes BEFORE the counter OR null  <br/>
- *  - the part of the fixedInputData that comes AFTER the counter OR null <br/>
- *  - the length of the counter in bits (not bytes)
- *  </p>
+ * <ul>
+ *  <li>KI</li>
+ *  <li>The part of the fixedInputData that comes BEFORE the counter OR null</li>
+ *  <li>the part of the fixedInputData that comes AFTER the counter OR null </li>
+ *  <li>the length of the counter in bits (not bytes)</li>
+ * </ul>
  * Resulting function calls assuming an 8 bit counter.
  * <ul>
  * <li>1.  KDFCounterParameters(ki, 	null, 									"Label || 0x00 || Context || [L]_2]",	8);</li>

@@ -14,7 +14,6 @@ import org.bouncycastle.util.Arrays;
  * <li> {@link ASN1Boolean#getInstance(boolean) ASN1Boolean.getInstance(boolean)}</li>
  * <li> {@link ASN1Boolean#getInstance(int) ASN1Boolean.getInstance(int)}</li>
  * </ul>
- * </p>
  */
 public class ASN1Boolean
     extends ASN1Primitive

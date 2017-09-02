@@ -171,8 +171,6 @@ public class BCMcElieceCCA2PrivateKey
      *     sqRootMatrix  SEQUENCE OF OCTET STRING -- square root matrix
      *   }
      * </pre>
-     * </p>
-     *
      * @return the keyData to encode in the SubjectPublicKeyInfo structure
      */
     public byte[] getEncoded()

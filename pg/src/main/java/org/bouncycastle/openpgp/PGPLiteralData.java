@@ -80,7 +80,7 @@ public class PGPLiteralData
     }
 
     /**
-     * Return the input stream representing the data stream. <br/>
+     * Return the input stream representing the data stream.
      * Equivalent to {@link #getInputStream()}.
      */
     public InputStream getDataStream()

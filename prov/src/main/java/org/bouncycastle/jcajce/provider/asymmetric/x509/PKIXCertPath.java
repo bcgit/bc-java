@@ -41,8 +41,7 @@ import org.bouncycastle.util.io.pem.PemWriter;
 
 /**
  * CertPath implementation for X.509 certificates.
- * <br />
- **/
+ */
 public  class PKIXCertPath
     extends CertPath
 {

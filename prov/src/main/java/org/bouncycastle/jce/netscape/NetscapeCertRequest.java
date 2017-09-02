@@ -31,7 +31,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
  *
  * 
  * Handles NetScape certificate request (KEYGEN), these are constructed as:
- * <pre><code>
+ * <pre>
  *   SignedPublicKeyAndChallenge ::= SEQUENCE {
  *     publicKeyAndChallenge    PublicKeyAndChallenge,
  *     signatureAlgorithm       AlgorithmIdentifier,

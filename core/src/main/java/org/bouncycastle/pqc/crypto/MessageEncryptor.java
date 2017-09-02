@@ -21,14 +21,13 @@ public interface MessageEncryptor
     /**
      *
      * @param message the message to be signed.
-     * @throws Exception 
      */
     public byte[] messageEncrypt(byte[] message);
 
     /**
      *
      * @param cipher the cipher text of the message
-     * @throws Exception 
+     * @throws InvalidCipherTextException
      */
     public byte[] messageDecrypt(byte[] cipher)
         throws InvalidCipherTextException;

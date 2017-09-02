@@ -40,7 +40,7 @@ public class SimplePKIResponse
      * Create a SimplePKIResponse from the passed in bytes.
      *
      * @param responseEncoding BER/DER encoding of the certificate.
-     * @throws IOException in the event of corrupted data, or an incorrect structure.
+     * @throws CMCException in the event of corrupted data, or an incorrect structure.
      */
     public SimplePKIResponse(byte[] responseEncoding)
         throws CMCException

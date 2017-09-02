@@ -22,7 +22,6 @@ public class DANEEntrySelectorFactory
      *     new DANEEntrySelectorFactory(new TruncatingDigestCalculator(new SHA256DigestCalculator()));
      * </pre>
      * or some equivalent.
-     * </p>
      *
      * @param digestCalculator a calculator for the message digest to filter email addresses currently truncated SHA-256 (originally SHA-224).
      */

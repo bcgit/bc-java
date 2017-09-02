@@ -19,7 +19,7 @@ import org.bouncycastle.asn1.DERSequence;
  *       p                INTEGER,           -- odd prime, p=jq +1
  *       g                INTEGER,           -- generator, g
  *       q                INTEGER,           -- factor of p-1
- *       j                INTEGER OPTIONAL,  -- subgroup factor, j>= 2
+ *       j                INTEGER OPTIONAL,  -- subgroup factor, j &gt;= 2
  *       validationParams  ValidationParams OPTIONAL
  *    }
  * </pre>

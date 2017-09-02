@@ -13,8 +13,8 @@ import org.bouncycastle.util.Pack;
  * "A Future-Adaptable Password Scheme" of Niels Provos and David Mazières,
  * see: https://www.usenix.org/legacy/events/usenix99/provos/provos_html/node1.html.
  * In contrast to the paper, the order of key setup and salt setup is reversed:
- * state <- ExpandKey(state, 0, key)
- * state <- ExpandKey(state, 0, salt)
+ * state &lt;- ExpandKey(state, 0, key)
+ * state &lt;- ExpandKey(state, 0, salt)
  * This corresponds to the OpenBSD reference implementation of Bcrypt. 
  * </p><p>
  * Note: 

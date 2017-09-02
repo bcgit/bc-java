@@ -105,10 +105,8 @@ public abstract class GF2nElement
      *
      * @param minuend the minuend
      * @return <tt>this - minuend</tt> (newly created)
-     * @throws DifferentFieldsException if the elements are of different fields.
      */
     public final GFElement subtract(GFElement minuend)
-        throws RuntimeException
     {
         return add(minuend);
     }
@@ -118,7 +116,6 @@ public abstract class GF2nElement
      * overwriting this element.
      *
      * @param minuend the minuend
-     * @throws DifferentFieldsException if the elements are of different fields.
      */
     public final void subtractFromThis(GFElement minuend)
     {
@@ -156,11 +153,8 @@ public abstract class GF2nElement
      *
      * @param basis the GF2nField representation to transform this element to
      * @return this element in the representation of <tt>basis</tt>
-     * @throws DifferentFieldsException if <tt>this</tt> cannot be converted according to
-     * <tt>basis</tt>.
      */
     public final GF2nElement convert(GF2nField basis)
-        throws RuntimeException
     {
         return mField.convert(this, basis);
     }
@@ -177,8 +171,6 @@ public abstract class GF2nElement
      * Let z<sup>2</sup> + z = <tt>this</tt>. Then this method returns z.
      *
      * @return z with z<sup>2</sup> + z = <tt>this</tt>
-     * @throws NoSolutionException if z<sup>2</sup> + z = <tt>this</tt> does not have a
-     * solution
      */
     public abstract GF2nElement solveQuadraticEquation()
         throws RuntimeException;

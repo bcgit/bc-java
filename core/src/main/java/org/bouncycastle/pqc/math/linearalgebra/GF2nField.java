@@ -225,8 +225,6 @@ public abstract class GF2nField
      * @param basis the basis to convert <tt>elem</tt> to
      * @return <tt>elem</tt> converted to a new element representation
      *         according to <tt>basis</tt>
-     * @throws DifferentFieldsException if <tt>elem</tt> cannot be converted according to
-     * <tt>basis</tt>.
      * @see GF2nField#computeCOBMatrix
      * @see GF2nField#getRandomRoot
      * @see GF2nPolynomial
