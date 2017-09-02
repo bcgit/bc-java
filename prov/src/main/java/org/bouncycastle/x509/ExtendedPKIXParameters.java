@@ -1,8 +1,5 @@
 package org.bouncycastle.x509;
 
-import org.bouncycastle.util.Selector;
-import org.bouncycastle.util.Store;
-
 import java.security.InvalidAlgorithmParameterException;
 import java.security.cert.CertSelector;
 import java.security.cert.CertStore;
@@ -15,6 +12,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
+import org.bouncycastle.util.Selector;
+import org.bouncycastle.util.Store;
 
 /**
  * This class extends the PKIXParameters with a validity model parameter.
@@ -286,7 +286,7 @@ public class ExtendedPKIXParameters
      * 
      * @param store The store to add.
      * @see #getStores()
-     * @deprectaed use addStore().
+     * @deprecated use addStore().
      */
     public void addAdditionalStore(Store store)
     {

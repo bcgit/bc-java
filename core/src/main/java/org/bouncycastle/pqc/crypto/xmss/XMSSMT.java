@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
-import java.io.IOException;
 import java.security.SecureRandom;
 import java.text.ParseException;
 
@@ -70,9 +69,6 @@ public final class XMSSMT
      *
      * @param privateKey XMSSMT private key.
      * @param publicKey  XMSSMT public key.
-     * @throws ParseException
-     * @throws ClassNotFoundException
-     * @throws IOException
      */
     public void importState(byte[] privateKey, byte[] publicKey)
     {

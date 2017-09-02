@@ -22,14 +22,14 @@ import org.bouncycastle.util.io.TeeOutputStream;
  * <p>
  * A PGPEncryptedDataGenerator is used by configuring one or more {@link #methods encryption
  * methods}, and then invoking one of the open functions to create an OutputStream that raw data can
- * be supplied to for encryption:
+ * be supplied to for encryption:</p>
  * <ul>
  * <li>If the length of the data to be written is known in advance, use
  * {@link #open(OutputStream, long)} to create a packet containing a single encrypted object.</li>
  * <li>If the length of the data is unknown, use {@link #open(OutputStream, byte[])} to create an
  * packet consisting of a series of encrypted objects (partials).</li>
  * </ul>
- * </p><p>
+ * <p>
  * Raw data is not typically written directly to the OutputStream obtained from a
  * PGPEncryptedDataGenerator. The OutputStream is usually wrapped by a
  * {@link PGPLiteralDataGenerator}, and often with a {@link PGPCompressedDataGenerator} between.

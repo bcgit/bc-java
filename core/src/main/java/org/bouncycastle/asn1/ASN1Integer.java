@@ -102,7 +102,7 @@ public class ASN1Integer
      * It has turned out that there are still a few applications that struggle with
      * the ASN.1 BER encoding rules for an INTEGER as described in:
      *
-     * @link https://www.itu.int/ITU-T/studygroups/com17/languages/X.690-0207.pdf
+     * https://www.itu.int/ITU-T/studygroups/com17/languages/X.690-0207.pdf
      * Section 8.3.2.
      * </p>
      * <p>

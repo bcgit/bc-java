@@ -39,7 +39,7 @@ public class TlsClientProtocol
     /**
      * Constructor for non-blocking mode.<br>
      * <br>
-     * When data is received, use {@link #offerInput(java.nio.ByteBuffer)} to
+     * When data is received, use offerInput(java.nio.ByteBuffer) to
      * provide the received ciphertext, then use
      * {@link #readInput(byte[], int, int)} to read the corresponding cleartext.<br>
      * <br>

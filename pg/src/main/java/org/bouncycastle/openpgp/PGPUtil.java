@@ -294,7 +294,7 @@ public class PGPUtil
      * @param file     the file to write the contents of.
      * @param buffer   buffer to be used to chunk the file into partial packets.
      * @throws IOException if an error occurs reading the file or writing to the output stream.
-     * @see PGPLiteralDataGenerator#open(OutputStream, char, String, Date, byte[]).
+     * @see PGPLiteralDataGenerator#open(OutputStream, char, String, Date, byte[])
      */
     public static void writeFileToLiteralData(
         OutputStream out,

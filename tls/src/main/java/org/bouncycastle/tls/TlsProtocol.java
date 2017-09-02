@@ -665,7 +665,7 @@ public abstract class TlsProtocol
      *            The buffer containing application data to send
      * @param offset
      *            The offset at which the application data begins
-     * @param length
+     * @param len
      *            The number of bytes of application data
      * @throws IllegalStateException
      *             If called before the initial handshake has completed.

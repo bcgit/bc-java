@@ -475,8 +475,7 @@ public class SMIMEUtil
     }
 
     /**
-     * return a file backed MimeBodyPart described in {@link CMSTypedStream} content. 
-     * </p>
+     * return a file backed MimeBodyPart described in {@link CMSTypedStream} content.
      */
     public static FileBackedMimeBodyPart toMimeBodyPart(
         CMSTypedStream    content)

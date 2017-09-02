@@ -157,7 +157,7 @@ public class McElieceCipher
      *
      * @param input the cipher text
      * @return the plain text
-     * @throws Exception if the cipher text is invalid.
+     * @throws InvalidCipherTextException if the cipher text is invalid.
      */
     public byte[] messageDecrypt(byte[] input)
         throws InvalidCipherTextException

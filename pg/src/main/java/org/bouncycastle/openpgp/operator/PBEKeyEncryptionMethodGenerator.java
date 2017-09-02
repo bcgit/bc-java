@@ -17,7 +17,7 @@ import org.bouncycastle.openpgp.PGPException;
  * </p><p>
  * Note that the iteration count provided to this method is a single byte as described by the
  * {@link S2K} algorithm, and the actual iteration count ranges exponentially from
- * <code>0x01<code> == 1088 to <code>0xFF</code> == 65,011,712.
+ * <code>0x01</code> == 1088 to <code>0xFF</code> == 65,011,712.
  * </p>
  */
 public abstract class PBEKeyEncryptionMethodGenerator

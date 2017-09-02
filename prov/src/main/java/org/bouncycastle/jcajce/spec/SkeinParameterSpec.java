@@ -31,7 +31,6 @@ import org.bouncycastle.util.Integers;
  * {@link org.bouncycastle.jcajce.spec.SkeinParameterSpec.Builder#setPersonalisation(java.util.Date, String, String) recommended format} or
  * {@link org.bouncycastle.jcajce.spec.SkeinParameterSpec.Builder#setPersonalisation(byte[]) arbitrary} personalisation string.</li>
  * </ul>
- * </p>
  *
  * @see org.bouncycastle.crypto.digests.SkeinEngine
  * @see org.bouncycastle.crypto.digests.SkeinDigest
@@ -172,8 +171,8 @@ public class SkeinParameterSpec
          * Parameter types must be in the range 0,5..62, and cannot use the value {@value
          * org.bouncycastle.jcajce.spec.SkeinParameterSpec#PARAM_TYPE_MESSAGE} (reserved for message body).
          * <p>
-         * Parameters with type < {@value org.bouncycastle.jcajce.spec.SkeinParameterSpec#PARAM_TYPE_MESSAGE} are processed before
-         * the message content, parameters with type > {@value org.bouncycastle.jcajce.spec.SkeinParameterSpec#PARAM_TYPE_MESSAGE}
+         * Parameters with type &lt; {@value org.bouncycastle.jcajce.spec.SkeinParameterSpec#PARAM_TYPE_MESSAGE} are processed before
+         * the message content, parameters with type &gt; {@value org.bouncycastle.jcajce.spec.SkeinParameterSpec#PARAM_TYPE_MESSAGE}
          * are processed after the message and prior to output.
          * </p>
          *
@@ -255,7 +254,7 @@ public class SkeinParameterSpec
          * Implements the recommended personalisation format for Skein defined in Section 4.11 of
          * the Skein 1.3 specification. You may need to use this method if the default locale
          * doesn't use a Gregorian calender so that the GeneralizedTime produced is compatible implementations.
-         * <p/>
+         * <p>
          * The format is <code>YYYYMMDD email@address distinguisher</code>, encoded to a byte
          * sequence using UTF-8 encoding.
          *
