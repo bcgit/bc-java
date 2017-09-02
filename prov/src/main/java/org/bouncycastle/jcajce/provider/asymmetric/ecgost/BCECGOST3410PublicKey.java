@@ -14,7 +14,6 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
@@ -238,11 +237,9 @@ public class BCECGOST3410PublicKey
         ASN1Encodable params;
         SubjectPublicKeyInfo info;
 
-        if (gostParams != null)
-        {
-            params = gostParams;
-        }
-        else
+        params = getGostParams();
+
+        if (params == null)
         {
             if (ecSpec instanceof ECNamedCurveSpec)
             {
@@ -394,6 +391,13 @@ public class BCECGOST3410PublicKey
 
     ASN1Encodable getGostParams()
     {
+        if (gostParams == null && ecSpec instanceof ECNamedCurveSpec)
+        {
+            this.gostParams = new GOST3410PublicKeyAlgParameters(
+                ECGOST3410NamedCurves.getOID(((ECNamedCurveSpec)ecSpec).getName()),
+                CryptoProObjectIdentifiers.gostR3411_94_CryptoProParamSet);
+        }
+
         return gostParams;
     }
 }
