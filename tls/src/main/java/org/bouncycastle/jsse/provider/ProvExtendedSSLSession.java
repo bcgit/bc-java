@@ -7,7 +7,6 @@ import java.util.Collections;
 import java.util.List;
 
 import javax.net.ssl.ExtendedSSLSession;
-import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSessionContext;
 
@@ -105,15 +104,15 @@ class ProvExtendedSSLSession
         return sslSession.getProtocol();
     }
 
-    public List<SNIServerName> getRequestedServerNames()
+    public List getRequestedServerNames()
     {
         List<BCSNIServerName> serverNames = sslSession.getRequestedServerNames();
         if (serverNames != null)
         {
-            ArrayList<SNIServerName> result = new ArrayList<SNIServerName>(serverNames.size());
+            ArrayList result = new ArrayList(serverNames.size());
             for (BCSNIServerName serverName : serverNames)
             {
-                SNIServerName exported = JsseUtilsv18.exportSNIServerName(serverName);
+                Object exported = JsseUtilsv18.exportSNIServerName(serverName);
                 if (exported != null)
                 {
                     result.add(exported);
