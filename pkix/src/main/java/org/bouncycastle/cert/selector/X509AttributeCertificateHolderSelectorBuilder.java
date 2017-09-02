@@ -157,8 +157,8 @@ public class X509AttributeCertificateHolderSelectorBuilder
      * Adds a collection with target groups criteria. If <code>null</code> is
      * given any will do.
      * <p>
-     * The collection consists of <code>GeneralName</code> objects or <code>byte[]</code representing DER
-     * encoded GeneralNames.
+     * The collection consists of <code>GeneralName</code> objects or <code>byte[]</code>
+     * representing DER encoded GeneralNames.
      *
      * @param names A collection of target groups.
      * @throws java.io.IOException if a parsing error occurs.

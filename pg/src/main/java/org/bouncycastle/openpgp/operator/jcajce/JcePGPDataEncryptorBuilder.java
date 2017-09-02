@@ -24,7 +24,7 @@ import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
  * JCE APIs.
  * <p>
  * By default, cryptographic primitives will be loaded using the default JCE load order (i.e.
- * without specifying a provider). <br/>
+ * without specifying a provider). 
  * A specific provider can be specified using one of the {@link #setProvider(String)} methods.
  * </p>
  */

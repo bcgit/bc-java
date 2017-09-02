@@ -73,7 +73,6 @@ public class JceKeyTransRecipientInfoGenerator
      * <pre>
      *     unwrapper.setAlgorithmMapping(PKCSObjectIdentifiers.rsaEncryption, "RSA");
      * </pre>
-     * </p>
      * @param algorithm  OID of algorithm in recipient.
      * @param algorithmName JCE algorithm name to use.
      * @return the current RecipientInfoGenerator.

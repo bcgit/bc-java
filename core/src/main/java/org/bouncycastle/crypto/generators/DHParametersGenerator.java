@@ -1,9 +1,9 @@
 package org.bouncycastle.crypto.generators;
 
-import org.bouncycastle.crypto.params.DHParameters;
-
 import java.math.BigInteger;
 import java.security.SecureRandom;
+
+import org.bouncycastle.crypto.params.DHParameters;
 
 public class DHParametersGenerator
 {
@@ -35,6 +35,7 @@ public class DHParametersGenerator
      * returning the DHParameters object.
      * <p>
      * Note: can take a while...
+     * @return a generated Diffie-Hellman parameters object.
      */
     public DHParameters generateParameters()
     {

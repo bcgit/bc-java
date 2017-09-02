@@ -9,7 +9,7 @@ import org.bouncycastle.util.Strings;
  * DER PrintableString object.
  * <p>
  * X.680 section 37.4 defines PrintableString character codes as ASCII subset of following characters:
- * </p><p>
+ * </p>
  * <ul>
  * <li>Latin capital letters: 'A' .. 'Z'</li>
  * <li>Latin small letters: 'a' .. 'z'</li>
@@ -27,7 +27,7 @@ import org.bouncycastle.util.Strings;
  * <li>Equals sign: '='</li>
  * <li>Question mark: '?'</li>
  * </ul>
- * </p><p>
+ * <p>
  * Explicit character set escape sequences are not allowed.
  * </p>
  */

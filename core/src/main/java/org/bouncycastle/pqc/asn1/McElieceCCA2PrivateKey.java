@@ -19,6 +19,7 @@ import org.bouncycastle.pqc.math.linearalgebra.PolynomialGF2mSmallM;
  * Return the keyData to encode in the PrivateKeyInfo structure.
  * <p>
  * The ASN.1 definition of the key structure is
+ * </p>
  * <pre>
  *   McElieceCCA2PrivateKey ::= SEQUENCE {
  *     m             INTEGER                  -- extension degree of the field
@@ -29,7 +30,6 @@ import org.bouncycastle.pqc.math.linearalgebra.PolynomialGF2mSmallM;
  *     digest        AlgorithmIdentifier      -- algorithm identifier for CCA2 digest
  *   }
  * </pre>
- * </p>
  */
 public class McElieceCCA2PrivateKey
     extends ASN1Object

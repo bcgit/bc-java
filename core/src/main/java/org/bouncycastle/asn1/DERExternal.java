@@ -24,7 +24,6 @@ public class DERExternal
      * <li> {@link ASN1Integer} + data {@link DERTaggedObject} (indirect reference form)</li>
      * <li> Anything but {@link DERTaggedObject} + data {@link DERTaggedObject} (data value form)</li>
      * </ul>
-     * </p>
      *
      * @throws IllegalArgumentException if input size is wrong, or
      */

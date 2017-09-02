@@ -27,7 +27,7 @@ import org.bouncycastle.util.Selector;
  * 
  * @see org.bouncycastle.x509.X509AttributeCertificate
  * @see org.bouncycastle.x509.X509Store
- *  @deprecated use org.bouncycastle.cert.X509AttributeCertificateSelector and org.bouncycastle.cert.X509AttributeCertificateSelectorBuilder.
+ * @deprecated use org.bouncycastle.cert.X509AttributeCertificateSelector and org.bouncycastle.cert.X509AttributeCertificateSelectorBuilder.
  */
 public class X509AttributeCertStoreSelector
     implements Selector
@@ -431,7 +431,7 @@ public class X509AttributeCertStoreSelector
      * Adds a collection with target groups criteria. If <code>null</code> is
      * given any will do.
      * <p>
-     * The collection consists of <code>GeneralName</code> objects or <code>byte[]</code representing DER
+     * The collection consists of <code>GeneralName</code> objects or <code>byte[]</code> representing DER
      * encoded GeneralNames.
      * 
      * @param names A collection of target groups.

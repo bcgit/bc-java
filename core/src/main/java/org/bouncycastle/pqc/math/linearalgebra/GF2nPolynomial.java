@@ -287,11 +287,8 @@ public class GF2nPolynomial
      * @param b -
      *          the <tt>PolynomialGF2n</tt> to add
      * @return <tt>this + b</tt>
-     * @throws DifferentFieldsException if <tt>this</tt> and <tt>b</tt> are not defined over
-     * the same field.
      */
     public final GF2nPolynomial add(GF2nPolynomial b)
-        throws RuntimeException
     {
         GF2nPolynomial result;
         if (size() >= b.size())
@@ -329,11 +326,8 @@ public class GF2nPolynomial
      *
      * @param s the scalar to multiply
      * @return <i>this</i> x <i>s</i>
-     * @throws DifferentFieldsException if <tt>this</tt> and <tt>s</tt> are not defined over
-     * the same field.
      */
     public final GF2nPolynomial scalarMultiply(GF2nElement s)
-        throws RuntimeException
     {
         GF2nPolynomial result = new GF2nPolynomial(size());
         int i;
@@ -352,11 +346,8 @@ public class GF2nPolynomial
      *
      * @param b the PolynomialGF2n to multiply
      * @return <i>this</i> * <i>b</i>
-     * @throws DifferentFieldsException if <tt>this</tt> and <tt>b</tt> are not defined over
-     * the same field.
      */
     public final GF2nPolynomial multiply(GF2nPolynomial b)
-        throws RuntimeException
     {
         int i, j;
         int aDegree = size();
@@ -394,13 +385,9 @@ public class GF2nPolynomial
      * @param b the PolynomialGF2n to multiply
      * @param g the modul
      * @return <i>this</i> * <i>b</i> mod <i>g</i>
-     * @throws DifferentFieldsException if <tt>this</tt>, <tt>b</tt> and <tt>g</tt> are
-     * not all defined over the same field.
      */
     public final GF2nPolynomial multiplyAndReduce(GF2nPolynomial b,
                                                   GF2nPolynomial g)
-        throws RuntimeException,
-        ArithmeticException
     {
         return multiply(b).reduce(g);
     }
@@ -412,8 +399,6 @@ public class GF2nPolynomial
      * @param g -
      *          the modulus
      * @return <i>this</i> % <i>g</i>
-     * @throws DifferentFieldsException if <tt>this</tt> and <tt>g</tt> are not defined over
-     * the same field.
      */
     public final GF2nPolynomial reduce(GF2nPolynomial g)
         throws RuntimeException, ArithmeticException
@@ -478,11 +463,8 @@ public class GF2nPolynomial
      *
      * @param b the divisor
      * @return the quotient and remainder of <i>this</i> / <i>b</i>
-     * @throws DifferentFieldsException if <tt>this</tt> and <tt>b</tt> are not defined over
-     * the same field.
      */
     public final GF2nPolynomial[] divide(GF2nPolynomial b)
-        throws RuntimeException, ArithmeticException
     {
         GF2nPolynomial[] result = new GF2nPolynomial[2];
         GF2nPolynomial a = new GF2nPolynomial(this);
@@ -524,8 +506,6 @@ public class GF2nPolynomial
      *
      * @param b the divisor
      * @return the remainder <i>this</i> % <i>b</i>
-     * @throws DifferentFieldsException if <tt>this</tt> and <tt>b</tt> are not defined over
-     * the same field.
      */
     public final GF2nPolynomial remainder(GF2nPolynomial b)
         throws RuntimeException, ArithmeticException
@@ -541,8 +521,6 @@ public class GF2nPolynomial
      *
      * @param b the divisor
      * @return the quotient <i>this</i> / <i>b</i>
-     * @throws DifferentFieldsException if <tt>this</tt> and <tt>b</tt> are not defined over
-     * the same field.
      */
     public final GF2nPolynomial quotient(GF2nPolynomial b)
         throws RuntimeException, ArithmeticException
@@ -559,12 +537,8 @@ public class GF2nPolynomial
      * @param g -
      *          a GF2nPolynomial
      * @return gcd(<i>this</i>, <i>g</i>)
-     * @throws DifferentFieldsException if the coefficients of <i>this</i> and <i>g</i> use
-     * different fields
-     * @throws ArithmeticException if coefficients are zero.
      */
     public final GF2nPolynomial gcd(GF2nPolynomial g)
-        throws RuntimeException, ArithmeticException
     {
         GF2nPolynomial a = new GF2nPolynomial(this);
         GF2nPolynomial b = new GF2nPolynomial(g);

@@ -23,7 +23,7 @@ public interface TlsClient
     TlsSession getSessionToResume();
 
     /**
-     * Return the {@link ProtocolVersion} to use for the <c>TLSPlaintext.version</c> field prior to
+     * Return the {@link ProtocolVersion} to use for the <code>TLSPlaintext.version</code> field prior to
      * receiving the server version. NOTE: This method is <b>not</b> called for DTLS.
      *
      * <p>

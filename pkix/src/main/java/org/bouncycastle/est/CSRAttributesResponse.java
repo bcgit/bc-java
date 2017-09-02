@@ -23,7 +23,7 @@ public class CSRAttributesResponse
      * Create a CSRAttributesResponse from the passed in bytes.
      *
      * @param responseEncoding BER/DER encoding of the certificate.
-     * @throws IOException in the event of corrupted data, or an incorrect structure.
+     * @throws ESTException in the event of corrupted data, or an incorrect structure.
      */
     public CSRAttributesResponse(byte[] responseEncoding)
         throws ESTException

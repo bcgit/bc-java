@@ -1383,7 +1383,7 @@ class CertPathValidatorUtilities
      *              which should be extended with DSA parameters.
      * @return The public key of the certificate in list position
      *         <code>index</code> extended with DSA parameters if applicable.
-     * @throws AnnotatedException if DSA parameters cannot be inherited.
+     * @throws CertPathValidatorException if DSA parameters cannot be inherited.
      */
     protected static PublicKey getNextWorkingKey(List certs, int index)
         throws CertPathValidatorException

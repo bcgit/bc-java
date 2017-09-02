@@ -21,10 +21,6 @@ import org.bouncycastle.pqc.math.linearalgebra.GF2Matrix;
 public class BCMcElieceCCA2PublicKey
     implements CipherParameters, PublicKey
 {
-
-    /**
-     *
-     */
     private static final long serialVersionUID = 1L;
 
     private McElieceCCA2PublicKeyParameters params;
@@ -125,7 +121,6 @@ public class BCMcElieceCCA2PublicKey
      *         matrixG     OctetString  -- generator matrix as octet string
      *       }
      * </pre>
-     * </p>
      * @return the keyData to encode in the SubjectPublicKeyInfo structure
      */
     public byte[] getEncoded()

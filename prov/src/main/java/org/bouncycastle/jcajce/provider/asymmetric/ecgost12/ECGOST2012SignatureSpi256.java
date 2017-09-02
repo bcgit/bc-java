@@ -191,7 +191,7 @@ public class ECGOST2012SignatureSpi256
     }
 
     /**
-     * @deprecated replaced with <a href = "#engineSetParameter(java.security.spec.AlgorithmParameterSpec)">
+     * @deprecated replaced with "#engineSetParameter(java.security.spec.AlgorithmParameterSpec)"
      */
     protected void engineSetParameter(
         String  param,

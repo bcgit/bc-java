@@ -13,7 +13,7 @@ import org.bouncycastle.util.Strings;
  * Generator for producing literal data packets.
  * <p>
  * A PGPLiteralData is used by invoking one of the open functions to create an OutputStream that raw
- * data can be supplied to for encoding:
+ * data can be supplied to for encoding:  </p>
  * <ul>
  * <li>If the length of the data to be written is known in advance, use
  * {@link #open(OutputStream, char, String, long, Date)} to create a packet containing a single
@@ -22,7 +22,7 @@ import org.bouncycastle.util.Strings;
  * {@link #open(OutputStream, char, String, Date, byte[])} to create a packet consisting of a series
  * of literal data objects (partials).</li>
  * </ul>
- * </p><p>
+ * <p>
  * A PGPLiteralDataGenerator is usually used to wrap the OutputStream
  * {@link PGPEncryptedDataGenerator#open(OutputStream, byte[]) obtained} from a
  * {@link PGPEncryptedDataGenerator} or a {@link PGPCompressedDataGenerator}.

@@ -110,6 +110,7 @@ public class DSAParametersGenerator
      * returning the DSAParameters object.
      * <p>
      * Note: can take a while...
+     * @return a generated DSA parameters object.
      */
     public DSAParameters generateParameters()
     {

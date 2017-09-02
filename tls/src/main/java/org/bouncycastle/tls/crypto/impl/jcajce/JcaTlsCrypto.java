@@ -39,7 +39,6 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
-import org.bouncycastle.tls.crypto.TlsMAC;
 import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.tls.crypto.TlsSRP6Client;
 import org.bouncycastle.tls.crypto.TlsSRP6Server;
@@ -580,7 +579,7 @@ public class JcaTlsCrypto
     }
 
     /**
-     * If you want to create your own versions of the block ciphers for < TLS 1.1, override this method.
+     * If you want to create your own versions of the block ciphers for &lt; TLS 1.1, override this method.
      *
      * @param cipherName   the full name of the cipher (algorithm/mode/padding)
      * @param algorithm    the base algorithm name
@@ -600,7 +599,6 @@ public class JcaTlsCrypto
      *
      * @param hmacName the name of the HMAC required.
      * @return a HMAC calculator.
-     * @throws GeneralSecurityException in case of failure.
      */
     protected TlsHMAC createHMAC(String hmacName)
     {

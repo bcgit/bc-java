@@ -21,7 +21,7 @@ import org.bouncycastle.util.Iterable;
  * to do is read a key ring file use either {@link PGPPublicKeyRingCollection} or
  * {@link PGPSecretKeyRingCollection}.
  * </p><p>
- * This factory supports reading the following types of objects:
+ * This factory supports reading the following types of objects: </p>
  * <ul>
  * <li>{@link PacketTags#SIGNATURE} - produces a {@link PGPSignatureList}</li>
  * <li>{@link PacketTags#SECRET_KEY} - produces a {@link PGPSecretKeyRing}</li>
@@ -34,7 +34,7 @@ import org.bouncycastle.util.Iterable;
  * <li>{@link PacketTags#ONE_PASS_SIGNATURE} - produces a {@link PGPOnePassSignatureList}</li>
  * <li>{@link PacketTags#MARKER} - produces a {@link PGPMarker}</li>
  * </ul>
- * </p>
+ *
  */
 public class PGPObjectFactory
     implements Iterable
