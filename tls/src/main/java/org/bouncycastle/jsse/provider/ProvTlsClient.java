@@ -44,7 +44,9 @@ import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedAgreement;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.IPAddress;
+import org.bouncycastle.util.encoders.Hex;
 
 class ProvTlsClient
     extends DefaultTlsClient
@@ -57,6 +59,7 @@ class ProvTlsClient
     protected final ProvTlsManager manager;
     protected final ProvSSLParameters sslParameters;
 
+    protected ProvSSLSessionImpl sslSession = null;
     protected boolean handshakeComplete = false;
 
     ProvTlsClient(ProvTlsManager manager)
@@ -358,7 +361,23 @@ class ProvTlsClient
     @Override
     public TlsSession getSessionToResume()
     {
-        // TODO[jsse] Search for a suitable session in the client session context
+        ProvSSLSessionContext sessionContext = manager.getContextData().getClientSessionContext();
+        this.sslSession = sessionContext.getSessionImpl(manager.getPeerHost(), manager.getPeerPort());
+
+        if (sslSession != null)
+        {
+            TlsSession sessionToResume = sslSession.getTlsSession();
+            if (sessionToResume != null)
+            {
+                return sessionToResume;
+            }
+        }
+
+        if (!manager.getEnableSessionCreation())
+        {
+            throw new IllegalStateException("No resumable sessions and session creation is disabled");
+        }
+
         return null;
     }
 
@@ -404,11 +423,15 @@ class ProvTlsClient
     {
         this.handshakeComplete = true;
 
-        ProvSSLSessionContext sessionContext = manager.getContextData().getClientSessionContext();
-        ProvSSLSessionImpl session = sessionContext.reportSession(context.getSession());
-        ProvSSLConnection connection = new ProvSSLConnection(context, session);
+        TlsSession handshakeSession = context.getSession();
 
-        manager.notifyHandshakeComplete(connection);
+        if (sslSession == null || sslSession.getTlsSession() != handshakeSession)
+        {
+            sslSession = manager.getContextData().getClientSessionContext().reportSession(handshakeSession,
+                manager.getPeerHost(), manager.getPeerPort());
+        }
+
+        manager.notifyHandshakeComplete(new ProvSSLConnection(context, sslSession));
     }
 
     @Override
@@ -437,5 +460,28 @@ class ProvTlsClient
             }
         }
         throw new TlsFatalAlert(AlertDescription.protocol_version);
+    }
+
+    @Override
+    public void notifySessionID(byte[] sessionID)
+    {
+        super.notifySessionID(sessionID);
+
+        if (sessionID == null || sessionID.length == 0)
+        {
+            LOG.fine("Server did not specify a session ID");
+        }
+        else if (sslSession != null && Arrays.areEqual(sessionID, sslSession.getId()))
+        {
+            LOG.fine("Server resumed session: " + Hex.toHexString(sessionID));
+        }
+        else if (!manager.getEnableSessionCreation())
+        {
+            throw new IllegalStateException("Server did not resume session and session creation is disabled");
+        }
+        else
+        {
+            LOG.fine("Server specified new session: " + Hex.toHexString(sessionID));
+        }
     }
 }

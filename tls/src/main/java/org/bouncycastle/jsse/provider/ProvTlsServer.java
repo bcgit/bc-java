@@ -13,6 +13,7 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.net.ssl.SSLException;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
@@ -60,12 +61,17 @@ class ProvTlsServer
     protected TlsCredentials credentials = null;
     protected boolean handshakeComplete = false;
 
-    ProvTlsServer(ProvTlsManager manager)
+    ProvTlsServer(ProvTlsManager manager) throws SSLException
     {
         super(manager.getContextData().getCrypto());
 
         this.manager = manager;
         this.sslParameters = manager.getProvSSLParameters();
+
+        if (!manager.getEnableSessionCreation())
+        {
+            throw new SSLException("Session resumption not implemented yet and session creation is disabled");
+        }
     }
 
     @Override
@@ -375,7 +381,7 @@ class ProvTlsServer
         this.handshakeComplete = true;
 
         ProvSSLSessionContext sessionContext = manager.getContextData().getServerSessionContext();
-        ProvSSLSessionImpl session = sessionContext.reportSession(context.getSession());
+        ProvSSLSessionImpl session = sessionContext.reportSession(context.getSession(), null, -1);
         ProvSSLConnection connection = new ProvSSLConnection(context, session);
 
         manager.notifyHandshakeComplete(connection);

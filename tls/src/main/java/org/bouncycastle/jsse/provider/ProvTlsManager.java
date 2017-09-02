@@ -6,11 +6,15 @@ interface ProvTlsManager
 {
     ProvSSLContextSpi getContext();
 
+    boolean getEnableSessionCreation();
+
     ProvSSLParameters getProvSSLParameters();
 
     ContextData getContextData();
 
     String getPeerHost();
+
+    int getPeerPort();
 
     boolean isClientTrusted(X509Certificate[] chain, String authType);
 

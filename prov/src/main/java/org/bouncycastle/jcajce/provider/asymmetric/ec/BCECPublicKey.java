@@ -180,12 +180,10 @@ public class BCECPublicKey
     private ECParameterSpec createSpec(EllipticCurve ellipticCurve, ECDomainParameters dp)
     {
         return new ECParameterSpec(
-                ellipticCurve,
-                new ECPoint(
-                        dp.getG().getAffineXCoord().toBigInteger(),
-                        dp.getG().getAffineYCoord().toBigInteger()),
-                        dp.getN(),
-                        dp.getH().intValue());
+            ellipticCurve,
+            EC5Util.convertPoint(dp.getG()),
+            dp.getN(),
+            dp.getH().intValue());
     }
 
     private void populateFromPubKeyInfo(SubjectPublicKeyInfo info)
@@ -262,9 +260,7 @@ public class BCECPublicKey
 
     public ECPoint getW()
     {
-        org.bouncycastle.math.ec.ECPoint q = ecPublicKey.getQ();
-
-        return new ECPoint(q.getAffineXCoord().toBigInteger(), q.getAffineYCoord().toBigInteger());
+        return EC5Util.convertPoint(ecPublicKey.getQ());
     }
 
     public org.bouncycastle.math.ec.ECPoint getQ()

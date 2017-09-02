@@ -36,7 +36,7 @@ class ProvSSLSocketWrap
     protected final boolean wrapAutoClose;
 
     protected ProvSSLParameters sslParameters;
-    protected boolean enableSessionCreation = false;
+    protected boolean enableSessionCreation = true;
     protected boolean useClientMode = true;
 
     protected boolean initialHandshakeBegun = false;
@@ -476,6 +476,11 @@ class ProvSSLSocketWrap
     public String getPeerHost()
     {
         return wrapHost;
+    }
+
+    public int getPeerPort()
+    {
+        return getPort();
     }
 
     public boolean isClientTrusted(X509Certificate[] chain, String authType)
