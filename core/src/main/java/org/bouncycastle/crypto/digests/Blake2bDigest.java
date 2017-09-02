@@ -392,9 +392,7 @@ public class Blake2bDigest
 
         f0 = 0xFFFFFFFFFFFFFFFFL;
         t0 += bufferPos;
-        // bufferPos may be < 128, so (t0 == 0) does not work
-        // for 2^64 < message length > 2^64 - 127
-        if ((t0 < 0) && (bufferPos > -t0))
+        if (bufferPos > 0 && t0 == 0)
         {
             t1++;
         }
