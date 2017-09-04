@@ -23,6 +23,12 @@ public class TlsServerProtocol
     /**
      * Constructor for non-blocking mode.<br>
      * <br>
+     * When data is received, use {@link #offerInput(byte[])} to provide the received ciphertext,
+     * then use {@link #readInput(byte[], int, int)} to read the corresponding cleartext.<br>
+     * <br>
+     * Similarly, when data needs to be sent, use {@link #writeApplicationData(byte[], int, int)} to
+     * provide the cleartext, then use {@link #readOutput(byte[], int, int)} to get the
+     * corresponding ciphertext.
      */
     public TlsServerProtocol()
     {
