@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.gm.GMNamedCurves;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.teletrust.TeleTrusTNamedCurves;
+import org.bouncycastle.crypto.params.ECDomainParameters;
 
 /**
  * A general class that reads all X9.62 style EC curve tables.
@@ -46,6 +47,11 @@ public class ECNamedCurveTable
         if (ecP == null)
         {
             ecP = ANSSINamedCurves.getByName(name);
+        }
+
+        if (ecP == null)
+        {
+            ecP = fromDomainParameters(ECGOST3410NamedCurves.getByName(name));
         }
 
         if (ecP == null)
@@ -89,6 +95,11 @@ public class ECNamedCurveTable
 
         if (oid == null)
         {
+            oid = ECNamedCurveTable.getOID(name);
+        }
+
+        if (oid == null)
+        {
             oid = GMNamedCurves.getOID(name);
         }
 
@@ -120,6 +131,11 @@ public class ECNamedCurveTable
         if (name == null)
         {
             name = X962NamedCurves.getName(oid);
+        }
+
+        if (name == null)
+        {
+            name = ANSSINamedCurves.getName(oid);
         }
 
         if (name == null)
@@ -166,6 +182,11 @@ public class ECNamedCurveTable
 
         if (ecP == null)
         {
+            ecP = fromDomainParameters(ECGOST3410NamedCurves.getByOID(oid));
+        }
+
+        if (ecP == null)
+        {
             ecP = GMNamedCurves.getByOID(oid);
         }
 
@@ -186,6 +207,7 @@ public class ECNamedCurveTable
         addEnumeration(v, NISTNamedCurves.getNames());
         addEnumeration(v, TeleTrusTNamedCurves.getNames());
         addEnumeration(v, ANSSINamedCurves.getNames());
+        addEnumeration(v, ECGOST3410NamedCurves.getNames());
         addEnumeration(v, GMNamedCurves.getNames());
 
         return v.elements();
@@ -199,5 +221,10 @@ public class ECNamedCurveTable
         {
             v.addElement(e.nextElement());
         }
+    }
+
+    private static X9ECParameters fromDomainParameters(ECDomainParameters dp)
+    {
+        return dp == null ? null : new X9ECParameters(dp.getCurve(), dp.getG(), dp.getN(), dp.getH(), dp.getSeed());
     }
 }
