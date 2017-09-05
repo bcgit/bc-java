@@ -95,7 +95,7 @@ public class ECNamedCurveTable
 
         if (oid == null)
         {
-            oid = ECNamedCurveTable.getOID(name);
+            oid = ECGOST3410NamedCurves.getOID(name);
         }
 
         if (oid == null)
