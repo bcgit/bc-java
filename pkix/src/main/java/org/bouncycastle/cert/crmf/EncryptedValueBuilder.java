@@ -7,11 +7,14 @@ import java.io.OutputStream;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.crmf.EncryptedValue;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.KeyWrapper;
 import org.bouncycastle.operator.OperatorException;
 import org.bouncycastle.operator.OutputEncryptor;
+import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
+import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfoBuilder;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -79,6 +82,49 @@ public class EncryptedValueBuilder
         catch (IOException e)
         {
             throw new CRMFException("cannot encode certificate: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Build an EncryptedValue structure containing the private key contained in
+     * the passed info structure.
+     *
+     * @param privateKeyInfo  a PKCS#8 private key info structure.
+     * @return an EncryptedValue containing an EncryptedPrivateKeyInfo structure.
+     * @throws CRMFException on a failure to encrypt the data, or wrap the symmetric key for this value.
+     */
+    public EncryptedValue build(PrivateKeyInfo privateKeyInfo)
+        throws CRMFException
+    {
+        PKCS8EncryptedPrivateKeyInfoBuilder encInfoBldr = new PKCS8EncryptedPrivateKeyInfoBuilder(privateKeyInfo);
+
+        AlgorithmIdentifier intendedAlg = privateKeyInfo.getPrivateKeyAlgorithm();
+        AlgorithmIdentifier symmAlg = encryptor.getAlgorithmIdentifier();
+        DERBitString encSymmKey;
+
+        try
+        {
+            PKCS8EncryptedPrivateKeyInfo encInfo = encInfoBldr.build(encryptor);
+
+            wrapper.generateWrappedKey(encryptor.getKey());
+            encSymmKey = new DERBitString(wrapper.generateWrappedKey(encryptor.getKey()));
+
+            AlgorithmIdentifier keyAlg = wrapper.getAlgorithmIdentifier();
+            ASN1OctetString valueHint = null;
+
+            return new EncryptedValue(intendedAlg, symmAlg, encSymmKey, keyAlg, valueHint, new DERBitString(encInfo.getEncoded()));
+        }
+        catch (IOException e)
+        {
+            throw new CRMFException("cannot encode encrypted private key: " + e.getMessage(), e);
+        }
+        catch (IllegalStateException e)
+        {
+            throw new CRMFException("cannot encode key: " + e.getMessage(), e);
+        }
+        catch (OperatorException e)
+        {
+            throw new CRMFException("cannot wrap key: " + e.getMessage(), e);
         }
     }
 
