@@ -136,6 +136,8 @@ public abstract class ASN1Sequence
         }
         else
         {
+            ASN1Primitive o = obj.getObject();
+
             //
             // constructed object which appears to be explicitly tagged
             // when it should be implicit means we have to add the
@@ -145,18 +147,18 @@ public abstract class ASN1Sequence
             {
                 if (obj instanceof BERTaggedObject)
                 {
-                    return new BERSequence(obj.getObject());
+                    return new BERSequence(o);
                 }
                 else
                 {
-                    return new DLSequence(obj.getObject());
+                    return new DLSequence(o);
                 }
             }
             else
             {
-                if (obj.getObject() instanceof ASN1Sequence)
+                if (o instanceof ASN1Sequence)
                 {
-                    return (ASN1Sequence)obj.getObject();
+                    return (ASN1Sequence)o;
                 }
             }
         }

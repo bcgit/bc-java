@@ -175,6 +175,8 @@ public abstract class ASN1Set
         }
         else
         {
+            ASN1Primitive o = obj.getObject();
+
             //
             // constructed object which appears to be explicitly tagged
             // and it's really implicit means we have to add the
@@ -184,27 +186,27 @@ public abstract class ASN1Set
             {
                 if (obj instanceof BERTaggedObject)
                 {
-                    return new BERSet(obj.getObject());
+                    return new BERSet(o);
                 }
                 else
                 {
-                    return new DLSet(obj.getObject());
+                    return new DLSet(o);
                 }
             }
             else
             {
-                if (obj.getObject() instanceof ASN1Set)
+                if (o instanceof ASN1Set)
                 {
-                    return (ASN1Set)obj.getObject();
+                    return (ASN1Set)o;
                 }
 
                 //
                 // in this case the parser returns a sequence, convert it
                 // into a set.
                 //
-                if (obj.getObject() instanceof ASN1Sequence)
+                if (o instanceof ASN1Sequence)
                 {
-                    ASN1Sequence s = (ASN1Sequence)obj.getObject();
+                    ASN1Sequence s = (ASN1Sequence)o;
 
                     if (obj instanceof BERTaggedObject)
                     {

@@ -66,7 +66,7 @@ public class ASN1Integer
         }
         else
         {
-            return new ASN1Integer(ASN1OctetString.getInstance(obj.getObject()).getOctets());
+            return new ASN1Integer(ASN1OctetString.getInstance(o).getOctets());
         }
     }
 
