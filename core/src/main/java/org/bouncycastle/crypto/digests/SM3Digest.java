@@ -27,7 +27,6 @@ public class SM3Digest
 
     // Work-bufs used within processBlock()
     private int[] W = new int[68];
-    private int[] W1 = new int[64];
 
     // Round constant T for processBlock() which is 32 bit integer rolled left up to (63 MOD 32) bit positions.
     private static final int[] T = new int[64];
@@ -124,14 +123,7 @@ public class SM3Digest
     {
         finish();
 
-        Pack.intToBigEndian(this.V[0], out, outOff + 0);
-        Pack.intToBigEndian(this.V[1], out, outOff + 4);
-        Pack.intToBigEndian(this.V[2], out, outOff + 8);
-        Pack.intToBigEndian(this.V[3], out, outOff + 12);
-        Pack.intToBigEndian(this.V[4], out, outOff + 16);
-        Pack.intToBigEndian(this.V[5], out, outOff + 20);
-        Pack.intToBigEndian(this.V[6], out, outOff + 24);
-        Pack.intToBigEndian(this.V[7], out, outOff + 28);
+        Pack.intToBigEndian(V, out, outOff);
 
         reset();
 
@@ -267,10 +259,6 @@ ROLL 23 :  ((x << 23) | (x >>> (32-23)))
             int r7 = ((wj13 << 7) | (wj13 >>> (32 - 7)));
             this.W[j] = P1(this.W[j - 16] ^ this.W[j - 9] ^ r15) ^ r7 ^ this.W[j - 6];
         }
-        for (int j = 0; j < 64; ++j)
-        {
-            this.W1[j] = this.W[j] ^ this.W[j + 4];
-        }
 
         int A = this.V[0];
         int B = this.V[1];
@@ -288,8 +276,10 @@ ROLL 23 :  ((x << 23) | (x >>> (32-23)))
             int s1_ = a12 + E + T[j];
             int SS1 = ((s1_ << 7) | (s1_ >>> (32 - 7)));
             int SS2 = SS1 ^ a12;
-            int TT1 = FF0(A, B, C) + D + SS2 + this.W1[j];
-            int TT2 = GG0(E, F, G) + H + SS1 + this.W[j];
+            int Wj = W[j];
+            int W1j = Wj ^ W[j + 4];
+            int TT1 = FF0(A, B, C) + D + SS2 + W1j;
+            int TT2 = GG0(E, F, G) + H + SS1 + Wj;
             D = C;
             C = ((B << 9) | (B >>> (32 - 9)));
             B = A;
@@ -307,8 +297,10 @@ ROLL 23 :  ((x << 23) | (x >>> (32-23)))
             int s1_ = a12 + E + T[j];
             int SS1 = ((s1_ << 7) | (s1_ >>> (32 - 7)));
             int SS2 = SS1 ^ a12;
-            int TT1 = FF1(A, B, C) + D + SS2 + this.W1[j];
-            int TT2 = GG1(E, F, G) + H + SS1 + this.W[j];
+            int Wj = W[j];
+            int W1j = Wj ^ W[j + 4];
+            int TT1 = FF1(A, B, C) + D + SS2 + W1j;
+            int TT2 = GG1(E, F, G) + H + SS1 + Wj;
             D = C;
             C = ((B << 9) | (B >>> (32 - 9)));
             B = A;
