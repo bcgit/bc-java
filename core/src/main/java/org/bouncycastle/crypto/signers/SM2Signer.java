@@ -21,13 +21,13 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithID;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -39,7 +39,6 @@ public class SM2Signer
     private final DSAKCalculator kCalculator = new RandomDSAKCalculator();
     private final SM3Digest digest = new SM3Digest();
 
-    private int curveLength;
     private ECDomainParameters ecParams;
     private ECPoint pubPoint;
     private ECKeyParameters ecKey;
@@ -77,7 +76,7 @@ public class SM2Signer
                 ecParams = ecKey.getParameters();
                 kCalculator.init(ecParams.getN(), new SecureRandom());
             }
-            pubPoint = ecParams.getG().multiply(((ECPrivateKeyParameters)ecKey).getD()).normalize();
+            pubPoint = createBasePointMultiplier().multiply(ecParams.getG(), ((ECPrivateKeyParameters)ecKey).getD()).normalize();
         }
         else
         {
@@ -86,11 +85,9 @@ public class SM2Signer
             pubPoint = ((ECPublicKeyParameters)ecKey).getQ();
         }
 
-        curveLength = (ecParams.getCurve().getFieldSize() + 7) / 8;
-
+        digest.reset();
         z = getZ(userID);
-
-        reset();
+        digest.update(z, 0, z.length);
     }
 
     public void update(byte b)
@@ -132,15 +129,17 @@ public class SM2Signer
     public void reset()
     {
         digest.reset();
-        digest.update(z, 0, z.length);
+
+        if (z != null)
+        {
+            digest.update(z, 0, z.length);
+        }
     }
 
     public byte[] generateSignature()
         throws CryptoException
     {
-        byte[] eHash = new byte[digest.getDigestSize()];
-
-        digest.doFinal(eHash, 0);
+        byte[] eHash = digestDoFinal();
 
         BigInteger n = ecParams.getN();
         BigInteger e = calculateE(eHash);
@@ -211,10 +210,8 @@ public class SM2Signer
 
         ECPoint q = ((ECPublicKeyParameters)ecKey).getQ();
 
-        byte[] eHash = new byte[digest.getDigestSize()];
-
         // B3
-        digest.doFinal(eHash, 0);
+        byte[] eHash = digestDoFinal();
 
         // B4
         BigInteger e = calculateE(eHash);
@@ -225,15 +222,25 @@ public class SM2Signer
         {
             return false;
         }
-        else
-        {
-            // B6
-            ECPoint x1y1 = ecParams.getG().multiply(s);
-            x1y1 = x1y1.add(q.multiply(t)).normalize();
 
-            // B7
-            return r.equals(e.add(x1y1.getAffineXCoord().toBigInteger()).mod(n));
+        // B6
+        ECPoint x1y1 = ECAlgorithms.sumOfTwoMultiplies(ecParams.getG(), s, q, t).normalize();
+        if (x1y1.isInfinity())
+        {
+            return false;
         }
+
+        // B7
+        BigInteger expectedR = e.add(x1y1.getAffineXCoord().toBigInteger()).mod(n);
+
+        return expectedR.equals(r);
+    }
+
+    private byte[] digestDoFinal()
+    {
+        byte[] result = new byte[digest.getDigestSize()];
+        digest.doFinal(result, 0);
+        return result;
     }
 
     private byte[] getZ(byte[] userID)
@@ -247,11 +254,7 @@ public class SM2Signer
         addFieldElement(digest, pubPoint.getAffineXCoord());
         addFieldElement(digest, pubPoint.getAffineYCoord());
 
-        byte[] rv = new byte[digest.getDigestSize()];
-
-        digest.doFinal(rv, 0);
-
-        return rv;
+        return digestDoFinal();
     }
 
     private void addUserID(Digest digest, byte[] userID)
@@ -264,7 +267,7 @@ public class SM2Signer
 
     private void addFieldElement(Digest digest, ECFieldElement v)
     {
-        byte[] p = BigIntegers.asUnsignedByteArray(curveLength, v.toBigInteger());
+        byte[] p = v.getEncoded();
         digest.update(p, 0, p.length);
     }
 
