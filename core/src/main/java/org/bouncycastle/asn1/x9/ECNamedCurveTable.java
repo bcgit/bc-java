@@ -116,7 +116,7 @@ public class ECNamedCurveTable
     public static String getName(
         ASN1ObjectIdentifier oid)
     {
-        String name = NISTNamedCurves.getName(oid);
+        String name = X962NamedCurves.getName(oid);
 
         if (name == null)
         {
@@ -125,12 +125,12 @@ public class ECNamedCurveTable
 
         if (name == null)
         {
-            name = TeleTrusTNamedCurves.getName(oid);
+            name = NISTNamedCurves.getName(oid);
         }
 
         if (name == null)
         {
-            name = X962NamedCurves.getName(oid);
+            name = TeleTrusTNamedCurves.getName(oid);
         }
 
         if (name == null)
