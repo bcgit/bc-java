@@ -76,7 +76,7 @@ public class ASN1ObjectIdentifier
         }
         else
         {
-            return ASN1ObjectIdentifier.fromOctetString(ASN1OctetString.getInstance(obj.getObject()).getOctets());
+            return ASN1ObjectIdentifier.fromOctetString(ASN1OctetString.getInstance(o).getOctets());
         }
     }
 
