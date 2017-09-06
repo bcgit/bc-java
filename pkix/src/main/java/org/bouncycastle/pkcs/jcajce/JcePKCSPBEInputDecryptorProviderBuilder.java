@@ -15,18 +15,20 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.cryptopro.GOST28147Parameters;
+import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
+import org.bouncycastle.asn1.misc.ScryptParams;
 import org.bouncycastle.asn1.pkcs.PBEParameter;
 import org.bouncycastle.asn1.pkcs.PBES2Parameters;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.crypto.CharToByteConverter;
 import org.bouncycastle.crypto.PasswordConverter;
 import org.bouncycastle.jcajce.PBKDF1Key;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
 import org.bouncycastle.jcajce.spec.PBKDF2KeySpec;
+import org.bouncycastle.jcajce.spec.ScryptKeySpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -111,18 +113,32 @@ public class JcePKCSPBEInputDecryptorProviderBuilder
                     else if (algorithm.equals(PKCSObjectIdentifiers.id_PBES2))
                     {
                         PBES2Parameters alg = PBES2Parameters.getInstance(algorithmIdentifier.getParameters());
-                        PBKDF2Params func = PBKDF2Params.getInstance(alg.getKeyDerivationFunc().getParameters());
-                        AlgorithmIdentifier encScheme = AlgorithmIdentifier.getInstance(alg.getEncryptionScheme());
 
-                        SecretKeyFactory keyFact = helper.createSecretKeyFactory(alg.getKeyDerivationFunc().getAlgorithm().getId());
-
-                        if (func.isDefaultPrf())
+                        if (MiscObjectIdentifiers.id_scrypt.equals(alg.getKeyDerivationFunc().getAlgorithm()))
                         {
-                            key = keyFact.generateSecret(new PBEKeySpec(password, func.getSalt(), func.getIterationCount().intValue(), keySizeProvider.getKeySize(encScheme)));
+                            ScryptParams params = ScryptParams.getInstance(alg.getKeyDerivationFunc().getParameters());
+                            AlgorithmIdentifier encScheme = AlgorithmIdentifier.getInstance(alg.getEncryptionScheme());
+
+                            SecretKeyFactory keyFact = helper.createSecretKeyFactory("SCRYPT");
+
+                            key = keyFact.generateSecret(new ScryptKeySpec(password,
+                                       params.getSalt(), params.getCostParameter().intValue(), params.getBlockSize().intValue(),
+                                       params.getParallelizationParameter().intValue(), keySizeProvider.getKeySize(encScheme)));
                         }
                         else
                         {
-                            key = keyFact.generateSecret(new PBKDF2KeySpec(password, func.getSalt(), func.getIterationCount().intValue(), keySizeProvider.getKeySize(encScheme), func.getPrf()));
+                            SecretKeyFactory keyFact = helper.createSecretKeyFactory(alg.getKeyDerivationFunc().getAlgorithm().getId());
+                            PBKDF2Params func = PBKDF2Params.getInstance(alg.getKeyDerivationFunc().getParameters());
+                            AlgorithmIdentifier encScheme = AlgorithmIdentifier.getInstance(alg.getEncryptionScheme());
+
+                            if (func.isDefaultPrf())
+                            {
+                                key = keyFact.generateSecret(new PBEKeySpec(password, func.getSalt(), func.getIterationCount().intValue(), keySizeProvider.getKeySize(encScheme)));
+                            }
+                            else
+                            {
+                                key = keyFact.generateSecret(new PBKDF2KeySpec(password, func.getSalt(), func.getIterationCount().intValue(), keySizeProvider.getKeySize(encScheme), func.getPrf()));
+                            }
                         }
 
                         cipher = helper.createCipher(alg.getEncryptionScheme().getAlgorithm().getId());

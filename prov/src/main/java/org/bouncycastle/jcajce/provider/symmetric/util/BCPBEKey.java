@@ -1,5 +1,7 @@
 package org.bouncycastle.jcajce.provider.symmetric.util;
 
+import java.security.spec.KeySpec;
+
 import javax.crypto.interfaces.PBEKey;
 import javax.crypto.spec.PBEKeySpec;
 
@@ -42,6 +44,13 @@ public class BCPBEKey
         this.keySize = keySize;
         this.ivSize = ivSize;
         this.pbeKeySpec = pbeKeySpec;
+        this.param = param;
+    }
+
+    public BCPBEKey(String algName,
+                    KeySpec pbeSpec, CipherParameters param)
+    {
+        this.algorithm = algName;
         this.param = param;
     }
 
