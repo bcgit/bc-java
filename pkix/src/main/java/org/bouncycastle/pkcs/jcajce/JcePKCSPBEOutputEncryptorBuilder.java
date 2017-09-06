@@ -33,9 +33,9 @@ import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.operator.SecretKeySizeProvider;
-import org.bouncycastle.pkcs.PBKDF2;
+import org.bouncycastle.pkcs.PBKDF2Config;
 import org.bouncycastle.pkcs.PBKDFConfig;
-import org.bouncycastle.pkcs.Scrypt;
+import org.bouncycastle.pkcs.ScryptConfig;
 
 public class JcePKCSPBEOutputEncryptorBuilder
 {
@@ -47,7 +47,7 @@ public class JcePKCSPBEOutputEncryptorBuilder
     private SecureRandom random;
     private SecretKeySizeProvider keySizeProvider = DefaultSecretKeySizeProvider.INSTANCE;
     private int iterationCount = 1024;
-    private PBKDF2.Builder pbkdfBuilder = new PBKDF2.Builder();
+    private PBKDF2Config.Builder pbkdfBuilder = new PBKDF2Config.Builder();
 
     public JcePKCSPBEOutputEncryptorBuilder(ASN1ObjectIdentifier keyEncryptionAlg)
     {
@@ -182,7 +182,7 @@ public class JcePKCSPBEOutputEncryptorBuilder
 
                 if (MiscObjectIdentifiers.id_scrypt.equals(pbkDef.getAlgorithm()))
                 {
-                    Scrypt skdf = (Scrypt)pbkDef;
+                    ScryptConfig skdf = (ScryptConfig)pbkDef;
 
                     byte[] salt = new byte[skdf.getSaltLength()];
 
@@ -212,7 +212,7 @@ public class JcePKCSPBEOutputEncryptorBuilder
                 }
                 else
                 {
-                    PBKDF2 pkdf = (PBKDF2)pbkDef;
+                    PBKDF2Config pkdf = (PBKDF2Config)pbkDef;
 
                     byte[] salt = new byte[pkdf.getSaltLength()];
 
