@@ -5,10 +5,10 @@ import javax.net.ssl.SNIHostName;
 import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.tls.NameType;
 
-abstract class JsseUtilsv18
+abstract class JsseUtils_8
     extends JsseUtils
 {
-    static Object exportSNIServerName(BCSNIServerName serverName)
+    static SNIHostName exportSNIServerName(BCSNIServerName serverName)
     {
         if (serverName == null || serverName.getType() != NameType.host_name)
         {
