@@ -14,10 +14,13 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.pkcs.PBKDFConfig;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfoBuilder;
+import org.bouncycastle.pkcs.Scrypt;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEOutputEncryptorBuilder;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 
 public class PKCS8Test
@@ -77,6 +80,21 @@ public class PKCS8Test
             "WhEN3fKJaM/Qfif5wwWvHjQb5TWrTyeNNuh4YtXsyQ3PkwOxHrmm"
     );
 
+    // from RFC 7914
+    private static byte[] pkcs8Scrypt = Base64.decode(
+        "MIHiME0GCSqGSIb3DQEFDTBAMB8GCSsGAQQB2kcECzASBAVNb3VzZQIDEAAAAgEI" +
+            "AgEBMB0GCWCGSAFlAwQBKgQQyYmguHMsOwzGMPoyObk/JgSBkJb47EWd5iAqJlyy" +
+            "+ni5ftd6gZgOPaLQClL7mEZc2KQay0VhjZm/7MbBUNbqOAXNM6OGebXxVp6sHUAL" +
+            "iBGY/Dls7B1TsWeGObE0sS1MXEpuREuloZjcsNVcNXWPlLdZtkSH6uwWzR0PyG/Z" +
+            "+ZXfNodZtd/voKlvLOw5B3opGIFaLkbtLZQwMiGtl42AS89lZg=="
+    );
+
+    private static byte[] scryptKey = Base64.decode(
+        "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg4RaNK5CuHY3CXr9f" +
+            "/CdVgOhEurMohrQmWbbLZK4ZInyhRANCAARs2WMV6UMlLjLaoc0Dsdnj4Vlffc9T" +
+            "t48lJU0RiCzXc280Vg/H5fm1xAP1B7UnIVcBqgDHDcfqWm1h/xSeCHXS"
+    );
+
     public void setUp()
     {
         Security.addProvider(new BouncyCastleProvider());
@@ -104,6 +122,16 @@ public class PKCS8Test
         RSAPrivateKey k = RSAPrivateKey.getInstance(pkInfo.parsePrivateKey());
 
         assertEquals(modulus, k.getModulus());
+    }
+
+    public void testScrypt()
+        throws Exception
+    {
+        PKCS8EncryptedPrivateKeyInfo info = new PKCS8EncryptedPrivateKeyInfo(pkcs8Scrypt);
+
+        PrivateKeyInfo pkInfo = info.decryptPrivateKeyInfo(new JcePKCSPBEInputDecryptorProviderBuilder().setProvider("BC").build("Rabbit".toCharArray()));
+        
+        assertTrue(Arrays.areEqual(scryptKey, pkInfo.getEncoded()));
     }
 
     public void testSHA256Encryption()
@@ -159,4 +187,26 @@ public class PKCS8Test
 
          assertEquals(modulus, k.getModulus());
      }
+
+    public void testScryptEncryption()
+        throws Exception
+    {
+        PKCS8EncryptedPrivateKeyInfoBuilder bldr = new PKCS8EncryptedPrivateKeyInfoBuilder(scryptKey);
+
+        PBKDFConfig scrypt = new Scrypt.Builder(1048576, 8, 1)
+                                        .withSaltLength(20).build();
+
+        PKCS8EncryptedPrivateKeyInfo encInfo = bldr.build(
+            new JcePKCSPBEOutputEncryptorBuilder(scrypt, NISTObjectIdentifiers.id_aes256_CBC)
+                .setProvider("BC")
+                .build("Rabbit".toCharArray()));
+
+        EncryptedPrivateKeyInfo encPkInfo = EncryptedPrivateKeyInfo.getInstance(encInfo.getEncoded());
+
+        PKCS8EncryptedPrivateKeyInfo info = new PKCS8EncryptedPrivateKeyInfo(encPkInfo);
+
+        PrivateKeyInfo pkInfo = info.decryptPrivateKeyInfo(new JcePKCSPBEInputDecryptorProviderBuilder().setProvider("BC").build("Rabbit".toCharArray()));
+
+        assertTrue(Arrays.areEqual(scryptKey, pkInfo.getEncoded()));
+    }
 }
