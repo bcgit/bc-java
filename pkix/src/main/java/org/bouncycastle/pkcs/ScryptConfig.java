@@ -5,7 +5,7 @@ import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 /**
  * Configuration class for a PBKDF based around scrypt.
  */
-public class Scrypt
+public class ScryptConfig
     extends PBKDFConfig
 {
     public static class Builder
@@ -14,7 +14,7 @@ public class Scrypt
         private final int blockSize;
         private final int parallelizationParameter;
 
-        private int saltLength;
+        private int saltLength = 16;
 
         /**
          * Base constructor.
@@ -48,9 +48,9 @@ public class Scrypt
             return this;
         }
 
-        public Scrypt build()
+        public ScryptConfig build()
         {
-            return new Scrypt(this);
+            return new ScryptConfig(this);
         }
 
         // note: we know X is non-zero
@@ -65,7 +65,7 @@ public class Scrypt
     private final int parallelizationParameter;
     private final int saltLength;
 
-    private Scrypt(Builder builder)
+    private ScryptConfig(Builder builder)
     {
         super(MiscObjectIdentifiers.id_scrypt);
 

@@ -7,7 +7,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 /**
  * Configuration class for a PBKDF using PKCS#5 Scheme 2.
  */
-public class PBKDF2
+public class PBKDF2Config
     extends PBKDFConfig
 {
     public static class Builder
@@ -59,9 +59,9 @@ public class PBKDF2
             return this;
         }
 
-        public PBKDF2 build()
+        public PBKDF2Config build()
         {
-            return new PBKDF2(this);
+            return new PBKDF2Config(this);
         }
     }
 
@@ -69,7 +69,7 @@ public class PBKDF2
     private final int saltLength;
     private final AlgorithmIdentifier prf;
 
-    private PBKDF2(Builder builder)
+    private PBKDF2Config(Builder builder)
     {
         super(PKCSObjectIdentifiers.id_PBKDF2);
 
