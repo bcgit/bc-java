@@ -12,8 +12,9 @@ import javax.crypto.spec.PBEKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
+import org.bouncycastle.asn1.misc.ScryptParams;
 import org.bouncycastle.asn1.pkcs.EncryptionScheme;
 import org.bouncycastle.asn1.pkcs.KeyDerivationFunc;
 import org.bouncycastle.asn1.pkcs.PBES2Parameters;
@@ -22,6 +23,7 @@ import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
+import org.bouncycastle.jcajce.spec.ScryptKeySpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -31,29 +33,48 @@ import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.operator.SecretKeySizeProvider;
+import org.bouncycastle.pkcs.PBKDF2;
+import org.bouncycastle.pkcs.PBKDFConfig;
+import org.bouncycastle.pkcs.Scrypt;
 
 public class JcePKCSPBEOutputEncryptorBuilder
 {
+    private final PBKDFConfig pbkdf;
+
     private JcaJceHelper helper = new DefaultJcaJceHelper();
     private ASN1ObjectIdentifier algorithm;
     private ASN1ObjectIdentifier keyEncAlgorithm;
     private SecureRandom random;
     private SecretKeySizeProvider keySizeProvider = DefaultSecretKeySizeProvider.INSTANCE;
     private int iterationCount = 1024;
-    private AlgorithmIdentifier prf = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA1, DERNull.INSTANCE);
+    private PBKDF2.Builder pbkdfBuilder = new PBKDF2.Builder();
 
-    public JcePKCSPBEOutputEncryptorBuilder(ASN1ObjectIdentifier algorithm)
+    public JcePKCSPBEOutputEncryptorBuilder(ASN1ObjectIdentifier keyEncryptionAlg)
     {
-        if (isPKCS12(algorithm))
+        this.pbkdf = null;
+        if (isPKCS12(keyEncryptionAlg))
         {
-            this.algorithm = algorithm;
-            this.keyEncAlgorithm = algorithm;
+            this.algorithm = keyEncryptionAlg;
+            this.keyEncAlgorithm = keyEncryptionAlg;
         }
         else
         {
             this.algorithm = PKCSObjectIdentifiers.id_PBES2;
-            this.keyEncAlgorithm = algorithm;
+            this.keyEncAlgorithm = keyEncryptionAlg;
         }
+    }
+
+    /**
+     * Constructor allowing different derivation functions such as PBKDF2 and scrypt.
+     *
+     * @param pbkdfAlgorithm key derivation algorithm definition to use.
+     * @param keyEncryptionAlg encryption algorithm to apply the derived key with.
+     */
+    public JcePKCSPBEOutputEncryptorBuilder(PBKDFConfig pbkdfAlgorithm, ASN1ObjectIdentifier keyEncryptionAlg)
+    {
+        this.algorithm = PKCSObjectIdentifiers.id_PBES2;
+        this.pbkdf = pbkdfAlgorithm;
+        this.keyEncAlgorithm = keyEncryptionAlg;
     }
 
     public JcePKCSPBEOutputEncryptorBuilder setProvider(Provider provider)
@@ -70,16 +91,9 @@ public class JcePKCSPBEOutputEncryptorBuilder
         return this;
     }
 
-    /**
-     * Set the PRF to use for key generation. By default this is HmacSHA1.
-     *
-     * @param prf algorithm id for PRF.
-     *
-     * @return the current builder.
-     */
-    public JcePKCSPBEOutputEncryptorBuilder setPRF(AlgorithmIdentifier prf)
+    public JcePKCSPBEOutputEncryptorBuilder setRandom(SecureRandom random)
     {
-        this.prf = prf;
+        this.random = random;
 
         return this;
     }
@@ -88,8 +102,7 @@ public class JcePKCSPBEOutputEncryptorBuilder
      * Set the lookup provider of AlgorithmIdentifier returning key_size_in_bits used to
      * handle PKCS5 decryption.
      *
-     * @param keySizeProvider  a provider of integer secret key sizes.
-     *
+     * @param keySizeProvider a provider of integer secret key sizes.
      * @return the current builder.
      */
     public JcePKCSPBEOutputEncryptorBuilder setKeySizeProvider(SecretKeySizeProvider keySizeProvider)
@@ -100,14 +113,38 @@ public class JcePKCSPBEOutputEncryptorBuilder
     }
 
     /**
+     * Set the PRF to use for key generation. By default this is HmacSHA1.
+     *
+     * @param prf algorithm id for PRF.
+     * @return the current builder.
+     * @throws IllegalStateException if this builder was intialised with a PBKDFDef
+     */
+    public JcePKCSPBEOutputEncryptorBuilder setPRF(AlgorithmIdentifier prf)
+    {
+        if (pbkdf != null)
+        {
+            throw new IllegalStateException("set PRF count using PBKDFDef");
+        }
+        this.pbkdfBuilder.withPRF(prf);
+
+        return this;
+    }
+
+    /**
      * Set the iteration count for the PBE calculation.
      *
      * @param iterationCount the iteration count to apply to the key creation.
      * @return the current builder.
+     * @throws IllegalStateException if this builder was intialised with a PBKDFDef
      */
     public JcePKCSPBEOutputEncryptorBuilder setIterationCount(int iterationCount)
     {
+        if (pbkdf != null)
+        {
+            throw new IllegalStateException("set iteration count using PBKDFDef");
+        }
         this.iterationCount = iterationCount;
+        this.pbkdfBuilder.withIterationCount(iterationCount);
 
         return this;
     }
@@ -125,7 +162,6 @@ public class JcePKCSPBEOutputEncryptorBuilder
 
         final AlgorithmIdentifier encryptionAlg;
 
-
         try
         {
             if (isPKCS12(algorithm))
@@ -142,23 +178,61 @@ public class JcePKCSPBEOutputEncryptorBuilder
             }
             else if (algorithm.equals(PKCSObjectIdentifiers.id_PBES2))
             {
-                byte[] salt = new byte[JceUtils.getSaltSize(prf.getAlgorithm())];
+                PBKDFConfig pbkDef = (pbkdf == null) ? pbkdfBuilder.build() : pbkdf;
 
-                random.nextBytes(salt);
+                if (MiscObjectIdentifiers.id_scrypt.equals(pbkDef.getAlgorithm()))
+                {
+                    Scrypt skdf = (Scrypt)pbkDef;
 
-                SecretKeyFactory keyFact = helper.createSecretKeyFactory(JceUtils.getAlgorithm(prf.getAlgorithm()));
+                    byte[] salt = new byte[skdf.getSaltLength()];
 
-                key = keyFact.generateSecret(new PBEKeySpec(password, salt, iterationCount, keySizeProvider.getKeySize(new AlgorithmIdentifier(keyEncAlgorithm))));
+                    random.nextBytes(salt);
 
-                cipher = helper.createCipher(keyEncAlgorithm.getId());
+                    ScryptParams params = new ScryptParams(
+                                                salt,
+                                                skdf.getCostParameter(),
+                                                skdf.getBlockSize(),
+                                                skdf.getParallelizationParameter());
+                    
+                    SecretKeyFactory keyFact = helper.createSecretKeyFactory("SCRYPT");
 
-                cipher.init(Cipher.ENCRYPT_MODE, key, random);
+                    key = keyFact.generateSecret(new ScryptKeySpec(password,
+                        salt, skdf.getCostParameter(), skdf.getBlockSize(), skdf.getParallelizationParameter(),
+                                                 keySizeProvider.getKeySize(new AlgorithmIdentifier(keyEncAlgorithm))));
 
-                PBES2Parameters algParams = new PBES2Parameters(
-                                   new KeyDerivationFunc(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params(salt, iterationCount, prf)),
-                                   new EncryptionScheme(keyEncAlgorithm, ASN1Primitive.fromByteArray(cipher.getParameters().getEncoded())));
+                    cipher = helper.createCipher(keyEncAlgorithm.getId());
 
-                encryptionAlg = new AlgorithmIdentifier(algorithm, algParams);
+                    cipher.init(Cipher.ENCRYPT_MODE, key, random);
+
+                    PBES2Parameters algParams = new PBES2Parameters(
+                        new KeyDerivationFunc(MiscObjectIdentifiers.id_scrypt, params),
+                        new EncryptionScheme(keyEncAlgorithm, ASN1Primitive.fromByteArray(cipher.getParameters().getEncoded())));
+
+                    encryptionAlg = new AlgorithmIdentifier(algorithm, algParams);
+                }
+                else
+                {
+                    PBKDF2 pkdf = (PBKDF2)pbkDef;
+
+                    byte[] salt = new byte[pkdf.getSaltLength()];
+
+                    random.nextBytes(salt);
+
+                    SecretKeyFactory keyFact = helper.createSecretKeyFactory(JceUtils.getAlgorithm(pkdf.getPRF().getAlgorithm()));
+
+                    key = keyFact.generateSecret(new PBEKeySpec(password, salt, pkdf.getIterationCount(),
+                                            keySizeProvider.getKeySize(new AlgorithmIdentifier(keyEncAlgorithm))));
+
+                    cipher = helper.createCipher(keyEncAlgorithm.getId());
+
+                    cipher.init(Cipher.ENCRYPT_MODE, key, random);
+
+                    PBES2Parameters algParams = new PBES2Parameters(
+                        new KeyDerivationFunc(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params(salt, pkdf.getIterationCount(), pkdf.getPRF())),
+                        new EncryptionScheme(keyEncAlgorithm, ASN1Primitive.fromByteArray(cipher.getParameters().getEncoded())));
+
+                    encryptionAlg = new AlgorithmIdentifier(algorithm, algParams);
+                }
             }
             else
             {
@@ -211,11 +285,11 @@ public class JcePKCSPBEOutputEncryptorBuilder
      * @return a byte array representing the password.
      */
     private static byte[] PKCS5PasswordToBytes(
-        char[]  password)
+        char[] password)
     {
         if (password != null)
         {
-            byte[]  bytes = new byte[password.length];
+            byte[] bytes = new byte[password.length];
 
             for (int i = 0; i != bytes.length; i++)
             {
@@ -238,14 +312,14 @@ public class JcePKCSPBEOutputEncryptorBuilder
      * @return a byte array representing the password.
      */
     private static byte[] PKCS12PasswordToBytes(
-        char[]  password)
+        char[] password)
     {
         if (password != null && password.length > 0)
         {
-                                       // +1 for extra 2 pad bytes.
-            byte[]  bytes = new byte[(password.length + 1) * 2];
+            // +1 for extra 2 pad bytes.
+            byte[] bytes = new byte[(password.length + 1) * 2];
 
-            for (int i = 0; i != password.length; i ++)
+            for (int i = 0; i != password.length; i++)
             {
                 bytes[i * 2] = (byte)(password[i] >>> 8);
                 bytes[i * 2 + 1] = (byte)password[i];
