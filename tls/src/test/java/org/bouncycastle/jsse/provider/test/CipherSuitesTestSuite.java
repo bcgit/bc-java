@@ -86,7 +86,15 @@ public class CipherSuitesTestSuite extends TestSuite
         }
         if (Security.getProvider(BouncyCastleJsseProvider.PROVIDER_NAME) == null)
         {
-            Security.addProvider(new BouncyCastleJsseProvider());
+            String javaVersion = System.getProperty("java.version");
+            if (javaVersion.startsWith("1.5") || javaVersion.startsWith("1.6"))
+            {
+                Security.addProvider(new BouncyCastleJsseProvider(new BouncyCastleProvider()));
+            }
+            else
+            {
+                Security.addProvider(new BouncyCastleJsseProvider());
+            }
         }
 
         CipherSuitesTestSuite testSuite = new CipherSuitesTestSuite();
