@@ -1,6 +1,7 @@
 package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.security.AccessController;
 import java.security.Principal;
 import java.security.PrivateKey;
@@ -332,6 +333,26 @@ abstract class JsseUtils
         {
             v.addElement(alg);
         }
+    }
+
+    static Constructor getDeclaredConstructor(final Class clazz, final Class<?>... parameterTypes)
+    {
+        return AccessController.doPrivileged(new PrivilegedAction<Constructor>()
+        {
+            public Constructor run()
+            {
+                try
+                {
+                    return clazz.getDeclaredConstructor(parameterTypes);
+                }
+                catch (Exception e)
+                {
+                    // ignore - maybe log?
+                }
+
+                return null;
+            }
+        });
     }
 
     static Class loadClass(Class sourceClass, final String className)
