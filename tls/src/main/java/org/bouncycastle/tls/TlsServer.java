@@ -12,6 +12,16 @@ public interface TlsServer
 {
     void init(TlsServerContext context);
 
+    /**
+     * Return the specified session, if available. Note that the peer's certificate
+     * chain for the session (if any) may need to be periodically revalidated.
+     * 
+     * @param sessionID the ID of the session to resume.
+     * @return A {@link TlsSession} with the specified session ID, or null.
+     * @see SessionParameters#getPeerCertificate()
+     */
+    TlsSession getSessionToResume(byte[] sessionID);
+
     void notifyClientVersion(ProtocolVersion clientVersion) throws IOException;
 
     void notifyFallback(boolean isFallback) throws IOException;
