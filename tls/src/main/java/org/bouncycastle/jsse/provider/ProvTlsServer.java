@@ -35,6 +35,7 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.DHGroup;
 import org.bouncycastle.tls.crypto.DHStandardGroups;
@@ -56,6 +57,7 @@ class ProvTlsServer
     protected final ProvTlsManager manager;
     protected final ProvSSLParameters sslParameters;
 
+    protected ProvSSLSessionImpl sslSession = null;
     protected BCSNIServerName matchedSNIServerName = null;
     protected Set<String> keyManagerMissCache = null;
     protected TlsCredentials credentials = null;
@@ -197,12 +199,14 @@ class ProvTlsServer
         return handshakeComplete;
     }
 
+    @Override
     public TlsCredentials getCredentials()
         throws IOException
     {
         return credentials;
     }
 
+    @Override
     public int[] getCipherSuites()
     {
         return TlsUtils.getSupportedCipherSuites(manager.getContextData().getCrypto(),
@@ -283,6 +287,29 @@ class ProvTlsServer
         }
 
         return serverExtensions;
+    }
+
+    @Override
+    public TlsSession getSessionToResume(byte[] sessionID)
+    {
+        ProvSSLSessionContext sessionContext = manager.getContextData().getServerSessionContext();
+        this.sslSession = sessionContext.getSessionImpl(sessionID);
+
+        if (sslSession != null)
+        {
+            TlsSession sessionToResume = sslSession.getTlsSession();
+            if (sessionToResume != null)
+            {
+                return sessionToResume;
+            }
+        }
+
+        if (!manager.getEnableSessionCreation())
+        {
+            throw new IllegalStateException("No resumable sessions and session creation is disabled");
+        }
+
+        return null;
     }
 
     @Override
@@ -380,11 +407,14 @@ class ProvTlsServer
     {
         this.handshakeComplete = true;
 
-        ProvSSLSessionContext sessionContext = manager.getContextData().getServerSessionContext();
-        ProvSSLSessionImpl session = sessionContext.reportSession(context.getSession(), null, -1);
-        ProvSSLConnection connection = new ProvSSLConnection(context, session);
+        TlsSession handshakeSession = context.getSession();
 
-        manager.notifyHandshakeComplete(connection);
+        if (sslSession == null || sslSession.getTlsSession() != handshakeSession)
+        {
+            sslSession = manager.getContextData().getServerSessionContext().reportSession(handshakeSession, null, -1);
+        }
+
+        manager.notifyHandshakeComplete(new ProvSSLConnection(context, sslSession));
     }
 
     @Override
