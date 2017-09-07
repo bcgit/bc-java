@@ -73,7 +73,7 @@ public abstract class AbstractTlsServer
 
     protected short[] getCompressionMethods()
     {
-        return new short[]{CompressionMethod._null};
+        return new short[]{ CompressionMethod._null };
     }
 
     protected DHGroup getDHParameters()
@@ -182,6 +182,11 @@ public abstract class AbstractTlsServer
     public void init(TlsServerContext context)
     {
         this.context = context;
+    }
+
+    public TlsSession getSessionToResume(byte[] sessionID)
+    {
+        return null;
     }
 
     public void notifyClientVersion(ProtocolVersion clientVersion)
