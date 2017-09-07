@@ -5,7 +5,6 @@ import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -14,7 +13,7 @@ import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 
 /**
- * The object that contains the public key stored in a certficate.
+ * The object that contains the public key stored in a certificate.
  * <p>
  * The getEncoded() method in the public keys in the JCE produces a DER
  * encoded one of these.
@@ -107,9 +106,7 @@ public class SubjectPublicKeyInfo
     public ASN1Primitive parsePublicKey()
         throws IOException
     {
-        ASN1InputStream         aIn = new ASN1InputStream(keyData.getOctets());
-
-        return aIn.readObject();
+        return ASN1Primitive.fromByteArray(keyData.getOctets());
     }
 
     /**
@@ -124,9 +121,7 @@ public class SubjectPublicKeyInfo
     public ASN1Primitive getPublicKey()
         throws IOException
     {
-        ASN1InputStream         aIn = new ASN1InputStream(keyData.getOctets());
-
-        return aIn.readObject();
+        return ASN1Primitive.fromByteArray(keyData.getOctets());
     }
 
     /**
