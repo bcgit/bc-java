@@ -41,7 +41,6 @@ public class JcaPGPKeyPair
      * @param algorithm the PGP algorithm the key is for.
      * @param keyPair  the public/private key pair to convert.
      * @param date the creation date to associate with the key pair.
-     * @return a PGPKeyPair.
      * @throws PGPException if conversion fails.
      */
     public JcaPGPKeyPair(int algorithm, KeyPair keyPair, Date date)
@@ -58,7 +57,6 @@ public class JcaPGPKeyPair
      * @param parameters additional parameters to be stored against the public key.
      * @param keyPair  the public/private key pair to convert.
      * @param date the creation date to associate with the key pair.
-     * @return a PGPKeyPair.
      * @throws PGPException if conversion fails.
      */
     public JcaPGPKeyPair(int algorithm, PGPAlgorithmParameters parameters, KeyPair keyPair, Date date)
