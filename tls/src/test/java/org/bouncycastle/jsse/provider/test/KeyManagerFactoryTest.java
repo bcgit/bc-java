@@ -202,6 +202,43 @@ public class KeyManagerFactoryTest
 
     }
 
+    public void testRSAServerTrustEE()
+        throws Exception
+    {
+        KeyStore ks = getRsaKeyStore(true);
+
+        KeyStore trustStore = KeyStore.getInstance("JKS");
+        trustStore.load(null, PASSWORD);
+        trustStore.setCertificateEntry("server", ks.getCertificate("root"));
+
+        SSLUtils.startServer(ks, PASSWORD, trustStore, false, 8886);
+
+        /*
+         * For this variation we add the server's certificate to the client's trust store directly, instead of the root (TA).
+         */
+        trustStore = KeyStore.getInstance("JKS");
+        trustStore.load(null, PASSWORD);
+        trustStore.setCertificateEntry("server", ks.getCertificate("test"));
+
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX", BouncyCastleJsseProvider.PROVIDER_NAME);
+        trustManagerFactory.init(trustStore);
+
+        SSLContext context = SSLContext.getInstance("TLS");
+
+        context.init(null, trustManagerFactory.getTrustManagers(), null);
+
+        SSLSocketFactory f = context.getSocketFactory();
+
+        SSLSocket c = (SSLSocket)f.createSocket("localhost", 8886);
+        c.setUseClientMode(true);
+
+        SSLUtils.restrictKeyExchange(c, "RSA");
+
+        c.getOutputStream().write('!');
+
+        c.getInputStream().read();
+    }
+
     public void testRSAServerWithClientAuth()
         throws Exception
     {

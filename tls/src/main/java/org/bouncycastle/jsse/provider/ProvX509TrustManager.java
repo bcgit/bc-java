@@ -14,7 +14,7 @@ import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.net.ssl.X509TrustManager;
@@ -22,24 +22,41 @@ import javax.net.ssl.X509TrustManager;
 class ProvX509TrustManager
     implements X509TrustManager
 {
+    private Set<X509Certificate> getTrustedCerts(Set<TrustAnchor> trustAnchors)
+    {
+        Set<X509Certificate> result = new HashSet<X509Certificate>(trustAnchors.size());
+        for (TrustAnchor trustAnchor : trustAnchors)
+        {
+            if (trustAnchor != null)
+            {
+                X509Certificate trustedCert = trustAnchor.getTrustedCert();
+                if (trustedCert != null)
+                {
+                    result.add(trustedCert);
+                }
+            }
+        }
+        return result;
+    }
+
     private final Provider pkixProvider;
-    private final Set trustAnchors;
+    private final Set<X509Certificate> trustedCerts;
     private final PKIXParameters baseParameters;
 
-    public ProvX509TrustManager(Provider pkixProvider, Set trustAnchors)
+    ProvX509TrustManager(Provider pkixProvider, Set<TrustAnchor> trustAnchors)
         throws InvalidAlgorithmParameterException
     {
         this.pkixProvider = pkixProvider;
-        this.trustAnchors = trustAnchors;
+        this.trustedCerts = getTrustedCerts(trustAnchors);
         this.baseParameters = new PKIXBuilderParameters(trustAnchors, new X509CertSelector());
         this.baseParameters.setRevocationEnabled(false);
     }
 
-    public ProvX509TrustManager(Provider pkixProvider, PKIXParameters baseParameters)
+    ProvX509TrustManager(Provider pkixProvider, PKIXParameters baseParameters)
         throws InvalidAlgorithmParameterException
     {
         this.pkixProvider = pkixProvider;
-        this.trustAnchors = baseParameters.getTrustAnchors();
+        this.trustedCerts = getTrustedCerts(baseParameters.getTrustAnchors());
         if (baseParameters instanceof PKIXBuilderParameters)
         {
             this.baseParameters = baseParameters;
@@ -68,7 +85,6 @@ class ProvX509TrustManager
     public void checkServerTrusted(X509Certificate[] x509Certificates, String authType)
         throws CertificateException
     {
-
         // TODO: need to confirm cert and server identity match
         // TODO: need to make sure authType makes sense.
         validatePath(x509Certificates);
@@ -76,27 +92,23 @@ class ProvX509TrustManager
 
     public X509Certificate[] getAcceptedIssuers()
     {
-        try
-        {
-            X509Certificate[] certs = new X509Certificate[trustAnchors.size()];
-            int count = 0;
-
-            for (Iterator it = trustAnchors.iterator(); it.hasNext();)
-            {
-                certs[count++] = ((TrustAnchor)it.next()).getTrustedCert();
-            }
-
-            return certs;
-        }
-        catch (Exception e)
-        {
-            return new X509Certificate[0];
-        }
+        return trustedCerts.toArray(new X509Certificate[trustedCerts.size()]);
     }
 
     protected void validatePath(X509Certificate[] x509Certificates)
         throws CertificateException
     {
+        if (x509Certificates == null || x509Certificates.length < 1)
+        {
+            throw new IllegalArgumentException("'x509Certificates' must be a chain of at least one certificate");
+        }
+
+        X509Certificate eeCert = x509Certificates[0];
+        if (trustedCerts.contains(eeCert))
+        {
+            return;
+        }
+
         try
         {
             CertStore certStore = CertStore.getInstance("Collection",
@@ -106,7 +118,7 @@ class ProvX509TrustManager
 
             X509CertSelector constraints = (X509CertSelector)baseParameters.getTargetCertConstraints().clone();
 
-            constraints.setCertificate(x509Certificates[0]);
+            constraints.setCertificate(eeCert);
 
             PKIXBuilderParameters param = (PKIXBuilderParameters)baseParameters.clone();
 
