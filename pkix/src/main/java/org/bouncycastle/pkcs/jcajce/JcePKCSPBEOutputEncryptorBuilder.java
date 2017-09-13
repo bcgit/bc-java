@@ -22,7 +22,10 @@ import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.jcajce.PBKDF2Config;
+import org.bouncycastle.jcajce.PBKDFConfig;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
+import org.bouncycastle.jcajce.ScryptConfig;
 import org.bouncycastle.jcajce.spec.ScryptKeySpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -33,9 +36,6 @@ import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.operator.SecretKeySizeProvider;
-import org.bouncycastle.pkcs.PBKDF2Config;
-import org.bouncycastle.pkcs.PBKDFConfig;
-import org.bouncycastle.pkcs.ScryptConfig;
 
 public class JcePKCSPBEOutputEncryptorBuilder
 {
