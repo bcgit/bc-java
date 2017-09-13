@@ -132,6 +132,8 @@ public class BCryptTest
             test(password, salt, cost, expected);
         }
 
+        isTrue(areEqual(BCrypt.generate(BCrypt.passwordToByteArray("12341234".toCharArray()), Hex.decode("01020304050607080102030405060708"), 5), Hex.decode("cdd19088721c50e5cb49a7b743d93b5a6e67bef0f700cd78")));
+        isTrue(areEqual(BCrypt.generate(BCrypt.passwordToByteArray("1234".toCharArray()), Hex.decode("01020304050607080102030405060708"), 5), Hex.decode("02a3269aca2732484057b40c614204814cbfc2becd8e093e")));
     }
 
     private void test(byte[] password, byte[] salt, int cost, byte[] expected)
