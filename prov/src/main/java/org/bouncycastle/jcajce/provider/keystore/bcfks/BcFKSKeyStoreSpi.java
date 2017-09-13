@@ -9,6 +9,7 @@ import java.security.AlgorithmParameters;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyFactory;
+import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.KeyStoreSpi;
 import java.security.NoSuchAlgorithmException;
@@ -37,6 +38,10 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.SecretKeySpec;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -53,6 +58,8 @@ import org.bouncycastle.asn1.bc.ObjectStoreIntegrityCheck;
 import org.bouncycastle.asn1.bc.PbkdMacIntegrityCheck;
 import org.bouncycastle.asn1.bc.SecretKeyData;
 import org.bouncycastle.asn1.cms.CCMParameters;
+import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
+import org.bouncycastle.asn1.misc.ScryptParams;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
@@ -65,9 +72,15 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.PBEParametersGenerator;
+import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
+import org.bouncycastle.crypto.generators.SCrypt;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.jcajce.BCFKSStoreParameter;
+import org.bouncycastle.jcajce.PBKDF2Config;
+import org.bouncycastle.jcajce.PBKDFConfig;
+import org.bouncycastle.jcajce.ScryptConfig;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -332,7 +345,7 @@ class BcFKSKeyStoreSpi
 
                 byte[] encodedKey = key.getEncoded();
 
-                KeyDerivationFunc pbkdAlgId = generatePkbdAlgorithmIdentifier(256 / 8);
+                KeyDerivationFunc pbkdAlgId = generatePkbdAlgorithmIdentifier(PKCSObjectIdentifiers.id_PBKDF2, 256 / 8);
                 byte[] keyBytes = generateKey(pbkdAlgId, "PRIVATE_KEY_ENCRYPTION", ((password != null) ? password : new char[0]));
 
                 Cipher c;
@@ -375,7 +388,7 @@ class BcFKSKeyStoreSpi
             {
                 byte[] encodedKey = key.getEncoded();
 
-                KeyDerivationFunc pbkdAlgId = generatePkbdAlgorithmIdentifier(256 / 8);
+                KeyDerivationFunc pbkdAlgId = generatePkbdAlgorithmIdentifier(PKCSObjectIdentifiers.id_PBKDF2, 256 / 8);
                 byte[] keyBytes = generateKey(pbkdAlgId, "SECRET_KEY_ENCRYPTION", ((password != null) ? password : new char[0]));
 
                 Cipher c;
@@ -673,30 +686,48 @@ class BcFKSKeyStoreSpi
         byte[] differentiator = PBEParametersGenerator.PKCS12PasswordToBytes(purpose.toCharArray());
 
         int keySizeInBytes;
-        PKCS5S2ParametersGenerator pGen = new PKCS5S2ParametersGenerator(new SHA512Digest());
 
-        if (pbkdAlgorithm.getAlgorithm().equals(PKCSObjectIdentifiers.id_PBKDF2))
+        if (MiscObjectIdentifiers.id_scrypt.equals(pbkdAlgorithm.getAlgorithm()))
+        {
+            ScryptParams params = ScryptParams.getInstance(pbkdAlgorithm.getParameters());
+
+            return SCrypt.generate(Arrays.concatenate(encPassword, differentiator), params.getSalt(),
+                params.getCostParameter().intValue(), params.getBlockSize().intValue(),
+                params.getBlockSize().intValue(), params.getKeyLength().intValue());
+        }
+        else if (pbkdAlgorithm.getAlgorithm().equals(PKCSObjectIdentifiers.id_PBKDF2))
         {
             PBKDF2Params pbkdf2Params = PBKDF2Params.getInstance(pbkdAlgorithm.getParameters());
 
             if (pbkdf2Params.getPrf().getAlgorithm().equals(PKCSObjectIdentifiers.id_hmacWithSHA512))
             {
+                PKCS5S2ParametersGenerator pGen = new PKCS5S2ParametersGenerator(new SHA512Digest());
 
                 pGen.init(Arrays.concatenate(encPassword, differentiator), pbkdf2Params.getSalt(), pbkdf2Params.getIterationCount().intValue());
 
                 keySizeInBytes = pbkdf2Params.getKeyLength().intValue();
+
+                return ((KeyParameter)pGen.generateDerivedParameters(keySizeInBytes * 8)).getKey();
+            }
+            else if (pbkdf2Params.getPrf().getAlgorithm().equals(NISTObjectIdentifiers.id_hmacWithSHA3_512))
+            {
+                PKCS5S2ParametersGenerator pGen = new PKCS5S2ParametersGenerator(new SHA3Digest(512));
+
+                pGen.init(Arrays.concatenate(encPassword, differentiator), pbkdf2Params.getSalt(), pbkdf2Params.getIterationCount().intValue());
+
+                keySizeInBytes = pbkdf2Params.getKeyLength().intValue();
+
+                return ((KeyParameter)pGen.generateDerivedParameters(keySizeInBytes * 8)).getKey();
             }
             else
             {
-                throw new IOException("BCFKS KeyStore: unrecognized MAC PBKD PRF.");
+                throw new IOException("BCFKS KeyStore: unrecognized MAC PBKD PRF: " + pbkdf2Params.getPrf().getAlgorithm());
             }
         }
         else
         {
             throw new IOException("BCFKS KeyStore: unrecognized MAC PBKD.");
         }
-
-        return ((KeyParameter)pGen.generateDerivedParameters(keySizeInBytes * 8)).getKey();
     }
 
     private void verifyMac(byte[] content, PbkdMacIntegrityCheck integrityCheck, char[] password)
@@ -737,12 +768,73 @@ class BcFKSKeyStoreSpi
         return mac.doFinal(content);
     }
 
+    public void engineStore(KeyStore.LoadStoreParameter parameter)
+        throws CertificateException, NoSuchAlgorithmException, IOException
+    {
+        if (parameter == null)
+        {
+            throw new IllegalArgumentException("'parameter' arg cannot be null");
+        }
+
+        if (!(parameter instanceof BCFKSStoreParameter))
+        {
+            throw new IllegalArgumentException(
+                "no support for 'parameter' of type " + parameter.getClass().getName());
+        }
+
+        BCFKSStoreParameter bcParam = (BCFKSStoreParameter)parameter;
+
+        char[] password;
+        KeyStore.ProtectionParameter protParam = bcParam.getProtectionParameter();
+        if (protParam == null)
+        {
+            password = null;
+        }
+        else if (protParam instanceof KeyStore.PasswordProtection)
+        {
+            password = ((KeyStore.PasswordProtection)protParam).getPassword();
+        }
+        else if (protParam instanceof KeyStore.CallbackHandlerProtection)
+        {
+            CallbackHandler handler = ((KeyStore.CallbackHandlerProtection)protParam).getCallbackHandler();
+
+            PasswordCallback passwordCallback = new PasswordCallback("password: ", false);
+
+            try
+            {
+                handler.handle(new Callback[]{passwordCallback});
+
+                password = passwordCallback.getPassword();
+            }
+            catch (UnsupportedCallbackException e)
+            {
+                throw new IllegalArgumentException("PasswordCallback not recognised: " + e.getMessage(), e);
+            }
+        }
+        else
+        {
+            throw new IllegalArgumentException(
+                "no support for protection parameter of type " + protParam.getClass().getName());
+        }
+
+        if (bcParam.getStorePBKDFConfig().getAlgorithm().equals(MiscObjectIdentifiers.id_scrypt))
+        {
+            hmacPkbdAlgorithm = generatePkbdAlgorithmIdentifier(bcParam.getStorePBKDFConfig(), 512 / 8);
+        }
+        else
+        {
+            hmacPkbdAlgorithm = generatePkbdAlgorithmIdentifier(bcParam.getStorePBKDFConfig(), 512 / 8);
+        }
+
+        engineStore(bcParam.getOutputStream(), password);
+    }
+
     public void engineStore(OutputStream outputStream, char[] password)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
         ObjectData[] dataArray = (ObjectData[])entries.values().toArray(new ObjectData[entries.size()]);
 
-        KeyDerivationFunc pbkdAlgId = generatePkbdAlgorithmIdentifier(256 / 8);
+        KeyDerivationFunc pbkdAlgId = generatePkbdAlgorithmIdentifier(hmacPkbdAlgorithm, 256 / 8);
         byte[] keyBytes = generateKey(pbkdAlgId, "STORE_ENCRYPTION", ((password != null) ? password : new char[0]));
 
         ObjectStoreData storeData = new ObjectStoreData(hmacAlgorithm, creationDate, lastModifiedDate, new ObjectDataSequence(dataArray), null);
@@ -788,13 +880,18 @@ class BcFKSKeyStoreSpi
         }
 
         // update the salt
-        PBKDF2Params pbkdf2Params = PBKDF2Params.getInstance(hmacPkbdAlgorithm.getParameters());
+        if (MiscObjectIdentifiers.id_scrypt.equals(hmacPkbdAlgorithm.getAlgorithm()))
+        {
+            ScryptParams sParams = ScryptParams.getInstance(hmacPkbdAlgorithm.getParameters());
 
-        byte[] pbkdSalt = new byte[pbkdf2Params.getSalt().length];
-        getDefaultSecureRandom().nextBytes(pbkdSalt);
+            hmacPkbdAlgorithm = generatePkbdAlgorithmIdentifier(hmacPkbdAlgorithm, sParams.getKeyLength().intValue());
+        }
+        else
+        {
+            PBKDF2Params pbkdf2Params = PBKDF2Params.getInstance(hmacPkbdAlgorithm.getParameters());
 
-        hmacPkbdAlgorithm = new KeyDerivationFunc(hmacPkbdAlgorithm.getAlgorithm(), new PBKDF2Params(pbkdSalt, pbkdf2Params.getIterationCount().intValue(), pbkdf2Params.getKeyLength().intValue(), pbkdf2Params.getPrf()));
-
+            hmacPkbdAlgorithm = generatePkbdAlgorithmIdentifier(hmacPkbdAlgorithm, pbkdf2Params.getKeyLength().intValue());
+        }
         byte[] mac = calculateMac(encStoreData.getEncoded(), hmacAlgorithm, hmacPkbdAlgorithm, password);
 
         ObjectStore store = new ObjectStore(encStoreData, new ObjectStoreIntegrityCheck(new PbkdMacIntegrityCheck(hmacAlgorithm, hmacPkbdAlgorithm, mac)));
@@ -819,8 +916,9 @@ class BcFKSKeyStoreSpi
             // initialise defaults
             lastModifiedDate = creationDate = new Date();
 
+            // basic initialisation
             hmacAlgorithm = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA512, DERNull.INSTANCE);
-            hmacPkbdAlgorithm = generatePkbdAlgorithmIdentifier(512 / 8);
+            hmacPkbdAlgorithm = generatePkbdAlgorithmIdentifier(PKCSObjectIdentifiers.id_PBKDF2, 512 / 8);
 
             return;
         }
@@ -929,11 +1027,73 @@ class BcFKSKeyStoreSpi
         }
     }
 
-    private KeyDerivationFunc generatePkbdAlgorithmIdentifier(int keySizeInBytes)
+    private KeyDerivationFunc generatePkbdAlgorithmIdentifier(PBKDFConfig pbkdfConfig, int keySizeInBytes)
+    {
+        if (MiscObjectIdentifiers.id_scrypt.equals(pbkdfConfig.getAlgorithm()))
+        {
+            ScryptConfig scryptConfig = (ScryptConfig)pbkdfConfig;
+
+            byte[] pbkdSalt = new byte[scryptConfig.getSaltLength()];
+            getDefaultSecureRandom().nextBytes(pbkdSalt);
+
+            ScryptParams params = new ScryptParams(
+                pbkdSalt,
+                scryptConfig.getCostParameter(), scryptConfig.getBlockSize(), scryptConfig.getParallelizationParameter(), keySizeInBytes);
+
+            return new KeyDerivationFunc(MiscObjectIdentifiers.id_scrypt, params);
+        }
+        else
+        {
+            PBKDF2Config pbkdf2Config = (PBKDF2Config)pbkdfConfig;
+
+            byte[] pbkdSalt = new byte[pbkdf2Config.getSaltLength()];
+            getDefaultSecureRandom().nextBytes(pbkdSalt);
+
+            return new KeyDerivationFunc(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params(pbkdSalt, pbkdf2Config.getIterationCount(), keySizeInBytes, pbkdf2Config.getPRF()));
+        }
+    }
+
+    private KeyDerivationFunc generatePkbdAlgorithmIdentifier(KeyDerivationFunc baseAlg, int keySizeInBytes)
+    {
+        if (MiscObjectIdentifiers.id_scrypt.equals(baseAlg.getAlgorithm()))
+        {
+            ScryptParams oldParams = ScryptParams.getInstance(baseAlg.getParameters());
+
+            byte[] pbkdSalt = new byte[oldParams.getSalt().length];
+            getDefaultSecureRandom().nextBytes(pbkdSalt);
+
+            ScryptParams params = new ScryptParams(
+                pbkdSalt,
+                oldParams.getCostParameter(), oldParams.getBlockSize(), oldParams.getParallelizationParameter(), BigInteger.valueOf(keySizeInBytes));
+
+            return new KeyDerivationFunc(MiscObjectIdentifiers.id_scrypt, params);
+        }
+        else
+        {
+            PBKDF2Params oldParams = PBKDF2Params.getInstance(baseAlg.getParameters());
+  
+            byte[] pbkdSalt = new byte[oldParams.getSalt().length];
+            getDefaultSecureRandom().nextBytes(pbkdSalt);
+
+            PBKDF2Params params = new PBKDF2Params(pbkdSalt,
+                oldParams.getIterationCount().intValue(), keySizeInBytes, oldParams.getPrf());
+            return new KeyDerivationFunc(PKCSObjectIdentifiers.id_PBKDF2, params);
+        }
+    }
+
+    private KeyDerivationFunc generatePkbdAlgorithmIdentifier(ASN1ObjectIdentifier derivationAlgorithm, int keySizeInBytes)
     {
         byte[] pbkdSalt = new byte[512 / 8];
         getDefaultSecureRandom().nextBytes(pbkdSalt);
-        return new KeyDerivationFunc(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params(pbkdSalt, 1024, keySizeInBytes, new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA512, DERNull.INSTANCE)));
+
+        if (PKCSObjectIdentifiers.id_PBKDF2.equals(derivationAlgorithm))
+        {
+            return new KeyDerivationFunc(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params(pbkdSalt, 1024, keySizeInBytes, new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA512, DERNull.INSTANCE)));
+        }
+        else
+        {
+            throw new IllegalStateException("unknown derivation algorithm: " + derivationAlgorithm);
+        }
     }
 
     public static class Std
@@ -967,7 +1127,7 @@ class BcFKSKeyStoreSpi
 
         public Throwable getCause()
         {
-           return cause;
+            return cause;
         }
     }
 }
