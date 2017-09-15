@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
@@ -28,27 +29,50 @@ import javax.net.ssl.X509TrustManager;
 class ProvTrustManagerFactorySpi
     extends TrustManagerFactorySpi
 {
-    static final boolean hasExtendedTrustManager;
+    static final Constructor<? extends X509TrustManager> extendedTrustManagerConstructor;
+
     static final String CACERTS_PATH;
     static final String JSSECACERTS_PATH;
 
     static
     {
-        Class<?> clazz = null;
+        Constructor<? extends X509TrustManager> cons = null;
         try
         {
-            clazz = JsseUtils.loadClass(ProvTrustManagerFactorySpi.class,"javax.net.ssl.X509ExtendedTrustManager");
+            if (null != JsseUtils.loadClass(ProvTrustManagerFactorySpi.class, "javax.net.ssl.X509ExtendedTrustManager"))
+            {
+                String className = "org.bouncycastle.jsse.provider.ProvX509ExtendedTrustManager_7";
+
+                Class<? extends X509TrustManager> clazz = JsseUtils.loadClass(ProvTrustManagerFactorySpi.class, className);
+
+                cons = JsseUtils.getDeclaredConstructor(clazz, ProvX509TrustManager.class);
+            }
         }
         catch (Exception e)
         {
-            clazz = null;
         }
 
-        hasExtendedTrustManager = (clazz != null);
+        extendedTrustManagerConstructor = cons;
 
         String javaHome = PropertyUtils.getSystemProperty("java.home");
-        CACERTS_PATH =  javaHome + "/lib/security/cacerts".replace('/', File.separatorChar);
-        JSSECACERTS_PATH =  javaHome + "/lib/security/jssecacerts".replace('/', File.separatorChar);
+        CACERTS_PATH = javaHome + "/lib/security/cacerts".replace('/', File.separatorChar);
+        JSSECACERTS_PATH = javaHome + "/lib/security/jssecacerts".replace('/', File.separatorChar);
+    }
+
+    static X509TrustManager makeExportTrustManager(ProvX509TrustManager trustManager)
+    {
+        if (extendedTrustManagerConstructor != null)
+        {
+            try
+            {
+                return extendedTrustManagerConstructor.newInstance(trustManager);
+            }
+            catch (Exception e)
+            {
+            }
+        }
+
+        return trustManager;
     }
 
     protected final Provider pkixProvider;
@@ -113,14 +137,8 @@ class ProvTrustManagerFactorySpi
             }
 
             Set<TrustAnchor> trustAnchors = getTrustAnchors(ks);
-            if (hasExtendedTrustManager)
-            {
-                trustManager = new ProvX509ExtendedTrustManager(new ProvX509TrustManager(pkixProvider, trustAnchors));
-            }
-            else
-            {
-                trustManager = new ProvX509TrustManager(pkixProvider, trustAnchors);
-            }
+
+            trustManager = makeExportTrustManager(new ProvX509TrustManagerImpl(pkixProvider, trustAnchors));
         }
         catch (Exception e)
         {
@@ -144,14 +162,7 @@ class ProvTrustManagerFactorySpi
 
                 PKIXParameters pkixParam = (PKIXParameters)param;
 
-                if (hasExtendedTrustManager)
-                {
-                    trustManager = new ProvX509ExtendedTrustManager(new ProvX509TrustManager(pkixProvider, pkixParam));
-                }
-                else
-                {
-                    trustManager = new ProvX509TrustManager(pkixProvider, pkixParam);
-                }
+                trustManager = makeExportTrustManager(new ProvX509TrustManagerImpl(pkixProvider, pkixParam));
             }
             catch (GeneralSecurityException e)
             {
