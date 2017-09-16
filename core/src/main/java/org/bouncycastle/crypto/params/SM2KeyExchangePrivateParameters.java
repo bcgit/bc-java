@@ -4,7 +4,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.math.ec.ECPoint;
 
 /**
- * Public parameters for an SM2 key exchange. The ephemeralPrivateKey is used to calculate the random point used in the algorithm.
+ * Private parameters for an SM2 key exchange. The ephemeralPrivateKey is used to calculate the random point used in the algorithm.
  */
 public class SM2KeyExchangePrivateParameters
     implements CipherParameters
