@@ -14,9 +14,13 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECFieldElement;
+import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Memoable;
+import org.bouncycastle.util.Pack;
 
 /**
  * SM2 public key encryption engine - based on https://tools.ietf.org/html/draft-shen-sm2-ecdsa-02.
@@ -85,6 +89,11 @@ public class SM2Engine
         }
     }
 
+    protected ECMultiplier createBasePointMultiplier()
+    {
+        return new FixedPointCombMultiplier();
+    }
+
     private byte[] encrypt(byte[] in, int inOff, int inLen)
         throws InvalidCipherTextException
     {
@@ -92,13 +101,15 @@ public class SM2Engine
 
         System.arraycopy(in, inOff, c2, 0, c2.length);
 
+        ECMultiplier multiplier = createBasePointMultiplier();
+
         byte[] c1;
         ECPoint kPB;
         do
         {
             BigInteger k = nextK();
 
-            ECPoint c1P = ecParams.getG().multiply(k).normalize();
+            ECPoint c1P = multiplier.multiply(ecParams.getG(), k).normalize();
 
             c1 = c1P.getEncoded(false);
 
@@ -156,13 +167,13 @@ public class SM2Engine
             check |= c3[i] ^ in[c1.length + c2.length + i];
         }
 
-        clearBlock(c1);
-        clearBlock(c3);
+        Arrays.fill(c1, (byte)0);
+        Arrays.fill(c3, (byte)0);
 
         if (check != 0)
         {
-           clearBlock(c2);
-           throw new InvalidCipherTextException("invalid cipher text");
+            Arrays.fill(c2, (byte)0);
+            throw new InvalidCipherTextException("invalid cipher text");
         }
 
         return c2;
@@ -183,34 +194,42 @@ public class SM2Engine
 
     private void kdf(Digest digest, ECPoint c1, byte[] encData)
     {
-        int ct = 1;
-        int v = digest.getDigestSize();
-
-        byte[] buf = new byte[digest.getDigestSize()];
+        int digestSize = digest.getDigestSize();
+        byte[] buf = new byte[Math.max(4, digestSize)];
         int off = 0;
 
-        for (int i = 1; i <= ((encData.length + v - 1) / v); i++)
+        Memoable memo = null;
+        Memoable copy = null;
+
+        if (digest instanceof Memoable)
         {
             addFieldElement(digest, c1.getAffineXCoord());
             addFieldElement(digest, c1.getAffineYCoord());
-            digest.update((byte)(ct >> 24));
-            digest.update((byte)(ct >> 16));
-            digest.update((byte)(ct >> 8));
-            digest.update((byte)ct);
+            memo = (Memoable)digest;
+            copy = memo.copy();
+        }
 
-            digest.doFinal(buf, 0);
+        int ct = 0;
 
-            if (off + buf.length < encData.length)
+        while (off < encData.length)
+        {
+            if (memo != null)
             {
-                xor(encData, buf, off, buf.length);
+                memo.reset(copy);
             }
             else
             {
-                xor(encData, buf, off, encData.length - off);
+                addFieldElement(digest, c1.getAffineXCoord());
+                addFieldElement(digest, c1.getAffineYCoord());
             }
 
-            off += buf.length;
-            ct++;
+            Pack.intToBigEndian(++ct, buf, 0);
+            digest.update(buf, 0, 4);
+            digest.doFinal(buf, 0);
+
+            int xorLen = Math.min(digestSize, encData.length - off);
+            xor(encData, buf, off, xorLen);
+            off += xorLen;
         }
     }
 
@@ -241,17 +260,5 @@ public class SM2Engine
         byte[] p = BigIntegers.asUnsignedByteArray(curveLength, v.toBigInteger());
 
         digest.update(p, 0, p.length);
-    }
-
-    /**
-     * clear possible sensitive data
-     */
-    private void clearBlock(
-        byte[]  block)
-    {
-        for (int i = 0; i != block.length; i++)
-        {
-            block[i] = 0;
-        }
     }
 }
