@@ -10,10 +10,12 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithID;
 import org.bouncycastle.crypto.params.SM2KeyExchangePrivateParameters;
 import org.bouncycastle.crypto.params.SM2KeyExchangePublicParameters;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Memoable;
+import org.bouncycastle.util.Pack;
 
 /**
  * SM2 Key Exchange protocol - based on https://tools.ietf.org/html/draft-shen-sm2-ecdsa-02
@@ -27,7 +29,6 @@ public class SM2KeyExchange
     private ECPoint staticPubPoint;
     private ECPoint ephemeralPubPoint;
     private ECDomainParameters ecParams;
-    private int curveLength;
     private int w;
     private ECPrivateKeyParameters ephemeralKey;
     private boolean initiator;
@@ -65,13 +66,7 @@ public class SM2KeyExchange
         staticPubPoint = baseParam.getStaticPublicPoint();
         ephemeralPubPoint = baseParam.getEphemeralPublicPoint();
 
-        curveLength = (ecParams.getCurve().getFieldSize() + 7) / 8;
         w = ecParams.getCurve().getFieldSize() / 2 - 1;
-    }
-
-    public int getFieldSize()
-    {
-        return (staticKey.getParameters().getCurve().getFieldSize() + 7) / 8;
     }
 
     public byte[] calculateKey(int kLen, CipherParameters pubParam)
@@ -162,52 +157,61 @@ public class SM2KeyExchange
 
     private ECPoint calculateU(SM2KeyExchangePublicParameters otherPub)
     {
+        ECPoint p1 = otherPub.getStaticPublicKey().getQ();
+        ECPoint p2 = otherPub.getEphemeralPublicKey().getQ();
+
         BigInteger x1 = reduce(ephemeralPubPoint.getAffineXCoord().toBigInteger());
+        BigInteger x2 = reduce(p2.getAffineXCoord().toBigInteger());
+        BigInteger tA = staticKey.getD().add(x1.multiply(ephemeralKey.getD()));
+        BigInteger k1 = ecParams.getH().multiply(tA).mod(ecParams.getN());
+        BigInteger k2 = k1.multiply(x2).mod(ecParams.getN());
 
-        BigInteger tA = staticKey.getD().add(x1.multiply(ephemeralKey.getD())).mod(ecParams.getN());
-
-        BigInteger x2 = reduce(otherPub.getEphemeralPublicKey().getQ().getAffineXCoord().toBigInteger());
-
-        ECPoint B0 = otherPub.getEphemeralPublicKey().getQ().multiply(x2).normalize();
-
-        ECPoint B1 = otherPub.getStaticPublicKey().getQ().add(B0).normalize();
-
-        return B1.multiply(ecParams.getH().multiply(tA)).normalize();
+        return ECAlgorithms.sumOfTwoMultiplies(p1, k1, p2, k2).normalize();
     }
 
     private byte[] kdf(ECPoint u, byte[] za, byte[] zb, int klen)
     {
-         int ct = 1;
-         int v = digest.getDigestSize() * 8;
-
-         byte[] buf = new byte[digest.getDigestSize()];
+         int digestSize = digest.getDigestSize();
+         byte[] buf = new byte[Math.max(4, digestSize)];
          byte[] rv = new byte[(klen + 7) / 8];
          int off = 0;
 
-         for (int i = 1; i <= ((klen + v - 1) / v); i++)
+         Memoable memo = null;
+         Memoable copy = null;
+
+         if (digest instanceof Memoable)
          {
              addFieldElement(digest, u.getAffineXCoord());
              addFieldElement(digest, u.getAffineYCoord());
              digest.update(za, 0, za.length);
              digest.update(zb, 0, zb.length);
-             digest.update((byte)(ct >> 24));
-             digest.update((byte)(ct >> 16));
-             digest.update((byte)(ct >> 8));
-             digest.update((byte)ct);
+             memo = (Memoable)digest;
+             copy = memo.copy();
+         }
 
-             digest.doFinal(buf, 0);
+         int ct = 0;
 
-             if (off + buf.length < rv.length)
+         while (off < rv.length)
+         {
+             if (memo != null)
              {
-                 System.arraycopy(buf, 0, rv, off, buf.length);
+                 memo.reset(copy);
              }
              else
              {
-                 System.arraycopy(buf, 0, rv, off, rv.length - off);
+                 addFieldElement(digest, u.getAffineXCoord());
+                 addFieldElement(digest, u.getAffineYCoord());
+                 digest.update(za, 0, za.length);
+                 digest.update(zb, 0, zb.length);
              }
 
-             off += buf.length;
-             ct++;
+             Pack.intToBigEndian(++ct, buf, 0);
+             digest.update(buf, 0, 4);
+             digest.doFinal(buf, 0);
+
+             int copyLen = Math.min(digestSize, rv.length - off);
+             System.arraycopy(buf, 0, rv, off, copyLen);
+             off += copyLen;
          }
 
          return rv;
@@ -221,15 +225,11 @@ public class SM2KeyExchange
 
     private byte[] S1(Digest digest, ECPoint u, byte[] inner)
     {
-        byte[] rv = new byte[digest.getDigestSize()];
-
         digest.update((byte)0x02);
         addFieldElement(digest, u.getAffineYCoord());
         digest.update(inner, 0, inner.length);
 
-        digest.doFinal(rv, 0);
-
-        return rv;
+        return digestDoFinal();
     }
 
     private byte[] calculateInnerHash(Digest digest, ECPoint u, byte[] za, byte[] zb, ECPoint p1, ECPoint p2)
@@ -242,23 +242,16 @@ public class SM2KeyExchange
         addFieldElement(digest, p2.getAffineXCoord());
         addFieldElement(digest, p2.getAffineYCoord());
 
-        byte[] rv = new byte[digest.getDigestSize()];
-
-        digest.doFinal(rv, 0);
-        return rv;
+        return digestDoFinal();
     }
 
     private byte[] S2(Digest digest, ECPoint u, byte[] inner)
     {
-        byte[] rv = new byte[digest.getDigestSize()];
-
         digest.update((byte)0x03);
         addFieldElement(digest, u.getAffineYCoord());
         digest.update(inner, 0, inner.length);
 
-        digest.doFinal(rv, 0);
-
-        return rv;
+        return digestDoFinal();
     }
 
     private byte[] getZ(Digest digest, byte[] userID, ECPoint pubPoint)
@@ -272,26 +265,28 @@ public class SM2KeyExchange
         addFieldElement(digest, pubPoint.getAffineXCoord());
         addFieldElement(digest, pubPoint.getAffineYCoord());
 
-        byte[] rv = new byte[digest.getDigestSize()];
-
-        digest.doFinal(rv, 0);
-
-        return rv;
+        return digestDoFinal();
     }
 
     private void addUserID(Digest digest, byte[] userID)
     {
         int len = userID.length * 8;
 
-        digest.update((byte)(len >> 8 & 0xFF));
-        digest.update((byte)(len & 0xFF));
+        digest.update((byte)(len >>> 8));
+        digest.update((byte)len);
         digest.update(userID, 0, userID.length);
     }
 
     private void addFieldElement(Digest digest, ECFieldElement v)
     {
-        byte[] p = BigIntegers.asUnsignedByteArray(curveLength, v.toBigInteger());
-
+        byte[] p = v.getEncoded();
         digest.update(p, 0, p.length);
+    }
+
+    private byte[] digestDoFinal()
+    {
+        byte[] result = new byte[digest.getDigestSize()];
+        digest.doFinal(result, 0);
+        return result;
     }
 }
