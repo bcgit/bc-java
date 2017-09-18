@@ -114,13 +114,13 @@ public class DSTU7564Digest
         this.state[0][0] = (byte)state.length; // Defined in standard
         this.padded = null;
 
-        this.tempState1 = new byte[STATE_BYTES_SIZE_1024][];
-        this.tempState2 = new byte[STATE_BYTES_SIZE_1024][];
+        this.tempState1 = new byte[columns][];
+        this.tempState2 = new byte[columns][];
 
-        for (int bufferIndex = 0; bufferIndex < state.length; bufferIndex++)
+        for (int col = 0; col < columns; col++)
         {
-            this.tempState1[bufferIndex] = new byte[ROWS];
-            this.tempState2[bufferIndex] = new byte[ROWS];
+            this.tempState1[col] = new byte[ROWS];
+            this.tempState2[col] = new byte[ROWS];
         }
 
         this.tempBuffer = new byte[NB_1024];
@@ -251,29 +251,7 @@ public class DSTU7564Digest
                 }
             }
 
-            /* MixColumns */
-            byte multiplicationResult;
-
-            for (int columnIndex = 0; columnIndex < columns; columnIndex++)
-            {
-
-                Arrays.fill(mixColumnsResult, (byte)0);
-                for (int rowIndex = ROWS - 1; rowIndex >= 0; rowIndex--)
-                {
-
-                    multiplicationResult = 0;
-                    for (int rowInternalIndex = ROWS - 1; rowInternalIndex >= 0; rowInternalIndex--)
-                    {
-                        multiplicationResult ^= multiplyGF(temp[columnIndex][rowInternalIndex], mds_matrix[rowIndex][rowInternalIndex]);
-                    }
-
-                    mixColumnsResult[rowIndex] = multiplicationResult;
-                }
-                for (int rowIndex = 0; rowIndex < ROWS; rowIndex++)
-                {
-                    temp[columnIndex][rowIndex] = mixColumnsResult[rowIndex];
-                }
-            }
+            mixColumns(temp);
         }
 
         for (int rowIndex = 0; rowIndex < ROWS; rowIndex++)
@@ -326,29 +304,27 @@ public class DSTU7564Digest
 
     private void processBlock(byte[] input, int inOff)
     {
-        for (int bufferIndex = 0; bufferIndex < state.length; bufferIndex++)
+        int pos = inOff;
+        for (int col = 0; col < columns; col++)
         {
-            Arrays.fill(tempState1[bufferIndex], (byte)0);
-            Arrays.fill(tempState2[bufferIndex], (byte)0);
-        }
-
-        for (int bufferIndex = 0; bufferIndex < ROWS; bufferIndex++)
-        {
-            for (int byteIndex = 0; byteIndex < columns; byteIndex++)
+            byte[] S = state[col], T1 = tempState1[col], T2 = tempState2[col];
+            for (int row = 0; row < ROWS; row++)
             {
-                tempState1[byteIndex][bufferIndex] = (byte)(state[byteIndex][bufferIndex] ^ input[byteIndex * ROWS + bufferIndex + inOff]);
-                tempState2[byteIndex][bufferIndex] = input[byteIndex * ROWS + bufferIndex + inOff];
+                byte inVal = input[pos++];
+                T1[row] = (byte)(S[row] ^ inVal);
+                T2[row] = inVal;
             }
         }
 
         P(); // mixing tempState1
         Q(); // mixing tempState2
 
-        for (int bufferIndex = 0; bufferIndex < ROWS; bufferIndex++)
+        for (int col = 0; col < columns; col++)
         {
-            for (int byteIndex = 0; byteIndex < columns; byteIndex++)
+            byte[] S = state[col], T1 = tempState1[col], T2 = tempState2[col];
+            for (int row = 0; row < ROWS; row++)
             {
-                state[byteIndex][bufferIndex] ^= (byte)(tempState1[byteIndex][bufferIndex] ^ tempState2[byteIndex][bufferIndex]);
+                S[row] ^= (byte)(T1[row] ^ T2[row]);
             }
         }
     }
@@ -357,7 +333,6 @@ public class DSTU7564Digest
     {
         for (int roundIndex = 0; roundIndex < rounds; roundIndex++)
         {
-
             /* AddRoundConstantsQ */
             for (int columnIndex = 0; columnIndex < columns; columnIndex++)
             {
@@ -400,30 +375,7 @@ public class DSTU7564Digest
                 }
             }
 
-            /* MixColumns */
-            byte multiplicationResult;
-
-            for (int columnIndex = 0; columnIndex < columns; columnIndex++)
-            {
-
-                Arrays.fill(mixColumnsResult, (byte)0);
-                for (int rowIndex = ROWS - 1; rowIndex >= 0; rowIndex--)
-                {
-
-                    multiplicationResult = 0;
-                    for (int rowInternalIndex = ROWS - 1; rowInternalIndex >= 0; rowInternalIndex--)
-                    {
-                        multiplicationResult ^= multiplyGF(tempState2[columnIndex][rowInternalIndex], mds_matrix[rowIndex][rowInternalIndex]);
-                    }
-
-                    mixColumnsResult[rowIndex] = multiplicationResult;
-                }
-                for (int rowIndex = 0; rowIndex < ROWS; rowIndex++)
-                {
-                    tempState2[columnIndex][rowIndex] = mixColumnsResult[rowIndex];
-                }
-            }
-
+            mixColumns(tempState2);
         }
     }
 
@@ -431,7 +383,6 @@ public class DSTU7564Digest
     {
         for (int roundIndex = 0; roundIndex < rounds; roundIndex++)
         {
-
             /* AddRoundConstants */
             for (int columnIndex = 0; columnIndex < columns; columnIndex++)
             {
@@ -447,6 +398,7 @@ public class DSTU7564Digest
                     tempState1[columnIndex][rowIndex] = sBoxes[rowIndex % 4][tempState1[columnIndex][rowIndex] & 0xFF];
                 }
             }
+
             /* ShiftBytes */
             int shift = -1;
             for (int rowIndex = 0; rowIndex < ROWS; rowIndex++)
@@ -470,52 +422,60 @@ public class DSTU7564Digest
                 }
             }
 
-            /* MixColumns */
-            byte multiplicationResult;
-
-            for (int columnIndex = 0; columnIndex < columns; columnIndex++)
-            {
-
-                Arrays.fill(mixColumnsResult, (byte)0);
-                for (int rowIndex = ROWS - 1; rowIndex >= 0; rowIndex--)
-                {
-
-                    multiplicationResult = 0;
-                    for (int rowInternalIndex = ROWS - 1; rowInternalIndex >= 0; rowInternalIndex--)
-                    {
-                        multiplicationResult ^= multiplyGF(tempState1[columnIndex][rowInternalIndex], mds_matrix[rowIndex][rowInternalIndex]);
-                    }
-
-                    mixColumnsResult[rowIndex] = multiplicationResult;
-                }
-                for (int rowIndex = 0; rowIndex < ROWS; rowIndex++)
-                {
-                    tempState1[columnIndex][rowIndex] = mixColumnsResult[rowIndex];
-                }
-            }
+            mixColumns(tempState1);
         }
     }
 
-    private static byte multiplyGF(byte x, byte y)
+    private void mixColumns(byte[][] state)
     {
-        // REDUCTION_POLYNOMIAL = 0x011d; /* x^8 + x^4 + x^3 + x^2 + 1 */
+        for (int col = 0; col < columns; ++col)
+        {
+            long colVal = Pack.littleEndianToLong(state[col], 0);
+            long colEven = colVal & 0x00FF00FF00FF00FFL; 
+            long colOdd = (colVal >>> 8) & 0x00FF00FF00FF00FFL; 
 
-        int u = x & 0xFF, v = y & 0xFF;
-        int r = u & -(v & 1);
+            //long rowMatrix = (mdsMatrix >>> 8) | (mdsMatrix << 56);
+            long rowMatrix = mdsMatrix;
 
-        for (int i = 1; i < BITS_IN_BYTE; i++)
+            long result = 0;
+            for (int row = 7; row >= 0; --row)
+            {
+                long product = multiplyGFx4(colEven, rowMatrix & 0x00FF00FF00FF00FFL);
+
+                rowMatrix = (rowMatrix >>> 8) | (rowMatrix << 56);
+
+                product ^= multiplyGFx4(colOdd, rowMatrix & 0x00FF00FF00FF00FFL);
+
+                product ^= (product >>> 32);
+                product ^= (product >>> 16);
+
+                result <<= 8;
+                result |= (product & 0xFFL);
+            }
+
+            Pack.longToLittleEndian(result, state[col], 0);
+        }
+    }
+
+    /* Pair-wise modular multiplication of 4 byte-pairs (at even byte-offset positions within u, v) */  
+    private static long multiplyGFx4(long u, long v)
+    {
+        long r = u & ((v & 0x0001000100010001L) * 0xFFFFL);
+
+        for (int i = 1; i < 8; ++i)
         {
             u <<= 1;
             v >>>= 1;
-            r ^= u & -(v & 1);
+            r ^= u & ((v & 0x0001000100010001L) * 0xFFFFL);
         }
 
-        int hi = r & 0xFF00;
-        r ^= hi ^ (hi >>> 4) ^ (hi >>> 5) ^ (hi >>> 6) ^ (hi >>> 8);
-        hi = r & 0x0F00;
-        r ^= hi ^ (hi >>> 4) ^ (hi >>> 5) ^ (hi >>> 6) ^ (hi >>> 8);
+        // REDUCTION_POLYNOMIAL = 0x011d; /* x^8 + x^4 + x^3 + x^2 + 1 */
 
-        return (byte)r;
+        long hi = r & 0xFF00FF00FF00FF00L;
+        r ^= hi ^ (hi >>> 4) ^ (hi >>> 5) ^ (hi >>> 6) ^ (hi >>> 8);
+        hi = r & 0x0F000F000F000F00L;
+        r ^= hi ^ (hi >>> 4) ^ (hi >>> 5) ^ (hi >>> 6) ^ (hi >>> 8);
+        return r;
     }
 
     private byte[] pad(byte[] in, int inOff, int len)
@@ -539,18 +499,8 @@ public class DSTU7564Digest
         return padded;
     }
 
-    //region CONSTANTS
-    private static final byte[][] mds_matrix = new byte[][]
-    {
-        new byte[]{ 0x01, 0x01, 0x05, 0x01, 0x08, 0x06, 0x07, 0x04 },
-        new byte[]{ 0x04, 0x01, 0x01, 0x05, 0x01, 0x08, 0x06, 0x07 },
-        new byte[]{ 0x07, 0x04, 0x01, 0x01, 0x05, 0x01, 0x08, 0x06 },
-        new byte[]{ 0x06, 0x07, 0x04, 0x01, 0x01, 0x05, 0x01, 0x08 },
-        new byte[]{ 0x08, 0x06, 0x07, 0x04, 0x01, 0x01, 0x05, 0x01 },
-        new byte[]{ 0x01, 0x08, 0x06, 0x07, 0x04, 0x01, 0x01, 0x05 },
-        new byte[]{ 0x05, 0x01, 0x08, 0x06, 0x07, 0x04, 0x01, 0x01 },
-        new byte[]{ 0x01, 0x05, 0x01, 0x08, 0x06, 0x07, 0x04, 0x01 }
-    };
+//    private static final long mdsMatrix = 0x0407060801050101L;
+    private static final long mdsMatrix = 0x0104070608010501L;
 
     private static final byte[][] sBoxes = new byte[][]{
         new byte[]{
