@@ -25,8 +25,6 @@ public class DSTU7624Engine
     private static final int BITS_IN_BYTE = 8;
     private static final int BITS_IN_LONG = 64;
 
-//    private static final int REDUCTION_POLYNOMIAL = 0x011d; /* x^8 + x^4 + x^3 + x^2 + 1 */
-
     private long[] internalState;
     private long[] workingKey;
     private long[][] roundKeys;
@@ -546,6 +544,8 @@ public class DSTU7624Engine
 
     private byte MultiplyGF(byte x, byte y)
     {
+        // REDUCTION_POLYNOMIAL = 0x011d; /* x^8 + x^4 + x^3 + x^2 + 1 */
+
         int u = x & 0xFF, v = y & 0xFF;
         int r = u & -(v & 1);
 
