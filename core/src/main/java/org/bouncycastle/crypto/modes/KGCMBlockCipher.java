@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.modes;
 
 import java.io.ByteArrayOutputStream;
-import java.math.BigInteger;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
@@ -13,7 +12,7 @@ import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Pack;
 
 /**
  * Implementation of DSTU7624 GCM mode
@@ -21,25 +20,7 @@ import org.bouncycastle.util.BigIntegers;
 public class KGCMBlockCipher
     implements AEADBlockCipher
 {
-    private static final BigInteger ZERO = BigInteger.valueOf(0);
-    private static final BigInteger ONE = BigInteger.valueOf(1);
-
-    /* Constants for GF(2^m) operations */
-    private static final BigInteger MASK_1_128 = new BigInteger("340282366920938463463374607431768211456", 10);
-    private static final BigInteger MASK_2_128 = new BigInteger("340282366920938463463374607431768211455", 10);
-    private static final BigInteger POLYRED_128 = new BigInteger("135", 10);
-
-    private static final BigInteger MASK_1_256 = new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639936", 10);
-    private static final BigInteger MASK_2_256 = new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935", 10);
-    private static final BigInteger POLYRED_256 = new BigInteger("1061", 10);
-
-    private static final BigInteger MASK_1_512 = new BigInteger("13407807929942597099574024998205846127479365820592393377723561443721764030073546976801874298166903427690031858186486050853753882811946569946433649006084096", 10);
-    private static final BigInteger MASK_2_512 = new BigInteger("13407807929942597099574024998205846127479365820592393377723561443721764030073546976801874298166903427690031858186486050853753882811946569946433649006084095", 10);
-    private static final BigInteger POLYRED_512 = new BigInteger("293", 10);
-
-
     private static final int MIN_MAC_BITS = 64;
-    private static final int BITS_IN_BYTE = 8;
 
     private BlockCipher engine;
     private BufferedBlockCipher ctrEngine;
@@ -51,31 +32,25 @@ public class KGCMBlockCipher
     private byte[] macBlock;
     private byte[] iv;
 
-    private byte[] H;
-    private byte[] b;
-    private byte[] temp;
+    private long[] H;
+    private long[] b;
 
-    private int lambda_o;
-    private int lambda_c;
+    private final int blockSize;
 
     private ExposedByteArrayOutputStream associatedText = new ExposedByteArrayOutputStream();
     private ExposedByteArrayOutputStream data = new ExposedByteArrayOutputStream();
 
     public KGCMBlockCipher(BlockCipher dstu7624Engine)
     {
-
         this.engine = dstu7624Engine;
         this.ctrEngine = new BufferedBlockCipher(new KCTRBlockCipher(this.engine));
-        this.macSize = 0;
+        this.macSize = -1;
+        this.blockSize = engine.getBlockSize();
 
-        this.initialAssociatedText = new byte[engine.getBlockSize()];
-        this.iv = new byte[engine.getBlockSize()];
-        this.H = new byte[engine.getBlockSize()];
-        this.b = new byte[engine.getBlockSize()];
-        this.temp = new byte[engine.getBlockSize()];
-
-        this.lambda_c = 0;
-        this.lambda_o = 0;
+        this.initialAssociatedText = new byte[blockSize];
+        this.iv = new byte[blockSize];
+        this.H = new long[blockSize >>> 3];
+        this.b = new long[blockSize >>> 3];
 
         this.macBlock = null;
     }
@@ -98,12 +73,12 @@ public class KGCMBlockCipher
             initialAssociatedText = param.getAssociatedText();
 
             int macSizeBits = param.getMacSize();
-            if (macSizeBits < MIN_MAC_BITS || macSizeBits > engine.getBlockSize() * BITS_IN_BYTE || macSizeBits % BITS_IN_BYTE != 0)
+            if (macSizeBits < MIN_MAC_BITS || macSizeBits > (blockSize << 3) || (macSizeBits & 7) != 0)
             {
                 throw new IllegalArgumentException("Invalid value for MAC size: " + macSizeBits);
             }
 
-            macSize = macSizeBits / BITS_IN_BYTE;
+            macSize = macSizeBits >>> 3;
             engineParam = param.getKey();
 
             if (initialAssociatedText != null)
@@ -122,7 +97,7 @@ public class KGCMBlockCipher
 
             initialAssociatedText = null;
 
-            macSize = engine.getBlockSize(); // Set default mac size
+            macSize = blockSize; // Set default mac size
 
             engineParam = (KeyParameter)param.getParameters();
         }
@@ -131,7 +106,7 @@ public class KGCMBlockCipher
             throw new IllegalArgumentException("Invalid parameter passed");
         }
 
-        this.macBlock = new byte[engine.getBlockSize()];
+        this.macBlock = new byte[blockSize];
         ctrEngine.init(true, new ParametersWithIV(engineParam, this.iv));
         engine.init(true, engineParam);
     }
@@ -158,29 +133,17 @@ public class KGCMBlockCipher
 
     private void processAAD(byte[] authText, int authOff, int len)
     {
-        lambda_o = len * BITS_IN_BYTE;
+        byte[] temp = new byte[blockSize];
+        engine.processBlock(temp, 0, temp, 0);
+        Pack.littleEndianToLong(temp, 0, H);
+        Arrays.fill(temp, (byte)0);
 
-        engine.processBlock(H, 0, H, 0);
-
-        int totalLength = len;
-        int inOff_ = authOff;
-
-        while (totalLength > 0)
+        int pos = authOff, end = authOff + len;
+        while (pos < end)
         {
-            for (int byteIndex = 0; byteIndex < engine.getBlockSize(); byteIndex++)
-            {
-                b[byteIndex] ^= authText[inOff_ + byteIndex];
-            }
-
-            multiplyOverField(engine.getBlockSize() * BITS_IN_BYTE, b, H, temp);
-
-            temp = Arrays.reverse(temp);
-
-            System.arraycopy(temp, 0, b, 0, engine.getBlockSize());
-
-            totalLength -= engine.getBlockSize();
-
-            inOff_ += engine.getBlockSize();
+            xorWithInput(b, authText, pos);
+            multiplyH(b);
+            pos += blockSize;
         }
     }
 
@@ -199,6 +162,7 @@ public class KGCMBlockCipher
         {
             throw new DataLengthException("input buffer too short");
         }
+
         data.write(in, inOff, inLen);
 
         return 0;
@@ -208,40 +172,45 @@ public class KGCMBlockCipher
         throws IllegalStateException, InvalidCipherTextException
     {
         int len = data.size();
-
-        if (associatedText.size() > 0)
+        if (!forEncryption && len < macSize)
         {
-            processAAD(associatedText.getBuffer(), 0, associatedText.size());
+            throw new InvalidCipherTextException("data too short");
+        }
+
+        int lenAAD = associatedText.size();
+        if (lenAAD > 0)
+        {
+            processAAD(associatedText.getBuffer(), 0, lenAAD);
         }
         
         //use alternative cipher to produce output
         int resultLen;
         if (forEncryption)
         {
-            if (out.length - outOff < len + macSize)
+            if (out.length - outOff - macSize < len)
             {
                 throw new OutputLengthException("Output buffer too short");
             }
 
-            lambda_c = len * BITS_IN_BYTE;
-
             resultLen = ctrEngine.processBytes(data.getBuffer(), 0, len, out, outOff);
             resultLen += ctrEngine.doFinal(out, outOff + resultLen);
 
-            calculateMac(out, outOff, len);
+            calculateMac(out, outOff, len, lenAAD);
         }
         else
         {
-            lambda_c = (len - macSize) * BITS_IN_BYTE;
+            int ctLen = len - macSize; 
+            if (out.length - outOff < ctLen)
+            {
+                throw new OutputLengthException("Output buffer too short");
+            }
 
-            calculateMac(data.getBuffer(), 0, len - macSize);
+            calculateMac(data.getBuffer(), 0, ctLen, lenAAD);
 
-            resultLen = ctrEngine.processBytes(data.getBuffer(), 0, len - macSize, out, outOff);
+            resultLen = ctrEngine.processBytes(data.getBuffer(), 0, ctLen, out, outOff);
             resultLen += ctrEngine.doFinal(out, outOff + resultLen);
         }
 
-        outOff += resultLen;
-        
         if (macBlock == null)
         {
             throw new IllegalStateException("mac is not calculated");
@@ -249,7 +218,7 @@ public class KGCMBlockCipher
 
         if (forEncryption)
         {
-            System.arraycopy(macBlock, 0, out, outOff, macSize);
+            System.arraycopy(macBlock, 0, out, outOff + resultLen, macSize);
 
             reset();
 
@@ -258,7 +227,7 @@ public class KGCMBlockCipher
         else
         {
             byte[] mac = new byte[macSize];
-            System.arraycopy(data.getBuffer(), resultLen, mac, 0, macSize);
+            System.arraycopy(data.getBuffer(), len - macSize, mac, 0, macSize);
 
             byte[] calculatedMac = new byte[macSize];
             System.arraycopy(macBlock, 0, calculatedMac, 0, macSize);
@@ -285,29 +254,25 @@ public class KGCMBlockCipher
 
     public int getUpdateOutputSize(int len)
     {
-        return len;
+        return 0;
     }
 
     public int getOutputSize(int len)
     {
+        int totalData = len + data.size();
+
         if (forEncryption)
         {
-            return len;
+            return totalData + macSize;
         }
-        else
-        {
-            return len + macSize;
-        }
+
+        return totalData < macSize ? 0 : totalData - macSize;
     }
 
     public void reset()
     {
-        this.H = new byte[engine.getBlockSize()];
-        this.b = new byte[engine.getBlockSize()];
-        this.temp = new byte[engine.getBlockSize()];
-
-        this.lambda_c = 0;
-        this.lambda_o = 0;
+        Arrays.fill(H, 0L);
+        Arrays.fill(b, 0L);
 
         engine.reset();
 
@@ -320,126 +285,144 @@ public class KGCMBlockCipher
         }
     }
 
-
-    private void calculateMac(byte[] input, int inOff, int len)
+    private void calculateMac(byte[] input, int inOff, int len, int lenAAD)
     {
-        macBlock = new byte[engine.getBlockSize()];
-
-        int totalLength = len;
-        int inOff_ = inOff;
-        while (totalLength > 0)
+        int pos = inOff, end = inOff + len;
+        while (pos < end)
         {
-            for (int byteIndex = 0; byteIndex < engine.getBlockSize(); byteIndex++)
-            {
-                b[byteIndex] ^= input[byteIndex + inOff_];
-            }
-
-            multiplyOverField(engine.getBlockSize() * BITS_IN_BYTE, b, H, temp);
-
-            temp = Arrays.reverse(temp);
-
-            System.arraycopy(temp, 0, b, 0, engine.getBlockSize());
-
-            totalLength -= engine.getBlockSize();
-            inOff_ += engine.getBlockSize();
+            xorWithInput(b, input, pos);
+            multiplyH(b);
+            pos += blockSize;
         }
 
-        Arrays.fill(temp, (byte)0);
+        long lambda_o = (lenAAD & 0xFFFFFFFFL) << 3;
+        long lambda_c = (len & 0xFFFFFFFFL) << 3;
 
-        intToBytes(lambda_o, temp, 0);
-        intToBytes(lambda_c, temp, engine.getBlockSize() / 2);
+//        byte[] temp = new byte[blockSize];
+//        Pack.longToLittleEndian(lambda_o, temp, 0);
+//        Pack.longToLittleEndian(lambda_c, temp, blockSize / 2);
+//
+//        xorWithInput(b, temp, 0);
+        b[0] ^= lambda_o;
+        b[blockSize >>> 4] ^= lambda_c;
 
-        for (int byteIndex = 0; byteIndex < engine.getBlockSize(); byteIndex++)
-        {
-            b[byteIndex] ^= temp[byteIndex];
-        }
-
-        engine.processBlock(b, 0, macBlock, 0);
-    }
-
-
-    private void intToBytes(int num, byte[] outBytes, int outOff)
-    {
-        outBytes[outOff + 3] = (byte)(num >> 24);
-        outBytes[outOff + 2] = (byte)(num >> 16);
-        outBytes[outOff + 1] = (byte)(num >> 8);
-        outBytes[outOff] = (byte)num;
+        macBlock = Pack.longToLittleEndian(b);
+        engine.processBlock(macBlock, 0, macBlock, 0);
     }
 
     /*
-    * Multiplication over GF(2^m) field with corresponding extension polynomials
-    *
-    * GF (2 ^ 128) -> x^128 + x^7 + x^2 + x
-    * GF (2 ^ 256) -> x^256 + x^10 + x^5 + x^2 + 1
-    * GF (2 ^ 512) -> x^512 + x^8 + x^5 + x^2 + 1
-    *
-    * Thanks to João H de A Franco script.
-    * https://jhafranco.com/2012/02/17/multiplication-over-the-binary-finite-field-gf2m/
-    */
-    private void multiplyOverField(int blockBitLength, byte[] x, byte[] y, byte[] x_mult_y)
+     * Multiplication over GF(2^m) field with corresponding extension polynomials
+     *
+     * GF (2 ^ 128) -> x^128 + x^7 + x^2 + x
+     * GF (2 ^ 256) -> x^256 + x^10 + x^5 + x^2 + 1
+     * GF (2 ^ 512) -> x^512 + x^8 + x^5 + x^2 + 1
+     */
+    private void multiplyH(long[] z)
     {
-        byte[] fieldOperationBuffer1 = new byte[engine.getBlockSize()];
-        byte[] fieldOperationBuffer2 = new byte[engine.getBlockSize()];
-
-        System.arraycopy(x, 0, fieldOperationBuffer1, 0, engine.getBlockSize());
-        System.arraycopy(y, 0, fieldOperationBuffer2, 0, engine.getBlockSize());
-
-        fieldOperationBuffer1 = Arrays.reverse(fieldOperationBuffer1);
-        fieldOperationBuffer2 = Arrays.reverse(fieldOperationBuffer2);
-
-
-        BigInteger mask1;
-        BigInteger mask2;
-        BigInteger polyred;
-
-        switch (blockBitLength)
+        switch (blockSize)
         {
-        case 128:
-            mask1 = MASK_1_128;
-            mask2 = MASK_2_128;
-            polyred = POLYRED_128;
+        case 16:
+        {
+            long z0 = z[0], z1 = z[1];
+            long r0 = 0, r1 = 0;
+
+            for (int i = 0; i < 2; ++i)
+            {
+                long bits = H[i];
+                for (int j = 0; j < 64; ++j)
+                {
+                    long m1 = -(bits & 1L); bits >>= 1;
+                    r0 ^= (z0 & m1);
+                    r1 ^= (z1 & m1);
+
+                    long m2 = z1 >> 63;
+                    z1 = (z1 << 1) | (z0 >>> 63);
+                    z0 = (z0 << 1) ^ (m2 & 0x87L);
+                }
+            }
+
+            z[0] = r0; z[1] = r1;
             break;
-        case 256:
-            mask1 = MASK_1_256;
-            mask2 = MASK_2_256;
-            polyred = POLYRED_256;
+        }
+        case 32:
+        {
+            long z0 = z[0], z1 = z[1], z2= z[2], z3 = z[3];
+            long r0 = 0, r1 = 0, r2 = 0, r3 = 0;
+
+            for (int i = 0; i < 4; ++i)
+            {
+                long bits = H[i];
+                for (int j = 0; j < 64; ++j)
+                {
+                    long m1 = -(bits & 1L); bits >>= 1;
+                    r0 ^= (z0 & m1);
+                    r1 ^= (z1 & m1);
+                    r2 ^= (z2 & m1);
+                    r3 ^= (z3 & m1);
+
+                    long m2 = z3 >> 63;
+                    z3 = (z3 << 1) | (z2 >>> 63);
+                    z2 = (z2 << 1) | (z1 >>> 63);
+                    z1 = (z1 << 1) | (z0 >>> 63);
+                    z0 = (z0 << 1) ^ (m2 & 0x425L);
+                }
+            }
+
+            z[0] = r0; z[1] = r1; z[2] = r2; z[3] = r3;
             break;
-        case 512:
-            mask1 = MASK_1_512;
-            mask2 = MASK_2_512;
-            polyred = POLYRED_512;
+        }
+        case 64:
+        {
+            long z0 = z[0], z1 = z[1], z2= z[2], z3 = z[3];
+            long z4 = z[4], z5 = z[5], z6= z[6], z7 = z[7];
+            long r0 = 0, r1 = 0, r2 = 0, r3 = 0;
+            long r4 = 0, r5 = 0, r6 = 0, r7 = 0;
+
+            for (int i = 0; i < 8; ++i)
+            {
+                long bits = H[i];
+                for (int j = 0; j < 64; ++j)
+                {
+                    long m1 = -(bits & 1L); bits >>= 1;
+                    r0 ^= (z0 & m1);
+                    r1 ^= (z1 & m1);
+                    r2 ^= (z2 & m1);
+                    r3 ^= (z3 & m1);
+                    r4 ^= (z4 & m1);
+                    r5 ^= (z5 & m1);
+                    r6 ^= (z6 & m1);
+                    r7 ^= (z7 & m1);
+
+                    long m2 = z7 >> 63;
+                    z7 = (z7 << 1) | (z6 >>> 63);
+                    z6 = (z6 << 1) | (z5 >>> 63);
+                    z5 = (z5 << 1) | (z4 >>> 63);
+                    z4 = (z4 << 1) | (z3 >>> 63);
+                    z3 = (z3 << 1) | (z2 >>> 63);
+                    z2 = (z2 << 1) | (z1 >>> 63);
+                    z1 = (z1 << 1) | (z0 >>> 63);
+                    z0 = (z0 << 1) ^ (m2 & 0x125L);// 293L);
+                }
+            }
+
+            z[0] = r0; z[1] = r1; z[2] = r2; z[3] = r3;
+            z[4] = r4; z[5] = r5; z[6] = r6; z[7] = r7;
             break;
+        }
         default:
-            mask1 = MASK_1_128;
-            mask2 = MASK_2_128;
-            polyred = POLYRED_128;
-            break;
-        }
-
-        BigInteger p = ZERO;
-        BigInteger p1 = new BigInteger(1, fieldOperationBuffer1);
-        BigInteger p2 = new BigInteger(1, fieldOperationBuffer2);
-
-        while (!p2.equals(ZERO))
         {
-            if (p2.and(ONE).equals(ONE))
-            {
-                p = p.xor(p1);
-            }
-
-            p1 = p1.shiftLeft(1);
-
-            if (!p1.and(mask1).equals(ZERO))
-            {
-                p1 = p1.xor(polyred);
-            }
-            p2 = p2.shiftRight(1);
+            throw new IllegalStateException("Only 128, 256, and 512 -bit block sizes supported");
         }
+        }
+    }
 
-        byte[] got = BigIntegers.asUnsignedByteArray(p.and(mask2));
-
-        Arrays.fill(x_mult_y, (byte)0);
-        System.arraycopy(got, 0, x_mult_y, 0, got.length);
+    private static void xorWithInput(long[] z, byte[] buf, int off)
+    {
+        for (int i = 0; i < z.length; ++i)
+        {
+            z[i] ^= Pack.littleEndianToLong(buf, off);
+            off += 8;
+        }
     }
 
     private class ExposedByteArrayOutputStream
