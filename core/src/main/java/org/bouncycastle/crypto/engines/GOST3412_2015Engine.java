@@ -5,130 +5,80 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithSBox;
 import org.bouncycastle.util.Arrays;
 
-/**
- * @author MikeSafonov
- */
+
 public class GOST3412_2015Engine implements BlockCipher {
 
-    private static final int[] PI = new int[]
-        {252, 238, 221, 17, 207, 110, 49, 22, 251, 196, 250,
-            218, 35, 197, 4, 77, 233, 119, 240, 219, 147, 46,
-            153, 186, 23, 54, 241, 187, 20, 205, 95, 193, 249,
-            24, 101, 90, 226, 92, 239, 33, 129, 28, 60, 66,
-            139, 1, 142, 79, 5, 132, 2, 174, 227, 106, 143,
-            160, 6, 11, 237, 152, 127, 212, 211, 31, 235, 52,
-            44, 81, 234, 200, 72, 171, 242, 42, 104, 162, 253,
-            58, 206, 204, 181, 112, 14, 86, 8, 12, 118, 18,
-            191, 114, 19, 71, 156, 183, 93, 135, 21, 161, 150,
-            41, 16, 123, 154, 199, 243, 145, 120, 111, 157, 158,
-            178, 177, 50, 117, 25, 61, 255, 53, 138, 126, 109,
-            84, 198, 128, 195, 189, 13, 87, 223, 245, 36, 169,
-            62, 168, 67, 201, 215, 121, 214, 246, 124, 34, 185,
-            3, 224, 15, 236, 222, 122, 148, 176, 188, 220, 232,
-            40, 80, 78, 51, 10, 74, 167, 151, 96, 115, 30,
-            0, 98, 68, 26, 184, 56, 130, 100, 159, 38, 65,
-            173, 69, 70, 146, 39, 94, 85, 47, 140, 163, 165,
-            125, 105, 213, 149, 59, 7, 88, 179, 64, 134, 172,
-            29, 247, 48, 55, 107, 228, 136, 217, 231, 137, 225,
-            27, 131, 73, 76, 63, 248, 254, 141, 83, 170, 144,
-            202, 216, 133, 97, 32, 113, 103, 164, 45, 43, 9,
-            91, 203, 155, 37, 208, 190, 229, 108, 82, 89, 166,
-            116, 210, 230, 244, 180, 192, 209, 102, 175, 194, 57,
-            75, 99, 182};
+    private static final byte[] PI = new byte[]
+        {
+            -4, -18, -35, 17, -49, 110, 49, 22, -5, -60, -6, -38, 35, -59, 4, 77, -23, 119, -16, -37, -109, 46, -103, -70,
+            23, 54, -15, -69, 20, -51, 95, -63, -7, 24, 101, 90, -30, 92, -17, 33, -127, 28, 60, 66, -117, 1, -114, 79, 5,
+            -124, 2, -82, -29, 106, -113, -96, 6, 11, -19, -104, 127, -44, -45, 31, -21, 52, 44, 81, -22, -56, 72, -85, -14,
+            42, 104, -94, -3, 58, -50, -52, -75, 112, 14, 86, 8, 12, 118, 18, -65, 114, 19, 71, -100, -73, 93, -121, 21,
+            -95, -106, 41, 16, 123, -102, -57, -13, -111, 120, 111, -99, -98, -78, -79, 50, 117, 25, 61, -1, 53, -118, 126,
+            109, 84, -58, -128, -61, -67, 13, 87, -33, -11, 36, -87, 62, -88, 67, -55, -41, 121, -42, -10, 124, 34, -71,
+            3, -32, 15, -20, -34, 122, -108, -80, -68, -36, -24, 40, 80, 78, 51, 10, 74, -89, -105, 96, 115, 30, 0, 98, 68,
+            26, -72, 56, -126, 100, -97, 38, 65, -83, 69, 70, -110, 39, 94, 85, 47, -116, -93, -91, 125, 105, -43, -107,
+            59, 7, 88, -77, 64, -122, -84, 29, -9, 48, 55, 107, -28, -120, -39, -25, -119, -31, 27, -125, 73, 76, 63, -8,
+            -2, -115, 83, -86, -112, -54, -40, -123, 97, 32, 113, 103, -92, 45, 43, 9, 91, -53, -101, 37, -48, -66, -27,
+            108, 82, 89, -90, 116, -46, -26, -12, -76, -64, -47, 102, -81, -62, 57, 75, 99, -74
+        };
 
 
-    private static final int[] inversePI = new int[]{
-        165, 45, 50, 143, 14, 48, 56, 192, 84, 230, 158,
-        57, 85, 126, 82, 145, 100, 3, 87, 90, 28, 96,
-        7, 24, 33, 114, 168, 209, 41, 198, 164, 63, 224,
-        39, 141, 12, 130, 234, 174, 180, 154, 99, 73, 229,
-        66, 228, 21, 183, 200, 6, 112, 157, 65, 117, 25,
-        201, 170, 252, 77, 191, 42, 115, 132, 213, 195, 175,
-        43, 134, 167, 177, 178, 91, 70, 211, 159, 253, 212,
-        15, 156, 47, 155, 67, 239, 217, 121, 182, 83, 127,
-        193, 240, 35, 231, 37, 94, 181, 30, 162, 223, 166,
-        254, 172, 34, 249, 226, 74, 188, 53, 202, 238, 120,
-        5, 107, 81, 225, 89, 163, 242, 113, 86, 17, 106,
-        137, 148, 101, 140, 187, 119, 60, 123, 40, 171, 210,
-        49, 222, 196, 95, 204, 207, 118, 44, 184, 216, 46,
-        54, 219, 105, 179, 20, 149, 190, 98, 161, 59, 22,
-        102, 233, 92, 108, 109, 173, 55, 97, 75, 185, 227,
-        186, 241, 160, 133, 131, 218, 71, 197, 176, 51, 250,
-        150, 111, 110, 194, 246, 80, 255, 93, 169, 142, 23,
-        27, 151, 125, 236, 88, 247, 31, 251, 124, 9, 13,
-        122, 103, 69, 135, 220, 232, 79, 29, 78, 4, 235,
-        248, 243, 62, 61, 189, 138, 136, 221, 205, 11, 19,
-        152, 2, 147, 128, 144, 208, 36, 52, 203, 237, 244,
-        206, 153, 16, 68, 64, 146, 58, 1, 38, 18, 26,
-        72, 104, 245, 129, 139, 199, 214, 32, 10, 8, 0,
-        76, 215, 116
+    private static final byte[] inversePI = new byte[]{
+        -91, 45, 50, -113, 14, 48, 56, -64, 84, -26, -98, 57, 85, 126, 82, -111, 100, 3, 87, 90, 28, 96, 7, 24, 33, 114,
+        -88, -47, 41, -58, -92, 63, -32, 39, -115, 12, -126, -22, -82, -76, -102, 99, 73, -27, 66, -28, 21, -73, -56, 6,
+        112, -99, 65, 117, 25, -55, -86, -4, 77, -65, 42, 115, -124, -43, -61, -81, 43, -122, -89, -79, -78, 91, 70, -45,
+        -97, -3, -44, 15, -100, 47, -101, 67, -17, -39, 121, -74, 83, 127, -63, -16, 35, -25, 37, 94, -75, 30, -94, -33,
+        -90, -2, -84, 34, -7, -30, 74, -68, 53, -54, -18, 120, 5, 107, 81, -31, 89, -93, -14, 113, 86, 17, 106, -119,
+        -108, 101, -116, -69, 119, 60, 123, 40, -85, -46, 49, -34, -60, 95, -52, -49, 118, 44, -72, -40, 46, 54, -37,
+        105, -77, 20, -107, -66, 98, -95, 59, 22, 102, -23, 92, 108, 109, -83, 55, 97, 75, -71, -29, -70, -15, -96, -123,
+        -125, -38, 71, -59, -80, 51, -6, -106, 111, 110, -62, -10, 80, -1, 93, -87, -114, 23, 27, -105, 125, -20, 88, -9,
+        31, -5, 124, 9, 13, 122, 103, 69, -121, -36, -24, 79, 29, 78, 4, -21, -8, -13, 62, 61, -67, -118, -120, -35, -51,
+        11, 19, -104, 2, -109, -128, -112, -48, 36, 52, -53, -19, -12, -50, -103, 16, 68, 64, -110, 58, 1, 38, 18, 26,
+        72, 104, -11, -127, -117, -57, -42, 32, 10, 8, 0, 76, -41, 116
+    };
+
+
+    private final byte[] lFactors = {
+        -108, 32, -123, 16, -62, -64, 1, -5, 1, -64, -62, 16, -123, 32, -108, 1
     };
 
 
     protected static final int BLOCK_SIZE = 16;
-    private int[] workingKey = null;
+    private int KEY_LENGTH = 32;
+    private int SUB_LENGTH = KEY_LENGTH / 2;
+    private byte[][] subKeys = null;
     private boolean forEncryption;
-    private byte[] S;
+    private byte[][] _gf_mul = init_gf256_mul_table();
 
 
-    public void init(boolean forEncryption, CipherParameters params) throws IllegalArgumentException {
-
-
-        if (params instanceof ParametersWithSBox) {
-            ParametersWithSBox param = (ParametersWithSBox) params;
-
-            //
-            // Set the S-Box
-            //
-            byte[] sBox = param.getSBox();
-            if (sBox.length != PI.length) {
-                throw new IllegalArgumentException("invalid S-box passed to GOST3412_2015 init");
+    private static byte[][] init_gf256_mul_table() {
+        byte[][] mul_table = new byte[256][];
+        for (int x = 0; x < 256; x++) {
+            mul_table[x] = new byte[256];
+            for (int y = 0; y < 256; y++) {
+                mul_table[x][y] = kuz_mul_gf256_slow((byte) x, (byte) y);
             }
-            this.S = Arrays.clone(sBox);
-
-            //
-            // set key if there is one
-            //
-            if (param.getParameters() != null) {
-                workingKey = generateWorkingKey(forEncryption,
-                    ((KeyParameter) param.getParameters()).getKey());
-            }
-        } else if (params instanceof KeyParameter) {
-            workingKey = generateWorkingKey(forEncryption,
-                ((KeyParameter) params).getKey());
-        } else if (params != null) {
-            throw new IllegalArgumentException("invalid parameter passed to GOST3412_2015 init - " + params.getClass().getName());
         }
+        return mul_table;
     }
 
-
-    private int[] generateWorkingKey(
-        boolean forEncryption,
-        byte[] userKey) {
-        this.forEncryption = forEncryption;
-
-        if (userKey.length != 32) {
-            throw new IllegalArgumentException("Key length invalid. Key needs to be 32 byte - 256 bit!!!");
+    private static byte kuz_mul_gf256_slow(byte a, byte b) {
+        byte p = 0;
+        byte counter;
+        byte hi_bit_set;
+        for (counter = 0; counter < 8 && a != 0 && b != 0; counter++) {
+            if ((b & 1) != 0)
+                p ^= a;
+            hi_bit_set = (byte) (a & 0x80);
+            a <<= 1;
+            if (hi_bit_set != 0)
+                a ^= 0xc3; /* x^8 + x^7 + x^6 + x + 1 */
+            b >>= 1;
         }
-
-        int key[] = new int[8];
-        for (int i = 0; i != 8; i++) {
-            key[i] = bytesToint(userKey, i * 4);
-        }
-
-        return key;
-    }
-
-
-    //array of bytes to type int
-    private int bytesToint(
-        byte[] in,
-        int inOff) {
-        return ((in[inOff + 3] << 24) & 0xff000000) + ((in[inOff + 2] << 16) & 0xff0000) +
-            ((in[inOff + 1] << 8) & 0xff00) + (in[inOff] & 0xff);
+        return p;
     }
 
     public String getAlgorithmName() {
@@ -139,54 +89,197 @@ public class GOST3412_2015Engine implements BlockCipher {
         return BLOCK_SIZE;
     }
 
+    public void init(boolean forEncryption, CipherParameters params) throws IllegalArgumentException {
+
+        if (params instanceof KeyParameter) {
+            this.forEncryption = forEncryption;
+            generateSubKeys(((KeyParameter) params).getKey());
+        } else if (params != null) {
+            throw new IllegalArgumentException("invalid parameter passed to GOST3412_2015 init - " + params.getClass().getName());
+        }
+    }
+
+    private void generateSubKeys(
+        byte[] userKey) {
+
+        if (userKey.length != KEY_LENGTH) {
+            throw new IllegalArgumentException("Key length invalid. Key needs to be 64 byte - 512 bit!!!");
+        }
+
+        subKeys = new byte[10][];
+        for (int i = 0; i < 10; i++) {
+            subKeys[i] = new byte[SUB_LENGTH];
+        }
+
+        byte[] x = new byte[SUB_LENGTH];
+        byte[] y = new byte[SUB_LENGTH];
+
+
+        for (int i = 0; i < SUB_LENGTH; i++) {
+            subKeys[0][i] = x[i] = userKey[i];
+            subKeys[1][i] = y[i] = userKey[i + SUB_LENGTH];
+        }
+
+        byte[] c = new byte[SUB_LENGTH];
+
+        for (int k = 1; k < 5; k++) {
+
+            for (int j = 1; j <= 8; j++) {
+                C(c, 8 * (k - 1) + j);
+                F(c, x, y);
+            }
+
+            System.arraycopy(x, 0, subKeys[2 * k], 0, SUB_LENGTH);
+            System.arraycopy(y, 0, subKeys[2 * k + 1], 0, SUB_LENGTH);
+        }
+    }
+
+
+    private void C(byte[] c, int i) {
+
+        Arrays.clear(c);
+        c[15] = (byte) i;
+        L(c);
+    }
+
+
+    private void F(byte[] k, byte[] a1, byte[] a0) {
+
+        byte[] temp = LSX(k, a1);
+        X(temp, a0);
+
+        System.arraycopy(a1, 0, a0, 0, SUB_LENGTH);
+        System.arraycopy(temp, 0, a1, 0, SUB_LENGTH);
+
+    }
+
     public int processBlock(byte[] in, int inOff, byte[] out, int outOff) throws DataLengthException, IllegalStateException {
 
-        if (workingKey == null)
-        {
+        if (subKeys == null) {
             throw new IllegalStateException("GOST3412_2015 engine not initialised");
         }
 
-        if ((inOff + BLOCK_SIZE) > in.length)
-        {
+        if ((inOff + BLOCK_SIZE) > in.length) {
             throw new DataLengthException("input buffer too short");
         }
 
-        if ((outOff + BLOCK_SIZE) > out.length)
-        {
+        if ((outOff + BLOCK_SIZE) > out.length) {
             throw new OutputLengthException("output buffer too short");
         }
 
-        GOST3412_2015Func(workingKey, in, inOff, out, outOff);
+        GOST3412_2015Func(in, inOff, out, outOff);
 
         return BLOCK_SIZE;
     }
 
 
-
     private void GOST3412_2015Func(
-        int[]   workingKey,
-        byte[]  in,
-        int     inOff,
-        byte[]  out,
-        int     outOff)
-    {
+        byte[] in,
+        int inOff,
+        byte[] out,
+        int outOff) {
 
-        // algo impl here!!!
+        byte[] block = new byte[BLOCK_SIZE];
+        System.arraycopy(in, inOff, block, 0, BLOCK_SIZE);
 
+        if (forEncryption) {
+
+            for (int i = 0; i < 9; i++) {
+
+                byte[] temp = LSX(subKeys[i], block);
+                block = Arrays.copyOf(temp, BLOCK_SIZE);
+            }
+
+            X(block, subKeys[9]);
+        } else {
+
+            for (int i = 9; i > 0; i--) {
+
+                byte[] temp = XSL(subKeys[i], block);
+                block = Arrays.copyOf(temp, BLOCK_SIZE);
+            }
+            X(block, subKeys[0]);
+        }
+
+
+        System.arraycopy(block, 0, out, outOff, BLOCK_SIZE);
     }
 
-    //int to array of bytes
-    private void intTobytes(
-        int     num,
-        byte[]  out,
-        int     outOff)
-    {
-        out[outOff + 3] = (byte)(num >>> 24);
-        out[outOff + 2] = (byte)(num >>> 16);
-        out[outOff + 1] = (byte)(num >>> 8);
-        out[outOff] =     (byte)num;
+    private byte[] LSX(byte[] k, byte[] a) {
+
+        byte[] result = Arrays.copyOf(k, k.length);
+        X(result, a);
+        S(result);
+        L(result);
+        return result;
     }
 
+    private byte[] XSL(byte[] k, byte[] a) {
+        byte[] result = Arrays.copyOf(k, k.length);
+        X(result, a);
+        inverseL(result);
+        inverseS(result);
+        return result;
+    }
+
+    private void X(byte[] result, byte[] data) {
+        for (int i = 0; i < result.length; i++) {
+            result[i] ^= data[i];
+        }
+    }
+
+    private void S(byte[] data) {
+        for (int i = 0; i < data.length; i++) {
+            data[i] = PI[unsignedByte(data[i])];
+        }
+    }
+
+    private void inverseS(byte[] data) {
+        for (int i = 0; i < data.length; i++) {
+            data[i] = inversePI[unsignedByte(data[i])];
+        }
+    }
+
+    private int unsignedByte(byte b) {
+        return b & 0xFF;
+    }
+
+    private void L(byte[] data) {
+        for (int i = 0; i < 16; i++) {
+            R(data);
+        }
+    }
+
+    private void inverseL(byte[] data) {
+        for (int i = 0; i < 16; i++) {
+            inverseR(data);
+        }
+    }
+
+
+    private void R(byte[] data) {
+        byte z = l(data);
+        System.arraycopy(data, 0, data, 1, 15);
+        data[0] = z;
+    }
+
+    private void inverseR(byte[] data) {
+        byte[] temp = new byte[16];
+        System.arraycopy(data, 1, temp, 0, 15);
+        temp[15] = data[0];
+        byte z = l(temp);
+        System.arraycopy(data, 1, data, 0, 15);
+        data[15] = z;
+    }
+
+
+    private byte l(byte[] data) {
+        byte x = data[15];
+        for (int i = 14; i >= 0; i--) {
+            x ^= _gf_mul[unsignedByte(data[i])][unsignedByte(lFactors[i])];
+        }
+        return x;
+    }
 
     public void reset() {
 
