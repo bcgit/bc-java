@@ -1,17 +1,18 @@
 package org.bouncycastle.crypto.modes.gcm;
 
-public class BasicGCMMultiplier implements GCMMultiplier
+public class BasicGCMMultiplier
+    implements GCMMultiplier
 {
-    private int[] H;
+    private long[] H;
 
     public void init(byte[] H)
     {
-        this.H = GCMUtil.asInts(H);
+        this.H = GCMUtil.asLongs(H);
     }
 
     public void multiplyH(byte[] x)
     {
-        int[] t = GCMUtil.asInts(x);
+        long[] t = GCMUtil.asLongs(x);
         GCMUtil.multiply(t, H);
         GCMUtil.asBytes(t, x);
     }
