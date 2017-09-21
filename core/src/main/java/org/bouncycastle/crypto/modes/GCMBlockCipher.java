@@ -9,7 +9,7 @@ import org.bouncycastle.crypto.modes.gcm.GCMExponentiator;
 import org.bouncycastle.crypto.modes.gcm.GCMMultiplier;
 import org.bouncycastle.crypto.modes.gcm.GCMUtil;
 import org.bouncycastle.crypto.modes.gcm.Tables1kGCMExponentiator;
-import org.bouncycastle.crypto.modes.gcm.Tables8kGCMMultiplier;
+import org.bouncycastle.crypto.modes.gcm.Tables4kGCMMultiplier;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -68,8 +68,7 @@ public class GCMBlockCipher
 
         if (m == null)
         {
-            // TODO Consider a static property specifying default multiplier
-            m = new Tables8kGCMMultiplier();
+            m = new Tables4kGCMMultiplier();
         }
 
         this.cipher = c;

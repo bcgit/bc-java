@@ -3,16 +3,17 @@ package org.bouncycastle.crypto.modes.gcm;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
-public class Tables8kGCMMultiplier  implements GCMMultiplier
+public class Tables8kGCMMultiplier
+    implements GCMMultiplier
 {
     private byte[] H;
-    private int[][][] M;
+    private long[][][] T;
 
     public void init(byte[] H)
     {
-        if (M == null)
+        if (T == null)
         {
-            M = new int[32][16][4];
+            T = new long[32][16][2];
         }
         else if (Arrays.areEqual(this.H, H))
         {
@@ -21,20 +22,21 @@ public class Tables8kGCMMultiplier  implements GCMMultiplier
 
         this.H = Arrays.clone(H);
 
-        // M[0][0] is ZEROES;
-        // M[1][0] is ZEROES;
-        GCMUtil.asInts(H, M[1][8]);
+        // T[0][0] is 0
+        // T[1][0] is 0
+
+        GCMUtil.asLongs(H, T[1][8]);
 
         for (int j = 4; j >= 1; j >>= 1)
         {
-            GCMUtil.multiplyP(M[1][j + j], M[1][j]);
+            GCMUtil.multiplyP(T[1][j + j], T[1][j]);
         }
 
-        GCMUtil.multiplyP(M[1][1], M[0][8]);
+        GCMUtil.multiplyP(T[1][1], T[0][8]);
 
         for (int j = 4; j >= 1; j >>= 1)
         {
-            GCMUtil.multiplyP(M[0][j + j], M[0][j]);
+            GCMUtil.multiplyP(T[0][j + j], T[0][j]);
         }
 
         int i = 0;
@@ -44,7 +46,7 @@ public class Tables8kGCMMultiplier  implements GCMMultiplier
             {
                 for (int k = 1; k < j; ++k)
                 {
-                    GCMUtil.xor(M[i][j], M[i][k], M[i][j + k]);
+                    GCMUtil.xor(T[i][j], T[i][k], T[i][j + k]);
                 }
             }
 
@@ -55,10 +57,10 @@ public class Tables8kGCMMultiplier  implements GCMMultiplier
 
             if (i > 1)
             {
-                // M[i][0] is ZEROES;
+                // T[i][0] is 0;
                 for(int j = 8; j > 0; j >>= 1)
                 {
-                    GCMUtil.multiplyP8(M[i - 2][j], M[i][j]);
+                    GCMUtil.multiplyP8(T[i - 2][j], T[i][j]);
                 }
             }
         }
@@ -66,25 +68,26 @@ public class Tables8kGCMMultiplier  implements GCMMultiplier
 
     public void multiplyH(byte[] x)
     {
-//      assert x.Length == 16;
+//        long[] z = new long[2];
+//        for (int i = 15; i >= 0; --i)
+//        {
+//            GCMUtil.xor(z, T[i + i][x[i] & 0x0F]);
+//            GCMUtil.xor(z, T[i + i + 1][(x[i] & 0xF0) >>> 4]);
+//        }
+//        Pack.longToBigEndian(z, x, 0);
 
-        int[] z = new int[4];
+        long z0 = 0, z1 = 0;
+
         for (int i = 15; i >= 0; --i)
         {
-//            GCMUtil.xor(z, M[i + i][x[i] & 0x0f]);
-            int[] m = M[i + i][x[i] & 0x0f];
-            z[0] ^= m[0];
-            z[1] ^= m[1];
-            z[2] ^= m[2];
-            z[3] ^= m[3];
-//            GCMUtil.xor(z, M[i + i + 1][(x[i] & 0xf0) >>> 4]);
-            m = M[i + i + 1][(x[i] & 0xf0) >>> 4];
-            z[0] ^= m[0];
-            z[1] ^= m[1];
-            z[2] ^= m[2];
-            z[3] ^= m[3];
+            long[] u = T[i + i][x[i] & 0x0F];
+            long[] v = T[i + i + 1][(x[i] & 0xF0) >>> 4];
+
+            z0 ^= u[0] ^ v[0];
+            z1 ^= u[1] ^ v[1];
         }
 
-        Pack.intToBigEndian(z, x, 0);
-    }
+        Pack.longToBigEndian(z0, x, 0);
+        Pack.longToBigEndian(z1, x, 8);
+   }
 }

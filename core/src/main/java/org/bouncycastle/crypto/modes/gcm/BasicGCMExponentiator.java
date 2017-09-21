@@ -2,23 +2,24 @@ package org.bouncycastle.crypto.modes.gcm;
 
 import org.bouncycastle.util.Arrays;
 
-public class BasicGCMExponentiator implements GCMExponentiator
+public class BasicGCMExponentiator
+    implements GCMExponentiator
 {
-    private int[] x;
+    private long[] x;
 
     public void init(byte[] x)
     {
-        this.x = GCMUtil.asInts(x);
+        this.x = GCMUtil.asLongs(x);
     }
 
     public void exponentiateX(long pow, byte[] output)
     {
         // Initial value is little-endian 1
-        int[] y = GCMUtil.oneAsInts();
+        long[] y = GCMUtil.oneAsLongs();
 
         if (pow > 0)
         {
-            int[] powX = Arrays.clone(x);
+            long[] powX = Arrays.clone(x);
             do
             {
                 if ((pow & 1L) != 0)
