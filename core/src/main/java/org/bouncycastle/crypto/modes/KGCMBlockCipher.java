@@ -8,6 +8,10 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.modes.kgcm.KGCMMultiplier;
+import org.bouncycastle.crypto.modes.kgcm.Tables16kKGCMMultiplier_512;
+import org.bouncycastle.crypto.modes.kgcm.Tables4kKGCMMultiplier_128;
+import org.bouncycastle.crypto.modes.kgcm.Tables8kKGCMMultiplier_256;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -22,6 +26,17 @@ public class KGCMBlockCipher
 {
     private static final int MIN_MAC_BITS = 64;
 
+    private static KGCMMultiplier createDefaultMultiplier(int blockSize)
+    {
+        switch (blockSize)
+        {
+        case 16:    return new Tables4kKGCMMultiplier_128();
+        case 32:    return new Tables8kKGCMMultiplier_256();
+        case 64:    return new Tables16kKGCMMultiplier_512();
+        default:    throw new IllegalArgumentException("Only 128, 256, and 512 -bit block sizes supported");
+        }
+    }
+
     private BlockCipher engine;
     private BufferedBlockCipher ctrEngine;
 
@@ -32,7 +47,7 @@ public class KGCMBlockCipher
     private byte[] macBlock;
     private byte[] iv;
 
-    private long[] H;
+    private KGCMMultiplier multiplier;
     private long[] b;
 
     private final int blockSize;
@@ -49,7 +64,7 @@ public class KGCMBlockCipher
 
         this.initialAssociatedText = new byte[blockSize];
         this.iv = new byte[blockSize];
-        this.H = new long[blockSize >>> 3];
+        this.multiplier = createDefaultMultiplier(blockSize);
         this.b = new long[blockSize >>> 3];
 
         this.macBlock = null;
@@ -106,6 +121,22 @@ public class KGCMBlockCipher
             throw new IllegalArgumentException("Invalid parameter passed");
         }
 
+        // TODO Nonce re-use check (sample code from GCMBlockCipher)
+//        if (forEncryption)
+//        {
+//            if (nonce != null && Arrays.areEqual(nonce, newNonce))
+//            {
+//                if (keyParam == null)
+//                {
+//                    throw new IllegalArgumentException("cannot reuse nonce for GCM encryption");
+//                }
+//                if (lastKey != null && Arrays.areEqual(lastKey, keyParam.getKey()))
+//                {
+//                    throw new IllegalArgumentException("cannot reuse nonce for GCM encryption");
+//                }
+//            }
+//        }
+
         this.macBlock = new byte[blockSize];
         ctrEngine.init(true, new ParametersWithIV(engineParam, this.iv));
         engine.init(true, engineParam);
@@ -133,16 +164,11 @@ public class KGCMBlockCipher
 
     private void processAAD(byte[] authText, int authOff, int len)
     {
-        byte[] temp = new byte[blockSize];
-        engine.processBlock(temp, 0, temp, 0);
-        Pack.littleEndianToLong(temp, 0, H);
-        Arrays.fill(temp, (byte)0);
-
         int pos = authOff, end = authOff + len;
         while (pos < end)
         {
             xorWithInput(b, authText, pos);
-            multiplyH(b);
+            multiplier.multiplyH(b);
             pos += blockSize;
         }
     }
@@ -175,6 +201,19 @@ public class KGCMBlockCipher
         if (!forEncryption && len < macSize)
         {
             throw new InvalidCipherTextException("data too short");
+        }
+
+        // TODO Total blocks restriction in GCM mode (extend limit naturally for larger block sizes?)
+
+        // Set up the multiplier
+        {
+            byte[] temp = new byte[blockSize];
+            engine.processBlock(temp, 0, temp, 0);
+            long[] H = new long[blockSize >>> 3];
+            Pack.littleEndianToLong(temp, 0, H);
+            multiplier.init(H);
+            Arrays.fill(temp, (byte)0);
+            Arrays.fill(H, 0L);
         }
 
         int lenAAD = associatedText.size();
@@ -271,7 +310,6 @@ public class KGCMBlockCipher
 
     public void reset()
     {
-        Arrays.fill(H, 0L);
         Arrays.fill(b, 0L);
 
         engine.reset();
@@ -291,7 +329,7 @@ public class KGCMBlockCipher
         while (pos < end)
         {
             xorWithInput(b, input, pos);
-            multiplyH(b);
+            multiplier.multiplyH(b);
             pos += blockSize;
         }
 
@@ -308,112 +346,6 @@ public class KGCMBlockCipher
 
         macBlock = Pack.longToLittleEndian(b);
         engine.processBlock(macBlock, 0, macBlock, 0);
-    }
-
-    /*
-     * Multiplication over GF(2^m) field with corresponding extension polynomials
-     *
-     * GF (2 ^ 128) -> x^128 + x^7 + x^2 + x
-     * GF (2 ^ 256) -> x^256 + x^10 + x^5 + x^2 + 1
-     * GF (2 ^ 512) -> x^512 + x^8 + x^5 + x^2 + 1
-     */
-    private void multiplyH(long[] z)
-    {
-        switch (blockSize)
-        {
-        case 16:
-        {
-            long z0 = z[0], z1 = z[1];
-            long r0 = 0, r1 = 0;
-
-            for (int i = 0; i < 2; ++i)
-            {
-                long bits = H[i];
-                for (int j = 0; j < 64; ++j)
-                {
-                    long m1 = -(bits & 1L); bits >>= 1;
-                    r0 ^= (z0 & m1);
-                    r1 ^= (z1 & m1);
-
-                    long m2 = z1 >> 63;
-                    z1 = (z1 << 1) | (z0 >>> 63);
-                    z0 = (z0 << 1) ^ (m2 & 0x87L);
-                }
-            }
-
-            z[0] = r0; z[1] = r1;
-            break;
-        }
-        case 32:
-        {
-            long z0 = z[0], z1 = z[1], z2= z[2], z3 = z[3];
-            long r0 = 0, r1 = 0, r2 = 0, r3 = 0;
-
-            for (int i = 0; i < 4; ++i)
-            {
-                long bits = H[i];
-                for (int j = 0; j < 64; ++j)
-                {
-                    long m1 = -(bits & 1L); bits >>= 1;
-                    r0 ^= (z0 & m1);
-                    r1 ^= (z1 & m1);
-                    r2 ^= (z2 & m1);
-                    r3 ^= (z3 & m1);
-
-                    long m2 = z3 >> 63;
-                    z3 = (z3 << 1) | (z2 >>> 63);
-                    z2 = (z2 << 1) | (z1 >>> 63);
-                    z1 = (z1 << 1) | (z0 >>> 63);
-                    z0 = (z0 << 1) ^ (m2 & 0x425L);
-                }
-            }
-
-            z[0] = r0; z[1] = r1; z[2] = r2; z[3] = r3;
-            break;
-        }
-        case 64:
-        {
-            long z0 = z[0], z1 = z[1], z2= z[2], z3 = z[3];
-            long z4 = z[4], z5 = z[5], z6= z[6], z7 = z[7];
-            long r0 = 0, r1 = 0, r2 = 0, r3 = 0;
-            long r4 = 0, r5 = 0, r6 = 0, r7 = 0;
-
-            for (int i = 0; i < 8; ++i)
-            {
-                long bits = H[i];
-                for (int j = 0; j < 64; ++j)
-                {
-                    long m1 = -(bits & 1L); bits >>= 1;
-                    r0 ^= (z0 & m1);
-                    r1 ^= (z1 & m1);
-                    r2 ^= (z2 & m1);
-                    r3 ^= (z3 & m1);
-                    r4 ^= (z4 & m1);
-                    r5 ^= (z5 & m1);
-                    r6 ^= (z6 & m1);
-                    r7 ^= (z7 & m1);
-
-                    long m2 = z7 >> 63;
-                    z7 = (z7 << 1) | (z6 >>> 63);
-                    z6 = (z6 << 1) | (z5 >>> 63);
-                    z5 = (z5 << 1) | (z4 >>> 63);
-                    z4 = (z4 << 1) | (z3 >>> 63);
-                    z3 = (z3 << 1) | (z2 >>> 63);
-                    z2 = (z2 << 1) | (z1 >>> 63);
-                    z1 = (z1 << 1) | (z0 >>> 63);
-                    z0 = (z0 << 1) ^ (m2 & 0x125L);// 293L);
-                }
-            }
-
-            z[0] = r0; z[1] = r1; z[2] = r2; z[3] = r3;
-            z[4] = r4; z[5] = r5; z[6] = r6; z[7] = r7;
-            break;
-        }
-        default:
-        {
-            throw new IllegalStateException("Only 128, 256, and 512 -bit block sizes supported");
-        }
-        }
     }
 
     private static void xorWithInput(long[] z, byte[] buf, int off)
