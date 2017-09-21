@@ -572,23 +572,18 @@ public class DSTU7624Engine
         for (int col = 0; col < wordsInBlock; ++col)
         {
             long colVal = internalState[col];
-            long colEven = colVal & 0x00FF00FF00FF00FFL; 
-            long colOdd = (colVal >>> 8) & 0x00FF00FF00FF00FFL; 
-
-//            long rowMatrix = (matrix >>> 8) | (matrix << 56);
             long rowMatrix = matrix;
 
             long result = 0;
             for (int row = 7; row >= 0; --row)
             {
-                long product = multiplyGFx4(colEven, rowMatrix & 0x00FF00FF00FF00FFL);
-
                 rowMatrix = (rowMatrix >>> 8) | (rowMatrix << 56);
 
-                product ^= multiplyGFx4(colOdd, rowMatrix & 0x00FF00FF00FF00FFL);
+                long product = multiplyGFx8(colVal, rowMatrix);
 
                 product ^= (product >>> 32);
                 product ^= (product >>> 16);
+                product ^= (product >>> 8);
 
                 result <<= 8;
                 result |= (product & 0xFFL);
@@ -598,24 +593,23 @@ public class DSTU7624Engine
         }
     }
 
-    /* Pair-wise modular multiplication of 4 byte-pairs (at even byte-offset positions within u, v) */  
-    private static long multiplyGFx4(long u, long v)
+    /*
+     * Pair-wise modular multiplication of 8 byte-pairs.
+     * 
+     * REDUCTION_POLYNOMIAL is x^8 + x^4 + x^3 + x^2 + 1
+     */  
+    private static long multiplyGFx8(long u, long v)
     {
-        long r = u & ((v & 0x0001000100010001L) * 0xFFFFL);
+        long r = u & ((v & 0x0101010101010101L) * 0xFFL);
 
         for (int i = 1; i < 8; ++i)
         {
-            u <<= 1;
+            u = ((u & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((u >>> 7) & 0x0101010101010101L) * 0x1DL);
             v >>>= 1;
-            r ^= u & ((v & 0x0001000100010001L) * 0xFFFFL);
+
+            r ^= u & ((v & 0x0101010101010101L) * 0xFFL);
         }
 
-        // REDUCTION_POLYNOMIAL = 0x011d; /* x^8 + x^4 + x^3 + x^2 + 1 */
-
-        long hi = r & 0xFF00FF00FF00FF00L;
-        r ^= hi ^ (hi >>> 4) ^ (hi >>> 5) ^ (hi >>> 6) ^ (hi >>> 8);
-        hi = r & 0x0F000F000F000F00L;
-        r ^= hi ^ (hi >>> 4) ^ (hi >>> 5) ^ (hi >>> 6) ^ (hi >>> 8);
         return r;
     }
 
@@ -650,10 +644,8 @@ public class DSTU7624Engine
         Pack.littleEndianToLong(bytes, 0, value);
     }
 
-//    private static final long mdsMatrix = 0x0407060801050101L;
-//    private static final long mdsInvMatrix = 0xCAD7492FA87695ADL;
-    private static final long mdsMatrix = 0x0104070608010501L;
-    private static final long mdsInvMatrix = 0xADCAD7492FA87695L;
+    private static final long mdsMatrix = 0x0407060801050101L;
+    private static final long mdsInvMatrix = 0xCAD7492FA87695ADL;
 
     private byte[][] sboxesForEncryption = {
         new byte[]{ (byte)0xa8, (byte)0x43, (byte)0x5f, (byte)0x06, (byte)0x6b, (byte)0x75, (byte)0x6c, (byte)0x59,
