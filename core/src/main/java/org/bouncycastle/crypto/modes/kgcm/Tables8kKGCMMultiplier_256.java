@@ -21,13 +21,13 @@ public class Tables8kKGCMMultiplier_256
         // T[1] = H
         KGCMUtil_256.copy(H, T[1]);
 
-        for (int e = 2; e < 256; e += 2)
+        for (int n = 2; n < 256; n += 2)
         {
-            // T[2.n] = 2.T[n]
-            KGCMUtil_256.double1x(T[e >> 1], T[e]);
+            // T[2.n] = x.T[n]
+            KGCMUtil_256.multiplyX(T[n >> 1], T[n]);
 
             // T[2.n + 1] = T[2.n] + T[1]
-            KGCMUtil_256.add(T[e], T[1], T[e + 1]);
+            KGCMUtil_256.add(T[n], T[1], T[n + 1]);
         }
     }
 
@@ -37,7 +37,7 @@ public class Tables8kKGCMMultiplier_256
         KGCMUtil_256.copy(T[(int)(z[KGCMUtil_256.SIZE - 1] >>> 56) & 0xFF], r);
         for (int i = (KGCMUtil_256.SIZE << 3) - 2; i >= 0; --i)
         {
-            KGCMUtil_256.double8x(r, r);
+            KGCMUtil_256.multiplyX8(r, r);
             KGCMUtil_256.add(T[(int)(z[i >>> 3] >>> ((i & 7) << 3)) & 0xFF], r, r);
         }
         KGCMUtil_256.copy(r, z);
