@@ -27,26 +27,6 @@ public class KGCMUtil_256
         z[3] = x[3];
     }
 
-    public static void double1x(long[] x, long[] z)
-    {
-        long x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3];
-        long m = x3 >> 63;
-        z[0] = (x0 << 1) ^ (m & 0x425L);
-        z[1] = (x1 << 1) | (x0 >>> 63);
-        z[2] = (x2 << 1) | (x1 >>> 63);
-        z[3] = (x3 << 1) | (x2 >>> 63);
-    }
-
-    public static void double8x(long[] x, long[] z)
-    {
-        long x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3];
-        long c = x3 >>> 56;
-        z[0] = (x0 << 8) ^ c ^ (c << 2) ^ (c << 5) ^ (c << 10);
-        z[1] = (x1 << 8) | (x0 >>> 56);
-        z[2] = (x2 << 8) | (x1 >>> 56);
-        z[3] = (x3 << 8) | (x2 >>> 56);
-    }
-
     public static boolean equal(long[] x, long[] y)
     {
         long d = 0L;
@@ -82,6 +62,26 @@ public class KGCMUtil_256
         }
 
         z[0] = z0; z[1] = z1; z[2] = z2; z[3] = z3;
+    }
+
+    public static void multiplyX(long[] x, long[] z)
+    {
+        long x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3];
+        long m = x3 >> 63;
+        z[0] = (x0 << 1) ^ (m & 0x425L);
+        z[1] = (x1 << 1) | (x0 >>> 63);
+        z[2] = (x2 << 1) | (x1 >>> 63);
+        z[3] = (x3 << 1) | (x2 >>> 63);
+    }
+
+    public static void multiplyX8(long[] x, long[] z)
+    {
+        long x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3];
+        long c = x3 >>> 56;
+        z[0] = (x0 << 8) ^ c ^ (c << 2) ^ (c << 5) ^ (c << 10);
+        z[1] = (x1 << 8) | (x0 >>> 56);
+        z[2] = (x2 << 8) | (x1 >>> 56);
+        z[3] = (x3 << 8) | (x2 >>> 56);
     }
 
     public static void one(long[] z)
