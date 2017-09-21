@@ -60,87 +60,66 @@ public class DSTU7624Engine
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-        if (params instanceof KeyParameter)
-        {
-            this.forEncryption = forEncryption;
-
-            byte[] keyBytes = ((KeyParameter)params).getKey();
-            int keyBitLength = keyBytes.length * BITS_IN_BYTE;
-            int blockBitLength = wordsInBlock * BITS_IN_WORD;
-
-            if (keyBitLength != 128 && keyBitLength != 256 && keyBitLength != 512)
-            {
-                throw new IllegalArgumentException("unsupported key length: only 128/256/512 are allowed");
-            }
-
-            /* Limitations on key lengths depending on block lengths. See table 6.1 in standard */
-            if (blockBitLength == 128)
-            {
-                if (keyBitLength == 512)
-                {
-                    throw new IllegalArgumentException("Unsupported key length");
-                }
-            }
-
-            if (blockBitLength == 256)
-            {
-                if (keyBitLength == 128)
-                {
-                    throw new IllegalArgumentException("Unsupported key length");
-                }
-            }
-
-            if (blockBitLength == 512)
-            {
-                if (keyBitLength != 512)
-                {
-                    throw new IllegalArgumentException("Unsupported key length");
-                }
-            }
-
-            switch (keyBitLength)
-            {
-            case 128:
-                roundsAmount = ROUNDS_128;
-                break;
-            case 256:
-                roundsAmount = ROUNDS_256;
-                break;
-            case 512:
-                roundsAmount = ROUNDS_512;
-                break;
-            }
-
-            wordsInKey = keyBitLength / BITS_IN_WORD;
-
-            /* +1 round key as defined in standard */
-            roundKeys = new long[roundsAmount + 1][];
-            for (int roundKeyIndex = 0; roundKeyIndex < roundKeys.length; roundKeyIndex++)
-            {
-                roundKeys[roundKeyIndex] = new long[wordsInBlock];
-            }
-
-            workingKey = new long[wordsInKey];
-
-            if (keyBytes.length != wordsInKey * BITS_IN_WORD / BITS_IN_BYTE)
-            {
-                throw new IllegalArgumentException("Invalid key parameter passed to DSTU7624Engine init");
-            }
-
-            /* Unpack encryption key bytes to words */
-            Pack.littleEndianToLong(keyBytes, 0, workingKey);
-
-            long[] tempKeys = new long[wordsInBlock];
-
-            /* KSA in DSTU7624 is strengthened to mitigate known weaknesses in AES KSA (eprint.iacr.org/2012/260.pdf) */
-            workingKeyExpandKT(workingKey, tempKeys);
-            workingKeyExpandEven(workingKey, tempKeys);
-            workingKeyExpandOdd();
-        }
-        else
+        if (!(params instanceof KeyParameter))
         {
             throw new IllegalArgumentException("Invalid parameter passed to DSTU7624Engine init");
         }
+
+        this.forEncryption = forEncryption;
+
+        byte[] keyBytes = ((KeyParameter)params).getKey();
+        int keyBitLength = keyBytes.length * BITS_IN_BYTE;
+        int blockBitLength = wordsInBlock * BITS_IN_WORD;
+
+        if (keyBitLength != 128 && keyBitLength != 256 && keyBitLength != 512)
+        {
+            throw new IllegalArgumentException("unsupported key length: only 128/256/512 are allowed");
+        }
+
+        /* Limitations on key lengths depending on block lengths. See table 6.1 in standard */
+        if (keyBitLength != blockBitLength && keyBitLength != (2 * blockBitLength))
+        {
+            throw new IllegalArgumentException("Unsupported key length");
+        }
+
+        switch (keyBitLength)
+        {
+        case 128:
+            roundsAmount = ROUNDS_128;
+            break;
+        case 256:
+            roundsAmount = ROUNDS_256;
+            break;
+        case 512:
+            roundsAmount = ROUNDS_512;
+            break;
+        }
+
+        wordsInKey = keyBitLength / BITS_IN_WORD;
+
+        /* +1 round key as defined in standard */
+        roundKeys = new long[roundsAmount + 1][];
+        for (int roundKeyIndex = 0; roundKeyIndex < roundKeys.length; roundKeyIndex++)
+        {
+            roundKeys[roundKeyIndex] = new long[wordsInBlock];
+        }
+
+        workingKey = new long[wordsInKey];
+
+        if (keyBytes.length != (keyBitLength >>> 3))
+        {
+            throw new IllegalArgumentException("Invalid key parameter passed to DSTU7624Engine init");
+        }
+
+        /* Unpack encryption key bytes to words */
+        Pack.littleEndianToLong(keyBytes, 0, workingKey);
+
+        long[] tempKeys = new long[wordsInBlock];
+
+        /* KSA in DSTU7624 is strengthened to mitigate known weaknesses in AES KSA (eprint.iacr.org/2012/260.pdf) */
+        workingKeyExpandKT(workingKey, tempKeys);
+        workingKeyExpandEven(workingKey, tempKeys);
+        workingKeyExpandOdd();
     }
 
     public String getAlgorithmName()
@@ -176,65 +155,47 @@ public class DSTU7624Engine
 
         if (forEncryption)
         {
-            int round = 0;
-
             /* Encrypt */
-            for (int wordIndex = 0; wordIndex < wordsInBlock; wordIndex++)
-            {
-                internalState[wordIndex] += roundKeys[round][wordIndex];
-            }
 
-            for (round = 1; round < roundsAmount; round++)
+            addRoundKey(0);
+
+            for (int round = 0;;)
             {
                 subBytes();
                 shiftRows();
                 mixColumns();
 
-                for (int wordIndex = 0; wordIndex < wordsInBlock; wordIndex++)
+                if (++round == roundsAmount)
                 {
-                    internalState[wordIndex] ^= roundKeys[round][wordIndex];
+                    break;
                 }
+
+                xorRoundKey(round);
             }
 
-            subBytes();
-            shiftRows();
-            mixColumns();
-
-            for (int wordIndex = 0; wordIndex < wordsInBlock; wordIndex++)
-            {
-                internalState[wordIndex] += roundKeys[roundsAmount][wordIndex];
-            }
+            addRoundKey(roundsAmount);
         }
         else
         {
-            int round = roundsAmount;
-
             /* Decrypt */
-            for (int wordIndex = 0; wordIndex < wordsInBlock; wordIndex++)
-            {
-                internalState[wordIndex] -= roundKeys[round][wordIndex];
-            }
 
-            for (round = roundsAmount - 1; round > 0; round--)
+            subRoundKey(roundsAmount);
+
+            for (int round = roundsAmount;;)
             {
                 invMixColumns();
                 invShiftRows();
                 invSubBytes();
 
-                for (int wordIndex = 0; wordIndex < wordsInBlock; wordIndex++)
+                if (--round == 0)
                 {
-                    internalState[wordIndex] ^= roundKeys[round][wordIndex];
+                    break;
                 }
+
+                xorRoundKey(round);
             }
 
-            invMixColumns();
-            invShiftRows();
-            invSubBytes();
-
-            for (int wordIndex = 0; wordIndex < wordsInBlock; wordIndex++)
-            {
-                internalState[wordIndex] -= roundKeys[0][wordIndex];
-            }
+            subRoundKey(0);
         }
 
         /* Pack */
@@ -246,6 +207,33 @@ public class DSTU7624Engine
     public void reset()
     {
         Arrays.fill(internalState, 0);
+    }
+
+    private void addRoundKey(int round)
+    {
+        long[] roundKey = roundKeys[round];
+        for (int i = 0; i < wordsInBlock; ++i)
+        {
+            internalState[i] += roundKey[i];
+        }
+    }
+
+    private void subRoundKey(int round)
+    {
+        long[] roundKey = roundKeys[round];
+        for (int i = 0; i < wordsInBlock; ++i)
+        {
+            internalState[i] -= roundKey[i];
+        }
+    }
+
+    private void xorRoundKey(int round)
+    {
+        long[] roundKey = roundKeys[round];
+        for (int i = 0; i < wordsInBlock; ++i)
+        {
+            internalState[i] ^= roundKey[i];
+        }
     }
 
     private void workingKeyExpandKT(long[] workingKey, long[] tempKeys)
@@ -302,32 +290,23 @@ public class DSTU7624Engine
     {
         long[] initialData = new long[wordsInKey];
         long[] tempRoundKey = new long[wordsInBlock];
-        long[] tmv = new long[wordsInBlock];
 
         int round = 0;
 
         System.arraycopy(workingKey, 0, initialData, 0, wordsInKey);
 
-        for (int wordIndex = 0; wordIndex < wordsInBlock; wordIndex++)
-        {
-            tmv[wordIndex] = 0x0001000100010001L;
-        }
+        long tmv = 0x0001000100010001L;
 
         while (true)
         {
-            System.arraycopy(tempKey, 0, internalState, 0, wordsInBlock);
-
             for (int wordIndex = 0; wordIndex < wordsInBlock; wordIndex++)
             {
-                internalState[wordIndex] += tmv[wordIndex];
+                tempRoundKey[wordIndex] = tempKey[wordIndex] + tmv;
             }
 
-            System.arraycopy(internalState, 0, tempRoundKey, 0, wordsInBlock);
-            System.arraycopy(initialData, 0, internalState, 0, wordsInBlock);
-
             for (int wordIndex = 0; wordIndex < wordsInBlock; wordIndex++)
             {
-                internalState[wordIndex] += tempRoundKey[wordIndex];
+                internalState[wordIndex] = initialData[wordIndex] + tempRoundKey[wordIndex];
             }
 
             subBytes();
@@ -354,23 +333,20 @@ public class DSTU7624Engine
             {
                 break;
             }
+
             if (wordsInBlock != wordsInKey)
             {
                 round += 2;
-                shiftLeft(tmv);
-                System.arraycopy(tempKey, 0, internalState, 0, wordsInBlock);
+                tmv <<= 1;
 
                 for (int wordIndex = 0; wordIndex < wordsInBlock; wordIndex++)
                 {
-                    internalState[wordIndex] += tmv[wordIndex];
+                    tempRoundKey[wordIndex] = tempKey[wordIndex] + tmv;
                 }
 
-                System.arraycopy(internalState, 0, tempRoundKey, 0, wordsInBlock);
-                System.arraycopy(initialData, wordsInBlock, internalState, 0, wordsInBlock);
-
                 for (int wordIndex = 0; wordIndex < wordsInBlock; wordIndex++)
                 {
-                    internalState[wordIndex] += tempRoundKey[wordIndex];
+                    internalState[wordIndex] = initialData[wordsInBlock + wordIndex] + tempRoundKey[wordIndex];
                 }
 
                 subBytes();
@@ -400,12 +376,14 @@ public class DSTU7624Engine
             }
 
             round += 2;
-            shiftLeft(tmv);
+            tmv <<= 1;
 
             long temp = initialData[0];
-            System.arraycopy(initialData, 1, initialData, 0, initialData.length - 1);
+            for (int i = 1; i < initialData.length; ++i)
+            {
+                initialData[i - 1] = initialData[i];
+            }
             initialData[initialData.length - 1] = temp;
-
         }
     }
 
@@ -413,11 +391,9 @@ public class DSTU7624Engine
     {
         for (int roundIndex = 1; roundIndex < roundsAmount; roundIndex += 2)
         {
-            System.arraycopy(roundKeys[roundIndex - 1], 0, roundKeys[roundIndex], 0, wordsInBlock);
-            rotateLeft(roundKeys[roundIndex]);
+            rotateLeft(roundKeys[roundIndex - 1], roundKeys[roundIndex]);
         }
     }
-
 
     private void subBytes()
     {
@@ -567,56 +543,64 @@ public class DSTU7624Engine
         }
     }
 
+    private long mixColumn(long colVal)
+    {
+        long rowMatrix = mdsMatrix;
+
+        long result = 0;
+        for (int row = 7; row >= 0; --row)
+        {
+            rowMatrix = (rowMatrix >>> 8) | (rowMatrix << 56);
+
+            // mdsMatrix elements have maximum degree of 3
+            long product = multiplyGFx8(colVal, rowMatrix, 3);
+
+            product ^= (product >>> 32);
+            product ^= (product >>> 16);
+            product ^= (product >>> 8);
+
+            result <<= 8;
+            result |= (product & 0xFFL);
+        }
+
+        return result;
+    }
+
     private void mixColumns()
     {
         for (int col = 0; col < wordsInBlock; ++col)
         {
-            long colVal = internalState[col];
-            long rowMatrix = mdsMatrix;
-
-            long result = 0;
-            for (int row = 7; row >= 0; --row)
-            {
-                rowMatrix = (rowMatrix >>> 8) | (rowMatrix << 56);
-
-                // mdsMatrix elements have maximum degree of 3
-                long product = multiplyGFx8(colVal, rowMatrix, 3);
-
-                product ^= (product >>> 32);
-                product ^= (product >>> 16);
-                product ^= (product >>> 8);
-
-                result <<= 8;
-                result |= (product & 0xFFL);
-            }
-
-            internalState[col] = result;
+            internalState[col] = mixColumn(internalState[col]);
         }
+    }
+
+    private long invMixColumn(long colVal)
+    {
+        long rowMatrix = mdsInvMatrix;
+
+        long result = 0;
+        for (int row = 7; row >= 0; --row)
+        {
+            rowMatrix = (rowMatrix >>> 8) | (rowMatrix << 56);
+
+            long product = multiplyGFx8(colVal, rowMatrix, 7);
+
+            product ^= (product >>> 32);
+            product ^= (product >>> 16);
+            product ^= (product >>> 8);
+
+            result <<= 8;
+            result |= (product & 0xFFL);
+        }
+
+        return result;
     }
 
     private void invMixColumns()
     {
         for (int col = 0; col < wordsInBlock; ++col)
         {
-            long colVal = internalState[col];
-            long rowMatrix = mdsInvMatrix;
-
-            long result = 0;
-            for (int row = 7; row >= 0; --row)
-            {
-                rowMatrix = (rowMatrix >>> 8) | (rowMatrix << 56);
-
-                long product = multiplyGFx8(colVal, rowMatrix, 7);
-
-                product ^= (product >>> 32);
-                product ^= (product >>> 16);
-                product ^= (product >>> 8);
-
-                result <<= 8;
-                result |= (product & 0xFFL);
-            }
-
-            internalState[col] = result;
+            internalState[col] = invMixColumn(internalState[col]);
         }
     }
 
@@ -640,35 +624,45 @@ public class DSTU7624Engine
         return r;
     }
 
-    private void shiftLeft(long[] value)
+    private void rotateLeft(long[] x, long[] z)
     {
-        for (int i = 0; i < value.length; i++)
+        switch (wordsInBlock)
         {
-            value[i] <<= 1;
-        }
-        //reversing state
-        for (int i = 0; i < value.length / 2; i++)
+        case 2:
         {
-            long temp = value[i];
-            value[i] = value[value.length - i - 1];
-            value[value.length - i - 1] = temp;
+            long x0 = x[0], x1 = x[1];
+            z[0] = (x0 >>> 56) | (x1 << 8);
+            z[1] = (x1 >>> 56) | (x0 << 8);
+            break;
         }
-    }
-
-    private void rotateLeft(long[] value)
-    {
-        int rotateBytesLength = 2 * value.length + 3;
-        int bytesLength = value.length * (BITS_IN_WORD / BITS_IN_BYTE);
-
-        byte[] bytes = new byte[value.length * BITS_IN_LONG / BITS_IN_BYTE];
-        Pack.longToLittleEndian(value, bytes, 0);
-
-        byte[] buffer = new byte[rotateBytesLength];
-        System.arraycopy(bytes, 0, buffer, 0, rotateBytesLength);
-        System.arraycopy(bytes, rotateBytesLength, bytes, 0, bytesLength - rotateBytesLength);
-        System.arraycopy(buffer, 0, bytes, bytesLength - rotateBytesLength, rotateBytesLength);
-
-        Pack.littleEndianToLong(bytes, 0, value);
+        case 4:
+        {
+            long x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3];
+            z[0] = (x1 >>> 24) | (x2 << 40);
+            z[1] = (x2 >>> 24) | (x3 << 40);
+            z[2] = (x3 >>> 24) | (x0 << 40);
+            z[3] = (x0 >>> 24) | (x1 << 40);
+            break;
+        }
+        case 8:
+        {
+            long x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3];
+            long x4 = x[4], x5 = x[5], x6 = x[6], x7 = x[7];
+            z[0] = (x2 >>> 24) | (x3 << 40);
+            z[1] = (x3 >>> 24) | (x4 << 40);
+            z[2] = (x4 >>> 24) | (x5 << 40);
+            z[3] = (x5 >>> 24) | (x6 << 40);
+            z[4] = (x6 >>> 24) | (x7 << 40);
+            z[5] = (x7 >>> 24) | (x0 << 40);
+            z[6] = (x0 >>> 24) | (x1 << 40);
+            z[7] = (x1 >>> 24) | (x2 << 40);
+            break;
+        }
+        default:
+        {
+            throw new IllegalStateException("unsupported block length: only 128/256/512 are allowed");
+        }
+        }
     }
 
     private static final long mdsMatrix = 0x0407060801050101L;
