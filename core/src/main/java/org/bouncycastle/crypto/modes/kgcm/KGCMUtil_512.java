@@ -35,36 +35,6 @@ public class KGCMUtil_512
         z[7] = x[7];
     }
 
-    public static void double1x(long[] x, long[] z)
-    {
-        long x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3];
-        long x4 = x[4], x5 = x[5], x6 = x[6], x7 = x[7];
-        long m = x7 >> 63;
-        z[0] = (x0 << 1) ^ (m & 0x125L);
-        z[1] = (x1 << 1) | (x0 >>> 63);
-        z[2] = (x2 << 1) | (x1 >>> 63);
-        z[3] = (x3 << 1) | (x2 >>> 63);
-        z[4] = (x4 << 1) | (x3 >>> 63);
-        z[5] = (x5 << 1) | (x4 >>> 63);
-        z[6] = (x6 << 1) | (x5 >>> 63);
-        z[7] = (x7 << 1) | (x6 >>> 63);
-    }
-
-    public static void double8x(long[] x, long[] z)
-    {
-        long x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3];
-        long x4 = x[4], x5 = x[5], x6 = x[6], x7 = x[7];
-        long c = x7 >>> 56;
-        z[0] = (x0 << 8) ^ c ^ (c << 2) ^ (c << 5) ^ (c << 8);
-        z[1] = (x1 << 8) | (x0 >>> 56);
-        z[2] = (x2 << 8) | (x1 >>> 56);
-        z[3] = (x3 << 8) | (x2 >>> 56);
-        z[4] = (x4 << 8) | (x3 >>> 56);
-        z[5] = (x5 << 8) | (x4 >>> 56);
-        z[6] = (x6 << 8) | (x5 >>> 56);
-        z[7] = (x7 << 8) | (x6 >>> 56);
-    }
-
     public static boolean equal(long[] x, long[] y)
     {
         long d = 0L;
@@ -115,6 +85,36 @@ public class KGCMUtil_512
 
         z[0] = z0; z[1] = z1; z[2] = z2; z[3] = z3;
         z[4] = z4; z[5] = z5; z[6] = z6; z[7] = z7;
+    }
+
+    public static void multiplyX(long[] x, long[] z)
+    {
+        long x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3];
+        long x4 = x[4], x5 = x[5], x6 = x[6], x7 = x[7];
+        long m = x7 >> 63;
+        z[0] = (x0 << 1) ^ (m & 0x125L);
+        z[1] = (x1 << 1) | (x0 >>> 63);
+        z[2] = (x2 << 1) | (x1 >>> 63);
+        z[3] = (x3 << 1) | (x2 >>> 63);
+        z[4] = (x4 << 1) | (x3 >>> 63);
+        z[5] = (x5 << 1) | (x4 >>> 63);
+        z[6] = (x6 << 1) | (x5 >>> 63);
+        z[7] = (x7 << 1) | (x6 >>> 63);
+    }
+
+    public static void multiplyX8(long[] x, long[] z)
+    {
+        long x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3];
+        long x4 = x[4], x5 = x[5], x6 = x[6], x7 = x[7];
+        long c = x7 >>> 56;
+        z[0] = (x0 << 8) ^ c ^ (c << 2) ^ (c << 5) ^ (c << 8);
+        z[1] = (x1 << 8) | (x0 >>> 56);
+        z[2] = (x2 << 8) | (x1 >>> 56);
+        z[3] = (x3 << 8) | (x2 >>> 56);
+        z[4] = (x4 << 8) | (x3 >>> 56);
+        z[5] = (x5 << 8) | (x4 >>> 56);
+        z[6] = (x6 << 8) | (x5 >>> 56);
+        z[7] = (x7 << 8) | (x6 >>> 56);
     }
 
     public static void one(long[] z)
