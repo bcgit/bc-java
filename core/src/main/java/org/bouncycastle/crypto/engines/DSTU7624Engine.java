@@ -44,9 +44,6 @@ public class DSTU7624Engine
 
     private boolean forEncryption;
 
-    private byte[] internalStateBytes;
-    private byte[] tempInternalStateBytes;
-
     public DSTU7624Engine(int blockBitLength)
         throws IllegalArgumentException
     {
@@ -58,9 +55,6 @@ public class DSTU7624Engine
 
         wordsInBlock = blockBitLength / BITS_IN_WORD;
         internalState = new long[wordsInBlock];
-
-        internalStateBytes = new byte[internalState.length * BITS_IN_LONG / BITS_IN_BYTE];
-        tempInternalStateBytes = new byte[internalState.length * BITS_IN_LONG / BITS_IN_BYTE];
     }
 
     public void init(boolean forEncryption, CipherParameters params)
@@ -156,7 +150,7 @@ public class DSTU7624Engine
 
     public int getBlockSize()
     {
-        return wordsInBlock * BITS_IN_WORD / BITS_IN_BYTE;
+        return wordsInBlock << 3;
     }
 
     public int processBlock(byte[] in, int inOff, byte[] out, int outOff)
@@ -177,13 +171,12 @@ public class DSTU7624Engine
             throw new OutputLengthException("Output buffer too short");
         }
 
+        /* Unpack */
+        Pack.littleEndianToLong(in, inOff, internalState);
 
         if (forEncryption)
         {
             int round = 0;
-
-            /* Unpack */
-            Pack.littleEndianToLong(in, inOff, internalState);
 
             /* Encrypt */
             for (int wordIndex = 0; wordIndex < wordsInBlock; wordIndex++)
@@ -211,18 +204,10 @@ public class DSTU7624Engine
             {
                 internalState[wordIndex] += roundKeys[roundsAmount][wordIndex];
             }
-
-
-            /* Pack */
-            Pack.longToLittleEndian(internalState, out, outOff);
-
         }
         else
         {
             int round = roundsAmount;
-
-            /* Unpack */
-            Pack.littleEndianToLong(in, inOff, internalState);
 
             /* Decrypt */
             for (int wordIndex = 0; wordIndex < wordsInBlock; wordIndex++)
@@ -241,6 +226,7 @@ public class DSTU7624Engine
                     internalState[wordIndex] ^= roundKeys[round][wordIndex];
                 }
             }
+
             mixColumns(mdsInvMatrix); // equals to multiplication on matrix
             invShiftRows();
             invSubBytes();
@@ -249,11 +235,10 @@ public class DSTU7624Engine
             {
                 internalState[wordIndex] -= roundKeys[0][wordIndex];
             }
-
-            /* Pack */
-            Pack.longToLittleEndian(internalState, out, outOff);
-
         }
+
+        /* Pack */
+        Pack.longToLittleEndian(internalState, out, outOff);
 
         return getBlockSize();
     }
@@ -261,10 +246,7 @@ public class DSTU7624Engine
     public void reset()
     {
         Arrays.fill(internalState, 0);
-        Arrays.fill(internalStateBytes, (byte)0x00);
-        Arrays.fill(tempInternalStateBytes, (byte)0x00);
     }
-
 
     private void workingKeyExpandKT(long[] workingKey, long[] tempKeys)
     {
@@ -439,76 +421,150 @@ public class DSTU7624Engine
 
     private void subBytes()
     {
+        byte[] s0 = sboxesForEncryption[0];
+        byte[] s1 = sboxesForEncryption[1];
+        byte[] s2 = sboxesForEncryption[2];
+        byte[] s3 = sboxesForEncryption[3];
+
         for (int i = 0; i < wordsInBlock; i++)
         {
-            internalState[i] = sboxesForEncryption[0][(int)(internalState[i] & 0x00000000000000FFL)] & 0x00000000000000FFL |
-                (long)sboxesForEncryption[1][(int)((internalState[i] & 0x000000000000FF00L) >>> 8)] << 8 & 0x000000000000FF00L |
-                (long)sboxesForEncryption[2][(int)((internalState[i] & 0x0000000000FF0000L) >>> 16)] << 16 & 0x0000000000FF0000L |
-                (long)sboxesForEncryption[3][(int)((internalState[i] & 0x00000000FF000000L) >>> 24)] << 24 & 0x00000000FF000000L |
-                (long)sboxesForEncryption[0][(int)((internalState[i] & 0x000000FF00000000L) >>> 32)] << 32 & 0x000000FF00000000L |
-                (long)sboxesForEncryption[1][(int)((internalState[i] & 0x0000FF0000000000L) >>> 40)] << 40 & 0x0000FF0000000000L |
-                (long)sboxesForEncryption[2][(int)((internalState[i] & 0x00FF000000000000L) >>> 48)] << 48 & 0x00FF000000000000L |
-                (long)sboxesForEncryption[3][(int)((internalState[i] & 0xFF00000000000000L) >>> 56)] << 56 & 0xFF00000000000000L;
+            long u = internalState[i];
+            int lo = (int)u, hi = (int)(u >>> 32);
+            byte t0 = s0[lo & 0xFF];
+            byte t1 = s1[(lo >>> 8) & 0xFF];
+            byte t2 = s2[(lo >>> 16) & 0xFF];
+            byte t3 = s3[lo >>> 24];
+            lo = (t0 & 0xFF) | ((t1 & 0xFF) << 8) | ((t2 & 0xFF) << 16) | ((int)t3 << 24);
+            byte t4 = s0[hi & 0xFF];
+            byte t5 = s1[(hi >>> 8) & 0xFF];
+            byte t6 = s2[(hi >>> 16) & 0xFF];
+            byte t7 = s3[hi >>> 24];
+            hi = (t4 & 0xFF) | ((t5 & 0xFF) << 8) | ((t6 & 0xFF) << 16) | ((int)t7 << 24);
+            internalState[i] = (lo & 0xFFFFFFFFL) | ((long)hi << 32);
         }
     }
 
     private void invSubBytes()
     {
+        byte[] s0 = sboxesForDecryption[0];
+        byte[] s1 = sboxesForDecryption[1];
+        byte[] s2 = sboxesForDecryption[2];
+        byte[] s3 = sboxesForDecryption[3];
+
         for (int i = 0; i < wordsInBlock; i++)
         {
-            internalState[i] = sboxesForDecryption[0][(int)(internalState[i] & 0x00000000000000FFL)] & 0x00000000000000FFL |
-                (long)sboxesForDecryption[1][(int)((internalState[i] & 0x000000000000FF00L) >>> 8)] << 8 & 0x000000000000FF00L |
-                (long)sboxesForDecryption[2][(int)((internalState[i] & 0x0000000000FF0000L) >>> 16)] << 16 & 0x0000000000FF0000L |
-                (long)sboxesForDecryption[3][(int)((internalState[i] & 0x00000000FF000000L) >>> 24)] << 24 & 0x00000000FF000000L |
-                (long)sboxesForDecryption[0][(int)((internalState[i] & 0x000000FF00000000L) >>> 32)] << 32 & 0x000000FF00000000L |
-                (long)sboxesForDecryption[1][(int)((internalState[i] & 0x0000FF0000000000L) >>> 40)] << 40 & 0x0000FF0000000000L |
-                (long)sboxesForDecryption[2][(int)((internalState[i] & 0x00FF000000000000L) >>> 48)] << 48 & 0x00FF000000000000L |
-                (long)sboxesForDecryption[3][(int)((internalState[i] & 0xFF00000000000000L) >>> 56)] << 56 & 0xFF00000000000000L;
+            long u = internalState[i];
+            int lo = (int)u, hi = (int)(u >>> 32);
+            byte t0 = s0[lo & 0xFF];
+            byte t1 = s1[(lo >>> 8) & 0xFF];
+            byte t2 = s2[(lo >>> 16) & 0xFF];
+            byte t3 = s3[lo >>> 24];
+            lo = (t0 & 0xFF) | ((t1 & 0xFF) << 8) | ((t2 & 0xFF) << 16) | ((int)t3 << 24);
+            byte t4 = s0[hi & 0xFF];
+            byte t5 = s1[(hi >>> 8) & 0xFF];
+            byte t6 = s2[(hi >>> 16) & 0xFF];
+            byte t7 = s3[hi >>> 24];
+            hi = (t4 & 0xFF) | ((t5 & 0xFF) << 8) | ((t6 & 0xFF) << 16) | ((int)t7 << 24);
+            internalState[i] = (lo & 0xFFFFFFFFL) | ((long)hi << 32);
         }
     }
 
     private void shiftRows()
     {
-        int row, col;
-        int shift = -1;
-
-        Pack.longToLittleEndian(internalState, internalStateBytes, 0);
-
-        for (row = 0; row < BITS_IN_LONG / BITS_IN_BYTE; row++)
+        switch (wordsInBlock)
         {
-            if (row % (BITS_IN_LONG / BITS_IN_BYTE / wordsInBlock) == 0)
-            {
-                shift += 1;
-            }
-            for (col = 0; col < wordsInBlock; col++)
-            {
-                tempInternalStateBytes[row + ((col + shift) % wordsInBlock) * BITS_IN_LONG / BITS_IN_BYTE] = internalStateBytes[row + col * BITS_IN_LONG / BITS_IN_BYTE];
-            }
+        case 2:
+        {
+            long c0 = internalState[0], c1 = internalState[1];
+            internalState[0] = (c0 & 0x00000000FFFFFFFFL) | (c1 & 0xFFFFFFFF00000000L);
+            internalState[1] = (c1 & 0x00000000FFFFFFFFL) | (c0 & 0xFFFFFFFF00000000L);
+            break;
         }
-
-        Pack.littleEndianToLong(tempInternalStateBytes, 0, internalState);
+        case 4:
+        {
+            long c0 = internalState[0], c1 = internalState[1], c2 = internalState[2], c3 = internalState[3];
+            internalState[0] = (c0 & 0x000000000000FFFFL) | (c3 & 0x00000000FFFF0000L) | (c2 & 0x0000FFFF00000000L) | (c1 & 0xFFFF000000000000L);
+            internalState[1] = (c1 & 0x000000000000FFFFL) | (c0 & 0x00000000FFFF0000L) | (c3 & 0x0000FFFF00000000L) | (c2 & 0xFFFF000000000000L);
+            internalState[2] = (c2 & 0x000000000000FFFFL) | (c1 & 0x00000000FFFF0000L) | (c0 & 0x0000FFFF00000000L) | (c3 & 0xFFFF000000000000L);
+            internalState[3] = (c3 & 0x000000000000FFFFL) | (c2 & 0x00000000FFFF0000L) | (c1 & 0x0000FFFF00000000L) | (c0 & 0xFFFF000000000000L);
+            break;
+        }
+        case 8:
+        {
+            long c0 = internalState[0], c1 = internalState[1], c2 = internalState[2], c3 = internalState[3];
+            long c4 = internalState[4], c5 = internalState[5], c6 = internalState[6], c7 = internalState[7];
+            internalState[0] = (c0 & 0x00000000000000FFL) | (c7 & 0x000000000000FF00L) | (c6 & 0x0000000000FF0000L) | (c5 & 0x00000000FF000000L)
+                             | (c4 & 0x000000FF00000000L) | (c3 & 0x0000FF0000000000L) | (c2 & 0x00FF000000000000L) | (c1 & 0xFF00000000000000L);
+            internalState[1] = (c1 & 0x00000000000000FFL) | (c0 & 0x000000000000FF00L) | (c7 & 0x0000000000FF0000L) | (c6 & 0x00000000FF000000L)
+                             | (c5 & 0x000000FF00000000L) | (c4 & 0x0000FF0000000000L) | (c3 & 0x00FF000000000000L) | (c2 & 0xFF00000000000000L);
+            internalState[2] = (c2 & 0x00000000000000FFL) | (c1 & 0x000000000000FF00L) | (c0 & 0x0000000000FF0000L) | (c7 & 0x00000000FF000000L)
+                             | (c6 & 0x000000FF00000000L) | (c5 & 0x0000FF0000000000L) | (c4 & 0x00FF000000000000L) | (c3 & 0xFF00000000000000L);
+            internalState[3] = (c3 & 0x00000000000000FFL) | (c2 & 0x000000000000FF00L) | (c1 & 0x0000000000FF0000L) | (c0 & 0x00000000FF000000L)
+                             | (c7 & 0x000000FF00000000L) | (c6 & 0x0000FF0000000000L) | (c5 & 0x00FF000000000000L) | (c4 & 0xFF00000000000000L);
+            internalState[4] = (c4 & 0x00000000000000FFL) | (c3 & 0x000000000000FF00L) | (c2 & 0x0000000000FF0000L) | (c1 & 0x00000000FF000000L)
+                             | (c0 & 0x000000FF00000000L) | (c7 & 0x0000FF0000000000L) | (c6 & 0x00FF000000000000L) | (c5 & 0xFF00000000000000L);
+            internalState[5] = (c5 & 0x00000000000000FFL) | (c4 & 0x000000000000FF00L) | (c3 & 0x0000000000FF0000L) | (c2 & 0x00000000FF000000L)
+                             | (c1 & 0x000000FF00000000L) | (c0 & 0x0000FF0000000000L) | (c7 & 0x00FF000000000000L) | (c6 & 0xFF00000000000000L);
+            internalState[6] = (c6 & 0x00000000000000FFL) | (c5 & 0x000000000000FF00L) | (c4 & 0x0000000000FF0000L) | (c3 & 0x00000000FF000000L)
+                             | (c2 & 0x000000FF00000000L) | (c1 & 0x0000FF0000000000L) | (c0 & 0x00FF000000000000L) | (c7 & 0xFF00000000000000L);
+            internalState[7] = (c7 & 0x00000000000000FFL) | (c6 & 0x000000000000FF00L) | (c5 & 0x0000000000FF0000L) | (c4 & 0x00000000FF000000L)
+                             | (c3 & 0x000000FF00000000L) | (c2 & 0x0000FF0000000000L) | (c1 & 0x00FF000000000000L) | (c0 & 0xFF00000000000000L);
+            break;
+        }
+        default:
+        {
+            throw new IllegalStateException("unsupported block length: only 128/256/512 are allowed");
+        }
+        }
     }
 
     private void invShiftRows()
     {
-        int row, col;
-        int shift = -1;
-
-        Pack.longToLittleEndian(internalState, internalStateBytes, 0);
-
-        for (row = 0; row < BITS_IN_LONG / BITS_IN_BYTE; row++)
+        switch (wordsInBlock)
         {
-            if (row % (BITS_IN_LONG / BITS_IN_BYTE / wordsInBlock) == 0)
-            {
-                shift += 1;
-            }
-            for (col = 0; col < wordsInBlock; col++)
-            {
-                tempInternalStateBytes[row + col * BITS_IN_LONG / BITS_IN_BYTE] = internalStateBytes[row + ((col + shift) % wordsInBlock) * BITS_IN_LONG / BITS_IN_BYTE];
-            }
+        case 2:
+        {
+            long c0 = internalState[0], c1 = internalState[1];
+            internalState[0] = (c0 & 0x00000000FFFFFFFFL) | (c1 & 0xFFFFFFFF00000000L);
+            internalState[1] = (c1 & 0x00000000FFFFFFFFL) | (c0 & 0xFFFFFFFF00000000L);
+            break;
         }
-
-        Pack.littleEndianToLong(tempInternalStateBytes, 0, internalState);
+        case 4:
+        {
+            long c0 = internalState[0], c1 = internalState[1], c2 = internalState[2], c3 = internalState[3];
+            internalState[0] = (c0 & 0x000000000000FFFFL) | (c1 & 0x00000000FFFF0000L) | (c2 & 0x0000FFFF00000000L) | (c3 & 0xFFFF000000000000L);
+            internalState[1] = (c1 & 0x000000000000FFFFL) | (c2 & 0x00000000FFFF0000L) | (c3 & 0x0000FFFF00000000L) | (c0 & 0xFFFF000000000000L);
+            internalState[2] = (c2 & 0x000000000000FFFFL) | (c3 & 0x00000000FFFF0000L) | (c0 & 0x0000FFFF00000000L) | (c1 & 0xFFFF000000000000L);
+            internalState[3] = (c3 & 0x000000000000FFFFL) | (c0 & 0x00000000FFFF0000L) | (c1 & 0x0000FFFF00000000L) | (c2 & 0xFFFF000000000000L);
+            break;
+        }
+        case 8:
+        {
+            long c0 = internalState[0], c1 = internalState[1], c2 = internalState[2], c3 = internalState[3];
+            long c4 = internalState[4], c5 = internalState[5], c6 = internalState[6], c7 = internalState[7];
+            internalState[0] = (c0 & 0x00000000000000FFL) | (c1 & 0x000000000000FF00L) | (c2 & 0x0000000000FF0000L) | (c3 & 0x00000000FF000000L)
+                             | (c4 & 0x000000FF00000000L) | (c5 & 0x0000FF0000000000L) | (c6 & 0x00FF000000000000L) | (c7 & 0xFF00000000000000L);
+            internalState[1] = (c1 & 0x00000000000000FFL) | (c2 & 0x000000000000FF00L) | (c3 & 0x0000000000FF0000L) | (c4 & 0x00000000FF000000L)
+                             | (c5 & 0x000000FF00000000L) | (c6 & 0x0000FF0000000000L) | (c7 & 0x00FF000000000000L) | (c0 & 0xFF00000000000000L);
+            internalState[2] = (c2 & 0x00000000000000FFL) | (c3 & 0x000000000000FF00L) | (c4 & 0x0000000000FF0000L) | (c5 & 0x00000000FF000000L)
+                             | (c6 & 0x000000FF00000000L) | (c7 & 0x0000FF0000000000L) | (c0 & 0x00FF000000000000L) | (c1 & 0xFF00000000000000L);
+            internalState[3] = (c3 & 0x00000000000000FFL) | (c4 & 0x000000000000FF00L) | (c5 & 0x0000000000FF0000L) | (c6 & 0x00000000FF000000L)
+                             | (c7 & 0x000000FF00000000L) | (c0 & 0x0000FF0000000000L) | (c1 & 0x00FF000000000000L) | (c2 & 0xFF00000000000000L);
+            internalState[4] = (c4 & 0x00000000000000FFL) | (c5 & 0x000000000000FF00L) | (c6 & 0x0000000000FF0000L) | (c7 & 0x00000000FF000000L)
+                             | (c0 & 0x000000FF00000000L) | (c1 & 0x0000FF0000000000L) | (c2 & 0x00FF000000000000L) | (c3 & 0xFF00000000000000L);
+            internalState[5] = (c5 & 0x00000000000000FFL) | (c6 & 0x000000000000FF00L) | (c7 & 0x0000000000FF0000L) | (c0 & 0x00000000FF000000L)
+                             | (c1 & 0x000000FF00000000L) | (c2 & 0x0000FF0000000000L) | (c3 & 0x00FF000000000000L) | (c4 & 0xFF00000000000000L);
+            internalState[6] = (c6 & 0x00000000000000FFL) | (c7 & 0x000000000000FF00L) | (c0 & 0x0000000000FF0000L) | (c1 & 0x00000000FF000000L)
+                             | (c2 & 0x000000FF00000000L) | (c3 & 0x0000FF0000000000L) | (c4 & 0x00FF000000000000L) | (c5 & 0xFF00000000000000L);
+            internalState[7] = (c7 & 0x00000000000000FFL) | (c0 & 0x000000000000FF00L) | (c1 & 0x0000000000FF0000L) | (c2 & 0x00000000FF000000L)
+                             | (c3 & 0x000000FF00000000L) | (c4 & 0x0000FF0000000000L) | (c5 & 0x00FF000000000000L) | (c6 & 0xFF00000000000000L);
+            break;
+        }
+        default:
+        {
+            throw new IllegalStateException("unsupported block length: only 128/256/512 are allowed");
+        }
+        }
     }
 
     private void mixColumns(long matrix)
