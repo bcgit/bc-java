@@ -188,7 +188,7 @@ public class DSTU7624Engine
             {
                 subBytes();
                 shiftRows();
-                mixColumns(mdsMatrix); // equals to multiplication on matrix
+                mixColumns();
 
                 for (int wordIndex = 0; wordIndex < wordsInBlock; wordIndex++)
                 {
@@ -198,7 +198,7 @@ public class DSTU7624Engine
 
             subBytes();
             shiftRows();
-            mixColumns(mdsMatrix); // equals to multiplication on matrix
+            mixColumns();
 
             for (int wordIndex = 0; wordIndex < wordsInBlock; wordIndex++)
             {
@@ -217,7 +217,7 @@ public class DSTU7624Engine
 
             for (round = roundsAmount - 1; round > 0; round--)
             {
-                mixColumns(mdsInvMatrix); // equals to multiplication on matrix
+                invMixColumns();
                 invShiftRows();
                 invSubBytes();
 
@@ -227,7 +227,7 @@ public class DSTU7624Engine
                 }
             }
 
-            mixColumns(mdsInvMatrix); // equals to multiplication on matrix
+            invMixColumns();
             invShiftRows();
             invSubBytes();
 
@@ -275,7 +275,7 @@ public class DSTU7624Engine
 
         subBytes();
         shiftRows();
-        mixColumns(mdsMatrix); // equals to multiplication on matrix
+        mixColumns();
 
         for (int wordIndex = 0; wordIndex < internalState.length; wordIndex++)
         {
@@ -284,7 +284,7 @@ public class DSTU7624Engine
 
         subBytes();
         shiftRows();
-        mixColumns(mdsMatrix); // equals to multiplication on matrix
+        mixColumns();
 
         for (int wordIndex = 0; wordIndex < internalState.length; wordIndex++)
         {
@@ -293,7 +293,7 @@ public class DSTU7624Engine
 
         subBytes();
         shiftRows();
-        mixColumns(mdsMatrix); // equals to multiplication on matrix
+        mixColumns();
 
         System.arraycopy(internalState, 0, tempKeys, 0, wordsInBlock);
     }
@@ -332,7 +332,7 @@ public class DSTU7624Engine
 
             subBytes();
             shiftRows();
-            mixColumns(mdsMatrix); // equals to multiplication on matrix
+            mixColumns();
 
             for (int wordIndex = 0; wordIndex < wordsInBlock; wordIndex++)
             {
@@ -341,7 +341,7 @@ public class DSTU7624Engine
 
             subBytes();
             shiftRows();
-            mixColumns(mdsMatrix); // equals to multiplication on matrix
+            mixColumns();
 
             for (int wordIndex = 0; wordIndex < wordsInBlock; wordIndex++)
             {
@@ -375,7 +375,7 @@ public class DSTU7624Engine
 
                 subBytes();
                 shiftRows();
-                mixColumns(mdsMatrix); // equals to multiplication on matrix
+                mixColumns();
 
                 for (int wordIndex = 0; wordIndex < wordsInBlock; wordIndex++)
                 {
@@ -384,7 +384,7 @@ public class DSTU7624Engine
 
                 subBytes();
                 shiftRows();
-                mixColumns(mdsMatrix); // equals to multiplication on matrix
+                mixColumns();
 
                 for (int wordIndex = 0; wordIndex < wordsInBlock; wordIndex++)
                 {
@@ -567,19 +567,46 @@ public class DSTU7624Engine
         }
     }
 
-    private void mixColumns(long matrix)
+    private void mixColumns()
     {
         for (int col = 0; col < wordsInBlock; ++col)
         {
             long colVal = internalState[col];
-            long rowMatrix = matrix;
+            long rowMatrix = mdsMatrix;
 
             long result = 0;
             for (int row = 7; row >= 0; --row)
             {
                 rowMatrix = (rowMatrix >>> 8) | (rowMatrix << 56);
 
-                long product = multiplyGFx8(colVal, rowMatrix);
+                // mdsMatrix elements have maximum degree of 3
+                long product = multiplyGFx8(colVal, rowMatrix, 3);
+
+                product ^= (product >>> 32);
+                product ^= (product >>> 16);
+                product ^= (product >>> 8);
+
+                result <<= 8;
+                result |= (product & 0xFFL);
+            }
+
+            internalState[col] = result;
+        }
+    }
+
+    private void invMixColumns()
+    {
+        for (int col = 0; col < wordsInBlock; ++col)
+        {
+            long colVal = internalState[col];
+            long rowMatrix = mdsInvMatrix;
+
+            long result = 0;
+            for (int row = 7; row >= 0; --row)
+            {
+                rowMatrix = (rowMatrix >>> 8) | (rowMatrix << 56);
+
+                long product = multiplyGFx8(colVal, rowMatrix, 7);
 
                 product ^= (product >>> 32);
                 product ^= (product >>> 16);
@@ -598,11 +625,11 @@ public class DSTU7624Engine
      * 
      * REDUCTION_POLYNOMIAL is x^8 + x^4 + x^3 + x^2 + 1
      */  
-    private static long multiplyGFx8(long u, long v)
+    private static long multiplyGFx8(long u, long v, int vMaxDegree)
     {
         long r = u & ((v & 0x0101010101010101L) * 0xFFL);
 
-        for (int i = 1; i < 8; ++i)
+        for (int i = 1; i <= vMaxDegree; ++i)
         {
             u = ((u & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((u >>> 7) & 0x0101010101010101L) * 0x1DL);
             v >>>= 1;
