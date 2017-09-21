@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.modes.gcm.BasicGCMMultiplier;
 import org.bouncycastle.crypto.modes.gcm.GCMMultiplier;
+import org.bouncycastle.crypto.modes.gcm.Tables4kGCMMultiplier;
 import org.bouncycastle.crypto.modes.gcm.Tables64kGCMMultiplier;
 import org.bouncycastle.crypto.modes.gcm.Tables8kGCMMultiplier;
 import org.bouncycastle.crypto.params.AEADParameters;
@@ -402,6 +403,7 @@ public class GCMTest
         runTestCase(null, null, testName, K, IV, A, P, C, T);
 
         runTestCase(new BasicGCMMultiplier(), new BasicGCMMultiplier(), testName, K, IV, A, P, C, T);
+        runTestCase(new Tables4kGCMMultiplier(), new Tables4kGCMMultiplier(), testName, K, IV, A, P, C, T);
         runTestCase(new Tables8kGCMMultiplier(), new Tables8kGCMMultiplier(), testName, K, IV, A, P, C, T);
         runTestCase(new Tables64kGCMMultiplier(), new Tables64kGCMMultiplier(), testName, K, IV, A, P, C, T);
     }
@@ -540,6 +542,7 @@ public class GCMTest
         srng.setSeed(Times.nanoTime());
         randomTests(srng, null);
         randomTests(srng, new BasicGCMMultiplier());
+        randomTests(srng, new Tables4kGCMMultiplier());
         randomTests(srng, new Tables8kGCMMultiplier());
         randomTests(srng, new Tables64kGCMMultiplier());
     }
