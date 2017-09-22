@@ -22,7 +22,7 @@ public class DERUTF8String
      *                if the object cannot be converted.
      * @return a DERUTF8String instance, or null
      */
-    public static DERUTF8String getInstance(Object obj)
+    public static DERUTF8String getInstance(final Object obj)
     {
         if (obj == null || obj instanceof DERUTF8String)
         {
@@ -35,7 +35,7 @@ public class DERUTF8String
             {
                 return (DERUTF8String)fromByteArray((byte[])obj);
             }
-            catch (Exception e)
+            catch (final Exception e)
             {
                 throw new IllegalArgumentException("encoding error in getInstance: " + e.toString());
             }
@@ -47,7 +47,7 @@ public class DERUTF8String
 
     /**
      * Return an UTF8 String from a tagged object.
-     * 
+     *
      * @param obj
      *            the tagged object holding the object we want
      * @param explicit
@@ -58,10 +58,10 @@ public class DERUTF8String
      * @return a DERUTF8String instance, or null
      */
     public static DERUTF8String getInstance(
-        ASN1TaggedObject obj,
-        boolean explicit)
+        final ASN1TaggedObject obj,
+        final boolean explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        final ASN1Primitive o = obj.getObject();
 
         if (explicit || o instanceof DERUTF8String)
         {
@@ -76,7 +76,7 @@ public class DERUTF8String
     /*
      * Basic constructor - byte encoded string.
      */
-    DERUTF8String(byte[] string)
+    DERUTF8String(final byte[] string)
     {
         this.string = string;
     }
@@ -86,51 +86,56 @@ public class DERUTF8String
      *
      * @param string the string to be carried in the UTF8String object,
      */
-    public DERUTF8String(String string)
+    public DERUTF8String(final String string)
     {
         this.string = Strings.toUTF8ByteArray(string);
     }
 
+    @Override
     public String getString()
     {
         return Strings.fromUTF8ByteArray(string);
     }
 
+    @Override
     public String toString()
     {
         return getString();
     }
 
+    @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);
     }
 
-    boolean asn1Equals(ASN1Primitive o)
+    @Override
+    boolean asn1Equals(final ASN1Primitive o)
     {
         if (!(o instanceof DERUTF8String))
         {
             return false;
         }
 
-        DERUTF8String s = (DERUTF8String)o;
+        final DERUTF8String s = (DERUTF8String)o;
 
         return Arrays.areEqual(string, s.string);
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
-        throws IOException
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
-    void encode(ASN1OutputStream out)
-        throws IOException
+    @Override
+    void encode(final ASN1OutputStream out)
     {
         out.writeEncoded(BERTags.UTF8_STRING, string);
     }

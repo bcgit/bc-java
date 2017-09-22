@@ -10,14 +10,14 @@ public class DLOutputStream
     extends ASN1OutputStream
 {
     public DLOutputStream(
-        OutputStream os)
+        final OutputStream os)
     {
         super(os);
     }
 
+    @Override
     public void writeObject(
-        ASN1Encodable obj)
-        throws IOException
+        final ASN1Encodable obj)
     {
         if (obj != null)
         {
@@ -25,7 +25,7 @@ public class DLOutputStream
         }
         else
         {
-            throw new IOException("null object detected");
+            throw new RuntimeException("null object detected");
         }
     }
 }

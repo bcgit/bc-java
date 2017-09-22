@@ -10,7 +10,7 @@ public class DERVideotexString
     implements ASN1String
 {
     private final byte[] string;
-    
+
     /**
      * return a Videotex String from the passed in object
      *
@@ -19,7 +19,7 @@ public class DERVideotexString
      * @return a DERVideotexString instance, or null.
      */
     public static DERVideotexString getInstance(
-        Object  obj)
+        final Object  obj)
     {
         if (obj == null || obj instanceof DERVideotexString)
         {
@@ -32,7 +32,7 @@ public class DERVideotexString
             {
                 return (DERVideotexString)fromByteArray((byte[])obj);
             }
-            catch (Exception e)
+            catch (final Exception e)
             {
                 throw new IllegalArgumentException("encoding error in getInstance: " + e.toString());
             }
@@ -52,10 +52,10 @@ public class DERVideotexString
      * @return a DERVideotexString instance, or null.
      */
     public static DERVideotexString getInstance(
-        ASN1TaggedObject obj,
-        boolean          explicit)
+        final ASN1TaggedObject obj,
+        final boolean          explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        final ASN1Primitive o = obj.getObject();
 
         if (explicit || o instanceof DERVideotexString)
         {
@@ -72,51 +72,56 @@ public class DERVideotexString
      * @param string the byte encoding of the characters making up the string.
      */
     public DERVideotexString(
-        byte[]   string)
+        final byte[]   string)
     {
         this.string = Arrays.clone(string);
     }
-    
+
     public byte[] getOctets()
     {
         return Arrays.clone(string);
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
         out.writeEncoded(BERTags.VIDEOTEX_STRING, string);
     }
 
+    @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);
     }
 
+    @Override
     boolean asn1Equals(
-        ASN1Primitive o)
+        final ASN1Primitive o)
     {
         if (!(o instanceof DERVideotexString))
         {
             return false;
         }
 
-        DERVideotexString  s = (DERVideotexString)o;
+        final DERVideotexString  s = (DERVideotexString)o;
 
         return Arrays.areEqual(string, s.string);
     }
 
+    @Override
     public String getString()
     {
         return Strings.fromByteArray(string);

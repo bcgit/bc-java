@@ -20,7 +20,7 @@ import com.github.gv2011.asn1.util.Strings;
 public class ASN1GeneralizedTime
     extends ASN1Primitive
 {
-    private byte[] time;
+    private final byte[] time;
 
     /**
      * return a generalized time from the passed in object
@@ -30,7 +30,7 @@ public class ASN1GeneralizedTime
      * @throws IllegalArgumentException if the object cannot be converted.
      */
     public static ASN1GeneralizedTime getInstance(
-        Object obj)
+        final Object obj)
     {
         if (obj == null || obj instanceof ASN1GeneralizedTime)
         {
@@ -43,7 +43,7 @@ public class ASN1GeneralizedTime
             {
                 return (ASN1GeneralizedTime)fromByteArray((byte[])obj);
             }
-            catch (Exception e)
+            catch (final Exception e)
             {
                 throw new IllegalArgumentException("encoding error in getInstance: " + e.toString());
             }
@@ -63,10 +63,10 @@ public class ASN1GeneralizedTime
      * be converted.
      */
     public static ASN1GeneralizedTime getInstance(
-        ASN1TaggedObject obj,
-        boolean explicit)
+        final ASN1TaggedObject obj,
+        final boolean explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        final ASN1Primitive o = obj.getObject();
 
         if (explicit || o instanceof ASN1GeneralizedTime)
         {
@@ -88,14 +88,14 @@ public class ASN1GeneralizedTime
      * @throws IllegalArgumentException if String is an illegal format.
      */
     public ASN1GeneralizedTime(
-        String time)
+        final String time)
     {
         this.time = Strings.toByteArray(time);
         try
         {
-            this.getDate();
+            getDate();
         }
-        catch (ParseException e)
+        catch (final ParseException e)
         {
             throw new IllegalArgumentException("invalid date string: " + e.getMessage());
         }
@@ -107,9 +107,9 @@ public class ASN1GeneralizedTime
      * @param time a date object representing the time of interest.
      */
     public ASN1GeneralizedTime(
-        Date time)
+        final Date time)
     {
-        SimpleDateFormat dateF = new SimpleDateFormat("yyyyMMddHHmmss'Z'");
+        final SimpleDateFormat dateF = new SimpleDateFormat("yyyyMMddHHmmss'Z'");
 
         dateF.setTimeZone(new SimpleTimeZone(0, "Z"));
 
@@ -124,10 +124,10 @@ public class ASN1GeneralizedTime
      * @param locale an appropriate Locale for producing an ASN.1 GeneralizedTime value.
      */
     public ASN1GeneralizedTime(
-        Date time,
-        Locale locale)
+        final Date time,
+        final Locale locale)
     {
-        SimpleDateFormat dateF = new SimpleDateFormat("yyyyMMddHHmmss'Z'", locale);
+        final SimpleDateFormat dateF = new SimpleDateFormat("yyyyMMddHHmmss'Z'", locale);
 
         dateF.setTimeZone(new SimpleTimeZone(0, "Z"));
 
@@ -135,9 +135,9 @@ public class ASN1GeneralizedTime
     }
 
     ASN1GeneralizedTime(
-        byte[] bytes)
+        final byte[] bytes)
     {
-        this.time = bytes;
+        time = bytes;
     }
 
     /**
@@ -166,7 +166,7 @@ public class ASN1GeneralizedTime
      */
     public String getTime()
     {
-        String stime = Strings.fromByteArray(time);
+        final String stime = Strings.fromByteArray(time);
 
         //
         // standardise the format.
@@ -206,7 +206,7 @@ public class ASN1GeneralizedTime
     private String calculateGMTOffset()
     {
         String sign = "+";
-        TimeZone timeZone = TimeZone.getDefault();
+        final TimeZone timeZone = TimeZone.getDefault();
         int offset = timeZone.getRawOffset();
         if (offset < 0)
         {
@@ -214,16 +214,16 @@ public class ASN1GeneralizedTime
             offset = -offset;
         }
         int hours = offset / (60 * 60 * 1000);
-        int minutes = (offset - (hours * 60 * 60 * 1000)) / (60 * 1000);
+        final int minutes = (offset - (hours * 60 * 60 * 1000)) / (60 * 1000);
 
         try
         {
-            if (timeZone.useDaylightTime() && timeZone.inDaylightTime(this.getDate()))
+            if (timeZone.useDaylightTime() && timeZone.inDaylightTime(getDate()))
             {
                 hours += sign.equals("+") ? 1 : -1;
             }
         }
-        catch (ParseException e)
+        catch (final ParseException e)
         {
             // we'll do our best and ignore daylight savings
         }
@@ -231,7 +231,7 @@ public class ASN1GeneralizedTime
         return "GMT" + sign + convert(hours) + ":" + convert(minutes);
     }
 
-    private String convert(int time)
+    private String convert(final int time)
     {
         if (time < 10)
         {
@@ -245,7 +245,7 @@ public class ASN1GeneralizedTime
         throws ParseException
     {
         SimpleDateFormat dateF;
-        String stime = Strings.fromByteArray(time);
+        final String stime = Strings.fromByteArray(time);
         String d = stime;
 
         if (stime.endsWith("Z"))
@@ -263,7 +263,7 @@ public class ASN1GeneralizedTime
         }
         else if (stime.indexOf('-') > 0 || stime.indexOf('+') > 0)
         {
-            d = this.getTime();
+            d = getTime();
             if (hasFractionalSeconds())
             {
                 dateF = new SimpleDateFormat("yyyyMMddHHmmss.SSSz");
@@ -296,7 +296,7 @@ public class ASN1GeneralizedTime
             int index;
             for (index = 1; index < frac.length(); index++)
             {
-                char ch = frac.charAt(index);
+                final char ch = frac.charAt(index);
                 if (!('0' <= ch && ch <= '9'))
                 {
                     break;
@@ -338,27 +338,30 @@ public class ASN1GeneralizedTime
         return false;
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
-        int length = time.length;
+        final int length = time.length;
 
         return 1 + StreamUtil.calculateBodyLength(length) + length;
     }
 
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
         out.writeEncoded(BERTags.GENERALIZED_TIME, time);
     }
 
+    @Override
     boolean asn1Equals(
-        ASN1Primitive o)
+        final ASN1Primitive o)
     {
         if (!(o instanceof ASN1GeneralizedTime))
         {
@@ -368,6 +371,7 @@ public class ASN1GeneralizedTime
         return Arrays.areEqual(time, ((ASN1GeneralizedTime)o).time);
     }
 
+    @Override
     public int hashCode()
     {
         return Arrays.hashCode(time);

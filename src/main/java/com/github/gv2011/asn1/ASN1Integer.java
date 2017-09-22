@@ -21,7 +21,7 @@ public class ASN1Integer
      * @return an ASN1Integer instance.
      */
     public static ASN1Integer getInstance(
-        Object obj)
+        final Object obj)
     {
         if (obj == null || obj instanceof ASN1Integer)
         {
@@ -34,7 +34,7 @@ public class ASN1Integer
             {
                 return (ASN1Integer)fromByteArray((byte[])obj);
             }
-            catch (Exception e)
+            catch (final Exception e)
             {
                 throw new IllegalArgumentException("encoding error in getInstance: " + e.toString());
             }
@@ -54,10 +54,10 @@ public class ASN1Integer
      * @return an ASN1Integer instance.
      */
     public static ASN1Integer getInstance(
-        ASN1TaggedObject obj,
-        boolean explicit)
+        final ASN1TaggedObject obj,
+        final boolean explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        final ASN1Primitive o = obj.getObject();
 
         if (explicit || o instanceof ASN1Integer)
         {
@@ -70,24 +70,24 @@ public class ASN1Integer
     }
 
     public ASN1Integer(
-        long value)
+        final long value)
     {
         bytes = BigInteger.valueOf(value).toByteArray();
     }
 
     public ASN1Integer(
-        BigInteger value)
+        final BigInteger value)
     {
         bytes = value.toByteArray();
     }
 
     public ASN1Integer(
-        byte[] bytes)
+        final byte[] bytes)
     {
         this(bytes, true);
     }
 
-    ASN1Integer(byte[] bytes, boolean clone)
+    ASN1Integer(final byte[] bytes, final boolean clone)
     {
         this.bytes = (clone) ? Arrays.clone(bytes) : bytes;
     }
@@ -107,23 +107,26 @@ public class ASN1Integer
         return new BigInteger(1, bytes);
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(bytes.length) + bytes.length;
     }
 
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
         out.writeEncoded(BERTags.INTEGER, bytes);
     }
 
+    @Override
     public int hashCode()
     {
         int value = 0;
@@ -136,19 +139,21 @@ public class ASN1Integer
         return value;
     }
 
+    @Override
     boolean asn1Equals(
-        ASN1Primitive o)
+        final ASN1Primitive o)
     {
         if (!(o instanceof ASN1Integer))
         {
             return false;
         }
 
-        ASN1Integer other = (ASN1Integer)o;
+        final ASN1Integer other = (ASN1Integer)o;
 
         return Arrays.areEqual(bytes, other.bytes);
     }
 
+    @Override
     public String toString()
     {
         return getValue().toString();

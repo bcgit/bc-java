@@ -16,7 +16,7 @@ public class DERBitString
      * @return a DERBitString instance, or null.
      */
     public static DERBitString getInstance(
-        Object  obj)
+        final Object  obj)
     {
         if (obj == null || obj instanceof DERBitString)
         {
@@ -41,10 +41,10 @@ public class DERBitString
      * @return a DERBitString instance, or null.
      */
     public static DERBitString getInstance(
-        ASN1TaggedObject obj,
-        boolean          explicit)
+        final ASN1TaggedObject obj,
+        final boolean          explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        final ASN1Primitive o = obj.getObject();
 
         if (explicit || o instanceof DERBitString)
         {
@@ -55,17 +55,17 @@ public class DERBitString
             return fromOctetString(((ASN1OctetString)o).getOctets());
         }
     }
-    
+
     protected DERBitString(
-        byte    data,
-        int     padBits)
+        final byte    data,
+        final int     padBits)
     {
         this(toByteArray(data), padBits);
     }
 
-    private static byte[] toByteArray(byte data)
+    private static byte[] toByteArray(final byte data)
     {
-        byte[] rv = new byte[1];
+        final byte[] rv = new byte[1];
 
         rv[0] = data;
 
@@ -77,47 +77,49 @@ public class DERBitString
      * @param padBits the number of extra bits at the end of the string.
      */
     public DERBitString(
-        byte[]  data,
-        int     padBits)
+        final byte[]  data,
+        final int     padBits)
     {
         super(data, padBits);
     }
 
     public DERBitString(
-        byte[]  data)
+        final byte[]  data)
     {
         this(data, 0);
     }
 
     public DERBitString(
-        int value)
+        final int value)
     {
         super(getBytes(value), getPadBits(value));
     }
 
     public DERBitString(
-        ASN1Encodable obj)
+        final ASN1Encodable obj)
         throws IOException
     {
         super(obj.toASN1Primitive().getEncoded(ASN1Encoding.DER), 0);
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(data.length + 1) + data.length + 1;
     }
 
+    @Override
     void encode(
-        ASN1OutputStream  out)
-        throws IOException
+        final ASN1OutputStream  out)
     {
-        byte[] string = derForm(data, padBits);
-        byte[] bytes = new byte[string.length + 1];
+        final byte[] string = derForm(data, padBits);
+        final byte[] bytes = new byte[string.length + 1];
 
         bytes[0] = (byte)getPadBits();
         System.arraycopy(string, 0, bytes, 1, bytes.length - 1);
@@ -125,15 +127,15 @@ public class DERBitString
         out.writeEncoded(BERTags.BIT_STRING, bytes);
     }
 
-    static DERBitString fromOctetString(byte[] bytes)
+    static DERBitString fromOctetString(final byte[] bytes)
     {
         if (bytes.length < 1)
         {
             throw new IllegalArgumentException("truncated BIT STRING detected");
         }
 
-        int padBits = bytes[0];
-        byte[] data = new byte[bytes.length - 1];
+        final int padBits = bytes[0];
+        final byte[] data = new byte[bytes.length - 1];
 
         if (data.length != 0)
         {

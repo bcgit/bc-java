@@ -10,11 +10,12 @@ import com.github.gv2011.asn1.util.Strings;
  * Use UTF8String instead.
  * @deprecated don't use this class, introduced in error, it will be removed.
  */
+@Deprecated
 public class DERT61UTF8String
     extends ASN1Primitive
     implements ASN1String
 {
-    private byte[] string;
+    private final byte[] string;
 
     /**
      * return a T61 string from the passed in object. UTF-8 Encoding is assumed in this case.
@@ -24,7 +25,7 @@ public class DERT61UTF8String
      * @return a DERT61UTF8String instance, or null
      */
     public static DERT61UTF8String getInstance(
-        Object obj)
+        final Object obj)
     {
         if (obj instanceof DERT61String)
         {
@@ -42,7 +43,7 @@ public class DERT61UTF8String
             {
                 return new DERT61UTF8String(((DERT61String)fromByteArray((byte[])obj)).getOctets());
             }
-            catch (Exception e)
+            catch (final Exception e)
             {
                 throw new IllegalArgumentException("encoding error in getInstance: " + e.toString());
             }
@@ -62,10 +63,10 @@ public class DERT61UTF8String
      * @return a DERT61UTF8String instance, or null
      */
     public static DERT61UTF8String getInstance(
-        ASN1TaggedObject obj,
-        boolean explicit)
+        final ASN1TaggedObject obj,
+        final boolean explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        final ASN1Primitive o = obj.getObject();
 
         if (explicit || o instanceof DERT61String || o instanceof DERT61UTF8String)
         {
@@ -81,7 +82,7 @@ public class DERT61UTF8String
      * basic constructor - string encoded as a sequence of bytes.
      */
     public DERT61UTF8String(
-        byte[] string)
+        final byte[] string)
     {
         this.string = string;
     }
@@ -90,7 +91,7 @@ public class DERT61UTF8String
      * basic constructor - with string UTF8 conversion assumed.
      */
     public DERT61UTF8String(
-        String string)
+        final String string)
     {
         this(Strings.toUTF8ByteArray(string));
     }
@@ -100,29 +101,33 @@ public class DERT61UTF8String
      *
      * @return the decoded String
      */
+    @Override
     public String getString()
     {
         return Strings.fromUTF8ByteArray(string);
     }
 
+    @Override
     public String toString()
     {
         return getString();
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
         out.writeEncoded(BERTags.T61_STRING, string);
     }
@@ -137,8 +142,9 @@ public class DERT61UTF8String
         return Arrays.clone(string);
     }
 
+    @Override
     boolean asn1Equals(
-        ASN1Primitive o)
+        final ASN1Primitive o)
     {
         if (!(o instanceof DERT61UTF8String))
         {
@@ -148,6 +154,7 @@ public class DERT61UTF8String
         return Arrays.areEqual(string, ((DERT61UTF8String)o).string);
     }
 
+    @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);

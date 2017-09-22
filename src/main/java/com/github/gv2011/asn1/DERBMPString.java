@@ -21,7 +21,7 @@ public class DERBMPString
      * @return a DERBMPString instance, or null.
      */
     public static DERBMPString getInstance(
-        Object  obj)
+        final Object  obj)
     {
         if (obj == null || obj instanceof DERBMPString)
         {
@@ -34,7 +34,7 @@ public class DERBMPString
             {
                 return (DERBMPString)fromByteArray((byte[])obj);
             }
-            catch (Exception e)
+            catch (final Exception e)
             {
                 throw new IllegalArgumentException("encoding error in getInstance: " + e.toString());
             }
@@ -54,10 +54,10 @@ public class DERBMPString
      * @return a DERBMPString instance.
      */
     public static DERBMPString getInstance(
-        ASN1TaggedObject obj,
-        boolean          explicit)
+        final ASN1TaggedObject obj,
+        final boolean          explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        final ASN1Primitive o = obj.getObject();
 
         if (explicit || o instanceof DERBMPString)
         {
@@ -74,9 +74,9 @@ public class DERBMPString
      * @param string the encoded BMP STRING to wrap.
      */
     DERBMPString(
-        byte[]   string)
+        final byte[]   string)
     {
-        char[]  cs = new char[string.length / 2];
+        final char[]  cs = new char[string.length / 2];
 
         for (int i = 0; i != cs.length; i++)
         {
@@ -86,7 +86,7 @@ public class DERBMPString
         this.string = cs;
     }
 
-    DERBMPString(char[] string)
+    DERBMPString(final char[] string)
     {
         this.string = string;
     }
@@ -96,59 +96,65 @@ public class DERBMPString
      * @param string a String to wrap as a BMP STRING.
      */
     public DERBMPString(
-        String   string)
+        final String   string)
     {
         this.string = string.toCharArray();
     }
 
+    @Override
     public String getString()
     {
         return new String(string);
     }
 
+    @Override
     public String toString()
     {
         return getString();
     }
 
+    @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);
     }
 
+    @Override
     protected boolean asn1Equals(
-        ASN1Primitive o)
+        final ASN1Primitive o)
     {
         if (!(o instanceof DERBMPString))
         {
             return false;
         }
 
-        DERBMPString  s = (DERBMPString)o;
+        final DERBMPString  s = (DERBMPString)o;
 
         return Arrays.areEqual(string, s.string);
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length * 2) + (string.length * 2);
     }
 
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
         out.write(BERTags.BMP_STRING);
         out.writeLength(string.length * 2);
 
         for (int i = 0; i != string.length; i++)
         {
-            char c = string[i];
+            final char c = string[i];
 
             out.write((byte)(c >> 8));
             out.write((byte)c);

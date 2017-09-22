@@ -23,7 +23,7 @@ public class DERT61String
      * @return a DERT61String instance, or null
      */
     public static DERT61String getInstance(
-        Object  obj)
+        final Object  obj)
     {
         if (obj == null || obj instanceof DERT61String)
         {
@@ -36,7 +36,7 @@ public class DERT61String
             {
                 return (DERT61String)fromByteArray((byte[])obj);
             }
-            catch (Exception e)
+            catch (final Exception e)
             {
                 throw new IllegalArgumentException("encoding error in getInstance: " + e.toString());
             }
@@ -56,10 +56,10 @@ public class DERT61String
      * @return a DERT61String instance, or null
      */
     public static DERT61String getInstance(
-        ASN1TaggedObject obj,
-        boolean          explicit)
+        final ASN1TaggedObject obj,
+        final boolean          explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        final ASN1Primitive o = obj.getObject();
 
         if (explicit || o instanceof DERT61String)
         {
@@ -77,7 +77,7 @@ public class DERT61String
      * @param string the byte encoding of the string to be wrapped.
      */
     public DERT61String(
-        byte[]   string)
+        final byte[]   string)
     {
         this.string = string;
     }
@@ -88,7 +88,7 @@ public class DERT61String
      * @param string the string to be wrapped.
      */
     public DERT61String(
-        String   string)
+        final String   string)
     {
         this(Strings.toByteArray(string));
     }
@@ -97,29 +97,33 @@ public class DERT61String
      * Decode the encoded string and return it, 8 bit encoding assumed.
      * @return the decoded String
      */
+    @Override
     public String getString()
     {
         return Strings.fromByteArray(string);
     }
 
+    @Override
     public String toString()
     {
         return getString();
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
         out.writeEncoded(BERTags.T61_STRING, string);
     }
@@ -133,8 +137,9 @@ public class DERT61String
         return Arrays.clone(string);
     }
 
+    @Override
     boolean asn1Equals(
-        ASN1Primitive o)
+        final ASN1Primitive o)
     {
         if (!(o instanceof DERT61String))
         {
@@ -143,7 +148,8 @@ public class DERT61String
 
         return Arrays.areEqual(string, ((DERT61String)o).string);
     }
-    
+
+    @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);

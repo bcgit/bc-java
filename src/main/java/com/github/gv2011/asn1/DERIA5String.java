@@ -22,7 +22,7 @@ public class DERIA5String
      * @return a DERIA5String instance, or null.
      */
     public static DERIA5String getInstance(
-        Object  obj)
+        final Object  obj)
     {
         if (obj == null || obj instanceof DERIA5String)
         {
@@ -35,7 +35,7 @@ public class DERIA5String
             {
                 return (DERIA5String)fromByteArray((byte[])obj);
             }
-            catch (Exception e)
+            catch (final Exception e)
             {
                 throw new IllegalArgumentException("encoding error in getInstance: " + e.toString());
             }
@@ -55,10 +55,10 @@ public class DERIA5String
      * @return a DERIA5String instance, or null.
      */
     public static DERIA5String getInstance(
-        ASN1TaggedObject obj,
-        boolean          explicit)
+        final ASN1TaggedObject obj,
+        final boolean          explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        final ASN1Primitive o = obj.getObject();
 
         if (explicit || o instanceof DERIA5String)
         {
@@ -75,7 +75,7 @@ public class DERIA5String
      * @param string the byte encoding of the characters making up the string.
      */
     DERIA5String(
-        byte[]   string)
+        final byte[]   string)
     {
         this.string = string;
     }
@@ -85,7 +85,7 @@ public class DERIA5String
      * @param string the base string to use..
      */
     public DERIA5String(
-        String   string)
+        final String   string)
     {
         this(string, false);
     }
@@ -99,8 +99,8 @@ public class DERIA5String
      * contains characters that should not be in an IA5String.
      */
     public DERIA5String(
-        String   string,
-        boolean  validate)
+        final String   string,
+        final boolean  validate)
     {
         if (string == null)
         {
@@ -114,11 +114,13 @@ public class DERIA5String
         this.string = Strings.toByteArray(string);
     }
 
+    @Override
     public String getString()
     {
         return Strings.fromByteArray(string);
     }
 
+    @Override
     public String toString()
     {
         return getString();
@@ -129,37 +131,41 @@ public class DERIA5String
         return Arrays.clone(string);
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
         out.writeEncoded(BERTags.IA5_STRING, string);
     }
 
+    @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);
     }
 
+    @Override
     boolean asn1Equals(
-        ASN1Primitive o)
+        final ASN1Primitive o)
     {
         if (!(o instanceof DERIA5String))
         {
             return false;
         }
 
-        DERIA5String  s = (DERIA5String)o;
+        final DERIA5String  s = (DERIA5String)o;
 
         return Arrays.areEqual(string, s.string);
     }
@@ -172,11 +178,11 @@ public class DERIA5String
      * @return true if character set in IA5String set, false otherwise.
      */
     public static boolean isIA5String(
-        String  str)
+        final String  str)
     {
         for (int i = str.length() - 1; i >= 0; i--)
         {
-            char    ch = str.charAt(i);
+            final char    ch = str.charAt(i);
 
             if (ch > 0x007f)
             {

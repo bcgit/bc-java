@@ -10,9 +10,9 @@ public class BERApplicationSpecific
     extends ASN1ApplicationSpecific
 {
     BERApplicationSpecific(
-        boolean isConstructed,
-        int tag,
-        byte[] octets)
+        final boolean isConstructed,
+        final int tag,
+        final byte[] octets)
     {
         super(isConstructed, tag, octets);
     }
@@ -24,8 +24,8 @@ public class BERApplicationSpecific
      * @param object the object to be contained.
      */
     public BERApplicationSpecific(
-        int tag,
-        ASN1Encodable object)
+        final int tag,
+        final ASN1Encodable object)
         throws IOException
     {
         this(true, tag, object);
@@ -39,18 +39,18 @@ public class BERApplicationSpecific
      * @param object the object to be contained.
      */
     public BERApplicationSpecific(
-        boolean constructed,
-        int tag,
-        ASN1Encodable object)
+        final boolean constructed,
+        final int tag,
+        final ASN1Encodable object)
         throws IOException
     {
         super(constructed || object.toASN1Primitive().isConstructed(), tag, getEncoding(constructed, object));
     }
 
-    private static byte[] getEncoding(boolean explicit, ASN1Encodable object)
+    private static byte[] getEncoding(final boolean explicit, final ASN1Encodable object)
         throws IOException
     {
-        byte[] data = object.toASN1Primitive().getEncoded(ASN1Encoding.BER);
+        final byte[] data = object.toASN1Primitive().getEncoded(ASN1Encoding.BER);
 
         if (explicit)
         {
@@ -58,8 +58,8 @@ public class BERApplicationSpecific
         }
         else
         {
-            int lenBytes = getLengthOfHeader(data);
-            byte[] tmp = new byte[data.length - lenBytes];
+            final int lenBytes = getLengthOfHeader(data);
+            final byte[] tmp = new byte[data.length - lenBytes];
             System.arraycopy(data, lenBytes, tmp, 0, tmp.length);
             return tmp;
         }
@@ -71,14 +71,14 @@ public class BERApplicationSpecific
      * @param tagNo the tag number for this object.
      * @param vec the objects making up the application specific object.
      */
-    public BERApplicationSpecific(int tagNo, ASN1EncodableVector vec)
+    public BERApplicationSpecific(final int tagNo, final ASN1EncodableVector vec)
     {
         super(true, tagNo, getEncodedVector(vec));
     }
 
-    private static byte[] getEncodedVector(ASN1EncodableVector vec)
+    private static byte[] getEncodedVector(final ASN1EncodableVector vec)
     {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         for (int i = 0; i != vec.size(); i++)
         {
@@ -86,7 +86,7 @@ public class BERApplicationSpecific
             {
                 bOut.write(((ASN1Object)vec.get(i)).getEncoded(ASN1Encoding.BER));
             }
-            catch (IOException e)
+            catch (final IOException e)
             {
                 throw new ASN1ParsingException("malformed object: " + e, e);
             }
@@ -97,7 +97,8 @@ public class BERApplicationSpecific
     /* (non-Javadoc)
      * @see org.bouncycastle.asn1.ASN1Primitive#encode(org.bouncycastle.asn1.DEROutputStream)
      */
-    void encode(ASN1OutputStream out) throws IOException
+    @Override
+    void encode(final ASN1OutputStream out)
     {
         int classBits = BERTags.APPLICATION;
         if (isConstructed)

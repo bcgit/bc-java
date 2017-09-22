@@ -8,6 +8,7 @@ import java.util.Vector;
 /**
  * @deprecated use BEROctetString
  */
+@Deprecated
 public class BERConstructedOctetString
     extends BEROctetString
 {
@@ -17,23 +18,23 @@ public class BERConstructedOctetString
      * convert a vector of octet strings into a single byte string
      */
     static private byte[] toBytes(
-        Vector  octs)
+        final Vector  octs)
     {
-        ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
+        final ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
 
         for (int i = 0; i != octs.size(); i++)
         {
             try
             {
-                DEROctetString  o = (DEROctetString)octs.elementAt(i);
+                final DEROctetString  o = (DEROctetString)octs.elementAt(i);
 
                 bOut.write(o.getOctets());
             }
-            catch (ClassCastException e)
+            catch (final ClassCastException e)
             {
                 throw new IllegalArgumentException(octs.elementAt(i).getClass().getName() + " found in input should only contain DEROctetString");
             }
-            catch (IOException e)
+            catch (final IOException e)
             {
                 throw new IllegalArgumentException("exception converting octets " + e.toString());
             }
@@ -48,13 +49,13 @@ public class BERConstructedOctetString
      * @param string the octets making up the octet string.
      */
     public BERConstructedOctetString(
-        byte[]  string)
+        final byte[]  string)
     {
         super(string);
     }
 
     public BERConstructedOctetString(
-        Vector  octs)
+        final Vector  octs)
     {
         super(toBytes(octs));
 
@@ -62,29 +63,23 @@ public class BERConstructedOctetString
     }
 
     public BERConstructedOctetString(
-        ASN1Primitive  obj)
+        final ASN1Primitive  obj)
     {
         super(toByteArray(obj));
     }
 
-    private static byte[] toByteArray(ASN1Primitive obj)
+    private static byte[] toByteArray(final ASN1Primitive obj)
     {
-        try
-        {
-            return obj.getEncoded();
-        }
-        catch (IOException e)
-        {
-            throw new IllegalArgumentException("Unable to encode object");
-        }
+        return obj.getEncoded();
     }
 
     public BERConstructedOctetString(
-        ASN1Encodable  obj)
+        final ASN1Encodable  obj)
     {
         this(obj.toASN1Primitive());
     }
 
+    @Override
     public byte[] getOctets()
     {
         return string;
@@ -93,6 +88,7 @@ public class BERConstructedOctetString
     /**
      * return the DER octets that make up this string.
      */
+    @Override
     public Enumeration getObjects()
     {
         if (octs == null)
@@ -103,36 +99,36 @@ public class BERConstructedOctetString
         return octs.elements();
     }
 
-    private Vector generateOcts() 
-    { 
-        Vector vec = new Vector(); 
-        for (int i = 0; i < string.length; i += MAX_LENGTH) 
-        { 
-            int end; 
+    private Vector generateOcts()
+    {
+        final Vector vec = new Vector();
+        for (int i = 0; i < string.length; i += MAX_LENGTH)
+        {
+            int end;
 
-            if (i + MAX_LENGTH > string.length) 
-            { 
-                end = string.length; 
-            } 
-            else 
-            { 
-                end = i + MAX_LENGTH; 
-            } 
+            if (i + MAX_LENGTH > string.length)
+            {
+                end = string.length;
+            }
+            else
+            {
+                end = i + MAX_LENGTH;
+            }
 
-            byte[] nStr = new byte[end - i]; 
+            final byte[] nStr = new byte[end - i];
 
-            System.arraycopy(string, i, nStr, 0, nStr.length); 
+            System.arraycopy(string, i, nStr, 0, nStr.length);
 
-            vec.addElement(new DEROctetString(nStr)); 
-         } 
-        
-         return vec; 
+            vec.addElement(new DEROctetString(nStr));
+         }
+
+         return vec;
     }
 
-    public static BEROctetString fromSequence(ASN1Sequence seq)
+    public static BEROctetString fromSequence(final ASN1Sequence seq)
     {
-        Vector      v = new Vector();
-        Enumeration e = seq.getObjects();
+        final Vector      v = new Vector();
+        final Enumeration e = seq.getObjects();
 
         while (e.hasMoreElements())
         {

@@ -14,7 +14,7 @@ public class DERUniversalString
 {
     private static final char[]  table = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
     private final byte[] string;
-    
+
     /**
      * return a Universal String from the passed in object.
      *
@@ -23,7 +23,7 @@ public class DERUniversalString
      * @return a DERUniversalString instance, or null
      */
     public static DERUniversalString getInstance(
-        Object  obj)
+        final Object  obj)
     {
         if (obj == null || obj instanceof DERUniversalString)
         {
@@ -36,7 +36,7 @@ public class DERUniversalString
             {
                 return (DERUniversalString)fromByteArray((byte[])obj);
             }
-            catch (Exception e)
+            catch (final Exception e)
             {
                 throw new IllegalArgumentException("encoding error getInstance: " + e.toString());
             }
@@ -56,10 +56,10 @@ public class DERUniversalString
      * @return a DERUniversalString instance, or null
      */
     public static DERUniversalString getInstance(
-        ASN1TaggedObject obj,
-        boolean          explicit)
+        final ASN1TaggedObject obj,
+        final boolean          explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        final ASN1Primitive o = obj.getObject();
 
         if (explicit || o instanceof DERUniversalString)
         {
@@ -77,37 +77,32 @@ public class DERUniversalString
      * @param string the byte encoding of the string to be carried in the UniversalString object,
      */
     public DERUniversalString(
-        byte[]   string)
+        final byte[]   string)
     {
         this.string = string;
     }
 
+    @Override
     public String getString()
     {
-        StringBuffer    buf = new StringBuffer("#");
-        ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
-        ASN1OutputStream            aOut = new ASN1OutputStream(bOut);
-        
-        try
-        {
-            aOut.writeObject(this);
-        }
-        catch (IOException e)
-        {
-           throw new RuntimeException("internal error encoding BitString");
-        }
-        
-        byte[]    string = bOut.toByteArray();
-        
+        final StringBuffer    buf = new StringBuffer("#");
+        final ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
+        final ASN1OutputStream            aOut = new ASN1OutputStream(bOut);
+
+        aOut.writeObject(this);
+
+        final byte[]    string = bOut.toByteArray();
+
         for (int i = 0; i != string.length; i++)
         {
             buf.append(table[(string[i] >>> 4) & 0xf]);
             buf.append(table[string[i] & 0xf]);
         }
-        
+
         return buf.toString();
     }
 
+    @Override
     public String toString()
     {
         return getString();
@@ -118,25 +113,28 @@ public class DERUniversalString
         return string;
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
-        out.writeEncoded(BERTags.UNIVERSAL_STRING, this.getOctets());
+        out.writeEncoded(BERTags.UNIVERSAL_STRING, getOctets());
     }
-    
+
+    @Override
     boolean asn1Equals(
-        ASN1Primitive o)
+        final ASN1Primitive o)
     {
         if (!(o instanceof DERUniversalString))
         {
@@ -145,7 +143,8 @@ public class DERUniversalString
 
         return Arrays.areEqual(string, ((DERUniversalString)o).string);
     }
-    
+
+    @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);

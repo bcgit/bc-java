@@ -16,23 +16,23 @@ public class BEROctetString
      * convert a vector of octet strings into a single byte string
      */
     static private byte[] toBytes(
-        ASN1OctetString[]  octs)
+        final ASN1OctetString[]  octs)
     {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         for (int i = 0; i != octs.length; i++)
         {
             try
             {
-                DEROctetString o = (DEROctetString)octs[i];
+                final DEROctetString o = (DEROctetString)octs[i];
 
                 bOut.write(o.getOctets());
             }
-            catch (ClassCastException e)
+            catch (final ClassCastException e)
             {
                 throw new IllegalArgumentException(octs[i].getClass().getName() + " found in input should only contain DEROctetString");
             }
-            catch (IOException e)
+            catch (final IOException e)
             {
                 throw new IllegalArgumentException("exception converting octets " + e.toString());
             }
@@ -45,19 +45,20 @@ public class BEROctetString
      * @param string the octets making up the octet string.
      */
     public BEROctetString(
-        byte[] string)
+        final byte[] string)
     {
         super(string);
     }
 
     public BEROctetString(
-        ASN1OctetString[] octs)
+        final ASN1OctetString[] octs)
     {
         super(toBytes(octs));
 
         this.octs = octs;
     }
 
+    @Override
     public byte[] getOctets()
     {
         return string;
@@ -77,11 +78,13 @@ public class BEROctetString
         {
             int counter = 0;
 
+            @Override
             public boolean hasMoreElements()
             {
                 return counter < octs.length;
             }
 
+            @Override
             public Object nextElement()
             {
                 return octs[counter++];
@@ -90,41 +93,42 @@ public class BEROctetString
     }
 
     private Vector generateOcts()
-    { 
-        Vector vec = new Vector();
-        for (int i = 0; i < string.length; i += MAX_LENGTH) 
-        { 
-            int end; 
+    {
+        final Vector vec = new Vector();
+        for (int i = 0; i < string.length; i += MAX_LENGTH)
+        {
+            int end;
 
-            if (i + MAX_LENGTH > string.length) 
-            { 
-                end = string.length; 
-            } 
-            else 
-            { 
-                end = i + MAX_LENGTH; 
-            } 
+            if (i + MAX_LENGTH > string.length)
+            {
+                end = string.length;
+            }
+            else
+            {
+                end = i + MAX_LENGTH;
+            }
 
-            byte[] nStr = new byte[end - i]; 
+            final byte[] nStr = new byte[end - i];
 
             System.arraycopy(string, i, nStr, 0, nStr.length);
 
             vec.addElement(new DEROctetString(nStr));
-         } 
-        
-         return vec; 
+         }
+
+         return vec;
     }
 
+    @Override
     boolean isConstructed()
     {
         return true;
     }
 
+    @Override
     int encodedLength()
-        throws IOException
     {
         int length = 0;
-        for (Enumeration e = getObjects(); e.hasMoreElements();)
+        for (final Enumeration e = getObjects(); e.hasMoreElements();)
         {
             length += ((ASN1Encodable)e.nextElement()).toASN1Primitive().encodedLength();
         }
@@ -132,9 +136,9 @@ public class BEROctetString
         return 2 + length + 2;
     }
 
+    @Override
     public void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
         out.write(BERTags.CONSTRUCTED | BERTags.OCTET_STRING);
 
@@ -143,7 +147,7 @@ public class BEROctetString
         //
         // write out the octet array
         //
-        for (Enumeration e = getObjects(); e.hasMoreElements();)
+        for (final Enumeration e = getObjects(); e.hasMoreElements();)
         {
             out.writeObject((ASN1Encodable)e.nextElement());
         }
@@ -152,10 +156,10 @@ public class BEROctetString
         out.write(0x00);
     }
 
-    static BEROctetString fromSequence(ASN1Sequence seq)
+    static BEROctetString fromSequence(final ASN1Sequence seq)
     {
-        ASN1OctetString[]     v = new ASN1OctetString[seq.size()];
-        Enumeration e = seq.getObjects();
+        final ASN1OctetString[]     v = new ASN1OctetString[seq.size()];
+        final Enumeration e = seq.getObjects();
         int                   index = 0;
 
         while (e.hasMoreElements())

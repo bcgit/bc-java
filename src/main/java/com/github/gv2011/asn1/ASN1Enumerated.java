@@ -21,7 +21,7 @@ public class ASN1Enumerated
      * @return an ASN1Enumerated instance, or null.
      */
     public static ASN1Enumerated getInstance(
-        Object  obj)
+        final Object  obj)
     {
         if (obj == null || obj instanceof ASN1Enumerated)
         {
@@ -34,7 +34,7 @@ public class ASN1Enumerated
             {
                 return (ASN1Enumerated)fromByteArray((byte[])obj);
             }
-            catch (Exception e)
+            catch (final Exception e)
             {
                 throw new IllegalArgumentException("encoding error in getInstance: " + e.toString());
             }
@@ -54,10 +54,10 @@ public class ASN1Enumerated
      * @return an ASN1Enumerated instance, or null.
      */
     public static ASN1Enumerated getInstance(
-        ASN1TaggedObject obj,
-        boolean          explicit)
+        final ASN1TaggedObject obj,
+        final boolean          explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        final ASN1Primitive o = obj.getObject();
 
         if (explicit || o instanceof ASN1Enumerated)
         {
@@ -75,7 +75,7 @@ public class ASN1Enumerated
      * @param value the value of this enumerated.
      */
     public ASN1Enumerated(
-        int         value)
+        final int         value)
     {
         bytes = BigInteger.valueOf(value).toByteArray();
     }
@@ -86,7 +86,7 @@ public class ASN1Enumerated
      * @param value the value of this enumerated.
      */
     public ASN1Enumerated(
-        BigInteger   value)
+        final BigInteger   value)
     {
         bytes = value.toByteArray();
     }
@@ -97,7 +97,7 @@ public class ASN1Enumerated
      * @param bytes the value of this enumerated as an encoded BigInteger (signed).
      */
     public ASN1Enumerated(
-        byte[]   bytes)
+        final byte[]   bytes)
     {
         this.bytes = bytes;
     }
@@ -107,36 +107,40 @@ public class ASN1Enumerated
         return new BigInteger(bytes);
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(bytes.length) + bytes.length;
     }
 
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
         out.writeEncoded(BERTags.ENUMERATED, bytes);
     }
-    
+
+    @Override
     boolean asn1Equals(
-        ASN1Primitive  o)
+        final ASN1Primitive  o)
     {
         if (!(o instanceof ASN1Enumerated))
         {
             return false;
         }
 
-        ASN1Enumerated other = (ASN1Enumerated)o;
+        final ASN1Enumerated other = (ASN1Enumerated)o;
 
-        return Arrays.areEqual(this.bytes, other.bytes);
+        return Arrays.areEqual(bytes, other.bytes);
     }
 
+    @Override
     public int hashCode()
     {
         return Arrays.hashCode(bytes);
@@ -144,7 +148,7 @@ public class ASN1Enumerated
 
     private static ASN1Enumerated[] cache = new ASN1Enumerated[12];
 
-    static ASN1Enumerated fromOctetString(byte[] enc)
+    static ASN1Enumerated fromOctetString(final byte[] enc)
     {
         if (enc.length > 1)
         {
@@ -155,7 +159,7 @@ public class ASN1Enumerated
         {
             throw new IllegalArgumentException("ENUMERATED has zero length");
         }
-        int value = enc[0] & 0xff;
+        final int value = enc[0] & 0xff;
 
         if (value >= cache.length)
         {

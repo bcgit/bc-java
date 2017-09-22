@@ -22,7 +22,7 @@ public class DERNumericString
      * @return a DERNumericString instance, or null
      */
     public static DERNumericString getInstance(
-        Object  obj)
+        final Object  obj)
     {
         if (obj == null || obj instanceof DERNumericString)
         {
@@ -35,7 +35,7 @@ public class DERNumericString
             {
                 return (DERNumericString)fromByteArray((byte[])obj);
             }
-            catch (Exception e)
+            catch (final Exception e)
             {
                 throw new IllegalArgumentException("encoding error in getInstance: " + e.toString());
             }
@@ -55,10 +55,10 @@ public class DERNumericString
      * @return a DERNumericString instance, or null.
      */
     public static DERNumericString getInstance(
-        ASN1TaggedObject obj,
-        boolean          explicit)
+        final ASN1TaggedObject obj,
+        final boolean          explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        final ASN1Primitive o = obj.getObject();
 
         if (explicit || o instanceof DERNumericString)
         {
@@ -74,7 +74,7 @@ public class DERNumericString
      * basic constructor - with bytes.
      */
     DERNumericString(
-        byte[]   string)
+        final byte[]   string)
     {
         this.string = string;
     }
@@ -83,7 +83,7 @@ public class DERNumericString
      * basic constructor -  without validation..
      */
     public DERNumericString(
-        String   string)
+        final String   string)
     {
         this(string, false);
     }
@@ -97,8 +97,8 @@ public class DERNumericString
      * contains characters that should not be in a NumericString.
      */
     public DERNumericString(
-        String   string,
-        boolean  validate)
+        final String   string,
+        final boolean  validate)
     {
         if (validate && !isNumericString(string))
         {
@@ -108,11 +108,13 @@ public class DERNumericString
         this.string = Strings.toByteArray(string);
     }
 
+    @Override
     public String getString()
     {
         return Strings.fromByteArray(string);
     }
 
+    @Override
     public String toString()
     {
         return getString();
@@ -123,37 +125,41 @@ public class DERNumericString
         return Arrays.clone(string);
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
         out.writeEncoded(BERTags.NUMERIC_STRING, string);
     }
 
+    @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);
     }
 
+    @Override
     boolean asn1Equals(
-        ASN1Primitive o)
+        final ASN1Primitive o)
     {
         if (!(o instanceof DERNumericString))
         {
             return false;
         }
 
-        DERNumericString  s = (DERNumericString)o;
+        final DERNumericString  s = (DERNumericString)o;
 
         return Arrays.areEqual(string, s.string);
     }
@@ -165,11 +171,11 @@ public class DERNumericString
      * @return true if numeric, fale otherwise.
      */
     public static boolean isNumericString(
-        String  str)
+        final String  str)
     {
         for (int i = str.length() - 1; i >= 0; i--)
         {
-            char    ch = str.charAt(i);
+            final char    ch = str.charAt(i);
 
             if (ch > 0x007f)
             {

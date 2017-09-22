@@ -15,23 +15,26 @@ public class DERNull
     /**
      * @deprecated use DERNull.INSTANCE
      */
+    @Deprecated
     public DERNull()
     {
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         return 2;
     }
 
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
         out.writeEncoded(BERTags.NULL, zeroBytes);
     }

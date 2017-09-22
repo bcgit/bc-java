@@ -26,7 +26,7 @@ public abstract class ASN1BitString
      * a 32 bit constant
      */
     static protected int getPadBits(
-        int bitString)
+        final int bitString)
     {
         int val = 0;
         for (int i = 3; i >= 0; i--)
@@ -73,7 +73,7 @@ public abstract class ASN1BitString
      * @return the correct number of bytes for a bit string defined in
      * a 32 bit constant
      */
-    static protected byte[] getBytes(int bitString)
+    static protected byte[] getBytes(final int bitString)
     {
         if (bitString == 0)
         {
@@ -90,7 +90,7 @@ public abstract class ASN1BitString
             bytes--;
         }
 
-        byte[] result = new byte[bytes];
+        final byte[] result = new byte[bytes];
         for (int i = 0; i < bytes; i++)
         {
             result[i] = (byte) ((bitString >> (i * 8)) & 0xFF);
@@ -106,8 +106,8 @@ public abstract class ASN1BitString
      * @param padBits the number of extra bits at the end of the string.
      */
     public ASN1BitString(
-        byte[]  data,
-        int     padBits)
+        final byte[]  data,
+        final int     padBits)
     {
         if (data == null)
         {
@@ -131,22 +131,16 @@ public abstract class ASN1BitString
      *
      * @return a String representation.
      */
+    @Override
     public String getString()
     {
-        StringBuffer          buf = new StringBuffer("#");
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        ASN1OutputStream      aOut = new ASN1OutputStream(bOut);
+        final StringBuffer          buf = new StringBuffer("#");
+        final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        final ASN1OutputStream      aOut = new ASN1OutputStream(bOut);
 
-        try
-        {
-            aOut.writeObject(this);
-        }
-        catch (IOException e)
-        {
-            throw new ASN1ParsingException("Internal error encoding BitString: " + e.getMessage(), e);
-        }
+        aOut.writeObject(this);
 
-        byte[]    string = bOut.toByteArray();
+        final byte[]    string = bOut.toByteArray();
 
         for (int i = 0; i != string.length; i++)
         {
@@ -205,33 +199,36 @@ public abstract class ASN1BitString
         return padBits;
     }
 
+    @Override
     public String toString()
     {
         return getString();
     }
 
+    @Override
     public int hashCode()
     {
         return padBits ^ Arrays.hashCode(this.getBytes());
     }
 
+    @Override
     protected boolean asn1Equals(
-        ASN1Primitive  o)
+        final ASN1Primitive  o)
     {
         if (!(o instanceof ASN1BitString))
         {
             return false;
         }
 
-        ASN1BitString other = (ASN1BitString)o;
+        final ASN1BitString other = (ASN1BitString)o;
 
-        return this.padBits == other.padBits
+        return padBits == other.padBits
             && Arrays.areEqual(this.getBytes(), other.getBytes());
     }
 
-    protected static byte[] derForm(byte[] data, int padBits)
+    protected static byte[] derForm(final byte[] data, final int padBits)
     {
-        byte[] rv = Arrays.clone(data);
+        final byte[] rv = Arrays.clone(data);
         // DER requires pad bits be zero
         if (padBits > 0)
         {
@@ -241,7 +238,7 @@ public abstract class ASN1BitString
         return rv;
     }
 
-    static ASN1BitString fromInputStream(int length, InputStream stream)
+    static ASN1BitString fromInputStream(final int length, final InputStream stream)
         throws IOException
     {
         if (length < 1)
@@ -249,8 +246,8 @@ public abstract class ASN1BitString
             throw new IllegalArgumentException("truncated BIT STRING detected");
         }
 
-        int padBits = stream.read();
-        byte[] data = new byte[length - 1];
+        final int padBits = stream.read();
+        final byte[] data = new byte[length - 1];
 
         if (data.length != 0)
         {
@@ -273,19 +270,21 @@ public abstract class ASN1BitString
 
     public ASN1Primitive getLoadedObject()
     {
-        return this.toASN1Primitive();
+        return toASN1Primitive();
     }
 
+    @Override
     ASN1Primitive toDERObject()
     {
         return new DERBitString(data, padBits);
     }
 
+    @Override
     ASN1Primitive toDLObject()
     {
         return new DLBitString(data, padBits);
     }
 
-    abstract void encode(ASN1OutputStream out)
-        throws IOException;
+    @Override
+    abstract void encode(ASN1OutputStream out);
 }

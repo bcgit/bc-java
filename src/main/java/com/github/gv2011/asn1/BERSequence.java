@@ -20,7 +20,7 @@ public class BERSequence
      * Create a sequence containing one object
      */
     public BERSequence(
-        ASN1Encodable obj)
+        final ASN1Encodable obj)
     {
         super(obj);
     }
@@ -29,7 +29,7 @@ public class BERSequence
      * Create a sequence containing a vector of objects.
      */
     public BERSequence(
-        ASN1EncodableVector v)
+        final ASN1EncodableVector v)
     {
         super(v);
     }
@@ -38,16 +38,16 @@ public class BERSequence
      * Create a sequence containing an array of objects.
      */
     public BERSequence(
-        ASN1Encodable[]   array)
+        final ASN1Encodable[]   array)
     {
         super(array);
     }
 
+    @Override
     int encodedLength()
-        throws IOException
     {
         int length = 0;
-        for (Enumeration e = getObjects(); e.hasMoreElements();)
+        for (final Enumeration e = getObjects(); e.hasMoreElements();)
         {
             length += ((ASN1Encodable)e.nextElement()).toASN1Primitive().encodedLength();
         }
@@ -55,14 +55,14 @@ public class BERSequence
         return 2 + length + 2;
     }
 
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
         out.write(BERTags.SEQUENCE | BERTags.CONSTRUCTED);
         out.write(0x80);
 
-        Enumeration e = getObjects();
+        final Enumeration e = getObjects();
         while (e.hasMoreElements())
         {
             out.writeObject((ASN1Encodable)e.nextElement());

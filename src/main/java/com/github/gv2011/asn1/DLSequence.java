@@ -23,7 +23,7 @@ public class DLSequence
      * @param obj the object to go in the sequence.
      */
     public DLSequence(
-        ASN1Encodable obj)
+        final ASN1Encodable obj)
     {
         super(obj);
     }
@@ -33,7 +33,7 @@ public class DLSequence
      * @param v the vector of objects to make up the sequence.
      */
     public DLSequence(
-        ASN1EncodableVector v)
+        final ASN1EncodableVector v)
     {
         super(v);
     }
@@ -43,21 +43,20 @@ public class DLSequence
      * @param array the array of objects to make up the sequence.
      */
     public DLSequence(
-        ASN1Encodable[] array)
+        final ASN1Encodable[] array)
     {
         super(array);
     }
 
     private int getBodyLength()
-        throws IOException
     {
         if (bodyLength < 0)
         {
             int length = 0;
 
-            for (Enumeration e = this.getObjects(); e.hasMoreElements();)
+            for (final Enumeration e = getObjects(); e.hasMoreElements();)
             {
-                Object obj = e.nextElement();
+                final Object obj = e.nextElement();
 
                 length += ((ASN1Encodable)obj).toASN1Primitive().toDLObject().encodedLength();
             }
@@ -68,10 +67,10 @@ public class DLSequence
         return bodyLength;
     }
 
+    @Override
     int encodedLength()
-        throws IOException
-    {
-        int length = getBodyLength();
+     {
+        final int length = getBodyLength();
 
         return 1 + StreamUtil.calculateBodyLength(length) + length;
     }
@@ -84,19 +83,19 @@ public class DLSequence
      * ASN.1 descriptions given. Rather than just outputting SEQUENCE,
      * we also have to specify CONSTRUCTED, and the objects length.
      */
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
-        ASN1OutputStream dOut = out.getDLSubStream();
-        int length = getBodyLength();
+        final ASN1OutputStream dOut = out.getDLSubStream();
+        final int length = getBodyLength();
 
         out.write(BERTags.SEQUENCE | BERTags.CONSTRUCTED);
         out.writeLength(length);
 
-        for (Enumeration e = this.getObjects(); e.hasMoreElements();)
+        for (final Enumeration e = getObjects(); e.hasMoreElements();)
         {
-            Object obj = e.nextElement();
+            final Object obj = e.nextElement();
 
             dOut.writeObject((ASN1Encodable)obj);
         }

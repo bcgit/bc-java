@@ -22,7 +22,7 @@ public class BERSet
      * @param obj - a single object that makes up the set.
      */
     public BERSet(
-        ASN1Encodable obj)
+        final ASN1Encodable obj)
     {
         super(obj);
     }
@@ -32,7 +32,7 @@ public class BERSet
      * @param v a vector of objects making up the set.
      */
     public BERSet(
-        ASN1EncodableVector v)
+        final ASN1EncodableVector v)
     {
         super(v, false);
     }
@@ -42,16 +42,16 @@ public class BERSet
      * @param a an array of ASN.1 objects.
      */
     public BERSet(
-        ASN1Encodable[]   a)
+        final ASN1Encodable[]   a)
     {
         super(a, false);
     }
 
+    @Override
     int encodedLength()
-        throws IOException
     {
         int length = 0;
-        for (Enumeration e = getObjects(); e.hasMoreElements();)
+        for (final Enumeration e = getObjects(); e.hasMoreElements();)
         {
             length += ((ASN1Encodable)e.nextElement()).toASN1Primitive().encodedLength();
         }
@@ -59,14 +59,14 @@ public class BERSet
         return 2 + length + 2;
     }
 
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
         out.write(BERTags.SET | BERTags.CONSTRUCTED);
         out.write(0x80);
 
-        Enumeration e = getObjects();
+        final Enumeration e = getObjects();
         while (e.hasMoreElements())
         {
             out.writeObject((ASN1Encodable)e.nextElement());

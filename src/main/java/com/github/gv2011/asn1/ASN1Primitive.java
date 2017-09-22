@@ -20,14 +20,14 @@ public abstract class ASN1Primitive
      * @return the base ASN.1 object represented by the byte stream.
      * @exception IOException if there is a problem parsing the data, or parsing the stream did not exhaust the available data.
      */
-    public static ASN1Primitive fromByteArray(byte[] data)
+    public static ASN1Primitive fromByteArray(final byte[] data)
         throws IOException
     {
-        ASN1InputStream aIn = new ASN1InputStream(data);
+        final ASN1InputStream aIn = new ASN1InputStream(data);
 
         try
         {
-            ASN1Primitive o = aIn.readObject();
+            final ASN1Primitive o = aIn.readObject();
 
             if (aIn.available() != 0)
             {
@@ -36,13 +36,14 @@ public abstract class ASN1Primitive
 
             return o;
         }
-        catch (ClassCastException e)
+        catch (final ClassCastException e)
         {
             throw new IOException("cannot recognise object in stream");
         }
     }
 
-    public final boolean equals(Object o)
+    @Override
+    public final boolean equals(final Object o)
     {
         if (this == o)
         {
@@ -52,6 +53,7 @@ public abstract class ASN1Primitive
         return (o instanceof ASN1Encodable) && asn1Equals(((ASN1Encodable)o).toASN1Primitive());
     }
 
+    @Override
     public ASN1Primitive toASN1Primitive()
     {
         return this;
@@ -77,13 +79,14 @@ public abstract class ASN1Primitive
         return this;
     }
 
+    @Override
     public abstract int hashCode();
 
     abstract boolean isConstructed();
 
-    abstract int encodedLength() throws IOException;
+    abstract int encodedLength();
 
-    abstract void encode(ASN1OutputStream out) throws IOException;
+    abstract void encode(ASN1OutputStream out);
 
     abstract boolean asn1Equals(ASN1Primitive o);
 }

@@ -18,13 +18,14 @@ public class DLTaggedObject
      * @param obj the tagged object.
      */
     public DLTaggedObject(
-        boolean explicit,
-        int tagNo,
-        ASN1Encodable obj)
+        final boolean explicit,
+        final int tagNo,
+        final ASN1Encodable obj)
     {
         super(explicit, tagNo, obj);
     }
 
+    @Override
     boolean isConstructed()
     {
         if (!empty)
@@ -35,7 +36,7 @@ public class DLTaggedObject
             }
             else
             {
-                ASN1Primitive primitive = obj.toASN1Primitive().toDLObject();
+                final ASN1Primitive primitive = obj.toASN1Primitive().toDLObject();
 
                 return primitive.isConstructed();
             }
@@ -46,8 +47,8 @@ public class DLTaggedObject
         }
     }
 
+    @Override
     int encodedLength()
-        throws IOException
     {
         if (!empty)
         {
@@ -71,13 +72,13 @@ public class DLTaggedObject
         }
     }
 
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
         if (!empty)
         {
-            ASN1Primitive primitive = obj.toASN1Primitive().toDLObject();
+            final ASN1Primitive primitive = obj.toASN1Primitive().toDLObject();
 
             if (explicit)
             {

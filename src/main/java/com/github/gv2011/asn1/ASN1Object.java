@@ -17,11 +17,11 @@ public abstract class ASN1Object
      * @return BER/DER byte encoded object.
      * @throws java.io.IOException on encoding error.
      */
+    @Override
     public byte[] getEncoded()
-        throws IOException
     {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        ASN1OutputStream      aOut = new ASN1OutputStream(bOut);
+        final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        final ASN1OutputStream      aOut = new ASN1OutputStream(bOut);
 
         aOut.writeObject(this);
 
@@ -36,13 +36,12 @@ public abstract class ASN1Object
      * @throws IOException on encoding error.
      */
     public byte[] getEncoded(
-        String encoding)
-        throws IOException
+        final String encoding)
     {
         if (encoding.equals(ASN1Encoding.DER))
         {
-            ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-            DEROutputStream         dOut = new DEROutputStream(bOut);
+            final ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
+            final DEROutputStream         dOut = new DEROutputStream(bOut);
 
             dOut.writeObject(this);
 
@@ -50,8 +49,8 @@ public abstract class ASN1Object
         }
         else if (encoding.equals(ASN1Encoding.DL))
         {
-            ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-            DLOutputStream          dOut = new DLOutputStream(bOut);
+            final ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
+            final DLOutputStream          dOut = new DLOutputStream(bOut);
 
             dOut.writeObject(this);
 
@@ -61,13 +60,15 @@ public abstract class ASN1Object
         return this.getEncoded();
     }
 
+    @Override
     public int hashCode()
     {
-        return this.toASN1Primitive().hashCode();
+        return toASN1Primitive().hashCode();
     }
 
+    @Override
     public boolean equals(
-        Object  o)
+        final Object  o)
     {
         if (this == o)
         {
@@ -79,18 +80,19 @@ public abstract class ASN1Object
             return false;
         }
 
-        ASN1Encodable other = (ASN1Encodable)o;
+        final ASN1Encodable other = (ASN1Encodable)o;
 
-        return this.toASN1Primitive().equals(other.toASN1Primitive());
+        return toASN1Primitive().equals(other.toASN1Primitive());
     }
 
     /**
      * @deprecated use toASN1Primitive()
      * @return the underlying primitive type.
      */
+    @Deprecated
     public ASN1Primitive toASN1Object()
     {
-        return this.toASN1Primitive();
+        return toASN1Primitive();
     }
 
     /**
@@ -100,7 +102,7 @@ public abstract class ASN1Object
      * @param tagValue tag value to check for.
      * @return  true if obj is a byte encoding starting with the given tag value, false otherwise.
      */
-    protected static boolean hasEncodedTagValue(Object obj, int tagValue)
+    protected static boolean hasEncodedTagValue(final Object obj, final int tagValue)
     {
         return (obj instanceof byte[]) && ((byte[])obj)[0] == tagValue;
     }
@@ -109,5 +111,6 @@ public abstract class ASN1Object
      * Method providing a primitive representation of this object suitable for encoding.
      * @return a primitive representation of this object.
      */
+    @Override
     public abstract ASN1Primitive toASN1Primitive();
 }

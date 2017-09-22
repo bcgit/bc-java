@@ -1,5 +1,7 @@
 package com.github.gv2011.asn1;
 
+import static com.github.gv2011.util.ex.Exceptions.run;
+
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -8,17 +10,16 @@ import java.io.OutputStream;
  */
 public class ASN1OutputStream
 {
-    private OutputStream os;
+    private final OutputStream os;
 
     public ASN1OutputStream(
-        OutputStream    os)
+        final OutputStream    os)
     {
         this.os = os;
     }
 
     void writeLength(
-        int length)
-        throws IOException
+        final int length)
     {
         if (length > 127)
         {
@@ -43,36 +44,31 @@ public class ASN1OutputStream
         }
     }
 
-    void write(int b)
-        throws IOException
+    void write(final int b)
     {
-        os.write(b);
+        run(()->os.write(b));
     }
 
-    void write(byte[] bytes)
-        throws IOException
+    void write(final byte[] bytes)
     {
-        os.write(bytes);
+        run(()->os.write(bytes));
     }
 
-    void write(byte[] bytes, int off, int len)
-        throws IOException
+    void write(final byte[] bytes, final int off, final int len)
     {
-        os.write(bytes, off, len);
+        run(()->os.write(bytes, off, len));
     }
 
     void writeEncoded(
-        int     tag,
-        byte[]  bytes)
-        throws IOException
+        final int     tag,
+        final byte[]  bytes)
     {
         write(tag);
         writeLength(bytes.length);
         write(bytes);
     }
 
-    void writeTag(int flags, int tagNo)
-        throws IOException
+    void writeTag(final int flags, int tagNo)
     {
         if (tagNo < 31)
         {
@@ -87,7 +83,7 @@ public class ASN1OutputStream
             }
             else
             {
-                byte[] stack = new byte[5];
+                final byte[] stack = new byte[5];
                 int pos = stack.length;
 
                 stack[--pos] = (byte)(tagNo & 0x7F);
@@ -104,8 +100,7 @@ public class ASN1OutputStream
         }
     }
 
-    void writeEncoded(int flags, int tagNo, byte[] bytes)
-        throws IOException
+    void writeEncoded(final int flags, final int tagNo, final byte[] bytes)
     {
         writeTag(flags, tagNo);
         writeLength(bytes.length);
@@ -120,8 +115,7 @@ public class ASN1OutputStream
     }
 
     public void writeObject(
-        ASN1Encodable obj)
-        throws IOException
+        final ASN1Encodable obj)
     {
         if (obj != null)
         {
@@ -129,12 +123,11 @@ public class ASN1OutputStream
         }
         else
         {
-            throw new IOException("null object detected");
+            throw new RuntimeException("null object detected");
         }
     }
 
-    void writeImplicitObject(ASN1Primitive obj)
-        throws IOException
+    void writeImplicitObject(final ASN1Primitive obj)
     {
         if (obj != null)
         {
@@ -142,7 +135,7 @@ public class ASN1OutputStream
         }
         else
         {
-            throw new IOException("null object detected");
+            throw new RuntimeException("null object detected");
         }
     }
 
@@ -173,13 +166,13 @@ public class ASN1OutputStream
     {
         private boolean first = true;
 
-        public ImplicitOutputStream(OutputStream os)
+        public ImplicitOutputStream(final OutputStream os)
         {
             super(os);
         }
 
-        public void write(int b)
-            throws IOException
+        @Override
+        public void write(final int b)
         {
             if (first)
             {

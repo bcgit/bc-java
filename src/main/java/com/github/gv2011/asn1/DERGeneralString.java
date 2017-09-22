@@ -8,7 +8,7 @@ import com.github.gv2011.asn1.util.Strings;
 /**
  * Carrier class for a DER encoding GeneralString
  */
-public class DERGeneralString 
+public class DERGeneralString
     extends ASN1Primitive
     implements ASN1String
 {
@@ -22,9 +22,9 @@ public class DERGeneralString
      * @return a DERBMPString instance, or null.
      */
     public static DERGeneralString getInstance(
-        Object obj) 
+        final Object obj)
     {
-        if (obj == null || obj instanceof DERGeneralString) 
+        if (obj == null || obj instanceof DERGeneralString)
         {
             return (DERGeneralString) obj;
         }
@@ -35,7 +35,7 @@ public class DERGeneralString
             {
                 return (DERGeneralString)fromByteArray((byte[])obj);
             }
-            catch (Exception e)
+            catch (final Exception e)
             {
                 throw new IllegalArgumentException("encoding error in getInstance: " + e.toString());
             }
@@ -56,10 +56,10 @@ public class DERGeneralString
      * @return a DERGeneralString instance.
      */
     public static DERGeneralString getInstance(
-        ASN1TaggedObject obj, 
-        boolean explicit) 
+        final ASN1TaggedObject obj,
+        final boolean explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        final ASN1Primitive o = obj.getObject();
 
         if (explicit || o instanceof DERGeneralString)
         {
@@ -71,7 +71,7 @@ public class DERGeneralString
         }
     }
 
-    DERGeneralString(byte[] string)
+    DERGeneralString(final byte[] string)
     {
         this.string = string;
     }
@@ -81,7 +81,7 @@ public class DERGeneralString
      *
      * @param string the string to be contained in this object.
      */
-    public DERGeneralString(String string) 
+    public DERGeneralString(final String string)
     {
         this.string = Strings.toByteArray(string);
     }
@@ -91,11 +91,13 @@ public class DERGeneralString
      *
      * @return a Java String representing our contents.
      */
-    public String getString() 
+    @Override
+    public String getString()
     {
         return Strings.fromByteArray(string);
     }
 
+    @Override
     public String toString()
     {
         return getString();
@@ -106,39 +108,43 @@ public class DERGeneralString
      *
      * @return a byte array representing our contents.
      */
-    public byte[] getOctets() 
+    public byte[] getOctets()
     {
         return Arrays.clone(string);
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
-    void encode(ASN1OutputStream out)
-        throws IOException 
+    @Override
+    void encode(final ASN1OutputStream out)
     {
         out.writeEncoded(BERTags.GENERAL_STRING, string);
     }
-    
-    public int hashCode() 
+
+    @Override
+    public int hashCode()
     {
         return Arrays.hashCode(string);
     }
-    
-    boolean asn1Equals(ASN1Primitive o)
+
+    @Override
+    boolean asn1Equals(final ASN1Primitive o)
     {
-        if (!(o instanceof DERGeneralString)) 
+        if (!(o instanceof DERGeneralString))
         {
             return false;
         }
-        DERGeneralString s = (DERGeneralString)o;
+        final DERGeneralString s = (DERGeneralString)o;
 
         return Arrays.areEqual(string, s.string);
     }

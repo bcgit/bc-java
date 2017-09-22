@@ -16,8 +16,8 @@ public class BERTaggedObject
      * @param obj the tagged object.
      */
     public BERTaggedObject(
-        int             tagNo,
-        ASN1Encodable    obj)
+        final int             tagNo,
+        final ASN1Encodable    obj)
     {
         super(true, tagNo, obj);
     }
@@ -28,9 +28,9 @@ public class BERTaggedObject
      * @param obj the tagged object.
      */
     public BERTaggedObject(
-        boolean         explicit,
-        int             tagNo,
-        ASN1Encodable    obj)
+        final boolean         explicit,
+        final int             tagNo,
+        final ASN1Encodable    obj)
     {
         super(explicit, tagNo, obj);
     }
@@ -40,11 +40,12 @@ public class BERTaggedObject
      * length sequence.
      */
     public BERTaggedObject(
-        int             tagNo)
+        final int             tagNo)
     {
         super(false, tagNo, new BERSequence());
     }
 
+    @Override
     boolean isConstructed()
     {
         if (!empty)
@@ -55,7 +56,7 @@ public class BERTaggedObject
             }
             else
             {
-                ASN1Primitive primitive = obj.toASN1Primitive().toDERObject();
+                final ASN1Primitive primitive = obj.toASN1Primitive().toDERObject();
 
                 return primitive.isConstructed();
             }
@@ -66,12 +67,12 @@ public class BERTaggedObject
         }
     }
 
+    @Override
     int encodedLength()
-        throws IOException
     {
         if (!empty)
         {
-            ASN1Primitive primitive = obj.toASN1Primitive();
+            final ASN1Primitive primitive = obj.toASN1Primitive();
             int length = primitive.encodedLength();
 
             if (explicit)
@@ -92,9 +93,9 @@ public class BERTaggedObject
         }
     }
 
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
         out.writeTag(BERTags.CONSTRUCTED | BERTags.TAGGED, tagNo);
         out.write(0x80);
@@ -112,8 +113,8 @@ public class BERTaggedObject
                     }
                     else
                     {
-                        ASN1OctetString             octs = (ASN1OctetString)obj;
-                        BEROctetString berO = new BEROctetString(octs.getOctets());
+                        final ASN1OctetString             octs = (ASN1OctetString)obj;
+                        final BEROctetString berO = new BEROctetString(octs.getOctets());
                         e = berO.getObjects();
                     }
                 }

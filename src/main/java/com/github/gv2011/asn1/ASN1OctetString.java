@@ -89,7 +89,7 @@ import com.github.gv2011.asn1.util.encoders.Hex;
  * <b>10.1 Length forms</b>
  * The definite form of length encoding shall be used,
  * encoded in the minimum number of octets.
- * [Contrast with 8.1.3.2 b).] 
+ * [Contrast with 8.1.3.2 b).]
  * </p><p>
  * <b>10.2 String encoding forms</b>
  * For BIT STRING, OCTET STRING and restricted character string types,
@@ -113,10 +113,10 @@ public abstract class ASN1OctetString
      *              be converted.
      */
     public static ASN1OctetString getInstance(
-        ASN1TaggedObject    obj,
-        boolean             explicit)
+        final ASN1TaggedObject    obj,
+        final boolean             explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        final ASN1Primitive o = obj.getObject();
 
         if (explicit || o instanceof ASN1OctetString)
         {
@@ -127,7 +127,7 @@ public abstract class ASN1OctetString
             return BEROctetString.fromSequence(ASN1Sequence.getInstance(o));
         }
     }
-    
+
     /**
      * return an Octet String from the given object.
      *
@@ -135,7 +135,7 @@ public abstract class ASN1OctetString
      * @exception IllegalArgumentException if the object cannot be converted.
      */
     public static ASN1OctetString getInstance(
-        Object  obj)
+        final Object  obj)
     {
         if (obj == null || obj instanceof ASN1OctetString)
         {
@@ -147,14 +147,14 @@ public abstract class ASN1OctetString
             {
                 return ASN1OctetString.getInstance(ASN1Primitive.fromByteArray((byte[])obj));
             }
-            catch (IOException e)
+            catch (final IOException e)
             {
                 throw new IllegalArgumentException("failed to construct OCTET STRING from byte[]: " + e.getMessage());
             }
         }
         else if (obj instanceof ASN1Encodable)
         {
-            ASN1Primitive primitive = ((ASN1Encodable)obj).toASN1Primitive();
+            final ASN1Primitive primitive = ((ASN1Encodable)obj).toASN1Primitive();
 
             if (primitive instanceof ASN1OctetString)
             {
@@ -171,7 +171,7 @@ public abstract class ASN1OctetString
      * @param string the octets making up the octet string.
      */
     public ASN1OctetString(
-        byte[]  string)
+        final byte[]  string)
     {
         if (string == null)
         {
@@ -185,6 +185,7 @@ public abstract class ASN1OctetString
      *
      * @return an InputStream representing the OCTET STRING's content.
      */
+    @Override
     public InputStream getOctetStream()
     {
         return new ByteArrayInputStream(string);
@@ -210,42 +211,48 @@ public abstract class ASN1OctetString
         return string;
     }
 
+    @Override
     public int hashCode()
     {
-        return Arrays.hashCode(this.getOctets());
+        return Arrays.hashCode(getOctets());
     }
 
+    @Override
     boolean asn1Equals(
-        ASN1Primitive o)
+        final ASN1Primitive o)
     {
         if (!(o instanceof ASN1OctetString))
         {
             return false;
         }
 
-        ASN1OctetString  other = (ASN1OctetString)o;
+        final ASN1OctetString  other = (ASN1OctetString)o;
 
         return Arrays.areEqual(string, other.string);
     }
 
+    @Override
     public ASN1Primitive getLoadedObject()
     {
-        return this.toASN1Primitive();
+        return toASN1Primitive();
     }
 
+    @Override
     ASN1Primitive toDERObject()
     {
         return new DEROctetString(string);
     }
 
+    @Override
     ASN1Primitive toDLObject()
     {
         return new DEROctetString(string);
     }
 
-    abstract void encode(ASN1OutputStream out)
-        throws IOException;
+    @Override
+    abstract void encode(ASN1OutputStream out);
 
+    @Override
     public String toString()
     {
       return "#"+new String(Hex.encode(string));

@@ -67,7 +67,7 @@ public class DLSet
      * @param obj - a single object that makes up the set.
      */
     public DLSet(
-        ASN1Encodable obj)
+        final ASN1Encodable obj)
     {
         super(obj);
     }
@@ -76,7 +76,7 @@ public class DLSet
      * @param v - a vector of objects making up the set.
      */
     public DLSet(
-        ASN1EncodableVector v)
+        final ASN1EncodableVector v)
     {
         super(v, false);
     }
@@ -85,21 +85,20 @@ public class DLSet
      * create a set from an array of objects.
      */
     public DLSet(
-        ASN1Encodable[] a)
+        final ASN1Encodable[] a)
     {
         super(a, false);
     }
 
     private int getBodyLength()
-        throws IOException
     {
         if (bodyLength < 0)
         {
             int length = 0;
 
-            for (Enumeration e = this.getObjects(); e.hasMoreElements();)
+            for (final Enumeration e = getObjects(); e.hasMoreElements();)
             {
-                Object obj = e.nextElement();
+                final Object obj = e.nextElement();
 
                 length += ((ASN1Encodable)obj).toASN1Primitive().toDLObject().encodedLength();
             }
@@ -110,10 +109,10 @@ public class DLSet
         return bodyLength;
     }
 
+    @Override
     int encodedLength()
-        throws IOException
     {
-        int length = getBodyLength();
+        final int length = getBodyLength();
 
         return 1 + StreamUtil.calculateBodyLength(length) + length;
     }
@@ -126,19 +125,19 @@ public class DLSet
      * ASN.1 descriptions given. Rather than just outputting SET,
      * we also have to specify CONSTRUCTED, and the objects length.
      */
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
-        ASN1OutputStream dOut = out.getDLSubStream();
-        int length = getBodyLength();
+        final ASN1OutputStream dOut = out.getDLSubStream();
+        final int length = getBodyLength();
 
         out.write(BERTags.SET | BERTags.CONSTRUCTED);
         out.writeLength(length);
 
-        for (Enumeration e = this.getObjects(); e.hasMoreElements();)
+        for (final Enumeration e = getObjects(); e.hasMoreElements();)
         {
-            Object obj = e.nextElement();
+            final Object obj = e.nextElement();
 
             dOut.writeObject((ASN1Encodable)obj);
         }

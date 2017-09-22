@@ -15,9 +15,9 @@ public abstract class ASN1ApplicationSpecific
     protected final byte[]    octets;
 
     ASN1ApplicationSpecific(
-        boolean isConstructed,
-        int tag,
-        byte[] octets)
+        final boolean isConstructed,
+        final int tag,
+        final byte[] octets)
     {
         this.isConstructed = isConstructed;
         this.tag = tag;
@@ -30,7 +30,7 @@ public abstract class ASN1ApplicationSpecific
      * @param obj the object to be converted.
      * @return obj's representation as an ASN1ApplicationSpecific object.
      */
-    public static ASN1ApplicationSpecific getInstance(Object obj)
+    public static ASN1ApplicationSpecific getInstance(final Object obj)
     {
         if (obj == null || obj instanceof ASN1ApplicationSpecific)
         {
@@ -42,7 +42,7 @@ public abstract class ASN1ApplicationSpecific
             {
                 return ASN1ApplicationSpecific.getInstance(ASN1Primitive.fromByteArray((byte[])obj));
             }
-            catch (IOException e)
+            catch (final IOException e)
             {
                 throw new IllegalArgumentException("Failed to construct object from byte[]: " + e.getMessage());
             }
@@ -51,9 +51,9 @@ public abstract class ASN1ApplicationSpecific
         throw new IllegalArgumentException("unknown object in getInstance: " + obj.getClass().getName());
     }
 
-    protected static int getLengthOfHeader(byte[] data)
+    protected static int getLengthOfHeader(final byte[] data)
     {
-        int length = data[1] & 0xff; // TODO: assumes 1 byte tag
+        final int length = data[1] & 0xff; // TODO: assumes 1 byte tag
 
         if (length == 0x80)
         {
@@ -62,7 +62,7 @@ public abstract class ASN1ApplicationSpecific
 
         if (length > 127)
         {
-            int size = length & 0x7f;
+            final int size = length & 0x7f;
 
             // Note: The invalid long form "0xff" (see X.690 8.1.3.5c) will be caught here
             if (size > 4)
@@ -81,6 +81,7 @@ public abstract class ASN1ApplicationSpecific
      *
      * @return true if constructed, otherwise false.
      */
+    @Override
     public boolean isConstructed()
     {
         return isConstructed;
@@ -101,7 +102,7 @@ public abstract class ASN1ApplicationSpecific
      *
      * @return the application tag number.
      */
-    public int getApplicationTag() 
+    public int getApplicationTag()
     {
         return tag;
     }
@@ -113,7 +114,7 @@ public abstract class ASN1ApplicationSpecific
      * @throws IOException if reconstruction fails.
      */
     public ASN1Primitive getObject()
-        throws IOException 
+        throws IOException
     {
         return new ASN1InputStream(getContents()).readObject();
     }
@@ -125,7 +126,7 @@ public abstract class ASN1ApplicationSpecific
      * @return  the resulting object
      * @throws IOException if reconstruction fails.
      */
-    public ASN1Primitive getObject(int derTagNo)
+    public ASN1Primitive getObject(final int derTagNo)
         throws IOException
     {
         if (derTagNo >= 0x1f)
@@ -133,8 +134,8 @@ public abstract class ASN1ApplicationSpecific
             throw new IOException("unsupported tag number");
         }
 
-        byte[] orig = this.getEncoded();
-        byte[] tmp = replaceTagNumber(derTagNo, orig);
+        final byte[] orig = this.getEncoded();
+        final byte[] tmp = replaceTagNumber(derTagNo, orig);
 
         if ((orig[0] & BERTags.CONSTRUCTED) != 0)
         {
@@ -144,8 +145,8 @@ public abstract class ASN1ApplicationSpecific
         return new ASN1InputStream(tmp).readObject();
     }
 
+    @Override
     int encodedLength()
-        throws IOException
     {
         return StreamUtil.calculateTagLength(tag) + StreamUtil.calculateBodyLength(octets.length) + octets.length;
     }
@@ -153,7 +154,8 @@ public abstract class ASN1ApplicationSpecific
     /* (non-Javadoc)
      * @see org.bouncycastle.asn1.ASN1Primitive#encode(org.bouncycastle.asn1.DEROutputStream)
      */
-    void encode(ASN1OutputStream out) throws IOException
+    @Override
+    void encode(final ASN1OutputStream out)
     {
         int classBits = BERTags.APPLICATION;
         if (isConstructed)
@@ -163,28 +165,30 @@ public abstract class ASN1ApplicationSpecific
 
         out.writeEncoded(classBits, tag, octets);
     }
-    
+
+    @Override
     boolean asn1Equals(
-        ASN1Primitive o)
+        final ASN1Primitive o)
     {
         if (!(o instanceof ASN1ApplicationSpecific))
         {
             return false;
         }
 
-        ASN1ApplicationSpecific other = (ASN1ApplicationSpecific)o;
+        final ASN1ApplicationSpecific other = (ASN1ApplicationSpecific)o;
 
         return isConstructed == other.isConstructed
             && tag == other.tag
             && Arrays.areEqual(octets, other.octets);
     }
 
+    @Override
     public int hashCode()
     {
         return (isConstructed ? 1 : 0) ^ tag ^ Arrays.hashCode(octets);
     }
 
-    private byte[] replaceTagNumber(int newTag, byte[] input)
+    private byte[] replaceTagNumber(final int newTag, final byte[] input)
         throws IOException
     {
         int tagNo = input[0] & 0x1f;
@@ -215,7 +219,7 @@ public abstract class ASN1ApplicationSpecific
 //            tagNo |= (b & 0x7f);
         }
 
-        byte[] tmp = new byte[input.length - index + 1];
+        final byte[] tmp = new byte[input.length - index + 1];
 
         System.arraycopy(input, index, tmp, 1, tmp.length - 1);
 

@@ -35,7 +35,7 @@ public class ASN1Boolean
      * @return an ASN1Boolean instance.
      */
     public static ASN1Boolean getInstance(
-        Object  obj)
+        final Object  obj)
     {
         if (obj == null || obj instanceof ASN1Boolean)
         {
@@ -44,12 +44,12 @@ public class ASN1Boolean
 
         if (obj instanceof byte[])
         {
-            byte[] enc = (byte[])obj;
+            final byte[] enc = (byte[])obj;
             try
             {
                 return (ASN1Boolean)fromByteArray(enc);
             }
-            catch (IOException e)
+            catch (final IOException e)
             {
                 throw new IllegalArgumentException("failed to construct boolean from byte[]: " + e.getMessage());
             }
@@ -64,7 +64,7 @@ public class ASN1Boolean
      * @return an ASN1Boolean instance.
      */
     public static ASN1Boolean getInstance(
-        boolean  value)
+        final boolean  value)
     {
         return (value ? TRUE : FALSE);
     }
@@ -75,7 +75,7 @@ public class ASN1Boolean
      * @return an ASN1Boolean instance.
      */
     public static ASN1Boolean getInstance(
-        int value)
+        final int value)
     {
         return (value != 0 ? TRUE : FALSE);
     }
@@ -91,10 +91,10 @@ public class ASN1Boolean
      * @return an ASN1Boolean instance.
      */
     public static ASN1Boolean getInstance(
-        ASN1TaggedObject obj,
-        boolean          explicit)
+        final ASN1TaggedObject obj,
+        final boolean          explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        final ASN1Primitive o = obj.getObject();
 
         if (explicit || o instanceof ASN1Boolean)
         {
@@ -107,7 +107,7 @@ public class ASN1Boolean
     }
 
     ASN1Boolean(
-        byte[] value)
+        final byte[] value)
     {
         if (value.length != 1)
         {
@@ -132,8 +132,9 @@ public class ASN1Boolean
      * @deprecated use getInstance(boolean) method.
      * @param value true or false.
      */
+    @Deprecated
     public ASN1Boolean(
-        boolean     value)
+        final boolean     value)
     {
         this.value = (value) ? TRUE_VALUE : FALSE_VALUE;
     }
@@ -143,25 +144,28 @@ public class ASN1Boolean
         return (value[0] != 0);
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         return 3;
     }
 
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
         out.writeEncoded(BERTags.BOOLEAN, value);
     }
 
+    @Override
     protected boolean asn1Equals(
-        ASN1Primitive  o)
+        final ASN1Primitive  o)
     {
         if (o instanceof ASN1Boolean)
         {
@@ -171,18 +175,20 @@ public class ASN1Boolean
         return false;
     }
 
+    @Override
     public int hashCode()
     {
         return value[0];
     }
 
 
+    @Override
     public String toString()
     {
       return (value[0] != 0) ? "TRUE" : "FALSE";
     }
 
-    static ASN1Boolean fromOctetString(byte[] value)
+    static ASN1Boolean fromOctetString(final byte[] value)
     {
         if (value.length != 1)
         {

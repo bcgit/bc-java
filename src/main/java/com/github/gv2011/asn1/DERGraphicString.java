@@ -10,7 +10,7 @@ public class DERGraphicString
     implements ASN1String
 {
     private final byte[] string;
-    
+
     /**
      * return a Graphic String from the passed in object
      *
@@ -19,7 +19,7 @@ public class DERGraphicString
      * @return a DERGraphicString instance, or null.
      */
     public static DERGraphicString getInstance(
-        Object  obj)
+        final Object  obj)
     {
         if (obj == null || obj instanceof DERGraphicString)
         {
@@ -32,7 +32,7 @@ public class DERGraphicString
             {
                 return (DERGraphicString)fromByteArray((byte[])obj);
             }
-            catch (Exception e)
+            catch (final Exception e)
             {
                 throw new IllegalArgumentException("encoding error in getInstance: " + e.toString());
             }
@@ -52,10 +52,10 @@ public class DERGraphicString
      * @return a DERGraphicString instance, or null.
      */
     public static DERGraphicString getInstance(
-        ASN1TaggedObject obj,
-        boolean          explicit)
+        final ASN1TaggedObject obj,
+        final boolean          explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        final ASN1Primitive o = obj.getObject();
 
         if (explicit || o instanceof DERGraphicString)
         {
@@ -72,51 +72,56 @@ public class DERGraphicString
      * @param string the byte encoding of the characters making up the string.
      */
     public DERGraphicString(
-        byte[]   string)
+        final byte[]   string)
     {
         this.string = Arrays.clone(string);
     }
-    
+
     public byte[] getOctets()
     {
         return Arrays.clone(string);
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
         out.writeEncoded(BERTags.GRAPHIC_STRING, string);
     }
 
+    @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);
     }
 
+    @Override
     boolean asn1Equals(
-        ASN1Primitive o)
+        final ASN1Primitive o)
     {
         if (!(o instanceof DERGraphicString))
         {
             return false;
         }
 
-        DERGraphicString  s = (DERGraphicString)o;
+        final DERGraphicString  s = (DERGraphicString)o;
 
         return Arrays.areEqual(string, s.string);
     }
 
+    @Override
     public String getString()
     {
         return Strings.fromByteArray(string);

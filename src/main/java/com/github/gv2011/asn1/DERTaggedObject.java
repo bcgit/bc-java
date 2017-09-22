@@ -18,18 +18,19 @@ public class DERTaggedObject
      * @param obj the tagged object.
      */
     public DERTaggedObject(
-        boolean       explicit,
-        int           tagNo,
-        ASN1Encodable obj)
+        final boolean       explicit,
+        final int           tagNo,
+        final ASN1Encodable obj)
     {
         super(explicit, tagNo, obj);
     }
 
-    public DERTaggedObject(int tagNo, ASN1Encodable encodable)
+    public DERTaggedObject(final int tagNo, final ASN1Encodable encodable)
     {
         super(true, tagNo, encodable);
     }
 
+    @Override
     boolean isConstructed()
     {
         if (!empty)
@@ -40,7 +41,7 @@ public class DERTaggedObject
             }
             else
             {
-                ASN1Primitive primitive = obj.toASN1Primitive().toDERObject();
+                final ASN1Primitive primitive = obj.toASN1Primitive().toDERObject();
 
                 return primitive.isConstructed();
             }
@@ -51,12 +52,12 @@ public class DERTaggedObject
         }
     }
 
+    @Override
     int encodedLength()
-        throws IOException
     {
         if (!empty)
         {
-            ASN1Primitive primitive = obj.toASN1Primitive().toDERObject();
+            final ASN1Primitive primitive = obj.toASN1Primitive().toDERObject();
             int length = primitive.encodedLength();
 
             if (explicit)
@@ -77,13 +78,13 @@ public class DERTaggedObject
         }
     }
 
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
         if (!empty)
         {
-            ASN1Primitive primitive = obj.toASN1Primitive().toDERObject();
+            final ASN1Primitive primitive = obj.toASN1Primitive().toDERObject();
 
             if (explicit)
             {

@@ -25,7 +25,7 @@ public class DERVisibleString
      * @return a DERVisibleString instance, or null
      */
     public static DERVisibleString getInstance(
-        Object  obj)
+        final Object  obj)
     {
         if (obj == null || obj instanceof DERVisibleString)
         {
@@ -38,7 +38,7 @@ public class DERVisibleString
             {
                 return (DERVisibleString)fromByteArray((byte[])obj);
             }
-            catch (Exception e)
+            catch (final Exception e)
             {
                 throw new IllegalArgumentException("encoding error in getInstance: " + e.toString());
             }
@@ -58,10 +58,10 @@ public class DERVisibleString
      * @return a DERVisibleString instance, or null
      */
     public static DERVisibleString getInstance(
-        ASN1TaggedObject obj,
-        boolean          explicit)
+        final ASN1TaggedObject obj,
+        final boolean          explicit)
     {
-        ASN1Primitive o = obj.getObject();
+        final ASN1Primitive o = obj.getObject();
 
         if (explicit || o instanceof DERVisibleString)
         {
@@ -77,7 +77,7 @@ public class DERVisibleString
      * Basic constructor - byte encoded string.
      */
     DERVisibleString(
-        byte[]   string)
+        final byte[]   string)
     {
         this.string = string;
     }
@@ -88,16 +88,18 @@ public class DERVisibleString
      * @param string the string to be carried in the VisibleString object,
      */
     public DERVisibleString(
-        String   string)
+        final String   string)
     {
         this.string = Strings.toByteArray(string);
     }
 
+    @Override
     public String getString()
     {
         return Strings.fromByteArray(string);
     }
 
+    @Override
     public String toString()
     {
         return getString();
@@ -108,25 +110,28 @@ public class DERVisibleString
         return Arrays.clone(string);
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
         return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
+    @Override
     void encode(
-        ASN1OutputStream out)
-        throws IOException
+        final ASN1OutputStream out)
     {
-        out.writeEncoded(BERTags.VISIBLE_STRING, this.string);
+        out.writeEncoded(BERTags.VISIBLE_STRING, string);
     }
-    
+
+    @Override
     boolean asn1Equals(
-        ASN1Primitive o)
+        final ASN1Primitive o)
     {
         if (!(o instanceof DERVisibleString))
         {
@@ -135,7 +140,8 @@ public class DERVisibleString
 
         return Arrays.areEqual(string, ((DERVisibleString)o).string);
     }
-    
+
+    @Override
     public int hashCode()
     {
         return Arrays.hashCode(string);

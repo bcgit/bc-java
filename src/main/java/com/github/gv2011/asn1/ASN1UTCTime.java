@@ -34,7 +34,7 @@ import com.github.gv2011.asn1.util.Strings;
 public class ASN1UTCTime
     extends ASN1Primitive
 {
-    private byte[]      time;
+    private final byte[]      time;
 
     /**
      * return an UTC Time from the passed in object.
@@ -44,7 +44,7 @@ public class ASN1UTCTime
      * @return an ASN1UTCTime instance, or null.
      */
     public static ASN1UTCTime getInstance(
-        Object  obj)
+        final Object  obj)
     {
         if (obj == null || obj instanceof ASN1UTCTime)
         {
@@ -57,7 +57,7 @@ public class ASN1UTCTime
             {
                 return (ASN1UTCTime)fromByteArray((byte[])obj);
             }
-            catch (Exception e)
+            catch (final Exception e)
             {
                 throw new IllegalArgumentException("encoding error in getInstance: " + e.toString());
             }
@@ -77,10 +77,10 @@ public class ASN1UTCTime
      * @return an ASN1UTCTime instance, or null.
      */
     public static ASN1UTCTime getInstance(
-        ASN1TaggedObject obj,
-        boolean          explicit)
+        final ASN1TaggedObject obj,
+        final boolean          explicit)
     {
-        ASN1Object o = obj.getObject();
+        final ASN1Object o = obj.getObject();
 
         if (explicit || o instanceof ASN1UTCTime)
         {
@@ -103,14 +103,14 @@ public class ASN1UTCTime
      * @param time the time string.
      */
     public ASN1UTCTime(
-        String time)
+        final String time)
     {
         this.time = Strings.toByteArray(time);
         try
         {
-            this.getDate();
+            getDate();
         }
-        catch (ParseException e)
+        catch (final ParseException e)
         {
             throw new IllegalArgumentException("invalid date string: " + e.getMessage());
         }
@@ -121,9 +121,9 @@ public class ASN1UTCTime
      * @param time the Date to build the time from.
      */
     public ASN1UTCTime(
-        Date time)
+        final Date time)
     {
-        SimpleDateFormat dateF = new SimpleDateFormat("yyMMddHHmmss'Z'");
+        final SimpleDateFormat dateF = new SimpleDateFormat("yyMMddHHmmss'Z'");
 
         dateF.setTimeZone(new SimpleTimeZone(0,"Z"));
 
@@ -138,10 +138,10 @@ public class ASN1UTCTime
      * @param locale an appropriate Locale for producing an ASN.1 UTCTime value.
      */
     public ASN1UTCTime(
-        Date time,
-        Locale locale)
+        final Date time,
+        final Locale locale)
     {
-        SimpleDateFormat dateF = new SimpleDateFormat("yyMMddHHmmss'Z'", locale);
+        final SimpleDateFormat dateF = new SimpleDateFormat("yyMMddHHmmss'Z'", locale);
 
         dateF.setTimeZone(new SimpleTimeZone(0,"Z"));
 
@@ -149,7 +149,7 @@ public class ASN1UTCTime
     }
 
     ASN1UTCTime(
-        byte[] time)
+        final byte[] time)
     {
         this.time = time;
     }
@@ -164,7 +164,7 @@ public class ASN1UTCTime
     public Date getDate()
         throws ParseException
     {
-        SimpleDateFormat dateF = new SimpleDateFormat("yyMMddHHmmssz");
+        final SimpleDateFormat dateF = new SimpleDateFormat("yyMMddHHmmssz");
 
         return dateF.parse(getTime());
     }
@@ -179,7 +179,7 @@ public class ASN1UTCTime
     public Date getAdjustedDate()
         throws ParseException
     {
-        SimpleDateFormat dateF = new SimpleDateFormat("yyyyMMddHHmmssz");
+        final SimpleDateFormat dateF = new SimpleDateFormat("yyyyMMddHHmmssz");
 
         dateF.setTimeZone(new SimpleTimeZone(0, "Z"));
 
@@ -204,7 +204,7 @@ public class ASN1UTCTime
      */
     public String getTime()
     {
-        String stime = Strings.fromByteArray(time);
+        final String stime = Strings.fromByteArray(time);
 
         //
         // standardise the format.
@@ -251,7 +251,7 @@ public class ASN1UTCTime
      */
     public String getAdjustedTime()
     {
-        String   d = this.getTime();
+        final String   d = getTime();
 
         if (d.charAt(0) < '5')
         {
@@ -263,36 +263,39 @@ public class ASN1UTCTime
         }
     }
 
+    @Override
     boolean isConstructed()
     {
         return false;
     }
 
+    @Override
     int encodedLength()
     {
-        int length = time.length;
+        final int length = time.length;
 
         return 1 + StreamUtil.calculateBodyLength(length) + length;
     }
 
+    @Override
     void encode(
-        ASN1OutputStream  out)
-        throws IOException
+        final ASN1OutputStream  out)
     {
         out.write(BERTags.UTC_TIME);
 
-        int length = time.length;
+        final int length = time.length;
 
         out.writeLength(length);
 
         for (int i = 0; i != length; i++)
         {
-            out.write((byte)time[i]);
+            out.write(time[i]);
         }
     }
 
+    @Override
     boolean asn1Equals(
-        ASN1Primitive o)
+        final ASN1Primitive o)
     {
         if (!(o instanceof ASN1UTCTime))
         {
@@ -302,11 +305,13 @@ public class ASN1UTCTime
         return Arrays.areEqual(time, ((ASN1UTCTime)o).time);
     }
 
+    @Override
     public int hashCode()
     {
         return Arrays.hashCode(time);
     }
 
+    @Override
     public String toString()
     {
       return Strings.fromByteArray(time);

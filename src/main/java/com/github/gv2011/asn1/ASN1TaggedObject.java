@@ -17,8 +17,8 @@ public abstract class ASN1TaggedObject
     ASN1Encodable obj = null;
 
     static public ASN1TaggedObject getInstance(
-        ASN1TaggedObject    obj,
-        boolean             explicit)
+        final ASN1TaggedObject    obj,
+        final boolean             explicit)
     {
         if (explicit)
         {
@@ -29,9 +29,9 @@ public abstract class ASN1TaggedObject
     }
 
     static public ASN1TaggedObject getInstance(
-        Object obj) 
+        final Object obj)
     {
-        if (obj == null || obj instanceof ASN1TaggedObject) 
+        if (obj == null || obj instanceof ASN1TaggedObject)
         {
                 return (ASN1TaggedObject)obj;
         }
@@ -41,7 +41,7 @@ public abstract class ASN1TaggedObject
             {
                 return ASN1TaggedObject.getInstance(fromByteArray((byte[])obj));
             }
-            catch (IOException e)
+            catch (final IOException e)
             {
                 throw new IllegalArgumentException("failed to construct tagged object from byte[]: " + e.getMessage());
             }
@@ -61,9 +61,9 @@ public abstract class ASN1TaggedObject
      * @param obj the tagged object.
      */
     public ASN1TaggedObject(
-        boolean         explicit,
-        int             tagNo,
-        ASN1Encodable   obj)
+        final boolean         explicit,
+        final int             tagNo,
+        final ASN1Encodable   obj)
     {
         if (obj instanceof ASN1Choice)
         {
@@ -73,7 +73,7 @@ public abstract class ASN1TaggedObject
         {
             this.explicit = explicit;
         }
-        
+
         this.tagNo = tagNo;
 
         if (this.explicit)
@@ -82,32 +82,33 @@ public abstract class ASN1TaggedObject
         }
         else
         {
-            ASN1Primitive prim = obj.toASN1Primitive();
+            final ASN1Primitive prim = obj.toASN1Primitive();
 
             if (prim instanceof ASN1Set)
             {
-                ASN1Set s = null;
+                final ASN1Set s = null;
             }
 
             this.obj = obj;
         }
     }
-    
+
+    @Override
     boolean asn1Equals(
-        ASN1Primitive o)
+        final ASN1Primitive o)
     {
         if (!(o instanceof ASN1TaggedObject))
         {
             return false;
         }
-        
-        ASN1TaggedObject other = (ASN1TaggedObject)o;
-        
+
+        final ASN1TaggedObject other = (ASN1TaggedObject)o;
+
         if (tagNo != other.tagNo || empty != other.empty || explicit != other.explicit)
         {
             return false;
         }
-        
+
         if(obj == null)
         {
             if (other.obj != null)
@@ -122,10 +123,11 @@ public abstract class ASN1TaggedObject
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
+    @Override
     public int hashCode()
     {
         int code = tagNo;
@@ -143,13 +145,14 @@ public abstract class ASN1TaggedObject
         return code;
     }
 
+    @Override
     public int getTagNo()
     {
         return tagNo;
     }
 
     /**
-     * return whether or not the object may be explicitly tagged. 
+     * return whether or not the object may be explicitly tagged.
      * <p>
      * Note: if the object has been read from an input stream, the only
      * time you can be sure if isExplicit is returning the true state of
@@ -189,9 +192,10 @@ public abstract class ASN1TaggedObject
      * the type of the passed in tag. If the object doesn't have a parser
      * associated with it, the base object is returned.
      */
+    @Override
     public ASN1Encodable getObjectParser(
-        int     tag,
-        boolean isExplicit)
+        final int     tag,
+        final boolean isExplicit)
         throws IOException
     {
         switch (tag)
@@ -212,24 +216,28 @@ public abstract class ASN1TaggedObject
         throw new ASN1Exception("implicit tagging not implemented for tag: " + tag);
     }
 
+    @Override
     public ASN1Primitive getLoadedObject()
     {
-        return this.toASN1Primitive();
+        return toASN1Primitive();
     }
 
+    @Override
     ASN1Primitive toDERObject()
     {
         return new DERTaggedObject(explicit, tagNo, obj);
     }
 
+    @Override
     ASN1Primitive toDLObject()
     {
         return new DLTaggedObject(explicit, tagNo, obj);
     }
 
-    abstract void encode(ASN1OutputStream out)
-        throws IOException;
+    @Override
+    abstract void encode(ASN1OutputStream out);
 
+    @Override
     public String toString()
     {
         return "[" + tagNo + "]" + obj;

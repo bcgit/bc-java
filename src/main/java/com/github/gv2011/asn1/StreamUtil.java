@@ -16,7 +16,7 @@ class StreamUtil
      * @param in input stream of interest
      * @return length calculation or MAX_VALUE.
      */
-    static int findLimit(InputStream in)
+    static int findLimit(final InputStream in)
     {
         if (in instanceof LimitedInputStream)
         {
@@ -34,15 +34,15 @@ class StreamUtil
         {
             try
             {
-                FileChannel channel = ((FileInputStream)in).getChannel();
-                long  size = (channel != null) ? channel.size() : Integer.MAX_VALUE;
+                final FileChannel channel = ((FileInputStream)in).getChannel();
+                final long  size = (channel != null) ? channel.size() : Integer.MAX_VALUE;
 
                 if (size < Integer.MAX_VALUE)
                 {
                     return (int)size;
                 }
             }
-            catch (IOException e)
+            catch (final IOException e)
             {
                 // ignore - they'll find out soon enough!
             }
@@ -57,7 +57,7 @@ class StreamUtil
     }
 
     static int calculateBodyLength(
-        int length)
+        final int length)
     {
         int count = 1;
 
@@ -81,7 +81,6 @@ class StreamUtil
     }
 
     static int calculateTagLength(int tagNo)
-        throws IOException
     {
         int length = 1;
 
@@ -93,7 +92,7 @@ class StreamUtil
             }
             else
             {
-                byte[] stack = new byte[5];
+                final byte[] stack = new byte[5];
                 int pos = stack.length;
 
                 stack[--pos] = (byte)(tagNo & 0x7F);

@@ -23,7 +23,7 @@ public abstract class ASN1Null
      * @return an instance of ASN1Null, or null.
      * @exception IllegalArgumentException if the object cannot be converted.
      */
-    public static ASN1Null getInstance(Object o)
+    public static ASN1Null getInstance(final Object o)
     {
         if (o instanceof ASN1Null)
         {
@@ -36,11 +36,11 @@ public abstract class ASN1Null
             {
                 return ASN1Null.getInstance(ASN1Primitive.fromByteArray((byte[])o));
             }
-            catch (IOException e)
+            catch (final IOException e)
             {
                 throw new IllegalArgumentException("failed to construct NULL from byte[]: " + e.getMessage());
             }
-            catch (ClassCastException e)
+            catch (final ClassCastException e)
             {
                 throw new IllegalArgumentException("unknown object in getInstance(): " + o.getClass().getName());
             }
@@ -49,25 +49,28 @@ public abstract class ASN1Null
         return null;
     }
 
+    @Override
     public int hashCode()
     {
         return -1;
     }
 
+    @Override
     boolean asn1Equals(
-        ASN1Primitive o)
+        final ASN1Primitive o)
     {
         if (!(o instanceof ASN1Null))
         {
             return false;
         }
-        
+
         return true;
     }
 
-    abstract void encode(ASN1OutputStream out)
-        throws IOException;
+    @Override
+    abstract void encode(ASN1OutputStream out);
 
+    @Override
     public String toString()
     {
          return "NULL";
