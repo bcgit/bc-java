@@ -375,6 +375,62 @@ public final class Arrays
         }
     }
 
+    public static void fill(
+        byte[] array,
+        int out,
+        byte value)
+    {
+        if(out < array.length)
+        {
+            for (int i = out; i < array.length; i++)
+            {
+                array[i] = value;
+            }
+        }
+    }
+
+    public static void fill(
+        int[] array,
+        int out,
+        int value)
+    {
+        if(out < array.length)
+        {
+            for (int i = out; i < array.length; i++)
+            {
+                array[i] = value;
+            }
+        }
+    }
+
+    public static void fill(
+        short[] array,
+        int out,
+        short value)
+    {
+        if(out < array.length)
+        {
+            for (int i = out; i < array.length; i++)
+            {
+                array[i] = value;
+            }
+        }
+    }
+
+    public static void fill(
+        long[] array,
+        int out,
+        long value)
+    {
+        if(out < array.length)
+        {
+            for (int i = out; i < array.length; i++)
+            {
+                array[i] = value;
+            }
+        }
+    }
+
     public static int hashCode(byte[] data)
     {
         if (data == null)
