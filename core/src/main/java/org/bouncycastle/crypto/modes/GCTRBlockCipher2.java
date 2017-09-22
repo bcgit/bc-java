@@ -1,13 +1,16 @@
 package org.bouncycastle.crypto.modes;
 
-import org.bouncycastle.crypto.*;
+import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.StreamBlockCipher;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 
 /**
  * implements the GOST 3412 2015 CTR counter mode (GCTR).
  */
-public class GCTRBlockCipher extends StreamBlockCipher {
+public class GCTRBlockCipher2 implements BlockCipher {
 
 
     private int s;
@@ -17,7 +20,7 @@ public class GCTRBlockCipher extends StreamBlockCipher {
     private final int blockSize;
     private final BlockCipher cipher;
     private int byteCount = 0;
-    private int inSize = 0;
+    private int inputCounter = 0;
 
 
     /**
@@ -26,10 +29,8 @@ public class GCTRBlockCipher extends StreamBlockCipher {
      * @param cipher the block cipher to be used as the basis of the
      *               counter mode (must have a 64 bit block size).
      */
-    public GCTRBlockCipher(
+    public GCTRBlockCipher2(
         BlockCipher cipher, int s) {
-
-        super(cipher);
 
         this.s = s;
         this.cipher = cipher;
@@ -66,7 +67,6 @@ public class GCTRBlockCipher extends StreamBlockCipher {
             if (iv.length != (blockSize / 2)) {
                 throw new IllegalArgumentException("GCTR parameter IV must be = blocksize/2");
             }
-
 
 
             System.arraycopy(iv, 0, CTR, 0, iv.length);
@@ -128,9 +128,25 @@ public class GCTRBlockCipher extends StreamBlockCipher {
         int outOff)
         throws DataLengthException, IllegalStateException {
 
-        processBytes(in, inOff, blockSize, out, outOff);
+        int blocsize = 0;
 
-        return blockSize;
+        if (inputCounter < s) {
+            cipher.processBlock(CTR, 0, CTR, 0);
+            byte[] msb = MSB(CTR, s);
+            byte[] sum = sum(in, msb);
+            System.arraycopy(sum, 0, out, outOff, sum.length);
+            blocsize = sum.length;
+            CTR = add(CTR);
+        } else {
+            cipher.processBlock(CTR, 0, CTR, 0);
+            byte[] msb = MSB(CTR, in.length);
+            byte[] sum = sum(in, msb);
+            System.arraycopy(sum, 0, out, outOff, sum.length);
+            blocsize = sum.length;
+            CTR = add(CTR);
+        }
+
+        return blocsize;
 
 //        cipher.processBlock(in, inOff, out, outOff);
 //
@@ -160,31 +176,31 @@ public class GCTRBlockCipher extends StreamBlockCipher {
     }
 
 
-    protected byte calculateByte(byte b) {
+    private byte[] add(byte[] prevCTR) {
 
-
-        if (byteCount < 0) {
-
-
-            cipher.processBlock(ofbV, 0, ofbOutV, 0);
-            byte[] ts = MSB(ofbOutV, s);
-
-
-            cipher.processBlock(ofbV, 0, ofbOutV, 0);
+        byte[] newCTR = new byte[prevCTR.length];
+        for (int i = 0; i < prevCTR.length; i++) {
+            newCTR[i] = (byte) (prevCTR[i] + 1);
         }
+        return newCTR;
+    }
 
-        byte rv = (byte) (ofbOutV[byteCount++] ^ b);
+    private byte[] ek(byte[] CTR) {
 
-        if (byteCount == blockSize) {
-            byteCount = 0;
+        byte[] out = new byte[CTR.length];
 
-            //
-            // change over the input block.
-            //
-            System.arraycopy(ofbV, blockSize, ofbV, 0, ofbV.length - blockSize);
-            System.arraycopy(ofbOutV, 0, ofbV, ofbV.length - blockSize, blockSize);
+        cipher.processBlock(CTR, 0, out, 0);
+
+        return out;
+    }
+
+    private byte[] sum(byte[] in, byte[] ctr) {
+
+        byte[] out = new byte[in.length];
+        for (int i = 0; i < in.length; i++) {
+            out[i] = (byte) (in[i] ^ ctr[i]);
         }
+        return out;
 
-        return rv;
     }
 }
