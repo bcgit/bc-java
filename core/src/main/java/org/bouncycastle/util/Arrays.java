@@ -1254,7 +1254,10 @@ public final class Arrays
         }
     }
 
-
+    /**
+     * fill input array by zeros
+     * @param array input array
+     */
     public static void clear(byte[] array) {
         if(array != null)
         {
