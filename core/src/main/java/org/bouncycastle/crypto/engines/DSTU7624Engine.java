@@ -545,25 +545,45 @@ public class DSTU7624Engine
 
     private long mixColumn(long colVal)
     {
-        long rowMatrix = mdsMatrix;
+//        long rowMatrix = mdsMatrix;
+//
+//        long result = 0;
+//        for (int row = 7; row >= 0; --row)
+//        {
+//            rowMatrix = (rowMatrix >>> 8) | (rowMatrix << 56);
+//
+//            // mdsMatrix elements have maximum degree of 3
+//            long product = multiplyGFx8(colVal, rowMatrix, 3);
+//
+//            product ^= (product >>> 32);
+//            product ^= (product >>> 16);
+//            product ^= (product >>> 8);
+//
+//            result <<= 8;
+//            result |= (product & 0xFFL);
+//        }
+//
+//        return result;
 
-        long result = 0;
-        for (int row = 7; row >= 0; --row)
-        {
-            rowMatrix = (rowMatrix >>> 8) | (rowMatrix << 56);
+        long t0 = multiplyGFx8(colVal, mdsMatrix, 3);
+        long t1 = multiplyGFx8(colVal, (mdsMatrix <<  8) | (mdsMatrix >>> 56), 3);
+        long t2 = multiplyGFx8(colVal, (mdsMatrix << 16) | (mdsMatrix >>> 48), 3);
+        long t3 = multiplyGFx8(colVal, (mdsMatrix << 24) | (mdsMatrix >>> 40), 3);
+        long t4 = multiplyGFx8(colVal, (mdsMatrix << 32) | (mdsMatrix >>> 32), 3);
+        long t5 = multiplyGFx8(colVal, (mdsMatrix << 40) | (mdsMatrix >>> 24), 3);
+        long t6 = multiplyGFx8(colVal, (mdsMatrix << 48) | (mdsMatrix >>> 16), 3);
+        long t7 = multiplyGFx8(colVal, (mdsMatrix << 56) | (mdsMatrix >>> 8), 3);
 
-            // mdsMatrix elements have maximum degree of 3
-            long product = multiplyGFx8(colVal, rowMatrix, 3);
+        long t04 = ((t0 ^ (t0 >>> 32)) & 0x00000000FFFFFFFFL) | ((t4 ^ (t4 << 32)) & 0xFFFFFFFF00000000L); 
+        long t15 = ((t1 ^ (t1 >>> 32)) & 0x00000000FFFFFFFFL) | ((t5 ^ (t5 << 32)) & 0xFFFFFFFF00000000L); 
+        long t26 = ((t2 ^ (t2 >>> 32)) & 0x00000000FFFFFFFFL) | ((t6 ^ (t6 << 32)) & 0xFFFFFFFF00000000L); 
+        long t37 = ((t3 ^ (t3 >>> 32)) & 0x00000000FFFFFFFFL) | ((t7 ^ (t7 << 32)) & 0xFFFFFFFF00000000L); 
 
-            product ^= (product >>> 32);
-            product ^= (product >>> 16);
-            product ^= (product >>> 8);
+        long t0246 = ((t04 ^ (t04 >>> 16)) & 0x0000FFFF0000FFFFL) | ((t26 ^ (t26 << 16)) & 0xFFFF0000FFFF0000L);
+        long t1357 = ((t15 ^ (t15 >>> 16)) & 0x0000FFFF0000FFFFL) | ((t37 ^ (t37 << 16)) & 0xFFFF0000FFFF0000L);
 
-            result <<= 8;
-            result |= (product & 0xFFL);
-        }
-
-        return result;
+        return (t0246 ^ (t0246 >>> 8)) & 0x00FF00FF00FF00FFL
+            |  (t1357 ^ (t1357 <<  8)) & 0xFF00FF00FF00FF00L;
     }
 
     private void mixColumns()
@@ -576,24 +596,44 @@ public class DSTU7624Engine
 
     private long invMixColumn(long colVal)
     {
-        long rowMatrix = mdsInvMatrix;
+//        long rowMatrix = mdsInvMatrix;
+//
+//        long result = 0;
+//        for (int row = 7; row >= 0; --row)
+//        {
+//            rowMatrix = (rowMatrix >>> 8) | (rowMatrix << 56);
+//
+//            long product = multiplyGFx8(colVal, rowMatrix, 7);
+//
+//            product ^= (product >>> 32);
+//            product ^= (product >>> 16);
+//            product ^= (product >>> 8);
+//
+//            result <<= 8;
+//            result |= (product & 0xFFL);
+//        }
+//
+//        return result;
 
-        long result = 0;
-        for (int row = 7; row >= 0; --row)
-        {
-            rowMatrix = (rowMatrix >>> 8) | (rowMatrix << 56);
+        long t0 = multiplyGFx8(colVal, mdsInvMatrix, 7);
+        long t1 = multiplyGFx8(colVal, (mdsInvMatrix <<  8) | (mdsInvMatrix >>> 56), 7);
+        long t2 = multiplyGFx8(colVal, (mdsInvMatrix << 16) | (mdsInvMatrix >>> 48), 7);
+        long t3 = multiplyGFx8(colVal, (mdsInvMatrix << 24) | (mdsInvMatrix >>> 40), 7);
+        long t4 = multiplyGFx8(colVal, (mdsInvMatrix << 32) | (mdsInvMatrix >>> 32), 7);
+        long t5 = multiplyGFx8(colVal, (mdsInvMatrix << 40) | (mdsInvMatrix >>> 24), 7);
+        long t6 = multiplyGFx8(colVal, (mdsInvMatrix << 48) | (mdsInvMatrix >>> 16), 7);
+        long t7 = multiplyGFx8(colVal, (mdsInvMatrix << 56) | (mdsInvMatrix >>> 8), 7);
 
-            long product = multiplyGFx8(colVal, rowMatrix, 7);
+        long t04 = ((t0 ^ (t0 >>> 32)) & 0x00000000FFFFFFFFL) | ((t4 ^ (t4 << 32)) & 0xFFFFFFFF00000000L); 
+        long t15 = ((t1 ^ (t1 >>> 32)) & 0x00000000FFFFFFFFL) | ((t5 ^ (t5 << 32)) & 0xFFFFFFFF00000000L); 
+        long t26 = ((t2 ^ (t2 >>> 32)) & 0x00000000FFFFFFFFL) | ((t6 ^ (t6 << 32)) & 0xFFFFFFFF00000000L); 
+        long t37 = ((t3 ^ (t3 >>> 32)) & 0x00000000FFFFFFFFL) | ((t7 ^ (t7 << 32)) & 0xFFFFFFFF00000000L); 
 
-            product ^= (product >>> 32);
-            product ^= (product >>> 16);
-            product ^= (product >>> 8);
+        long t0246 = ((t04 ^ (t04 >>> 16)) & 0x0000FFFF0000FFFFL) | ((t26 ^ (t26 << 16)) & 0xFFFF0000FFFF0000L);
+        long t1357 = ((t15 ^ (t15 >>> 16)) & 0x0000FFFF0000FFFFL) | ((t37 ^ (t37 << 16)) & 0xFFFF0000FFFF0000L);
 
-            result <<= 8;
-            result |= (product & 0xFFL);
-        }
-
-        return result;
+        return (t0246 ^ (t0246 >>> 8)) & 0x00FF00FF00FF00FFL
+            |  (t1357 ^ (t1357 <<  8)) & 0xFF00FF00FF00FF00L;
     }
 
     private void invMixColumns()
@@ -623,6 +663,20 @@ public class DSTU7624Engine
 
         return r;
     }
+
+//    private static long multiplyMDS(long u)
+//    {
+//        long r = 0, s = 0, t = (u >>> 8);
+//        r ^= u & 0x0000001F00000000L; r <<= 1;
+//        s ^= t & 0x00000000E0000000L; s <<= 1;
+//        r ^= u & 0x3F3F3F00003F0000L; r <<= 1;
+//        s ^= t & 0x00C0C0C00000C000L; s <<= 1;
+//        r ^= u & 0x007F7F0000000000L; r <<= 1;
+//        s ^= t & 0x0000808000000000L; s <<= 1;
+//        r ^= u & 0x00FF0000FFFFFFFFL;
+//        r ^= s ^ (s << 2) ^ (s << 3) ^ (s << 4);
+//        return r;
+//    }
 
     private void rotateLeft(long[] x, long[] z)
     {
