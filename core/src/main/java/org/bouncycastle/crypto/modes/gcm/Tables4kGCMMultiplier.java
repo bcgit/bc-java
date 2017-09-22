@@ -59,7 +59,7 @@ public class Tables4kGCMMultiplier
             t = T[x[i] & 0xFF];
 
             long c = z1 << 56;
-            z1 = t[1] ^ (z1 >>> 8) ^ (z0 << 56);
+            z1 = t[1] ^ ((z1 >>> 8) | (z0 << 56));
             z0 = t[0] ^ (z0 >>> 8) ^ c ^ (c >>> 1) ^ (c >>> 2) ^ (c >>> 7);
         }
 
