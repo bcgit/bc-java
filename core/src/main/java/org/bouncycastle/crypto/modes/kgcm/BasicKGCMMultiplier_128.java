@@ -12,6 +12,6 @@ public class BasicKGCMMultiplier_128
 
     public void multiplyH(long[] z)
     {
-        KGCMUtil_128.multiply(H, z, z);
+        KGCMUtil_128.multiply(z, H, z);
     }
 }

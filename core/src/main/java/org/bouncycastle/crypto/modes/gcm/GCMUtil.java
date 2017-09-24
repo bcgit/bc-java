@@ -100,25 +100,25 @@ public abstract class GCMUtil
 
     public static void multiply(int[] x, int[] y)
     {
-        int x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3];
+        int y0 = y[0], y1 = y[1], y2 = y[2], y3 = y[3];
         int z0 = 0, z1 = 0, z2 = 0, z3 = 0;
 
         for (int i = 0; i < 4; ++i)
         {
-            int bits = y[i];
+            int bits = x[i];
             for (int j = 0; j < 32; ++j)
             {
                 int m1 = bits >> 31; bits <<= 1;
-                z0 ^= (x0 & m1);
-                z1 ^= (x1 & m1);
-                z2 ^= (x2 & m1);
-                z3 ^= (x3 & m1);
+                z0 ^= (y0 & m1);
+                z1 ^= (y1 & m1);
+                z2 ^= (y2 & m1);
+                z3 ^= (y3 & m1);
 
-                int m2 = (x3 << 31) >> 8;
-                x3 = (x3 >>> 1) | (x2 << 31);
-                x2 = (x2 >>> 1) | (x1 << 31);
-                x1 = (x1 >>> 1) | (x0 << 31);
-                x0 = (x0 >>> 1) ^ (m2 & E1);
+                int m2 = (y3 << 31) >> 8;
+                y3 = (y3 >>> 1) | (y2 << 31);
+                y2 = (y2 >>> 1) | (y1 << 31);
+                y1 = (y1 >>> 1) | (y0 << 31);
+                y0 = (y0 >>> 1) ^ (m2 & E1);
             }
         }
 
@@ -130,21 +130,21 @@ public abstract class GCMUtil
 
     public static void multiply(long[] x, long[] y)
     {
-        long x0 = x[0], x1 = x[1];
+        long y0 = y[0], y1 = y[1];
         long z0 = 0, z1 = 0;
 
         for (int i = 0; i < 2; ++i)
         {
-            long bits = y[i];
+            long bits = x[i];
             for (int j = 0; j < 64; ++j)
             {
                 long m1 = bits >> 63; bits <<= 1;
-                z0 ^= (x0 & m1);
-                z1 ^= (x1 & m1);
+                z0 ^= (y0 & m1);
+                z1 ^= (y1 & m1);
 
-                long m2 = (x1 << 63) >> 8;
-                x1 = (x1 >>> 1) | (x0 << 63);
-                x0 = (x0 >>> 1) ^ (m2 & E1L);
+                long m2 = (y1 << 63) >> 8;
+                y1 = (y1 >>> 1) | (y0 << 63);
+                y0 = (y0 >>> 1) ^ (m2 & E1L);
             }
         }
 
