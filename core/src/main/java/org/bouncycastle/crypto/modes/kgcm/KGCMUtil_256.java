@@ -39,27 +39,60 @@ public class KGCMUtil_256
 
     public static void multiply(long[] x, long[] y, long[] z)
     {
+        long x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3];
         long y0 = y[0], y1 = y[1], y2 = y[2], y3 = y[3];
-        long z0 = 0, z1 = 0, z2 = 0, z3 = 0;
+        long z0 = 0, z1 = 0, z2 = 0, z3 = 0, z4 = 0;
 
-        for (int i = 0; i < 4; ++i)
+        for (int j = 0; j < 64; ++j)
         {
-            long bits = x[i];
-            for (int j = 0; j < 64; ++j)
-            {
-                long m1 = -(bits & 1L); bits >>= 1;
-                z0 ^= (y0 & m1);
-                z1 ^= (y1 & m1);
-                z2 ^= (y2 & m1);
-                z3 ^= (y3 & m1);
+            long m0 = -(x0 & 1L); x0 >>>= 1;
+            z0 ^= (y0 & m0);
+            z1 ^= (y1 & m0);
+            z2 ^= (y2 & m0);
+            z3 ^= (y3 & m0);
 
-                long m2 = y3 >> 63;
-                y3 = (y3 << 1) | (y2 >>> 63);
-                y2 = (y2 << 1) | (y1 >>> 63);
-                y1 = (y1 << 1) | (y0 >>> 63);
-                y0 = (y0 << 1) ^ (m2 & 0x425L);
-            }
+            long m1 = -(x1 & 1L); x1 >>>= 1;
+            z1 ^= (y0 & m1);
+            z2 ^= (y1 & m1);
+            z3 ^= (y2 & m1);
+            z4 ^= (y3 & m1);
+
+            long c = y3 >> 63;
+            y3 = (y3 << 1) | (y2 >>> 63);
+            y2 = (y2 << 1) | (y1 >>> 63);
+            y1 = (y1 << 1) | (y0 >>> 63);
+            y0 = (y0 << 1) ^ (c & 0x425L);
         }
+
+        long y4 = y3;
+        y3 = y2;
+        y2 = y1;
+        y1 = y0 ^ (y4 >>> 62) ^ (y4 >>> 59) ^ (y4 >>> 54);
+        y0 = y4 ^ (y4 <<   2) ^ (y4 <<   5) ^ (y4 <<  10);
+
+        for (int j = 0; j < 64; ++j)
+        {
+            long m2 = -(x2 & 1L); x2 >>>= 1;
+            z0 ^= (y0 & m2);
+            z1 ^= (y1 & m2);
+            z2 ^= (y2 & m2);
+            z3 ^= (y3 & m2);
+
+            long m3 = -(x3 & 1L); x3 >>>= 1;
+            z1 ^= (y0 & m3);
+            z2 ^= (y1 & m3);
+            z3 ^= (y2 & m3);
+            z4 ^= (y3 & m3);
+
+            long c = y3 >> 63;
+            y3 = (y3 << 1) | (y2 >>> 63);
+            y2 = (y2 << 1) | (y1 >>> 63);
+            y1 = (y1 << 1) | (y0 >>> 63);
+            y0 = (y0 << 1) ^ (c & 0x425L);
+        }
+
+        z0 ^= z4 ^ (z4 <<   2) ^ (z4 <<   5) ^ (z4 <<  10);
+        z1 ^=      (z4 >>> 62) ^ (z4 >>> 59) ^ (z4 >>> 54);      
 
         z[0] = z0; z[1] = z1; z[2] = z2; z[3] = z3;
     }
@@ -87,6 +120,14 @@ public class KGCMUtil_256
     public static void one(long[] z)
     {
         z[0] = 1;
+        z[1] = 0;
+        z[2] = 0;
+        z[3] = 0;
+    }
+
+    public static void x(long[] z)
+    {
+        z[0] = 2;
         z[1] = 0;
         z[2] = 0;
         z[3] = 0;
