@@ -26,28 +26,27 @@ public class Tables64kGCMMultiplier
         {
             long[][] t = T[i];
 
-            // t[0] is 0
+            // t[0] = 0
 
             if (i == 0)
             {
-                GCMUtil.asLongs(H, t[128]);
+                // t[1] = H.p^7
+                GCMUtil.asLongs(this.H, t[1]);
+                GCMUtil.multiplyP7(t[1], t[1]);
             }
             else
             {
-                GCMUtil.multiplyP8(T[i - 1][128], t[128]);
+                // t[1] = T[i-1][1].p^8
+                GCMUtil.multiplyP8(T[i - 1][1], t[1]);
             }
 
-            for (int j = 64; j >= 1; j >>= 1)
+            for (int n = 2; n < 256; n += 2)
             {
-                GCMUtil.multiplyP(t[j + j], t[j]);
-            }
+                // t[2.n] = t[n].p^-1
+                GCMUtil.divideP(t[n >> 1], t[n]);
 
-            for (int j = 2; j < 256; j += j)
-            {
-                for (int k = 1; k < j; ++k)
-                {
-                    GCMUtil.xor(t[j], t[k], t[j + k]);
-                }
+                // t[2.n + 1] = t[2.n] + t[1]
+                GCMUtil.xor(t[n], t[1], t[n + 1]);
             }
         }
     }
