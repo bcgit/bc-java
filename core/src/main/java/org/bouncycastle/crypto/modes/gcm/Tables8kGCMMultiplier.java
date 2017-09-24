@@ -22,48 +22,34 @@ public class Tables8kGCMMultiplier
 
         this.H = Arrays.clone(H);
 
-        // T[0][0] is 0
-        // T[1][0] is 0
-
-        GCMUtil.asLongs(H, T[1][8]);
-
-        for (int j = 4; j >= 1; j >>= 1)
+        for (int i = 0; i < 32; ++i)
         {
-            GCMUtil.multiplyP(T[1][j + j], T[1][j]);
-        }
+            long[][] t = T[i];
 
-        GCMUtil.multiplyP(T[1][1], T[0][8]);
+            // t[0] = 0
 
-        for (int j = 4; j >= 1; j >>= 1)
-        {
-            GCMUtil.multiplyP(T[0][j + j], T[0][j]);
-        }
-
-        int i = 0;
-        for (;;)
-        {
-            for (int j = 2; j < 16; j += j)
+            if (i == 0)
             {
-                for (int k = 1; k < j; ++k)
-                {
-                    GCMUtil.xor(T[i][j], T[i][k], T[i][j + k]);
-                }
+                // t[1] = H.p^3
+                GCMUtil.asLongs(this.H, t[1]);
+                GCMUtil.multiplyP3(t[1], t[1]);
+            }
+            else
+            {
+                // t[1] = T[i-1][1].p^4
+                GCMUtil.multiplyP4(T[i - 1][1], t[1]);
             }
 
-            if (++i == 32)
+            for (int n = 2; n < 16; n += 2)
             {
-                return;
-            }
+                // t[2.n] = t[n].p^-1
+                GCMUtil.divideP(t[n >> 1], t[n]);
 
-            if (i > 1)
-            {
-                // T[i][0] is 0;
-                for(int j = 8; j > 0; j >>= 1)
-                {
-                    GCMUtil.multiplyP8(T[i - 2][j], T[i][j]);
-                }
+                // t[2.n + 1] = t[2.n] + t[1]
+                GCMUtil.xor(t[n], t[1], t[n + 1]);
             }
         }
+
     }
 
     public void multiplyH(byte[] x)
@@ -71,8 +57,8 @@ public class Tables8kGCMMultiplier
 //        long[] z = new long[2];
 //        for (int i = 15; i >= 0; --i)
 //        {
-//            GCMUtil.xor(z, T[i + i][x[i] & 0x0F]);
-//            GCMUtil.xor(z, T[i + i + 1][(x[i] & 0xF0) >>> 4]);
+//            GCMUtil.xor(z, T[i + i + 1][(x[i] & 0x0F)]);
+//            GCMUtil.xor(z, T[i + i    ][(x[i] & 0xF0) >>> 4]);
 //        }
 //        Pack.longToBigEndian(z, x, 0);
 
@@ -80,8 +66,8 @@ public class Tables8kGCMMultiplier
 
         for (int i = 15; i >= 0; --i)
         {
-            long[] u = T[i + i][x[i] & 0x0F];
-            long[] v = T[i + i + 1][(x[i] & 0xF0) >>> 4];
+            long[] u = T[i + i + 1][(x[i] & 0x0F)];
+            long[] v = T[i + i    ][(x[i] & 0xF0) >>> 4];
 
             z0 ^= u[0] ^ v[0];
             z1 ^= u[1] ^ v[1];

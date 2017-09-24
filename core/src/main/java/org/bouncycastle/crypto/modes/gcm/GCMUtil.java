@@ -90,6 +90,15 @@ public abstract class GCMUtil
         z[1] = x[1];
     }
 
+    public static void divideP(long[] x, long[] z)
+    {
+        long x0 = x[0], x1 = x[1];
+        long m = x0 >> 63;
+        x0 ^= (m & E1L);
+        z[0] = (x0 << 1) | (x1 >>> 63);
+        z[1] = (x1 << 1) | -m;
+    }
+
     public static void multiply(byte[] x, byte[] y)
     {
         long[] t1 = GCMUtil.asLongs(x);
@@ -192,6 +201,30 @@ public abstract class GCMUtil
         z[1] = (x1 >>> 1) | (x0 << 63);
     }
 
+    public static void multiplyP3(long[] x, long[] z)
+    {
+        long x0 = x[0], x1 = x[1];
+        long c = x1 << 61;
+        z[0] = (x0 >>> 3) ^ c ^ (c >>> 1) ^ (c >>> 2) ^ (c >>> 7);
+        z[1] = (x1 >>> 3) | (x0 << 61);
+    }
+
+    public static void multiplyP4(long[] x, long[] z)
+    {
+        long x0 = x[0], x1 = x[1];
+        long c = x1 << 60;
+        z[0] = (x0 >>> 4) ^ c ^ (c >>> 1) ^ (c >>> 2) ^ (c >>> 7);
+        z[1] = (x1 >>> 4) | (x0 << 60);
+    }
+
+    public static void multiplyP7(long[] x, long[] z)
+    {
+        long x0 = x[0], x1 = x[1];
+        long c = x1 << 57;
+        z[0] = (x0 >>> 7) ^ c ^ (c >>> 1) ^ (c >>> 2) ^ (c >>> 7);
+        z[1] = (x1 >>> 7) | (x0 << 57);
+    }
+
     public static void multiplyP8(int[] x)
     {
         int x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3];
@@ -226,6 +259,13 @@ public abstract class GCMUtil
         long c = x1 << 56;
         y[0] = (x0 >>> 8) ^ c ^ (c >>> 1) ^ (c >>> 2) ^ (c >>> 7);
         y[1] = (x1 >>> 8) | (x0 << 56);
+    }
+
+    public static long[] pAsLongs()
+    {
+        long[] tmp = new long[2];
+        tmp[0] = 1L << 62;
+        return tmp;
     }
 
     public static void xor(byte[] x, byte[] y)

@@ -22,21 +22,19 @@ public class Tables4kGCMMultiplier
 
         this.H = Arrays.clone(H);
 
-        // T[0] is 0
+        // T[0] = 0
 
-        GCMUtil.asLongs(H, T[128]);
+        // T[1] = H.p^7
+        GCMUtil.asLongs(this.H, T[1]);
+        GCMUtil.multiplyP7(T[1], T[1]);
 
-        for (int j = 64; j >= 1; j >>= 1)
+        for (int n = 2; n < 256; n += 2)
         {
-            GCMUtil.multiplyP(T[j + j], T[j]);
-        }
+            // T[2.n] = T[n].p^-1
+            GCMUtil.divideP(T[n >> 1], T[n]);
 
-        for (int j = 2; j < 256; j += j)
-        {
-            for (int k = 1; k < j; ++k)
-            {
-                GCMUtil.xor(T[j], T[k], T[j + k]);
-            }
+            // T[2.n + 1] = T[2.n] + T[1]
+            GCMUtil.xor(T[n], T[1], T[n + 1]);
         }
     }
 
