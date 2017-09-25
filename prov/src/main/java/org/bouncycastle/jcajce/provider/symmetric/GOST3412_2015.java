@@ -2,7 +2,6 @@ package org.bouncycastle.jcajce.provider.symmetric;
 
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
-import org.bouncycastle.crypto.engines.GOST28147Engine;
 import org.bouncycastle.crypto.engines.GOST3412_2015Engine;
 import org.bouncycastle.crypto.macs.CMac;
 import org.bouncycastle.crypto.modes.*;
@@ -26,7 +25,7 @@ public class GOST3412_2015 {
     public static class CBC
         extends BaseBlockCipher {
         public CBC() {
-            super(new CBCBlockCipher(new GOST3412_2015Engine()), 128);
+            super(new G3412CBCBlockCipher(new GOST3412_2015Engine()), 128);
         }
     }
 
@@ -53,7 +52,7 @@ public class GOST3412_2015 {
 
     public static class CTR extends BaseBlockCipher {
         public CTR() {
-            super(new BufferedBlockCipher(new GCTRBlockCipher(new GOST3412_2015Engine(), 128)), 128);
+            super(new BufferedBlockCipher(new G3412CTRBlockCipher(new GOST3412_2015Engine(), 128)), 128);
         }
 
     }

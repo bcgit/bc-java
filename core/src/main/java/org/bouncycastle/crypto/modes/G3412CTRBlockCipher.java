@@ -7,7 +7,7 @@ import org.bouncycastle.util.Arrays;
 /**
  * implements the GOST 3412 2015 CTR counter mode (GCTR).
  */
-public class GCTRBlockCipher extends StreamBlockCipher {
+public class G3412CTRBlockCipher extends StreamBlockCipher {
 
 
     private int s;
@@ -26,7 +26,7 @@ public class GCTRBlockCipher extends StreamBlockCipher {
      * @param cipher the block cipher to be used as the basis of the
      *               counter mode (must have a 64 bit block size).
      */
-    public GCTRBlockCipher(
+    public G3412CTRBlockCipher(
         BlockCipher cipher, int s) {
 
         super(cipher);
