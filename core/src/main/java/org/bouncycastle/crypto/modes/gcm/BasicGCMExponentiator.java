@@ -26,7 +26,7 @@ public class BasicGCMExponentiator
                 {
                     GCMUtil.multiply(y, powX);
                 }
-                GCMUtil.multiply(powX, powX);
+                GCMUtil.square(powX, powX);
                 pow >>>= 1;
             }
             while (pow > 0);

@@ -50,7 +50,7 @@ public class Tables1kGCMExponentiator
             do
             {
                 tmp = Arrays.clone(tmp);
-                GCMUtil.multiply(tmp, tmp);
+                GCMUtil.square(tmp, tmp);
                 lookupPowX2.addElement(tmp);
             }
             while (++count <= bit);
