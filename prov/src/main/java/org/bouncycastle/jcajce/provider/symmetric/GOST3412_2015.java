@@ -52,20 +52,10 @@ public class GOST3412_2015 {
 
     public static class CTR extends BaseBlockCipher {
         public CTR() {
-            super(new BufferedBlockCipher(new G3412CTRBlockCipher(new GOST3412_2015Engine(), 128)), 128);
+            super(new BufferedBlockCipher(new G3412CTRBlockCipher(new GOST3412_2015Engine())), 128);
         }
 
     }
-
-
-//    public static class GostWrap
-//        extends BaseWrapCipher
-//    {
-//        public GostWrap()
-//        {
-//            super(new GOST28147WrapEngine());
-//        }
-//    }
 
     /**
      * GOST3412 2015 CMAC( OMAC1)
@@ -100,18 +90,14 @@ public class GOST3412_2015 {
             provider.addAlgorithm("Cipher.GOST3412_2015", PREFIX + "$ECB");
             provider.addAlgorithm("Alg.Alias.Cipher.GOST3412_2015", "GOST3412_2015");
             provider.addAlgorithm("Alg.Alias.Cipher.GOST3412_2015_CFB", PREFIX + "$GCFB");
+            provider.addAlgorithm("Alg.Alias.Cipher.GOST3412_2015_CFB_STREAM", PREFIX + "$GCFB_STREAM");
             provider.addAlgorithm("Alg.Alias.Cipher.GOST3412_2015_OFB", PREFIX + "$OFB");
+            provider.addAlgorithm("Alg.Alias.Cipher.GOST3412_2015_CBC", PREFIX + "$CBC");
             provider.addAlgorithm("Alg.Alias.Cipher.GOST3412_2015_CTR", PREFIX + "$CTR");
-
-//            provider.addAlgorithm("Cipher." + CryptoProObjectIdentifiers.gostR28147_gcfb, PREFIX + "$GCFB");
 
             provider.addAlgorithm("KeyGenerator.GOST3412_2015", PREFIX + "$KeyGen");
             provider.addAlgorithm("Alg.Alias.KeyGenerator.GOST", "GOST3412_2015");
             provider.addAlgorithm("Alg.Alias.KeyGenerator.GOST3412_2015", "GOST3412_2015");
-
-
-//            provider.addAlgorithm("Cipher." + CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_KeyWrap, PREFIX + "$CryptoProWrap");
-//            provider.addAlgorithm("Cipher." + CryptoProObjectIdentifiers.id_Gost28147_89_None_KeyWrap, PREFIX + "$GostWrap");
 
             provider.addAlgorithm("Mac.GOST3412MAC", PREFIX + "$Mac");
             provider.addAlgorithm("Alg.Alias.Mac.GOST3412_2015", "GOST3412MAC");

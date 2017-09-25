@@ -43,7 +43,7 @@ public class G3412OFBBlockCipher extends StreamBlockCipher {
 
             initArrays();
 
-            initIV(ivParam.getIV());
+            R_init = GOST3412CipherUtil.initIV(ivParam.getIV(), m);
             System.arraycopy(R_init, 0, R, 0, R_init.length);
 
 
@@ -64,7 +64,7 @@ public class G3412OFBBlockCipher extends StreamBlockCipher {
 
             initArrays();
 
-            initIV(ivParam.getIV());
+            R_init = GOST3412CipherUtil.initIV(ivParam.getIV(), m);
             System.arraycopy(R_init, 0, R, 0, R_init.length);
 
             // if null it's an IV changed only.
@@ -93,7 +93,6 @@ public class G3412OFBBlockCipher extends StreamBlockCipher {
             throw new IllegalArgumentException("Parameter s must be in range 0 < s <= blockSize");
         }
 
-
         if(m < blockSize){
             throw new IllegalArgumentException("Parameter m must blockSize <= m");
         }
@@ -119,24 +118,8 @@ public class G3412OFBBlockCipher extends StreamBlockCipher {
         this.m = 2 * blockSize;
     }
 
-    /**
-     * init initial value for <b>R1</b>
-     *
-     * @param iv
-     */
-    private void initIV(byte[] iv) {
-        if (iv.length < R.length) {
-            System.arraycopy(iv, 0, R_init, R_init.length - iv.length, iv.length);
-            for (int i = 0; i < R_init.length - iv.length; i++) {
-                R_init[i] = 0;
-            }
-        } else {
-            System.arraycopy(iv, 0, R_init, 0, R_init.length);
-        }
-    }
-
     public String getAlgorithmName() {
-        return cipher.getAlgorithmName();
+        return cipher.getAlgorithmName() +  "/OFB";
     }
 
     public int getBlockSize() {

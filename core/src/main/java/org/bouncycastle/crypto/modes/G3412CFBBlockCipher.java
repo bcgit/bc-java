@@ -50,7 +50,7 @@ public class G3412CFBBlockCipher implements BlockCipher {
 
             initArrays();
 
-            initIV(ivParam.getIV());
+            R_init = GOST3412CipherUtil.initIV(ivParam.getIV(), m);
             System.arraycopy(R_init, 0, R, 0, R_init.length);
 
 
@@ -68,7 +68,7 @@ public class G3412CFBBlockCipher implements BlockCipher {
 
             initArrays();
 
-            initIV(ivParam.getIV());
+            R_init = GOST3412CipherUtil.initIV(ivParam.getIV(), m);
             System.arraycopy(R_init, 0, R, 0, R_init.length);
 
             // if null it's an IV changed only.
@@ -87,6 +87,8 @@ public class G3412CFBBlockCipher implements BlockCipher {
                 cipher.init(true, params);
             }
         }
+
+        initialized = true;
     }
 
 
@@ -95,7 +97,6 @@ public class G3412CFBBlockCipher implements BlockCipher {
         if(s < 0 || s > blockSize){
             throw new IllegalArgumentException("Parameter s must be in range 0 < s <= blockSize");
         }
-
 
         if(m < blockSize){
             throw new IllegalArgumentException("Parameter m must blockSize <= m");
@@ -122,21 +123,7 @@ public class G3412CFBBlockCipher implements BlockCipher {
         this.m = 2 * blockSize;
     }
 
-    /**
-     * init initial value for <b>R1</b>
-     *
-     * @param iv
-     */
-    private void initIV(byte[] iv) {
-        if (iv.length < R.length) {
-            System.arraycopy(iv, 0, R_init, R_init.length - iv.length, iv.length);
-            for (int i = 0; i < R_init.length - iv.length; i++) {
-                R_init[i] = 0;
-            }
-        } else {
-            System.arraycopy(iv, 0, R_init, 0, R_init.length);
-        }
-    }
+
 
     public String getAlgorithmName() {
         return cipher.getAlgorithmName() + "/CFB" + (blockSize * 8);
@@ -149,44 +136,33 @@ public class G3412CFBBlockCipher implements BlockCipher {
     public int processBlock(byte[] in, int inOff, byte[] out, int outOff) throws DataLengthException, IllegalStateException {
 
         byte[] gamma = createGamma();
-        byte[] input = copyFromInput(in, blockSize, inOff);
+        byte[] input = GOST3412CipherUtil.copyFromInput(in, blockSize, inOff);
         byte[] c = GOST3412CipherUtil.sum(input, gamma);
 
-        if (forEncryption) {
-            generateR(c);
-        } else {
-            generateR(input);
-        }
-
         System.arraycopy(c, 0, out, outOff, c.length);
+
+
+        if(out.length > (outOff + c.length) ) {
+
+            if (forEncryption) {
+                generateR(c);
+            } else {
+                generateR(input);
+            }
+        }
         return c.length;
     }
 
     /**
      * creating gamma value
      *
-     * @return
+     * @return gamma
      */
     byte[] createGamma() {
         byte[] msb = GOST3412CipherUtil.MSB(R, blockSize);
         byte[] encryptedMsb = new byte[msb.length];
         cipher.processBlock(msb, 0, encryptedMsb, 0);
         return GOST3412CipherUtil.MSB(encryptedMsb, s);
-    }
-
-    /**
-     * copy from <b>input</b> array <b>size</b> bytes with <b>offset</b>
-     *
-     * @param input  input byte array
-     * @param size   count bytes to copy
-     * @param offset <b>inputs</b> offset
-     * @return
-     */
-    private byte[] copyFromInput(byte[] input, int size, int offset) {
-
-        byte[] newIn = new byte[size];
-        System.arraycopy(input, offset, newIn, 0, size);
-        return newIn;
     }
 
     /**

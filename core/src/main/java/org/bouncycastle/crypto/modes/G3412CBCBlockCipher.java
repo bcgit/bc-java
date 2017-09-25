@@ -3,11 +3,9 @@ package org.bouncycastle.crypto.modes;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.StreamBlockCipher;
 import org.bouncycastle.crypto.params.GOST3412ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.util.GOST3412CipherUtil;
-import org.bouncycastle.util.Arrays;
 
 /**
  * An implementation of the CBC mode for GOST 3412 2015 cipher.
@@ -41,7 +39,7 @@ public class G3412CBCBlockCipher implements BlockCipher {
 
             initArrays();
 
-            initIV(ivParam.getIV());
+            R_init = GOST3412CipherUtil.initIV(ivParam.getIV(), m);
             System.arraycopy(R_init, 0, R, 0, R_init.length);
 
 
@@ -61,7 +59,7 @@ public class G3412CBCBlockCipher implements BlockCipher {
 
             initArrays();
 
-            initIV(ivParam.getIV());
+            R_init = GOST3412CipherUtil.initIV(ivParam.getIV(), m);
             System.arraycopy(R_init, 0, R, 0, R_init.length);
 
             // if null it's an IV changed only.
@@ -84,9 +82,9 @@ public class G3412CBCBlockCipher implements BlockCipher {
         initialized = true;
     }
 
-    private void validateParams() throws IllegalArgumentException{
+    private void validateParams() throws IllegalArgumentException {
 
-        if(m < blockSize){
+        if (m < blockSize) {
             throw new IllegalArgumentException("Parameter m must blockSize <= m");
         }
 
@@ -109,24 +107,8 @@ public class G3412CBCBlockCipher implements BlockCipher {
         this.m = blockSize;
     }
 
-    /**
-     * init initial value for <b>R1</b>
-     *
-     * @param iv
-     */
-    private void initIV(byte[] iv) {
-        if (iv.length < R.length) {
-            System.arraycopy(iv, 0, R_init, R_init.length - iv.length, iv.length);
-            for (int i = 0; i < R_init.length - iv.length; i++) {
-                R_init[i] = 0;
-            }
-        } else {
-            System.arraycopy(iv, 0, R_init, 0, R_init.length);
-        }
-    }
-
     public String getAlgorithmName() {
-        return cipher.getAlgorithmName();
+        return cipher.getAlgorithmName() + "/CBC";
     }
 
     public int getBlockSize() {
@@ -135,59 +117,47 @@ public class G3412CBCBlockCipher implements BlockCipher {
 
     public int processBlock(byte[] in, int inOff, byte[] out, int outOff) throws DataLengthException, IllegalStateException {
 
-        return (forEncryption) ? encrypt(in, inOff, out, outOff) : decrypt(in, inOff, out, outOff) ;
+        return (forEncryption) ? encrypt(in, inOff, out, outOff) : decrypt(in, inOff, out, outOff);
     }
 
 
-    private int encrypt(byte[] in, int inOff, byte[] out, int outOff )
-    {
+    private int encrypt(byte[] in, int inOff, byte[] out, int outOff) {
 
         byte[] msb = GOST3412CipherUtil.MSB(R, blockSize);
-        byte[] input = copyFromInput(in, blockSize, inOff);
+        byte[] input = GOST3412CipherUtil.copyFromInput(in, blockSize, inOff);
         byte[] sum = GOST3412CipherUtil.sum(input, msb);
         byte[] c = new byte[sum.length];
         cipher.processBlock(sum, 0, c, 0);
 
-        generateR(c);
-
         System.arraycopy(c, 0, out, outOff, c.length);
+
+        if (out.length > (outOff + sum.length)) {
+            generateR(c);
+        }
+
         return c.length;
     }
 
 
-    private int decrypt(byte[] in, int inOff, byte[] out, int outOff )
-    {
+    private int decrypt(byte[] in, int inOff, byte[] out, int outOff) {
 
         byte[] msb = GOST3412CipherUtil.MSB(R, blockSize);
-        byte[] input = copyFromInput(in, blockSize, inOff);
+        byte[] input = GOST3412CipherUtil.copyFromInput(in, blockSize, inOff);
 
         byte[] c = new byte[input.length];
         cipher.processBlock(input, 0, c, 0);
 
         byte[] sum = GOST3412CipherUtil.sum(c, msb);
 
-
-        generateR(input);
-
         System.arraycopy(sum, 0, out, outOff, sum.length);
+
+
+        if (out.length > (outOff + sum.length)) {
+            generateR(input);
+        }
+
         return sum.length;
     }
-
-    /**
-     * copy from <b>input</b> array <b>size</b> bytes with <b>offset</b>
-     *
-     * @param input  input byte array
-     * @param size   count bytes to copy
-     * @param offset <b>inputs</b> offset
-     * @return
-     */
-    private byte[] copyFromInput(byte[] input, int size, int offset) {
-
-        byte[] newIn = new byte[size];
-        System.arraycopy(input, offset, newIn, 0, size);
-        return newIn;
-    }
-
 
     /**
      * generate new R value
@@ -200,7 +170,6 @@ public class G3412CBCBlockCipher implements BlockCipher {
         System.arraycopy(buf, 0, R, 0, buf.length);
         System.arraycopy(C, 0, R, buf.length, m - buf.length);
     }
-
 
 
     public void reset() {
