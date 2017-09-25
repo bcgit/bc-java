@@ -19,11 +19,10 @@ public class GOST3412ParametersWithIV implements CipherParameters {
         this.m = m;
     }
 
-    public GOST3412ParametersWithIV(byte[] iv, CipherParameters parameters, int s) {
+    public GOST3412ParametersWithIV(byte[] iv, CipherParameters parameters, int m) {
         this.iv = iv;
         this.parameters = parameters;
-        this.s = s;
-        this.m = 2 * s;
+        this.m = m;
     }
 
     public byte[] getIV() {

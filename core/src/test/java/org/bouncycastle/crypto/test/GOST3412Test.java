@@ -55,11 +55,11 @@ public class GOST3412Test extends CipherTest {
 //            "81800a59b1842b24ff1f795e897abd95ed5b47a7048cfab48fb521369d9326bf66a257ac3ca0b8b1c80fe7fc10288a13203ebbc066138660a0292243f6903150"),
 
 //CBC
-        new BlockCipherVectorTest(5, new CBCBlockCipher(new GOST3412_2015Engine()),
-            new ParametersWithIV(new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef")),
-                Hex.decode("1234567890abcef0a1b2c3d4e5f0011223344556677889901213141516171819")),
+        new BlockCipherVectorTest(5, new G3412CBCBlockCipher(new GOST3412_2015Engine()),
+            new GOST3412ParametersWithIV(Hex.decode("1234567890abcef0a1b2c3d4e5f0011223344556677889901213141516171819"),
+                new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef")), 256),
             "1122334455667700ffeeddccbbaa998800112233445566778899aabbcceeff0a112233445566778899aabbcceeff0a002233445566778899aabbcceeff0a0011",
-            "81800a59b1842b24ff1f795e897abd95ed5b47a7048cfab48fb521369d9326bf66a257ac3ca0b8b1c80fe7fc10288a13203ebbc066138660a0292243f6903150"),
+            "689972d4a085fa4d90e52e3d6d7dcc272826e661b478eca6af1e8e448d5ea5acfe7babf1e91999e85640e8b0f49d90d0167688065a895c631a2d9a1560b63970"),
 
 
         // ==============
