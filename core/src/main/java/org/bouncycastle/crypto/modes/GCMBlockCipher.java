@@ -5,10 +5,10 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.modes.gcm.BasicGCMExponentiator;
 import org.bouncycastle.crypto.modes.gcm.GCMExponentiator;
 import org.bouncycastle.crypto.modes.gcm.GCMMultiplier;
 import org.bouncycastle.crypto.modes.gcm.GCMUtil;
-import org.bouncycastle.crypto.modes.gcm.Tables1kGCMExponentiator;
 import org.bouncycastle.crypto.modes.gcm.Tables4kGCMMultiplier;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -426,7 +426,7 @@ public class GCMBlockCipher
             byte[] H_c = new byte[16];
             if (exp == null)
             {
-                exp = new Tables1kGCMExponentiator();
+                exp = new BasicGCMExponentiator();
                 exp.init(H);
             }
             exp.exponentiateX(c, H_c);
