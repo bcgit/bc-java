@@ -55,22 +55,10 @@ public class TlsRSAKeyExchange
         this.serverCertificate = serverCertificate.getCertificateAt(0).useInRole(ConnectionEnd.server, keyExchange);
     }
 
-    public void validateCertificateRequest(CertificateRequest certificateRequest)
-        throws IOException
+    public short[] getClientCertificateTypes()
     {
-        short[] types = certificateRequest.getCertificateTypes();
-        for (int i = 0; i < types.length; ++i)
-        {
-            switch (types[i])
-            {
-            case ClientCertificateType.rsa_sign:
-            case ClientCertificateType.dss_sign:
-            case ClientCertificateType.ecdsa_sign:
-                break;
-            default:
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-        }
+        return new short[]{ ClientCertificateType.rsa_sign, ClientCertificateType.dss_sign,
+            ClientCertificateType.ecdsa_sign };
     }
 
     public void processClientCredentials(TlsCredentials clientCredentials)

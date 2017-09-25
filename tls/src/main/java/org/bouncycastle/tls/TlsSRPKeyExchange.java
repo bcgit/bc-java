@@ -174,11 +174,6 @@ public class TlsSRPKeyExchange
         this.srpClient = context.getCrypto().createSRP6Client(srpConfig);
     }
 
-    public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException
-    {
-        throw new TlsFatalAlert(AlertDescription.unexpected_message);
-    }
-
     public void processClientCredentials(TlsCredentials clientCredentials) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);

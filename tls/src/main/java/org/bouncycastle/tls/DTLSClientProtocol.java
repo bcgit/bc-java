@@ -528,7 +528,7 @@ public class DTLSClientProtocol
 
         TlsProtocol.assertEmpty(buf);
 
-        state.keyExchange.validateCertificateRequest(state.certificateRequest);
+        state.certificateRequest = TlsUtils.validateCertificateRequest(state.certificateRequest, state.keyExchange);
     }
 
     protected void processCertificateStatus(ClientHandshakeState state, byte[] body)

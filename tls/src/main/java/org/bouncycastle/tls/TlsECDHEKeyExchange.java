@@ -100,7 +100,7 @@ public class TlsECDHEKeyExchange
         processEphemeral(clientECPointFormats, point);
     }
 
-    public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException
+    public short[] getClientCertificateTypes()
     {
         /*
          * RFC 4492 3. [...] The ECDSA_fixed_ECDH and RSA_fixed_ECDH mechanisms are usable with
@@ -108,19 +108,8 @@ public class TlsECDHEKeyExchange
          * the use of a long-term ECDH client key would jeopardize the forward secrecy property of
          * these algorithms.
          */
-        short[] types = certificateRequest.getCertificateTypes();
-        for (int i = 0; i < types.length; ++i)
-        {
-            switch (types[i])
-            {
-            case ClientCertificateType.dss_sign:
-            case ClientCertificateType.ecdsa_sign:
-            case ClientCertificateType.rsa_sign:
-                break;
-            default:
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-        }
+        return new short[]{ ClientCertificateType.dss_sign, ClientCertificateType.ecdsa_sign,
+            ClientCertificateType.rsa_sign };
     }
 
     public void processClientCredentials(TlsCredentials clientCredentials) throws IOException
