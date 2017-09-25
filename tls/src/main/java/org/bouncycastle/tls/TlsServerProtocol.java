@@ -197,7 +197,7 @@ public class TlsServerProtocol
                             throw new TlsFatalAlert(AlertDescription.internal_error);
                         }
 
-                        this.keyExchange.validateCertificateRequest(certificateRequest);
+                        this.certificateRequest = TlsUtils.validateCertificateRequest(this.certificateRequest, this.keyExchange);
 
                         sendCertificateRequestMessage(certificateRequest);
 

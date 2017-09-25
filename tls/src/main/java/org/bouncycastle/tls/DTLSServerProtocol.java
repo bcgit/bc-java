@@ -191,7 +191,7 @@ public class DTLSServerProtocol
                     throw new TlsFatalAlert(AlertDescription.internal_error);
                 }
 
-                state.keyExchange.validateCertificateRequest(state.certificateRequest);
+                state.certificateRequest = TlsUtils.validateCertificateRequest(state.certificateRequest, state.keyExchange);
 
                 byte[] certificateRequestBody = generateCertificateRequest(state, state.certificateRequest);
                 handshake.sendMessage(HandshakeType.certificate_request, certificateRequestBody);

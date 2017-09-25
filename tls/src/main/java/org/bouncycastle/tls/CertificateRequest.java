@@ -34,6 +34,15 @@ public class CertificateRequest
      */
     public CertificateRequest(short[] certificateTypes, Vector supportedSignatureAlgorithms, Vector certificateAuthorities)
     {
+        if (certificateTypes == null)
+        {
+            throw new IllegalArgumentException("'certificateTypes' cannot be null");
+        }
+        if (certificateTypes.length < 1 || !TlsUtils.isValidUint8(certificateTypes.length))
+        {
+            throw new IllegalArgumentException("'certificateTypes' should have length from 1 to 255");
+        }
+
         this.certificateTypes = certificateTypes;
         this.supportedSignatureAlgorithms = supportedSignatureAlgorithms;
         this.certificateAuthorities = certificateAuthorities;
@@ -130,6 +139,11 @@ public class CertificateRequest
         throws IOException
     {
         int numTypes = TlsUtils.readUint8(input);
+        if (numTypes < 1)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
         short[] certificateTypes = new short[numTypes];
         for (int i = 0; i < numTypes; ++i)
         {
