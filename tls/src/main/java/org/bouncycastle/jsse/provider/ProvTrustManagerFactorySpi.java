@@ -19,6 +19,7 @@ import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import javax.net.ssl.CertPathTrustManagerParameters;
 import javax.net.ssl.ManagerFactoryParameters;
@@ -29,6 +30,8 @@ import javax.net.ssl.X509TrustManager;
 class ProvTrustManagerFactorySpi
     extends TrustManagerFactorySpi
 {
+    private static Logger LOG = Logger.getLogger(ProvTrustManagerFactorySpi.class.getName());
+
     static final Constructor<? extends X509TrustManager> extendedTrustManagerConstructor;
 
     static final String CACERTS_PATH;
@@ -127,12 +130,14 @@ class ProvTrustManagerFactorySpi
                 if (tsPath == null)
                 {
                     ks.load(null, null);
+                    LOG.warning("Initialized with empty trust store");
                 }
                 else
                 {
                     InputStream tsInput = new BufferedInputStream(new FileInputStream(tsPath));
                     ks.load(tsInput, tsPassword);
                     tsInput.close();
+                    LOG.info("Initialized with trust store at path: " + tsPath);
                 }
             }
 
