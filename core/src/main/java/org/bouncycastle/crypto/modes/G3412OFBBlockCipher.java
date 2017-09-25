@@ -3,46 +3,39 @@ package org.bouncycastle.crypto.modes;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.StreamBlockCipher;
 import org.bouncycastle.crypto.params.GOST3412ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.util.GOST3412CipherUtil;
+import org.bouncycastle.util.Arrays;
 
 /**
- * An implementation of the CFB mode for GOST 3412 2015 cipher.
+ * An implementation of the OFB mode for GOST 3412 2015 cipher.
  * See  <a href="http://www.tc26.ru/standard/gost/GOST_R_3413-2015.pdf">GOST R 3413 2015</a>
  */
-public class G3412CFBBlockCipher implements BlockCipher {
+public class G3412OFBBlockCipher extends StreamBlockCipher {
 
     private int s;
     private int m;
     private int blockSize;
     private byte[] R;
     private byte[] R_init;
+    private byte[] Y;
     private BlockCipher cipher;
-    private boolean forEncryption;
+    private int byteCount;
     private boolean initialized = false;
 
     /**
      * @param cipher base cipher
      */
-    public G3412CFBBlockCipher(BlockCipher cipher) {
+    public G3412OFBBlockCipher(BlockCipher cipher) {
+        super(cipher);
         this.blockSize = cipher.getBlockSize();
         this.cipher = cipher;
+        Y = new byte[blockSize];
     }
 
-    /**
-     * Initialise the cipher and initialisation vector R.
-     * If an IV isn't passed as part of the parameter, the IV will be all zeros.
-     * An IV which is too short is handled in FIPS compliant fashion.
-     * R_init = IV, and R1 = R_init
-     *
-     * @param forEncryption ignored because encryption and decryption are same
-     * @param params        the key and other data required by the cipher.
-     * @throws IllegalArgumentException
-     */
     public void init(boolean forEncryption, CipherParameters params) throws IllegalArgumentException {
-
-        this.forEncryption = forEncryption;
         if (params instanceof ParametersWithIV) {
             ParametersWithIV ivParam = (ParametersWithIV) params;
 
@@ -58,7 +51,10 @@ public class G3412CFBBlockCipher implements BlockCipher {
             if (ivParam.getParameters() != null) {
                 cipher.init(true, ivParam.getParameters());
             }
-        } else if (params instanceof GOST3412ParametersWithIV) {
+
+
+        }
+        if (params instanceof GOST3412ParametersWithIV) {
             GOST3412ParametersWithIV ivParam = (GOST3412ParametersWithIV) params;
 
             this.s = ivParam.getS() / 8;
@@ -76,19 +72,20 @@ public class G3412CFBBlockCipher implements BlockCipher {
                 cipher.init(true, ivParam.getParameters());
             }
         } else {
+
             setupDefaultParams();
 
             initArrays();
             System.arraycopy(R_init, 0, R, 0, R_init.length);
-
 
             // if it's null, key is to be reused.
             if (params != null) {
                 cipher.init(true, params);
             }
         }
-    }
 
+        initialized = true;
+    }
 
     private void validateParams() throws IllegalArgumentException{
 
@@ -139,7 +136,7 @@ public class G3412CFBBlockCipher implements BlockCipher {
     }
 
     public String getAlgorithmName() {
-        return cipher.getAlgorithmName() + "/CFB" + (blockSize * 8);
+        return cipher.getAlgorithmName();
     }
 
     public int getBlockSize() {
@@ -148,68 +145,51 @@ public class G3412CFBBlockCipher implements BlockCipher {
 
     public int processBlock(byte[] in, int inOff, byte[] out, int outOff) throws DataLengthException, IllegalStateException {
 
-        byte[] gamma = createGamma();
-        byte[] input = copyFromInput(in, blockSize, inOff);
-        byte[] c = GOST3412CipherUtil.sum(input, gamma);
+        processBytes(in, inOff, blockSize, out, outOff);
+        return blockSize;
+    }
 
-        if (forEncryption) {
-            generateR(c);
-        } else {
-            generateR(input);
+
+    protected byte calculateByte(byte in) {
+        if (byteCount == 0) {
+            generateY();
         }
 
-        System.arraycopy(c, 0, out, outOff, c.length);
-        return c.length;
+        byte rv = (byte) (Y[byteCount] ^ in);
+        byteCount++;
+
+        if (byteCount == getBlockSize()) {
+            byteCount = 0;
+            generateR();
+        }
+
+        return rv;
     }
 
     /**
-     * creating gamma value
-     *
-     * @return
+     * generate new Y value
      */
-    byte[] createGamma() {
+    private void generateY() {
         byte[] msb = GOST3412CipherUtil.MSB(R, blockSize);
-        byte[] encryptedMsb = new byte[msb.length];
-        cipher.processBlock(msb, 0, encryptedMsb, 0);
-        return GOST3412CipherUtil.MSB(encryptedMsb, s);
+        cipher.processBlock(msb, 0, Y, 0);
     }
 
-    /**
-     * copy from <b>input</b> array <b>size</b> bytes with <b>offset</b>
-     *
-     * @param input  input byte array
-     * @param size   count bytes to copy
-     * @param offset <b>inputs</b> offset
-     * @return
-     */
-    private byte[] copyFromInput(byte[] input, int size, int offset) {
-
-        byte[] newIn = new byte[size];
-        System.arraycopy(input, offset, newIn, 0, size);
-        return newIn;
-    }
 
     /**
      * generate new R value
-     *
-     * @param C processed block
      */
-    void generateR(byte[] C) {
-
-        byte[] buf = GOST3412CipherUtil.LSB(R, m - s);
+    private void generateR() {
+        byte[] buf = GOST3412CipherUtil.LSB(R, m - blockSize);
         System.arraycopy(buf, 0, R, 0, buf.length);
-        System.arraycopy(C, 0, R, buf.length, m - buf.length);
+        System.arraycopy(Y, 0, R, buf.length, m - buf.length);
     }
 
-    /**
-     * copy R_init into R and reset the underlying
-     * cipher.
-     */
-    public void reset() {
 
+    public void reset() {
         if (initialized) {
             System.arraycopy(R_init, 0, R, 0, R_init.length);
-
+            Arrays.clear(Y);
+            byteCount = 0;
             cipher.reset();
         }
     }
