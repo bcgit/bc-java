@@ -33,8 +33,7 @@ public interface TlsKeyExchange
     void processServerKeyExchange(InputStream input)
         throws IOException;
 
-    void validateCertificateRequest(CertificateRequest certificateRequest)
-        throws IOException;
+    short[] getClientCertificateTypes();
 
     void skipClientCredentials()
         throws IOException;

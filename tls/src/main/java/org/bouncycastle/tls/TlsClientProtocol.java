@@ -469,7 +469,7 @@ public class TlsClientProtocol
 
                 assertEmpty(buf);
 
-                this.keyExchange.validateCertificateRequest(this.certificateRequest);
+                this.certificateRequest = TlsUtils.validateCertificateRequest(this.certificateRequest, this.keyExchange);
 
                 /*
                  * TODO Give the client a chance to immediately select the CertificateVerify hash

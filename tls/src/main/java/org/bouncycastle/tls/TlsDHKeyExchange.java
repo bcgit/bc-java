@@ -144,25 +144,14 @@ public class TlsDHKeyExchange
         processEphemeral(y);
     }
 
-    public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException
+    public short[] getClientCertificateTypes()
     {
         if (keyExchange == KeyExchangeAlgorithm.DH_anon)
         {
-            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            return null;
         }
 
-        short[] types = certificateRequest.getCertificateTypes();
-        for (int i = 0; i < types.length; ++i)
-        {
-            switch (types[i])
-            {
-            case ClientCertificateType.dss_fixed_dh:
-            case ClientCertificateType.rsa_fixed_dh:
-                break;
-            default:
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-        }
+        return new short[]{ ClientCertificateType.dss_fixed_dh, ClientCertificateType.rsa_fixed_dh };
     }
 
     public void processClientCredentials(TlsCredentials clientCredentials) throws IOException

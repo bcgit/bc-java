@@ -162,6 +162,11 @@ public abstract class AbstractTlsKeyExchange
         }
     }
 
+    public short[] getClientCertificateTypes()
+    {
+        return null;
+    }
+
     public void skipClientCredentials()
         throws IOException
     {

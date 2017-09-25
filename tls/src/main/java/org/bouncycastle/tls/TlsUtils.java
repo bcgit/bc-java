@@ -2947,4 +2947,79 @@ public class TlsUtils
         keyExchange.processServerCertificate(serverCertificate);
         clientAuthentication.notifyServerCertificate(new TlsServerCertificateImpl(serverCertificate, serverCertificateStatus));
     }
+
+    static CertificateRequest validateCertificateRequest(CertificateRequest certificateRequest, TlsKeyExchange keyExchange)
+        throws IOException
+    {
+        short[] validClientCertificateTypes = keyExchange.getClientCertificateTypes();
+        if (validClientCertificateTypes == null || validClientCertificateTypes.length < 1)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        certificateRequest = normalizeCertificateRequest(certificateRequest, validClientCertificateTypes);
+        if (certificateRequest == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        return certificateRequest;
+    }
+
+    static CertificateRequest normalizeCertificateRequest(CertificateRequest certificateRequest, short[] validClientCertificateTypes)
+    {
+        if (containsAll(validClientCertificateTypes, certificateRequest.getCertificateTypes()))
+        {
+            return certificateRequest;
+        }
+
+        short[] retained = retainAll(certificateRequest.getCertificateTypes(), validClientCertificateTypes);
+        if (retained.length < 1)
+        {
+            return null;
+        }
+
+        return new CertificateRequest(retained, certificateRequest.getSupportedSignatureAlgorithms(),
+            certificateRequest.getCertificateAuthorities());
+    }
+
+    static boolean containsAll(short[] container, short[] elements)
+    {
+        for (int i = 0; i < elements.length; ++i)
+        {
+            if (!Arrays.contains(container, elements[i]))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static short[] retainAll(short[] retainer, short[] elements)
+    {
+        short[] retained = new short[Math.min(retainer.length, elements.length)];
+
+        int count = 0;
+        for (int i = 0; i < elements.length; ++i)
+        {
+            if (Arrays.contains(retainer, elements[i]))
+            {
+                retained[count++] = elements[i];
+            }
+        }
+
+        return truncate(retained, count);
+    }
+
+    static short[] truncate(short[] a, int n)
+    {
+        if (n < a.length)
+        {
+            return a;
+        }
+
+        short[] t = new short[n];
+        System.arraycopy(a, 0,  t, 0, n);
+        return t;
+    }
 }

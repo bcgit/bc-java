@@ -99,21 +99,10 @@ public class TlsDHEKeyExchange
         processEphemeral(y);
     }
 
-    public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException
+    public short[] getClientCertificateTypes()
     {
-        short[] types = certificateRequest.getCertificateTypes();
-        for (int i = 0; i < types.length; ++i)
-        {
-            switch (types[i])
-            {
-            case ClientCertificateType.dss_sign:
-            case ClientCertificateType.ecdsa_sign:
-            case ClientCertificateType.rsa_sign:
-                break;
-            default:
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-        }
+        return new short[]{ ClientCertificateType.dss_sign, ClientCertificateType.ecdsa_sign,
+            ClientCertificateType.rsa_sign };
     }
 
     public void processClientCredentials(TlsCredentials clientCredentials) throws IOException
