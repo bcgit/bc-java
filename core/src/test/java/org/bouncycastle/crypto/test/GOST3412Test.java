@@ -26,33 +26,33 @@ public class GOST3412Test extends CipherTest {
 
     static SimpleTest[] tests = {
 
-////         ECB
-//        new BlockCipherVectorTest(1, new GOST3412_2015Engine(),
-//            new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef")),
-//            "1122334455667700ffeeddccbbaa9988", "7f679d90bebc24305a468d42b9d4edcd"),
-//
-//        // CFB
-//        new BlockCipherVectorTest(2, new G3412CFBStreamBlockCipher(new GOST3412_2015Engine()),
-//            new GOST3412ParametersWithIV(Hex.decode("1234567890abcef0a1b2c3d4e5f0011223344556677889901213141516171819"),
-//                new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef")),
-//                128, 256),
-//            "1122334455667700ffeeddccbbaa998800112233445566778899aabbcceeff0a112233445566778899aabbcceeff0a002233445566778899aabbcceeff0a0011",
-//            "81800a59b1842b24ff1f795e897abd95ed5b47a7048cfab48fb521369d9326bf79f2a8eb5cc68d38842d264e97a238b54ffebecd4e922de6c75bd9dd44fbf4d1"),
-//        // CFB STREAM
-//        new BlockCipherVectorTest(3, new G3412CFBBlockCipher(new GOST3412_2015Engine()),
-//            new GOST3412ParametersWithIV(Hex.decode("1234567890abcef0a1b2c3d4e5f0011223344556677889901213141516171819"),
-//                new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef")),
-//                128, 256),
-//            "1122334455667700ffeeddccbbaa998800112233445566778899aabbcceeff0a112233445566778899aabbcceeff0a002233445566778899aabbcceeff0a0011",
-//            "81800a59b1842b24ff1f795e897abd95ed5b47a7048cfab48fb521369d9326bf79f2a8eb5cc68d38842d264e97a238b54ffebecd4e922de6c75bd9dd44fbf4d1"),
-//
-//    // OFB
-//        new BlockCipherVectorTest(4, new G3412OFBBlockCipher(new GOST3412_2015Engine()),
-//            new GOST3412ParametersWithIV(Hex.decode("1234567890abcef0a1b2c3d4e5f0011223344556677889901213141516171819"),
-//                new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef")),
-//                128, 256),
-//            "1122334455667700ffeeddccbbaa998800112233445566778899aabbcceeff0a112233445566778899aabbcceeff0a002233445566778899aabbcceeff0a0011",
-//            "81800a59b1842b24ff1f795e897abd95ed5b47a7048cfab48fb521369d9326bf66a257ac3ca0b8b1c80fe7fc10288a13203ebbc066138660a0292243f6903150"),
+//         ECB
+        new BlockCipherVectorTest(1, new GOST3412_2015Engine(),
+            new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef")),
+            "1122334455667700ffeeddccbbaa9988", "7f679d90bebc24305a468d42b9d4edcd"),
+
+        // CFB
+        new BlockCipherVectorTest(2, new G3412CFBStreamBlockCipher(new GOST3412_2015Engine()),
+            new GOST3412ParametersWithIV(Hex.decode("1234567890abcef0a1b2c3d4e5f0011223344556677889901213141516171819"),
+                new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef")),
+                128, 256),
+            "1122334455667700ffeeddccbbaa998800112233445566778899aabbcceeff0a112233445566778899aabbcceeff0a002233445566778899aabbcceeff0a0011",
+            "81800a59b1842b24ff1f795e897abd95ed5b47a7048cfab48fb521369d9326bf79f2a8eb5cc68d38842d264e97a238b54ffebecd4e922de6c75bd9dd44fbf4d1"),
+        // CFB STREAM
+        new BlockCipherVectorTest(3, new G3412CFBBlockCipher(new GOST3412_2015Engine()),
+            new GOST3412ParametersWithIV(Hex.decode("1234567890abcef0a1b2c3d4e5f0011223344556677889901213141516171819"),
+                new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef")),
+                128, 256),
+            "1122334455667700ffeeddccbbaa998800112233445566778899aabbcceeff0a112233445566778899aabbcceeff0a002233445566778899aabbcceeff0a0011",
+            "81800a59b1842b24ff1f795e897abd95ed5b47a7048cfab48fb521369d9326bf79f2a8eb5cc68d38842d264e97a238b54ffebecd4e922de6c75bd9dd44fbf4d1"),
+
+        // OFB
+        new BlockCipherVectorTest(4, new G3412OFBBlockCipher(new GOST3412_2015Engine()),
+            new GOST3412ParametersWithIV(Hex.decode("1234567890abcef0a1b2c3d4e5f0011223344556677889901213141516171819"),
+                new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef")),
+                128, 256),
+            "1122334455667700ffeeddccbbaa998800112233445566778899aabbcceeff0a112233445566778899aabbcceeff0a002233445566778899aabbcceeff0a0011",
+            "81800a59b1842b24ff1f795e897abd95ed5b47a7048cfab48fb521369d9326bf66a257ac3ca0b8b1c80fe7fc10288a13203ebbc066138660a0292243f6903150"),
 
 //CBC
         new BlockCipherVectorTest(5, new G3412CBCBlockCipher(new GOST3412_2015Engine()),
@@ -60,31 +60,14 @@ public class GOST3412Test extends CipherTest {
                 new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef")), 256),
             "1122334455667700ffeeddccbbaa998800112233445566778899aabbcceeff0a112233445566778899aabbcceeff0a002233445566778899aabbcceeff0a0011",
             "689972d4a085fa4d90e52e3d6d7dcc272826e661b478eca6af1e8e448d5ea5acfe7babf1e91999e85640e8b0f49d90d0167688065a895c631a2d9a1560b63970"),
+//CTR
+        new BlockCipherVectorTest(6, new G3412CTRBlockCipher(new GOST3412_2015Engine()),
+            new GOST3412ParametersWithIV(Hex.decode("1234567890abcef0"),
+                new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef")),
+                128, 128),
+            "1122334455667700ffeeddccbbaa998800112233445566778899aabbcceeff0a112233445566778899aabbcceeff0a002233445566778899aabbcceeff0a0011",
+            "f195d8bec10ed1dbd57b5fa240bda1b885eee733f6a13e5df33ce4b33c45dee4a5eae88be6356ed3d5e877f13564a3a5cb91fab1f20cbab6d1c6d15820bdba73")
 
-
-        // ==============
-
-//
-//        new BlockCipherVectorTest(3, new G3412OFBBlockCipher(new GOST3412_2015Engine()),
-//            new GOST3412ParametersWithIV(Hex.decode("1234567890abcef0a1b2c3d4e5f0011223344556677889901213141516171819"),
-//                new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef")),
-//                128, 256),
-//            "1122334455667700ffeeddccbbaa998800112233445566778899aabbcceeff0a112233445566778899aabbcceeff0a002233445566778899aabbcceeff0a0011",
-//            "81800a59b1842b24ff1f795e897abd95ed5b47a7048cfab48fb521369d9326bf66a257ac3ca0b8b1c80fe7fc10288a13203ebbc066138660a0292243f6903150"),
-//
-
-
-//                new BlockCipherVectorTest(2, new GCTRBlockCipher2(new GOST3412_2015Engine(), 16),
-//                    new ParametersWithIV(new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef")),
-//                        Hex.decode("1234567890abcef0")),
-//                    "1122334455667700ffeeddccbbaa9988", "f195d8bec10ed1dbd57b5fa240bda1b8"),
-
-//        new BlockCipherVectorTest(4, new GCTRBlockCipher2(new GOST3412_2015Engine(), 16),
-//            new ParametersWithIV(new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef")),
-//                Hex.decode("1234567890abcef0")),
-//            "00112233445566778899aabbcceeff0a", "85eee733f6a13e5df33ce4b33c45dee4\n"),
-
-        // ==============
 
     };
 

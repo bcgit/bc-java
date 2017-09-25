@@ -1,8 +1,13 @@
 package org.bouncycastle.crypto.modes;
 
 import org.bouncycastle.crypto.*;
+import org.bouncycastle.crypto.params.GOST3412ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.crypto.util.GOST3412CipherUtil;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
+
+import static javafx.scene.input.KeyCode.R;
 
 /**
  * implements the GOST 3412 2015 CTR counter mode (GCTR).
@@ -11,13 +16,13 @@ public class G3412CTRBlockCipher extends StreamBlockCipher {
 
 
     private int s;
-    private byte[] ofbV;
-    private byte[] ofbOutV;
     private byte[] CTR;
+    private byte[] IV;
+    private byte[] buf;
     private final int blockSize;
     private final BlockCipher cipher;
     private int byteCount = 0;
-    private int inSize = 0;
+    private boolean initialized;
 
 
     /**
@@ -27,20 +32,13 @@ public class G3412CTRBlockCipher extends StreamBlockCipher {
      *               counter mode (must have a 64 bit block size).
      */
     public G3412CTRBlockCipher(
-        BlockCipher cipher, int s) {
+        BlockCipher cipher) {
 
         super(cipher);
 
-        this.s = s;
         this.cipher = cipher;
         this.blockSize = cipher.getBlockSize();
         CTR = new byte[blockSize];
-        ofbV = new byte[blockSize];
-        ofbOutV = new byte[blockSize];
-
-        if (s > blockSize || s <= 0) {
-            throw new IllegalArgumentException("GCTR parameter s must be in range 0 < s <= block size");
-        }
     }
 
     /**
@@ -61,32 +59,78 @@ public class G3412CTRBlockCipher extends StreamBlockCipher {
 
         if (params instanceof ParametersWithIV) {
             ParametersWithIV ivParam = (ParametersWithIV) params;
-            byte[] iv = ivParam.getIV();
 
-            if (iv.length != (blockSize / 2)) {
-                throw new IllegalArgumentException("GCTR parameter IV must be = blocksize/2");
+            setupDefaultParams();
+
+            initArrays();
+
+            IV = GOST3412CipherUtil.initIV(ivParam.getIV(), IV.length);
+            System.arraycopy(IV, 0, CTR, 0, IV.length);
+            for (int i = IV.length; i < blockSize; i++) {
+                CTR[i] = 0;
             }
 
 
+            // if null it's an IV changed only.
+            if (ivParam.getParameters() != null) {
+                cipher.init(true, ivParam.getParameters());
+            }
 
-            System.arraycopy(iv, 0, CTR, 0, iv.length);
 
-            Arrays.fill(CTR, blockSize / 2, (byte) 0);
+        }
+        if (params instanceof GOST3412ParametersWithIV) {
+            GOST3412ParametersWithIV ivParam = (GOST3412ParametersWithIV) params;
 
-            reset();
+            this.s = ivParam.getS() / 8;
 
-            // if params is null we reuse the current working key.
+            validateParams(ivParam.getIV().length);
+
+            initArrays();
+
+            IV = GOST3412CipherUtil.initIV(ivParam.getIV(), IV.length);
+            System.arraycopy(IV, 0, CTR, 0, IV.length);
+            for (int i = IV.length; i < blockSize; i++) {
+                CTR[i] = 0;
+            }
+
+
+            // if null it's an IV changed only.
             if (ivParam.getParameters() != null) {
                 cipher.init(true, ivParam.getParameters());
             }
         } else {
-            reset();
 
-            // if params is null we reuse the current working key.
+            setupDefaultParams();
+
+            initArrays();
+
+            // if it's null, key is to be reused.
             if (params != null) {
                 cipher.init(true, params);
             }
         }
+
+        initialized = true;
+    }
+
+    private void validateParams(int viLen) throws IllegalArgumentException {
+        if (s < 0 || s > blockSize) {
+            throw new IllegalArgumentException("Parameter s must be in range 0 < s <= blockSize");
+        }
+
+        if (viLen != blockSize / 2) {
+            throw new IllegalArgumentException("Parameter IV length must be == blockSize/2");
+        }
+    }
+
+    private void initArrays() {
+        IV = new byte[blockSize / 2];
+        CTR = new byte[blockSize];
+        buf = new byte[s];
+    }
+
+    private void setupDefaultParams() {
+        s = 128;
     }
 
     /**
@@ -131,60 +175,53 @@ public class G3412CTRBlockCipher extends StreamBlockCipher {
         processBytes(in, inOff, blockSize, out, outOff);
 
         return blockSize;
-
-//        cipher.processBlock(in, inOff, out, outOff);
-//
-//        byte[] ts = MSB(out, blockSize);
-//        for (int i = 0; i < ts.length; i++) {
-//            ts[i] = (byte) (ts[i] ^ in[i]);
-//        }
-//
-//        System.arraycopy(ts, 0, out, 0, ts.length);
-//
-//        return blockSize;
     }
+
+    protected byte calculateByte(byte in) {
+
+        if (byteCount == 0) {
+            buf = generateBuf();
+        }
+
+        byte rv = (byte) (buf[byteCount] ^ in);
+        byteCount++;
+
+        if (byteCount == blockSize) {
+            byteCount = 0;
+            generateCRT();
+        }
+
+        return rv;
+
+    }
+
+    private void generateCRT() {
+        CTR[CTR.length - 1]++;
+    }
+
+
+    private byte[] generateBuf() {
+
+        byte[] encryptedCTR = new byte[CTR.length];
+        cipher.processBlock(CTR, 0, encryptedCTR, 0);
+
+        return GOST3412CipherUtil.MSB(encryptedCTR, s);
+
+    }
+
 
     /**
      * reset the feedback vector back to the IV and reset the underlying
      * cipher.
      */
     public void reset() {
-        System.arraycopy(CTR, 0, ofbV, 0, CTR.length);
-        byteCount = 0;
-        cipher.reset();
-    }
-
-
-    private byte[] MSB(byte[] from, int size) {
-        return Arrays.copyOf(from, size);
-    }
-
-
-    protected byte calculateByte(byte b) {
-
-
-        if (byteCount < 0) {
-
-
-            cipher.processBlock(ofbV, 0, ofbOutV, 0);
-            byte[] ts = MSB(ofbOutV, s);
-
-
-            cipher.processBlock(ofbV, 0, ofbOutV, 0);
-        }
-
-        byte rv = (byte) (ofbOutV[byteCount++] ^ b);
-
-        if (byteCount == blockSize) {
+        if (initialized) {
+            System.arraycopy(IV, 0, CTR, 0, IV.length);
+            for (int i = IV.length; i < blockSize; i++) {
+                CTR[i] = 0;
+            }
             byteCount = 0;
-
-            //
-            // change over the input block.
-            //
-            System.arraycopy(ofbV, blockSize, ofbV, 0, ofbV.length - blockSize);
-            System.arraycopy(ofbOutV, 0, ofbV, ofbV.length - blockSize, blockSize);
+            cipher.reset();
         }
-
-        return rv;
     }
 }
