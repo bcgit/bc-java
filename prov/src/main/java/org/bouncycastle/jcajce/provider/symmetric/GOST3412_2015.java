@@ -5,13 +5,11 @@ import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.GOST28147Engine;
 import org.bouncycastle.crypto.engines.GOST3412_2015Engine;
 import org.bouncycastle.crypto.macs.CMac;
-import org.bouncycastle.crypto.modes.CBCBlockCipher;
-import org.bouncycastle.crypto.modes.CFBBlockCipher;
-import org.bouncycastle.crypto.modes.GCTRBlockCipher;
-import org.bouncycastle.crypto.modes.OFBBlockCipher;
+import org.bouncycastle.crypto.modes.*;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseStreamCipher;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 
 
@@ -35,13 +33,20 @@ public class GOST3412_2015 {
     public static class GCFB
         extends BaseBlockCipher {
         public GCFB() {
-            super(new BufferedBlockCipher(new CFBBlockCipher(new GOST3412_2015Engine(), 128)), 128);
+            super(new BufferedBlockCipher(new G3412CFBBlockCipher(new GOST3412_2015Engine())), 128);
+        }
+    }
+
+    public static class GCFB_STREAM
+        extends BaseStreamCipher {
+        public GCFB_STREAM() {
+            super(new G3412CFBStreamBlockCipher(new GOST3412_2015Engine()), 128);
         }
     }
 
     public static class OFB extends BaseBlockCipher {
         public OFB() {
-            super(new BufferedBlockCipher(new OFBBlockCipher(new GOST3412_2015Engine(), 128)), 128);
+            super(new BufferedBlockCipher(new G3412OFBBlockCipher(new GOST3412_2015Engine())), 128);
         }
 
     }
