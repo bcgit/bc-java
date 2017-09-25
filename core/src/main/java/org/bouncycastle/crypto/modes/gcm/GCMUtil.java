@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.modes.gcm;
 
+import org.bouncycastle.math.raw.Interleave;
 import org.bouncycastle.util.Pack;
 
 public abstract class GCMUtil
@@ -266,6 +267,24 @@ public abstract class GCMUtil
         long[] tmp = new long[2];
         tmp[0] = 1L << 62;
         return tmp;
+    }
+
+    public static void square(long[] x, long[] z)
+    {
+        long[] t  = new long[4];
+        Interleave.expand64To128Rev(x[0], t, 0);
+        Interleave.expand64To128Rev(x[1], t, 2);
+
+        long z0 = t[0], z1 = t[1], z2 = t[2], z3 = t[3];
+
+        z1 ^= z3 ^ (z3 >>>  1) ^ (z3 >>>  2) ^ (z3 >>>  7);
+        z2 ^=      (z3 <<  63) ^ (z3 <<  62) ^ (z3 <<  57);
+
+        z0 ^= z2 ^ (z2 >>>  1) ^ (z2 >>>  2) ^ (z2 >>>  7);
+        z1 ^=      (z2 <<  63) ^ (z2 <<  62) ^ (z2 <<  57);
+
+        z[0] = z0;
+        z[1] = z1;
     }
 
     public static void xor(byte[] x, byte[] y)
