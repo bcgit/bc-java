@@ -579,58 +579,60 @@ public class DSTU7624Engine
         case 2:
         {
             long c0 = internalState[0], c1 = internalState[1];
-            internalState[0] = (c0 & 0x00000000FFFFFFFFL) | (c1 & 0xFFFFFFFF00000000L);
-            internalState[1] = (c1 & 0x00000000FFFFFFFFL) | (c0 & 0xFFFFFFFF00000000L);
+            long d;
+
+            d = (c0 ^ c1) & 0xFFFFFFFF00000000L; c0 ^= d; c1 ^= d;
+
+            internalState[0] = c0;
+            internalState[1] = c1;
             break;
         }
         case 4:
         {
             long c0 = internalState[0], c1 = internalState[1], c2 = internalState[2], c3 = internalState[3];
-            long d0, d1, d2, d3;
+            long d;
 
-            d0 = (c0 & 0x00000000FFFFFFFFL) | (c2 & 0xFFFFFFFF00000000L);
-            d1 = (c1 & 0x00000000FFFFFFFFL) | (c3 & 0xFFFFFFFF00000000L);
-            d2 = (c2 & 0x00000000FFFFFFFFL) | (c0 & 0xFFFFFFFF00000000L);
-            d3 = (c3 & 0x00000000FFFFFFFFL) | (c1 & 0xFFFFFFFF00000000L);
+            d = (c0 ^ c2) & 0xFFFFFFFF00000000L; c0 ^= d; c2 ^= d;
+            d = (c1 ^ c3) & 0x0000FFFFFFFF0000L; c1 ^= d; c3 ^= d;
 
-            internalState[0] = (d0 & 0x0000FFFF0000FFFFL) | (d3 & 0xFFFF0000FFFF0000L);
-            internalState[1] = (d1 & 0x0000FFFF0000FFFFL) | (d0 & 0xFFFF0000FFFF0000L);
-            internalState[2] = (d2 & 0x0000FFFF0000FFFFL) | (d1 & 0xFFFF0000FFFF0000L);
-            internalState[3] = (d3 & 0x0000FFFF0000FFFFL) | (d2 & 0xFFFF0000FFFF0000L);
+            d = (c0 ^ c1) & 0xFFFF0000FFFF0000L; c0 ^= d; c1 ^= d;
+            d = (c2 ^ c3) & 0xFFFF0000FFFF0000L; c2 ^= d; c3 ^= d;
+
+            internalState[0] = c0;
+            internalState[1] = c1;
+            internalState[2] = c2;
+            internalState[3] = c3;
             break;
         }
         case 8:
         {
             long c0 = internalState[0], c1 = internalState[1], c2 = internalState[2], c3 = internalState[3];
             long c4 = internalState[4], c5 = internalState[5], c6 = internalState[6], c7 = internalState[7];
-            long d0, d1, d2, d3, d4, d5, d6, d7;
+            long d;
 
-            d0 = (c0 & 0x00000000FFFFFFFFL) | (c4 & 0xFFFFFFFF00000000L);
-            d1 = (c1 & 0x00000000FFFFFFFFL) | (c5 & 0xFFFFFFFF00000000L);
-            d2 = (c2 & 0x00000000FFFFFFFFL) | (c6 & 0xFFFFFFFF00000000L);
-            d3 = (c3 & 0x00000000FFFFFFFFL) | (c7 & 0xFFFFFFFF00000000L);
-            d4 = (c4 & 0x00000000FFFFFFFFL) | (c0 & 0xFFFFFFFF00000000L);
-            d5 = (c5 & 0x00000000FFFFFFFFL) | (c1 & 0xFFFFFFFF00000000L);
-            d6 = (c6 & 0x00000000FFFFFFFFL) | (c2 & 0xFFFFFFFF00000000L);
-            d7 = (c7 & 0x00000000FFFFFFFFL) | (c3 & 0xFFFFFFFF00000000L);
+            d = (c0 ^ c4) & 0xFFFFFFFF00000000L; c0 ^= d; c4 ^= d;
+            d = (c1 ^ c5) & 0x00FFFFFFFF000000L; c1 ^= d; c5 ^= d;
+            d = (c2 ^ c6) & 0x0000FFFFFFFF0000L; c2 ^= d; c6 ^= d;
+            d = (c3 ^ c7) & 0x000000FFFFFFFF00L; c3 ^= d; c7 ^= d;
 
-            c0 = (d0 & 0x0000FFFF0000FFFFL) | (d6 & 0xFFFF0000FFFF0000L);
-            c1 = (d1 & 0x0000FFFF0000FFFFL) | (d7 & 0xFFFF0000FFFF0000L);
-            c2 = (d2 & 0x0000FFFF0000FFFFL) | (d0 & 0xFFFF0000FFFF0000L);
-            c3 = (d3 & 0x0000FFFF0000FFFFL) | (d1 & 0xFFFF0000FFFF0000L);
-            c4 = (d4 & 0x0000FFFF0000FFFFL) | (d2 & 0xFFFF0000FFFF0000L);
-            c5 = (d5 & 0x0000FFFF0000FFFFL) | (d3 & 0xFFFF0000FFFF0000L);
-            c6 = (d6 & 0x0000FFFF0000FFFFL) | (d4 & 0xFFFF0000FFFF0000L);
-            c7 = (d7 & 0x0000FFFF0000FFFFL) | (d5 & 0xFFFF0000FFFF0000L);
+            d = (c0 ^ c2) & 0xFFFF0000FFFF0000L; c0 ^= d; c2 ^= d;
+            d = (c1 ^ c3) & 0x00FFFF0000FFFF00L; c1 ^= d; c3 ^= d;
+            d = (c4 ^ c6) & 0xFFFF0000FFFF0000L; c4 ^= d; c6 ^= d;
+            d = (c5 ^ c7) & 0x00FFFF0000FFFF00L; c5 ^= d; c7 ^= d;
 
-            internalState[0] = (c0 & 0x00FF00FF00FF00FFL) | (c7 & 0xFF00FF00FF00FF00L);
-            internalState[1] = (c1 & 0x00FF00FF00FF00FFL) | (c0 & 0xFF00FF00FF00FF00L);
-            internalState[2] = (c2 & 0x00FF00FF00FF00FFL) | (c1 & 0xFF00FF00FF00FF00L);
-            internalState[3] = (c3 & 0x00FF00FF00FF00FFL) | (c2 & 0xFF00FF00FF00FF00L);
-            internalState[4] = (c4 & 0x00FF00FF00FF00FFL) | (c3 & 0xFF00FF00FF00FF00L);
-            internalState[5] = (c5 & 0x00FF00FF00FF00FFL) | (c4 & 0xFF00FF00FF00FF00L);
-            internalState[6] = (c6 & 0x00FF00FF00FF00FFL) | (c5 & 0xFF00FF00FF00FF00L);
-            internalState[7] = (c7 & 0x00FF00FF00FF00FFL) | (c6 & 0xFF00FF00FF00FF00L);
+            d = (c0 ^ c1) & 0xFF00FF00FF00FF00L; c0 ^= d; c1 ^= d;
+            d = (c2 ^ c3) & 0xFF00FF00FF00FF00L; c2 ^= d; c3 ^= d;
+            d = (c4 ^ c5) & 0xFF00FF00FF00FF00L; c4 ^= d; c5 ^= d;
+            d = (c6 ^ c7) & 0xFF00FF00FF00FF00L; c6 ^= d; c7 ^= d;
+
+            internalState[0] = c0;
+            internalState[1] = c1;
+            internalState[2] = c2;
+            internalState[3] = c3;
+            internalState[4] = c4;
+            internalState[5] = c5;
+            internalState[6] = c6;
+            internalState[7] = c7;
             break;
         }
         default:
@@ -647,58 +649,60 @@ public class DSTU7624Engine
         case 2:
         {
             long c0 = internalState[0], c1 = internalState[1];
-            internalState[0] = (c0 & 0x00000000FFFFFFFFL) | (c1 & 0xFFFFFFFF00000000L);
-            internalState[1] = (c1 & 0x00000000FFFFFFFFL) | (c0 & 0xFFFFFFFF00000000L);
+            long d;
+
+            d = (c0 ^ c1) & 0xFFFFFFFF00000000L; c0 ^= d; c1 ^= d;
+
+            internalState[0] = c0;
+            internalState[1] = c1;
             break;
         }
         case 4:
         {
             long c0 = internalState[0], c1 = internalState[1], c2 = internalState[2], c3 = internalState[3];
-            long d0, d1, d2, d3;
+            long d;
 
-            d0 = (c0 & 0x00000000FFFFFFFFL) | (c2 & 0xFFFFFFFF00000000L);
-            d1 = (c1 & 0x00000000FFFFFFFFL) | (c3 & 0xFFFFFFFF00000000L);
-            d2 = (c2 & 0x00000000FFFFFFFFL) | (c0 & 0xFFFFFFFF00000000L);
-            d3 = (c3 & 0x00000000FFFFFFFFL) | (c1 & 0xFFFFFFFF00000000L);
+            d = (c0 ^ c1) & 0xFFFF0000FFFF0000L; c0 ^= d; c1 ^= d;
+            d = (c2 ^ c3) & 0xFFFF0000FFFF0000L; c2 ^= d; c3 ^= d;
 
-            internalState[0] = (d0 & 0x0000FFFF0000FFFFL) | (d1 & 0xFFFF0000FFFF0000L);
-            internalState[1] = (d1 & 0x0000FFFF0000FFFFL) | (d2 & 0xFFFF0000FFFF0000L);
-            internalState[2] = (d2 & 0x0000FFFF0000FFFFL) | (d3 & 0xFFFF0000FFFF0000L);
-            internalState[3] = (d3 & 0x0000FFFF0000FFFFL) | (d0 & 0xFFFF0000FFFF0000L);
+            d = (c0 ^ c2) & 0xFFFFFFFF00000000L; c0 ^= d; c2 ^= d;
+            d = (c1 ^ c3) & 0x0000FFFFFFFF0000L; c1 ^= d; c3 ^= d;
+
+            internalState[0] = c0;
+            internalState[1] = c1;
+            internalState[2] = c2;
+            internalState[3] = c3;
             break;
         }
         case 8:
         {
             long c0 = internalState[0], c1 = internalState[1], c2 = internalState[2], c3 = internalState[3];
             long c4 = internalState[4], c5 = internalState[5], c6 = internalState[6], c7 = internalState[7];
-            long d0, d1, d2, d3, d4, d5, d6, d7;
+            long d;
 
-            d0 = (c0 & 0x00000000FFFFFFFFL) | (c4 & 0xFFFFFFFF00000000L);
-            d1 = (c1 & 0x00000000FFFFFFFFL) | (c5 & 0xFFFFFFFF00000000L);
-            d2 = (c2 & 0x00000000FFFFFFFFL) | (c6 & 0xFFFFFFFF00000000L);
-            d3 = (c3 & 0x00000000FFFFFFFFL) | (c7 & 0xFFFFFFFF00000000L);
-            d4 = (c4 & 0x00000000FFFFFFFFL) | (c0 & 0xFFFFFFFF00000000L);
-            d5 = (c5 & 0x00000000FFFFFFFFL) | (c1 & 0xFFFFFFFF00000000L);
-            d6 = (c6 & 0x00000000FFFFFFFFL) | (c2 & 0xFFFFFFFF00000000L);
-            d7 = (c7 & 0x00000000FFFFFFFFL) | (c3 & 0xFFFFFFFF00000000L);
+            d = (c0 ^ c1) & 0xFF00FF00FF00FF00L; c0 ^= d; c1 ^= d;
+            d = (c2 ^ c3) & 0xFF00FF00FF00FF00L; c2 ^= d; c3 ^= d;
+            d = (c4 ^ c5) & 0xFF00FF00FF00FF00L; c4 ^= d; c5 ^= d;
+            d = (c6 ^ c7) & 0xFF00FF00FF00FF00L; c6 ^= d; c7 ^= d;
 
-            c0 = (d0 & 0x0000FFFF0000FFFFL) | (d2 & 0xFFFF0000FFFF0000L);
-            c1 = (d1 & 0x0000FFFF0000FFFFL) | (d3 & 0xFFFF0000FFFF0000L);
-            c2 = (d2 & 0x0000FFFF0000FFFFL) | (d4 & 0xFFFF0000FFFF0000L);
-            c3 = (d3 & 0x0000FFFF0000FFFFL) | (d5 & 0xFFFF0000FFFF0000L);
-            c4 = (d4 & 0x0000FFFF0000FFFFL) | (d6 & 0xFFFF0000FFFF0000L);
-            c5 = (d5 & 0x0000FFFF0000FFFFL) | (d7 & 0xFFFF0000FFFF0000L);
-            c6 = (d6 & 0x0000FFFF0000FFFFL) | (d0 & 0xFFFF0000FFFF0000L);
-            c7 = (d7 & 0x0000FFFF0000FFFFL) | (d1 & 0xFFFF0000FFFF0000L);
+            d = (c0 ^ c2) & 0xFFFF0000FFFF0000L; c0 ^= d; c2 ^= d;
+            d = (c1 ^ c3) & 0x00FFFF0000FFFF00L; c1 ^= d; c3 ^= d;
+            d = (c4 ^ c6) & 0xFFFF0000FFFF0000L; c4 ^= d; c6 ^= d;
+            d = (c5 ^ c7) & 0x00FFFF0000FFFF00L; c5 ^= d; c7 ^= d;
 
-            internalState[0] = (c0 & 0x00FF00FF00FF00FFL) | (c1 & 0xFF00FF00FF00FF00L);
-            internalState[1] = (c1 & 0x00FF00FF00FF00FFL) | (c2 & 0xFF00FF00FF00FF00L);
-            internalState[2] = (c2 & 0x00FF00FF00FF00FFL) | (c3 & 0xFF00FF00FF00FF00L);
-            internalState[3] = (c3 & 0x00FF00FF00FF00FFL) | (c4 & 0xFF00FF00FF00FF00L);
-            internalState[4] = (c4 & 0x00FF00FF00FF00FFL) | (c5 & 0xFF00FF00FF00FF00L);
-            internalState[5] = (c5 & 0x00FF00FF00FF00FFL) | (c6 & 0xFF00FF00FF00FF00L);
-            internalState[6] = (c6 & 0x00FF00FF00FF00FFL) | (c7 & 0xFF00FF00FF00FF00L);
-            internalState[7] = (c7 & 0x00FF00FF00FF00FFL) | (c0 & 0xFF00FF00FF00FF00L);
+            d = (c0 ^ c4) & 0xFFFFFFFF00000000L; c0 ^= d; c4 ^= d;
+            d = (c1 ^ c5) & 0x00FFFFFFFF000000L; c1 ^= d; c5 ^= d;
+            d = (c2 ^ c6) & 0x0000FFFFFFFF0000L; c2 ^= d; c6 ^= d;
+            d = (c3 ^ c7) & 0x000000FFFFFFFF00L; c3 ^= d; c7 ^= d;
+
+            internalState[0] = c0;
+            internalState[1] = c1;
+            internalState[2] = c2;
+            internalState[3] = c3;
+            internalState[4] = c4;
+            internalState[5] = c5;
+            internalState[6] = c6;
+            internalState[7] = c7;
             break;
         }
         default:
