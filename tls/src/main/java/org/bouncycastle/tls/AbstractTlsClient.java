@@ -94,8 +94,25 @@ public abstract class AbstractTlsClient
 
     protected short[] getSupportedPointFormats()
     {
-        return new short[]{ ECPointFormat.uncompressed, ECPointFormat.ansiX962_compressed_prime,
+    	short[] supportedFormats = new short[]{ ECPointFormat.uncompressed, ECPointFormat.ansiX962_compressed_prime,
             ECPointFormat.ansiX962_compressed_char2, };
+        
+        Vector<Short> clientECPointFormats = new Vector<Short>();
+        for (short format : supportedFormats) 
+        {
+            if(getCrypto().hasECPointFormat(format)) 
+            {
+                clientECPointFormats.addElement(format);
+            }
+        }
+        
+        short[] filteredClientECPointFormats = new short[clientECPointFormats.size()];
+        for (int i = 0; i < clientECPointFormats.size(); i++) 
+        {
+        	filteredClientECPointFormats[i] = clientECPointFormats.get(i);
+        }
+        
+        return filteredClientECPointFormats;
     }
 
     /**
@@ -112,23 +129,21 @@ public abstract class AbstractTlsClient
      */
     protected Vector getSupportedGroups(boolean offeringDH, boolean offeringEC)
     {
-        Vector supportedGroups = new Vector();
-
-        if (offeringEC)
+    	Vector supportedGroups = new Vector();
+    	
+        /*
+         * NOTE[fips]: These curves are recommended for FIPS. If any changes are made to how
+         * this is configured, FIPS considerations need to be accounted for in BCJSSE.
+         */
+        int[] supportedCurves = NamedGroup.getSupportedCurves();
+        for (int curve : supportedCurves) 
         {
-            /*
-             * NOTE[fips]: These curves are recommended for FIPS. If any changes are made to how
-             * this is configured, FIPS considerations need to be accounted for in BCJSSE.
-             */
-            supportedGroups.addElement(NamedGroup.secp256r1);
-            supportedGroups.addElement(NamedGroup.secp384r1);
-        }
-
-        if (offeringDH)
-        {
-            supportedGroups.addElement(NamedGroup.ffdhe2048);
-            supportedGroups.addElement(NamedGroup.ffdhe3072);
-            supportedGroups.addElement(NamedGroup.ffdhe4096);
+        	if((curve < 256 && offeringEC) || (curve >= 256 && offeringDH)) {
+        		if(getCrypto().hasNamedGroup(curve)) 
+        		{
+        			supportedGroups.addElement(curve);
+        		}
+        	}
         }
 
         return supportedGroups;
@@ -216,8 +231,7 @@ public abstract class AbstractTlsClient
         if (offeringEC)
         {
             this.clientECPointFormats = getSupportedPointFormats();
-
-            TlsECCUtils.addSupportedPointFormatsExtension(clientExtensions, clientECPointFormats);
+            TlsECCUtils.addSupportedPointFormatsExtension(clientExtensions, this.clientECPointFormats);
         }
 
         Vector supportedGroups = getSupportedGroups(offeringDH, offeringEC);

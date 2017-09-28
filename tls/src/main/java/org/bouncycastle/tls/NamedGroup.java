@@ -235,6 +235,22 @@ public class NamedGroup
     {
         return getName(namedGroup) + "(" + namedGroup + ")";
     }
+    
+    public static int[] getSupportedCurves() 
+    {
+        int[] curves = new int[brainpoolP512r1];
+        for (int i = 0; i < brainpoolP512r1; i++) 
+        {
+            curves[i] = i+1;
+        }
+        return curves;
+    }
+    
+    public static int[] getSupportedFiniteFields() 
+    {
+        int[] finiteFields = new int[] { ffdhe2048, ffdhe3072, ffdhe4096, ffdhe6144, ffdhe8192 };
+        return finiteFields;
+    }
 
     public static boolean isChar2Curve(int namedGroup)
     {

@@ -20,6 +20,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.ECPointFormat;
 import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
@@ -389,37 +390,58 @@ public class JcaTlsCrypto
         {
             return true;
         }
-
+        
         if (!NamedGroup.refersToASpecificCurve(namedGroup))
         {
             return false;
         }
-
-        String curveName = NamedGroup.getName(namedGroup);
-        if (curveName == null)
+        
+        switch (namedGroup)
         {
+        case NamedGroup.secp256r1:
+        case NamedGroup.secp384r1:
+        case NamedGroup.ffdhe2048:
+        case NamedGroup.ffdhe3072:
+        case NamedGroup.ffdhe4096:
+        case NamedGroup.ffdhe6144:
+        case NamedGroup.ffdhe8192: 
+        {
+            String curveName = NamedGroup.getName(namedGroup);
+            if (curveName == null)
+            {
+                return false;
+            }
+            
+            int key = Integers.valueOf(namedGroup);
+            
+            synchronized (supportedGroups)
+            {
+                Boolean cached = (Boolean)supportedGroups.get(key);
+                if (cached != null)
+                {
+                    return cached.booleanValue();
+                }
+            }
+            
+            boolean result = isCurveSupported(curveName);
+            
+            synchronized (supportedGroups)
+            {
+                supportedGroups.put(key, Boolean.valueOf(result));
+            }
+            
+            return result;
+        }
+
+        default:
             return false;
         }
 
-        int key = Integers.valueOf(namedGroup);
-
-        synchronized (supportedGroups)
-        {
-            Boolean cached = (Boolean)supportedGroups.get(key);
-            if (cached != null)
-            {
-                return cached.booleanValue();
-            }
-        }
-
-        boolean result = isCurveSupported(curveName);
-
-        synchronized (supportedGroups)
-        {
-            supportedGroups.put(key, Boolean.valueOf(result));
-        }
-
-        return result;
+    }
+    
+    public boolean hasECPointFormat(short format) 
+    {
+        return format >= ECPointFormat.uncompressed &&  format <= ECPointFormat.ansiX962_compressed_char2;
     }
 
     public boolean hasRSAEncryption()

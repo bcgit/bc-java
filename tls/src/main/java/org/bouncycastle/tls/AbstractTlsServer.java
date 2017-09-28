@@ -147,7 +147,7 @@ public abstract class AbstractTlsServer
         for (int i = 0; i < clientSupportedGroups.length; ++i)
         {
             int namedGroup = clientSupportedGroups[i];
-            if (NamedGroup.getCurveBits(namedGroup) >= minimumCurveBits)
+            if (NamedGroup.getCurveBits(namedGroup) >= minimumCurveBits && getCrypto().hasNamedGroup(namedGroup))
             {
                 return namedGroup;
             }

@@ -69,6 +69,13 @@ public interface TlsCrypto
     boolean hasNamedGroup(int namedGroup);
 
     /**
+     * Return true if this TlsCrypto supports the passed in {@link ECPointFormat format} value.
+     *
+     * @return true if this instance supports the passed in {@link ECPointFormat format} value.
+     */
+    boolean hasECPointFormat(short format);
+
+    /**
      * Return true if this TlsCrypto can support RSA encryption/decryption.
      *
      * @return true if this instance can support RSA encryption/decryption, false otherwise.
