@@ -3,6 +3,7 @@ package org.bouncycastle.jcajce.provider.keystore.pkcs12;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -22,6 +23,7 @@ import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -636,7 +638,7 @@ public class PKCS12KeyStoreSpi
             {
 
                 Cipher cipher = createCipher(Cipher.UNWRAP_MODE, password, algId);
-
+                   System.err.println("here");
                 // we pass "" as the key algorithm type as it is unknown at this point
                 return (PrivateKey)cipher.unwrap(data, "", Cipher.PRIVATE_KEY);
             }
@@ -716,7 +718,7 @@ public class PKCS12KeyStoreSpi
             try
             {
                 Cipher cipher = createCipher(mode, password, algId);
-
+                     System.err.println("and here");
                 return cipher.doFinal(data);
             }
             catch (Exception e)
@@ -1853,5 +1855,15 @@ public class PKCS12KeyStoreSpi
 
             return -1;
         }
+    }
+
+    public static void main(String[] args)
+        throws Exception
+    {
+        Security.addProvider(new BouncyCastleProvider());
+
+        KeyStore kS = KeyStore.getInstance("PKCS12", "BC");
+
+        kS.load(new FileInputStream("/tmp/id.p12"), "fred".toCharArray());
     }
 }
