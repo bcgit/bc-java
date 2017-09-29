@@ -3,6 +3,8 @@ package org.bouncycastle.jcajce;
 import java.io.OutputStream;
 import java.security.KeyStore;
 
+import org.bouncycastle.crypto.util.PBKDFConfig;
+
 /**
  * LoadStoreParameter to allow configuring of the PBKDF used to generate encryption keys for
  * use in the keystore.

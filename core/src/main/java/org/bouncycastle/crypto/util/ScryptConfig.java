@@ -1,4 +1,4 @@
-package org.bouncycastle.jcajce;
+package org.bouncycastle.crypto.util;
 
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 
