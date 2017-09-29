@@ -1,4 +1,4 @@
-package org.bouncycastle.jcajce;
+package org.bouncycastle.crypto.util;
 
 import java.util.HashMap;
 import java.util.Map;
