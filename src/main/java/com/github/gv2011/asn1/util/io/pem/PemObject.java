@@ -4,17 +4,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.github.gv2011.util.bytes.Bytes;
+
 /**
  * A generic PEM object - type, header properties, and byte content.
  */
 public class PemObject
     implements PemObjectGenerator
 {
-    private static final List EMPTY_LIST = Collections.unmodifiableList(new ArrayList());
+    private static final List<?> EMPTY_LIST = Collections.unmodifiableList(new ArrayList<>());
 
-    private String type;
-    private List   headers;
-    private byte[] content;
+    private final String type;
+    private final List<?>   headers;
+    private final Bytes content;
 
     /**
      * Generic constructor for object without headers.
@@ -22,7 +24,7 @@ public class PemObject
      * @param type pem object type.
      * @param content the binary content of the object.
      */
-    public PemObject(String type, byte[] content)
+    public PemObject(final String type, final Bytes content)
     {
         this(type, EMPTY_LIST, content);
     }
@@ -34,7 +36,7 @@ public class PemObject
      * @param headers a list of PemHeader objects.
      * @param content the binary content of the object.
      */
-    public PemObject(String type, List headers, byte[] content)
+    public PemObject(final String type, final List<?> headers, final Bytes content)
     {
         this.type = type;
         this.headers = Collections.unmodifiableList(headers);
@@ -46,16 +48,17 @@ public class PemObject
         return type;
     }
 
-    public List getHeaders()
+    public List<?> getHeaders()
     {
         return headers;
     }
 
-    public byte[] getContent()
+    public Bytes getContent()
     {
         return content;
     }
 
+    @Override
     public PemObject generate()
         throws PemGenerationException
     {

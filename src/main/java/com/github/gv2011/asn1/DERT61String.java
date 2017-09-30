@@ -1,19 +1,16 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
-
-import com.github.gv2011.asn1.util.Arrays;
 import com.github.gv2011.asn1.util.Strings;
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * DER T61String (also the teletex string), try not to use this if you don't need to. The standard support the encoding for
  * this has been withdrawn.
  */
-public class DERT61String
-    extends ASN1Primitive
+public final class DERT61String
+    extends ASN1PrimitiveBytes
     implements ASN1String
 {
-    private final byte[] string;
 
     /**
      * return a T61 string from the passed in object.
@@ -30,11 +27,11 @@ public class DERT61String
             return (DERT61String)obj;
         }
 
-        if (obj instanceof byte[])
+        if (obj instanceof Bytes)
         {
             try
             {
-                return (DERT61String)fromByteArray((byte[])obj);
+                return (DERT61String)fromByteArray((Bytes)obj);
             }
             catch (final Exception e)
             {
@@ -77,9 +74,9 @@ public class DERT61String
      * @param string the byte encoding of the string to be wrapped.
      */
     public DERT61String(
-        final byte[]   string)
+        final Bytes   string)
     {
-        this.string = string;
+        super(string);
     }
 
     /**
@@ -116,42 +113,10 @@ public class DERT61String
     }
 
     @Override
-    int encodedLength()
-    {
-        return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
-    }
-
-    @Override
     void encode(
         final ASN1OutputStream out)
     {
         out.writeEncoded(BERTags.T61_STRING, string);
     }
 
-    /**
-     * Return the encoded string as a byte array.
-     * @return the actual bytes making up the encoded body of the T61 string.
-     */
-    public byte[] getOctets()
-    {
-        return Arrays.clone(string);
-    }
-
-    @Override
-    boolean asn1Equals(
-        final ASN1Primitive o)
-    {
-        if (!(o instanceof DERT61String))
-        {
-            return false;
-        }
-
-        return Arrays.areEqual(string, ((DERT61String)o).string);
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return Arrays.hashCode(string);
-    }
 }

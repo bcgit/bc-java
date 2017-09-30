@@ -14,43 +14,44 @@ public class BERGenerator
     private int          _tagNo;
 
     protected BERGenerator(
-        OutputStream out)
+        final OutputStream out)
     {
         super(out);
     }
 
     protected BERGenerator(
-        OutputStream out,
-        int tagNo,
-        boolean isExplicit) 
+        final OutputStream out,
+        final int tagNo,
+        final boolean isExplicit)
     {
         super(out);
-        
+
         _tagged = true;
         _isExplicit = isExplicit;
         _tagNo = tagNo;
     }
 
+    @Override
     public OutputStream getRawOutputStream()
     {
         return _out;
     }
-    
+
     private void writeHdr(
-        int tag)
+        final int tag)
         throws IOException
     {
         _out.write(tag);
         _out.write(0x80);
     }
-    
+
     protected void writeBERHeader(
-        int tag) 
+        final int tag)
         throws IOException
     {
         if (_tagged)
         {
-            int tagNum = _tagNo | BERTags.TAGGED;
+            final int tagNum = _tagNo | BERTags.TAGGED;
 
             if (_isExplicit)
             {
@@ -58,7 +59,7 @@ public class BERGenerator
                 writeHdr(tag);
             }
             else
-            {   
+            {
                 if ((tag & BERTags.CONSTRUCTED) != 0)
                 {
                     writeHdr(tagNum | BERTags.CONSTRUCTED);
@@ -80,7 +81,7 @@ public class BERGenerator
     {
         _out.write(0x00);
         _out.write(0x00);
-        
+
         if (_tagged && _isExplicit)  // write extra end for tag header
         {
             _out.write(0x00);

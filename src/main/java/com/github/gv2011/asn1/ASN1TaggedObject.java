@@ -1,6 +1,7 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
+
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * ASN.1 TaggedObject - in ASN.1 notation this is any object preceded by
@@ -35,16 +36,9 @@ public abstract class ASN1TaggedObject
         {
                 return (ASN1TaggedObject)obj;
         }
-        else if (obj instanceof byte[])
+        else if (obj instanceof Bytes)
         {
-            try
-            {
-                return ASN1TaggedObject.getInstance(fromByteArray((byte[])obj));
-            }
-            catch (final IOException e)
-            {
-                throw new IllegalArgumentException("failed to construct tagged object from byte[]: " + e.getMessage());
-            }
+            return ASN1TaggedObject.getInstance(fromByteArray((Bytes)obj));
         }
 
         throw new IllegalArgumentException("unknown object in getInstance: " + obj.getClass().getName());
@@ -82,14 +76,16 @@ public abstract class ASN1TaggedObject
         }
         else
         {
-            final ASN1Primitive prim = obj.toASN1Primitive();
 
-            if (prim instanceof ASN1Set)
-            {
-                final ASN1Set s = null;
-            }
+          //TODO: WTF?
+          final ASN1Primitive prim = obj.toASN1Primitive();
+          if (prim instanceof ASN1Set)
+          {
+              @SuppressWarnings("unused")
+              final ASN1Set s = null;
+          }
 
-            this.obj = obj;
+          this.obj = obj;
         }
     }
 
@@ -196,7 +192,6 @@ public abstract class ASN1TaggedObject
     public ASN1Encodable getObjectParser(
         final int     tag,
         final boolean isExplicit)
-        throws IOException
     {
         switch (tag)
         {

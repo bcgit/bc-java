@@ -1,8 +1,7 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
-
 import com.github.gv2011.asn1.util.Arrays;
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * Carrier class for DER encoding BMPString object.
@@ -11,7 +10,7 @@ public class DERBMPString
     extends ASN1Primitive
     implements ASN1String
 {
-    private final char[]  string;
+    private final char[] string;
 
     /**
      * return a BMP String from the given object.
@@ -28,11 +27,11 @@ public class DERBMPString
             return (DERBMPString)obj;
         }
 
-        if (obj instanceof byte[])
+        if (obj instanceof Bytes)
         {
             try
             {
-                return (DERBMPString)fromByteArray((byte[])obj);
+                return (DERBMPString)fromByteArray((Bytes)obj);
             }
             catch (final Exception e)
             {
@@ -74,13 +73,13 @@ public class DERBMPString
      * @param string the encoded BMP STRING to wrap.
      */
     DERBMPString(
-        final byte[]   string)
+        final Bytes string)
     {
-        final char[]  cs = new char[string.length / 2];
+        final char[]  cs = new char[string.size() / 2];
 
         for (int i = 0; i != cs.length; i++)
         {
-            cs[i] = (char)((string[2 * i] << 8) | (string[2 * i + 1] & 0xff));
+            cs[i] = (char)((string.getByte(2 * i) << 8) | (string.getByte(2 * i + 1) & 0xff));
         }
 
         this.string = cs;

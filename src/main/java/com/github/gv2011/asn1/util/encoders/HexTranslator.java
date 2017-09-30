@@ -6,8 +6,8 @@ package com.github.gv2011.asn1.util.encoders;
 public class HexTranslator
     implements Translator
 {
-    private static final byte[]   hexTable = 
-        { 
+    private static final byte[]   hexTable =
+        {
             (byte)'0', (byte)'1', (byte)'2', (byte)'3', (byte)'4', (byte)'5', (byte)'6', (byte)'7',
             (byte)'8', (byte)'9', (byte)'a', (byte)'b', (byte)'c', (byte)'d', (byte)'e', (byte)'f'
         };
@@ -16,17 +16,19 @@ public class HexTranslator
      * size of the output block on encoding produced by getDecodedBlockSize()
      * bytes.
      */
+    @Override
     public int getEncodedBlockSize()
     {
         return 2;
     }
 
+    @Override
     public int encode(
-        byte[]  in,
+        final byte[]  in,
         int     inOff,
-        int     length,
-        byte[]  out,
-        int     outOff)
+        final int     length,
+        final byte[]  out,
+        final int     outOff)
     {
         for (int i = 0, j = 0; i < length; i++, j += 2)
         {
@@ -43,25 +45,27 @@ public class HexTranslator
      * size of the output block on decoding produced by getEncodedBlockSize()
      * bytes.
      */
+    @Override
     public int getDecodedBlockSize()
     {
         return 1;
     }
 
+    @Override
     public int decode(
-        byte[]  in,
-        int     inOff,
-        int     length,
-        byte[]  out,
+        final byte[]  in,
+        final int     inOff,
+        final int     length,
+        final byte[]  out,
         int     outOff)
     {
-        int halfLength = length / 2;
+        final int halfLength = length / 2;
         byte left, right;
         for (int i = 0; i < halfLength; i++)
         {
             left  = in[inOff + i * 2];
             right = in[inOff + i * 2 + 1];
-            
+
             if (left < (byte)'a')
             {
                 out[outOff] = (byte)((left - '0') << 4);

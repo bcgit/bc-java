@@ -1,8 +1,9 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
+import static com.github.gv2011.util.bytes.ByteUtils.newBytes;
 
-import com.github.gv2011.asn1.util.Arrays;
+
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * Public facade of ASN.1 Boolean data.
@@ -19,10 +20,10 @@ import com.github.gv2011.asn1.util.Arrays;
 public class ASN1Boolean
     extends ASN1Primitive
 {
-    private static final byte[] TRUE_VALUE = new byte[] { (byte)0xff };
-    private static final byte[] FALSE_VALUE = new byte[] { 0 };
+    private static final Bytes TRUE_VALUE = newBytes(new byte[] { (byte)0xff });
+    private static final Bytes FALSE_VALUE = newBytes(new byte[] { 0 });
 
-    private final byte[]         value;
+    private final Bytes         value;
 
     public static final ASN1Boolean FALSE = new ASN1Boolean(false);
     public static final ASN1Boolean TRUE  = new ASN1Boolean(true);
@@ -42,17 +43,10 @@ public class ASN1Boolean
             return (ASN1Boolean)obj;
         }
 
-        if (obj instanceof byte[])
+        if (obj instanceof Bytes)
         {
-            final byte[] enc = (byte[])obj;
-            try
-            {
-                return (ASN1Boolean)fromByteArray(enc);
-            }
-            catch (final IOException e)
-            {
-                throw new IllegalArgumentException("failed to construct boolean from byte[]: " + e.getMessage());
-            }
+            final Bytes enc = (Bytes)obj;
+            return (ASN1Boolean)fromByteArray(enc);
         }
 
         throw new IllegalArgumentException("illegal object in getInstance: " + obj.getClass().getName());
@@ -107,24 +101,24 @@ public class ASN1Boolean
     }
 
     ASN1Boolean(
-        final byte[] value)
+        final Bytes value)
     {
-        if (value.length != 1)
+        if (value.size() != 1)
         {
             throw new IllegalArgumentException("byte value should have 1 byte in it");
         }
 
-        if (value[0] == 0)
+        if (value.get(0) == 0)
         {
             this.value = FALSE_VALUE;
         }
-        else if ((value[0] & 0xff) == 0xff)
+        else if ((value.get(0) & 0xff) == 0xff)
         {
             this.value = TRUE_VALUE;
         }
         else
         {
-            this.value = Arrays.clone(value);
+            this.value = value;
         }
     }
 
@@ -141,7 +135,7 @@ public class ASN1Boolean
 
     public boolean isTrue()
     {
-        return (value[0] != 0);
+        return (value.get(0) != 0);
     }
 
     @Override
@@ -169,7 +163,7 @@ public class ASN1Boolean
     {
         if (o instanceof ASN1Boolean)
         {
-            return (value[0] == ((ASN1Boolean)o).value[0]);
+            return (value.get(0) == ((ASN1Boolean)o).value.get(0));
         }
 
         return false;
@@ -178,28 +172,28 @@ public class ASN1Boolean
     @Override
     public int hashCode()
     {
-        return value[0];
+        return value.get(0);
     }
 
 
     @Override
     public String toString()
     {
-      return (value[0] != 0) ? "TRUE" : "FALSE";
+      return (value.get(0) != 0) ? "TRUE" : "FALSE";
     }
 
-    static ASN1Boolean fromOctetString(final byte[] value)
+    static ASN1Boolean fromOctetString(final Bytes value)
     {
-        if (value.length != 1)
+        if (value.size() != 1)
         {
             throw new IllegalArgumentException("BOOLEAN value should have 1 byte in it");
         }
 
-        if (value[0] == 0)
+        if (value.get(0) == 0)
         {
             return FALSE;
         }
-        else if ((value[0] & 0xff) == 0xff)
+        else if ((value.get(0) & 0xff) == 0xff)
         {
             return TRUE;
         }

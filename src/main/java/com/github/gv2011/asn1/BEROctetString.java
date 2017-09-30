@@ -1,13 +1,16 @@
 package com.github.gv2011.asn1;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import static com.github.gv2011.util.bytes.ByteUtils.newBytes;
+import static com.github.gv2011.util.bytes.ByteUtils.newBytesBuilder;
+
 import java.util.Enumeration;
 import java.util.Vector;
 
-public class BEROctetString
-    extends ASN1OctetString
-{
+import com.github.gv2011.util.bytes.Bytes;
+import com.github.gv2011.util.bytes.BytesBuilder;
+
+public class BEROctetString extends ASN1OctetString {
+
     private static final int MAX_LENGTH = 1000;
 
     private ASN1OctetString[] octs;
@@ -15,10 +18,10 @@ public class BEROctetString
     /**
      * convert a vector of octet strings into a single byte string
      */
-    static private byte[] toBytes(
+    static private Bytes toBytes(
         final ASN1OctetString[]  octs)
     {
-        final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+      final BytesBuilder bOut = newBytesBuilder();
 
         for (int i = 0; i != octs.length; i++)
         {
@@ -26,26 +29,22 @@ public class BEROctetString
             {
                 final DEROctetString o = (DEROctetString)octs[i];
 
-                bOut.write(o.getOctets());
+                o.getOctets().write(bOut);
             }
             catch (final ClassCastException e)
             {
                 throw new IllegalArgumentException(octs[i].getClass().getName() + " found in input should only contain DEROctetString");
             }
-            catch (final IOException e)
-            {
-                throw new IllegalArgumentException("exception converting octets " + e.toString());
-            }
         }
 
-        return bOut.toByteArray();
+        return bOut.build();
     }
 
     /**
      * @param string the octets making up the octet string.
      */
     public BEROctetString(
-        final byte[] string)
+        final Bytes string)
     {
         super(string);
     }
@@ -58,15 +57,10 @@ public class BEROctetString
         this.octs = octs;
     }
 
-    @Override
-    public byte[] getOctets()
-    {
-        return string;
-    }
-
     /**
      * return the DER octets that make up this string.
      */
+    @SuppressWarnings("rawtypes")
     public Enumeration getObjects()
     {
         if (octs == null)
@@ -92,16 +86,17 @@ public class BEROctetString
         };
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private Vector generateOcts()
     {
         final Vector vec = new Vector();
-        for (int i = 0; i < string.length; i += MAX_LENGTH)
+        for (int i = 0; i < string.size(); i += MAX_LENGTH)
         {
             int end;
 
-            if (i + MAX_LENGTH > string.length)
+            if (i + MAX_LENGTH > string.size())
             {
-                end = string.length;
+                end = string.size();
             }
             else
             {
@@ -112,7 +107,7 @@ public class BEROctetString
 
             System.arraycopy(string, i, nStr, 0, nStr.length);
 
-            vec.addElement(new DEROctetString(nStr));
+            vec.addElement(new DEROctetString(newBytes(nStr)));
          }
 
          return vec;
@@ -124,6 +119,7 @@ public class BEROctetString
         return true;
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     int encodedLength()
     {
@@ -136,6 +132,7 @@ public class BEROctetString
         return 2 + length + 2;
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public void encode(
         final ASN1OutputStream out)
@@ -156,6 +153,7 @@ public class BEROctetString
         out.write(0x00);
     }
 
+    @SuppressWarnings("rawtypes")
     static BEROctetString fromSequence(final ASN1Sequence seq)
     {
         final ASN1OctetString[]     v = new ASN1OctetString[seq.size()];

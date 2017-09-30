@@ -1,6 +1,5 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
 
 /**
  * Parser for indefinite-length SETs.
@@ -8,11 +7,11 @@ import java.io.IOException;
 public class BERSetParser
     implements ASN1SetParser
 {
-    private ASN1StreamParser _parser;
+    private final ASN1StreamParser _parser;
 
-    BERSetParser(ASN1StreamParser parser)
+    BERSetParser(final ASN1StreamParser parser)
     {
-        this._parser = parser;
+        _parser = parser;
     }
 
     /**
@@ -21,8 +20,8 @@ public class BERSetParser
      * @return the next object in the SET, null if there are no more.
      * @throws IOException if there is an issue reading the underlying stream.
      */
+    @Override
     public ASN1Encodable readObject()
-        throws IOException
     {
         return _parser.readObject();
     }
@@ -33,8 +32,8 @@ public class BERSetParser
      * @return a BERSet.
      * @throws IOException if there is an issue loading the data.
      */
+    @Override
     public ASN1Primitive getLoadedObject()
-        throws IOException
     {
         return new BERSet(_parser.readVector());
     }
@@ -44,15 +43,9 @@ public class BERSetParser
      *
      * @return an BERSet
      */
+    @Override
     public ASN1Primitive toASN1Primitive()
     {
-        try
-        {
             return getLoadedObject();
-        }
-        catch (IOException e)
-        {
-            throw new ASN1ParsingException(e.getMessage(), e);
-        }
     }
 }

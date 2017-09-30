@@ -1,7 +1,8 @@
 package com.github.gv2011.asn1.util.io.pem;
 
+import static com.github.gv2011.util.ex.Exceptions.call;
+
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,13 +18,21 @@ public class PemReader
     private static final String BEGIN = "-----BEGIN ";
     private static final String END = "-----END ";
 
-    public PemReader(Reader reader)
+    public PemReader(final Reader reader)
     {
         super(reader);
     }
 
+
+
+    @Override
+    public String readLine(){
+      return call(super::readLine);
+    }
+
+
+
     public PemObject readPemObject()
-        throws IOException
     {
         String line = readLine();
 
@@ -35,8 +44,8 @@ public class PemReader
         if (line != null)
         {
             line = line.substring(BEGIN.length());
-            int index = line.indexOf('-');
-            String type = line.substring(0, index);
+            final int index = line.indexOf('-');
+            final String type = line.substring(0, index);
 
             if (index > 0)
             {
@@ -47,21 +56,20 @@ public class PemReader
         return null;
     }
 
-    private PemObject loadObject(String type)
-        throws IOException
+    private PemObject loadObject(final String type)
     {
         String          line;
-        String          endMarker = END + type;
-        StringBuffer    buf = new StringBuffer();
-        List            headers = new ArrayList();
+        final String          endMarker = END + type;
+        final StringBuffer    buf = new StringBuffer();
+        final List<PemHeader>            headers = new ArrayList<>();
 
         while ((line = readLine()) != null)
         {
             if (line.indexOf(":") >= 0)
             {
-                int index = line.indexOf(':');
-                String hdr = line.substring(0, index);
-                String value = line.substring(index + 1).trim();
+                final int index = line.indexOf(':');
+                final String hdr = line.substring(0, index);
+                final String value = line.substring(index + 1).trim();
 
                 headers.add(new PemHeader(hdr, value));
 
@@ -72,13 +80,13 @@ public class PemReader
             {
                 break;
             }
-            
+
             buf.append(line.trim());
         }
 
         if (line == null)
         {
-            throw new IOException(endMarker + " not found");
+            throw new PemGenerationException(endMarker + " not found");
         }
 
         return new PemObject(type, headers, Base64.decode(buf.toString()));

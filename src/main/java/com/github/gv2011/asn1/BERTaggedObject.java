@@ -1,6 +1,5 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
 import java.util.Enumeration;
 
 /**
@@ -104,7 +103,7 @@ public class BERTaggedObject
         {
             if (!explicit)
             {
-                Enumeration e;
+                Enumeration<?> e;
                 if (obj instanceof ASN1OctetString)
                 {
                     if (obj instanceof BEROctetString)

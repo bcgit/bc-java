@@ -1,19 +1,17 @@
 package com.github.gv2011.asn1;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
-import com.github.gv2011.asn1.util.Arrays;
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * DER UniversalString object.
  */
-public class DERUniversalString
-    extends ASN1Primitive
+public final class DERUniversalString
+    extends ASN1PrimitiveBytes
     implements ASN1String
 {
     private static final char[]  table = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
-    private final byte[] string;
 
     /**
      * return a Universal String from the passed in object.
@@ -30,11 +28,11 @@ public class DERUniversalString
             return (DERUniversalString)obj;
         }
 
-        if (obj instanceof byte[])
+        if (obj instanceof Bytes)
         {
             try
             {
-                return (DERUniversalString)fromByteArray((byte[])obj);
+                return (DERUniversalString)fromByteArray((Bytes)obj);
             }
             catch (final Exception e)
             {
@@ -76,10 +74,8 @@ public class DERUniversalString
      *
      * @param string the byte encoding of the string to be carried in the UniversalString object,
      */
-    public DERUniversalString(
-        final byte[]   string)
-    {
-        this.string = string;
+    public DERUniversalString(final Bytes string){
+      super(string);
     }
 
     @Override
@@ -108,21 +104,10 @@ public class DERUniversalString
         return getString();
     }
 
-    public byte[] getOctets()
-    {
-        return string;
-    }
-
     @Override
     boolean isConstructed()
     {
         return false;
-    }
-
-    @Override
-    int encodedLength()
-    {
-        return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
     @Override
@@ -132,21 +117,4 @@ public class DERUniversalString
         out.writeEncoded(BERTags.UNIVERSAL_STRING, getOctets());
     }
 
-    @Override
-    boolean asn1Equals(
-        final ASN1Primitive o)
-    {
-        if (!(o instanceof DERUniversalString))
-        {
-            return false;
-        }
-
-        return Arrays.areEqual(string, ((DERUniversalString)o).string);
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return Arrays.hashCode(string);
-    }
 }

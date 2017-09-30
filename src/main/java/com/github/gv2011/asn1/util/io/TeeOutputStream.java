@@ -1,6 +1,7 @@
 package com.github.gv2011.asn1.util.io;
 
-import java.io.IOException;
+import static com.github.gv2011.util.ex.Exceptions.run;
+
 import java.io.OutputStream;
 
 
@@ -10,8 +11,8 @@ import java.io.OutputStream;
 public class TeeOutputStream
     extends OutputStream
 {
-    private OutputStream output1;
-    private OutputStream output2;
+    private final OutputStream output1;
+    private final OutputStream output2;
 
     /**
      * Base constructor.
@@ -19,44 +20,54 @@ public class TeeOutputStream
      * @param output1 the output stream that is wrapped.
      * @param output2 a secondary stream that anything written to output1 is also written to.
      */
-    public TeeOutputStream(OutputStream output1, OutputStream output2)
+    public TeeOutputStream(final OutputStream output1, final OutputStream output2)
     {
         this.output1 = output1;
         this.output2 = output2;
     }
 
-    public void write(byte[] buf)
-        throws IOException
+    @Override
+    public void write(final byte[] buf)
     {
-        this.output1.write(buf);
-        this.output2.write(buf);
+      run(()->{
+        output1.write(buf);
+        output2.write(buf);
+      });
     }
 
-    public void write(byte[] buf, int off, int len)
-        throws IOException
+    @Override
+    public void write(final byte[] buf, final int off, final int len)
     {
-        this.output1.write(buf, off, len);
-        this.output2.write(buf, off, len);
+      run(()->{
+        output1.write(buf, off, len);
+        output2.write(buf, off, len);
+      });
+     }
+
+    @Override
+    public void write(final int b)
+    {
+      run(()->{
+        output1.write(b);
+        output2.write(b);
+      });
     }
 
-    public void write(int b)
-        throws IOException
-    {
-        this.output1.write(b);
-        this.output2.write(b);
-    }
-
+    @Override
     public void flush()
-        throws IOException
     {
-        this.output1.flush();
-        this.output2.flush();
+      run(()->{
+        output1.flush();
+        output2.flush();
+      });
     }
 
+    @Override
     public void close()
-        throws IOException
     {
-        this.output1.close();
-        this.output2.close();
+      run(()->{
+        try{output1.close();}
+        finally{output2.close();}
+      });
     }
 }

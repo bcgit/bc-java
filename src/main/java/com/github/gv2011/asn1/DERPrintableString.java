@@ -1,9 +1,7 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
-
-import com.github.gv2011.asn1.util.Arrays;
 import com.github.gv2011.asn1.util.Strings;
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * DER PrintableString object.
@@ -12,7 +10,7 @@ public class DERPrintableString
     extends ASN1Primitive
     implements ASN1String
 {
-    private final byte[]  string;
+    private final Bytes string;
 
     /**
      * return a printable string from the passed in object.
@@ -29,11 +27,11 @@ public class DERPrintableString
             return (DERPrintableString)obj;
         }
 
-        if (obj instanceof byte[])
+        if (obj instanceof Bytes)
         {
             try
             {
-                return (DERPrintableString)fromByteArray((byte[])obj);
+                return (DERPrintableString)fromByteArray((Bytes)obj);
             }
             catch (final Exception e)
             {
@@ -74,7 +72,7 @@ public class DERPrintableString
      * basic constructor - byte encoded string.
      */
     DERPrintableString(
-        final byte[]   string)
+        final Bytes   string)
     {
         this.string = string;
     }
@@ -114,9 +112,9 @@ public class DERPrintableString
         return Strings.fromByteArray(string);
     }
 
-    public byte[] getOctets()
+    public Bytes getOctets()
     {
-        return Arrays.clone(string);
+        return string;
     }
 
     @Override
@@ -128,7 +126,7 @@ public class DERPrintableString
     @Override
     int encodedLength()
     {
-        return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
+        return 1 + StreamUtil.calculateBodyLength(string.size()) + string.size();
     }
 
     @Override
@@ -141,7 +139,7 @@ public class DERPrintableString
     @Override
     public int hashCode()
     {
-        return Arrays.hashCode(string);
+        return string.hashCode();
     }
 
     @Override
@@ -155,7 +153,7 @@ public class DERPrintableString
 
         final DERPrintableString  s = (DERPrintableString)o;
 
-        return Arrays.areEqual(string, s.string);
+        return string.equals(s.string);
     }
 
     @Override

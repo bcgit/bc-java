@@ -1,6 +1,7 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
+import static com.github.gv2011.util.ex.Exceptions.call;
+
 import java.io.InputStream;
 
 class ConstructedOctetStream
@@ -12,12 +13,13 @@ class ConstructedOctetStream
     private InputStream            _currentStream;
 
     ConstructedOctetStream(
-        ASN1StreamParser parser)
+        final ASN1StreamParser parser)
     {
         _parser = parser;
     }
 
-    public int read(byte[] b, int off, int len) throws IOException
+    @Override
+    public int read(final byte[] b, final int off, final int len)
     {
         if (_currentStream == null)
         {
@@ -26,7 +28,7 @@ class ConstructedOctetStream
                 return -1;
             }
 
-            ASN1OctetStringParser s = (ASN1OctetStringParser)_parser.readObject();
+            final ASN1OctetStringParser s = (ASN1OctetStringParser)_parser.readObject();
 
             if (s == null)
             {
@@ -41,7 +43,8 @@ class ConstructedOctetStream
 
         for (;;)
         {
-            int numRead = _currentStream.read(b, off + totalRead, len - totalRead);
+            final int tr = totalRead;
+            final int numRead = call(()->_currentStream.read(b, off + tr, len - tr));
 
             if (numRead >= 0)
             {
@@ -54,7 +57,7 @@ class ConstructedOctetStream
             }
             else
             {
-                ASN1OctetStringParser aos = (ASN1OctetStringParser)_parser.readObject();
+                final ASN1OctetStringParser aos = (ASN1OctetStringParser)_parser.readObject();
 
                 if (aos == null)
                 {
@@ -67,8 +70,8 @@ class ConstructedOctetStream
         }
     }
 
+    @Override
     public int read()
-        throws IOException
     {
         if (_currentStream == null)
         {
@@ -77,27 +80,27 @@ class ConstructedOctetStream
                 return -1;
             }
 
-            ASN1OctetStringParser s = (ASN1OctetStringParser)_parser.readObject();
-    
+            final ASN1OctetStringParser s = (ASN1OctetStringParser)_parser.readObject();
+
             if (s == null)
             {
                 return -1;
             }
-    
+
             _first = false;
             _currentStream = s.getOctetStream();
         }
 
         for (;;)
         {
-            int b = _currentStream.read();
+            final int b = call(_currentStream::read);
 
             if (b >= 0)
             {
                 return b;
             }
 
-            ASN1OctetStringParser s = (ASN1OctetStringParser)_parser.readObject();
+            final ASN1OctetStringParser s = (ASN1OctetStringParser)_parser.readObject();
 
             if (s == null)
             {

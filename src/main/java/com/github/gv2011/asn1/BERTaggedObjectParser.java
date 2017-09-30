@@ -1,6 +1,5 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
 
 /**
  * Parser for indefinite-length tagged objects.
@@ -8,14 +7,14 @@ import java.io.IOException;
 public class BERTaggedObjectParser
     implements ASN1TaggedObjectParser
 {
-    private boolean _constructed;
-    private int _tagNumber;
-    private ASN1StreamParser _parser;
+    private final boolean _constructed;
+    private final int _tagNumber;
+    private final ASN1StreamParser _parser;
 
     BERTaggedObjectParser(
-        boolean             constructed,
-        int                 tagNumber,
-        ASN1StreamParser    parser)
+        final boolean             constructed,
+        final int                 tagNumber,
+        final ASN1StreamParser    parser)
     {
         _constructed = constructed;
         _tagNumber = tagNumber;
@@ -37,6 +36,7 @@ public class BERTaggedObjectParser
      *
      * @return the tag number.
      */
+    @Override
     public int getTagNo()
     {
         return _tagNumber;
@@ -50,16 +50,16 @@ public class BERTaggedObjectParser
      * @return an ASN.1 encodable object parser.
      * @throws IOException if there is an issue building the object parser from the stream.
      */
+    @Override
     public ASN1Encodable getObjectParser(
-        int     tag,
-        boolean isExplicit)
-        throws IOException
+        final int     tag,
+        final boolean isExplicit)
     {
         if (isExplicit)
         {
             if (!_constructed)
             {
-                throw new IOException("Explicit tags must be constructed (see X.690 8.14.2)");
+                throw new ASN1Exception("Explicit tags must be constructed (see X.690 8.14.2)");
             }
             return _parser.readObject();
         }
@@ -73,8 +73,8 @@ public class BERTaggedObjectParser
      * @return an ASN1TaggedObject.
      * @throws IOException if there is an issue loading the data.
      */
+    @Override
     public ASN1Primitive getLoadedObject()
-        throws IOException
     {
         return _parser.readTaggedObject(_constructed, _tagNumber);
     }
@@ -84,15 +84,9 @@ public class BERTaggedObjectParser
      *
      * @return an ASN1TaggedObject
      */
+    @Override
     public ASN1Primitive toASN1Primitive()
     {
-        try
-        {
-            return this.getLoadedObject();
-        }
-        catch (IOException e)
-        {
-            throw new ASN1ParsingException(e.getMessage());
-        }
-    }
+            return getLoadedObject();
+     }
 }

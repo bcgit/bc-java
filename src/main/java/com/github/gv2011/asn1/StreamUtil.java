@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileChannel;
 
+import com.github.gv2011.util.bytes.Bytes;
+
 class StreamUtil
 {
     private static final long  MAX_MEMORY = Runtime.getRuntime().maxMemory();
@@ -56,28 +58,19 @@ class StreamUtil
         return (int)MAX_MEMORY;
     }
 
-    static int calculateBodyLength(
-        final int length)
-    {
-        int count = 1;
+    static int typicalLength(final Bytes encoded){
+      return 1 + calculateBodyLength(encoded.size()) + encoded.size();
+    }
 
-        if (length > 127)
-        {
-            int size = 1;
-            int val = length;
-
-            while ((val >>>= 8) != 0)
-            {
-                size++;
-            }
-
-            for (int i = (size - 1) * 8; i >= 0; i -= 8)
-            {
-                count++;
-            }
-        }
-
-        return count;
+    static int calculateBodyLength(final int length){
+      int count = 1;
+      if (length > 127){
+        int size = 1;
+        int val = length;
+        while ((val >>>= 8) != 0) size++;
+        for (int i = (size - 1) * 8; i >= 0; i -= 8) count++;
+      }
+      return count;
     }
 
     static int calculateTagLength(int tagNo)

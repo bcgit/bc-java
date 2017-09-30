@@ -2,6 +2,8 @@ package com.github.gv2011.asn1;
 
 import java.io.IOException;
 
+import com.github.gv2011.util.bytes.Bytes;
+
 /**
  * Carrier class for a DER encoding OCTET STRING
  */
@@ -14,7 +16,7 @@ public class DEROctetString
      * @param string the octets making up the octet string.
      */
     public DEROctetString(
-        final byte[]  string)
+        final Bytes  string)
     {
         super(string);
     }
@@ -38,12 +40,6 @@ public class DEROctetString
     }
 
     @Override
-    int encodedLength()
-    {
-        return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
-    }
-
-    @Override
     void encode(
         final ASN1OutputStream out)
     {
@@ -52,8 +48,7 @@ public class DEROctetString
 
     static void encode(
         final DEROutputStream derOut,
-        final byte[]          bytes)
-        throws IOException
+        final Bytes          bytes)
     {
         derOut.writeEncoded(BERTags.OCTET_STRING, bytes);
     }

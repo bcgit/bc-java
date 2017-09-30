@@ -1,6 +1,5 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
 
 /**
  * A parser for indefinite-length application specific objects.
@@ -11,7 +10,7 @@ public class BERApplicationSpecificParser
     private final int tag;
     private final ASN1StreamParser parser;
 
-    BERApplicationSpecificParser(int tag, ASN1StreamParser parser)
+    BERApplicationSpecificParser(final int tag, final ASN1StreamParser parser)
     {
         this.tag = tag;
         this.parser = parser;
@@ -22,9 +21,8 @@ public class BERApplicationSpecificParser
      * @return the contained object.
      * @throws IOException if the underlying stream cannot be read, or does not contain an ASN.1 encoding.
      */
-    public ASN1Encodable readObject()
-        throws IOException
-    {
+    @Override
+    public ASN1Encodable readObject(){
         return parser.readObject();
     }
 
@@ -34,9 +32,8 @@ public class BERApplicationSpecificParser
      * @return a BERApplicationSpecific.
      * @throws IOException if there is an issue loading the data.
      */
-    public ASN1Primitive getLoadedObject()
-        throws IOException
-    {
+    @Override
+    public ASN1Primitive getLoadedObject(){
          return new BERApplicationSpecific(tag, parser.readVector());
     }
 
@@ -45,15 +42,9 @@ public class BERApplicationSpecificParser
      *
      * @return a BERApplicationSpecific
      */
+    @Override
     public ASN1Primitive toASN1Primitive()
     {
-        try
-        {
-            return getLoadedObject();
-        }
-        catch (IOException e)
-        {
-            throw new ASN1ParsingException(e.getMessage(), e);
-        }
+        return getLoadedObject();
     }
 }

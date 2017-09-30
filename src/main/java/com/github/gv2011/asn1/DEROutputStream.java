@@ -1,6 +1,5 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
 import java.io.OutputStream;
 
 /**

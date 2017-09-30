@@ -1,9 +1,7 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
-
-import com.github.gv2011.asn1.util.Arrays;
 import com.github.gv2011.asn1.util.Strings;
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * DER T61String (also the teletex string) - a "modern" encapsulation that uses UTF-8. If at all possible, avoid this one! It's only for emergencies.
@@ -12,10 +10,9 @@ import com.github.gv2011.asn1.util.Strings;
  */
 @Deprecated
 public class DERT61UTF8String
-    extends ASN1Primitive
+    extends ASN1PrimitiveBytes
     implements ASN1String
 {
-    private final byte[] string;
 
     /**
      * return a T61 string from the passed in object. UTF-8 Encoding is assumed in this case.
@@ -37,11 +34,11 @@ public class DERT61UTF8String
             return (DERT61UTF8String)obj;
         }
 
-        if (obj instanceof byte[])
+        if (obj instanceof Bytes)
         {
             try
             {
-                return new DERT61UTF8String(((DERT61String)fromByteArray((byte[])obj)).getOctets());
+                return new DERT61UTF8String(((DERT61String)fromByteArray((Bytes)obj)).getOctets());
             }
             catch (final Exception e)
             {
@@ -81,17 +78,14 @@ public class DERT61UTF8String
     /**
      * basic constructor - string encoded as a sequence of bytes.
      */
-    public DERT61UTF8String(
-        final byte[] string)
-    {
-        this.string = string;
+    public DERT61UTF8String(final Bytes string){
+      super(string);
     }
 
     /**
      * basic constructor - with string UTF8 conversion assumed.
      */
-    public DERT61UTF8String(
-        final String string)
+    public DERT61UTF8String( final String string)
     {
         this(Strings.toUTF8ByteArray(string));
     }
@@ -120,43 +114,10 @@ public class DERT61UTF8String
     }
 
     @Override
-    int encodedLength()
-    {
-        return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
-    }
-
-    @Override
     void encode(
         final ASN1OutputStream out)
     {
         out.writeEncoded(BERTags.T61_STRING, string);
     }
 
-    /**
-     * Return the encoded string as a byte array.
-     *
-     * @return the actual bytes making up the encoded body of the T61 string.
-     */
-    public byte[] getOctets()
-    {
-        return Arrays.clone(string);
-    }
-
-    @Override
-    boolean asn1Equals(
-        final ASN1Primitive o)
-    {
-        if (!(o instanceof DERT61UTF8String))
-        {
-            return false;
-        }
-
-        return Arrays.areEqual(string, ((DERT61UTF8String)o).string);
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return Arrays.hashCode(string);
-    }
 }

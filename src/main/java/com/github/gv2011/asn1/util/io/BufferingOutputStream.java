@@ -1,6 +1,7 @@
 package com.github.gv2011.asn1.util.io;
 
-import java.io.IOException;
+import static com.github.gv2011.util.ex.Exceptions.run;
+
 import java.io.OutputStream;
 
 import com.github.gv2011.asn1.util.Arrays;
@@ -24,10 +25,10 @@ public class BufferingOutputStream
      *
      * @param other output stream to be wrapped.
      */
-    public BufferingOutputStream(OutputStream other)
+    public BufferingOutputStream(final OutputStream other)
     {
         this.other = other;
-        this.buf = new byte[4096];
+        buf = new byte[4096];
     }
 
     /**
@@ -36,15 +37,14 @@ public class BufferingOutputStream
      * @param other output stream to be wrapped.
      * @param bufferSize size in bytes for internal buffer.
      */
-    public BufferingOutputStream(OutputStream other, int bufferSize)
+    public BufferingOutputStream(final OutputStream other, final int bufferSize)
     {
         this.other = other;
-        this.buf = new byte[bufferSize];
+        buf = new byte[bufferSize];
     }
 
-    public void write(byte[] bytes, int offset, int len)
-        throws IOException
-    {
+    @Override
+    public void write(final byte[] bytes, int offset, int len){
         if (len < buf.length - bufOff)
         {
             System.arraycopy(bytes, offset, buf, bufOff, len);
@@ -52,7 +52,7 @@ public class BufferingOutputStream
         }
         else
         {
-            int gap = buf.length - bufOff;
+            final int gap = buf.length - bufOff;
 
             System.arraycopy(bytes, offset, buf, bufOff, gap);
             bufOff += gap;
@@ -63,7 +63,8 @@ public class BufferingOutputStream
             len -= gap;
             while (len >= buf.length)
             {
-                other.write(bytes, offset, buf.length);
+                final int off = offset;
+                run(()->other.write(bytes, off, buf.length));
                 offset += buf.length;
                 len -= buf.length;
             }
@@ -76,9 +77,8 @@ public class BufferingOutputStream
         }
     }
 
-    public void write(int b)
-        throws IOException
-    {
+    @Override
+    public void write(final int b){
         buf[bufOff++] = (byte)b;
         if (bufOff == buf.length)
         {
@@ -91,18 +91,16 @@ public class BufferingOutputStream
      *
      * @throws IOException on error.
      */
-    public void flush()
-        throws IOException
-    {
-        other.write(buf, 0, bufOff);
+    @Override
+    public void flush(){
+        run(()->other.write(buf, 0, bufOff));
         bufOff = 0;
         Arrays.fill(buf, (byte)0);
     }
 
-    public void close()
-        throws IOException
-    {
-        flush();
-        other.close();
+    @Override
+    public void close(){
+        try{flush();}
+        finally{run(other::close);}
     }
 }

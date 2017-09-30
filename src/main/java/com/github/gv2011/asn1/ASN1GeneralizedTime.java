@@ -1,6 +1,5 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -8,8 +7,8 @@ import java.util.Locale;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 
-import com.github.gv2011.asn1.util.Arrays;
 import com.github.gv2011.asn1.util.Strings;
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * Base class representing the ASN.1 GeneralizedTime type.
@@ -20,7 +19,7 @@ import com.github.gv2011.asn1.util.Strings;
 public class ASN1GeneralizedTime
     extends ASN1Primitive
 {
-    private final byte[] time;
+    private final Bytes time;
 
     /**
      * return a generalized time from the passed in object
@@ -37,11 +36,11 @@ public class ASN1GeneralizedTime
             return (ASN1GeneralizedTime)obj;
         }
 
-        if (obj instanceof byte[])
+        if (obj instanceof Bytes)
         {
             try
             {
-                return (ASN1GeneralizedTime)fromByteArray((byte[])obj);
+                return (ASN1GeneralizedTime)fromByteArray((Bytes)obj);
             }
             catch (final Exception e)
             {
@@ -135,7 +134,7 @@ public class ASN1GeneralizedTime
     }
 
     ASN1GeneralizedTime(
-        final byte[] bytes)
+        final Bytes bytes)
     {
         time = bytes;
     }
@@ -325,9 +324,9 @@ public class ASN1GeneralizedTime
 
     private boolean hasFractionalSeconds()
     {
-        for (int i = 0; i != time.length; i++)
+        for (int i = 0; i != time.size(); i++)
         {
-            if (time[i] == '.')
+            if (time.getByte(i) == '.')
             {
                 if (i == 14)
                 {
@@ -347,7 +346,7 @@ public class ASN1GeneralizedTime
     @Override
     int encodedLength()
     {
-        final int length = time.length;
+        final int length = time.size();
 
         return 1 + StreamUtil.calculateBodyLength(length) + length;
     }
@@ -368,12 +367,12 @@ public class ASN1GeneralizedTime
             return false;
         }
 
-        return Arrays.areEqual(time, ((ASN1GeneralizedTime)o).time);
+        return time.equals(((ASN1GeneralizedTime)o).time);
     }
 
     @Override
     public int hashCode()
     {
-        return Arrays.hashCode(time);
+        return time.hashCode();
     }
 }

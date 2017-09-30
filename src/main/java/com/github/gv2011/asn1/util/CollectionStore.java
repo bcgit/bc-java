@@ -11,7 +11,7 @@ import java.util.List;
 public class CollectionStore<T>
     implements Store<T>, Iterable<T>
 {
-    private Collection<T> _local;
+    private final Collection<T> _local;
 
     /**
      * Basic constructor.
@@ -19,9 +19,9 @@ public class CollectionStore<T>
      * @param collection - initial contents for the store, this is copied.
      */
     public CollectionStore(
-        Collection<T> collection)
+        final Collection<T> collection)
     {
-        _local = new ArrayList<T>(collection);
+        _local = new ArrayList<>(collection);
     }
 
     /**
@@ -30,20 +30,21 @@ public class CollectionStore<T>
      * @param selector the selector to match against.
      * @return a possibly empty collection of matching objects.
      */
-    public Collection<T> getMatches(Selector<T> selector)
+    @Override
+    public Collection<T> getMatches(final Selector<T> selector)
     {
         if (selector == null)
         {
-            return new ArrayList<T>(_local);
+            return new ArrayList<>(_local);
         }
         else
         {
-            List<T> col = new ArrayList<T>();
-            Iterator<T> iter = _local.iterator();
+            final List<T> col = new ArrayList<>();
+            final Iterator<T> iter = _local.iterator();
 
             while (iter.hasNext())
             {
-                T obj = iter.next();
+                final T obj = iter.next();
 
                 if (selector.match(obj))
                 {
@@ -55,6 +56,7 @@ public class CollectionStore<T>
         }
     }
 
+    @Override
     public Iterator<T> iterator()
     {
         return getMatches(null).iterator();

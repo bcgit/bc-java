@@ -1,5 +1,7 @@
 package com.github.gv2011.asn1;
 
+import static com.github.gv2011.util.ex.Exceptions.call;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,26 +15,24 @@ class IndefiniteLengthInputStream
     private boolean _eofOn00 = true;
 
     IndefiniteLengthInputStream(
-        InputStream in,
-        int         limit)
-        throws IOException
-    {
+        final InputStream in,
+        final int         limit) {
         super(in, limit);
 
-        _b1 = in.read();
-        _b2 = in.read();
+        _b1 = call(in::read);
+        _b2 = call(in::read);
 
         if (_b2 < 0)
         {
             // Corrupted stream
-            throw new EOFException();
+            throw new ASN1Exception();
         }
 
         checkForEof();
     }
 
     void setEofOn00(
-        boolean eofOn00)
+        final boolean eofOn00)
     {
         _eofOn00 = eofOn00;
         checkForEof();
@@ -48,7 +48,8 @@ class IndefiniteLengthInputStream
         return _eofReached;
     }
 
-    public int read(byte[] b, int off, int len)
+    @Override
+    public int read(final byte[] b, final int off, final int len)
         throws IOException
     {
         // Only use this optimisation if we aren't checking for 00
@@ -62,7 +63,7 @@ class IndefiniteLengthInputStream
             return -1;
         }
 
-        int numRead = _in.read(b, off + 2, len - 2);
+        final int numRead = _in.read(b, off + 2, len - 2);
 
         if (numRead < 0)
         {
@@ -85,6 +86,7 @@ class IndefiniteLengthInputStream
         return numRead + 2;
     }
 
+    @Override
     public int read()
         throws IOException
     {
@@ -93,7 +95,7 @@ class IndefiniteLengthInputStream
             return -1;
         }
 
-        int b = _in.read();
+        final int b = _in.read();
 
         if (b < 0)
         {
@@ -101,7 +103,7 @@ class IndefiniteLengthInputStream
             throw new EOFException();
         }
 
-        int v = _b1;
+        final int v = _b1;
 
         _b1 = _b2;
         _b2 = b;

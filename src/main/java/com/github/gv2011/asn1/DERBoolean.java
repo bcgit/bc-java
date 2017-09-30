@@ -1,8 +1,11 @@
 package com.github.gv2011.asn1;
 
+import com.github.gv2011.util.bytes.Bytes;
+
 /**
  * @deprecated use ASN1Boolean
  */
+@Deprecated
 public class DERBoolean
     extends ASN1Boolean
 {
@@ -10,12 +13,13 @@ public class DERBoolean
      * @deprecated use getInstance(boolean) method.
      * @param value
      */
-    public DERBoolean(boolean value)
+    @Deprecated
+    public DERBoolean(final boolean value)
     {
         super(value);
     }
 
-    DERBoolean(byte[] value)
+    DERBoolean(final Bytes value)
     {
         super(value);
     }

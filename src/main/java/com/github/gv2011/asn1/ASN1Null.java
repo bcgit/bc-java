@@ -1,6 +1,6 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * A NULL object - use DERNull.INSTANCE for populating structures.
@@ -34,11 +34,7 @@ public abstract class ASN1Null
         {
             try
             {
-                return ASN1Null.getInstance(ASN1Primitive.fromByteArray((byte[])o));
-            }
-            catch (final IOException e)
-            {
-                throw new IllegalArgumentException("failed to construct NULL from byte[]: " + e.getMessage());
+                return ASN1Null.getInstance(ASN1Primitive.fromByteArray((Bytes)o));
             }
             catch (final ClassCastException e)
             {

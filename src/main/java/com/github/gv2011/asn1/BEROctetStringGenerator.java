@@ -1,74 +1,71 @@
 package com.github.gv2011.asn1;
 
+import static com.github.gv2011.util.bytes.ByteUtils.newBytes;
+
 import java.io.IOException;
 import java.io.OutputStream;
 
 public class BEROctetStringGenerator
     extends BERGenerator
 {
-    public BEROctetStringGenerator(OutputStream out) 
+    public BEROctetStringGenerator(final OutputStream out)
         throws IOException
     {
         super(out);
-        
+
         writeBERHeader(BERTags.CONSTRUCTED | BERTags.OCTET_STRING);
     }
 
     public BEROctetStringGenerator(
-        OutputStream out,
-        int tagNo,
-        boolean isExplicit) 
+        final OutputStream out,
+        final int tagNo,
+        final boolean isExplicit)
         throws IOException
     {
         super(out, tagNo, isExplicit);
-        
+
         writeBERHeader(BERTags.CONSTRUCTED | BERTags.OCTET_STRING);
     }
-    
+
     public OutputStream getOctetOutputStream()
     {
-        return getOctetOutputStream(new byte[1000]); // limit for CER encoding.
+        return getOctetOutputStream();
     }
 
-    public OutputStream getOctetOutputStream(
-        byte[] buf)
-    {
-        return new BufferedBEROctetStream(buf);
-    }
-   
+    @SuppressWarnings("unused") //TODO delete
     private class BufferedBEROctetStream
         extends OutputStream
     {
-        private byte[] _buf;
+        private final byte[] _buf = new byte[1000];// limit for CER encoding.
         private int    _off;
-        private DEROutputStream _derOut;
+        private final DEROutputStream _derOut;
 
-        BufferedBEROctetStream(
-            byte[] buf)
+        BufferedBEROctetStream()
         {
-            _buf = buf;
             _off = 0;
             _derOut = new DEROutputStream(_out);
         }
-        
+
+        @Override
         public void write(
-            int b)
+            final int b)
             throws IOException
         {
             _buf[_off++] = (byte)b;
 
             if (_off == _buf.length)
             {
-                DEROctetString.encode(_derOut, _buf);
+                DEROctetString.encode(_derOut, newBytes(_buf));
                 _off = 0;
             }
         }
 
-        public void write(byte[] b, int off, int len) throws IOException
+        @Override
+        public void write(final byte[] b, int off, int len) throws IOException
         {
             while (len > 0)
             {
-                int numToCopy = Math.min(len, _buf.length - _off);
+                final int numToCopy = Math.min(len, _buf.length - _off);
                 System.arraycopy(b, off, _buf, _off, numToCopy);
 
                 _off += numToCopy;
@@ -77,7 +74,7 @@ public class BEROctetStringGenerator
                     break;
                 }
 
-                DEROctetString.encode(_derOut, _buf);
+                DEROctetString.encode(_derOut, newBytes(_buf));
                 _off = 0;
 
                 off += numToCopy;
@@ -85,17 +82,18 @@ public class BEROctetStringGenerator
             }
         }
 
-        public void close() 
+        @Override
+        public void close()
             throws IOException
         {
             if (_off != 0)
             {
-                byte[] bytes = new byte[_off];
+                final byte[] bytes = new byte[_off];
                 System.arraycopy(_buf, 0, bytes, 0, _off);
-                
-                DEROctetString.encode(_derOut, bytes);
+
+                DEROctetString.encode(_derOut, newBytes(bytes));
             }
-            
+
              writeBEREnd();
         }
     }

@@ -1,7 +1,9 @@
 package com.github.gv2011.asn1;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import static com.github.gv2011.util.bytes.ByteUtils.newBytesBuilder;
+
+import com.github.gv2011.util.bytes.Bytes;
+import com.github.gv2011.util.bytes.BytesBuilder;
 
 /**
  * An indefinite-length encoding version of an application specific object.
@@ -12,7 +14,7 @@ public class BERApplicationSpecific
     BERApplicationSpecific(
         final boolean isConstructed,
         final int tag,
-        final byte[] octets)
+        final Bytes octets)
     {
         super(isConstructed, tag, octets);
     }
@@ -26,7 +28,6 @@ public class BERApplicationSpecific
     public BERApplicationSpecific(
         final int tag,
         final ASN1Encodable object)
-        throws IOException
     {
         this(true, tag, object);
     }
@@ -42,15 +43,12 @@ public class BERApplicationSpecific
         final boolean constructed,
         final int tag,
         final ASN1Encodable object)
-        throws IOException
     {
         super(constructed || object.toASN1Primitive().isConstructed(), tag, getEncoding(constructed, object));
     }
 
-    private static byte[] getEncoding(final boolean explicit, final ASN1Encodable object)
-        throws IOException
-    {
-        final byte[] data = object.toASN1Primitive().getEncoded(ASN1Encoding.BER);
+    private static Bytes getEncoding(final boolean explicit, final ASN1Encodable object){
+        final Bytes data = object.toASN1Primitive().getEncoded(ASN1Encoding.BER);
 
         if (explicit)
         {
@@ -58,10 +56,10 @@ public class BERApplicationSpecific
         }
         else
         {
-            final int lenBytes = getLengthOfHeader(data);
-            final byte[] tmp = new byte[data.length - lenBytes];
-            System.arraycopy(data, lenBytes, tmp, 0, tmp.length);
-            return tmp;
+//            final int lenBytes = getLengthOfHeader(data);
+//            final byte[] tmp = new byte[data.length - lenBytes];
+//            System.arraycopy(data, lenBytes, tmp, 0, tmp.length);
+            return data.subList(getLengthOfHeader(data));
         }
     }
 
@@ -76,22 +74,13 @@ public class BERApplicationSpecific
         super(true, tagNo, getEncodedVector(vec));
     }
 
-    private static byte[] getEncodedVector(final ASN1EncodableVector vec)
+    private static Bytes getEncodedVector(final ASN1EncodableVector vec)
     {
-        final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-
-        for (int i = 0; i != vec.size(); i++)
-        {
-            try
-            {
-                bOut.write(((ASN1Object)vec.get(i)).getEncoded(ASN1Encoding.BER));
-            }
-            catch (final IOException e)
-            {
-                throw new ASN1ParsingException("malformed object: " + e, e);
-            }
+        final BytesBuilder bOut = newBytesBuilder();
+        for (int i = 0; i != vec.size(); i++){
+          ((ASN1Object)vec.get(i)).getEncoded(ASN1Encoding.BER).write(bOut);
         }
-        return bOut.toByteArray();
+        return bOut.build();
     }
 
     /* (non-Javadoc)

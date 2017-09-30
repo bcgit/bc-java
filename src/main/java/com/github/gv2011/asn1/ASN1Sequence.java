@@ -1,11 +1,12 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
+
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Vector;
 
 import com.github.gv2011.asn1.util.Arrays;
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * ASN.1 <code>SEQUENCE</code> and <code>SEQUENCE OF</code> constructs.
@@ -58,6 +59,7 @@ public abstract class ASN1Sequence
     extends ASN1Primitive
     implements com.github.gv2011.asn1.util.Iterable<ASN1Encodable>
 {
+    @SuppressWarnings("rawtypes")
     protected Vector seq = new Vector();
 
     /**
@@ -78,16 +80,9 @@ public abstract class ASN1Sequence
         {
             return ASN1Sequence.getInstance(((ASN1SequenceParser)obj).toASN1Primitive());
         }
-        else if (obj instanceof byte[])
+        else if (obj instanceof Bytes)
         {
-            try
-            {
-                return ASN1Sequence.getInstance(fromByteArray((byte[])obj));
-            }
-            catch (final IOException e)
-            {
-                throw new IllegalArgumentException("failed to construct sequence from byte[]: " + e.getMessage());
-            }
+            return ASN1Sequence.getInstance(fromByteArray((Bytes)obj));
         }
         else if (obj instanceof ASN1Encodable)
         {
@@ -173,6 +168,7 @@ public abstract class ASN1Sequence
      * Create a sequence containing one object
      * @param obj the object to be put in the SEQUENCE.
      */
+    @SuppressWarnings("unchecked")
     protected ASN1Sequence(
         final ASN1Encodable obj)
     {
@@ -183,6 +179,7 @@ public abstract class ASN1Sequence
      * Create a sequence containing a vector of objects.
      * @param v the vector of objects to be put in the SEQUENCE
      */
+    @SuppressWarnings("unchecked")
     protected ASN1Sequence(
         final ASN1EncodableVector v)
     {
@@ -195,6 +192,7 @@ public abstract class ASN1Sequence
     /*
      * Create a sequence containing a vector of objects.
      */
+    @SuppressWarnings("unchecked")
     protected ASN1Sequence(
         final ASN1Encodable[]   array)
     {
@@ -216,6 +214,7 @@ public abstract class ASN1Sequence
         return values;
     }
 
+    @SuppressWarnings("rawtypes")
     public Enumeration getObjects()
     {
         return seq.elements();
@@ -232,7 +231,7 @@ public abstract class ASN1Sequence
             private int index;
 
             @Override
-            public ASN1Encodable readObject() throws IOException
+            public ASN1Encodable readObject()
             {
                 if (index == max)
                 {
@@ -291,6 +290,7 @@ public abstract class ASN1Sequence
     @Override
     public int hashCode()
     {
+        @SuppressWarnings("rawtypes")
         final Enumeration             e = getObjects();
         int                     hashCode = size();
 
@@ -305,6 +305,7 @@ public abstract class ASN1Sequence
         return hashCode;
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     boolean asn1Equals(
         final ASN1Primitive o)
@@ -343,6 +344,7 @@ public abstract class ASN1Sequence
         return true;
     }
 
+    @SuppressWarnings("rawtypes")
     private ASN1Encodable getNext(final Enumeration e)
     {
         final ASN1Encodable encObj = (ASN1Encodable)e.nextElement();

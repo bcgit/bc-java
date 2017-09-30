@@ -1,18 +1,15 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
-
-import com.github.gv2011.asn1.util.Arrays;
 import com.github.gv2011.asn1.util.Strings;
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * DER UTF8String object.
  */
 public class DERUTF8String
-    extends ASN1Primitive
+    extends ASN1PrimitiveBytes
     implements ASN1String
 {
-    private final byte[]  string;
 
     /**
      * Return an UTF8 string from the passed in object.
@@ -29,11 +26,11 @@ public class DERUTF8String
             return (DERUTF8String)obj;
         }
 
-        if (obj instanceof byte[])
+        if (obj instanceof Bytes)
         {
             try
             {
-                return (DERUTF8String)fromByteArray((byte[])obj);
+                return (DERUTF8String)fromByteArray((Bytes)obj);
             }
             catch (final Exception e)
             {
@@ -76,9 +73,9 @@ public class DERUTF8String
     /*
      * Basic constructor - byte encoded string.
      */
-    DERUTF8String(final byte[] string)
+    DERUTF8String(final Bytes string)
     {
-        this.string = string;
+        super(string);
     }
 
     /**
@@ -88,7 +85,7 @@ public class DERUTF8String
      */
     public DERUTF8String(final String string)
     {
-        this.string = Strings.toUTF8ByteArray(string);
+        this(Strings.toUTF8ByteArray(string));
     }
 
     @Override
@@ -103,35 +100,11 @@ public class DERUTF8String
         return getString();
     }
 
-    @Override
-    public int hashCode()
-    {
-        return Arrays.hashCode(string);
-    }
-
-    @Override
-    boolean asn1Equals(final ASN1Primitive o)
-    {
-        if (!(o instanceof DERUTF8String))
-        {
-            return false;
-        }
-
-        final DERUTF8String s = (DERUTF8String)o;
-
-        return Arrays.areEqual(string, s.string);
-    }
 
     @Override
     boolean isConstructed()
     {
         return false;
-    }
-
-    @Override
-    int encodedLength()
-    {
-        return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
     }
 
     @Override

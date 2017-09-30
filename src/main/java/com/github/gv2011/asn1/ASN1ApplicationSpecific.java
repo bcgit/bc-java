@@ -1,8 +1,9 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
+import static com.github.gv2011.util.bytes.ByteUtils.newBytes;
 
-import com.github.gv2011.asn1.util.Arrays;
+
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * Base class for an application specific object
@@ -12,12 +13,12 @@ public abstract class ASN1ApplicationSpecific
 {
     protected final boolean   isConstructed;
     protected final int       tag;
-    protected final byte[]    octets;
+    protected final Bytes     octets;
 
     ASN1ApplicationSpecific(
         final boolean isConstructed,
         final int tag,
-        final byte[] octets)
+        final Bytes octets)
     {
         this.isConstructed = isConstructed;
         this.tag = tag;
@@ -36,24 +37,17 @@ public abstract class ASN1ApplicationSpecific
         {
             return (ASN1ApplicationSpecific)obj;
         }
-        else if (obj instanceof byte[])
+        else if (obj instanceof Bytes)
         {
-            try
-            {
-                return ASN1ApplicationSpecific.getInstance(ASN1Primitive.fromByteArray((byte[])obj));
-            }
-            catch (final IOException e)
-            {
-                throw new IllegalArgumentException("Failed to construct object from byte[]: " + e.getMessage());
-            }
+            return ASN1ApplicationSpecific.getInstance(ASN1Primitive.fromByteArray((Bytes)obj));
         }
 
         throw new IllegalArgumentException("unknown object in getInstance: " + obj.getClass().getName());
     }
 
-    protected static int getLengthOfHeader(final byte[] data)
+    protected static int getLengthOfHeader(final Bytes data)
     {
-        final int length = data[1] & 0xff; // TODO: assumes 1 byte tag
+        final int length = data.getByte(1) & 0xff; // TODO: assumes 1 byte tag
 
         if (length == 0x80)
         {
@@ -92,7 +86,7 @@ public abstract class ASN1ApplicationSpecific
      *
      * @return the encoded contents of the object.
      */
-    public byte[] getContents()
+    public Bytes getContents()
     {
         return octets;
     }
@@ -113,8 +107,8 @@ public abstract class ASN1ApplicationSpecific
      * @return  the resulting object
      * @throws IOException if reconstruction fails.
      */
+    @SuppressWarnings("resource")
     public ASN1Primitive getObject()
-        throws IOException
     {
         return new ASN1InputStream(getContents()).readObject();
     }
@@ -126,29 +120,29 @@ public abstract class ASN1ApplicationSpecific
      * @return  the resulting object
      * @throws IOException if reconstruction fails.
      */
+    @SuppressWarnings("resource")
     public ASN1Primitive getObject(final int derTagNo)
-        throws IOException
     {
         if (derTagNo >= 0x1f)
         {
-            throw new IOException("unsupported tag number");
+            throw new ASN1Exception("unsupported tag number");
         }
 
-        final byte[] orig = this.getEncoded();
+        final Bytes orig = this.getEncoded();
         final byte[] tmp = replaceTagNumber(derTagNo, orig);
 
-        if ((orig[0] & BERTags.CONSTRUCTED) != 0)
+        if ((orig.getByte(0) & BERTags.CONSTRUCTED) != 0)
         {
             tmp[0] |= BERTags.CONSTRUCTED;
         }
 
-        return new ASN1InputStream(tmp).readObject();
+        return new ASN1InputStream(newBytes(tmp)).readObject();
     }
 
     @Override
     int encodedLength()
     {
-        return StreamUtil.calculateTagLength(tag) + StreamUtil.calculateBodyLength(octets.length) + octets.length;
+        return StreamUtil.calculateTagLength(tag) + StreamUtil.calculateBodyLength(octets.size()) + octets.size();
     }
 
     /* (non-Javadoc)
@@ -179,19 +173,18 @@ public abstract class ASN1ApplicationSpecific
 
         return isConstructed == other.isConstructed
             && tag == other.tag
-            && Arrays.areEqual(octets, other.octets);
+            && octets.equals(other.octets);
     }
 
     @Override
     public int hashCode()
     {
-        return (isConstructed ? 1 : 0) ^ tag ^ Arrays.hashCode(octets);
+        return (isConstructed ? 1 : 0) ^ tag ^ octets.hashCode();
     }
 
-    private byte[] replaceTagNumber(final int newTag, final byte[] input)
-        throws IOException
+    private byte[] replaceTagNumber(final int newTag, final Bytes input)
     {
-        int tagNo = input[0] & 0x1f;
+        int tagNo = input.getByte(0) & 0x1f;
         int index = 1;
         //
         // with tagged object tag number is bottom 5 bits, or stored at the start of the content
@@ -200,7 +193,7 @@ public abstract class ASN1ApplicationSpecific
         {
             tagNo = 0;
 
-            int b = input[index++] & 0xff;
+            int b = input.getByte(index++) & 0xff;
 
             // X.690-0207 8.1.2.4.2
             // "c) bits 7 to 1 of the first subsequent octet shall not all be zero."
@@ -213,13 +206,13 @@ public abstract class ASN1ApplicationSpecific
             {
                 tagNo |= (b & 0x7f);
                 tagNo <<= 7;
-                b = input[index++] & 0xff;
+                b = input.getByte(index++) & 0xff;
             }
 
 //            tagNo |= (b & 0x7f);
         }
 
-        final byte[] tmp = new byte[input.length - index + 1];
+        final byte[] tmp = new byte[input.size() - index + 1];
 
         System.arraycopy(input, index, tmp, 1, tmp.length - 1);
 

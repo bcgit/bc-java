@@ -1,7 +1,8 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
 import java.util.Enumeration;
+
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * Note: this class is for processing DER/DL encoded sequences only.
@@ -9,15 +10,14 @@ import java.util.Enumeration;
 class LazyEncodedSequence
     extends ASN1Sequence
 {
-    private byte[] encoded;
+    private Bytes encoded;
 
     LazyEncodedSequence(
-        final byte[] encoded)
-        throws IOException
-    {
+        final Bytes encoded){
         this.encoded = encoded;
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private void parse()
     {
         final Enumeration en = new LazyConstructionEnumeration(encoded);
@@ -41,6 +41,7 @@ class LazyEncodedSequence
         return super.getObjectAt(index);
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public synchronized Enumeration getObjects()
     {
@@ -90,7 +91,7 @@ class LazyEncodedSequence
     {
         if (encoded != null)
         {
-            return 1 + StreamUtil.calculateBodyLength(encoded.length) + encoded.length;
+            return StreamUtil.typicalLength(encoded);
         }
         else
         {

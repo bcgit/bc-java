@@ -1,6 +1,8 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
+import static com.github.gv2011.util.bytes.ByteUtils.emptyBytes;
+
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * DER TaggedObject - in ASN.1 notation this is any object preceded by
@@ -10,7 +12,7 @@ import java.io.IOException;
 public class DERTaggedObject
     extends ASN1TaggedObject
 {
-    private static final byte[] ZERO_BYTES = new byte[0];
+    private static final Bytes ZERO_BYTES = emptyBytes();
 
     /**
      * @param explicit true if an explicitly tagged object.

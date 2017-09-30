@@ -1,6 +1,5 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
 import java.util.Enumeration;
 
 /**
@@ -51,7 +50,7 @@ public class BERSet
     int encodedLength()
     {
         int length = 0;
-        for (final Enumeration e = getObjects(); e.hasMoreElements();)
+        for (final Enumeration<?> e = getObjects(); e.hasMoreElements();)
         {
             length += ((ASN1Encodable)e.nextElement()).toASN1Primitive().encodedLength();
         }
@@ -66,7 +65,7 @@ public class BERSet
         out.write(BERTags.SET | BERTags.CONSTRUCTED);
         out.write(0x80);
 
-        final Enumeration e = getObjects();
+        final Enumeration<?> e = getObjects();
         while (e.hasMoreElements())
         {
             out.writeObject((ASN1Encodable)e.nextElement());

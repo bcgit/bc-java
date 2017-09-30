@@ -1,12 +1,15 @@
 package com.github.gv2011.asn1;
 
+import static com.github.gv2011.util.bytes.ByteUtils.emptyBytes;
+import static com.github.gv2011.util.bytes.ByteUtils.newBytes;
+import static com.github.gv2011.util.ex.Exceptions.call;
+
 import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
-import java.io.IOException;
+
 import java.io.InputStream;
 
-import com.github.gv2011.asn1.util.Arrays;
 import com.github.gv2011.asn1.util.io.Streams;
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * Base class for BIT STRING objects
@@ -17,7 +20,7 @@ public abstract class ASN1BitString
 {
     private static final char[]  table = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
-    protected final byte[]      data;
+    protected final Bytes      data;
     protected final int         padBits;
 
     /**
@@ -73,11 +76,11 @@ public abstract class ASN1BitString
      * @return the correct number of bytes for a bit string defined in
      * a 32 bit constant
      */
-    static protected byte[] getBytes(final int bitString)
+    static protected Bytes getBytes(final int bitString)
     {
         if (bitString == 0)
         {
-            return new byte[0];
+            return emptyBytes();
         }
 
         int bytes = 4;
@@ -96,7 +99,7 @@ public abstract class ASN1BitString
             result[i] = (byte) ((bitString >> (i * 8)) & 0xFF);
         }
 
-        return result;
+        return newBytes(result);
     }
 
     /**
@@ -106,14 +109,14 @@ public abstract class ASN1BitString
      * @param padBits the number of extra bits at the end of the string.
      */
     public ASN1BitString(
-        final byte[]  data,
+        final Bytes  data,
         final int     padBits)
     {
         if (data == null)
         {
             throw new NullPointerException("data cannot be null");
         }
-        if (data.length == 0 && padBits != 0)
+        if (data.size() == 0 && padBits != 0)
         {
             throw new IllegalArgumentException("zero length data with non-zero pad bits");
         }
@@ -122,7 +125,7 @@ public abstract class ASN1BitString
             throw new IllegalArgumentException("pad bits cannot be greater than 7 or less than 0");
         }
 
-        this.data = Arrays.clone(data);
+        this.data = data;
         this.padBits = padBits;
     }
 
@@ -157,16 +160,16 @@ public abstract class ASN1BitString
     public int intValue()
     {
         int value = 0;
-        byte[] string = data;
+        Bytes string = data;
 
-        if (padBits > 0 && data.length <= 4)
+        if (padBits > 0 && data.size() <= 4)
         {
             string = derForm(data, padBits);
         }
 
-        for (int i = 0; i != string.length && i != 4; i++)
+        for (int i = 0; i != string.size() && i != 4; i++)
         {
-            value |= (string[i] & 0xff) << (8 * i);
+            value |= (string.getByte(i) & 0xff) << (8 * i);
         }
 
         return value;
@@ -179,17 +182,17 @@ public abstract class ASN1BitString
      *
      * @return a copy of the octet aligned data.
      */
-    public byte[] getOctets()
+    public Bytes getOctets()
     {
         if (padBits != 0)
         {
             throw new IllegalStateException("attempt to get non-octet aligned data from BIT STRING");
         }
 
-        return Arrays.clone(data);
+        return data;
     }
 
-    public byte[] getBytes()
+    public Bytes getBytes()
     {
         return derForm(data, padBits);
     }
@@ -208,7 +211,7 @@ public abstract class ASN1BitString
     @Override
     public int hashCode()
     {
-        return padBits ^ Arrays.hashCode(this.getBytes());
+        return padBits ^ this.getBytes().hashCode();
     }
 
     @Override
@@ -222,50 +225,47 @@ public abstract class ASN1BitString
 
         final ASN1BitString other = (ASN1BitString)o;
 
-        return padBits == other.padBits
-            && Arrays.areEqual(this.getBytes(), other.getBytes());
+        return padBits == other.padBits && this.getBytes().equals(other.getBytes());
     }
 
-    protected static byte[] derForm(final byte[] data, final int padBits)
+    protected static Bytes derForm(final Bytes data, final int padBits)
     {
-        final byte[] rv = Arrays.clone(data);
         // DER requires pad bits be zero
-        if (padBits > 0)
-        {
-            rv[data.length - 1] &= 0xff << padBits;
+        if (padBits > 0){
+          final byte[] rv = data.toByteArray();
+          rv[data.size() - 1] &= 0xff << padBits;
+          return newBytes(rv);
         }
-
-        return rv;
+        else return data;
     }
 
     static ASN1BitString fromInputStream(final int length, final InputStream stream)
-        throws IOException
     {
         if (length < 1)
         {
             throw new IllegalArgumentException("truncated BIT STRING detected");
         }
 
-        final int padBits = stream.read();
+        final int padBits = call(stream::read);
         final byte[] data = new byte[length - 1];
 
         if (data.length != 0)
         {
             if (Streams.readFully(stream, data) != data.length)
             {
-                throw new EOFException("EOF encountered in middle of BIT STRING");
+                throw new ASN1Exception("EOF encountered in middle of BIT STRING");
             }
 
             if (padBits > 0 && padBits < 8)
             {
                 if (data[data.length - 1] != (byte)(data[data.length - 1] & (0xff << padBits)))
                 {
-                    return new DLBitString(data, padBits);
+                    return new DLBitString(newBytes(data), padBits);
                 }
             }
         }
 
-        return new DERBitString(data, padBits);
+        return new DERBitString(newBytes(data), padBits);
     }
 
     public ASN1Primitive getLoadedObject()

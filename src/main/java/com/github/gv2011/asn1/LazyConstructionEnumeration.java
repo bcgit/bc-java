@@ -1,28 +1,32 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
+
 import java.util.Enumeration;
 
+import com.github.gv2011.util.bytes.Bytes;
+
 class LazyConstructionEnumeration
-    implements Enumeration
+    implements Enumeration<Object>
 {
-    private ASN1InputStream aIn;
+    private final ASN1InputStream aIn;
     private Object          nextObj;
 
-    public LazyConstructionEnumeration(byte[] encoded)
+    public LazyConstructionEnumeration(final Bytes encoded)
     {
         aIn = new ASN1InputStream(encoded, true);
         nextObj = readObject();
     }
 
+    @Override
     public boolean hasMoreElements()
     {
         return nextObj != null;
     }
 
+    @Override
     public Object nextElement()
     {
-        Object o = nextObj;
+        final Object o = nextObj;
 
         nextObj = readObject();
 
@@ -31,13 +35,6 @@ class LazyConstructionEnumeration
 
     private Object readObject()
     {
-        try
-        {
             return aIn.readObject();
-        }
-        catch (IOException e)
-        {
-            throw new ASN1ParsingException("malformed DER construction: " + e, e);
-        }
     }
 }

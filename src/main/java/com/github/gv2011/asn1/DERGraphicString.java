@@ -1,15 +1,9 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
-
-import com.github.gv2011.asn1.util.Arrays;
 import com.github.gv2011.asn1.util.Strings;
+import com.github.gv2011.util.bytes.Bytes;
 
-public class DERGraphicString
-    extends ASN1Primitive
-    implements ASN1String
-{
-    private final byte[] string;
+public final class DERGraphicString extends ASN1PrimitiveBytes implements ASN1String {
 
     /**
      * return a Graphic String from the passed in object
@@ -26,11 +20,11 @@ public class DERGraphicString
             return (DERGraphicString)obj;
         }
 
-        if (obj instanceof byte[])
+        if (obj instanceof Bytes)
         {
             try
             {
-                return (DERGraphicString)fromByteArray((byte[])obj);
+                return (DERGraphicString)fromByteArray((Bytes)obj);
             }
             catch (final Exception e)
             {
@@ -71,15 +65,8 @@ public class DERGraphicString
      * basic constructor - with bytes.
      * @param string the byte encoding of the characters making up the string.
      */
-    public DERGraphicString(
-        final byte[]   string)
-    {
-        this.string = Arrays.clone(string);
-    }
-
-    public byte[] getOctets()
-    {
-        return Arrays.clone(string);
+    public DERGraphicString(final Bytes string){
+      super(string);
     }
 
     @Override
@@ -89,36 +76,10 @@ public class DERGraphicString
     }
 
     @Override
-    int encodedLength()
-    {
-        return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
-    }
-
-    @Override
     void encode(
         final ASN1OutputStream out)
     {
         out.writeEncoded(BERTags.GRAPHIC_STRING, string);
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return Arrays.hashCode(string);
-    }
-
-    @Override
-    boolean asn1Equals(
-        final ASN1Primitive o)
-    {
-        if (!(o instanceof DERGraphicString))
-        {
-            return false;
-        }
-
-        final DERGraphicString  s = (DERGraphicString)o;
-
-        return Arrays.areEqual(string, s.string);
     }
 
     @Override

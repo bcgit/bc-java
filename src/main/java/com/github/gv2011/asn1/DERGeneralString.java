@@ -1,9 +1,7 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
-
-import com.github.gv2011.asn1.util.Arrays;
 import com.github.gv2011.asn1.util.Strings;
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * Carrier class for a DER encoding GeneralString
@@ -12,7 +10,7 @@ public class DERGeneralString
     extends ASN1Primitive
     implements ASN1String
 {
-    private final byte[] string;
+    private final Bytes string;
 
     /**
      * return a GeneralString from the given object.
@@ -29,11 +27,11 @@ public class DERGeneralString
             return (DERGeneralString) obj;
         }
 
-        if (obj instanceof byte[])
+        if (obj instanceof Bytes)
         {
             try
             {
-                return (DERGeneralString)fromByteArray((byte[])obj);
+                return (DERGeneralString)fromByteArray((Bytes)obj);
             }
             catch (final Exception e)
             {
@@ -71,7 +69,7 @@ public class DERGeneralString
         }
     }
 
-    DERGeneralString(final byte[] string)
+    DERGeneralString(final Bytes string)
     {
         this.string = string;
     }
@@ -108,9 +106,9 @@ public class DERGeneralString
      *
      * @return a byte array representing our contents.
      */
-    public byte[] getOctets()
+    public Bytes getOctets()
     {
-        return Arrays.clone(string);
+        return string;
     }
 
     @Override
@@ -122,7 +120,7 @@ public class DERGeneralString
     @Override
     int encodedLength()
     {
-        return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
+        return 1 + StreamUtil.calculateBodyLength(string.size()) + string.size();
     }
 
     @Override
@@ -134,7 +132,7 @@ public class DERGeneralString
     @Override
     public int hashCode()
     {
-        return Arrays.hashCode(string);
+        return string.hashCode();
     }
 
     @Override
@@ -146,6 +144,6 @@ public class DERGeneralString
         }
         final DERGeneralString s = (DERGeneralString)o;
 
-        return Arrays.areEqual(string, s.string);
+        return string.equals(s.string);
     }
 }

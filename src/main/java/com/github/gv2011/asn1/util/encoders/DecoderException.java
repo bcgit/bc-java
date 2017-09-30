@@ -6,15 +6,20 @@ package com.github.gv2011.asn1.util.encoders;
 public class DecoderException
     extends IllegalStateException
 {
-    private Throwable cause;
+    /**
+   *
+   */
+  private static final long serialVersionUID = 972969736256420978L;
+    private final Throwable cause;
 
-    DecoderException(String msg, Throwable cause)
+    DecoderException(final String msg, final Throwable cause)
     {
         super(msg);
 
         this.cause = cause;
     }
 
+    @Override
     public Throwable getCause()
     {
         return cause;

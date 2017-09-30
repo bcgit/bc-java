@@ -1,22 +1,26 @@
 package com.github.gv2011.asn1;
 
+import static com.github.gv2011.util.bytes.ByteUtils.emptyBytes;
+import static com.github.gv2011.util.bytes.ByteUtils.newBytes;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
 import com.github.gv2011.asn1.util.io.Streams;
+import com.github.gv2011.util.bytes.Bytes;
 
 class DefiniteLengthInputStream
         extends LimitedInputStream
 {
-    private static final byte[] EMPTY_BYTES = new byte[0];
+    private static final Bytes EMPTY_BYTES = emptyBytes();
 
     private final int _originalLength;
     private int _remaining;
 
     DefiniteLengthInputStream(
-        InputStream in,
-        int         length)
+        final InputStream in,
+        final int         length)
     {
         super(in, length);
 
@@ -25,8 +29,8 @@ class DefiniteLengthInputStream
             throw new IllegalArgumentException("negative lengths not allowed");
         }
 
-        this._originalLength = length;
-        this._remaining = length;
+        _originalLength = length;
+        _remaining = length;
 
         if (length == 0)
         {
@@ -34,11 +38,13 @@ class DefiniteLengthInputStream
         }
     }
 
+    @Override
     int getRemaining()
     {
         return _remaining;
     }
 
+    @Override
     public int read()
         throws IOException
     {
@@ -47,7 +53,7 @@ class DefiniteLengthInputStream
             return -1;
         }
 
-        int b = _in.read();
+        final int b = _in.read();
 
         if (b < 0)
         {
@@ -62,7 +68,8 @@ class DefiniteLengthInputStream
         return b;
     }
 
-    public int read(byte[] buf, int off, int len)
+    @Override
+    public int read(final byte[] buf, final int off, final int len)
         throws IOException
     {
         if (_remaining == 0)
@@ -70,8 +77,8 @@ class DefiniteLengthInputStream
             return -1;
         }
 
-        int toRead = Math.min(len, _remaining);
-        int numRead = _in.read(buf, off, toRead);
+        final int toRead = Math.min(len, _remaining);
+        final int numRead = _in.read(buf, off, toRead);
 
         if (numRead < 0)
         {
@@ -86,20 +93,18 @@ class DefiniteLengthInputStream
         return numRead;
     }
 
-    byte[] toByteArray()
-        throws IOException
-    {
+    Bytes toByteArray(){
         if (_remaining == 0)
         {
             return EMPTY_BYTES;
         }
 
-        byte[] bytes = new byte[_remaining];
+        final byte[] bytes = new byte[_remaining];
         if ((_remaining -= Streams.readFully(_in, bytes)) != 0)
         {
-            throw new EOFException("DEF length " + _originalLength + " object truncated by " + _remaining);
+            throw new ASN1Exception("DEF length " + _originalLength + " object truncated by " + _remaining);
         }
         setParentEofDetect(true);
-        return bytes;
+        return newBytes(bytes);
     }
 }

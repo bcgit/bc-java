@@ -1,10 +1,13 @@
 package com.github.gv2011.asn1;
 
+import static com.github.gv2011.util.ex.Exceptions.call;
+
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 
 /**
+ * TODO: Does not close streams properly. See @SuppressWarnings("resource").
+ *
  * A parser for ASN.1 streams which also returns, where possible, parsers for the objects it encounters.
  */
 public class ASN1StreamParser
@@ -14,28 +17,28 @@ public class ASN1StreamParser
     private final byte[][] tmpBuffers;
 
     public ASN1StreamParser(
-        InputStream in)
+        final InputStream in)
     {
         this(in, StreamUtil.findLimit(in));
     }
 
     public ASN1StreamParser(
-        InputStream in,
-        int         limit)
+        final InputStream in,
+        final int         limit)
     {
-        this._in = in;
-        this._limit = limit;
+        _in = in;
+        _limit = limit;
 
-        this.tmpBuffers = new byte[11][];
+        tmpBuffers = new byte[11][];
     }
 
     public ASN1StreamParser(
-        byte[] encoding)
+        final byte[] encoding)
     {
         this(new ByteArrayInputStream(encoding), encoding.length);
     }
 
-    ASN1Encodable readIndef(int tagValue) throws IOException
+    ASN1Encodable readIndef(final int tagValue)
     {
         // Note: INDEF => CONSTRUCTED
 
@@ -55,15 +58,15 @@ public class ASN1StreamParser
         }
     }
 
-    ASN1Encodable readImplicit(boolean constructed, int tag) throws IOException
+    ASN1Encodable readImplicit(final boolean constructed, final int tag)
     {
         if (_in instanceof IndefiniteLengthInputStream)
         {
             if (!constructed)
             {
-                throw new IOException("indefinite-length primitive encoding encountered");
+                throw new ASN1Exception("indefinite-length primitive encoding encountered");
             }
-            
+
             return readIndef(tag);
         }
 
@@ -95,16 +98,16 @@ public class ASN1StreamParser
         throw new ASN1Exception("implicit tagging not implemented");
     }
 
-    ASN1Primitive readTaggedObject(boolean constructed, int tag) throws IOException
+    ASN1Primitive readTaggedObject(final boolean constructed, final int tag)
     {
         if (!constructed)
         {
             // Note: !CONSTRUCTED => IMPLICIT
-            DefiniteLengthInputStream defIn = (DefiniteLengthInputStream)_in;
+            final DefiniteLengthInputStream defIn = (DefiniteLengthInputStream)_in;
             return new DERTaggedObject(false, tag, new DEROctetString(defIn.toByteArray()));
         }
 
-        ASN1EncodableVector v = readVector();
+        final ASN1EncodableVector v = readVector();
 
         if (_in instanceof IndefiniteLengthInputStream)
         {
@@ -118,10 +121,9 @@ public class ASN1StreamParser
             :   new DERTaggedObject(false, tag, DERFactory.createSequence(v));
     }
 
-    public ASN1Encodable readObject()
-        throws IOException
-    {
-        int tag = _in.read();
+    @SuppressWarnings("resource")
+    public ASN1Encodable readObject(){
+        final int tag = call(_in::read);
         if (tag == -1)
         {
             return null;
@@ -135,24 +137,24 @@ public class ASN1StreamParser
         //
         // calculate tag number
         //
-        int tagNo = ASN1InputStream.readTagNumber(_in, tag);
+        final int tagNo = ASN1InputStream.readTagNumber(_in, tag);
 
-        boolean isConstructed = (tag & BERTags.CONSTRUCTED) != 0;
+        final boolean isConstructed = (tag & BERTags.CONSTRUCTED) != 0;
 
         //
         // calculate length
         //
-        int length = ASN1InputStream.readLength(_in, _limit);
+        final int length = ASN1InputStream.readLength(_in, _limit);
 
         if (length < 0) // indefinite-length method
         {
             if (!isConstructed)
             {
-                throw new IOException("indefinite-length primitive encoding encountered");
+                throw new ASN1Exception("indefinite-length primitive encoding encountered");
             }
 
-            IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(_in, _limit);
-            ASN1StreamParser sp = new ASN1StreamParser(indIn, _limit);
+            final IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(_in, _limit);
+            final ASN1StreamParser sp = new ASN1StreamParser(indIn, _limit);
 
             if ((tag & BERTags.APPLICATION) != 0)
             {
@@ -168,7 +170,7 @@ public class ASN1StreamParser
         }
         else
         {
-            DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(_in, length);
+            final DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(_in, length);
 
             if ((tag & BERTags.APPLICATION) != 0)
             {
@@ -197,7 +199,7 @@ public class ASN1StreamParser
                     case BERTags.EXTERNAL:
                         return new DERExternalParser(new ASN1StreamParser(defIn));
                     default:
-                        throw new IOException("unknown tag " + tagNo + " encountered");
+                        throw new ASN1Exception("unknown tag " + tagNo + " encountered");
                 }
             }
 
@@ -212,14 +214,14 @@ public class ASN1StreamParser
             {
                 return ASN1InputStream.createPrimitiveDERObject(tagNo, defIn, tmpBuffers);
             }
-            catch (IllegalArgumentException e)
+            catch (final IllegalArgumentException e)
             {
                 throw new ASN1Exception("corrupted stream detected", e);
             }
         }
     }
 
-    private void set00Check(boolean enabled)
+    private void set00Check(final boolean enabled)
     {
         if (_in instanceof IndefiniteLengthInputStream)
         {
@@ -227,9 +229,8 @@ public class ASN1StreamParser
         }
     }
 
-    ASN1EncodableVector readVector() throws IOException
-    {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+    ASN1EncodableVector readVector(){
+        final ASN1EncodableVector v = new ASN1EncodableVector();
 
         ASN1Encodable obj;
         while ((obj = readObject()) != null)

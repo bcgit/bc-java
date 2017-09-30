@@ -1,6 +1,5 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
 import java.util.Enumeration;
 
 public class DERSequence
@@ -51,7 +50,7 @@ public class DERSequence
         {
             int length = 0;
 
-            for (final Enumeration e = getObjects(); e.hasMoreElements();)
+            for (final Enumeration<?> e = getObjects(); e.hasMoreElements();)
             {
                 final Object    obj = e.nextElement();
 
@@ -90,7 +89,7 @@ public class DERSequence
         out.write(BERTags.SEQUENCE | BERTags.CONSTRUCTED);
         out.writeLength(length);
 
-        for (final Enumeration e = getObjects(); e.hasMoreElements();)
+        for (final Enumeration<?> e = getObjects(); e.hasMoreElements();)
         {
             final Object    obj = e.nextElement();
 

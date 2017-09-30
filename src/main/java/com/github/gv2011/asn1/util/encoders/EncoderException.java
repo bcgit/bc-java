@@ -6,15 +6,18 @@ package com.github.gv2011.asn1.util.encoders;
 public class EncoderException
     extends IllegalStateException
 {
-    private Throwable cause;
+    private static final long serialVersionUID = -3643553776450726733L;
 
-    EncoderException(String msg, Throwable cause)
+    private final Throwable cause;
+
+    EncoderException(final String msg, final Throwable cause)
     {
         super(msg);
 
         this.cause = cause;
     }
 
+    @Override
     public Throwable getCause()
     {
         return cause;

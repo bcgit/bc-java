@@ -11,6 +11,7 @@ public class DEREncodableVector
     /**
      * @deprecated use ASN1EncodableVector instead.
      */
+    @Deprecated
     public DEREncodableVector()
     {
 

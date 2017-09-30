@@ -1,9 +1,8 @@
 package com.github.gv2011.asn1;
 
-import static com.github.gv2011.util.ex.Exceptions.run;
+import static com.github.gv2011.util.bytes.ByteUtils.newBytesBuilder;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import com.github.gv2011.util.bytes.BytesBuilder;
 
 /**
  * Class representing the DER-type External
@@ -127,7 +126,7 @@ public class DERExternal
     @Override
     int encodedLength()
     {
-        return this.getEncoded().length;
+        return this.getEncoded().size();
     }
 
     /* (non-Javadoc)
@@ -136,22 +135,22 @@ public class DERExternal
     @Override
     void encode(final ASN1OutputStream out)
     {
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        final BytesBuilder baos = newBytesBuilder();
         if (directReference != null)
         {
-            run(()->baos.write(directReference.getEncoded(ASN1Encoding.DER)));
+            directReference.getEncoded(ASN1Encoding.DER).write(baos);
         }
         if (indirectReference != null)
         {
-          run(()->baos.write(indirectReference.getEncoded(ASN1Encoding.DER)));
+          indirectReference.getEncoded(ASN1Encoding.DER).write(baos);
         }
         if (dataValueDescriptor != null)
         {
-          run(()->baos.write(dataValueDescriptor.getEncoded(ASN1Encoding.DER)));
+          dataValueDescriptor.getEncoded(ASN1Encoding.DER).write(baos);
         }
         final DERTaggedObject obj = new DERTaggedObject(true, encoding, externalContent);
-        run(()->baos.write(obj.getEncoded(ASN1Encoding.DER)));
-        out.writeEncoded(BERTags.CONSTRUCTED, BERTags.EXTERNAL, baos.toByteArray());
+        obj.getEncoded(ASN1Encoding.DER).write(baos);
+        out.writeEncoded(BERTags.CONSTRUCTED, BERTags.EXTERNAL, baos.build());
     }
 
     /* (non-Javadoc)

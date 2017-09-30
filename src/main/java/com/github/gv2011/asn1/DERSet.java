@@ -1,6 +1,5 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
 import java.util.Enumeration;
 
 /**
@@ -61,7 +60,7 @@ public class DERSet
         {
             int length = 0;
 
-            for (final Enumeration e = getObjects(); e.hasMoreElements();)
+            for (final Enumeration<?> e = getObjects(); e.hasMoreElements();)
             {
                 final Object    obj = e.nextElement();
 
@@ -100,7 +99,7 @@ public class DERSet
         out.write(BERTags.SET | BERTags.CONSTRUCTED);
         out.writeLength(length);
 
-        for (final Enumeration e = getObjects(); e.hasMoreElements();)
+        for (final Enumeration<?> e = getObjects(); e.hasMoreElements();)
         {
             final Object    obj = e.nextElement();
 

@@ -5,8 +5,8 @@ package com.github.gv2011.asn1.util.io.pem;
  */
 public class PemHeader
 {
-    private String name;
-    private String value;
+    private final String name;
+    private final String value;
 
     /**
      * Base constructor.
@@ -14,7 +14,7 @@ public class PemHeader
      * @param name name of the header property.
      * @param value value of the header property.
      */
-    public PemHeader(String name, String value)
+    public PemHeader(final String name, final String value)
     {
         this.name = name;
         this.value = value;
@@ -30,24 +30,26 @@ public class PemHeader
         return value;
     }
 
+    @Override
     public int hashCode()
     {
-        return getHashCode(this.name) + 31 * getHashCode(this.value);    
+        return getHashCode(name) + 31 * getHashCode(value);
     }
 
-    public boolean equals(Object o)
+    @Override
+    public boolean equals(final Object o)
     {
         if (!(o instanceof PemHeader))
         {
             return false;
         }
 
-        PemHeader other = (PemHeader)o;
+        final PemHeader other = (PemHeader)o;
 
-        return other == this || (isEqual(this.name, other.name) && isEqual(this.value, other.value));
+        return other == this || (isEqual(name, other.name) && isEqual(value, other.value));
     }
 
-    private int getHashCode(String s)
+    private int getHashCode(final String s)
     {
         if (s == null)
         {
@@ -57,7 +59,7 @@ public class PemHeader
         return s.hashCode();
     }
 
-    private boolean isEqual(String s1, String s2)
+    private boolean isEqual(final String s1, final String s2)
     {
         if (s1 == s2)
         {

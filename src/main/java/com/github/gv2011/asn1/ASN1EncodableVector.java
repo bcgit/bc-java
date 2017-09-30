@@ -6,6 +6,7 @@ import java.util.Vector;
 /**
  * Mutable class for building ASN.1 constructed objects.
  */
+@SuppressWarnings("rawtypes")
 public class ASN1EncodableVector
 {
     private final Vector v = new Vector();
@@ -22,7 +23,8 @@ public class ASN1EncodableVector
      *
      * @param obj the encodable to add.
      */
-    public void add(ASN1Encodable obj)
+    @SuppressWarnings("unchecked")
+    public void add(final ASN1Encodable obj)
     {
         v.addElement(obj);
     }
@@ -32,9 +34,10 @@ public class ASN1EncodableVector
      *
      * @param other the vector to add.
      */
-    public void addAll(ASN1EncodableVector other)
+    @SuppressWarnings("unchecked")
+    public void addAll(final ASN1EncodableVector other)
     {
-        for (Enumeration en = other.v.elements(); en.hasMoreElements();)
+        for (final Enumeration en = other.v.elements(); en.hasMoreElements();)
         {
             v.addElement(en.nextElement());
         }
@@ -46,7 +49,7 @@ public class ASN1EncodableVector
      * @param i the index of the object of interest.
      * @return the object at position i.
      */
-    public ASN1Encodable get(int i)
+    public ASN1Encodable get(final int i)
     {
         return (ASN1Encodable)v.elementAt(i);
     }

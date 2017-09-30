@@ -1,9 +1,13 @@
 package com.github.gv2011.asn1;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import static com.github.gv2011.util.bytes.ByteUtils.newBytes;
+import static com.github.gv2011.util.bytes.ByteUtils.newBytesBuilder;
+
 import java.util.Enumeration;
 import java.util.Vector;
+
+import com.github.gv2011.util.bytes.Bytes;
+import com.github.gv2011.util.bytes.BytesBuilder;
 
 /**
  * @deprecated use BEROctetString
@@ -17,10 +21,11 @@ public class BERConstructedOctetString
     /**
      * convert a vector of octet strings into a single byte string
      */
-    static private byte[] toBytes(
+    @SuppressWarnings("rawtypes")
+    static private Bytes toBytes(
         final Vector  octs)
     {
-        final ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
+      final BytesBuilder bOut = newBytesBuilder();
 
         for (int i = 0; i != octs.size(); i++)
         {
@@ -28,32 +33,29 @@ public class BERConstructedOctetString
             {
                 final DEROctetString  o = (DEROctetString)octs.elementAt(i);
 
-                bOut.write(o.getOctets());
+                o.getOctets().write(bOut);
             }
-            catch (final ClassCastException e)
-            {
-                throw new IllegalArgumentException(octs.elementAt(i).getClass().getName() + " found in input should only contain DEROctetString");
-            }
-            catch (final IOException e)
-            {
-                throw new IllegalArgumentException("exception converting octets " + e.toString());
+            catch (final ClassCastException e){
+              throw new IllegalArgumentException(
+                octs.elementAt(i).getClass().getName() + " found in input should only contain DEROctetString"
+              );
             }
         }
 
-        return bOut.toByteArray();
+        return bOut.build();
     }
 
+    @SuppressWarnings("rawtypes")
     private Vector  octs;
 
     /**
      * @param string the octets making up the octet string.
      */
-    public BERConstructedOctetString(
-        final byte[]  string)
-    {
+    public BERConstructedOctetString(final Bytes string){
         super(string);
     }
 
+    @SuppressWarnings("rawtypes")
     public BERConstructedOctetString(
         final Vector  octs)
     {
@@ -62,15 +64,8 @@ public class BERConstructedOctetString
         this.octs = octs;
     }
 
-    public BERConstructedOctetString(
-        final ASN1Primitive  obj)
-    {
-        super(toByteArray(obj));
-    }
-
-    private static byte[] toByteArray(final ASN1Primitive obj)
-    {
-        return obj.getEncoded();
+    public BERConstructedOctetString(final ASN1Primitive obj) {
+        super(obj.getEncoded());
     }
 
     public BERConstructedOctetString(
@@ -79,15 +74,11 @@ public class BERConstructedOctetString
         this(obj.toASN1Primitive());
     }
 
-    @Override
-    public byte[] getOctets()
-    {
-        return string;
-    }
 
     /**
      * return the DER octets that make up this string.
      */
+    @SuppressWarnings("rawtypes")
     @Override
     public Enumeration getObjects()
     {
@@ -99,16 +90,17 @@ public class BERConstructedOctetString
         return octs.elements();
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private Vector generateOcts()
     {
         final Vector vec = new Vector();
-        for (int i = 0; i < string.length; i += MAX_LENGTH)
+        for (int i = 0; i < string.size(); i += MAX_LENGTH)
         {
             int end;
 
-            if (i + MAX_LENGTH > string.length)
+            if (i + MAX_LENGTH > string.size())
             {
-                end = string.length;
+                end = string.size();
             }
             else
             {
@@ -119,12 +111,13 @@ public class BERConstructedOctetString
 
             System.arraycopy(string, i, nStr, 0, nStr.length);
 
-            vec.addElement(new DEROctetString(nStr));
+            vec.addElement(new DEROctetString(newBytes(nStr)));
          }
 
          return vec;
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public static BEROctetString fromSequence(final ASN1Sequence seq)
     {
         final Vector      v = new Vector();

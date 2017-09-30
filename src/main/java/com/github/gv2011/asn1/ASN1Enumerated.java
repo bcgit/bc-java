@@ -1,9 +1,10 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
+import static com.github.gv2011.util.bytes.ByteUtils.fromBigInteger;
+
 import java.math.BigInteger;
 
-import com.github.gv2011.asn1.util.Arrays;
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * Class representing the ASN.1 ENUMERATED type.
@@ -11,7 +12,7 @@ import com.github.gv2011.asn1.util.Arrays;
 public class ASN1Enumerated
     extends ASN1Primitive
 {
-    private final byte[] bytes;
+    private final Bytes bytes;
 
     /**
      * return an enumerated from the passed in object
@@ -28,11 +29,11 @@ public class ASN1Enumerated
             return (ASN1Enumerated)obj;
         }
 
-        if (obj instanceof byte[])
+        if (obj instanceof Bytes)
         {
             try
             {
-                return (ASN1Enumerated)fromByteArray((byte[])obj);
+                return (ASN1Enumerated)fromByteArray((Bytes)obj);
             }
             catch (final Exception e)
             {
@@ -69,26 +70,12 @@ public class ASN1Enumerated
         }
     }
 
-    /**
-     * Constructor from int.
-     *
-     * @param value the value of this enumerated.
-     */
-    public ASN1Enumerated(
-        final int         value)
-    {
-        bytes = BigInteger.valueOf(value).toByteArray();
+    public ASN1Enumerated(final int value){
+      this(BigInteger.valueOf(value));
     }
 
-    /**
-     * Constructor from BigInteger
-     *
-     * @param value the value of this enumerated.
-     */
-    public ASN1Enumerated(
-        final BigInteger   value)
-    {
-        bytes = value.toByteArray();
+    public ASN1Enumerated(final BigInteger value){
+      bytes = fromBigInteger(value);
     }
 
     /**
@@ -96,15 +83,12 @@ public class ASN1Enumerated
      *
      * @param bytes the value of this enumerated as an encoded BigInteger (signed).
      */
-    public ASN1Enumerated(
-        final byte[]   bytes)
-    {
-        this.bytes = bytes;
+    public ASN1Enumerated(final Bytes bytes){
+      this.bytes = bytes;
     }
 
-    public BigInteger getValue()
-    {
-        return new BigInteger(bytes);
+    public BigInteger getValue(){
+      return new BigInteger(bytes.toByteArray());
     }
 
     @Override
@@ -116,7 +100,7 @@ public class ASN1Enumerated
     @Override
     int encodedLength()
     {
-        return 1 + StreamUtil.calculateBodyLength(bytes.length) + bytes.length;
+        return 1 + StreamUtil.calculateBodyLength(bytes.size()) + bytes.size();
     }
 
     @Override
@@ -137,40 +121,39 @@ public class ASN1Enumerated
 
         final ASN1Enumerated other = (ASN1Enumerated)o;
 
-        return Arrays.areEqual(bytes, other.bytes);
+        return bytes.equals(other.bytes);
     }
 
     @Override
-    public int hashCode()
-    {
-        return Arrays.hashCode(bytes);
+    public int hashCode(){
+      return bytes.hashCode();
     }
 
     private static ASN1Enumerated[] cache = new ASN1Enumerated[12];
 
-    static ASN1Enumerated fromOctetString(final byte[] enc)
+    static ASN1Enumerated fromOctetString(final Bytes enc)
     {
-        if (enc.length > 1)
+        if (enc.size() > 1)
         {
-            return new ASN1Enumerated(Arrays.clone(enc));
+            return new ASN1Enumerated(enc);
         }
 
-        if (enc.length == 0)
+        if (enc.size() == 0)
         {
             throw new IllegalArgumentException("ENUMERATED has zero length");
         }
-        final int value = enc[0] & 0xff;
+        final int value = enc.getByte(0) & 0xff;
 
         if (value >= cache.length)
         {
-            return new ASN1Enumerated(Arrays.clone(enc));
+            return new ASN1Enumerated(enc);
         }
 
         ASN1Enumerated possibleMatch = cache[value];
 
         if (possibleMatch == null)
         {
-            possibleMatch = cache[value] = new ASN1Enumerated(Arrays.clone(enc));
+            possibleMatch = cache[value] = new ASN1Enumerated(enc);
         }
 
         return possibleMatch;

@@ -1,9 +1,7 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
-
-import com.github.gv2011.asn1.util.Arrays;
 import com.github.gv2011.asn1.util.Strings;
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * DER IA5String object - this is an ascii string.
@@ -12,7 +10,7 @@ public class DERIA5String
     extends ASN1Primitive
     implements ASN1String
 {
-    private final byte[]  string;
+    private final Bytes  string;
 
     /**
      * return a IA5 string from the passed in object
@@ -29,11 +27,11 @@ public class DERIA5String
             return (DERIA5String)obj;
         }
 
-        if (obj instanceof byte[])
+        if (obj instanceof Bytes)
         {
             try
             {
-                return (DERIA5String)fromByteArray((byte[])obj);
+                return (DERIA5String)fromByteArray((Bytes)obj);
             }
             catch (final Exception e)
             {
@@ -75,7 +73,7 @@ public class DERIA5String
      * @param string the byte encoding of the characters making up the string.
      */
     DERIA5String(
-        final byte[]   string)
+        final Bytes   string)
     {
         this.string = string;
     }
@@ -126,9 +124,9 @@ public class DERIA5String
         return getString();
     }
 
-    public byte[] getOctets()
+    public Bytes getOctets()
     {
-        return Arrays.clone(string);
+        return string;
     }
 
     @Override
@@ -140,7 +138,7 @@ public class DERIA5String
     @Override
     int encodedLength()
     {
-        return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
+        return 1 + StreamUtil.calculateBodyLength(string.size()) + string.size();
     }
 
     @Override
@@ -153,7 +151,7 @@ public class DERIA5String
     @Override
     public int hashCode()
     {
-        return Arrays.hashCode(string);
+        return string.hashCode();
     }
 
     @Override
@@ -167,7 +165,7 @@ public class DERIA5String
 
         final DERIA5String  s = (DERIA5String)o;
 
-        return Arrays.areEqual(string, s.string);
+        return string.equals(s.string);
     }
 
     /**

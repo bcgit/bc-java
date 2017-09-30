@@ -1,6 +1,5 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
 
 /**
  * Interface implemented by objects that can be converted from streaming to in-memory objects.
@@ -12,6 +11,5 @@ public interface InMemoryRepresentable
      * @return an ASN1Primitive representing the loaded object.
      * @throws IOException for bad input data.
      */
-    ASN1Primitive getLoadedObject()
-        throws IOException;
+    ASN1Primitive getLoadedObject();
 }

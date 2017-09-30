@@ -1,14 +1,17 @@
 package com.github.gv2011.asn1.util.encoders;
 
-import java.io.IOException;
+
+import static com.github.gv2011.util.ex.Exceptions.run;
+
 import java.io.OutputStream;
+
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * A streaming Hex encoder.
  */
-public class HexEncoder
-    implements Encoder
-{
+public class HexEncoder implements Encoder{
+
     protected final byte[] encodingTable =
     {
         (byte)'0', (byte)'1', (byte)'2', (byte)'3', (byte)'4', (byte)'5', (byte)'6', (byte)'7',
@@ -31,7 +34,7 @@ public class HexEncoder
         {
             decodingTable[encodingTable[i]] = (byte)i;
         }
-        
+
         decodingTable['A'] = decodingTable['a'];
         decodingTable['B'] = decodingTable['b'];
         decodingTable['C'] = decodingTable['c'];
@@ -39,37 +42,38 @@ public class HexEncoder
         decodingTable['E'] = decodingTable['e'];
         decodingTable['F'] = decodingTable['f'];
     }
-    
+
     public HexEncoder()
     {
         initialiseDecodingTable();
     }
-    
+
     /**
      * encode the input data producing a Hex output stream.
      *
      * @return the number of bytes produced.
      */
+    @Override
     public int encode(
-        byte[]                data,
-        int                    off,
-        int                    length,
-        OutputStream    out) 
-        throws IOException
-    {        
+        final Bytes                data,
+        final int                    off,
+        final int                    length,
+        final OutputStream    out)
+    {
         for (int i = off; i < (off + length); i++)
         {
-            int    v = data[i] & 0xff;
-
-            out.write(encodingTable[(v >>> 4)]);
-            out.write(encodingTable[v & 0xf]);
+            final int    v = data.getByte(i) & 0xff;
+            run(()->{
+              out.write(encodingTable[(v >>> 4)]);
+              out.write(encodingTable[v & 0xf]);
+            });
         }
 
         return length * 2;
     }
 
     private static boolean ignore(
-        char    c)
+        final char    c)
     {
         return c == '\n' || c =='\r' || c == '\t' || c == ' ';
     }
@@ -80,84 +84,84 @@ public class HexEncoder
      *
      * @return the number of bytes produced.
      */
+    @Override
     public int decode(
-        byte[]          data,
-        int             off,
-        int             length,
-        OutputStream    out)
-        throws IOException
+        final Bytes          data,
+        final int             off,
+        final int             length,
+        final OutputStream    out)
     {
-        byte    b1, b2;
         int     outLen = 0;
-        
+
         int     end = off + length;
-        
+
         while (end > off)
         {
-            if (!ignore((char)data[end - 1]))
+            if (!ignore((char)data.getByte(end - 1)))
             {
                 break;
             }
-            
+
             end--;
         }
-        
+
         int i = off;
         while (i < end)
         {
-            while (i < end && ignore((char)data[i]))
+            while (i < end && ignore((char)data.getByte(i)))
             {
                 i++;
             }
-            
-            b1 = decodingTable[data[i++]];
-            
-            while (i < end && ignore((char)data[i]))
+
+            final byte    b1, b2;
+
+            b1 = decodingTable[data.getByte(i++)];
+
+            while (i < end && ignore((char)data.getByte(i)))
             {
                 i++;
             }
-            
-            b2 = decodingTable[data[i++]];
+
+            b2 = decodingTable[data.getByte(i++)];
 
             if ((b1 | b2) < 0)
             {
-                throw new IOException("invalid characters encountered in Hex data");
+                throw new RuntimeException("invalid characters encountered in Hex data");
             }
 
-            out.write((b1 << 4) | b2);
-            
+            run(()->out.write((b1 << 4) | b2));
+
             outLen++;
         }
 
         return outLen;
     }
-    
+
     /**
      * decode the Hex encoded String data writing it to the given output stream,
      * whitespace characters will be ignored.
      *
      * @return the number of bytes produced.
      */
+    @Override
     public int decode(
-        String          data,
-        OutputStream    out)
-        throws IOException
+        final String          data,
+        final OutputStream    out)
     {
-        byte    b1, b2;
         int     length = 0;
-        
+
         int     end = data.length();
-        
+
         while (end > 0)
         {
             if (!ignore(data.charAt(end - 1)))
             {
                 break;
             }
-            
+
             end--;
         }
-        
+
         int i = 0;
         while (i < end)
         {
@@ -165,23 +169,24 @@ public class HexEncoder
             {
                 i++;
             }
-            
+
+            final byte    b1, b2;
             b1 = decodingTable[data.charAt(i++)];
-            
+
             while (i < end && ignore(data.charAt(i)))
             {
                 i++;
             }
-            
+
             b2 = decodingTable[data.charAt(i++)];
 
             if ((b1 | b2) < 0)
             {
-                throw new IOException("invalid characters encountered in Hex string");
+                throw new RuntimeException("invalid characters encountered in Hex string");
             }
 
-            out.write((b1 << 4) | b2);
-            
+            run(()->out.write((b1 << 4) | b2));
+
             length++;
         }
 

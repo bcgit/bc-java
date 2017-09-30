@@ -10,12 +10,14 @@ package com.github.gv2011.asn1.util;
 public class MemoableResetException
     extends ClassCastException
 {
+  private static final long serialVersionUID = -1011367661083793500L;
+
     /**
      * Basic Constructor.
      *
      * @param msg message to be associated with this exception.
      */
-    public MemoableResetException(String msg)
+    public MemoableResetException(final String msg)
     {
         super(msg);
     }

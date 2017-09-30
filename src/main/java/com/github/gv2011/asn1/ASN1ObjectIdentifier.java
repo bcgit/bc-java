@@ -1,12 +1,15 @@
 package com.github.gv2011.asn1;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import static com.github.gv2011.util.bytes.ByteUtils.newBytesBuilder;
+
+
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.github.gv2011.asn1.util.Arrays;
+import com.github.gv2011.util.ann.Nullable;
+import com.github.gv2011.util.bytes.Bytes;
+import com.github.gv2011.util.bytes.BytesBuilder;
 
 /**
  * Class representing the ASN.1 OBJECT IDENTIFIER type.
@@ -16,7 +19,7 @@ public class ASN1ObjectIdentifier
 {
     private final String identifier;
 
-    private byte[] body;
+    private @Nullable Bytes body;
 
     /**
      * return an OID from the passed in object
@@ -37,17 +40,10 @@ public class ASN1ObjectIdentifier
             return (ASN1ObjectIdentifier)((ASN1Encodable)obj).toASN1Primitive();
         }
 
-        if (obj instanceof byte[])
+        if (obj instanceof Bytes)
         {
-            final byte[] enc = (byte[])obj;
-            try
-            {
-                return (ASN1ObjectIdentifier)fromByteArray(enc);
-            }
-            catch (final IOException e)
-            {
-                throw new IllegalArgumentException("failed to construct object identifier from byte[]: " + e.getMessage());
-            }
+            final Bytes enc = (Bytes)obj;
+            return (ASN1ObjectIdentifier)fromByteArray(enc);
         }
 
         throw new IllegalArgumentException("illegal object in getInstance: " + obj.getClass().getName());
@@ -82,16 +78,16 @@ public class ASN1ObjectIdentifier
     private static final long LONG_LIMIT = (Long.MAX_VALUE >> 7) - 0x7f;
 
     ASN1ObjectIdentifier(
-        final byte[] bytes)
+        final Bytes bytes)
     {
         final StringBuffer objId = new StringBuffer();
         long value = 0;
         BigInteger bigValue = null;
         boolean first = true;
 
-        for (int i = 0; i != bytes.length; i++)
+        for (int i = 0; i != bytes.size(); i++)
         {
-            final int b = bytes[i] & 0xff;
+            final int b = bytes.getByte(i) & 0xff;
 
             if (value <= LONG_LIMIT)
             {
@@ -155,7 +151,7 @@ public class ASN1ObjectIdentifier
         }
 
         identifier = objId.toString();
-        body = Arrays.clone(bytes);
+        body = bytes;
     }
 
     /**
@@ -228,7 +224,7 @@ public class ASN1ObjectIdentifier
     }
 
     private void writeField(
-        final ByteArrayOutputStream out,
+        final BytesBuilder out,
         long fieldValue)
     {
         final byte[] result = new byte[9];
@@ -243,7 +239,7 @@ public class ASN1ObjectIdentifier
     }
 
     private void writeField(
-        final ByteArrayOutputStream out,
+        final BytesBuilder out,
         final BigInteger fieldValue)
     {
         final int byteCount = (fieldValue.bitLength() + 6) / 7;
@@ -265,7 +261,7 @@ public class ASN1ObjectIdentifier
         }
     }
 
-    private void doOutput(final ByteArrayOutputStream aOut)
+    private void doOutput(final BytesBuilder aOut)
     {
         final OIDTokenizer tok = new OIDTokenizer(identifier);
         final int first = Integer.parseInt(tok.nextToken()) * 40;
@@ -294,15 +290,15 @@ public class ASN1ObjectIdentifier
         }
     }
 
-    private synchronized byte[] getBody()
+    private synchronized Bytes getBody()
     {
         if (body == null)
         {
-            final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+            final BytesBuilder bOut = newBytesBuilder();
 
             doOutput(bOut);
 
-            body = bOut.toByteArray();
+            body = bOut.build();
         }
 
         return body;
@@ -317,7 +313,7 @@ public class ASN1ObjectIdentifier
     @Override
     int encodedLength()
     {
-        final int length = getBody().length;
+        final int length = getBody().size();
 
         return 1 + StreamUtil.calculateBodyLength(length) + length;
     }
@@ -326,10 +322,10 @@ public class ASN1ObjectIdentifier
     void encode(
         final ASN1OutputStream out)
     {
-        final byte[] enc = getBody();
+        final Bytes enc = getBody();
 
         out.write(BERTags.OBJECT_IDENTIFIER);
-        out.writeLength(enc.length);
+        out.writeLength(enc.size());
         out.write(enc);
     }
 
@@ -422,6 +418,7 @@ public class ASN1ObjectIdentifier
      * </p>
      * @return a reference to the identifier in the pool.
      */
+    @SuppressWarnings("unchecked")
     public ASN1ObjectIdentifier intern()
     {
         synchronized (pool)
@@ -441,16 +438,17 @@ public class ASN1ObjectIdentifier
         }
     }
 
+    @SuppressWarnings("rawtypes")
     private static final Map pool = new HashMap();
 
     private static class OidHandle
     {
         private final int key;
-        private final byte[] enc;
+        private final Bytes enc;
 
-        OidHandle(final byte[] enc)
+        OidHandle(final Bytes enc)
         {
-            key = Arrays.hashCode(enc);
+            key = enc.hashCode();
             this.enc = enc;
         }
 
@@ -465,14 +463,14 @@ public class ASN1ObjectIdentifier
         {
             if (o instanceof OidHandle)
             {
-                return Arrays.areEqual(enc, ((OidHandle)o).enc);
+                return enc.equals(((OidHandle)o).enc);
             }
 
             return false;
         }
     }
 
-    static ASN1ObjectIdentifier fromOctetString(final byte[] enc)
+    static ASN1ObjectIdentifier fromOctetString(final Bytes enc)
     {
         final OidHandle hdl = new OidHandle(enc);
 

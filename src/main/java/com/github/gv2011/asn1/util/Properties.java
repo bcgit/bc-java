@@ -13,22 +13,17 @@ public class Properties
     {
         try
         {
-            return "true".equals(AccessController.doPrivileged(new PrivilegedAction()
-            {
-                // JDK 1.4 compatibility
-                public Object run()
+            return "true".equals(AccessController.doPrivileged((PrivilegedAction<?>) () -> {
+                final String value = System.getProperty(propertyName);
+                if (value == null)
                 {
-                    String value = System.getProperty(propertyName);
-                    if (value == null)
-                    {
-                        return null;
-                    }
-
-                    return Strings.toLowerCase(value);
+                    return null;
                 }
+
+                return Strings.toLowerCase(value);
             }));
         }
-        catch (AccessControlException e)
+        catch (final AccessControlException e)
         {
             return false;
         }

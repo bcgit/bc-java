@@ -1,11 +1,12 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
+
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Vector;
 
 import com.github.gv2011.asn1.util.Arrays;
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * ASN.1 <code>SET</code> and <code>SET OF</code> constructs.
@@ -98,7 +99,7 @@ public abstract class ASN1Set
     extends ASN1Primitive
     implements com.github.gv2011.asn1.util.Iterable<ASN1Encodable>
 {
-    private Vector set = new Vector();
+    private Vector<Object> set = new Vector<>();
     private boolean isSorted = false;
 
     /**
@@ -119,16 +120,9 @@ public abstract class ASN1Set
         {
             return ASN1Set.getInstance(((ASN1SetParser)obj).toASN1Primitive());
         }
-        else if (obj instanceof byte[])
+        else if (obj instanceof Bytes)
         {
-            try
-            {
-                return ASN1Set.getInstance(ASN1Primitive.fromByteArray((byte[])obj));
-            }
-            catch (final IOException e)
-            {
-                throw new IllegalArgumentException("failed to construct set from byte[]: " + e.getMessage());
-            }
+            return ASN1Set.getInstance(ASN1Primitive.fromByteArray((Bytes)obj));
         }
         else if (obj instanceof ASN1Encodable)
         {
@@ -273,7 +267,7 @@ public abstract class ASN1Set
         }
     }
 
-    public Enumeration getObjects()
+    public Enumeration<Object> getObjects()
     {
         return set.elements();
     }
@@ -323,7 +317,7 @@ public abstract class ASN1Set
             private int index;
 
             @Override
-            public ASN1Encodable readObject() throws IOException
+            public ASN1Encodable readObject()
             {
                 if (index == max)
                 {
@@ -360,7 +354,7 @@ public abstract class ASN1Set
     @Override
     public int hashCode()
     {
-        final Enumeration             e = getObjects();
+        final Enumeration<Object>             e = getObjects();
         int                     hashCode = size();
 
         while (e.hasMoreElements())
@@ -391,7 +385,7 @@ public abstract class ASN1Set
         }
         else
         {
-            final Vector v = new Vector();
+            final Vector<Object> v = new Vector<>();
 
             for (int i = 0; i != set.size(); i++)
             {
@@ -438,8 +432,8 @@ public abstract class ASN1Set
             return false;
         }
 
-        final Enumeration s1 = getObjects();
-        final Enumeration s2 = other.getObjects();
+        final Enumeration<Object> s1 = getObjects();
+        final Enumeration<Object> s2 = other.getObjects();
 
         while (s1.hasMoreElements())
         {
@@ -460,7 +454,7 @@ public abstract class ASN1Set
         return true;
     }
 
-    private ASN1Encodable getNext(final Enumeration e)
+    private ASN1Encodable getNext(final Enumeration<Object> e)
     {
         final ASN1Encodable encObj = (ASN1Encodable)e.nextElement();
 
@@ -477,21 +471,21 @@ public abstract class ASN1Set
      * return true if a <= b (arrays are assumed padded with zeros).
      */
     private boolean lessThanOrEqual(
-         final byte[] a,
-         final byte[] b)
+         final Bytes a,
+         final Bytes b)
     {
-        final int len = Math.min(a.length, b.length);
+        final int len = Math.min(a.size(), b.size());
         for (int i = 0; i != len; ++i)
         {
-            if (a[i] != b[i])
+            if (a.getByte(i) != b.getByte(i))
             {
-                return (a[i] & 0xff) < (b[i] & 0xff);
+                return (a.getByte(i) & 0xff) < (b.getByte(i) & 0xff);
             }
         }
-        return len == a.length;
+        return len == a.size();
     }
 
-    private byte[] getDEREncoded(
+    private Bytes getDEREncoded(
         final ASN1Encodable obj)
     {
             return obj.toASN1Primitive().getEncoded(ASN1Encoding.DER);
@@ -511,13 +505,13 @@ public abstract class ASN1Set
                 {
                     int    index = 0;
                     int    swapIndex = 0;
-                    byte[] a = getDEREncoded((ASN1Encodable)set.elementAt(0));
+                    Bytes a = getDEREncoded((ASN1Encodable)set.elementAt(0));
 
                     swapped = false;
 
                     while (index != lastSwap)
                     {
-                        final byte[] b = getDEREncoded((ASN1Encodable)set.elementAt(index + 1));
+                        final Bytes b = getDEREncoded((ASN1Encodable)set.elementAt(index + 1));
 
                         if (lessThanOrEqual(a, b))
                         {

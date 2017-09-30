@@ -1,10 +1,12 @@
 package com.github.gv2011.asn1.util.encoders;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import static com.github.gv2011.util.bytes.ByteUtils.newBytesBuilder;
+
 import java.io.OutputStream;
 
 import com.github.gv2011.asn1.util.Strings;
+import com.github.gv2011.util.bytes.Bytes;
+import com.github.gv2011.util.bytes.BytesBuilder;
 
 /**
  * Utility class for converting Base64 data to bytes and back again.
@@ -12,19 +14,19 @@ import com.github.gv2011.asn1.util.Strings;
 public class Base64
 {
     private static final Encoder encoder = new Base64Encoder();
-    
+
     public static String toBase64String(
-        byte[] data)
+        final Bytes data)
     {
-        return toBase64String(data, 0, data.length);
+        return toBase64String(data, 0, data.size());
     }
 
     public static String toBase64String(
-        byte[] data,
-        int    off,
-        int    length)
+        final Bytes data,
+        final int    off,
+        final int    length)
     {
-        byte[] encoded = encode(data, off, length);
+        final Bytes encoded = encode(data, off, length);
         return Strings.fromByteArray(encoded);
     }
 
@@ -33,10 +35,10 @@ public class Base64
      *
      * @return a byte array containing the base 64 encoded data.
      */
-    public static byte[] encode(
-        byte[]    data)
+    public static Bytes encode(
+        final Bytes    data)
     {
-        return encode(data, 0, data.length);
+        return encode(data, 0, data.size());
     }
 
     /**
@@ -44,24 +46,24 @@ public class Base64
      *
      * @return a byte array containing the base 64 encoded data.
      */
-    public static byte[] encode(
-        byte[] data,
-        int    off,
-        int    length)
+    public static Bytes encode(
+        final Bytes data,
+        final int    off,
+        final int    length)
     {
-        int len = (length + 2) / 3 * 4;
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream(len);
+        final int len = (length + 2) / 3 * 4;
+        final BytesBuilder bOut = newBytesBuilder(len);
 
         try
         {
             encoder.encode(data, off, length, bOut);
         }
-        catch (Exception e)
+        catch (final Exception e)
         {
             throw new EncoderException("exception encoding base64 string: " + e.getMessage(), e);
         }
-        
-        return bOut.toByteArray();
+
+        return bOut.build();
     }
 
     /**
@@ -70,74 +72,72 @@ public class Base64
      * @return the number of bytes produced.
      */
     public static int encode(
-        byte[]                data,
-        OutputStream    out)
-        throws IOException
+        final Bytes                data,
+        final OutputStream    out)
     {
-        return encoder.encode(data, 0, data.length, out);
+        return encoder.encode(data, 0, data.size(), out);
     }
-    
+
     /**
      * Encode the byte data to base 64 writing it to the given output stream.
      *
      * @return the number of bytes produced.
      */
     public static int encode(
-        byte[]                data,
-        int                    off,
-        int                    length,
-        OutputStream    out)
-        throws IOException
+        final Bytes                data,
+        final int                    off,
+        final int                    length,
+        final OutputStream    out)
     {
         return encoder.encode(data, off, length, out);
     }
-    
+
     /**
      * decode the base 64 encoded input data. It is assumed the input data is valid.
      *
      * @return a byte array representing the decoded data.
      */
-    public static byte[] decode(
-        byte[]    data)
+    public static Bytes decode(
+        final Bytes    data)
     {
-        int len = data.length / 4 * 3;
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream(len);
-        
+        final int len = data.size() / 4 * 3;
+        final BytesBuilder bOut = newBytesBuilder(len);
+
         try
         {
-            encoder.decode(data, 0, data.length, bOut);
+            encoder.decode(data, 0, data.size(), bOut);
         }
-        catch (Exception e)
+        catch (final Exception e)
         {
             throw new DecoderException("unable to decode base64 data: " + e.getMessage(), e);
         }
-        
-        return bOut.toByteArray();
+
+        return bOut.build();
     }
-    
+
     /**
      * decode the base 64 encoded String data - whitespace will be ignored.
      *
      * @return a byte array representing the decoded data.
      */
-    public static byte[] decode(
-        String    data)
+    public static Bytes decode(
+        final String    data)
     {
-        int len = data.length() / 4 * 3;
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream(len);
-        
+        final int len = data.length() / 4 * 3;
+        final BytesBuilder bOut = newBytesBuilder(len);
+
         try
         {
             encoder.decode(data, bOut);
         }
-        catch (Exception e)
+        catch (final Exception e)
         {
             throw new DecoderException("unable to decode base64 string: " + e.getMessage(), e);
         }
-        
-        return bOut.toByteArray();
+
+        return bOut.build();
     }
-    
+
     /**
      * decode the base 64 encoded String data writing it to the given output stream,
      * whitespace characters will be ignored.
@@ -145,9 +145,8 @@ public class Base64
      * @return the number of bytes produced.
      */
     public static int decode(
-        String                data,
-        OutputStream    out)
-        throws IOException
+        final String                data,
+        final OutputStream    out)
     {
         return encoder.decode(data, out);
     }

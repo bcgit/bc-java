@@ -1,6 +1,5 @@
 package com.github.gv2011.asn1.dump;
 
-import java.io.IOException;
 import java.util.Enumeration;
 
 import com.github.gv2011.asn1.ASN1ApplicationSpecific;
@@ -37,6 +36,7 @@ import com.github.gv2011.asn1.DERVideotexString;
 import com.github.gv2011.asn1.DERVisibleString;
 import com.github.gv2011.asn1.util.Strings;
 import com.github.gv2011.asn1.util.encoders.Hex;
+import com.github.gv2011.util.bytes.Bytes;
 
 public class ASN1Dump
 {
@@ -49,16 +49,16 @@ public class ASN1Dump
      * @param obj the ASN1Primitive to be dumped out.
      */
     static void _dumpAsString(
-        String      indent,
-        boolean     verbose,
-        ASN1Primitive obj,
-        StringBuffer    buf)
+        final String      indent,
+        final boolean     verbose,
+        final ASN1Primitive obj,
+        final StringBuffer    buf)
     {
-        String nl = Strings.lineSeparator();
+        final String nl = Strings.lineSeparator();
         if (obj instanceof ASN1Sequence)
         {
-            Enumeration     e = ((ASN1Sequence)obj).getObjects();
-            String          tab = indent + TAB;
+            final Enumeration<?>     e = ((ASN1Sequence)obj).getObjects();
+            final String          tab = indent + TAB;
 
             buf.append(indent);
             if (obj instanceof BERSequence)
@@ -78,7 +78,7 @@ public class ASN1Dump
 
             while (e.hasMoreElements())
             {
-                Object  o = e.nextElement();
+                final Object  o = e.nextElement();
 
                 if (o == null || o.equals(DERNull.INSTANCE))
                 {
@@ -98,7 +98,7 @@ public class ASN1Dump
         }
         else if (obj instanceof ASN1TaggedObject)
         {
-            String          tab = indent + TAB;
+            final String          tab = indent + TAB;
 
             buf.append(indent);
             if (obj instanceof BERTaggedObject)
@@ -110,7 +110,7 @@ public class ASN1Dump
                 buf.append("Tagged [");
             }
 
-            ASN1TaggedObject o = (ASN1TaggedObject)obj;
+            final ASN1TaggedObject o = (ASN1TaggedObject)obj;
 
             buf.append(Integer.toString(o.getTagNo()));
             buf.append(']');
@@ -135,8 +135,8 @@ public class ASN1Dump
         }
         else if (obj instanceof ASN1Set)
         {
-            Enumeration     e = ((ASN1Set)obj).getObjects();
-            String          tab = indent + TAB;
+            final Enumeration<?>     e = ((ASN1Set)obj).getObjects();
+            final String          tab = indent + TAB;
 
             buf.append(indent);
 
@@ -153,7 +153,7 @@ public class ASN1Dump
 
             while (e.hasMoreElements())
             {
-                Object  o = e.nextElement();
+                final Object  o = e.nextElement();
 
                 if (o == null)
                 {
@@ -173,15 +173,15 @@ public class ASN1Dump
         }
         else if (obj instanceof ASN1OctetString)
         {
-            ASN1OctetString oct = (ASN1OctetString)obj;
+            final ASN1OctetString oct = (ASN1OctetString)obj;
 
             if (obj instanceof BEROctetString)
             {
-                buf.append(indent + "BER Constructed Octet String" + "[" + oct.getOctets().length + "] ");
+                buf.append(indent + "BER Constructed Octet String" + "[" + oct.getOctets().size() + "] ");
             }
             else
             {
-                buf.append(indent + "DER Octet String" + "[" + oct.getOctets().length + "] ");
+                buf.append(indent + "DER Octet String" + "[" + oct.getOctets().size() + "] ");
             }
             if (verbose)
             {
@@ -206,8 +206,8 @@ public class ASN1Dump
         }
         else if (obj instanceof DERBitString)
         {
-            DERBitString bt = (DERBitString)obj;
-            buf.append(indent + "DER Bit String" + "[" + bt.getBytes().length + ", " + bt.getPadBits() + "] ");
+            final DERBitString bt = (DERBitString)obj;
+            buf.append(indent + "DER Bit String" + "[" + bt.getBytes().size() + ", " + bt.getPadBits() + "] ");
             if (verbose)
             {
                 buf.append(dumpBinaryDataAsString(indent, bt.getBytes()));
@@ -267,14 +267,14 @@ public class ASN1Dump
         }
         else if (obj instanceof ASN1Enumerated)
         {
-            ASN1Enumerated en = (ASN1Enumerated) obj;
+            final ASN1Enumerated en = (ASN1Enumerated) obj;
             buf.append(indent + "DER Enumerated(" + en.getValue() + ")" + nl);
         }
         else if (obj instanceof DERExternal)
         {
-            DERExternal ext = (DERExternal) obj;
+            final DERExternal ext = (DERExternal) obj;
             buf.append(indent + "External " + nl);
-            String          tab = indent + TAB;
+            final String          tab = indent + TAB;
             if (ext.getDirectReference() != null)
             {
                 buf.append(tab + "Direct Reference: " + ext.getDirectReference().getId() + nl);
@@ -295,31 +295,25 @@ public class ASN1Dump
             buf.append(indent + obj.toString() + nl);
         }
     }
-    
-    private static String outputApplicationSpecific(String type, String indent, boolean verbose, ASN1Primitive obj, String nl)
+
+    private static String outputApplicationSpecific(final String type, final String indent, final boolean verbose, final ASN1Primitive obj, final String nl)
     {
-        ASN1ApplicationSpecific app = ASN1ApplicationSpecific.getInstance(obj);
-        StringBuffer buf = new StringBuffer();
+        final ASN1ApplicationSpecific app = ASN1ApplicationSpecific.getInstance(obj);
+        final StringBuffer buf = new StringBuffer();
 
         if (app.isConstructed())
         {
-            try
+            final ASN1Sequence s = ASN1Sequence.getInstance(app.getObject(BERTags.SEQUENCE));
+            buf.append(indent + type + " ApplicationSpecific[" + app.getApplicationTag() + "]" + nl);
+            for (final Enumeration<?> e = s.getObjects(); e.hasMoreElements();)
             {
-                ASN1Sequence s = ASN1Sequence.getInstance(app.getObject(BERTags.SEQUENCE));
-                buf.append(indent + type + " ApplicationSpecific[" + app.getApplicationTag() + "]" + nl);
-                for (Enumeration e = s.getObjects(); e.hasMoreElements();)
-                {
-                    _dumpAsString(indent + TAB, verbose, (ASN1Primitive)e.nextElement(), buf);
-                }
-            }
-            catch (IOException e)
-            {
-                buf.append(e);
+                _dumpAsString(indent + TAB, verbose, (ASN1Primitive)e.nextElement(), buf);
             }
             return buf.toString();
         }
 
-        return indent + type + " ApplicationSpecific[" + app.getApplicationTag() + "] (" + new String(Hex.encode(app.getContents())) + ")" + nl;
+        return indent + type + " ApplicationSpecific[" + app.getApplicationTag() + "] "
+            + "(" + Hex.encode(app.getContents()).utf8ToString() + ")" + nl;
     }
 
     /**
@@ -329,7 +323,7 @@ public class ASN1Dump
      * @return  the resulting string.
      */
     public static String dumpAsString(
-        Object   obj)
+        final Object   obj)
     {
         return dumpAsString(obj, false);
     }
@@ -342,10 +336,10 @@ public class ASN1Dump
      * @return  the resulting string.
      */
     public static String dumpAsString(
-        Object   obj,
-        boolean  verbose)
+        final Object   obj,
+        final boolean  verbose)
     {
-        StringBuffer buf = new StringBuffer();
+        final StringBuffer buf = new StringBuffer();
 
         if (obj instanceof ASN1Primitive)
         {
@@ -363,20 +357,20 @@ public class ASN1Dump
         return buf.toString();
     }
 
-    private static String dumpBinaryDataAsString(String indent, byte[] bytes)
+    private static String dumpBinaryDataAsString(String indent, final Bytes bytes)
     {
-        String nl = Strings.lineSeparator();
-        StringBuffer buf = new StringBuffer();
+        final String nl = Strings.lineSeparator();
+        final StringBuffer buf = new StringBuffer();
 
         indent += TAB;
-        
+
         buf.append(nl);
-        for (int i = 0; i < bytes.length; i += SAMPLE_SIZE)
+        for (int i = 0; i < bytes.size(); i += SAMPLE_SIZE)
         {
-            if (bytes.length - i > SAMPLE_SIZE)
+            if (bytes.size() - i > SAMPLE_SIZE)
             {
                 buf.append(indent);
-                buf.append(new String(Hex.encode(bytes, i, SAMPLE_SIZE)));
+                buf.append(Hex.encode(bytes, i, SAMPLE_SIZE).utf8ToString());
                 buf.append(TAB);
                 buf.append(calculateAscString(bytes, i, SAMPLE_SIZE));
                 buf.append(nl);
@@ -384,29 +378,29 @@ public class ASN1Dump
             else
             {
                 buf.append(indent);
-                buf.append(new String(Hex.encode(bytes, i, bytes.length - i)));
-                for (int j = bytes.length - i; j != SAMPLE_SIZE; j++)
+                buf.append(Hex.encode(bytes, i, bytes.size() - i).utf8ToString());
+                for (int j = bytes.size() - i; j != SAMPLE_SIZE; j++)
                 {
                     buf.append("  ");
                 }
                 buf.append(TAB);
-                buf.append(calculateAscString(bytes, i, bytes.length - i));
+                buf.append(calculateAscString(bytes, i, bytes.size() - i));
                 buf.append(nl);
             }
         }
-        
+
         return buf.toString();
     }
 
-    private static String calculateAscString(byte[] bytes, int off, int len)
+    private static String calculateAscString(final Bytes bytes, final int off, final int len)
     {
-        StringBuffer buf = new StringBuffer();
+        final StringBuffer buf = new StringBuffer();
 
         for (int i = off; i != off + len; i++)
         {
-            if (bytes[i] >= ' ' && bytes[i] <= '~')
+            if (bytes.getByte(i) >= ' ' && bytes.getByte(i) <= '~')
             {
-                buf.append((char)bytes[i]);
+                buf.append((char)bytes.getByte(i));
             }
         }
 

@@ -1,9 +1,12 @@
 package com.github.gv2011.asn1;
 
+import static com.github.gv2011.util.bytes.ByteUtils.newBytes;
 import static com.github.gv2011.util.ex.Exceptions.run;
 
 import java.io.IOException;
 import java.io.OutputStream;
+
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * Stream that produces output based on the default encoding for the passed in objects.
@@ -49,22 +52,17 @@ public class ASN1OutputStream
         run(()->os.write(b));
     }
 
-    void write(final byte[] bytes)
+    void write(final Bytes bytes)
     {
-        run(()->os.write(bytes));
-    }
-
-    void write(final byte[] bytes, final int off, final int len)
-    {
-        run(()->os.write(bytes, off, len));
+      bytes.write(os);
     }
 
     void writeEncoded(
         final int     tag,
-        final byte[]  bytes)
+        final Bytes  bytes)
     {
         write(tag);
-        writeLength(bytes.length);
+        writeLength(bytes.size());
         write(bytes);
     }
 
@@ -95,15 +93,15 @@ public class ASN1OutputStream
                 }
                 while (tagNo > 127);
 
-                write(stack, pos, stack.length - pos);
+                write(newBytes(stack, pos, stack.length));
             }
         }
     }
 
-    void writeEncoded(final int flags, final int tagNo, final byte[] bytes)
+    void writeEncoded(final int flags, final int tagNo, final Bytes bytes)
     {
         writeTag(flags, tagNo);
-        writeLength(bytes.length);
+        writeLength(bytes.size());
         write(bytes);
     }
 

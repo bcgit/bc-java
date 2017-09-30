@@ -1,9 +1,7 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
-
-import com.github.gv2011.asn1.util.Arrays;
 import com.github.gv2011.asn1.util.Strings;
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * DER VisibleString object encoding ISO 646 (ASCII) character code points 32 to 126.
@@ -11,11 +9,7 @@ import com.github.gv2011.asn1.util.Strings;
  * Explicit character set escape sequences are not allowed.
  * </p>
  */
-public class DERVisibleString
-    extends ASN1Primitive
-    implements ASN1String
-{
-    private final byte[]  string;
+public final class DERVisibleString extends ASN1PrimitiveBytes implements ASN1String {
 
     /**
      * Return a Visible String from the passed in object.
@@ -32,11 +26,11 @@ public class DERVisibleString
             return (DERVisibleString)obj;
         }
 
-        if (obj instanceof byte[])
+        if (obj instanceof Bytes)
         {
             try
             {
-                return (DERVisibleString)fromByteArray((byte[])obj);
+                return (DERVisibleString)fromByteArray((Bytes)obj);
             }
             catch (final Exception e)
             {
@@ -73,41 +67,23 @@ public class DERVisibleString
         }
     }
 
-    /*
-     * Basic constructor - byte encoded string.
-     */
-    DERVisibleString(
-        final byte[]   string)
-    {
-        this.string = string;
+    DERVisibleString(final Bytes string){
+      super(string);
     }
 
-    /**
-     * Basic constructor
-     *
-     * @param string the string to be carried in the VisibleString object,
-     */
-    public DERVisibleString(
-        final String   string)
-    {
-        this.string = Strings.toByteArray(string);
+    public DERVisibleString(final String string){
+      this(Strings.toByteArray(string));
     }
 
     @Override
-    public String getString()
-    {
-        return Strings.fromByteArray(string);
+    public String getString(){
+      return Strings.fromByteArray(string);
     }
 
     @Override
     public String toString()
     {
         return getString();
-    }
-
-    public byte[] getOctets()
-    {
-        return Arrays.clone(string);
     }
 
     @Override
@@ -117,33 +93,10 @@ public class DERVisibleString
     }
 
     @Override
-    int encodedLength()
-    {
-        return 1 + StreamUtil.calculateBodyLength(string.length) + string.length;
-    }
-
-    @Override
     void encode(
         final ASN1OutputStream out)
     {
         out.writeEncoded(BERTags.VISIBLE_STRING, string);
     }
 
-    @Override
-    boolean asn1Equals(
-        final ASN1Primitive o)
-    {
-        if (!(o instanceof DERVisibleString))
-        {
-            return false;
-        }
-
-        return Arrays.areEqual(string, ((DERVisibleString)o).string);
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return Arrays.hashCode(string);
-    }
 }

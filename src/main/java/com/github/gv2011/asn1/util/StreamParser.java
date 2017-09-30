@@ -6,5 +6,5 @@ public interface StreamParser
 {
     Object read() throws StreamParsingException;
 
-    Collection readAll() throws StreamParsingException;
+    Collection<?> readAll() throws StreamParsingException;
 }

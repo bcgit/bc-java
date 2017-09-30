@@ -19,7 +19,7 @@ public class DERSequenceGenerator
      * @throws IOException if the target stream cannot be written to.
      */
     public DERSequenceGenerator(
-        OutputStream out)
+        final OutputStream out)
         throws IOException
     {
         super(out);
@@ -35,9 +35,9 @@ public class DERSequenceGenerator
      * @throws IOException if the target stream cannot be written to.
      */
     public DERSequenceGenerator(
-        OutputStream out,
-        int          tagNo,
-        boolean      isExplicit)
+        final OutputStream out,
+        final int          tagNo,
+        final boolean      isExplicit)
         throws IOException
     {
         super(out, tagNo, isExplicit);
@@ -50,7 +50,7 @@ public class DERSequenceGenerator
      * @throws IOException if the target stream cannot be written to or the object cannot be encoded.
      */
     public void addObject(
-        ASN1Encodable object)
+        final ASN1Encodable object)
         throws IOException
     {
         object.toASN1Primitive().encode(new DEROutputStream(_bOut));
@@ -61,6 +61,7 @@ public class DERSequenceGenerator
      *
      * @return  the OutputStream the SEQUENCE is being written to.
      */
+    @Override
     public OutputStream getRawOutputStream()
     {
         return _bOut;
@@ -71,7 +72,7 @@ public class DERSequenceGenerator
      *
      * @throws IOException if the target stream cannot be written.
      */
-    public void close() 
+    public void close()
         throws IOException
     {
         writeDEREncoded(BERTags.CONSTRUCTED | BERTags.SEQUENCE, _bOut.toByteArray());

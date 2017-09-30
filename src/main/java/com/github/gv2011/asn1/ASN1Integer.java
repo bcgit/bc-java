@@ -1,9 +1,10 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
+import static com.github.gv2011.util.bytes.ByteUtils.fromBigInteger;
+
 import java.math.BigInteger;
 
-import com.github.gv2011.asn1.util.Arrays;
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * Class representing the ASN.1 INTEGER type.
@@ -11,7 +12,7 @@ import com.github.gv2011.asn1.util.Arrays;
 public class ASN1Integer
     extends ASN1Primitive
 {
-    private final byte[] bytes;
+    private final Bytes bytes;
 
     /**
      * return an integer from the passed in object
@@ -28,11 +29,11 @@ public class ASN1Integer
             return (ASN1Integer)obj;
         }
 
-        if (obj instanceof byte[])
+        if (obj instanceof Bytes)
         {
             try
             {
-                return (ASN1Integer)fromByteArray((byte[])obj);
+                return (ASN1Integer)fromByteArray((Bytes)obj);
             }
             catch (final Exception e)
             {
@@ -69,32 +70,21 @@ public class ASN1Integer
         }
     }
 
-    public ASN1Integer(
-        final long value)
-    {
-        bytes = BigInteger.valueOf(value).toByteArray();
+    public ASN1Integer(final long value){
+      this(BigInteger.valueOf(value));
     }
 
-    public ASN1Integer(
-        final BigInteger value)
-    {
-        bytes = value.toByteArray();
+    public ASN1Integer(final BigInteger value){
+      this(fromBigInteger(value));
     }
 
-    public ASN1Integer(
-        final byte[] bytes)
-    {
-        this(bytes, true);
-    }
-
-    ASN1Integer(final byte[] bytes, final boolean clone)
-    {
-        this.bytes = (clone) ? Arrays.clone(bytes) : bytes;
+    public ASN1Integer(final Bytes bytes){
+      this.bytes = bytes;
     }
 
     public BigInteger getValue()
     {
-        return new BigInteger(bytes);
+        return new BigInteger(bytes.toByteArray());
     }
 
     /**
@@ -104,7 +94,7 @@ public class ASN1Integer
      */
     public BigInteger getPositiveValue()
     {
-        return new BigInteger(1, bytes);
+        return new BigInteger(1, bytes.toByteArray());
     }
 
     @Override
@@ -116,7 +106,7 @@ public class ASN1Integer
     @Override
     int encodedLength()
     {
-        return 1 + StreamUtil.calculateBodyLength(bytes.length) + bytes.length;
+        return 1 + StreamUtil.calculateBodyLength(bytes.size()) + bytes.size();
     }
 
     @Override
@@ -131,9 +121,9 @@ public class ASN1Integer
     {
         int value = 0;
 
-        for (int i = 0; i != bytes.length; i++)
+        for (int i = 0; i != bytes.size(); i++)
         {
-            value ^= (bytes[i] & 0xff) << (i % 4);
+            value ^= (bytes.getByte(i) & 0xff) << (i % 4);
         }
 
         return value;
@@ -150,7 +140,7 @@ public class ASN1Integer
 
         final ASN1Integer other = (ASN1Integer)o;
 
-        return Arrays.areEqual(bytes, other.bytes);
+        return bytes.equals(other.bytes);
     }
 
     @Override

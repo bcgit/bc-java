@@ -1,6 +1,5 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
 
 /**
  * Parser DER EXTERNAL tagged objects.
@@ -8,20 +7,19 @@ import java.io.IOException;
 public class DERExternalParser
     implements ASN1Encodable, InMemoryRepresentable
 {
-    private ASN1StreamParser _parser;
+    private final ASN1StreamParser _parser;
 
     /**
      * Base constructor.
      *
      * @param parser the underlying parser to read the DER EXTERNAL from.
      */
-    public DERExternalParser(ASN1StreamParser parser)
+    public DERExternalParser(final ASN1StreamParser parser)
     {
-        this._parser = parser;
+        _parser = parser;
     }
 
     public ASN1Encodable readObject()
-        throws IOException
     {
         return _parser.readObject();
     }
@@ -32,14 +30,14 @@ public class DERExternalParser
      * @return a DERExternal.
      * @throws IOException if there is an issue loading the data.
      */
+    @Override
     public ASN1Primitive getLoadedObject()
-        throws IOException
     {
         try
         {
             return new DERExternal(_parser.readVector());
         }
-        catch (IllegalArgumentException e)
+        catch (final IllegalArgumentException e)
         {
             throw new ASN1Exception(e.getMessage(), e);
         }
@@ -50,17 +48,14 @@ public class DERExternalParser
      *
      * @return an DERExternal
      */
+    @Override
     public ASN1Primitive toASN1Primitive()
     {
         try
         {
             return getLoadedObject();
         }
-        catch (IOException ioe)
-        {
-            throw new ASN1ParsingException("unable to get DER object", ioe);
-        }
-        catch (IllegalArgumentException ioe)
+        catch (final IllegalArgumentException ioe)
         {
             throw new ASN1ParsingException("unable to get DER object", ioe);
         }

@@ -1,9 +1,12 @@
 package com.github.gv2011.asn1;
 
-import java.io.ByteArrayOutputStream;
+import static com.github.gv2011.util.bytes.ByteUtils.newBytesBuilder;
+
 import java.io.IOException;
 
 import com.github.gv2011.asn1.util.Encodable;
+import com.github.gv2011.util.bytes.Bytes;
+import com.github.gv2011.util.bytes.BytesBuilder;
 
 /**
  * Base class for defining an ASN.1 object.
@@ -18,14 +21,14 @@ public abstract class ASN1Object
      * @throws java.io.IOException on encoding error.
      */
     @Override
-    public byte[] getEncoded()
+    public Bytes getEncoded()
     {
-        final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        final BytesBuilder bOut = newBytesBuilder();
         final ASN1OutputStream      aOut = new ASN1OutputStream(bOut);
 
         aOut.writeObject(this);
 
-        return bOut.toByteArray();
+        return bOut.build();
     }
 
     /**
@@ -35,26 +38,26 @@ public abstract class ASN1Object
      * @return byte encoded object.
      * @throws IOException on encoding error.
      */
-    public byte[] getEncoded(
+    public Bytes getEncoded(
         final String encoding)
     {
         if (encoding.equals(ASN1Encoding.DER))
         {
-            final ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-            final DEROutputStream         dOut = new DEROutputStream(bOut);
+            final BytesBuilder    bOut = newBytesBuilder();
+            final DEROutputStream dOut = new DEROutputStream(bOut);
 
             dOut.writeObject(this);
 
-            return bOut.toByteArray();
+            return bOut.build();
         }
         else if (encoding.equals(ASN1Encoding.DL))
         {
-            final ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-            final DLOutputStream          dOut = new DLOutputStream(bOut);
+            final BytesBuilder   bOut = newBytesBuilder();
+            final DLOutputStream dOut = new DLOutputStream(bOut);
 
             dOut.writeObject(this);
 
-            return bOut.toByteArray();
+            return bOut.build();
         }
 
         return this.getEncoded();

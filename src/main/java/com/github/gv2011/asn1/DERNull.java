@@ -1,6 +1,8 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
+import static com.github.gv2011.util.bytes.ByteUtils.emptyBytes;
+
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * A NULL object.
@@ -10,7 +12,7 @@ public class DERNull
 {
     public static final DERNull INSTANCE = new DERNull();
 
-    private static final byte[]  zeroBytes = new byte[0];
+    private static final Bytes  zeroBytes = emptyBytes();
 
     /**
      * @deprecated use DERNull.INSTANCE

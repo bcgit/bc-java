@@ -1,7 +1,11 @@
 package com.github.gv2011.asn1;
 
-import java.io.ByteArrayOutputStream;
+import static com.github.gv2011.util.bytes.ByteUtils.newBytesBuilder;
+
 import java.io.IOException;
+
+import com.github.gv2011.util.bytes.Bytes;
+import com.github.gv2011.util.bytes.BytesBuilder;
 
 /**
  * A DER encoding version of an application specific object.
@@ -12,7 +16,7 @@ public class DERApplicationSpecific
     DERApplicationSpecific(
         final boolean isConstructed,
         final int     tag,
-        final byte[]  octets)
+        final Bytes  octets)
     {
         super(isConstructed, tag, octets);
     }
@@ -26,7 +30,7 @@ public class DERApplicationSpecific
      */
     public DERApplicationSpecific(
         final int    tag,
-        final byte[] octets)
+        final Bytes octets)
     {
         this(false, tag, octets);
     }
@@ -61,10 +65,10 @@ public class DERApplicationSpecific
         super(constructed || object.toASN1Primitive().isConstructed(), tag, getEncoding(constructed, object));
     }
 
-    private static byte[] getEncoding(final boolean explicit, final ASN1Encodable object)
+    private static Bytes getEncoding(final boolean explicit, final ASN1Encodable object)
         throws IOException
     {
-        final byte[] data = object.toASN1Primitive().getEncoded(ASN1Encoding.DER);
+        final Bytes data = object.toASN1Primitive().getEncoded(ASN1Encoding.DER);
 
         if (explicit)
         {
@@ -72,10 +76,10 @@ public class DERApplicationSpecific
         }
         else
         {
-            final int lenBytes = getLengthOfHeader(data);
-            final byte[] tmp = new byte[data.length - lenBytes];
-            System.arraycopy(data, lenBytes, tmp, 0, tmp.length);
-            return tmp;
+          // final int lenBytes = getLengthOfHeader(data);
+          // final byte[] tmp = new byte[data.size() - lenBytes];
+          // System.arraycopy(data, lenBytes, tmp, 0, tmp.length);
+          return data.subList(getLengthOfHeader(data));
         }
     }
 
@@ -90,25 +94,15 @@ public class DERApplicationSpecific
         super(true, tagNo, getEncodedVector(vec));
     }
 
-    private static byte[] getEncodedVector(final ASN1EncodableVector vec)
-    {
-        final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-
-        for (int i = 0; i != vec.size(); i++)
-        {
-            try
-            {
-                bOut.write(((ASN1Object)vec.get(i)).getEncoded(ASN1Encoding.DER));
-            }
-            catch (final IOException e)
-            {
-                throw new ASN1ParsingException("malformed object: " + e, e);
-            }
-        }
-        return bOut.toByteArray();
+    private static Bytes getEncodedVector(final ASN1EncodableVector vec){
+      final BytesBuilder bOut = newBytesBuilder();
+      for (int i = 0; i != vec.size(); i++){
+        ((ASN1Object)vec.get(i)).getEncoded(ASN1Encoding.DER).write(bOut);
+      }
+      return bOut.build();
     }
 
-    /* (non-Javadoc)
+    /**
      * @see org.bouncycastle.asn1.ASN1Primitive#encode(org.bouncycastle.asn1.DEROutputStream)
      */
     @Override

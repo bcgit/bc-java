@@ -1,25 +1,24 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
+public class ASN1Exception extends RuntimeException{
 
-public class ASN1Exception
-    extends IOException
-{
-    private Throwable cause;
+  private static final long serialVersionUID = -2721088745216034082L;
 
-    ASN1Exception(String message)
-    {
-        super(message);
-    }
+  private Throwable cause;
 
-    ASN1Exception(String message, Throwable cause)
-    {
-        super(message);
-        this.cause = cause;
-    }
+  ASN1Exception(final String message){
+    super(message);
+  }
 
-    public Throwable getCause()
-    {
-        return cause;
-    }
+  ASN1Exception(final String message, final Throwable cause){
+    super(message);
+    this.cause = cause;
+  }
+
+  public ASN1Exception() {}
+
+  @Override
+  public Throwable getCause(){
+    return cause;
+  }
 }

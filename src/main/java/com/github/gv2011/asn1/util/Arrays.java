@@ -8,14 +8,14 @@ import java.util.NoSuchElementException;
  */
 public final class Arrays
 {
-    private Arrays() 
+    private Arrays()
     {
         // static class, hide constructor
     }
 
     public static boolean areEqual(
-        boolean[]  a,
-        boolean[]  b)
+        final boolean[]  a,
+        final boolean[]  b)
     {
         if (a == b)
         {
@@ -44,8 +44,8 @@ public final class Arrays
     }
 
     public static boolean areEqual(
-        char[]  a,
-        char[]  b)
+        final char[]  a,
+        final char[]  b)
     {
         if (a == b)
         {
@@ -74,8 +74,8 @@ public final class Arrays
     }
 
     public static boolean areEqual(
-        byte[]  a,
-        byte[]  b)
+        final byte[]  a,
+        final byte[]  b)
     {
         if (a == b)
         {
@@ -112,8 +112,8 @@ public final class Arrays
      * @return true if arrays equal, false otherwise.
      */
     public static boolean constantTimeAreEqual(
-        byte[]  a,
-        byte[]  b)
+        final byte[]  a,
+        final byte[]  b)
     {
         if (a == b)
         {
@@ -141,8 +141,8 @@ public final class Arrays
     }
 
     public static boolean areEqual(
-        int[]  a,
-        int[]  b)
+        final int[]  a,
+        final int[]  b)
     {
         if (a == b)
         {
@@ -171,8 +171,8 @@ public final class Arrays
     }
 
     public static boolean areEqual(
-        long[]  a,
-        long[]  b)
+        final long[]  a,
+        final long[]  b)
     {
         if (a == b)
         {
@@ -200,7 +200,7 @@ public final class Arrays
         return true;
     }
 
-    public static boolean areEqual(Object[] a, Object[] b)
+    public static boolean areEqual(final Object[] a, final Object[] b)
     {
         if (a == b)
         {
@@ -216,7 +216,7 @@ public final class Arrays
         }
         for (int i = 0; i != a.length; i++)
         {
-            Object objA = a[i], objB = b[i];
+            final Object objA = a[i], objB = b[i];
             if (objA == null)
             {
                 if (objB != null)
@@ -232,7 +232,7 @@ public final class Arrays
         return true;
     }
 
-    public static boolean contains(short[] a, short n)
+    public static boolean contains(final short[] a, final short n)
     {
         for (int i = 0; i < a.length; ++i)
         {
@@ -244,7 +244,7 @@ public final class Arrays
         return false;
     }
 
-    public static boolean contains(int[] a, int n)
+    public static boolean contains(final int[] a, final int n)
     {
         for (int i = 0; i < a.length; ++i)
         {
@@ -257,8 +257,8 @@ public final class Arrays
     }
 
     public static void fill(
-        byte[] array,
-        byte value)
+        final byte[] array,
+        final byte value)
     {
         for (int i = 0; i < array.length; i++)
         {
@@ -267,8 +267,8 @@ public final class Arrays
     }
 
     public static void fill(
-        char[] array,
-        char value)
+        final char[] array,
+        final char value)
     {
         for (int i = 0; i < array.length; i++)
         {
@@ -277,8 +277,8 @@ public final class Arrays
     }
 
     public static void fill(
-        long[] array,
-        long value)
+        final long[] array,
+        final long value)
     {
         for (int i = 0; i < array.length; i++)
         {
@@ -287,8 +287,8 @@ public final class Arrays
     }
 
     public static void fill(
-        short[] array, 
-        short value)
+        final short[] array,
+        final short value)
     {
         for (int i = 0; i < array.length; i++)
         {
@@ -297,16 +297,16 @@ public final class Arrays
     }
 
     public static void fill(
-        int[] array,
-        int value)
+        final int[] array,
+        final int value)
     {
         for (int i = 0; i < array.length; i++)
         {
             array[i] = value;
         }
     }
-    
-    public static int hashCode(byte[] data)
+
+    public static int hashCode(final byte[] data)
     {
         if (data == null)
         {
@@ -325,7 +325,7 @@ public final class Arrays
         return hc;
     }
 
-    public static int hashCode(byte[] data, int off, int len)
+    public static int hashCode(final byte[] data, final int off, final int len)
     {
         if (data == null)
         {
@@ -344,7 +344,7 @@ public final class Arrays
         return hc;
     }
 
-    public static int hashCode(char[] data)
+    public static int hashCode(final char[] data)
     {
         if (data == null)
         {
@@ -363,7 +363,7 @@ public final class Arrays
         return hc;
     }
 
-    public static int hashCode(int[][] ints)
+    public static int hashCode(final int[][] ints)
     {
         int hc = 0;
 
@@ -375,7 +375,7 @@ public final class Arrays
         return hc;
     }
 
-    public static int hashCode(int[] data)
+    public static int hashCode(final int[] data)
     {
         if (data == null)
         {
@@ -394,7 +394,7 @@ public final class Arrays
         return hc;
     }
 
-    public static int hashCode(int[] data, int off, int len)
+    public static int hashCode(final int[] data, final int off, final int len)
     {
         if (data == null)
         {
@@ -413,7 +413,7 @@ public final class Arrays
         return hc;
     }
 
-    public static int hashCode(long[] data)
+    public static int hashCode(final long[] data)
     {
         if (data == null)
         {
@@ -425,7 +425,7 @@ public final class Arrays
 
         while (--i >= 0)
         {
-            long di = data[i];
+            final long di = data[i];
             hc *= 257;
             hc ^= (int)di;
             hc *= 257;
@@ -435,7 +435,7 @@ public final class Arrays
         return hc;
     }
 
-    public static int hashCode(long[] data, int off, int len)
+    public static int hashCode(final long[] data, final int off, final int len)
     {
         if (data == null)
         {
@@ -447,7 +447,7 @@ public final class Arrays
 
         while (--i >= 0)
         {
-            long di = data[off + i];
+            final long di = data[off + i];
             hc *= 257;
             hc ^= (int)di;
             hc *= 257;
@@ -457,7 +457,7 @@ public final class Arrays
         return hc;
     }
 
-    public static int hashCode(short[][][] shorts)
+    public static int hashCode(final short[][][] shorts)
     {
         int hc = 0;
 
@@ -469,7 +469,7 @@ public final class Arrays
         return hc;
     }
 
-    public static int hashCode(short[][] shorts)
+    public static int hashCode(final short[][] shorts)
     {
         int hc = 0;
 
@@ -481,7 +481,7 @@ public final class Arrays
         return hc;
     }
 
-    public static int hashCode(short[] data)
+    public static int hashCode(final short[] data)
     {
         if (data == null)
         {
@@ -500,7 +500,7 @@ public final class Arrays
         return hc;
     }
 
-    public static int hashCode(Object[] data)
+    public static int hashCode(final Object[] data)
     {
         if (data == null)
         {
@@ -519,33 +519,33 @@ public final class Arrays
         return hc;
     }
 
-    public static byte[] clone(byte[] data)
+    public static byte[] clone(final byte[] data)
     {
         if (data == null)
         {
             return null;
         }
-        byte[] copy = new byte[data.length];
+        final byte[] copy = new byte[data.length];
 
         System.arraycopy(data, 0, copy, 0, data.length);
 
         return copy;
     }
 
-    public static char[] clone(char[] data)
+    public static char[] clone(final char[] data)
     {
         if (data == null)
         {
             return null;
         }
-        char[] copy = new char[data.length];
+        final char[] copy = new char[data.length];
 
         System.arraycopy(data, 0, copy, 0, data.length);
 
         return copy;
     }
 
-    public static byte[] clone(byte[] data, byte[] existing)
+    public static byte[] clone(final byte[] data, final byte[] existing)
     {
         if (data == null)
         {
@@ -559,14 +559,14 @@ public final class Arrays
         return existing;
     }
 
-    public static byte[][] clone(byte[][] data)
+    public static byte[][] clone(final byte[][] data)
     {
         if (data == null)
         {
             return null;
         }
 
-        byte[][] copy = new byte[data.length][];
+        final byte[][] copy = new byte[data.length][];
 
         for (int i = 0; i != copy.length; i++)
         {
@@ -576,14 +576,14 @@ public final class Arrays
         return copy;
     }
 
-    public static byte[][][] clone(byte[][][] data)
+    public static byte[][][] clone(final byte[][][] data)
     {
         if (data == null)
         {
             return null;
         }
 
-        byte[][][] copy = new byte[data.length][][];
+        final byte[][][] copy = new byte[data.length][][];
 
         for (int i = 0; i != copy.length; i++)
         {
@@ -593,33 +593,33 @@ public final class Arrays
         return copy;
     }
 
-    public static int[] clone(int[] data)
+    public static int[] clone(final int[] data)
     {
         if (data == null)
         {
             return null;
         }
-        int[] copy = new int[data.length];
+        final int[] copy = new int[data.length];
 
         System.arraycopy(data, 0, copy, 0, data.length);
 
         return copy;
     }
 
-    public static long[] clone(long[] data)
+    public static long[] clone(final long[] data)
     {
         if (data == null)
         {
             return null;
         }
-        long[] copy = new long[data.length];
-        
+        final long[] copy = new long[data.length];
+
         System.arraycopy(data, 0, copy, 0, data.length);
-        
+
         return copy;
     }
 
-    public static long[] clone(long[] data, long[] existing)
+    public static long[] clone(final long[] data, final long[] existing)
     {
         if (data == null)
         {
@@ -633,35 +633,35 @@ public final class Arrays
         return existing;
     }
 
-    public static short[] clone(short[] data)
+    public static short[] clone(final short[] data)
     {
         if (data == null)
         {
             return null;
         }
-        short[] copy = new short[data.length];
+        final short[] copy = new short[data.length];
 
         System.arraycopy(data, 0, copy, 0, data.length);
 
         return copy;
     }
 
-    public static BigInteger[] clone(BigInteger[] data)
+    public static BigInteger[] clone(final BigInteger[] data)
     {
         if (data == null)
         {
             return null;
         }
-        BigInteger[] copy = new BigInteger[data.length];
+        final BigInteger[] copy = new BigInteger[data.length];
 
         System.arraycopy(data, 0, copy, 0, data.length);
 
         return copy;
     }
 
-    public static byte[] copyOf(byte[] data, int newLength)
+    public static byte[] copyOf(final byte[] data, final int newLength)
     {
-        byte[] tmp = new byte[newLength];
+        final byte[] tmp = new byte[newLength];
 
         if (newLength < data.length)
         {
@@ -675,9 +675,9 @@ public final class Arrays
         return tmp;
     }
 
-    public static char[] copyOf(char[] data, int newLength)
+    public static char[] copyOf(final char[] data, final int newLength)
     {
-        char[] tmp = new char[newLength];
+        final char[] tmp = new char[newLength];
 
         if (newLength < data.length)
         {
@@ -691,9 +691,9 @@ public final class Arrays
         return tmp;
     }
 
-    public static int[] copyOf(int[] data, int newLength)
+    public static int[] copyOf(final int[] data, final int newLength)
     {
-        int[] tmp = new int[newLength];
+        final int[] tmp = new int[newLength];
 
         if (newLength < data.length)
         {
@@ -707,9 +707,9 @@ public final class Arrays
         return tmp;
     }
 
-    public static long[] copyOf(long[] data, int newLength)
+    public static long[] copyOf(final long[] data, final int newLength)
     {
-        long[] tmp = new long[newLength];
+        final long[] tmp = new long[newLength];
 
         if (newLength < data.length)
         {
@@ -723,9 +723,9 @@ public final class Arrays
         return tmp;
     }
 
-    public static BigInteger[] copyOf(BigInteger[] data, int newLength)
+    public static BigInteger[] copyOf(final BigInteger[] data, final int newLength)
     {
-        BigInteger[] tmp = new BigInteger[newLength];
+        final BigInteger[] tmp = new BigInteger[newLength];
 
         if (newLength < data.length)
         {
@@ -750,11 +750,11 @@ public final class Arrays
      *
      * @return a new byte array containing the range given.
      */
-    public static byte[] copyOfRange(byte[] data, int from, int to)
+    public static byte[] copyOfRange(final byte[] data, final int from, final int to)
     {
-        int newLength = getLength(from, to);
+        final int newLength = getLength(from, to);
 
-        byte[] tmp = new byte[newLength];
+        final byte[] tmp = new byte[newLength];
 
         if (data.length - from < newLength)
         {
@@ -768,11 +768,11 @@ public final class Arrays
         return tmp;
     }
 
-    public static int[] copyOfRange(int[] data, int from, int to)
+    public static int[] copyOfRange(final int[] data, final int from, final int to)
     {
-        int newLength = getLength(from, to);
+        final int newLength = getLength(from, to);
 
-        int[] tmp = new int[newLength];
+        final int[] tmp = new int[newLength];
 
         if (data.length - from < newLength)
         {
@@ -786,11 +786,11 @@ public final class Arrays
         return tmp;
     }
 
-    public static long[] copyOfRange(long[] data, int from, int to)
+    public static long[] copyOfRange(final long[] data, final int from, final int to)
     {
-        int newLength = getLength(from, to);
+        final int newLength = getLength(from, to);
 
-        long[] tmp = new long[newLength];
+        final long[] tmp = new long[newLength];
 
         if (data.length - from < newLength)
         {
@@ -804,11 +804,11 @@ public final class Arrays
         return tmp;
     }
 
-    public static BigInteger[] copyOfRange(BigInteger[] data, int from, int to)
+    public static BigInteger[] copyOfRange(final BigInteger[] data, final int from, final int to)
     {
-        int newLength = getLength(from, to);
+        final int newLength = getLength(from, to);
 
-        BigInteger[] tmp = new BigInteger[newLength];
+        final BigInteger[] tmp = new BigInteger[newLength];
 
         if (data.length - from < newLength)
         {
@@ -822,65 +822,65 @@ public final class Arrays
         return tmp;
     }
 
-    private static int getLength(int from, int to)
+    private static int getLength(final int from, final int to)
     {
-        int newLength = to - from;
+        final int newLength = to - from;
         if (newLength < 0)
         {
-            StringBuffer sb = new StringBuffer(from);
+            final StringBuffer sb = new StringBuffer(from);
             sb.append(" > ").append(to);
             throw new IllegalArgumentException(sb.toString());
         }
         return newLength;
     }
 
-    public static byte[] append(byte[] a, byte b)
+    public static byte[] append(final byte[] a, final byte b)
     {
         if (a == null)
         {
             return new byte[]{ b };
         }
 
-        int length = a.length;
-        byte[] result = new byte[length + 1];
+        final int length = a.length;
+        final byte[] result = new byte[length + 1];
         System.arraycopy(a, 0, result, 0, length);
         result[length] = b;
         return result;
     }
 
-    public static short[] append(short[] a, short b)
+    public static short[] append(final short[] a, final short b)
     {
         if (a == null)
         {
             return new short[]{ b };
         }
 
-        int length = a.length;
-        short[] result = new short[length + 1];
+        final int length = a.length;
+        final short[] result = new short[length + 1];
         System.arraycopy(a, 0, result, 0, length);
         result[length] = b;
         return result;
     }
 
-    public static int[] append(int[] a, int b)
+    public static int[] append(final int[] a, final int b)
     {
         if (a == null)
         {
             return new int[]{ b };
         }
 
-        int length = a.length;
-        int[] result = new int[length + 1];
+        final int length = a.length;
+        final int[] result = new int[length + 1];
         System.arraycopy(a, 0, result, 0, length);
         result[length] = b;
         return result;
     }
 
-    public static byte[] concatenate(byte[] a, byte[] b)
+    public static byte[] concatenate(final byte[] a, final byte[] b)
     {
         if (a != null && b != null)
         {
-            byte[] rv = new byte[a.length + b.length];
+            final byte[] rv = new byte[a.length + b.length];
 
             System.arraycopy(a, 0, rv, 0, a.length);
             System.arraycopy(b, 0, rv, a.length, b.length);
@@ -897,11 +897,11 @@ public final class Arrays
         }
     }
 
-    public static byte[] concatenate(byte[] a, byte[] b, byte[] c)
+    public static byte[] concatenate(final byte[] a, final byte[] b, final byte[] c)
     {
         if (a != null && b != null && c != null)
         {
-            byte[] rv = new byte[a.length + b.length + c.length];
+            final byte[] rv = new byte[a.length + b.length + c.length];
 
             System.arraycopy(a, 0, rv, 0, a.length);
             System.arraycopy(b, 0, rv, a.length, b.length);
@@ -923,11 +923,11 @@ public final class Arrays
         }
     }
 
-    public static byte[] concatenate(byte[] a, byte[] b, byte[] c, byte[] d)
+    public static byte[] concatenate(final byte[] a, final byte[] b, final byte[] c, final byte[] d)
     {
         if (a != null && b != null && c != null && d != null)
         {
-            byte[] rv = new byte[a.length + b.length + c.length + d.length];
+            final byte[] rv = new byte[a.length + b.length + c.length + d.length];
 
             System.arraycopy(a, 0, rv, 0, a.length);
             System.arraycopy(b, 0, rv, a.length, b.length);
@@ -954,7 +954,7 @@ public final class Arrays
         }
     }
 
-    public static int[] concatenate(int[] a, int[] b)
+    public static int[] concatenate(final int[] a, final int[] b)
     {
         if (a == null)
         {
@@ -965,55 +965,55 @@ public final class Arrays
             return clone(a);
         }
 
-        int[] c = new int[a.length + b.length];
+        final int[] c = new int[a.length + b.length];
         System.arraycopy(a, 0, c, 0, a.length);
         System.arraycopy(b, 0, c, a.length, b.length);
         return c;
     }
 
-    public static byte[] prepend(byte[] a, byte b)
+    public static byte[] prepend(final byte[] a, final byte b)
     {
         if (a == null)
         {
             return new byte[]{ b };
         }
 
-        int length = a.length;
-        byte[] result = new byte[length + 1];
+        final int length = a.length;
+        final byte[] result = new byte[length + 1];
         System.arraycopy(a, 0, result, 1, length);
         result[0] = b;
         return result;
     }
 
-    public static short[] prepend(short[] a, short b)
+    public static short[] prepend(final short[] a, final short b)
     {
         if (a == null)
         {
             return new short[]{ b };
         }
 
-        int length = a.length;
-        short[] result = new short[length + 1];
+        final int length = a.length;
+        final short[] result = new short[length + 1];
         System.arraycopy(a, 0, result, 1, length);
         result[0] = b;
         return result;
     }
 
-    public static int[] prepend(int[] a, int b)
+    public static int[] prepend(final int[] a, final int b)
     {
         if (a == null)
         {
             return new int[]{ b };
         }
 
-        int length = a.length;
-        int[] result = new int[length + 1];
+        final int length = a.length;
+        final int[] result = new int[length + 1];
         System.arraycopy(a, 0, result, 1, length);
         result[0] = b;
         return result;
     }
 
-    public static byte[] reverse(byte[] a)
+    public static byte[] reverse(final byte[] a)
     {
         if (a == null)
         {
@@ -1021,8 +1021,8 @@ public final class Arrays
         }
 
         int p1 = 0, p2 = a.length;
-        byte[] result = new byte[p2];
-        
+        final byte[] result = new byte[p2];
+
         while (--p2 >= 0)
         {
             result[p2] = a[p1++];
@@ -1031,7 +1031,7 @@ public final class Arrays
         return result;
     }
 
-    public static int[] reverse(int[] a)
+    public static int[] reverse(final int[] a)
     {
         if (a == null)
         {
@@ -1039,7 +1039,7 @@ public final class Arrays
         }
 
         int p1 = 0, p2 = a.length;
-        int[] result = new int[p2];
+        final int[] result = new int[p2];
 
         while (--p2 >= 0)
         {
@@ -1067,16 +1067,18 @@ public final class Arrays
          *
          * @param dataArray array backing the iterator.
          */
-        public Iterator(T[] dataArray)
+        public Iterator(final T[] dataArray)
         {
             this.dataArray = dataArray;
         }
 
+        @Override
         public boolean hasNext()
         {
             return position < dataArray.length;
         }
 
+        @Override
         public T next()
         {
             if (position == dataArray.length)
@@ -1087,6 +1089,7 @@ public final class Arrays
             return dataArray[position++];
         }
 
+        @Override
         public void remove()
         {
             throw new UnsupportedOperationException("Cannot remove element from an Array.");

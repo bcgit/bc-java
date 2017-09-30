@@ -1,6 +1,10 @@
 package com.github.gv2011.asn1;
 
+import static com.github.gv2011.util.bytes.ByteUtils.newBytes;
+
 import java.io.IOException;
+
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * A Definite length BIT STRING
@@ -60,16 +64,7 @@ public class DLBitString
         final byte    data,
         final int     padBits)
     {
-        this(toByteArray(data), padBits);
-    }
-
-    private static byte[] toByteArray(final byte data)
-    {
-        final byte[] rv = new byte[1];
-
-        rv[0] = data;
-
-        return rv;
+        this(newBytes(data), padBits);
     }
 
     /**
@@ -77,14 +72,14 @@ public class DLBitString
      * @param padBits the number of extra bits at the end of the string.
      */
     public DLBitString(
-        final byte[]  data,
+        final Bytes  data,
         final int     padBits)
     {
         super(data, padBits);
     }
 
     public DLBitString(
-        final byte[]  data)
+        final Bytes  data)
     {
         this(data, 0);
     }
@@ -111,37 +106,27 @@ public class DLBitString
     @Override
     int encodedLength()
     {
-        return 1 + StreamUtil.calculateBodyLength(data.length + 1) + data.length + 1;
+        return 1 + StreamUtil.calculateBodyLength(data.size() + 1) + data.size() + 1;
     }
 
     @Override
     void encode(
         final ASN1OutputStream  out)
     {
-        final byte[] string = data;
+        final byte[] string = data.toByteArray();
         final byte[] bytes = new byte[string.length + 1];
 
         bytes[0] = (byte)getPadBits();
         System.arraycopy(string, 0, bytes, 1, bytes.length - 1);
 
-        out.writeEncoded(BERTags.BIT_STRING, bytes);
+        out.writeEncoded(BERTags.BIT_STRING, newBytes(bytes));
     }
 
-    static DLBitString fromOctetString(final byte[] bytes)
+    static DLBitString fromOctetString(final Bytes bytes)
     {
-        if (bytes.length < 1)
-        {
-            throw new IllegalArgumentException("truncated BIT STRING detected");
-        }
+        if (bytes.size() < 1){throw new IllegalArgumentException("truncated BIT STRING detected");}
 
-        final int padBits = bytes[0];
-        final byte[] data = new byte[bytes.length - 1];
-
-        if (data.length != 0)
-        {
-            System.arraycopy(bytes, 1, data, 0, bytes.length - 1);
-        }
-
-        return new DLBitString(data, padBits);
+        final int padBits = bytes.get(0);
+        return new DLBitString(bytes.subList(1), padBits);
     }
 }

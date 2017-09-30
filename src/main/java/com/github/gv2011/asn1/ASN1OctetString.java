@@ -1,11 +1,9 @@
 package com.github.gv2011.asn1;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 
-import com.github.gv2011.asn1.util.Arrays;
 import com.github.gv2011.asn1.util.encoders.Hex;
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * Abstract base for the ASN.1 OCTET STRING data type
@@ -97,11 +95,7 @@ import com.github.gv2011.asn1.util.encoders.Hex;
  * (Contrast with 8.21.6.)
  * </p>
  */
-public abstract class ASN1OctetString
-    extends ASN1Primitive
-    implements ASN1OctetStringParser
-{
-    byte[]  string;
+public abstract class ASN1OctetString extends ASN1PrimitiveBytes implements ASN1OctetStringParser {
 
     /**
      * return an Octet String from a tagged object.
@@ -141,16 +135,9 @@ public abstract class ASN1OctetString
         {
             return (ASN1OctetString)obj;
         }
-        else if (obj instanceof byte[])
+        else if (obj instanceof Bytes)
         {
-            try
-            {
-                return ASN1OctetString.getInstance(ASN1Primitive.fromByteArray((byte[])obj));
-            }
-            catch (final IOException e)
-            {
-                throw new IllegalArgumentException("failed to construct OCTET STRING from byte[]: " + e.getMessage());
-            }
+            return ASN1OctetString.getInstance(ASN1Primitive.fromByteArray((Bytes)obj));
         }
         else if (obj instanceof ASN1Encodable)
         {
@@ -170,14 +157,8 @@ public abstract class ASN1OctetString
      *
      * @param string the octets making up the octet string.
      */
-    public ASN1OctetString(
-        final byte[]  string)
-    {
-        if (string == null)
-        {
-            throw new NullPointerException("string cannot be null");
-        }
-        this.string = string;
+    public ASN1OctetString(final Bytes string){
+      super(string);
     }
 
     /**
@@ -188,7 +169,7 @@ public abstract class ASN1OctetString
     @Override
     public InputStream getOctetStream()
     {
-        return new ByteArrayInputStream(string);
+        return string.openStream();
     }
 
     /**
@@ -201,34 +182,9 @@ public abstract class ASN1OctetString
         return this;
     }
 
-    /**
-     * Return the content of the OCTET STRING as a byte array.
-     *
-     * @return the byte[] representing the OCTET STRING's content.
-     */
-    public byte[] getOctets()
-    {
-        return string;
-    }
-
     @Override
-    public int hashCode()
-    {
-        return Arrays.hashCode(getOctets());
-    }
-
-    @Override
-    boolean asn1Equals(
-        final ASN1Primitive o)
-    {
-        if (!(o instanceof ASN1OctetString))
-        {
-            return false;
-        }
-
-        final ASN1OctetString  other = (ASN1OctetString)o;
-
-        return Arrays.areEqual(string, other.string);
+    protected final Class<ASN1OctetString> asn1EqualsClass() {
+      return ASN1OctetString.class;
     }
 
     @Override
@@ -255,6 +211,6 @@ public abstract class ASN1OctetString
     @Override
     public String toString()
     {
-      return "#"+new String(Hex.encode(string));
+      return "#"+Hex.encode(string).utf8ToString();
     }
 }
