@@ -41,15 +41,7 @@ public abstract class ASN1Object
     public Bytes getEncoded(
         final String encoding)
     {
-        if (encoding.equals(ASN1Encoding.DER))
-        {
-            final BytesBuilder    bOut = newBytesBuilder();
-            final DEROutputStream dOut = new DEROutputStream(bOut);
-
-            dOut.writeObject(this);
-
-            return bOut.build();
-        }
+        if (encoding.equals(ASN1Encoding.DER)) return getDerEncoded();
         else if (encoding.equals(ASN1Encoding.DL))
         {
             final BytesBuilder   bOut = newBytesBuilder();
@@ -61,6 +53,13 @@ public abstract class ASN1Object
         }
 
         return this.getEncoded();
+    }
+
+    public final Bytes getDerEncoded(){
+      final BytesBuilder bOut = newBytesBuilder();
+      final DEROutputStream dOut = new DEROutputStream(bOut);
+      dOut.writeObject(this);
+      return bOut.build();
     }
 
     @Override
