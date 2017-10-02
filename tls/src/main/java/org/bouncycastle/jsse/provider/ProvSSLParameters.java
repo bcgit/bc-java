@@ -128,7 +128,7 @@ class ProvSSLParameters
 
     public void setServerNames(List<BCSNIServerName> serverNames)
     {
-        throw new UnsupportedOperationException();
+        this.sniServerNames = copyList(serverNames);
     }
 
     public Collection<BCSNIMatcher> getSNIMatchers()
