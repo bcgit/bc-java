@@ -296,50 +296,6 @@ class ProvTlsClient
             :   super.getCompressionMethods();
     }
 
-    @Override
-    public Hashtable getClientExtensions() throws IOException
-    {
-        Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
-
-        if (provEnableSNIExtension)
-        {
-            List<BCSNIServerName> sniServerNames = manager.getProvSSLParameters().getServerNames();
-            if (sniServerNames == null)
-            {
-                String peerHost = manager.getPeerHost();
-                if (peerHost != null && peerHost.indexOf('.') > 0 && !IPAddress.isValid(peerHost))
-                {
-                    Vector serverNames = new Vector(1);
-                    serverNames.addElement(new ServerName(NameType.host_name, peerHost));
-                    TlsExtensionsUtils.addServerNameExtension(clientExtensions, new ServerNameList(serverNames));
-                }
-            }
-            else if (sniServerNames.isEmpty())
-            {
-                // NOTE: We follow SunJSSE behaviour and disable SNI in this case
-            }
-            else
-            {
-                Vector serverNames = new Vector(sniServerNames.size());
-                for (BCSNIServerName sniServerName : sniServerNames)
-                {
-                    /*
-                     * TODO[jsse] Add support for constructing ServerName using
-                     * BCSNIServerName.getEncoded() directly, then remove the 'host_name' limitation
-                     * (although it's currently the only defined type).
-                     */
-                    if (sniServerName.getType() == NameType.host_name)
-                    {
-                        serverNames.addElement(new ServerName((short)sniServerName.getType(), new String(sniServerName.getEncoded(), "ASCII")));
-                    }
-                }
-                TlsExtensionsUtils.addServerNameExtension(clientExtensions, new ServerNameList(serverNames));
-            }
-        }
-
-        return clientExtensions;
-    }
-
 //    public TlsKeyExchange getKeyExchange() throws IOException
 //    {
 //        // TODO[jsse] Check that all key exchanges used in JSSE supportedCipherSuites are handled

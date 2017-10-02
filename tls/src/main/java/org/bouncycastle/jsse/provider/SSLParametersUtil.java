@@ -12,8 +12,25 @@ abstract class SSLParametersUtil
     private static final Method setAlgorithmConstraints;
     private static final Method getEndpointIdentificationAlgorithm;
     private static final Method setEndpointIdentificationAlgorithm;
+    private static final Method getServerNames;
+    private static final Method setServerNames;
     private static final Method getUseCipherSuitesOrder;
     private static final Method setUseCipherSuitesOrder;
+
+    private static Method findMethod(Method[] methods, String name)
+    {
+        if (methods != null)
+        {
+            for (Method m : methods)
+            {
+                if (m.getName().equals(name))
+                {
+                    return m;
+                }
+            }
+        }
+        return null;
+    }
 
     private static Class<?> getClassPrivileged(final String className)
     {
@@ -39,20 +56,20 @@ abstract class SSLParametersUtil
         });
     }
 
-    private static Method getMethodPrivileged(final Class<?> clazz, final String methodName)
+    private static Method[] getMethodsPrivileged(final Class<?> clazz)
     {
         if (clazz == null)
         {
             return null;
         }
 
-        return AccessController.doPrivileged(new PrivilegedAction<Method>()
+        return AccessController.doPrivileged(new PrivilegedAction<Method[]>()
         {
-            public Method run()
+            public Method[] run()
             {
                 try
                 {
-                    return clazz.getMethod(methodName);
+                    return clazz.getMethods();
                 }
                 catch (Exception e)
                 {
@@ -103,13 +120,17 @@ abstract class SSLParametersUtil
     static
     {
         Class<?> sslParametersClazz = getClassPrivileged("javax.net.ssl.SSLParameters");
-
-        getAlgorithmConstraints = getMethodPrivileged(sslParametersClazz, "getAlgorithmConstraints");
-        setAlgorithmConstraints = getMethodPrivileged(sslParametersClazz, "setAlgorithmConstraints");
-        getEndpointIdentificationAlgorithm = getMethodPrivileged(sslParametersClazz, "getEndpointIdentificationAlgorithm");
-        setEndpointIdentificationAlgorithm = getMethodPrivileged(sslParametersClazz, "setEndpointIdentificationAlgorithm");
-        getUseCipherSuitesOrder = getMethodPrivileged(sslParametersClazz, "getUseCipherSuitesOrder");
-        setUseCipherSuitesOrder = getMethodPrivileged(sslParametersClazz, "setUseCipherSuitesOrder");
+        
+        Method[] methods = getMethodsPrivileged(sslParametersClazz);
+        
+        getAlgorithmConstraints = findMethod(methods, "getAlgorithmConstraints");
+        setAlgorithmConstraints = findMethod(methods, "setAlgorithmConstraints");
+        getEndpointIdentificationAlgorithm = findMethod(methods, "getEndpointIdentificationAlgorithm");
+        setEndpointIdentificationAlgorithm = findMethod(methods, "setEndpointIdentificationAlgorithm");
+        getServerNames = findMethod(methods, "getServerNames");
+        setServerNames = findMethod(methods, "setServerNames");
+        getUseCipherSuitesOrder = findMethod(methods, "getUseCipherSuitesOrder");
+        setUseCipherSuitesOrder = findMethod(methods, "setUseCipherSuitesOrder");
     }
 
     static SSLParameters toSSLParameters(final ProvSSLParameters provSslParameters)
@@ -126,8 +147,12 @@ abstract class SSLParametersUtil
         {
             invokeSetterPrivileged(r, setEndpointIdentificationAlgorithm, provSslParameters.getEndpointIdentificationAlgorithm());
         }
+        // From JDK 1.8
+        if (setServerNames != null)
+        {
+            invokeSetterPrivileged(r, setServerNames, JsseUtils_8.exportSNIServerNames(provSslParameters.getServerNames()));
+        }
         // TODO[jsse] From JDK 1.8
-//        r.setServerNames(p.getServerNames());
 //        r.setSNIMatchers(p.getSNIMatchers());
         if (setUseCipherSuitesOrder != null)
         {
@@ -164,8 +189,12 @@ abstract class SSLParametersUtil
         {
             r.setEndpointIdentificationAlgorithm((String)invokeGetterPrivileged(sslParameters, getEndpointIdentificationAlgorithm));
         }
+        // From JDK 1.8
+        if (getServerNames != null)
+        {
+            r.setServerNames(JsseUtils_8.importSNIServerNames(invokeGetterPrivileged(sslParameters, getServerNames)));
+        }
         // TODO[jsse] From JDK 1.8
-//        r.setServerNames(p.getServerNames());
 //        r.setSNIMatchers(p.getSNIMatchers());
         if (getUseCipherSuitesOrder != null)
         {
