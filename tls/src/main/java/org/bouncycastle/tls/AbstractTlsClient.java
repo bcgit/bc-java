@@ -92,6 +92,48 @@ public abstract class AbstractTlsClient
         return null;
     }
 
+    protected short[] getSupportedPointFormats()
+    {
+        return new short[]{ ECPointFormat.uncompressed, ECPointFormat.ansiX962_compressed_prime,
+            ECPointFormat.ansiX962_compressed_char2, };
+    }
+
+    /**
+     * The default {@link #getClientExtensions()} implementation calls this to determine which named
+     * groups to include in the supported_groups extension for the ClientHello.
+     * 
+     * @param offeringDH
+     *            True if we are offering any DH ciphersuites in ClientHello, so at least one DH
+     *            group should be included.
+     * @param offeringEC
+     *            True if we are offering any EC ciphersuites in ClientHello, so at least one EC
+     *            group should be included.
+     * @return a {@link Vector} of {@link Integer}. See {@link NamedGroup} for group constants.
+     */
+    protected Vector getSupportedGroups(boolean offeringDH, boolean offeringEC)
+    {
+        Vector supportedGroups = new Vector();
+
+        if (offeringEC)
+        {
+            /*
+             * NOTE[fips]: These curves are recommended for FIPS. If any changes are made to how
+             * this is configured, FIPS considerations need to be accounted for in BCJSSE.
+             */
+            supportedGroups.addElement(NamedGroup.secp256r1);
+            supportedGroups.addElement(NamedGroup.secp384r1);
+        }
+
+        if (offeringDH)
+        {
+            supportedGroups.addElement(NamedGroup.ffdhe2048);
+            supportedGroups.addElement(NamedGroup.ffdhe3072);
+            supportedGroups.addElement(NamedGroup.ffdhe4096);
+        }
+
+        return supportedGroups;
+    }
+
     protected Vector getSupportedSignatureAlgorithms()
     {
         return TlsUtils.getDefaultSupportedSignatureAlgorithms(context);
@@ -168,45 +210,18 @@ public abstract class AbstractTlsClient
         }
 
         int[] cipherSuites = getCipherSuites();
-        Vector supportedGroups = new Vector();
+        boolean offeringDH = TlsDHUtils.containsDHECipherSuites(cipherSuites);
+        boolean offeringEC = TlsECCUtils.containsECCipherSuites(cipherSuites);
 
-        if (TlsECCUtils.containsECCipherSuites(cipherSuites))
+        if (offeringEC)
         {
-            /*
-             * RFC 4492 5.1. A client that proposes ECC cipher suites in its ClientHello message
-             * appends these extensions (along with any others), enumerating the curves it supports
-             * and the point formats it can parse. Clients SHOULD send both the Supported Elliptic
-             * Curves Extension and the Supported Point Formats Extension.
-             */
-
-            /*
-             * NOTE[fips]: These curves are recommended for FIPS. If any changes are made to how
-             * this is configured, FIPS considerations need to be accounted for in BCJSSE.
-             *
-             * TODO Could just add all the EC groups since we support them all, but users may not
-             * want to use unnecessarily large groups. Need configuration options.
-             */
-            supportedGroups.addElement(NamedGroup.secp256r1);
-            supportedGroups.addElement(NamedGroup.secp384r1);
-
-            this.clientECPointFormats = new short[]{ ECPointFormat.uncompressed,
-                ECPointFormat.ansiX962_compressed_prime, ECPointFormat.ansiX962_compressed_char2, };
+            this.clientECPointFormats = getSupportedPointFormats();
 
             TlsECCUtils.addSupportedPointFormatsExtension(clientExtensions, clientECPointFormats);
         }
 
-        if (TlsDHUtils.containsDHECipherSuites(cipherSuites))
-        {
-            /*
-             * TODO Could just add all the FFDHE groups since we support them all, but users may not
-             * want to use unnecessarily large groups. Need configuration options.
-             */
-            supportedGroups.addElement(NamedGroup.ffdhe2048);
-            supportedGroups.addElement(NamedGroup.ffdhe3072);
-            supportedGroups.addElement(NamedGroup.ffdhe4096);
-        }
-
-        if (!supportedGroups.isEmpty())
+        Vector supportedGroups = getSupportedGroups(offeringDH, offeringEC);
+        if (supportedGroups != null && !supportedGroups.isEmpty())
         {
             this.supportedGroups = supportedGroups;
 
