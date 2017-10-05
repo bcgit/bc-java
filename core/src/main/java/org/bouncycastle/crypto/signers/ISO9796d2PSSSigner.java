@@ -248,9 +248,13 @@ public class ISO9796d2PSSSigner
 
             if (trailerObj != null)
             {
-                if (sigTrail != trailerObj.intValue())
+                int trailer = trailerObj.intValue();
+                if (sigTrail != trailer)
                 {
-                    throw new IllegalStateException("signer initialised with wrong digest for trailer " + sigTrail);
+                    if (!(trailer == ISOTrailers.TRAILER_SHA512_256 && sigTrail == 0x40CC))
+                    {
+                        throw new IllegalStateException("signer initialised with wrong digest for trailer " + sigTrail);
+                    }
                 }
             }
             else

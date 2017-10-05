@@ -153,7 +153,8 @@ public class RegressionTest
         new SM2SignerTest(),
         new SM4Test(),
         new DSTU7624Test(),
-        new DSTU7564Test()
+        new DSTU7564Test(),
+        new IsoTrailerTest()
     };
 
     public static void main(

@@ -22,7 +22,7 @@ public class ISOTrailers
     static final public int   TRAILER_WHIRLPOOL   = 0x37CC;
     static final public int   TRAILER_SHA224      = 0x38CC;
     static final public int   TRAILER_SHA512_224  = 0x39CC;
-    static final public int   TRAILER_SHA512_256  = 0x40CC;
+    static final public int   TRAILER_SHA512_256  = 0x3aCC;
 
     static
     {
