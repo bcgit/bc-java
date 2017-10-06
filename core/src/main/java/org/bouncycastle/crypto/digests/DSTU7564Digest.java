@@ -45,7 +45,8 @@ public class DSTU7564Digest
     private byte[] tempBuffer;
     private long[] tempLongBuffer;
 
-    private long inputLength;
+    // TODO Guard against 'inputBlocks' overflow (2^64 blocks)
+    private long inputBlocks;
     private int bufOff;
     private byte[] buf;
 
@@ -70,7 +71,7 @@ public class DSTU7564Digest
         this.tempBuffer = Arrays.clone(digest.tempBuffer);
         this.tempLongBuffer = Arrays.clone(digest.tempLongBuffer);
 
-        this.inputLength = digest.inputLength;
+        this.inputBlocks = digest.inputBlocks;
         this.bufOff = digest.bufOff;
         this.buf = Arrays.clone(digest.buf);
     }
@@ -143,8 +144,8 @@ public class DSTU7564Digest
         {
             processBlock(buf, 0);
             bufOff = 0;
+            ++inputBlocks;
         }
-        inputLength++;
     }
 
     public void update(byte[] in, int inOff, int len)
@@ -161,8 +162,8 @@ public class DSTU7564Digest
             {
                 processBlock(in, inOff);
                 inOff += blockSize;
-                inputLength += blockSize;
                 len -= blockSize;
+                ++inputBlocks;
             }
 
             while (len > 0)
@@ -177,6 +178,7 @@ public class DSTU7564Digest
     {
         // Apply padding: terminator byte and 96-bit length field
         {
+            int inputBytes = bufOff;
             buf[bufOff++] = (byte)0x80;
 
             int lenPos = blockSize - 12;
@@ -194,13 +196,14 @@ public class DSTU7564Digest
             {
                 buf[bufOff++] = 0;
             }
-            // TODO inputLength has to be restricted to 61 bits
-            Pack.longToLittleEndian(inputLength << 3, buf, bufOff);
-            bufOff += 8;
-            while (bufOff < blockSize)
-            {
-                buf[bufOff++] = 0;
-            }
+
+            long c = ((inputBlocks & 0xFFFFFFFFL) * blockSize + inputBytes) << 3;
+            Pack.intToLittleEndian((int)c, buf, bufOff);
+            bufOff += 4;
+            c >>>= 32;
+            c += ((inputBlocks >>> 32) * blockSize) << 3;
+            Pack.longToLittleEndian((int)c, buf, bufOff);
+//            bufOff += 8;
             processBlock(buf, 0);
         }
 
@@ -294,7 +297,7 @@ public class DSTU7564Digest
 
         state[0][0] = (byte)state.length;
 
-        inputLength = 0;
+        inputBlocks = 0;
         bufOff = 0;
         
         Arrays.fill(buf, (byte)0);
