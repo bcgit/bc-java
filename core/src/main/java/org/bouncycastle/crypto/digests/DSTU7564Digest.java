@@ -42,7 +42,6 @@ public class DSTU7564Digest
     private byte[][] tempState1;
     private byte[][] tempState2;
 
-    private byte[] tempBuffer;
     private long[] tempLongBuffer;
 
     // TODO Guard against 'inputBlocks' overflow (2^64 blocks)
@@ -68,7 +67,6 @@ public class DSTU7564Digest
         this.tempState1 = Arrays.clone(digest.tempState1);
         this.tempState2 = Arrays.clone(digest.tempState2);
 
-        this.tempBuffer = Arrays.clone(digest.tempBuffer);
         this.tempLongBuffer = Arrays.clone(digest.tempLongBuffer);
 
         this.inputBlocks = digest.inputBlocks;
@@ -117,7 +115,6 @@ public class DSTU7564Digest
             this.tempState2[col] = new byte[ROWS];
         }
 
-        this.tempBuffer = new byte[NB_1024];
         this.tempLongBuffer = new long[columns];
         this.buf = new byte[blockSize];
     }
@@ -207,25 +204,17 @@ public class DSTU7564Digest
             processBlock(buf, 0);
         }
 
-        byte[][] temp = new byte[STATE_BYTES_SIZE_1024][];
+        byte[][] temp = new byte[state.length][];
 
         for (int bufferIndex = 0; bufferIndex < state.length; bufferIndex++)
         {
-
             temp[bufferIndex] = new byte[ROWS];
-
-//            System.out.println(state.length);
-//            System.out.println(temp.length);
-//            System.out.println(state[bufferIndex].length);
-//            System.out.println(temp[bufferIndex].length);
-
 
             System.arraycopy(state[bufferIndex], 0, temp[bufferIndex], 0, ROWS);
         }
 
         for (int roundIndex = 0; roundIndex < rounds; roundIndex++)
         {
-
             /* AddRoundConstants */
             for (int columnIndex = 0; columnIndex < columns; columnIndex++)
             {
@@ -233,30 +222,7 @@ public class DSTU7564Digest
             }
 
             subBytes(temp);
-
-            /* ShiftBytes */
-            int shift = -1;
-            for (int rowIndex = 0; rowIndex < ROWS; rowIndex++)
-            {
-                if ((rowIndex == ROWS - 1) && (columns == NB_1024))
-                {
-                    shift = 11; // Defined in standard
-                }
-                else
-                {
-                    shift++;
-                }
-
-                for (int columnIndex = 0; columnIndex < columns; columnIndex++)
-                {
-                    tempBuffer[(columnIndex + shift) % columns] = temp[columnIndex][rowIndex];
-                }
-                for (int columnIndex = 0; columnIndex < columns; columnIndex++)
-                {
-                    temp[columnIndex][rowIndex] = tempBuffer[columnIndex];
-                }
-            }
-
+            shiftRows(temp);
             mixColumns(temp);
         }
 
@@ -330,49 +296,6 @@ public class DSTU7564Digest
         }
     }
 
-    private void Q()
-    {
-        for (int roundIndex = 0; roundIndex < rounds; roundIndex++)
-        {
-            /* AddRoundConstantsQ */
-            for (int columnIndex = 0; columnIndex < columns; columnIndex++)
-            {
-                tempLongBuffer[columnIndex] = Pack.littleEndianToLong(tempState2[columnIndex], 0);
-
-                tempLongBuffer[columnIndex] += (0x00F0F0F0F0F0F0F3L ^ ((((long)(columns - columnIndex - 1) * 0x10L) ^ (long)roundIndex) << (7 * 8))); // Defined in standard
-
-                Pack.longToLittleEndian(tempLongBuffer[columnIndex], tempState2[columnIndex], 0);
-            }
-
-            subBytes(tempState2);
-
-            /* ShiftBytes */
-            int shift = -1;
-            for (int rowIndex = 0; rowIndex < ROWS; rowIndex++)
-            {
-                if ((rowIndex == ROWS - 1) && (columns == NB_1024))
-                {
-                    shift = 11; // Defined in standard
-                }
-                else
-                {
-                    shift++;
-                }
-
-                for (int columnIndex = 0; columnIndex < columns; columnIndex++)
-                {
-                    tempBuffer[(columnIndex + shift) % columns] = tempState2[columnIndex][rowIndex];
-                }
-                for (int columnIndex = 0; columnIndex < columns; columnIndex++)
-                {
-                    tempState2[columnIndex][rowIndex] = tempBuffer[columnIndex];
-                }
-            }
-
-            mixColumns(tempState2);
-        }
-    }
-
     private void P()
     {
         for (int roundIndex = 0; roundIndex < rounds; roundIndex++)
@@ -380,36 +303,37 @@ public class DSTU7564Digest
             /* AddRoundConstants */
             for (int columnIndex = 0; columnIndex < columns; columnIndex++)
             {
-                //System.out.println((byte)((columnIndex * 0x10) ^ roundIndex));
                 tempState1[columnIndex][0] ^= (byte)((columnIndex * 0x10) ^ roundIndex); // Defined in standard
             }
 
             subBytes(tempState1);
+            shiftRows(tempState1);
+            mixColumns(tempState1);
+        }
+    }
 
-            /* ShiftBytes */
-            int shift = -1;
-            for (int rowIndex = 0; rowIndex < ROWS; rowIndex++)
+    private void Q()
+    {
+        for (int roundIndex = 0; roundIndex < rounds; roundIndex++)
+        {
+            /* AddRoundConstantsQ */
             {
-                if ((rowIndex == ROWS - 1) && (columns == NB_1024))
-                {
-                    shift = 11; // Defined in standard
-                }
-                else
-                {
-                    shift++;
-                }
+                long rc = ((long)(((columns - 1) << 4) ^ roundIndex) << 56) | 0x00F0F0F0F0F0F0F3L;
 
                 for (int columnIndex = 0; columnIndex < columns; columnIndex++)
                 {
-                    tempBuffer[(columnIndex + shift) % columns] = tempState1[columnIndex][rowIndex];
-                }
-                for (int columnIndex = 0; columnIndex < columns; columnIndex++)
-                {
-                    tempState1[columnIndex][rowIndex] = tempBuffer[columnIndex];
+                    tempLongBuffer[columnIndex] = Pack.littleEndianToLong(tempState2[columnIndex], 0);
+
+                    tempLongBuffer[columnIndex] += rc;
+                    rc -= 0x1000000000000000L;
+
+                    Pack.longToLittleEndian(tempLongBuffer[columnIndex], tempState2[columnIndex], 0);
                 }
             }
 
-            mixColumns(tempState1);
+            subBytes(tempState2);
+            shiftRows(tempState2);
+            mixColumns(tempState2);
         }
     }
 
@@ -462,6 +386,130 @@ public class DSTU7564Digest
             long colVal = Pack.littleEndianToLong(state[col], 0);
             colVal = mixColumn(colVal);
             Pack.longToLittleEndian(colVal, state[col], 0);
+        }
+    }
+
+    private void shiftRows(byte[][] state)
+    {
+        switch (columns)
+        {
+        case NB_512:
+        {
+            long c0 = Pack.littleEndianToLong(state[0], 0);
+            long c1 = Pack.littleEndianToLong(state[1], 0);
+            long c2 = Pack.littleEndianToLong(state[2], 0);
+            long c3 = Pack.littleEndianToLong(state[3], 0);
+            long c4 = Pack.littleEndianToLong(state[4], 0);
+            long c5 = Pack.littleEndianToLong(state[5], 0);
+            long c6 = Pack.littleEndianToLong(state[6], 0);
+            long c7 = Pack.littleEndianToLong(state[7], 0);
+            long d;
+
+            d = (c0 ^ c4) & 0xFFFFFFFF00000000L; c0 ^= d; c4 ^= d;
+            d = (c1 ^ c5) & 0x00FFFFFFFF000000L; c1 ^= d; c5 ^= d;
+            d = (c2 ^ c6) & 0x0000FFFFFFFF0000L; c2 ^= d; c6 ^= d;
+            d = (c3 ^ c7) & 0x000000FFFFFFFF00L; c3 ^= d; c7 ^= d;
+
+            d = (c0 ^ c2) & 0xFFFF0000FFFF0000L; c0 ^= d; c2 ^= d;
+            d = (c1 ^ c3) & 0x00FFFF0000FFFF00L; c1 ^= d; c3 ^= d;
+            d = (c4 ^ c6) & 0xFFFF0000FFFF0000L; c4 ^= d; c6 ^= d;
+            d = (c5 ^ c7) & 0x00FFFF0000FFFF00L; c5 ^= d; c7 ^= d;
+
+            d = (c0 ^ c1) & 0xFF00FF00FF00FF00L; c0 ^= d; c1 ^= d;
+            d = (c2 ^ c3) & 0xFF00FF00FF00FF00L; c2 ^= d; c3 ^= d;
+            d = (c4 ^ c5) & 0xFF00FF00FF00FF00L; c4 ^= d; c5 ^= d;
+            d = (c6 ^ c7) & 0xFF00FF00FF00FF00L; c6 ^= d; c7 ^= d;
+
+            Pack.longToLittleEndian(c0, state[0], 0);
+            Pack.longToLittleEndian(c1, state[1], 0);
+            Pack.longToLittleEndian(c2, state[2], 0);
+            Pack.longToLittleEndian(c3, state[3], 0);
+            Pack.longToLittleEndian(c4, state[4], 0);
+            Pack.longToLittleEndian(c5, state[5], 0);
+            Pack.longToLittleEndian(c6, state[6], 0);
+            Pack.longToLittleEndian(c7, state[7], 0);
+            break;
+        }
+        case NB_1024:
+        {
+            long c00 = Pack.littleEndianToLong(state[0], 0);
+            long c01 = Pack.littleEndianToLong(state[1], 0);
+            long c02 = Pack.littleEndianToLong(state[2], 0);
+            long c03 = Pack.littleEndianToLong(state[3], 0);
+            long c04 = Pack.littleEndianToLong(state[4], 0);
+            long c05 = Pack.littleEndianToLong(state[5], 0);
+            long c06 = Pack.littleEndianToLong(state[6], 0);
+            long c07 = Pack.littleEndianToLong(state[7], 0);
+            long c08 = Pack.littleEndianToLong(state[8], 0);
+            long c09 = Pack.littleEndianToLong(state[9], 0);
+            long c10 = Pack.littleEndianToLong(state[10], 0);
+            long c11 = Pack.littleEndianToLong(state[11], 0);
+            long c12 = Pack.littleEndianToLong(state[12], 0);
+            long c13 = Pack.littleEndianToLong(state[13], 0);
+            long c14 = Pack.littleEndianToLong(state[14], 0);
+            long c15 = Pack.littleEndianToLong(state[15], 0);
+            long d;
+
+            // NOTE: Row 7 is shifted by 11
+
+            d = (c00 ^ c08) & 0xFF00000000000000L; c00 ^= d; c08 ^= d;
+            d = (c01 ^ c09) & 0xFF00000000000000L; c01 ^= d; c09 ^= d;
+            d = (c02 ^ c10) & 0xFFFF000000000000L; c02 ^= d; c10 ^= d;
+            d = (c03 ^ c11) & 0xFFFFFF0000000000L; c03 ^= d; c11 ^= d;
+            d = (c04 ^ c12) & 0xFFFFFFFF00000000L; c04 ^= d; c12 ^= d;
+            d = (c05 ^ c13) & 0x00FFFFFFFF000000L; c05 ^= d; c13 ^= d;
+            d = (c06 ^ c14) & 0x00FFFFFFFFFF0000L; c06 ^= d; c14 ^= d;
+            d = (c07 ^ c15) & 0x00FFFFFFFFFFFF00L; c07 ^= d; c15 ^= d;
+
+            d = (c00 ^ c04) & 0x00FFFFFF00000000L; c00 ^= d; c04 ^= d;
+            d = (c01 ^ c05) & 0xFFFFFFFFFF000000L; c01 ^= d; c05 ^= d;
+            d = (c02 ^ c06) & 0xFF00FFFFFFFF0000L; c02 ^= d; c06 ^= d;
+            d = (c03 ^ c07) & 0xFF0000FFFFFFFF00L; c03 ^= d; c07 ^= d;
+            d = (c08 ^ c12) & 0x00FFFFFF00000000L; c08 ^= d; c12 ^= d;
+            d = (c09 ^ c13) & 0xFFFFFFFFFF000000L; c09 ^= d; c13 ^= d;
+            d = (c10 ^ c14) & 0xFF00FFFFFFFF0000L; c10 ^= d; c14 ^= d;
+            d = (c11 ^ c15) & 0xFF0000FFFFFFFF00L; c11 ^= d; c15 ^= d;
+
+            d = (c00 ^ c02) & 0xFFFF0000FFFF0000L; c00 ^= d; c02 ^= d;
+            d = (c01 ^ c03) & 0x00FFFF0000FFFF00L; c01 ^= d; c03 ^= d;
+            d = (c04 ^ c06) & 0xFFFF0000FFFF0000L; c04 ^= d; c06 ^= d;
+            d = (c05 ^ c07) & 0x00FFFF0000FFFF00L; c05 ^= d; c07 ^= d;
+            d = (c08 ^ c10) & 0xFFFF0000FFFF0000L; c08 ^= d; c10 ^= d;
+            d = (c09 ^ c11) & 0x00FFFF0000FFFF00L; c09 ^= d; c11 ^= d;
+            d = (c12 ^ c14) & 0xFFFF0000FFFF0000L; c12 ^= d; c14 ^= d;
+            d = (c13 ^ c15) & 0x00FFFF0000FFFF00L; c13 ^= d; c15 ^= d;
+
+            d = (c00 ^ c01) & 0xFF00FF00FF00FF00L; c00 ^= d; c01 ^= d;
+            d = (c02 ^ c03) & 0xFF00FF00FF00FF00L; c02 ^= d; c03 ^= d;
+            d = (c04 ^ c05) & 0xFF00FF00FF00FF00L; c04 ^= d; c05 ^= d;
+            d = (c06 ^ c07) & 0xFF00FF00FF00FF00L; c06 ^= d; c07 ^= d;
+            d = (c08 ^ c09) & 0xFF00FF00FF00FF00L; c08 ^= d; c09 ^= d;
+            d = (c10 ^ c11) & 0xFF00FF00FF00FF00L; c10 ^= d; c11 ^= d;
+            d = (c12 ^ c13) & 0xFF00FF00FF00FF00L; c12 ^= d; c13 ^= d;
+            d = (c14 ^ c15) & 0xFF00FF00FF00FF00L; c14 ^= d; c15 ^= d;
+
+            Pack.longToLittleEndian(c00, state[0], 0);
+            Pack.longToLittleEndian(c01, state[1], 0);
+            Pack.longToLittleEndian(c02, state[2], 0);
+            Pack.longToLittleEndian(c03, state[3], 0);
+            Pack.longToLittleEndian(c04, state[4], 0);
+            Pack.longToLittleEndian(c05, state[5], 0);
+            Pack.longToLittleEndian(c06, state[6], 0);
+            Pack.longToLittleEndian(c07, state[7], 0);
+            Pack.longToLittleEndian(c08, state[8], 0);
+            Pack.longToLittleEndian(c09, state[9], 0);
+            Pack.longToLittleEndian(c10, state[10], 0);
+            Pack.longToLittleEndian(c11, state[11], 0);
+            Pack.longToLittleEndian(c12, state[12], 0);
+            Pack.longToLittleEndian(c13, state[13], 0);
+            Pack.longToLittleEndian(c14, state[14], 0);
+            Pack.longToLittleEndian(c15, state[15], 0);
+            break;
+        }
+        default:
+        {
+            throw new IllegalStateException("unsupported state size: only 512/1024 are allowed");
+        }
         }
     }
 
