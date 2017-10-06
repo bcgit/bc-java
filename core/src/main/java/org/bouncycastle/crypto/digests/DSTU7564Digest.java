@@ -44,8 +44,6 @@ public class DSTU7564Digest
     private byte[][] tempState2;
 
     private byte[] tempBuffer;
-    private byte[] mixColumnsResult;
-
     private long[] tempLongBuffer;
 
     private long inputLength;
@@ -72,8 +70,6 @@ public class DSTU7564Digest
         this.tempState2 = Arrays.clone(digest.tempState2);
 
         this.tempBuffer = Arrays.clone(digest.tempBuffer);
-        this.mixColumnsResult = Arrays.clone(digest.mixColumnsResult);
-
         this.tempLongBuffer = Arrays.clone(digest.tempLongBuffer);
 
         this.inputLength = digest.inputLength;
@@ -124,7 +120,6 @@ public class DSTU7564Digest
         }
 
         this.tempBuffer = new byte[NB_1024];
-        this.mixColumnsResult = new byte[ROWS];
         this.tempLongBuffer = new long[columns];
         this.buf = new byte[blockSize];
     }
@@ -426,56 +421,56 @@ public class DSTU7564Digest
         }
     }
 
+    private static long mixColumn(long c)
+    {
+        // Calculate column multiplied by powers of 'x'
+        long x0 = c;
+        long x1 = ((x0 & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((x0 & 0x8080808080808080L) >>> 7) * 0x1DL);
+        long x2 = ((x1 & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((x1 & 0x8080808080808080L) >>> 7) * 0x1DL);
+        long x3 = ((x2 & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((x2 & 0x8080808080808080L) >>> 7) * 0x1DL);
+
+        // Calculate products with circulant matrix from (0x01, 0x01, 0x05, 0x01, 0x08, 0x06, 0x07, 0x04)
+//        long m0 = x0;
+//        long m1 = x0;
+//        long m2 = x0 ^ x2;
+//        long m3 = x0;
+//        long m4 = x3;
+//        long m5 = x1 ^ x2;
+//        long m6 = x0 ^ x1 ^ x2;
+//        long m7 = x2;
+
+        // Assemble the rotated products
+//        return m0
+//            ^ ((m1 << 56) | (m1 >>>  8))
+//            ^ ((m2 << 48) | (m2 >>> 16))
+//            ^ ((m3 << 40) | (m3 >>> 24))
+//            ^ ((m4 << 32) | (m4 >>> 32))
+//            ^ ((m5 << 24) | (m5 >>> 40))
+//            ^ ((m6 << 16) | (m6 >>> 48))
+//            ^ ((m7 <<  8) | (m7 >>> 56));
+
+        x1 ^= x2;
+        x1 ^= ((x1 <<  8) | (x1 >>> 56));
+        x1 ^= x0;
+
+        x0 ^= ((x0 << 56) | (x0 >>>  8));
+        x0 ^= ((x0 << 16) | (x0 >>> 48));
+        x0 ^= x2;
+
+        return ((x0 << 48) | (x0 >>> 16))
+            ^  ((x3 << 32) | (x3 >>> 32))
+            ^  ((x1 << 16) | (x1 >>> 48))
+            ^  ((x2 <<  8) | (x2 >>> 56));
+    }
+
     private void mixColumns(byte[][] state)
     {
         for (int col = 0; col < columns; ++col)
         {
             long colVal = Pack.littleEndianToLong(state[col], 0);
-            long colEven = colVal & 0x00FF00FF00FF00FFL; 
-            long colOdd = (colVal >>> 8) & 0x00FF00FF00FF00FFL; 
-
-            //long rowMatrix = (mdsMatrix >>> 8) | (mdsMatrix << 56);
-            long rowMatrix = mdsMatrix;
-
-            long result = 0;
-            for (int row = 7; row >= 0; --row)
-            {
-                long product = multiplyGFx4(colEven, rowMatrix & 0x00FF00FF00FF00FFL);
-
-                rowMatrix = (rowMatrix >>> 8) | (rowMatrix << 56);
-
-                product ^= multiplyGFx4(colOdd, rowMatrix & 0x00FF00FF00FF00FFL);
-
-                product ^= (product >>> 32);
-                product ^= (product >>> 16);
-
-                result <<= 8;
-                result |= (product & 0xFFL);
-            }
-
-            Pack.longToLittleEndian(result, state[col], 0);
+            colVal = mixColumn(colVal);
+            Pack.longToLittleEndian(colVal, state[col], 0);
         }
-    }
-
-    /* Pair-wise modular multiplication of 4 byte-pairs (at even byte-offset positions within u, v) */  
-    private static long multiplyGFx4(long u, long v)
-    {
-        long r = u & ((v & 0x0001000100010001L) * 0xFFFFL);
-
-        for (int i = 1; i < 8; ++i)
-        {
-            u <<= 1;
-            v >>>= 1;
-            r ^= u & ((v & 0x0001000100010001L) * 0xFFFFL);
-        }
-
-        // REDUCTION_POLYNOMIAL = 0x011d; /* x^8 + x^4 + x^3 + x^2 + 1 */
-
-        long hi = r & 0xFF00FF00FF00FF00L;
-        r ^= hi ^ (hi >>> 4) ^ (hi >>> 5) ^ (hi >>> 6) ^ (hi >>> 8);
-        hi = r & 0x0F000F000F000F00L;
-        r ^= hi ^ (hi >>> 4) ^ (hi >>> 5) ^ (hi >>> 6) ^ (hi >>> 8);
-        return r;
     }
 
     private byte[] pad(byte[] in, int inOff, int len)
@@ -498,9 +493,6 @@ public class DSTU7564Digest
 
         return padded;
     }
-
-//    private static final long mdsMatrix = 0x0407060801050101L;
-    private static final long mdsMatrix = 0x0104070608010501L;
 
     private static final byte[][] sBoxes = new byte[][]{
         new byte[]{
