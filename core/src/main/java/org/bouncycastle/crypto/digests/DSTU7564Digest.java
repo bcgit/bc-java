@@ -37,7 +37,6 @@ public class DSTU7564Digest
     private int columns;
     private int rounds;
 
-    private byte[] padded;
     private byte[][] state;
 
     private byte[][] tempState1;
@@ -63,7 +62,6 @@ public class DSTU7564Digest
         this.columns = digest.columns;
         this.rounds = digest.rounds;
 
-        this.padded = Arrays.clone(digest.padded);
         this.state = Arrays.clone(digest.state);
 
         this.tempState1 = Arrays.clone(digest.tempState1);
@@ -108,7 +106,6 @@ public class DSTU7564Digest
         }
 
         this.state[0][0] = (byte)state.length; // Defined in standard
-        this.padded = null;
 
         this.tempState1 = new byte[columns][];
         this.tempState2 = new byte[columns][];
@@ -178,16 +175,33 @@ public class DSTU7564Digest
 
     public int doFinal(byte[] out, int outOff)
     {
-        padded = pad(buf, 0, bufOff);
-
-        int paddedLen = padded.length;
-        int paddedOff = 0;
-
-        while (paddedLen != 0)
+        // Apply padding: terminator byte and 96-bit length field
         {
-            processBlock(padded, paddedOff);
-            paddedOff += blockSize;
-            paddedLen -= blockSize;
+            buf[bufOff++] = (byte)0x80;
+
+            int lenPos = blockSize - 12;
+            if (bufOff > lenPos)
+            {
+                while (bufOff < blockSize)
+                {
+                    buf[bufOff++] = 0;
+                }
+                bufOff = 0;
+                processBlock(buf, 0);
+            }
+
+            while (bufOff < lenPos)
+            {
+                buf[bufOff++] = 0;
+            }
+            // TODO inputLength has to be restricted to 61 bits
+            Pack.longToLittleEndian(inputLength << 3, buf, bufOff);
+            bufOff += 8;
+            while (bufOff < blockSize)
+            {
+                buf[bufOff++] = 0;
+            }
+            processBlock(buf, 0);
         }
 
         byte[][] temp = new byte[STATE_BYTES_SIZE_1024][];
@@ -290,11 +304,6 @@ public class DSTU7564Digest
         bufOff = 0;
         
         Arrays.fill(buf, (byte)0);
-
-        if (padded != null)
-        {
-            Arrays.fill(padded, (byte)0);
-        }
     }
 
     private void processBlock(byte[] input, int inOff)
@@ -471,27 +480,6 @@ public class DSTU7564Digest
             colVal = mixColumn(colVal);
             Pack.longToLittleEndian(colVal, state[col], 0);
         }
-    }
-
-    private byte[] pad(byte[] in, int inOff, int len)
-    {
-        byte[] padded;
-        if (blockSize - len < 13)         // terminator byte + 96 bits of length
-        {
-            padded = new byte[2 * blockSize];
-        }
-        else
-        {
-            padded = new byte[blockSize];
-        }
-
-        System.arraycopy(in, inOff, padded, 0, len);
-
-        padded[len] = (byte)0x80; // Defined in standard;
-        // Defined in standard;
-        Pack.longToLittleEndian(inputLength * BITS_IN_BYTE, padded, padded.length - 12);
-
-        return padded;
     }
 
     private static final byte[][] sBoxes = new byte[][]{
