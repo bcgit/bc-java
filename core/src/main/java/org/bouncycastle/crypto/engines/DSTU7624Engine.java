@@ -194,7 +194,7 @@ public class DSTU7624Engine
                 subRoundKey(roundsAmount);
                 for (int round = roundsAmount;;)
                 {
-                    invMixColumns();
+                    mixColumnsInv();
                     invShiftRows();
                     invSubBytes();
     
@@ -417,8 +417,8 @@ public class DSTU7624Engine
 
         for (int round = roundsAmount;;)
         {
-            c0 = invMixColumn(c0);
-            c1 = invMixColumn(c1);
+            c0 = mixColumnInv(c0);
+            c1 = mixColumnInv(c1);
 
             int lo0 = (int)c0, hi0 = (int)(c0 >>> 32);
             int lo1 = (int)c1, hi1 = (int)(c1 >>> 32);
@@ -716,9 +716,9 @@ public class DSTU7624Engine
     {
 //        // Calculate column multiplied by powers of 'x'
 //        long x0 = c;
-//        long x1 = ((x0 & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((x0 & 0x8080808080808080L) >>> 7) * 0x1DL);
-//        long x2 = ((x1 & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((x1 & 0x8080808080808080L) >>> 7) * 0x1DL);
-//        long x3 = ((x2 & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((x2 & 0x8080808080808080L) >>> 7) * 0x1DL);
+//        long x1 = mulX(x0);
+//        long x2 = mulX(x1);
+//        long x3 = mulX(x2);
 //
 //        // Calculate products with circulant matrix from (0x01, 0x01, 0x05, 0x01, 0x08, 0x06, 0x07, 0x04)
 //        long m0 = x0;
@@ -740,18 +740,14 @@ public class DSTU7624Engine
 //            ^ rotate(48, m6)
 //            ^ rotate(56, m7);
 
-        // Multiply elements by 'x'
-        long x1 = ((c & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((c & 0x8080808080808080L) >>> 7) * 0x1DL);
+        long x1 = mulX(c);
         long u, v;
 
         u  = rotate(8, c) ^ c;
         u ^= rotate(16, u);
         u ^= rotate(48, c);
 
-        v  = u ^ c ^ x1;
-
-        // Multiply elements by 'x^2'
-        v  = ((v & 0x3F3F3F3F3F3F3F3FL) << 2) ^ (((v & 0x8080808080808080L) >>> 6) * 0x1DL) ^ (((v & 0x4040404040404040L) >>> 6) * 0x1DL);
+        v  = mulX2(u ^ c ^ x1);
 
         return u ^ rotate(32, v) ^ rotate(40, x1) ^ rotate(48, x1);
     }
@@ -764,27 +760,41 @@ public class DSTU7624Engine
         }
     }
 
-    private static long invMixColumn(long c)
+    private static long mixColumnInv(long c)
     {
+/*
         // Calculate column multiplied by powers of 'x'
         long x0 = c;
-        long x1 = ((x0 & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((x0 & 0x8080808080808080L) >>> 7) * 0x1DL);
-        long x2 = ((x1 & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((x1 & 0x8080808080808080L) >>> 7) * 0x1DL);
-        long x3 = ((x2 & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((x2 & 0x8080808080808080L) >>> 7) * 0x1DL);
-        long x4 = ((x3 & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((x3 & 0x8080808080808080L) >>> 7) * 0x1DL);
-        long x5 = ((x4 & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((x4 & 0x8080808080808080L) >>> 7) * 0x1DL);
-        long x6 = ((x5 & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((x5 & 0x8080808080808080L) >>> 7) * 0x1DL);
-        long x7 = ((x6 & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((x6 & 0x8080808080808080L) >>> 7) * 0x1DL);
+        long x1 = mulX(x0);
+        long x2 = mulX(x1);
+        long x3 = mulX(x2);
+        long x4 = mulX(x3);
+        long x5 = mulX(x4);
+        long x6 = mulX(x5);
+        long x7 = mulX(x6);
 
         // Calculate products with circulant matrix from (0xAD,0x95,0x76,0xA8,0x2F,0x49,0xD7,0xCA)
-        long m0 = x0 ^ x2 ^ x3 ^ x5 ^ x7;
-        long m1 = x0 ^ x2 ^ x4 ^ x7;
-        long m2 = x1 ^ x2 ^ x4 ^ x5 ^ x6;
-        long m3 = x3 ^ x5 ^ x7;
-        long m4 = x0 ^ x1 ^ x2 ^ x3 ^ x5;
+//        long m0 = x0 ^ x2 ^ x3 ^ x5 ^ x7;
+//        long m1 = x0 ^ x2 ^ x4 ^ x7;
+//        long m2 = x1 ^ x2 ^ x4 ^ x5 ^ x6;
+//        long m3 = x3 ^ x5 ^ x7;
+//        long m4 = x0 ^ x1 ^ x2 ^ x3 ^ x5;
+//        long m5 = x0 ^ x3 ^ x6;
+//        long m6 = x0 ^ x1 ^ x2 ^ x4 ^ x6 ^ x7;
+//        long m7 = x1 ^ x3 ^ x6 ^ x7;
+
         long m5 = x0 ^ x3 ^ x6;
-        long m6 = x0 ^ x1 ^ x2 ^ x4 ^ x6 ^ x7;
-        long m7 = x1 ^ x3 ^ x6 ^ x7;
+        x0 ^= x2;
+        long m3 = x3 ^ x5 ^ x7;
+        long m0 = m3 ^ x0;
+        long m6 = x0 ^ x4;
+        long m1 = m6 ^ x7;
+        x5 ^= x1;
+        x7 ^= x1 ^ x6;
+        long m2 = x2 ^ x4 ^ x5 ^ x6;
+        long m4 = x0 ^ x3 ^ x5;
+        m6 ^= x7;
+        long m7 = x3 ^ x7;
 
         // Assemble the rotated products
         return m0
@@ -795,15 +805,59 @@ public class DSTU7624Engine
             ^ rotate(40, m5)
             ^ rotate(48, m6)
             ^ rotate(56, m7);
+*/
+        
+        long u0 = c;
+        u0 ^= rotate( 8, u0);
+        u0 ^= rotate(32, u0);
+        u0 ^= rotate(48, c);
+
+        long t = u0 ^ c;
+
+        long c48 = rotate(48, c);
+        long c56 = rotate(56, c);
+
+        long u7 = t ^ c56;
+        long u6 = rotate(56, t);
+        u6 ^= mulX(u7);
+        long u5 = rotate(16, t) ^ c;
+        u5 ^= rotate(40, mulX(u6) ^ c);
+        long u4 = t ^ c48;
+        u4 ^= mulX(u5);
+        long u3 = rotate(16, u0);
+        u3 ^= mulX(u4);
+        long u2 = t ^ rotate(24, c) ^ c48 ^ c56;
+        u2 ^= mulX(u3);
+        long u1 = rotate(32, t) ^ c ^ c56;
+        u1 ^= mulX(u2);
+        u0 ^= mulX(rotate(40, u1));
+
+        return u0;
     }
 
-    private void invMixColumns()
+    private void mixColumnsInv()
     {
         for (int col = 0; col < wordsInBlock; ++col)
         {
-            internalState[col] = invMixColumn(internalState[col]);
+            internalState[col] = mixColumnInv(internalState[col]);
         }
     }
+
+    private static long mulX(long n)
+    {
+        return ((n & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((n & 0x8080808080808080L) >>> 7) * 0x1DL);
+    }
+
+    private static long mulX2(long n)
+    {
+        return ((n & 0x3F3F3F3F3F3F3F3FL) << 2) ^ (((n & 0x8080808080808080L) >>> 6) * 0x1DL) ^ (((n & 0x4040404040404040L) >>> 6) * 0x1DL);
+    }
+
+//    private static long mulX4(long n)
+//    {
+//        long u = n & 0xF0F0F0F0F0F0F0F0L;
+//        return ((n & 0x0F0F0F0F0F0F0F0FL) << 4) ^ u ^ (u >>> 1) ^ (u >>> 2) ^ (u >>> 4);
+//    }
 
     /*
      * Pair-wise modular multiplication of 8 byte-pairs.
