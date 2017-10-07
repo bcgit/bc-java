@@ -280,13 +280,13 @@ public class DSTU7564Digest
 
     private static long mixColumn(long c)
     {
-        // Calculate column multiplied by powers of 'x'
-        long x0 = c;
-        long x1 = ((x0 & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((x0 & 0x8080808080808080L) >>> 7) * 0x1DL);
-        long x2 = ((x1 & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((x1 & 0x8080808080808080L) >>> 7) * 0x1DL);
-        long x3 = ((x2 & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((x2 & 0x8080808080808080L) >>> 7) * 0x1DL);
-
-        // Calculate products with circulant matrix from (0x01, 0x01, 0x05, 0x01, 0x08, 0x06, 0x07, 0x04)
+//        // Calculate column multiplied by powers of 'x'
+//        long x0 = c;
+//        long x1 = ((x0 & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((x0 & 0x8080808080808080L) >>> 7) * 0x1DL);
+//        long x2 = ((x1 & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((x1 & 0x8080808080808080L) >>> 7) * 0x1DL);
+//        long x3 = ((x2 & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((x2 & 0x8080808080808080L) >>> 7) * 0x1DL);
+//
+//        // Calculate products with circulant matrix from (0x01, 0x01, 0x05, 0x01, 0x08, 0x06, 0x07, 0x04)
 //        long m0 = x0;
 //        long m1 = x0;
 //        long m2 = x0 ^ x2;
@@ -295,29 +295,31 @@ public class DSTU7564Digest
 //        long m5 = x1 ^ x2;
 //        long m6 = x0 ^ x1 ^ x2;
 //        long m7 = x2;
-
-        // Assemble the rotated products
+//
+//        // Assemble the rotated products
 //        return m0
-//            ^ ((m1 << 56) | (m1 >>>  8))
-//            ^ ((m2 << 48) | (m2 >>> 16))
-//            ^ ((m3 << 40) | (m3 >>> 24))
-//            ^ ((m4 << 32) | (m4 >>> 32))
-//            ^ ((m5 << 24) | (m5 >>> 40))
-//            ^ ((m6 << 16) | (m6 >>> 48))
-//            ^ ((m7 <<  8) | (m7 >>> 56));
+//            ^ rotate(8, m1)
+//            ^ rotate(16, m2)
+//            ^ rotate(24, m3)
+//            ^ rotate(32, m4)
+//            ^ rotate(40, m5)
+//            ^ rotate(48, m6)
+//            ^ rotate(56, m7);
 
-        x1 ^= x2;
-        x1 ^= ((x1 <<  8) | (x1 >>> 56));
-        x1 ^= x0;
+        // Multiply elements by 'x'
+        long x1 = ((c & 0x7F7F7F7F7F7F7F7FL) << 1) ^ (((c & 0x8080808080808080L) >>> 7) * 0x1DL);
+        long u, v;
 
-        x0 ^= ((x0 << 56) | (x0 >>>  8));
-        x0 ^= ((x0 << 16) | (x0 >>> 48));
-        x0 ^= x2;
+        u  = rotate(8, c) ^ c;
+        u ^= rotate(16, u);
+        u ^= rotate(48, c);
 
-        return ((x0 << 48) | (x0 >>> 16))
-            ^  ((x3 << 32) | (x3 >>> 32))
-            ^  ((x1 << 16) | (x1 >>> 48))
-            ^  ((x2 <<  8) | (x2 >>> 56));
+        v  = u ^ c ^ x1;
+
+        // Multiply elements by 'x^2'
+        v  = ((v & 0x3F3F3F3F3F3F3F3FL) << 2) ^ (((v & 0x8080808080808080L) >>> 6) * 0x1DL) ^ (((v & 0x4040404040404040L) >>> 6) * 0x1DL);
+
+        return u ^ rotate(32, v) ^ rotate(40, x1) ^ rotate(48, x1);
     }
 
     private void mixColumns(long[] s)
@@ -326,6 +328,11 @@ public class DSTU7564Digest
         {
             s[col] = mixColumn(s[col]);
         }
+    }
+
+    private static long rotate(int n, long x)
+    {
+        return (x >>> n) | (x << -n);
     }
 
     private void shiftRows(long[] s)
