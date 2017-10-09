@@ -300,6 +300,32 @@ public abstract class GCMUtil
         while (i < 16);
     }
 
+    public static void xor(byte[] x, byte[] y, int yOff)
+    {
+        int i = 0;
+        do
+        {
+            x[i] ^= y[yOff + i]; ++i;
+            x[i] ^= y[yOff + i]; ++i;
+            x[i] ^= y[yOff + i]; ++i;
+            x[i] ^= y[yOff + i]; ++i;
+        }
+        while (i < 16);
+    }
+
+    public static void xor(byte[] x, int xOff, byte[] y, int yOff, byte[] z, int zOff)
+    {
+        int i = 0;
+        do
+        {
+            z[zOff + i] = (byte)(x[xOff + i] ^ y[yOff + i]); ++i;
+            z[zOff + i] = (byte)(x[xOff + i] ^ y[yOff + i]); ++i;
+            z[zOff + i] = (byte)(x[xOff + i] ^ y[yOff + i]); ++i;
+            z[zOff + i] = (byte)(x[xOff + i] ^ y[yOff + i]); ++i;
+        }
+        while (i < 16);
+    }
+
     public static void xor(byte[] x, byte[] y, int yOff, int yLen)
     {
         while (--yLen >= 0)
