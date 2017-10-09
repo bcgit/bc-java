@@ -306,7 +306,16 @@ public class GCMBlockCipher
         bufBlock[bufOff] = in;
         if (++bufOff == bufBlock.length)
         {
-            outputBlock(out, outOff);
+            processBlock(bufBlock, 0, out, outOff);
+            if (forEncryption)
+            {
+                bufOff = 0;
+            }
+            else
+            {
+                System.arraycopy(bufBlock, BLOCK_SIZE, bufBlock, 0, macSize);
+                bufOff = macSize;
+            }
             return BLOCK_SIZE;
         }
         return 0;
@@ -317,45 +326,61 @@ public class GCMBlockCipher
     {
         checkStatus();
 
-        if (in.length < (inOff + len))
+        if ((in.length - inOff) < len)
         {
             throw new DataLengthException("Input buffer too short");
         }
+
         int resultLen = 0;
 
-        for (int i = 0; i < len; ++i)
+        if (forEncryption)
         {
-            bufBlock[bufOff] = in[inOff + i];
-            if (++bufOff == bufBlock.length)
+            if (bufOff != 0)
             {
-                outputBlock(out, outOff + resultLen);
+                while (len > 0)
+                {
+                    --len;
+                    bufBlock[bufOff] = in[inOff++];
+                    if (++bufOff == BLOCK_SIZE)
+                    {
+                        processBlock(bufBlock, 0, out, outOff);
+                        bufOff = 0;
+                        resultLen += BLOCK_SIZE;
+                        break;
+                    }
+                }
+            }
+
+            while (len >= BLOCK_SIZE)
+            {
+                processBlock(in, inOff, out, outOff + resultLen);
+                inOff += BLOCK_SIZE;
+                len -= BLOCK_SIZE;
                 resultLen += BLOCK_SIZE;
+            }
+
+            if (len > 0)
+            {
+                System.arraycopy(in, inOff, bufBlock, 0, len);
+                bufOff = len;
+            }
+        }
+        else
+        {
+            for (int i = 0; i < len; ++i)
+            {
+                bufBlock[bufOff] = in[inOff + i];
+                if (++bufOff == bufBlock.length)
+                {
+                    processBlock(bufBlock, 0, out, outOff + resultLen);
+                    System.arraycopy(bufBlock, BLOCK_SIZE, bufBlock, 0, macSize);
+                    bufOff = macSize;
+                    resultLen += BLOCK_SIZE;
+                }
             }
         }
 
         return resultLen;
-    }
-
-    private void outputBlock(byte[] output, int offset)
-    {
-        if (output.length < (offset + BLOCK_SIZE))
-        {
-            throw new OutputLengthException("Output buffer too short");
-        }
-        if (totalLength == 0)
-        {
-            initCipher();
-        }
-        processBlock(bufBlock, output, offset);
-        if (forEncryption)
-        {
-            bufOff = 0;
-        }
-        else
-        {
-            System.arraycopy(bufBlock, BLOCK_SIZE, bufBlock, 0, macSize);
-            bufOff = macSize;
-        }
     }
 
     public int doFinal(byte[] out, int outOff)
@@ -372,7 +397,7 @@ public class GCMBlockCipher
 
         if (forEncryption)
         {
-            if (out.length < (outOff + extra + macSize))
+            if ((out.length - outOff) < (extra + macSize))
             {
                 throw new OutputLengthException("Output buffer too short");
             }
@@ -385,7 +410,7 @@ public class GCMBlockCipher
             }
             extra -= macSize;
 
-            if (out.length < (outOff + extra))
+            if ((out.length - outOff) < extra)
             {
                 throw new OutputLengthException("Output buffer too short");
             }
@@ -525,23 +550,32 @@ public class GCMBlockCipher
         }
     }
 
-    private void processBlock(byte[] block, byte[] out, int outOff)
+    private void processBlock(byte[] buf, int bufOff, byte[] out, int outOff)
     {
+        if ((out.length - outOff) < BLOCK_SIZE)
+        {
+            throw new OutputLengthException("Output buffer too short");
+        }
+        if (totalLength == 0)
+        {
+            initCipher();
+        }
+
         byte[] ctrBlock = new byte[BLOCK_SIZE];
         getNextCTRBlock(ctrBlock);
 
         if (forEncryption)
         {
-            GCMUtil.xor(block, ctrBlock);
-            gHASHBlock(S, block);
+            GCMUtil.xor(ctrBlock, buf, bufOff);
+            gHASHBlock(S, ctrBlock);
+            System.arraycopy(ctrBlock, 0, out, outOff, BLOCK_SIZE);
         }
         else
         {
-            gHASHBlock(S, block);
-            GCMUtil.xor(block, ctrBlock);
+            gHASHBlock(S, buf, bufOff);
+            GCMUtil.xor(ctrBlock, 0, buf, bufOff, out, outOff);
         }
 
-        System.arraycopy(block, 0, out, outOff, BLOCK_SIZE);
         totalLength += BLOCK_SIZE;
     }
 
@@ -577,6 +611,12 @@ public class GCMBlockCipher
     private void gHASHBlock(byte[] Y, byte[] b)
     {
         GCMUtil.xor(Y, b);
+        multiplier.multiplyH(Y);
+    }
+
+    private void gHASHBlock(byte[] Y, byte[] b, int off)
+    {
+        GCMUtil.xor(Y, b, off);
         multiplier.multiplyH(Y);
     }
 
