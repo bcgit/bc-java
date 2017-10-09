@@ -308,6 +308,14 @@ public abstract class GCMUtil
         }
     }
 
+    public static void xor(byte[] x, int xOff, byte[] y, int yOff, int len)
+    {
+        while (--len >= 0)
+        {
+            x[xOff + len] ^= y[yOff + len];
+        }
+    }
+
     public static void xor(byte[] x, byte[] y, byte[] z)
     {
         int i = 0;
