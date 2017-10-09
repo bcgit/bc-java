@@ -346,7 +346,7 @@ public class GCMBlockCipher
         {
             initCipher();
         }
-        gCTRBlock(bufBlock, output, offset);
+        processBlock(bufBlock, output, offset);
         if (forEncryption)
         {
             bufOff = 0;
@@ -393,7 +393,7 @@ public class GCMBlockCipher
 
         if (extra > 0)
         {
-            gCTRPartial(bufBlock, 0, extra, out, outOff);
+            processPartial(bufBlock, 0, extra, out, outOff);
         }
 
         atLength += atBlockPos;
@@ -525,27 +525,43 @@ public class GCMBlockCipher
         }
     }
 
-    private void gCTRBlock(byte[] block, byte[] out, int outOff)
+    private void processBlock(byte[] block, byte[] out, int outOff)
     {
-        byte[] tmp = getNextCounterBlock();
+        byte[] ctrBlock = new byte[BLOCK_SIZE];
+        getNextCTRBlock(ctrBlock);
 
-        GCMUtil.xor(tmp, block);
-        System.arraycopy(tmp, 0, out, outOff, BLOCK_SIZE);
+        if (forEncryption)
+        {
+            GCMUtil.xor(block, ctrBlock);
+            gHASHBlock(S, block);
+        }
+        else
+        {
+            gHASHBlock(S, block);
+            GCMUtil.xor(block, ctrBlock);
+        }
 
-        gHASHBlock(S, forEncryption ? tmp : block);
-
+        System.arraycopy(block, 0, out, outOff, BLOCK_SIZE);
         totalLength += BLOCK_SIZE;
     }
 
-    private void gCTRPartial(byte[] buf, int off, int len, byte[] out, int outOff)
+    private void processPartial(byte[] buf, int off, int len, byte[] out, int outOff)
     {
-        byte[] tmp = getNextCounterBlock();
+        byte[] ctrBlock = new byte[BLOCK_SIZE];
+        getNextCTRBlock(ctrBlock);
 
-        GCMUtil.xor(tmp, buf, off, len);
-        System.arraycopy(tmp, 0, out, outOff, len);
+        if (forEncryption)
+        {
+            GCMUtil.xor(buf, off, ctrBlock, 0, len);
+            gHASHPartial(S, buf, off, len);
+        }
+        else
+        {
+            gHASHPartial(S, buf, off, len);
+            GCMUtil.xor(buf, off, ctrBlock, 0, len);
+        }
 
-        gHASHPartial(S, forEncryption ? tmp : buf, 0, len);
-
+        System.arraycopy(buf, off, out, outOff, len);
         totalLength += len;
     }
 
@@ -570,7 +586,7 @@ public class GCMBlockCipher
         multiplier.multiplyH(Y);
     }
 
-    private byte[] getNextCounterBlock()
+    private void getNextCTRBlock(byte[] block)
     {
         if (blocksRemaining == 0)
         {
@@ -584,10 +600,7 @@ public class GCMBlockCipher
         c += counter[13] & 0xFF; counter[13] = (byte)c; c >>>= 8;
         c += counter[12] & 0xFF; counter[12] = (byte)c;
 
-        byte[] tmp = new byte[BLOCK_SIZE];
-        // TODO Sure would be nice if ciphers could operate on int[]
-        cipher.processBlock(counter, 0, tmp, 0);
-        return tmp;
+        cipher.processBlock(counter, 0, block, 0);
     }
 
     private void checkStatus()
