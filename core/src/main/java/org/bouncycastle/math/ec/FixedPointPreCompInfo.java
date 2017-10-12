@@ -10,8 +10,15 @@ public class FixedPointPreCompInfo implements PreCompInfo
     /**
      * Array holding the precomputed <code>ECPoint</code>s used for a fixed
      * point multiplication.
+     * 
+     * @deprecated Will be removed
      */
     protected ECPoint[] preComp = null;
+
+    /**
+     * Lookup table for the precomputed {@link ECPoint}s used for a fixed point multiplication.
+     */
+    protected ECLookupTable lookupTable = null;
 
     /**
      * The width used for the precomputation. If a larger width precomputation
@@ -19,6 +26,16 @@ public class FixedPointPreCompInfo implements PreCompInfo
      * code should refer to the actual width.
      */
     protected int width = -1;
+
+    public ECLookupTable getLookupTable()
+    {
+        return lookupTable;
+    }
+
+    public void setLookupTable(ECLookupTable lookupTable)
+    {
+        this.lookupTable = lookupTable;
+    }
 
     public ECPoint getOffset()
     {
@@ -30,11 +47,13 @@ public class FixedPointPreCompInfo implements PreCompInfo
         this.offset = offset;
     }
 
+    /** @deprecated Use {@link #getLookupTable()} instead */
     public ECPoint[] getPreComp()
     {
         return preComp;
     }
 
+    /** @deprecated Use {@link #setLookupTable(ECLookupTable)} instead */
     public void setPreComp(ECPoint[] preComp)
     {
         this.preComp = preComp;
