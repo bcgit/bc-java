@@ -25,6 +25,7 @@ public class AllTests
 
         suite.addTestSuite(ECAlgorithmsTest.class);
         suite.addTestSuite(ECPointTest.class);
+        suite.addTestSuite(FixedPointTest.class);
 
         return new BCTestSetup(suite);
     }
