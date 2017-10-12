@@ -206,6 +206,11 @@ public abstract class Nat
         System.arraycopy(x, 0, z, 0, len);
     }
 
+    public static void copy(int len, int[] x, int xOff, int[] z, int zOff)
+    {
+        System.arraycopy(x, xOff, z, zOff, len);
+    }
+
     public static int[] create(int len)
     {
         return new int[len];

@@ -441,6 +441,19 @@ public abstract class ECCurve
         return p;
     }
 
+    /**
+     * Create a cache-safe lookup table for the specified sequence of points. All the points MUST
+     * belong to this {@link ECCurve} instance, and MUST already be normalized.
+     * 
+     * WARNING: This is a Work-In-Progress; cache-safety currently only implemented for selected
+     * custom curves.
+     */
+    public ECLookupTable createCacheSafeLookupTable(final ECPoint[] points, int off, int len)
+    {
+        // TODO No, this isn't cache-safe yet (only for some subclasses)
+        return new SimpleLookupTable(points, off, len);
+    }
+
     protected void checkPoint(ECPoint point)
     {
         if (null == point || (this != point.getCurve()))

@@ -238,6 +238,18 @@ public abstract class Nat256
         z[7] = x[7];
     }
 
+    public static void copy(int[] x, int xOff, int[] z, int zOff)
+    {
+        z[zOff + 0] = x[xOff + 0];
+        z[zOff + 1] = x[xOff + 1];
+        z[zOff + 2] = x[xOff + 2];
+        z[zOff + 3] = x[xOff + 3];
+        z[zOff + 4] = x[xOff + 4];
+        z[zOff + 5] = x[xOff + 5];
+        z[zOff + 6] = x[xOff + 6];
+        z[zOff + 7] = x[xOff + 7];
+    }
+
     public static void copy64(long[] x, long[] z)
     {
         z[0] = x[0];
