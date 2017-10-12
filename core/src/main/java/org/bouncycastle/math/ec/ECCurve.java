@@ -444,14 +444,56 @@ public abstract class ECCurve
     /**
      * Create a cache-safe lookup table for the specified sequence of points. All the points MUST
      * belong to this {@link ECCurve} instance, and MUST already be normalized.
-     * 
-     * WARNING: This is a Work-In-Progress; cache-safety currently only implemented for selected
-     * custom curves.
      */
-    public ECLookupTable createCacheSafeLookupTable(final ECPoint[] points, int off, int len)
+    public ECLookupTable createCacheSafeLookupTable(final ECPoint[] points, int off, final int len)
     {
-        // TODO No, this isn't cache-safe yet (only for some subclasses)
-        return new SimpleLookupTable(points, off, len);
+        final int FE_BYTES = (getFieldSize() + 7) >>> 3;
+
+        final byte[] table = new byte[len * FE_BYTES * 2];
+        {
+            int pos = 0;
+            for (int i = 0; i < len; ++i)
+            {
+                ECPoint p = points[off + i];
+                byte[] px = p.getRawXCoord().toBigInteger().toByteArray();
+                byte[] py = p.getRawYCoord().toBigInteger().toByteArray();
+
+                int pxStart = px.length > FE_BYTES ? 1 : 0, pxLen = px.length - pxStart;
+                int pyStart = py.length > FE_BYTES ? 1 : 0, pyLen = py.length - pyStart;
+
+                System.arraycopy(px, pxStart, table, pos + FE_BYTES - pxLen, pxLen); pos += FE_BYTES;
+                System.arraycopy(py, pyStart, table, pos + FE_BYTES - pyLen, pyLen); pos += FE_BYTES;
+            }
+        }
+
+        return new ECLookupTable()
+        {
+            public int getSize()
+            {
+                return len;
+            }
+
+            public ECPoint lookup(int index)
+            {
+                byte[] x = new byte[FE_BYTES], y = new byte[FE_BYTES];
+                int pos = 0;
+
+                for (int i = 0; i < len; ++i)
+                {
+                    int MASK = ((i ^ index) - 1) >> 31;
+
+                    for (int j = 0; j < FE_BYTES; ++j)
+                    {
+                        x[j] ^= table[pos + j] & MASK;
+                        y[j] ^= table[pos + FE_BYTES + j] & MASK;
+                    }
+
+                    pos += (FE_BYTES * 2);
+                }
+
+                return createRawPoint(fromBigInteger(new BigInteger(1, x)), fromBigInteger(new BigInteger(1, y)), false);
+            }
+        };
     }
 
     protected void checkPoint(ECPoint point)
