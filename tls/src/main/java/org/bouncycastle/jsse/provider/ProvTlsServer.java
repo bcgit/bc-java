@@ -28,7 +28,6 @@ import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.CompressionMethod;
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
-import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.ServerNameList;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
@@ -116,31 +115,7 @@ class ProvTlsServer
     {
         // NOTE: BC supports all the current set of point formats so we don't check them here
 
-        final boolean isFips = manager.getContext().isFips();
-
-        if (clientSupportedGroups == null)
-        {
-            /*
-             * RFC 4492 4. A client that proposes ECC cipher suites may choose not to include these
-             * extensions. In this case, the server is free to choose any one of the elliptic curves
-             * or point formats [...].
-             */
-            return isFips
-                ?   FipsUtils.getFipsMaximumCurveBits()
-                :   NamedGroup.getMaximumCurveBits();
-        }
-
-        int maxBits = 0;
-        for (int i = 0; i < clientSupportedGroups.length; ++i)
-        {
-            int namedGroup = clientSupportedGroups[i];
-
-            if (!isFips || FipsUtils.isFipsNamedGroup(namedGroup))
-            {
-                maxBits = Math.max(maxBits, NamedGroup.getCurveBits(namedGroup));
-            }
-        }
-        return maxBits;
+        return SupportedGroups.getServerMaximumNegotiableCurveBits(manager.getContext().isFips(), clientSupportedGroups);
     }
 
     @Override
@@ -164,34 +139,15 @@ class ProvTlsServer
             return selectDefaultCurve(minimumCurveBits);
         }
 
-        final boolean isFips = manager.getContext().isFips();
+        boolean isFips = manager.getContext().isFips();
 
-        // Try to find a supported named group of the required size from the client's list.
-        for (int i = 0; i < clientSupportedGroups.length; ++i)
-        {
-            int namedGroup = clientSupportedGroups[i];
-            if (NamedGroup.getCurveBits(namedGroup) >= minimumCurveBits)
-            {
-                if (!isFips || FipsUtils.isFipsNamedGroup(namedGroup))
-                {
-                    return namedGroup;
-                }
-            }
-        }
-
-        return -1;
+        return SupportedGroups.getServerSelectedCurve(isFips, minimumCurveBits, clientSupportedGroups);
     }
 
     @Override
     protected int selectDefaultCurve(int minimumCurveBits)
     {
-        /*
-         * NOTE[fips]: These curves are recommended for FIPS. If any changes are made to how
-         * this is configured, FIPS considerations need to be accounted for in BCJSSE.
-         */
-        return minimumCurveBits <= 256 ? NamedGroup.secp256r1
-            :  minimumCurveBits <= 384 ? NamedGroup.secp384r1
-            :  -1;
+        return SupportedGroups.getServerDefaultCurve(manager.getContext().isFips(), minimumCurveBits);
     }
 
     public synchronized boolean isHandshakeComplete()
