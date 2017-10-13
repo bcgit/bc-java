@@ -422,4 +422,17 @@ abstract class JsseUtils
         }
         return null;
     }
+
+    static String stripQuotes(String s)
+    {
+        if (s != null)
+        {
+            int sLast = s.length() - 1;
+            if (sLast > 0 && s.charAt(0) == '"' && s.charAt(sLast) == '"')
+            {
+                return s.substring(1, sLast);
+            }
+        }
+        return s;
+    }
 }
