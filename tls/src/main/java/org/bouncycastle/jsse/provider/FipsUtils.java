@@ -99,12 +99,17 @@ abstract class FipsUtils
         return cipherSuite != null && FIPS_SUPPORTED_CIPHERSUITES.contains(cipherSuite);
     }
 
-    static boolean isFipsCurve(int namedGroup)
+    static boolean isFipsNamedGroup(int namedGroup)
     {
         switch (namedGroup)
         {
         case NamedGroup.secp256r1:
         case NamedGroup.secp384r1:
+        case NamedGroup.ffdhe2048:
+        case NamedGroup.ffdhe3072:
+        case NamedGroup.ffdhe4096:
+        case NamedGroup.ffdhe6144:
+        case NamedGroup.ffdhe8192:
             return true;
 
         default:

@@ -135,6 +135,17 @@ class PropertyUtils
         return defaultValue;
     }
 
+    static String getStringSystemProperty(String propertyName)
+    {
+        String propertyValue = getSystemProperty(propertyName);
+        if (null != propertyValue)
+        {
+            LOG.log(Level. INFO, "Found string system property [" + propertyName + "]: " + propertyValue);
+            return propertyValue;
+        }
+        return null;
+    }
+
     private static String getRangeString(int minimumValue, int maximumValue)
     {
         StringBuilder sb = new StringBuilder(32);

@@ -77,6 +77,28 @@ public class NamedGroup
 
     private static final String[] FINITE_FIELD_NAMES = new String[] { "ffdhe2048", "ffdhe3072", "ffdhe4096", "ffdhe6144", "ffdhe8192" };
 
+    public static int getByName(String name)
+    {
+        if (name != null)
+        {
+            for (int i = 0; i < CURVE_NAMES.length; ++i)
+            {
+                if (name.equals(CURVE_NAMES[i]))
+                {
+                    return sect163k1 + i;
+                }
+            }
+            for (int i = 0; i < FINITE_FIELD_NAMES.length; ++i)
+            {
+                if (name.equals(FINITE_FIELD_NAMES[i]))
+                {
+                    return ffdhe2048 + i;
+                }
+            }
+        }
+        return -1;
+    }
+
     public static int getCurveBits(int namedGroup)
     {
         switch (namedGroup)

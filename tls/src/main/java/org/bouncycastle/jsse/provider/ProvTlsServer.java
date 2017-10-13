@@ -135,7 +135,7 @@ class ProvTlsServer
         {
             int namedGroup = clientSupportedGroups[i];
 
-            if (!isFips || FipsUtils.isFipsCurve(namedGroup))
+            if (!isFips || FipsUtils.isFipsNamedGroup(namedGroup))
             {
                 maxBits = Math.max(maxBits, NamedGroup.getCurveBits(namedGroup));
             }
@@ -172,7 +172,7 @@ class ProvTlsServer
             int namedGroup = clientSupportedGroups[i];
             if (NamedGroup.getCurveBits(namedGroup) >= minimumCurveBits)
             {
-                if (!isFips || FipsUtils.isFipsCurve(namedGroup))
+                if (!isFips || FipsUtils.isFipsNamedGroup(namedGroup))
                 {
                     return namedGroup;
                 }
