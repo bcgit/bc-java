@@ -149,10 +149,10 @@ public abstract class AbstractTlsServer
 
     protected int selectDefaultCurve(int minimumCurveBits)
     {
-        // Note: this must all have a co-factor of 1 to qualify for FIPS ECDH.
         return minimumCurveBits <= 256 ? NamedGroup.secp256r1
             :  minimumCurveBits <= 384 ? NamedGroup.secp384r1
             :  minimumCurveBits <= 521 ? NamedGroup.secp521r1
+            :  minimumCurveBits <= 571 ? NamedGroup.sect571r1
             :  -1;
     }
 
