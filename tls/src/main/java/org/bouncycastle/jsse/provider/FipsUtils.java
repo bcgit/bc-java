@@ -89,6 +89,13 @@ abstract class FipsUtils
         return Collections.unmodifiableSet(cs);
     }
 
+    static int getFipsDefaultCurve(int minimumCurveBits)
+    {
+        return minimumCurveBits <= 256 ? NamedGroup.secp256r1
+            :  minimumCurveBits <= 384 ? NamedGroup.secp384r1
+            :  -1;
+    }
+
     static int getFipsMaximumCurveBits()
     {
         return 384;
