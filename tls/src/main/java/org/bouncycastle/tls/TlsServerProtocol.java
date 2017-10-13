@@ -355,10 +355,10 @@ public class TlsServerProtocol
                 if (this.expectSessionTicket)
                 {
                     sendNewSessionTicketMessage(tlsServer.getNewSessionTicket());
-                    sendChangeCipherSpecMessage();
                 }
                 this.connection_state = CS_SERVER_SESSION_TICKET;
 
+                sendChangeCipherSpecMessage();
                 sendFinishedMessage();
                 this.connection_state = CS_SERVER_FINISHED;
 
@@ -601,11 +601,6 @@ public class TlsServerProtocol
         establishMasterSecret(getContext(), keyExchange);
 
         recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
-
-        if (!expectSessionTicket)
-        {
-            sendChangeCipherSpecMessage();
-        }
     }
 
     protected void sendCertificateRequestMessage(CertificateRequest certificateRequest)

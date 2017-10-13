@@ -139,6 +139,7 @@ public class TlsClientProtocol
             processFinishedMessage(buf);
             this.connection_state = CS_SERVER_FINISHED;
 
+            sendChangeCipherSpecMessage();
             sendFinishedMessage();
             this.connection_state = CS_CLIENT_FINISHED;
 
@@ -261,8 +262,6 @@ public class TlsClientProtocol
                 {
                     this.securityParameters.masterSecret = getContext().getCrypto().adoptSecret(sessionParameters.getMasterSecret());
                     this.recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
-
-                    sendChangeCipherSpecMessage();
                 }
                 else
                 {
