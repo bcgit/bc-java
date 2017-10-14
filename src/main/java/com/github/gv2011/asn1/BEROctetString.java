@@ -60,7 +60,6 @@ public class BEROctetString extends ASN1OctetString {
     /**
      * return the DER octets that make up this string.
      */
-    @SuppressWarnings("rawtypes")
     public Enumeration getObjects()
     {
         if (octs == null)
@@ -86,7 +85,6 @@ public class BEROctetString extends ASN1OctetString {
         };
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     private Vector generateOcts()
     {
         final Vector vec = new Vector();
@@ -119,7 +117,6 @@ public class BEROctetString extends ASN1OctetString {
         return true;
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     int encodedLength()
     {
@@ -132,7 +129,6 @@ public class BEROctetString extends ASN1OctetString {
         return 2 + length + 2;
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public void encode(
         final ASN1OutputStream out)
@@ -153,7 +149,6 @@ public class BEROctetString extends ASN1OctetString {
         out.write(0x00);
     }
 
-    @SuppressWarnings("rawtypes")
     static BEROctetString fromSequence(final ASN1Sequence seq)
     {
         final ASN1OctetString[]     v = new ASN1OctetString[seq.size()];

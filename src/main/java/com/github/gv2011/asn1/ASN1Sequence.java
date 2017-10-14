@@ -59,7 +59,6 @@ public abstract class ASN1Sequence
     extends ASN1Primitive
     implements com.github.gv2011.asn1.util.Iterable<ASN1Encodable>
 {
-    @SuppressWarnings("rawtypes")
     protected Vector seq = new Vector();
 
     /**
@@ -168,7 +167,6 @@ public abstract class ASN1Sequence
      * Create a sequence containing one object
      * @param obj the object to be put in the SEQUENCE.
      */
-    @SuppressWarnings("unchecked")
     protected ASN1Sequence(
         final ASN1Encodable obj)
     {
@@ -179,7 +177,6 @@ public abstract class ASN1Sequence
      * Create a sequence containing a vector of objects.
      * @param v the vector of objects to be put in the SEQUENCE
      */
-    @SuppressWarnings("unchecked")
     protected ASN1Sequence(
         final ASN1EncodableVector v)
     {
@@ -214,7 +211,6 @@ public abstract class ASN1Sequence
         return values;
     }
 
-    @SuppressWarnings("rawtypes")
     public Enumeration getObjects()
     {
         return seq.elements();

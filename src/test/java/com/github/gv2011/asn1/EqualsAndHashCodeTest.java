@@ -38,11 +38,11 @@ import com.github.gv2011.asn1.DERVisibleString;
 import com.github.gv2011.asn1.util.Strings;
 import com.github.gv2011.asn1.util.encoders.Hex;
 import com.github.gv2011.asn1.util.test.SimpleTestResult;
-import com.github.gv2011.asn1.util.test.Test;
+import com.github.gv2011.asn1.util.test.LegacyTest;
 import com.github.gv2011.asn1.util.test.TestResult;
 
 public class EqualsAndHashCodeTest
-    implements Test
+    implements LegacyTest
 {
     public TestResult perform()
     {

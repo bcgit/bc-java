@@ -1,5 +1,6 @@
 package com.github.gv2011.asn1;
 
+import static com.github.gv2011.util.Verify.verifyEqual;
 import static com.github.gv2011.util.bytes.ByteUtils.newBytes;
 import static com.github.gv2011.util.ex.Exceptions.call;
 
@@ -23,6 +24,13 @@ public class ASN1InputStream
     private final boolean lazyEvaluate;
 
     private final byte[][] tmpBuffers;
+    
+    public static ASN1Primitive parse(final Bytes asn1) {
+      final ASN1InputStream asn1InputStream = new ASN1InputStream(asn1);
+      final ASN1Primitive result = asn1InputStream.readObject();
+      verifyEqual(asn1InputStream.readObject(), null);
+      return result;
+    }
 
     public ASN1InputStream(
         final InputStream is)

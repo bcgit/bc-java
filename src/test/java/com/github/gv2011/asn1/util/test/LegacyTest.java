@@ -1,6 +1,6 @@
 package com.github.gv2011.asn1.util.test;
 
-public interface Test
+public interface LegacyTest
 {
     String getName();
 

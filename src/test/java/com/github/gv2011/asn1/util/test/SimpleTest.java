@@ -5,7 +5,7 @@ import java.io.PrintStream;
 import com.github.gv2011.asn1.util.Arrays;
 
 public abstract class SimpleTest
-    implements Test
+    implements LegacyTest
 {
     public abstract String getName();
 
@@ -61,13 +61,13 @@ public abstract class SimpleTest
     }
     
     protected static void runTest(
-        Test        test)
+        LegacyTest        test)
     {
         runTest(test, System.out);
     }
     
     protected static void runTest(
-        Test        test,
+        LegacyTest        test,
         PrintStream out)
     {
         TestResult      result = test.perform();

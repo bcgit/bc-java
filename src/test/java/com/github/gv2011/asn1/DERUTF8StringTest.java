@@ -1,16 +1,38 @@
 package com.github.gv2011.asn1;
 
-import com.github.gv2011.asn1.DEROctetString;
-import com.github.gv2011.asn1.DERUTF8String;
+import static com.github.gv2011.testutil.Matchers.hasClass;
+import static com.github.gv2011.testutil.Matchers.is;
+import static org.junit.Assert.assertThat;
+
+import org.junit.Test;
+
+import com.github.gv2011.asn1.dump.ASN1Dump;
 import com.github.gv2011.asn1.util.Arrays;
 import com.github.gv2011.asn1.util.Strings;
+import com.github.gv2011.asn1.util.test.LegacyTest;
 import com.github.gv2011.asn1.util.test.SimpleTestResult;
-import com.github.gv2011.asn1.util.test.Test;
 import com.github.gv2011.asn1.util.test.TestResult;
+import com.github.gv2011.util.bytes.ByteUtils;
+import com.github.gv2011.util.bytes.Bytes;
 
-public class DERUTF8StringTest 
-    implements Test
-{
+public class DERUTF8StringTest implements LegacyTest{
+  
+  @Test
+  public void testRoundTrip() {
+    final DERUTF8String asn1 = new DERUTF8String("test");
+    final Bytes encoded = asn1.getDerEncoded();
+    final ASN1Primitive back = new ASN1InputStream(encoded).readObject();
+    assertThat(back, is(asn1));
+    assertThat(back, hasClass(DERUTF8String.class));
+//    System.out.println(ASN1Dump.dumpAsString(back, true));
+    final DERTaggedObject tagged = new DERTaggedObject(false, 7, asn1);
+    System.out.println(ASN1Dump.dumpAsString(tagged, true));
+  }
+
+  @Test
+  public void test() {
+    main(new String[0]);
+  }
 
     /**
      * Unicode code point U+10400 coded as surrogate in two native Java UTF-16
@@ -57,17 +79,20 @@ public class DERUTF8StringTest
 
     private final static char[][] glyphs_utf16 = { glyph1_utf16, glyph2_utf16, glyph3_utf16, glyph4_utf16 };
 
+    @Override
     public TestResult perform()
     {
         try
         {
             for (int i = 0; i < glyphs_utf16.length; i++)
             {
-                String s = new String(glyphs_utf16[i]);
-                byte[] b1 = new DERUTF8String(s).getEncoded();
-                byte temp[] = new byte[b1.length - 2];
+                final String s = new String(glyphs_utf16[i]);
+                final byte[] b1 = new DERUTF8String(s).getEncoded().toByteArray();
+                final byte temp[] = new byte[b1.length - 2];
                 System.arraycopy(b1, 2, temp, 0, b1.length - 2);
-                byte[] b2 = new DERUTF8String(Strings.fromUTF8ByteArray(new DEROctetString(temp).getOctets())).getEncoded();
+                final byte[] b2 = new DERUTF8String(Strings.fromUTF8ByteArray(
+                  new DEROctetString(ByteUtils.newBytes(temp)).getOctets()
+                )).getEncoded().toByteArray();
                 if (!Arrays.areEqual(b1, b2))
                 {
                     return new SimpleTestResult(false, getName() + ": failed UTF-8 encoding and decoding");
@@ -78,7 +103,7 @@ public class DERUTF8StringTest
                 }
             }
         }
-        catch (Exception e)
+        catch (final Exception e)
         {
             return new SimpleTestResult(false, getName() + ": failed with Exception " + e.getMessage());
         }
@@ -86,15 +111,16 @@ public class DERUTF8StringTest
         return new SimpleTestResult(true, getName() + ": Okay");
     }
 
+    @Override
     public String getName()
     {
         return "DERUTF8String";
     }
 
-    public static void main(String[] args)
+    public static void main(final String[] args)
     {
-        DERUTF8StringTest test = new DERUTF8StringTest();
-        TestResult result = test.perform();
+        final DERUTF8StringTest test = new DERUTF8StringTest();
+        final TestResult result = test.perform();
 
         System.out.println(result);
     }
