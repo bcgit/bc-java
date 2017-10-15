@@ -19,6 +19,7 @@ import org.bouncycastle.jsse.BCSSLEngine;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
+import org.bouncycastle.tls.TlsUtils;
 
 /*
  * TODO[jsse] Currently doesn't properly support NIO usage, or conform very well with SSLEngine javadoc
@@ -324,47 +325,54 @@ class ProvSSLEngine
 
         if (!protocol.isClosed())
         {
-            /*
-             * Limit the net data that we will process in one call
-             * TODO[jsse] Ideally, we'd be processing exactly one record at a time
-             */
-            int srcLimit = ProvSSLSessionImpl.NULL_SESSION.getApplicationBufferSize() + 5;
-
-            int count = Math.min(src.remaining(), srcLimit);
-            if (count > 0)
+            if (src.remaining() >= 5)
             {
-                byte[] buf = new byte[count];
-                src.get(buf);
+                byte[] recordHeader = new byte[5];
+                src.slice().get(recordHeader);
 
-                try
-                {
-                    protocol.offerInput(buf);
-                }
-                catch (IOException e)
+                int recordSize = TlsUtils.readUint16(recordHeader, 3) + 5;
+                if (recordSize > ProvSSLSessionImpl.NULL_SESSION.getPacketBufferSize())
                 {
                     /*
-                     * TODO[jsse] 'deferredException' is a workaround for Apache Tomcat's (as of
-                     * 8.5.13) SecureNioChannel behaviour when exceptions are thrown from SSLEngine.
-                     * In the case of SSLEngine.wrap throwing, Tomcat will call wrap again, allowing
-                     * any buffered outbound alert to be flushed. For unwrap, this doesn't happen.
-                     * So we pretend this unwrap was OK and ask for NEED_WRAP, then throw in wrap.
-                     * 
-                     * Note that the SSLEngine javadoc clearly describes a process of flushing via
-                     * wrap calls after any closure events, to include thrown exceptions.
+                     * TODO[jsse] Prefer to have the TLS layer raise a record_overflow alert
                      */
-                    //throw new SSLException(e);
-                    if (this.deferredException == null)
-                    {
-                        this.deferredException = new SSLException(e);
-                    }
-
-                    handshakeStatus = HandshakeStatus.NEED_WRAP;
-
-                    return new SSLEngineResult(Status.OK, HandshakeStatus.NEED_WRAP, bytesConsumed, bytesProduced);
+                    throw new SSLException("Input record has invalid size: " + recordSize);
                 }
 
-                bytesConsumed += count;
-                srcLimit -= count;
+                if (src.remaining() >= recordSize)
+                {
+                    byte[] buf = new byte[recordSize];
+                    src.get(buf);
+    
+                    try
+                    {
+                        protocol.offerInput(buf);
+                    }
+                    catch (IOException e)
+                    {
+                        /*
+                         * TODO[jsse] 'deferredException' is a workaround for Apache Tomcat's (as of
+                         * 8.5.13) SecureNioChannel behaviour when exceptions are thrown from SSLEngine.
+                         * In the case of SSLEngine.wrap throwing, Tomcat will call wrap again, allowing
+                         * any buffered outbound alert to be flushed. For unwrap, this doesn't happen.
+                         * So we pretend this unwrap was OK and ask for NEED_WRAP, then throw in wrap.
+                         * 
+                         * Note that the SSLEngine javadoc clearly describes a process of flushing via
+                         * wrap calls after any closure events, to include thrown exceptions.
+                         */
+                        //throw new SSLException(e);
+                        if (this.deferredException == null)
+                        {
+                            this.deferredException = new SSLException(e);
+                        }
+    
+                        handshakeStatus = HandshakeStatus.NEED_WRAP;
+    
+                        return new SSLEngineResult(Status.OK, HandshakeStatus.NEED_WRAP, bytesConsumed, bytesProduced);
+                    }
+    
+                    bytesConsumed += recordSize;
+                }
             }
         }
 
