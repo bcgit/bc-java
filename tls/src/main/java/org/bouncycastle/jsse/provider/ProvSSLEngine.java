@@ -16,11 +16,13 @@ import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLEngine;
+import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.RecordFormat;
+import org.bouncycastle.tls.RecordPreview;
 import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
-import org.bouncycastle.tls.TlsUtils;
 
 /*
  * TODO[jsse] Currently doesn't properly support NIO usage, or conform very well with SSLEngine javadoc
@@ -322,94 +324,87 @@ class ProvSSLEngine
             beginHandshake();
         }
 
+        Status resultStatus = Status.OK;
         int bytesConsumed = 0, bytesProduced = 0;
 
-        if (!protocol.isClosed())
-        {
-            if (src.remaining() >= RecordFormat.FRAGMENT_OFFSET)
-            {
-                byte[] recordHeader = new byte[RecordFormat.FRAGMENT_OFFSET];
-                src.slice().get(recordHeader);
-
-                int recordSize = RecordFormat.FRAGMENT_OFFSET + TlsUtils.readUint16(recordHeader, RecordFormat.LENGTH_OFFSET);
-                if (recordSize > ProvSSLSessionImpl.NULL_SESSION.getPacketBufferSize())
-                {
-                    /*
-                     * TODO[jsse] Prefer to have the TLS layer raise a record_overflow alert
-                     */
-                    throw new SSLException("Input record has invalid size: " + recordSize);
-                }
-
-                if (src.remaining() >= recordSize)
-                {
-                    byte[] buf = new byte[recordSize];
-                    src.get(buf);
-    
-                    try
-                    {
-                        protocol.offerInput(buf);
-                    }
-                    catch (IOException e)
-                    {
-                        /*
-                         * TODO[jsse] 'deferredException' is a workaround for Apache Tomcat's (as of
-                         * 8.5.13) SecureNioChannel behaviour when exceptions are thrown from
-                         * SSLEngine during the handshake. In the case of SSLEngine.wrap throwing,
-                         * Tomcat will call wrap again, allowing any buffered outbound alert to be
-                         * flushed. For unwrap, this doesn't happen. So we pretend this unwrap was
-                         * OK and ask for NEED_WRAP, then throw in wrap.
-                         * 
-                         * Note that the SSLEngine javadoc clearly describes a process of flushing
-                         * via wrap calls after any closure events, to include thrown exceptions.
-                         */
-                        if (handshakeStatus != HandshakeStatus.NEED_UNWRAP)
-                        {
-                            throw new SSLException(e);
-                        }
-
-                        if (this.deferredException == null)
-                        {
-                            this.deferredException = new SSLException(e);
-                        }
-
-                        handshakeStatus = HandshakeStatus.NEED_WRAP;
-
-                        return new SSLEngineResult(Status.OK, HandshakeStatus.NEED_WRAP, bytesConsumed, bytesProduced);
-                    }
-
-                    bytesConsumed += recordSize;
-                }
-            }
-        }
-
-        int inputAvailable = protocol.getAvailableInputBytes();
-        for (int dstIndex = 0; dstIndex < length && inputAvailable > 0; ++dstIndex)
-        {
-            ByteBuffer dst = dsts[dstIndex];
-            int count = Math.min(dst.remaining(), inputAvailable);
-
-            byte[] input = new byte[count];
-            int numRead = protocol.readInput(input, 0, count);
-            assert numRead == count;
-
-            dst.put(input);
-
-            bytesProduced += count;
-            inputAvailable -= count;
-        }
-
-        Status resultStatus = Status.OK;
-        if (inputAvailable > 0)
-        {
-            resultStatus = Status.BUFFER_OVERFLOW;
-        }
-        else if (protocol.isClosed())
+        if (protocol.isClosed())
         {
             resultStatus = Status.CLOSED;
         }
-        else if (bytesConsumed == 0)
+        else
         {
-            resultStatus = Status.BUFFER_UNDERFLOW;
+            try
+            {
+                RecordPreview preview = getRecordPreview(src);
+                if (preview == null || src.remaining() < preview.getRecordSize())
+                {
+                    resultStatus = Status.BUFFER_UNDERFLOW;
+                }
+                else if (getTotalRemaining(dsts) < (long)preview.getApplicationDataLimit())
+                {
+                    resultStatus = Status.BUFFER_OVERFLOW;
+                }
+                else
+                {
+                    byte[] record = new byte[preview.getRecordSize()];
+                    src.get(record);
+
+                    protocol.offerInput(record);
+                    bytesConsumed += record.length;
+
+                    int appDataAvailable = protocol.getAvailableInputBytes();
+                    for (int dstIndex = 0; dstIndex < length && appDataAvailable > 0; ++dstIndex)
+                    {
+                        ByteBuffer dst = dsts[dstIndex];
+                        int count = Math.min(dst.remaining(), appDataAvailable);
+                        if (count > 0)
+                        {
+                            byte[] appData = new byte[count];
+                            int numRead = protocol.readInput(appData, 0, count);
+                            assert numRead == count;
+                
+                            dst.put(appData);
+                
+                            bytesProduced += count;
+                            appDataAvailable -= count;
+                        }
+                    }
+
+                    // We pre-checked the output would fit, so there should be nothing left over.
+                    if (appDataAvailable != 0)
+                    {
+                        // TODO[tls] Expose a method to fail the connection externally
+                        throw new TlsFatalAlert(AlertDescription.record_overflow);
+                    }
+                }
+            }
+            catch (IOException e)
+            {
+                /*
+                 * TODO[jsse] 'deferredException' is a workaround for Apache Tomcat's (as of
+                 * 8.5.13) SecureNioChannel behaviour when exceptions are thrown from
+                 * SSLEngine during the handshake. In the case of SSLEngine.wrap throwing,
+                 * Tomcat will call wrap again, allowing any buffered outbound alert to be
+                 * flushed. For unwrap, this doesn't happen. So we pretend this unwrap was
+                 * OK and ask for NEED_WRAP, then throw in wrap.
+                 * 
+                 * Note that the SSLEngine javadoc clearly describes a process of flushing
+                 * via wrap calls after any closure events, to include thrown exceptions.
+                 */
+                if (handshakeStatus != HandshakeStatus.NEED_UNWRAP)
+                {
+                    throw new SSLException(e);
+                }
+
+                if (this.deferredException == null)
+                {
+                    this.deferredException = new SSLException(e);
+                }
+
+                handshakeStatus = HandshakeStatus.NEED_WRAP;
+
+                return new SSLEngineResult(Status.OK, HandshakeStatus.NEED_WRAP, bytesConsumed, bytesProduced);
+            }
         }
 
         /*
@@ -612,5 +607,32 @@ class ProvSSLEngine
     public synchronized void notifyHandshakeComplete(ProvSSLConnection connection)
     {
         this.connection = connection;
+    }
+
+    private RecordPreview getRecordPreview(ByteBuffer src)
+        throws IOException
+    {
+        if (src.remaining() < RecordFormat.FRAGMENT_OFFSET)
+        {
+            return null;
+        }
+
+        byte[] recordHeader = new byte[RecordFormat.FRAGMENT_OFFSET];
+
+        int position = src.position();
+        src.get(recordHeader);
+        src.position(position);
+
+        return protocol.previewInputRecord(recordHeader);
+    }
+
+    private long getTotalRemaining(ByteBuffer[] buffers)
+    {
+        long result = 0;
+        for (ByteBuffer buffer : buffers)
+        {
+            result += buffer.remaining();
+        }
+        return result;
     }
 }
