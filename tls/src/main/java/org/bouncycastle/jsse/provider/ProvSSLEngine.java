@@ -353,25 +353,30 @@ class ProvSSLEngine
                     {
                         /*
                          * TODO[jsse] 'deferredException' is a workaround for Apache Tomcat's (as of
-                         * 8.5.13) SecureNioChannel behaviour when exceptions are thrown from SSLEngine.
-                         * In the case of SSLEngine.wrap throwing, Tomcat will call wrap again, allowing
-                         * any buffered outbound alert to be flushed. For unwrap, this doesn't happen.
-                         * So we pretend this unwrap was OK and ask for NEED_WRAP, then throw in wrap.
+                         * 8.5.13) SecureNioChannel behaviour when exceptions are thrown from
+                         * SSLEngine during the handshake. In the case of SSLEngine.wrap throwing,
+                         * Tomcat will call wrap again, allowing any buffered outbound alert to be
+                         * flushed. For unwrap, this doesn't happen. So we pretend this unwrap was
+                         * OK and ask for NEED_WRAP, then throw in wrap.
                          * 
-                         * Note that the SSLEngine javadoc clearly describes a process of flushing via
-                         * wrap calls after any closure events, to include thrown exceptions.
+                         * Note that the SSLEngine javadoc clearly describes a process of flushing
+                         * via wrap calls after any closure events, to include thrown exceptions.
                          */
-                        //throw new SSLException(e);
+                        if (handshakeStatus != HandshakeStatus.NEED_UNWRAP)
+                        {
+                            throw new SSLException(e);
+                        }
+
                         if (this.deferredException == null)
                         {
                             this.deferredException = new SSLException(e);
                         }
-    
+
                         handshakeStatus = HandshakeStatus.NEED_WRAP;
-    
+
                         return new SSLEngineResult(Status.OK, HandshakeStatus.NEED_WRAP, bytesConsumed, bytesProduced);
                     }
-    
+
                     bytesConsumed += recordSize;
                 }
             }
