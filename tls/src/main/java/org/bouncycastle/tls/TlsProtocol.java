@@ -561,12 +561,12 @@ public abstract class TlsProtocol
         return len;
     }
 
-    protected void safeCheckRecordHeader(byte[] recordHeader)
+    protected RecordPreview safePreviewRecordHeader(byte[] recordHeader)
         throws IOException
     {
         try
         {
-            recordStream.checkRecordHeader(recordHeader);
+            return recordStream.previewRecordHeader(recordHeader, appDataReady);
         }
         catch (TlsFatalAlert e)
         {
@@ -836,6 +836,25 @@ public abstract class TlsProtocol
         throw new TlsNoCloseNotifyException();
     }
 
+    public RecordPreview previewInputRecord(byte[] recordHeader) throws IOException
+    {
+        if (blocking)
+        {
+            throw new IllegalStateException("Cannot use previewInputRecord() in blocking mode! Use getInputStream() instead.");
+        }
+        if (inputBuffers.available() != 0)
+        {
+            throw new IllegalStateException("Can only use previewInputRecord() for record-aligned input.");
+        }
+
+        if (closed)
+        {
+            throw new IOException("Connection is closed, cannot accept any more input");
+        }
+
+        return safePreviewRecordHeader(recordHeader);
+    }
+
     /**
      * Offer input from an arbitrary source. Only allowed in non-blocking mode.<br>
      * <br>
@@ -888,11 +907,10 @@ public abstract class TlsProtocol
             byte[] recordHeader = new byte[RecordFormat.FRAGMENT_OFFSET];
             inputBuffers.peek(recordHeader);
 
-            int totalLength = TlsUtils.readUint16(recordHeader, RecordFormat.LENGTH_OFFSET) + RecordFormat.FRAGMENT_OFFSET;
-            if (inputBuffers.available() < totalLength)
+            RecordPreview preview = safePreviewRecordHeader(recordHeader);
+            if (inputBuffers.available() < preview.getRecordSize())
             {
                 // not enough bytes to read a whole record
-                safeCheckRecordHeader(recordHeader);
                 break;
             }
 
