@@ -626,6 +626,30 @@ public abstract class TlsProtocol
         throw new TlsNoCloseNotifyException();
     }
 
+    protected boolean safeReadFullRecord(byte[] record)
+        throws IOException
+    {
+        try
+        {
+            return recordStream.readFullRecord(record);
+        }
+        catch (TlsFatalAlert e)
+        {
+            handleException(e.getAlertDescription(), "Failed to process record", e);
+            throw e;
+        }
+        catch (IOException e)
+        {
+            handleException(AlertDescription.internal_error, "Failed to process record", e);
+            throw e;
+        }
+        catch (RuntimeException e)
+        {
+            handleException(AlertDescription.internal_error, "Failed to process record", e);
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
+        }
+    }
+
     protected void safeWriteRecord(short type, byte[] buf, int offset, int len)
         throws IOException
     {
@@ -841,7 +865,21 @@ public abstract class TlsProtocol
         {
             throw new IOException("Connection is closed, cannot accept any more input");
         }
-        
+
+        // Fast path if the input is arriving one record at a time
+        if (inputBuffers.available() == 0 && safeReadFullRecord(input))
+        {
+            if (closed)
+            {
+                if (connection_state != CS_END)
+                {
+                    // NOTE: Any close during the handshake should have raised an exception.
+                    throw new TlsFatalAlert(AlertDescription.internal_error);
+                }
+            }
+            return;
+        }
+
         inputBuffers.addBytes(input);
 
         // loop while there are enough bytes to read the length of the next record

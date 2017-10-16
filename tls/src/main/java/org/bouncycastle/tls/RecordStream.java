@@ -176,6 +176,56 @@ class RecordStream
         checkLength(length, ciphertextLimit, AlertDescription.record_overflow);
     }
 
+    boolean readFullRecord(byte[] record)
+        throws IOException
+    {
+        if (record.length < TLS_HEADER_SIZE)
+        {
+            return false;
+        }
+
+        int length = TlsUtils.readUint16(record, TLS_HEADER_LENGTH_OFFSET);
+        if (record.length != (TLS_HEADER_SIZE + length))
+        {
+            return false;
+        }
+
+        short type = TlsUtils.readUint8(record, TLS_HEADER_TYPE_OFFSET);
+
+        /*
+         * RFC 5246 6. If a TLS implementation receives an unexpected record type, it MUST send an
+         * unexpected_message alert.
+         */
+        checkType(type, AlertDescription.unexpected_message);
+
+        if (!restrictReadVersion)
+        {
+            int version = TlsUtils.readVersionRaw(record, TLS_HEADER_VERSION_OFFSET);
+            if ((version & 0xffffff00) != 0x0300)
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+        }
+        else
+        {
+            ProtocolVersion version = TlsUtils.readVersion(record, TLS_HEADER_VERSION_OFFSET);
+            if (readVersion == null)
+            {
+                readVersion = version;
+            }
+            else if (!version.equals(readVersion))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+        }
+
+        checkLength(length, ciphertextLimit, AlertDescription.record_overflow);
+
+        byte[] plaintext = decodeAndVerify(type, record, TLS_HEADER_SIZE, length);
+        handler.processRecord(type, plaintext, 0, plaintext.length);
+        return true;
+    }
+
     boolean readRecord()
         throws IOException
     {
@@ -218,18 +268,17 @@ class RecordStream
 
         checkLength(length, ciphertextLimit, AlertDescription.record_overflow);
 
-        byte[] plaintext = decodeAndVerify(type, input, length);
+        byte[] ciphertext = TlsUtils.readFully(length, input);
+        byte[] plaintext = decodeAndVerify(type, ciphertext, 0, length);
         handler.processRecord(type, plaintext, 0, plaintext.length);
         return true;
     }
 
-    byte[] decodeAndVerify(short type, InputStream input, int len)
+    byte[] decodeAndVerify(short type, byte[] ciphertext, int off, int len)
         throws IOException
     {
-        byte[] buf = TlsUtils.readFully(len, input);
-
         long seqNo = readSeqNo.nextValue(AlertDescription.unexpected_message);
-        byte[] decoded = readCipher.decodeCiphertext(seqNo, type, buf, 0, buf.length);
+        byte[] decoded = readCipher.decodeCiphertext(seqNo, type, ciphertext, off, len);
 
         checkLength(decoded.length, compressedLimit, AlertDescription.record_overflow);
 
