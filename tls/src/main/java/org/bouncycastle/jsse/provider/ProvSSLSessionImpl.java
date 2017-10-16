@@ -17,6 +17,7 @@ import javax.net.ssl.SSLSessionContext;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.jsse.BCSNIServerName;
+import org.bouncycastle.tls.RecordFormat;
 import org.bouncycastle.tls.SessionParameters;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.util.Arrays;
@@ -178,7 +179,7 @@ class ProvSSLSessionImpl
          * when the max_fragment_length extension has been negotiated, or when no compression was negotiated).
          */
         // Header size + Fragment length limit + Compression expansion + Cipher expansion
-        return 5 + (1 << 14) + 1024 + 1024; 
+        return RecordFormat.FRAGMENT_OFFSET + (1 << 14) + 1024 + 1024; 
     }
 
     public javax.security.cert.X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException
