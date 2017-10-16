@@ -136,9 +136,14 @@ class RecordStream
         this.pendingCipher = null;
     }
 
-    void checkRecordHeader(byte[] recordHeader) throws IOException
+    RecordPreview previewRecordHeader(byte[] recordHeader, boolean appDataReady) throws IOException
     {
         short type = TlsUtils.readUint8(recordHeader, RecordFormat.TYPE_OFFSET);
+
+        if (!appDataReady && type == ContentType.application_data)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
 
         /*
          * RFC 5246 6. If a TLS implementation receives an unexpected record type, it MUST send an
@@ -170,6 +175,23 @@ class RecordStream
         int length = TlsUtils.readUint16(recordHeader, RecordFormat.LENGTH_OFFSET);
 
         checkLength(length, ciphertextLimit, AlertDescription.record_overflow);
+
+        int recordSize = RecordFormat.FRAGMENT_OFFSET + length;
+        int applicationDataLimit = 0;
+
+        if (type == ContentType.application_data)
+        {
+            if (readCompression instanceof TlsNullCompression)
+            {
+                applicationDataLimit = readCipher.getPlaintextLimit(length);
+            }
+            else
+            {
+                applicationDataLimit = getPlaintextLimit();
+            }
+        }
+
+        return new RecordPreview(recordSize, applicationDataLimit);
     }
 
     boolean readFullRecord(byte[] record)
