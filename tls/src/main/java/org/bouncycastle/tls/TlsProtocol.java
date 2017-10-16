@@ -883,12 +883,12 @@ public abstract class TlsProtocol
         inputBuffers.addBytes(input);
 
         // loop while there are enough bytes to read the length of the next record
-        while (inputBuffers.available() >= RecordStream.TLS_HEADER_SIZE)
+        while (inputBuffers.available() >= RecordFormat.FRAGMENT_OFFSET)
         {
-            byte[] recordHeader = new byte[RecordStream.TLS_HEADER_SIZE];
+            byte[] recordHeader = new byte[RecordFormat.FRAGMENT_OFFSET];
             inputBuffers.peek(recordHeader);
 
-            int totalLength = TlsUtils.readUint16(recordHeader, RecordStream.TLS_HEADER_LENGTH_OFFSET) + RecordStream.TLS_HEADER_SIZE;
+            int totalLength = TlsUtils.readUint16(recordHeader, RecordFormat.LENGTH_OFFSET) + RecordFormat.FRAGMENT_OFFSET;
             if (inputBuffers.available() < totalLength)
             {
                 // not enough bytes to read a whole record

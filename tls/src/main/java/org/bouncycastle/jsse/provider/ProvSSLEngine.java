@@ -16,6 +16,7 @@ import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLEngine;
+import org.bouncycastle.tls.RecordFormat;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
@@ -325,12 +326,12 @@ class ProvSSLEngine
 
         if (!protocol.isClosed())
         {
-            if (src.remaining() >= 5)
+            if (src.remaining() >= RecordFormat.FRAGMENT_OFFSET)
             {
-                byte[] recordHeader = new byte[5];
+                byte[] recordHeader = new byte[RecordFormat.FRAGMENT_OFFSET];
                 src.slice().get(recordHeader);
 
-                int recordSize = TlsUtils.readUint16(recordHeader, 3) + 5;
+                int recordSize = RecordFormat.FRAGMENT_OFFSET + TlsUtils.readUint16(recordHeader, RecordFormat.LENGTH_OFFSET);
                 if (recordSize > ProvSSLSessionImpl.NULL_SESSION.getPacketBufferSize())
                 {
                     /*
