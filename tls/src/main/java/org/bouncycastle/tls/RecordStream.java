@@ -181,13 +181,11 @@ class RecordStream
 
         if (type == ContentType.application_data)
         {
-            if (readCompression instanceof TlsNullCompression)
+            applicationDataLimit = getPlaintextLimit();
+
+            if (readCompression.getClass() == TlsNullCompression.class)
             {
-                applicationDataLimit = readCipher.getPlaintextLimit(length);
-            }
-            else
-            {
-                applicationDataLimit = getPlaintextLimit();
+                applicationDataLimit = Math.min(applicationDataLimit, readCipher.getPlaintextLimit(length));
             }
         }
 
