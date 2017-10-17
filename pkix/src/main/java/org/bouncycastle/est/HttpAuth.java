@@ -21,6 +21,7 @@ import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
@@ -163,10 +164,17 @@ public class HttpAuth
                         {
                             throw new IllegalArgumentException("User must not contain a ':'");
                         }
-                        String userPass = username + ":" + new String(password);
-                        answer.setHeader("Authorization", "Basic " + Base64.toBase64String(userPass.getBytes()));
+                        //userPass = username + ":" + password;
+                        char[]  userPass = new char[username.length() + 1 + password.length];
+                        System.arraycopy(username.toCharArray(), 0, userPass, 0, username.length());
+                        userPass[username.length()] = ':';
+                        System.arraycopy(password, 0, userPass, username.length() + 1, password.length);
+
+                        answer.setHeader("Authorization", "Basic " + Base64.toBase64String(Strings.toByteArray(userPass)));
 
                         res = req.getClient().doRequest(answer.build());
+
+                        Arrays.fill(userPass, (char)0);
                     }
                     else
                     {
