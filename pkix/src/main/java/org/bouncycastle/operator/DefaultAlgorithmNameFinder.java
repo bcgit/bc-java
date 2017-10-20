@@ -56,6 +56,10 @@ public class DefaultAlgorithmNameFinder
         algorithms.put(NISTObjectIdentifiers.id_sha256, "SHA256");
         algorithms.put(NISTObjectIdentifiers.id_sha384, "SHA384");
         algorithms.put(NISTObjectIdentifiers.id_sha512, "SHA512");
+        algorithms.put(NISTObjectIdentifiers.id_sha3_224, "SHA3-224");
+        algorithms.put(NISTObjectIdentifiers.id_sha3_256, "SHA3-256");
+        algorithms.put(NISTObjectIdentifiers.id_sha3_384, "SHA3-384");
+        algorithms.put(NISTObjectIdentifiers.id_sha3_512, "SHA3-512");
         algorithms.put(OIWObjectIdentifiers.elGamalAlgorithm, "ELGAMAL");
         algorithms.put(OIWObjectIdentifiers.idSHA1, "SHA1");
         algorithms.put(OIWObjectIdentifiers.md5WithRSA, "MD5WITHRSA");
