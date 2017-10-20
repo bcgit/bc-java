@@ -33,11 +33,17 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <li>SM2 signatures were using the wrong default identity value. This has now been fixed.</li>
 <li>An edge condition in Blake2b for hashes on data with a length in the range of 2**64 - 127 to 2**64 has been identifed and fixed.</li>
 <li>The ISO Trailer for SHA512/256 used in X9.31 and ISO9796-2 signatures was incorrect. This has beem fixed.</li>
+<li>The BCJSSE SSLEngine implementation now correctly unwraps only whole records.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
 <li>GOST3410-94 private keys encoded using ASN.1 INTEGER are now accepted in private key info objects.</li>
 <li>SCRYPT is now supported as a SecretKeyFactory in the provider and in the PKCS8 APIs</li>
+<li>The BCJSSE provider now supports session resumption in clients.</li>
+<li>The BCJSSE provider now supports Server Name Indication.</li>
+<li>The BCJSSE provider now supports the jdk.tls.namedGroups system property.</li>
+<li>EC key generation and signing now use cache-timing resistant table lookups.</li>
+<li>Performance of the DSTU algorithms has been greatly improved.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
