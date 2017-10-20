@@ -2290,7 +2290,7 @@ public class TestEnroll
             // Non-ideal for testing but the TLS library emits errors that can not accidentally be printed to
             // a web page and aid an attacker.
             //
-            Assert.assertTrue(t.getMessage().toLowerCase().contains("internal tls error"));
+            Assert.assertTrue(t.getMessage().toLowerCase().contains("certificate_unknown"));
         }
         finally
         {
