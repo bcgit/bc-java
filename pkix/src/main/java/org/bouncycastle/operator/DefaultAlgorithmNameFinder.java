@@ -51,10 +51,7 @@ public class DefaultAlgorithmNameFinder
         algorithms.put(EACObjectIdentifiers.id_TA_ECDSA_SHA_256, "SHA256WITHCVC-ECDSA");
         algorithms.put(EACObjectIdentifiers.id_TA_ECDSA_SHA_384, "SHA384WITHCVC-ECDSA");
         algorithms.put(EACObjectIdentifiers.id_TA_ECDSA_SHA_512, "SHA512WITHCVC-ECDSA");
-        algorithms.put(NISTObjectIdentifiers.dsa_with_sha224, "SHA224WITHDSA");
-        algorithms.put(NISTObjectIdentifiers.dsa_with_sha256, "SHA256WITHDSA");
-        algorithms.put(NISTObjectIdentifiers.dsa_with_sha384, "SHA384WITHDSA");
-        algorithms.put(NISTObjectIdentifiers.dsa_with_sha512, "SHA512WITHDSA");
+
         algorithms.put(NISTObjectIdentifiers.id_sha224, "SHA224");
         algorithms.put(NISTObjectIdentifiers.id_sha256, "SHA256");
         algorithms.put(NISTObjectIdentifiers.id_sha384, "SHA384");
