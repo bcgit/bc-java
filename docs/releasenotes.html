@@ -34,6 +34,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <li>An edge condition in Blake2b for hashes on data with a length in the range of 2**64 - 127 to 2**64 has been identifed and fixed.</li>
 <li>The ISO Trailer for SHA512/256 used in X9.31 and ISO9796-2 signatures was incorrect. This has beem fixed.</li>
 <li>The BCJSSE SSLEngine implementation now correctly unwraps only whole records.</li>
+<li>The curve parameters for tc26_gost_3410_12_256_paramSetA were incorrect. These have been fixed.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
@@ -44,6 +45,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <li>The BCJSSE provider now supports the jdk.tls.namedGroups system property.</li>
 <li>EC key generation and signing now use cache-timing resistant table lookups.</li>
 <li>Performance of the DSTU algorithms has been greatly improved.</li>
+<li>Support has been added for generating certificates and signatures in the PKIX API using SHA-3 based digests.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
@@ -132,7 +134,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2016, December 23
 <li>See section 2.1.4 for Security Defects.</li>
 <li>Using unknown status with the ASN.1 CertStatus primitive could result in an IllegalArgumentException on construction. This has been fixed.</li>
 <li>A potentional NullPointerException in a precomputation in WNafUtil has been removed.</li>
-<li>PGPUtil.getDecoderStream() would throw something other than an IOException for empty and very small data. This has been fixed.
+<li>PGPUtil.getDecoderStream() would throw something other than an IOException for empty and very small data. This has been fixed.</li>
 </ul>
 <h3>2.4.3 Additional Features and Functionality</h3>
 <ul>
