@@ -127,6 +127,15 @@ public abstract class Nat160
         z[4] = x[4];
     }
 
+    public static void copy(int[] x, int xOff, int[] z, int zOff)
+    {
+        z[zOff + 0] = x[xOff + 0];
+        z[zOff + 1] = x[xOff + 1];
+        z[zOff + 2] = x[xOff + 2];
+        z[zOff + 3] = x[xOff + 3];
+        z[zOff + 4] = x[xOff + 4];
+    }
+
     public static int[] create()
     {
         return new int[5];
