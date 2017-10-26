@@ -373,6 +373,11 @@ class LongArray implements Cloneable
         }
     }
 
+    void copyTo(long[] z, int zOff)
+    {
+        System.arraycopy(m_ints, 0, z, zOff, m_ints.length);
+    }
+
     public boolean isOne()
     {
         long[] a = m_ints;
