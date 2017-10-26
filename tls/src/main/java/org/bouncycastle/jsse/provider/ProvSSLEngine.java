@@ -25,8 +25,10 @@ import org.bouncycastle.tls.TlsProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
 
 /*
- * TODO[jsse] Currently doesn't properly support NIO usage, or conform very well with SSLEngine javadoc
- * - e.g. "The wrap() and unwrap() methods may execute concurrently of each other." is not true yet.
+ * TODO[jsse] Known limitations (relative to SSLEngine javadoc): 1. The wrap() and unwrap() methods
+ * are synchronized, so will not execute concurrently with each other. 2. Never delegates tasks i.e.
+ * getDelegatedTasks() will always return null; CPU-intensive parts of the handshake will execute
+ * during wrap/unwrap calls.
  */
 class ProvSSLEngine
     extends SSLEngine
