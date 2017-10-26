@@ -5,7 +5,9 @@ import java.math.BigInteger;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECCurve.AbstractF2m;
 import org.bouncycastle.math.ec.ECFieldElement;
+import org.bouncycastle.math.ec.ECLookupTable;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.raw.Nat256;
 import org.bouncycastle.util.encoders.Hex;
 
 public class SecT193R1Curve extends AbstractF2m
@@ -97,5 +99,50 @@ public class SecT193R1Curve extends AbstractF2m
     public int getK3()
     {
         return 0;
+    }
+
+    public ECLookupTable createCacheSafeLookupTable(ECPoint[] points, int off, final int len)
+    {
+        final int FE_LONGS = 4;
+
+        final long[] table = new long[len * FE_LONGS * 2];
+        {
+            int pos = 0;
+            for (int i = 0; i < len; ++i)
+            {
+                ECPoint p = points[off + i];
+                Nat256.copy64(((SecT193FieldElement)p.getRawXCoord()).x, 0, table, pos); pos += FE_LONGS;
+                Nat256.copy64(((SecT193FieldElement)p.getRawYCoord()).x, 0, table, pos); pos += FE_LONGS;
+            }
+        }
+
+        return new ECLookupTable()
+        {
+            public int getSize()
+            {
+                return len;
+            }
+
+            public ECPoint lookup(int index)
+            {
+                long[] x = Nat256.create64(), y = Nat256.create64();
+                int pos = 0;
+
+                for (int i = 0; i < len; ++i)
+                {
+                    long MASK = ((i ^ index) - 1) >> 31;
+
+                    for (int j = 0; j < FE_LONGS; ++j)
+                    {
+                        x[j] ^= table[pos + j] & MASK;
+                        y[j] ^= table[pos + FE_LONGS + j] & MASK;
+                    }
+
+                    pos += (FE_LONGS * 2);
+                }
+
+                return createRawPoint(new SecT193FieldElement(x), new SecT193FieldElement(y), false);
+            }
+        };
     }
 }
