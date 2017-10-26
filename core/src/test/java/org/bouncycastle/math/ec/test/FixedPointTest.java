@@ -38,7 +38,6 @@ public class FixedPointTest
         while (it.hasNext())
         {
             String name = (String)it.next();
-            System.out.println(name);
 
             X9ECParameters x9A = ECNamedCurveTable.getByName(name);
             X9ECParameters x9B = CustomNamedCurves.getByName(name);
