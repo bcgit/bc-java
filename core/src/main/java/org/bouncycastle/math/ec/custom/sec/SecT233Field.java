@@ -130,35 +130,6 @@ public class SecT233Field
         z[zOff + 3]  = z3 & M41;
     }
 
-    public static void square(long[] x, long[] z)
-    {
-        long[] tt = Nat256.createExt64();
-        implSquare(x, tt);
-        reduce(tt, z);
-    }
-
-    public static void squareAddToExt(long[] x, long[] zz)
-    {
-        long[] tt = Nat256.createExt64();
-        implSquare(x, tt);
-        addExt(zz, tt, zz);
-    }
-
-    public static void squareN(long[] x, int n, long[] z)
-    {
-//        assert n > 0;
-
-        long[] tt = Nat256.createExt64();
-        implSquare(x, tt);
-        reduce(tt, z);
-
-        while (--n > 0)
-        {
-            implSquare(z, tt);
-            reduce(tt, z);
-        }
-    }
-
     public static void sqrt(long[] x, long[] z)
     {
         long u0, u1;
@@ -192,6 +163,35 @@ public class SecT233Field
 
         z[0] ^= e0;
         z[1] ^= e1;
+    }
+
+    public static void square(long[] x, long[] z)
+    {
+        long[] tt = Nat256.createExt64();
+        implSquare(x, tt);
+        reduce(tt, z);
+    }
+
+    public static void squareAddToExt(long[] x, long[] zz)
+    {
+        long[] tt = Nat256.createExt64();
+        implSquare(x, tt);
+        addExt(zz, tt, zz);
+    }
+
+    public static void squareN(long[] x, int n, long[] z)
+    {
+//        assert n > 0;
+
+        long[] tt = Nat256.createExt64();
+        implSquare(x, tt);
+        reduce(tt, z);
+
+        while (--n > 0)
+        {
+            implSquare(z, tt);
+            reduce(tt, z);
+        }
     }
 
     public static int trace(long[] x)
