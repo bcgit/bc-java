@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.tls.crypto.DHGroup;
-import org.bouncycastle.tls.crypto.DHStandardGroups;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
@@ -76,11 +74,6 @@ public abstract class AbstractTlsServer
         return new short[]{ CompressionMethod._null };
     }
 
-    protected DHGroup getDHParameters()
-    {
-        return DHStandardGroups.rfc7919_ffdhe2048;
-    }
-
     protected ProtocolVersion getMaximumVersion()
     {
         return ProtocolVersion.TLSv12;
@@ -113,11 +106,27 @@ public abstract class AbstractTlsServer
         return maxBits;
     }
 
-    protected boolean isSelectableCipherSuite(int cipherSuite, int availCurveBits, Vector sigAlgs)
+    protected int getMaximumNegotiableFiniteFieldBits()
+    {
+        if (clientSupportedGroups == null)
+        {
+            return NamedGroup.getMaximumFiniteFieldBits();
+        }
+
+        int maxBits = 0;
+        for (int i = 0; i < clientSupportedGroups.length; ++i)
+        {
+            maxBits = Math.max(maxBits, NamedGroup.getFiniteFieldBits(clientSupportedGroups[i]));
+        }
+        return maxBits;
+    }
+
+    protected boolean isSelectableCipherSuite(int cipherSuite, int availCurveBits, int availFiniteFieldBits, Vector sigAlgs)
     {
         return Arrays.contains(this.offeredCipherSuites, cipherSuite)
             && TlsUtils.isValidCipherSuiteForVersion(cipherSuite, serverVersion)
             && availCurveBits >= TlsECCUtils.getMinimumCurveBits(cipherSuite)
+            && availFiniteFieldBits >= TlsDHUtils.getMinimumFiniteFieldBits(cipherSuite)
             && TlsUtils.isValidCipherSuiteForSignatureAlgorithms(cipherSuite, sigAlgs);
     }
 
@@ -156,9 +165,48 @@ public abstract class AbstractTlsServer
             :  -1;
     }
 
-    protected TlsDHConfig selectDHConfig()
+    protected TlsDHConfig selectDefaultDHConfig(int minimumFiniteFieldBits)
     {
-        return new TlsDHConfig(getDHParameters()); 
+        int namedGroup = minimumFiniteFieldBits <= 2048 ? NamedGroup.ffdhe2048
+                      :  minimumFiniteFieldBits <= 3072 ? NamedGroup.ffdhe3072
+                      :  minimumFiniteFieldBits <= 4096 ? NamedGroup.ffdhe4096
+                      :  minimumFiniteFieldBits <= 6144 ? NamedGroup.ffdhe6144
+                      :  minimumFiniteFieldBits <= 8192 ? NamedGroup.ffdhe8192
+                      :  -1;
+
+        return TlsDHUtils.createNamedDHConfig(namedGroup);
+    }
+
+    protected TlsDHConfig selectDHConfig() throws IOException
+    {
+        int minimumFiniteFieldBits = TlsDHUtils.getMinimumFiniteFieldBits(selectedCipherSuite);
+
+        TlsDHConfig dhConfig = selectDHConfig(minimumFiniteFieldBits);
+        if (dhConfig == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+        return dhConfig;
+    }
+
+    protected TlsDHConfig selectDHConfig(int minimumFiniteFieldBits)
+    {
+        if (clientSupportedGroups == null)
+        {
+            return selectDefaultDHConfig(minimumFiniteFieldBits);
+        }
+
+        // Try to find a supported named group of the required size from the client's list.
+        for (int i = 0; i < clientSupportedGroups.length; ++i)
+        {
+            int namedGroup = clientSupportedGroups[i];
+            if (NamedGroup.getFiniteFieldBits(namedGroup) >= minimumFiniteFieldBits)
+            {
+                return new TlsDHConfig(namedGroup);
+            }
+        }
+
+        return null;
     }
 
     protected TlsECConfig selectECConfig() throws IOException
@@ -310,12 +358,13 @@ public abstract class AbstractTlsServer
          * formats supported by the client [...].
          */
         int availCurveBits = getMaximumNegotiableCurveBits();
+        int availFiniteFieldBits = getMaximumNegotiableFiniteFieldBits();
 
         int[] cipherSuites = getCipherSuites();
         for (int i = 0; i < cipherSuites.length; ++i)
         {
             int cipherSuite = cipherSuites[i];
-            if (isSelectableCipherSuite(cipherSuite, availCurveBits, sigAlgs)
+            if (isSelectableCipherSuite(cipherSuite, availCurveBits, availFiniteFieldBits, sigAlgs)
                 && selectCipherSuite(cipherSuite))
             {
                 return cipherSuite;
