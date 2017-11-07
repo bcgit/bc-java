@@ -65,7 +65,9 @@ public class BlockCipherVectorTest
 
         if (!areEqual(input, out))
         {
-            fail("failed reversal got " + new String(Hex.encode(out)));
+            System.out.println(" got " + new String(Hex.encode(out)));
+
+            fail("failed reversal - " + "expected " + new String(Hex.encode(input)));
         }
     }
 }
