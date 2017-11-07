@@ -154,7 +154,8 @@ public class RegressionTest
         new SM4Test(),
         new DSTU7624Test(),
         new DSTU7564Test(),
-        new IsoTrailerTest()
+        new IsoTrailerTest(),
+        new GOST3412Test()
     };
 
     public static void main(
