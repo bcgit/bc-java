@@ -1,21 +1,21 @@
 package org.bouncycastle.crypto.modes;
 
-import org.bouncycastle.crypto.*;
+import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.StreamBlockCipher;
 import org.bouncycastle.crypto.params.GOST3412ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithIV;
-import org.bouncycastle.crypto.util.GOST3412CipherUtil;
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
-
-import static javafx.scene.input.KeyCode.R;
 
 /**
  * implements the GOST 3412 2015 CTR counter mode (GCTR).
  */
-public class G3412CTRBlockCipher extends StreamBlockCipher {
+public class G3413CTRBlockCipher
+    extends StreamBlockCipher
+{
 
 
-    private int s;
+    private final int s;
     private byte[] CTR;
     private byte[] IV;
     private byte[] buf;
@@ -31,13 +31,26 @@ public class G3412CTRBlockCipher extends StreamBlockCipher {
      * @param cipher the block cipher to be used as the basis of the
      *               counter mode (must have a 64 bit block size).
      */
-    public G3412CTRBlockCipher(
-        BlockCipher cipher) {
+    public G3413CTRBlockCipher(
+        BlockCipher cipher)
+    {
+        this(cipher, cipher.getBlockSize() * 8);
+    }
 
+    /**
+     * Basic constructor.
+     *
+     * @param cipher       the block cipher to be used as the basis of the
+     *                     counter mode (must have a 64 bit block size).
+     * @param bitBlockSize basic unit (defined as s)
+     */
+    public G3413CTRBlockCipher(BlockCipher cipher, int bitBlockSize)
+    {
         super(cipher);
 
         this.cipher = cipher;
         this.blockSize = cipher.getBlockSize();
+        this.s = bitBlockSize / 8;
         CTR = new byte[blockSize];
     }
 
@@ -50,62 +63,62 @@ public class G3412CTRBlockCipher extends StreamBlockCipher {
      *                   encryption, if false for decryption.
      * @param params     the key and other data required by the cipher.
      * @throws IllegalArgumentException if the params argument is
-     *                                  inappropriate.
+     * inappropriate.
      */
     public void init(
         boolean encrypting, //ignored by this CTR mode
         CipherParameters params)
-        throws IllegalArgumentException {
+        throws IllegalArgumentException
+    {
 
-        if (params instanceof ParametersWithIV) {
-            ParametersWithIV ivParam = (ParametersWithIV) params;
-
-            setupDefaultParams();
+        if (params instanceof ParametersWithIV)
+        {
+            ParametersWithIV ivParam = (ParametersWithIV)params;
 
             initArrays();
 
-            IV = GOST3412CipherUtil.initIV(ivParam.getIV(), IV.length);
+            IV = GOST3413CipherUtil.initIV(ivParam.getIV(), IV.length);
             System.arraycopy(IV, 0, CTR, 0, IV.length);
-            for (int i = IV.length; i < blockSize; i++) {
+            for (int i = IV.length; i < blockSize; i++)
+            {
                 CTR[i] = 0;
             }
 
-
             // if null it's an IV changed only.
-            if (ivParam.getParameters() != null) {
+            if (ivParam.getParameters() != null)
+            {
                 cipher.init(true, ivParam.getParameters());
             }
-
-
         }
-        if (params instanceof GOST3412ParametersWithIV) {
-            GOST3412ParametersWithIV ivParam = (GOST3412ParametersWithIV) params;
-
-            this.s = ivParam.getS() / 8;
+        if (params instanceof GOST3412ParametersWithIV)
+        {
+            GOST3412ParametersWithIV ivParam = (GOST3412ParametersWithIV)params;
 
             validateParams(ivParam.getIV().length);
 
             initArrays();
 
-            IV = GOST3412CipherUtil.initIV(ivParam.getIV(), IV.length);
+            IV = GOST3413CipherUtil.initIV(ivParam.getIV(), IV.length);
             System.arraycopy(IV, 0, CTR, 0, IV.length);
-            for (int i = IV.length; i < blockSize; i++) {
+            for (int i = IV.length; i < blockSize; i++)
+            {
                 CTR[i] = 0;
             }
 
 
             // if null it's an IV changed only.
-            if (ivParam.getParameters() != null) {
+            if (ivParam.getParameters() != null)
+            {
                 cipher.init(true, ivParam.getParameters());
             }
-        } else {
-
-            setupDefaultParams();
-
+        }
+        else
+        {
             initArrays();
 
             // if it's null, key is to be reused.
-            if (params != null) {
+            if (params != null)
+            {
                 cipher.init(true, params);
             }
         }
@@ -113,24 +126,25 @@ public class G3412CTRBlockCipher extends StreamBlockCipher {
         initialized = true;
     }
 
-    private void validateParams(int viLen) throws IllegalArgumentException {
-        if (s < 0 || s > blockSize) {
+    private void validateParams(int viLen)
+        throws IllegalArgumentException
+    {
+        if (s < 0 || s > blockSize)
+        {
             throw new IllegalArgumentException("Parameter s must be in range 0 < s <= blockSize");
         }
 
-        if (viLen != blockSize / 2) {
+        if (viLen != blockSize / 2)
+        {
             throw new IllegalArgumentException("Parameter IV length must be == blockSize/2");
         }
     }
 
-    private void initArrays() {
+    private void initArrays()
+    {
         IV = new byte[blockSize / 2];
         CTR = new byte[blockSize];
         buf = new byte[s];
-    }
-
-    private void setupDefaultParams() {
-        s = 128;
     }
 
     /**
@@ -139,7 +153,8 @@ public class G3412CTRBlockCipher extends StreamBlockCipher {
      * @return the name of the underlying algorithm followed by "/GCTR"
      * and the block size in bits
      */
-    public String getAlgorithmName() {
+    public String getAlgorithmName()
+    {
         return cipher.getAlgorithmName() + "/GCTR";
     }
 
@@ -148,8 +163,9 @@ public class G3412CTRBlockCipher extends StreamBlockCipher {
      *
      * @return the block size we are operating at (in bytes).
      */
-    public int getBlockSize() {
-        return blockSize;
+    public int getBlockSize()
+    {
+        return s;
     }
 
     /**
@@ -161,8 +177,8 @@ public class G3412CTRBlockCipher extends StreamBlockCipher {
      * @param out    the array the output data will be copied into.
      * @param outOff the offset into the out array the output will start at.
      * @return the number of bytes processed and produced.
-     * @throws DataLengthException   if there isn't enough data in in, or
-     *                               space in out.
+     * @throws DataLengthException if there isn't enough data in in, or
+     * space in out.
      * @throws IllegalStateException if the cipher isn't initialised.
      */
     public int processBlock(
@@ -170,23 +186,27 @@ public class G3412CTRBlockCipher extends StreamBlockCipher {
         int inOff,
         byte[] out,
         int outOff)
-        throws DataLengthException, IllegalStateException {
+        throws DataLengthException, IllegalStateException
+    {
 
-        processBytes(in, inOff, blockSize, out, outOff);
+        processBytes(in, inOff, s, out, outOff);
 
-        return blockSize;
+        return s;
     }
 
-    protected byte calculateByte(byte in) {
+    protected byte calculateByte(byte in)
+    {
 
-        if (byteCount == 0) {
+        if (byteCount == 0)
+        {
             buf = generateBuf();
         }
 
-        byte rv = (byte) (buf[byteCount] ^ in);
+        byte rv = (byte)(buf[byteCount] ^ in);
         byteCount++;
 
-        if (byteCount == blockSize) {
+        if (byteCount == s)
+        {
             byteCount = 0;
             generateCRT();
         }
@@ -195,17 +215,19 @@ public class G3412CTRBlockCipher extends StreamBlockCipher {
 
     }
 
-    private void generateCRT() {
+    private void generateCRT()
+    {
         CTR[CTR.length - 1]++;
     }
 
 
-    private byte[] generateBuf() {
+    private byte[] generateBuf()
+    {
 
         byte[] encryptedCTR = new byte[CTR.length];
         cipher.processBlock(CTR, 0, encryptedCTR, 0);
 
-        return GOST3412CipherUtil.MSB(encryptedCTR, s);
+        return GOST3413CipherUtil.MSB(encryptedCTR, s);
 
     }
 
@@ -214,10 +236,13 @@ public class G3412CTRBlockCipher extends StreamBlockCipher {
      * reset the feedback vector back to the IV and reset the underlying
      * cipher.
      */
-    public void reset() {
-        if (initialized) {
+    public void reset()
+    {
+        if (initialized)
+        {
             System.arraycopy(IV, 0, CTR, 0, IV.length);
-            for (int i = IV.length; i < blockSize; i++) {
+            for (int i = IV.length; i < blockSize; i++)
+            {
                 CTR[i] = 0;
             }
             byteCount = 0;

@@ -7,8 +7,12 @@ import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
 
-
-public class GOST3412_2015Engine implements BlockCipher {
+/**
+ * Implementation of GOST 3412 2015 (aka "Kuznyechik") RFC 7801, GOST 3412
+ */
+public class GOST3412_2015Engine
+    implements BlockCipher
+{
 
     private static final byte[] PI = new byte[]
         {
@@ -54,60 +58,79 @@ public class GOST3412_2015Engine implements BlockCipher {
     private byte[][] _gf_mul = init_gf256_mul_table();
 
 
-    private static byte[][] init_gf256_mul_table() {
+    private static byte[][] init_gf256_mul_table()
+    {
         byte[][] mul_table = new byte[256][];
-        for (int x = 0; x < 256; x++) {
+        for (int x = 0; x < 256; x++)
+        {
             mul_table[x] = new byte[256];
-            for (int y = 0; y < 256; y++) {
-                mul_table[x][y] = kuz_mul_gf256_slow((byte) x, (byte) y);
+            for (int y = 0; y < 256; y++)
+            {
+                mul_table[x][y] = kuz_mul_gf256_slow((byte)x, (byte)y);
             }
         }
         return mul_table;
     }
 
-    private static byte kuz_mul_gf256_slow(byte a, byte b) {
+    private static byte kuz_mul_gf256_slow(byte a, byte b)
+    {
         byte p = 0;
         byte counter;
         byte hi_bit_set;
-        for (counter = 0; counter < 8 && a != 0 && b != 0; counter++) {
+        for (counter = 0; counter < 8 && a != 0 && b != 0; counter++)
+        {
             if ((b & 1) != 0)
+            {
                 p ^= a;
-            hi_bit_set = (byte) (a & 0x80);
+            }
+            hi_bit_set = (byte)(a & 0x80);
             a <<= 1;
             if (hi_bit_set != 0)
+            {
                 a ^= 0xc3; /* x^8 + x^7 + x^6 + x + 1 */
+            }
             b >>= 1;
         }
         return p;
     }
 
-    public String getAlgorithmName() {
+    public String getAlgorithmName()
+    {
         return "GOST3412_2015";
     }
 
-    public int getBlockSize() {
+    public int getBlockSize()
+    {
         return BLOCK_SIZE;
     }
 
-    public void init(boolean forEncryption, CipherParameters params) throws IllegalArgumentException {
+    public void init(boolean forEncryption, CipherParameters params)
+        throws IllegalArgumentException
+    {
 
-        if (params instanceof KeyParameter) {
+        if (params instanceof KeyParameter)
+        {
             this.forEncryption = forEncryption;
-            generateSubKeys(((KeyParameter) params).getKey());
-        } else if (params != null) {
+            generateSubKeys(((KeyParameter)params).getKey());
+        }
+        else if (params != null)
+        {
             throw new IllegalArgumentException("invalid parameter passed to GOST3412_2015 init - " + params.getClass().getName());
         }
     }
 
     private void generateSubKeys(
-        byte[] userKey) {
+        byte[] userKey)
+    {
 
-        if (userKey.length != KEY_LENGTH) {
+        if (userKey.length != KEY_LENGTH)
+        {
             throw new IllegalArgumentException("Key length invalid. Key needs to be 64 byte - 512 bit!!!");
         }
 
         subKeys = new byte[10][];
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 10; i++)
+        {
             subKeys[i] = new byte[SUB_LENGTH];
         }
 
@@ -115,16 +138,19 @@ public class GOST3412_2015Engine implements BlockCipher {
         byte[] y = new byte[SUB_LENGTH];
 
 
-        for (int i = 0; i < SUB_LENGTH; i++) {
+        for (int i = 0; i < SUB_LENGTH; i++)
+        {
             subKeys[0][i] = x[i] = userKey[i];
             subKeys[1][i] = y[i] = userKey[i + SUB_LENGTH];
         }
 
         byte[] c = new byte[SUB_LENGTH];
 
-        for (int k = 1; k < 5; k++) {
+        for (int k = 1; k < 5; k++)
+        {
 
-            for (int j = 1; j <= 8; j++) {
+            for (int j = 1; j <= 8; j++)
+            {
                 C(c, 8 * (k - 1) + j);
                 F(c, x, y);
             }
@@ -135,15 +161,17 @@ public class GOST3412_2015Engine implements BlockCipher {
     }
 
 
-    private void C(byte[] c, int i) {
+    private void C(byte[] c, int i)
+    {
 
         Arrays.clear(c);
-        c[15] = (byte) i;
+        c[15] = (byte)i;
         L(c);
     }
 
 
-    private void F(byte[] k, byte[] a1, byte[] a0) {
+    private void F(byte[] k, byte[] a1, byte[] a0)
+    {
 
         byte[] temp = LSX(k, a1);
         X(temp, a0);
@@ -153,17 +181,22 @@ public class GOST3412_2015Engine implements BlockCipher {
 
     }
 
-    public int processBlock(byte[] in, int inOff, byte[] out, int outOff) throws DataLengthException, IllegalStateException {
+    public int processBlock(byte[] in, int inOff, byte[] out, int outOff)
+        throws DataLengthException, IllegalStateException
+    {
 
-        if (subKeys == null) {
+        if (subKeys == null)
+        {
             throw new IllegalStateException("GOST3412_2015 engine not initialised");
         }
 
-        if ((inOff + BLOCK_SIZE) > in.length) {
+        if ((inOff + BLOCK_SIZE) > in.length)
+        {
             throw new DataLengthException("input buffer too short");
         }
 
-        if ((outOff + BLOCK_SIZE) > out.length) {
+        if ((outOff + BLOCK_SIZE) > out.length)
+        {
             throw new OutputLengthException("output buffer too short");
         }
 
@@ -177,23 +210,29 @@ public class GOST3412_2015Engine implements BlockCipher {
         byte[] in,
         int inOff,
         byte[] out,
-        int outOff) {
+        int outOff)
+    {
 
         byte[] block = new byte[BLOCK_SIZE];
         System.arraycopy(in, inOff, block, 0, BLOCK_SIZE);
 
-        if (forEncryption) {
+        if (forEncryption)
+        {
 
-            for (int i = 0; i < 9; i++) {
+            for (int i = 0; i < 9; i++)
+            {
 
                 byte[] temp = LSX(subKeys[i], block);
                 block = Arrays.copyOf(temp, BLOCK_SIZE);
             }
 
             X(block, subKeys[9]);
-        } else {
+        }
+        else
+        {
 
-            for (int i = 9; i > 0; i--) {
+            for (int i = 9; i > 0; i--)
+            {
 
                 byte[] temp = XSL(subKeys[i], block);
                 block = Arrays.copyOf(temp, BLOCK_SIZE);
@@ -205,7 +244,8 @@ public class GOST3412_2015Engine implements BlockCipher {
         System.arraycopy(block, 0, out, outOff, BLOCK_SIZE);
     }
 
-    private byte[] LSX(byte[] k, byte[] a) {
+    private byte[] LSX(byte[] k, byte[] a)
+    {
 
         byte[] result = Arrays.copyOf(k, k.length);
         X(result, a);
@@ -214,7 +254,8 @@ public class GOST3412_2015Engine implements BlockCipher {
         return result;
     }
 
-    private byte[] XSL(byte[] k, byte[] a) {
+    private byte[] XSL(byte[] k, byte[] a)
+    {
         byte[] result = Arrays.copyOf(k, k.length);
         X(result, a);
         inverseL(result);
@@ -222,48 +263,61 @@ public class GOST3412_2015Engine implements BlockCipher {
         return result;
     }
 
-    private void X(byte[] result, byte[] data) {
-        for (int i = 0; i < result.length; i++) {
+    private void X(byte[] result, byte[] data)
+    {
+        for (int i = 0; i < result.length; i++)
+        {
             result[i] ^= data[i];
         }
     }
 
-    private void S(byte[] data) {
-        for (int i = 0; i < data.length; i++) {
+    private void S(byte[] data)
+    {
+        for (int i = 0; i < data.length; i++)
+        {
             data[i] = PI[unsignedByte(data[i])];
         }
     }
 
-    private void inverseS(byte[] data) {
-        for (int i = 0; i < data.length; i++) {
+    private void inverseS(byte[] data)
+    {
+        for (int i = 0; i < data.length; i++)
+        {
             data[i] = inversePI[unsignedByte(data[i])];
         }
     }
 
-    private int unsignedByte(byte b) {
+    private int unsignedByte(byte b)
+    {
         return b & 0xFF;
     }
 
-    private void L(byte[] data) {
-        for (int i = 0; i < 16; i++) {
+    private void L(byte[] data)
+    {
+        for (int i = 0; i < 16; i++)
+        {
             R(data);
         }
     }
 
-    private void inverseL(byte[] data) {
-        for (int i = 0; i < 16; i++) {
+    private void inverseL(byte[] data)
+    {
+        for (int i = 0; i < 16; i++)
+        {
             inverseR(data);
         }
     }
 
 
-    private void R(byte[] data) {
+    private void R(byte[] data)
+    {
         byte z = l(data);
         System.arraycopy(data, 0, data, 1, 15);
         data[0] = z;
     }
 
-    private void inverseR(byte[] data) {
+    private void inverseR(byte[] data)
+    {
         byte[] temp = new byte[16];
         System.arraycopy(data, 1, temp, 0, 15);
         temp[15] = data[0];
@@ -273,15 +327,18 @@ public class GOST3412_2015Engine implements BlockCipher {
     }
 
 
-    private byte l(byte[] data) {
+    private byte l(byte[] data)
+    {
         byte x = data[15];
-        for (int i = 14; i >= 0; i--) {
+        for (int i = 14; i >= 0; i--)
+        {
             x ^= _gf_mul[unsignedByte(data[i])][unsignedByte(lFactors[i])];
         }
         return x;
     }
 
-    public void reset() {
+    public void reset()
+    {
 
     }
 }
