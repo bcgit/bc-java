@@ -3,8 +3,8 @@ package org.bouncycastle.crypto.modes;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.params.GOST3412ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 
 /**
  * An implementation of the CBC mode for GOST 3412 2015 cipher.
@@ -34,39 +34,22 @@ public class G3413CBCBlockCipher
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-
         this.forEncryption = forEncryption;
         if (params instanceof ParametersWithIV)
         {
             ParametersWithIV ivParam = (ParametersWithIV)params;
 
-            setupDefaultParams();
+            byte[] iv = ivParam.getIV();
 
-            initArrays();
-
-            R_init = GOST3413CipherUtil.initIV(ivParam.getIV(), m);
-            System.arraycopy(R_init, 0, R, 0, R_init.length);
-
-
-            // if null it's an IV changed only.
-            if (ivParam.getParameters() != null)
+            if (iv.length < blockSize)
             {
-                cipher.init(forEncryption, ivParam.getParameters());
+                throw new IllegalArgumentException("Parameter m must blockSize <= m");
             }
-
-
-        }
-        if (params instanceof GOST3412ParametersWithIV)
-        {
-            GOST3412ParametersWithIV ivParam = (GOST3412ParametersWithIV)params;
-
-            this.m = ivParam.getM() / 8;
-
-            validateParams();
+            this.m = iv.length;
 
             initArrays();
 
-            R_init = GOST3413CipherUtil.initIV(ivParam.getIV(), m);
+            R_init = Arrays.clone(iv);
             System.arraycopy(R_init, 0, R, 0, R_init.length);
 
             // if null it's an IV changed only.
@@ -77,7 +60,6 @@ public class G3413CBCBlockCipher
         }
         else
         {
-
             setupDefaultParams();
 
             initArrays();
@@ -92,19 +74,7 @@ public class G3413CBCBlockCipher
 
         initialized = true;
     }
-
-    private void validateParams()
-        throws IllegalArgumentException
-    {
-
-        if (m < blockSize)
-        {
-            throw new IllegalArgumentException("Parameter m must blockSize <= m");
-        }
-
-    }
-
-
+    
     /**
      * allocate memory for R and R_init arrays
      */
@@ -190,7 +160,6 @@ public class G3413CBCBlockCipher
      */
     private void generateR(byte[] C)
     {
-
         byte[] buf = GOST3413CipherUtil.LSB(R, m - blockSize);
         System.arraycopy(buf, 0, R, 0, buf.length);
         System.arraycopy(C, 0, R, buf.length, m - buf.length);

@@ -4,7 +4,6 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.StreamBlockCipher;
-import org.bouncycastle.crypto.params.GOST3412ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 
@@ -73,13 +72,10 @@ public class G3413CFBBlockCipher
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-
         this.forEncryption = forEncryption;
         if (params instanceof ParametersWithIV)
         {
             ParametersWithIV ivParam = (ParametersWithIV)params;
-
-            setupDefaultParams();
 
             byte[] iv = ivParam.getIV();
 
@@ -91,27 +87,10 @@ public class G3413CFBBlockCipher
 
             initArrays();
 
-            R_init = GOST3413CipherUtil.initIV(ivParam.getIV(), iv.length);
+            R_init = Arrays.clone(iv);
             System.arraycopy(R_init, 0, R, 0, R_init.length);
 
 
-            // if null it's an IV changed only.
-            if (ivParam.getParameters() != null)
-            {
-                cipher.init(true, ivParam.getParameters());
-            }
-        }
-        else if (params instanceof GOST3412ParametersWithIV)
-        {
-            GOST3412ParametersWithIV ivParam = (GOST3412ParametersWithIV)params;
-
-            this.m = ivParam.getM() / 8;
-
-            initArrays();
-
-            R_init = GOST3413CipherUtil.initIV(ivParam.getIV(), m);
-            System.arraycopy(R_init, 0, R, 0, R_init.length);
-            System.err.println(ivParam.getIV().length);
             // if null it's an IV changed only.
             if (ivParam.getParameters() != null)
             {
