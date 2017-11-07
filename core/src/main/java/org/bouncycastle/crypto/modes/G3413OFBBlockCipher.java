@@ -4,7 +4,6 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.StreamBlockCipher;
-import org.bouncycastle.crypto.params.GOST3412ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 
@@ -15,7 +14,7 @@ import org.bouncycastle.util.Arrays;
 public class G3413OFBBlockCipher
     extends StreamBlockCipher
 {
-//    private int s;
+    //    private int s;
     private int m;
     private int blockSize;
     private byte[] R;
@@ -43,11 +42,17 @@ public class G3413OFBBlockCipher
         {
             ParametersWithIV ivParam = (ParametersWithIV)params;
 
-            setupDefaultParams();
+            byte[] iv = ivParam.getIV();
+
+            if (iv.length < blockSize)
+            {
+                throw new IllegalArgumentException("Parameter m must blockSize <= m");
+            }
+            this.m = iv.length;
 
             initArrays();
 
-            R_init = GOST3413CipherUtil.initIV(ivParam.getIV(), m);
+            R_init = Arrays.clone(iv);
             System.arraycopy(R_init, 0, R, 0, R_init.length);
 
 
@@ -58,25 +63,6 @@ public class G3413OFBBlockCipher
             }
 
 
-        }
-        if (params instanceof GOST3412ParametersWithIV)
-        {
-            GOST3412ParametersWithIV ivParam = (GOST3412ParametersWithIV)params;
-
-            this.m = ivParam.getM() / 8;
-
-            validateParams();
-
-            initArrays();
-
-            R_init = GOST3413CipherUtil.initIV(ivParam.getIV(), m);
-            System.arraycopy(R_init, 0, R, 0, R_init.length);
-
-            // if null it's an IV changed only.
-            if (ivParam.getParameters() != null)
-            {
-                cipher.init(true, ivParam.getParameters());
-            }
         }
         else
         {
@@ -95,17 +81,6 @@ public class G3413OFBBlockCipher
 
         initialized = true;
     }
-
-    private void validateParams()
-        throws IllegalArgumentException
-    {
-        if (m < blockSize)
-        {
-            throw new IllegalArgumentException("Parameter m must blockSize <= m");
-        }
-
-    }
-
 
     /**
      * allocate memory for R and R_init arrays

@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.modes.G3413OFBBlockCipher;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 
 
@@ -30,7 +31,7 @@ public class GOST3412_2015
     {
         public CBC()
         {
-            super(new G3413CBCBlockCipher(new GOST3412_2015Engine()), 128);
+            super(new G3413CBCBlockCipher(new GOST3412_2015Engine()), false, 128);
         }
     }
 
@@ -39,7 +40,16 @@ public class GOST3412_2015
     {
         public GCFB()
         {
-            super(new BufferedBlockCipher(new G3413CFBBlockCipher(new GOST3412_2015Engine())), 128);
+            super(new BufferedBlockCipher(new G3413CFBBlockCipher(new GOST3412_2015Engine())), false, 128);
+        }
+    }
+
+    public static class GCFB8
+        extends BaseBlockCipher
+    {
+        public GCFB8()
+        {
+            super(new BufferedBlockCipher(new G3413CFBBlockCipher(new GOST3412_2015Engine(), 8)), false, 128);
         }
     }
 
@@ -48,7 +58,7 @@ public class GOST3412_2015
     {
         public OFB()
         {
-            super(new BufferedBlockCipher(new G3413OFBBlockCipher(new GOST3412_2015Engine())), 128);
+            super(new BufferedBlockCipher(new G3413OFBBlockCipher(new GOST3412_2015Engine())), false, 128);
         }
 
     }
@@ -67,11 +77,11 @@ public class GOST3412_2015
      * GOST3412 2015 CMAC( OMAC1)
      */
     public static class Mac
-        extends CMac
+        extends BaseMac
     {
         public Mac()
         {
-            super(new GOST3412_2015Engine());
+            super(new CMac(new GOST3412_2015Engine()));
         }
     }
 
@@ -102,10 +112,11 @@ public class GOST3412_2015
         public void configure(ConfigurableProvider provider)
         {
             provider.addAlgorithm("Cipher.GOST3412-2015", PREFIX + "$ECB");
-            provider.addAlgorithm("Alg.Alias.Cipher.GOST3412-2015/CFB", PREFIX + "$GCFB");
-            provider.addAlgorithm("Alg.Alias.Cipher.GOST3412-2015/OFB", PREFIX + "$OFB");
-            provider.addAlgorithm("Alg.Alias.Cipher.GOST3412-2015/CBC", PREFIX + "$CBC");
-            provider.addAlgorithm("Alg.Alias.Cipher.GOST3412-2015/CTR", PREFIX + "$CTR");
+            provider.addAlgorithm("Cipher.GOST3412-2015/CFB", PREFIX + "$GCFB");
+            provider.addAlgorithm("Cipher.GOST3412-2015/CFB8", PREFIX + "$GCFB8");
+            provider.addAlgorithm("Cipher.GOST3412-2015/OFB", PREFIX + "$OFB");
+            provider.addAlgorithm("Cipher.GOST3412-2015/CBC", PREFIX + "$CBC");
+            provider.addAlgorithm("Cipher.GOST3412-2015/CTR", PREFIX + "$CTR");
 
             provider.addAlgorithm("KeyGenerator.GOST3412-2015", PREFIX + "$KeyGen");;
 

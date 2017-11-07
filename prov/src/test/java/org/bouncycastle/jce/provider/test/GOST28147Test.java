@@ -246,7 +246,7 @@ public class GOST28147Test
 
             if (!Arrays.areEqual(Hex.decode("1b69996e"), mac.doFinal(Hex.decode("4e6f77206973207468652074696d6520666f7220616c6c20"))))
             {
-                fail("mac test falied.");
+                fail("mac test failed.");
             }
         }
 

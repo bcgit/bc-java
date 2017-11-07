@@ -4,8 +4,8 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.StreamBlockCipher;
-import org.bouncycastle.crypto.params.GOST3412ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 
 /**
  * implements the GOST 3412 2015 CTR counter mode (GCTR).
@@ -48,6 +48,12 @@ public class G3413CTRBlockCipher
     {
         super(cipher);
 
+        if (bitBlockSize < 0 || bitBlockSize > cipher.getBlockSize() * 8)
+        {
+            throw new IllegalArgumentException("Parameter bitBlockSize must be in range 0 < bitBlockSize <= "
+                            + cipher.getBlockSize() * 8);
+        }
+
         this.cipher = cipher;
         this.blockSize = cipher.getBlockSize();
         this.s = bitBlockSize / 8;
@@ -77,34 +83,18 @@ public class G3413CTRBlockCipher
 
             initArrays();
 
-            IV = GOST3413CipherUtil.initIV(ivParam.getIV(), IV.length);
+            IV = Arrays.clone(ivParam.getIV());
+
+            if (IV.length != blockSize / 2)
+            {
+                throw new IllegalArgumentException("Parameter IV length must be == blockSize/2");
+            }
+
             System.arraycopy(IV, 0, CTR, 0, IV.length);
             for (int i = IV.length; i < blockSize; i++)
             {
                 CTR[i] = 0;
             }
-
-            // if null it's an IV changed only.
-            if (ivParam.getParameters() != null)
-            {
-                cipher.init(true, ivParam.getParameters());
-            }
-        }
-        if (params instanceof GOST3412ParametersWithIV)
-        {
-            GOST3412ParametersWithIV ivParam = (GOST3412ParametersWithIV)params;
-
-            validateParams(ivParam.getIV().length);
-
-            initArrays();
-
-            IV = GOST3413CipherUtil.initIV(ivParam.getIV(), IV.length);
-            System.arraycopy(IV, 0, CTR, 0, IV.length);
-            for (int i = IV.length; i < blockSize; i++)
-            {
-                CTR[i] = 0;
-            }
-
 
             // if null it's an IV changed only.
             if (ivParam.getParameters() != null)
@@ -125,21 +115,7 @@ public class G3413CTRBlockCipher
 
         initialized = true;
     }
-
-    private void validateParams(int viLen)
-        throws IllegalArgumentException
-    {
-        if (s < 0 || s > blockSize)
-        {
-            throw new IllegalArgumentException("Parameter s must be in range 0 < s <= blockSize");
-        }
-
-        if (viLen != blockSize / 2)
-        {
-            throw new IllegalArgumentException("Parameter IV length must be == blockSize/2");
-        }
-    }
-
+    
     private void initArrays()
     {
         IV = new byte[blockSize / 2];
