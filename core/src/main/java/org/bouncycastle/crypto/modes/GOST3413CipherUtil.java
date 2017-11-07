@@ -8,28 +8,6 @@ import org.bouncycastle.util.Arrays;
 class GOST3413CipherUtil
 {
     /**
-     * init initial value for <b>R1</b>
-     *
-     * @param iv
-     * @param len
-     * @return R1
-     */
-    public static byte[] initIV(byte[] iv, int len)
-    {
-        byte[] R1 = new byte[len];
-        if (iv.length < len)
-        {
-            System.arraycopy(iv, 0, R1, R1.length - iv.length, iv.length);
-        }
-        else
-        {
-            System.arraycopy(iv, 0, R1, 0, R1.length);
-        }
-        return R1;
-    }
-
-
-    /**
      * copy first <b>size</b> elements from <b>from</b>
      *
      * @param from source array

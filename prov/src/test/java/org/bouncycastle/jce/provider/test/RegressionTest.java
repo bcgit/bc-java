@@ -82,7 +82,8 @@ public class RegressionTest
         new SM4Test(),
         new TLSKDFTest(),
         new BCFKSStoreTest(),
-        new DSTU7624Test()
+        new DSTU7624Test(),
+        new GOST3412Test(),
     };
 
     public static void main(
