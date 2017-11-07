@@ -155,7 +155,8 @@ public class RegressionTest
         new DSTU7624Test(),
         new DSTU7564Test(),
         new IsoTrailerTest(),
-        new GOST3412Test()
+        new GOST3412Test(),
+        new GOST3412MacTest()
     };
 
     public static void main(
