@@ -24,6 +24,11 @@ public class TlsDHUtils
         return false;
     }
 
+    public static TlsDHConfig createNamedDHConfig(int namedGroup)
+    {
+        return NamedGroup.getFiniteFieldBits(namedGroup) > 0 ? new TlsDHConfig(namedGroup) : null;
+    }
+
     public static DHGroup getDHGroup(TlsDHConfig dhConfig)
     {
         int namedGroup = dhConfig.getNamedGroup();
@@ -54,6 +59,16 @@ public class TlsDHUtils
         }
     }
 
+    public static int getMinimumFiniteFieldBits(int cipherSuite)
+    {
+        /*
+         * NOTE: An equivalent mechanism was added to support a minimum bit-size requirement for ECC
+         * mooted in draft-ietf-tls-ecdhe-psk-aead-00. This requirement was removed in later drafts,
+         * so that mechanism is currently somewhat trivial, and this similarly so.
+         */
+        return isDHECipherSuite(cipherSuite) ? 1 : 0;
+    }
+
     public static boolean isDHECipherSuite(int cipherSuite)
     {
         switch (TlsUtils.getKeyExchangeAlgorithm(cipherSuite))
@@ -70,17 +85,41 @@ public class TlsDHUtils
         }
     }
 
+    public static int getNamedGroupForDHParameters(BigInteger p, BigInteger g)
+    {
+        int[] namedGroups = new int[]{ NamedGroup.ffdhe2048, NamedGroup.ffdhe3072, NamedGroup.ffdhe4096,
+            NamedGroup.ffdhe6144, NamedGroup.ffdhe8192 };
+
+        for (int i = 0; i < namedGroups.length; ++i)
+        {
+            int namedGroup = namedGroups[i];
+            DHGroup dhGroup = getNamedDHGroup(namedGroup);
+            if (dhGroup != null && dhGroup.getP().equals(p) && dhGroup.getG().equals(g))
+            {
+                return namedGroup;
+            }
+        }
+
+        return -1;
+    }
+
     public static TlsDHConfig readDHConfig(InputStream input) throws IOException
     {
         BigInteger p = readDHParameter(input);
         BigInteger g = readDHParameter(input);
+
+        int namedGroup = getNamedGroupForDHParameters(p, g);
+        if (namedGroup >= 0)
+        {
+            return new TlsDHConfig(namedGroup);
+        }
 
         return new TlsDHConfig(new DHGroup(p, null, g, 0));
     }
 
     public static TlsDHConfig receiveDHConfig(TlsDHConfigVerifier dhConfigVerifier, InputStream input) throws IOException
     {
-        TlsDHConfig dhConfig = TlsDHUtils.readDHConfig(input);
+        TlsDHConfig dhConfig = readDHConfig(input);
         if (!dhConfigVerifier.accept(dhConfig))
         {
             throw new TlsFatalAlert(AlertDescription.insufficient_security);
@@ -96,15 +135,9 @@ public class TlsDHUtils
     public static void writeDHConfig(TlsDHConfig dhConfig, OutputStream output)
         throws IOException
     {
-        // TODO[rfc7919] Support selection of named groups
-        if (dhConfig.getNamedGroup() >= 0)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        DHGroup explicitGroup = dhConfig.getExplicitGroup();
-        writeDHParameter(explicitGroup.getP(), output);
-        writeDHParameter(explicitGroup.getG(), output);
+        DHGroup group = getDHGroup(dhConfig);
+        writeDHParameter(group.getP(), output);
+        writeDHParameter(group.getG(), output);
     }
 
     public static void writeDHParameter(BigInteger x, OutputStream output) throws IOException
