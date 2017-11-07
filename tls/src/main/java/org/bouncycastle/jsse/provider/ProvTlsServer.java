@@ -32,14 +32,14 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.ServerNameList;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsCredentials;
+import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.DHGroup;
-import org.bouncycastle.tls.crypto.DHStandardGroups;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
+import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedAgreement;
@@ -76,46 +76,19 @@ class ProvTlsServer
     }
 
     @Override
-    protected DHGroup getDHParameters()
-    {
-        if (provEphemeralDHKeySize <= 1024)
-        {
-            return DHStandardGroups.rfc2409_1024;
-        }
-        if (provEphemeralDHKeySize <= 1536)
-        {
-            return DHStandardGroups.rfc3526_1536;
-        }
-        if (provEphemeralDHKeySize <= 2048)
-        {
-            return DHStandardGroups.rfc7919_ffdhe2048;
-        }
-        if (provEphemeralDHKeySize <= 3072)
-        {
-            return DHStandardGroups.rfc7919_ffdhe3072;
-        }
-        if (provEphemeralDHKeySize <= 4096)
-        {
-            return DHStandardGroups.rfc7919_ffdhe4096;
-        }
-        if (provEphemeralDHKeySize <= 6144)
-        {
-            return DHStandardGroups.rfc7919_ffdhe6144;
-        }
-        if (provEphemeralDHKeySize <= 8192)
-        {
-            return DHStandardGroups.rfc7919_ffdhe8192;
-        }
-
-        throw new IllegalStateException("Ephemeral DH key size has unexpected value: " + provEphemeralDHKeySize);
-    }
-
-    @Override
     protected int getMaximumNegotiableCurveBits()
     {
         // NOTE: BC supports all the current set of point formats so we don't check them here
 
         return SupportedGroups.getServerMaximumNegotiableCurveBits(manager.getContext().isFips(), clientSupportedGroups);
+    }
+
+    @Override
+    protected int getMaximumNegotiableFiniteFieldBits()
+    {
+        int maxBits = SupportedGroups.getServerMaximumNegotiableFiniteFieldBits(manager.getContext().isFips(), clientSupportedGroups);
+
+        return maxBits >= provEphemeralDHKeySize ? maxBits : 0;
     }
 
     @Override
@@ -148,6 +121,30 @@ class ProvTlsServer
     protected int selectDefaultCurve(int minimumCurveBits)
     {
         return SupportedGroups.getServerDefaultCurve(manager.getContext().isFips(), minimumCurveBits);
+    }
+
+    @Override
+    protected TlsDHConfig selectDefaultDHConfig(int minimumFiniteFieldBits)
+    {
+        return SupportedGroups.getServerDefaultDHConfig(manager.getContext().isFips(), minimumFiniteFieldBits);
+    }
+
+    @Override
+    protected TlsDHConfig selectDHConfig(int minimumFiniteFieldBits)
+    {
+        minimumFiniteFieldBits = Math.max(minimumFiniteFieldBits, provEphemeralDHKeySize);
+
+        if (clientSupportedGroups == null)
+        {
+            return selectDefaultDHConfig(minimumFiniteFieldBits);
+        }
+
+        boolean isFips = manager.getContext().isFips();
+
+        int namedGroup = SupportedGroups.getServerSelectedFiniteField(isFips, minimumFiniteFieldBits,
+            clientSupportedGroups);
+
+        return TlsDHUtils.createNamedDHConfig(namedGroup);
     }
 
     public synchronized boolean isHandshakeComplete()
