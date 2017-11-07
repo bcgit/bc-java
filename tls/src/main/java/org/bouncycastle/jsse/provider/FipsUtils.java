@@ -96,9 +96,24 @@ abstract class FipsUtils
             :  -1;
     }
 
+    static int getFipsDefaultFiniteField(int minimumFiniteFieldBits)
+    {
+        return minimumFiniteFieldBits <= 2048 ? NamedGroup.ffdhe2048
+            :  minimumFiniteFieldBits <= 3072 ? NamedGroup.ffdhe3072
+            :  minimumFiniteFieldBits <= 4096 ? NamedGroup.ffdhe4096
+            :  minimumFiniteFieldBits <= 6144 ? NamedGroup.ffdhe6144
+            :  minimumFiniteFieldBits <= 8192 ? NamedGroup.ffdhe8192
+            :  -1;
+    }
+
     static int getFipsMaximumCurveBits()
     {
         return 384;
+    }
+
+    static int getFipsMaximumFiniteFieldBits()
+    {
+        return 8192;
     }
 
     static boolean isFipsCipherSuite(String cipherSuite)
