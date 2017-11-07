@@ -13,13 +13,17 @@ import org.bouncycastle.util.test.TestResult;
 /**
  * see GOST_R_3413-2015
  */
-public class GOST3412MacTest implements Test {
+public class GOST3412MacTest
+    implements Test
+{
 
-    public String getName() {
+    public String getName()
+    {
         return "GOST 3412 2015 MAC test";
     }
 
-    public TestResult perform() {
+    public TestResult perform()
+    {
 
 
         byte[][] inputs = new byte[][]{
@@ -36,7 +40,8 @@ public class GOST3412MacTest implements Test {
             new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef"));
         mac.init(key);
 
-        for(byte[] input : inputs){
+        for (byte[] input : inputs)
+        {
             mac.update(input, 0, input.length);
         }
 
@@ -54,7 +59,8 @@ public class GOST3412MacTest implements Test {
     }
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         GOST3412MacTest test = new GOST3412MacTest();
         TestResult result = test.perform();
 
