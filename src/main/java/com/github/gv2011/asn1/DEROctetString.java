@@ -28,7 +28,6 @@ public class DEROctetString
      */
     public DEROctetString(
         final ASN1Encodable obj)
-        throws IOException
     {
         super(obj.toASN1Primitive().getEncoded(ASN1Encoding.DER));
     }
