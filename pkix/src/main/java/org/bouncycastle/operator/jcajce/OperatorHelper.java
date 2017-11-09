@@ -93,11 +93,11 @@ class OperatorHelper
         oids.put(NISTObjectIdentifiers.dsa_with_sha224, "SHA224WITHDSA");
         oids.put(NISTObjectIdentifiers.dsa_with_sha256, "SHA256WITHDSA");
 
-        oids.put(OIWObjectIdentifiers.idSHA1, "SHA-1");
-        oids.put(NISTObjectIdentifiers.id_sha224, "SHA-224");
-        oids.put(NISTObjectIdentifiers.id_sha256, "SHA-256");
-        oids.put(NISTObjectIdentifiers.id_sha384, "SHA-384");
-        oids.put(NISTObjectIdentifiers.id_sha512, "SHA-512");
+        oids.put(OIWObjectIdentifiers.idSHA1, "SHA1");
+        oids.put(NISTObjectIdentifiers.id_sha224, "SHA224");
+        oids.put(NISTObjectIdentifiers.id_sha256, "SHA256");
+        oids.put(NISTObjectIdentifiers.id_sha384, "SHA384");
+        oids.put(NISTObjectIdentifiers.id_sha512, "SHA512");
         oids.put(TeleTrusTObjectIdentifiers.ripemd128, "RIPEMD128");
         oids.put(TeleTrusTObjectIdentifiers.ripemd160, "RIPEMD160");
         oids.put(TeleTrusTObjectIdentifiers.ripemd256, "RIPEMD256");
