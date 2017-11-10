@@ -33,4 +33,9 @@ public class ExporterLabel
      * draft-ietf-tls-session-hash-04
      */
     public static final String extended_master_secret = "extended master secret";
+
+    /*
+     * draft-ietf-tokbind-protocol-16
+     */
+    public static final String token_binding = "EXPORTER-Token-Binding";
 }
