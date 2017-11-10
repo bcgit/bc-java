@@ -2,11 +2,10 @@ package org.bouncycastle.math.ec.rfc7748.test;
 
 import java.security.SecureRandom;
 
-import org.bouncycastle.math.ec.rfc7748.X25519;
-import org.bouncycastle.util.encoders.Hex;
-import org.junit.Assert;
-
 import junit.framework.TestCase;
+import org.bouncycastle.math.ec.rfc7748.X25519;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 public class X25519Test
     extends TestCase
@@ -33,7 +32,7 @@ public class X25519Test
             RANDOM.nextBytes(k);
             X25519.scalarMultBase(k, 0, rF, 0);
             X25519.scalarMult(k, 0, u, 0, rV, 0);
-            Assert.assertArrayEquals("Consistency #" + i, rF, rV);
+            assertTrue("Consistency #" + i, Arrays.areEqual(rF, rV));
         }
     }
 
@@ -62,7 +61,7 @@ public class X25519Test
             X25519.scalarMult(kB, 0, qA, 0, sB, 0);
 
             // ... which is the same for both parties.
-            Assert.assertArrayEquals("ECDH #" + i, sA, sB);
+            assertTrue("ECDH #" + i, Arrays.areEqual(sA, sB));
         }
     }
 
@@ -167,7 +166,7 @@ public class X25519Test
     private static void checkValue(byte[] n, String text, String se)
     {
         byte[] e = Hex.decode(se);
-        Assert.assertArrayEquals(text, e, n);
+        assertTrue(text, Arrays.areEqual(e, n));
     }
 
     private static void checkX25519Vector(String sk, String su, String se, String text)
