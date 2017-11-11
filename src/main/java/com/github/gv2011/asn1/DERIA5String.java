@@ -31,7 +31,7 @@ public class DERIA5String
         {
             try
             {
-                return (DERIA5String)fromByteArray((Bytes)obj);
+                return (DERIA5String)fromBytes((Bytes)obj);
             }
             catch (final Exception e)
             {

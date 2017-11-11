@@ -40,7 +40,7 @@ public class ASN1GeneralizedTime
         {
             try
             {
-                return (ASN1GeneralizedTime)fromByteArray((Bytes)obj);
+                return (ASN1GeneralizedTime)fromBytes((Bytes)obj);
             }
             catch (final Exception e)
             {

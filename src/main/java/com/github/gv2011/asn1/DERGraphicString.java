@@ -24,7 +24,7 @@ public final class DERGraphicString extends ASN1PrimitiveBytes implements ASN1St
         {
             try
             {
-                return (DERGraphicString)fromByteArray((Bytes)obj);
+                return (DERGraphicString)fromBytes((Bytes)obj);
             }
             catch (final Exception e)
             {

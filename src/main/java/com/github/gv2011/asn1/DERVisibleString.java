@@ -30,7 +30,7 @@ public final class DERVisibleString extends ASN1PrimitiveBytes implements ASN1St
         {
             try
             {
-                return (DERVisibleString)fromByteArray((Bytes)obj);
+                return (DERVisibleString)fromBytes((Bytes)obj);
             }
             catch (final Exception e)
             {

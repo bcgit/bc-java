@@ -31,7 +31,7 @@ public final class DERT61String
         {
             try
             {
-                return (DERT61String)fromByteArray((Bytes)obj);
+                return (DERT61String)fromBytes((Bytes)obj);
             }
             catch (final Exception e)
             {

@@ -1,7 +1,5 @@
 package com.github.gv2011.asn1;
 
-import java.io.IOException;
-
 import com.github.gv2011.util.bytes.Bytes;
 
 /**

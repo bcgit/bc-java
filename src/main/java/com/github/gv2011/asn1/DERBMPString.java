@@ -31,7 +31,7 @@ public class DERBMPString
         {
             try
             {
-                return (DERBMPString)fromByteArray((Bytes)obj);
+                return (DERBMPString)fromBytes((Bytes)obj);
             }
             catch (final Exception e)
             {

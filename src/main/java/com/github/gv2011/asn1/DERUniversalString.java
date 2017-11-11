@@ -32,7 +32,7 @@ public final class DERUniversalString
         {
             try
             {
-                return (DERUniversalString)fromByteArray((Bytes)obj);
+                return (DERUniversalString)fromBytes((Bytes)obj);
             }
             catch (final Exception e)
             {

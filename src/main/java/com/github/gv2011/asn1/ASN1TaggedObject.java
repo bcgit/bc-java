@@ -38,7 +38,7 @@ public abstract class ASN1TaggedObject
         }
         else if (obj instanceof Bytes)
         {
-            return ASN1TaggedObject.getInstance(fromByteArray((Bytes)obj));
+            return ASN1TaggedObject.getInstance(fromBytes((Bytes)obj));
         }
 
         throw new IllegalArgumentException("unknown object in getInstance: " + obj.getClass().getName());

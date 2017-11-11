@@ -57,9 +57,9 @@ import com.github.gv2011.util.bytes.Bytes;
  */
 public abstract class ASN1Sequence
     extends ASN1Primitive
-    implements com.github.gv2011.asn1.util.Iterable<ASN1Encodable>
+    implements Iterable<ASN1Encodable>
 {
-    protected Vector seq = new Vector();
+    protected Vector<ASN1Encodable> seq = new Vector<>();
 
     /**
      * Return an ASN1Sequence from the given object.
@@ -81,7 +81,7 @@ public abstract class ASN1Sequence
         }
         else if (obj instanceof Bytes)
         {
-            return ASN1Sequence.getInstance(fromByteArray((Bytes)obj));
+            return ASN1Sequence.getInstance(fromBytes((Bytes)obj));
         }
         else if (obj instanceof ASN1Encodable)
         {
@@ -189,7 +189,6 @@ public abstract class ASN1Sequence
     /*
      * Create a sequence containing a vector of objects.
      */
-    @SuppressWarnings("unchecked")
     protected ASN1Sequence(
         final ASN1Encodable[]   array)
     {
@@ -211,7 +210,7 @@ public abstract class ASN1Sequence
         return values;
     }
 
-    public Enumeration getObjects()
+    public Enumeration<ASN1Encodable> getObjects()
     {
         return seq.elements();
     }
@@ -270,7 +269,7 @@ public abstract class ASN1Sequence
     public ASN1Encodable getObjectAt(
         final int index)
     {
-        return (ASN1Encodable)seq.elementAt(index);
+        return seq.elementAt(index);
     }
 
     /**

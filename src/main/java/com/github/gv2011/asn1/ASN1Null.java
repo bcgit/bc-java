@@ -34,7 +34,7 @@ public abstract class ASN1Null
         {
             try
             {
-                return ASN1Null.getInstance(ASN1Primitive.fromByteArray((Bytes)o));
+                return ASN1Null.getInstance(ASN1Primitive.fromBytes((Bytes)o));
             }
             catch (final ClassCastException e)
             {

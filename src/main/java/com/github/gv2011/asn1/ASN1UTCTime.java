@@ -50,7 +50,7 @@ public class ASN1UTCTime extends ASN1PrimitiveBytes{
         {
             try
             {
-                return (ASN1UTCTime)fromByteArray((Bytes)obj);
+                return (ASN1UTCTime)fromBytes((Bytes)obj);
             }
             catch (final Exception e)
             {

@@ -1,6 +1,6 @@
 package com.github.gv2011.asn1;
 
-public class ASN1ParsingException extends IllegalStateException {
+public class ASN1ParsingException extends ASN1Exception {
 
   private static final long serialVersionUID = -6152659036346724789L;
 

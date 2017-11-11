@@ -31,7 +31,7 @@ public class DERNumericString
         {
             try
             {
-                return (DERNumericString)fromByteArray((Bytes)obj);
+                return (DERNumericString)fromBytes((Bytes)obj);
             }
             catch (final Exception e)
             {

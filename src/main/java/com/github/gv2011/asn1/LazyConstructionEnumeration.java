@@ -6,10 +6,10 @@ import java.util.Enumeration;
 import com.github.gv2011.util.bytes.Bytes;
 
 class LazyConstructionEnumeration
-    implements Enumeration<Object>
+    implements Enumeration<ASN1Encodable>
 {
     private final ASN1InputStream aIn;
-    private Object          nextObj;
+    private ASN1Primitive          nextObj;
 
     public LazyConstructionEnumeration(final Bytes encoded)
     {
@@ -24,16 +24,16 @@ class LazyConstructionEnumeration
     }
 
     @Override
-    public Object nextElement()
+    public ASN1Primitive nextElement()
     {
-        final Object o = nextObj;
+        final ASN1Primitive o = nextObj;
 
         nextObj = readObject();
 
         return o;
     }
 
-    private Object readObject()
+    private ASN1Primitive readObject()
     {
             return aIn.readObject();
     }

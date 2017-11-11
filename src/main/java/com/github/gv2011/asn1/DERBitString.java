@@ -114,7 +114,7 @@ public class DERBitString
         final byte[] bytes = new byte[string.size() + 1];
 
         bytes[0] = (byte)getPadBits();
-        System.arraycopy(string, 0, bytes, 1, bytes.length - 1);
+        System.arraycopy(string.toByteArray(), 0, bytes, 1, bytes.length - 1);
 
         out.writeEncoded(BERTags.BIT_STRING, newBytes(bytes));
     }

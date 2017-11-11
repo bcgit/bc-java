@@ -31,7 +31,7 @@ public class DERPrintableString
         {
             try
             {
-                return (DERPrintableString)fromByteArray((Bytes)obj);
+                return (DERPrintableString)fromBytes((Bytes)obj);
             }
             catch (final Exception e)
             {

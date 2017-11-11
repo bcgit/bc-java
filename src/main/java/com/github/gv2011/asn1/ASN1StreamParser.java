@@ -2,16 +2,16 @@ package com.github.gv2011.asn1;
 
 import static com.github.gv2011.util.ex.Exceptions.call;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * TODO: Does not close streams properly. See @SuppressWarnings("resource").
  *
  * A parser for ASN.1 streams which also returns, where possible, parsers for the objects it encounters.
  */
-public class ASN1StreamParser
-{
+public class ASN1StreamParser implements ASN1Parser{
     private final InputStream _in;
     private final int         _limit;
     private final byte[][] tmpBuffers;
@@ -33,9 +33,9 @@ public class ASN1StreamParser
     }
 
     public ASN1StreamParser(
-        final byte[] encoding)
+        final Bytes encoding)
     {
-        this(new ByteArrayInputStream(encoding), encoding.length);
+        this(encoding.openStream(), encoding.size());
     }
 
     ASN1Encodable readIndef(final int tagValue)
@@ -121,6 +121,7 @@ public class ASN1StreamParser
             :   new DERTaggedObject(false, tag, DERFactory.createSequence(v));
     }
 
+    @Override
     @SuppressWarnings("resource")
     public ASN1Encodable readObject(){
         final int tag = call(_in::read);
@@ -199,7 +200,7 @@ public class ASN1StreamParser
                     case BERTags.EXTERNAL:
                         return new DERExternalParser(new ASN1StreamParser(defIn));
                     default:
-                        throw new ASN1Exception("unknown tag " + tagNo + " encountered");
+                        throw new ASN1ParsingException("unknown tag " + tagNo + " encountered");
                 }
             }
 
@@ -216,7 +217,7 @@ public class ASN1StreamParser
             }
             catch (final IllegalArgumentException e)
             {
-                throw new ASN1Exception("corrupted stream detected", e);
+                throw new ASN1ParsingException("corrupted stream detected", e);
             }
         }
     }

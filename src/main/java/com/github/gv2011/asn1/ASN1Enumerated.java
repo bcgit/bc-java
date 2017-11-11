@@ -33,7 +33,7 @@ public class ASN1Enumerated
         {
             try
             {
-                return (ASN1Enumerated)fromByteArray((Bytes)obj);
+                return (ASN1Enumerated)fromBytes((Bytes)obj);
             }
             catch (final Exception e)
             {

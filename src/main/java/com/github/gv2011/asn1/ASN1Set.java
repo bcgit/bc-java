@@ -97,7 +97,7 @@ import com.github.gv2011.util.bytes.Bytes;
  */
 public abstract class ASN1Set
     extends ASN1Primitive
-    implements com.github.gv2011.asn1.util.Iterable<ASN1Encodable>
+    implements Iterable<ASN1Encodable>
 {
     private Vector<Object> set = new Vector<>();
     private boolean isSorted = false;
@@ -122,7 +122,7 @@ public abstract class ASN1Set
         }
         else if (obj instanceof Bytes)
         {
-            return ASN1Set.getInstance(ASN1Primitive.fromByteArray((Bytes)obj));
+            return ASN1Set.getInstance(ASN1Primitive.fromBytes((Bytes)obj));
         }
         else if (obj instanceof ASN1Encodable)
         {

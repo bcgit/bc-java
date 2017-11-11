@@ -3,7 +3,6 @@ package com.github.gv2011.asn1;
 import static com.github.gv2011.util.bytes.ByteUtils.emptyBytes;
 import static com.github.gv2011.util.bytes.ByteUtils.newBytes;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -57,7 +56,7 @@ class DefiniteLengthInputStream
 
         if (b < 0)
         {
-            throw new EOFException("DEF length " + _originalLength + " object truncated by " + _remaining);
+            throw new ASN1ParsingException("DEF length " + _originalLength + " object truncated by " + _remaining);
         }
 
         if (--_remaining == 0)
@@ -82,7 +81,7 @@ class DefiniteLengthInputStream
 
         if (numRead < 0)
         {
-            throw new EOFException("DEF length " + _originalLength + " object truncated by " + _remaining);
+            throw new ASN1ParsingException("DEF length " + _originalLength + " object truncated by " + _remaining);
         }
 
         if ((_remaining -= numRead) == 0)
@@ -102,7 +101,7 @@ class DefiniteLengthInputStream
         final byte[] bytes = new byte[_remaining];
         if ((_remaining -= Streams.readFully(_in, bytes)) != 0)
         {
-            throw new ASN1Exception("DEF length " + _originalLength + " object truncated by " + _remaining);
+            throw new ASN1ParsingException("DEF length " + _originalLength + " object truncated by " + _remaining);
         }
         setParentEofDetect(true);
         return newBytes(bytes);

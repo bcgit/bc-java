@@ -16,15 +16,14 @@ import com.github.gv2011.util.bytes.ByteUtils;
 import com.github.gv2011.util.bytes.Bytes;
 
 public class DERUTF8StringTest implements LegacyTest{
-  
+
   @Test
   public void testRoundTrip() {
     final DERUTF8String asn1 = new DERUTF8String("test");
     final Bytes encoded = asn1.getDerEncoded();
-    final ASN1Primitive back = new ASN1InputStream(encoded).readObject();
+    final ASN1Primitive back = ASN1InputStream.parse(encoded);
     assertThat(back, is(asn1));
     assertThat(back, hasClass(DERUTF8String.class));
-//    System.out.println(ASN1Dump.dumpAsString(back, true));
     final DERTaggedObject tagged = new DERTaggedObject(false, 7, asn1);
     System.out.println(ASN1Dump.dumpAsString(tagged, true));
   }

@@ -17,10 +17,9 @@ class LazyEncodedSequence
         this.encoded = encoded;
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     private void parse()
     {
-        final Enumeration en = new LazyConstructionEnumeration(encoded);
+        final Enumeration<ASN1Encodable> en = new LazyConstructionEnumeration(encoded);
 
         while (en.hasMoreElements())
         {
@@ -41,9 +40,8 @@ class LazyEncodedSequence
         return super.getObjectAt(index);
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
-    public synchronized Enumeration getObjects()
+    public synchronized Enumeration<ASN1Encodable> getObjects()
     {
         if (encoded == null)
         {

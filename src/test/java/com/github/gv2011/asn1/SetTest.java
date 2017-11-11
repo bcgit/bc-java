@@ -1,31 +1,18 @@
 package com.github.gv2011.asn1;
 
-import com.github.gv2011.asn1.ASN1Boolean;
-import com.github.gv2011.asn1.ASN1EncodableVector;
-import com.github.gv2011.asn1.ASN1Integer;
-import com.github.gv2011.asn1.ASN1Set;
-import com.github.gv2011.asn1.ASN1TaggedObject;
-import com.github.gv2011.asn1.BERSet;
-import com.github.gv2011.asn1.DERBitString;
-import com.github.gv2011.asn1.DEROctetString;
-import com.github.gv2011.asn1.DERSequence;
-import com.github.gv2011.asn1.DERSet;
-import com.github.gv2011.asn1.DERTaggedObject;
-import com.github.gv2011.asn1.util.test.SimpleTest;
+import static org.junit.Assert.fail;
+
+import org.junit.Test;
+
+import com.github.gv2011.util.bytes.ByteUtils;
+import com.github.gv2011.util.bytes.Bytes;
 
 /**
  * Set sorting test example
  */
-public class SetTest
-    extends SimpleTest
-{
+public class SetTest{
 
-    public String getName()
-    {
-        return "Set";
-    }
-
-    private void checkedSortedSet(int attempt, ASN1Set s)
+    private void checkedSortedSet(final int attempt, final ASN1Set s)
     {
         if (s.getObjectAt(0) instanceof ASN1Boolean
             && s.getObjectAt(1) instanceof ASN1Integer
@@ -38,10 +25,10 @@ public class SetTest
         fail("sorting failed on attempt: " + attempt);
     }
 
-    public void performTest()
-    {
+    @Test
+    public void test(){
         ASN1EncodableVector v = new ASN1EncodableVector();
-        byte[] data = new byte[10];
+        final Bytes data = ByteUtils.parseHex("00 00 00 00 00 00 00 00 00 00");
 
         v.add(new DEROctetString(data));
         v.add(new DERBitString(data));
@@ -89,7 +76,7 @@ public class SetTest
         }
 
         // create an implicitly tagged "set" without sorting
-        ASN1TaggedObject tag = new DERTaggedObject(false, 1, new DERSequence(v));
+        final ASN1TaggedObject tag = new DERTaggedObject(false, 1, new DERSequence(v));
         s = ASN1Set.getInstance(tag, false);
 
         if (s.getObjectAt(0) instanceof ASN1Boolean)
@@ -107,9 +94,4 @@ public class SetTest
         s = new DERSet(v);
     }
 
-    public static void main(
-        String[]    args)
-    {
-        runTest(new SetTest());
-    }
 }

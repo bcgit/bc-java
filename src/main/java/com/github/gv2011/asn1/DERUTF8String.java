@@ -30,7 +30,7 @@ public class DERUTF8String
         {
             try
             {
-                return (DERUTF8String)fromByteArray((Bytes)obj);
+                return (DERUTF8String)fromBytes((Bytes)obj);
             }
             catch (final Exception e)
             {

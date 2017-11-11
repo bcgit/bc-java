@@ -14,13 +14,7 @@ public class DERNull
 
     private static final Bytes  zeroBytes = emptyBytes();
 
-    /**
-     * @deprecated use DERNull.INSTANCE
-     */
-    @Deprecated
-    public DERNull()
-    {
-    }
+    private DERNull(){}
 
     @Override
     boolean isConstructed()

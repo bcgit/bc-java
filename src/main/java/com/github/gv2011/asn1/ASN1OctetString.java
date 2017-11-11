@@ -137,7 +137,7 @@ public abstract class ASN1OctetString extends ASN1PrimitiveBytes implements ASN1
         }
         else if (obj instanceof Bytes)
         {
-            return ASN1OctetString.getInstance(ASN1Primitive.fromByteArray((Bytes)obj));
+            return ASN1OctetString.getInstance(ASN1Primitive.fromBytes((Bytes)obj));
         }
         else if (obj instanceof ASN1Encodable)
         {

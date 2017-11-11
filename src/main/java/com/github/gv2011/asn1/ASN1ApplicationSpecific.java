@@ -39,7 +39,7 @@ public abstract class ASN1ApplicationSpecific
         }
         else if (obj instanceof Bytes)
         {
-            return ASN1ApplicationSpecific.getInstance(ASN1Primitive.fromByteArray((Bytes)obj));
+            return ASN1ApplicationSpecific.getInstance(ASN1Primitive.fromBytes((Bytes)obj));
         }
 
         throw new IllegalArgumentException("unknown object in getInstance: " + obj.getClass().getName());
@@ -214,7 +214,7 @@ public abstract class ASN1ApplicationSpecific
 
         final byte[] tmp = new byte[input.size() - index + 1];
 
-        System.arraycopy(input, index, tmp, 1, tmp.length - 1);
+        System.arraycopy(input.toByteArray(), index, tmp, 1, tmp.length - 1);
 
         tmp[0] = (byte)newTag;
 

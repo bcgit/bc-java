@@ -5,6 +5,8 @@ import java.util.Date;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 
+import org.junit.Test;
+
 import com.github.gv2011.asn1.DERGeneralizedTime;
 import com.github.gv2011.asn1.util.test.SimpleTest;
 
@@ -110,11 +112,14 @@ public class GeneralizedTimeTest
         "20020122022220.000Z"
     };
 
+    @Override
     public String getName()
     {
         return "GeneralizedTime";
     }
-    
+
+    @Test
+    @Override
     public void performTest()
         throws Exception
     {
@@ -124,7 +129,7 @@ public class GeneralizedTimeTest
 
         for (int i = 0; i != input.length; i++)
         {
-            DERGeneralizedTime    t = new DERGeneralizedTime(input[i]);
+            final DERGeneralizedTime    t = new DERGeneralizedTime(input[i]);
 
             if (output[i].indexOf('G') > 0)   // don't check local time the same way
             {
@@ -139,7 +144,7 @@ public class GeneralizedTimeTest
             }
             else
             {
-                String offset = calculateGMTOffset(t.getDate());
+                final String offset = calculateGMTOffset(t.getDate());
                 if (!t.getTime().equals(output[i] + offset))
                 {
                     fail("failed conversion test");
@@ -153,7 +158,7 @@ public class GeneralizedTimeTest
 
         for (int i = 0; i != input.length; i++)
         {
-            DERGeneralizedTime    t = new DERGeneralizedTime(input[i]);
+            final DERGeneralizedTime    t = new DERGeneralizedTime(input[i]);
 
             if (!dateF.format(t.getDate()).equals(mzOutput[i]))
             {
@@ -162,10 +167,10 @@ public class GeneralizedTimeTest
         }
     }
 
-    private String calculateGMTOffset(Date date)
+    private String calculateGMTOffset(final Date date)
     {
         String sign = "+";
-        TimeZone timeZone = TimeZone.getDefault();
+        final TimeZone timeZone = TimeZone.getDefault();
         int offset = timeZone.getRawOffset();
         if (offset < 0)
         {
@@ -173,7 +178,7 @@ public class GeneralizedTimeTest
             offset = -offset;
         }
         int hours = offset / (60 * 60 * 1000);
-        int minutes = (offset - (hours * 60 * 60 * 1000)) / (60 * 1000);
+        final int minutes = (offset - (hours * 60 * 60 * 1000)) / (60 * 1000);
 
         if (timeZone.useDaylightTime() && timeZone.inDaylightTime(date))
         {
@@ -183,7 +188,7 @@ public class GeneralizedTimeTest
         return "GMT" + sign + convert(hours) + ":" + convert(minutes);
     }
 
-    private String convert(int time)
+    private String convert(final int time)
     {
         if (time < 10)
         {
@@ -193,9 +198,4 @@ public class GeneralizedTimeTest
         return Integer.toString(time);
     }
 
-    public static void main(
-        String[]    args)
-    {
-        runTest(new GeneralizedTimeTest());
-    }
 }

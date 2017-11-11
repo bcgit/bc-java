@@ -7,70 +7,72 @@ import com.github.gv2011.asn1.util.Arrays;
 public abstract class SimpleTest
     implements LegacyTest
 {
+    @Override
     public abstract String getName();
 
     private TestResult success()
     {
         return SimpleTestResult.successful(this, "Okay");
     }
-    
+
     protected void fail(
-        String message)
+        final String message)
     {
         throw new TestFailedException(SimpleTestResult.failed(this, message));
     }
-    
+
     protected void fail(
-        String    message,
-        Throwable throwable)
+        final String    message,
+        final Throwable throwable)
     {
         throw new TestFailedException(SimpleTestResult.failed(this, message, throwable));
     }
-    
+
     protected void fail(
-        String message,
-        Object expected,
-        Object found)
+        final String message,
+        final Object expected,
+        final Object found)
     {
         throw new TestFailedException(SimpleTestResult.failed(this, message, expected, found));
     }
-        
+
     protected boolean areEqual(
-        byte[] a,
-        byte[] b)
+        final byte[] a,
+        final byte[] b)
     {
         return Arrays.areEqual(a, b);
     }
-    
+
+    @Override
     public TestResult perform()
     {
         try
         {
             performTest();
-            
+
             return success();
         }
-        catch (TestFailedException e)
+        catch (final TestFailedException e)
         {
             return e.getResult();
         }
-        catch (Exception e)
+        catch (final Exception e)
         {
             return SimpleTestResult.failed(this, "Exception: " +  e, e);
         }
     }
-    
+
     protected static void runTest(
-        LegacyTest        test)
+        final LegacyTest        test)
     {
         runTest(test, System.out);
     }
-    
+
     protected static void runTest(
-        LegacyTest        test,
-        PrintStream out)
+        final LegacyTest        test,
+        final PrintStream out)
     {
-        TestResult      result = test.perform();
+        final TestResult      result = test.perform();
 
         out.println(result.toString());
         if (result.getException() != null)

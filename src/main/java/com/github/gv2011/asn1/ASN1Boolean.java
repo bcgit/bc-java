@@ -46,7 +46,7 @@ public class ASN1Boolean
         if (obj instanceof Bytes)
         {
             final Bytes enc = (Bytes)obj;
-            return (ASN1Boolean)fromByteArray(enc);
+            return (ASN1Boolean)fromBytes(enc);
         }
 
         throw new IllegalArgumentException("illegal object in getInstance: " + obj.getClass().getName());
@@ -122,15 +122,8 @@ public class ASN1Boolean
         }
     }
 
-    /**
-     * @deprecated use getInstance(boolean) method.
-     * @param value true or false.
-     */
-    @Deprecated
-    public ASN1Boolean(
-        final boolean     value)
-    {
-        this.value = (value) ? TRUE_VALUE : FALSE_VALUE;
+    private ASN1Boolean(final boolean value){
+      this.value = (value) ? TRUE_VALUE : FALSE_VALUE;
     }
 
     public boolean isTrue()

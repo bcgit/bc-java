@@ -31,7 +31,7 @@ public class DERGeneralString
         {
             try
             {
-                return (DERGeneralString)fromByteArray((Bytes)obj);
+                return (DERGeneralString)fromBytes((Bytes)obj);
             }
             catch (final Exception e)
             {

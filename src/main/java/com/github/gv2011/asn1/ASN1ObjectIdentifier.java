@@ -43,7 +43,7 @@ public class ASN1ObjectIdentifier
         if (obj instanceof Bytes)
         {
             final Bytes enc = (Bytes)obj;
-            return (ASN1ObjectIdentifier)fromByteArray(enc);
+            return (ASN1ObjectIdentifier)fromBytes(enc);
         }
 
         throw new IllegalArgumentException("illegal object in getInstance: " + obj.getClass().getName());

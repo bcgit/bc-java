@@ -4,18 +4,9 @@ import static com.github.gv2011.testutil.Matchers.is;
 import static com.github.gv2011.util.bytes.ByteUtils.newBytesBuilder;
 import static org.junit.Assert.assertThat;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.Arrays;
 
-import com.github.gv2011.asn1.ASN1Integer;
-import com.github.gv2011.asn1.ASN1Null;
-import com.github.gv2011.asn1.ASN1ObjectIdentifier;
-import com.github.gv2011.asn1.ASN1SequenceParser;
-import com.github.gv2011.asn1.ASN1StreamParser;
-import com.github.gv2011.asn1.BERSequenceGenerator;
-import com.github.gv2011.asn1.DERSequenceGenerator;
 import com.github.gv2011.asn1.util.encoders.Hex;
 import com.github.gv2011.util.bytes.Bytes;
 import com.github.gv2011.util.bytes.BytesBuilder;
@@ -146,8 +137,7 @@ public class ASN1SequenceParserTest
 
        seqGen1.close();
 
-       assertTrue("nested implicit tagged DER writing test failed.", Arrays.equals(nestedSeqImpTagData, bOut.toByteArray()));
-       assertThat("nested explicit tagged DER writing test failed.", bOut.build(), is(nestedSeqExpTagData));
+       assertThat("nested implicit tagged DER writing test failed.", bOut.build(), is(nestedSeqImpTagData));
     }
 
     public void testBERWriting()
@@ -162,7 +152,7 @@ public class ASN1SequenceParserTest
 
        seqGen.close();
 
-       assertTrue("basic BER writing test failed.", Arrays.equals(berSeqData, bOut.toByteArray()));
+       assertThat("basic BER writing test failed.", bOut.build(), is(berSeqData));
     }
 
     public void testNestedBERDERWriting()
@@ -183,13 +173,13 @@ public class ASN1SequenceParserTest
 
        seqGen1.close();
 
-       assertTrue("nested BER/DER writing test failed.", Arrays.equals(berDERNestedSeqData, bOut.toByteArray()));
+       assertThat("nested BER/DER writing test failed.", bOut.build(), is(berDERNestedSeqData));
     }
 
     public void testNestedBERWriting()
         throws Exception
     {
-      final BytesBuilder bOut = newBytesBuilder();
+       final BytesBuilder bOut = newBytesBuilder();
        final BERSequenceGenerator  seqGen1 = new BERSequenceGenerator(bOut);
 
        seqGen1.addObject(new ASN1Integer(BigInteger.valueOf(0)));
@@ -204,7 +194,7 @@ public class ASN1SequenceParserTest
 
        seqGen1.close();
 
-       assertTrue("nested BER writing test failed.", Arrays.equals(berNestedSeqData, bOut.toByteArray()));
+       assertThat("nested BER writing test failed.", bOut.build(), is(berNestedSeqData));
     }
 
     public void testDERReading()
@@ -325,7 +315,7 @@ public class ASN1SequenceParserTest
     public void testBERExplicitTaggedSequenceWriting()
         throws Exception
     {
-       final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+       final BytesBuilder bOut = newBytesBuilder();
        final BERSequenceGenerator  seqGen = new BERSequenceGenerator(bOut, 1, true);
 
        seqGen.addObject(new ASN1Integer(BigInteger.valueOf(0)));
@@ -334,7 +324,7 @@ public class ASN1SequenceParserTest
 
        seqGen.close();
 
-       assertTrue("explicit BER tag writing test failed.", Arrays.equals(berExpTagSeqData, bOut.toByteArray()));
+       assertThat("explicit BER tag writing test failed.", bOut.build(), is(berExpTagSeqData));
     }
 
     public void testSequenceWithDERNullReading()

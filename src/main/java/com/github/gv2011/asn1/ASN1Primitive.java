@@ -24,7 +24,7 @@ public abstract class ASN1Primitive extends ASN1Object {
    *              if there is a problem parsing the data, or parsing the stream
    *              did not exhaust the available data.
    */
-  public static ASN1Primitive fromByteArray(final Bytes data){
+  public static ASN1Primitive fromBytes(final Bytes data){
 
     @SuppressWarnings("resource")
     final ASN1InputStream aIn = new ASN1InputStream(data);

@@ -33,7 +33,7 @@ public class ASN1Integer
         {
             try
             {
-                return (ASN1Integer)fromByteArray((Bytes)obj);
+                return (ASN1Integer)fromBytes((Bytes)obj);
             }
             catch (final Exception e)
             {

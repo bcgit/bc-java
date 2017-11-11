@@ -24,7 +24,7 @@ public final class DERVideotexString extends ASN1PrimitiveBytes implements ASN1S
         {
             try
             {
-                return (DERVideotexString)fromByteArray((Bytes)obj);
+                return (DERVideotexString)fromBytes((Bytes)obj);
             }
             catch (final Exception e)
             {

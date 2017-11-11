@@ -60,14 +60,14 @@ public class BEROctetString extends ASN1OctetString {
     /**
      * return the DER octets that make up this string.
      */
-    public Enumeration getObjects()
+    public Enumeration<ASN1OctetString> getObjects()
     {
         if (octs == null)
         {
             return generateOcts().elements();
         }
 
-        return new Enumeration()
+        return new Enumeration<ASN1OctetString>()
         {
             int counter = 0;
 
@@ -78,16 +78,16 @@ public class BEROctetString extends ASN1OctetString {
             }
 
             @Override
-            public Object nextElement()
+            public ASN1OctetString nextElement()
             {
                 return octs[counter++];
             }
         };
     }
 
-    private Vector generateOcts()
+    private Vector<ASN1OctetString> generateOcts()
     {
-        final Vector vec = new Vector();
+        final Vector<ASN1OctetString> vec = new Vector<>();
         for (int i = 0; i < string.size(); i += MAX_LENGTH)
         {
             int end;
@@ -121,7 +121,7 @@ public class BEROctetString extends ASN1OctetString {
     int encodedLength()
     {
         int length = 0;
-        for (final Enumeration e = getObjects(); e.hasMoreElements();)
+        for (final Enumeration<ASN1OctetString> e = getObjects(); e.hasMoreElements();)
         {
             length += ((ASN1Encodable)e.nextElement()).toASN1Primitive().encodedLength();
         }
@@ -140,9 +140,9 @@ public class BEROctetString extends ASN1OctetString {
         //
         // write out the octet array
         //
-        for (final Enumeration e = getObjects(); e.hasMoreElements();)
+        for (final Enumeration<ASN1OctetString> e = getObjects(); e.hasMoreElements();)
         {
-            out.writeObject((ASN1Encodable)e.nextElement());
+            out.writeObject(e.nextElement());
         }
 
         out.write(0x00);
@@ -152,7 +152,7 @@ public class BEROctetString extends ASN1OctetString {
     static BEROctetString fromSequence(final ASN1Sequence seq)
     {
         final ASN1OctetString[]     v = new ASN1OctetString[seq.size()];
-        final Enumeration e = seq.getObjects();
+        final Enumeration<ASN1Encodable> e = seq.getObjects();
         int                   index = 0;
 
         while (e.hasMoreElements())
