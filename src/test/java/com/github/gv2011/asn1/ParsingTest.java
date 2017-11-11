@@ -79,13 +79,13 @@ public class ParsingTest{
     in = b;
   }
 
-  @Test(expected=IOException.class)
+  @Test(expected=ASN1ParsingException.class)
   public void parserTest() {
     final ASN1StreamParser aIn = new ASN1StreamParser(in.openStream());
     while(aIn.readObject()!=null);
   }
 
-  @Test(expected = IOException.class)
+  @Test(expected = ASN1ParsingException.class)
   public void inputStreamTest() throws IOException {
     try(final ASN1InputStream aIn = new ASN1InputStream(in.openStream())){
       while(aIn.readObject()!=null);

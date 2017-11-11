@@ -244,7 +244,7 @@ public class ASN1StreamParser implements ASN1Parser{
             }
             catch (final IllegalArgumentException e)
             {
-                throw new ASN1Exception("corrupted stream detected", e);
+                throw new ASN1ParsingException("corrupted stream detected", e);
             }
         }
     }

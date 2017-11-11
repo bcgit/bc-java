@@ -165,7 +165,6 @@ public class ASN1SequenceParserTest
        seqGen1.close();
 
        assertThat("nested implicit tagged DER writing test failed.", bOut.build(), is(nestedSeqImpTagData));
-       assertThat("nested explicit tagged DER writing test failed.", bOut.build(), is(nestedSeqExpTagData));
     }
 
     public void testBERWriting()
