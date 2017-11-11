@@ -12,7 +12,7 @@
   <version>0.0.3-SNAPSHOT</version>
 
   <name>Vinz ASN.1</name>
-  <description>Basic ASN.1 implementation (originally extracted from Bouncy Castle)</description>
+  <description>ASN.1 implementation extracted from Bouncy Castle</description>
   <url>https://github.com/gv2011/asn1</url>
 
   <licenses>
@@ -86,6 +86,7 @@
             <exclude>**/*.json</exclude>
             <exclude>**/descriptionTemplate.ftl</exclude>
             <exclude>**/package-info.java</exclude>
+            <exclude>**/licenses.properties</exclude>
           </excludes>
         </configuration>
         <executions>
