@@ -4,7 +4,7 @@
   <parent>
     <groupId>com.github.gv2011</groupId>
     <artifactId>parent</artifactId>
-    <version>0.0.4</version>
+    <version>0.0.5-SNAPSHOT</version>
   </parent>
 
   <artifactId>asn1</artifactId>
@@ -51,18 +51,18 @@
     <dependency>
       <groupId>com.github.gv2011</groupId>
       <artifactId>util</artifactId>
-      <version>0.0.4</version>
+      <version>0.0.5-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.github.gv2011</groupId>
       <artifactId>gcol</artifactId>
-      <version>0.0.4</version>
+      <version>0.0.5-SNAPSHOT</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>com.github.gv2011</groupId>
       <artifactId>util-test</artifactId>
-      <version>0.0.4</version>
+      <version>0.0.5-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
