@@ -3,7 +3,7 @@
 
   <parent>
     <groupId>com.github.gv2011</groupId>
-    <artifactId>parent</artifactId>
+    <artifactId>parent-gv</artifactId>
     <version>0.0.5-SNAPSHOT</version>
   </parent>
 
