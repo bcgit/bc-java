@@ -1,2 +1,4 @@
-# ASN implementation extracted from Bouncy Castle
+# Basic ASN.1 implementation
+
+(originally extracted from Bouncy Castle)
 

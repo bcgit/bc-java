@@ -1,5 +1,32 @@
 package com.github.gv2011.asn1;
 
+/*-
+ * %---license-start---
+ * Vinz ASN.1
+ * %
+ * Copyright (C) 2016 - 2017 Vinz (https://github.com/gv2011)
+ * %
+ * Please note this should be read in the same way as the MIT license. (https://www.bouncycastle.org/licence.html)
+ * 
+ * Copyright (c) 2000-2015 The Legion of the Bouncy Castle Inc. (http://www.bouncycastle.org)
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
+ * and associated documentation files (the "Software"), to deal in the Software without restriction, 
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+ * and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial
+ * portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+ * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ * %---license-end---
+ */
 
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -57,9 +84,9 @@ import com.github.gv2011.util.bytes.Bytes;
  */
 public abstract class ASN1Sequence
     extends ASN1Primitive
-    implements com.github.gv2011.asn1.util.Iterable<ASN1Encodable>
+    implements Iterable<ASN1Encodable>
 {
-    protected Vector seq = new Vector();
+    protected Vector<ASN1Encodable> seq = new Vector<>();
 
     /**
      * Return an ASN1Sequence from the given object.
@@ -81,7 +108,7 @@ public abstract class ASN1Sequence
         }
         else if (obj instanceof Bytes)
         {
-            return ASN1Sequence.getInstance(fromByteArray((Bytes)obj));
+            return ASN1Sequence.getInstance(fromBytes((Bytes)obj));
         }
         else if (obj instanceof ASN1Encodable)
         {
@@ -189,7 +216,6 @@ public abstract class ASN1Sequence
     /*
      * Create a sequence containing a vector of objects.
      */
-    @SuppressWarnings("unchecked")
     protected ASN1Sequence(
         final ASN1Encodable[]   array)
     {
@@ -211,7 +237,7 @@ public abstract class ASN1Sequence
         return values;
     }
 
-    public Enumeration getObjects()
+    public Enumeration<ASN1Encodable> getObjects()
     {
         return seq.elements();
     }
@@ -270,7 +296,7 @@ public abstract class ASN1Sequence
     public ASN1Encodable getObjectAt(
         final int index)
     {
-        return (ASN1Encodable)seq.elementAt(index);
+        return seq.elementAt(index);
     }
 
     /**

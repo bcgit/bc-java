@@ -1,52 +1,113 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-	<parent>
-		<groupId>com.github.gv2011</groupId>
-		<artifactId>parent</artifactId>
-		<version>0.0.3-SNAPSHOT</version>
-	</parent>
+  <parent>
+    <groupId>com.github.gv2011</groupId>
+    <artifactId>parent</artifactId>
+    <version>0.0.4</version>
+  </parent>
 
-	<artifactId>asn1</artifactId>
+  <artifactId>asn1</artifactId>
+  <version>0.0.3-SNAPSHOT</version>
 
-	<name>Vinz ASN.1</name>
-	<description>ASN.1 implementation extracted from Bouncy Castle</description>
-	<url>https://github.com/gv2011/asn1</url>
+  <name>Vinz ASN.1</name>
+  <description>Basic ASN.1 implementation (originally extracted from Bouncy Castle)</description>
+  <url>https://github.com/gv2011/asn1</url>
 
-	<licenses>
-		<license>
-			<name>MIT License</name>
-			<url>https://opensource.org/licenses/MIT</url>
-		</license>
-	</licenses>
+  <licenses>
+    <license>
+      <name>Bouncy Castle</name>
+      <url>https://www.bouncycastle.org/licence.html</url>
+    </license>
+  </licenses>
 
-	<developers>
-		<developer>
-			<id>gv2011</id>
-			<name>Vinz</name>
-			<url>https://github.com/gv2011</url>
-		</developer>
-		<developer>
-			<id>bouncycastle</id>
-			<name>The Legion of the Bouncy Castle Inc.</name>
-			<url>http://www.bouncycastle.org</url>
-		</developer>
-	</developers>
+  <developers>
+    <developer>
+      <id>gv2011</id>
+      <name>Vinz</name>
+      <url>https://github.com/gv2011</url>
+      <roles>
+        <role>Developer on this project</role>
+      </roles>
+    </developer>
+    <developer>
+      <id>bouncycastle</id>
+      <name>The Legion of the Bouncy Castle Inc.</name>
+      <url>http://www.bouncycastle.org</url>
+      <roles>
+        <role>Developer before fork</role>
+      </roles>
+    </developer>
+  </developers>
 
-	<scm>
-		<connection>scm:git:git@github.com:gv2011/asn1.git</connection>
-		<developerConnection>scm:git:git@github.com:gv2011/asn1.git</developerConnection>
-		<url>https://github.com/gv2011/asn1</url>
-		<tag>HEAD</tag>
-	</scm>
+  <scm>
+    <connection>scm:git:git@github.com:gv2011/asn1.git</connection>
+    <developerConnection>scm:git:git@github.com:gv2011/asn1.git</developerConnection>
+    <url>https://github.com/gv2011/asn1</url>
+    <tag>HEAD</tag>
+  </scm>
 
-	<dependencies>
-		<dependency>
-			<groupId>com.github.gv2011</groupId>
-			<artifactId>util-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
+  <dependencies>
+    <dependency>
+      <groupId>com.github.gv2011</groupId>
+      <artifactId>util</artifactId>
+      <version>0.0.4</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.gv2011</groupId>
+      <artifactId>gcol</artifactId>
+      <version>0.0.4</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.github.gv2011</groupId>
+      <artifactId>util-test</artifactId>
+      <version>0.0.4</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <configuration>
+          <licenseName>bc</licenseName>
+          <licenseResolver>${project.baseUri}/src/license</licenseResolver>
+          <organizationName>Vinz (https://github.com/gv2011)</organizationName>
+          <inceptionYear>2016</inceptionYear>
+          <addSvnKeyWords>false</addSvnKeyWords>
+          <processStartTag>%---license-start---</processStartTag>
+          <processEndTag>%---license-end---</processEndTag>
+          <sectionDelimiter>%</sectionDelimiter>
+          <excludes>
+            <exclude>**/*.json</exclude>
+            <exclude>**/descriptionTemplate.ftl</exclude>
+            <exclude>**/package-info.java</exclude>
+          </excludes>
+        </configuration>
+        <executions>
+          <execution>
+            <id>license-update</id>
+            <goals>
+              <goal>update-project-license</goal>
+              <goal>update-file-header</goal>
+            </goals>
+            <phase>process-sources</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>

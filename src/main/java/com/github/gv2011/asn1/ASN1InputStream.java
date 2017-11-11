@@ -1,5 +1,32 @@
 package com.github.gv2011.asn1;
 
+/*-
+ * %---license-start---
+ * Vinz ASN.1
+ * %
+ * Copyright (C) 2016 - 2017 Vinz (https://github.com/gv2011)
+ * %
+ * Please note this should be read in the same way as the MIT license. (https://www.bouncycastle.org/licence.html)
+ * 
+ * Copyright (c) 2000-2015 The Legion of the Bouncy Castle Inc. (http://www.bouncycastle.org)
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
+ * and associated documentation files (the "Software"), to deal in the Software without restriction, 
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+ * and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial
+ * portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+ * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ * %---license-end---
+ */
 import static com.github.gv2011.util.Verify.verifyEqual;
 import static com.github.gv2011.util.bytes.ByteUtils.newBytes;
 import static com.github.gv2011.util.ex.Exceptions.call;
@@ -18,14 +45,15 @@ import com.github.gv2011.util.bytes.Bytes;
  */
 public class ASN1InputStream
     extends FilterInputStream
-    implements BERTags
+    implements BERTags, ASN1Parser
 {
     private final int limit;
     private final boolean lazyEvaluate;
 
     private final byte[][] tmpBuffers;
-    
+
     public static ASN1Primitive parse(final Bytes asn1) {
+      @SuppressWarnings("resource")
       final ASN1InputStream asn1InputStream = new ASN1InputStream(asn1);
       final ASN1Primitive result = asn1InputStream.readObject();
       verifyEqual(asn1InputStream.readObject(), null);
@@ -123,7 +151,7 @@ public class ASN1InputStream
         final byte[]  bytes){
         if (Streams.readFully(this, bytes) != bytes.length)
         {
-            throw new RuntimeException("EOF encountered in middle of object");
+            throw new ASN1ParsingException("EOF encountered in middle of object");
         }
     }
 
@@ -188,7 +216,7 @@ public class ASN1InputStream
                 case EXTERNAL:
                     return new DERExternal(buildDEREncodableVector(defIn));
                 default:
-                    throw new RuntimeException("unknown tag " + tagNo + " encountered");
+                    throw new ASN1ParsingException("unknown tag " + tagNo + " encountered");
             }
         }
 
@@ -213,13 +241,14 @@ public class ASN1InputStream
         return new ASN1InputStream(dIn).buildEncodableVector();
     }
 
+    @Override
     public ASN1Primitive readObject(){
         final int tag = call(this::read);
         if (tag <= 0)
         {
             if (tag == 0)
             {
-                throw new RuntimeException("unexpected end-of-contents marker");
+                throw new ASN1ParsingException("unexpected end-of-contents marker");
             }
 
             return null;
@@ -241,7 +270,7 @@ public class ASN1InputStream
         {
             if (!isConstructed)
             {
-                throw new RuntimeException("indefinite-length primitive encoding encountered");
+                throw new ASN1ParsingException("indefinite-length primitive encoding encountered");
             }
 
             final IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(this, limit);
@@ -269,7 +298,7 @@ public class ASN1InputStream
                 case EXTERNAL:
                     return new DERExternalParser(sp).getLoadedObject();
                 default:
-                    throw new RuntimeException("unknown BER object encountered");
+                    throw new ASN1ParsingException("unknown BER object encountered");
             }
         }
         else
@@ -280,7 +309,7 @@ public class ASN1InputStream
             }
             catch (final IllegalArgumentException e)
             {
-                throw new ASN1Exception("corrupted stream detected", e);
+                throw new ASN1ParsingException("corrupted stream detected", e);
             }
         }
     }
@@ -301,7 +330,7 @@ public class ASN1InputStream
             // "c) bits 7 to 1 of the first subsequent octet shall not all be zero."
             if ((b & 0x7f) == 0) // Note: -1 will pass
             {
-                throw new RuntimeException("corrupted stream - invalid high tag number found");
+                throw new ASN1ParsingException("corrupted stream - invalid high tag number found");
             }
 
             while ((b >= 0) && ((b & 0x80) != 0))
@@ -313,7 +342,7 @@ public class ASN1InputStream
 
             if (b < 0)
             {
-                throw new ASN1Exception("EOF found inside tag value.");
+                throw new ASN1ParsingException("EOF found inside tag value.");
             }
 
             tagNo |= (b & 0x7f);
@@ -326,7 +355,7 @@ public class ASN1InputStream
         int length = call(s::read);
         if (length < 0)
         {
-            throw new ASN1Exception("EOF found when length expected");
+            throw new ASN1ParsingException("EOF found when length expected");
         }
 
         if (length == 0x80)
@@ -341,7 +370,7 @@ public class ASN1InputStream
             // Note: The invalid long form "0xff" (see X.690 8.1.3.5c) will be caught here
             if (size > 4)
             {
-                throw new RuntimeException("DER length more than 4 bytes: " + size);
+                throw new ASN1ParsingException("DER length more than 4 bytes: " + size);
             }
 
             length = 0;
@@ -351,7 +380,7 @@ public class ASN1InputStream
 
                 if (next < 0)
                 {
-                    throw new ASN1Exception("EOF found reading length");
+                    throw new ASN1ParsingException("EOF found reading length");
                 }
 
                 length = (length << 8) + next;
@@ -359,12 +388,12 @@ public class ASN1InputStream
 
             if (length < 0)
             {
-                throw new RuntimeException("corrupted stream - negative length found");
+                throw new ASN1ParsingException("corrupted stream - negative length found");
             }
 
             if (length >= limit)   // after all we must have read at least 1 byte
             {
-                throw new RuntimeException("corrupted stream - out of bounds length found");
+                throw new ASN1ParsingException("corrupted stream - out of bounds length found");
             }
         }
 
@@ -461,7 +490,7 @@ public class ASN1InputStream
             case VIDEOTEX_STRING:
                 return new DERVideotexString(defIn.toByteArray());
             default:
-                throw new RuntimeException("unknown tag " + tagNo + " encountered");
+                throw new ASN1ParsingException("unknown tag " + tagNo + " encountered");
         }
     }
 }

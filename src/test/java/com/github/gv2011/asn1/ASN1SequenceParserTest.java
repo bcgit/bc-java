@@ -1,21 +1,39 @@
 package com.github.gv2011.asn1;
 
+/*-
+ * %---license-start---
+ * Vinz ASN.1
+ * %
+ * Copyright (C) 2016 - 2017 Vinz (https://github.com/gv2011)
+ * %
+ * Please note this should be read in the same way as the MIT license. (https://www.bouncycastle.org/licence.html)
+ * 
+ * Copyright (c) 2000-2015 The Legion of the Bouncy Castle Inc. (http://www.bouncycastle.org)
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
+ * and associated documentation files (the "Software"), to deal in the Software without restriction, 
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+ * and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial
+ * portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+ * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ * %---license-end---
+ */
 import static com.github.gv2011.testutil.Matchers.is;
 import static com.github.gv2011.util.bytes.ByteUtils.newBytesBuilder;
 import static org.junit.Assert.assertThat;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.Arrays;
 
-import com.github.gv2011.asn1.ASN1Integer;
-import com.github.gv2011.asn1.ASN1Null;
-import com.github.gv2011.asn1.ASN1ObjectIdentifier;
-import com.github.gv2011.asn1.ASN1SequenceParser;
-import com.github.gv2011.asn1.ASN1StreamParser;
-import com.github.gv2011.asn1.BERSequenceGenerator;
-import com.github.gv2011.asn1.DERSequenceGenerator;
 import com.github.gv2011.asn1.util.encoders.Hex;
 import com.github.gv2011.util.bytes.Bytes;
 import com.github.gv2011.util.bytes.BytesBuilder;
@@ -146,8 +164,7 @@ public class ASN1SequenceParserTest
 
        seqGen1.close();
 
-       assertTrue("nested implicit tagged DER writing test failed.", Arrays.equals(nestedSeqImpTagData, bOut.toByteArray()));
-       assertThat("nested explicit tagged DER writing test failed.", bOut.build(), is(nestedSeqExpTagData));
+       assertThat("nested implicit tagged DER writing test failed.", bOut.build(), is(nestedSeqImpTagData));
     }
 
     public void testBERWriting()
@@ -162,7 +179,7 @@ public class ASN1SequenceParserTest
 
        seqGen.close();
 
-       assertTrue("basic BER writing test failed.", Arrays.equals(berSeqData, bOut.toByteArray()));
+       assertThat("basic BER writing test failed.", bOut.build(), is(berSeqData));
     }
 
     public void testNestedBERDERWriting()
@@ -183,13 +200,13 @@ public class ASN1SequenceParserTest
 
        seqGen1.close();
 
-       assertTrue("nested BER/DER writing test failed.", Arrays.equals(berDERNestedSeqData, bOut.toByteArray()));
+       assertThat("nested BER/DER writing test failed.", bOut.build(), is(berDERNestedSeqData));
     }
 
     public void testNestedBERWriting()
         throws Exception
     {
-      final BytesBuilder bOut = newBytesBuilder();
+       final BytesBuilder bOut = newBytesBuilder();
        final BERSequenceGenerator  seqGen1 = new BERSequenceGenerator(bOut);
 
        seqGen1.addObject(new ASN1Integer(BigInteger.valueOf(0)));
@@ -204,7 +221,7 @@ public class ASN1SequenceParserTest
 
        seqGen1.close();
 
-       assertTrue("nested BER writing test failed.", Arrays.equals(berNestedSeqData, bOut.toByteArray()));
+       assertThat("nested BER writing test failed.", bOut.build(), is(berNestedSeqData));
     }
 
     public void testDERReading()
@@ -325,7 +342,7 @@ public class ASN1SequenceParserTest
     public void testBERExplicitTaggedSequenceWriting()
         throws Exception
     {
-       final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+       final BytesBuilder bOut = newBytesBuilder();
        final BERSequenceGenerator  seqGen = new BERSequenceGenerator(bOut, 1, true);
 
        seqGen.addObject(new ASN1Integer(BigInteger.valueOf(0)));
@@ -334,7 +351,7 @@ public class ASN1SequenceParserTest
 
        seqGen.close();
 
-       assertTrue("explicit BER tag writing test failed.", Arrays.equals(berExpTagSeqData, bOut.toByteArray()));
+       assertThat("explicit BER tag writing test failed.", bOut.build(), is(berExpTagSeqData));
     }
 
     public void testSequenceWithDERNullReading()

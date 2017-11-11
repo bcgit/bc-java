@@ -1,16 +1,53 @@
 package com.github.gv2011.asn1;
 
+/*-
+ * %---license-start---
+ * Vinz ASN.1
+ * %
+ * Copyright (C) 2016 - 2017 Vinz (https://github.com/gv2011)
+ * %
+ * Please note this should be read in the same way as the MIT license. (https://www.bouncycastle.org/licence.html)
+ * 
+ * Copyright (c) 2000-2015 The Legion of the Bouncy Castle Inc. (http://www.bouncycastle.org)
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
+ * and associated documentation files (the "Software"), to deal in the Software without restriction, 
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+ * and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial
+ * portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+ * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ * %---license-end---
+ */
+import static com.github.gv2011.util.CollectionUtils.iCollections;
+import static com.github.gv2011.util.CollectionUtils.toIList;
+
 import java.io.IOException;
 
-import com.github.gv2011.asn1.ASN1InputStream;
-import com.github.gv2011.asn1.ASN1StreamParser;
-import com.github.gv2011.asn1.util.encoders.Base64;
-import com.github.gv2011.asn1.util.test.SimpleTest;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
-public class ParsingTest
-    extends SimpleTest
-{
-     String[] streams = {
+import com.github.gv2011.util.bytes.ByteUtils;
+import com.github.gv2011.util.bytes.Bytes;
+import com.github.gv2011.util.icol.IList;
+
+@RunWith(Parameterized.class)
+public class ParsingTest{
+
+  @Parameters
+  public static final IList<Bytes> streams(){
+    return
+      iCollections().listOf(
         "oRNphCO0F+jcMQKC1uMO8qFBPikDDYmtfVGeB45xvbfj1qu696YGjdW2igRnePYM/KkQtADG7gMHIhqBRcl7dBtkejNeolOklPNA3NgsACTiVN9JFUsYq0a5842+TU+U2/6Kt/D0kvz0WmwWFRPHWEWVM9PYOWabGsh28Iucc6s7eEqmr8NEzWUx/jM3dmjpFYVpSpxt2KbbT+yUO0EqFQyy8hQ7JvKRgv1AoWQfPjMsfjkKgxnA8DjenmwXaZnDaKEvQIKQl46L1Yyu3boN082SQliSJMJVgNuNNLFIt5QSUdG1ant5O6f9Yr0niAkAoqGzmqz+LZE1S7RrGHWiQ3DowE9NzviBuaAoI4WdCn1ClMwb9fdEmBMU4C7DJSgs3qaJzPUuaAT9vU3GhZqZ0wcTV5DHxSRzGLqg9JEJRi4qyeuG3Qkg3YBtathl+FiLJ7mVoO3dFIccRuuqp2MpMhfuP1DxHLNLNiUZEhLMQ0CLTGabUISBuyQudVFlKBZIpcLD0k7fKpMPuywrYiDrTinMc2ZP3fOGevoR5fnZ6kZAE5oMTtMNokzBuctGqVapblXNrVMLYbriT538oYz5",
         "KEKVhHxtyUR9D3v5K4IJbVQLAMiVKoK9z7wFWUjzvLFNLg9C/r8zKfBa3YgZrt0Nq64+MxBePMbiNLCnfditc2qUcQZUHnvNnhwT6uGK37JmXg7MvQiKwvi31EIYt6ghqBZVs1iaqc0ep7wuQ16uwSQMlaDdXc9Qf1L0dGO/6eLyREz+p4UR4NOXK+GooQLfMxYL40zJlYcwNyR0rigvIr84WP2IMS2hZjqXtyS6HMM4yUv70hkIorjr7+JC4GtU1MyWuPuNSAGen0AZTaEEXd5sMbqXMqWg3jeM4mzRH1Kb3WdAChO5vMJZPBj9jZZKgXzmxkUh5GlIhUdYgztoNceBzQ3PIc7slCDUw9I2PjB87xsfy7jA5tFtFADs2EUyxUTMCuhilP664jSHgwbrr80k9Xc4sU+MCwCq2nQmcZYcPgKb4M31VJMlKwnZF3JUU2Jtqgg4gbErw58YoBwSkEcMJ2Juhiyx9U36MzxHs9OcTURfpsilMy+mDL8arCDx1knM1KkAHCLjWuJI+p1PvuIypgCwVc+MtGfd7wW8iR1JPJLBiuoZyNJ+xx9htd/HVB+rLtB57H8Gz8W+R00f",
         "Ol9I/rXMwbLpxTY97v70B+HCl2+cojz2574x/cC56A7KGVF13La8RdzOOvSkl338ct9T/blEFa6QwNz3GmF+MoPdH9lncwz+tqixIqGU02Bp5swH0qjbp/Yjaeq91eR6B+9fl+KKrpglBr8S1BrI4Ey5v3AxxJdCWP8Gd+6Sp15/HMYanwlHBpCsW4+Kq8sGJoJXUXpQ/GBUJKs+WjX1zE6PsvF7/B8cByuqE3NJt7x4Oa+qZtF8qNc0CFDNj31Yhdt7JkAoD30IAd+ue9OhImQMCWwFwySRIRJXU3865K2dBR+VhLuI2aKzLh7MlgVKJk6b2P/ZIkc86ksR1sOUiHrs9EdoYuIssAgMc8QGzn4VN8lxopdzQYVG6pbXGS/VQlHkGdyLd+OHt4srz/NTUWiOquVTRxa6GgtlBFfIXikPTb+iT2pZKyKUlBvpgo0BY9vVUadsteHAI5qrFZBrL5ecK/Qtl9hf/M8qEjyjt2aCXe9B96Hg2QR5A53qW2PJW5VzS0AeB3g+zJSPCTpygrBs20q5Xrna0ux2l17r6HT9Q/AXIOkwPZUXXn0d02igS4D6Hxrg3Fhdp+OTXL8G",
@@ -29,71 +66,30 @@ public class ParsingTest
         "KACwq8rZuOLHuNnZJA07WzI7kppCwptbcYU2B7t86QcZrnadCtxoM5QNcl9rsbMA26iWCPV3VlDAmLSWcxtMoSKWuo4edJpk8K915xkFU5U6I/901vx5hqAECQDy/Q+QDWmWTXDoVHqFV9wvIj3wCJPpJL/Ewpl0NZd+68jjOjUhjIdNebLrWNK2nhTPiIjFjkcVqEgashpOmnbHT+2MV/CHoixmUEiuRI1B0dvSf7FHGRgbXGBubisuu60g8XTens5zyRo4Qn/LTxIu2aj4LTtyLonV3sXr+y35A1zq5mCrE1f1nOINVzwYYY76iJGIaBkZuMU3366FPIbYkmXwla6RQU1FA0Y7n05qczw7Ie5TveRTByKFtUqW8OAb9vH+H2ezJ4CXE3AGbu/nTj64KClO/zL499GA+97g+X6tTN6xOJdNknlqw6ZnFNtCL8+A3hL4OyOgWD0IGC+xFvcKjDUaaJenCtQvprCJaFrvoOS+yYmixnFqglnPYL/64/Lca8NmDVpPzlHI8HNwUDzKiXTw3q7GnQZWmUYzu1vLIEi6/hyqrULRN1vLdd/8HCMNQFj4ot61UftHtOG8MCKa",
         "rUABPQ3SEWE5rY16pM+o+7EObLNM1jEa5YCMQM/aen0PWajWNax3Pyo6TZL8aGDXZF0yWqDM3b2m6UHOr6yqsUSrD+0jXPT48QN1VdBmh+AFRK+UcaYO383a0nvtv0c9uHt4yfceXLPGWrNjW+uTnS/lKpCdpE4GfLF1SFHIUcMxT+3At7hwDHNkLXllEXqbgDP8LyQSlYwT5jQUDCOzwc8CSxAryUOj6fN+iLKAiw4haPV/WZDG+JOmDMG2azo8SoBMi3y6Z2Le2fz2dMuvn5DUvCUvazrUmWYx4NEdSzc9GfBc6cXkduMqCs+lT2Ik2GHO0WjhrEB6j5NULOaCtbrislM85P6QutN4Pj9l18pcD6vZCcDTOwMj/BznclH342jeMn7rBgpW1YSzbNGP6KC4NeNW1H2xqNtuyhcJvasx4dwhzO18A36H6HtkiQyJNnfnVHh1oviO6mi3atmnh9B/55ugXM1Wf/6Kv8kJyaKtK8cWo+jCAR0/P/EsPtzToJM9Yk2+qxaPFd3k7T2KXvCQ9D1jLeECxL59L+WDvdBtxOEBD7W0a/Mn/9LuQPOiwARKJSTU+blJ6ezTeo83",
         "poA1hF4zRh7HF0xVglYoLFqkUR7Pru/qYFnfMKBPuEOOGdgO3MMcAvIZ+w+Ug4THr/6+Vux0TN3wdOB+beObOboLgNE2zaD65lyMFbaulzrEnWjUgIg63CdpQJ2ESaimHGg/GmsipUCndRJ37TbUtn8W112SehsAgrsjiBcuJhw61i4bVfAZEcycq4Y/FlEDxtzoH8WzDoESNbl+r5agLcHGr37BFi81IXS8TLihC1T8b7d6tLb6lpXT+9IR4xAyZTw1IFMDZZEzVmHgYE/Et20/WhkX/oGghkWSpCxR0kynDplk+BEK2oyGKnl+rf4vymhsse2iQ/C99PhaodZjDfuGVSwPLoU0AYyAKaEwmgHPOFbDlrAmNk4iBp+IZYm9guZM2hcQ4GeA5WQyZzw4C1yMywWbdjtL9ZhpClmmPZ28nmwNORAat7tXPJoBBdXFB0gNT/wU7UYIKU5GnAiDIFJ0o8ijnuAMat3AsBki2vxwdypuBq5M6OF9DVA0HRUjOA0l4JHjK8Y282mz3U34PDPQvwCT342uD9cO3uXoSr3T2FnDmsVHz4Q9zYpSjioLmZk9ZTnQWgN5V5Oyat6m"
-     };
+      )
+      .stream()
+      .map(s->ByteUtils.asUtf8(s).decodeBase64())
+      .collect(toIList())
+    ;
+  }
 
-    public String getName()
-    {
-        return "ParsingTest";
+  private final Bytes in;
+
+  public ParsingTest(final Bytes b){
+    in = b;
+  }
+
+  @Test(expected=ASN1ParsingException.class)
+  public void parserTest() {
+    final ASN1StreamParser aIn = new ASN1StreamParser(in.openStream());
+    while(aIn.readObject()!=null);
+  }
+
+  @Test(expected = ASN1ParsingException.class)
+  public void inputStreamTest() throws IOException {
+    try(final ASN1InputStream aIn = new ASN1InputStream(in.openStream())){
+      while(aIn.readObject()!=null);
     }
+  }
 
-    public void performTest()
-        throws Exception
-    {
-        inputStreamTest();
-        parserTest();
-    }
-
-    private void parserTest()
-    {
-        for (int i = 0; i != streams.length; i++)
-        {
-            ASN1StreamParser aIn = new ASN1StreamParser(Base64.decode(streams[i]));
-
-            try
-            {
-                Object obj;
-
-                while ((obj = aIn.readObject()) != null)
-                {
-
-                }
-
-                fail("bad stream parsed successfully!");
-            }
-            catch (IOException e)
-            {
-                // ignore
-            }
-        }
-    }
-
-    private void inputStreamTest()
-    {
-        for (int i = 0; i != streams.length; i++)
-        {
-            ASN1InputStream aIn = new ASN1InputStream(Base64.decode(streams[i]));
-
-            try
-            {
-                Object obj;
-
-                while ((obj = aIn.readObject()) != null)
-                {
-
-                }
-
-                fail("bad stream parsed successfully!");
-            }
-            catch (IOException e)
-            {
-                // ignore
-            }
-        }
-    }
-
-    public static void main(
-        String[]    args)
-    {
-        runTest(new ParsingTest());
-    }
 }
