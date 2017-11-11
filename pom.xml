@@ -8,7 +8,7 @@
   </parent>
 
   <artifactId>asn1</artifactId>
-  <version>0.0.3</version>
+  <version>0.0.4-SNAPSHOT</version>
 
   <name>Vinz ASN.1</name>
   <description>ASN.1 implementation extracted from Bouncy Castle</description>
@@ -44,7 +44,7 @@
     <connection>scm:git:git@github.com:gv2011/asn1.git</connection>
     <developerConnection>scm:git:git@github.com:gv2011/asn1.git</developerConnection>
     <url>https://github.com/gv2011/asn1</url>
-    <tag>asn1-0.0.3</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <dependencies>
