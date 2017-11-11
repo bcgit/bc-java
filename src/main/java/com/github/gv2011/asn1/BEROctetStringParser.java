@@ -1,11 +1,11 @@
 package com.github.gv2011.asn1;
 
 /*-
- * %---license-start---
+ * #%L
  * Vinz ASN.1
- * %
+ * %%
  * Copyright (C) 2016 - 2017 Vinz (https://github.com/gv2011)
- * %
+ * %%
  * Please note this should be read in the same way as the MIT license. (https://www.bouncycastle.org/licence.html)
  * 
  * Copyright (c) 2000-2015 The Legion of the Bouncy Castle Inc. (http://www.bouncycastle.org)
@@ -25,8 +25,10 @@ package com.github.gv2011.asn1;
  * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- * %---license-end---
+ * #L%
  */
+
+
 import java.io.InputStream;
 
 import com.github.gv2011.asn1.util.io.Streams;

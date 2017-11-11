@@ -75,37 +75,8 @@
         <configuration>
           <licenseName>bc</licenseName>
           <licenseResolver>${project.baseUri}/src/license</licenseResolver>
-          <organizationName>Vinz (https://github.com/gv2011)</organizationName>
           <inceptionYear>2016</inceptionYear>
-          <addSvnKeyWords>false</addSvnKeyWords>
-          <processStartTag>%---license-start---</processStartTag>
-          <processEndTag>%---license-end---</processEndTag>
-          <sectionDelimiter>%</sectionDelimiter>
-          <excludes>
-            <exclude>**/*.json</exclude>
-            <exclude>**/descriptionTemplate.ftl</exclude>
-            <exclude>**/package-info.java</exclude>
-            <exclude>**/licenses.properties</exclude>
-          </excludes>
         </configuration>
-        <executions>
-          <execution>
-            <id>license-update</id>
-            <goals>
-              <goal>update-project-license</goal>
-              <goal>update-file-header</goal>
-            </goals>
-            <phase>process-sources</phase>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
       </plugin>
     </plugins>
   </build>
