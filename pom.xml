@@ -4,7 +4,7 @@
   <parent>
     <groupId>com.github.gv2011</groupId>
     <artifactId>parent-gv</artifactId>
-    <version>0.0.5-SNAPSHOT</version>
+    <version>0.1.0</version>
   </parent>
 
   <artifactId>asn1</artifactId>
@@ -46,23 +46,27 @@
     <url>https://github.com/gv2011/asn1</url>
     <tag>HEAD</tag>
   </scm>
+  
+  <properties>
+    <utils.version>0.1.0</utils.version>
+  </properties>
 
   <dependencies>
     <dependency>
       <groupId>com.github.gv2011</groupId>
       <artifactId>util</artifactId>
-      <version>0.0.5-SNAPSHOT</version>
+      <version>${utils.version}</version>
     </dependency>
     <dependency>
       <groupId>com.github.gv2011</groupId>
       <artifactId>gcol</artifactId>
-      <version>0.0.5-SNAPSHOT</version>
+      <version>${utils.version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>com.github.gv2011</groupId>
       <artifactId>util-test</artifactId>
-      <version>0.0.5-SNAPSHOT</version>
+      <version>${utils.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
