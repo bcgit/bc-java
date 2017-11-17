@@ -118,7 +118,7 @@ public class PKCS12KeyStoreSpi
     private final JcaJceHelper helper = new BCJcaJceHelper();
 
     private static final int SALT_SIZE = 20;
-    private static final int MIN_ITERATIONS = 1024;
+    private static final int MIN_ITERATIONS = 50 * 1024;
 
     private static final DefaultSecretKeyProvider keySizeProvider = new DefaultSecretKeyProvider();
 
@@ -152,7 +152,7 @@ public class PKCS12KeyStoreSpi
     private ASN1ObjectIdentifier certAlgorithm;
 
     private AlgorithmIdentifier macAlgorithm = new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE);
-    private int itCount = MIN_ITERATIONS;
+    private int itCount = 2 * MIN_ITERATIONS;
     private int saltLength = 20;
 
     private class CertId
