@@ -8,5 +8,5 @@ class Params
 
     static final int POLY_BYTES = 1792;
     static final int REC_BYTES = 256;
-    static final int SEED_BYTES = 32;
+    static final int SEED_BYTES = 32;     // care changing this one - connected to digest size used.
 }
