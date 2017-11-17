@@ -113,8 +113,7 @@ class Poly
             for (int i = 0; i < output.length; i += 2)
             {
                 int val = (output[i] & 0xFF) | ((output[i + 1] & 0xFF) << 8);
-                val &= 0x3FFF;
-                if (val < Params.Q)
+                if (val < 5 * Params.Q)
                 {
                     a[pos++] = (short)val;
                     if (pos == Params.N)
