@@ -20,6 +20,8 @@ class NewHope
     {
         byte[] seed = new byte[Params.SEED_BYTES];
         rand.nextBytes(seed);
+        
+        sha3(seed);     // don't expose RNG output
 
         short[] a = new short[Params.N];
         generateA(a, seed);
