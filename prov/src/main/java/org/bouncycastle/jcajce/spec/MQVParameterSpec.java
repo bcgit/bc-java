@@ -7,6 +7,9 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Parameter spec to provide MQV ephemeral keys and user keying material.
+ */
 public class MQVParameterSpec
     implements AlgorithmParameterSpec
 {
