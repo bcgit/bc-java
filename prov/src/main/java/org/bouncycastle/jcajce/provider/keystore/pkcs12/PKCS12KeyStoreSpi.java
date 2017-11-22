@@ -3,7 +3,6 @@ package org.bouncycastle.jcajce.provider.keystore.pkcs12;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -1736,7 +1735,7 @@ public class PKCS12KeyStoreSpi
     {
         public BCPKCS12KeyStore()
         {
-            super(new BouncyCastleProvider(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd40BitRC2_CBC);
+            super(PKCS12KeyStoreSpi.getBouncyCastleProvider(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd40BitRC2_CBC);
         }
     }
 
@@ -1745,7 +1744,7 @@ public class PKCS12KeyStoreSpi
     {
         public BCPKCS12KeyStore3DES()
         {
-            super(new BouncyCastleProvider(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd3_KeyTripleDES_CBC);
+            super(PKCS12KeyStoreSpi.getBouncyCastleProvider(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd3_KeyTripleDES_CBC);
         }
     }
 
@@ -1857,13 +1856,19 @@ public class PKCS12KeyStoreSpi
         }
     }
 
-    public static void main(String[] args)
-        throws Exception
+    private static Provider provider = null;
+
+    private static synchronized Provider getBouncyCastleProvider()
     {
-        Security.addProvider(new BouncyCastleProvider());
+        if (Security.getProvider("BC") != null)
+        {
+            return Security.getProvider("BC");
+        }
+        else if (provider == null)
+        {
+            provider = new BouncyCastleProvider();
+        }
 
-        KeyStore kS = KeyStore.getInstance("PKCS12", "BC");
-
-        kS.load(new FileInputStream("/tmp/id.p12"), "fred".toCharArray());
+        return provider;
     }
 }
