@@ -125,7 +125,7 @@ public class GOST3412_2015Engine
 
         if (userKey.length != KEY_LENGTH)
         {
-            throw new IllegalArgumentException("Key length invalid. Key needs to be 64 byte - 512 bit!!!");
+            throw new IllegalArgumentException("Key length invalid. Key needs to be 32 byte - 256 bit!!!");
         }
 
         subKeys = new byte[10][];
