@@ -120,6 +120,11 @@ public class TlsAEADCipher
         this.decryptCipher.init(dummyNonce, macSize, null);
     }
 
+    public int getCiphertextLimit(int plaintextLimit)
+    {
+        return plaintextLimit + macSize + record_iv_length;
+    }
+
     public int getPlaintextLimit(int ciphertextLimit)
     {
         // TODO We ought to be able to ask the decryptCipher (independently of it's current state!)
