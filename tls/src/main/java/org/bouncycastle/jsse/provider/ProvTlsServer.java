@@ -92,6 +92,12 @@ class ProvTlsServer
     }
 
     @Override
+    protected ProtocolVersion getMaximumVersion()
+    {
+        return manager.getContext().getMaximumVersion(sslParameters.getProtocols());
+    }
+
+    @Override
     protected boolean selectCipherSuite(int cipherSuite) throws IOException
     {
         if (!selectCredentials(cipherSuite))
