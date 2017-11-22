@@ -342,7 +342,7 @@ class ProvSSLEngine
                 {
                     resultStatus = Status.BUFFER_UNDERFLOW;
                 }
-                else if (getTotalRemaining(dsts) < (long)preview.getApplicationDataLimit())
+                else if (hasInsufficientSpace(dsts, offset, length, preview.getApplicationDataLimit()))
                 {
                     resultStatus = Status.BUFFER_OVERFLOW;
                 }
@@ -357,7 +357,7 @@ class ProvSSLEngine
                     int appDataAvailable = protocol.getAvailableInputBytes();
                     for (int dstIndex = 0; dstIndex < length && appDataAvailable > 0; ++dstIndex)
                     {
-                        ByteBuffer dst = dsts[dstIndex];
+                        ByteBuffer dst = dsts[offset + dstIndex];
                         int count = Math.min(dst.remaining(), appDataAvailable);
                         if (count > 0)
                         {
@@ -469,35 +469,55 @@ class ProvSSLEngine
             {
                 resultStatus = Status.CLOSED;
             }
-            else
+            else if (protocol.getAvailableOutputBytes() > 0)
             {
                 /*
-                 * Limit the app data that we will process in one call
+                 * Handle any buffered handshake data fully before sending application data.
                  */
-                int srcLimit = ProvSSLSessionImpl.NULL_SESSION.getApplicationBufferSize();
-
-                for (int srcIndex = 0; srcIndex < length && srcLimit > 0; ++srcIndex)
+            }
+            else
+            {
+                try
                 {
-                    ByteBuffer src = srcs[srcIndex];
-                    int count = Math.min(src.remaining(), srcLimit);
-                    if (count > 0)
+                    /*
+                     * Generate at most one maximum-sized application data record per call.
+                     */
+                    int srcRemaining = getTotalRemaining(srcs, offset, length, protocol.getApplicationDataLimit());
+                    if (srcRemaining > 0)
                     {
-                        byte[] input = new byte[count];
-                        src.get(input);
-        
-                        try
-                        {
-                            protocol.writeApplicationData(input, 0, count);
-                        }
-                        catch (IOException e)
-                        {
-                            // TODO[jsse] Throw a subclass of SSLException?
-                            throw new SSLException(e);
-                        }
+                        RecordPreview preview = protocol.previewOutputRecord(srcRemaining);
 
-                        bytesConsumed += count;
-                        srcLimit -= count;
+                        int srcLimit = preview.getApplicationDataLimit();
+                        int dstLimit = preview.getRecordSize();
+
+                        if (dst.remaining() < dstLimit)
+                        {
+                            resultStatus = Status.BUFFER_OVERFLOW;
+                        }
+                        else
+                        {
+                            for (int srcIndex = 0; srcIndex < length && srcLimit > 0; ++srcIndex)
+                            {
+                                ByteBuffer src = srcs[offset + srcIndex];
+                                int count = Math.min(src.remaining(), srcLimit);
+                                if (count > 0)
+                                {
+                                    byte[] input = new byte[count];
+                                    src.get(input);
+    
+                                    protocol.writeApplicationData(input, 0, count);
+    
+                                    bytesConsumed += count;
+                                    srcLimit -= count;
+                                }
+                            }
+                        }
                     }
+                }
+                catch (IOException e)
+                {
+                    // TODO[jsse] Throw a subclass of SSLException?
+                    throw new SSLException(e);
                 }
             }
         }
@@ -520,8 +540,7 @@ class ProvSSLEngine
                 bytesProduced += count;
                 outputAvailable -= count;
             }
-
-            if (outputAvailable > 0)
+            else
             {
                 resultStatus = Status.BUFFER_OVERFLOW;
             }
@@ -628,13 +647,24 @@ class ProvSSLEngine
         return protocol.previewInputRecord(recordHeader);
     }
 
-    private long getTotalRemaining(ByteBuffer[] buffers)
+    private int getTotalRemaining(ByteBuffer[] bufs, int off, int len, int limit)
     {
-        long result = 0;
-        for (ByteBuffer buffer : buffers)
+        int result = 0;
+        for (int i = 0; i < len; ++i)
         {
-            result += buffer.remaining();
+            ByteBuffer buf = bufs[off + i];
+            int next = buf.remaining();
+            if (next >= (limit - result))
+            {
+                return limit;
+            }
+            result += next;
         }
         return result;
+    }
+
+    private boolean hasInsufficientSpace(ByteBuffer[] dsts, int off, int len, int amount)
+    {
+        return getTotalRemaining(dsts, off, len, amount) < amount;
     }
 }

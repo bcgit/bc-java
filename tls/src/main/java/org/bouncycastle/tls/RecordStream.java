@@ -192,6 +192,21 @@ class RecordStream
         return new RecordPreview(recordSize, applicationDataLimit);
     }
 
+    RecordPreview previewOutputRecord(int applicationDataSize)
+    {
+        int applicationDataLimit = Math.max(0, Math.min(getPlaintextLimit(), applicationDataSize));
+
+        int recordSize = applicationDataLimit;
+        if (writeCompression.getClass() != TlsNullCompression.class)
+        {
+            recordSize += 1024;
+        }
+
+        recordSize = writeCipher.getCiphertextLimit(recordSize) + RecordFormat.FRAGMENT_OFFSET;
+
+        return new RecordPreview(recordSize, applicationDataLimit);
+    }
+
     boolean readFullRecord(byte[] record)
         throws IOException
     {
