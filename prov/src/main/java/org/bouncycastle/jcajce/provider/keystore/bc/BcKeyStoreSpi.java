@@ -13,10 +13,8 @@ import java.security.KeyStoreSpi;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -1045,18 +1043,6 @@ public class BcKeyStoreSpi
             cOut.write(dig);
     
             cOut.close();
-        }
-    }
-
-    static Provider getBouncyCastleProvider()
-    {
-        if (Security.getProvider("BC") != null)
-        {
-            return Security.getProvider("BC");
-        }
-        else
-        {
-            return new BouncyCastleProvider();
         }
     }
 
