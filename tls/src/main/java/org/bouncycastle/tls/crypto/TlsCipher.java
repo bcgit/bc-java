@@ -8,6 +8,13 @@ import java.io.IOException;
 public interface TlsCipher
 {
     /**
+     * Return the maximum size for the ciphertext given plaintextlimit bytes of plaintext.
+     * @param plaintextLimit the maximum number of bytes of plaintext.
+     * @return the maximum size of the ciphertext for plaintextlimit bytes of input.
+     */
+    int getCiphertextLimit(int plaintextLimit);
+
+    /**
      * Return the maximum size for the plaintext given ciphertextlimit bytes of ciphertext.
      * @param ciphertextLimit the maximum number of bytes of ciphertext.
      * @return the maximum size of the plaintext for ciphertextlimit bytes of input.
