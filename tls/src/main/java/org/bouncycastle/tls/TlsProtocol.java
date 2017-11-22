@@ -840,7 +840,7 @@ public abstract class TlsProtocol
     {
         if (blocking)
         {
-            throw new IllegalStateException("Cannot use previewInputRecord() in blocking mode! Use getInputStream() instead.");
+            throw new IllegalStateException("Cannot use previewInputRecord() in blocking mode!");
         }
         if (inputBuffers.available() != 0)
         {
@@ -853,6 +853,57 @@ public abstract class TlsProtocol
         }
 
         return safePreviewRecordHeader(recordHeader);
+    }
+
+    public RecordPreview previewOutputRecord(int applicationDataSize) throws IOException
+    {
+        if (blocking)
+        {
+            throw new IllegalStateException("Cannot use previewOutputRecord() in blocking mode!");
+        }
+        if (outputBuffer.getBuffer().available() != 0)
+        {
+            throw new IllegalStateException("Can only use previewOutputRecord() for record-aligned output.");
+        }
+
+        if (closed)
+        {
+            throw new IOException("Connection is closed, cannot produce any more output");
+        }
+
+        if (applicationDataSize < 1)
+        {
+            return new RecordPreview(0, 0);
+        }
+
+        if (this.appDataSplitEnabled)
+        {
+            switch (appDataSplitMode)
+            {
+                case ADS_MODE_0_N_FIRSTONLY:
+                case ADS_MODE_0_N:
+                {
+                    RecordPreview a = recordStream.previewOutputRecord(0);
+                    RecordPreview b = recordStream.previewOutputRecord(applicationDataSize);
+                    return RecordPreview.combine(a, b);
+                }
+                case ADS_MODE_1_Nsub1:
+                default:
+                {
+                    RecordPreview a = recordStream.previewOutputRecord(1);
+                    if (applicationDataSize > 1)
+                    {
+                        RecordPreview b = recordStream.previewOutputRecord(applicationDataSize - 1);
+                        a = RecordPreview.combine(a, b);
+                    }
+                    return a;
+                }
+            }
+        }
+        else
+        {
+            return recordStream.previewOutputRecord(applicationDataSize);
+        }
     }
 
     /**
@@ -926,6 +977,11 @@ public abstract class TlsProtocol
                 break;
             }
         }
+    }
+
+    public int getApplicationDataLimit()
+    {
+        return recordStream.getPlaintextLimit();
     }
 
     /**

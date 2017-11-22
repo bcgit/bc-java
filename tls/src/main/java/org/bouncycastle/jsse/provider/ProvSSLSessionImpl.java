@@ -179,7 +179,12 @@ class ProvSSLSessionImpl
          * when the max_fragment_length extension has been negotiated, or when no compression was negotiated).
          */
         // Header size + Fragment length limit + Compression expansion + Cipher expansion
-        return RecordFormat.FRAGMENT_OFFSET + (1 << 14) + 1024 + 1024; 
+//        return RecordFormat.FRAGMENT_OFFSET + (1 << 14) + 1024 + 1024;
+
+        /*
+         * Worst case accounts for possible application data splitting (before TLS 1.1)
+         */
+        return (1 << 14) + 1 + 2 * (RecordFormat.FRAGMENT_OFFSET + 1024 + 1024);
     }
 
     public javax.security.cert.X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException
