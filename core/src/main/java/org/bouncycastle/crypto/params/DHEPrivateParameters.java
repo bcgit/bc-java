@@ -5,24 +5,24 @@ import org.bouncycastle.crypto.CipherParameters;
 /**
  * Parameters holder for private unified static/ephemeral agreement as described in NIST SP 800-56A.
  */
-public class ECCombinedPrivateParameters
+public class DHEPrivateParameters
     implements CipherParameters
 {
-    private ECPrivateKeyParameters staticPrivateKey;
-    private ECPrivateKeyParameters ephemeralPrivateKey;
-    private ECPublicKeyParameters ephemeralPublicKey;
+    private DHPrivateKeyParameters staticPrivateKey;
+    private DHPrivateKeyParameters ephemeralPrivateKey;
+    private DHPublicKeyParameters ephemeralPublicKey;
 
-    public ECCombinedPrivateParameters(
-        ECPrivateKeyParameters  staticPrivateKey,
-        ECPrivateKeyParameters  ephemeralPrivateKey)
+    public DHEPrivateParameters(
+        DHPrivateKeyParameters  staticPrivateKey,
+        DHPrivateKeyParameters  ephemeralPrivateKey)
     {
         this(staticPrivateKey, ephemeralPrivateKey, null);
     }
 
-    public ECCombinedPrivateParameters(
-        ECPrivateKeyParameters  staticPrivateKey,
-        ECPrivateKeyParameters  ephemeralPrivateKey,
-        ECPublicKeyParameters   ephemeralPublicKey)
+    public DHEPrivateParameters(
+        DHPrivateKeyParameters  staticPrivateKey,
+        DHPrivateKeyParameters  ephemeralPrivateKey,
+        DHPublicKeyParameters   ephemeralPublicKey)
     {
         if (staticPrivateKey == null)
         {
@@ -33,7 +33,7 @@ public class ECCombinedPrivateParameters
             throw new NullPointerException("ephemeralPrivateKey cannot be null");
         }
 
-        ECDomainParameters parameters = staticPrivateKey.getParameters();
+        DHParameters parameters = staticPrivateKey.getParameters();
         if (!parameters.equals(ephemeralPrivateKey.getParameters()))
         {
             throw new IllegalArgumentException("static and ephemeral private keys have different domain parameters");
@@ -41,8 +41,8 @@ public class ECCombinedPrivateParameters
 
         if (ephemeralPublicKey == null)
         {
-            ephemeralPublicKey = new ECPublicKeyParameters(
-                parameters.getG().multiply(ephemeralPrivateKey.getD()),
+            ephemeralPublicKey = new DHPublicKeyParameters(
+                parameters.getG().modPow(ephemeralPrivateKey.getX(), parameters.getP()),
                 parameters);
         }
         else if (!parameters.equals(ephemeralPublicKey.getParameters()))
@@ -55,17 +55,17 @@ public class ECCombinedPrivateParameters
         this.ephemeralPublicKey = ephemeralPublicKey;
     }
 
-    public ECPrivateKeyParameters getStaticPrivateKey()
+    public DHPrivateKeyParameters getStaticPrivateKey()
     {
         return staticPrivateKey;
     }
 
-    public ECPrivateKeyParameters getEphemeralPrivateKey()
+    public DHPrivateKeyParameters getEphemeralPrivateKey()
     {
         return ephemeralPrivateKey;
     }
 
-    public ECPublicKeyParameters getEphemeralPublicKey()
+    public DHPublicKeyParameters getEphemeralPublicKey()
     {
         return ephemeralPublicKey;
     }
