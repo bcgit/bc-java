@@ -3,15 +3,15 @@ package org.bouncycastle.crypto.params;
 import org.bouncycastle.crypto.CipherParameters;
 
 /**
- * Parameters holder for public unified static/ephemeral agreement as described in NIST SP 800-56A.
+ * Parameters holder for static/ephemeral agreement as described in NIST SP 800-56A.
  */
-public class CombinedPublicParameters
+public class DHEPublicParameters
     implements CipherParameters
 {
     private DHPublicKeyParameters staticPublicKey;
     private DHPublicKeyParameters ephemeralPublicKey;
 
-    public CombinedPublicParameters(
+    public DHEPublicParameters(
         DHPublicKeyParameters   staticPublicKey,
         DHPublicKeyParameters   ephemeralPublicKey)
     {

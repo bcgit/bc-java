@@ -4,14 +4,14 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.agreement.CombinedAgreement;
 import org.bouncycastle.crypto.agreement.DHAgreement;
 import org.bouncycastle.crypto.agreement.DHBasicAgreement;
+import org.bouncycastle.crypto.agreement.DHEphemeralAgreement;
 import org.bouncycastle.crypto.generators.DHBasicKeyPairGenerator;
 import org.bouncycastle.crypto.generators.DHKeyPairGenerator;
 import org.bouncycastle.crypto.generators.DHParametersGenerator;
-import org.bouncycastle.crypto.params.CombinedPrivateParameters;
-import org.bouncycastle.crypto.params.CombinedPublicParameters;
+import org.bouncycastle.crypto.params.DHEPrivateParameters;
+import org.bouncycastle.crypto.params.DHEPublicParameters;
 import org.bouncycastle.crypto.params.DHKeyGenerationParameters;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
@@ -411,21 +411,21 @@ public class DHTest
         AsymmetricCipherKeyPair V1,
         AsymmetricCipherKeyPair V2)
     {
-        CombinedAgreement u = new CombinedAgreement();
-        u.init(new CombinedPrivateParameters(
+        DHEphemeralAgreement u = new DHEphemeralAgreement();
+        u.init(new DHEPrivateParameters(
             (DHPrivateKeyParameters)U1.getPrivate(),
             (DHPrivateKeyParameters)U2.getPrivate(),
             (DHPublicKeyParameters)U2.getPublic()));
-        byte[] ux = u.calculateAgreement(new CombinedPublicParameters(
+        byte[] ux = u.calculateAgreement(new DHEPublicParameters(
             (DHPublicKeyParameters)V1.getPublic(),
             (DHPublicKeyParameters)V2.getPublic()));
 
-        CombinedAgreement v = new CombinedAgreement();
-        v.init(new CombinedPrivateParameters(
+        DHEphemeralAgreement v = new DHEphemeralAgreement();
+        v.init(new DHEPrivateParameters(
             (DHPrivateKeyParameters)V1.getPrivate(),
             (DHPrivateKeyParameters)V2.getPrivate(),
             (DHPublicKeyParameters)V2.getPublic()));
-        byte[] vx = v.calculateAgreement(new CombinedPublicParameters(
+        byte[] vx = v.calculateAgreement(new DHEPublicParameters(
             (DHPublicKeyParameters)U1.getPublic(),
             (DHPublicKeyParameters)U2.getPublic()));
 

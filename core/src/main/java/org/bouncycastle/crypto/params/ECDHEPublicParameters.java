@@ -3,15 +3,15 @@ package org.bouncycastle.crypto.params;
 import org.bouncycastle.crypto.CipherParameters;
 
 /**
- * Parameters holder for public unified static/ephemeral agreement as described in NIST SP 800-56A.
+ * Parameters holder for public unified static/ephemeral agreement as described in NIST SP 800-56A using EC DH/CDH.
  */
-public class ECCombinedPublicParameters
+public class ECDHEPublicParameters
     implements CipherParameters
 {
     private ECPublicKeyParameters staticPublicKey;
     private ECPublicKeyParameters ephemeralPublicKey;
 
-    public ECCombinedPublicParameters(
+    public ECDHEPublicParameters(
         ECPublicKeyParameters   staticPublicKey,
         ECPublicKeyParameters   ephemeralPublicKey)
     {
@@ -25,7 +25,7 @@ public class ECCombinedPublicParameters
         }
         if (!staticPublicKey.getParameters().equals(ephemeralPublicKey.getParameters()))
         {
-            throw new IllegalArgumentException("Static and ephemeral public keys have different domain parameters");
+            throw new IllegalArgumentException("static and ephemeral public keys have different domain parameters");
         }
 
         this.staticPublicKey = staticPublicKey;

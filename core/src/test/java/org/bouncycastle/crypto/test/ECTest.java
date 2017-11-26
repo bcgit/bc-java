@@ -10,14 +10,14 @@ import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.BasicAgreement;
-import org.bouncycastle.crypto.agreement.ECCombinedAgreement;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.agreement.ECDHCBasicAgreement;
+import org.bouncycastle.crypto.agreement.ECDHCEphemeralAgreement;
 import org.bouncycastle.crypto.agreement.ECMQVBasicAgreement;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
-import org.bouncycastle.crypto.params.ECCombinedPrivateParameters;
-import org.bouncycastle.crypto.params.ECCombinedPublicParameters;
+import org.bouncycastle.crypto.params.ECDHEPrivateParameters;
+import org.bouncycastle.crypto.params.ECDHEPublicParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -1039,21 +1039,21 @@ public class ECTest
         AsymmetricCipherKeyPair V1,
         AsymmetricCipherKeyPair V2)
     {
-        ECCombinedAgreement u = new ECCombinedAgreement();
-        u.init(new ECCombinedPrivateParameters(
+        ECDHCEphemeralAgreement u = new ECDHCEphemeralAgreement();
+        u.init(new ECDHEPrivateParameters(
             (ECPrivateKeyParameters)U1.getPrivate(),
             (ECPrivateKeyParameters)U2.getPrivate(),
             (ECPublicKeyParameters)U2.getPublic()));
-        byte[] ux = u.calculateAgreement(new ECCombinedPublicParameters(
+        byte[] ux = u.calculateAgreement(new ECDHEPublicParameters(
             (ECPublicKeyParameters)V1.getPublic(),
             (ECPublicKeyParameters)V2.getPublic()));
 
-        ECCombinedAgreement v = new ECCombinedAgreement();
-        v.init(new ECCombinedPrivateParameters(
+        ECDHCEphemeralAgreement v = new ECDHCEphemeralAgreement();
+        v.init(new ECDHEPrivateParameters(
             (ECPrivateKeyParameters)V1.getPrivate(),
             (ECPrivateKeyParameters)V2.getPrivate(),
             (ECPublicKeyParameters)V2.getPublic()));
-        byte[] vx = v.calculateAgreement(new ECCombinedPublicParameters(
+        byte[] vx = v.calculateAgreement(new ECDHEPublicParameters(
             (ECPublicKeyParameters)U1.getPublic(),
             (ECPublicKeyParameters)U2.getPublic()));
 
