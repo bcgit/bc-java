@@ -21,6 +21,7 @@ import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECFieldFp;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
+import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.EllipticCurve;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -38,6 +39,7 @@ import javax.crypto.spec.DHPublicKeySpec;
 
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
+import org.bouncycastle.jcajce.spec.DHEParameterSpec;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
@@ -709,6 +711,140 @@ public class DHTest
         }
     }
 
+    private void testECUnifiedTestVector1()
+        throws Exception
+    {
+        // Test Vector from NIST sample data
+
+        ECNamedCurveParameterSpec namedSpec = ECNamedCurveTable.getParameterSpec("P-224");
+        KeyFactory ecKeyFact = KeyFactory.getInstance("EC", "BC");
+
+        EllipticCurve ecCurve = new EllipticCurve(
+            new ECFieldFp(namedSpec.getCurve().getField().getCharacteristic()),
+            namedSpec.getCurve().getA().toBigInteger(), namedSpec.getCurve().getB().toBigInteger());
+        ECParameterSpec ecSpec = new ECParameterSpec(ecCurve,
+            new ECPoint(namedSpec.getG().getAffineXCoord().toBigInteger(), namedSpec.getG().getAffineYCoord().toBigInteger()),
+            namedSpec.getN(), namedSpec.getH().intValue());
+
+        KeyPair U1 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("040784e946ef1fae0cfe127042a310a018ba639d3f6b41f265904f0a7b21b7953efe638b45e6c0c0d34a883a510ce836d143d831daa9ce8a12")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("86d1735ca357890aeec8eccb4859275151356ecee9f1b2effb76b092", 16), ecSpec)));
+
+        KeyPair U2 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("04b33713dc0d56215be26ee6c5e60ad36d12e02e78529ae3ff07873c6b39598bda41c1cf86ee3981f40e102333c15fef214bda034291c1aca6")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("764010b3137ef8d34a3552955ada572a4fa1bb1f5289f27c1bf18344", 16), ecSpec)));
+
+        KeyPair V1 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("0484c22d9575d09e280613c8758467f84869c6eede4f6c1b644517d6a72c4fc5c68fa12b4c259032fc5949c630259948fca38fb3342d9cb0a8")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("e37964e391f5058fb43435352a9913438a1ec10831f755273285230a", 16), ecSpec)));
+
+        KeyPair V2 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("044b917e9ce693b277c8095e535ea81c2dea089446a8c55438eda750fb6170c85b86390481fff2dff94b7dff3e42d35ff623921cb558967b48")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("ab40d67f59ba7265d8ad33ade8f704d13a7ba2298b69172a7cd02515", 16), ecSpec)));
+
+        byte[] x = calculateUnifiedAgreement("ECCDHEwithSHA224CKDF", "AES[128]/CCM[128]", U1, U2, V1, V2,
+            Hex.decode("a1b2c3d4e54341565369643dba868da77897b6552f6f767ad873b232aa4a810a91863ec3dc86db53359a772dd76933"));
+
+        if (x == null
+            || !areEqual(Hex.decode("63b7ba5699927cb08e058b76af7fc0b0"), x))
+        {
+            fail("EC combined Test Vector #1 agreement failed, got: " + Hex.toHexString(x));
+        }
+    }
+
+    private void testECUnifiedTestVector2()
+        throws Exception
+    {
+        // Test Vector from NIST sample data
+
+        ECNamedCurveParameterSpec namedSpec = ECNamedCurveTable.getParameterSpec("P-256");
+        KeyFactory ecKeyFact = KeyFactory.getInstance("EC", "BC");
+
+        EllipticCurve ecCurve = new EllipticCurve(
+            new ECFieldFp(namedSpec.getCurve().getField().getCharacteristic()),
+            namedSpec.getCurve().getA().toBigInteger(), namedSpec.getCurve().getB().toBigInteger());
+        ECParameterSpec ecSpec = new ECParameterSpec(ecCurve,
+            new ECPoint(namedSpec.getG().getAffineXCoord().toBigInteger(), namedSpec.getG().getAffineYCoord().toBigInteger()),
+            namedSpec.getN(), namedSpec.getH().intValue());
+
+        KeyPair U1 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("047581b35964a983414ebdd56f4ebb1ddcad10881b200666a51ae41306e1ecf1db368468a5e8a65ca10ccea526472c8982db68316c468800e171c11f4ee694fce4")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("2eb7ef76d4936123b6f13035045aedf45c1c7731f35d529d25941926b5bb38bb", 16), ecSpec)));
+
+        KeyPair U2 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("045b1e4cdeb0728333c0a51631b1a75269e4878d10732f4cb94d600483db4bd9ee625c374592c3db7e9f8b4f2c91a0098a158bc37b922e4243bd9cbdefe67d6ab0")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("78acde388a022261767e6b3dd6dd016c53b70a084260ec87d395aec761c082de", 16), ecSpec)));
+
+        KeyPair V1 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("04e4916d616803ff1bd9569f35b7d06f792f19c1fb4e6fa916d686c027a17d8dffd570193d8e101624ac2ea0bcb762d5613f05452670f09af66ef70861fb528868")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("9c85898640a1b1de8ce7f557492dc1460530b9e17afaaf742eb953bb644e9c5a", 16), ecSpec)));
+
+        KeyPair V2 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("04d1cd23c29d0fc865c316d44a1fd5adb6605ee47c9ddfec3a9b0a5e532d52704e74ff5d149aeb50856fefb38d5907b6dbb580fe6dc166bcfcbee4eb376d77e95c")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("d6e11d5d3b85b201b8f4c12dadfad3000e267961a806a0658a2b859d44389599", 16), ecSpec)));
+
+        byte[] x = calculateUnifiedAgreement("ECCDHEwithSHA256CKDF", "AES[128]/CCM[128]",
+            U1, U2, V1, V2, Hex.decode("a1b2c3d4e54341565369649018558dc958160b4b1d240d06ea07c6f321a752496c1a3ff45cbb4b43507c6fe1997d1d"));
+
+        if (x == null
+            || !areEqual(Hex.decode("221d252072d6f85b8298eab6fc38634e"), x))
+        {
+            fail("EC combined Test Vector #2 agreement failed");
+        }
+    }
+
+    private byte[] calculateUnifiedAgreement(
+        String alg,
+        String keyAlg,
+        KeyPair U1,
+        KeyPair U2,
+        KeyPair V1,
+        KeyPair V2,
+        byte[]  oi)
+        throws Exception
+    {
+        KeyAgreement u = KeyAgreement.getInstance(alg, "BC");
+
+        u.init(U1.getPrivate(), new DHEParameterSpec(U2, V2.getPublic(), oi));
+
+        u.doPhase(V1.getPublic(), true);
+
+        SecretKey uk = u.generateSecret(keyAlg);
+        byte[] ux = uk.getEncoded();
+        
+        KeyAgreement v = KeyAgreement.getInstance(alg, "BC");
+
+        v.init(V1.getPrivate(), new DHEParameterSpec(V2, U2.getPublic(), oi));
+
+        v.doPhase(U1.getPublic(), true);
+
+        SecretKey vk = u.generateSecret(keyAlg);
+        byte[] vx = vk.getEncoded();
+
+        if (areEqual(ux, vx))
+        {
+            return ux;
+        }
+
+        return null;
+    }
+
     private void testExceptions()
         throws Exception
     {
@@ -1120,6 +1256,9 @@ public class DHTest
         testSmallSecret();
         testConfig();
         testSubgroupConfinement();
+
+        testECUnifiedTestVector1();
+        testECUnifiedTestVector2();
     }
 
     public static void main(

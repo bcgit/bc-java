@@ -44,6 +44,9 @@ public class EC
             provider.addAttributes("KeyAgreement.ECCDH", generalEcAttributes);
             provider.addAlgorithm("KeyAgreement.ECCDH", PREFIX + "KeyAgreementSpi$DHC");
 
+            provider.addAttributes("KeyAgreement.ECCDHE", generalEcAttributes);
+            provider.addAlgorithm("KeyAgreement.ECCDHE", PREFIX + "KeyAgreementSpi$DHCE");
+
             provider.addAlgorithm("KeyAgreement.ECDHWITHSHA1KDF", PREFIX + "KeyAgreementSpi$DHwithSHA1KDFAndSharedInfo");
             provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA1KDF", PREFIX + "KeyAgreementSpi$CDHwithSHA1KDFAndSharedInfo");
 
@@ -78,6 +81,12 @@ public class EC
             provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA256CKDF", PREFIX + "KeyAgreementSpi$DHwithSHA256CKDF");
             provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA384CKDF", PREFIX + "KeyAgreementSpi$DHwithSHA384CKDF");
             provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA512CKDF", PREFIX + "KeyAgreementSpi$DHwithSHA512CKDF");
+
+            provider.addAlgorithm("KeyAgreement.ECCDHEWITHSHA1CKDF", PREFIX + "KeyAgreementSpi$DHEwithSHA1CKDF");
+            provider.addAlgorithm("KeyAgreement.ECCDHEWITHSHA224CKDF", PREFIX + "KeyAgreementSpi$DHEwithSHA224CKDF");
+            provider.addAlgorithm("KeyAgreement.ECCDHEWITHSHA256CKDF", PREFIX + "KeyAgreementSpi$DHEwithSHA256CKDF");
+            provider.addAlgorithm("KeyAgreement.ECCDHEWITHSHA384CKDF", PREFIX + "KeyAgreementSpi$DHEwithSHA384CKDF");
+            provider.addAlgorithm("KeyAgreement.ECCDHEWITHSHA512CKDF", PREFIX + "KeyAgreementSpi$DHEwithSHA512CKDF");
 
             registerOid(provider, X9ObjectIdentifiers.id_ecPublicKey, "EC", new KeyFactorySpi.EC());
 
