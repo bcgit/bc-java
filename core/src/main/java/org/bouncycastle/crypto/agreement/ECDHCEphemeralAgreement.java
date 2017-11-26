@@ -3,35 +3,35 @@ package org.bouncycastle.crypto.agreement;
 import java.math.BigInteger;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.params.CombinedPrivateParameters;
-import org.bouncycastle.crypto.params.CombinedPublicParameters;
+import org.bouncycastle.crypto.params.ECDHEPrivateParameters;
+import org.bouncycastle.crypto.params.ECDHEPublicParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
 /**
- * FFC static/ephemeral agreement as described in NIST SP 800-56A.
+ * EC static/ephemeral agreement as described in NIST SP 800-56A using EC co-factor Diffie-Hellman.
  */
-public class CombinedAgreement
+public class ECDHCEphemeralAgreement
 {
-    private CombinedPrivateParameters privParams;
+    private ECDHEPrivateParameters privParams;
 
     public void init(
         CipherParameters key)
     {
-        this.privParams = (CombinedPrivateParameters)key;
+        this.privParams = (ECDHEPrivateParameters)key;
     }
 
     public int getFieldSize()
     {
-        return (privParams.getStaticPrivateKey().getParameters().getP().bitLength() + 7) / 8;
+        return (privParams.getStaticPrivateKey().getParameters().getCurve().getFieldSize() + 7) / 8;
     }
 
     public byte[] calculateAgreement(CipherParameters pubKey)
     {
-        CombinedPublicParameters pubParams = (CombinedPublicParameters)pubKey;
+        ECDHEPublicParameters pubParams = (ECDHEPublicParameters)pubKey;
 
-        DHBasicAgreement sAgree = new DHBasicAgreement();
-        DHBasicAgreement eAgree = new DHBasicAgreement();
+        ECDHCBasicAgreement sAgree = new ECDHCBasicAgreement();
+        ECDHCBasicAgreement eAgree = new ECDHCBasicAgreement();
 
         sAgree.init(privParams.getStaticPrivateKey());
 
