@@ -277,9 +277,17 @@ public class ASN1GeneralizedTime
             {
                 dateF = new SimpleDateFormat("yyyyMMddHHmmss.SSS'Z'");
             }
-            else
+            else if (hasSeconds())
             {
                 dateF = new SimpleDateFormat("yyyyMMddHHmmss'Z'");
+            }
+            else if (hasMinutes())
+            {
+                dateF = new SimpleDateFormat("yyyyMMddHHmm'Z'");
+            }
+            else
+            {
+                dateF = new SimpleDateFormat("yyyyMMddHH'Z'");
             }
 
             dateF.setTimeZone(new SimpleTimeZone(0, "Z"));
@@ -291,9 +299,17 @@ public class ASN1GeneralizedTime
             {
                 dateF = new SimpleDateFormat("yyyyMMddHHmmss.SSSz");
             }
-            else
+            else if (hasSeconds())
             {
                 dateF = new SimpleDateFormat("yyyyMMddHHmmssz");
+            }
+            else if (hasMinutes())
+            {
+                dateF = new SimpleDateFormat("yyyyMMddHHmmz");
+            }
+            else
+            {
+                dateF = new SimpleDateFormat("yyyyMMddHHz");
             }
 
             dateF.setTimeZone(new SimpleTimeZone(0, "Z"));
@@ -304,9 +320,17 @@ public class ASN1GeneralizedTime
             {
                 dateF = new SimpleDateFormat("yyyyMMddHHmmss.SSS");
             }
-            else
+            else if (hasSeconds())
             {
                 dateF = new SimpleDateFormat("yyyyMMddHHmmss");
+            }
+            else if (hasMinutes())
+            {
+                dateF = new SimpleDateFormat("yyyyMMddHHmm");
+            }
+            else
+            {
+                dateF = new SimpleDateFormat("yyyyMMddHH");
             }
 
             dateF.setTimeZone(new SimpleTimeZone(0, TimeZone.getDefault().getID()));
@@ -359,6 +383,16 @@ public class ASN1GeneralizedTime
             }
         }
         return false;
+    }
+
+    private boolean hasSeconds()
+    {
+        return time.length >= 14 && time[12] >= '0' && time[12] <= '9' && time[13] >= '0' && time[13] <= '9';
+    }
+
+    private boolean hasMinutes()
+    {
+        return time.length >= 12 && time[10] >= '0' && time[10] <= '9' && time[11] >= '0' && time[11] <= '9';
     }
 
     boolean isConstructed()
