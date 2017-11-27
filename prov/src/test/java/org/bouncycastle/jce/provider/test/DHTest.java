@@ -39,7 +39,7 @@ import javax.crypto.spec.DHPublicKeySpec;
 
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
-import org.bouncycastle.jcajce.spec.DHEParameterSpec;
+import org.bouncycastle.jcajce.spec.DHUParameterSpec;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
@@ -750,13 +750,13 @@ public class DHTest
             ecKeyFact.generatePrivate(new ECPrivateKeySpec(
                 new BigInteger("ab40d67f59ba7265d8ad33ade8f704d13a7ba2298b69172a7cd02515", 16), ecSpec)));
 
-        byte[] x = calculateUnifiedAgreement("ECCDHEwithSHA224CKDF", "AES[128]/CCM[128]", U1, U2, V1, V2,
+        byte[] x = calculateUnifiedAgreement("ECCDHUwithSHA224CKDF", "AES[128]/CCM[128]", U1, U2, V1, V2,
             Hex.decode("a1b2c3d4e54341565369643dba868da77897b6552f6f767ad873b232aa4a810a91863ec3dc86db53359a772dd76933"));
 
         if (x == null
             || !areEqual(Hex.decode("63b7ba5699927cb08e058b76af7fc0b0"), x))
         {
-            fail("EC combined Test Vector #1 agreement failed, got: " + Hex.toHexString(x));
+            fail("EC unified Test Vector #1 agreement failed, got: " + Hex.toHexString(x));
         }
     }
 
@@ -799,13 +799,56 @@ public class DHTest
             ecKeyFact.generatePrivate(new ECPrivateKeySpec(
                 new BigInteger("d6e11d5d3b85b201b8f4c12dadfad3000e267961a806a0658a2b859d44389599", 16), ecSpec)));
 
-        byte[] x = calculateUnifiedAgreement("ECCDHEwithSHA256CKDF", "AES[128]/CCM[128]",
+        byte[] x = calculateUnifiedAgreement("ECCDHUwithSHA256CKDF", "AES[128]/CCM[128]",
             U1, U2, V1, V2, Hex.decode("a1b2c3d4e54341565369649018558dc958160b4b1d240d06ea07c6f321a752496c1a3ff45cbb4b43507c6fe1997d1d"));
 
         if (x == null
             || !areEqual(Hex.decode("221d252072d6f85b8298eab6fc38634e"), x))
         {
-            fail("EC combined Test Vector #2 agreement failed");
+            fail("EC unified Test Vector #2 agreement failed");
+        }
+    }
+
+    private void testECUnifiedTestVector3()
+        throws Exception
+    {
+        // Test Vector from NIST sample data - One pass unified.
+
+        ECNamedCurveParameterSpec namedSpec = ECNamedCurveTable.getParameterSpec("P-224");
+        KeyFactory ecKeyFact = KeyFactory.getInstance("EC", "BC");
+
+        EllipticCurve ecCurve = new EllipticCurve(
+            new ECFieldFp(namedSpec.getCurve().getField().getCharacteristic()),
+            namedSpec.getCurve().getA().toBigInteger(), namedSpec.getCurve().getB().toBigInteger());
+        ECParameterSpec ecSpec = new ECParameterSpec(ecCurve,
+            new ECPoint(namedSpec.getG().getAffineXCoord().toBigInteger(), namedSpec.getG().getAffineYCoord().toBigInteger()),
+            namedSpec.getN(), namedSpec.getH().intValue());
+
+        KeyPair U1 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("04030f136fa7fef90d185655ed1c6d46bacdb82001714e682cc80ca6b2d7c62e2f2e19d11755dba4aafd7e1ee5fda3e5f4d0af9a3ad773c38a")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("6fc464c741f52b2a2e4cde35673b87fdd0f52caf4e716230b11570ba", 16), ecSpec)));
+
+        KeyPair V1 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("048f87f5f8a632c9a3348ea85b596c01c12ca29ca71583dcdc27ff9766351416a707b95fae67d56be5119b460a446b6a02db20a13bbc8ed13b")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("f5cb57a08a6949d3f2c2cc02e7c2252cecb3ebb8b3572943ceb407c7", 16), ecSpec)));
+
+        KeyPair V2 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("046fcc7d01f905b279e9413645d24cc30d293b98b0ea7bfe87124e4951eba04a74817f596a67c0bfe3b4f4cee99537a2ac1c6470dd006be8ca")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("505b6f372725e293cda07bf0dd14dabe2faf0edaa5ab1c7d187a6138", 16), ecSpec)));
+
+        byte[] x = calculateUnifiedAgreement("ECCDHUwithSHA224CKDF", "AES[128]/CCM[128]", U1, U1, V1, V2,
+            Hex.decode("a1b2c3d4e5434156536964b62d3197031c27af0e3b45228a8768efcc0b39a375f8f61852f8765b80c067eed4e4db30"));
+
+        if (x == null
+            || !areEqual(Hex.decode("0c96fa268b89cf664392621ad5e174a6"), x))
+        {
+            fail("EC unified Test Vector #3 agreement failed, got: " + Hex.toHexString(x));
         }
     }
 
@@ -816,21 +859,21 @@ public class DHTest
         KeyPair U2,
         KeyPair V1,
         KeyPair V2,
-        byte[]  oi)
+        byte[] oi)
         throws Exception
     {
         KeyAgreement u = KeyAgreement.getInstance(alg, "BC");
 
-        u.init(U1.getPrivate(), new DHEParameterSpec(U2, V2.getPublic(), oi));
+        u.init(U1.getPrivate(), new DHUParameterSpec(U2, V2.getPublic(), oi));
 
         u.doPhase(V1.getPublic(), true);
 
         SecretKey uk = u.generateSecret(keyAlg);
         byte[] ux = uk.getEncoded();
-        
+
         KeyAgreement v = KeyAgreement.getInstance(alg, "BC");
 
-        v.init(V1.getPrivate(), new DHEParameterSpec(V2, U2.getPublic(), oi));
+        v.init(V1.getPrivate(), new DHUParameterSpec(V2, U2.getPublic(), oi));
 
         v.doPhase(U1.getPublic(), true);
 
@@ -1259,6 +1302,7 @@ public class DHTest
 
         testECUnifiedTestVector1();
         testECUnifiedTestVector2();
+        testECUnifiedTestVector3();
     }
 
     public static void main(

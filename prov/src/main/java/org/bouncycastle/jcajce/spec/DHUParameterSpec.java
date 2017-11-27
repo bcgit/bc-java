@@ -8,9 +8,9 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.util.Arrays;
 
 /**
- * Parameter spec to provide Diffie-Hellman ephemeral keys and user keying material.
+ * Parameter spec to provide Diffie-Hellman Unified model keys and user keying material.
  */
-public class DHEParameterSpec
+public class DHUParameterSpec
     implements AlgorithmParameterSpec
 {
     private final PublicKey ephemeralPublicKey;
@@ -18,7 +18,7 @@ public class DHEParameterSpec
     private final PublicKey otherPartyEphemeralKey;
     private final byte[] userKeyingMaterial;
 
-    public DHEParameterSpec(PublicKey ephemeralPublicKey, PrivateKey ephemeralPrivateKey, PublicKey otherPartyEphemeralKey, byte[] userKeyingMaterial)
+    public DHUParameterSpec(PublicKey ephemeralPublicKey, PrivateKey ephemeralPrivateKey, PublicKey otherPartyEphemeralKey, byte[] userKeyingMaterial)
     {
         this.ephemeralPublicKey = ephemeralPublicKey;
         this.ephemeralPrivateKey = ephemeralPrivateKey;
@@ -26,27 +26,27 @@ public class DHEParameterSpec
         this.userKeyingMaterial = Arrays.clone(userKeyingMaterial);
     }
 
-    public DHEParameterSpec(PublicKey ephemeralPublicKey, PrivateKey ephemeralPrivateKey, PublicKey otherPartyEphemeralKey)
+    public DHUParameterSpec(PublicKey ephemeralPublicKey, PrivateKey ephemeralPrivateKey, PublicKey otherPartyEphemeralKey)
     {
         this(ephemeralPublicKey, ephemeralPrivateKey, otherPartyEphemeralKey, null);
     }
 
-    public DHEParameterSpec(KeyPair ephemeralKeyPair, PublicKey otherPartyEphemeralKey, byte[] userKeyingMaterial)
+    public DHUParameterSpec(KeyPair ephemeralKeyPair, PublicKey otherPartyEphemeralKey, byte[] userKeyingMaterial)
     {
         this(ephemeralKeyPair.getPublic(), ephemeralKeyPair.getPrivate(), otherPartyEphemeralKey, userKeyingMaterial);
     }
 
-    public DHEParameterSpec(PrivateKey ephemeralPrivateKey, PublicKey otherPartyEphemeralKey, byte[] userKeyingMaterial)
+    public DHUParameterSpec(PrivateKey ephemeralPrivateKey, PublicKey otherPartyEphemeralKey, byte[] userKeyingMaterial)
     {
         this(null, ephemeralPrivateKey, otherPartyEphemeralKey, userKeyingMaterial);
     }
 
-    public DHEParameterSpec(KeyPair ephemeralKeyPair, PublicKey otherPartyEphemeralKey)
+    public DHUParameterSpec(KeyPair ephemeralKeyPair, PublicKey otherPartyEphemeralKey)
     {
         this(ephemeralKeyPair.getPublic(), ephemeralKeyPair.getPrivate(), otherPartyEphemeralKey, null);
     }
 
-    public DHEParameterSpec(PrivateKey ephemeralPrivateKey, PublicKey otherPartyEphemeralKey)
+    public DHUParameterSpec(PrivateKey ephemeralPrivateKey, PublicKey otherPartyEphemeralKey)
     {
         this(null, ephemeralPrivateKey, otherPartyEphemeralKey, null);
     }
