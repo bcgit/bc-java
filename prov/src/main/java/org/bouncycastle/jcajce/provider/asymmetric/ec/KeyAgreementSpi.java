@@ -15,12 +15,12 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.agreement.ECDHCBasicAgreement;
-import org.bouncycastle.crypto.agreement.ECDHCEphemeralAgreement;
+import org.bouncycastle.crypto.agreement.ECDHCUnifiedAgreement;
 import org.bouncycastle.crypto.agreement.ECMQVBasicAgreement;
 import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
-import org.bouncycastle.crypto.params.ECDHEPrivateParameters;
-import org.bouncycastle.crypto.params.ECDHEPublicParameters;
+import org.bouncycastle.crypto.params.ECDHUPrivateParameters;
+import org.bouncycastle.crypto.params.ECDHUPublicParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
@@ -29,7 +29,7 @@ import org.bouncycastle.crypto.params.MQVPublicParameters;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAgreementSpi;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
-import org.bouncycastle.jcajce.spec.DHEParameterSpec;
+import org.bouncycastle.jcajce.spec.DHUParameterSpec;
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
@@ -55,7 +55,7 @@ public class KeyAgreementSpi
     private Object agreement;
 
     private MQVParameterSpec mqvParameters;
-    private DHEParameterSpec dheParameters;
+    private DHUParameterSpec dheParameters;
     private byte[] result;
 
     protected KeyAgreementSpi(
@@ -71,7 +71,7 @@ public class KeyAgreementSpi
 
     protected KeyAgreementSpi(
         String kaAlgorithm,
-        ECDHCEphemeralAgreement agreement,
+        ECDHCUnifiedAgreement agreement,
         DerivationFunction kdf)
     {
         super(kaAlgorithm, kdf);
@@ -124,14 +124,14 @@ public class KeyAgreementSpi
                 pubKey = new MQVPublicParameters(staticKey, ephemKey);
             }
         }
-        else if (agreement instanceof ECDHCEphemeralAgreement)
+        else if (agreement instanceof ECDHCUnifiedAgreement)
         {
             ECPublicKeyParameters staticKey = (ECPublicKeyParameters)
                 ECUtils.generatePublicKeyParameter((PublicKey)key);
             ECPublicKeyParameters ephemKey = (ECPublicKeyParameters)
                 ECUtils.generatePublicKeyParameter(dheParameters.getOtherPartyEphemeralKey());
 
-            pubKey = new ECDHEPublicParameters(staticKey, ephemKey);
+            pubKey = new ECDHUPublicParameters(staticKey, ephemKey);
         }
         else
         {
@@ -152,7 +152,7 @@ public class KeyAgreementSpi
             }
             else
             {
-                result = ((ECDHCEphemeralAgreement)agreement).calculateAgreement(pubKey);
+                result = ((ECDHCUnifiedAgreement)agreement).calculateAgreement(pubKey);
             }
         }
         catch (final Exception e)
@@ -176,7 +176,7 @@ public class KeyAgreementSpi
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
         if (params != null &&
-            !(params instanceof MQVParameterSpec || params instanceof UserKeyingMaterialSpec || params instanceof DHEParameterSpec))
+            !(params instanceof MQVParameterSpec || params instanceof UserKeyingMaterialSpec || params instanceof DHUParameterSpec))
         {
             throw new InvalidAlgorithmParameterException("No algorithm parameters supported");
         }
@@ -248,14 +248,14 @@ public class KeyAgreementSpi
 
             ((ECMQVBasicAgreement)agreement).init(localParams);
         }
-        else if (parameterSpec instanceof DHEParameterSpec)
+        else if (parameterSpec instanceof DHUParameterSpec)
         {
-            if (!(agreement instanceof ECDHCEphemeralAgreement))
+            if (!(agreement instanceof ECDHCUnifiedAgreement))
             {
                 throw new InvalidKeyException(kaAlgorithm + " key agreement cannot be used with "
-                    + getSimpleName(DHEParameterSpec.class));
+                    + getSimpleName(DHUParameterSpec.class));
             }
-            DHEParameterSpec dheParameterSpec = (DHEParameterSpec)parameterSpec;
+            DHUParameterSpec dheParameterSpec = (DHUParameterSpec)parameterSpec;
             ECPrivateKeyParameters staticPrivKey;
             ECPrivateKeyParameters ephemPrivKey;
             ECPublicKeyParameters ephemPubKey;
@@ -274,10 +274,10 @@ public class KeyAgreementSpi
             dheParameters = dheParameterSpec;
             ukmParameters = dheParameterSpec.getUserKeyingMaterial();
 
-            ECDHEPrivateParameters localParams = new ECDHEPrivateParameters(staticPrivKey, ephemPrivKey, ephemPubKey);
+            ECDHUPrivateParameters localParams = new ECDHUPrivateParameters(staticPrivKey, ephemPrivKey, ephemPubKey);
             this.parameters = staticPrivKey.getParameters();
 
-            ((ECDHCEphemeralAgreement)agreement).init(localParams);
+            ((ECDHCUnifiedAgreement)agreement).init(localParams);
         }
         else
         {
@@ -333,12 +333,12 @@ public class KeyAgreementSpi
         }
     }
 
-    public static class DHCE
+    public static class DHUC
         extends KeyAgreementSpi
     {
-        public DHCE()
+        public DHUC()
         {
-            super("ECCDHE", new ECDHCEphemeralAgreement(), null);
+            super("ECCDHU", new ECDHCUnifiedAgreement(), null);
         }
     }
 
@@ -563,52 +563,52 @@ public class KeyAgreementSpi
     {
         public MQVwithSHA512CKDF()
         {
-            super("ECDHEwithSHA512CKDF", new ECMQVBasicAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA512()));
+            super("ECDHUwithSHA512CKDF", new ECMQVBasicAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA512()));
         }
     }
 
-    public static class DHEwithSHA1CKDF
+    public static class DHUwithSHA1CKDF
         extends KeyAgreementSpi
     {
-        public DHEwithSHA1CKDF()
+        public DHUwithSHA1CKDF()
         {
-            super("ECCDHEwithSHA1CKDF", new ECDHCEphemeralAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA1()));
+            super("ECCDHUwithSHA1CKDF", new ECDHCUnifiedAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA1()));
         }
     }
 
-    public static class DHEwithSHA224CKDF
+    public static class DHUwithSHA224CKDF
         extends KeyAgreementSpi
     {
-        public DHEwithSHA224CKDF()
+        public DHUwithSHA224CKDF()
         {
-            super("ECCDHEwithSHA224CKDF", new ECDHCEphemeralAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA224()));
+            super("ECCDHUwithSHA224CKDF", new ECDHCUnifiedAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA224()));
         }
     }
 
-    public static class DHEwithSHA256CKDF
+    public static class DHUwithSHA256CKDF
         extends KeyAgreementSpi
     {
-        public DHEwithSHA256CKDF()
+        public DHUwithSHA256CKDF()
         {
-            super("ECCDHEwithSHA256CKDF", new ECDHCEphemeralAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA256()));
+            super("ECCDHUwithSHA256CKDF", new ECDHCUnifiedAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA256()));
         }
     }
 
-    public static class DHEwithSHA384CKDF
+    public static class DHUwithSHA384CKDF
         extends KeyAgreementSpi
     {
-        public DHEwithSHA384CKDF()
+        public DHUwithSHA384CKDF()
         {
-            super("ECCDHEwithSHA384CKDF", new ECDHCEphemeralAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA384()));
+            super("ECCDHUwithSHA384CKDF", new ECDHCUnifiedAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA384()));
         }
     }
 
-    public static class DHEwithSHA512CKDF
+    public static class DHUwithSHA512CKDF
         extends KeyAgreementSpi
     {
-        public DHEwithSHA512CKDF()
+        public DHUwithSHA512CKDF()
         {
-            super("ECCDHEwithSHA512CKDF", new ECDHCEphemeralAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA512()));
+            super("ECCDHUwithSHA512CKDF", new ECDHCUnifiedAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA512()));
         }
     }
 }
