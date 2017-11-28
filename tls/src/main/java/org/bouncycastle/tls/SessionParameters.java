@@ -21,7 +21,6 @@ public final class SessionParameters
         private byte[] pskIdentity = null;
         private byte[] srpIdentity = null;
         private byte[] encodedServerExtensions = null;
-        private NegotiatedTokenBinding negotiatedTokenBinding=null;
 
         public Builder()
         {
