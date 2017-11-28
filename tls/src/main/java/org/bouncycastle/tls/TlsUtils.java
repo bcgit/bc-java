@@ -450,6 +450,21 @@ public class TlsUtils
         return uints;
     }
 
+    public static int[] decodeUint8ArrayWithUint16Length(byte[] buf) throws IOException
+    {
+        if (buf == null)
+        {
+            throw new IllegalArgumentException("'buf' cannot be null");
+        }
+
+        int[] uints = new int[buf.length];
+        for (int i = 0; i < buf.length; ++i)
+        {
+            uints[i] = readUint8(buf, i );
+        }
+        return uints;
+    }
+
     public static byte[] encodeOpaque8(byte[] buf)
         throws IOException
     {

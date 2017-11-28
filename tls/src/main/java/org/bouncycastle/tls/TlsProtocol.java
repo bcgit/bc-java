@@ -1189,6 +1189,19 @@ public abstract class TlsProtocol
         raiseAlertWarning(AlertDescription.no_renegotiation, "Renegotiation not supported");
     }
 
+    protected NegotiatedTokenBinding processTokenBindingExtension(Hashtable serverExtensions) throws IOException {
+        NegotiatedTokenBinding tokenBinding = TlsExtensionsUtils.getTokenBindingExtension(serverExtensions);
+        if (tokenBinding != null) {
+            if (tokenBinding.getMajorProtocolVerison() > TokenBindingExtension.getMajorProtocolVerison()) {
+                throw new TlsFatalAlert(AlertDescription.unsupported_extension);
+            }
+            if (tokenBinding.getMinorProtocolVerison() > TokenBindingExtension.getMinorProtocolVerison()) {
+                throw new TlsFatalAlert(AlertDescription.unsupported_extension);
+            }
+        }
+        return tokenBinding;
+    }
+
     /**
      * Make sure the InputStream 'buf' now empty. Fail otherwise.
      *
