@@ -183,6 +183,11 @@ public class NamedGroup
         }
     }
 
+    public static int getMaximumChar2CurveBits()
+    {
+        return 571;
+    }
+
     public static int getMaximumCurveBits()
     {
         return 571;
@@ -191,6 +196,11 @@ public class NamedGroup
     public static int getMaximumFiniteFieldBits()
     {
         return 8192;
+    }
+
+    public static int getMaximumPrimeCurveBits()
+    {
+        return 521;
     }
 
     public static String getName(int namedGroup)
