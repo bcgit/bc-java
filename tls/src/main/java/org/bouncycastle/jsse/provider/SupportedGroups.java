@@ -16,7 +16,12 @@ abstract class SupportedGroups
 
     private static final String PROPERTY_NAME = "jdk.tls.namedGroups";
 
-    private static final int[] provJdkTlsNamedGroups = getJdkTlsNamedGroups();
+    private static final boolean provDisableChar2 = PropertyUtils.getBooleanSystemProperty("org.bouncycastle.jsse.ec.disableChar2", false);
+    private static final int[] provJdkTlsNamedGroups = getJdkTlsNamedGroups(provDisableChar2);
+
+    /*
+     * IMPORTANT: This list is currently assumed by the code to not contain any char-2 curves.
+     */
     private static final int[] defaultClientNamedGroups = new int[]{
         NamedGroup.secp256r1,
         NamedGroup.secp384r1,
@@ -31,7 +36,7 @@ abstract class SupportedGroups
         return minimumCurveBits <= 256 ? NamedGroup.secp256r1
             :  minimumCurveBits <= 384 ? NamedGroup.secp384r1
             :  minimumCurveBits <= 521 ? NamedGroup.secp521r1
-            :  minimumCurveBits <= 571 ? NamedGroup.sect571r1
+            :  (!provDisableChar2 && minimumCurveBits <= 571) ? NamedGroup.sect571r1
             :  -1;
     }
 
@@ -52,9 +57,9 @@ abstract class SupportedGroups
             :  -1;
     }
 
-    private static int[] getJdkTlsNamedGroups()
+    private static int[] getJdkTlsNamedGroups(boolean provDisableChar2)
     {
-        String prop = PropertyUtils.getStringSystemProperty(PROPERTY_NAME);
+        String prop = PropertyUtils.getStringSystemProperty("jdk.tls.namedGroups");
         if (prop == null)
         {
             return null;
@@ -74,6 +79,10 @@ abstract class SupportedGroups
             {
                 LOG.warning("'" + PROPERTY_NAME + "' contains unrecognised NamedGroup: " + name);
             }
+            else if (provDisableChar2 && NamedGroup.isChar2Curve(namedGroup))
+            {
+                LOG.warning("'" + PROPERTY_NAME + "' contains disabled characteristic-2 curve: " + name);
+            }
             else
             {
                 result[count++] = namedGroup;
@@ -85,7 +94,7 @@ abstract class SupportedGroups
         }
         if (result.length < 1)
         {
-            LOG.severe("'" + PROPERTY_NAME + "' contains no recognised NamedGroup values");
+            LOG.severe("'" + PROPERTY_NAME + "' contained no usable NamedGroup values");
         }
         return result;
     }
@@ -112,7 +121,8 @@ abstract class SupportedGroups
     static int getServerDefaultCurve(boolean isFips, int minimumCurveBits)
     {
         /*
-         * If supported groups wasn't explicitly configured, servers support all available curves.
+         * If supported groups wasn't explicitly configured, servers support all available curves
+         * (modulo 'provDisableF2m').
          */
         int[] serverSupportedGroups = provJdkTlsNamedGroups;
 
@@ -174,7 +184,8 @@ abstract class SupportedGroups
     static int getServerMaximumNegotiableCurveBits(boolean isFips, int[] clientSupportedGroups)
     {
         /*
-         * If supported groups wasn't explicitly configured, servers support all available curves.
+         * If supported groups wasn't explicitly configured, servers support all available curves
+         * (modulo 'provDisableF2m').
          */
         int[] serverSupportedGroups = provJdkTlsNamedGroups;
 
@@ -187,9 +198,9 @@ abstract class SupportedGroups
                  * extensions. In this case, the server is free to choose any one of the elliptic curves
                  * or point formats [...].
                  */
-                return isFips
-                    ?  FipsUtils.getFipsMaximumCurveBits()
-                    :  NamedGroup.getMaximumCurveBits();
+                return isFips           ?   FipsUtils.getFipsMaximumCurveBits()
+                    :  provDisableChar2 ?   NamedGroup.getMaximumPrimeCurveBits()
+                    :                       NamedGroup.getMaximumCurveBits();
             }
 
             int maxBits = 0;
@@ -210,6 +221,11 @@ abstract class SupportedGroups
             for (int i = 0; i < clientSupportedGroups.length; ++i)
             {
                 int namedGroup = clientSupportedGroups[i];
+
+                if (provDisableChar2 && NamedGroup.isChar2Curve(namedGroup))
+                {
+                    continue;
+                }
 
                 if (serverSupportedGroups == null || Arrays.contains(serverSupportedGroups, namedGroup))
                 {
@@ -273,13 +289,19 @@ abstract class SupportedGroups
     static int getServerSelectedCurve(boolean isFips, int minimumCurveBits, int[] clientSupportedGroups)
     {
         /*
-         * If supported groups wasn't explicitly configured, servers support all available curves.
+         * If supported groups wasn't explicitly configured, servers support all available curves
+         * (modulo 'provDisableF2m').
          */
         int[] serverSupportedGroups = provJdkTlsNamedGroups;
 
         for (int i = 0; i < clientSupportedGroups.length; ++i)
         {
             int namedGroup = clientSupportedGroups[i];
+
+            if (provDisableChar2 && NamedGroup.isChar2Curve(namedGroup))
+            {
+                continue;
+            }
 
             if (serverSupportedGroups == null || Arrays.contains(serverSupportedGroups, namedGroup))
             {

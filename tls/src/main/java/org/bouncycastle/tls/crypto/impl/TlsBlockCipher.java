@@ -123,17 +123,20 @@ public class TlsBlockCipher
             ciphertextLimit += blockSize;
         }
 
-        // Leave room for the MAC, and require block-alignment
-        // Minimum 1 byte of padding
+        int maxPadding = useExtraPadding ? 255 : blockSize;
+
+        // Leave room for the MAC and (block-aligning) padding
         if (encryptThenMAC)
         {
-            ciphertextLimit += blockSize - (ciphertextLimit % blockSize);
+            ciphertextLimit += maxPadding;
+            ciphertextLimit -= (ciphertextLimit % blockSize);
             ciphertextLimit += macSize;
         }
         else
         {
             ciphertextLimit += macSize;
-            ciphertextLimit += blockSize - (ciphertextLimit % blockSize);
+            ciphertextLimit += maxPadding;
+            ciphertextLimit -= (ciphertextLimit % blockSize);
         }
 
         return ciphertextLimit;
