@@ -44,7 +44,7 @@ import org.bouncycastle.util.Strings;
 public class ASN1GeneralizedTime
     extends ASN1Primitive
 {
-    private byte[] time;
+    protected byte[] time;
 
     /**
      * return a generalized time from the passed in object
@@ -370,7 +370,7 @@ public class ASN1GeneralizedTime
         return dateF.parse(d);
     }
 
-    private boolean hasFractionalSeconds()
+    protected boolean hasFractionalSeconds()
     {
         for (int i = 0; i != time.length; i++)
         {
@@ -385,14 +385,19 @@ public class ASN1GeneralizedTime
         return false;
     }
 
-    private boolean hasSeconds()
+    protected boolean hasSeconds()
     {
-        return time.length >= 14 && time[12] >= '0' && time[12] <= '9' && time[13] >= '0' && time[13] <= '9';
+        return isDigit(12) && isDigit(13);
     }
 
-    private boolean hasMinutes()
+    protected boolean hasMinutes()
     {
-        return time.length >= 12 && time[10] >= '0' && time[10] <= '9' && time[11] >= '0' && time[11] <= '9';
+        return isDigit(10) && isDigit(11);
+    }
+
+    private boolean isDigit(int pos)
+    {
+        return time.length > pos && time[pos] >= '0' && time[pos] <= '9';
     }
 
     boolean isConstructed()
@@ -412,6 +417,11 @@ public class ASN1GeneralizedTime
         throws IOException
     {
         out.writeEncoded(BERTags.GENERALIZED_TIME, time);
+    }
+
+    ASN1Primitive toDERObject()
+    {
+        return new DERGeneralizedTime(time);
     }
 
     boolean asn1Equals(
