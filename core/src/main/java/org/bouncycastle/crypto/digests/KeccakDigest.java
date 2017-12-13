@@ -12,70 +12,34 @@ import org.bouncycastle.util.Pack;
 public class KeccakDigest
     implements ExtendedDigest
 {
-    private static long[] KeccakRoundConstants = keccakInitializeRoundConstants();
+    private static long[] KeccakRoundConstants = new long[]{
+            0x0000000000000001L,
+            0x0000000000008082L,
+            0x800000000000808aL,
+            0x8000000080008000L,
+            0x000000000000808bL,
+            0x0000000080000001L,
+            0x8000000080008081L,
+            0x8000000000008009L,
+            0x000000000000008aL,
+            0x0000000000000088L,
+            0x0000000080008009L,
+            0x000000008000000aL,
+            0x000000008000808bL,
+            0x800000000000008bL,
+            0x8000000000008089L,
+            0x8000000000008003L,
+            0x8000000000008002L,
+            0x8000000000000080L,
+            0x000000000000800aL,
+            0x800000008000000aL,
+            0x8000000080008081L,
+            0x8000000000008080L,
+            0x0000000080000001L,
+            0x8000000080008008L};
 
-    private static int[] KeccakRhoOffsets = keccakInitializeRhoOffsets();
-
-    private static long[] keccakInitializeRoundConstants()
-    {
-        long[] keccakRoundConstants = new long[24];
-        byte[] LFSRstate = new byte[1];
-
-        LFSRstate[0] = 0x01;
-        int i, j, bitPosition;
-
-        for (i = 0; i < 24; i++)
-        {
-            keccakRoundConstants[i] = 0;
-            for (j = 0; j < 7; j++)
-            {
-                bitPosition = (1 << j) - 1;
-                if (LFSR86540(LFSRstate))
-                {
-                    keccakRoundConstants[i] ^= 1L << bitPosition;
-                }
-            }
-        }
-
-        return keccakRoundConstants;
-    }
-
-    private static boolean LFSR86540(byte[] LFSR)
-    {
-        boolean result = (((LFSR[0]) & 0x01) != 0);
-        if (((LFSR[0]) & 0x80) != 0)
-        {
-            LFSR[0] = (byte)(((LFSR[0]) << 1) ^ 0x71);
-        }
-        else
-        {
-            LFSR[0] <<= 1;
-        }
-
-        return result;
-    }
-
-    private static int[] keccakInitializeRhoOffsets()
-    {
-        int[] keccakRhoOffsets = new int[25];
-        int x, y, t, newX, newY;
-
-        keccakRhoOffsets[(((0) % 5) + 5 * ((0) % 5))] = 0;
-        x = 1;
-        y = 0;
-        for (t = 0; t < 24; t++)
-        {
-            keccakRhoOffsets[(((x) % 5) + 5 * ((y) % 5))] = ((t + 1) * (t + 2) / 2) % 64;
-            newX = (0 * x + 1 * y) % 5;
-            newY = (2 * x + 3 * y) % 5;
-            x = newX;
-            y = newY;
-        }
-        return keccakRhoOffsets;
-    }
-
-    protected long[] state = new long[(1600 / 64)];
-    protected byte[] dataQueue = new byte[(1536 / 8)];
+    protected long[] state = new long[25];
+    protected byte[] dataQueue = new byte[192];
     protected int rate;
     protected int bitsInQueue;
     protected int fixedOutputLength;
@@ -365,7 +329,8 @@ public class KeccakDigest
             chi(state);
 //            displayIntermediateValues.displayStateAs64bitWords(3, "After chi", state);
 
-            iota(state, i);
+            state[0] ^= KeccakRoundConstants[i];
+//            iota(state, i);
 //            displayIntermediateValues.displayStateAs64bitWords(3, "After iota", state);
         }
     }
@@ -384,7 +349,7 @@ public class KeccakDigest
         long C4 = A[4 + 0] ^ A[4 + 5] ^ A[4 + 10] ^ A[4 + 15] ^ A[4 + 20];
 
         long dX = leftRotate(C1, 1) ^ C4;
-                       
+
         A[0] ^= dX;
         A[5] ^= dX;
         A[10] ^= dX;
@@ -426,11 +391,30 @@ public class KeccakDigest
 
     private static void rho(long[] A)
     {
-        // KeccakRhoOffsets[0] == 0
-        for (int x = 1; x < 25; x++)
-        {
-            A[x] = leftRotate(A[x], KeccakRhoOffsets[x]);
-        }
+        A[1]  = A[ 1] <<  1 | A[ 1] >>> 63;
+        A[2]  = A[ 2] << 62 | A[ 2] >>>  2;
+        A[3]  = A[ 3] << 28 | A[ 3] >>> 36;
+        A[4]  = A[ 4] << 27 | A[ 4] >>> 37;
+        A[5]  = A[ 5] << 36 | A[ 5] >>> 28;
+        A[6]  = A[ 6] << 44 | A[ 6] >>> 20;
+        A[7]  = A[ 7] <<  6 | A[ 7] >>> 58;
+        A[8]  = A[ 8] << 55 | A[ 8] >>>  9;
+        A[9]  = A[ 9] << 20 | A[ 9] >>> 44;
+        A[10] = A[10] <<  3 | A[10] >>> 61;
+        A[11] = A[11] << 10 | A[11] >>> 54;
+        A[12] = A[12] << 43 | A[12] >>> 21;
+        A[13] = A[13] << 25 | A[13] >>> 39;
+        A[14] = A[14] << 39 | A[14] >>> 25;
+        A[15] = A[15] << 41 | A[15] >>> 23;
+        A[16] = A[16] << 45 | A[16] >>> 19;
+        A[17] = A[17] << 15 | A[17] >>> 49;
+        A[18] = A[18] << 21 | A[18] >>> 43;
+        A[19] = A[19] <<  8 | A[19] >>> 56;
+        A[20] = A[20] << 18 | A[20] >>> 46;
+        A[21] = A[21] <<  2 | A[21] >>> 62;
+        A[22] = A[22] << 61 | A[22] >>>  3;
+        A[23] = A[23] << 56 | A[23] >>>  8;
+        A[24] = A[24] << 14 | A[24] >>> 50;
     }
 
     private static void pi(long[] A)
@@ -464,26 +448,47 @@ public class KeccakDigest
 
     private static void chi(long[] A)
     {
-        long chiC0, chiC1, chiC2, chiC3, chiC4;
+        long chiC0, chiC1;
 
-        for (int yBy5 = 0; yBy5 < 25; yBy5 += 5)
-        {
-            chiC0 = A[0 + yBy5] ^ ((~A[(((0 + 1) % 5) + yBy5)]) & A[(((0 + 2) % 5) + yBy5)]);
-            chiC1 = A[1 + yBy5] ^ ((~A[(((1 + 1) % 5) + yBy5)]) & A[(((1 + 2) % 5) + yBy5)]);
-            chiC2 = A[2 + yBy5] ^ ((~A[(((2 + 1) % 5) + yBy5)]) & A[(((2 + 2) % 5) + yBy5)]);
-            chiC3 = A[3 + yBy5] ^ ((~A[(((3 + 1) % 5) + yBy5)]) & A[(((3 + 2) % 5) + yBy5)]);
-            chiC4 = A[4 + yBy5] ^ ((~A[(((4 + 1) % 5) + yBy5)]) & A[(((4 + 2) % 5) + yBy5)]);
+        chiC0 = A[0] ^ ((~A[1]) & A[2]);
+        chiC1 = A[1] ^ ((~A[2]) & A[3]);
+        A[2] ^= ((~A[3]) & A[4]);
+        A[3] ^= ((~A[4]) & A[0]);
+        A[4] ^= ((~A[0]) & A[1]);
+        A[0] = chiC0;
+        A[1] = chiC1;
 
-            A[0 + yBy5] = chiC0;
-            A[1 + yBy5] = chiC1;
-            A[2 + yBy5] = chiC2;
-            A[3 + yBy5] = chiC3;
-            A[4 + yBy5] = chiC4;
-        }
+        chiC0 = A[5] ^ ((~A[6]) & A[7]);
+        chiC1 = A[6] ^ ((~A[7]) & A[8]);
+        A[7] ^= ((~A[8]) & A[9]);
+        A[8] ^= ((~A[9]) & A[5]);
+        A[9] ^= ((~A[5]) & A[6]);
+        A[5] = chiC0;
+        A[6] = chiC1;
+
+        chiC0 = A[10] ^ ((~A[11]) & A[12]);
+        chiC1 = A[11] ^ ((~A[12]) & A[13]);
+        A[12] ^= ((~A[13]) & A[14]);
+        A[13] ^= ((~A[14]) & A[10]);
+        A[14] ^= ((~A[10]) & A[11]);
+        A[10] = chiC0;
+        A[11] = chiC1;
+
+        chiC0 = A[15] ^ ((~A[16]) & A[17]);
+        chiC1 = A[16] ^ ((~A[17]) & A[18]);
+        A[17] ^= ((~A[18]) & A[19]);
+        A[18] ^= ((~A[19]) & A[15]);
+        A[19] ^= ((~A[15]) & A[16]);
+        A[15] = chiC0;
+        A[16] = chiC1;
+
+        chiC0 = A[20] ^ ((~A[21]) & A[22]);
+        chiC1 = A[21] ^ ((~A[22]) & A[23]);
+        A[22] ^= ((~A[23]) & A[24]);
+        A[23] ^= ((~A[24]) & A[20]);
+        A[24] ^= ((~A[20]) & A[21]);
+        A[20] = chiC0;
+        A[21] = chiC1;
     }
 
-    private static void iota(long[] A, int indexRound)
-    {
-        A[0] ^= KeccakRoundConstants[indexRound];
-    }
 }
