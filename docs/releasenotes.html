@@ -27,13 +27,14 @@ Release: 1.59 <br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
+<li>Fixed CVE-2017-13098 ("ROBOT"), a Bleichenbacher oracle in TLS when RSA key exchange is negotiated. This potentially affected BCJSSE servers and any other TLS servers configured to use JCE for the underlying crypto.</li>
 <li>Issues with using PQC based keys with the provided BC KeyStores have now been fixed.</li>
 <li>ECGOST-2012 public keys were being encoded with the wrong OID for the digest parameter in the algorithm parameter set. This has been fixed.</li>
 <li>SM3 has now been added as an acceptable algorithm for TSP timestamps.</li>
 <li>SM2 signatures were using the wrong default identity value. This has now been fixed.</li>
 <li>An edge condition in Blake2b for hashes on data with a length in the range of 2**64 - 127 to 2**64 has been identifed and fixed.</li>
 <li>The ISO Trailer for SHA512/256 used in X9.31 and ISO9796-2 signatures was incorrect. This has beem fixed.</li>
-<li>The BCJSSE SSLEngine implementation now correctly unwraps only whole records.</li>
+<li>The BCJSSE SSLEngine implementation now correctly wraps/unwraps application data only in whole records.</li>
 <li>The curve parameters for tc26_gost_3410_12_256_paramSetA were incorrect. These have been fixed.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
@@ -43,6 +44,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <li>The BCJSSE provider now supports session resumption in clients.</li>
 <li>The BCJSSE provider now supports Server Name Indication.</li>
 <li>The BCJSSE provider now supports the jdk.tls.namedGroups system property.</li>
+<li>The BCJSSE provider now supports the org.bouncycastle.jsse.ec.disableChar2 system property, which optionally disables the use of characteristic-2 elliptic curves.</li>
 <li>EC key generation and signing now use cache-timing resistant table lookups.</li>
 <li>Performance of the DSTU algorithms has been greatly improved.</li>
 <li>Support has been added for generating certificates and signatures in the PKIX API using SHA-3 based digests.</li>
