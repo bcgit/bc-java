@@ -9,7 +9,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-
+/**
+ * Token binding (draft) extension to TLS
+ */
 public class TokenBindingExtension {
 
     public static final Integer rsa2048_pcks15 = 0;
@@ -18,7 +20,7 @@ public class TokenBindingExtension {
 
     List<Integer> TokenBindingKeyParameters = new ArrayList<Integer>();
 
-    private   static int MajorProtocolVerison=0;
+    private static int MajorProtocolVerison = 0;
 
     public static int getMajorProtocolVerison() {
         return MajorProtocolVerison;
@@ -28,7 +30,7 @@ public class TokenBindingExtension {
         return MinorProtocolVerison;
     }
 
-    private   static int MinorProtocolVerison=13;
+    private static int MinorProtocolVerison = 13;
 
     public static void setMajorProtocolVerison(int majorProtocolVerison) {
         MajorProtocolVerison = majorProtocolVerison;
@@ -38,29 +40,29 @@ public class TokenBindingExtension {
         MinorProtocolVerison = minorProtocolVerison;
     }
 
-    public void addTokenbindingKeyParameters(int parameter){
+    public void addTokenbindingKeyParameters(int parameter) {
         TokenBindingKeyParameters.add(parameter);
     }
 
     public List<Integer> getTokenBindingKeyParameters() {
-        if (TokenBindingKeyParameters.size() <1){
+        if (TokenBindingKeyParameters.size() < 1) {
             TokenBindingKeyParameters.add(rsa2048_pcks15);
         }
-        Collections.sort(TokenBindingKeyParameters,Collections.reverseOrder());
+        Collections.sort(TokenBindingKeyParameters, Collections.reverseOrder());
         return TokenBindingKeyParameters;
     }
 
-    public void encode (OutputStream output) throws IOException {
+    public void encode(OutputStream output) throws IOException {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
         TlsUtils.checkUint8(MajorProtocolVerison);
         TlsUtils.checkUint8(MinorProtocolVerison);
-        TlsUtils.writeUint8(MajorProtocolVerison,output);
-        TlsUtils.writeUint8(MinorProtocolVerison,output);
+        TlsUtils.writeUint8(MajorProtocolVerison, output);
+        TlsUtils.writeUint8(MinorProtocolVerison, output);
 
-        for (Integer param : this.getTokenBindingKeyParameters()){
+        for (Integer param : this.getTokenBindingKeyParameters()) {
             TlsUtils.checkUint8(param);
-            TlsUtils.writeUint8(param,buf);
+            TlsUtils.writeUint8(param, buf);
         }
 
         TlsUtils.checkUint8(buf.size());

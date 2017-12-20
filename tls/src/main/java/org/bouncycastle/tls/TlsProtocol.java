@@ -1189,6 +1189,13 @@ public abstract class TlsProtocol
         raiseAlertWarning(AlertDescription.no_renegotiation, "Renegotiation not supported");
     }
 
+    /**
+     * This method creates NegotiatedTokenBindingClass and checks the negotiated parameters.
+     *
+     * @param serverExtensions
+     * @return
+     * @throws IOException
+     */
     protected NegotiatedTokenBinding processTokenBindingExtension(Hashtable serverExtensions) throws IOException {
         NegotiatedTokenBinding tokenBinding = TlsExtensionsUtils.getTokenBindingExtension(serverExtensions);
         if (tokenBinding != null) {
