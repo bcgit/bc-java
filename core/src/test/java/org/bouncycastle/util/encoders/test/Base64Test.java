@@ -1,5 +1,6 @@
 package org.bouncycastle.util.encoders.test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
@@ -67,6 +68,23 @@ public class Base64Test extends AbstractCoderTest
             invalidTest(invalid[i]);
             invalidTest(Strings.toByteArray(invalid[i]));
         }
+    }
+
+    public void testWithWhitespace()
+        throws Exception
+    {
+        String data = "dGVzdHN0cmluZ" + "\r\n" + "               " + "w==";
+
+        assertTrue(Arrays.areEqual(Strings.toByteArray("teststring"), Base64.decode(data)));
+
+        byte[] bData = Strings.toByteArray(data);
+        assertTrue(Arrays.areEqual(Strings.toByteArray("teststring"), Base64.decode(bData)));
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        Base64.decode(Arrays.concatenate(new byte[4], bData), 4, bData.length, bOut);
+
+        assertTrue(Arrays.areEqual(Strings.toByteArray("teststring"), bOut.toByteArray()));
     }
 
     private void invalidTest(String data)
