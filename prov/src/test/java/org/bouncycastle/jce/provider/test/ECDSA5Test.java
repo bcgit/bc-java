@@ -58,6 +58,7 @@ import org.bouncycastle.jce.ECKeyUtil;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.Arrays;
@@ -258,6 +259,20 @@ public class ECDSA5Test
         }
     }
 
+    private void testSM2()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("ECDSA", "BC");
+
+        kpGen.initialize(new ECGenParameterSpec("sm2p256v1"));
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        kpGen.initialize(new ECNamedCurveGenParameterSpec("sm2p256v1"));
+
+        kp = kpGen.generateKeyPair();
+    }
+    
     // test BSI algorithm support.
     private void testBSI()
         throws Exception
@@ -1123,6 +1138,7 @@ public class ECDSA5Test
         testMQVwithHMACOnePass();
         testAlgorithmParameters();
         testModified();
+        testSM2();
     }
 
     public static void main(
