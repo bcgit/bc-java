@@ -229,8 +229,8 @@ public abstract class AbstractTlsClient
         }
 
         //add TokenBinding Extension
-        TokenBindingExtension tokenBindingExtension =new TokenBindingExtension();
-        TlsExtensionsUtils.addTokenBindingExtension(clientExtensions,tokenBindingExtension);
+        TokenBindingExtension tokenBindingExtension = new TokenBindingExtension();
+        TlsExtensionsUtils.addTokenBindingExtension(clientExtensions, tokenBindingExtension);
 
         return clientExtensions;
     }
