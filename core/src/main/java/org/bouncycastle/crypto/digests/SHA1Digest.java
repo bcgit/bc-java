@@ -110,7 +110,7 @@ public class SHA1Digest
         }
 
         X[14] = (int)(bitLength >>> 32);
-        X[15] = (int)(bitLength & 0xffffffff);
+        X[15] = (int)bitLength;
     }
 
     public int doFinal(
