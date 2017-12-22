@@ -131,6 +131,7 @@ public class SM2Signer
         throws CryptoException
     {
         byte[] eHash = digestDoFinal();
+        reset();
 
         BigInteger n = ecParams.getN();
         BigInteger e = calculateE(eHash);
