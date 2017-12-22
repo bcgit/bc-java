@@ -43,7 +43,7 @@ public class SCrypt
             throw new IllegalArgumentException("Cost parameter N must be > 1 and a power of 2");
         }
         // Only value of r that cost (as an int) could be exceeded for is 1
-        if (r == 1 && N > 65536)
+        if (r == 1 && N >= 65536)
         {
             throw new IllegalArgumentException("Cost parameter N must be > 1 and < 65536.");
         }
