@@ -49,6 +49,7 @@ public class SM2SignatureTest
 
         signer.setParameter(new SM2ParameterSpec(Strings.toByteArray("ALICE123@YAHOO.COM")));
 
+        // repetition test
         final int times = 2;
         String random = "";
         for (int i = 0; i < times; i++) {
@@ -59,6 +60,12 @@ public class SM2SignatureTest
 
         byte[] msg = Strings.toByteArray("message digest");
 
+        Signature verifier = Signature.getInstance("SM3withSM2", "BC");
+
+        verifier.setParameter(new SM2ParameterSpec(Strings.toByteArray("ALICE123@YAHOO.COM")));
+
+        verifier.initVerify(kp.getPublic());
+
         for (int i = 0; i < times; i++) {
             signer.update(msg, 0, msg.length);
 
@@ -68,10 +75,6 @@ public class SM2SignatureTest
 
             isTrue("r wrong", rs[0].equals(new BigInteger("40F1EC59F793D9F49E09DCEF49130D4194F79FB1EED2CAA55BACDB49C4E755D1", 16)));
             isTrue("s wrong", rs[1].equals(new BigInteger("6FC6DAC32C5D5CF10C77DFB20F7C2EB667A457872FB09EC56327A67EC7DEEBE7", 16)));
-
-            Signature verifier = Signature.getInstance("SM3withSM2", "BC");
-            verifier.setParameter(new SM2ParameterSpec(Strings.toByteArray("ALICE123@YAHOO.COM")));
-            verifier.initVerify(kp.getPublic());
 
             verifier.update(msg, 0, msg.length);
 
