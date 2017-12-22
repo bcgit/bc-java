@@ -1,14 +1,20 @@
 package org.bouncycastle.pqc.crypto.test;
 
+import java.io.IOException;
 import java.security.SecureRandom;
 
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.util.DEROtherInfo;
 import org.bouncycastle.pqc.crypto.ExchangePair;
 import org.bouncycastle.pqc.crypto.newhope.NHAgreement;
 import org.bouncycastle.pqc.crypto.newhope.NHExchangePairGenerator;
 import org.bouncycastle.pqc.crypto.newhope.NHKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.newhope.NHOtherInfoGenerator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class NewHopeTest
@@ -112,7 +118,26 @@ public class NewHopeTest
             isTrue("value mismatch", Arrays.areEqual(aliceSharedKey, bobExchPair.getSharedValue()));
         }
     }
-    
+
+    private void testPrivInfoGeneration()
+        throws IOException
+    {
+        SecureRandom random = new SecureRandom();
+        NHOtherInfoGenerator.PartyU partyU = new NHOtherInfoGenerator.PartyU(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), random);
+
+        byte[] partA = partyU.getSuppPrivInfoPartA();
+
+        NHOtherInfoGenerator.PartyV partyV = new NHOtherInfoGenerator.PartyV(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), random);
+
+        byte[] partB = partyV.getSuppPrivInfoPartB(partA);
+
+        DEROtherInfo otherInfoU = partyU.generate(partB);
+
+        DEROtherInfo otherInfoV = partyV.generate();
+
+        areEqual(otherInfoU.getEncoded(), otherInfoV.getEncoded());
+    }
+
     private void testInterop()
     {
         /*
@@ -151,6 +176,7 @@ public class NewHopeTest
     {
         testKeyExchange();
         testInterop();
+        testPrivInfoGeneration();
     }
 
     public static void main(
