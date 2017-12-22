@@ -30,7 +30,7 @@ public class SCryptTest extends SimpleTest
         checkOK("Minimal values", new byte[0], new byte[0], 2, 1, 1, 1);
         checkIllegal("Cost parameter must be > 1", new byte[0], new byte[0], 1, 1, 1, 1);
         checkOK("Cost parameter 65536 OK for r == 1", new byte[0], new byte[0], 65536, 1, 1, 1);
-        checkIllegal("Cost parameter must <= 65536 for r == 1", new byte[0], new byte[0], 65537, 1, 1, 1);
+        checkIllegal("Cost parameter must < 65536 for r == 1", new byte[0], new byte[0], 65536, 1, 1, 1);
         checkIllegal("Block size must be >= 1", new byte[0], new byte[0], 2, 0, 2, 1);
         checkIllegal("Parallelisation parameter must be >= 1", new byte[0], new byte[0], 2, 1, 0, 1);
         // checkOK("Parallelisation parameter 65535 OK for r = 4", new byte[0], new byte[0], 2, 32,
