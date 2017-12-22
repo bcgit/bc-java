@@ -260,7 +260,7 @@ public class CTRSP800DRBG
         System.arraycopy(temp, 0, K, 0, K.length);
         System.arraycopy(temp, K.length, X, 0, X.length);
 
-        temp = new byte[bitLength / 2];
+        temp = new byte[bitLength / 8];
 
         i = 0;
         _engine.init(true, new KeyParameter(expandKey(K)));
