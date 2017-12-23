@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.BasicAgreement;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 
 /**
@@ -46,8 +47,28 @@ public class ECDHBasicAgreement
         {
             throw new IllegalStateException("ECDH public key has wrong domain parameters");
         }
+        
+        ECCurve myCurve = key.getParameters().getCurve();
+        ECPoint peerPoint = pub.getQ();
+        if (peerPoint.isInfinity()) 
+        {
+            throw new IllegalStateException("Infinity is not a valid public key for ECDH");
+        }
 
-        ECPoint P = pub.getQ().multiply(key.getD()).normalize();
+        try 
+        {
+            myCurve.validatePoint(peerPoint.getXCoord().toBigInteger(),
+                peerPoint.getYCoord().toBigInteger());
+        }
+        catch (IllegalArgumentException ex) 
+        {
+            throw new IllegalStateException("The peer public key must be on the curve for ECDH");
+        }
+
+        // Explicitly construct a public key using the private key's curve.
+        ECPoint pubPoint = myCurve.createPoint(peerPoint.getXCoord().toBigInteger(),
+            peerPoint.getYCoord().toBigInteger());
+        ECPoint P = pubPoint.multiply(key.getD()).normalize();
 
         if (P.isInfinity())
         {
