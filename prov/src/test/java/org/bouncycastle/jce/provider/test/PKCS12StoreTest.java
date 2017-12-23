@@ -1417,6 +1417,69 @@ public class PKCS12StoreTest
         System.clearProperty("org.bouncycastle.pkcs12.max_it_count");
     }
 
+    private void testBCFKSLoad()
+        throws Exception
+    {
+        KeyStore k = KeyStore.getInstance("BCFKS", "BC");
+
+        try
+        {
+            k.load(new ByteArrayInputStream(pkcs12), passwd);
+        }
+        catch (IOException e)
+        {
+            isTrue("malformed sequence".equals(e.getMessage()));
+        }
+
+        KeyPair kp1 = TestUtils.generateRSAKeyPair();
+        KeyPair kp1ca = TestUtils.generateRSAKeyPair();
+        KeyPair kp1ee = TestUtils.generateRSAKeyPair();
+
+        X509Certificate kp1Root = TestUtils.generateRootCert(kp1, new X500Name("CN=KP1 ROOT"));
+        X509Certificate kp1CA = TestUtils.generateIntermediateCert(kp1ca.getPublic(), new X500Name("CN=KP1 CA"), kp1.getPrivate(), kp1Root);
+        X509Certificate kp1EE = TestUtils.generateEndEntityCert(kp1ee.getPublic(), new X500Name("CN=KP1 EE"), kp1ca.getPrivate(), kp1CA);
+
+        Certificate[] kp1Chain = new Certificate[] { kp1EE, kp1CA, kp1Root };
+
+        KeyPair kp2 = TestUtils.generateRSAKeyPair();
+        KeyPair kp2ca = TestUtils.generateRSAKeyPair();
+        KeyPair kp2ee = TestUtils.generateRSAKeyPair();
+
+        X509Certificate kp2Root = TestUtils.generateRootCert(kp2, new X500Name("CN=KP2 ROOT"));
+        X509Certificate kp2CA = TestUtils.generateIntermediateCert(kp2ca.getPublic(), new X500Name("CN=KP2 CA"), kp2.getPrivate(), kp1Root);
+        X509Certificate kp2EE = TestUtils.generateEndEntityCert(kp2ee.getPublic(), new X500Name("CN=KP2 EE"), kp2ca.getPrivate(), kp1CA);
+
+        Certificate[] kp2Chain = new Certificate[] { kp2EE, kp2CA, kp2Root };
+
+        KeyPair kp3 = TestUtils.generateRSAKeyPair();
+        X509Certificate kp3Root = TestUtils.generateRootCert(kp3, new X500Name("CN=KP3 ROOT"));
+
+        KeyStore keyStore = KeyStore.getInstance("BCFKS", "BC");
+
+        keyStore.load(null, null);
+
+        keyStore.setKeyEntry("kp1", kp1ee.getPrivate(), null, kp1Chain);
+        keyStore.setCertificateEntry("kp1root", kp1Root);
+        keyStore.setKeyEntry("kp2", kp1ee.getPrivate(), null, kp2Chain);
+
+        keyStore.setCertificateEntry("kp3root", kp3Root);
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        keyStore.store(bOut, "fred".toCharArray());
+
+        KeyStore k12 = KeyStore.getInstance("PKCS12", "BC");
+
+        try
+        {
+            k12.load(new ByteArrayInputStream(bOut.toByteArray()), "fred".toCharArray());
+        }
+        catch (IOException e)
+        {           
+            isTrue("illegal object in getInstance: org.bouncycastle.asn1.DLSequence".equals(e.getMessage()));
+        }
+    }
+
     public String getName()
     {
         return "PKCS12Store";
@@ -1429,6 +1492,7 @@ public class PKCS12StoreTest
         testPKCS12Store();
         testGOSTStore();
         testChainCycle();
+        testBCFKSLoad();
 
         // converter tests
 
