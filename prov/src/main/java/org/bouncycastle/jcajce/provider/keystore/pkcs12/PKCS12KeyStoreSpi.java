@@ -637,7 +637,7 @@ public class PKCS12KeyStoreSpi
             {
 
                 Cipher cipher = createCipher(Cipher.UNWRAP_MODE, password, algId);
-                   System.err.println("here");
+
                 // we pass "" as the key algorithm type as it is unknown at this point
                 return (PrivateKey)cipher.unwrap(data, "", Cipher.PRIVATE_KEY);
             }
@@ -717,7 +717,7 @@ public class PKCS12KeyStoreSpi
             try
             {
                 Cipher cipher = createCipher(mode, password, algId);
-                     System.err.println("and here");
+
                 return cipher.doFinal(data);
             }
             catch (Exception e)
@@ -796,8 +796,17 @@ public class PKCS12KeyStoreSpi
         bufIn.reset();
 
         ASN1InputStream bIn = new ASN1InputStream(bufIn);
-        ASN1Sequence obj = (ASN1Sequence)bIn.readObject();
-        Pfx bag = Pfx.getInstance(obj);
+        
+        Pfx bag;
+        try
+        {
+            bag = Pfx.getInstance(bIn.readObject());
+        }
+        catch (Exception e)
+        {
+            throw new IOException(e.getMessage(), e);
+        }
+
         ContentInfo info = bag.getAuthSafe();
         Vector chain = new Vector();
         boolean unmarkedKey = false;

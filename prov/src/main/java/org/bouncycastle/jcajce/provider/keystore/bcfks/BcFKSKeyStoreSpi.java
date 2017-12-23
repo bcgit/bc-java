@@ -925,7 +925,16 @@ class BcFKSKeyStoreSpi
 
         ASN1InputStream aIn = new ASN1InputStream(inputStream);
 
-        ObjectStore store = ObjectStore.getInstance(aIn.readObject());
+        ObjectStore store;
+
+        try
+        {
+            store = ObjectStore.getInstance(aIn.readObject());
+        }
+        catch (Exception e)
+        {
+            throw new IOException(e.getMessage(), e.getCause());
+        }
 
         ObjectStoreIntegrityCheck integrityCheck = store.getIntegrityCheck();
         if (integrityCheck.getType() == ObjectStoreIntegrityCheck.PBKD_MAC_CHECK)
