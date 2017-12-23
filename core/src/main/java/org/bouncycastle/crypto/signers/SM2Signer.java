@@ -85,8 +85,8 @@ public class SM2Signer
             pubPoint = ((ECPublicKeyParameters)ecKey).getQ();
         }
 
-        digest.reset();
         z = getZ(userID);
+        
         digest.update(z, 0, z.length);
     }
 
@@ -232,6 +232,8 @@ public class SM2Signer
 
     private byte[] getZ(byte[] userID)
     {
+        digest.reset();
+
         addUserID(digest, userID);
 
         addFieldElement(digest, ecParams.getCurve().getA());
@@ -241,7 +243,11 @@ public class SM2Signer
         addFieldElement(digest, pubPoint.getAffineXCoord());
         addFieldElement(digest, pubPoint.getAffineYCoord());
 
-        return digestDoFinal();
+        byte[] result = new byte[digest.getDigestSize()];
+
+        digest.doFinal(result, 0);
+
+        return result;
     }
 
     private void addUserID(Digest digest, byte[] userID)
