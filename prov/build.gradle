@@ -1,6 +1,5 @@
 dependencies {
     compile project(':core')
-  compile 'junit:junit:4.12'
 }
 
 cobertura {
