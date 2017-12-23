@@ -265,6 +265,13 @@ public class CertPathValidationTest
             fail("basic validation (1) not working");
         }
 
+        result = path.evaluate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new BasicConstraintsValidation(), new KeyUsageValidation()});
+
+        if (!result.isValid())
+        {
+            fail("basic evaluation (1) not working");
+        }
+
         List crlList = new ArrayList();
 
         crlList.add(rootCrl);
@@ -305,8 +312,15 @@ public class CertPathValidationTest
             fail("incorrect path validated!!");
         }
 
+        result = path.evaluate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier)});
 
+        if (result.isValid())
+        {
+            fail("incorrect path validated!!");
+        }
 
+        isTrue(result.isDetailed());
+        
 //        List list = new ArrayList();
 //        list.add(rootCert);
 //        list.add(interCert);
