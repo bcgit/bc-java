@@ -729,7 +729,7 @@ public class BcKeyStoreSpi
                     table.put(alias, new StoreEntry(alias, date, type, b, chain));
                     break;
             default:
-                    throw new RuntimeException("Unknown object type in store.");
+                    throw new IOException("Unknown object type in store.");
             }
 
             type = dIn.read();
@@ -781,7 +781,7 @@ public class BcKeyStoreSpi
                     dOut.write(b);
                     break;
             default:
-                    throw new RuntimeException("Unknown object type in store.");
+                    throw new IOException("Unknown object type in store.");
             }
         }
 
