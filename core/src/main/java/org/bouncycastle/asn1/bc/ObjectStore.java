@@ -39,6 +39,11 @@ public class ObjectStore
 
     private ObjectStore(ASN1Sequence seq)
     {
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("malformed sequence");
+        }
+        
         ASN1Encodable sData = seq.getObjectAt(0);
         if (sData instanceof EncryptedObjectStoreData)
         {

@@ -22,7 +22,7 @@ public class Pfx
     private Pfx(
         ASN1Sequence   seq)
     {
-        BigInteger  version = ((ASN1Integer)seq.getObjectAt(0)).getValue();
+        BigInteger  version = ASN1Integer.getInstance(seq.getObjectAt(0)).getValue();
         if (version.intValue() != 3)
         {
             throw new IllegalArgumentException("wrong version for PFX PDU");
