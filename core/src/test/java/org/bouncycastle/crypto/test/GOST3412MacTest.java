@@ -40,9 +40,9 @@ public class GOST3412MacTest
             new KeyParameter(Hex.decode("8899aabbccddeeff0011223344556677fedcba98765432100123456789abcdef"));
         mac.init(key);
 
-        for (byte[] input : inputs)
+        for (int i = 0; i != inputs.length; i++)
         {
-            mac.update(input, 0, input.length);
+            mac.update(inputs[i], 0, inputs[i].length);
         }
 
         byte[] out = new byte[8];
