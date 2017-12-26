@@ -1056,6 +1056,22 @@ public final class Arrays
     }
 
     /**
+     * Fill input array by zeros
+     *
+     * @param array input array
+     */
+    public static void clear(byte[] array)
+    {
+        if (array != null)
+        {
+            for (int i = 0; i < array.length; i++)
+            {
+                array[i] = 0;
+            }
+        }
+    }
+
+    /**
      * Iterator backed by a specific array.
      */
     public static class Iterator

@@ -8,6 +8,7 @@ import java.math.BigInteger;
 import java.security.AlgorithmParameterGenerator;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -711,6 +712,26 @@ public class DHTest
         }
     }
 
+    private void testMinSpecValue()
+        throws Exception
+    {
+        BigInteger p = new BigInteger("16560215747140417249215968347342080587", 16);
+        BigInteger g = new BigInteger("1234567890", 16);
+
+        DHParameterSpec serverParam = new DHParameterSpec(p, g);
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DH", "BC");
+
+        try
+        {
+            keyGen.initialize(serverParam, new SecureRandom());
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isTrue("unsafe p value so small specific l required".equals(e.getMessage()));
+        }
+
+    }
+
     private void testECUnifiedTestVector1()
         throws Exception
     {
@@ -1303,6 +1324,8 @@ public class DHTest
         testECUnifiedTestVector1();
         testECUnifiedTestVector2();
         testECUnifiedTestVector3();
+        
+        testMinSpecValue();
     }
 
     public static void main(
