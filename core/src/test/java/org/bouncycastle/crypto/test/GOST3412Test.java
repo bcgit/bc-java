@@ -82,7 +82,6 @@ public class GOST3412Test
         return "GOST 34.12 2015";
     }
 
-    @Override
     public void performTest()
         throws Exception
     {

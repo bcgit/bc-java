@@ -1255,16 +1255,18 @@ public final class Arrays
     }
 
     /**
-     * fill input array by zeros
+     * Fill input array by zeros
+     *
      * @param array input array
      */
-    public static void clear(byte[] array) {
-        if(array != null)
+    public static void clear(byte[] array)
+    {
+        if (array != null)
         {
             for (int i = 0; i < array.length; i++)
+            {
                 array[i] = 0;
+            }
         }
     }
-
-
 }

@@ -23,8 +23,7 @@ public class IsoTrailerTest
 
     private static final byte[] iso9796d2PSSOld = Hex.decode("274dbd6e3d93672ee5121022843e37f66b1ff12bb7f04cff059d76932ce9116e8b12efcd19d98a78f8c9d3f262fd3ce7c3bca0edc223f3af54e1401b37f807ef5b6d71591a22a40a34ce8abc10164138835bb63ac8eeb0223d1e1d8c5d18da2acac7f7061023597aa338c4af96bebe6c7935e0b5603cb87977b9e345f697ff98");
     private static final byte[] iso9796d2PSSCorrect = Hex.decode("3a5c1248652cd6fd4419064b894379ad48c8596a3a5a0bdf98b6d6a9d25f5df164591beddff9e2ae88100dd165053f0edd2e4154834ea7b7c1f56312c4fe23a5407cf73a2c4540c8c19e91187f709529ebb779db2f8fa39f6bef923c392abecf9e7596927a71f62990dafd8bf00d298863d07680e75b1bb9bb655ba25ff48d1e");
-
-    @Override
+    
     public String getName()
     {
         return "IsoTrailerTest";
@@ -106,8 +105,7 @@ public class IsoTrailerTest
             fail("ISO9796-2PSS old Signer failed.");
         }
     }
-
-    @Override
+    
     public void performTest()
         throws Exception
     {

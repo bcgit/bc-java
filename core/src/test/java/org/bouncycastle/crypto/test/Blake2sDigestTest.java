@@ -54,8 +54,9 @@ public class Blake2sDigestTest
     {
         Blake2sDigest digest = new Blake2sDigest(Hex.decode(
             keyedTestVectors[0][1]));
-        for (String[] keyedTestVector : keyedTestVectors)
+        for (int i = 0; i != keyedTestVectors.length; i++)
         {
+            String[] keyedTestVector = keyedTestVectors[i];
             byte[] input = Hex.decode(keyedTestVector[0]);
             digest.reset();
 
@@ -79,8 +80,9 @@ public class Blake2sDigestTest
         Random random = new Random();
         for (int i = 0; i < 100; i++)
         {
-            for (String[] keyedTestVector : keyedTestVectors)
+            for (int j = 0; j != keyedTestVectors.length; j++)
             {
+                String[] keyedTestVector = keyedTestVectors[j];
                 byte[] input = Hex.decode(keyedTestVector[0]);
                 if (input.length < 3)
                 {

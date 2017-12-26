@@ -56,8 +56,15 @@ public class KeyPairGeneratorSpi
         }
         DHParameterSpec dhParams = (DHParameterSpec)params;
 
-        param = new DHKeyGenerationParameters(random, new DHParameters(dhParams.getP(), dhParams.getG(), null, dhParams.getL()));
-
+        try
+        {
+            param = new DHKeyGenerationParameters(random, new DHParameters(dhParams.getP(), dhParams.getG(), null, dhParams.getL()));
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new InvalidAlgorithmParameterException(e.getMessage(), e);
+        }
+        
         engine.init(param);
         initialised = true;
     }
