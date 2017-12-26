@@ -458,6 +458,7 @@ public class Blake2sDigest
             System.arraycopy(key, 0, buffer, 0, key.length);
             bufferPos = BLOCK_LENGTH_BYTES; // zero padding
         }
+        Arrays.fill(buffer, (byte)0);
         init();
     }
 
