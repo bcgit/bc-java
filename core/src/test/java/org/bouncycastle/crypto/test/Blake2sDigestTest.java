@@ -90,7 +90,7 @@ public class Blake2sDigestTest
                 }
                 digest.reset();
 
-                int pos = random.nextInt(input.length);
+                int pos = (random.nextInt() & 0xffff) % input.length;
                 if (pos > 0)
                 {
                     digest.update(input, 0, pos);
