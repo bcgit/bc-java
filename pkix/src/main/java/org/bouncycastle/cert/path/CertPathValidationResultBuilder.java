@@ -3,6 +3,8 @@ package org.bouncycastle.cert.path;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bouncycastle.util.Integers;
+
 class CertPathValidationResultBuilder
 {
     private final CertPathValidationContext context;
@@ -24,14 +26,14 @@ class CertPathValidationResultBuilder
         else
         {
             return new CertPathValidationResult(context,
-                toInts(certIndexes), toInts(ruleIndexes), exceptions.toArray(new CertPathValidationException[exceptions.size()]));
+                toInts(certIndexes), toInts(ruleIndexes), (CertPathValidationException[])exceptions.toArray(new CertPathValidationException[exceptions.size()]));
         }
     }
 
     public void addException(int certIndex, int ruleIndex, CertPathValidationException exception)
     {
-        this.certIndexes.add(certIndex);
-        this.ruleIndexes.add(ruleIndex);
+        this.certIndexes.add(Integers.valueOf(certIndex));
+        this.ruleIndexes.add(Integers.valueOf(ruleIndex));
         this.exceptions.add(exception);
     }
 
@@ -41,7 +43,7 @@ class CertPathValidationResultBuilder
 
         for (int i = 0; i != rv.length; i++)
         {
-            rv[i] = values.get(i).intValue();
+            rv[i] = ((Integer)values.get(i)).intValue();
         }
 
         return rv;
