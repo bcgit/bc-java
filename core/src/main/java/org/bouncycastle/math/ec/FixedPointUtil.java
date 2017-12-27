@@ -23,7 +23,7 @@ public class FixedPointUtil
     }
 
     /**
-     * @deprecated Use {@link #precompute(ECPoint) instead, as minWidth parameter is now ignored.
+     * @deprecated Use {@link #precompute(ECPoint)} instead, as minWidth parameter is now ignored.
      */
     public static FixedPointPreCompInfo precompute(ECPoint p, int minWidth)
     {
