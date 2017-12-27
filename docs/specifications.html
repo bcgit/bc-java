@@ -219,6 +219,7 @@ used with the above modes.
 <tr><td><b>DSTU7624Engine</b></td><td>128, 256, 512</td><td>128/256/512 bit</td><td>DSTU7624 Block Cipher</td></tr>
 <tr><td><b>DSTU7624WrapEngine</b></td><td>128, 256, 512</td><td>128/256/512 bit</td><td>DSTU7624 key wrapper</td></tr>
 <tr><td><b>GOST28147Engine</b></td><td>256</td><td>64 bit</td><td>Has a range of S-boxes</td></tr>
+<tr><td><b>GOST3412_2015Engine</b></td><td>256</td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>IDEAEngine</b></td><td>128</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>NoekeonEngine</b></td><td>128</td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>RC2Engine</b></td><td>0 .. 1024 </td><td>64 bit</td><td>&nbsp;</td></tr>
@@ -309,6 +310,8 @@ implementations
 <p>
 <table cellpadding=5 cellspacing=0 border=1 width=80%>
 <tr><th>Name</th><th>Output (in bits)</th><th>Notes</th></tr>
+<tr><td><b>Blake2sDigest</b></td><td>128, 160, 224, 256</td><td></td></tr>
+<tr><td><b>Blake2bDigest</b></td><td>224, 256, 384, 512</td><td></td></tr>
 <tr><td><b>DSTU7564Digest</b></td><td>256, 384, 512</td><td></td></tr>
 <tr><td><b>KeccakDigest</b></td><td>224, 256, 288, 384, 512</td><td></td></tr>
 <tr><td><b>MD2Digest</b></td><td>128</td><td>&nbsp;</td></tr>
@@ -698,7 +701,7 @@ as;
 
 <p>
 Diffie-Hellman key agreement is supported using the "DH", "ECDH",
-"ECCDH" (EC cofactor DH) and "ECMQV" key agreement instances and their variations. Key exchange, which also uses the KeyAgreement API is supported by "NH" (the NewHope algorithm (BCPQC)). SM2 key exchange is currently supported in the lightweight API.
+"ECCDH" (EC Cofactor DH), "ECMQV" and "ECCDHU" (EC Cofactor DH Unified) key agreement instances and their variations. Key exchange, which also uses the KeyAgreement API is supported by "NH" (the NewHope algorithm (BCPQC)). SM2 key exchange is currently supported in the lightweight API.
 </p>
 <p>
 Support is provided for the standard SEC algorithm set for EC. Names appear
