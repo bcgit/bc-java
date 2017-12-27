@@ -146,6 +146,7 @@ public class RegressionTest
         new OpenBSDBCryptTest(),
         new X931SignerTest(),
         new Blake2bDigestTest(),
+        new Blake2sDigestTest(),
         new KeccakDigestTest(),
         new SHAKEDigestTest(),
         new SM2EngineTest(),
