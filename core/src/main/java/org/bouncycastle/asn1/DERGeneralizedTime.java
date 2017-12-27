@@ -75,7 +75,7 @@ public class DERGeneralizedTime
                     byte[] derTime = new byte[ind + 1];
 
                     System.arraycopy(time, 0, derTime, 0, ind);
-                    derTime[ind] = 'Z';
+                    derTime[ind] = (byte)'Z';
 
                     return derTime;
                 }
@@ -84,7 +84,7 @@ public class DERGeneralizedTime
                     byte[] derTime = new byte[ind + 2];
 
                     System.arraycopy(time, 0, derTime, 0, ind + 1);
-                    derTime[ind + 1] = 'Z';
+                    derTime[ind + 1] = (byte)'Z';
 
                     return derTime;
                 }
