@@ -804,7 +804,7 @@ public class PKCS12KeyStoreSpi
         }
         catch (Exception e)
         {
-            throw new IOException(e.getMessage(), e);
+            throw new IOException(e.getMessage());
         }
 
         ContentInfo info = bag.getAuthSafe();
