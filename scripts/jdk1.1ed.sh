@@ -244,3 +244,33 @@ g/private final .*;/s/final//
 w
 q
 %
+
+ed org/bouncycastle/asn1/misc/ScryptParams.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/modes/G3413CFBBlockCipher.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/modes/G3413CTRBlockCipher.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/modes/KGCMBlockCipher.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/jcajce/spec/DHUParameterSpec.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
