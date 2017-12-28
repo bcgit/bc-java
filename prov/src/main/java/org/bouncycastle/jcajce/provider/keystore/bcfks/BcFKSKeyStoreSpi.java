@@ -933,7 +933,7 @@ class BcFKSKeyStoreSpi
         }
         catch (Exception e)
         {
-            throw new IOException(e.getMessage(), e.getCause());
+            throw new IOException(e.getMessage());
         }
 
         ObjectStoreIntegrityCheck integrityCheck = store.getIntegrityCheck();
