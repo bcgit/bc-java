@@ -22,6 +22,11 @@ public abstract class AbstractTlsPeer
         return crypto;
     }
 
+    public boolean shouldUseExtendedPadding()
+    {
+        return false;
+    }
+
     public boolean shouldUseGMTUnixTime()
     {
         /*

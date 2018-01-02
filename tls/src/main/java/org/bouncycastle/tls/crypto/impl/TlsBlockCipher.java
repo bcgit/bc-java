@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.security.SecureRandom;
 
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
@@ -37,6 +38,8 @@ public class TlsBlockCipher
         this.encryptThenMAC = cryptoParams.getSecurityParameters().isEncryptThenMAC();
         this.useExplicitIV = TlsImplUtils.isTLSv11(cryptoParams);
 
+        SecurityParameters securityParameters = cryptoParams.getSecurityParameters();
+
         /*
          * Don't use variable-length padding with truncated MACs.
          * 
@@ -45,8 +48,9 @@ public class TlsBlockCipher
          *
          * TODO[DTLS] Consider supporting in DTLS (without exceeding send limit though)
          */
-        this.useExtraPadding = !cryptoParams.getServerVersion().isDTLS()
-            && (encryptThenMAC || !cryptoParams.getSecurityParameters().isTruncatedHMac());
+        this.useExtraPadding = securityParameters.isExtendedPadding()
+            && !cryptoParams.getServerVersion().isDTLS()
+            && (encryptThenMAC || !securityParameters.isTruncatedHMac());
 
         this.encryptCipher = encryptCipher;
         this.decryptCipher = decryptCipher;
