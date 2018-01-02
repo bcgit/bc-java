@@ -48,6 +48,7 @@ public class DTLSServerProtocol
         state.serverContext = new TlsServerContextImpl(server.getCrypto(), securityParameters);
 
         securityParameters.serverRandom = TlsProtocol.createRandomBlock(server.shouldUseGMTUnixTime(), state.serverContext);
+        securityParameters.extendedPadding = server.shouldUseExtendedPadding();
 
         server.init(state.serverContext);
 

@@ -38,6 +38,7 @@ public class DTLSClientProtocol
         state.clientContext = new TlsClientContextImpl(client.getCrypto(), securityParameters);
 
         securityParameters.clientRandom = TlsProtocol.createRandomBlock(client.shouldUseGMTUnixTime(), state.clientContext);
+        securityParameters.extendedPadding = client.shouldUseExtendedPadding();
 
         client.init(state.clientContext);
 

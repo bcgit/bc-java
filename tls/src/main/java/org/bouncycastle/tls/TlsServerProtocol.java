@@ -75,6 +75,7 @@ public class TlsServerProtocol
         this.tlsServerContext = new TlsServerContextImpl(tlsServer.getCrypto(), securityParameters);
 
         this.securityParameters.serverRandom = createRandomBlock(tlsServer.shouldUseGMTUnixTime(), tlsServerContext);
+        this.securityParameters.extendedPadding = tlsServer.shouldUseExtendedPadding();
 
         this.tlsServer.init(tlsServerContext);
         this.recordStream.init(tlsServerContext);
