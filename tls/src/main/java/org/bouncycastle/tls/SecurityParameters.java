@@ -19,6 +19,7 @@ public class SecurityParameters
     byte[] tlsUnique = null;
     boolean encryptThenMAC = false;
     boolean extendedMasterSecret = false;
+    boolean extendedPadding = false;
     boolean truncatedHMac = false;
 
     void clear()
@@ -126,6 +127,11 @@ public class SecurityParameters
     public boolean isExtendedMasterSecret()
     {
         return extendedMasterSecret;
+    }
+
+    public boolean isExtendedPadding()
+    {
+        return extendedPadding;
     }
 
     public boolean isTruncatedHMac()
