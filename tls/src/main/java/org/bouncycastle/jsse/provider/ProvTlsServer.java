@@ -62,12 +62,12 @@ class ProvTlsServer
     protected TlsCredentials credentials = null;
     protected boolean handshakeComplete = false;
 
-    ProvTlsServer(ProvTlsManager manager) throws SSLException
+    ProvTlsServer(ProvTlsManager manager, ProvSSLParameters sslParameters) throws SSLException
     {
         super(manager.getContextData().getCrypto());
 
         this.manager = manager;
-        this.sslParameters = manager.getProvSSLParameters();
+        this.sslParameters = sslParameters;
 
         if (!manager.getEnableSessionCreation())
         {
@@ -404,7 +404,7 @@ class ProvTlsServer
              * TODO[jsse] RFC 6066 A server that implements this extension MUST NOT accept the
              * request to resume the session if the server_name extension contains a different name.
              */
-            Collection<BCSNIMatcher> sniMatchers = manager.getProvSSLParameters().getSNIMatchers();
+            Collection<BCSNIMatcher> sniMatchers = sslParameters.getSNIMatchers();
             if (sniMatchers != null && !sniMatchers.isEmpty())
             {
                 ServerNameList serverNameList = TlsExtensionsUtils.getServerNameExtension(clientExtensions);

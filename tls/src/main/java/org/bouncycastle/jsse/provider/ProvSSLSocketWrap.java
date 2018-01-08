@@ -29,13 +29,12 @@ class ProvSSLSocketWrap
 
     protected final ProvSSLContextSpi context;
     protected final ContextData contextData;
-
     protected final Socket wrapSocket;
     protected final String wrapHost;
     protected final int wrapPort;
     protected final boolean wrapAutoClose;
+    protected final ProvSSLParameters sslParameters;
 
-    protected ProvSSLParameters sslParameters;
     protected boolean enableSessionCreation = true;
     protected boolean useClientMode = true;
 
@@ -55,7 +54,7 @@ class ProvSSLSocketWrap
         this.wrapHost = host;
         this.wrapPort = port;
         this.wrapAutoClose = autoClose;
-        this.sslParameters = ProvSSLParameters.extractDefaultParameters(context);
+        this.sslParameters = context.getDefaultParameters(!useClientMode);
     }
 
     public ProvSSLContextSpi getContext()
@@ -239,12 +238,7 @@ class ProvSSLSocketWrap
     @Override
     public synchronized SSLParameters getSSLParameters()
     {
-        return SSLParametersUtil.toSSLParameters(sslParameters);
-    }
-
-    public synchronized ProvSSLParameters getProvSSLParameters()
-    {
-        return sslParameters;
+        return SSLParametersUtil.getSSLParameters(sslParameters);
     }
 
     @Override
@@ -380,7 +374,7 @@ class ProvSSLSocketWrap
     @Override
     public synchronized void setSSLParameters(SSLParameters sslParameters)
     {
-        this.sslParameters = SSLParametersUtil.toProvSSLParameters(sslParameters);
+        SSLParametersUtil.setSSLParameters(this.sslParameters, sslParameters);
     }
 
     @Override
@@ -410,12 +404,19 @@ class ProvSSLSocketWrap
     @Override
     public synchronized void setUseClientMode(boolean mode)
     {
-        if (initialHandshakeBegun && mode != this.useClientMode)
+        if (this.useClientMode == mode)
+        {
+            return;
+        }
+
+        if (initialHandshakeBegun)
         {
             throw new IllegalArgumentException("Mode cannot be changed after the initial handshake has begun");
         }
 
         this.useClientMode = mode;
+
+        context.updateDefaultProtocols(sslParameters, !useClientMode);
     }
 
     @Override
@@ -444,7 +445,7 @@ class ProvSSLSocketWrap
                 TlsClientProtocol clientProtocol = new TlsClientProtocol(wrapSocket.getInputStream(), wrapSocket.getOutputStream());
                 this.protocol = clientProtocol;
 
-                ProvTlsClient client = new ProvTlsClient(this);
+                ProvTlsClient client = new ProvTlsClient(this, sslParameters.copy());
                 this.protocolPeer = client;
     
                 clientProtocol.connect(client);
@@ -454,7 +455,7 @@ class ProvSSLSocketWrap
                 TlsServerProtocol serverProtocol = new TlsServerProtocol(wrapSocket.getInputStream(), wrapSocket.getOutputStream());
                 this.protocol = serverProtocol;
     
-                ProvTlsServer server = new ProvTlsServer(this);
+                ProvTlsServer server = new ProvTlsServer(this, sslParameters.copy());
                 this.protocolPeer = server;
     
                 serverProtocol.accept(server);

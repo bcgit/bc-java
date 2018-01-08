@@ -161,7 +161,7 @@ public class BouncyCastleJsseProvider
             {
                 public Object createInstance(Object constructorParameter)
                 {
-                    return new ProvSSLContextSpi(fipsMode, baseCryptoProvider, new String[]{ "TLSv1.2" });
+                    return new ProvSSLContextSpi(fipsMode, baseCryptoProvider, null);
                 }
             });
         addAlgorithmImplementation("SSLContext.TLSV1", "org.bouncycastle.jsse.provider.SSLContext.TLSv1",
@@ -195,7 +195,7 @@ public class BouncyCastleJsseProvider
                 {
                     try
                     {
-                        ProvSSLContextSpi defaultSSLContextSpi = new ProvSSLContextSpi(fipsMode, baseCryptoProvider, new String[]{ "TLSv1.2" });
+                        ProvSSLContextSpi defaultSSLContextSpi = new ProvSSLContextSpi(fipsMode, baseCryptoProvider, null);
                         defaultSSLContextSpi.engineInit(null, null, null);
                         return defaultSSLContextSpi;
                     }
