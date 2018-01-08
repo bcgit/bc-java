@@ -6,7 +6,6 @@ import java.net.Socket;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
@@ -30,11 +29,9 @@ import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.NameType;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.ServerName;
-import org.bouncycastle.tls.ServerNameList;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentials;
-import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsSession;
@@ -62,12 +59,12 @@ class ProvTlsClient
     protected ProvSSLSessionImpl sslSession = null;
     protected boolean handshakeComplete = false;
 
-    ProvTlsClient(ProvTlsManager manager)
+    ProvTlsClient(ProvTlsManager manager, ProvSSLParameters sslParameters)
     {
         super(manager.getContextData().getCrypto(), new DefaultTlsKeyExchangeFactory(), new ProvDHConfigVerifier());
 
         this.manager = manager;
-        this.sslParameters = manager.getProvSSLParameters();
+        this.sslParameters = sslParameters;
     }
 
     @Override
@@ -87,7 +84,7 @@ class ProvTlsClient
     {
         if (provEnableSNIExtension)
         {
-            List<BCSNIServerName> sniServerNames = manager.getProvSSLParameters().getServerNames();
+            List<BCSNIServerName> sniServerNames = sslParameters.getServerNames();
             if (sniServerNames == null)
             {
                 String peerHost = manager.getPeerHost();

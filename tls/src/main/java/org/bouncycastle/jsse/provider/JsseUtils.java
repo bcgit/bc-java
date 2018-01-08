@@ -59,6 +59,13 @@ abstract class JsseUtils
         return false;
     }
 
+    public static String[] copyOf(String[] data, int newLength)
+    {
+        String[] tmp = new String[newLength];
+        System.arraycopy(data, 0, tmp, 0, Math.min(data.length, newLength));
+        return tmp;
+    }
+
     public static String getAuthTypeClient(short clientCertificateType) throws IOException
     {
         switch (clientCertificateType)
