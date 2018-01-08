@@ -33,7 +33,7 @@ public class Base64Test extends AbstractCoderTest
     private static final String invalidc = "mO4TyLWG7vjFWdKT8IJcVbZ/%wc=";
     private static final String invalidd = "F4I4p8Vf/mS+Kxvri3FPoMcqm%1c";
     private static final String invalide = "UJmEdJYodqHJmd7Rtv6/OP29/jUEFw=1";
-
+    private static final String invalidf = "DAxFSkJDQSBTYW";
 
     public Base64Test(
         String    name)
@@ -61,7 +61,9 @@ public class Base64Test extends AbstractCoderTest
     public void testInvalidInput()
         throws IOException
     {
-        String[] invalid = new String[] { invalid1, invalid2, invalid3, invalid4, invalid5, invalid6, invalid7, invalid8, invalid9, invalida, invalidb, invalidc, invalidd, invalide };
+        String[] invalid = new String[] {
+            invalid1, invalid2, invalid3, invalid4, invalid5, invalid6, invalid7, invalid8,
+            invalid9, invalida, invalidb, invalidc, invalidd, invalide, invalidf };
 
         for (int i = 0; i != invalid.length; i++)
         {
