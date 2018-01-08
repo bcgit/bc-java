@@ -133,87 +133,112 @@ abstract class SSLParametersUtil
         setUseCipherSuitesOrder = findMethod(methods, "setUseCipherSuitesOrder");
     }
 
-    static SSLParameters toSSLParameters(final ProvSSLParameters provSslParameters)
+    static SSLParameters getSSLParameters(ProvSSLParameters prov)
     {
-        final SSLParameters r = new SSLParameters();
-        r.setCipherSuites(provSslParameters.getCipherSuites());
-        r.setProtocols(provSslParameters.getProtocols());
+        SSLParameters ssl = new SSLParameters();
+        ssl.setCipherSuites(prov.getCipherSuites());
+        ssl.setProtocols(prov.getProtocols());
         // From JDK 1.7
         if (setAlgorithmConstraints != null)
         {
-            invokeSetterPrivileged(r, setAlgorithmConstraints, provSslParameters.getAlgorithmConstraints());
+            invokeSetterPrivileged(ssl, setAlgorithmConstraints, prov.getAlgorithmConstraints());
         }
         if (setEndpointIdentificationAlgorithm != null)
         {
-            invokeSetterPrivileged(r, setEndpointIdentificationAlgorithm, provSslParameters.getEndpointIdentificationAlgorithm());
+            invokeSetterPrivileged(ssl, setEndpointIdentificationAlgorithm, prov.getEndpointIdentificationAlgorithm());
         }
         // From JDK 1.8
         if (setServerNames != null)
         {
-            invokeSetterPrivileged(r, setServerNames, JsseUtils_8.exportSNIServerNames(provSslParameters.getServerNames()));
+            invokeSetterPrivileged(ssl, setServerNames, JsseUtils_8.exportSNIServerNames(prov.getServerNames()));
         }
         // TODO[jsse] From JDK 1.8
 //        r.setSNIMatchers(p.getSNIMatchers());
         if (setUseCipherSuitesOrder != null)
         {
-            invokeSetterPrivileged(r, setUseCipherSuitesOrder, provSslParameters.getUseCipherSuitesOrder());
+            invokeSetterPrivileged(ssl, setUseCipherSuitesOrder, prov.getUseCipherSuitesOrder());
         }
 
         // NOTE: The client-auth setters each clear the other client-auth property, so only one can be set
-        if (provSslParameters.getNeedClientAuth())
+        if (prov.getNeedClientAuth())
         {
-            r.setNeedClientAuth(true);
+            ssl.setNeedClientAuth(true);
         }
-        else if (provSslParameters.getWantClientAuth())
+        else if (prov.getWantClientAuth())
         {
-            r.setWantClientAuth(true);
+            ssl.setWantClientAuth(true);
         }
         else
         {
-            r.setWantClientAuth(false);
+            ssl.setWantClientAuth(false);
         }
-        return r;
+        return ssl;
     }
 
-    static ProvSSLParameters toProvSSLParameters(final SSLParameters sslParameters)
+    static void setSSLParameters(ProvSSLParameters prov, SSLParameters ssl)
     {
-        final ProvSSLParameters r = new ProvSSLParameters();
-        r.setCipherSuites(sslParameters.getCipherSuites());
-        r.setProtocols(sslParameters.getProtocols());
-        // From JDK 1.7
-        if (getAlgorithmConstraints != null)
+        String[] cipherSuites = ssl.getCipherSuites();
+        if (cipherSuites != null)
         {
-            r.setAlgorithmConstraints(invokeGetterPrivileged(sslParameters, getAlgorithmConstraints));
+            prov.setCipherSuites(cipherSuites);
         }
-        if (getEndpointIdentificationAlgorithm != null)
+
+        String[] protocols = ssl.getProtocols();
+        if (protocols != null)
         {
-            r.setEndpointIdentificationAlgorithm((String)invokeGetterPrivileged(sslParameters, getEndpointIdentificationAlgorithm));
-        }
-        // From JDK 1.8
-        if (getServerNames != null)
-        {
-            r.setServerNames(JsseUtils_8.importSNIServerNames(invokeGetterPrivileged(sslParameters, getServerNames)));
-        }
-        // TODO[jsse] From JDK 1.8
-//        r.setSNIMatchers(p.getSNIMatchers());
-        if (getUseCipherSuitesOrder != null)
-        {
-            r.setUseCipherSuitesOrder((Boolean)invokeGetterPrivileged(sslParameters, getUseCipherSuitesOrder));
+            prov.setProtocols(protocols);
         }
 
         // NOTE: The client-auth setters each clear the other client-auth property, so only one can be set
-        if (sslParameters.getNeedClientAuth())
+        if (ssl.getNeedClientAuth())
         {
-            r.setNeedClientAuth(true);
+            prov.setNeedClientAuth(true);
         }
-        else if (sslParameters.getWantClientAuth())
+        else if (ssl.getWantClientAuth())
         {
-            r.setWantClientAuth(true);
+            prov.setWantClientAuth(true);
         }
         else
         {
-            r.setWantClientAuth(false);
+            prov.setWantClientAuth(false);
         }
-        return r;
+
+        // From JDK 1.7
+
+        if (getAlgorithmConstraints != null)
+        {
+            prov.setAlgorithmConstraints(invokeGetterPrivileged(ssl, getAlgorithmConstraints));
+        }
+
+        if (getEndpointIdentificationAlgorithm != null)
+        {
+            prov.setEndpointIdentificationAlgorithm((String)invokeGetterPrivileged(ssl, getEndpointIdentificationAlgorithm));
+        }
+
+        // From JDK 1.8
+
+        if (getUseCipherSuitesOrder != null)
+        {
+            prov.setUseCipherSuitesOrder((Boolean)invokeGetterPrivileged(ssl, getUseCipherSuitesOrder));
+        }
+
+        if (getServerNames != null)
+        {
+            Object serverNames = invokeGetterPrivileged(ssl, getServerNames);
+            if (serverNames != null)
+            {
+                prov.setServerNames(JsseUtils_8.importSNIServerNames(serverNames));
+            }
+        }
+
+        // TODO[jsse]
+//        if (getSNIMatchers != null)
+//        {
+//            Object sniMatchers = invokerGetterPrivileged(ssl, getSNIMatchers);
+//            if (sniMatchers != null)
+//            {
+//                prov.setSNIMatchers(JsseUtils_8.importSNIMatchers(sniMatchers));
+//            }
+//        }
     }
 }

@@ -8,8 +8,6 @@ interface ProvTlsManager
 
     boolean getEnableSessionCreation();
 
-    ProvSSLParameters getProvSSLParameters();
-
     ContextData getContextData();
 
     String getPeerHost();
