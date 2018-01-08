@@ -74,7 +74,7 @@ abstract class SupportedGroups
             if (name.length() < 1)
                 continue;
 
-            int namedGroup = NamedGroup.getByName(name.trim());
+            int namedGroup = NamedGroup.getByName(name);
             if (namedGroup < 0)
             {
                 LOG.warning("'" + PROPERTY_NAMEDGROUPS + "' contains unrecognised NamedGroup: " + name);
