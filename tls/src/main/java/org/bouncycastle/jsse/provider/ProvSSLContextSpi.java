@@ -483,12 +483,6 @@ class ProvSSLContextSpi
     }
 
     @Override
-    protected SSLParameters engineGetDefaultSSLParameters()
-    {
-        return super.engineGetDefaultSSLParameters();
-    }
-
-    @Override
     protected synchronized SSLSessionContext engineGetServerSessionContext()
     {
         return serverSessionContext;
