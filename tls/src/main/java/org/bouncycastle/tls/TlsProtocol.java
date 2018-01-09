@@ -107,6 +107,11 @@ public abstract class TlsProtocol
         this.recordStream = new RecordStream(this, input, output);
     }
 
+    protected void closeConnection() throws IOException
+    {
+        recordStream.close();
+    }
+
     protected abstract TlsContext getContext();
 
     abstract AbstractTlsContext getContextAdmin();
@@ -165,12 +170,12 @@ public abstract class TlsProtocol
 
             raiseAlertWarning(AlertDescription.close_notify, "Connection closed");
 
-            recordStream.safeClose();
-
             if (!appDataReady)
             {
                 cleanupHandshake();
             }
+
+            closeConnection();
         }
     }
 
@@ -185,7 +190,7 @@ public abstract class TlsProtocol
         }
     }
 
-    protected void handleFailure()
+    protected void handleFailure() throws IOException
     {
         this.closed = true;
         this.failedWithError = true;
@@ -197,12 +202,12 @@ public abstract class TlsProtocol
         // TODO This isn't quite in the right place. Also, as of TLS 1.1 the above is obsolete.
         invalidateSession();
 
-        recordStream.safeClose();
-
         if (!appDataReady)
         {
             cleanupHandshake();
         }
+
+        closeConnection();
     }
 
     protected abstract void handleHandshakeMessage(short type, ByteArrayInputStream buf)

@@ -433,14 +433,16 @@ class RecordStream
         return result;
     }
 
-    void safeClose()
+    void close() throws IOException
     {
+        IOException io = null;
         try
         {
             input.close();
         }
         catch (IOException e)
         {
+            io = e;
         }
 
         try
@@ -449,6 +451,15 @@ class RecordStream
         }
         catch (IOException e)
         {
+            if (io == null)
+            {
+                io = e;
+            }
+            else
+            {
+                // TODO[tls] Available from JDK 7
+//                io.addSuppressed(e);
+            }
         }
     }
 

@@ -77,13 +77,29 @@ class ProvSSLSocketWrap
     @Override
     public synchronized void close() throws IOException
     {
-        if (protocol != null)
+        if (protocol == null)
+        {
+            closeSocket();
+        }
+        else
         {
             protocol.close();
         }
+    }
+
+    @Override
+    protected void closeSocket() throws IOException
+    {
         if (wrapAutoClose)
         {
             wrapSocket.close();
+        }
+        else if (protocol != null)
+        {
+            /*
+             * TODO[jsse] If we initiated the close, we need to wait for the close_notify from the
+             * peer to arrive so that the underlying socket can be used after we detach.
+             */
         }
     }
 
@@ -440,9 +456,12 @@ class ProvSSLSocketWrap
             // TODO[jsse] Check for session to re-use and apply to handshake
             // TODO[jsse] Allocate this.handshakeSession and update it during handshake
     
+            InputStream input = wrapSocket.getInputStream();
+            OutputStream output = wrapSocket.getOutputStream();
+
             if (this.useClientMode)
             {
-                TlsClientProtocol clientProtocol = new TlsClientProtocol(wrapSocket.getInputStream(), wrapSocket.getOutputStream());
+                TlsClientProtocol clientProtocol = new ProvTlsClientProtocol(input, output, socketCloser);
                 this.protocol = clientProtocol;
 
                 ProvTlsClient client = new ProvTlsClient(this, sslParameters.copy());
@@ -452,7 +471,7 @@ class ProvSSLSocketWrap
             }
             else
             {
-                TlsServerProtocol serverProtocol = new TlsServerProtocol(wrapSocket.getInputStream(), wrapSocket.getOutputStream());
+                TlsServerProtocol serverProtocol = new ProvTlsServerProtocol(input, output, socketCloser);
                 this.protocol = serverProtocol;
     
                 ProvTlsServer server = new ProvTlsServer(this, sslParameters.copy());
