@@ -461,6 +461,11 @@ class RecordStream
 //                io.addSuppressed(e);
             }
         }
+
+        if (io != null)
+        {
+            throw io;
+        }
     }
 
     void flush()
