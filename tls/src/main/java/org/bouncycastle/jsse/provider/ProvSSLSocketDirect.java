@@ -110,11 +110,14 @@ class ProvSSLSocketDirect
     @Override
     public synchronized void close() throws IOException
     {
-        if (protocol != null)
+        if (protocol == null)
+        {
+            closeSocket();
+        }
+        else
         {
             protocol.close();
         }
-        super.close();
     }
 
     public synchronized BCSSLConnection getConnection()
@@ -290,9 +293,12 @@ class ProvSSLSocketDirect
             // TODO[jsse] Check for session to re-use and apply to handshake
             // TODO[jsse] Allocate this.handshakeSession and update it during handshake
     
+            InputStream input = super.getInputStream();
+            OutputStream output = super.getOutputStream();
+
             if (this.useClientMode)
             {
-                TlsClientProtocol clientProtocol = new TlsClientProtocol(super.getInputStream(), super.getOutputStream());
+                TlsClientProtocol clientProtocol = new ProvTlsClientProtocol(input, output, socketCloser);
                 this.protocol = clientProtocol;
     
                 ProvTlsClient client = new ProvTlsClient(this, sslParameters.copy());
@@ -302,7 +308,7 @@ class ProvSSLSocketDirect
             }
             else
             {
-                TlsServerProtocol serverProtocol = new TlsServerProtocol(super.getInputStream(), super.getOutputStream());
+                TlsServerProtocol serverProtocol = new ProvTlsServerProtocol(input, output, socketCloser);
                 this.protocol = serverProtocol;
     
                 ProvTlsServer server = new ProvTlsServer(this, sslParameters.copy());
