@@ -1,5 +1,6 @@
 package org.bouncycastle.jsse.provider;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
@@ -18,6 +19,14 @@ abstract class ProvSSLSocketBase
     extends SSLSocket
     implements BCSSLSocket
 {
+    protected final Closeable socketCloser = new Closeable()
+    {
+        public void close() throws IOException
+        {
+            closeSocket();
+        }
+    };
+
     protected final Set<HandshakeCompletedListenerAdapter> listeners = Collections.synchronizedSet(
         new HashSet<HandshakeCompletedListenerAdapter>());
 
@@ -57,6 +66,11 @@ abstract class ProvSSLSocketBase
         }
 
         listeners.add(new HandshakeCompletedListenerAdapter(listener));
+    }
+
+    protected void closeSocket() throws IOException
+    {
+        super.close();
     }
 
     @Override
