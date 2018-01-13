@@ -318,4 +318,18 @@ public class PGPSignatureSubpacketVector
     {
         return packets;
     }
+
+    /**
+     * Return a copy of the subpackets in this vector.
+     *
+     * @return an array containing the vector subpackets in order.
+     */
+    public SignatureSubpacket[] toArray()
+    {
+        SignatureSubpacket[] rv = new SignatureSubpacket[packets.length];
+
+        System.arraycopy(packets, 0, rv, 0, rv.length);
+
+        return rv;
+    }
 }
