@@ -38,13 +38,44 @@ public class PGPPublicKeyRing
         this(new ByteArrayInputStream(encoding), fingerPrintCalculator);
     }
 
+    private static List checkKeys(List keys)
+    {
+        List rv = new ArrayList(keys.size());
+
+        for (int i = 0; i != keys.size(); i++)
+        {
+            PGPPublicKey k = (PGPPublicKey)keys.get(i);
+
+            if (i == 0)
+            {
+                if (!k.isMasterKey())
+                {
+                    throw new IllegalArgumentException("key 0 must be a master key");
+                }
+            }
+            else
+            {
+                if (k.isMasterKey())
+                {
+                    throw new IllegalArgumentException("key 0 can be only master key");
+                }
+            }
+            rv.add(k);
+        }
+
+        return rv;
+    }
+
     /**
-     * @param pubKeys
+     * Base constructor from a list of keys representing a public key ring (a master key and its
+     * associated sub-keys).
+     *
+     * @param pubKeys the list of keys making up the ring.
      */
-    PGPPublicKeyRing(
+    public PGPPublicKeyRing(
         List pubKeys)
     {
-        this.keys = pubKeys;
+        this.keys = checkKeys(pubKeys);
     }
 
     public PGPPublicKeyRing(

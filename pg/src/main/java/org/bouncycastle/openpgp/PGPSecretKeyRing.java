@@ -35,9 +35,43 @@ public class PGPSecretKeyRing
     List keys;
     List extraPubKeys;
 
-    PGPSecretKeyRing(List keys)
+    private static List checkKeys(List keys)
     {
-        this(keys, new ArrayList());
+        List rv = new ArrayList(keys.size());
+
+        for (int i = 0; i != keys.size(); i++)
+        {
+            PGPSecretKey k = (PGPSecretKey)keys.get(i);
+
+            if (i == 0)
+            {
+                if (!k.isMasterKey())
+                {
+                    throw new IllegalArgumentException("key 0 must be a master key");
+                }
+            }
+            else
+            {
+                if (k.isMasterKey())
+                {
+                    throw new IllegalArgumentException("key 0 can be only master key");
+                }
+            }
+            rv.add(k);
+        }
+
+        return rv;
+    }
+
+    /**
+     * Base constructor from a list of keys representing a secret key ring (a master key and its
+     * associated sub-keys).
+     *
+     * @param secKeys the list of keys making up the ring.
+     */
+    public PGPSecretKeyRing(List secKeys)
+    {
+        this(checkKeys(secKeys), new ArrayList());
     }
 
     private PGPSecretKeyRing(List keys, List extraPubKeys)
