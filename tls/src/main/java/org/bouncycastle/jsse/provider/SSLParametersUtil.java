@@ -14,6 +14,8 @@ abstract class SSLParametersUtil
     private static final Method setEndpointIdentificationAlgorithm;
     private static final Method getServerNames;
     private static final Method setServerNames;
+    private static final Method getSNIMatchers;
+    private static final Method setSNIMatchers;
     private static final Method getUseCipherSuitesOrder;
     private static final Method setUseCipherSuitesOrder;
 
@@ -120,44 +122,24 @@ abstract class SSLParametersUtil
     static
     {
         Class<?> sslParametersClazz = getClassPrivileged("javax.net.ssl.SSLParameters");
-        
+
         Method[] methods = getMethodsPrivileged(sslParametersClazz);
-        
+
         getAlgorithmConstraints = findMethod(methods, "getAlgorithmConstraints");
         setAlgorithmConstraints = findMethod(methods, "setAlgorithmConstraints");
         getEndpointIdentificationAlgorithm = findMethod(methods, "getEndpointIdentificationAlgorithm");
         setEndpointIdentificationAlgorithm = findMethod(methods, "setEndpointIdentificationAlgorithm");
         getServerNames = findMethod(methods, "getServerNames");
         setServerNames = findMethod(methods, "setServerNames");
+        getSNIMatchers = findMethod(methods, "getSNIMatchers");
+        setSNIMatchers = findMethod(methods, "setSNIMatchers");
         getUseCipherSuitesOrder = findMethod(methods, "getUseCipherSuitesOrder");
         setUseCipherSuitesOrder = findMethod(methods, "setUseCipherSuitesOrder");
     }
 
     static SSLParameters getSSLParameters(ProvSSLParameters prov)
     {
-        SSLParameters ssl = new SSLParameters();
-        ssl.setCipherSuites(prov.getCipherSuites());
-        ssl.setProtocols(prov.getProtocols());
-        // From JDK 1.7
-        if (setAlgorithmConstraints != null)
-        {
-            invokeSetterPrivileged(ssl, setAlgorithmConstraints, prov.getAlgorithmConstraints());
-        }
-        if (setEndpointIdentificationAlgorithm != null)
-        {
-            invokeSetterPrivileged(ssl, setEndpointIdentificationAlgorithm, prov.getEndpointIdentificationAlgorithm());
-        }
-        // From JDK 1.8
-        if (setServerNames != null)
-        {
-            invokeSetterPrivileged(ssl, setServerNames, JsseUtils_8.exportSNIServerNames(prov.getServerNames()));
-        }
-        // TODO[jsse] From JDK 1.8
-//        r.setSNIMatchers(p.getSNIMatchers());
-        if (setUseCipherSuitesOrder != null)
-        {
-            invokeSetterPrivileged(ssl, setUseCipherSuitesOrder, prov.getUseCipherSuitesOrder());
-        }
+        SSLParameters ssl = new SSLParameters(prov.getCipherSuites(), prov.getProtocols());
 
         // NOTE: The client-auth setters each clear the other client-auth property, so only one can be set
         if (prov.getNeedClientAuth())
@@ -172,6 +154,36 @@ abstract class SSLParametersUtil
         {
             ssl.setWantClientAuth(false);
         }
+
+        // From JDK 1.7
+
+        if (setAlgorithmConstraints != null)
+        {
+            invokeSetterPrivileged(ssl, setAlgorithmConstraints, prov.getAlgorithmConstraints());
+        }
+
+        if (setEndpointIdentificationAlgorithm != null)
+        {
+            invokeSetterPrivileged(ssl, setEndpointIdentificationAlgorithm, prov.getEndpointIdentificationAlgorithm());
+        }
+
+        // From JDK 1.8
+
+        if (setUseCipherSuitesOrder != null)
+        {
+            invokeSetterPrivileged(ssl, setUseCipherSuitesOrder, prov.getUseCipherSuitesOrder());
+        }
+
+        if (setServerNames != null)
+        {
+            invokeSetterPrivileged(ssl, setServerNames, JsseUtils_8.exportSNIServerNames(prov.getServerNames()));
+        }
+
+        if (setSNIMatchers != null)
+        {
+            invokeSetterPrivileged(ssl, setSNIMatchers, JsseUtils_8.exportSNIMatchers(prov.getSNIMatchers()));
+        }
+
         return ssl;
     }
 
@@ -231,14 +243,13 @@ abstract class SSLParametersUtil
             }
         }
 
-        // TODO[jsse]
-//        if (getSNIMatchers != null)
-//        {
-//            Object sniMatchers = invokerGetterPrivileged(ssl, getSNIMatchers);
-//            if (sniMatchers != null)
-//            {
-//                prov.setSNIMatchers(JsseUtils_8.importSNIMatchers(sniMatchers));
-//            }
-//        }
+        if (getSNIMatchers != null)
+        {
+            Object sniMatchers = invokeGetterPrivileged(ssl, getSNIMatchers);
+            if (sniMatchers != null)
+            {
+                prov.setSNIMatchers(JsseUtils_8.importSNIMatchers(sniMatchers));
+            }
+        }
     }
 }

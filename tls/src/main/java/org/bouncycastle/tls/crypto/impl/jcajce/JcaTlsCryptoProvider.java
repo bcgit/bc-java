@@ -138,7 +138,6 @@ public class JcaTlsCryptoProvider
                 this.state = new byte[seed.length];
             }
 
-            @Override
             protected void engineSetSeed(byte[] bytes)
             {
                 synchronized (digest)
@@ -147,7 +146,6 @@ public class JcaTlsCryptoProvider
                 }
             }
 
-            @Override
             protected void engineNextBytes(byte[] bytes)
             {
                 synchronized (digest)
@@ -167,7 +165,6 @@ public class JcaTlsCryptoProvider
                 }
             }
 
-            @Override
             protected byte[] engineGenerateSeed(int seedLen)
             {
                 return source.generateSeed(seedLen);

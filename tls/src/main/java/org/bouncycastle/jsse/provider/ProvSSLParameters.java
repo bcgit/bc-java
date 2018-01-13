@@ -12,7 +12,7 @@ class ProvSSLParameters
 {
     static final boolean hasSslParameters;
 
-    private static <T> List<T> copyList(List<T> list)
+    private static <T> List<T> copyList(Collection<T> list)
     {
         if (list == null)
         {
@@ -170,6 +170,6 @@ class ProvSSLParameters
 
     public void setSNIMatchers(Collection<BCSNIMatcher> matchers)
     {
-        throw new UnsupportedOperationException();
+        this.sniMatchers = copyList(matchers);
     }
 }
