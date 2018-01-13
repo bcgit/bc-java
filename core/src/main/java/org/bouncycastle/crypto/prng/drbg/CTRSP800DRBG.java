@@ -380,7 +380,7 @@ public class CTRSP800DRBG
         }
         else
         {
-            additionalInput = new byte[_seedLength];
+            additionalInput = new byte[_seedLength / 8];
         }
 
         byte[] out = new byte[_V.length];
