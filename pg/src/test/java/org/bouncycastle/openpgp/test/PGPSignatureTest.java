@@ -14,6 +14,7 @@ import java.util.Iterator;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.KeyFlags;
@@ -496,6 +497,15 @@ public class PGPSignatureTest
         if (hashedPcks.size() != 6)
         {
             fail("wrong number of hashed packets found.");
+        }
+
+        SignatureSubpacket[] subPacks = hashedPcks.toArray();
+
+        isTrue(subPacks.length == hashedPcks.size());
+
+        for (int i = 0; i != subPacks.length; i++)
+        {
+            isEquals(subPacks[i], hashedPcks.getSubpacket(subPacks[i].getType()));
         }
 
         if (unhashedPcks.size() != 1)
