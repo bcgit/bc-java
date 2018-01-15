@@ -23,6 +23,8 @@ class ProvSSLParameters
         return Collections.unmodifiableList(new ArrayList<T>(list));
     }
 
+    private final ProvSSLContextSpi context;
+
     private String[] cipherSuites;
     private String[] protocols;
     private boolean needClientAuth = false;
@@ -33,15 +35,17 @@ class ProvSSLParameters
     private List<BCSNIMatcher> sniMatchers;
     private List<BCSNIServerName> sniServerNames;
 
-    ProvSSLParameters(String[] cipherSuites, String[] protocols)
+    ProvSSLParameters(ProvSSLContextSpi context, String[] cipherSuites, String[] protocols)
     {
+        this.context = context;
+
         this.cipherSuites = cipherSuites;
         this.protocols = protocols;
     }
 
     ProvSSLParameters copy()
     {
-        ProvSSLParameters p = new ProvSSLParameters(cipherSuites, protocols);
+        ProvSSLParameters p = new ProvSSLParameters(context, cipherSuites, protocols);
         p.needClientAuth = needClientAuth;
         p.wantClientAuth = wantClientAuth;
         p.algorithmConstraints = algorithmConstraints;
@@ -54,11 +58,21 @@ class ProvSSLParameters
 
     public void setCipherSuites(String[] cipherSuites)
     {
+        if (!context.isSupportedCipherSuites(cipherSuites))
+        {
+            throw new IllegalArgumentException("'cipherSuites' cannot be null, or contain unsupported cipher suites");
+        }
+
         this.cipherSuites = cipherSuites.clone();
     }
 
     public void setProtocols(String[] protocols)
     {
+        if (!context.isSupportedProtocols(protocols))
+        {
+            throw new IllegalArgumentException("'protocols' cannot be null, or contain unsupported protocols");
+        }
+
         this.protocols = protocols.clone();
     }
 

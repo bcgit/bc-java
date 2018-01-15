@@ -5,6 +5,7 @@ import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -242,6 +243,16 @@ class ProvSSLContextSpi
         return result;
     }
 
+    private static String[] getArray(Collection<String> c)
+    {
+        return c.toArray(new String[c.size()]);
+    }
+
+    private static String[] getKeysArray(Map<String, ?> m)
+    {
+        return getArray(m.keySet());
+    }
+
     protected final boolean isInFipsMode;
     protected final TlsCryptoProvider cryptoProvider;
     protected final String[] defaultProtocolsClient;
@@ -268,7 +279,7 @@ class ProvSSLContextSpi
         this.supportedCipherSuites = isInFipsMode ? SUPPORTED_CIPHERSUITE_MAP_FIPS : SUPPORTED_CIPHERSUITE_MAP;
 
         List<String> defaultCipherSuiteList = isInFipsMode ? DEFAULT_CIPHERSUITE_LIST_FIPS : DEFAULT_CIPHERSUITE_LIST;
-        this.defaultCipherSuites = defaultCipherSuiteList.toArray(new String[defaultCipherSuiteList.size()]);
+        this.defaultCipherSuites = getArray(defaultCipherSuiteList);
     }
 
     int[] convertCipherSuites(String[] suites)
@@ -308,7 +319,7 @@ class ProvSSLContextSpi
 
     ProvSSLParameters getDefaultParameters(boolean isServer)
     {
-        return new ProvSSLParameters(defaultCipherSuites, getDefaultProtocols(isServer));
+        return new ProvSSLParameters(this, defaultCipherSuites, getDefaultProtocols(isServer));
     }
 
     String[] getDefaultProtocols(boolean isServer)
@@ -389,12 +400,12 @@ class ProvSSLContextSpi
 
     String[] getSupportedCipherSuites()
     {
-        return supportedCipherSuites.keySet().toArray(new String[supportedCipherSuites.size()]);
+        return getKeysArray(supportedCipherSuites);
     }
 
     String[] getSupportedProtocols()
     {
-        return supportedProtocols.keySet().toArray(new String[supportedProtocols.size()]);
+        return getKeysArray(supportedProtocols);
     }
 
     boolean isFips()
