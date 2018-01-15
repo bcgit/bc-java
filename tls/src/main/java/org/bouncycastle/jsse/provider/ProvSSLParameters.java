@@ -10,8 +10,6 @@ import org.bouncycastle.jsse.BCSNIServerName;
 
 class ProvSSLParameters
 {
-    static final boolean hasSslParameters;
-
     private static <T> List<T> copyList(Collection<T> list)
     {
         if (list == null)
@@ -23,21 +21,6 @@ class ProvSSLParameters
             return Collections.emptyList();
         }
         return Collections.unmodifiableList(new ArrayList<T>(list));
-    }
-
-    static
-    {
-        Class<?> clazz = null;
-        try
-        {
-            clazz = JsseUtils.loadClass(ProvSSLParameters.class,"javax.net.ssl.SSLParameters");
-        }
-        catch (Exception e)
-        {
-            clazz = null;
-        }
-
-        hasSslParameters = (clazz != null);
     }
 
     private String[] cipherSuites;
