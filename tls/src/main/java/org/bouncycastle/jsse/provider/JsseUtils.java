@@ -26,13 +26,13 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
+import org.bouncycastle.jsse.BCStandardConstants;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
-import org.bouncycastle.tls.NameType;
 import org.bouncycastle.tls.ServerName;
 import org.bouncycastle.tls.ServerNameList;
 import org.bouncycastle.tls.SignatureAlgorithm;
@@ -403,7 +403,7 @@ abstract class JsseUtils
     {
         switch (serverName.getNameType())
         {
-        case NameType.host_name:
+        case BCStandardConstants.SNI_HOST_NAME:
             return new BCSNIHostName(serverName.getHostName());
         default:
             return null;
