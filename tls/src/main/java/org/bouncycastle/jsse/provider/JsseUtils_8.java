@@ -12,7 +12,7 @@ import javax.net.ssl.SNIServerName;
 import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
-import org.bouncycastle.tls.NameType;
+import org.bouncycastle.jsse.BCStandardConstants;
 
 abstract class JsseUtils_8
     extends JsseUtils
@@ -108,7 +108,7 @@ abstract class JsseUtils_8
 
     static SNIHostName exportSNIServerName(BCSNIServerName serverName)
     {
-        if (serverName == null || serverName.getType() != NameType.host_name)
+        if (serverName == null || serverName.getType() != BCStandardConstants.SNI_HOST_NAME)
         {
             return null;
         }
@@ -188,7 +188,7 @@ abstract class JsseUtils_8
 
     static BCSNIHostName importSNIServerName(SNIServerName serverName)
     {
-        if (serverName == null || serverName.getType() != NameType.host_name)
+        if (serverName == null || serverName.getType() != BCStandardConstants.SNI_HOST_NAME)
         {
             return null;
         }
