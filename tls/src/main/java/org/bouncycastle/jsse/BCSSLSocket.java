@@ -14,4 +14,24 @@ public interface BCSSLSocket
      * @return A {@link BCSSLConnection} instance.
      */
     BCSSLConnection getConnection();
+
+    /**
+     * Returns a {@link BCSSLParameters} with properties reflecting the current configuration.
+     * @return the current {@link BCSSLParameters parameters}
+     */
+    BCSSLParameters getParameters();
+
+    /**
+     * Sets parameters according to the properties in a {@link BCSSLParameters}.
+     * <p>
+     * Note that any properties set to null will be ignored, which will leave the corresponding
+     * settings unchanged.
+     * </p>
+     *
+     * @param parameters
+     *            the {@link BCSSLParameters parameters} to set
+     * @throws IllegalArgumentException
+     *             if the cipherSuites or protocols properties contain unsupported values
+     */
+    void setParameters(BCSSLParameters parameters);
 }

@@ -16,6 +16,7 @@ import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLEngine;
+import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.RecordFormat;
 import org.bouncycastle.tls.RecordPreview;
@@ -205,6 +206,11 @@ class ProvSSLEngine
         return sslParameters.getNeedClientAuth();
     }
 
+    public synchronized BCSSLParameters getParameters()
+    {
+        return SSLParametersUtil.getParameters(sslParameters);
+    }
+
     @Override
     public synchronized SSLSession getSession()
     {
@@ -275,6 +281,11 @@ class ProvSSLEngine
     public synchronized void setNeedClientAuth(boolean need)
     {
         sslParameters.setNeedClientAuth(need);
+    }
+
+    public synchronized void setParameters(BCSSLParameters parameters)
+    {
+        SSLParametersUtil.setParameters(this.sslParameters, parameters);
     }
 
     @Override

@@ -4,8 +4,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import org.bouncycastle.tls.NameType;
-
 public final class BCSNIHostName extends BCSNIServerName
 {
     public static BCSNIMatcher createSNIMatcher(String regex)
@@ -46,14 +44,14 @@ public final class BCSNIHostName extends BCSNIServerName
 
     public BCSNIHostName(String hostName)
     {
-        super(NameType.host_name, toAscii(hostName));
+        super(BCStandardConstants.SNI_HOST_NAME, toAscii(hostName));
 
         this.hostName = hostName;
     }
 
     public BCSNIHostName(byte[] asciiEncoding)
     {
-        super(NameType.host_name, asciiEncoding);
+        super(BCStandardConstants.SNI_HOST_NAME, asciiEncoding);
 
         this.hostName = fromAscii(asciiEncoding);
     }
@@ -89,14 +87,14 @@ public final class BCSNIHostName extends BCSNIServerName
 
         BCSNIHostNameMatcher(String regex)
         {
-            super(NameType.host_name);
+            super(BCStandardConstants.SNI_HOST_NAME);
 
             this.pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
         }
 
         public boolean matches(BCSNIServerName serverName)
         {
-            if (serverName == null || serverName.getType() != NameType.host_name)
+            if (serverName == null || serverName.getType() != BCStandardConstants.SNI_HOST_NAME)
             {
                 return false;
             }

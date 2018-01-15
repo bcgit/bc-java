@@ -16,6 +16,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.jsse.BCSSLConnection;
+import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
@@ -251,6 +252,11 @@ class ProvSSLSocketWrap
         return wrapSocket.getSoTimeout();
     }
 
+    public synchronized BCSSLParameters getParameters()
+    {
+        return SSLParametersUtil.getParameters(sslParameters);
+    }
+
     @Override
     public synchronized SSLParameters getSSLParameters()
     {
@@ -353,6 +359,11 @@ class ProvSSLSocketWrap
         sslParameters.setNeedClientAuth(need);
     }
 
+    public synchronized void setParameters(BCSSLParameters parameters)
+    {
+        SSLParametersUtil.setParameters(this.sslParameters, parameters);
+    }
+
     @Override
     public void setPerformancePreferences(int connectionTime, int latency, int bandwidth)
     {
@@ -378,12 +389,6 @@ class ProvSSLSocketWrap
     }
 
     @Override
-    public synchronized void setSSLParameters(SSLParameters sslParameters)
-    {
-        SSLParametersUtil.setSSLParameters(this.sslParameters, sslParameters);
-    }
-
-    @Override
     public void setSoLinger(boolean on, int linger) throws SocketException
     {
         wrapSocket.setSoLinger(on, linger);
@@ -393,6 +398,12 @@ class ProvSSLSocketWrap
     public void setSoTimeout(int timeout) throws SocketException
     {
         wrapSocket.setSoTimeout(timeout);
+    }
+
+    @Override
+    public synchronized void setSSLParameters(SSLParameters sslParameters)
+    {
+        SSLParametersUtil.setSSLParameters(this.sslParameters, sslParameters);
     }
 
     @Override
