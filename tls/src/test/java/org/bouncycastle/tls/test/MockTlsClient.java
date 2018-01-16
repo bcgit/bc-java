@@ -133,8 +133,11 @@ class MockTlsClient
     {
         super.notifyHandshakeComplete();
 
+        byte[] tlsServerEndPoint = context.exportChannelBinding(ChannelBinding.tls_server_end_point);
+        System.out.println("'tls-server-end-point': " + hex(tlsServerEndPoint));
+
         byte[] tlsUnique = context.exportChannelBinding(ChannelBinding.tls_unique);
-        System.out.println("'tls-unique': " + Hex.toHexString(tlsUnique));
+        System.out.println("'tls-unique': " + hex(tlsUnique));
 
         TlsSession newSession = context.getResumableSession();
         if (newSession != null)
@@ -153,5 +156,10 @@ class MockTlsClient
 
             this.session = newSession;
         }
+    }
+
+    protected String hex(byte[] data)
+    {
+        return data == null ? "(null)" : Hex.toHexString(data);
     }
 }

@@ -12,8 +12,10 @@ public interface BCSSLConnection
      * <a href="https://tools.ietf.org/html/rfc5929">RFC 5929</a> for details.
      * 
      * @param channelBinding
-     *            An IANA-registered "Channel-binding unique prefix" valid for TLS e.g. "tls-unique".
-     * @return A copy of the channel binding data as a {@link byte[]}.
+     *            An IANA-registered "Channel-binding unique prefix" valid for TLS e.g.
+     *            "tls-unique" or "tls-server-end-point".
+     * @return A copy of the channel binding data as a {@link byte[]}, or null if the binding is
+     *         unavailable for this connection.
      */
     byte[] getChannelBinding(String channelBinding);
 
