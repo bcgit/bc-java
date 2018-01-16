@@ -3,6 +3,7 @@ package org.bouncycastle.jsse.provider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.SequenceInputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -25,19 +26,32 @@ class ProvSSLSocketWrap
     extends ProvSSLSocketBase
     implements ProvTlsManager
 {
+    private static Socket checkSocket(Socket s) throws SocketException
+    {
+        if (s == null)
+        {
+            throw new NullPointerException("'s' cannot be null");
+        }
+        if (!s.isConnected())
+        {
+            throw new SocketException("'s' is not a connected socket");
+        }
+        return s;
+    }
+
     protected final AppDataInput appDataIn = new AppDataInput();
     protected final AppDataOutput appDataOut = new AppDataOutput();
 
     protected final ProvSSLContextSpi context;
     protected final ContextData contextData;
     protected final Socket wrapSocket;
-    protected final String wrapHost;
-    protected final int wrapPort;
-    protected final boolean wrapAutoClose;
+    protected final InputStream consumed;
+    protected final String host;
+    protected final boolean autoClose;
     protected final ProvSSLParameters sslParameters;
 
     protected boolean enableSessionCreation = true;
-    protected boolean useClientMode = true;
+    protected boolean useClientMode;
 
     protected boolean initialHandshakeBegun = false;
     protected TlsProtocol protocol = null;
@@ -45,16 +59,33 @@ class ProvSSLSocketWrap
     protected BCSSLConnection connection = null;
     protected SSLSession handshakeSession = null;
 
-    protected ProvSSLSocketWrap(ProvSSLContextSpi context, ContextData contextData, Socket s, String host, int port, boolean autoClose)
+    protected ProvSSLSocketWrap(ProvSSLContextSpi context, ContextData contextData, Socket s, InputStream consumed, boolean autoClose)
+        throws IOException
     {
         super();
 
         this.context = context;
         this.contextData = contextData;
-        this.wrapSocket = s;
-        this.wrapHost = host;
-        this.wrapPort = port;
-        this.wrapAutoClose = autoClose;
+        this.wrapSocket = checkSocket(s);
+        this.consumed = consumed;
+        this.host = null;
+        this.autoClose = autoClose;
+        this.useClientMode = false;
+        this.sslParameters = context.getDefaultParameters(!useClientMode);
+    }
+
+    protected ProvSSLSocketWrap(ProvSSLContextSpi context, ContextData contextData, Socket s, String host, int port, boolean autoClose)
+        throws IOException
+    {
+        super();
+
+        this.context = context;
+        this.contextData = contextData;
+        this.wrapSocket = checkSocket(s);
+        this.consumed = null;
+        this.host = host;
+        this.autoClose = autoClose;
+        this.useClientMode = true;
         this.sslParameters = context.getDefaultParameters(!useClientMode);
     }
 
@@ -91,7 +122,7 @@ class ProvSSLSocketWrap
     @Override
     protected void closeSocket() throws IOException
     {
-        if (wrapAutoClose)
+        if (autoClose)
         {
             wrapSocket.close();
         }
@@ -456,8 +487,13 @@ class ProvSSLSocketWrap
         {
             // TODO[jsse] Check for session to re-use and apply to handshake
             // TODO[jsse] Allocate this.handshakeSession and update it during handshake
-    
+
             InputStream input = wrapSocket.getInputStream();
+            if (consumed != null)
+            {
+                input = new SequenceInputStream(consumed, input);
+            }
+
             OutputStream output = wrapSocket.getOutputStream();
 
             if (this.useClientMode)
@@ -467,17 +503,17 @@ class ProvSSLSocketWrap
 
                 ProvTlsClient client = new ProvTlsClient(this, sslParameters.copy());
                 this.protocolPeer = client;
-    
+
                 clientProtocol.connect(client);
             }
             else
             {
                 TlsServerProtocol serverProtocol = new ProvTlsServerProtocol(input, output, socketCloser);
                 this.protocol = serverProtocol;
-    
+
                 ProvTlsServer server = new ProvTlsServer(this, sslParameters.copy());
                 this.protocolPeer = server;
-    
+
                 serverProtocol.accept(server);
             }
         }
@@ -496,7 +532,9 @@ class ProvSSLSocketWrap
 
     public String getPeerHost()
     {
-        return wrapHost;
+        // TODO[jsse] See SunJSSE for some attempt at implicit host name determination
+
+        return host;
     }
 
     public int getPeerPort()
