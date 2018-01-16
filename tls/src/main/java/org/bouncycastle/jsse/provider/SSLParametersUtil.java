@@ -3,8 +3,14 @@ package org.bouncycastle.jsse.provider;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Collection;
+import java.util.List;
 
 import javax.net.ssl.SSLParameters;
+
+import org.bouncycastle.jsse.BCSNIMatcher;
+import org.bouncycastle.jsse.BCSNIServerName;
+import org.bouncycastle.jsse.BCSSLParameters;
 
 abstract class SSLParametersUtil
 {
@@ -137,6 +143,30 @@ abstract class SSLParametersUtil
         setUseCipherSuitesOrder = findMethod(methods, "setUseCipherSuitesOrder");
     }
 
+    static BCSSLParameters getParameters(ProvSSLParameters prov)
+    {
+        BCSSLParameters ssl = new BCSSLParameters(prov.getCipherSuites(), prov.getProtocols());
+
+        // NOTE: The client-auth setters each clear the other client-auth property, so only one can be set
+        if (prov.getNeedClientAuth())
+        {
+            ssl.setNeedClientAuth(true);
+        }
+        else if (prov.getWantClientAuth())
+        {
+            ssl.setWantClientAuth(true);
+        }
+        else
+        {
+            ssl.setWantClientAuth(false);
+        }
+
+        ssl.setServerNames(prov.getServerNames());
+        ssl.setSNIMatchers(prov.getSNIMatchers());
+
+        return ssl;
+    }
+
     static SSLParameters getSSLParameters(ProvSSLParameters prov)
     {
         SSLParameters ssl = new SSLParameters(prov.getCipherSuites(), prov.getProtocols());
@@ -185,6 +215,47 @@ abstract class SSLParametersUtil
         }
 
         return ssl;
+    }
+
+    static void setParameters(ProvSSLParameters prov, BCSSLParameters ssl)
+    {
+        String[] cipherSuites = ssl.getCipherSuites();
+        if (cipherSuites != null)
+        {
+            prov.setCipherSuites(cipherSuites);
+        }
+
+        String[] protocols = ssl.getProtocols();
+        if (protocols != null)
+        {
+            prov.setProtocols(protocols);
+        }
+
+        // NOTE: The client-auth setters each clear the other client-auth property, so only one can be set
+        if (ssl.getNeedClientAuth())
+        {
+            prov.setNeedClientAuth(true);
+        }
+        else if (ssl.getWantClientAuth())
+        {
+            prov.setWantClientAuth(true);
+        }
+        else
+        {
+            prov.setWantClientAuth(false);
+        }
+
+        List<BCSNIServerName> serverNames = ssl.getServerNames();
+        if (serverNames != null)
+        {
+            prov.setServerNames(serverNames);
+        }
+
+        Collection<BCSNIMatcher> sniMatchers = ssl.getSNIMatchers();
+        if (sniMatchers != null)
+        {
+            prov.setSNIMatchers(sniMatchers);
+        }
     }
 
     static void setSSLParameters(ProvSSLParameters prov, SSLParameters ssl)

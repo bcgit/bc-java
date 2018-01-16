@@ -16,6 +16,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.jsse.BCSSLConnection;
+import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
@@ -251,6 +252,11 @@ class ProvSSLSocketWrap
         return wrapSocket.getSoTimeout();
     }
 
+    public synchronized BCSSLParameters getParameters()
+    {
+        return SSLParametersUtil.getParameters(sslParameters);
+    }
+
     @Override
     public synchronized SSLParameters getSSLParameters()
     {
@@ -326,22 +332,12 @@ class ProvSSLSocketWrap
     @Override
     public synchronized void setEnabledCipherSuites(String[] suites)
     {
-        if (!context.isSupportedCipherSuites(suites))
-        {
-            throw new IllegalArgumentException("'suites' cannot be null, or contain unsupported cipher suites");
-        }
-
         sslParameters.setCipherSuites(suites);
     }
 
     @Override
     public synchronized void setEnabledProtocols(String[] protocols)
     {
-        if (!context.isSupportedProtocols(protocols))
-        {
-            throw new IllegalArgumentException("'protocols' cannot be null, or contain unsupported protocols");
-        }
-
         sslParameters.setProtocols(protocols);
     }
 
@@ -361,6 +357,11 @@ class ProvSSLSocketWrap
     public synchronized void setNeedClientAuth(boolean need)
     {
         sslParameters.setNeedClientAuth(need);
+    }
+
+    public synchronized void setParameters(BCSSLParameters parameters)
+    {
+        SSLParametersUtil.setParameters(this.sslParameters, parameters);
     }
 
     @Override
@@ -388,12 +389,6 @@ class ProvSSLSocketWrap
     }
 
     @Override
-    public synchronized void setSSLParameters(SSLParameters sslParameters)
-    {
-        SSLParametersUtil.setSSLParameters(this.sslParameters, sslParameters);
-    }
-
-    @Override
     public void setSoLinger(boolean on, int linger) throws SocketException
     {
         wrapSocket.setSoLinger(on, linger);
@@ -403,6 +398,12 @@ class ProvSSLSocketWrap
     public void setSoTimeout(int timeout) throws SocketException
     {
         wrapSocket.setSoTimeout(timeout);
+    }
+
+    @Override
+    public synchronized void setSSLParameters(SSLParameters sslParameters)
+    {
+        SSLParametersUtil.setSSLParameters(this.sslParameters, sslParameters);
     }
 
     @Override
