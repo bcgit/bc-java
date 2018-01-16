@@ -53,8 +53,10 @@ public interface TlsContext
      * Export the value of the specified channel binding. Only available after the handshake has
      * successfully completed.
      * 
-     * @param channelBinding A {@link ChannelBinding} constant specifying the channel binding to export.
-     * @return A copy of the channel binding data as a {@link byte[]}.
+     * @param channelBinding
+     *            A {@link ChannelBinding} constant specifying the channel binding to export.
+     * @return A copy of the channel binding data as a {@link byte[]}, or null if the binding could
+     *         not be determined.
      */
     byte[] exportChannelBinding(int channelBinding);
 
