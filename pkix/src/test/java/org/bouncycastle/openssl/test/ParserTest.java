@@ -539,7 +539,7 @@ public class ParserTest
     private void doNoECPublicKeyTest()
         throws Exception
     {
-        // EC private key without the public key defined.
+        // EC private key without the public key defined. Note: this encoding is actually invalid.
         String ecSample =
                     "-----BEGIN EC PRIVATE KEY-----\n" +
                     "MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgvYiiubZYNO1WXXi3\n" +
