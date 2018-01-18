@@ -44,6 +44,7 @@ class TlsTestClientImpl
     protected int firstFatalAlertConnectionEnd = -1;
     protected short firstFatalAlertDescription = -1;
 
+    byte[] tlsServerEndPoint = null;
     byte[] tlsUnique = null;
 
     TlsTestClientImpl(TlsTestConfig config)
@@ -154,11 +155,13 @@ class TlsTestClientImpl
     {
         super.notifyHandshakeComplete();
 
+        tlsServerEndPoint = context.exportChannelBinding(ChannelBinding.tls_server_end_point);
         tlsUnique = context.exportChannelBinding(ChannelBinding.tls_unique);
 
         if (TlsTestConfig.DEBUG)
         {
-            System.out.println("TLS client reports 'tls-unique' = " + Hex.toHexString(tlsUnique));
+            System.out.println("TLS client reports 'tls-server-end-point' = " + hex(tlsServerEndPoint));
+            System.out.println("TLS client reports 'tls-unique' = " + hex(tlsUnique));
         }
     }
 
@@ -316,5 +319,10 @@ class TlsTestClientImpl
         bs[bit >>> 3] ^= (1 << (bit & 7));
 
         return bs;
+    }
+
+    protected String hex(byte[] data)
+    {
+        return data == null ? "(null)" : Hex.toHexString(data);
     }
 }
