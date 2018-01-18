@@ -111,6 +111,20 @@ abstract class AbstractTlsContext
     {
         switch (channelBinding)
         {
+        case ChannelBinding.tls_server_end_point:
+        {
+            byte[] tlsServerEndPoint = getSecurityParameters().getTLSServerEndPoint();
+            if (tlsServerEndPoint == null)
+            {
+                throw new IllegalStateException("'tls-server-end-point' channel binding unavailable before handshake completion");
+            }
+            if (tlsServerEndPoint.length < 1)
+            {
+                return null;
+            }
+            return Arrays.clone(tlsServerEndPoint);
+        }
+
         case ChannelBinding.tls_unique:
         {
             byte[] tlsUnique = getSecurityParameters().getTLSUnique();
@@ -121,7 +135,6 @@ abstract class AbstractTlsContext
             return Arrays.clone(tlsUnique);
         }
 
-        case ChannelBinding.tls_server_end_point:
         case ChannelBinding.tls_unique_for_telnet:
         default:
             throw new UnsupportedOperationException();

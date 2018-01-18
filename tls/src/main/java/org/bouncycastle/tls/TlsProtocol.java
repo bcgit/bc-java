@@ -1149,7 +1149,14 @@ public abstract class TlsProtocol
         safeWriteRecord(ContentType.alert, alert, 0, 2);
     }
 
+    /** @deprecated */
     protected void sendCertificateMessage(Certificate certificate)
+        throws IOException
+    {
+        sendCertificateMessage(certificate, null);
+    }
+
+    protected void sendCertificateMessage(Certificate certificate, OutputStream endPointHash)
         throws IOException
     {
         if (certificate == null)
@@ -1159,7 +1166,7 @@ public abstract class TlsProtocol
 
         HandshakeMessage message = new HandshakeMessage(HandshakeType.certificate);
 
-        certificate.encode(message);
+        certificate.encode(getContext(), message, endPointHash);
 
         message.writeToRecordStream();
 

@@ -32,6 +32,11 @@ public interface TlsCertificate
     BigInteger getSerialNumber();
 
     /**
+     * @return the OID of this certificate's 'signatureAlgorithm', as a String.
+     */
+    String getSigAlgOID();
+
+    /**
      * @param connectionEnd
      *            {@link ConnectionEnd}
      * @param keyExchangeAlgorithm
