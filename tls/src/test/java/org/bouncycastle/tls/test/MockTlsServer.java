@@ -110,8 +110,11 @@ class MockTlsServer
     {
         super.notifyHandshakeComplete();
 
+        byte[] tlsServerEndPoint = context.exportChannelBinding(ChannelBinding.tls_server_end_point);
+        System.out.println("'tls-server-end-point': " + hex(tlsServerEndPoint));
+
         byte[] tlsUnique = context.exportChannelBinding(ChannelBinding.tls_unique);
-        System.out.println("'tls-unique': " + Hex.toHexString(tlsUnique));
+        System.out.println("'tls-unique': " + hex(tlsUnique));
     }
 
     protected TlsCredentialedDecryptor getRSAEncryptionCredentials()
@@ -125,5 +128,10 @@ class MockTlsServer
     {
         return TlsTestUtils.loadSignerCredentials(context, supportedSignatureAlgorithms, SignatureAlgorithm.rsa,
             "x509-server-rsa-sign.pem", "x509-server-key-rsa-sign.pem");
+    }
+
+    protected String hex(byte[] data)
+    {
+        return data == null ? "(null)" : Hex.toHexString(data);
     }
 }
