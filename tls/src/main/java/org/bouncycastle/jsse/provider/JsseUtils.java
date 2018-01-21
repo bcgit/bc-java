@@ -244,23 +244,31 @@ abstract class JsseUtils
 
     public static boolean isUsableKeyForServer(int keyExchangeAlgorithm, PrivateKey privateKey) throws IOException
     {
+        if (privateKey == null)
+        {
+            return false;
+        }
+
+        String algorithm = privateKey.getAlgorithm();
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DH_DSS:
         case KeyExchangeAlgorithm.DH_DSS_EXPORT:
         case KeyExchangeAlgorithm.DH_RSA:
         case KeyExchangeAlgorithm.DH_RSA_EXPORT:
-            return privateKey instanceof DHPrivateKey;
+            return privateKey instanceof DHPrivateKey || "DH".equals(algorithm);
 
         case KeyExchangeAlgorithm.ECDH_ECDSA:
         case KeyExchangeAlgorithm.ECDH_RSA:
+            return privateKey instanceof ECPrivateKey || "ECDH".equals(algorithm);
+
         case KeyExchangeAlgorithm.ECDHE_ECDSA:
-            return privateKey instanceof ECPrivateKey;
+            return privateKey instanceof ECPrivateKey || "EC".equals(algorithm);
 
         case KeyExchangeAlgorithm.DHE_DSS:
         case KeyExchangeAlgorithm.DHE_DSS_EXPORT:
         case KeyExchangeAlgorithm.SRP_DSS:
-            return privateKey instanceof DSAPrivateKey;
+            return privateKey instanceof DSAPrivateKey || "DSA".equals(algorithm);
 
         case KeyExchangeAlgorithm.DHE_RSA:
         case KeyExchangeAlgorithm.DHE_RSA_EXPORT:
@@ -268,7 +276,7 @@ abstract class JsseUtils
         case KeyExchangeAlgorithm.RSA:
         case KeyExchangeAlgorithm.RSA_PSK:
         case KeyExchangeAlgorithm.SRP_RSA:
-            return privateKey instanceof RSAPrivateKey;
+            return privateKey instanceof RSAPrivateKey || "RSA".equals(algorithm);
 
         default:
             return false;
