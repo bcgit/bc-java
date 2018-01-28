@@ -99,7 +99,10 @@ public class TlsClientProtocol
         sendClientHelloMessage();
         this.connection_state = CS_CLIENT_HELLO;
 
-        blockForHandshake();
+        if (blocking)
+        {
+            blockForHandshake();
+        }
     }
 
     protected void cleanupHandshake()
