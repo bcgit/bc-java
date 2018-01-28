@@ -11,6 +11,8 @@ import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
@@ -26,6 +28,8 @@ class ProvSSLSocketWrap
     extends ProvSSLSocketBase
     implements ProvTlsManager
 {
+    private static Logger LOG = Logger.getLogger(ProvSSLSocketWrap.class.getName());
+
     private static Socket checkSocket(Socket s) throws SocketException
     {
         if (s == null)
@@ -53,7 +57,6 @@ class ProvSSLSocketWrap
     protected boolean enableSessionCreation = true;
     protected boolean useClientMode;
 
-    protected boolean initialHandshakeBegun = false;
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
     protected BCSSLConnection connection = null;
@@ -151,11 +154,11 @@ class ProvSSLSocketWrap
     {
         try
         {
-            handshakeIfNecessary();
+            handshakeIfNecessary(false);
         }
         catch (Exception e)
         {
-            // TODO[jsse] Logging?
+            LOG.log(Level.FINE, "Failed to establish connection", e);
         }
 
         return connection;
@@ -457,7 +460,7 @@ class ProvSSLSocketWrap
             return;
         }
 
-        if (initialHandshakeBegun)
+        if (protocol != null)
         {
             throw new IllegalArgumentException("Mode cannot be changed after the initial handshake has begun");
         }
@@ -476,14 +479,12 @@ class ProvSSLSocketWrap
     @Override
     public synchronized void startHandshake() throws IOException
     {
-        if (initialHandshakeBegun)
-        {
-            throw new UnsupportedOperationException("Renegotiation not supported");
-        }
+        startHandshake(true);
+    }
 
-        this.initialHandshakeBegun = true;
-
-        try
+    protected void startHandshake(boolean resumable) throws IOException
+    {
+        if (protocol == null)
         {
             // TODO[jsse] Check for session to re-use and apply to handshake
             // TODO[jsse] Allocate this.handshakeSession and update it during handshake
@@ -499,6 +500,7 @@ class ProvSSLSocketWrap
             if (this.useClientMode)
             {
                 TlsClientProtocol clientProtocol = new ProvTlsClientProtocol(input, output, socketCloser);
+                clientProtocol.setResumableHandshake(resumable);
                 this.protocol = clientProtocol;
 
                 ProvTlsClient client = new ProvTlsClient(this, sslParameters.copy());
@@ -509,6 +511,7 @@ class ProvSSLSocketWrap
             else
             {
                 TlsServerProtocol serverProtocol = new ProvTlsServerProtocol(input, output, socketCloser);
+                serverProtocol.setResumableHandshake(resumable);
                 this.protocol = serverProtocol;
 
                 ProvTlsServer server = new ProvTlsServer(this, sslParameters.copy());
@@ -517,9 +520,14 @@ class ProvSSLSocketWrap
                 serverProtocol.accept(server);
             }
         }
-        finally
+        else if (protocol.isHandshaking())
         {
-            this.handshakeSession = null;
+            protocol.setResumableHandshake(resumable);
+            protocol.resumeHandshake();
+        }
+        else
+        {
+            throw new UnsupportedOperationException("Renegotiation not supported");
         }
     }
 
@@ -585,11 +593,11 @@ class ProvSSLSocketWrap
         this.connection = connection;
     }
 
-    synchronized void handshakeIfNecessary() throws IOException
+    synchronized void handshakeIfNecessary(boolean resumable) throws IOException
     {
-        if (!initialHandshakeBegun)
+        if (protocol == null || protocol.isHandshaking())
         {
-            startHandshake();
+            startHandshake(resumable);
         }
     }
 
@@ -615,7 +623,7 @@ class ProvSSLSocketWrap
         @Override
         public int read() throws IOException
         {
-            handshakeIfNecessary();
+            handshakeIfNecessary(true);
 
             byte[] buf = new byte[1];
             int ret = protocol.readApplicationData(buf, 0, 1);
@@ -630,7 +638,7 @@ class ProvSSLSocketWrap
                 return 0;
             }
 
-            handshakeIfNecessary();
+            handshakeIfNecessary(true);
             return protocol.readApplicationData(b, off, len);
         }
     }
@@ -658,7 +666,7 @@ class ProvSSLSocketWrap
         @Override
         public void write(int b) throws IOException
         {
-            handshakeIfNecessary();
+            handshakeIfNecessary(true);
 
             byte[] buf = new byte[]{ (byte)b };
             protocol.writeApplicationData(buf, 0, 1);
@@ -669,7 +677,7 @@ class ProvSSLSocketWrap
         {
             if (len > 0)
             {
-                handshakeIfNecessary();
+                handshakeIfNecessary(true);
                 protocol.writeApplicationData(b, off, len);
             }
         }
