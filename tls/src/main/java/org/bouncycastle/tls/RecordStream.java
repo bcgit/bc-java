@@ -532,15 +532,6 @@ class RecordStream
         {
             while (pos < length)
             {
-                /*
-                 * TODO[tls] It might be necessary to catch/rethrow InterruptedIOException here if
-                 * there were any instance of that class where bytesTransferred != 0 .
-                 * 
-                 * Unfortunately, this would be complicated because rethrowing our own exception
-                 * type would break at least some client code, e.g. in Apache's
-                 * httpcomponents-core-4.4.9, BHttpConnectionBase.isStale depends on the exception
-                 * type being SocketTimeoutException (or a subclass).
-                 */
                 try
                 {
                     int numRead = input.read(buf, pos, length - pos);
