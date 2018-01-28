@@ -420,7 +420,16 @@ class RecordStream
         TlsUtils.writeVersion(writeVersion, record, RecordFormat.VERSION_OFFSET);
         TlsUtils.writeUint16(ciphertext.length, record, RecordFormat.LENGTH_OFFSET);
         System.arraycopy(ciphertext, 0, record, RecordFormat.FRAGMENT_OFFSET, ciphertext.length);
-        output.write(record);
+
+        try
+        {
+            output.write(record);
+        }
+        catch (InterruptedIOException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
+        }
+
         output.flush();
     }
 
