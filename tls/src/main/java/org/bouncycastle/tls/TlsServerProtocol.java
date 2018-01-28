@@ -83,7 +83,10 @@ public class TlsServerProtocol
 
         this.recordStream.setRestrictReadVersion(false);
 
-        blockForHandshake();
+        if (blocking)
+        {
+            blockForHandshake();
+        }
     }
 
     protected void cleanupHandshake()
