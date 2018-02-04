@@ -30,6 +30,13 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2018
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
+<li>TLS: Extended CBC padding is now optional (and disabled by default).</li>
+<li>TLS: Now supports channel binding 'tls-server-end-point'.</li>
+<li>TLS: InterruptedIOException (e.g. socket timeout) during app-data reads no longer fails connection; handshake is optionally resumable after IIOE using 'TlsProtocol.setResumableHandshake()'.</li>
+<li>BCJSSE: Now supports system property 'jdk.tls.client.protocols'</li>
+<li>BCJSSE: Now supports SSLParameters.setSNIMatchers.</li>
+<li>BCJSSE: SNI can now be used in earlier JDKs via BC extensions.</li>
+<li>BCJSSE: Session context now holds sessions via soft references.</li>
 </ul>
 <h3>2.2.1 Version</h3>
 Release: 1.59 <br/>
