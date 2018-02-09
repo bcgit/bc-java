@@ -58,6 +58,7 @@ public class ParserTest
         return "PEMParserTest";
     }
 
+
     private PEMParser openPEMResource(
         String          fileName)
     {
@@ -267,6 +268,7 @@ public class ParserTest
         doDudPasswordTest("aaf9c4d",17, "corrupted stream - out of bounds length found");
 
         doNoPasswordTest();
+        doNoECPublicKeyTest();
 
         // encrypted private key test
         InputDecryptorProvider pkcs8Prov = new JceOpenSSLPKCS8DecryptorProviderBuilder().setProvider("BC").build("password".toCharArray());
@@ -323,6 +325,8 @@ public class ParserTest
         trusted = (X509TrustedCertificateBlock)pemRd.readObject();
 
         checkTrustedCert(trusted);
+
+
     }
 
     private void checkTrustedCert(X509TrustedCertificateBlock trusted)
@@ -355,15 +359,15 @@ public class ParserTest
 
     private void keyPairTest(
         String   name,
-        KeyPair pair) 
+        KeyPair pair)
         throws IOException
     {
         PEMParser pemRd;
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         JcaPEMWriter             pWrt = new JcaPEMWriter(new OutputStreamWriter(bOut));
-        
+
         pWrt.writeObject(pair.getPublic());
-        
+
         pWrt.close();
 
         pemRd = new PEMParser(new InputStreamReader(new ByteArrayInputStream(bOut.toByteArray())));
@@ -377,22 +381,22 @@ public class ParserTest
         {
             fail("Failed public key read: " + name);
         }
-        
+
         bOut = new ByteArrayOutputStream();
         pWrt = new JcaPEMWriter(new OutputStreamWriter(bOut));
-        
+
         pWrt.writeObject(pair.getPrivate());
-        
+
         pWrt.close();
-        
+
         pemRd = new PEMParser(new InputStreamReader(new ByteArrayInputStream(bOut.toByteArray())));
-        
+
         KeyPair kPair = converter.getKeyPair((PEMKeyPair)pemRd.readObject());
         if (!kPair.getPrivate().equals(pair.getPrivate()))
         {
             fail("Failed private key read: " + name);
         }
-        
+
         if (!kPair.getPublic().equals(pair.getPublic()))
         {
             fail("Failed private key public read: " + name);
@@ -530,6 +534,25 @@ public class ParserTest
         {
             fail("private key not detected");
         }
+    }
+
+    private void doNoECPublicKeyTest()
+        throws Exception
+    {
+        // EC private key without the public key defined. Note: this encoding is actually invalid.
+        String ecSample =
+                    "-----BEGIN EC PRIVATE KEY-----\n" +
+                    "MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgvYiiubZYNO1WXXi3\n" +
+                    "jmGT9DLeFemvlmR1zTA0FdcSAG2gCgYIKoZIzj0DAQehRANCAATNXYa06ykwhxuy\n" +
+                    "Dg+q6zsVqOLk9LtXz/1fzf9AkAVm9lBMTZAh+FRfregBgl08LATztGlTh/z0dPnp\n" +
+                    "dW2jFrDn\n" +
+                    "-----END EC PRIVATE KEY-----";
+
+        PEMParser pemRd = new PEMParser(new StringReader(ecSample));
+
+        PEMKeyPair kp = (PEMKeyPair)pemRd.readObject();
+
+        isTrue(kp.getPublicKeyInfo() == null);
     }
 
     public static void main(

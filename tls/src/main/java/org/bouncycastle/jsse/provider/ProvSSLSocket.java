@@ -10,6 +10,7 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 
 import org.bouncycastle.jsse.BCSSLConnection;
+import org.bouncycastle.jsse.BCSSLParameters;
 
 class ProvSSLSocket
     extends ProvSSLSocketBase
@@ -118,6 +119,11 @@ class ProvSSLSocket
         throw new UnsupportedOperationException();
     }
 
+    public BCSSLParameters getParameters()
+    {
+        return engine.getParameters();
+    }
+
     @Override
     public SSLSession getSession()
     {
@@ -176,6 +182,11 @@ class ProvSSLSocket
     public void setNeedClientAuth(boolean need)
     {
         engine.setNeedClientAuth(need);
+    }
+
+    public void setParameters(BCSSLParameters parameters)
+    {
+        engine.setParameters(parameters);
     }
 
     @Override
