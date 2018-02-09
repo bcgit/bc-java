@@ -202,6 +202,11 @@ public class JcaTlsCertificate
         return certificate.getSerialNumber();
     }
 
+    public String getSigAlgOID()
+    {
+        return certificate.getSigAlgOID();
+    }
+
     DHPublicKey getPubKeyDH() throws IOException
     {
         DHPublicKey pubKeyDH;

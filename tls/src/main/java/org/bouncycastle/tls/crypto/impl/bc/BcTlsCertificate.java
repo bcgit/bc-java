@@ -187,6 +187,11 @@ public class BcTlsCertificate
         return certificate.getSerialNumber().getValue();
     }
 
+    public String getSigAlgOID()
+    {
+        return certificate.getSignatureAlgorithm().getAlgorithm().getId();
+    }
+
     protected DHPublicKeyParameters getPubKeyDH() throws IOException
     {
         try

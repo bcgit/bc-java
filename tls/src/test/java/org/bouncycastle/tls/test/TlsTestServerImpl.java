@@ -35,6 +35,7 @@ class TlsTestServerImpl
     protected int firstFatalAlertConnectionEnd = -1;
     protected short firstFatalAlertDescription = -1;
 
+    byte[] tlsServerEndPoint = null;
     byte[] tlsUnique = null;
 
     TlsTestServerImpl(TlsTestConfig config)
@@ -129,11 +130,13 @@ class TlsTestServerImpl
     {
         super.notifyHandshakeComplete();
 
+        tlsServerEndPoint = context.exportChannelBinding(ChannelBinding.tls_server_end_point);
         tlsUnique = context.exportChannelBinding(ChannelBinding.tls_unique);
 
         if (TlsTestConfig.DEBUG)
         {
-            System.out.println("TLS server reports 'tls-unique' = " + Hex.toHexString(tlsUnique));
+            System.out.println("TLS server reports 'tls-server-end-point' = " + hex(tlsServerEndPoint));
+            System.out.println("TLS server reports 'tls-unique' = " + hex(tlsUnique));
         }
     }
 
@@ -249,5 +252,10 @@ class TlsTestServerImpl
     {
         return TlsTestUtils.loadSignerCredentials(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.rsa,
             "x509-server-rsa-sign.pem", "x509-server-key-rsa-sign.pem");
+    }
+
+    protected String hex(byte[] data)
+    {
+        return data == null ? "(null)" : Hex.toHexString(data);
     }
 }

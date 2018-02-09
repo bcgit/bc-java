@@ -1,6 +1,7 @@
 package org.bouncycastle.tls;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -82,7 +83,10 @@ public class TlsServerProtocol
 
         this.recordStream.setRestrictReadVersion(false);
 
-        blockForHandshake();
+        if (blocking)
+        {
+            blockForHandshake();
+        }
     }
 
     protected void cleanupHandshake()
@@ -151,6 +155,7 @@ public class TlsServerProtocol
 
                 Certificate serverCertificate = null;
 
+                ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
                 if (this.serverCredentials == null)
                 {
                     this.keyExchange.skipServerCredentials();
@@ -160,8 +165,9 @@ public class TlsServerProtocol
                     this.keyExchange.processServerCredentials(this.serverCredentials);
 
                     serverCertificate = this.serverCredentials.getCertificate();
-                    sendCertificateMessage(serverCertificate);
+                    sendCertificateMessage(serverCertificate, endPointHash);
                 }
+                securityParameters.tlsServerEndPoint = endPointHash.toByteArray();
                 this.connection_state = CS_SERVER_CERTIFICATE;
 
                 // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus
@@ -442,7 +448,7 @@ public class TlsServerProtocol
     protected void receiveCertificateMessage(ByteArrayInputStream buf)
         throws IOException
     {
-        Certificate clientCertificate = Certificate.parse(getContext(), buf);
+        Certificate clientCertificate = Certificate.parse(getContext(), buf, null);
 
         assertEmpty(buf);
 

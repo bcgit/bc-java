@@ -3,6 +3,7 @@ package org.bouncycastle.tls;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -60,11 +61,20 @@ public abstract class DTLSProtocol
         return maxFragmentLength;
     }
 
+    /** @deprecated */
     protected static byte[] generateCertificate(Certificate certificate)
         throws IOException
     {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         certificate.encode(buf);
+        return buf.toByteArray();
+    }
+
+    protected static byte[] generateCertificate(TlsContext context, Certificate certificate, OutputStream endPointHash)
+        throws IOException
+    {
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        certificate.encode(context, buf, endPointHash);
         return buf.toByteArray();
     }
 
