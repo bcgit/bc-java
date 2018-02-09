@@ -229,9 +229,17 @@ public class PEMParser
                 org.bouncycastle.asn1.sec.ECPrivateKey pKey = org.bouncycastle.asn1.sec.ECPrivateKey.getInstance(seq);
                 AlgorithmIdentifier algId = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, pKey.getParameters());
                 PrivateKeyInfo privInfo = new PrivateKeyInfo(algId, pKey);
-                SubjectPublicKeyInfo pubInfo = new SubjectPublicKeyInfo(algId, pKey.getPublicKey().getBytes());
 
-                return new PEMKeyPair(pubInfo, privInfo);
+                if (pKey.getPublicKey() != null)
+                {
+                    SubjectPublicKeyInfo pubInfo = new SubjectPublicKeyInfo(algId, pKey.getPublicKey().getBytes());
+
+                    return new PEMKeyPair(pubInfo, privInfo);
+                }
+                else
+                {
+                    return new PEMKeyPair(null, privInfo);
+                }
             }
             catch (IOException e)
             {

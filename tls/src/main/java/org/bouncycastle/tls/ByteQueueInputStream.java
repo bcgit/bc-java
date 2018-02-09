@@ -15,9 +15,14 @@ public class ByteQueueInputStream
         buffer = new ByteQueue();
     }
 
-    public void addBytes(byte[] bytes)
+    public void addBytes(byte[] buf)
     {
-        buffer.addData(bytes, 0, bytes.length);
+        buffer.addData(buf, 0, buf.length);
+    }
+
+    public void addBytes(byte[] buf, int bufOff, int bufLen)
+    {
+        buffer.addData(buf, bufOff, bufLen);
     }
 
     public int peek(byte[] buf)

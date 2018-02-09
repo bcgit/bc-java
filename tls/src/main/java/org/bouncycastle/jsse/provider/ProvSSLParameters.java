@@ -10,8 +10,6 @@ import org.bouncycastle.jsse.BCSNIServerName;
 
 class ProvSSLParameters
 {
-    static final boolean hasSslParameters;
-
     private static <T> List<T> copyList(Collection<T> list)
     {
         if (list == null)
@@ -25,20 +23,7 @@ class ProvSSLParameters
         return Collections.unmodifiableList(new ArrayList<T>(list));
     }
 
-    static
-    {
-        Class<?> clazz = null;
-        try
-        {
-            clazz = JsseUtils.loadClass(ProvSSLParameters.class,"javax.net.ssl.SSLParameters");
-        }
-        catch (Exception e)
-        {
-            clazz = null;
-        }
-
-        hasSslParameters = (clazz != null);
-    }
+    private final ProvSSLContextSpi context;
 
     private String[] cipherSuites;
     private String[] protocols;
@@ -50,15 +35,17 @@ class ProvSSLParameters
     private List<BCSNIMatcher> sniMatchers;
     private List<BCSNIServerName> sniServerNames;
 
-    ProvSSLParameters(String[] cipherSuites, String[] protocols)
+    ProvSSLParameters(ProvSSLContextSpi context, String[] cipherSuites, String[] protocols)
     {
+        this.context = context;
+
         this.cipherSuites = cipherSuites;
         this.protocols = protocols;
     }
 
     ProvSSLParameters copy()
     {
-        ProvSSLParameters p = new ProvSSLParameters(cipherSuites, protocols);
+        ProvSSLParameters p = new ProvSSLParameters(context, cipherSuites, protocols);
         p.needClientAuth = needClientAuth;
         p.wantClientAuth = wantClientAuth;
         p.algorithmConstraints = algorithmConstraints;
@@ -71,11 +58,21 @@ class ProvSSLParameters
 
     public void setCipherSuites(String[] cipherSuites)
     {
+        if (!context.isSupportedCipherSuites(cipherSuites))
+        {
+            throw new IllegalArgumentException("'cipherSuites' cannot be null, or contain unsupported cipher suites");
+        }
+
         this.cipherSuites = cipherSuites.clone();
     }
 
     public void setProtocols(String[] protocols)
     {
+        if (!context.isSupportedProtocols(protocols))
+        {
+            throw new IllegalArgumentException("'protocols' cannot be null, or contain unsupported protocols");
+        }
+
         this.protocols = protocols.clone();
     }
 
