@@ -88,7 +88,7 @@ public class BrokenKDF2BytesGenerator
         //
         if (oBits > (digest.getDigestSize() * 8L * (1L<<32 - 1)))
         {
-            new IllegalArgumentException("Output length to large");
+            throw new IllegalArgumentException("Output length too large");
         }
     
         int cThreshold = (int)(oBits / digest.getDigestSize());
