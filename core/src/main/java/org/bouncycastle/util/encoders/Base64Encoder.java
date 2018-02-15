@@ -149,6 +149,12 @@ public class Base64Encoder
             
             end--;
         }
+
+        // empty data!
+        if (end == 0)
+        {
+            return 0;
+        }
         
         int  i = 0;
         int  finish = end;
@@ -238,6 +244,12 @@ public class Base64Encoder
             }
             
             end--;
+        }
+
+        // empty data!
+        if (end == 0)
+        {
+            return 0;
         }
         
         int  i = 0;

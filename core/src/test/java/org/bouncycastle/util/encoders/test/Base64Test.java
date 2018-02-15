@@ -50,6 +50,9 @@ public class Base64Test extends AbstractCoderTest
     public void testSamples()
         throws IOException
     {
+        assertTrue(Arrays.areEqual(new byte[0], Base64.decode("")));
+        assertEquals(0, Base64.decode(new byte[0], 0, 0, new ByteArrayOutputStream()));
+        assertTrue(Arrays.areEqual(Strings.toByteArray("1"), Base64.decode("MQ==")));
         assertTrue(Arrays.areEqual(sample1Bytes, Base64.decode(sample1)));
         assertTrue(Arrays.areEqual(sample1Bytes, Base64.decode(Strings.toByteArray(sample1))));
         assertTrue(Arrays.areEqual(sample2Bytes, Base64.decode(sample2)));
