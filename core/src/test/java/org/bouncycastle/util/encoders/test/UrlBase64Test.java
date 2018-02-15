@@ -1,5 +1,6 @@
 package org.bouncycastle.util.encoders.test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
@@ -48,6 +49,8 @@ public class UrlBase64Test extends AbstractCoderTest
     public void testSamples()
         throws IOException
     {
+        assertTrue(Arrays.areEqual(new byte[0], UrlBase64.decode("")));
+        assertEquals(0, UrlBase64.decode(new byte[0], new ByteArrayOutputStream()));
         assertTrue(Arrays.areEqual(sample1Bytes, UrlBase64.decode(sample1)));
         assertTrue(Arrays.areEqual(sample1Bytes, UrlBase64.decode(Strings.toByteArray(sample1))));
         assertTrue(Arrays.areEqual(sample2Bytes, UrlBase64.decode(sample2)));
