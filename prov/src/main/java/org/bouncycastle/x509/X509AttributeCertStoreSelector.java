@@ -14,11 +14,11 @@ import java.util.Set;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.Target;
 import org.bouncycastle.asn1.x509.TargetInformation;
 import org.bouncycastle.asn1.x509.Targets;
-import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.util.Selector;
 
 /**
@@ -118,7 +118,7 @@ public class X509AttributeCertStoreSelector
         {
 
             byte[] targetInfoExt = attrCert
-                .getExtensionValue(X509Extensions.TargetInformation.getId());
+                .getExtensionValue(Extension.targetInformation.getId());
             if (targetInfoExt != null)
             {
                 TargetInformation targetinfo;

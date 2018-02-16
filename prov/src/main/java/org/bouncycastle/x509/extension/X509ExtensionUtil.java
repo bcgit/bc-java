@@ -16,8 +16,8 @@ import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.util.Integers;
 
 
@@ -35,7 +35,7 @@ public class X509ExtensionUtil
     public static Collection getIssuerAlternativeNames(X509Certificate cert)
             throws CertificateParsingException
     {
-        byte[] extVal = cert.getExtensionValue(X509Extension.issuerAlternativeName.getId());
+        byte[] extVal = cert.getExtensionValue(Extension.issuerAlternativeName.getId());
 
         return getAlternativeNames(extVal);
     }
@@ -43,7 +43,7 @@ public class X509ExtensionUtil
     public static Collection getSubjectAlternativeNames(X509Certificate cert)
             throws CertificateParsingException
     {        
-        byte[] extVal = cert.getExtensionValue(X509Extension.subjectAlternativeName.getId());
+        byte[] extVal = cert.getExtensionValue(Extension.subjectAlternativeName.getId());
 
         return getAlternativeNames(extVal);
     }
