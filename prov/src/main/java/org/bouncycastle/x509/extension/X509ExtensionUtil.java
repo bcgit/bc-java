@@ -21,8 +21,14 @@ import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.util.Integers;
 
 
+/**
+ * @deprecated use org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils
+ */
 public class X509ExtensionUtil
 {
+    /**
+     * @deprecated use org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils.parseExtensionValue()
+     */
     public static ASN1Primitive fromExtensionValue(
         byte[]  encodedValue) 
         throws IOException
@@ -32,6 +38,9 @@ public class X509ExtensionUtil
         return ASN1Primitive.fromByteArray(octs.getOctets());
     }
 
+    /**
+     * @deprecated use org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils.getIssuerAlternativeNames()
+     */
     public static Collection getIssuerAlternativeNames(X509Certificate cert)
             throws CertificateParsingException
     {
@@ -40,6 +49,9 @@ public class X509ExtensionUtil
         return getAlternativeNames(extVal);
     }
 
+    /**
+     * @deprecated use org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils.getSubjectAlternativeNames()
+     */
     public static Collection getSubjectAlternativeNames(X509Certificate cert)
             throws CertificateParsingException
     {        
