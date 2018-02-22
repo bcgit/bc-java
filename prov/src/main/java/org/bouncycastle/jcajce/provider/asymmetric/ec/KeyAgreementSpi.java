@@ -18,6 +18,10 @@ import org.bouncycastle.crypto.agreement.ECDHCBasicAgreement;
 import org.bouncycastle.crypto.agreement.ECDHCUnifiedAgreement;
 import org.bouncycastle.crypto.agreement.ECMQVBasicAgreement;
 import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
+import org.bouncycastle.crypto.agreement.kdf.ECKaEgKEKGenerator;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.params.ECDHUPrivateParameters;
 import org.bouncycastle.crypto.params.ECDHUPublicParameters;
@@ -611,4 +615,52 @@ public class KeyAgreementSpi
             super("ECCDHUwithSHA512CKDF", new ECDHCUnifiedAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA512()));
         }
     }
+
+	/**
+	 * KeyAgreement according to BSI TR-03111 chapter 4.3.1
+	 * TODO check optional SharedInfo
+	 * TODO SHAxxxDigest according to FIPS180-2 but should be FIPS180-3 - check conformity
+	 * @author rainer.schubert
+	 */
+	public static class ECKAEGwithSHA256KDF
+			extends KeyAgreementSpi
+	{
+		public ECKAEGwithSHA256KDF()
+		{
+			super("ECKAEGwithSHA256KDF", new ECDHBasicAgreement(), new ECKaEgKEKGenerator(new SHA256Digest(),
+					ECKaEgKEKGenerator.DONTUSE_SHARED_INFO));
+		}
+	}
+
+	/**
+	 * KeyAgreement according to BSI TR-03111 chapter 4.3.1
+	 * TODO check optional SharedInfo
+	 * TODO SHAxxxDigest according to FIPS180-2 but should be FIPS180-3 - check conformity
+	 * @author rainer.schubert
+	 */
+	public static class ECKAEGwithSHA384KDF
+			extends KeyAgreementSpi
+	{
+		public ECKAEGwithSHA384KDF()
+		{
+			super("ECKAEGwithSHA384KDF", new ECDHBasicAgreement(), new ECKaEgKEKGenerator(new SHA384Digest(),
+					ECKaEgKEKGenerator.DONTUSE_SHARED_INFO));
+		}
+	}
+
+	/**
+	 * KeyAgreement according to BSI TR-03111 chapter 4.3.1
+	 * TODO check optional SharedInfo
+	 * TODO SHAxxxDigest according to FIPS180-2 but should be FIPS180-3 - check conformity
+	 * @author rainer.schubert
+	 */
+	public static class ECKAEGwithSHA512KDF
+			extends KeyAgreementSpi
+	{
+		public ECKAEGwithSHA512KDF()
+		{
+			super("ECKAEGwithSHA512KDF", new ECDHBasicAgreement(), new ECKaEgKEKGenerator(new SHA512Digest(),
+					ECKaEgKEKGenerator.DONTUSE_SHARED_INFO));
+		}
+	}
 }
