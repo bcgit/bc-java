@@ -17,8 +17,6 @@ import javax.security.auth.DestroyFailedException;
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
 
-import de.ehex.showcase.ssl.ehex.cipher.JceAEADCipherImpl;
-
 /**
  * A basic wrapper for a JCE Cipher class to provide the needed AEAD cipher functionality for TLS.
  */

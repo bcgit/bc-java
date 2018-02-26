@@ -16,11 +16,10 @@ import javax.crypto.spec.DHParameterSpec;
 
 import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.crypto.agreement.kdf.DHKEKGenerator;
+import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.crypto.util.EraseUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.DestroyableSecretKeySpec;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAgreementSpi;
-import org.bouncycastle.jcajce.provider.asymmetric.util.EraseUtil;
-import org.bouncycastle.jcajce.provider.util.DigestFactory;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 
 /**

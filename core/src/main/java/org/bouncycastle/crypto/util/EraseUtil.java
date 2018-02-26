@@ -13,26 +13,33 @@ public class EraseUtil {
 
     private static Logger LOG = java.util.logging.Logger.getLogger(EraseUtil.class.getName());
 
-    public static void clearByteArray(final byte[] array) {
+    public static void clearByteArray(final byte[] array) 
+    {
         if (array != null) {
             Arrays.fill(array, (byte) 0);
         }
     }
 
-    public static void clearIntArray(final int[] array) {
-        if (array != null) {
+    public static void clearIntArray(final int[] array) 
+    {
+        if (array != null) 
+        {
             Arrays.fill(array, 0);
         }
     }
 
-    public static void clearLongArray(final long[] array) {
-        if (array != null) {
+    public static void clearLongArray(final long[] array) 
+    {
+        if (array != null) 
+        {
             Arrays.fill(array, 0);
         }
     }
 
-    public static void clearBigInteger(final BigInteger bigInteger) {
-        if (bigInteger != null) {
+    public static void clearBigInteger(final BigInteger bigInteger) 
+    {
+        if (bigInteger != null) 
+        {
             Field declaredField = null;
             try {
 
@@ -45,33 +52,45 @@ public class EraseUtil {
                 clearIntArray(array);
                 declaredField.setAccessible(accessible);
 
-            } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+            } 
+            catch (Exception e) 
+            {
                 LOG.log(Level.WARNING, "Could not erase BigInteger", e);
             }
         }
     }
 
     public static void clearECFieldElement(final ECFieldElement ecField) {
-        if (ecField != null) {
+        if (ecField != null) 
+        {
 
             ecField.toBigInteger(); // x = int[]; long[]
             Field declaredField = null;
-            try {
+            try 
+            {
                 declaredField = ECFieldElement.class.getDeclaredField("x");
                 final boolean accessible = declaredField.isAccessible();
 
                 declaredField.setAccessible(true);
 
-                if (declaredField.getType().isAssignableFrom(BigInteger.class)) {
+                if (declaredField.getType().isAssignableFrom(BigInteger.class)) 
+                {
                     final BigInteger bigInteger = (BigInteger) declaredField.get(ecField);
                     clearBigInteger(bigInteger);
-                } else if (declaredField.getType().getSimpleName().equals("LongArray")) {
+                } 
+                else if (declaredField.getType().getSimpleName().equals("LongArray")) 
+                {
                     clearBCLongArray(declaredField.get(ecField));
-                } else if (declaredField.getType().isArray()) {
-                    if (declaredField.getType().getComponentType().getName().equals("int")) {
+                } 
+                else if (declaredField.getType().isArray()) 
+                {
+                    if (declaredField.getType().getComponentType().getName().equals("int")) 
+                    {
                         final int[] array = (int[]) declaredField.get(ecField);
                         clearIntArray(array);
-                    } else if (declaredField.getType().getComponentType().getName().equals("long")) {
+                    } 
+                    else if (declaredField.getType().getComponentType().getName().equals("long")) 
+                    {
                         final long[] array = (long[]) declaredField.get(ecField);
                         clearLongArray(array);
                     }
@@ -79,16 +98,21 @@ public class EraseUtil {
 
                 declaredField.setAccessible(accessible);
 
-            } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+            } 
+            catch (Exception e) 
+            {
                 LOG.log(Level.WARNING, "Could not erase ECFieldElement", e);
             }
         }
     }
 
-    private static void clearBCLongArray(final Object longArray) {
+    private static void clearBCLongArray(final Object longArray) 
+    {
 
-        if (longArray != null) {
-            try {
+        if (longArray != null) 
+        {
+            try 
+            {
                 final Class<?> c = Class.forName("org.bouncycastle.math.ec.LongArray");
                 final Field declaredField = ECPoint.class.getDeclaredField("m_ints");
                 final boolean accessible = declaredField.isAccessible();
@@ -102,7 +126,8 @@ public class EraseUtil {
                 clearECFieldElement(ecField);
                 declaredField.setAccessible(accessible);
 
-            } catch (ClassNotFoundException | NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+            } 
+            catch (Exception e) {
                 LOG.log(Level.WARNING, "Could not erase LongArray", e);
             }
         }

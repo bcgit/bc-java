@@ -6,7 +6,8 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.DESKeySpec;
 import javax.security.auth.DestroyFailedException;
 
-import org.bouncycastle.jcajce.provider.asymmetric.util.EraseUtil;
+import org.bouncycastle.crypto.util.EraseUtil;
+
 
 public class DestroyableSecretKeySpec implements KeySpec, SecretKey 
 {
@@ -119,7 +120,6 @@ public class DestroyableSecretKeySpec implements KeySpec, SecretKey
      *
      * @return the secret key algorithm.
      */
-    @Override
     public String getAlgorithm() 
     {
         return this.algorithm;
@@ -130,7 +130,6 @@ public class DestroyableSecretKeySpec implements KeySpec, SecretKey
      *
      * @return the string "RAW".
      */
-    @Override
     public String getFormat() 
     {
         return "RAW";
@@ -141,7 +140,6 @@ public class DestroyableSecretKeySpec implements KeySpec, SecretKey
      *
      * @return the key material. Returns a new array each time this method is called.
      */
-    @Override
     public byte[] getEncoded() 
     {
         return this.key.clone();
@@ -203,7 +201,6 @@ public class DestroyableSecretKeySpec implements KeySpec, SecretKey
         return java.util.Arrays.equals(this.key, thatKey);
     }
 
-    @Override
     public void destroy() throws DestroyFailedException {
         EraseUtil.clearByteArray(this.key);
     }

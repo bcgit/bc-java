@@ -12,8 +12,6 @@ import javax.security.auth.DestroyFailedException;
 
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipherImpl;
 
-import de.ehex.showcase.ssl.ehex.cipher.JceBlockCipherImpl;
-
 /**
  * A basic wrapper for a JCE Cipher class to provide the needed block cipher functionality for TLS.
  */
