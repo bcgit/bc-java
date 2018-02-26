@@ -13,11 +13,12 @@ import javax.crypto.ShortBufferException;
 import javax.crypto.interfaces.DHPrivateKey;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.crypto.agreement.kdf.DHKEKGenerator;
 import org.bouncycastle.crypto.util.DigestFactory;
+import org.bouncycastle.crypto.util.EraseUtil;
+import org.bouncycastle.jcajce.provider.asymmetric.DestroyableSecretKeySpec;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAgreementSpi;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 
@@ -32,9 +33,9 @@ public class KeyAgreementSpi
     private static final BigInteger ONE = BigInteger.valueOf(1);
     private static final BigInteger TWO = BigInteger.valueOf(2);
 
-    private BigInteger      x;
-    private BigInteger      p;
-    private BigInteger      g;
+    private BigInteger x;
+    private BigInteger p;
+    private BigInteger g;
 
     private BigInteger     result;
 
@@ -57,7 +58,7 @@ public class KeyAgreementSpi
         // RFC 2631 (2.1.2) specifies that the secret should be padded with leading zeros if necessary
         // must be the same length as p
         //
-        int expectedLength = (p.bitLength() + 7) / 8;
+        final int expectedLength = (this.p.bitLength() + 7) / 8;
 
         byte[]    tmp = r.toByteArray();
 
@@ -76,7 +77,7 @@ public class KeyAgreementSpi
 
         // tmp must be shorter than expectedLength
         // pad to the left with zeros.
-        byte[]    rv = new byte[expectedLength];
+        final byte[] rv = new byte[expectedLength];
 
         System.arraycopy(tmp, 0, rv, rv.length - tmp.length, tmp.length);
 
@@ -158,12 +159,19 @@ public class KeyAgreementSpi
             throw new IllegalStateException("Diffie-Hellman not initialised.");
         }
 
-        byte[] res = bigIntToBytes(result);
+        final byte[] res = calcSecret();
 
         // for JSSE compatibility
-        if (algorithm.equals("TlsPremasterSecret"))
-        {
-            return new SecretKeySpec(trimZeroes(res), algorithm);
+        if (algorithm.equals("TlsPremasterSecret")) {
+            final byte[] trimedZeroes = trimZeroes(res);
+            final DestroyableSecretKeySpec secretKeySpec = new DestroyableSecretKeySpec(trimedZeroes, algorithm);
+
+            EraseUtil.clearByteArray(res);
+            EraseUtil.clearByteArray(trimedZeroes);
+            EraseUtil.clearBigInteger(this.x);
+            EraseUtil.clearBigInteger(this.result);
+
+            return secretKeySpec;
         }
 
         return super.engineGenerateSecret(algorithm);

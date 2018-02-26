@@ -6,12 +6,15 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.DHPrivateKey;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
+import javax.security.auth.DestroyFailedException;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsDHUtils;
@@ -41,6 +44,8 @@ public class JceTlsDHDomain
         return new DHParameterSpec(dhGroup.getP(), dhGroup.getG(), dhGroup.getL());
     }
 
+    private static Logger LOG = Logger.getLogger(JceTlsDHDomain.class.getName());
+    
     protected final JcaTlsCrypto crypto;
     protected final TlsDHConfig dhConfig;
     protected final DHParameterSpec dhParameterSpec;
@@ -65,8 +70,15 @@ public class JceTlsDHDomain
             SecretKey secretKey = crypto.calculateKeyAgreement("DH", privateKey, publicKey, "TlsPremasterSecret");
 
             // TODO Need to consider cases where SecretKey may not be encodable
+            JceTlsSecret adoptLocalSecret = crypto.adoptLocalSecret(secretKey.getEncoded());
 
-            return crypto.adoptLocalSecret(secretKey.getEncoded());
+            try {
+                secretKey.destroy();
+            } catch (DestroyFailedException e) {
+                LOG.log(Level.FINE, "Could not destroy calculate SecretKey", e);
+            }
+            
+            return adoptLocalSecret;
         }
         catch (GeneralSecurityException e)
         {

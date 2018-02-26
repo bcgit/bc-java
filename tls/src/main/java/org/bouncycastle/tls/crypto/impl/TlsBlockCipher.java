@@ -97,6 +97,8 @@ public class TlsBlockCipher
             offset += serverCipher.getBlockSize();
         }
 
+        Arrays.fill(key_block, (byte) 0x0);
+        
         if (offset != key_block_size)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);

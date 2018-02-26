@@ -16,8 +16,11 @@ import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.EllipticCurve;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.crypto.SecretKey;
+import javax.security.auth.DestroyFailedException;
 
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
@@ -35,6 +38,8 @@ import org.bouncycastle.tls.crypto.TlsECDomain;
 public class JceTlsECDomain
     implements TlsECDomain
 {
+    private static Logger LOG = Logger.getLogger(JceTlsECDomain.class.getName());
+    
     protected final JcaTlsCrypto crypto;
     protected final TlsECConfig ecConfig;
 
@@ -65,8 +70,16 @@ public class JceTlsECDomain
             SecretKey secretKey = crypto.calculateKeyAgreement("ECDH", privateKey, publicKey, "TlsPremasterSecret");
 
             // TODO Need to consider cases where SecretKey may not be encodable
+            JceTlsSecret adoptLocalSecret = crypto.adoptLocalSecret(secretKey.getEncoded());
 
-            return crypto.adoptLocalSecret(secretKey.getEncoded());
+            try {
+                secretKey.destroy();
+            } catch (DestroyFailedException e) {
+                LOG.log(Level.FINE, "Could not destroy calculate SecretKey", e);
+            }
+            
+            
+            return adoptLocalSecret;
         }
         catch (GeneralSecurityException e)
         {

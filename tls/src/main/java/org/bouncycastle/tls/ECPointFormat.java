@@ -12,4 +12,15 @@ public class ECPointFormat
     /*
      * reserved (248..255)
      */
+    
+    public static short[] getSupportedFormats() 
+    {
+        short[] format = new short[ansiX962_compressed_char2];
+        for (short i = 0; i < ansiX962_compressed_char2; i++) 
+        {
+            format[i] = i;
+        }
+        return format;
+    }
+    
 }

@@ -1,11 +1,14 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.security.GeneralSecurityException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.security.auth.DestroyFailedException;
 
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipherImpl;
 
@@ -15,6 +18,8 @@ import org.bouncycastle.tls.crypto.impl.TlsBlockCipherImpl;
 public class JceBlockCipherImpl
     implements TlsBlockCipherImpl
 {
+    private static Logger LOG = Logger.getLogger(JceBlockCipherImpl.class.getName());
+    
     private final int cipherMode;
     private final Cipher cipher;
     private final String algorithm;
@@ -55,6 +60,21 @@ public class JceBlockCipherImpl
         catch (GeneralSecurityException e)
         {
             throw new IllegalStateException(e);
+        } 
+        finally 
+        {
+            if (this.key != null) 
+            {
+                try 
+                {
+                    this.key.destroy();
+                } 
+                catch (final DestroyFailedException e) 
+                {
+                    LOG.log(Level.FINE, "Could not destroy calculate SecretKey", e);
+                }
+
+            }
         }
     }
 

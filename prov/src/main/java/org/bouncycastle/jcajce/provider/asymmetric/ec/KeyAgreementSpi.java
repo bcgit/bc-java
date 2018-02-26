@@ -4,10 +4,14 @@ import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
+
+import javax.crypto.SecretKey;
+import javax.crypto.ShortBufferException;
 
 import org.bouncycastle.asn1.x9.X9IntegerConverter;
 import org.bouncycastle.crypto.BasicAgreement;
@@ -27,6 +31,8 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.MQVPrivateParameters;
 import org.bouncycastle.crypto.params.MQVPublicParameters;
 import org.bouncycastle.crypto.util.DigestFactory;
+import org.bouncycastle.crypto.util.EraseUtil;
+import org.bouncycastle.jcajce.provider.asymmetric.DestroyableSecretKeySpec;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAgreementSpi;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.spec.DHUParameterSpec;
@@ -169,6 +175,16 @@ public class KeyAgreementSpi
         return null;
     }
 
+    @Override
+    protected SecretKey engineGenerateSecret(final String algorithm) throws NoSuchAlgorithmException {
+        SecretKey secretKey = super.engineGenerateSecret(algorithm);
+
+        EraseUtil.clearByteArray(this.result);
+
+        return secretKey;
+    }
+
+    
     protected void engineInit(
         Key key,
         AlgorithmParameterSpec params,

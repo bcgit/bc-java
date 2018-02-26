@@ -24,6 +24,8 @@ import org.bouncycastle.crypto.agreement.kdf.DHKDFParameters;
 import org.bouncycastle.crypto.agreement.kdf.DHKEKGenerator;
 import org.bouncycastle.crypto.params.DESParameters;
 import org.bouncycastle.crypto.params.KDFParameters;
+import org.bouncycastle.crypto.util.EraseUtil;
+import org.bouncycastle.jcajce.provider.asymmetric.DestroyableSecretKeySpec;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Strings;
 
@@ -311,7 +313,11 @@ public abstract class BaseAgreementSpi
             DESParameters.setOddParity(secret);
         }
 
-        return new SecretKeySpec(secret, algName);
+        DestroyableSecretKeySpec secretKeySpec = new DestroyableSecretKeySpec(secret, algName);
+
+        EraseUtil.clearByteArray(secret);
+        
+        return secretKeySpec;
     }
 
     protected abstract byte[] calcSecret();

@@ -45,6 +45,7 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.ECPointFormat;
 import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.NamedGroup;
@@ -286,7 +287,25 @@ public class BcTlsCrypto
 
     public boolean hasNamedGroup(int namedGroup)
     {
-        return NamedGroup.refersToASpecificGroup(namedGroup);
+        switch (namedGroup)
+        {
+        case NamedGroup.secp256r1:
+        case NamedGroup.secp384r1:
+        case NamedGroup.ffdhe2048:
+        case NamedGroup.ffdhe3072:
+        case NamedGroup.ffdhe4096:
+        case NamedGroup.ffdhe6144:
+        case NamedGroup.ffdhe8192:
+            return NamedGroup.refersToASpecificGroup(namedGroup);
+
+        default:
+            return false;
+        }
+    }
+    
+    public boolean hasECPointFormat(short format) 
+    {
+        return format >= ECPointFormat.uncompressed &&  format <= ECPointFormat.ansiX962_compressed_char2;
     }
 
     public boolean hasRSAEncryption()

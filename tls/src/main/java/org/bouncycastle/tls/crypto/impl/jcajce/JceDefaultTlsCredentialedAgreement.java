@@ -5,9 +5,12 @@ import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.interfaces.ECPrivateKey;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.DHPrivateKey;
+import javax.security.auth.DestroyFailedException;
 
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.TlsCredentialedAgreement;
@@ -35,6 +38,8 @@ public class JceDefaultTlsCredentialedAgreement
         throw new IllegalArgumentException("'privateKey' type not supported: " + privateKey.getClass().getName());
     }
 
+    private static Logger LOG = Logger.getLogger(JceTlsDHDomain.class.getName());
+    
     private final JcaTlsCrypto crypto;
     private final Certificate certificate;
     private final PrivateKey privateKey;
@@ -91,8 +96,15 @@ public class JceDefaultTlsCredentialedAgreement
             SecretKey secretKey = crypto.calculateKeyAgreement(agreementAlgorithm, privateKey, publicKey, "TlsPremasterSecret");
 
             // TODO Need to consider cases where SecretKey may not be encodable
+            JceTlsSecret adoptLocalSecret = crypto.adoptLocalSecret(secretKey.getEncoded());
 
-            return crypto.adoptLocalSecret(secretKey.getEncoded());
+            try {
+                secretKey.destroy();
+            } catch (DestroyFailedException e) {
+                LOG.log(Level.FINE, "Could not destroy calculate SecretKey", e);
+            }  
+            
+            return adoptLocalSecret;
         }
         catch (GeneralSecurityException e)
         {
