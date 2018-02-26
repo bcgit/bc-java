@@ -5,14 +5,19 @@ import java.security.AccessController;
 import java.security.GeneralSecurityException;
 import java.security.PrivilegedAction;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.security.auth.DestroyFailedException;
 
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
+
+import de.ehex.showcase.ssl.ehex.cipher.JceAEADCipherImpl;
 
 /**
  * A basic wrapper for a JCE Cipher class to provide the needed AEAD cipher functionality for TLS.
@@ -20,6 +25,8 @@ import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
 public class JceAEADCipherImpl
     implements TlsAEADCipherImpl
 {
+    private static Logger LOG = Logger.getLogger(JceAEADCipherImpl.class.getName());
+    
     private static Constructor<AlgorithmParameterSpec> initSpecConstructor()
     {
         try
@@ -104,6 +111,20 @@ public class JceAEADCipherImpl
         catch (GeneralSecurityException e)
         {
             throw new IllegalStateException(e);
+        } 
+        finally 
+        {
+            if (this.key != null) 
+            {
+                try 
+                {
+                    this.key.destroy();
+                } 
+                catch (final DestroyFailedException e) 
+                {
+                    LOG.log(Level.FINE, "Could not destroy calculated SecretKey", e);
+                }
+            }
         }
     }
 

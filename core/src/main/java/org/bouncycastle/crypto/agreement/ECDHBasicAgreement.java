@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.BasicAgreement;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.util.EraseUtil;
 import org.bouncycastle.math.ec.ECPoint;
 
 /**
@@ -60,7 +61,12 @@ public class ECDHBasicAgreement
         {
             throw new IllegalStateException("Infinity is not a valid agreement value for ECDH");
         }
+        final BigInteger result = P.getAffineXCoord().toBigInteger();
 
-        return P.getAffineXCoord().toBigInteger();
+        EraseUtil.clearECFieldElement(P.getAffineXCoord());
+        EraseUtil.clearECFieldElement(P.getAffineYCoord());
+
+        return result;
+        
     }
 }

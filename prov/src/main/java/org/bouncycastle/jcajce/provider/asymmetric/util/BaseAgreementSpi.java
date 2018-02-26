@@ -27,6 +27,8 @@ import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Strings;
 
+import de.ehex.showcase.ssl.ehex.EraseUtil;
+
 public abstract class BaseAgreementSpi
     extends KeyAgreementSpi
 {
@@ -311,7 +313,11 @@ public abstract class BaseAgreementSpi
             DESParameters.setOddParity(secret);
         }
 
-        return new SecretKeySpec(secret, algName);
+        DestroyableSecretKeySpec secretKeySpec = new DestroyableSecretKeySpec(secret, algName);
+
+        EraseUtil.clearByteArray(secret);
+        
+        return secretKeySpec;
     }
 
     protected abstract byte[] calcSecret();
