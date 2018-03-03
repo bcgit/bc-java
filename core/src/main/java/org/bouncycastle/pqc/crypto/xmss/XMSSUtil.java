@@ -384,7 +384,7 @@ public class XMSSUtil
     private static class CheckingStream
        extends ObjectInputStream
     {
-        private static final Set<String> components = new HashSet<>();
+        private static final Set components = new HashSet();
 
         static
         {
