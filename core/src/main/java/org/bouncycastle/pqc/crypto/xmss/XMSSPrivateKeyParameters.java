@@ -86,26 +86,25 @@ public final class XMSSPrivateKeyParameters
             position += rootSize;
 			/* import BDS state */
             byte[] bdsStateBinary = XMSSUtil.extractBytesAtOffset(privateKey, position, privateKey.length - position);
-            BDS bdsImport = null;
             try
             {
-                bdsImport = (BDS)XMSSUtil.deserialize(bdsStateBinary);
+                BDS bdsImport = (BDS)XMSSUtil.deserialize(bdsStateBinary, BDS.class);
+                bdsImport.setXMSS(builder.xmss);
+                bdsImport.validate();
+                if (bdsImport.getIndex() != index)
+                {
+                    throw new IllegalStateException("serialized BDS has wrong index");
+                }
+                bdsState = bdsImport;
             }
             catch (IOException e)
             {
-                e.printStackTrace();
+                throw new IllegalArgumentException(e.getMessage(), e);
             }
             catch (ClassNotFoundException e)
             {
-                e.printStackTrace();
+                throw new IllegalArgumentException(e.getMessage(), e);
             }
-            bdsImport.setXMSS(builder.xmss);
-            bdsImport.validate();
-            if (bdsImport.getIndex() != index)
-            {
-                throw new IllegalStateException("serialized BDS has wrong index");
-            }
-            bdsState = bdsImport;
         }
         else
         {
