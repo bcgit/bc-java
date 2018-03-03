@@ -44,22 +44,15 @@ public class RainbowParameters
     public RainbowParameters(int[] vi)
     {
         this.vi = vi;
-        try
-        {
-            checkParams();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
+
+        checkParams();
     }
 
     private void checkParams()
-        throws Exception
     {
         if (vi == null)
         {
-            throw new Exception("no layers defined.");
+            throw new IllegalArgumentException("no layers defined.");
         }
         if (vi.length > 1)
         {
@@ -67,14 +60,14 @@ public class RainbowParameters
             {
                 if (vi[i] >= vi[i + 1])
                 {
-                    throw new Exception(
+                    throw new IllegalArgumentException(
                         "v[i] has to be smaller than v[i+1]");
                 }
             }
         }
         else
         {
-            throw new Exception(
+            throw new IllegalArgumentException(
                 "Rainbow needs at least 1 layer, such that v1 < v2.");
         }
     }
