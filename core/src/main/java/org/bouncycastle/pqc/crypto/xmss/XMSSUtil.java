@@ -3,8 +3,11 @@ package org.bouncycastle.pqc.crypto.xmss;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectStreamClass;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Arrays;
@@ -321,17 +324,19 @@ public class XMSSUtil
         return out.toByteArray();
     }
 
-    public static Object deserialize(byte[] data, Class clazz)
+    public static Object deserialize(byte[] data, final Class clazz)
         throws IOException, ClassNotFoundException
     {
         ByteArrayInputStream in = new ByteArrayInputStream(data);
-        ObjectInputStream is = new ObjectInputStream(in);
+        ObjectInputStream is = new CheckingStream(clazz, in);
+
         Object obj = is.readObject();
 
         if (is.available() != 0)
         {
             throw new IOException("unexpected data found at end of ObjectInputStream");
         }
+        // you'd hope this would always succeed!
         if (clazz.isInstance(obj))
         {
             return obj;
@@ -372,5 +377,39 @@ public class XMSSUtil
             return false;
         }
         return ((globalIndex + 1) % (long)Math.pow((1 << xmssHeight), layer) == 0) ? true : false;
+    }
+
+    private static class CheckingStream
+       extends ObjectInputStream
+    {
+        private final Class mainClass;
+        private boolean found = false;
+
+        CheckingStream(Class mainClass, InputStream in)
+            throws IOException
+        {
+            super(in);
+
+            this.mainClass = mainClass;
+        }
+
+        protected Class<?> resolveClass(ObjectStreamClass desc)
+            throws IOException,
+            ClassNotFoundException
+        {
+            if (!found)
+            {
+                if (!desc.getName().equals(mainClass.getName()))
+                {
+                    throw new InvalidClassException(
+                        "unexpected class: ", desc.getName());
+                }
+                else
+                {
+                    found = true;
+                }
+            }
+            return super.resolveClass(desc);
+        }
     }
 }
