@@ -51,7 +51,7 @@ public class BCXMSSPrivateKey
 
             if (xmssPrivateKey.getBdsState() != null)
             {
-                keyBuilder.withBDSState((BDS)XMSSUtil.deserialize(xmssPrivateKey.getBdsState()));
+                keyBuilder.withBDSState((BDS)XMSSUtil.deserialize(xmssPrivateKey.getBdsState(), BDS.class));
             }
 
             this.keyParams = keyBuilder.build();

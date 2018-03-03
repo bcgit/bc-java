@@ -321,12 +321,25 @@ public class XMSSUtil
         return out.toByteArray();
     }
 
-    public static Object deserialize(byte[] data)
+    public static Object deserialize(byte[] data, Class clazz)
         throws IOException, ClassNotFoundException
     {
         ByteArrayInputStream in = new ByteArrayInputStream(data);
         ObjectInputStream is = new ObjectInputStream(in);
-        return is.readObject();
+        Object obj = is.readObject();
+
+        if (is.available() != 0)
+        {
+            throw new IOException("unexpected data found at end of ObjectInputStream");
+        }
+        if (clazz.isInstance(obj))
+        {
+            return obj;
+        }
+        else
+        {
+            throw new IOException("unexpected class found in ObjectInputStream");
+        }
     }
 
     public static int calculateTau(int index, int height)

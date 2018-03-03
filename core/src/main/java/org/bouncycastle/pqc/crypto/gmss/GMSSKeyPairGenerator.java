@@ -178,26 +178,19 @@ public class GMSSKeyPairGenerator
         // from bottom up to the root
         for (int h = numLayer - 1; h >= 0; h--)
         {
-            GMSSRootCalc tree = new GMSSRootCalc(this.heightOfTrees[h], this.K[h], digestProvider);
-            try
-            {
-                // on lowest layer no lower root is available, so just call
-                // the method with null as first parameter
-                if (h == numLayer - 1)
-                {
-                    tree = this.generateCurrentAuthpathAndRoot(null, currentStack[h], seeds[h], h);
-                }
-                else
-                // otherwise call the method with the former computed root
-                // value
-                {
-                    tree = this.generateCurrentAuthpathAndRoot(currentRoots[h + 1], currentStack[h], seeds[h], h);
-                }
+            GMSSRootCalc tree;
 
-            }
-            catch (Exception e1)
+            // on lowest layer no lower root is available, so just call
+            // the method with null as first parameter
+            if (h == numLayer - 1)
             {
-                e1.printStackTrace();
+                tree = this.generateCurrentAuthpathAndRoot(null, currentStack[h], seeds[h], h);
+            }
+            else
+            // otherwise call the method with the former computed root
+            // value
+            {
+                tree = this.generateCurrentAuthpathAndRoot(currentRoots[h + 1], currentStack[h], seeds[h], h);
             }
 
             // set initial values needed for the private key construction
