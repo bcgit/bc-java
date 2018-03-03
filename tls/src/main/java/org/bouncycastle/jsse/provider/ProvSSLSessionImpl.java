@@ -20,6 +20,7 @@ import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.tls.RecordFormat;
 import org.bouncycastle.tls.SessionParameters;
 import org.bouncycastle.tls.TlsSession;
+import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.util.Arrays;
 
 // TODO[jsse] Serializable ?
@@ -135,9 +136,10 @@ class ProvSSLSessionImpl
 
     public byte[] getId()
     {
-        return tlsSession == null
+        byte[] id = tlsSession == null
             ?   null
             :   Arrays.clone(tlsSession.getSessionID());
+        return id == null ? TlsUtils.EMPTY_BYTES : id;
     }
 
     public long getLastAccessedTime()
