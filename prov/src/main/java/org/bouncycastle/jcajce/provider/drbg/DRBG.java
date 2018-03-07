@@ -252,6 +252,15 @@ public class DRBG
             Pack.longToLittleEndian(Thread.currentThread().getId()), Pack.longToLittleEndian(System.currentTimeMillis()));
     }
 
+    private static class HybridRandomProvider
+        extends Provider
+    {
+        protected HybridRandomProvider()
+        {
+            super("BCHEP", 1.0, "Bouncy Castle Hybrid Entropy Provider");
+        }
+    }
+
     private static class HybridSecureRandom
         extends SecureRandom
     {
@@ -263,7 +272,7 @@ public class DRBG
 
         HybridSecureRandom()
         {
-            super(null, null);
+            super(null, new HybridRandomProvider());
             drbg = new SP800SecureRandomBuilder(new EntropySourceProvider()
                 {
                     public EntropySource get(final int bitsRequired)
