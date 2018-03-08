@@ -22,6 +22,7 @@ public class SecurityParameters
     boolean extendedMasterSecret = false;
     boolean extendedPadding = false;
     boolean truncatedHMac = false;
+    NegotiatedTokenBinding negotiatedTokenBinding =null;
 
     void clear()
     {
@@ -143,5 +144,13 @@ public class SecurityParameters
     public boolean isTruncatedHMac()
     {
         return truncatedHMac;
+    }
+
+    public NegotiatedTokenBinding getNegotiatedTokenBinding() {
+        return negotiatedTokenBinding;
+    }
+
+    public void setNegotiatedTokenBinding(NegotiatedTokenBinding negotiatedTokenBinding) {
+        this.negotiatedTokenBinding = negotiatedTokenBinding;
     }
 }

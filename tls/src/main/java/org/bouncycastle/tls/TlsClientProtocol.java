@@ -395,6 +395,12 @@ public class TlsClientProtocol
 
                 establishMasterSecret(getContext(), keyExchange);
 
+                if (this.securityParameters.negotiatedTokenBinding != null && this.securityParameters.masterSecret !=
+                        null ){
+                    this.securityParameters.negotiatedTokenBinding.setExportKeyingMaterial(this.tlsClientContext
+                            .exportKeyingMaterial(ExporterLabel.token_binding,null,32));
+                }
+
                 recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 
                 if (credentialedSigner != null)
@@ -786,6 +792,7 @@ public class TlsClientProtocol
                 sessionServerExtensions, AlertDescription.illegal_parameter);
 
             this.securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(sessionServerExtensions);
+            this.securityParameters.negotiatedTokenBinding=processTokenBindingExtension(sessionServerExtensions);
 
             /*
              * TODO It's surprising that there's no provision to allow a 'fresh' CertificateStatus to be sent in

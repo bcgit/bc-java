@@ -23,6 +23,7 @@ public class TlsExtensionsUtils
     public static final Integer EXT_supported_groups = Integers.valueOf(ExtensionType.supported_groups);
     public static final Integer EXT_truncated_hmac = Integers.valueOf(ExtensionType.truncated_hmac);
     public static final Integer EXT_trusted_ca_keys = Integers.valueOf(ExtensionType.trusted_ca_keys);
+    public static final Integer EXT_token_binding = Integers.valueOf(ExtensionType.DRAFT_token_binding);
 
     public static Hashtable ensureExtensionsInitialised(Hashtable extensions)
     {
@@ -119,6 +120,12 @@ public class TlsExtensionsUtils
         extensions.put(EXT_trusted_ca_keys, createTrustedCAKeysExtensionServer());
     }
 
+    public static void addTokenBindingExtension(Hashtable extensions, TokenBindingExtension tokenBindingExtension)
+            throws IOException {
+        extensions.put(EXT_token_binding, createTokenBindingExtension(tokenBindingExtension));
+    }
+
+
     public static short[] getClientCertificateTypeExtensionClient(Hashtable extensions)
         throws IOException
     {
@@ -195,6 +202,13 @@ public class TlsExtensionsUtils
         return extensionData == null ? null : readTrustedCAKeysExtensionClient(extensionData);
     }
 
+    public static NegotiatedTokenBinding getTokenBindingExtension(Hashtable extensions)
+            throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_token_binding);
+        return extensionData == null ? null : readTokenBindingExtension(extensionData);
+    }
+
     public static boolean hasClientCertificateURLExtension(Hashtable extensions) throws IOException
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_client_certificate_url);
@@ -223,6 +237,15 @@ public class TlsExtensionsUtils
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_trusted_ca_keys);
         return extensionData == null ? false : readTrustedCAKeysExtensionServer(extensionData);
+    }
+
+    private static byte[] createTokenBindingExtension(TokenBindingExtension tokenBindingExtension) throws IOException {
+        if (tokenBindingExtension == null) {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        tokenBindingExtension.encode(buf);
+        return buf.toByteArray();
     }
 
     public static byte[] createCertificateTypeExtensionClient(short[] certificateTypes) throws IOException
@@ -364,6 +387,14 @@ public class TlsExtensionsUtils
     public static byte[] createTrustedCAKeysExtensionServer()
     {
         return createEmptyExtensionData();
+    }
+
+    public static NegotiatedTokenBinding readTokenBindingExtension(byte[] extensionData)
+            throws IOException {
+        int[] serverData = TlsUtils.decodeUint8ArrayWithUint16Length(extensionData);
+        NegotiatedTokenBinding tokenBinding = new NegotiatedTokenBinding();
+        tokenBinding.decode(serverData);
+        return tokenBinding;
     }
 
     private static boolean readEmptyExtensionData(byte[] extensionData) throws IOException

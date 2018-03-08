@@ -228,6 +228,10 @@ public abstract class AbstractTlsClient
             TlsExtensionsUtils.addSupportedGroupsExtension(clientExtensions, supportedGroups);
         }
 
+        //add TokenBinding Extension
+        TokenBindingExtension tokenBindingExtension = new TokenBindingExtension();
+        TlsExtensionsUtils.addTokenBindingExtension(clientExtensions, tokenBindingExtension);
+
         return clientExtensions;
     }
 

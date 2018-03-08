@@ -1319,6 +1319,26 @@ public abstract class TlsProtocol
     }
 
     /**
+     * This method creates NegotiatedTokenBindingClass and checks the negotiated parameters.
+     *
+     * @param serverExtensions
+     * @return
+     * @throws IOException
+     */
+    protected NegotiatedTokenBinding processTokenBindingExtension(Hashtable serverExtensions) throws IOException {
+        NegotiatedTokenBinding tokenBinding = TlsExtensionsUtils.getTokenBindingExtension(serverExtensions);
+        if (tokenBinding != null) {
+            if (tokenBinding.getMajorProtocolVerison() > TokenBindingExtension.getMajorProtocolVerison()) {
+                throw new TlsFatalAlert(AlertDescription.unsupported_extension);
+            }
+            if (tokenBinding.getMinorProtocolVerison() > TokenBindingExtension.getMinorProtocolVerison()) {
+                throw new TlsFatalAlert(AlertDescription.unsupported_extension);
+            }
+        }
+        return tokenBinding;
+    }
+
+    /**
      * Make sure the InputStream 'buf' now empty. Fail otherwise.
      *
      * @param buf The InputStream to check.
