@@ -10,6 +10,7 @@ import org.bouncycastle.util.Integers;
 
 public class TlsExtensionsUtils
 {
+    public static final Integer EXT_application_layer_protocol_negotiation = Integers.valueOf(ExtensionType.application_layer_protocol_negotiation);
     public static final Integer EXT_client_certificate_type = Integers.valueOf(ExtensionType.client_certificate_type);
     public static final Integer EXT_client_certificate_url = Integers.valueOf(ExtensionType.client_certificate_url);
     public static final Integer EXT_encrypt_then_mac = Integers.valueOf(ExtensionType.encrypt_then_mac);
@@ -27,6 +28,19 @@ public class TlsExtensionsUtils
     public static Hashtable ensureExtensionsInitialised(Hashtable extensions)
     {
         return extensions == null ? new Hashtable() : extensions;
+    }
+
+    /**
+     * @param protocolNameList a {@link Vector} of {@link ProtocolName}
+     */
+    public static void addALPNExtensionClient(Hashtable extensions, Vector protocolNameList) throws IOException
+    {
+        extensions.put(EXT_application_layer_protocol_negotiation, createALPNExtensionClient(protocolNameList));
+    }
+
+    public static void addALPNExtensionServer(Hashtable extensions, ProtocolName protocolName) throws IOException
+    {
+        extensions.put(EXT_application_layer_protocol_negotiation, createALPNExtensionServer(protocolName));
     }
 
     public static void addClientCertificateTypeExtensionClient(Hashtable extensions, short[] certificateTypes)
@@ -117,6 +131,21 @@ public class TlsExtensionsUtils
     public static void addTrustedCAKeysExtensionServer(Hashtable extensions)
     {
         extensions.put(EXT_trusted_ca_keys, createTrustedCAKeysExtensionServer());
+    }
+
+    /**
+     * @return a {@link Vector} of {@link ProtocolName}
+     */
+    public static Vector getALPNExtensionClient(Hashtable extensions) throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_application_layer_protocol_negotiation);
+        return extensionData == null ? null : readALPNExtensionClient(extensionData);
+    }
+
+    public static ProtocolName getALPNExtensionServer(Hashtable extensions) throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_application_layer_protocol_negotiation);
+        return extensionData == null ? null : readALPNExtensionServer(extensionData);
     }
 
     public static short[] getClientCertificateTypeExtensionClient(Hashtable extensions)
@@ -223,6 +252,43 @@ public class TlsExtensionsUtils
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_trusted_ca_keys);
         return extensionData == null ? false : readTrustedCAKeysExtensionServer(extensionData);
+    }
+
+    /**
+     * @param protocolNameList a {@link Vector} of {@link ProtocolName}
+     */
+    public static byte[] createALPNExtensionClient(Vector protocolNameList) throws IOException
+    {
+        if (protocolNameList == null || protocolNameList.size() < 1)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+        // Placeholder for length
+        TlsUtils.writeUint16(0, buf);
+
+        for (int i = 0; i < protocolNameList.size(); ++i)
+        {
+            ProtocolName protocolName = (ProtocolName)protocolNameList.elementAt(i);
+
+            protocolName.encode(buf);
+        }
+
+        int length = buf.size() - 2;
+        TlsUtils.checkUint16(length);
+        byte[] extensionData = buf.toByteArray();
+        TlsUtils.writeUint16(length, extensionData, 0);
+        return extensionData;
+    }
+
+    public static byte[] createALPNExtensionServer(ProtocolName protocolName) throws IOException
+    {
+        Vector protocol_name_list = new Vector();
+        protocol_name_list.addElement(protocolName);
+
+        return createALPNExtensionClient(protocol_name_list);
     }
 
     public static byte[] createCertificateTypeExtensionClient(short[] certificateTypes) throws IOException
@@ -379,6 +445,45 @@ public class TlsExtensionsUtils
         }
 
         return true;
+    }
+
+    /**
+     * @return a {@link Vector} of {@link ProtocolName}
+     */
+    public static Vector readALPNExtensionClient(byte[] extensionData) throws IOException
+    {
+        if (extensionData == null)
+        {
+            throw new IllegalArgumentException("'extensionData' cannot be null");
+        }
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
+
+        int length = TlsUtils.readUint16(buf);
+        if (length != (extensionData.length - 2))
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        Vector protocol_name_list = new Vector();
+        while (buf.available() > 0)
+        {
+            ProtocolName protocolName = ProtocolName.parse(buf);
+
+            protocol_name_list.addElement(protocolName);
+        }
+        return protocol_name_list;
+    }
+
+    public static ProtocolName readALPNExtensionServer(byte[] extensionData) throws IOException
+    {
+        Vector protocol_name_list = readALPNExtensionClient(extensionData);
+        if (protocol_name_list.size() != 1)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        return (ProtocolName)protocol_name_list.elementAt(0);
     }
 
     public static short[] readCertificateTypeExtensionClient(byte[] extensionData) throws IOException
