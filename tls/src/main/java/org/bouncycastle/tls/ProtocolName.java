@@ -26,6 +26,19 @@ public final class ProtocolName
     public static final ProtocolName SPDY_1 = asUtf8Encoding("spdy/1");
     public static final ProtocolName SPDY_2 = asUtf8Encoding("spdy/2");
     public static final ProtocolName SPDY_3 = asUtf8Encoding("spdy/3");
+    public static final ProtocolName STUN_TURN = asUtf8Encoding("stun.turn");
+    public static final ProtocolName STUN_NAT_DISCOVERY = asUtf8Encoding("stun.nat-discovery");
+    public static final ProtocolName HTTP_2_TLS = asUtf8Encoding("h2");
+    public static final ProtocolName HTTP_2_TCP = asUtf8Encoding("h2c");
+    public static final ProtocolName WEBRTC = asUtf8Encoding("webrtc");
+    public static final ProtocolName WEBRTC_CONFIDENTIAL = asUtf8Encoding("c-webrtc");
+    public static final ProtocolName FTP = asUtf8Encoding("ftp");
+    public static final ProtocolName IMAP = asUtf8Encoding("imap");
+    public static final ProtocolName POP3 = asUtf8Encoding("pop3");
+    public static final ProtocolName MANAGESIEVE = asUtf8Encoding("managesieve");
+    public static final ProtocolName COAP = asUtf8Encoding("coap");
+    public static final ProtocolName XMPP_CLIENT = asUtf8Encoding("xmpp-client");
+    public static final ProtocolName XMPP_SERVER = asUtf8Encoding("xmpp-server");
 
     private final byte[] bytes;
 
