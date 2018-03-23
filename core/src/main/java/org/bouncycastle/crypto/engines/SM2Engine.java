@@ -164,7 +164,7 @@ public class SM2Engine
         int check = 0;
         for (int i = 0; i != c3.length; i++)
         {
-            check |= c3[i] ^ in[c1.length + c2.length + i];
+            check |= c3[i] ^ in[inOff + c1.length + c2.length + i];
         }
 
         Arrays.fill(c1, (byte)0);
