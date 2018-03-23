@@ -215,6 +215,16 @@ public class AlertDescription
     public static final short unknown_psk_identity = 115;
 
     /*
+     * RFC 7301
+     */
+
+    /**
+     * In the event that the server supports no protocols that the client advertises, then the
+     * server SHALL respond with a fatal "no_application_protocol" alert.
+     */
+    public static final short no_application_protocol = 120;
+
+    /*
      * RFC 7507
      */
 
@@ -289,6 +299,8 @@ public class AlertDescription
             return "bad_certificate_hash_value";
         case unknown_psk_identity:
             return "unknown_psk_identity";
+        case no_application_protocol:
+            return "no_application_protocol";
         case inappropriate_fallback:
             return "inappropriate_fallback";
         default:
