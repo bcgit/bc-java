@@ -1532,15 +1532,15 @@ public class GOST3410Test
     {
         new GOST3410_TEST1_512(),
         new GOST3410_TEST2_512(),
-//        new GOST3410_TEST1_1024(),
-//        new GOST3410_TEST2_1024(),
-//        new GOST3410_AParam(),
-//        new GOST3410_BParam(),
-//        new GOST3410_CParam(),
-//        new GOST3410_DParam(),
-//        new GOST3410_AExParam(),
-//        new GOST3410_BExParam(),
-//        new GOST3410_CExParam()
+        new GOST3410_TEST1_1024(),
+        new GOST3410_TEST2_1024(),
+        new GOST3410_AParam(),
+        new GOST3410_BParam(),
+        new GOST3410_CParam(),
+        new GOST3410_DParam(),
+        new GOST3410_AExParam(),
+        new GOST3410_BExParam(),
+        new GOST3410_CExParam()
     };
 
     public String getName()
