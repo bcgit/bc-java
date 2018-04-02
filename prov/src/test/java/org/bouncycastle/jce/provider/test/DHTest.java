@@ -1360,42 +1360,42 @@ public class DHTest
     public void performTest()
         throws Exception
     {
-//        testDefault(64, g512, p512);
-//
-//        testEnc();
-//        testGP("DH", 512, 0, g512, p512);
-//        testGP("DiffieHellman", 768, 0, g768, p768);
-//        testGP("DIFFIEHELLMAN", 1024, 0, g1024, p1024);
-//        testGP("DH", 512, 64, g512, p512);
-//        testGP("DiffieHellman", 768, 128, g768, p768);
-//        testGP("DIFFIEHELLMAN", 1024, 256, g1024, p1024);
-//        testExplicitWrapping(512, 0, g512, p512);
-//        testRandom(256);
-//
-//        testECDH("ECDH");
-//        testECDH("ECDHC");
-//        testECDH("ECDH", "secp521r1", "AES", 256);
-//        testECDH("ECDH", "secp521r1", "DESEDE", 192);
-//        testECDH("ECDH", "secp521r1", "DES", 64);
-//        testECDH("ECDHwithSHA1KDF", "secp521r1", "AES", 256);
-//        testECDH("ECDHwithSHA1KDF", "secp521r1", "DESEDE", 192);
-//        testECDH("ECDH", "Curve25519", "AES", 256);
-//        testECDH("ECDH", "Curve25519", "DESEDE", 192);
-//        testECDH("ECDH", "Curve25519", "DES", 64);
-//        testECDH("ECDHwithSHA1KDF", "Curve25519", "AES", 256);
-//        testECDH("ECDHwithSHA1KDF", "Curve25519", "DESEDE", 192);
-//
-//        testExceptions();
-//        testDESAndDESede(g768, p768);
-//        testInitialise();
-//        testSmallSecret();
-//        testConfig();
-//        testSubgroupConfinement();
-//
-//        testECUnifiedTestVector1();
-//        testECUnifiedTestVector2();
-//        testECUnifiedTestVector3();
-//
+        testDefault(64, g512, p512);
+
+        testEnc();
+        testGP("DH", 512, 0, g512, p512);
+        testGP("DiffieHellman", 768, 0, g768, p768);
+        testGP("DIFFIEHELLMAN", 1024, 0, g1024, p1024);
+        testGP("DH", 512, 64, g512, p512);
+        testGP("DiffieHellman", 768, 128, g768, p768);
+        testGP("DIFFIEHELLMAN", 1024, 256, g1024, p1024);
+        testExplicitWrapping(512, 0, g512, p512);
+        testRandom(256);
+
+        testECDH("ECDH");
+        testECDH("ECDHC");
+        testECDH("ECDH", "secp521r1", "AES", 256);
+        testECDH("ECDH", "secp521r1", "DESEDE", 192);
+        testECDH("ECDH", "secp521r1", "DES", 64);
+        testECDH("ECDHwithSHA1KDF", "secp521r1", "AES", 256);
+        testECDH("ECDHwithSHA1KDF", "secp521r1", "DESEDE", 192);
+        testECDH("ECDH", "Curve25519", "AES", 256);
+        testECDH("ECDH", "Curve25519", "DESEDE", 192);
+        testECDH("ECDH", "Curve25519", "DES", 64);
+        testECDH("ECDHwithSHA1KDF", "Curve25519", "AES", 256);
+        testECDH("ECDHwithSHA1KDF", "Curve25519", "DESEDE", 192);
+
+        testExceptions();
+        testDESAndDESede(g768, p768);
+        testInitialise();
+        testSmallSecret();
+        testConfig();
+        testSubgroupConfinement();
+
+        testECUnifiedTestVector1();
+        testECUnifiedTestVector2();
+        testECUnifiedTestVector3();
+
         testDHUnifiedTestVector1();
 
         testMinSpecValue();
