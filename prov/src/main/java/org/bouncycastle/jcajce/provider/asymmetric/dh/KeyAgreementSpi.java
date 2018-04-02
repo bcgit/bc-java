@@ -30,7 +30,6 @@ import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAgreementSpi;
 import org.bouncycastle.jcajce.spec.DHUParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Diffie-Hellman key agreement. There's actually a better way of doing this
@@ -297,7 +296,6 @@ public class KeyAgreementSpi
 
     protected byte[] calcSecret()
     {
-        System.err.println(Hex.toHexString(result));
         return result;
     }
 
