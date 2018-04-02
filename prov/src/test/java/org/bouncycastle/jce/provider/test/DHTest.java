@@ -799,7 +799,7 @@ public class DHTest
         if (x == null
             || !areEqual(Hex.decode("24a246e6cbaae19e4e8bffbe3167fbbc"), x))
         {
-            fail("EC unified Test Vector #1 agreement failed, got: " + Hex.toHexString(x));
+            fail("DH unified Test Vector #1 agreement failed, got: " + Hex.toHexString(x));
         }
     }
 
