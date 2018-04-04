@@ -793,7 +793,7 @@ public class DHTest
                 new BigInteger("412a15e0866572a825219d3eaf9a4d6c0ed855180e5bdabc90f6d1a2354c3964", 16),
                 dhSpec.getP(), dhSpec.getG())));
 
-        byte[] x = calculateUnifiedAgreement("DHUwithSHA256CKDF", "AES[128]/CCM[128]", U1, U2, V1, V2,
+        byte[] x = calculateUnifiedAgreement("DHUwithSHA256CKDF", "AES[128]", U1, U2, V1, V2,
             Hex.decode("a1b2c3d4e543415653696412daed24199775845035176e67b0ace1b413e0"));
 
         if (x == null
@@ -818,6 +818,7 @@ public class DHTest
             new ECPoint(namedSpec.getG().getAffineXCoord().toBigInteger(), namedSpec.getG().getAffineYCoord().toBigInteger()),
             namedSpec.getN(), namedSpec.getH().intValue());
 
+        System.err.println(ECPointUtil.decodePoint(ecCurve, Hex.decode("040784e946ef1fae0cfe127042a310a018ba639d3f6b41f265904f0a7b21b7953efe638b45e6c0c0d34a883a510ce836d143d831daa9ce8a12")).getAffineX().toString(16));
         KeyPair U1 = new KeyPair(
             ecKeyFact.generatePublic(new ECPublicKeySpec(
                 ECPointUtil.decodePoint(ecCurve, Hex.decode("040784e946ef1fae0cfe127042a310a018ba639d3f6b41f265904f0a7b21b7953efe638b45e6c0c0d34a883a510ce836d143d831daa9ce8a12")), ecSpec)),
@@ -842,7 +843,7 @@ public class DHTest
             ecKeyFact.generatePrivate(new ECPrivateKeySpec(
                 new BigInteger("ab40d67f59ba7265d8ad33ade8f704d13a7ba2298b69172a7cd02515", 16), ecSpec)));
 
-        byte[] x = calculateUnifiedAgreement("ECCDHUwithSHA224CKDF", "AES[128]/CCM[128]", U1, U2, V1, V2,
+        byte[] x = calculateUnifiedAgreement("ECCDHUwithSHA224CKDF", "AES[128]", U1, U2, V1, V2,
             Hex.decode("a1b2c3d4e54341565369643dba868da77897b6552f6f767ad873b232aa4a810a91863ec3dc86db53359a772dd76933"));
 
         if (x == null
@@ -891,7 +892,7 @@ public class DHTest
             ecKeyFact.generatePrivate(new ECPrivateKeySpec(
                 new BigInteger("d6e11d5d3b85b201b8f4c12dadfad3000e267961a806a0658a2b859d44389599", 16), ecSpec)));
 
-        byte[] x = calculateUnifiedAgreement("ECCDHUwithSHA256CKDF", "AES[128]/CCM[128]",
+        byte[] x = calculateUnifiedAgreement("ECCDHUwithSHA256CKDF", "AES[128]",
             U1, U2, V1, V2, Hex.decode("a1b2c3d4e54341565369649018558dc958160b4b1d240d06ea07c6f321a752496c1a3ff45cbb4b43507c6fe1997d1d"));
 
         if (x == null
@@ -934,7 +935,7 @@ public class DHTest
             ecKeyFact.generatePrivate(new ECPrivateKeySpec(
                 new BigInteger("505b6f372725e293cda07bf0dd14dabe2faf0edaa5ab1c7d187a6138", 16), ecSpec)));
 
-        byte[] x = calculateUnifiedAgreement("ECCDHUwithSHA224CKDF", "AES[128]/CCM[128]", U1, U1, V1, V2,
+        byte[] x = calculateUnifiedAgreement("ECCDHUwithSHA224CKDF", "AES[128]", U1, U1, V1, V2,
             Hex.decode("a1b2c3d4e5434156536964b62d3197031c27af0e3b45228a8768efcc0b39a375f8f61852f8765b80c067eed4e4db30"));
 
         if (x == null
@@ -969,7 +970,7 @@ public class DHTest
 
         v.doPhase(U1.getPublic(), true);
 
-        SecretKey vk = u.generateSecret(keyAlg);
+        SecretKey vk = v.generateSecret(keyAlg);
         byte[] vx = vk.getEncoded();
 
         if (areEqual(ux, vx))

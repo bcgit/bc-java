@@ -16,7 +16,8 @@ abstract class SupportedGroups
 
     private static final String PROPERTY_NAMEDGROUPS = "jdk.tls.namedGroups";
 
-    private static final boolean provDisableChar2 = PropertyUtils.getBooleanSystemProperty("org.bouncycastle.jsse.ec.disableChar2", false);
+    private static final boolean provDisableChar2 = PropertyUtils.getBooleanSystemProperty("org.bouncycastle.jsse.ec.disableChar2", false)
+        || PropertyUtils.getBooleanSystemProperty("org.bouncycastle.ec.disable_f2m", false);
     private static final int[] provJdkTlsNamedGroups = getJdkTlsNamedGroups(provDisableChar2);
 
     /*
