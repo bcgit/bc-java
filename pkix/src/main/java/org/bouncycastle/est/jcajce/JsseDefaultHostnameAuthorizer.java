@@ -180,7 +180,7 @@ public class JsseDefaultHostnameAuthorizer
 
                 if (wildIndex > 0)
                 {
-                    if (loweredName.startsWith(dnsName.substring(0, wildIndex - 1)) && loweredName.endsWith(end))
+                    if (loweredName.startsWith(dnsName.substring(0, wildIndex)) && loweredName.endsWith(end))
                     {
                         return loweredName.substring(wildIndex, loweredName.length() - end.length()).indexOf('.') < 0;
                     }
