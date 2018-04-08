@@ -1,0 +1,11 @@
+language: java
+
+jdk:
+  - openjdk7
+
+install:
+  - TERM=dumb gradle assemble
+
+script:
+  - TERM=dumb gradle check --info
+
