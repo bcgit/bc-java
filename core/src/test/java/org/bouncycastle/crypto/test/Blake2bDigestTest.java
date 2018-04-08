@@ -72,7 +72,7 @@ public class Blake2bDigestTest
 
 	public String getName()
 	{
-		return "Blake2b";
+		return "BLAKE2b";
 	}
 
 	private void offsetTest(
@@ -109,7 +109,7 @@ public class Blake2bDigestTest
 
 			if (!Arrays.areEqual(Hex.decode(keyedTestVectors[tv][2]), keyedHash))
 			{
-				fail("Blake2b mismatch on test vector ",
+				fail("BLAKE2b mismatch on test vector ",
 						keyedTestVectors[tv][2],
 						new String(Hex.encode(keyedHash)));
 			}
@@ -146,7 +146,7 @@ public class Blake2bDigestTest
 			if (!Arrays.areEqual(Hex.decode(unkeyedTestVectors[i][0]),
 					unkeyedHash))
 			{
-				fail("Blake2b mismatch on test vector ",
+				fail("BLAKE2b mismatch on test vector ",
 						unkeyedTestVectors[i][0],
 						new String(Hex.encode(unkeyedHash)));
 			}
