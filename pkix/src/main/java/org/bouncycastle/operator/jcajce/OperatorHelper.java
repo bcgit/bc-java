@@ -27,6 +27,7 @@ import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.edcurves.EdwardsCurvesObjectIdentifiers;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
@@ -88,6 +89,7 @@ class OperatorHelper
         oids.put(OIWObjectIdentifiers.dsaWithSHA1, "SHA1WITHDSA");
         oids.put(NISTObjectIdentifiers.dsa_with_sha224, "SHA224WITHDSA");
         oids.put(NISTObjectIdentifiers.dsa_with_sha256, "SHA256WITHDSA");
+        oids.put(EdwardsCurvesObjectIdentifiers.id_Ed25519, "SHA512WITHED25519");
 
         oids.put(OIWObjectIdentifiers.idSHA1, "SHA-1");
         oids.put(NISTObjectIdentifiers.id_sha224, "SHA-224");
