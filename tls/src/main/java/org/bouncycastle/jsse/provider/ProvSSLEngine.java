@@ -2,8 +2,11 @@ package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ReadOnlyBufferException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -35,6 +38,8 @@ class ProvSSLEngine
     extends SSLEngine
     implements BCSSLEngine, ProvTlsManager
 {
+    private static final Logger LOG = Logger.getLogger(ProvSSLEngine.class.getName());
+    
     protected final ProvSSLContextSpi context;
     protected final ContextData contextData;
     protected final ProvSSLParameters sslParameters;
@@ -128,32 +133,28 @@ class ProvSSLEngine
         }
     }
 
+
     @Override
-    public synchronized void closeInbound()
-        throws SSLException
-    {
-        // TODO How to behave when protocol is still null?
-        try
-        {
-            protocol.closeInput();
+    public synchronized void closeInbound() throws SSLException {
+        if (!initialHandshakeBegun) {
+            return;
         }
-        catch (IOException e)
-        {
+        try {
+            protocol.closeInput();
+        } catch (IOException e) {
             throw new SSLException(e);
         }
     }
 
     @Override
-    public synchronized void closeOutbound()
-    {
-        // TODO How to behave when protocol is still null?
-        try
-        {
-            protocol.close();
+    public synchronized void closeOutbound() {
+        if (!initialHandshakeBegun) {
+            return;
         }
-        catch (IOException e)
-        {
-           // TODO[logging] 
+        try {
+            protocol.close();
+        } catch (IOException e) {
+            LOG.log(Level.INFO, "protocol outbound", e);
         }
     }
 
@@ -322,7 +323,26 @@ class ProvSSLEngine
     public synchronized SSLEngineResult unwrap(ByteBuffer src, ByteBuffer[] dsts, int offset, int length)
         throws SSLException
     {
-        // TODO[jsse] Argument checks - see javadoc
+        /* argument checking */
+        if (src == null) {
+            throw new IllegalArgumentException();
+        } 
+        
+        if (dsts == null) {
+            throw new IllegalArgumentException();
+        } else {
+            for (ByteBuffer buffer : dsts) {
+                if (buffer == null) {
+                    throw new IllegalArgumentException();
+                }
+            }
+        }
+
+        if (offset < 0 || offset > dsts.length) {
+            throw new IndexOutOfBoundsException("offset");
+        } else if (length < 0 || length > (dsts.length - offset)) {
+            throw new IndexOutOfBoundsException("length");
+        }
 
         if (!initialHandshakeBegun)
         {
@@ -361,6 +381,9 @@ class ProvSSLEngine
                     for (int dstIndex = 0; dstIndex < length && appDataAvailable > 0; ++dstIndex)
                     {
                         ByteBuffer dst = dsts[offset + dstIndex];
+                        if (dst.isReadOnly()) {
+                            throw new ReadOnlyBufferException();
+                        }
                         int count = Math.min(dst.remaining(), appDataAvailable);
                         if (count > 0)
                         {
@@ -452,8 +475,29 @@ class ProvSSLEngine
             deferredException = null;
             throw e;
         }
+        
+        /* argument checking */
+        if (srcs == null) {
+            throw new IllegalArgumentException();
+        } else {
+            for (ByteBuffer buffer : srcs) {
+                if (buffer == null) {
+                    throw new IllegalArgumentException();
+                }
+            }
+        }
 
-        // TODO[jsse] Argument checks - see javadoc
+        if (offset < 0 || offset > srcs.length) {
+            throw new IndexOutOfBoundsException("offset");
+        } else if (length < 0 || length > (srcs.length - offset)) {
+            throw new IndexOutOfBoundsException("length");
+        }
+
+        if (dst == null) {
+            throw new IllegalArgumentException();
+        } else if (dst.isReadOnly()) {
+            throw new ReadOnlyBufferException();
+        }
 
         if (!initialHandshakeBegun)
         {
