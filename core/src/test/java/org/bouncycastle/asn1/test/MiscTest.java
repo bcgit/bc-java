@@ -112,15 +112,12 @@ public class MiscTest
             aOut.writeObject(values[i]);
         }
 
-        ASN1Primitive[] readValues = new ASN1Primitive[values.length];
-
         if (!areEqual(bOut.toByteArray(), data))
         {
             fail("Failed data check");
         }
 
-        ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
-        ASN1InputStream aIn = new ASN1InputStream(bIn);
+        ASN1InputStream aIn = new ASN1InputStream(bOut.toByteArray());
 
         for (int i = 0; i != values.length; i++)
         {

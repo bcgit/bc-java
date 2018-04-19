@@ -132,7 +132,7 @@ public class DSTU7624Engine
     {
         if (workingKey == null)
         {
-            throw new IllegalStateException("DSTU7624 engine not initialised");
+            throw new IllegalStateException("DSTU7624Engine not initialised");
         }
 
         if (inOff + getBlockSize() > in.length)
