@@ -20,12 +20,10 @@ public class RSAKeyPairGenerator
     private static final BigInteger ONE = BigInteger.valueOf(1);
 
     private RSAKeyGenerationParameters param;
-    private int iterations;
 
     public void init(KeyGenerationParameters param)
     {
         this.param = (RSAKeyGenerationParameters)param;
-        this.iterations = getNumberOfIterations(this.param.getStrength(), this.param.getCertainty());
     }
 
     public AsymmetricCipherKeyPair generateKeyPair()
@@ -159,6 +157,8 @@ public class RSAKeyPairGenerator
      */
     protected BigInteger chooseRandomPrime(int bitlength, BigInteger e, BigInteger sqrdBound)
     {
+        int iterations = getNumberOfIterations(bitlength, param.getCertainty());
+
         for (int i = 0; i != 5 * bitlength; i++)
         {
             BigInteger p = new BigInteger(bitlength, 1, param.getRandom());
@@ -173,7 +173,7 @@ public class RSAKeyPairGenerator
                 continue;
             }
 
-            if (!isProbablePrime(p))
+            if (!isProbablePrime(p, iterations))
             {
                 continue;
             }
@@ -189,7 +189,7 @@ public class RSAKeyPairGenerator
         throw new IllegalStateException("unable to generate prime number for RSA key");
     }
 
-    protected boolean isProbablePrime(BigInteger x)
+    protected boolean isProbablePrime(BigInteger x, int iterations)
     {
         /*
          * Primes class for FIPS 186-4 C.3 primality checking
