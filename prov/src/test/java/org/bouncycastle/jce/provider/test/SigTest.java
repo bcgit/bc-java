@@ -21,6 +21,10 @@ import java.security.spec.RSAPublicKeySpec;
 
 import javax.crypto.Cipher;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x509.DigestInfo;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -193,86 +197,6 @@ public class SigTest
         }
 
         //
-        // SHA-224
-        //
-        sig = Signature.getInstance("SHA224WithRSAEncryption", "BC");
-
-        sig.initSign(signingKey);
-
-        sig.update(data);
-
-        sigBytes = sig.sign();
-
-        sig.initVerify(verifyKey);
-
-        sig.update(data);
-
-        if (!sig.verify(sigBytes))
-        {
-            fail("SHA224 verification failed");
-        }
-        
-        //
-        // SHA-256
-        //
-        sig = Signature.getInstance("SHA256WithRSAEncryption", "BC");
-
-        sig.initSign(signingKey);
-
-        sig.update(data);
-
-        sigBytes = sig.sign();
-
-        sig.initVerify(verifyKey);
-
-        sig.update(data);
-
-        if (!sig.verify(sigBytes))
-        {
-            fail("SHA256 verification failed");
-        }
-        
-        //
-        // SHA-384
-        //
-        sig = Signature.getInstance("SHA384WithRSAEncryption", "BC");
-
-        sig.initSign(signingKey);
-
-        sig.update(data);
-
-        sigBytes = sig.sign();
-
-        sig.initVerify(verifyKey);
-
-        sig.update(data);
-
-        if (!sig.verify(sigBytes))
-        {
-            fail("SHA384 verification failed");
-        }
-        
-        //
-        // SHA-512
-        //
-        sig = Signature.getInstance("SHA512WithRSAEncryption", "BC");
-
-        sig.initSign(signingKey);
-
-        sig.update(data);
-
-        sigBytes = sig.sign();
-
-        sig.initVerify(verifyKey);
-
-        sig.update(data);
-
-        if (!sig.verify(sigBytes))
-        {
-            fail("SHA512 verification failed");
-        }
-
-        //
         // ISO Sigs.
         //
         sig = Signature.getInstance("MD5WithRSA/ISO9796-2", "BC");
@@ -309,8 +233,27 @@ public class SigTest
             fail("SHA1/ISO verification failed");
         }
 
-        trySig("SHA512(224)WithRSA", data, signingKey, verifyKey);
-        trySig("SHA512(256)WithRSA", data, signingKey, verifyKey);
+        tryRsaPkcs15Sig("SHA224WithRSA", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha224WithRSAEncryption, NISTObjectIdentifiers.id_sha224);
+        tryRsaPkcs15Sig("SHA256WithRSA", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha256WithRSAEncryption, NISTObjectIdentifiers.id_sha256);
+        tryRsaPkcs15Sig("SHA384WithRSA", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha384WithRSAEncryption, NISTObjectIdentifiers.id_sha384);
+        tryRsaPkcs15Sig("SHA512WithRSA", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha512WithRSAEncryption, NISTObjectIdentifiers.id_sha512);
+        tryRsaPkcs15Sig("SHA512(224)WithRSA", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha512_224WithRSAEncryption, NISTObjectIdentifiers.id_sha512_224);
+        tryRsaPkcs15Sig("SHA512(256)WithRSA", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha512_256WithRSAEncryption, NISTObjectIdentifiers.id_sha512_256);
+        tryRsaPkcs15Sig("SHA224WithRSAEncryption", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha224WithRSAEncryption, NISTObjectIdentifiers.id_sha224);
+        tryRsaPkcs15Sig("SHA256WithRSAEncryption", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha256WithRSAEncryption, NISTObjectIdentifiers.id_sha256);
+        tryRsaPkcs15Sig("SHA384WithRSAEncryption", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha384WithRSAEncryption, NISTObjectIdentifiers.id_sha384);
+        tryRsaPkcs15Sig("SHA512WithRSAEncryption", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha512WithRSAEncryption, NISTObjectIdentifiers.id_sha512);
+        tryRsaPkcs15Sig("SHA512(224)WithRSAEncryption", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha512_224WithRSAEncryption, NISTObjectIdentifiers.id_sha512_224);
+        tryRsaPkcs15Sig("SHA512(256)WithRSAEncryption", data, signingKey, verifyKey, PKCSObjectIdentifiers.sha512_256WithRSAEncryption, NISTObjectIdentifiers.id_sha512_256);
+
+        tryRsaPkcs15Sig("SHA3-224WithRSA", data, signingKey, verifyKey, NISTObjectIdentifiers.id_rsassa_pkcs1_v1_5_with_sha3_224, NISTObjectIdentifiers.id_sha3_224);
+        tryRsaPkcs15Sig("SHA3-256WithRSA", data, signingKey, verifyKey, NISTObjectIdentifiers.id_rsassa_pkcs1_v1_5_with_sha3_256, NISTObjectIdentifiers.id_sha3_256);
+        tryRsaPkcs15Sig("SHA3-384WithRSA", data, signingKey, verifyKey, NISTObjectIdentifiers.id_rsassa_pkcs1_v1_5_with_sha3_384, NISTObjectIdentifiers.id_sha3_384);
+        tryRsaPkcs15Sig("SHA3-512WithRSA", data, signingKey, verifyKey, NISTObjectIdentifiers.id_rsassa_pkcs1_v1_5_with_sha3_512, NISTObjectIdentifiers.id_sha3_512);
+        tryRsaPkcs15Sig("SHA3-224WithRSAEncryption", data, signingKey, verifyKey, NISTObjectIdentifiers.id_rsassa_pkcs1_v1_5_with_sha3_224, NISTObjectIdentifiers.id_sha3_224);
+        tryRsaPkcs15Sig("SHA3-256WithRSAEncryption", data, signingKey, verifyKey, NISTObjectIdentifiers.id_rsassa_pkcs1_v1_5_with_sha3_256, NISTObjectIdentifiers.id_sha3_256);
+        tryRsaPkcs15Sig("SHA3-384WithRSAEncryption", data, signingKey, verifyKey, NISTObjectIdentifiers.id_rsassa_pkcs1_v1_5_with_sha3_384, NISTObjectIdentifiers.id_sha3_384);
+        tryRsaPkcs15Sig("SHA3-512WithRSAEncryption", data, signingKey, verifyKey, NISTObjectIdentifiers.id_rsassa_pkcs1_v1_5_with_sha3_512, NISTObjectIdentifiers.id_sha3_512);
 
         trySig("SHA1WithRSAAndMGF1", data, signingKey, verifyKey);
         trySig("SHA224WithRSAAndMGF1", data, signingKey, verifyKey);
@@ -319,6 +262,11 @@ public class SigTest
        //trySig("SHA512WithRSAAndMGF1", data, signingKey, verifyKey);
         trySig("SHA512(224)WithRSAAndMGF1", data, signingKey, verifyKey);
         trySig("SHA512(256)WithRSAAndMGF1", data, signingKey, verifyKey);
+
+        trySig("SHA3-224WithRSAAndMGF1", data, signingKey, verifyKey);
+        trySig("SHA3-256WithRSAAndMGF1", data, signingKey, verifyKey);
+//        trySig("SHA3-384WithRSAAndMGF1", data, signingKey, verifyKey);
+//        trySig("SHA3-512WithRSAAndMGF1", data, signingKey, verifyKey);
 
         trySig("SHA1WithRSA/ISO9796-2", data, signingKey, verifyKey);
         trySig("SHA224WithRSA/ISO9796-2", data, signingKey, verifyKey);
@@ -412,6 +360,54 @@ public class SigTest
         if (!sig.verify(sigBytes))
         {
             fail(algorithm + " verification failed");
+        }
+    }
+
+    private void tryRsaPkcs15Sig(String algorithm, byte[] data, PrivateKey signingKey, PublicKey verifyKey, ASN1ObjectIdentifier sigOid, ASN1ObjectIdentifier hashOid)
+        throws Exception
+    {
+        Signature sig;
+        byte[] sigBytes;
+        sig = Signature.getInstance(algorithm, "BC");
+
+        sig.initSign(signingKey);
+
+        sig.update(data);
+
+        sigBytes = sig.sign();
+
+        sig.initVerify(verifyKey);
+
+        sig.update(data);
+
+        if (!sig.verify(sigBytes))
+        {
+            fail(algorithm + " verification failed");
+        }
+
+        Cipher c = Cipher.getInstance("RSA/NONE/PKCS1Padding", "BC");
+
+        c.init(Cipher.DECRYPT_MODE, verifyKey);
+
+        DigestInfo digInfo = DigestInfo.getInstance(c.doFinal(sigBytes));
+
+        isTrue("digest alg not match", digInfo.getAlgorithmId().getAlgorithm().equals(hashOid));
+
+        sig = Signature.getInstance(sigOid.getId(), "BC");
+
+        sig.initSign(signingKey);
+
+        sig.update(data);
+
+        isTrue("sig not matched", Arrays.areEqual(sigBytes, sig.sign()));
+
+        sig.initVerify(verifyKey);
+
+        sig.update(data);
+
+        if (!sig.verify(sigBytes))
+        {
+            fail(algorithm + " oid verification failed");
         }
     }
 

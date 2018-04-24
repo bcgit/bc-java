@@ -1,0 +1,10 @@
+dependencies {
+  compile fileTree(dir: 'libs', include: '*.jar')
+  compile project(":core")
+  compile project(":mail")
+  compile project(":pg")
+  compile project(":pkix")
+ // compile project(":prov")
+  compile project(":tls")
+}
+

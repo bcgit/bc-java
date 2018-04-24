@@ -55,4 +55,9 @@ public interface GNUObjectIdentifiers
     public static final ASN1ObjectIdentifier CRC = new ASN1ObjectIdentifier("1.3.6.1.4.1.11591.14"); // CRC algorithms
     /** 1.3.6.1.4.1.11591.14,1 -- CRC32 */
     public static final ASN1ObjectIdentifier CRC32 = new ASN1ObjectIdentifier("1.3.6.1.4.1.11591.14.1"); // CRC 32
+
+    /** 1.3.6.1.4.1.11591.15 - ellipticCurve */
+    public static final ASN1ObjectIdentifier ellipticCurve = new ASN1ObjectIdentifier("1.3.6.1.4.1.11591.15");
+
+    public static final ASN1ObjectIdentifier Ed25519   = ellipticCurve.branch("1");
 }

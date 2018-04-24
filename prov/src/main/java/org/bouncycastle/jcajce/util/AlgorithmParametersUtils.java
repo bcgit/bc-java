@@ -1,6 +1,3 @@
-/***************************************************************/
-/******    DO NOT EDIT THIS CLASS bc-java SOURCE FILE     ******/
-/***************************************************************/
 package org.bouncycastle.jcajce.util;
 
 import java.io.IOException;

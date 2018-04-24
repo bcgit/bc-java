@@ -141,13 +141,20 @@ public class KeyFactorySpi
         KeySpec keySpec)
         throws InvalidKeySpecException
     {
-        if (keySpec instanceof ECPublicKeySpec)
+        try
         {
-            return new BCECPublicKey(algorithm, (ECPublicKeySpec)keySpec, configuration);
+            if (keySpec instanceof ECPublicKeySpec)
+            {
+                return new BCECPublicKey(algorithm, (ECPublicKeySpec)keySpec, configuration);
+            }
+            else if (keySpec instanceof java.security.spec.ECPublicKeySpec)
+            {
+                return new BCECPublicKey(algorithm, (java.security.spec.ECPublicKeySpec)keySpec, configuration);
+            }
         }
-        else if (keySpec instanceof java.security.spec.ECPublicKeySpec)
+        catch (Exception e)
         {
-            return new BCECPublicKey(algorithm, (java.security.spec.ECPublicKeySpec)keySpec, configuration);
+            throw new InvalidKeySpecException("invalid KeySpec: " + e.getMessage(), e);
         }
 
         return super.engineGeneratePublic(keySpec);
@@ -208,6 +215,10 @@ public class KeyFactorySpi
         {
             super("ECGOST3410", BouncyCastleProvider.CONFIGURATION);
         }
+    }
+
+    public static class ECGOST3410_2012 extends KeyFactorySpi{
+        public ECGOST3410_2012(){super("ECGOST3410-2012", BouncyCastleProvider.CONFIGURATION);}
     }
 
     public static class ECDH

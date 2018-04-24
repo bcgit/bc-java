@@ -16,9 +16,11 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.EncryptionScheme;
 import org.bouncycastle.asn1.pkcs.KeyDerivationFunc;
 import org.bouncycastle.asn1.pkcs.PBES2Parameters;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
@@ -62,6 +64,7 @@ public class JceOpenSSLPKCS8EncryptorBuilder
     private char[] password;
 
     private SecretKey key;
+    private AlgorithmIdentifier prf = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA1, DERNull.INSTANCE);
 
     public JceOpenSSLPKCS8EncryptorBuilder(ASN1ObjectIdentifier algorithm)
     {
@@ -80,6 +83,20 @@ public class JceOpenSSLPKCS8EncryptorBuilder
     public JceOpenSSLPKCS8EncryptorBuilder setPasssword(char[] password)
     {
         this.password = password;
+
+        return this;
+    }
+
+    /**
+     * Set the PRF to use for key generation. By default this is HmacSHA1.
+     *
+     * @param prf algorithm id for PRF.
+     *
+     * @return the current builder.
+     */
+    public JceOpenSSLPKCS8EncryptorBuilder setPRF(AlgorithmIdentifier prf)
+    {
+        this.prf = prf;
 
         return this;
     }
@@ -110,14 +127,10 @@ public class JceOpenSSLPKCS8EncryptorBuilder
     {
         final AlgorithmIdentifier algID;
 
-        salt = new byte[20];
-
         if (random == null)
         {
             random = new SecureRandom();
         }
-
-        random.nextBytes(salt);
 
         try
         {
@@ -135,12 +148,16 @@ public class JceOpenSSLPKCS8EncryptorBuilder
 
         if (PEMUtilities.isPKCS5Scheme2(algOID))
         {
+            salt = new byte[PEMUtilities.getSaltSize(prf.getAlgorithm())];
+
+            random.nextBytes(salt);
+
             params = paramGen.generateParameters();
 
             try
             {
-                KeyDerivationFunc scheme = new KeyDerivationFunc(algOID, ASN1Primitive.fromByteArray(params.getEncoded()));
-                KeyDerivationFunc func = new KeyDerivationFunc(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params(salt, iterationCount));
+                EncryptionScheme scheme = new EncryptionScheme(algOID, ASN1Primitive.fromByteArray(params.getEncoded()));
+                KeyDerivationFunc func = new KeyDerivationFunc(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params(salt, iterationCount, prf));
 
                 ASN1EncodableVector v = new ASN1EncodableVector();
 
@@ -156,7 +173,14 @@ public class JceOpenSSLPKCS8EncryptorBuilder
 
             try
             {
-                key = PEMUtilities.generateSecretKeyForPKCS5Scheme2(helper, algOID.getId(), password, salt, iterationCount);
+                if (PEMUtilities.isHmacSHA1(prf))
+                {
+                    key = PEMUtilities.generateSecretKeyForPKCS5Scheme2(helper, algOID.getId(), password, salt, iterationCount);
+                }
+                else
+                {
+                    key = PEMUtilities.generateSecretKeyForPKCS5Scheme2(helper, algOID.getId(), password, salt, iterationCount, prf);
+                }
 
                 cipher.init(Cipher.ENCRYPT_MODE, key, params);
             }
@@ -168,6 +192,10 @@ public class JceOpenSSLPKCS8EncryptorBuilder
         else if (PEMUtilities.isPKCS12(algOID))
         {
             ASN1EncodableVector v = new ASN1EncodableVector();
+
+            salt = new byte[20];
+
+            random.nextBytes(salt);
 
             v.add(new DEROctetString(salt));
             v.add(new ASN1Integer(iterationCount));

@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 
 /**
  * implementation of Keccak based on following KeccakNISTInterface.c from http://keccak.noekeon.org/
@@ -11,86 +12,19 @@ import org.bouncycastle.util.Arrays;
 public class KeccakDigest
     implements ExtendedDigest
 {
-    private static long[] KeccakRoundConstants = keccakInitializeRoundConstants();
+    private static long[] KeccakRoundConstants = new long[]{ 0x0000000000000001L, 0x0000000000008082L,
+        0x800000000000808aL, 0x8000000080008000L, 0x000000000000808bL, 0x0000000080000001L, 0x8000000080008081L,
+        0x8000000000008009L, 0x000000000000008aL, 0x0000000000000088L, 0x0000000080008009L, 0x000000008000000aL,
+        0x000000008000808bL, 0x800000000000008bL, 0x8000000000008089L, 0x8000000000008003L, 0x8000000000008002L,
+        0x8000000000000080L, 0x000000000000800aL, 0x800000008000000aL, 0x8000000080008081L, 0x8000000000008080L,
+        0x0000000080000001L, 0x8000000080008008L };
 
-    private static int[] KeccakRhoOffsets = keccakInitializeRhoOffsets();
-
-    private static long[] keccakInitializeRoundConstants()
-    {
-        long[] keccakRoundConstants = new long[24];
-        byte[] LFSRstate = new byte[1];
-
-        LFSRstate[0] = 0x01;
-        int i, j, bitPosition;
-
-        for (i = 0; i < 24; i++)
-        {
-            keccakRoundConstants[i] = 0;
-            for (j = 0; j < 7; j++)
-            {
-                bitPosition = (1 << j) - 1;
-                if (LFSR86540(LFSRstate))
-                {
-                    keccakRoundConstants[i] ^= 1L << bitPosition;
-                }
-            }
-        }
-
-        return keccakRoundConstants;
-    }
-
-    private static boolean LFSR86540(byte[] LFSR)
-    {
-        boolean result = (((LFSR[0]) & 0x01) != 0);
-        if (((LFSR[0]) & 0x80) != 0)
-        {
-            LFSR[0] = (byte)(((LFSR[0]) << 1) ^ 0x71);
-        }
-        else
-        {
-            LFSR[0] <<= 1;
-        }
-
-        return result;
-    }
-
-    private static int[] keccakInitializeRhoOffsets()
-    {
-        int[] keccakRhoOffsets = new int[25];
-        int x, y, t, newX, newY;
-
-        keccakRhoOffsets[(((0) % 5) + 5 * ((0) % 5))] = 0;
-        x = 1;
-        y = 0;
-        for (t = 0; t < 24; t++)
-        {
-            keccakRhoOffsets[(((x) % 5) + 5 * ((y) % 5))] = ((t + 1) * (t + 2) / 2) % 64;
-            newX = (0 * x + 1 * y) % 5;
-            newY = (2 * x + 3 * y) % 5;
-            x = newX;
-            y = newY;
-        }
-
-        return keccakRhoOffsets;
-    }
-
-    protected byte[] state = new byte[(1600 / 8)];
-    protected byte[] dataQueue = new byte[(1536 / 8)];
+    protected long[] state = new long[25];
+    protected byte[] dataQueue = new byte[192];
     protected int rate;
     protected int bitsInQueue;
     protected int fixedOutputLength;
     protected boolean squeezing;
-    protected int bitsAvailableForSqueezing;
-    protected byte[] chunk;
-    protected byte[] oneByte;
-
-    private void clearDataQueueSection(int off, int len)
-    {
-        for (int i = off; i != off + len; i++)
-        {
-            dataQueue[i] = 0;
-        }
-    }
 
     public KeccakDigest()
     {
@@ -102,16 +36,14 @@ public class KeccakDigest
         init(bitLength);
     }
 
-    public KeccakDigest(KeccakDigest source) {
+    public KeccakDigest(KeccakDigest source)
+    {
         System.arraycopy(source.state, 0, this.state, 0, source.state.length);
         System.arraycopy(source.dataQueue, 0, this.dataQueue, 0, source.dataQueue.length);
         this.rate = source.rate;
         this.bitsInQueue = source.bitsInQueue;
         this.fixedOutputLength = source.fixedOutputLength;
         this.squeezing = source.squeezing;
-        this.bitsAvailableForSqueezing = source.bitsAvailableForSqueezing;
-        this.chunk = Arrays.clone(source.chunk);
-        this.oneByte = Arrays.clone(source.oneByte);
     }
 
     public String getAlgorithmName()
@@ -126,14 +58,12 @@ public class KeccakDigest
 
     public void update(byte in)
     {
-        oneByte[0] = in;
-
-        absorb(oneByte, 0, 8L);
+        absorb(new byte[]{ in }, 0, 1);
     }
 
     public void update(byte[] in, int inOff, int len)
     {
-        absorb(in, inOff, len * 8L);
+        absorb(in, inOff, len);
     }
 
     public int doFinal(byte[] out, int outOff)
@@ -152,8 +82,7 @@ public class KeccakDigest
     {
         if (partialBits > 0)
         {
-            oneByte[0] = partialByte;
-            absorb(oneByte, 0, partialBits);
+            absorbBits(partialByte, partialBits);
         }
 
         squeeze(out, outOff, fixedOutputLength);
@@ -182,161 +111,140 @@ public class KeccakDigest
     {
         switch (bitLength)
         {
-        case 288:
-            initSponge(1024, 576);
-            break;
         case 128:
-            initSponge(1344, 256);
-            break;
         case 224:
-            initSponge(1152, 448);
-            break;
         case 256:
-            initSponge(1088, 512);
-            break;
+        case 288:
         case 384:
-            initSponge(832, 768);
-            break;
         case 512:
-            initSponge(576, 1024);
+            initSponge(1600 - (bitLength << 1));
             break;
         default:
             throw new IllegalArgumentException("bitLength must be one of 128, 224, 256, 288, 384, or 512.");
         }
     }
 
-    private void initSponge(int rate, int capacity)
+    private void initSponge(int rate)
     {
-        if (rate + capacity != 1600)
-        {
-            throw new IllegalStateException("rate + capacity != 1600");
-        }
         if ((rate <= 0) || (rate >= 1600) || ((rate % 64) != 0))
         {
             throw new IllegalStateException("invalid rate value");
         }
 
         this.rate = rate;
-        // this is never read, need to check to see why we want to save it
-        //  this.capacity = capacity;
-        Arrays.fill(this.state, (byte)0);
+        for (int i = 0; i < state.length; ++i)
+        {
+            state[i] = 0L;
+        }
         Arrays.fill(this.dataQueue, (byte)0);
         this.bitsInQueue = 0;
         this.squeezing = false;
-        this.bitsAvailableForSqueezing = 0;
-        this.fixedOutputLength = capacity / 2;
-        this.chunk = new byte[rate / 8];
-        this.oneByte = new byte[1];
+        this.fixedOutputLength = (1600 - rate) / 2;
     }
 
-    private void absorbQueue()
+    protected void absorb(byte[] data, int off, int len)
     {
-        KeccakAbsorb(state, dataQueue, rate / 8);
-
-        bitsInQueue = 0;
-    }
-
-    protected void absorb(byte[] data, int off, long databitlen)
-    {
-        long i, j, wholeBlocks;
-
         if ((bitsInQueue % 8) != 0)
         {
-            throw new IllegalStateException("attempt to absorb with odd length queue.");
+            throw new IllegalStateException("attempt to absorb with odd length queue");
         }
         if (squeezing)
         {
-            throw new IllegalStateException("attempt to absorb while squeezing.");
+            throw new IllegalStateException("attempt to absorb while squeezing");
         }
 
-        i = 0;
-        while (i < databitlen)
+        int bytesInQueue = bitsInQueue >> 3;
+        int rateBytes = rate >> 3;
+
+        int count = 0;
+        while (count < len)
         {
-            if ((bitsInQueue == 0) && (databitlen >= rate) && (i <= (databitlen - rate)))
+            if (bytesInQueue == 0 && count <= (len - rateBytes))
             {
-                wholeBlocks = (databitlen - i) / rate;
-
-                for (j = 0; j < wholeBlocks; j++)
+                do
                 {
-                    System.arraycopy(data, (int)(off + (i / 8) + (j * chunk.length)), chunk, 0, chunk.length);
-
-//                            displayIntermediateValues.displayBytes(1, "Block to be absorbed", curData, rate / 8);
-
-                    KeccakAbsorb(state, chunk, chunk.length);
+                    KeccakAbsorb(data, off + count);
+                    count += rateBytes;
                 }
-
-                i += wholeBlocks * rate;
+                while (count <= (len - rateBytes));
             }
             else
             {
-                int partialBlock = (int)(databitlen - i);
-                if (partialBlock + bitsInQueue > rate)
-                {
-                    partialBlock = rate - bitsInQueue;
-                }
-                int partialByte = partialBlock % 8;
-                partialBlock -= partialByte;
-                System.arraycopy(data, off + (int)(i / 8), dataQueue, bitsInQueue / 8, partialBlock / 8);
+                int partialBlock = Math.min(rateBytes - bytesInQueue, len - count);
+                System.arraycopy(data, off + count, dataQueue, bytesInQueue, partialBlock);
 
-                bitsInQueue += partialBlock;
-                i += partialBlock;
-                if (bitsInQueue == rate)
+                bytesInQueue += partialBlock;
+                count += partialBlock;
+
+                if (bytesInQueue == rateBytes)
                 {
-                    absorbQueue();
-                }
-                if (partialByte > 0)
-                {
-                    int mask = (1 << partialByte) - 1;
-                    dataQueue[bitsInQueue / 8] = (byte)(data[off + ((int)(i / 8))] & mask);
-                    bitsInQueue += partialByte;
-                    i += partialByte;
+                    KeccakAbsorb(dataQueue, 0);
+                    bytesInQueue = 0;
                 }
             }
         }
+
+        bitsInQueue = bytesInQueue << 3;
+    }
+
+    protected void absorbBits(int data, int bits)
+    {
+        if (bits < 1 || bits > 7)
+        {
+            throw new IllegalArgumentException("'bits' must be in the range 1 to 7");
+        }
+        if ((bitsInQueue % 8) != 0)
+        {
+            throw new IllegalStateException("attempt to absorb with odd length queue");
+        }
+        if (squeezing)
+        {
+            throw new IllegalStateException("attempt to absorb while squeezing");
+        }
+
+        int mask = (1 << bits) - 1;
+        dataQueue[bitsInQueue >> 3] = (byte)(data & mask);
+
+        // NOTE: After this, bitsInQueue is no longer a multiple of 8, so no more absorbs will work
+        bitsInQueue += bits;
     }
 
     private void padAndSwitchToSqueezingPhase()
     {
-        if (bitsInQueue + 1 == rate)
+        dataQueue[bitsInQueue >> 3] |= (byte)(1L << (bitsInQueue & 7));
+
+        if (++bitsInQueue == rate)
         {
-            dataQueue[bitsInQueue / 8] |= 1 << (bitsInQueue % 8);
-            absorbQueue();
-            clearDataQueueSection(0, rate / 8);
-        }
-        else
-        {
-            clearDataQueueSection((bitsInQueue + 7) / 8, rate / 8 - (bitsInQueue + 7) / 8);
-            dataQueue[bitsInQueue / 8] |= 1 << (bitsInQueue % 8);
-        }
-        dataQueue[(rate - 1) / 8] |= 1 << ((rate - 1) % 8);
-        absorbQueue();
-
-
-//            displayIntermediateValues.displayText(1, "--- Switching to squeezing phase ---");
-
-
-        if (rate == 1024)
-        {
-            KeccakExtract1024bits(state, dataQueue);
-            bitsAvailableForSqueezing = 1024;
-        }
-        else
-
-        {
-            KeccakExtract(state, dataQueue, rate / 64);
-            bitsAvailableForSqueezing = rate;
+            KeccakAbsorb(dataQueue, 0);
+            bitsInQueue = 0;
         }
 
-//            displayIntermediateValues.displayBytes(1, "Block available for squeezing", dataQueue, bitsAvailableForSqueezing / 8);
+        {
+            int full = bitsInQueue >> 6, partial = bitsInQueue & 63;
+            int off = 0;
+            for (int i = 0; i < full; ++i)
+            {
+                state[i] ^= Pack.littleEndianToLong(dataQueue, off);
+                off += 8;
+            }
+            if (partial > 0)
+            {
+                long mask = (1L << partial) - 1L;
+                state[full] ^= Pack.littleEndianToLong(dataQueue, off) & mask;
+            }
+            state[(rate - 1) >> 6] ^= (1L << 63);
+        }
+
+        KeccakPermutation();
+
+        KeccakExtract();
+        bitsInQueue = rate;
 
         squeezing = true;
     }
 
     protected void squeeze(byte[] output, int offset, long outputLength)
     {
-        long i;
-        int partialBlock;
-
         if (!squeezing)
         {
             padAndSwitchToSqueezingPhase();
@@ -346,204 +254,146 @@ public class KeccakDigest
             throw new IllegalStateException("outputLength not a multiple of 8");
         }
 
-        i = 0;
+        long i = 0;
         while (i < outputLength)
         {
-            if (bitsAvailableForSqueezing == 0)
+            if (bitsInQueue == 0)
             {
-                keccakPermutation(state);
-
-                if (rate == 1024)
-                {
-                    KeccakExtract1024bits(state, dataQueue);
-                    bitsAvailableForSqueezing = 1024;
-                }
-                else
-
-                {
-                    KeccakExtract(state, dataQueue, rate / 64);
-                    bitsAvailableForSqueezing = rate;
-                }
-
-//                    displayIntermediateValues.displayBytes(1, "Block available for squeezing", dataQueue, bitsAvailableForSqueezing / 8);
-
+                KeccakPermutation();
+                KeccakExtract();
+                bitsInQueue = rate;
             }
-            partialBlock = bitsAvailableForSqueezing;
-            if ((long)partialBlock > outputLength - i)
-            {
-                partialBlock = (int)(outputLength - i);
-            }
-
-            System.arraycopy(dataQueue, (rate - bitsAvailableForSqueezing) / 8, output, offset + (int)(i / 8), partialBlock / 8);
-            bitsAvailableForSqueezing -= partialBlock;
+            int partialBlock = (int)Math.min((long)bitsInQueue, outputLength - i);
+            System.arraycopy(dataQueue, (rate - bitsInQueue) / 8, output, offset + (int)(i / 8), partialBlock / 8);
+            bitsInQueue -= partialBlock;
             i += partialBlock;
         }
     }
 
-    private void fromBytesToWords(long[] stateAsWords, byte[] state)
+    private void KeccakAbsorb(byte[] data, int off)
     {
-        for (int i = 0; i < (1600 / 64); i++)
+        int count = rate >> 6;
+        for (int i = 0; i < count; ++i)
         {
-            stateAsWords[i] = 0;
-            int index = i * (64 / 8);
-            for (int j = 0; j < (64 / 8); j++)
-            {
-                stateAsWords[i] |= ((long)state[index + j] & 0xff) << ((8 * j));
-            }
-        }
-    }
-
-    private void fromWordsToBytes(byte[] state, long[] stateAsWords)
-    {
-        for (int i = 0; i < (1600 / 64); i++)
-        {
-            int index = i * (64 / 8);
-            for (int j = 0; j < (64 / 8); j++)
-            {
-                state[index + j] = (byte)((stateAsWords[i] >>> ((8 * j))) & 0xFF);
-            }
-        }
-    }
-
-    private void keccakPermutation(byte[] state)
-    {
-        long[] longState = new long[state.length / 8];
-
-        fromBytesToWords(longState, state);
-
-//        displayIntermediateValues.displayStateAsBytes(1, "Input of permutation", longState);
-
-        keccakPermutationOnWords(longState);
-
-//        displayIntermediateValues.displayStateAsBytes(1, "State after permutation", longState);
-
-        fromWordsToBytes(state, longState);
-    }
-
-    private void keccakPermutationAfterXor(byte[] state, byte[] data, int dataLengthInBytes)
-    {
-        int i;
-
-        for (i = 0; i < dataLengthInBytes; i++)
-        {
-            state[i] ^= data[i];
+            state[i] ^= Pack.littleEndianToLong(data, off);
+            off += 8;
         }
 
-        keccakPermutation(state);
+        KeccakPermutation();
     }
 
-    private void keccakPermutationOnWords(long[] state)
+    private void KeccakExtract()
     {
-        int i;
+        Pack.longToLittleEndian(state, 0, rate >> 6, dataQueue, 0);
+    }
 
-//        displayIntermediateValues.displayStateAs64bitWords(3, "Same, with lanes as 64-bit words", state);
+    private void KeccakPermutation()
+    {
+        long[] A = state;
 
-        for (i = 0; i < 24; i++)
+        long a00 = A[ 0], a01 = A[ 1], a02 = A[ 2], a03 = A[ 3], a04 = A[ 4];
+        long a05 = A[ 5], a06 = A[ 6], a07 = A[ 7], a08 = A[ 8], a09 = A[ 9];
+        long a10 = A[10], a11 = A[11], a12 = A[12], a13 = A[13], a14 = A[14];
+        long a15 = A[15], a16 = A[16], a17 = A[17], a18 = A[18], a19 = A[19];
+        long a20 = A[20], a21 = A[21], a22 = A[22], a23 = A[23], a24 = A[24];
+
+        for (int i = 0; i < 24; i++)
         {
-//            displayIntermediateValues.displayRoundNumber(3, i);
+            // theta
+            long c0 = a00 ^ a05 ^ a10 ^ a15 ^ a20;
+            long c1 = a01 ^ a06 ^ a11 ^ a16 ^ a21;
+            long c2 = a02 ^ a07 ^ a12 ^ a17 ^ a22;
+            long c3 = a03 ^ a08 ^ a13 ^ a18 ^ a23;
+            long c4 = a04 ^ a09 ^ a14 ^ a19 ^ a24;
 
-            theta(state);
-//            displayIntermediateValues.displayStateAs64bitWords(3, "After theta", state);
+            long d1 = (c1 << 1 | c1 >>> -1) ^ c4;
+            long d2 = (c2 << 1 | c2 >>> -1) ^ c0;
+            long d3 = (c3 << 1 | c3 >>> -1) ^ c1;
+            long d4 = (c4 << 1 | c4 >>> -1) ^ c2;
+            long d0 = (c0 << 1 | c0 >>> -1) ^ c3;
 
-            rho(state);
-//            displayIntermediateValues.displayStateAs64bitWords(3, "After rho", state);
+            a00 ^= d1; a05 ^= d1; a10 ^= d1; a15 ^= d1; a20 ^= d1;
+            a01 ^= d2; a06 ^= d2; a11 ^= d2; a16 ^= d2; a21 ^= d2;
+            a02 ^= d3; a07 ^= d3; a12 ^= d3; a17 ^= d3; a22 ^= d3;
+            a03 ^= d4; a08 ^= d4; a13 ^= d4; a18 ^= d4; a23 ^= d4;
+            a04 ^= d0; a09 ^= d0; a14 ^= d0; a19 ^= d0; a24 ^= d0;
 
-            pi(state);
-//            displayIntermediateValues.displayStateAs64bitWords(3, "After pi", state);
+            // rho/pi
+            c1  = a01 <<  1 | a01 >>> 63;
+            a01 = a06 << 44 | a06 >>> 20;
+            a06 = a09 << 20 | a09 >>> 44;
+            a09 = a22 << 61 | a22 >>>  3;
+            a22 = a14 << 39 | a14 >>> 25;
+            a14 = a20 << 18 | a20 >>> 46;
+            a20 = a02 << 62 | a02 >>>  2;
+            a02 = a12 << 43 | a12 >>> 21;
+            a12 = a13 << 25 | a13 >>> 39;
+            a13 = a19 <<  8 | a19 >>> 56;
+            a19 = a23 << 56 | a23 >>>  8;
+            a23 = a15 << 41 | a15 >>> 23;
+            a15 = a04 << 27 | a04 >>> 37;
+            a04 = a24 << 14 | a24 >>> 50;
+            a24 = a21 <<  2 | a21 >>> 62;
+            a21 = a08 << 55 | a08 >>>  9;
+            a08 = a16 << 45 | a16 >>> 19;
+            a16 = a05 << 36 | a05 >>> 28;
+            a05 = a03 << 28 | a03 >>> 36;
+            a03 = a18 << 21 | a18 >>> 43;
+            a18 = a17 << 15 | a17 >>> 49;
+            a17 = a11 << 10 | a11 >>> 54;
+            a11 = a07 <<  6 | a07 >>> 58;
+            a07 = a10 <<  3 | a10 >>> 61;
+            a10 = c1;
 
-            chi(state);
-//            displayIntermediateValues.displayStateAs64bitWords(3, "After chi", state);
+            // chi
+            c0 = a00 ^ (~a01 & a02);
+            c1 = a01 ^ (~a02 & a03);
+            a02 ^= ~a03 & a04;
+            a03 ^= ~a04 & a00;
+            a04 ^= ~a00 & a01;
+            a00 = c0;
+            a01 = c1;
 
-            iota(state, i);
-//            displayIntermediateValues.displayStateAs64bitWords(3, "After iota", state);
+            c0 = a05 ^ (~a06 & a07);
+            c1 = a06 ^ (~a07 & a08);
+            a07 ^= ~a08 & a09;
+            a08 ^= ~a09 & a05;
+            a09 ^= ~a05 & a06;
+            a05 = c0;
+            a06 = c1;
+
+            c0 = a10 ^ (~a11 & a12);
+            c1 = a11 ^ (~a12 & a13);
+            a12 ^= ~a13 & a14;
+            a13 ^= ~a14 & a10;
+            a14 ^= ~a10 & a11;
+            a10 = c0;
+            a11 = c1;
+
+            c0 = a15 ^ (~a16 & a17);
+            c1 = a16 ^ (~a17 & a18);
+            a17 ^= ~a18 & a19;
+            a18 ^= ~a19 & a15;
+            a19 ^= ~a15 & a16;
+            a15 = c0;
+            a16 = c1;
+
+            c0 = a20 ^ (~a21 & a22);
+            c1 = a21 ^ (~a22 & a23);
+            a22 ^= ~a23 & a24;
+            a23 ^= ~a24 & a20;
+            a24 ^= ~a20 & a21;
+            a20 = c0;
+            a21 = c1;
+
+            // iota
+            a00 ^= KeccakRoundConstants[i];
         }
-    }
-
-    long[] C = new long[5];
-
-    private void theta(long[] A)
-    {
-        for (int x = 0; x < 5; x++)
-        {
-            C[x] = 0;
-            for (int y = 0; y < 5; y++)
-            {
-                C[x] ^= A[x + 5 * y];
-            }
-        }
-        for (int x = 0; x < 5; x++)
-        {
-            long dX = ((((C[(x + 1) % 5]) << 1) ^ ((C[(x + 1) % 5]) >>> (64 - 1)))) ^ C[(x + 4) % 5];
-            for (int y = 0; y < 5; y++)
-            {
-                A[x + 5 * y] ^= dX;
-            }
-        }
-    }
-
-    private void rho(long[] A)
-    {
-        for (int x = 0; x < 5; x++)
-        {
-            for (int y = 0; y < 5; y++)
-            {
-                int index = x + 5 * y;
-                A[index] = ((KeccakRhoOffsets[index] != 0) ? (((A[index]) << KeccakRhoOffsets[index]) ^ ((A[index]) >>> (64 - KeccakRhoOffsets[index]))) : A[index]);
-            }
-        }
-    }
-
-    long[] tempA = new long[25];
-
-    private void pi(long[] A)
-    {
-        System.arraycopy(A, 0, tempA, 0, tempA.length);
-
-        for (int x = 0; x < 5; x++)
-        {
-            for (int y = 0; y < 5; y++)
-            {
-                A[y + 5 * ((2 * x + 3 * y) % 5)] = tempA[x + 5 * y];
-            }
-        }
-    }
-
-    long[] chiC = new long[5];
-
-    private void chi(long[] A)
-    {
-        for (int y = 0; y < 5; y++)
-        {
-            for (int x = 0; x < 5; x++)
-            {
-                chiC[x] = A[x + 5 * y] ^ ((~A[(((x + 1) % 5) + 5 * y)]) & A[(((x + 2) % 5) + 5 * y)]);
-            }
-            for (int x = 0; x < 5; x++)
-            {
-                A[x + 5 * y] = chiC[x];
-            }
-        }
-    }
-
-    private void iota(long[] A, int indexRound)
-    {
-        A[(((0) % 5) + 5 * ((0) % 5))] ^= KeccakRoundConstants[indexRound];
-    }
-
-    private void KeccakAbsorb(byte[] byteState, byte[] data, int dataInBytes)
-    {
-        keccakPermutationAfterXor(byteState, data, dataInBytes);
-    }
-
-
-    private void KeccakExtract1024bits(byte[] byteState, byte[] data)
-    {
-        System.arraycopy(byteState, 0, data, 0, 128);
-    }
-
-
-    private void KeccakExtract(byte[] byteState, byte[] data, int laneCount)
-    {
-        System.arraycopy(byteState, 0, data, 0, laneCount * 8);
+        
+        A[ 0] = a00; A[ 1] = a01; A[ 2] = a02; A[ 3] = a03; A[ 4] = a04;
+        A[ 5] = a05; A[ 6] = a06; A[ 7] = a07; A[ 8] = a08; A[ 9] = a09;
+        A[10] = a10; A[11] = a11; A[12] = a12; A[13] = a13; A[14] = a14;
+        A[15] = a15; A[16] = a16; A[17] = a17; A[18] = a18; A[19] = a19;
+        A[20] = a20; A[21] = a21; A[22] = a22; A[23] = a23; A[24] = a24;
     }
 }

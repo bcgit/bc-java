@@ -18,7 +18,7 @@ public class DVCSResponse
     private org.bouncycastle.asn1.dvcs.DVCSResponse asn1;
 
     /**
-     * Constructs DVCRequest from CMS SignedData object.
+     * Constructs DVCResponse from CMS SignedData object.
      *
      * @param signedData the CMS SignedData object containing the request
      * @throws org.bouncycastle.dvcs.DVCSConstructionException
@@ -30,7 +30,7 @@ public class DVCSResponse
     }
 
     /**
-     * Construct a DVCS Request from a ContentInfo
+     * Construct a DVCS Response from a ContentInfo
      *
      * @param contentInfo the contentInfo representing the DVCSRequest
      * @throws org.bouncycastle.dvcs.DVCSConstructionException
@@ -42,7 +42,7 @@ public class DVCSResponse
 
         if (!DVCSObjectIdentifiers.id_ct_DVCSResponseData.equals(contentInfo.getContentType()))
         {
-            throw new DVCSConstructionException("ContentInfo not a DVCS Request");
+            throw new DVCSConstructionException("ContentInfo not a DVCS Response");
         }
 
         try

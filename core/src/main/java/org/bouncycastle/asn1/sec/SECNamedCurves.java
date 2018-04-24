@@ -987,7 +987,7 @@ public class SECNamedCurves
 
     static void defineCurve(String name, ASN1ObjectIdentifier oid, X9ECParametersHolder holder)
     {
-        objIds.put(name.toLowerCase(), oid);
+        objIds.put(name, oid);
         names.put(oid, name);
         curves.put(oid, holder);
     }

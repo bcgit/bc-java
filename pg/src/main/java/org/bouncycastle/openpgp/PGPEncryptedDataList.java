@@ -16,12 +16,12 @@ import org.bouncycastle.util.Iterable;
  * A holder for a list of PGP encryption method packets and the encrypted data associated with them.
  * <p>
  * This holder supports reading a sequence of the following encryption methods, followed by an
- * encrypted data packet:
+ * encrypted data packet:</p>
  * <ul>
  * <li>{@link PacketTags#SYMMETRIC_KEY_ENC_SESSION} - produces a {@link PGPPBEEncryptedData}</li>
  * <li>{@link PacketTags#PUBLIC_KEY_ENC_SESSION} - produces a {@link PGPPublicKeyEncryptedData}</li>
  * </ul>
- * </p><p>
+ * <p>
  * All of the objects returned from this holder share a reference to the same encrypted data input
  * stream, which can only be consumed once.
  * </p>

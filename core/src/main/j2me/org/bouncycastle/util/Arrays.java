@@ -8,14 +8,14 @@ import java.util.Iterator;
  */
 public final class Arrays
 {
-    private Arrays() 
+    private Arrays()
     {
         // static class, hide constructor
     }
 
     public static boolean areEqual(
-        boolean[]  a,
-        boolean[]  b)
+        boolean[] a,
+        boolean[] b)
     {
         if (a == b)
         {
@@ -44,8 +44,8 @@ public final class Arrays
     }
 
     public static boolean areEqual(
-        char[]  a,
-        char[]  b)
+        char[] a,
+        char[] b)
     {
         if (a == b)
         {
@@ -74,8 +74,8 @@ public final class Arrays
     }
 
     public static boolean areEqual(
-        byte[]  a,
-        byte[]  b)
+        byte[] a,
+        byte[] b)
     {
         if (a == b)
         {
@@ -112,8 +112,8 @@ public final class Arrays
      * @return true if arrays equal, false otherwise.
      */
     public static boolean constantTimeAreEqual(
-        byte[]  a,
-        byte[]  b)
+        byte[] a,
+        byte[] b)
     {
         if (a == b)
         {
@@ -141,8 +141,8 @@ public final class Arrays
     }
 
     public static boolean areEqual(
-        int[]  a,
-        int[]  b)
+        int[] a,
+        int[] b)
     {
         if (a == b)
         {
@@ -171,8 +171,8 @@ public final class Arrays
     }
 
     public static boolean areEqual(
-        long[]  a,
-        long[]  b)
+        long[] a,
+        long[] b)
     {
         if (a == b)
         {
@@ -287,7 +287,7 @@ public final class Arrays
     }
 
     public static void fill(
-        short[] array, 
+        short[] array,
         short value)
     {
         for (int i = 0; i < array.length; i++)
@@ -305,7 +305,7 @@ public final class Arrays
             array[i] = value;
         }
     }
-    
+
     public static int hashCode(byte[] data)
     {
         if (data == null)
@@ -613,9 +613,9 @@ public final class Arrays
             return null;
         }
         long[] copy = new long[data.length];
-        
+
         System.arraycopy(data, 0, copy, 0, data.length);
-        
+
         return copy;
     }
 
@@ -746,8 +746,7 @@ public final class Arrays
      *
      * @param data the array from which the data is to be copied.
      * @param from the start index at which the copying should take place.
-     * @param to the final index of the range (exclusive).
-     *
+     * @param to   the final index of the range (exclusive).
      * @return a new byte array containing the range given.
      */
     public static byte[] copyOfRange(byte[] data, int from, int to)
@@ -838,7 +837,7 @@ public final class Arrays
     {
         if (a == null)
         {
-            return new byte[]{ b };
+            return new byte[]{b};
         }
 
         int length = a.length;
@@ -852,7 +851,7 @@ public final class Arrays
     {
         if (a == null)
         {
-            return new short[]{ b };
+            return new short[]{b};
         }
 
         int length = a.length;
@@ -866,7 +865,7 @@ public final class Arrays
     {
         if (a == null)
         {
-            return new int[]{ b };
+            return new int[]{b};
         }
 
         int length = a.length;
@@ -971,7 +970,7 @@ public final class Arrays
     {
         if (a == null)
         {
-            return new byte[]{ b };
+            return new byte[]{b};
         }
 
         int length = a.length;
@@ -985,7 +984,7 @@ public final class Arrays
     {
         if (a == null)
         {
-            return new short[]{ b };
+            return new short[]{b};
         }
 
         int length = a.length;
@@ -999,7 +998,7 @@ public final class Arrays
     {
         if (a == null)
         {
-            return new int[]{ b };
+            return new int[]{b};
         }
 
         int length = a.length;
@@ -1018,7 +1017,7 @@ public final class Arrays
 
         int p1 = 0, p2 = a.length;
         byte[] result = new byte[p2];
-        
+
         while (--p2 >= 0)
         {
             result[p2] = a[p1++];
@@ -1043,6 +1042,42 @@ public final class Arrays
         }
 
         return result;
+    }
+
+    public static byte[] concatenate(byte[][] arrays)
+    {
+        int size = 0;
+        for (int i = 0; i != arrays.length; i++)
+        {
+            size += arrays[i].length;
+        }
+
+        byte[] rv = new byte[size];
+
+        int offSet = 0;
+        for (int i = 0; i != arrays.length; i++)
+        {
+            System.arraycopy(arrays[i], 0, rv, offSet, arrays[i].length);
+            offSet += arrays[i].length;
+        }
+
+        return rv;
+    }
+
+    /**
+     * Fill input array by zeros
+     *
+     * @param array input array
+     */
+    public static void clear(byte[] array)
+    {
+        if (array != null)
+        {
+            for (int i = 0; i < array.length; i++)
+            {
+                array[i] = 0;
+            }
+        }
     }
 
     /**

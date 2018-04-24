@@ -12,13 +12,12 @@ import org.bouncycastle.util.Arrays;
  * <p>
  * Note: This does not know which syntax the set is!
  * (The difference: ordering of SET elements or not ordering.)
- * <p>
+ * </p><p>
  * DER form is always definite form length fields, while
  * BER support uses indefinite form.
- * <p>
+ * </p><p>
  * The CER form support does not exist.
- * <p>
- * <hr>
+ * </p><p>
  * <h2>X.690</h2>
  * <h3>8: Basic encoding rules</h3>
  * <h4>8.11 Encoding of a set value </h4>
@@ -29,7 +28,7 @@ import org.bouncycastle.util.Arrays;
  * ASN.1 definition of the set type, in an order chosen by the sender,
  * unless the type was referenced with the keyword
  * <b>OPTIONAL</b> or the keyword <b>DEFAULT</b>.
- * <p>
+ * </p><p>
  * <b>8.11.3</b> The encoding of a data value may, but need not,
  * be present for a type which was referenced with the keyword
  * <b>OPTIONAL</b> or the keyword <b>DEFAULT</b>.
@@ -38,13 +37,14 @@ import org.bouncycastle.util.Arrays;
  * and places no constraints on the order during transfer
  * </blockquote>
  * <h4>8.12 Encoding of a set-of value</h4>
- * <b>8.12.1</b> The encoding of a set-of value shall be constructed.
  * <p>
+ * <b>8.12.1</b> The encoding of a set-of value shall be constructed.
+ * </p><p>
  * <b>8.12.2</b> The text of 8.10.2 applies:
  * <i>The contents octets shall consist of zero,
  * one or more complete encodings of data values from the type listed in
  * the ASN.1 definition.</i>
- * <p>
+ * </p><p>
  * <b>8.12.3</b> The order of data values need not be preserved by
  * the encoding and subsequent decoding.
  *
@@ -175,6 +175,8 @@ public abstract class ASN1Set
         }
         else
         {
+            ASN1Primitive o = obj.getObject();
+
             //
             // constructed object which appears to be explicitly tagged
             // and it's really implicit means we have to add the
@@ -184,27 +186,27 @@ public abstract class ASN1Set
             {
                 if (obj instanceof BERTaggedObject)
                 {
-                    return new BERSet(obj.getObject());
+                    return new BERSet(o);
                 }
                 else
                 {
-                    return new DLSet(obj.getObject());
+                    return new DLSet(o);
                 }
             }
             else
             {
-                if (obj.getObject() instanceof ASN1Set)
+                if (o instanceof ASN1Set)
                 {
-                    return (ASN1Set)obj.getObject();
+                    return (ASN1Set)o;
                 }
 
                 //
                 // in this case the parser returns a sequence, convert it
                 // into a set.
                 //
-                if (obj.getObject() instanceof ASN1Sequence)
+                if (o instanceof ASN1Sequence)
                 {
-                    ASN1Sequence s = (ASN1Sequence)obj.getObject();
+                    ASN1Sequence s = (ASN1Sequence)o;
 
                     if (obj instanceof BERTaggedObject)
                     {
@@ -226,7 +228,7 @@ public abstract class ASN1Set
     }
 
     /**
-     * create a sequence containing one object
+     * Create a SET containing one object
      * @param obj object to be added to the SET.
      */
     protected ASN1Set(
@@ -236,7 +238,7 @@ public abstract class ASN1Set
     }
 
     /**
-     * create a sequence containing a vector of objects.
+     * Create a SET containing a vector of objects.
      * @param v a vector of objects to make up the SET.
      * @param doSort true if should be sorted DER style, false otherwise.
      */
@@ -255,8 +257,10 @@ public abstract class ASN1Set
         }
     }
 
-    /*
-     * create a sequence containing a vector of objects.
+    /**
+     * Create a SET containing an array of objects.
+     * @param array an array of objects to make up the SET.
+     * @param doSort true if should be sorted DER style, false otherwise.
      */
     protected ASN1Set(
         ASN1Encodable[]   array,

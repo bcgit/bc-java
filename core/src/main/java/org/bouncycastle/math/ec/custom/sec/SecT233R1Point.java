@@ -147,7 +147,6 @@ public class SecT233R1Point extends AbstractF2m
             ECFieldElement Y2 = L2;
             ECFieldElement L = Y1.add(Y2).divide(X1);
 
-//            X3 = L.square().add(L).add(X1).add(curve.getA());
             X3 = L.square().add(L).add(X1).addOne();
             if (X3.isZero())
             {
@@ -259,10 +258,7 @@ public class SecT233R1Point extends AbstractF2m
         ECFieldElement Z1Sq = Z1.square();
         ECFieldElement L1Z1 = L1.multiply(Z1);
 
-//        ECFieldElement T = curve.getA().multiply(Z1Sq).add(L1Sq).add(L1Z1);
         ECFieldElement T = Z1Sq.add(L1Sq).add(L1Z1);
-        ECFieldElement L2plus1 = L2.addOne();
-//        ECFieldElement A = curve.getA().add(L2plus1).multiply(Z1Sq).add(L1Sq).multiplyPlusProduct(T, X1Sq, Z1Sq);
         ECFieldElement A = L2.multiply(Z1Sq).add(L1Sq).multiplyPlusProduct(T, X1Sq, Z1Sq);
         ECFieldElement X2Z1Sq = X2.multiply(Z1Sq);
         ECFieldElement B = X2Z1Sq.add(T).square();
@@ -284,7 +280,7 @@ public class SecT233R1Point extends AbstractF2m
 
         ECFieldElement X3 = A.square().multiply(X2Z1Sq);
         ECFieldElement Z3 = A.multiply(B).multiply(Z1Sq);
-        ECFieldElement L3 = A.add(B).square().multiplyPlusProduct(T, L2plus1, Z3);
+        ECFieldElement L3 = A.add(B).square().multiplyPlusProduct(T, L2.addOne(), Z3);
 
         return new SecT233R1Point(curve, X3, L3, new ECFieldElement[]{ Z3 }, this.withCompression);
     }

@@ -143,6 +143,11 @@ public abstract class ASN1TaggedObject
         return code;
     }
 
+    /**
+     * Return the tag number associated with this object.
+     *
+     * @return the tag number.
+     */
     public int getTagNo()
     {
         return tagNo;
@@ -168,7 +173,7 @@ public abstract class ASN1TaggedObject
     }
 
     /**
-     * return whatever was following the tag.
+     * Return whatever was following the tag.
      * <p>
      * Note: tagged objects are generally context dependent if you're
      * trying to extract a tagged object you should be going via the

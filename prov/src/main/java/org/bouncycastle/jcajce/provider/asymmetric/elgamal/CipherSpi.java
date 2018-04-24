@@ -30,6 +30,7 @@ import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.ElGamalEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseCipherSpi;
+import org.bouncycastle.jcajce.provider.util.BadBlockException;
 import org.bouncycastle.jcajce.provider.util.DigestFactory;
 import org.bouncycastle.jce.interfaces.ElGamalKey;
 import org.bouncycastle.jce.interfaces.ElGamalPrivateKey;
@@ -277,14 +278,8 @@ public class CipherSpi
         throws IllegalBlockSizeException, BadPaddingException
     {
         cipher.processBytes(input, inputOffset, inputLen);
-        try
-        {
-            return cipher.doFinal();
-        }
-        catch (InvalidCipherTextException e)
-        {
-            throw new BadPaddingException(e.getMessage());
-        }
+
+        return getOutput();
     }
 
     protected int engineDoFinal(
@@ -295,18 +290,9 @@ public class CipherSpi
         int     outputOffset) 
         throws IllegalBlockSizeException, BadPaddingException
     {
-        byte[]  out;
-
         cipher.processBytes(input, inputOffset, inputLen);
 
-        try
-        {
-            out = cipher.doFinal();
-        }
-        catch (InvalidCipherTextException e)
-        {
-            throw new BadPaddingException(e.getMessage());
-        }
+        byte[]  out = getOutput();
 
         for (int i = 0; i != out.length; i++)
         {
@@ -314,6 +300,29 @@ public class CipherSpi
         }
 
         return out.length;
+    }
+
+    private byte[] getOutput()
+        throws BadPaddingException
+    {
+        try
+        {
+            return cipher.doFinal();
+        }
+        catch (final InvalidCipherTextException e)
+        {
+            throw new BadPaddingException("unable to decrypt block")
+            {
+                public synchronized Throwable getCause()
+                {
+                    return e;
+                }
+            };
+        }
+        catch (ArrayIndexOutOfBoundsException e)
+        {
+            throw new BadBlockException("unable to decrypt block", e);
+        }
     }
 
     /**

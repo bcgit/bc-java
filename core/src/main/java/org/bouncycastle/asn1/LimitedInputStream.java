@@ -2,6 +2,9 @@ package org.bouncycastle.asn1;
 
 import java.io.InputStream;
 
+/**
+ * Internal use stream that allows reading of a limited number of bytes from a wrapped stream.
+ */
 abstract class LimitedInputStream
         extends InputStream
 {

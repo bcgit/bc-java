@@ -12,7 +12,9 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
@@ -24,6 +26,7 @@ class CMSUtils
 {
     private static final Set mqvAlgs = new HashSet();
     private static final Set ecAlgs = new HashSet();
+    private static final Set gostAlgs = new HashSet();
 
     static
     {
@@ -43,6 +46,13 @@ class CMSUtils
         ecAlgs.add(SECObjectIdentifiers.dhSinglePass_stdDH_sha384kdf_scheme);
         ecAlgs.add(SECObjectIdentifiers.dhSinglePass_cofactorDH_sha512kdf_scheme);
         ecAlgs.add(SECObjectIdentifiers.dhSinglePass_stdDH_sha512kdf_scheme);
+
+        gostAlgs.add(CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_ESDH);
+        gostAlgs.add(CryptoProObjectIdentifiers.gostR3410_2001);
+        gostAlgs.add(RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_256);
+        gostAlgs.add(RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_512);
+        gostAlgs.add(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256);
+        gostAlgs.add(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512);
     }
 
     static boolean isMQV(ASN1ObjectIdentifier algorithm)
@@ -53,6 +63,11 @@ class CMSUtils
     static boolean isEC(ASN1ObjectIdentifier algorithm)
     {
         return ecAlgs.contains(algorithm);
+    }
+
+    static boolean isGOST(ASN1ObjectIdentifier algorithm)
+    {
+        return gostAlgs.contains(algorithm);
     }
 
     static boolean isRFC2631(ASN1ObjectIdentifier algorithm)

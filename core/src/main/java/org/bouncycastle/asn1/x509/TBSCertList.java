@@ -199,13 +199,13 @@ public class TBSCertList
         }
 
         if (seqPos < seq.size()
-            && !(seq.getObjectAt(seqPos) instanceof DERTaggedObject))
+            && !(seq.getObjectAt(seqPos) instanceof ASN1TaggedObject))
         {
             revokedCertificates = ASN1Sequence.getInstance(seq.getObjectAt(seqPos++));
         }
 
         if (seqPos < seq.size()
-            && seq.getObjectAt(seqPos) instanceof DERTaggedObject)
+            && seq.getObjectAt(seqPos) instanceof ASN1TaggedObject)
         {
             crlExtensions = Extensions.getInstance(ASN1Sequence.getInstance((ASN1TaggedObject)seq.getObjectAt(seqPos), true));
         }

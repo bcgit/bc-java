@@ -118,8 +118,8 @@ public class Certificate
         Vector certificate_list = new Vector();
         while (buf.available() > 0)
         {
-            byte[] derEncoding = TlsUtils.readOpaque24(buf);
-            ASN1Primitive asn1Cert = TlsUtils.readDERObject(derEncoding);
+            byte[] berEncoding = TlsUtils.readOpaque24(buf);
+            ASN1Primitive asn1Cert = TlsUtils.readASN1Object(berEncoding);
             certificate_list.addElement(org.bouncycastle.asn1.x509.Certificate.getInstance(asn1Cert));
         }
 

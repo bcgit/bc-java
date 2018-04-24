@@ -40,8 +40,7 @@ public class XSalsa20Engine extends Salsa20Engine
         super.setKey(keyBytes, ivBytes);
 
         // Pack next 64 bits of IV into engine state instead of counter
-        engineState[8] = Pack.littleEndianToInt(ivBytes, 8);
-        engineState[9] = Pack.littleEndianToInt(ivBytes, 12);
+        Pack.littleEndianToInt(ivBytes, 8, engineState, 8, 2);
 
         // Process engine state to generate Salsa20 key
         int[] hsalsa20Out = new int[engineState.length];
@@ -59,7 +58,6 @@ public class XSalsa20Engine extends Salsa20Engine
         engineState[14] = hsalsa20Out[9] - engineState[9];
 
         // Last 64 bits of input IV
-        engineState[6] = Pack.littleEndianToInt(ivBytes, 16);
-        engineState[7] = Pack.littleEndianToInt(ivBytes, 20);
+        Pack.littleEndianToInt(ivBytes, 16, engineState, 6, 2);
     }
 }

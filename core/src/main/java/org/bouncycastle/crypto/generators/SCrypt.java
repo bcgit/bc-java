@@ -12,27 +12,25 @@ import org.bouncycastle.util.Pack;
  * <p>
  * Scrypt was created by Colin Percival and is specified in <a
  * href="http://tools.ietf.org/html/draft-josefsson-scrypt-kdf-01">draft-josefsson-scrypt-kd</a>
- *
  */
 public class SCrypt
 {
     /**
      * Generate a key using the scrypt key derivation function.
-     * 
-     * @param P the bytes of the pass phrase.
-     * @param S the salt to use for this invocation.
-     * @param N CPU/Memory cost parameter. Must be larger than 1, a power of 2 and less than
-     *            <code>2^(128 * r / 8)</code>.
-     * @param r the block size, must be >= 1.
-     * @param p Parallelization parameter. Must be a positive integer less than or equal to
-     *            <code>Integer.MAX_VALUE / (128 * r * 8)</code>.
-     * 
+     *
+     * @param P     the bytes of the pass phrase.
+     * @param S     the salt to use for this invocation.
+     * @param N     CPU/Memory cost parameter. Must be larger than 1, a power of 2 and less than
+     *              <code>2^(128 * r / 8)</code>.
+     * @param r     the block size, must be &gt;= 1.
+     * @param p     Parallelization parameter. Must be a positive integer less than or equal to
+     *              <code>Integer.MAX_VALUE / (128 * r * 8)</code>.
      * @param dkLen the length of the key to generate.
      * @return the generated key.
      */
     public static byte[] generate(byte[] P, byte[] S, int N, int r, int p, int dkLen)
     {
-        if (P== null)
+        if (P == null)
         {
             throw new IllegalArgumentException("Passphrase P must be provided.");
         }
@@ -40,12 +38,12 @@ public class SCrypt
         {
             throw new IllegalArgumentException("Salt S must be provided.");
         }
-        if (N <= 1)
+        if (N <= 1 || !isPowerOf2(N))
         {
-            throw new IllegalArgumentException("Cost parameter N must be > 1.");
+            throw new IllegalArgumentException("Cost parameter N must be > 1 and a power of 2");
         }
         // Only value of r that cost (as an int) could be exceeded for is 1
-        if (r == 1 && N > 65536)
+        if (r == 1 && N >= 65536)
         {
             throw new IllegalArgumentException("Cost parameter N must be > 1 and < 65536.");
         }
@@ -102,7 +100,7 @@ public class SCrypt
     {
         PBEParametersGenerator pGen = new PKCS5S2ParametersGenerator(new SHA256Digest());
         pGen.init(P, S, 1);
-        KeyParameter key = (KeyParameter) pGen.generateDerivedMacParameters(dkLen * 8);
+        KeyParameter key = (KeyParameter)pGen.generateDerivedMacParameters(dkLen * 8);
         return key.getKey();
     }
 
@@ -140,7 +138,7 @@ public class SCrypt
         finally
         {
             ClearAll(V);
-            ClearAll(new int[][]{ X, blockX1, blockX2, blockY });
+            ClearAll(new int[][]{X, blockX1, blockX2, blockY});
         }
     }
 
@@ -194,5 +192,11 @@ public class SCrypt
         {
             Clear(arrays[i]);
         }
+    }
+
+    // note: we know X is non-zero
+    private static boolean isPowerOf2(int x)
+    {
+        return ((x & (x - 1)) == 0);
     }
 }

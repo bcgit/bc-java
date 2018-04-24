@@ -8,12 +8,22 @@ import java.security.ProviderException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.MGF1ParameterSpec;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.crypto.Cipher;
+import javax.crypto.spec.OAEPParameterSpec;
+import javax.crypto.spec.PSource;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
@@ -56,6 +66,20 @@ public class JceAsymmetricKeyWrapper
         this.publicKey = publicKey;
     }
 
+    /**
+     * Create a wrapper, overriding the algorithm type that is stored in the public key.
+     *
+     * @param algorithmParameterSpec the parameterSpec for encryption algorithm to be used.
+     * @param publicKey the public key to be used.
+     */
+    public JceAsymmetricKeyWrapper(AlgorithmParameterSpec algorithmParameterSpec, PublicKey publicKey)
+    {
+        super(extractFromSpec(algorithmParameterSpec));
+
+        this.publicKey = publicKey;
+    }
+
+
     public JceAsymmetricKeyWrapper setProvider(Provider provider)
     {
         this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
@@ -86,7 +110,6 @@ public class JceAsymmetricKeyWrapper
      * <pre>
      *     unwrapper.setAlgorithmMapping(PKCSObjectIdentifiers.rsaEncryption, "RSA");
      * </pre>
-     * </p>
      * @param algorithm  OID of algorithm in recipient.
      * @param algorithmName JCE algorithm name to use.
      * @return the current Wrapper.
@@ -153,5 +176,68 @@ public class JceAsymmetricKeyWrapper
         }
 
         return encryptedKeyBytes;
+    }
+
+    private static AlgorithmIdentifier extractFromSpec(AlgorithmParameterSpec algorithmParameterSpec)
+    {
+        if (algorithmParameterSpec instanceof OAEPParameterSpec)
+        {
+            OAEPParameterSpec oaepSpec = (OAEPParameterSpec)algorithmParameterSpec;
+
+            if (oaepSpec.getMGFAlgorithm().equals(OAEPParameterSpec.DEFAULT.getMGFAlgorithm()))
+            {
+                if (oaepSpec.getPSource() instanceof PSource.PSpecified)
+                {
+                    return new AlgorithmIdentifier(PKCSObjectIdentifiers.id_RSAES_OAEP,
+                        new RSAESOAEPparams(getDigest(oaepSpec.getDigestAlgorithm()),
+                            new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, getDigest(((MGF1ParameterSpec)oaepSpec.getMGFParameters()).getDigestAlgorithm())),
+                            new AlgorithmIdentifier(PKCSObjectIdentifiers.id_pSpecified, new DEROctetString(((PSource.PSpecified)oaepSpec.getPSource()).getValue()))));
+                }
+                else
+                {
+                    throw new IllegalArgumentException("unknown PSource: " + oaepSpec.getPSource().getAlgorithm());
+                }
+            }
+            else
+            {
+                throw new IllegalArgumentException("unknown MGF: " + oaepSpec.getMGFAlgorithm());
+            }
+        }
+
+        throw new IllegalArgumentException("unknown spec: " + algorithmParameterSpec.getClass().getName());
+    }
+
+    private static final Map digests = new HashMap();
+
+    static
+    {
+        digests.put("SHA-1", new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE));
+        digests.put("SHA-1", new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE));
+        digests.put("SHA224", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha224, DERNull.INSTANCE));
+        digests.put("SHA-224", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha224, DERNull.INSTANCE));
+        digests.put("SHA256", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE));
+        digests.put("SHA-256", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE));
+        digests.put("SHA384", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384, DERNull.INSTANCE));
+        digests.put("SHA-384", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384, DERNull.INSTANCE));
+        digests.put("SHA512", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512, DERNull.INSTANCE));
+        digests.put("SHA-512", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512, DERNull.INSTANCE));
+        digests.put("SHA512/224", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512_224, DERNull.INSTANCE));
+        digests.put("SHA-512/224", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512_224, DERNull.INSTANCE));
+        digests.put("SHA-512(224)", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512_224, DERNull.INSTANCE));
+        digests.put("SHA512/256", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512_256, DERNull.INSTANCE));
+        digests.put("SHA-512/256", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512_256, DERNull.INSTANCE));
+        digests.put("SHA-512(256)", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512_256, DERNull.INSTANCE));
+    }
+
+    private static AlgorithmIdentifier getDigest(String digest)
+    {
+        AlgorithmIdentifier algId = (AlgorithmIdentifier)digests.get(digest);
+
+        if (algId != null)
+        {
+            return algId;
+        }
+
+        throw new IllegalArgumentException("unknown digest name: " + digest);
     }
 }

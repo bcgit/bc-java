@@ -72,11 +72,7 @@ public class MockDTLSClient
 //        return Arrays.concatenate(super.getCipherSuites(),
 //            new int[]
 //            {
-//                CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
-//                CipherSuite.TLS_ECDHE_RSA_WITH_ESTREAM_SALSA20_SHA1,
-//                CipherSuite.TLS_ECDHE_RSA_WITH_SALSA20_SHA1,
-//                CipherSuite.TLS_RSA_WITH_ESTREAM_SALSA20_SHA1,
-//                CipherSuite.TLS_RSA_WITH_SALSA20_SHA1,
+//                CipherSuite.DRAFT_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
 //            });
 //    }
 
@@ -90,6 +86,7 @@ public class MockDTLSClient
              * NOTE: If you are copying test code, do not blindly set these extensions in your own client.
              */
             TlsExtensionsUtils.addMaxFragmentLengthExtension(clientExtensions, MaxFragmentLength.pow2_9);
+            TlsExtensionsUtils.addPaddingExtension(clientExtensions, context.getSecureRandom().nextInt(16));
             TlsExtensionsUtils.addTruncatedHMacExtension(clientExtensions);
         }
         return clientExtensions;

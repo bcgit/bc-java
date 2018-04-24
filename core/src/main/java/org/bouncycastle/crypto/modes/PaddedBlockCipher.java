@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.OutputLengthException;
 
 /**
  * A wrapper class that allows block ciphers to be used to process data in
@@ -139,7 +140,7 @@ public class PaddedBlockCipher
         {
             if ((outOff + length) > out.length)
             {
-                throw new DataLengthException("output buffer too short");
+                throw new OutputLengthException("output buffer too short");
             }
         }
 
@@ -199,7 +200,7 @@ public class PaddedBlockCipher
             {
                 if ((outOff + 2 * blockSize) > out.length)
                 {
-                    throw new DataLengthException("output buffer too short");
+                    throw new OutputLengthException("output buffer too short");
                 }
 
                 resultLen = cipher.processBlock(buf, 0, out, outOff);

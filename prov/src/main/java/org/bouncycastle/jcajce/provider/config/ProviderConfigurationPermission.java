@@ -27,18 +27,23 @@ import org.bouncycastle.util.Strings;
 public class ProviderConfigurationPermission
     extends BasicPermission
 {
-    private static final int  THREAD_LOCAL_EC_IMPLICITLY_CA = 0x01;
-    private static final int  EC_IMPLICITLY_CA = 0x02;
-    private static final int  THREAD_LOCAL_DH_DEFAULT_PARAMS = 0x04;
-    private static final int  DH_DEFAULT_PARAMS = 0x08;
+    private static final int THREAD_LOCAL_EC_IMPLICITLY_CA = 0x01;
+    private static final int EC_IMPLICITLY_CA = 0x02;
+    private static final int THREAD_LOCAL_DH_DEFAULT_PARAMS = 0x04;
+    private static final int DH_DEFAULT_PARAMS = 0x08;
+    private static final int ACCEPTABLE_EC_CURVES = 0x10;
+    private static final int ADDITIONAL_EC_PARAMETERS = 0x20;
 
-    private static final int  ALL = THREAD_LOCAL_EC_IMPLICITLY_CA | EC_IMPLICITLY_CA | THREAD_LOCAL_DH_DEFAULT_PARAMS | DH_DEFAULT_PARAMS;
+    private static final int  ALL =
+            THREAD_LOCAL_EC_IMPLICITLY_CA | EC_IMPLICITLY_CA | THREAD_LOCAL_DH_DEFAULT_PARAMS | DH_DEFAULT_PARAMS |
+            ACCEPTABLE_EC_CURVES | ADDITIONAL_EC_PARAMETERS;
 
     private static final String THREAD_LOCAL_EC_IMPLICITLY_CA_STR = "threadlocalecimplicitlyca";
     private static final String EC_IMPLICITLY_CA_STR = "ecimplicitlyca";
     private static final String THREAD_LOCAL_DH_DEFAULT_PARAMS_STR = "threadlocaldhdefaultparams";
     private static final String DH_DEFAULT_PARAMS_STR = "dhdefaultparams";
-
+    private static final String ACCEPTABLE_EC_CURVES_STR = "acceptableeccurves";
+    private static final String ADDITIONAL_EC_PARAMETERS_STR = "additionalecparameters";
     private static final String ALL_STR = "all";
 
     private final String actions;
@@ -83,6 +88,14 @@ public class ProviderConfigurationPermission
             else if (s.equals(DH_DEFAULT_PARAMS_STR))
             {
                 mask |= DH_DEFAULT_PARAMS;
+            }
+            else if (s.equals(ACCEPTABLE_EC_CURVES_STR))
+            {
+                mask |= ACCEPTABLE_EC_CURVES;
+            }
+            else if (s.equals(ADDITIONAL_EC_PARAMETERS_STR))
+            {
+                mask |= ADDITIONAL_EC_PARAMETERS;
             }
             else if (s.equals(ALL_STR))
             {

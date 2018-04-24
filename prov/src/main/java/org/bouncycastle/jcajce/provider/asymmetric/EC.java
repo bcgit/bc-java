@@ -1,7 +1,11 @@
 package org.bouncycastle.jcajce.provider.asymmetric;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
@@ -14,6 +18,14 @@ public class EC
 {
     private static final String PREFIX = "org.bouncycastle.jcajce.provider.asymmetric" + ".ec.";
 
+    private static final Map<String, String> generalEcAttributes = new HashMap<String, String>();
+
+    static
+    {
+        generalEcAttributes.put("SupportedKeyClasses", "java.security.interfaces.ECPublicKey|java.security.interfaces.ECPrivateKey");
+        generalEcAttributes.put("SupportedKeyFormats", "PKCS#8|X.509");
+    }
+
     public static class Mappings
         extends AsymmetricAlgorithmProvider
     {
@@ -25,9 +37,30 @@ public class EC
         {
             provider.addAlgorithm("AlgorithmParameters.EC", PREFIX + "AlgorithmParametersSpi");
 
+            provider.addAttributes("KeyAgreement.ECDH", generalEcAttributes);
             provider.addAlgorithm("KeyAgreement.ECDH", PREFIX + "KeyAgreementSpi$DH");
+            provider.addAttributes("KeyAgreement.ECDHC", generalEcAttributes);
             provider.addAlgorithm("KeyAgreement.ECDHC", PREFIX + "KeyAgreementSpi$DHC");
+            provider.addAttributes("KeyAgreement.ECCDH", generalEcAttributes);
             provider.addAlgorithm("KeyAgreement.ECCDH", PREFIX + "KeyAgreementSpi$DHC");
+
+            provider.addAttributes("KeyAgreement.ECCDHU", generalEcAttributes);
+            provider.addAlgorithm("KeyAgreement.ECCDHU", PREFIX + "KeyAgreementSpi$DHUC");
+
+            provider.addAlgorithm("KeyAgreement.ECDHWITHSHA1KDF", PREFIX + "KeyAgreementSpi$DHwithSHA1KDFAndSharedInfo");
+            provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA1KDF", PREFIX + "KeyAgreementSpi$CDHwithSHA1KDFAndSharedInfo");
+
+            provider.addAlgorithm("KeyAgreement.ECDHWITHSHA224KDF", PREFIX + "KeyAgreementSpi$DHwithSHA224KDFAndSharedInfo");
+            provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA224KDF", PREFIX + "KeyAgreementSpi$CDHwithSHA224KDFAndSharedInfo");
+
+            provider.addAlgorithm("KeyAgreement.ECDHWITHSHA256KDF", PREFIX + "KeyAgreementSpi$DHwithSHA256KDFAndSharedInfo");
+            provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA256KDF", PREFIX + "KeyAgreementSpi$CDHwithSHA256KDFAndSharedInfo");
+
+            provider.addAlgorithm("KeyAgreement.ECDHWITHSHA384KDF", PREFIX + "KeyAgreementSpi$DHwithSHA384KDFAndSharedInfo");
+            provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA384KDF", PREFIX + "KeyAgreementSpi$CDHwithSHA384KDFAndSharedInfo");
+
+            provider.addAlgorithm("KeyAgreement.ECDHWITHSHA512KDF", PREFIX + "KeyAgreementSpi$DHwithSHA512KDFAndSharedInfo");
+            provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA512KDF", PREFIX + "KeyAgreementSpi$CDHwithSHA512KDFAndSharedInfo");
 
             provider.addAlgorithm("KeyAgreement." + X9ObjectIdentifiers.dhSinglePass_stdDH_sha1kdf_scheme, PREFIX + "KeyAgreementSpi$DHwithSHA1KDFAndSharedInfo");
             provider.addAlgorithm("KeyAgreement." + X9ObjectIdentifiers.dhSinglePass_cofactorDH_sha1kdf_scheme, PREFIX + "KeyAgreementSpi$CDHwithSHA1KDFAndSharedInfo");
@@ -44,12 +77,16 @@ public class EC
             provider.addAlgorithm("KeyAgreement." + SECObjectIdentifiers.dhSinglePass_stdDH_sha512kdf_scheme, PREFIX + "KeyAgreementSpi$DHwithSHA512KDFAndSharedInfo");
             provider.addAlgorithm("KeyAgreement." + SECObjectIdentifiers.dhSinglePass_cofactorDH_sha512kdf_scheme, PREFIX + "KeyAgreementSpi$CDHwithSHA512KDFAndSharedInfo");
 
-            provider.addAlgorithm("KeyAgreement.ECDHWITHSHA1KDF", PREFIX + "KeyAgreementSpi$DHwithSHA1KDF");
-
             provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA1CKDF", PREFIX + "KeyAgreementSpi$DHwithSHA1CKDF");
             provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA256CKDF", PREFIX + "KeyAgreementSpi$DHwithSHA256CKDF");
             provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA384CKDF", PREFIX + "KeyAgreementSpi$DHwithSHA384CKDF");
             provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA512CKDF", PREFIX + "KeyAgreementSpi$DHwithSHA512CKDF");
+
+            provider.addAlgorithm("KeyAgreement.ECCDHUWITHSHA1CKDF", PREFIX + "KeyAgreementSpi$DHUwithSHA1CKDF");
+            provider.addAlgorithm("KeyAgreement.ECCDHUWITHSHA224CKDF", PREFIX + "KeyAgreementSpi$DHUwithSHA224CKDF");
+            provider.addAlgorithm("KeyAgreement.ECCDHUWITHSHA256CKDF", PREFIX + "KeyAgreementSpi$DHUwithSHA256CKDF");
+            provider.addAlgorithm("KeyAgreement.ECCDHUWITHSHA384CKDF", PREFIX + "KeyAgreementSpi$DHUwithSHA384CKDF");
+            provider.addAlgorithm("KeyAgreement.ECCDHUWITHSHA512CKDF", PREFIX + "KeyAgreementSpi$DHUwithSHA512CKDF");
 
             registerOid(provider, X9ObjectIdentifiers.id_ecPublicKey, "EC", new KeyFactorySpi.EC());
 
@@ -133,24 +170,11 @@ public class EC
             provider.addAlgorithm("KeyPairGenerator.ECIES", PREFIX + "KeyPairGeneratorSpi$ECDH");
 
             provider.addAlgorithm("Cipher.ECIES", PREFIX + "IESCipher$ECIES");
-            provider.addAlgorithm("Cipher.ECIESwithAES", PREFIX + "IESCipher$ECIESwithAES");
-            provider.addAlgorithm("Cipher.ECIESWITHAES", PREFIX + "IESCipher$ECIESwithAES");
-            provider.addAlgorithm("Cipher.ECIESwithDESEDE", PREFIX + "IESCipher$ECIESwithDESede");
-            provider.addAlgorithm("Cipher.ECIESWITHDESEDE", PREFIX + "IESCipher$ECIESwithDESede");
+
             provider.addAlgorithm("Cipher.ECIESwithAES-CBC", PREFIX + "IESCipher$ECIESwithAESCBC");
             provider.addAlgorithm("Cipher.ECIESWITHAES-CBC", PREFIX + "IESCipher$ECIESwithAESCBC");
             provider.addAlgorithm("Cipher.ECIESwithDESEDE-CBC", PREFIX + "IESCipher$ECIESwithDESedeCBC");
             provider.addAlgorithm("Cipher.ECIESWITHDESEDE-CBC", PREFIX + "IESCipher$ECIESwithDESedeCBC");
-
-            provider.addAlgorithm("Cipher.OldECIES", PREFIX + "IESCipher$OldECIES");
-            provider.addAlgorithm("Cipher.OldECIESwithAES", PREFIX + "IESCipher$OldECIESwithAES");
-            provider.addAlgorithm("Cipher.OldECIESWITHAES", PREFIX + "IESCipher$OldECIESwithAES");
-            provider.addAlgorithm("Cipher.OldECIESwithDESEDE", PREFIX + "IESCipher$OldECIESwithDESede");
-            provider.addAlgorithm("Cipher.OldECIESWITHDESEDE", PREFIX + "IESCipher$OldECIESwithDESede");
-            provider.addAlgorithm("Cipher.OldECIESwithAES-CBC", PREFIX + "IESCipher$OldECIESwithAESCBC");
-            provider.addAlgorithm("Cipher.OldECIESWITHAES-CBC", PREFIX + "IESCipher$OldECIESwithAESCBC");
-            provider.addAlgorithm("Cipher.OldECIESwithDESEDE-CBC", PREFIX + "IESCipher$OldECIESwithDESedeCBC");
-            provider.addAlgorithm("Cipher.OldECIESWITHDESEDE-CBC", PREFIX + "IESCipher$OldECIESwithDESedeCBC");
 
             provider.addAlgorithm("Signature.ECDSA", PREFIX + "SignatureSpi$ecDSA");
             provider.addAlgorithm("Signature.NONEwithECDSA", PREFIX + "SignatureSpi$ecDSAnone");
@@ -170,6 +194,10 @@ public class EC
             provider.addAlgorithm("Signature.SHA256WITHECDDSA", PREFIX + "SignatureSpi$ecDetDSA256");
             provider.addAlgorithm("Signature.SHA384WITHECDDSA", PREFIX + "SignatureSpi$ecDetDSA384");
             provider.addAlgorithm("Signature.SHA512WITHECDDSA", PREFIX + "SignatureSpi$ecDetDSA512");
+            provider.addAlgorithm("Signature.SHA3-224WITHECDDSA", PREFIX + "SignatureSpi$ecDetDSASha3_224");
+            provider.addAlgorithm("Signature.SHA3-256WITHECDDSA", PREFIX + "SignatureSpi$ecDetDSASha3_256");
+            provider.addAlgorithm("Signature.SHA3-384WITHECDDSA", PREFIX + "SignatureSpi$ecDetDSASha3_384");
+            provider.addAlgorithm("Signature.SHA3-512WITHECDDSA", PREFIX + "SignatureSpi$ecDetDSASha3_512");
 
             provider.addAlgorithm("Alg.Alias.Signature.DETECDSA", "ECDDSA");
             provider.addAlgorithm("Alg.Alias.Signature.SHA1WITHDETECDSA", "SHA1WITHECDDSA");
@@ -182,6 +210,11 @@ public class EC
             addSignatureAlgorithm(provider, "SHA256", "ECDSA", PREFIX + "SignatureSpi$ecDSA256", X9ObjectIdentifiers.ecdsa_with_SHA256);
             addSignatureAlgorithm(provider, "SHA384", "ECDSA", PREFIX + "SignatureSpi$ecDSA384", X9ObjectIdentifiers.ecdsa_with_SHA384);
             addSignatureAlgorithm(provider, "SHA512", "ECDSA", PREFIX + "SignatureSpi$ecDSA512", X9ObjectIdentifiers.ecdsa_with_SHA512);
+            addSignatureAlgorithm(provider, "SHA3-224", "ECDSA", PREFIX + "SignatureSpi$ecDSASha3_224", NISTObjectIdentifiers.id_ecdsa_with_sha3_224);
+            addSignatureAlgorithm(provider, "SHA3-256", "ECDSA", PREFIX + "SignatureSpi$ecDSASha3_256", NISTObjectIdentifiers.id_ecdsa_with_sha3_256);
+            addSignatureAlgorithm(provider, "SHA3-384", "ECDSA", PREFIX + "SignatureSpi$ecDSASha3_384", NISTObjectIdentifiers.id_ecdsa_with_sha3_384);
+            addSignatureAlgorithm(provider, "SHA3-512", "ECDSA", PREFIX + "SignatureSpi$ecDSASha3_512", NISTObjectIdentifiers.id_ecdsa_with_sha3_512);
+
             addSignatureAlgorithm(provider, "RIPEMD160", "ECDSA", PREFIX + "SignatureSpi$ecDSARipeMD160",TeleTrusTObjectIdentifiers.ecSignWithRipemd160);
 
             provider.addAlgorithm("Signature.SHA1WITHECNR", PREFIX + "SignatureSpi$ecNR");

@@ -15,16 +15,25 @@ import java.util.Date;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.cmp.CMPCertificate;
 import org.bouncycastle.asn1.cmp.CertConfirmContent;
+import org.bouncycastle.asn1.cmp.CertOrEncCert;
 import org.bouncycastle.asn1.cmp.CertRepMessage;
+import org.bouncycastle.asn1.cmp.CertResponse;
+import org.bouncycastle.asn1.cmp.CertifiedKeyPair;
 import org.bouncycastle.asn1.cmp.PKIBody;
 import org.bouncycastle.asn1.cmp.PKIMessage;
+import org.bouncycastle.asn1.cmp.PKIStatus;
+import org.bouncycastle.asn1.cmp.PKIStatusInfo;
 import org.bouncycastle.asn1.crmf.CertReqMessages;
 import org.bouncycastle.asn1.crmf.CertReqMsg;
+import org.bouncycastle.asn1.crmf.EncryptedValue;
 import org.bouncycastle.asn1.crmf.ProofOfPossession;
 import org.bouncycastle.asn1.crmf.SubsequentMessage;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.cert.CertException;
@@ -40,16 +49,25 @@ import org.bouncycastle.cert.crmf.CertificateRequestMessage;
 import org.bouncycastle.cert.crmf.CertificateRequestMessageBuilder;
 import org.bouncycastle.cert.crmf.PKMACBuilder;
 import org.bouncycastle.cert.crmf.jcajce.JcaCertificateRequestMessageBuilder;
+import org.bouncycastle.cert.crmf.jcajce.JcaEncryptedValueBuilder;
+import org.bouncycastle.cert.crmf.jcajce.JceCRMFEncryptorBuilder;
 import org.bouncycastle.cert.crmf.jcajce.JcePKMACValuesCalculator;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.AsymmetricKeyUnwrapper;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
+import org.bouncycastle.operator.jcajce.JceAsymmetricKeyUnwrapper;
+import org.bouncycastle.operator.jcajce.JceAsymmetricKeyWrapper;
+import org.bouncycastle.operator.jcajce.JceInputDecryptorProviderBuilder;
+import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
 public class AllTests
@@ -224,6 +242,76 @@ public class AllTests
 
         assertEquals(ProofOfPossession.TYPE_KEY_ENCIPHERMENT, reqMsg.getPopo().getType());
     }
+
+    public void testServerSideKey()
+        throws Exception
+    {
+        KeyPairGenerator kGen = KeyPairGenerator.getInstance("RSA", BC);
+
+        kGen.initialize(512);
+
+        KeyPair kp = kGen.generateKeyPair();
+        X509CertificateHolder cert = makeV3Certificate(kp, "CN=Test", kp, "CN=Test");
+
+        JcaEncryptedValueBuilder encBldr = new JcaEncryptedValueBuilder(
+            new JceAsymmetricKeyWrapper(kp.getPublic()).setProvider(BC),
+            new JceCRMFEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+
+        GeneralName sender = new GeneralName(new X500Name("CN=Sender"));
+        GeneralName recipient = new GeneralName(new X500Name("CN=Recip"));
+
+        CertRepMessage msg = new CertRepMessage(null, new CertResponse[] {
+            new CertResponse(
+                new ASN1Integer(2),
+                new PKIStatusInfo(PKIStatus.granted),
+                new CertifiedKeyPair(
+                    new CertOrEncCert(CMPCertificate.getInstance(cert.getEncoded())),
+                    encBldr.build(kp.getPrivate()),
+                    null), null) });
+
+        ContentSigner signer = new JcaContentSignerBuilder("MD5WithRSAEncryption").setProvider(BC).build(kp.getPrivate());
+        ProtectedPKIMessage message = new ProtectedPKIMessageBuilder(sender, recipient)
+                                                  .setBody(new PKIBody(PKIBody.TYPE_INIT_REP, msg))
+                                                  .addCMPCertificate(cert)
+                                                  .build(signer);
+
+        X509Certificate jcaCert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(message.getCertificates()[0]);
+        ContentVerifierProvider verifierProvider = new JcaContentVerifierProviderBuilder().setProvider(BC).build(jcaCert.getPublicKey());
+
+        assertTrue(message.verify(verifierProvider));
+
+        assertEquals(sender, message.getHeader().getSender());
+        assertEquals(recipient, message.getHeader().getRecipient());
+
+        CertRepMessage content = CertRepMessage.getInstance(message.getBody().getContent());
+
+        CertResponse[] responseList = content.getResponse();
+
+        assertEquals(1, responseList.length);
+
+        CertResponse response = responseList[0];
+
+        assertEquals(PKIStatus.granted.getValue(), response.getStatus().getStatus());
+
+        CertifiedKeyPair certKp = response.getCertifiedKeyPair();
+
+        // steps to unwrap private key
+        EncryptedValue encValue = certKp.getPrivateKey();
+
+        // recover symmetric key
+        AsymmetricKeyUnwrapper unwrapper = new JceAsymmetricKeyUnwrapper(encValue.getKeyAlg(), kp.getPrivate());
+        
+        byte[] secKeyBytes = (byte[])unwrapper.generateUnwrappedKey(encValue.getKeyAlg(), encValue.getEncSymmKey().getBytes()).getRepresentation();
+
+        // recover private key
+        PKCS8EncryptedPrivateKeyInfo respInfo = new PKCS8EncryptedPrivateKeyInfo(encValue.getEncValue().getBytes());
+
+        PrivateKeyInfo keyInfo = respInfo.decryptPrivateKeyInfo(new JceInputDecryptorProviderBuilder().setProvider("BC").build(secKeyBytes));
+
+        assertEquals(keyInfo.getPrivateKeyAlgorithm(), encValue.getIntendedAlg());
+        assertTrue(Arrays.areEqual(kp.getPrivate().getEncoded(), keyInfo.getEncoded()));
+    }
+
 
     public void testNotBeforeNotAfter()
         throws Exception

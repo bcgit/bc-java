@@ -21,6 +21,7 @@ import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KeyUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
+import org.bouncycastle.util.Strings;
 
 public class BCDSAPrivateKey
     implements DSAPrivateKey, PKCS12BagAttributeCarrier
@@ -163,5 +164,18 @@ public class BCDSAPrivateKey
         out.writeObject(dsaSpec.getP());
         out.writeObject(dsaSpec.getQ());
         out.writeObject(dsaSpec.getG());
+    }
+
+    public String toString()
+    {
+        StringBuffer    buf = new StringBuffer();
+        String          nl = Strings.lineSeparator();
+
+        BigInteger y = getParams().getG().modPow(x, getParams().getP());
+
+        buf.append("DSA Private Key [").append(DSAUtil.generateKeyFingerprint(y, getParams())).append("]").append(nl);
+        buf.append("            y: ").append(y.toString(16)).append(nl);
+
+        return buf.toString();
     }
 }

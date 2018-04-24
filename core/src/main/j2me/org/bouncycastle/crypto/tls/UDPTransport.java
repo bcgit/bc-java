@@ -80,7 +80,7 @@ public class UDPTransport
              * the DTLS implementation SHOULD generate an error, thus avoiding sending a packet
              * which will be fragmented."
              */
-            // TODO Exception
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         if (off == 0)

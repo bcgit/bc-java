@@ -50,11 +50,21 @@ public class SHAKEDigest
 
     public int doFinal(byte[] out, int outOff, int outLen)
     {
-        absorb(new byte[]{ 0x0F }, 0, 4);
-
-        squeeze(out, outOff, ((long)outLen) * 8);
+        int length = doOutput(out, outOff, outLen);
 
         reset();
+
+        return length;
+    }
+
+    public int doOutput(byte[] out, int outOff, int outLen)
+    {
+        if (!squeezing)
+        {
+            absorbBits(0x0F, 4);
+        }
+
+        squeeze(out, outOff, ((long)outLen) * 8);
 
         return outLen;
     }
@@ -82,16 +92,14 @@ public class SHAKEDigest
 
         if (finalBits >= 8)
         {
-            oneByte[0] = (byte)finalInput;
-            absorb(oneByte, 0, 8);
+            absorb(new byte[]{ (byte)finalInput }, 0, 1);
             finalBits -= 8;
             finalInput >>>= 8;
         }
 
         if (finalBits > 0)
         {
-            oneByte[0] = (byte)finalInput;
-            absorb(oneByte, 0, finalBits);
+            absorbBits(finalInput, finalBits);
         }
 
         squeeze(out, outOff, ((long)outLen) * 8);

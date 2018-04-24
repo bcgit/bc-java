@@ -1,8 +1,12 @@
 package org.bouncycastle.jce.provider.test;
 
 import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.Key;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.KeySpec;
 
@@ -25,10 +29,12 @@ import org.bouncycastle.crypto.generators.OpenSSLPBEParametersGenerator;
 import org.bouncycastle.crypto.generators.PKCS12ParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -378,6 +384,46 @@ public class PBETest
         }
     }
 
+    public void testPKCS12HMac(
+        String  hmacName,
+        byte[]  output)
+    {
+        SecretKey           key;
+        byte[]              out;
+        Mac                 mac;
+
+        try
+        {
+            mac = Mac.getInstance(hmacName, "BC");
+        }
+        catch (Exception e)
+        {
+            fail("Failed - exception " + e.toString(), e);
+            return;
+        }
+
+        try
+        {
+            mac.init(new PKCS12Key("hello".toCharArray()), new PBEParameterSpec(new byte[20], 100));
+        }
+        catch (Exception e)
+        {
+            fail("Failed - exception " + e.toString(), e);
+            return;
+        }
+
+        mac.reset();
+
+        mac.update(message, 0, message.length);
+
+        out = mac.doFinal();
+
+        if (!Arrays.areEqual(out, output))
+        {
+            fail("Failed - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(out)));
+        }
+    }
+
     public void testPBEonSecretKeyHmac(
         String  hmacName,
         byte[]  output)
@@ -455,6 +501,25 @@ public class PBETest
         if (!Arrays.areEqual(unwrappedKey.getEncoded(), key.getEncoded()))
         {
             fail("key mismatch on unwrapping");
+        }
+    }
+
+    public void testNullSalt()
+        throws Exception
+    {
+        SecretKeyFactory skf = SecretKeyFactory.getInstance("PBEWITHSHAAND128BITAES-CBC-BC");
+        Key key = skf.generateSecret(new PBEKeySpec("secret".toCharArray()));
+
+        Cipher cipher = Cipher.getInstance("PBEWITHSHAAND128BITAES-CBC-BC");
+
+        try
+        {
+            cipher.init(Cipher.ENCRYPT_MODE, key, (AlgorithmParameterSpec)null);
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isTrue("wrong message", "PBEKey requires parameters to specify salt".equals(e.getMessage()));
         }
     }
 
@@ -614,6 +679,27 @@ public class PBETest
         testCipherNameWithWrap("PBEWITHSHAAND128BITRC4", "RC4");
 
         checkPBE("PBKDF2WithHmacSHA1", true, "f14687fc31a66e2f7cc01d0a65f687961bd27e20", "6f6579193d6433a3e4600b243bb390674f04a615");
+
+        testPKCS12HMac("HMacSHA1", Hex.decode("bcc42174ccb04f425d9a5c8c4a95d6fd7c372911"));
+        testPKCS12HMac("HMacSHA256", Hex.decode("e1ae77e2d1dcc56a8befa3867ea3ff8c2163b01885504379412e525b120bf9ce"));
+        testPKCS12HMac("HMacSHA384", Hex.decode("1256a861351db2082f2ba827ca72cede54ee851f533962bba1fd97b500b6d6eb42aa4a51920aca0c817955feaf52d7f8"));
+        testPKCS12HMac("HMacSHA512", Hex.decode("9090898971914cb2e65eb1b083f1cad1ce9a9d386f963a2e2ede965fbce0a7121526b5f8aed83f81db60b97ced0bc4b0c27cf23407028cc2f289957f607cec98"));
+        testPKCS12HMac("HMacRIPEMD160", Hex.decode("cb1d8bdb6aca9e3fa8980d6eb41ab28a7eb2cfd6"));
+
+        try
+        {
+            Mac mac = Mac.getInstance("HMacRIPEMD256", "BC");
+
+            mac.init(new PKCS12Key("hello".toCharArray()), new PBEParameterSpec(new byte[20], 100));
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isTrue("wrong exception", "no PKCS12 mapping for HMAC: RIPEMD256/HMAC".equals(e.getMessage()));
+        }
+
+        testMixedKeyTypes();
+        testNullSalt();
     }
 
     private void testPKCS12Interop()
@@ -688,6 +774,32 @@ public class PBETest
         if (!Arrays.areEqual(ascK, f.generateSecret(ks2).getEncoded()))
         {
             fail(baseAlg + " wrong PBKDF2 k2 8bit key generated");
+        }
+    }
+
+    // for regression testing only - don't try this at home.
+    public void testMixedKeyTypes()
+        throws Exception
+    {
+        String provider = "BC";
+        SecretKeyFactory skf =
+            SecretKeyFactory.getInstance("PBKDF2WITHHMACSHA1", provider);
+        PBEKeySpec pbeks = new PBEKeySpec("password".toCharArray(), Strings.toByteArray("salt"), 100, 128);
+        SecretKey secretKey = skf.generateSecret(pbeks);
+        PBEParameterSpec paramSpec = new PBEParameterSpec(pbeks.getSalt(), pbeks.getIterationCount());
+
+        // in this case pbeSpec picked up from internal class representing key
+        Cipher cipher =
+            Cipher.getInstance("PBEWITHSHAAND128BITAES-CBC-BC", provider);
+
+        try
+        {
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            isTrue("wrong exception", "Algorithm requires a PBE key suitable for PKCS12".equals(e.getMessage()));
         }
     }
 

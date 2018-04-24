@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.generators;
 
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.Strings;
 
 /**
  * Core of password hashing scheme Bcrypt,
@@ -12,8 +14,8 @@ import org.bouncycastle.util.Arrays;
  * "A Future-Adaptable Password Scheme" of Niels Provos and David Mazières,
  * see: https://www.usenix.org/legacy/events/usenix99/provos/provos_html/node1.html.
  * In contrast to the paper, the order of key setup and salt setup is reversed:
- * state <- ExpandKey(state, 0, key)
- * state <- ExpandKey(state, 0, salt)
+ * state &lt;- ExpandKey(state, 0, key)
+ * state &lt;- ExpandKey(state, 0, salt)
  * This corresponds to the OpenBSD reference implementation of Bcrypt. 
  * </p><p>
  * Note: 
@@ -388,22 +390,6 @@ public final class BCrypt
 
     }
 
-    private int BytesTo32bits(byte[] b, int i)
-    {
-        return ((b[i] & 0xff) << 24) |
-            ((b[i + 1] & 0xff) << 16) |
-            ((b[i + 2] & 0xff) << 8) |
-            ((b[i + 3] & 0xff));
-    }
-
-    private void Bits32ToBytes(int in, byte[] b, int offset)
-    {
-        b[offset + 3] = (byte)in;
-        b[offset + 2] = (byte)(in >> 8);
-        b[offset + 1] = (byte)(in >> 16);
-        b[offset] = (byte)(in >> 24);
-    }
-
     /*
      * XOR P with key cyclic.
      * This is the first part of ExpandKey function
@@ -464,10 +450,7 @@ public final class BCrypt
             }
         }
         byte[] result = new byte[24]; // holds 192 bit key
-        for (int i = 0; i < text.length; i++)
-        {
-            Bits32ToBytes(text[i], result, i * 4);
-        }
+        Pack.intToBigEndian(text, result, 0);
         Arrays.fill(text, 0);
         Arrays.fill(P, 0);
         Arrays.fill(S, 0);
@@ -564,10 +547,7 @@ public final class BCrypt
         initState();
 
         int[] salt32Bit = new int[4]; // holds 16 byte salt
-        salt32Bit[0] = BytesTo32bits(salt, 0);
-        salt32Bit[1] = BytesTo32bits(salt, 4);
-        salt32Bit[2] = BytesTo32bits(salt, 8);
-        salt32Bit[3] = BytesTo32bits(salt, 12);
+        Pack.bigEndianToInt(salt, 0, salt32Bit);
 
         int[] salt32Bit2 = new int[salt.length]; // swapped values
         salt32Bit2[0] = salt32Bit[2];
@@ -621,6 +601,19 @@ public final class BCrypt
     // Blowfish spec limits keys to 448bit/56 bytes to ensure all bits of key affect all ciphertext
     // bits, but technically algorithm handles 72 byte keys and most implementations support this.
     static final int MAX_PASSWORD_BYTES = 72;
+
+    private static final byte[] oneByte = new byte[1];
+
+    /**
+     * Converts a character password to bytes incorporating the required trailing zero byte.
+     *
+     * @param password the password to be encoded.
+     * @return a byte representation of the password in UTF8 + trailing zero.
+     */
+    public static byte[] passwordToByteArray(char[] password)
+    {
+        return Arrays.concatenate(Strings.toUTF8ByteArray(password), oneByte);
+    }
 
     /**
      * Calculates the <b>bcrypt</b> hash of a password.

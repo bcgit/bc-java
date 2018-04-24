@@ -21,8 +21,6 @@ public abstract class TlsProtocol
     protected static final Integer EXT_RenegotiationInfo = Integers.valueOf(ExtensionType.renegotiation_info);
     protected static final Integer EXT_SessionTicket = Integers.valueOf(ExtensionType.session_ticket);
 
-    private static final String TLS_ERROR_MESSAGE = "Internal TLS error, this could be an attack";
-
     /*
      * Our Connection states
      */
@@ -45,11 +43,18 @@ public abstract class TlsProtocol
     protected static final short CS_END = 16;
 
     /*
+     * Different modes to handle the known IV weakness
+     */
+    protected static final short ADS_MODE_1_Nsub1 = 0; // 1/n-1 record splitting
+    protected static final short ADS_MODE_0_N = 1; // 0/n record splitting
+    protected static final short ADS_MODE_0_N_FIRSTONLY = 2; // 0/n record splitting on first data fragment only
+
+    /*
      * Queues for data from some protocols.
      */
-    private ByteQueue applicationDataQueue = new ByteQueue();
+    private ByteQueue applicationDataQueue = new ByteQueue(0);
     private ByteQueue alertQueue = new ByteQueue(2);
-    private ByteQueue handshakeQueue = new ByteQueue();
+    private ByteQueue handshakeQueue = new ByteQueue(0);
 //    private ByteQueue heartbeatQueue = new ByteQueue();
 
     /*
@@ -64,7 +69,8 @@ public abstract class TlsProtocol
     private volatile boolean closed = false;
     private volatile boolean failedWithError = false;
     private volatile boolean appDataReady = false;
-    private volatile boolean splitApplicationDataRecords = true;
+    private volatile boolean appDataSplitEnabled = true;
+    private volatile int appDataSplitMode = ADS_MODE_1_Nsub1;
     private byte[] expected_verify_data = null;
 
     protected TlsSession tlsSession = null;
@@ -110,17 +116,100 @@ public abstract class TlsProtocol
 
     protected abstract TlsPeer getPeer();
 
+    protected void handleAlertMessage(short alertLevel, short alertDescription)
+        throws IOException
+    {
+        getPeer().notifyAlertReceived(alertLevel, alertDescription);
+
+        if (alertLevel == AlertLevel.warning)
+        {
+            handleAlertWarningMessage(alertDescription);
+        }
+        else
+        {
+            handleFailure();
+
+            throw new TlsFatalAlertReceived(alertDescription);
+        }
+    }
+
+    protected void handleAlertWarningMessage(short alertDescription)
+        throws IOException
+    {
+        /*
+         * RFC 5246 7.2.1. The other party MUST respond with a close_notify alert of its own
+         * and close down the connection immediately, discarding any pending writes.
+         */
+        if (alertDescription == AlertDescription.close_notify)
+        {
+            if (!appDataReady)
+            {
+                throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            }
+            handleClose(false);
+        }
+    }
+
     protected void handleChangeCipherSpecMessage() throws IOException
     {
     }
 
-    protected abstract void handleHandshakeMessage(short type, byte[] buf)
-        throws IOException;
-
-    protected void handleWarningMessage(short description)
+    protected void handleClose(boolean user_canceled)
         throws IOException
     {
+        if (!closed)
+        {
+            this.closed = true;
+
+            if (user_canceled && !appDataReady)
+            {
+                raiseAlertWarning(AlertDescription.user_canceled, "User canceled handshake");
+            }
+
+            raiseAlertWarning(AlertDescription.close_notify, "Connection closed");
+
+            recordStream.safeClose();
+
+            if (!appDataReady)
+            {
+                cleanupHandshake();
+            }
+        }
     }
+
+    protected void handleException(short alertDescription, String message, Throwable cause)
+        throws IOException
+    {
+        if (!closed)
+        {
+            raiseAlertFatal(alertDescription, message, cause);
+
+            handleFailure();
+        }
+    }
+
+    protected void handleFailure()
+    {
+        this.closed = true;
+        this.failedWithError = true;
+
+        /*
+         * RFC 2246 7.2.1. The session becomes unresumable if any connection is terminated
+         * without proper close_notify messages with level equal to warning.
+         */
+        // TODO This isn't quite in the right place. Also, as of TLS 1.1 the above is obsolete.
+        invalidateSession();
+
+        recordStream.safeClose();
+
+        if (!appDataReady)
+        {
+            cleanupHandshake();
+        }
+    }
+
+    protected abstract void handleHandshakeMessage(short type, ByteArrayInputStream buf)
+        throws IOException;
 
     protected void applyMaxFragmentLengthExtension()
         throws IOException
@@ -177,7 +266,8 @@ public abstract class TlsProtocol
             {
                 if (this.closed)
                 {
-                    // TODO What kind of exception/alert?
+                    // NOTE: Any close during the handshake should have raised an exception.
+                    throw new TlsFatalAlert(AlertDescription.internal_error);
                 }
 
                 safeReadRecord();
@@ -190,9 +280,14 @@ public abstract class TlsProtocol
     {
         try
         {
+            this.connection_state = CS_END;
+
+            this.alertQueue.shrink();
+            this.handshakeQueue.shrink();
+
             this.recordStream.finaliseHandshake();
 
-            this.splitApplicationDataRecords = !TlsUtils.isTLSv11(getContext());
+            this.appDataSplitEnabled = !TlsUtils.isTLSv11(getContext());
 
             /*
              * If this was an initial handshake, we are now ready to send and receive application data.
@@ -237,7 +332,7 @@ public abstract class TlsProtocol
         }
     }
 
-    protected void processRecord(short protocol, byte[] buf, int offset, int len)
+    protected void processRecord(short protocol, byte[] buf, int off, int len)
         throws IOException
     {
         /*
@@ -247,8 +342,8 @@ public abstract class TlsProtocol
         {
         case ContentType.alert:
         {
-            alertQueue.addData(buf, offset, len);
-            processAlert();
+            alertQueue.addData(buf, off, len);
+            processAlertQueue();
             break;
         }
         case ContentType.application_data:
@@ -257,109 +352,112 @@ public abstract class TlsProtocol
             {
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
-            applicationDataQueue.addData(buf, offset, len);
-            processApplicationData();
+            applicationDataQueue.addData(buf, off, len);
+            processApplicationDataQueue();
             break;
         }
         case ContentType.change_cipher_spec:
         {
-            processChangeCipherSpec(buf, offset, len);
+            processChangeCipherSpec(buf, off, len);
             break;
         }
         case ContentType.handshake:
         {
-            handshakeQueue.addData(buf, offset, len);
-            processHandshake();
-            break;
-        }
-        case ContentType.heartbeat:
-        {
-            if (!appDataReady)
+            if (handshakeQueue.available() > 0)
             {
-                throw new TlsFatalAlert(AlertDescription.unexpected_message);
+                handshakeQueue.addData(buf, off, len);
+                processHandshakeQueue(handshakeQueue);
             }
-            // TODO[RFC 6520]
-//            heartbeatQueue.addData(buf, offset, len);
-//            processHeartbeat();
+            else
+            {
+                ByteQueue tmpQueue = new ByteQueue(buf, off, len);
+                processHandshakeQueue(tmpQueue);
+                int remaining = tmpQueue.available();
+                if (remaining > 0)
+                {
+                    handshakeQueue.addData(buf, off + len - remaining, remaining);
+                }
+            }
             break;
         }
+//        case ContentType.heartbeat:
+//        {
+//            if (!appDataReady)
+//            {
+//                throw new TlsFatalAlert(AlertDescription.unexpected_message);
+//            }
+//            // TODO[RFC 6520]
+////            heartbeatQueue.addData(buf, offset, len);
+////            processHeartbeat();
+//            break;
+//        }
         default:
-            /*
-             * Uh, we don't know this protocol.
-             * 
-             * RFC2246 defines on page 13, that we should ignore this.
-             */
-            break;
+            // Record type should already have been checked
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
 
-    private void processHandshake()
+    private void processHandshakeQueue(ByteQueue queue)
         throws IOException
     {
-        boolean read;
-        do
+        while (queue.available() >= 4)
         {
-            read = false;
             /*
              * We need the first 4 bytes, they contain type and length of the message.
              */
-            if (handshakeQueue.available() >= 4)
+            byte[] beginning = new byte[4];
+            queue.read(beginning, 0, 4, 0);
+            short type = TlsUtils.readUint8(beginning, 0);
+            int length = TlsUtils.readUint24(beginning, 1);
+            int totalLength = 4 + length;
+    
+            /*
+             * Check if we have enough bytes in the buffer to read the full message.
+             */
+            if (queue.available() < totalLength)
             {
-                byte[] beginning = new byte[4];
-                handshakeQueue.read(beginning, 0, 4, 0);
-                short type = TlsUtils.readUint8(beginning, 0);
-                int len = TlsUtils.readUint24(beginning, 1);
-
-                /*
-                 * Check if we have enough bytes in the buffer to read the full message.
-                 */
-                if (handshakeQueue.available() >= (len + 4))
-                {
-                    /*
-                     * Read the message.
-                     */
-                    byte[] buf = handshakeQueue.removeData(len, 4);
-
-                    checkReceivedChangeCipherSpec(connection_state == CS_END || type == HandshakeType.finished);
-
-                    /*
-                     * RFC 2246 7.4.9. The value handshake_messages includes all handshake messages
-                     * starting at client hello up to, but not including, this finished message.
-                     * [..] Note: [Also,] Hello Request messages are omitted from handshake hashes.
-                     */
-                    switch (type)
-                    {
-                    case HandshakeType.hello_request:
-                        break;
-                    case HandshakeType.finished:
-                    {
-                        TlsContext ctx = getContext();
-                        if (this.expected_verify_data == null
-                            && ctx.getSecurityParameters().getMasterSecret() != null)
-                        {
-                            this.expected_verify_data = createVerifyData(!ctx.isServer());
-                        }
-
-                        // NB: Fall through to next case label
-                    }
-                    default:
-                        recordStream.updateHandshakeData(beginning, 0, 4);
-                        recordStream.updateHandshakeData(buf, 0, len);
-                        break;
-                    }
-
-                    /*
-                     * Now, parse the message.
-                     */
-                    handleHandshakeMessage(type, buf);
-                    read = true;
-                }
+                break;
             }
+
+            checkReceivedChangeCipherSpec(connection_state == CS_END || type == HandshakeType.finished);
+
+            /*
+             * RFC 2246 7.4.9. The value handshake_messages includes all handshake messages
+             * starting at client hello up to, but not including, this finished message.
+             * [..] Note: [Also,] Hello Request messages are omitted from handshake hashes.
+             */
+            switch (type)
+            {
+            case HandshakeType.hello_request:
+                break;
+            case HandshakeType.finished:
+            {
+                TlsContext ctx = getContext();
+                if (this.expected_verify_data == null
+                    && ctx.getSecurityParameters().getMasterSecret() != null)
+                {
+                    this.expected_verify_data = createVerifyData(!ctx.isServer());
+                }
+
+                // NB: Fall through to next case label
+            }
+            default:
+                queue.copyTo(recordStream.getHandshakeHashUpdater(), totalLength);
+                break;
+            }
+
+            queue.removeData(4);
+
+            ByteArrayInputStream buf = queue.readFrom(length);
+
+            /*
+             * Now, parse the message.
+             */
+            handleHandshakeMessage(type, buf);
         }
-        while (read);
     }
 
-    private void processApplicationData()
+    private void processApplicationDataQueue()
     {
         /*
          * There is nothing we need to do here.
@@ -368,7 +466,7 @@ public abstract class TlsProtocol
          */
     }
 
-    private void processAlert()
+    private void processAlertQueue()
         throws IOException
     {
         while (alertQueue.available() >= 2)
@@ -376,45 +474,11 @@ public abstract class TlsProtocol
             /*
              * An alert is always 2 bytes. Read the alert.
              */
-            byte[] tmp = alertQueue.removeData(2, 0);
-            short level = tmp[0];
-            short description = tmp[1];
+            byte[] alert = alertQueue.removeData(2, 0);
+            short alertLevel = alert[0];
+            short alertDescription = alert[1];
 
-            getPeer().notifyAlertReceived(level, description);
-
-            if (level == AlertLevel.fatal)
-            {
-                /*
-                 * RFC 2246 7.2.1. The session becomes unresumable if any connection is terminated
-                 * without proper close_notify messages with level equal to warning.
-                 */
-                invalidateSession();
-
-                this.failedWithError = true;
-                this.closed = true;
-
-                recordStream.safeClose();
-
-                throw new IOException(TLS_ERROR_MESSAGE);
-            }
-            else
-            {
-
-                /*
-                 * RFC 5246 7.2.1. The other party MUST respond with a close_notify alert of its own
-                 * and close down the connection immediately, discarding any pending writes.
-                 */
-                // TODO Can close_notify be a fatal alert?
-                if (description == AlertDescription.close_notify)
-                {
-                    handleClose(false);
-                }
-
-                /*
-                 * If it is just a warning, we continue.
-                 */
-                handleWarningMessage(description);
-            }
+            handleAlertMessage(alertLevel, alertDescription);
         }
     }
 
@@ -476,22 +540,17 @@ public abstract class TlsProtocol
 
         while (applicationDataQueue.available() == 0)
         {
-            /*
-             * We need to read some data.
-             */
             if (this.closed)
             {
                 if (this.failedWithError)
                 {
-                    /*
-                     * Something went terribly wrong, we should throw an IOException
-                     */
-                    throw new IOException(TLS_ERROR_MESSAGE);
+                    throw new IOException("Cannot read application data on failed TLS connection");
+                }
+                if (!appDataReady)
+                {
+                    throw new IllegalStateException("Cannot read application data until initial handshake completed.");
                 }
 
-                /*
-                 * Connection has been closed, there is no more data to read.
-                 */
                 return -1;
             }
 
@@ -503,42 +562,69 @@ public abstract class TlsProtocol
         return len;
     }
 
+    protected void safeCheckRecordHeader(byte[] recordHeader)
+        throws IOException
+    {
+        try
+        {
+            recordStream.checkRecordHeader(recordHeader);
+        }
+        catch (TlsFatalAlert e)
+        {
+            handleException(e.getAlertDescription(), "Failed to read record", e);
+            throw e;
+        }
+        catch (IOException e)
+        {
+            handleException(AlertDescription.internal_error, "Failed to read record", e);
+            throw e;
+        }
+        catch (RuntimeException e)
+        {
+            handleException(AlertDescription.internal_error, "Failed to read record", e);
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
+        }
+    }
+
     protected void safeReadRecord()
         throws IOException
     {
         try
         {
-            if (!recordStream.readRecord())
+            if (recordStream.readRecord())
             {
-                // TODO It would be nicer to allow graceful connection close if between records
-//                this.failWithError(AlertLevel.warning, AlertDescription.close_notify);
-                throw new EOFException();
+                return;
             }
+
+            if (!appDataReady)
+            {
+                throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            }
+        }
+        catch (TlsFatalAlertReceived e)
+        {
+            // Connection failure already handled at source
+            throw e;
         }
         catch (TlsFatalAlert e)
         {
-            if (!closed)
-            {
-                this.failWithError(AlertLevel.fatal, e.getAlertDescription(), "Failed to read record", e);
-            }
+            handleException(e.getAlertDescription(), "Failed to read record", e);
             throw e;
         }
         catch (IOException e)
         {
-            if (!closed)
-            {
-                this.failWithError(AlertLevel.fatal, AlertDescription.internal_error, "Failed to read record", e);
-            }
+            handleException(AlertDescription.internal_error, "Failed to read record", e);
             throw e;
         }
         catch (RuntimeException e)
         {
-            if (!closed)
-            {
-                this.failWithError(AlertLevel.fatal, AlertDescription.internal_error, "Failed to read record", e);
-            }
-            throw e;
+            handleException(AlertDescription.internal_error, "Failed to read record", e);
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
+
+        handleFailure();
+
+        throw new TlsNoCloseNotifyException();
     }
 
     protected void safeWriteRecord(short type, byte[] buf, int offset, int len)
@@ -550,27 +636,18 @@ public abstract class TlsProtocol
         }
         catch (TlsFatalAlert e)
         {
-            if (!closed)
-            {
-                this.failWithError(AlertLevel.fatal, e.getAlertDescription(), "Failed to write record", e);
-            }
+            handleException(e.getAlertDescription(), "Failed to write record", e);
             throw e;
         }
         catch (IOException e)
         {
-            if (!closed)
-            {
-                this.failWithError(AlertLevel.fatal, AlertDescription.internal_error, "Failed to write record", e);
-            }
+            handleException(AlertDescription.internal_error, "Failed to write record", e);
             throw e;
         }
         catch (RuntimeException e)
         {
-            if (!closed)
-            {
-                this.failWithError(AlertLevel.fatal, AlertDescription.internal_error, "Failed to write record", e);
-            }
-            throw e;
+            handleException(AlertDescription.internal_error, "Failed to write record", e);
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
     }
 
@@ -589,12 +666,7 @@ public abstract class TlsProtocol
     {
         if (this.closed)
         {
-            if (this.failedWithError)
-            {
-                throw new IOException(TLS_ERROR_MESSAGE);
-            }
-
-            throw new IOException("Sorry, connection has been closed, you cannot write more data");
+            throw new IOException("Cannot write application data on closed/failed TLS connection");
         }
 
         while (len > 0)
@@ -606,16 +678,27 @@ public abstract class TlsProtocol
              * NOTE: Actually, implementations appear to have settled on 1/n-1 record splitting.
              */
 
-            if (this.splitApplicationDataRecords)
+            if (this.appDataSplitEnabled)
             {
                 /*
                  * Protect against known IV attack!
                  * 
                  * DO NOT REMOVE THIS CODE, EXCEPT YOU KNOW EXACTLY WHAT YOU ARE DOING HERE.
                  */
-                safeWriteRecord(ContentType.application_data, buf, offset, 1);
-                ++offset;
-                --len;
+                switch (appDataSplitMode) {
+                    case ADS_MODE_0_N_FIRSTONLY:
+                        this.appDataSplitEnabled = false;
+                        // fall through intended!
+                    case ADS_MODE_0_N:
+                        safeWriteRecord(ContentType.application_data, TlsUtils.EMPTY_BYTES, 0, 0);
+                        break;
+                    case ADS_MODE_1_Nsub1:
+                    default:
+                        safeWriteRecord(ContentType.application_data, buf, offset, 1);
+                        ++offset;
+                        --len;
+                        break;
+                }
             }
 
             if (len > 0)
@@ -629,16 +712,37 @@ public abstract class TlsProtocol
         }
     }
 
+    protected void setAppDataSplitMode(int appDataSplitMode) {
+        if (appDataSplitMode < ADS_MODE_1_Nsub1 ||
+            appDataSplitMode > ADS_MODE_0_N_FIRSTONLY)
+        {
+            throw new IllegalArgumentException("Illegal appDataSplitMode mode: " + appDataSplitMode);
+        }
+        this.appDataSplitMode = appDataSplitMode;
+	}
+
     protected void writeHandshakeMessage(byte[] buf, int off, int len) throws IOException
     {
-        while (len > 0)
+        if (len < 4)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        short type = TlsUtils.readUint8(buf, off);
+        if (type != HandshakeType.hello_request)
+        {
+            recordStream.getHandshakeHashUpdater().write(buf, off, len);
+        }
+
+        int total = 0;
+        do
         {
             // Fragment data according to the current fragment limit.
-            int toWrite = Math.min(len, recordStream.getPlaintextLimit());
-            safeWriteRecord(ContentType.handshake, buf, off, toWrite);
-            off += toWrite;
-            len -= toWrite;
+            int toWrite = Math.min(len - total, recordStream.getPlaintextLimit());
+            safeWriteRecord(ContentType.handshake, buf, off + total, toWrite);
+            total += toWrite;
         }
+        while (total < len);
     }
 
     /**
@@ -663,6 +767,34 @@ public abstract class TlsProtocol
             throw new IllegalStateException("Cannot use InputStream in non-blocking mode! Use offerInput() instead.");
         }
         return this.tlsInputStream;
+    }
+
+    /**
+     * Should be called in non-blocking mode when the input data reaches EOF.
+     */
+    public void closeInput() throws IOException
+    {
+        if (blocking)
+        {
+            throw new IllegalStateException("Cannot use closeInput() in blocking mode!");
+        }
+
+        if (closed)
+        {
+            return;
+        }
+
+        if (inputBuffers.available() > 0)
+        {
+            throw new EOFException();
+        }
+
+        if (!appDataReady)
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
+
+        throw new TlsNoCloseNotifyException();
     }
 
     /**
@@ -700,17 +832,28 @@ public abstract class TlsProtocol
         // loop while there are enough bytes to read the length of the next record
         while (inputBuffers.available() >= RecordStream.TLS_HEADER_SIZE)
         {
-            byte[] header = new byte[RecordStream.TLS_HEADER_SIZE];
-            inputBuffers.peek(header);
+            byte[] recordHeader = new byte[RecordStream.TLS_HEADER_SIZE];
+            inputBuffers.peek(recordHeader);
 
-            int totalLength = TlsUtils.readUint16(header, RecordStream.TLS_HEADER_LENGTH_OFFSET) + RecordStream.TLS_HEADER_SIZE;
+            int totalLength = TlsUtils.readUint16(recordHeader, RecordStream.TLS_HEADER_LENGTH_OFFSET) + RecordStream.TLS_HEADER_SIZE;
             if (inputBuffers.available() < totalLength)
             {
                 // not enough bytes to read a whole record
+                safeCheckRecordHeader(recordHeader);
                 break;
             }
 
             safeReadRecord();
+
+            if (closed)
+            {
+                if (connection_state != CS_END)
+                {
+                    // NOTE: Any close during the handshake should have raised an exception.
+                    throw new TlsFatalAlert(AlertDescription.internal_error);
+                }
+                break;
+            }
         }
     }
 
@@ -834,51 +977,6 @@ public abstract class TlsProtocol
         return bytesToRead;
     }
 
-    /**
-     * Terminate this connection with an alert. Can be used for normal closure too.
-     * 
-     * @param alertLevel
-     *            See {@link AlertLevel} for values.
-     * @param alertDescription
-     *            See {@link AlertDescription} for values.
-     * @throws IOException
-     *             If alert was fatal.
-     */
-    protected void failWithError(short alertLevel, short alertDescription, String message, Throwable cause)
-        throws IOException
-    {
-        /*
-         * Check if the connection is still open.
-         */
-        if (!closed)
-        {
-            /*
-             * Prepare the message
-             */
-            this.closed = true;
-
-            if (alertLevel == AlertLevel.fatal)
-            {
-                /*
-                 * RFC 2246 7.2.1. The session becomes unresumable if any connection is terminated
-                 * without proper close_notify messages with level equal to warning.
-                 */
-                // TODO This isn't quite in the right place. Also, as of TLS 1.1 the above is obsolete.
-                invalidateSession();
-
-                this.failedWithError = true;
-            }
-            raiseAlert(alertLevel, alertDescription, message, cause);
-            recordStream.safeClose();
-            if (alertLevel != AlertLevel.fatal)
-            {
-                return;
-            }
-        }
-
-        throw new IOException(TLS_ERROR_MESSAGE);
-    }
-
     protected void invalidateSession()
     {
         if (this.sessionParameters != null)
@@ -918,22 +1016,31 @@ public abstract class TlsProtocol
         }
     }
 
-    protected void raiseAlert(short alertLevel, short alertDescription, String message, Throwable cause)
+    protected void raiseAlertFatal(short alertDescription, String message, Throwable cause)
         throws IOException
     {
-        getPeer().notifyAlertRaised(alertLevel, alertDescription, message, cause);
+        getPeer().notifyAlertRaised(AlertLevel.fatal, alertDescription, message, cause);
 
-        byte[] error = new byte[2];
-        error[0] = (byte)alertLevel;
-        error[1] = (byte)alertDescription;
+        byte[] alert = new byte[]{ (byte)AlertLevel.fatal, (byte)alertDescription };
 
-        safeWriteRecord(ContentType.alert, error, 0, 2);
+        try
+        {
+            recordStream.writeRecord(ContentType.alert, alert, 0, 2);
+        }
+        catch (Exception e)
+        {
+            // We are already processing an exception, so just ignore this
+        }
     }
 
-    protected void raiseWarning(short alertDescription, String message)
+    protected void raiseAlertWarning(short alertDescription, String message)
         throws IOException
     {
-        raiseAlert(AlertLevel.warning, alertDescription, message, null);
+        getPeer().notifyAlertRaised(AlertLevel.warning, alertDescription, message, null);
+
+        byte[] alert = new byte[]{ (byte)AlertLevel.warning, (byte)alertDescription };
+
+        safeWriteRecord(ContentType.alert, alert, 0, 2);
     }
 
     protected void sendCertificateMessage(Certificate certificate)
@@ -953,7 +1060,7 @@ public abstract class TlsProtocol
                 if (serverVersion.isSSL())
                 {
                     String errorMessage = serverVersion.toString() + " client didn't provide credentials";
-                    raiseWarning(AlertDescription.no_certificate, errorMessage);
+                    raiseAlertWarning(AlertDescription.no_certificate, errorMessage);
                     return;
                 }
             }
@@ -1016,19 +1123,6 @@ public abstract class TlsProtocol
         handleClose(true);
     }
 
-    protected void handleClose(boolean user_canceled)
-        throws IOException
-    {
-        if (!closed)
-        {
-            if (user_canceled && !appDataReady)
-            {
-                raiseWarning(AlertDescription.user_canceled, "User canceled handshake");
-            }
-            this.failWithError(AlertLevel.warning, AlertDescription.close_notify, "Connection closed", null);
-        }
-    }
-
     protected void flush()
         throws IOException
     {
@@ -1068,7 +1162,7 @@ public abstract class TlsProtocol
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
 
-        raiseWarning(AlertDescription.no_renegotiation, "Renegotiation not supported");
+        raiseAlertWarning(AlertDescription.no_renegotiation, "Renegotiation not supported");
     }
 
     /**
@@ -1206,6 +1300,21 @@ public abstract class TlsProtocol
     {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
+        /*
+         * NOTE: There are reports of servers that don't accept a zero-length extension as the last
+         * one, so we write out any zero-length ones first as a best-effort workaround.
+         */
+        writeSelectedExtensions(buf, extensions, true);
+        writeSelectedExtensions(buf, extensions, false);
+
+        byte[] extBytes = buf.toByteArray();
+
+        TlsUtils.writeOpaque16(extBytes, output);
+    }
+
+    protected static void writeSelectedExtensions(OutputStream output, Hashtable extensions, boolean selectEmpty)
+        throws IOException
+    {
         Enumeration keys = extensions.keys();
         while (keys.hasMoreElements())
         {
@@ -1213,14 +1322,13 @@ public abstract class TlsProtocol
             int extension_type = key.intValue();
             byte[] extension_data = (byte[])extensions.get(key);
 
-            TlsUtils.checkUint16(extension_type);
-            TlsUtils.writeUint16(extension_type, buf);
-            TlsUtils.writeOpaque16(extension_data, buf);
+            if (selectEmpty == (extension_data.length == 0))
+            {
+                TlsUtils.checkUint16(extension_type);
+                TlsUtils.writeUint16(extension_type, output);
+                TlsUtils.writeOpaque16(extension_data, output);
+            }
         }
-
-        byte[] extBytes = buf.toByteArray();
-
-        TlsUtils.writeOpaque16(extBytes, output);
     }
 
     protected static void writeSupplementalData(OutputStream output, Vector supplementalData)
@@ -1249,6 +1357,9 @@ public abstract class TlsProtocol
 
         switch (ciphersuite)
         {
+        case CipherSuite.TLS_DH_anon_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_DH_anon_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_DH_anon_WITH_AES_256_CBC_SHA256:
         case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256:
         case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_128_GCM_SHA256:
         case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256:
@@ -1272,19 +1383,24 @@ public abstract class TlsProtocol
         case CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA256:
         case CipherSuite.TLS_DHE_PSK_WITH_AES_128_CCM:
         case CipherSuite.TLS_DHE_PSK_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.DRAFT_TLS_DHE_PSK_WITH_AES_128_OCB:
         case CipherSuite.TLS_DHE_PSK_WITH_AES_256_CCM:
+        case CipherSuite.DRAFT_TLS_DHE_PSK_WITH_AES_256_OCB:
         case CipherSuite.TLS_DHE_PSK_WITH_CAMELLIA_128_GCM_SHA256:
+        case CipherSuite.DRAFT_TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM_8:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.DRAFT_TLS_DHE_RSA_WITH_AES_128_OCB:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA256:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM:
         case CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM_8:
+        case CipherSuite.DRAFT_TLS_DHE_RSA_WITH_AES_256_OCB:
         case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256:
         case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_GCM_SHA256:
         case CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256:
-        case CipherSuite.TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
+        case CipherSuite.DRAFT_TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
         case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_ECDH_ECDSA_WITH_CAMELLIA_128_CBC_SHA256:
@@ -1297,26 +1413,37 @@ public abstract class TlsProtocol
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.DRAFT_TLS_ECDHE_ECDSA_WITH_AES_128_OCB:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CCM:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8:
+        case CipherSuite.DRAFT_TLS_ECDHE_ECDSA_WITH_AES_256_OCB:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256:
         case CipherSuite.TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_GCM_SHA256:
-        case CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:
+        case CipherSuite.DRAFT_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_128_OCB:
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_AES_256_OCB:
+        case CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256:
         case CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.DRAFT_TLS_ECDHE_RSA_WITH_AES_128_OCB:
+        case CipherSuite.DRAFT_TLS_ECDHE_RSA_WITH_AES_256_OCB:
         case CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256:
         case CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_128_GCM_SHA256:
-        case CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
+        case CipherSuite.DRAFT_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
         case CipherSuite.TLS_PSK_DHE_WITH_AES_128_CCM_8:
         case CipherSuite.TLS_PSK_DHE_WITH_AES_256_CCM_8:
         case CipherSuite.TLS_PSK_WITH_AES_128_CCM:
         case CipherSuite.TLS_PSK_WITH_AES_128_CCM_8:
         case CipherSuite.TLS_PSK_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.DRAFT_TLS_PSK_WITH_CHACHA20_POLY1305_SHA256:
+        case CipherSuite.DRAFT_TLS_PSK_WITH_AES_128_OCB:
         case CipherSuite.TLS_PSK_WITH_AES_256_CCM:
         case CipherSuite.TLS_PSK_WITH_AES_256_CCM_8:
+        case CipherSuite.DRAFT_TLS_PSK_WITH_AES_256_OCB:
         case CipherSuite.TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256:
         case CipherSuite.TLS_RSA_PSK_WITH_AES_128_GCM_SHA256:
         case CipherSuite.TLS_RSA_PSK_WITH_CAMELLIA_128_GCM_SHA256:
+        case CipherSuite.DRAFT_TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256:
         case CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256:
         case CipherSuite.TLS_RSA_WITH_AES_128_CCM:
         case CipherSuite.TLS_RSA_WITH_AES_128_CCM_8:
@@ -1336,6 +1463,7 @@ public abstract class TlsProtocol
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
+        case CipherSuite.TLS_DH_anon_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_256_GCM_SHA384:
         case CipherSuite.TLS_DH_DSS_WITH_AES_256_GCM_SHA384:
         case CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_256_GCM_SHA384:

@@ -38,8 +38,8 @@ import org.bouncycastle.operator.ContentSigner;
  *  Attributes { ATTRIBUTE:IOSet } ::= SET OF Attribute{{ IOSet }}
  *
  *  Attribute { ATTRIBUTE:IOSet } ::= SEQUENCE {
- *    type    ATTRIBUTE.&id({IOSet}),
- *    values  SET SIZE(1..MAX) OF ATTRIBUTE.&Type({IOSet}{\@type})
+ *    type    ATTRIBUTE.&amp;id({IOSet}),
+ *    values  SET SIZE(1..MAX) OF ATTRIBUTE.&amp;Type({IOSet}{\@type})
  *  }
  * </pre>
  */
@@ -50,10 +50,20 @@ public class PKCS10CertificationRequestBuilder
     private List attributes = new ArrayList();
     private boolean leaveOffEmpty = false;
 
+
+    public PKCS10CertificationRequestBuilder(PKCS10CertificationRequestBuilder original)
+    {
+        this.publicKeyInfo = original.publicKeyInfo;
+        this.subject = original.subject;
+        this.leaveOffEmpty = original.leaveOffEmpty;
+        this.attributes = new ArrayList(original.attributes);
+    }
+
+
     /**
      * Basic constructor.
      *
-     * @param subject the X.500 Name defining the certificate subject this request is for.
+     * @param subject       the X.500 Name defining the certificate subject this request is for.
      * @param publicKeyInfo the info structure for the public key to be associated with this subject.
      */
     public PKCS10CertificationRequestBuilder(X500Name subject, SubjectPublicKeyInfo publicKeyInfo)
@@ -63,30 +73,73 @@ public class PKCS10CertificationRequestBuilder
     }
 
     /**
+     * Set an attribute to the certification request we are building.
+     * Removed existing attributes with the same attrType.
+     *
+     * @param attrType  the OID giving the type of the attribute.
+     * @param attrValue the ASN.1 structure that forms the value of the attribute.
+     * @return this builder object.
+     */
+    public PKCS10CertificationRequestBuilder setAttribute(ASN1ObjectIdentifier attrType, ASN1Encodable attrValue)
+    {
+        // Remove existing copies of the attribute.
+        for (Iterator it = attributes.iterator(); it.hasNext(); )
+        {
+            if (((Attribute)it.next()).getAttrType().equals(attrType))
+            {
+                throw new IllegalStateException("Attribute " + attrType.toString() + " is already set");
+            }
+        }
+        addAttribute(attrType, attrValue);
+        return this;
+    }
+
+    /**
+     * Add an attribute with multiple values to the certification request we are building.
+     * Removed existing attributes with the same attrType.
+     *
+     * @param attrType  the OID giving the type of the attribute.
+     * @param attrValue the ASN.1 structure that forms the value of the attribute.
+     * @return this builder object.
+     */
+    public PKCS10CertificationRequestBuilder setAttribute(ASN1ObjectIdentifier attrType, ASN1Encodable[] attrValue)
+    {
+        // Remove existing copies of the attribute.
+        for (Iterator it = attributes.iterator(); it.hasNext(); )
+        {
+            if (((Attribute)it.next()).getAttrType().equals(attrType))
+            {
+                throw new IllegalStateException("Attribute " + attrType.toString() + " is already set");
+            }
+        }
+        addAttribute(attrType, attrValue);
+        return this;
+    }
+
+
+    /**
      * Add an attribute to the certification request we are building.
      *
-     * @param attrType the OID giving the type of the attribute.
+     * @param attrType  the OID giving the type of the attribute.
      * @param attrValue the ASN.1 structure that forms the value of the attribute.
      * @return this builder object.
      */
     public PKCS10CertificationRequestBuilder addAttribute(ASN1ObjectIdentifier attrType, ASN1Encodable attrValue)
     {
         attributes.add(new Attribute(attrType, new DERSet(attrValue)));
-
         return this;
     }
 
     /**
      * Add an attribute with multiple values to the certification request we are building.
      *
-     * @param attrType the OID giving the type of the attribute.
+     * @param attrType   the OID giving the type of the attribute.
      * @param attrValues an array of ASN.1 structures that form the value of the attribute.
      * @return this builder object.
      */
     public PKCS10CertificationRequestBuilder addAttribute(ASN1ObjectIdentifier attrType, ASN1Encodable[] attrValues)
     {
         attributes.add(new Attribute(attrType, new DERSet(attrValues)));
-
         return this;
     }
 
@@ -130,7 +183,7 @@ public class PKCS10CertificationRequestBuilder
         {
             ASN1EncodableVector v = new ASN1EncodableVector();
 
-            for (Iterator it = attributes.iterator(); it.hasNext();)
+            for (Iterator it = attributes.iterator(); it.hasNext(); )
             {
                 v.add(Attribute.getInstance(it.next()));
             }

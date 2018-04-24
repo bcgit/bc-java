@@ -4,6 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -376,7 +378,7 @@ public class BlockCipherTest
         "SEED/OCB/NoPadding",
         "eb04b3612769e1ad681f975af1a6f401d94dc88276dd50fc3ebce791c28825c652b7351acbad8c63d4d66191de94c970",
         "SEED/CCM/NoPadding",
-        "8bb16b37e7f1d4eb97bb1fa3b9bfd411aca64a3581bb3c5b2a91346983aa334984d73ad629a847f7",
+        "da684e8cab782d4ebae835726f43c3aeea97ee270897255714d464e981ac39af06c9483153f8a05a",
         "SEED/GCM/NoPadding",
         "ed5f6293c9a4f280af6695750bfb3bb3b60c214565a049494df955152757812ebfb93705895606c4378498a93f2541b5",
         "SM4/GCM/NoPadding",
@@ -899,8 +901,20 @@ public class BlockCipherTest
                 System.arraycopy(input, 0, input2, input.length * 2, input.length);
                 System.arraycopy(input, 0, input2, input.length * 3, input.length);
 
+                if (algorithm.indexOf("GCM") > 0)
+                {
+                    out = Cipher.getInstance(algorithm, "BC");
+                    out.init(Cipher.ENCRYPT_MODE, key, rand);
+                }
+
                 byte[] output2 = out.doFinal(input2);
 
+                if (algorithm.indexOf("GCM") > 0)
+                {
+                    out = Cipher.getInstance(algorithm, "BC");
+                    out.init(Cipher.ENCRYPT_MODE, key, rand);
+                }
+                
                 byte[] out1 = new byte[input2.length / 2 - out.getBlockSize() * 2 - 1];
 
                 try
@@ -923,6 +937,8 @@ public class BlockCipherTest
                     }
                 }
             }
+
+            serialiseTest(algorithm, input, output);
         }
         catch (TestFailedException e)
         {
@@ -932,7 +948,216 @@ public class BlockCipherTest
         {
             fail("" + algorithm + " failed short buffer decryption - " + e.toString());
         }
-    }
+     }
+
+     private void serialiseTest(
+         String algorithm,
+         byte[] input,
+         byte[] output)
+         throws Exception
+     {
+         Key key = null;
+         KeyGenerator keyGen;
+         SecureRandom rand;
+         Cipher in = null;
+         Cipher out = null;
+         CipherInputStream cIn;
+         CipherOutputStream cOut;
+         ByteArrayInputStream bIn;
+         ByteArrayOutputStream bOut;
+
+         rand = new FixedSecureRandom();
+
+         String baseAlgorithm, mode;
+         int index = algorithm.indexOf('/');
+
+         if (index > 0)
+         {
+             baseAlgorithm = algorithm.substring(0, index);
+             mode = algorithm.substring(index + 1, algorithm.lastIndexOf('/'));
+         }
+         else
+         {
+             baseAlgorithm = algorithm;
+             mode = null;
+         }
+
+         keyGen = KeyGenerator.getInstance(baseAlgorithm, "BC");
+         if (!keyGen.getAlgorithm().equals(baseAlgorithm))
+         {
+             fail("wrong key generator returned!");
+         }
+         keyGen.init(rand);
+
+         key = keyGen.generateKey();
+
+         bOut = new ByteArrayOutputStream();
+         ObjectOutputStream oOut = new ObjectOutputStream(bOut);
+
+         oOut.writeObject(key);
+
+         bIn = new ByteArrayInputStream(bOut.toByteArray());
+         ObjectInputStream oIn = new ObjectInputStream(bIn);
+
+         in = Cipher.getInstance(algorithm, "BC");
+         out = Cipher.getInstance(algorithm, "BC");
+
+         key = (Key)oIn.readObject();
+
+         if (!in.getAlgorithm().startsWith(baseAlgorithm))
+         {
+             fail("wrong cipher returned!");
+         }
+
+         if (algorithm.startsWith("RC2"))
+         {
+             if (baseAlgorithm.equals(algorithm) || algorithm.indexOf("ECB") > 0)
+             {
+                 out.init(Cipher.ENCRYPT_MODE, key, new RC2ParameterSpec(rc2Spec.getEffectiveKeyBits()), rand);
+             }
+             else
+             {
+                 out.init(Cipher.ENCRYPT_MODE, key, rc2Spec, rand);
+             }
+         }
+         else if (algorithm.startsWith("RC5"))
+         {
+             if (algorithm.startsWith("RC5-64"))
+             {
+                 out.init(Cipher.ENCRYPT_MODE, key, rc564Spec, rand);
+             }
+             else
+             {
+                 out.init(Cipher.ENCRYPT_MODE, key, rc5Spec, rand);
+             }
+         }
+         else
+         {
+             out.init(Cipher.ENCRYPT_MODE, key, rand);
+         }
+
+         //
+         // grab the iv if there is one
+         //
+         if (algorithm.startsWith("RC2"))
+         {
+             if (baseAlgorithm.equals(algorithm) || algorithm.indexOf("ECB") > 0)
+             {
+                 in.init(Cipher.DECRYPT_MODE, key, new RC2ParameterSpec(rc2Spec.getEffectiveKeyBits()), rand);
+             }
+             else
+             {
+                 in.init(Cipher.DECRYPT_MODE, key, rc2Spec, rand);
+             }
+         }
+         else if (algorithm.startsWith("RC5"))
+         {
+             if (algorithm.startsWith("RC5-64"))
+             {
+                 in.init(Cipher.DECRYPT_MODE, key, rc564Spec, rand);
+             }
+             else
+             {
+                 in.init(Cipher.DECRYPT_MODE, key, rc5Spec, rand);
+             }
+         }
+         else
+         {
+             byte[] iv;
+
+             iv = out.getIV();
+             if (iv != null)
+             {
+                 if (!shortIvOkay.contains(mode))
+                 {
+                     try
+                     {
+                         byte[] nIv = new byte[iv.length - 1];
+
+                         in.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(nIv));
+                         fail("failed to pick up short IV");
+                     }
+                     catch (InvalidAlgorithmParameterException e)
+                     {
+                         // ignore - this is what we want...
+                     }
+                 }
+
+                 IvParameterSpec spec;
+
+                 spec = new IvParameterSpec(iv);
+
+                 in.init(Cipher.DECRYPT_MODE, key, spec);
+             }
+             else
+             {
+                 in.init(Cipher.DECRYPT_MODE, key);
+             }
+         }
+
+         //
+         // encryption pass
+         //
+         bOut = new ByteArrayOutputStream();
+
+         cOut = new CipherOutputStream(bOut, out);
+
+         try
+         {
+             for (int i = 0; i != input.length / 2; i++)
+             {
+                 cOut.write(input[i]);
+             }
+
+             cOut.write(input, input.length / 2, input.length - input.length / 2);
+             cOut.close();
+         }
+         catch (IOException e)
+         {
+             fail("" + algorithm + " failed encryption - " + e.toString());
+         }
+
+         byte[] bytes;
+
+         bytes = bOut.toByteArray();
+
+         if (!Arrays.areEqual(bytes, output))
+         {
+             fail("" + algorithm + " failed encryption - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(bytes)));
+         }
+
+         //
+         // decryption pass
+         //
+         bIn = new ByteArrayInputStream(bytes);
+
+         cIn = new CipherInputStream(bIn, in);
+
+         try
+         {
+             DataInputStream dIn = new DataInputStream(cIn);
+
+             bytes = new byte[input.length];
+
+             for (int i = 0; i != input.length / 2; i++)
+             {
+                 bytes[i] = (byte)dIn.read();
+             }
+             dIn.readFully(bytes, input.length / 2, bytes.length - input.length / 2);
+
+             dIn.close();
+         }
+         catch (Exception e)
+         {
+             fail("" + algorithm + " failed decryption - " + e.toString());
+         }
+
+         if (!Arrays.areEqual(bytes, input))
+         {
+             fail("" + algorithm + " failed decryption - expected " + new String(Hex.encode(input)) + " got " + new String(Hex.encode(bytes)));
+         }
+     }
+
 
     private boolean noIDEA()
     {

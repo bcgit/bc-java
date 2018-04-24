@@ -72,7 +72,6 @@ public class HKDFBytesGenerator
      */
     private KeyParameter extract(byte[] salt, byte[] ikm)
     {
-        hMacHash.init(new KeyParameter(ikm));
         if (salt == null)
         {
             // TODO check if hashLen is indeed same as HMAC size

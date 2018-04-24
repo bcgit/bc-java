@@ -20,8 +20,10 @@ import javax.crypto.spec.RC2ParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.openssl.EncryptionException;
 import org.bouncycastle.openssl.PEMException;
@@ -32,6 +34,8 @@ class PEMUtilities
     private static final Map KEYSIZES = new HashMap();
     private static final Set PKCS5_SCHEME_1 = new HashSet();
     private static final Set PKCS5_SCHEME_2 = new HashSet();
+    private static final Map PRFS = new HashMap();
+    private static final Map PRFS_SALT = new HashMap();
 
     static
     {
@@ -58,6 +62,28 @@ class PEMUtilities
         KEYSIZES.put(PKCSObjectIdentifiers.pbeWithSHAAnd3_KeyTripleDES_CBC, Integers.valueOf(192));
         KEYSIZES.put(PKCSObjectIdentifiers.pbeWithSHAAnd128BitRC2_CBC, Integers.valueOf(128));
         KEYSIZES.put(PKCSObjectIdentifiers.pbeWithSHAAnd40BitRC2_CBC, Integers.valueOf(40));
+
+        PRFS.put(PKCSObjectIdentifiers.id_hmacWithSHA1, "PBKDF2withHMACSHA1");
+        PRFS.put(PKCSObjectIdentifiers.id_hmacWithSHA256, "PBKDF2withHMACSHA256");
+        PRFS.put(PKCSObjectIdentifiers.id_hmacWithSHA512, "PBKDF2withHMACSHA512");
+        PRFS.put(PKCSObjectIdentifiers.id_hmacWithSHA224, "PBKDF2withHMACSHA224");
+        PRFS.put(PKCSObjectIdentifiers.id_hmacWithSHA384, "PBKDF2withHMACSHA384");
+        PRFS.put(NISTObjectIdentifiers.id_hmacWithSHA3_224, "PBKDF2withHMACSHA3-224");
+        PRFS.put(NISTObjectIdentifiers.id_hmacWithSHA3_256, "PBKDF2withHMACSHA3-256");
+        PRFS.put(NISTObjectIdentifiers.id_hmacWithSHA3_384, "PBKDF2withHMACSHA3-384");
+        PRFS.put(NISTObjectIdentifiers.id_hmacWithSHA3_512, "PBKDF2withHMACSHA3-512");
+        PRFS.put(CryptoProObjectIdentifiers.gostR3411Hmac, "PBKDF2withHMACGOST3411");
+
+        PRFS_SALT.put(PKCSObjectIdentifiers.id_hmacWithSHA1, Integers.valueOf(20));
+        PRFS_SALT.put(PKCSObjectIdentifiers.id_hmacWithSHA256, Integers.valueOf(32));
+        PRFS_SALT.put(PKCSObjectIdentifiers.id_hmacWithSHA512, Integers.valueOf(64));
+        PRFS_SALT.put(PKCSObjectIdentifiers.id_hmacWithSHA224, Integers.valueOf(28));
+        PRFS_SALT.put(PKCSObjectIdentifiers.id_hmacWithSHA384, Integers.valueOf(48));
+        PRFS_SALT.put(NISTObjectIdentifiers.id_hmacWithSHA3_224, Integers.valueOf(28));
+        PRFS_SALT.put(NISTObjectIdentifiers.id_hmacWithSHA3_256, Integers.valueOf(32));
+        PRFS_SALT.put(NISTObjectIdentifiers.id_hmacWithSHA3_384, Integers.valueOf(48));
+        PRFS_SALT.put(NISTObjectIdentifiers.id_hmacWithSHA3_512, Integers.valueOf(64));
+        PRFS_SALT.put(CryptoProObjectIdentifiers.gostR3411Hmac, Integers.valueOf(32));
     }
 
     static int getKeySize(String algorithm)
@@ -68,6 +94,21 @@ class PEMUtilities
         }
         
         return ((Integer)KEYSIZES.get(algorithm)).intValue();
+    }
+
+    static int getSaltSize(ASN1ObjectIdentifier algorithm)
+    {
+        if (!PRFS_SALT.containsKey(algorithm))
+        {
+            throw new IllegalStateException("no salt size for algorithm: " + algorithm);
+        }
+
+        return ((Integer)PRFS_SALT.get(algorithm)).intValue();
+    }
+
+    static boolean isHmacSHA1(AlgorithmIdentifier prf)
+    {
+        return prf == null || prf.getAlgorithm().equals(PKCSObjectIdentifiers.id_hmacWithSHA1);
     }
 
     static boolean isPKCS5Scheme1(ASN1ObjectIdentifier algOid)
@@ -89,6 +130,22 @@ class PEMUtilities
         throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeySpecException
     {
         SecretKeyFactory keyGen = helper.createSecretKeyFactory("PBKDF2with8BIT");
+                            
+        SecretKey sKey = keyGen.generateSecret(new PBEKeySpec(password, salt, iterationCount, PEMUtilities.getKeySize(algorithm)));
+
+        return new SecretKeySpec(sKey.getEncoded(), algorithm);
+    }
+
+    public static SecretKey generateSecretKeyForPKCS5Scheme2(JcaJceHelper helper, String algorithm, char[] password, byte[] salt, int iterationCount, AlgorithmIdentifier prf)
+        throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeySpecException
+    {
+        String prfName = (String)PRFS.get(prf.getAlgorithm());
+        if (prfName == null)
+        {
+            throw new NoSuchAlgorithmException("unknown PRF in PKCS#2: " + prf.getAlgorithm());
+        }
+
+        SecretKeyFactory keyGen = helper.createSecretKeyFactory(prfName);
 
         SecretKey sKey = keyGen.generateSecret(new PBEKeySpec(password, salt, iterationCount, PEMUtilities.getKeySize(algorithm)));
 

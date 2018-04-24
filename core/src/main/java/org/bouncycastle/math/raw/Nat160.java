@@ -127,6 +127,15 @@ public abstract class Nat160
         z[4] = x[4];
     }
 
+    public static void copy(int[] x, int xOff, int[] z, int zOff)
+    {
+        z[zOff + 0] = x[xOff + 0];
+        z[zOff + 1] = x[xOff + 1];
+        z[zOff + 2] = x[xOff + 2];
+        z[zOff + 3] = x[xOff + 3];
+        z[zOff + 4] = x[xOff + 4];
+    }
+
     public static int[] create()
     {
         return new int[5];
@@ -609,8 +618,8 @@ public abstract class Nat160
         }
 
         long x_3 = x[3] & M;
-        long zz_5 = zz[5] & M;
-        long zz_6 = zz[6] & M;
+        long zz_5 = (zz[5] & M) + (zz_4 >>> 32); zz_4 &= M;
+        long zz_6 = (zz[6] & M) + (zz_5 >>> 32); zz_5 &= M;
         {
             zz_3 += x_3 * x_0;
             w = (int)zz_3;
@@ -624,8 +633,8 @@ public abstract class Nat160
         }
 
         long x_4 = x[4] & M;
-        long zz_7 = zz[7] & M;
-        long zz_8 = zz[8] & M;
+        long zz_7 = (zz[7] & M) + (zz_6 >>> 32); zz_6 &= M;
+        long zz_8 = (zz[8] & M) + (zz_7 >>> 32); zz_7 &= M;
         {
             zz_4 += x_4 * x_0;
             w = (int)zz_4;
@@ -649,7 +658,7 @@ public abstract class Nat160
         w = (int)zz_8;
         zz[8] = (w << 1) | c;
         c = w >>> 31;
-        w = zz[9] + (int)(zz_8 >> 32);
+        w = zz[9] + (int)(zz_8 >>> 32);
         zz[9] = (w << 1) | c;
     }
 
@@ -704,8 +713,8 @@ public abstract class Nat160
         }
 
         long x_3 = x[xOff + 3] & M;
-        long zz_5 = zz[zzOff + 5] & M;
-        long zz_6 = zz[zzOff + 6] & M;
+        long zz_5 = (zz[zzOff + 5] & M) + (zz_4 >>> 32); zz_4 &= M;
+        long zz_6 = (zz[zzOff + 6] & M) + (zz_5 >>> 32); zz_5 &= M;
         {
             zz_3 += x_3 * x_0;
             w = (int)zz_3;
@@ -719,8 +728,8 @@ public abstract class Nat160
         }
 
         long x_4 = x[xOff + 4] & M;
-        long zz_7 = zz[zzOff + 7] & M;
-        long zz_8 = zz[zzOff + 8] & M;
+        long zz_7 = (zz[zzOff + 7] & M) + (zz_6 >>> 32); zz_6 &= M;
+        long zz_8 = (zz[zzOff + 8] & M) + (zz_7 >>> 32); zz_7 &= M;
         {
             zz_4 += x_4 * x_0;
             w = (int)zz_4;
@@ -744,7 +753,7 @@ public abstract class Nat160
         w = (int)zz_8;
         zz[zzOff + 8] = (w << 1) | c;
         c = w >>> 31;
-        w = zz[zzOff + 9] + (int)(zz_8 >> 32);
+        w = zz[zzOff + 9] + (int)(zz_8 >>> 32);
         zz[zzOff + 9] = (w << 1) | c;
     }
 

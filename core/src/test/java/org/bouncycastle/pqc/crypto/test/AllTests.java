@@ -26,6 +26,18 @@ public class AllTests
         suite.addTestSuite(NTRUSignatureKeyTest.class);
         suite.addTestSuite(NTRUSignerTest.class);
         suite.addTestSuite(NTRUSigningParametersTest.class);
+        suite.addTestSuite(XMSSMTPrivateKeyTest.class);
+        suite.addTestSuite(XMSSMTPublicKeyTest.class);
+        suite.addTestSuite(XMSSMTSignatureTest.class);
+        suite.addTestSuite(XMSSMTTest.class);
+        suite.addTestSuite(XMSSOidTest.class);
+        suite.addTestSuite(XMSSPrivateKeyTest.class);
+        suite.addTestSuite(XMSSPublicKeyTest.class);
+        suite.addTestSuite(XMSSReducedSignatureTest.class);
+        suite.addTestSuite(XMSSSignatureTest.class);
+        suite.addTestSuite(XMSSTest.class);
+        suite.addTestSuite(XMSSUtilTest.class);
+        suite.addTestSuite(AllTests.SimpleTestTest.class);
 
         return new BCTestSetup(suite);
     }

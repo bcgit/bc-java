@@ -47,7 +47,7 @@ public class PGPSecretKeyRingCollection
      * Build a PGPSecretKeyRingCollection from the passed in input stream.
      *
      * @param in  input stream containing data
-     * @throws IOException if a problem parsinh the base stream occurs
+     * @throws IOException if a problem parsing the base stream occurs
      * @throws PGPException if an object is encountered which isn't a PGPSecretKeyRing
      */
     public PGPSecretKeyRingCollection(

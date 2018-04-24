@@ -2,12 +2,14 @@ package org.bouncycastle.crypto.digests;
 
 
 import org.bouncycastle.util.Memoable;
+import org.bouncycastle.util.Pack;
 
 /**
  * implementation of MD5 as outlined in "Handbook of Applied Cryptography", pages 346 - 347.
  */
 public class MD5Digest
     extends GeneralDigest
+    implements EncodableDigest
 {
     private static final int    DIGEST_LENGTH = 16;
 
@@ -22,6 +24,22 @@ public class MD5Digest
     public MD5Digest()
     {
         reset();
+    }
+
+    public MD5Digest(byte[] encodedState)
+    {
+        super(encodedState);
+
+        H1 = Pack.bigEndianToInt(encodedState, 16);
+        H2 = Pack.bigEndianToInt(encodedState, 20);
+        H3 = Pack.bigEndianToInt(encodedState, 24);
+        H4 = Pack.bigEndianToInt(encodedState, 28);
+
+        xOff = Pack.bigEndianToInt(encodedState, 32);
+        for (int i = 0; i != xOff; i++)
+        {
+            X[i] = Pack.bigEndianToInt(encodedState, 36 + (i * 4));
+        }
     }
 
     /**
@@ -319,5 +337,25 @@ public class MD5Digest
         MD5Digest d = (MD5Digest)other;
 
         copyIn(d);
+    }
+
+    public byte[] getEncodedState()
+    {
+        byte[] state = new byte[36 + xOff * 4];
+
+        super.populateState(state);
+
+        Pack.intToBigEndian(H1, state, 16);
+        Pack.intToBigEndian(H2, state, 20);
+        Pack.intToBigEndian(H3, state, 24);
+        Pack.intToBigEndian(H4, state, 28);
+        Pack.intToBigEndian(xOff, state, 32);
+
+        for (int i = 0; i != xOff; i++)
+        {
+            Pack.intToBigEndian(X[i], state, 36 + (i * 4));
+        }
+
+        return state;
     }
 }

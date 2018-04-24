@@ -2,6 +2,9 @@ package org.bouncycastle.crypto.tls;
 
 import java.io.IOException;
 
+/**
+ * Base interface to provide TLS authentication credentials.
+ */
 public interface TlsAuthentication
 {
     /**

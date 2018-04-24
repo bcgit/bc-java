@@ -11,6 +11,7 @@ import java.security.spec.ECPublicKeySpec;
 import java.security.spec.EllipticCurve;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERBitString;
@@ -25,16 +26,15 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
+import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KeyUtil;
+import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jce.ECGOST3410NamedCurveTable;
 import org.bouncycastle.jce.interfaces.ECPointEncoder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.custom.sec.SecP256K1Point;
-import org.bouncycastle.math.ec.custom.sec.SecP256R1Point;
-import org.bouncycastle.util.Strings;
 
 public class BCECGOST3410PublicKey
     implements ECPublicKey, org.bouncycastle.jce.interfaces.ECPublicKey, ECPointEncoder
@@ -44,14 +44,14 @@ public class BCECGOST3410PublicKey
     private String algorithm = "ECGOST3410";
     private boolean withCompression;
 
-    private transient org.bouncycastle.math.ec.ECPoint q;
+    private transient ECPublicKeyParameters   ecPublicKey;
     private transient ECParameterSpec ecSpec;
-    private transient GOST3410PublicKeyAlgParameters gostParams;
+    private transient ASN1Encodable gostParams;
 
     public BCECGOST3410PublicKey(
         BCECGOST3410PublicKey key)
     {
-        this.q = key.q;
+        this.ecPublicKey = key.ecPublicKey;
         this.ecSpec = key.ecSpec;
         this.withCompression = key.withCompression;
         this.gostParams = key.gostParams;
@@ -61,29 +61,28 @@ public class BCECGOST3410PublicKey
         ECPublicKeySpec spec)
     {
         this.ecSpec = spec.getParams();
-        this.q = EC5Util.convertPoint(ecSpec, spec.getW(), false);
+        this.ecPublicKey = new ECPublicKeyParameters(EC5Util.convertPoint(ecSpec, spec.getW(), false), EC5Util.getDomainParameters(null, spec.getParams()));
     }
 
     public BCECGOST3410PublicKey(
-        org.bouncycastle.jce.spec.ECPublicKeySpec spec)
+        org.bouncycastle.jce.spec.ECPublicKeySpec spec,
+        ProviderConfiguration configuration)
     {
-        this.q = spec.getQ();
-
         if (spec.getParams() != null) // can be null if implictlyCa
         {
             ECCurve curve = spec.getParams().getCurve();
             EllipticCurve ellipticCurve = EC5Util.convertCurve(curve, spec.getParams().getSeed());
 
+            // this may seem a little long-winded but it's how we pick up the custom curve.
+            this.ecPublicKey = new ECPublicKeyParameters(
+                spec.getQ(), ECUtil.getDomainParameters(configuration, spec.getParams()));
             this.ecSpec = EC5Util.convertSpec(ellipticCurve, spec.getParams());
         }
         else
         {
-            if (q.getCurve() == null)
-            {
-                org.bouncycastle.jce.spec.ECParameterSpec s = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
+            org.bouncycastle.jce.spec.ECParameterSpec s = configuration.getEcImplicitlyCa();
 
-                q = s.getCurve().createPoint(q.getAffineXCoord().toBigInteger(), q.getAffineYCoord().toBigInteger());
-            }
+            this.ecPublicKey = new ECPublicKeyParameters(s.getCurve().createPoint(spec.getQ().getAffineXCoord().toBigInteger(), spec.getQ().getAffineYCoord().toBigInteger()), EC5Util.getDomainParameters(configuration, (ECParameterSpec)null));
             this.ecSpec = null;
         }
     }
@@ -93,10 +92,10 @@ public class BCECGOST3410PublicKey
         ECPublicKeyParameters params,
         ECParameterSpec spec)
     {
-        ECDomainParameters dp = params.getParameters();
+        ECDomainParameters      dp = params.getParameters();
 
         this.algorithm = algorithm;
-        this.q = params.getQ();
+        this.ecPublicKey = params;
 
         if (spec == null)
         {
@@ -118,7 +117,7 @@ public class BCECGOST3410PublicKey
         ECDomainParameters dp = params.getParameters();
 
         this.algorithm = algorithm;
-        this.q = params.getQ();
+        this.ecPublicKey = params;
 
         if (spec == null)
         {
@@ -142,7 +141,7 @@ public class BCECGOST3410PublicKey
         ECPublicKeyParameters params)
     {
         this.algorithm = algorithm;
-        this.q = params.getQ();
+        this.ecPublicKey = params;
         this.ecSpec = null;
     }
 
@@ -150,9 +149,7 @@ public class BCECGOST3410PublicKey
     {
         return new ECParameterSpec(
             ellipticCurve,
-            new ECPoint(
-                dp.getG().getAffineXCoord().toBigInteger(),
-                dp.getG().getAffineYCoord().toBigInteger()),
+            EC5Util.convertPoint(dp.getG()),
             dp.getN(),
             dp.getH().intValue());
     }
@@ -162,7 +159,7 @@ public class BCECGOST3410PublicKey
     {
         this.algorithm = key.getAlgorithm();
         this.ecSpec = key.getParams();
-        this.q = EC5Util.convertPoint(this.ecSpec, key.getW(), false);
+        this.ecPublicKey = new ECPublicKeyParameters(EC5Util.convertPoint(this.ecSpec, key.getW(), false), EC5Util.getDomainParameters(null, key.getParams()));
     }
 
     BCECGOST3410PublicKey(
@@ -187,34 +184,41 @@ public class BCECGOST3410PublicKey
         }
 
         byte[] keyEnc = key.getOctets();
-        byte[] x = new byte[32];
-        byte[] y = new byte[32];
 
-        for (int i = 0; i != x.length; i++)
+        byte[] x9Encoding = new byte[65];
+        x9Encoding[0] = 0x04;
+        for (int i = 1; i <= 32; ++i)
         {
-            x[i] = keyEnc[32 - 1 - i];
+            x9Encoding[i     ] = keyEnc[32 - i];
+            x9Encoding[i + 32] = keyEnc[64 - i];
         }
 
-        for (int i = 0; i != y.length; i++)
+        ASN1ObjectIdentifier paramOID;
+
+        if (info.getAlgorithm().getParameters() instanceof ASN1ObjectIdentifier)
         {
-            y[i] = keyEnc[64 - 1 - i];
+            paramOID = ASN1ObjectIdentifier.getInstance(info.getAlgorithm().getParameters());
+            gostParams = paramOID;
+        }
+        else
+        {
+            GOST3410PublicKeyAlgParameters params = GOST3410PublicKeyAlgParameters.getInstance(info.getAlgorithm().getParameters());
+            gostParams = params;
+            paramOID = params.getPublicKeyParamSet();
+
         }
 
-        gostParams = GOST3410PublicKeyAlgParameters.getInstance(info.getAlgorithm().getParameters());
-
-        ECNamedCurveParameterSpec spec = ECGOST3410NamedCurveTable.getParameterSpec(ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet()));
+        ECNamedCurveParameterSpec spec = ECGOST3410NamedCurveTable.getParameterSpec(ECGOST3410NamedCurves.getName(paramOID));
 
         ECCurve curve = spec.getCurve();
         EllipticCurve ellipticCurve = EC5Util.convertCurve(curve, spec.getSeed());
 
-        this.q = curve.createPoint(new BigInteger(1, x), new BigInteger(1, y));
+        this.ecPublicKey = new ECPublicKeyParameters(curve.decodePoint(x9Encoding), ECUtil.getDomainParameters(null, spec));
 
-        ecSpec = new ECNamedCurveSpec(
-            ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet()),
+        this.ecSpec = new ECNamedCurveSpec(
+            ECGOST3410NamedCurves.getName(paramOID),
             ellipticCurve,
-            new ECPoint(
-                spec.getG().getAffineXCoord().toBigInteger(),
-                spec.getG().getAffineYCoord().toBigInteger()),
+            EC5Util.convertPoint(spec.getG()),
             spec.getN(), spec.getH());
     }
 
@@ -233,11 +237,9 @@ public class BCECGOST3410PublicKey
         ASN1Encodable params;
         SubjectPublicKeyInfo info;
 
-        if (gostParams != null)
-        {
-            params = gostParams;
-        }
-        else
+        params = getGostParams();
+
+        if (params == null)
         {
             if (ecSpec instanceof ECNamedCurveSpec)
             {
@@ -260,8 +262,8 @@ public class BCECGOST3410PublicKey
             }
         }
 
-        BigInteger bX = this.q.getAffineXCoord().toBigInteger();
-        BigInteger bY = this.q.getAffineYCoord().toBigInteger();
+        BigInteger bX = this.ecPublicKey.getQ().getAffineXCoord().toBigInteger();
+        BigInteger bY = this.ecPublicKey.getQ().getAffineYCoord().toBigInteger();
         byte[] encKey = new byte[64];
 
         extractBytes(encKey, 0, bX);
@@ -312,22 +314,22 @@ public class BCECGOST3410PublicKey
 
     public ECPoint getW()
     {
-        return new ECPoint(q.getAffineXCoord().toBigInteger(), q.getAffineYCoord().toBigInteger());
+        return EC5Util.convertPoint(ecPublicKey.getQ());
     }
 
     public org.bouncycastle.math.ec.ECPoint getQ()
     {
         if (ecSpec == null)
         {
-            return q.getDetachedPoint();
+            return ecPublicKey.getQ().getDetachedPoint();
         }
 
-        return q;
+        return ecPublicKey.getQ();
     }
 
-    public org.bouncycastle.math.ec.ECPoint engineGetQ()
+    ECPublicKeyParameters engineGetKeyParameters()
     {
-        return q;
+        return ecPublicKey;
     }
 
     org.bouncycastle.jce.spec.ECParameterSpec engineGetSpec()
@@ -342,14 +344,7 @@ public class BCECGOST3410PublicKey
 
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
-        String nl = Strings.lineSeparator();
-
-        buf.append("EC Public Key").append(nl);
-        buf.append("            X: ").append(this.q.getAffineXCoord().toBigInteger().toString(16)).append(nl);
-        buf.append("            Y: ").append(this.q.getAffineYCoord().toBigInteger().toString(16)).append(nl);
-
-        return buf.toString();
+        return ECUtil.publicKeyToString(algorithm, ecPublicKey.getQ(), engineGetSpec());
     }
 
     public void setPointFormat(String style)
@@ -366,12 +361,12 @@ public class BCECGOST3410PublicKey
 
         BCECGOST3410PublicKey other = (BCECGOST3410PublicKey)o;
 
-        return engineGetQ().equals(other.engineGetQ()) && (engineGetSpec().equals(other.engineGetSpec()));
+        return ecPublicKey.getQ().equals(other.ecPublicKey.getQ()) && (engineGetSpec().equals(other.engineGetSpec()));
     }
 
     public int hashCode()
     {
-        return engineGetQ().hashCode() ^ engineGetSpec().hashCode();
+        return ecPublicKey.getQ().hashCode() ^ engineGetSpec().hashCode();
     }
 
     private void readObject(
@@ -394,8 +389,15 @@ public class BCECGOST3410PublicKey
         out.writeObject(this.getEncoded());
     }
 
-    public GOST3410PublicKeyAlgParameters getGostParams()
+    ASN1Encodable getGostParams()
     {
+        if (gostParams == null && ecSpec instanceof ECNamedCurveSpec)
+        {
+            this.gostParams = new GOST3410PublicKeyAlgParameters(
+                ECGOST3410NamedCurves.getOID(((ECNamedCurveSpec)ecSpec).getName()),
+                CryptoProObjectIdentifiers.gostR3411_94_CryptoProParamSet);
+        }
+
         return gostParams;
     }
 }

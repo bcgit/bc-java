@@ -5,6 +5,8 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.KeySpec;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.PBEKeySpec;
@@ -14,9 +16,12 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.PasswordConverter;
+import org.bouncycastle.jcajce.PBKDF2Key;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameters;
@@ -24,9 +29,26 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseSecretKeyFactory;
 import org.bouncycastle.jcajce.provider.symmetric.util.PBE;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 import org.bouncycastle.jcajce.spec.PBKDF2KeySpec;
+import org.bouncycastle.util.Integers;
 
 public class PBEPBKDF2
 {
+    private static final Map prfCodes = new HashMap();
+
+    static
+    {
+        prfCodes.put(CryptoProObjectIdentifiers.gostR3411Hmac, Integers.valueOf(PBE.GOST3411));
+        prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA1, Integers.valueOf(PBE.SHA1));
+        prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA256, Integers.valueOf(PBE.SHA256));
+        prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA224, Integers.valueOf(PBE.SHA224));
+        prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA384, Integers.valueOf(PBE.SHA384));
+        prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA512, Integers.valueOf(PBE.SHA512));
+        prfCodes.put(NISTObjectIdentifiers.id_hmacWithSHA3_256, Integers.valueOf(PBE.SHA3_256));
+        prfCodes.put(NISTObjectIdentifiers.id_hmacWithSHA3_224, Integers.valueOf(PBE.SHA3_224));
+        prfCodes.put(NISTObjectIdentifiers.id_hmacWithSHA3_384, Integers.valueOf(PBE.SHA3_384));
+        prfCodes.put(NISTObjectIdentifiers.id_hmacWithSHA3_512, Integers.valueOf(PBE.SHA3_512));
+    }
+
     private PBEPBKDF2()
     {
 
@@ -67,7 +89,7 @@ public class PBEPBKDF2
             if (paramSpec == PBEParameterSpec.class)
             {
                 return new PBEParameterSpec(params.getSalt(),
-                                params.getIterationCount().intValue());
+                    params.getIterationCount().intValue());
             }
 
             throw new InvalidParameterSpecException("unknown parameter spec passed to PBKDF2 PBE parameters object.");
@@ -82,10 +104,10 @@ public class PBEPBKDF2
                 throw new InvalidParameterSpecException("PBEParameterSpec required to initialise a PBKDF2 PBE parameters algorithm parameters object");
             }
 
-            PBEParameterSpec    pbeSpec = (PBEParameterSpec)paramSpec;
+            PBEParameterSpec pbeSpec = (PBEParameterSpec)paramSpec;
 
             this.params = new PBKDF2Params(pbeSpec.getSalt(),
-                                pbeSpec.getIterationCount());
+                pbeSpec.getIterationCount());
         }
 
         protected void engineInit(
@@ -119,12 +141,19 @@ public class PBEPBKDF2
         extends BaseSecretKeyFactory
     {
         private int scheme;
+        private int defaultDigest;
 
         public BasePBKDF2(String name, int scheme)
+        {
+            this(name, scheme, SHA1);
+        }
+
+        public BasePBKDF2(String name, int scheme, int defaultDigest)
         {
             super(name, PKCSObjectIdentifiers.id_PBKDF2);
 
             this.scheme = scheme;
+            this.defaultDigest = defaultDigest;
         }
 
         protected SecretKey engineGenerateSecret(
@@ -137,7 +166,8 @@ public class PBEPBKDF2
 
                 if (pbeSpec.getSalt() == null)
                 {
-                    throw new InvalidKeySpecException("missing required salt");
+                    return new PBKDF2Key(((PBEKeySpec)keySpec).getPassword(),
+                        scheme == PKCS5S2 ? PasswordConverter.ASCII : PasswordConverter.UTF8);
                 }
 
                 if (pbeSpec.getIterationCount() <= 0)
@@ -170,7 +200,7 @@ public class PBEPBKDF2
                 }
                 else
                 {
-                    int digest = SHA1;
+                    int digest = defaultDigest;
                     int keySize = pbeSpec.getKeyLength();
                     int ivSize = -1;    // JDK 1,2 and earlier does not understand simplified version.
                     CipherParameters param = PBE.Util.makePBEMacParameters(pbeSpec, scheme, digest, keySize);
@@ -186,15 +216,12 @@ public class PBEPBKDF2
         private int getDigestCode(ASN1ObjectIdentifier algorithm)
             throws InvalidKeySpecException
         {
-            if (algorithm.equals(CryptoProObjectIdentifiers.gostR3411Hmac))
+            Integer code = (Integer)prfCodes.get(algorithm);
+            if (code != null)
             {
-                return GOST3411;
+                return code.intValue();
             }
-            else if (algorithm.equals(PKCSObjectIdentifiers.id_hmacWithSHA1))
-            {
-                return SHA1;
-            }
-
+            
             throw new InvalidKeySpecException("Invalid KeySpec: unknown PRF algorithm " + algorithm);
         }
     }
@@ -205,6 +232,87 @@ public class PBEPBKDF2
         public PBKDF2withUTF8()
         {
             super("PBKDF2", PKCS5S2_UTF8);
+        }
+    }
+
+    public static class PBKDF2withSHA224
+        extends BasePBKDF2
+    {
+        public PBKDF2withSHA224()
+        {
+            super("PBKDF2", PKCS5S2_UTF8, SHA224);
+        }
+    }
+
+    public static class PBKDF2withSHA256
+        extends BasePBKDF2
+    {
+        public PBKDF2withSHA256()
+        {
+            super("PBKDF2", PKCS5S2_UTF8, SHA256);
+        }
+    }
+
+    public static class PBKDF2withSHA384
+        extends BasePBKDF2
+    {
+        public PBKDF2withSHA384()
+        {
+            super("PBKDF2", PKCS5S2_UTF8, SHA384);
+        }
+    }
+
+    public static class PBKDF2withSHA512
+        extends BasePBKDF2
+    {
+        public PBKDF2withSHA512()
+        {
+            super("PBKDF2", PKCS5S2_UTF8, SHA512);
+        }
+    }
+
+    public static class PBKDF2withGOST3411
+        extends BasePBKDF2
+    {
+        public PBKDF2withGOST3411()
+        {
+            super("PBKDF2", PKCS5S2_UTF8, GOST3411);
+        }
+    }
+
+    public static class PBKDF2withSHA3_224
+        extends BasePBKDF2
+    {
+        public PBKDF2withSHA3_224()
+        {
+            super("PBKDF2", PKCS5S2_UTF8, SHA3_224);
+        }
+    }
+
+    public static class PBKDF2withSHA3_256
+        extends BasePBKDF2
+    {
+        public PBKDF2withSHA3_256()
+        {
+            super("PBKDF2", PKCS5S2_UTF8, SHA3_256);
+        }
+    }
+
+    public static class PBKDF2withSHA3_384
+        extends BasePBKDF2
+    {
+        public PBKDF2withSHA3_384()
+        {
+            super("PBKDF2", PKCS5S2_UTF8, SHA3_384);
+        }
+    }
+
+    public static class PBKDF2withSHA3_512
+        extends BasePBKDF2
+    {
+        public PBKDF2withSHA3_512()
+        {
+            super("PBKDF2", PKCS5S2_UTF8, SHA3_512);
         }
     }
 
@@ -231,9 +339,21 @@ public class PBEPBKDF2
             provider.addAlgorithm("AlgorithmParameters.PBKDF2", PREFIX + "$AlgParams");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameters." + PKCSObjectIdentifiers.id_PBKDF2, "PBKDF2");
             provider.addAlgorithm("SecretKeyFactory.PBKDF2", PREFIX + "$PBKDF2withUTF8");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory.PBKDF2WITHHMACSHA1", "PBKDF2");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory.PBKDF2WITHHMACSHA1ANDUTF8", "PBKDF2");
             provider.addAlgorithm("Alg.Alias.SecretKeyFactory." + PKCSObjectIdentifiers.id_PBKDF2, "PBKDF2");
             provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHASCII", PREFIX + "$PBKDF2with8BIT");
             provider.addAlgorithm("Alg.Alias.SecretKeyFactory.PBKDF2WITH8BIT", "PBKDF2WITHASCII");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory.PBKDF2WITHHMACSHA1AND8BIT", "PBKDF2WITHASCII");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA224", PREFIX + "$PBKDF2withSHA224");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA256", PREFIX + "$PBKDF2withSHA256");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA384", PREFIX + "$PBKDF2withSHA384");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA512", PREFIX + "$PBKDF2withSHA512");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA3-224", PREFIX + "$PBKDF2withSHA3_224");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA3-256", PREFIX + "$PBKDF2withSHA3_256");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA3-384", PREFIX + "$PBKDF2withSHA3_384");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACSHA3-512", PREFIX + "$PBKDF2withSHA3_512");
+            provider.addAlgorithm("SecretKeyFactory.PBKDF2WITHHMACGOST3411", PREFIX + "$PBKDF2withGOST3411");
         }
     }
 }

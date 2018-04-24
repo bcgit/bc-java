@@ -1,5 +1,6 @@
 package org.bouncycastle.x509;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
@@ -20,21 +21,23 @@ import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.asn1.x509.X509ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.jcajce.provider.asymmetric.x509.CertificateFactory;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.X509Principal;
-import org.bouncycastle.jce.provider.X509CertificateObject;
 import org.bouncycastle.x509.extension.X509ExtensionUtil;
 
 /**
@@ -43,6 +46,9 @@ import org.bouncycastle.x509.extension.X509ExtensionUtil;
  */
 public class X509V3CertificateGenerator
 {
+    private final JcaJceHelper bcHelper = new BCJcaJceHelper(); // needed to force provider loading
+    private final CertificateFactory certificateFactory = new CertificateFactory();
+
     private V3TBSCertificateGenerator   tbsGen;
     private ASN1ObjectIdentifier        sigOID;
     private AlgorithmIdentifier         sigAlgId;
@@ -441,7 +447,7 @@ public class X509V3CertificateGenerator
         {
             return generateJcaObject(tbsCert, signature);
         }
-        catch (CertificateParsingException e)
+        catch (Exception e)
         {
             throw new ExtCertificateEncodingException("exception producing certificate object", e);
         }
@@ -486,7 +492,7 @@ public class X509V3CertificateGenerator
         {
             return generateJcaObject(tbsCert, signature);
         }
-        catch (CertificateParsingException e)
+        catch (Exception e)
         {
             throw new ExtCertificateEncodingException("exception producing certificate object", e);
         }
@@ -503,7 +509,7 @@ public class X509V3CertificateGenerator
     }
 
     private X509Certificate generateJcaObject(TBSCertificate tbsCert, byte[] signature)
-        throws CertificateParsingException
+        throws Exception
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
@@ -511,7 +517,8 @@ public class X509V3CertificateGenerator
         v.add(sigAlgId);
         v.add(new DERBitString(signature));
 
-        return new X509CertificateObject(Certificate.getInstance(new DERSequence(v)));
+        return (X509Certificate)certificateFactory.engineGenerateCertificate(
+            new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
     }
 
     /**

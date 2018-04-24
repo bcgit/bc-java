@@ -2,12 +2,9 @@ package org.bouncycastle.pqc.jcajce.provider.test;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -16,7 +13,6 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
-import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -27,6 +23,9 @@ import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.RainbowParameterSpec;
 import org.bouncycastle.util.encoders.Hex;
 
+/**
+ * Test cases for the use of Rainbow with the BCPQC provider.
+ */
 public class RainbowSignatureTest
     extends TestCase
 {
@@ -92,7 +91,7 @@ public class RainbowSignatureTest
     {
         // generate new signature instance for verification
         //            sigVerify = (Signature) sig.getClass().newInstance();
-        sigVerify = Signature.getInstance("SHA384WITHRainbow");
+        sigVerify = Signature.getInstance("SHA384withRainbow", "BCPQC");
 
         for (int j = 0; j < numPassesKPG; j++)
         {
@@ -144,10 +143,6 @@ public class RainbowSignatureTest
                                                int numPassesSigVer, int keySize)
         throws Exception
     {
-
-        System.out.println("=== TEST ===");
-        System.out.println(numPassesKPG + " Tests");
-        System.out.println("KeySize: " + keySize + "");
         for (int j = 0; j < numPassesKPG; j++)
         {
             // generate key pair
@@ -188,58 +183,6 @@ public class RainbowSignatureTest
         }
 
     }
-
-    protected final void performSignVerifyTest(int numPassesSigVer, PublicKey pubKey, PrivateKey privKey)
-        throws Exception
-    {
-        // initialize signature instances
-        sig.initSign(privKey);
-        sigVerify.initVerify(pubKey);
-
-        for (int k = 1; k <= numPassesSigVer; k++)
-        {
-            // generate random message
-            final int messageSize = 100;
-            mBytes = new byte[messageSize];
-            rand.nextBytes(mBytes);
-
-            // sign
-            sig.update(mBytes);
-            sigBytes = sig.sign();
-
-            // verify
-            sigVerify.update(mBytes);
-            valid = sigVerify.verify(sigBytes);
-
-
-            // compare
-            assertTrue(
-                "Signature generation and verification test failed.\n"
-                    + "Message: \""
-                    + new String(Hex.encode(mBytes)) + "\"\n"
-                    + privKey + "\n" + pubKey, valid);
-        }
-    }
-
-    protected final void performVerifyTest(PublicKey pk, byte[] signature, byte[] message)
-    {
-        try
-        {
-            sig.initVerify(pk);
-            sig.update(message);
-            valid = sig.verify(signature);
-            assertTrue("Signature generation and verification test failed.\n" + "Message: \"" + new String(Hex.encode(mBytes)) + "\"\n" + privKey + "\n" + pubKey, valid);
-        }
-        catch (InvalidKeyException e)
-        {
-            e.printStackTrace();
-        }
-        catch (SignatureException e)
-        {
-            e.printStackTrace();
-        }
-    }
-
 
     /**
      * Using ParameterSpecs to initialize the key pair generator without initialization.
@@ -318,22 +261,6 @@ public class RainbowSignatureTest
         assertEquals(privKey.hashCode(), privKeyKF.hashCode());
     }
 
-    public PrivateKey getPrivateKey(String file)
-        throws Exception
-    {
-        byte[] privKeyBytes = getBytesFromFile(new File(file));
-        PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(privKeyBytes);
-        return kf.generatePrivate(privKeySpec);
-    }
-
-    public void writeToFile(String filename, String data)
-        throws IOException
-    {
-        FileOutputStream fos = new FileOutputStream(filename);
-        fos.write(data.getBytes());
-        fos.close();
-    }
-
     public void testSignVerifyWithRandomParams()
         throws Exception
     {
@@ -384,16 +311,6 @@ public class RainbowSignatureTest
         kpg = KeyPairGenerator.getInstance("Rainbow");
         sig = Signature.getInstance("SHA384WITHRainbow");
         performSignVerifyTest(15, 100, new RainbowParameterSpec());
-    }
-
-
-    public void writeKey(String file, Key key)
-        throws IOException
-    {
-        byte[] privKeyBytes = key.getEncoded();
-        FileOutputStream fos = new FileOutputStream(file);
-        fos.write(privKeyBytes);
-        fos.close();
     }
 
     public PublicKey getPublicKey(String file)

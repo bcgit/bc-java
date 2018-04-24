@@ -122,3 +122,155 @@ w
 q
 %
 
+ed org/bouncycastle/asn1/dvcs/DVCSTime.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/x509/UserNotice.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/cmc/BodyPartID.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/cmc/CMCFailInfo.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/cmc/CMCStatus.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/cmc/CMCStatusInfo.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/cmc/OtherStatusInfo.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/cmc/TaggedRequest.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+for i in mceliece/McElieceCCA2Parameters.java sphincs/HashFunctions.java 
+do
+ed org/bouncycastle/pqc/crypto/$i <<%
+g/private final .*;/s/final//
+w
+q
+%
+done
+
+ed org/bouncycastle/cert/dane/TruncatingDigestCalculator.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/signers/RSADigestSigner.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/agreement/SM2KeyExchange.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/engines/SM2Engine.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/bc/ObjectStoreIntegrityCheck.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/jcajce/spec/AEADParameterSpec.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/jcajce/provider/asymmetric/dh/IESCipher.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/jcajce/provider/keystore/bcfks/BcFKSKeyStoreSpi.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/cert/dane/DANEEntry.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/cryptopro/Gost2814789KeyWrapParameters.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/cryptopro/Gost2814789EncryptedKey.java <<%
+g/private final .*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/misc/ScryptParams.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/modes/G3413CFBBlockCipher.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/modes/G3413CTRBlockCipher.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/modes/KGCMBlockCipher.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/jcajce/spec/DHUParameterSpec.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%

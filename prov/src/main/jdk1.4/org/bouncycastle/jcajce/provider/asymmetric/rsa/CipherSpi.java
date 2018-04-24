@@ -364,10 +364,10 @@ public class CipherSpi
     }
 
     protected byte[] engineDoFinal(
-        byte[]  input,
-        int     inputOffset,
-        int     inputLen) 
-        throws IllegalBlockSizeException, BadPaddingException
+            byte[]  input,
+            int     inputOffset,
+            int     inputLen)
+            throws IllegalBlockSizeException, BadPaddingException
     {
         if (input != null)
         {
@@ -389,18 +389,7 @@ public class CipherSpi
             }
         }
 
-        try
-        {
-            byte[]  bytes = bOut.toByteArray();
-
-            bOut.reset();
-
-            return cipher.processBlock(bytes, 0, bytes.length);
-        }
-        catch (InvalidCipherTextException e)
-        {
-            throw new BadPaddingException(e.getMessage());
-        }
+        return getOutput();
     }
 
     protected int engineDoFinal(
@@ -408,7 +397,7 @@ public class CipherSpi
         int     inputOffset,
         int     inputLen,
         byte[]  output,
-        int     outputOffset) 
+        int     outputOffset)
         throws IllegalBlockSizeException, BadPaddingException
     {
         if (input != null)
@@ -431,19 +420,7 @@ public class CipherSpi
             }
         }
 
-        byte[]  out;
-
-        try
-        {
-            byte[]  bytes = bOut.toByteArray();
-            bOut.reset();
-
-            out = cipher.processBlock(bytes, 0, bytes.length);
-        }
-        catch (InvalidCipherTextException e)
-        {
-            throw new BadPaddingException(e.getMessage());
-        }
+        byte[]  out = getOutput();
 
         for (int i = 0; i != out.length; i++)
         {
@@ -451,6 +428,31 @@ public class CipherSpi
         }
 
         return out.length;
+    }
+
+    private byte[] getOutput()
+        throws BadPaddingException
+    {
+        try
+        {
+            byte[]  bytes = bOut.toByteArray();
+
+            return cipher.processBlock(bytes, 0, bytes.length);
+        }
+        catch (final InvalidCipherTextException e)
+        {
+            throw new BadPaddingException("unable to decrypt block")
+            {
+                public synchronized Throwable getCause()
+                {
+                    return e;
+                }
+            };
+        }
+        finally
+        {
+            bOut.reset();
+        }
     }
 
     /**

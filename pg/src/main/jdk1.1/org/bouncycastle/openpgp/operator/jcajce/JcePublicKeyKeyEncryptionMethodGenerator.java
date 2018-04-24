@@ -34,6 +34,7 @@ import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.RFC6637Utils;
@@ -95,7 +96,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
             if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.ECDH)
             {
                 ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKey.getPublicKeyPacket().getKey();
-                X9ECParameters x9Params = PGPUtil.getX9Parameters(ecKey.getCurveOID());
+                X9ECParameters x9Params = JcaJcePGPUtil.getX9Parameters(ecKey.getCurveOID());
                 AlgorithmParameters ecAlgParams = helper.createAlgorithmParameters("EC");
 
                 ecAlgParams.init(new X962Parameters(ecKey.getCurveOID()).getEncoded());

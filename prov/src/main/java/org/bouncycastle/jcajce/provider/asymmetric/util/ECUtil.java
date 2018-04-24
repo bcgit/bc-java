@@ -5,10 +5,12 @@ import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Enumeration;
+import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.anssi.ANSSINamedCurves;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
+import org.bouncycastle.asn1.gm.GMNamedCurves;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
@@ -16,17 +18,25 @@ import org.bouncycastle.asn1.teletrust.TeleTrusTNamedCurves;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X962NamedCurves;
+import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
+import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECParameterSpec;
+import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Fingerprint;
+import org.bouncycastle.util.Strings;
 
 /**
  * utility class for converting jce/jca ECDSA, ECDH, and ECDHC
@@ -104,6 +114,67 @@ public class ECUtil
         return res;
     }
 
+    public static ECDomainParameters getDomainParameters(
+        ProviderConfiguration configuration,
+        org.bouncycastle.jce.spec.ECParameterSpec params)
+    {
+        ECDomainParameters domainParameters;
+
+        if (params instanceof ECNamedCurveParameterSpec)
+        {
+            ECNamedCurveParameterSpec nParams = (ECNamedCurveParameterSpec)params;
+            ASN1ObjectIdentifier nameOid = ECUtil.getNamedCurveOid(nParams.getName());
+
+            domainParameters = new ECNamedDomainParameters(nameOid, nParams.getCurve(), nParams.getG(), nParams.getN(), nParams.getH(), nParams.getSeed());
+        }
+        else if (params == null)
+        {
+            org.bouncycastle.jce.spec.ECParameterSpec iSpec = configuration.getEcImplicitlyCa();
+
+            domainParameters = new ECDomainParameters(iSpec.getCurve(), iSpec.getG(), iSpec.getN(), iSpec.getH(), iSpec.getSeed());
+        }
+        else
+        {
+            domainParameters = new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed());
+        }
+
+        return domainParameters;
+    }
+
+    public static ECDomainParameters getDomainParameters(
+        ProviderConfiguration configuration,
+        X962Parameters params)
+    {
+        ECDomainParameters domainParameters;
+
+        if (params.isNamedCurve())
+        {
+            ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(params.getParameters());
+            X9ECParameters ecP = ECUtil.getNamedCurveByOid(oid);
+            if (ecP == null)
+            {
+                Map extraCurves = configuration.getAdditionalECParameters();
+
+                ecP = (X9ECParameters)extraCurves.get(oid);
+            }
+            domainParameters = new ECNamedDomainParameters(oid, ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(), ecP.getSeed());
+        }
+        else if (params.isImplicitlyCA())
+        {
+            org.bouncycastle.jce.spec.ECParameterSpec iSpec = configuration.getEcImplicitlyCa();
+
+            domainParameters = new ECDomainParameters(iSpec.getCurve(), iSpec.getG(), iSpec.getN(), iSpec.getH(), iSpec.getSeed());
+        }
+        else
+        {
+            X9ECParameters ecP = X9ECParameters.getInstance(params.getParameters());
+
+            domainParameters = new ECDomainParameters(ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(), ecP.getSeed());
+        }
+
+        return domainParameters;
+    }
+
     public static AsymmetricKeyParameter generatePublicKeyParameter(
         PublicKey    key)
         throws InvalidKeyException
@@ -113,20 +184,9 @@ public class ECUtil
             ECPublicKey    k = (ECPublicKey)key;
             ECParameterSpec s = k.getParameters();
 
-            if (s == null)
-            {
-                s = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
-
-                return new ECPublicKeyParameters(
-                            ((BCECPublicKey)k).engineGetQ(),
-                            new ECDomainParameters(s.getCurve(), s.getG(), s.getN(), s.getH(), s.getSeed()));
-            }
-            else
-            {
-                return new ECPublicKeyParameters(
+            return new ECPublicKeyParameters(
                             k.getQ(),
                             new ECDomainParameters(s.getCurve(), s.getG(), s.getN(), s.getH(), s.getSeed()));
-            }
         }
         else if (key instanceof java.security.interfaces.ECPublicKey)
         {
@@ -218,11 +278,11 @@ public class ECUtil
         throw new InvalidKeyException("can't identify EC private key.");
     }
 
-    public static int getOrderBitLength(BigInteger order, BigInteger privateValue)
+    public static int getOrderBitLength(ProviderConfiguration configuration, BigInteger order, BigInteger privateValue)
     {
         if (order == null)     // implicitly CA
         {
-            ECParameterSpec implicitCA = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
+            ECParameterSpec implicitCA = configuration.getEcImplicitlyCa();
 
             if (implicitCA == null)
             {
@@ -240,15 +300,12 @@ public class ECUtil
     public static ASN1ObjectIdentifier getNamedCurveOid(
         String curveName)
     {
-        String name;
+        String name = curveName;
 
-        if (curveName.indexOf(' ') > 0)
+        int spacePos = name.indexOf(' ');
+        if (spacePos > 0)
         {
-            name = curveName.substring(curveName.indexOf(' ') + 1);
-        }
-        else
-        {
-            name = curveName;
+            name = name.substring(spacePos + 1);
         }
 
         try
@@ -257,43 +314,12 @@ public class ECUtil
             {
                 return new ASN1ObjectIdentifier(name);
             }
-            else
-            {
-                return lookupOidByName(name);
-            }
         }
         catch (IllegalArgumentException ex)
         {
-            return lookupOidByName(name);
-        }
-    }
-
-    private static ASN1ObjectIdentifier lookupOidByName(String name)
-    {
-        ASN1ObjectIdentifier oid = X962NamedCurves.getOID(name);
-
-        if (oid == null)
-        {
-            oid = SECNamedCurves.getOID(name);
-            if (oid == null)
-            {
-                oid = NISTNamedCurves.getOID(name);
-            }
-            if (oid == null)
-            {
-                oid = TeleTrusTNamedCurves.getOID(name);
-            }
-            if (oid == null)
-            {
-                oid = ECGOST3410NamedCurves.getOID(name);
-            }
-            if (oid == null)
-            {
-                oid = ANSSINamedCurves.getOID(name);
-            }
         }
 
-        return oid;
+        return ECNamedCurveTable.getOID(name);
     }
 
     public static ASN1ObjectIdentifier getNamedCurveOid(
@@ -324,19 +350,7 @@ public class ECUtil
 
         if (params == null)
         {
-            params = X962NamedCurves.getByOID(oid);
-            if (params == null)
-            {
-                params = SECNamedCurves.getByOID(oid);
-            }
-            if (params == null)
-            {
-                params = NISTNamedCurves.getByOID(oid);
-            }
-            if (params == null)
-            {
-                params = TeleTrusTNamedCurves.getByOID(oid);
-            }
+            params = ECNamedCurveTable.getByOID(oid);
         }
 
         return params;
@@ -349,19 +363,7 @@ public class ECUtil
 
         if (params == null)
         {
-            params = X962NamedCurves.getByName(curveName);
-            if (params == null)
-            {
-                params = SECNamedCurves.getByName(curveName);
-            }
-            if (params == null)
-            {
-                params = NISTNamedCurves.getByName(curveName);
-            }
-            if (params == null)
-            {
-                params = TeleTrusTNamedCurves.getByName(curveName);
-            }
+            params = ECNamedCurveTable.getByName(curveName);
         }
 
         return params;
@@ -370,25 +372,52 @@ public class ECUtil
     public static String getCurveName(
         ASN1ObjectIdentifier oid)
     {
-        String name = X962NamedCurves.getName(oid);
-        
-        if (name == null)
+        return ECNamedCurveTable.getName(oid);
+    }
+
+    public static String privateKeyToString(String algorithm, BigInteger d, org.bouncycastle.jce.spec.ECParameterSpec spec)
+    {
+        StringBuffer buf = new StringBuffer();
+        String nl = Strings.lineSeparator();
+
+        org.bouncycastle.math.ec.ECPoint q = calculateQ(d, spec);
+
+        buf.append(algorithm);
+        buf.append(" Private Key [").append(ECUtil.generateKeyFingerprint(q, spec)).append("]").append(nl);
+        buf.append("            X: ").append(q.getAffineXCoord().toBigInteger().toString(16)).append(nl);
+        buf.append("            Y: ").append(q.getAffineYCoord().toBigInteger().toString(16)).append(nl);
+
+        return buf.toString();
+    }
+
+    private static org.bouncycastle.math.ec.ECPoint calculateQ(BigInteger d, org.bouncycastle.jce.spec.ECParameterSpec spec)
+    {
+        return spec.getG().multiply(d).normalize();
+    }
+
+    public static String publicKeyToString(String algorithm, org.bouncycastle.math.ec.ECPoint q, org.bouncycastle.jce.spec.ECParameterSpec spec)
+    {
+        StringBuffer buf = new StringBuffer();
+        String nl = Strings.lineSeparator();
+
+        buf.append(algorithm);
+        buf.append(" Public Key [").append(ECUtil.generateKeyFingerprint(q, spec)).append("]").append(nl);
+        buf.append("            X: ").append(q.getAffineXCoord().toBigInteger().toString(16)).append(nl);
+        buf.append("            Y: ").append(q.getAffineYCoord().toBigInteger().toString(16)).append(nl);
+
+        return buf.toString();
+    }
+
+    public static String generateKeyFingerprint(ECPoint publicPoint, org.bouncycastle.jce.spec.ECParameterSpec spec)
+    {
+        ECCurve curve = spec.getCurve();
+        ECPoint g = spec.getG();
+
+        if (curve != null)
         {
-            name = SECNamedCurves.getName(oid);
-            if (name == null)
-            {
-                name = NISTNamedCurves.getName(oid);
-            }
-            if (name == null)
-            {
-                name = TeleTrusTNamedCurves.getName(oid);
-            }
-            if (name == null)
-            {
-                name = ECGOST3410NamedCurves.getName(oid);
-            }
+            return new Fingerprint(Arrays.concatenate(publicPoint.getEncoded(false), curve.getA().getEncoded(), curve.getB().getEncoded(), g.getEncoded(false))).toString();
         }
 
-        return name;
+        return new Fingerprint(publicPoint.getEncoded(false)).toString();
     }
 }

@@ -109,7 +109,20 @@ public class KeyFactorySpi
     {
         if (keySpec instanceof DSAPublicKeySpec)
         {
-            return new BCDSAPublicKey((DSAPublicKeySpec)keySpec);
+            try
+            {
+                return new BCDSAPublicKey((DSAPublicKeySpec)keySpec);
+            }
+            catch (final Exception e)
+            {
+                throw new InvalidKeySpecException("invalid KeySpec: " + e.getMessage())
+                {
+                    public Throwable getCause()
+                                {
+                                    return e;
+                                }
+                };
+            }
         }
 
         return super.engineGeneratePublic(keySpec);

@@ -49,6 +49,11 @@ class DTLSRecordLayer
         this.plaintextLimit = plaintextLimit;
     }
 
+    int getReadEpoch()
+    {
+        return readEpoch.getEpoch();
+    }
+
     ProtocolVersion getReadVersion()
     {
         return readVersion;
@@ -243,7 +248,7 @@ class DTLSRecordLayer
 
                         if (alertLevel == AlertLevel.fatal)
                         {
-                            fail(alertDescription);
+                            failed();
                             throw new TlsFatalAlert(alertDescription);
                         }
 
@@ -401,6 +406,16 @@ class DTLSRecordLayer
         }
     }
 
+    void failed()
+    {
+        if (!closed)
+        {
+            failed = true;
+
+            closeTransport();
+        }
+    }
+
     void warn(short alertDescription, String message)
         throws IOException
     {
@@ -495,7 +510,7 @@ class DTLSRecordLayer
         }
 
         /*
-         * RFC 5264 6.2.1 Implementations MUST NOT send zero-length fragments of Handshake, Alert,
+         * RFC 5246 6.2.1 Implementations MUST NOT send zero-length fragments of Handshake, Alert,
          * or ChangeCipherSpec content types.
          */
         if (len < 1 && contentType != ContentType.application_data)

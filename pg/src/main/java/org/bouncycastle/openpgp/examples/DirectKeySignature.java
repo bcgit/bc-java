@@ -27,14 +27,13 @@ import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
  * A simple utility class that directly signs a public key and writes the signed key to "SignedKey.asc" in 
  * the current working directory.
  * <p>
- * To sign a key: DirectKeySignature secretKeyFile secretKeyPass publicKeyFile(key to be signed) NotationName NotationValue.<br/>
+ * To sign a key: DirectKeySignature secretKeyFile secretKeyPass publicKeyFile(key to be signed) NotationName NotationValue.
  * </p><p>
- * To display a NotationData packet from a publicKey previously signed: DirectKeySignature signedPublicKeyFile.<br/>
+ * To display a NotationData packet from a publicKey previously signed: DirectKeySignature signedPublicKeyFile.
  * </p><p>
  * <b>Note</b>: this example will silently overwrite files, nor does it pay any attention to
  * the specification of "_CONSOLE" in the filename. It also expects that a single pass phrase
  * will have been used.
- * </p>
  */
 public class DirectKeySignature
 {

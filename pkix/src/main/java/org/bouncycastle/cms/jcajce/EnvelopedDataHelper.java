@@ -35,6 +35,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
@@ -58,6 +59,8 @@ public class EnvelopedDataHelper
     protected static final Map CIPHER_ALG_NAMES = new HashMap();
     protected static final Map MAC_ALG_NAMES = new HashMap();
 
+    private static final Map PBKDF2_ALG_NAMES = new HashMap();
+
     static
     {
         BASE_CIPHER_NAMES.put(CMSAlgorithm.DES_CBC,  "DES");
@@ -72,6 +75,7 @@ public class EnvelopedDataHelper
         BASE_CIPHER_NAMES.put(CMSAlgorithm.CAMELLIA256_CBC, "Camellia");
         BASE_CIPHER_NAMES.put(CMSAlgorithm.SEED_CBC, "SEED");
         BASE_CIPHER_NAMES.put(PKCSObjectIdentifiers.rc4, "RC4");
+        BASE_CIPHER_NAMES.put(CryptoProObjectIdentifiers.gostR28147_gcfb, "GOST28147");
 
         CIPHER_ALG_NAMES.put(CMSAlgorithm.DES_CBC,  "DES/CBC/PKCS5Padding");
         CIPHER_ALG_NAMES.put(CMSAlgorithm.RC2_CBC,  "RC2/CBC/PKCS5Padding");
@@ -92,6 +96,12 @@ public class EnvelopedDataHelper
         MAC_ALG_NAMES.put(CMSAlgorithm.AES192_CBC,  "AESMac");
         MAC_ALG_NAMES.put(CMSAlgorithm.AES256_CBC,  "AESMac");
         MAC_ALG_NAMES.put(CMSAlgorithm.RC2_CBC,  "RC2Mac");
+
+        PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA1.getAlgorithmID(), "PBKDF2WITHHMACSHA1");
+        PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA224.getAlgorithmID(), "PBKDF2WITHHMACSHA224");
+        PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA256.getAlgorithmID(), "PBKDF2WITHHMACSHA256");
+        PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA384.getAlgorithmID(), "PBKDF2WITHHMACSHA384");
+        PBKDF2_ALG_NAMES.put(PasswordRecipient.PRF.HMacSHA512.getAlgorithmID(), "PBKDF2WITHHMACSHA512");
     }
 
     private static final short[] rc2Table = {
@@ -415,7 +425,7 @@ public class EnvelopedDataHelper
 
                         CMSUtils.loadParameters(params, sParams);
 
-                        mac.init(sKey, params.getParameterSpec(IvParameterSpec.class));
+                        mac.init(sKey, params.getParameterSpec(AlgorithmParameterSpec.class));
                     }
                     catch (NoSuchAlgorithmException e)
                     {
@@ -690,7 +700,7 @@ public class EnvelopedDataHelper
             }
             else
             {
-                keyFact = helper.createSecretKeyFactory("PBKDF2");
+                keyFact = helper.createSecretKeyFactory((String)PBKDF2_ALG_NAMES.get(params.getPrf()));
             }
 
             SecretKey key = keyFact.generateSecret(new PBEKeySpec(password, params.getSalt(), params.getIterationCount().intValue(), keySize));
@@ -699,7 +709,7 @@ public class EnvelopedDataHelper
         }
         catch (GeneralSecurityException e)
         {
-             throw new CMSException("Unable to calculate dervied key from password: " + e.getMessage(), e);
+             throw new CMSException("Unable to calculate derived key from password: " + e.getMessage(), e);
         }
     }
 

@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
 
 public class AlgorithmParametersSpi
@@ -45,7 +46,14 @@ public class AlgorithmParametersSpi
         }
         else if (algorithmParameterSpec instanceof ECParameterSpec)
         {
-            curveName = null;
+            if (algorithmParameterSpec instanceof ECNamedCurveSpec)
+            {
+                curveName = ((ECNamedCurveSpec)algorithmParameterSpec).getName();
+            }
+            else
+            {
+                curveName = null;
+            }
             ecParameterSpec = (ECParameterSpec)algorithmParameterSpec;
         }
         else
@@ -73,7 +81,13 @@ public class AlgorithmParametersSpi
 
             if (params.isNamedCurve())
             {
-                curveName = ECNamedCurveTable.getName(ASN1ObjectIdentifier.getInstance(params.getParameters()));
+                ASN1ObjectIdentifier curveId = ASN1ObjectIdentifier.getInstance(params.getParameters());
+
+                curveName = ECNamedCurveTable.getName(curveId);
+                if (curveName == null)
+                {
+                    curveName = curveId.getId();
+                }
             }
 
             ecParameterSpec = EC5Util.convertToSpec(params, curve);

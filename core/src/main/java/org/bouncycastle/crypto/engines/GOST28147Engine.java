@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
+import java.util.Enumeration;
 import java.util.Hashtable;
 
 import org.bouncycastle.crypto.BlockCipher;
@@ -368,5 +369,20 @@ public class GOST28147Engine
         }
 
         return Arrays.clone(sBox);
+    }
+
+    public static String getSBoxName(byte[] sBox)
+    {
+        for (Enumeration en = sBoxes.keys(); en.hasMoreElements();)
+        {
+            String name = (String)en.nextElement();
+            byte[] sb = (byte[])sBoxes.get(name);
+            if (Arrays.areEqual(sb, sBox))
+            {
+                return name;
+            }
+        }
+
+        throw new IllegalArgumentException("SBOX provided did not map to a known one");
     }
 }

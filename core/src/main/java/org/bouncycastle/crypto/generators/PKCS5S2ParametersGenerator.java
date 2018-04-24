@@ -4,10 +4,10 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.PBEParametersGenerator;
-import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -29,7 +29,7 @@ public class PKCS5S2ParametersGenerator
      */
     public PKCS5S2ParametersGenerator()
     {
-        this(new SHA1Digest());
+        this(DigestFactory.createSHA1());
     }
 
     public PKCS5S2ParametersGenerator(Digest digest)

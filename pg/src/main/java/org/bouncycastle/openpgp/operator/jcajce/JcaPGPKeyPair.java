@@ -11,6 +11,9 @@ import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 
+/**
+ * A PGP key pair class that is constructed from JCA/JCE key pairs.
+ */
 public class JcaPGPKeyPair
     extends PGPKeyPair
 {
@@ -32,6 +35,14 @@ public class JcaPGPKeyPair
         return new JcaPGPKeyConverter().getPGPPrivateKey(pub, privKey);
     }
 
+    /**
+     * Construct PGP key pair from a JCA/JCE key pair.
+     *
+     * @param algorithm the PGP algorithm the key is for.
+     * @param keyPair  the public/private key pair to convert.
+     * @param date the creation date to associate with the key pair.
+     * @throws PGPException if conversion fails.
+     */
     public JcaPGPKeyPair(int algorithm, KeyPair keyPair, Date date)
         throws PGPException
     {
@@ -39,6 +50,15 @@ public class JcaPGPKeyPair
         this.priv = getPrivateKey(this.pub, keyPair.getPrivate());
     }
 
+    /**
+     * Construct PGP key pair from a JCA/JCE key pair.
+     *
+     * @param algorithm the PGP algorithm the key is for.
+     * @param parameters additional parameters to be stored against the public key.
+     * @param keyPair  the public/private key pair to convert.
+     * @param date the creation date to associate with the key pair.
+     * @throws PGPException if conversion fails.
+     */
     public JcaPGPKeyPair(int algorithm, PGPAlgorithmParameters parameters, KeyPair keyPair, Date date)
         throws PGPException
     {

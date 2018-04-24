@@ -8,6 +8,8 @@ public interface MacDerivationFunction
 {
     /**
      * return the MAC used as the basis for the function
+     *
+     * @return the Mac.
      */
     public Mac getMac();
 }

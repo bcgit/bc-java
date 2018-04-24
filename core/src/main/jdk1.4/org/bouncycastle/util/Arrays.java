@@ -103,6 +103,36 @@ public final class Arrays
         return true;
     }
 
+    public static boolean areEqual(
+        short[]  a,
+        short[]  b)
+    {
+        if (a == b)
+        {
+            return true;
+        }
+
+        if (a == null || b == null)
+        {
+            return false;
+        }
+
+        if (a.length != b.length)
+        {
+            return false;
+        }
+
+        for (int i = 0; i != a.length; i++)
+        {
+            if (a[i] != b[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /**
      * A constant time equals comparison - does not terminate early if
      * test will fail.
@@ -928,6 +958,26 @@ public final class Arrays
         }
     }
 
+    public static byte[] concatenate(byte[][] arrays)
+    {
+        int size = 0;
+        for (int i = 0; i != arrays.length; i++)
+        {
+            size += arrays[i].length;
+        }
+
+        byte[] rv = new byte[size];
+
+        int offSet = 0;
+        for (int i = 0; i != arrays.length; i++)
+        {
+            System.arraycopy(arrays[i], 0, rv, offSet, arrays[i].length);
+            offSet += arrays[i].length;
+        }
+
+        return rv;
+    }
+
     public static int[] concatenate(int[] a, int[] b)
     {
         if (a == null)
@@ -1003,6 +1053,22 @@ public final class Arrays
         }
 
         return result;
+    }
+
+    /**
+     * Fill input array by zeros
+     *
+     * @param array input array
+     */
+    public static void clear(byte[] array)
+    {
+        if (array != null)
+        {
+            for (int i = 0; i < array.length; i++)
+            {
+                array[i] = 0;
+            }
+        }
     }
 
     /**

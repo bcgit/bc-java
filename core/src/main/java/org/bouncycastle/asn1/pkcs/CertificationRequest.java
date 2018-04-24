@@ -54,6 +54,9 @@ public class CertificationRequest
         this.sigBits = signature;
     }
 
+    /**
+     * @deprecated use getInstance()
+     */
     public CertificationRequest(
         ASN1Sequence seq)
     {

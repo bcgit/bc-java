@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.PacketTags;
@@ -20,7 +21,7 @@ import org.bouncycastle.util.Iterable;
  * to do is read a key ring file use either {@link PGPPublicKeyRingCollection} or
  * {@link PGPSecretKeyRingCollection}.
  * </p><p>
- * This factory supports reading the following types of objects:
+ * This factory supports reading the following types of objects: </p>
  * <ul>
  * <li>{@link PacketTags#SIGNATURE} - produces a {@link PGPSignatureList}</li>
  * <li>{@link PacketTags#SECRET_KEY} - produces a {@link PGPSecretKeyRing}</li>
@@ -33,7 +34,7 @@ import org.bouncycastle.util.Iterable;
  * <li>{@link PacketTags#ONE_PASS_SIGNATURE} - produces a {@link PGPOnePassSignatureList}</li>
  * <li>{@link PacketTags#MARKER} - produces a {@link PGPMarker}</li>
  * </ul>
- * </p>
+ *
  */
 public class PGPObjectFactory
     implements Iterable
@@ -163,20 +164,28 @@ public class PGPObjectFactory
     {
         return new Iterator()
         {
-            private Object obj = getObject();
+            private boolean triedNext = false;
+            private Object obj = null;
 
             public boolean hasNext()
             {
+                if (!triedNext)
+                {
+                    triedNext = true;
+                    obj = getObject();
+                }
                 return obj != null;
             }
 
             public Object next()
             {
-                Object rv = obj;
+                if (!hasNext())
+                {
+                    throw new NoSuchElementException();
+                }
+                triedNext = false;
 
-                obj = getObject();;
-
-                return rv;
+                return obj;
             }
 
             public void remove()

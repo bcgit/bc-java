@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
+/**
+ * Interface describing a TLS client endpoint.
+ */
 public interface TlsClient
     extends TlsPeer
 {
@@ -20,7 +23,7 @@ public interface TlsClient
     TlsSession getSessionToResume();
 
     /**
-     * Return the {@link ProtocolVersion} to use for the <c>TLSPlaintext.version</c> field prior to
+     * Return the {@link ProtocolVersion} to use for the <code>TLSPlaintext.version</code> field prior to
      * receiving the server version. NOTE: This method is <b>not</b> called for DTLS.
      *
      * <p>

@@ -59,6 +59,7 @@ public class JcaContentSignerBuilder
         try
         {
             final Signature sig = helper.createSignature(sigAlgId);
+            final AlgorithmIdentifier signatureAlgId = sigAlgId;
 
             if (random != null)
             {
@@ -75,7 +76,7 @@ public class JcaContentSignerBuilder
 
                 public AlgorithmIdentifier getAlgorithmIdentifier()
                 {
-                    return sigAlgId;
+                    return signatureAlgId;
                 }
 
                 public OutputStream getOutputStream()

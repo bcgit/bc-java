@@ -142,4 +142,10 @@ public final class Streams
         }
         return total;
     }
+
+    public static void writeBufTo(ByteArrayOutputStream buf, OutputStream output)
+        throws IOException
+    {
+        buf.writeTo(output);
+    }
 }

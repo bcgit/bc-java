@@ -9,7 +9,9 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.util.Arrays;
 
 /**
  * ASN.1 algorithm identifier parameters for GOST-28147
@@ -41,6 +43,14 @@ public class GOST28147Parameters
         }
 
         return null;
+    }
+
+    public GOST28147Parameters(
+        byte[] iv,
+        ASN1ObjectIdentifier paramSet)
+    {
+        this.iv = new DEROctetString(iv);
+        this.paramSet = paramSet;
     }
 
     /**
@@ -93,6 +103,6 @@ public class GOST28147Parameters
      */
     public byte[] getIV()
     {
-        return iv.getOctets();
+        return Arrays.clone(iv.getOctets());
     }
 }

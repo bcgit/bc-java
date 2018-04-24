@@ -32,6 +32,7 @@ import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseCipherSpi;
+import org.bouncycastle.jcajce.provider.util.BadBlockException;
 import org.bouncycastle.jcajce.provider.util.DigestFactory;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -232,6 +233,22 @@ public class CipherSpi
         {
             initFromSpec(new OAEPParameterSpec("SHA-512", "MGF1", MGF1ParameterSpec.SHA512, PSource.PSpecified.DEFAULT));
         }
+        else if (pad.equals("OAEPWITHSHA3-224ANDMGF1PADDING"))
+        {
+            initFromSpec(new OAEPParameterSpec("SHA3-224", "MGF1", new MGF1ParameterSpec("SHA3-224"), PSource.PSpecified.DEFAULT));
+        }
+        else if (pad.equals("OAEPWITHSHA3-256ANDMGF1PADDING"))
+        {
+            initFromSpec(new OAEPParameterSpec("SHA3-256", "MGF1", new MGF1ParameterSpec("SHA3-256"), PSource.PSpecified.DEFAULT));
+        }
+        else if (pad.equals("OAEPWITHSHA3-384ANDMGF1PADDING"))
+        {
+            initFromSpec(new OAEPParameterSpec("SHA3-384", "MGF1", new MGF1ParameterSpec("SHA3-384"), PSource.PSpecified.DEFAULT));
+        }
+        else if (pad.equals("OAEPWITHSHA3-512ANDMGF1PADDING"))
+        {
+            initFromSpec(new OAEPParameterSpec("SHA3-512", "MGF1", new MGF1ParameterSpec("SHA3-512"), PSource.PSpecified.DEFAULT));
+        }
         else
         {
             throw new NoSuchPaddingException(padding + " unavailable with RSA.");
@@ -304,7 +321,7 @@ public class CipherSpi
                 {
                     throw new InvalidAlgorithmParameterException("no match on MGF digest algorithm: "+ mgfParams.getDigestAlgorithm());
                 }
-                
+
                 cipher = new OAEPEncoding(new RSABlindedEngine(), digest, mgfDigest, ((PSource.PSpecified)spec.getPSource()).getValue());
             }
         }
@@ -462,18 +479,7 @@ public class CipherSpi
             }
         }
 
-        try
-        {
-            byte[]  bytes = bOut.toByteArray();
-
-            bOut.reset();
-
-            return cipher.processBlock(bytes, 0, bytes.length);
-        }
-        catch (InvalidCipherTextException e)
-        {
-            throw new BadPaddingException(e.getMessage());
-        }
+        return getOutput();
     }
 
     protected int engineDoFinal(
@@ -504,22 +510,7 @@ public class CipherSpi
             }
         }
 
-        byte[]  out;
-
-        try
-        {
-            byte[]  bytes = bOut.toByteArray();
-
-            out = cipher.processBlock(bytes, 0, bytes.length);
-        }
-        catch (InvalidCipherTextException e)
-        {
-            throw new BadPaddingException(e.getMessage());
-        }
-        finally
-        {
-            bOut.reset();
-        }
+        byte[]  out = getOutput();
 
         for (int i = 0; i != out.length; i++)
         {
@@ -527,6 +518,29 @@ public class CipherSpi
         }
 
         return out.length;
+    }
+
+    private byte[] getOutput()
+        throws BadPaddingException
+    {
+        try
+        {
+            byte[]  bytes = bOut.toByteArray();
+
+            return cipher.processBlock(bytes, 0, bytes.length);
+        }
+        catch (InvalidCipherTextException e)
+        {
+            throw new BadBlockException("unable to decrypt block", e);
+        }
+        catch (ArrayIndexOutOfBoundsException e)
+        {
+            throw new BadBlockException("unable to decrypt block", e);
+        }
+        finally
+        {
+            bOut.reset();
+        }
     }
 
     /**

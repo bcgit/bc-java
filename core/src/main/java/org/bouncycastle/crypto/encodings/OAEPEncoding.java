@@ -4,10 +4,12 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.util.DigestFactory;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Optimal Asymmetric Encryption Padding (OAEP) - see PKCS 1 V 2.
@@ -25,7 +27,7 @@ public class OAEPEncoding
     public OAEPEncoding(
         AsymmetricBlockCipher   cipher)
     {
-        this(cipher, new SHA1Digest(), null);
+        this(cipher, DigestFactory.createSHA1(), null);
     }
     
     public OAEPEncoding(
@@ -138,6 +140,11 @@ public class OAEPEncoding
         int     inLen)
         throws InvalidCipherTextException
     {
+        if (inLen > getInputBlockSize())
+        {
+            throw new DataLengthException("input data too long");
+        }
+
         byte[]  block = new byte[getInputBlockSize() + 1 + 2 * defHash.length];
 
         //
@@ -206,28 +213,17 @@ public class OAEPEncoding
         throws InvalidCipherTextException
     {
         byte[]  data = engine.processBlock(in, inOff, inLen);
-        byte[]  block;
+        byte[]  block = new byte[engine.getOutputBlockSize()];
 
         //
         // as we may have zeros in our leading bytes for the block we produced
         // on encryption, we need to make sure our decrypted block comes back
         // the same size.
         //
-        if (data.length < engine.getOutputBlockSize())
-        {
-            block = new byte[engine.getOutputBlockSize()];
 
-            System.arraycopy(data, 0, block, block.length - data.length, data.length);
-        }
-        else
-        {
-            block = data;
-        }
+        System.arraycopy(data, 0, block, block.length - data.length, data.length);
 
-        if (block.length < (2 * defHash.length) + 1)
-        {
-            throw new InvalidCipherTextException("data too short");
-        }
+        boolean shortData = (block.length < (2 * defHash.length) + 1);
 
         //
         // unmask the seed.
@@ -264,30 +260,28 @@ public class OAEPEncoding
             }
         }
 
-        if (defHashWrong)
-        {
-            throw new InvalidCipherTextException("data hash wrong");
-        }
-
         //
         // find the data block
         //
-        int start;
+        int start = block.length;
 
-        for (start = 2 * defHash.length; start != block.length; start++)
+        for (int index = 2 * defHash.length; index != block.length; index++)
         {
-            if (block[start] != 0)
+            if (block[index] != 0 & start == block.length)
             {
-                break;
+                start = index;
             }
         }
 
-        if (start >= (block.length - 1) || block[start] != 1)
-        {
-            throw new InvalidCipherTextException("data start wrong " + start);
-        }
+        boolean dataStartWrong = (start > (block.length - 1) | block[start] != 1);
 
         start++;
+
+        if (defHashWrong | shortData | dataStartWrong)
+        {
+            Arrays.fill(block, (byte)0);
+            throw new InvalidCipherTextException("data wrong");
+        }
 
         //
         // extract the data block

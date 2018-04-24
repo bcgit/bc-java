@@ -17,6 +17,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.PKCS8Generator;
@@ -85,6 +86,17 @@ public class
         encryptedTestNew(key, PKCS8Generator.AES_256_CBC);
         encryptedTestNew(key, PKCS8Generator.DES3_CBC);
         encryptedTestNew(key, PKCS8Generator.PBE_SHA1_3DES);
+
+        encryptedTestNew(key, PKCS8Generator.AES_256_CBC, PKCS8Generator.PRF_HMACSHA1);
+        encryptedTestNew(key, PKCS8Generator.AES_256_CBC, PKCS8Generator.PRF_HMACSHA224);
+        encryptedTestNew(key, PKCS8Generator.AES_256_CBC, PKCS8Generator.PRF_HMACSHA256);
+        encryptedTestNew(key, PKCS8Generator.AES_256_CBC, PKCS8Generator.PRF_HMACSHA384);
+        encryptedTestNew(key, PKCS8Generator.AES_256_CBC, PKCS8Generator.PRF_HMACSHA512);
+        encryptedTestNew(key, PKCS8Generator.AES_256_CBC, PKCS8Generator.PRF_HMACSHA3_224);
+        encryptedTestNew(key, PKCS8Generator.AES_256_CBC, PKCS8Generator.PRF_HMACSHA3_256);
+        encryptedTestNew(key, PKCS8Generator.AES_256_CBC, PKCS8Generator.PRF_HMACSHA3_384);
+        encryptedTestNew(key, PKCS8Generator.AES_256_CBC, PKCS8Generator.PRF_HMACSHA3_512);
+        encryptedTestNew(key, PKCS8Generator.AES_256_CBC, PKCS8Generator.PRF_HMACGOST3411);
     }
 
     private void encryptedTestNew(PrivateKey key, ASN1ObjectIdentifier algorithm)
@@ -97,6 +109,34 @@ public class
 
         encryptorBuilder.setProvider("BC");
         encryptorBuilder.setPasssword("hello".toCharArray());
+
+        PKCS8Generator pkcs8 = new JcaPKCS8Generator(key, encryptorBuilder.build());
+
+        pWrt.writeObject(pkcs8);
+
+        pWrt.close();
+
+        PEMParser pRd = new PEMParser(new InputStreamReader(new ByteArrayInputStream(bOut.toByteArray())));
+
+        PKCS8EncryptedPrivateKeyInfo pInfo = (PKCS8EncryptedPrivateKeyInfo)pRd.readObject();
+
+        PrivateKey rdKey = new JcaPEMKeyConverter().setProvider("BC").getPrivateKey(pInfo.decryptPrivateKeyInfo(new JceOpenSSLPKCS8DecryptorProviderBuilder().setProvider("BC").build("hello".toCharArray())));
+
+
+        assertEquals(key, rdKey);
+    }
+
+    private void encryptedTestNew(PrivateKey key, ASN1ObjectIdentifier algorithm, AlgorithmIdentifier prf)
+        throws NoSuchProviderException, NoSuchAlgorithmException, IOException, OperatorCreationException, PKCSException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        JcaPEMWriter pWrt = new JcaPEMWriter(new OutputStreamWriter(bOut));
+
+        JceOpenSSLPKCS8EncryptorBuilder encryptorBuilder = new JceOpenSSLPKCS8EncryptorBuilder(algorithm);
+
+        encryptorBuilder.setProvider("BC");
+        encryptorBuilder.setPasssword("hello".toCharArray());
+        encryptorBuilder.setPRF(prf);
 
         PKCS8Generator pkcs8 = new JcaPKCS8Generator(key, encryptorBuilder.build());
 

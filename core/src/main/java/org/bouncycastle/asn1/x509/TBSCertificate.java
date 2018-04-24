@@ -1,5 +1,7 @@
 package org.bouncycastle.asn1.x509;
 
+import java.math.BigInteger;
+
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -77,7 +79,7 @@ public class TBSCertificate
         //
         // some certficates don't include a version number - we assume v1
         //
-        if (seq.getObjectAt(0) instanceof DERTaggedObject)
+        if (seq.getObjectAt(0) instanceof ASN1TaggedObject)
         {
             version = ASN1Integer.getInstance((ASN1TaggedObject)seq.getObjectAt(0), true);
         }
@@ -85,6 +87,22 @@ public class TBSCertificate
         {
             seqStart = -1;          // field 0 is missing!
             version = new ASN1Integer(0);
+        }
+
+        boolean isV1 = false;
+        boolean isV2 = false;
+ 
+        if (version.getValue().equals(BigInteger.valueOf(0)))
+        {
+            isV1 = true;
+        }
+        else if (version.getValue().equals(BigInteger.valueOf(1)))
+        {
+            isV2 = true;
+        }
+        else if (!version.getValue().equals(BigInteger.valueOf(2)))
+        {
+            throw new IllegalArgumentException("version number not recognised");
         }
 
         serialNumber = ASN1Integer.getInstance(seq.getObjectAt(seqStart + 1));
@@ -107,9 +125,15 @@ public class TBSCertificate
         //
         subjectPublicKeyInfo = SubjectPublicKeyInfo.getInstance(seq.getObjectAt(seqStart + 6));
 
-        for (int extras = seq.size() - (seqStart + 6) - 1; extras > 0; extras--)
+        int extras = seq.size() - (seqStart + 6) - 1;
+        if (extras != 0 && isV1)
         {
-            DERTaggedObject extra = (DERTaggedObject)seq.getObjectAt(seqStart + 6 + extras);
+            throw new IllegalArgumentException("version 1 certificate contains extra data");
+        }
+        
+        while (extras > 0)
+        {
+            ASN1TaggedObject extra = (ASN1TaggedObject)seq.getObjectAt(seqStart + 6 + extras);
 
             switch (extra.getTagNo())
             {
@@ -120,8 +144,13 @@ public class TBSCertificate
                 subjectUniqueId = DERBitString.getInstance(extra, false);
                 break;
             case 3:
+                if (isV2)
+                {
+                    throw new IllegalArgumentException("version 2 certificate cannot contain extensions");
+                }
                 extensions = Extensions.getInstance(ASN1Sequence.getInstance(extra, true));
             }
+            extras--;
         }
     }
 

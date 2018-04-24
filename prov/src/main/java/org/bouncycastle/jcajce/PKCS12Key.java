@@ -29,6 +29,11 @@ public class PKCS12Key
      */
     public PKCS12Key(char[] password, boolean useWrongZeroLengthConversion)
     {
+        if (password == null)
+        {
+            password = new char[0];
+        }
+
         this.password = new char[password.length];
         this.useWrongZeroLengthConversion = useWrongZeroLengthConversion;
 

@@ -1,5 +1,6 @@
 package org.bouncycastle.util.encoders.test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
@@ -31,6 +32,7 @@ public class Base64Test extends AbstractCoderTest
     private static final String invalidb = "UJmEdJYodqHJmd7Rtv6/OP29/jU%Fc==";
     private static final String invalidc = "mO4TyLWG7vjFWdKT8IJcVbZ/%wc=";
     private static final String invalidd = "F4I4p8Vf/mS+Kxvri3FPoMcqm%1c";
+    private static final String invalide = "UJmEdJYodqHJmd7Rtv6/OP29/jUEFw=1";
 
 
     public Base64Test(
@@ -59,13 +61,30 @@ public class Base64Test extends AbstractCoderTest
     public void testInvalidInput()
         throws IOException
     {
-        String[] invalid = new String[] { invalid1, invalid2, invalid3, invalid4, invalid5, invalid6, invalid7, invalid8, invalid9, invalida, invalidb, invalidc, invalidd };
+        String[] invalid = new String[] { invalid1, invalid2, invalid3, invalid4, invalid5, invalid6, invalid7, invalid8, invalid9, invalida, invalidb, invalidc, invalidd, invalide };
 
         for (int i = 0; i != invalid.length; i++)
         {
             invalidTest(invalid[i]);
             invalidTest(Strings.toByteArray(invalid[i]));
         }
+    }
+
+    public void testWithWhitespace()
+        throws Exception
+    {
+        String data = "dGVzdHN0cmluZ" + "\r\n" + "               " + "w==";
+
+        assertTrue(Arrays.areEqual(Strings.toByteArray("teststring"), Base64.decode(data)));
+
+        byte[] bData = Strings.toByteArray(data);
+        assertTrue(Arrays.areEqual(Strings.toByteArray("teststring"), Base64.decode(bData)));
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        Base64.decode(Arrays.concatenate(new byte[4], bData), 4, bData.length, bOut);
+
+        assertTrue(Arrays.areEqual(Strings.toByteArray("teststring"), bOut.toByteArray()));
     }
 
     private void invalidTest(String data)

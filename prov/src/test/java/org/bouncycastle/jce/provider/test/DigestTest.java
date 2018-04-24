@@ -4,6 +4,8 @@ import java.security.MessageDigest;
 import java.security.Security;
 
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
+import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
+import org.bouncycastle.asn1.ua.UAObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -50,6 +52,24 @@ public class DigestTest
         { MiscObjectIdentifiers.id_blake2b256.getId(), "bddd813c634239723171ef3fee98579b94964e3bb1cb3e427262c8c068d52319" },
         { MiscObjectIdentifiers.id_blake2b384.getId(), "6f56a82c8e7ef526dfe182eb5212f7db9df1317e57815dbda46083fc30f54ee6c66ba83be64b302d7cba6ce15bb556f4" },
         { MiscObjectIdentifiers.id_blake2b512.getId(), "ba80a53f981c4d0d6a2797b69f12f6e94c212f14685ac4b74b12bb6fdbffa2d17d87c5392aab792dc252d5de4533cc9518d38aa8dbf1925ab92386edd4009923" },
+        { "BLAKE2S-128", "aa4938119b1dc7b87cbad0ffd200d0ae" },
+        { "BLAKE2S-160", "5ae3b99be29b01834c3b508521ede60438f8de17" },
+        { "BLAKE2S-224", "0b033fc226df7abde29f67a05d3dc62cf271ef3dfea4d387407fbd55" },
+        { "BLAKE2S-256", "508c5e8c327c14e2e1a72ba34eeb452f37458b209ed63a294d999b4c86675982" },
+        { MiscObjectIdentifiers.id_blake2s128.getId(), "aa4938119b1dc7b87cbad0ffd200d0ae" },
+        { MiscObjectIdentifiers.id_blake2s160.getId(), "5ae3b99be29b01834c3b508521ede60438f8de17" },
+        { MiscObjectIdentifiers.id_blake2s224.getId(), "0b033fc226df7abde29f67a05d3dc62cf271ef3dfea4d387407fbd55" },
+        { MiscObjectIdentifiers.id_blake2s256.getId(), "508c5e8c327c14e2e1a72ba34eeb452f37458b209ed63a294d999b4c86675982" },
+        { "GOST3411-2012-256", "4e2919cf137ed41ec4fb6270c61826cc4fffb660341e0af3688cd0626d23b481" },
+        { RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256.getId(), "4e2919cf137ed41ec4fb6270c61826cc4fffb660341e0af3688cd0626d23b481" },
+        { "GOST3411-2012-512", "28156e28317da7c98f4fe2bed6b542d0dab85bb224445fcedaf75d46e26d7eb8d5997f3e0915dd6b7f0aab08d9c8beb0d8c64bae2ab8b3c8c6bc53b3bf0db728" },
+        { RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512.getId(), "28156e28317da7c98f4fe2bed6b542d0dab85bb224445fcedaf75d46e26d7eb8d5997f3e0915dd6b7f0aab08d9c8beb0d8c64bae2ab8b3c8c6bc53b3bf0db728" },
+        { "DSTU7564-256", "0bd1b36109f1318411a0517315aa46b8839df06622a278676f5487996c9cfc04" },
+        { UAObjectIdentifiers.dstu7564digest_256.getId(), "0bd1b36109f1318411a0517315aa46b8839df06622a278676f5487996c9cfc04" },
+        { "DSTU7564-384", "72945012b0820c3132846ddc90da511f80bb7b70abd0cb1ab8df785d600c187b9d0ac567e8b6f76fde8a0b417a2ebf88" },
+        { UAObjectIdentifiers.dstu7564digest_384.getId(), "72945012b0820c3132846ddc90da511f80bb7b70abd0cb1ab8df785d600c187b9d0ac567e8b6f76fde8a0b417a2ebf88" },
+        { "DSTU7564-512", "9e5be7daf7b68b49d2ecbd04c7a5b3af72945012b0820c3132846ddc90da511f80bb7b70abd0cb1ab8df785d600c187b9d0ac567e8b6f76fde8a0b417a2ebf88" },
+        { UAObjectIdentifiers.dstu7564digest_512.getId(), "9e5be7daf7b68b49d2ecbd04c7a5b3af72945012b0820c3132846ddc90da511f80bb7b70abd0cb1ab8df785d600c187b9d0ac567e8b6f76fde8a0b417a2ebf88" },
     };
     
     public String getName()
@@ -110,7 +130,7 @@ public class DigestTest
         result2 = d.digest();
 
         if (!MessageDigest.isEqual(result, result2))
-        {                         System.err.println(Hex.toHexString(result2));  System.err.println(Hex.toHexString(result));
+        {
             fail("Result object 4(b) not equal");
         }
 
@@ -124,6 +144,18 @@ public class DigestTest
         if (!MessageDigest.isEqual(result, result2))
         {
             fail("Result object 5 not equal");
+        }
+
+        // test six, check reset() method with longer message
+        digest.update(message);
+        digest.update(message);
+        digest.reset();
+
+        result2 = digest.digest(message);
+
+        if (!MessageDigest.isEqual(result, result2))
+        {
+            fail("Result object 6 not equal");
         }
     }
 

@@ -23,6 +23,7 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHA512tDigest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -76,11 +77,11 @@ public class PSSSignatureSpi
         super(name);
 
         this.signer = signer;
-        this.mgfDigest = digest;
 
         if (digest != null)
         {
             this.saltLength = digest.getDigestSize();
+            this.mgfDigest = digest;
         }
         else
         {
@@ -106,11 +107,11 @@ public class PSSSignatureSpi
         super(name);
 
         this.signer = signer;
-        this.mgfDigest = digest;
-        
+
         if (digest != null)
         {
             this.saltLength = digest.getDigestSize();
+            this.mgfDigest = digest;
         }
         else
         {
@@ -136,6 +137,12 @@ public class PSSSignatureSpi
             throw new InvalidKeyException("Supplied key is not a RSAPublicKey instance");
         }
 
+        if (mgfDigest == null)
+        {
+            mgfDigest = new SHA1Digest();
+            setupContentDigest();
+        }
+
         pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, contentDigest, mgfDigest, saltLength);
         pss.init(false,
             RSAUtil.generatePublicKeyParameter((RSAPublicKey)publicKey));
@@ -151,6 +158,12 @@ public class PSSSignatureSpi
             throw new InvalidKeyException("Supplied key is not a RSAPrivateKey instance");
         }
 
+        if (mgfDigest == null)
+        {
+            mgfDigest = new SHA1Digest();
+            setupContentDigest();
+        }
+
         pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, contentDigest, mgfDigest, saltLength);
         pss.init(true, new ParametersWithRandom(RSAUtil.generatePrivateKeyParameter((RSAPrivateKey)privateKey), random));
     }
@@ -164,6 +177,12 @@ public class PSSSignatureSpi
             throw new InvalidKeyException("Supplied key is not a RSAPrivateKey instance");
         }
 
+        if (mgfDigest == null)
+        {
+            mgfDigest = new SHA1Digest();
+            setupContentDigest();
+        }
+        
         pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, contentDigest, mgfDigest, saltLength);
         pss.init(true, RSAUtil.generatePrivateKeyParameter((RSAPrivateKey)privateKey));
     }
@@ -235,6 +254,19 @@ public class PSSSignatureSpi
                 case 64:
                     this.mgfDigest = new SHA512Digest();
                     break;
+                default:
+                    if (saltLength <= 20)
+                    {
+                        this.mgfDigest = new SHA1Digest();
+                    }
+                    else if (saltLength <= 28)
+                    {
+                        this.mgfDigest = new SHA224Digest();
+                    }
+                    else if (saltLength <= 32)
+                    {
+                         this.mgfDigest = new SHA256Digest();
+                    }
                 }
                 setupContentDigest();
             }
@@ -357,6 +389,42 @@ public class PSSSignatureSpi
         public SHA512_256withRSA()
         {
             super("SHA512(256)withRSAandMGF1", new RSABlindedEngine(), new SHA512tDigest(256));
+        }
+    }
+
+    static public class SHA3_224withRSA
+        extends PSSSignatureSpi
+    {
+        public SHA3_224withRSA()
+        {
+            super("SHA3-224withRSAandMGF1", new RSABlindedEngine(), new SHA3Digest(224));
+        }
+    }
+
+    static public class SHA3_256withRSA
+        extends PSSSignatureSpi
+    {
+        public SHA3_256withRSA()
+        {
+            super("SHA3-256withRSAandMGF1", new RSABlindedEngine(), new SHA3Digest(256));
+        }
+    }
+
+    static public class SHA3_384withRSA
+        extends PSSSignatureSpi
+    {
+        public SHA3_384withRSA()
+        {
+            super("SHA3-384withRSAandMGF1", new RSABlindedEngine(), new SHA3Digest(384));
+        }
+    }
+
+    static public class SHA3_512withRSA
+        extends PSSSignatureSpi
+    {
+        public SHA3_512withRSA()
+        {
+            super("SHA3-512withRSAandMGF1", new RSABlindedEngine(), new SHA3Digest(512));
         }
     }
 

@@ -6,7 +6,6 @@ import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.security.interfaces.ECPrivateKey;
 import java.security.spec.ECParameterSpec;
-import java.security.spec.ECPoint;
 import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.EllipticCurve;
 import java.util.Enumeration;
@@ -36,7 +35,6 @@ import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.util.Strings;
 
 public class BCDSTU4145PrivateKey
     implements ECPrivateKey, org.bouncycastle.jce.interfaces.ECPrivateKey, PKCS12BagAttributeCarrier, ECPointEncoder
@@ -118,9 +116,7 @@ public class BCDSTU4145PrivateKey
 
             this.ecSpec = new ECParameterSpec(
                 ellipticCurve,
-                new ECPoint(
-                    dp.getG().getAffineXCoord().toBigInteger(),
-                    dp.getG().getAffineYCoord().toBigInteger()),
+                EC5Util.convertPoint(dp.getG()),
                 dp.getN(),
                 dp.getH().intValue());
         }
@@ -149,9 +145,7 @@ public class BCDSTU4145PrivateKey
 
             this.ecSpec = new ECParameterSpec(
                 ellipticCurve,
-                new ECPoint(
-                    dp.getG().getAffineXCoord().toBigInteger(),
-                    dp.getG().getAffineYCoord().toBigInteger()),
+                EC5Util.convertPoint(dp.getG()),
                 dp.getN(),
                 dp.getH().intValue());
         }
@@ -161,9 +155,7 @@ public class BCDSTU4145PrivateKey
 
             this.ecSpec = new ECParameterSpec(
                 ellipticCurve,
-                new ECPoint(
-                    spec.getG().getAffineXCoord().toBigInteger(),
-                    spec.getG().getAffineYCoord().toBigInteger()),
+                EC5Util.convertPoint(spec.getG()),
                 spec.getN(),
                 spec.getH().intValue());
         }
@@ -205,9 +197,7 @@ public class BCDSTU4145PrivateKey
                 ecSpec = new ECNamedCurveSpec(
                     oid.getId(),
                     ellipticCurve,
-                    new ECPoint(
-                        gParam.getG().getAffineXCoord().toBigInteger(),
-                        gParam.getG().getAffineYCoord().toBigInteger()),
+                    EC5Util.convertPoint(gParam.getG()),
                     gParam.getN(),
                     gParam.getH());
             }
@@ -218,9 +208,7 @@ public class BCDSTU4145PrivateKey
                 ecSpec = new ECNamedCurveSpec(
                     ECUtil.getCurveName(oid),
                     ellipticCurve,
-                    new ECPoint(
-                        ecP.getG().getAffineXCoord().toBigInteger(),
-                        ecP.getG().getAffineYCoord().toBigInteger()),
+                    EC5Util.convertPoint(ecP.getG()),
                     ecP.getN(),
                     ecP.getH());
             }
@@ -236,9 +224,7 @@ public class BCDSTU4145PrivateKey
 
             this.ecSpec = new ECParameterSpec(
                 ellipticCurve,
-                new ECPoint(
-                    ecP.getG().getAffineXCoord().toBigInteger(),
-                    ecP.getG().getAffineYCoord().toBigInteger()),
+                EC5Util.convertPoint(ecP.getG()),
                 ecP.getN(),
                 ecP.getH().intValue());
         }
@@ -293,12 +279,12 @@ public class BCDSTU4145PrivateKey
                 curveOid = new ASN1ObjectIdentifier(((ECNamedCurveSpec)ecSpec).getName());
             }
             params = new X962Parameters(curveOid);
-            orderBitLength = ECUtil.getOrderBitLength(ecSpec.getOrder(), this.getS());
+            orderBitLength = ECUtil.getOrderBitLength(BouncyCastleProvider.CONFIGURATION, ecSpec.getOrder(), this.getS());
         }
         else if (ecSpec == null)
         {
             params = new X962Parameters(DERNull.INSTANCE);
-            orderBitLength = ECUtil.getOrderBitLength(null, this.getS());
+            orderBitLength = ECUtil.getOrderBitLength(BouncyCastleProvider.CONFIGURATION, null, this.getS());
         }
         else
         {
@@ -312,7 +298,7 @@ public class BCDSTU4145PrivateKey
                 ecSpec.getCurve().getSeed());
 
             params = new X962Parameters(ecP);
-            orderBitLength = ECUtil.getOrderBitLength(ecSpec.getOrder(), this.getS());
+            orderBitLength = ECUtil.getOrderBitLength(BouncyCastleProvider.CONFIGURATION, ecSpec.getOrder(), this.getS());
         }
 
         PrivateKeyInfo info;
@@ -424,14 +410,7 @@ public class BCDSTU4145PrivateKey
 
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
-        String nl = Strings.lineSeparator();
-
-        buf.append("EC Private Key").append(nl);
-        buf.append("             S: ").append(this.d.toString(16)).append(nl);
-
-        return buf.toString();
-
+        return ECUtil.privateKeyToString(algorithm, d, engineGetSpec());
     }
 
     private DERBitString getPublicKeyDetails(BCDSTU4145PublicKey pub)

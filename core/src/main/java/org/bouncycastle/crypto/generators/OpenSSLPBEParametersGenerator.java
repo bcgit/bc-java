@@ -3,9 +3,9 @@ package org.bouncycastle.crypto.generators;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.PBEParametersGenerator;
-import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.crypto.util.DigestFactory;
 
 /**
  * Generator for PBE derived keys and ivs as usd by OpenSSL.
@@ -17,7 +17,7 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 public class OpenSSLPBEParametersGenerator
     extends PBEParametersGenerator
 {
-    private Digest  digest = new MD5Digest();
+    private Digest  digest = DigestFactory.createMD5();
 
     /**
      * Construct a OpenSSL Parameters generator. 

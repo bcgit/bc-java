@@ -37,9 +37,10 @@ public class SignerInformationVerifier
     public ContentVerifier getContentVerifier(AlgorithmIdentifier signingAlgorithm, AlgorithmIdentifier digestAlgorithm)
         throws OperatorCreationException
     {
-        String          signatureName = sigNameGenerator.getSignatureName(digestAlgorithm, signingAlgorithm);
+        String              signatureName = sigNameGenerator.getSignatureName(digestAlgorithm, signingAlgorithm);
+        AlgorithmIdentifier baseAlgID = sigAlgorithmFinder.find(signatureName);
 
-        return verifierProvider.get(sigAlgorithmFinder.find(signatureName));
+        return verifierProvider.get(new AlgorithmIdentifier(baseAlgID.getAlgorithm(), signingAlgorithm.getParameters()));
     }
 
     public DigestCalculator getDigestCalculator(AlgorithmIdentifier algorithmIdentifier)

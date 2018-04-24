@@ -4,25 +4,20 @@ import java.io.ByteArrayOutputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
 
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.digests.SHA224Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA384Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2KeyParameters;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceFujisakiCipher;
 import org.bouncycastle.pqc.jcajce.provider.util.AsymmetricHybridCipher;
@@ -81,33 +76,26 @@ public class McElieceFujisakiCipherSpi
         update(input, inOff, inLen);
         byte[] data = buf.toByteArray();
         buf.reset();
+
         if (opMode == ENCRYPT_MODE)
         {
-
-            try
-            {
-                return cipher.messageEncrypt(data);
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-
+            return cipher.messageEncrypt(data);
         }
         else if (opMode == DECRYPT_MODE)
         {
-
             try
             {
                 return cipher.messageDecrypt(data);
             }
-            catch (Exception e)
+            catch (InvalidCipherTextException e)
             {
-                e.printStackTrace();
+                throw new BadPaddingException(e.getMessage());
             }
-
         }
-        return null;
+        else
+        {
+            throw new IllegalStateException("unknown mode in doFinal");
+        }
     }
 
 
@@ -170,37 +158,6 @@ public class McElieceFujisakiCipherSpi
         return cipher.getKeySize(mcElieceCCA2KeyParameters);
     }
 
-    public byte[] messageEncrypt(byte[] input)
-        throws IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException
-    {
-        byte[] output = null;
-        try
-        {
-            output = cipher.messageEncrypt(input);
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-        return output;
-    }
-
-
-    public byte[] messageDecrypt(byte[] input)
-        throws IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException
-    {
-        byte[] output = null;
-        try
-        {
-            output = cipher.messageDecrypt(input);
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-        return output;
-    }
-
 
     //////////////////////////////////////////////////////////////////////////////////
 
@@ -209,45 +166,7 @@ public class McElieceFujisakiCipherSpi
     {
         public McElieceFujisaki()
         {
-            super(new SHA1Digest(), new McElieceFujisakiCipher());
+            super(DigestFactory.createSHA1(), new McElieceFujisakiCipher());
         }
     }
-
-    static public class McElieceFujisaki224
-        extends McElieceFujisakiCipherSpi
-    {
-        public McElieceFujisaki224()
-        {
-            super(new SHA224Digest(), new McElieceFujisakiCipher());
-        }
-    }
-
-    static public class McElieceFujisaki256
-        extends McElieceFujisakiCipherSpi
-    {
-        public McElieceFujisaki256()
-        {
-            super(new SHA256Digest(), new McElieceFujisakiCipher());
-        }
-    }
-
-    static public class McElieceFujisaki384
-        extends McElieceFujisakiCipherSpi
-    {
-        public McElieceFujisaki384()
-        {
-            super(new SHA384Digest(), new McElieceFujisakiCipher());
-        }
-    }
-
-    static public class McElieceFujisaki512
-        extends McElieceFujisakiCipherSpi
-    {
-        public McElieceFujisaki512()
-        {
-            super(new SHA512Digest(), new McElieceFujisakiCipher());
-        }
-    }
-
-
 }

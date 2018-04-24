@@ -10,7 +10,6 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DSA;
@@ -20,8 +19,6 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.DSTU4145Signer;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jce.interfaces.ECKey;
-import org.bouncycastle.jce.interfaces.ECPublicKey;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class SignatureSpi
     extends java.security.SignatureSpi
@@ -54,31 +51,13 @@ public class SignatureSpi
     {
         CipherParameters param;
 
-        if (publicKey instanceof ECPublicKey)
+        if (publicKey instanceof BCDSTU4145PublicKey)
         {
-            param = ECUtil.generatePublicKeyParameter(publicKey);
+            param = ((BCDSTU4145PublicKey)publicKey).engineGetKeyParameters();
         }
         else
         {
-            try
-            {
-                byte[] bytes = publicKey.getEncoded();
-
-                publicKey = BouncyCastleProvider.getPublicKey(SubjectPublicKeyInfo.getInstance(bytes));
-
-                if (publicKey instanceof ECPublicKey)
-                {
-                    param = ECUtil.generatePublicKeyParameter(publicKey);
-                }
-                else
-                {
-                    throw new InvalidKeyException("can't recognise key type in DSA based signer");
-                }
-            }
-            catch (Exception e)
-            {
-                throw new InvalidKeyException("can't recognise key type in DSA based signer");
-            }
+            param = ECUtil.generatePublicKeyParameter(publicKey);
         }
 
         digest = new GOST3411Digest(expandSbox(((BCDSTU4145PublicKey)publicKey).getSbox()));
@@ -201,7 +180,7 @@ public class SignatureSpi
     }
 
     /**
-     * @deprecated replaced with <a href = "#engineSetParameter(java.security.spec.AlgorithmParameterSpec)">
+     * @deprecated replaced with #engineSetParameter(java.security.spec.AlgorithmParameterSpec)
      */
     protected void engineSetParameter(
         String param,

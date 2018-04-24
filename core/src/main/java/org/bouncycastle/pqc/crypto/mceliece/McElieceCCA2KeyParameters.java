@@ -6,18 +6,18 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 public class McElieceCCA2KeyParameters
     extends AsymmetricKeyParameter
 {
-    private McElieceCCA2Parameters params;
+    private String params;
 
     public McElieceCCA2KeyParameters(
         boolean isPrivate,
-        McElieceCCA2Parameters params)
+        String params)
     {
         super(isPrivate);
         this.params = params;
     }
 
 
-    public McElieceCCA2Parameters getParameters()
+    public String getDigest()
     {
         return params;
     }

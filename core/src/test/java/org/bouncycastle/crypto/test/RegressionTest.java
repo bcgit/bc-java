@@ -12,6 +12,7 @@ public class RegressionTest
         new AESFastTest(),
         new AESWrapTest(),
         new AESWrapPadTest(),
+        new ARIATest(),
         new DESTest(),
         new DESedeTest(),
         new ModeTest(),
@@ -73,6 +74,8 @@ public class RegressionTest
         new RIPEMD320DigestTest(),
         new TigerDigestTest(),
         new GOST3411DigestTest(),
+        new GOST3411_2012_256DigestTest(),
+        new GOST3411_2012_512DigestTest(),
         new WhirlpoolDigestTest(),
         new MD5HMacTest(),
         new SHA1HMacTest(),
@@ -143,9 +146,18 @@ public class RegressionTest
         new OpenBSDBCryptTest(),
         new X931SignerTest(),
         new Blake2bDigestTest(),
+        new Blake2sDigestTest(),
         new KeccakDigestTest(),
         new SHAKEDigestTest(),
-        new SM4Test()
+        new SM2EngineTest(),
+        new SM2KeyExchangeTest(),
+        new SM2SignerTest(),
+        new SM4Test(),
+        new DSTU7624Test(),
+        new DSTU7564Test(),
+        new IsoTrailerTest(),
+        new GOST3412Test(),
+        new GOST3412MacTest()
     };
 
     public static void main(

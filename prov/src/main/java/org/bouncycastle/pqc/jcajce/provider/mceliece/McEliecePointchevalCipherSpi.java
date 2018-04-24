@@ -4,25 +4,20 @@ import java.io.ByteArrayOutputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
 
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.digests.SHA224Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA384Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2KeyParameters;
 import org.bouncycastle.pqc.crypto.mceliece.McEliecePointchevalCipher;
 import org.bouncycastle.pqc.jcajce.provider.util.AsymmetricHybridCipher;
@@ -82,29 +77,18 @@ public class McEliecePointchevalCipherSpi
         buf.reset();
         if (opMode == ENCRYPT_MODE)
         {
-
-            try
-            {
-                return cipher.messageEncrypt(data);
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-
+            return cipher.messageEncrypt(data);
         }
         else if (opMode == DECRYPT_MODE)
         {
-
             try
             {
                 return cipher.messageDecrypt(data);
             }
-            catch (Exception e)
+            catch (InvalidCipherTextException e)
             {
-                e.printStackTrace();
+                throw new BadPaddingException(e.getMessage());
             }
-
         }
         return null;
     }
@@ -164,38 +148,6 @@ public class McEliecePointchevalCipherSpi
         return cipher.getKeySize(mcElieceCCA2KeyParameters);
     }
 
-    public byte[] messageEncrypt(byte[] input)
-        throws IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException
-    {
-        byte[] output = null;
-        try
-        {
-            output = cipher.messageEncrypt(input);
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-        return output;
-    }
-
-
-    public byte[] messageDecrypt(byte[] input)
-        throws IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException
-    {
-        byte[] output = null;
-        try
-        {
-            output = cipher.messageDecrypt(input);
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-        return output;
-    }
-
-
     //////////////////////////////////////////////////////////////////////////////////77
 
     static public class McEliecePointcheval
@@ -203,7 +155,7 @@ public class McEliecePointchevalCipherSpi
     {
         public McEliecePointcheval()
         {
-            super(new SHA1Digest(), new McEliecePointchevalCipher());
+            super(DigestFactory.createSHA1(), new McEliecePointchevalCipher());
         }
     }
 
@@ -212,7 +164,7 @@ public class McEliecePointchevalCipherSpi
     {
         public McEliecePointcheval224()
         {
-            super(new SHA224Digest(), new McEliecePointchevalCipher());
+            super(DigestFactory.createSHA224(), new McEliecePointchevalCipher());
         }
     }
 
@@ -221,7 +173,7 @@ public class McEliecePointchevalCipherSpi
     {
         public McEliecePointcheval256()
         {
-            super(new SHA256Digest(), new McEliecePointchevalCipher());
+            super(DigestFactory.createSHA256(), new McEliecePointchevalCipher());
         }
     }
 
@@ -230,7 +182,7 @@ public class McEliecePointchevalCipherSpi
     {
         public McEliecePointcheval384()
         {
-            super(new SHA384Digest(), new McEliecePointchevalCipher());
+            super(DigestFactory.createSHA384(), new McEliecePointchevalCipher());
         }
     }
 
@@ -239,7 +191,7 @@ public class McEliecePointchevalCipherSpi
     {
         public McEliecePointcheval512()
         {
-            super(new SHA512Digest(), new McEliecePointchevalCipher());
+            super(DigestFactory.createSHA512(), new McEliecePointchevalCipher());
         }
     }
 

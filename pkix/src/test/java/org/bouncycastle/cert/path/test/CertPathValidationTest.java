@@ -2,6 +2,7 @@ package org.bouncycastle.cert.path.test;
 
 import java.security.Security;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import org.bouncycastle.asn1.x509.Extension;
@@ -11,6 +12,7 @@ import org.bouncycastle.cert.X509ContentVerifierProviderBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509ContentVerifierProviderBuilder;
 import org.bouncycastle.cert.path.CertPath;
 import org.bouncycastle.cert.path.CertPathValidation;
+import org.bouncycastle.cert.path.CertPathValidationContext;
 import org.bouncycastle.cert.path.CertPathValidationResult;
 import org.bouncycastle.cert.path.validations.BasicConstraintsValidation;
 import org.bouncycastle.cert.path.validations.CRLValidation;
@@ -233,9 +235,19 @@ public class CertPathValidationTest
 //        PKIXCertPathValidatorResult result = (PKIXCertPathValidatorResult)cpv.validate(cp, param);
 //    }
 
+    private void basicConstraintsTest()
+        throws Exception
+    {
+        byte[] cert = Base64.decode("MIIDRzCCAi+gAwIBAgIBATANBgkqhkiG9w0BAQsFADBFMQswCQYDVQQGEwJVUzEfMB0GA1UEChMWVGVzdCBDZXJ0aWZpY2F0ZXMgMjAxMTEVMBMGA1UEAxMMVHJ1c3QgQW5jaG9yMB4XDTEwMDEwMTA4MzAwMFoXDTMwMTIzMTA4MzAwMFowRTELMAkGA1UEBhMCVVMxHzAdBgNVBAoTFlRlc3QgQ2VydGlmaWNhdGVzIDIwMTExFTATBgNVBAMTDFRydXN0IEFuY2hvcjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALmZUYkRR+DNRbmEJ4ITAhbNRDmqrNsJw97iLE7bpFeflDUoNcJrZPZbC208bG+g5M0ATzV0vOqg88Ds1/FjFDK1oPItqsiDImJIq0xb/et5w72WNPxHVrcsr7Ap6DHfdwLpNMncqtzX92hU/iGVHLE/w/OCWwAIIbTHaxdrGMUG7DkJJ6iI7mzqpcyPvyAAo9O3SHjJr+uw5vSrHRretnV2un0bohvGslN64MY/UIiRnPFwd2gD76byDzoM1ioyLRCllfBJ5sRDz9xrUHNigTAUdlblb6yrnNtNJmkrROYvkh6sLETUh9EYh0Ar+94fZVXfGVi57Sw7x1jyANTlA40CAwEAAaNCMEAwHQYDVR0OBBYEFOR9X9FclYYILAWuvnW2ZafZXahmMA4GA1UdDwEB/wQEAwIBBjAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQCYoa9uR55KJTkpwyPihIgXHq7/Z8dx3qZlCJQwE5qQBZXIsf5eC8Va/QjnTHOC4Gt4MwpnqqmoDqyqSW8pBVQgAUFAXqO91nLCQb4+/yfjiiNjzprpxQlcqIZYjJSVtckH1IDWFLFeuGW+OgPPEFgN4hjU5YFIsE2r1i4+ixkeuorxxsK1D/jYbVwQMXLqn1pjJttOPJwuA8+ho1f2c8FrKlqjHgOwxuHhsiGN6MKgs1baalpR/lnNFCIpq+/+3cnhufDjvxMy5lg+cwgMCiGzCxn4n4dBMw41C+4KhNF7ZtKuKSZ1eczztXD9NUkGUGw3LzpLDJazz3JhlZ/9pXzF");
+
+        new BasicConstraintsValidation(true).validate(new CertPathValidationContext(new HashSet()), new X509CertificateHolder(cert));
+    }
+
     public void performTest()
         throws Exception
     {
+        basicConstraintsTest();
+
             // initialise CertStore
         X509CertificateHolder rootCert = new X509CertificateHolder(CertPathTest.rootCertBin);
         X509CertificateHolder interCert = new X509CertificateHolder(CertPathTest.interCertBin);
@@ -251,6 +263,13 @@ public class CertPathValidationTest
         if (!result.isValid())
         {
             fail("basic validation (1) not working");
+        }
+
+        result = path.evaluate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new BasicConstraintsValidation(), new KeyUsageValidation()});
+
+        if (!result.isValid())
+        {
+            fail("basic evaluation (1) not working");
         }
 
         List crlList = new ArrayList();
@@ -293,8 +312,15 @@ public class CertPathValidationTest
             fail("incorrect path validated!!");
         }
 
+        result = path.evaluate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier)});
 
+        if (result.isValid())
+        {
+            fail("incorrect path validated!!");
+        }
 
+        isTrue(result.isDetailed());
+        
 //        List list = new ArrayList();
 //        list.add(rootCert);
 //        list.add(interCert);

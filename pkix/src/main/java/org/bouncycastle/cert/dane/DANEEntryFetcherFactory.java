@@ -12,7 +12,6 @@ package org.bouncycastle.cert.dane;
  *     91d23d115b68072e7a38afeb7e295bd6392a19f25f8328b4ecae4778._smimecert.test.org
  * </pre>
  * In the case of the later ideally just returning a list containing the single entry.
- * </p>
  */
 public interface DANEEntryFetcherFactory
 {

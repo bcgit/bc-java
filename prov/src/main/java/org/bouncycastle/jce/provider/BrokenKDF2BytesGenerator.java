@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.crypto.DerivationParameters;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KDFParameters;
 
 /**
@@ -42,7 +43,7 @@ public class BrokenKDF2BytesGenerator
     {
         if (!(param instanceof KDFParameters))
         {
-            throw new IllegalArgumentException("KDF parameters required for KDF2Generator");
+            throw new IllegalArgumentException("KDF parameters required for generator");
         }
 
         KDFParameters   p = (KDFParameters)param;
@@ -74,18 +75,18 @@ public class BrokenKDF2BytesGenerator
     {
         if ((out.length - len) < outOff)
         {
-            throw new DataLengthException("output buffer too small");
+            throw new OutputLengthException("output buffer too small");
         }
 
-        long    oBits = len * 8;
+        long    oBits = len * 8L;
 
         //
         // this is at odds with the standard implementation, the
-        // maximum value should be hBits * (2^23 - 1) where hBits
+        // maximum value should be hBits * (2^32 - 1) where hBits
         // is the digest output size in bits. We can't have an
         // array with a long index at the moment...
         //
-        if (oBits > (digest.getDigestSize() * 8 * (2L^32 - 1)))
+        if (oBits > (digest.getDigestSize() * 8L * (1L<<32 - 1)))
         {
             new IllegalArgumentException("Output length to large");
         }

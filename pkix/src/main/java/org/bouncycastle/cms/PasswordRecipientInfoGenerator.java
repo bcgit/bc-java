@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.operator.GenericKey;
+import org.bouncycastle.util.Arrays;
 
 public abstract class PasswordRecipientInfoGenerator
     implements RecipientInfoGenerator
@@ -25,6 +26,9 @@ public abstract class PasswordRecipientInfoGenerator
     private int schemeID;
     private int keySize;
     private int blockSize;
+    private PasswordRecipient.PRF prf;
+    private byte[] salt;
+    private int iterationCount;
 
     protected PasswordRecipientInfoGenerator(ASN1ObjectIdentifier kekAlgorithm, char[] password)
     {
@@ -38,6 +42,8 @@ public abstract class PasswordRecipientInfoGenerator
         this.kekAlgorithm = kekAlgorithm;
         this.keySize = keySize;
         this.blockSize = blockSize;
+        this.prf = PasswordRecipient.PRF.HMacSHA1;
+        this.iterationCount = 1024;
     }
 
     private static int getKeySize(ASN1ObjectIdentifier kekAlgorithm)
@@ -59,9 +65,17 @@ public abstract class PasswordRecipientInfoGenerator
         return this;
     }
 
+    public PasswordRecipientInfoGenerator setPRF(PasswordRecipient.PRF prf)
+    {
+        this.prf = prf;
+
+        return this;
+    }
+
     public PasswordRecipientInfoGenerator setSaltAndIterationCount(byte[] salt, int iterationCount)
     {
-        this.keyDerivationAlgorithm = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params(salt, iterationCount));
+        this.salt = Arrays.clone(salt);
+        this.iterationCount = iterationCount;
 
         return this;
     }
@@ -85,14 +99,14 @@ public abstract class PasswordRecipientInfoGenerator
         
         random.nextBytes(iv);
 
-        if (keyDerivationAlgorithm == null)
+        if (salt == null)
         {
-            byte[] salt = new byte[20];
+            salt = new byte[20];
 
             random.nextBytes(salt);
-
-            keyDerivationAlgorithm = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params(salt, 1024));
         }
+
+        keyDerivationAlgorithm = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params(salt, iterationCount, prf.prfAlgID));
 
         byte[] derivedKey = calculateDerivedKey(schemeID, keyDerivationAlgorithm, keySize);
 

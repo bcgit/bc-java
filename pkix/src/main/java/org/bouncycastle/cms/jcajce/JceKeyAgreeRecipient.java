@@ -25,16 +25,21 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.cms.ecc.ECCCMSSharedInfo;
 import org.bouncycastle.asn1.cms.ecc.MQVuserKeyingMaterial;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.cryptopro.Gost2814789EncryptedKey;
+import org.bouncycastle.asn1.cryptopro.Gost2814789KeyWrapParameters;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.KeyAgreeRecipient;
+import org.bouncycastle.jcajce.spec.GOST28147WrapParameterSpec;
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.SecretKeySizeProvider;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 public abstract class JceKeyAgreeRecipient
@@ -172,6 +177,13 @@ public abstract class JceKeyAgreeRecipient
                     userKeyingMaterialSpec = new UserKeyingMaterialSpec(userKeyingMaterial.getOctets());
                 }
             }
+            else if (CMSUtils.isGOST(keyEncAlg.getAlgorithm()))
+            {
+                if (userKeyingMaterial != null)
+                {
+                    userKeyingMaterialSpec = new UserKeyingMaterialSpec(userKeyingMaterial.getOctets());
+                }
+            }
             else
             {
                 throw new CMSException("Unknown key agreement algorithm: " + keyEncAlg.getAlgorithm());
@@ -209,6 +221,19 @@ public abstract class JceKeyAgreeRecipient
             {
                 SecretKey agreedWrapKey = calculateAgreedWrapKey(keyEncryptionAlgorithm, wrapAlg,
                     senderPublicKey, userKeyingMaterial, recipientKey, ecc_cms_Generator);
+
+                if (wrapAlg.getAlgorithm().equals(CryptoProObjectIdentifiers.id_Gost28147_89_None_KeyWrap)
+                    || wrapAlg.getAlgorithm().equals(CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_KeyWrap))
+                {
+                    Gost2814789EncryptedKey encKey = Gost2814789EncryptedKey.getInstance(encryptedContentEncryptionKey);
+                    Gost2814789KeyWrapParameters wrapParams = Gost2814789KeyWrapParameters.getInstance(wrapAlg.getParameters());
+             
+                    Cipher keyCipher = helper.createCipher(wrapAlg.getAlgorithm());
+
+                    keyCipher.init(Cipher.UNWRAP_MODE, agreedWrapKey, new GOST28147WrapParameterSpec(wrapParams.getEncryptionParamSet(), userKeyingMaterial.getOctets()));
+
+                    return keyCipher.unwrap(Arrays.concatenate(encKey.getEncryptedKey(), encKey.getMacKey()), helper.getBaseCipherName(contentEncryptionAlgorithm.getAlgorithm()), Cipher.SECRET_KEY);
+                }
 
                 return unwrapSessionKey(wrapAlg.getAlgorithm(), agreedWrapKey, contentEncryptionAlgorithm.getAlgorithm(), encryptedContentEncryptionKey);
             }

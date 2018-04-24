@@ -6,11 +6,11 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.generators.DHKeyPairGenerator;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHKeyGenerationParameters;
 import org.bouncycastle.crypto.params.DHParameters;
-import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 
 /**
@@ -26,6 +26,8 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
  */
 public class DHAgreement
 {
+    private static final BigInteger ONE = BigInteger.valueOf(1);
+
     private DHPrivateKeyParameters  key;
     private DHParameters            dhParams;
     private BigInteger              privateValue;
@@ -89,6 +91,18 @@ public class DHAgreement
 
         BigInteger p = dhParams.getP();
 
-        return message.modPow(key.getX(), p).multiply(pub.getY().modPow(privateValue, p)).mod(p);
+        BigInteger peerY = pub.getY();
+        if (peerY == null || peerY.compareTo(ONE) <= 0 || peerY.compareTo(p.subtract(ONE)) >= 0)
+        {
+            throw new IllegalArgumentException("Diffie-Hellman public key is weak");
+        }
+
+        BigInteger result = peerY.modPow(privateValue, p);
+        if (result.equals(ONE))
+        {
+            throw new IllegalStateException("Shared key can't be 1");
+        }
+
+        return message.modPow(key.getX(), p).multiply(result).mod(p);
     }
 }

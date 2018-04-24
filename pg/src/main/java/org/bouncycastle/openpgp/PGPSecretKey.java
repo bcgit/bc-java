@@ -857,70 +857,70 @@ public class PGPSecretKey
     }
 
     /**
-        * Parse a secret key from one of the GPG S expression keys.
-        *
-        * @return a secret key object.
-        */
-       public static PGPSecretKey parseSecretKeyFromSExpr(InputStream inputStream, PBEProtectionRemoverFactory keyProtectionRemoverFactory, KeyFingerPrintCalculator fingerPrintCalculator)
-           throws IOException, PGPException
-       {
-           SXprUtils.skipOpenParenthesis(inputStream);
+     * Parse a secret key from one of the GPG S expression keys.
+     *
+     * @return a secret key object.
+     */
+    public static PGPSecretKey parseSecretKeyFromSExpr(InputStream inputStream, PBEProtectionRemoverFactory keyProtectionRemoverFactory, KeyFingerPrintCalculator fingerPrintCalculator)
+        throws IOException, PGPException
+    {
+        SXprUtils.skipOpenParenthesis(inputStream);
 
-           String type;
+        String type;
 
-           type = SXprUtils.readString(inputStream, inputStream.read());
-           if (type.equals("protected-private-key"))
-           {
-               SXprUtils.skipOpenParenthesis(inputStream);
+        type = SXprUtils.readString(inputStream, inputStream.read());
+        if (type.equals("protected-private-key"))
+        {
+            SXprUtils.skipOpenParenthesis(inputStream);
 
-               String curveName;
+            String curveName;
 
-               String keyType = SXprUtils.readString(inputStream, inputStream.read());
-               if (keyType.equals("ecc"))
-               {
-                   SXprUtils.skipOpenParenthesis(inputStream);
+            String keyType = SXprUtils.readString(inputStream, inputStream.read());
+            if (keyType.equals("ecc"))
+            {
+                SXprUtils.skipOpenParenthesis(inputStream);
 
-                   String curveID = SXprUtils.readString(inputStream, inputStream.read());
-                   curveName = SXprUtils.readString(inputStream, inputStream.read());
+                String curveID = SXprUtils.readString(inputStream, inputStream.read());
+                curveName = SXprUtils.readString(inputStream, inputStream.read());
 
-                   if (curveName.startsWith("NIST "))
-                   {
-                       curveName = curveName.substring("NIST ".length());
-                   }
+                if (curveName.startsWith("NIST "))
+                {
+                    curveName = curveName.substring("NIST ".length());
+                }
 
-                   SXprUtils.skipCloseParenthesis(inputStream);
-               }
-               else
-               {
-                   throw new PGPException("no curve details found");
-               }
+                SXprUtils.skipCloseParenthesis(inputStream);
+            }
+            else
+            {
+                throw new PGPException("no curve details found");
+            }
 
-               byte[] qVal;
+            byte[] qVal;
 
-               SXprUtils.skipOpenParenthesis(inputStream);
+            SXprUtils.skipOpenParenthesis(inputStream);
 
-               type = SXprUtils.readString(inputStream, inputStream.read());
-               if (type.equals("q"))
-               {
-                   qVal = SXprUtils.readBytes(inputStream, inputStream.read());
-               }
-               else
-               {
-                   throw new PGPException("no q value found");
-               }
+            type = SXprUtils.readString(inputStream, inputStream.read());
+            if (type.equals("q"))
+            {
+                qVal = SXprUtils.readBytes(inputStream, inputStream.read());
+            }
+            else
+            {
+                throw new PGPException("no q value found");
+            }
 
-               PublicKeyPacket pubPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.ECDSA, new Date(), new ECDSAPublicBCPGKey(ECNamedCurveTable.getOID(curveName), new BigInteger(1, qVal)));
+            PublicKeyPacket pubPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.ECDSA, new Date(), new ECDSAPublicBCPGKey(ECNamedCurveTable.getOID(curveName), new BigInteger(1, qVal)));
 
-               SXprUtils.skipCloseParenthesis(inputStream);
+            SXprUtils.skipCloseParenthesis(inputStream);
 
-               byte[] dValue = getDValue(inputStream, keyProtectionRemoverFactory, curveName);
-               // TODO: check SHA-1 hash.
+            byte[] dValue = getDValue(inputStream, keyProtectionRemoverFactory, curveName);
+            // TODO: check SHA-1 hash.
 
-               return new PGPSecretKey(new SecretKeyPacket(pubPacket, SymmetricKeyAlgorithmTags.NULL, null, null, new ECSecretBCPGKey(new BigInteger(1, dValue)).getEncoded()), new PGPPublicKey(pubPacket, fingerPrintCalculator));
-           }
+            return new PGPSecretKey(new SecretKeyPacket(pubPacket, SymmetricKeyAlgorithmTags.NULL, null, null, new ECSecretBCPGKey(new BigInteger(1, dValue)).getEncoded()), new PGPPublicKey(pubPacket, fingerPrintCalculator));
+        }
 
-           throw new PGPException("unknown key type found");
-       }
+        throw new PGPException("unknown key type found");
+    }
 
     private static byte[] getDValue(InputStream inputStream, PBEProtectionRemoverFactory keyProtectionRemoverFactory, String curveName)
         throws IOException, PGPException

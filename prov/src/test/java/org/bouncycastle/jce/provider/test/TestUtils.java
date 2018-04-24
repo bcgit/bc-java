@@ -53,6 +53,7 @@ import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.V1TBSCertificateGenerator;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.jce.PrincipalUtil;
@@ -72,6 +73,8 @@ class TestUtils
         algIds.put("GOST3411withGOST3410", new AlgorithmIdentifier(CryptoProObjectIdentifiers.gostR3411_94_with_gostR3410_94));
         algIds.put("SHA1withRSA", new AlgorithmIdentifier(PKCSObjectIdentifiers.sha1WithRSAEncryption, DERNull.INSTANCE));
         algIds.put("SHA256withRSA", new AlgorithmIdentifier(PKCSObjectIdentifiers.sha256WithRSAEncryption, DERNull.INSTANCE));
+        algIds.put("SHA1withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA1));
+        algIds.put("SHA256withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA256));
     }
 
     public static X509Certificate createSelfSignedCert(String dn, String sigName, KeyPair keyPair)
@@ -246,8 +249,8 @@ class TestUtils
 
         crlGen.addCRLEntry(serialNumber, now, CRLReason.privilegeWithdrawn);
 
-        crlGen.addExtension(X509Extensions.AuthorityKeyIdentifier, false, new AuthorityKeyIdentifierStructure(caCert));
-        crlGen.addExtension(X509Extensions.CRLNumber, false, new CRLNumber(BigInteger.valueOf(1)));
+        crlGen.addExtension(Extension.authorityKeyIdentifier, false, new AuthorityKeyIdentifierStructure(caCert));
+        crlGen.addExtension(Extension.cRLNumber, false, new CRLNumber(BigInteger.valueOf(1)));
 
         return crlGen.generate(caKey, "BC");
     }
@@ -255,6 +258,18 @@ class TestUtils
     public static X509Certificate createExceptionCertificate(boolean exceptionOnEncode)
     {
         return new ExceptionCertificate(exceptionOnEncode);
+    }
+
+    public static X500Name getCertIssuer(X509Certificate x509Certificate)
+        throws CertificateEncodingException
+    {
+        return TBSCertificate.getInstance(x509Certificate.getTBSCertificate()).getIssuer();
+    }
+
+    public static X500Name getCertSubject(X509Certificate x509Certificate)
+        throws CertificateEncodingException
+    {
+        return TBSCertificate.getInstance(x509Certificate.getTBSCertificate()).getSubject();
     }
 
     private static class ExceptionCertificate

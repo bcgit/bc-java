@@ -38,6 +38,7 @@ public class CramerShoupParametersGenerator
      * <p>
      * Note: can take a while...
      * </p>
+     * @return a generated CramerShoupParameters object.
      */
     public CramerShoupParameters generateParameters()
     {

@@ -92,4 +92,13 @@ public interface MiscObjectIdentifiers
     ASN1ObjectIdentifier id_blake2b256 = blake2.branch("1.8");
     ASN1ObjectIdentifier id_blake2b384 = blake2.branch("1.12");
     ASN1ObjectIdentifier id_blake2b512 = blake2.branch("1.16");
+
+    ASN1ObjectIdentifier id_blake2s128 = blake2.branch("2.4");
+    ASN1ObjectIdentifier id_blake2s160 = blake2.branch("2.5");
+    ASN1ObjectIdentifier id_blake2s224 = blake2.branch("2.7");
+    ASN1ObjectIdentifier id_blake2s256 = blake2.branch("2.8");
+
+    //
+    // Scrypt
+    ASN1ObjectIdentifier id_scrypt = new ASN1ObjectIdentifier("1.3.6.1.4.1.11591.4.11");
 }

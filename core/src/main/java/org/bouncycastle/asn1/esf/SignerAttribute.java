@@ -88,7 +88,11 @@ public class SignerAttribute
      */
     public Object[] getValues()
     {
-        return values;
+        Object[] rv = new Object[values.length];
+
+        System.arraycopy(values, 0, rv, 0, rv.length);
+
+        return rv;
     }
 
     /**

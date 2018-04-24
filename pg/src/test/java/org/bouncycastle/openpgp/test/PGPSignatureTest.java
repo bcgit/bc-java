@@ -18,6 +18,7 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.NotationData;
+import org.bouncycastle.bcpg.sig.SignatureTarget;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
@@ -43,7 +44,9 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.UncloseableOutputStream;
@@ -360,9 +363,53 @@ public class PGPSignatureTest
           + "6YD9JpfYZHEFmpYoS+qQ3tLfPCG3gaS/djBZWWkNt5z7e6sbRko49XEj3EUh"
           + "33HgjrOlL8uJNbhlZ5NeILcxHqGTHji+5wMEDBjfNT/C6m0=");
 
+    private void testRemoveSignature()
+        throws IOException
+    {
+        byte[] testPubKeyRing =
+            Base64.decode(
+                "mQGiBEAR8jYRBADNifuSopd20JOQ5x30ljIaY0M6927+vo09NeNxS3KqItba"
+                    + "nz9o5e2aqdT0W1xgdHYZmdElOHTTsugZxdXTEhghyxoo3KhVcNnTABQyrrvX"
+                    + "qouvmP2fEDEw0Vpyk+90BpyY9YlgeX/dEA8OfooRLCJde/iDTl7r9FT+mts8"
+                    + "g3azjwCgx+pOLD9LPBF5E4FhUOdXISJ0f4EEAKXSOi9nZzajpdhe8W2ZL9gc"
+                    + "BpzZi6AcrRZBHOEMqd69gtUxA4eD8xycUQ42yH89imEcwLz8XdJ98uHUxGJi"
+                    + "qp6hq4oakmw8GQfiL7yQIFgaM0dOAI9Afe3m84cEYZsoAFYpB4/s9pVMpPRH"
+                    + "NsVspU0qd3NHnSZ0QXs8L8DXGO1uBACjDUj+8GsfDCIP2QF3JC+nPUNa0Y5t"
+                    + "wKPKl+T8hX/0FBD7fnNeC6c9j5Ir/Fp/QtdaDAOoBKiyNLh1JaB1NY6US5zc"
+                    + "qFks2seZPjXEiE6OIDXYra494mjNKGUobA4hqT2peKWXt/uBcuL1mjKOy8Qf"
+                    + "JxgEd0MOcGJO+1PFFZWGzLQ3RXJpYyBILiBFY2hpZG5hICh0ZXN0IGtleSBv"
+                    + "bmx5KSA8ZXJpY0Bib3VuY3ljYXN0bGUub3JnPohZBBMRAgAZBQJAEfI2BAsH"
+                    + "AwIDFQIDAxYCAQIeAQIXgAAKCRAOtk6iUOgnkDdnAKC/CfLWikSBdbngY6OK"
+                    + "5UN3+o7q1ACcDRqjT3yjBU3WmRUNlxBg3tSuljmwAgAAuQENBEAR8jgQBAC2"
+                    + "kr57iuOaV7Ga1xcU14MNbKcA0PVembRCjcVjei/3yVfT/fuCVtGHOmYLEBqH"
+                    + "bn5aaJ0P/6vMbLCHKuN61NZlts+LEctfwoya43RtcubqMc7eKw4k0JnnoYgB"
+                    + "ocLXOtloCb7jfubOsnfORvrUkK0+Ne6anRhFBYfaBmGU75cQgwADBQP/XxR2"
+                    + "qGHiwn+0YiMioRDRiIAxp6UiC/JQIri2AKSqAi0zeAMdrRsBN7kyzYVVpWwN"
+                    + "5u13gPdQ2HnJ7d4wLWAuizUdKIQxBG8VoCxkbipnwh2RR4xCXFDhJrJFQUm+"
+                    + "4nKx9JvAmZTBIlI5Wsi5qxst/9p5MgP3flXsNi1tRbTmRhqIRgQYEQIABgUC"
+                    + "QBHyOAAKCRAOtk6iUOgnkBStAJoCZBVM61B1LG2xip294MZecMtCwQCbBbsk"
+                    + "JVCXP0/Szm05GB+WN+MOCT2wAgAA");
+
+        JcaPGPObjectFactory pgpFact = new JcaPGPObjectFactory(testPubKeyRing);
+
+        PGPPublicKeyRing pgpPub = (PGPPublicKeyRing)pgpFact.nextObject();
+
+        Iterator itSignatures = pgpPub.getPublicKey().getSignatures();
+        while (itSignatures.hasNext())
+        {
+            PGPSignature sig = (PGPSignature)itSignatures.next();
+            if (sig.getSignatureType() == PGPSignature.POSITIVE_CERTIFICATION)
+            {
+                PGPPublicKey.removeCertification(pgpPub.getPublicKey(), sig);
+            }
+        }
+    }
+
     public void performTest()
         throws Exception
     {
+        testRemoveSignature();
+
         //
         // RSA tests
         //
@@ -673,6 +720,7 @@ public class PGPSignatureTest
         testKeyFlagsValues();
 
         testSubpacketGenerator();
+        testSignatureTarget();
         testUserAttributeEncoding();
     }
 
@@ -708,6 +756,38 @@ public class PGPSignatureTest
                 }
             }
         }
+    }
+
+    private void testSignatureTarget()
+    {
+        byte[] hash = Hex.decode("0001020304050607080910111213141516171819");
+        PGPSignatureSubpacketGenerator sGen = new PGPSignatureSubpacketGenerator();
+
+        sGen.setSignatureTarget(true, PublicKeyAlgorithmTags.ECDSA, HashAlgorithmTags.SHA1, hash);
+
+        PGPSignatureSubpacketVector sVec = sGen.generate();
+
+        isTrue("no sig target", sVec.hasSubpacket(SignatureSubpacketTags.SIGNATURE_TARGET));
+
+        SignatureTarget sigTarg = sVec.getSignatureTarget();
+
+        isTrue("wrong critical", sigTarg.isCritical());
+        isTrue("wrong key alg", PublicKeyAlgorithmTags.ECDSA == sigTarg.getPublicKeyAlgorithm());
+        isTrue("wrong hash alg", HashAlgorithmTags.SHA1 == sigTarg.getHashAlgorithm());
+        isTrue("wrong hash data", Arrays.areEqual(hash, sigTarg.getHashData()));
+
+        sGen = new PGPSignatureSubpacketGenerator();
+
+        sGen.setSignatureTarget(false, PublicKeyAlgorithmTags.RSA_SIGN, HashAlgorithmTags.SHA256, hash);
+
+        sVec = sGen.generate();
+
+        sigTarg = sVec.getSignatureTarget();
+
+        isTrue("wrong critical", !sigTarg.isCritical());
+        isTrue("wrong key alg", PublicKeyAlgorithmTags.RSA_SIGN == sigTarg.getPublicKeyAlgorithm());
+        isTrue("wrong hash alg", HashAlgorithmTags.SHA256 == sigTarg.getHashAlgorithm());
+        isTrue("wrong hash data", Arrays.areEqual(hash, sigTarg.getHashData()));
     }
 
     private void testSubpacketGenerator()

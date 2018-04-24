@@ -1,5 +1,9 @@
 package org.bouncycastle.crypto.tls;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
 /**
  * A queue for bytes. This file could be more optimized.
  */
@@ -42,6 +46,8 @@ public class ByteQueue
      */
     private int available = 0;
 
+    private boolean readOnlyBuf = false;
+
     public ByteQueue()
     {
         this(DEFAULT_CAPACITY);
@@ -49,7 +55,73 @@ public class ByteQueue
 
     public ByteQueue(int capacity)
     {
-        databuf = new byte[capacity];
+        databuf = capacity == 0 ? TlsUtils.EMPTY_BYTES : new byte[capacity];
+    }
+
+    public ByteQueue(byte[] buf, int off, int len)
+    {
+        this.databuf = buf;
+        this.skipped = off;
+        this.available = len;
+        this.readOnlyBuf = true;
+    }
+
+    /**
+     * Add some data to our buffer.
+     *
+     * @param buf A byte-array to read data from.
+     * @param off How many bytes to skip at the beginning of the array.
+     * @param len How many bytes to read from the array.
+     */
+    public void addData(byte[] buf, int off, int len)
+    {
+        if (readOnlyBuf)
+        {
+            throw new IllegalStateException("Cannot add data to read-only buffer");
+        }
+
+        if ((skipped + available + len) > databuf.length)
+        {
+            int desiredSize = ByteQueue.nextTwoPow(available + len);
+            if (desiredSize > databuf.length)
+            {
+                byte[] tmp = new byte[desiredSize];
+                System.arraycopy(databuf, skipped, tmp, 0, available);
+                databuf = tmp;
+            }
+            else
+            {
+                System.arraycopy(databuf, skipped, databuf, 0, available);
+            }
+            skipped = 0;
+        }
+
+        System.arraycopy(buf, off, databuf, skipped + available, len);
+        available += len;
+    }
+
+    /**
+     * @return The number of bytes which are available in this buffer.
+     */
+    public int available()
+    {
+        return available;
+    }
+
+    /**
+     * Copy some bytes from the beginning of the data to the provided {@link OutputStream}.
+     *
+     * @param output The {@link OutputStream} to copy the bytes to.
+     * @param length How many bytes to copy.
+     */
+    public void copyTo(OutputStream output, int length) throws IOException
+    {
+        if (length > available)
+        {
+            throw new IllegalStateException("Cannot copy " + length + " bytes, only got " + available);
+        }
+
+        output.write(databuf, skipped, length);
     }
 
     /**
@@ -75,32 +147,23 @@ public class ByteQueue
     }
 
     /**
-     * Add some data to our buffer.
-     *
-     * @param buf A byte-array to read data from.
-     * @param off How many bytes to skip at the beginning of the array.
-     * @param len How many bytes to read from the array.
+     * Return a {@link ByteArrayInputStream} over some bytes at the beginning of the data.
+     * @param length How many bytes will be readable.
+     * @return A {@link ByteArrayInputStream} over the data.
      */
-    public void addData(byte[] buf, int off, int len)
+    public ByteArrayInputStream readFrom(int length)
     {
-        if ((skipped + available + len) > databuf.length)
+        if (length > available)
         {
-            int desiredSize = ByteQueue.nextTwoPow(available + len);
-            if (desiredSize > databuf.length)
-            {
-                byte[] tmp = new byte[desiredSize];
-                System.arraycopy(databuf, skipped, tmp, 0, available);
-                databuf = tmp;
-            }
-            else
-            {
-                System.arraycopy(databuf, skipped, databuf, 0, available);
-            }
-            skipped = 0;
+            throw new IllegalStateException("Cannot read " + length + " bytes, only got " + available);
         }
 
-        System.arraycopy(buf, off, databuf, skipped + available, len);
-        available += len;
+        int position = skipped;
+
+        available -= length;
+        skipped += length;
+
+        return new ByteArrayInputStream(databuf, position, length);
     }
 
     /**
@@ -142,20 +205,24 @@ public class ByteQueue
         removeData(buf, 0, len, skip);
         return buf;
     }
-    
-    /**
-     * @deprecated Use 'available' instead
-     */
-    public int size()
-    {
-        return available;
-    }
 
-    /**
-     * @return The number of bytes which are available in this buffer.
-     */
-    public int available()
+    public void shrink()
     {
-        return available;
+        if (available == 0)
+        {
+            databuf = TlsUtils.EMPTY_BYTES;
+            skipped = 0;
+        }
+        else
+        {
+            int desiredSize = ByteQueue.nextTwoPow(available);
+            if (desiredSize < databuf.length)
+            {
+                byte[] tmp = new byte[desiredSize];
+                System.arraycopy(databuf, skipped, tmp, 0, available);
+                databuf = tmp;
+                skipped = 0;
+            }
+        }
     }
 }

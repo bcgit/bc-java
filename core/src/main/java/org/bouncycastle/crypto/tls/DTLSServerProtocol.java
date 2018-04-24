@@ -66,19 +66,29 @@ public class DTLSServerProtocol
         }
         catch (TlsFatalAlert fatalAlert)
         {
-            recordLayer.fail(fatalAlert.getAlertDescription());
+            abortServerHandshake(state, recordLayer, fatalAlert.getAlertDescription());
             throw fatalAlert;
         }
         catch (IOException e)
         {
-            recordLayer.fail(AlertDescription.internal_error);
+            abortServerHandshake(state, recordLayer, AlertDescription.internal_error);
             throw e;
         }
         catch (RuntimeException e)
         {
-            recordLayer.fail(AlertDescription.internal_error);
+            abortServerHandshake(state, recordLayer, AlertDescription.internal_error);
             throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
+        finally
+        {
+            securityParameters.clear();
+        }
+    }
+
+    protected void abortServerHandshake(ServerHandshakeState state, DTLSRecordLayer recordLayer, short alertDescription)
+    {
+        recordLayer.fail(alertDescription);
+        invalidateSession(state);
     }
 
     protected DTLSTransport serverHandshake(ServerHandshakeState state, DTLSRecordLayer recordLayer)
@@ -424,12 +434,27 @@ public class DTLSServerProtocol
             securityParameters.getCipherSuite());
 
         /*
-         * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify verify_data_length
+         * RFC 5246 7.4.9. Any cipher suite which does not explicitly specify verify_data_length
          * has a verify_data_length equal to 12. This includes all existing cipher suites.
          */
         securityParameters.verifyDataLength = 12;
 
         return buf.toByteArray();
+    }
+
+    protected void invalidateSession(ServerHandshakeState state)
+    {
+        if (state.sessionParameters != null)
+        {
+            state.sessionParameters.clear();
+            state.sessionParameters = null;
+        }
+
+        if (state.tlsSession != null)
+        {
+            state.tlsSession.invalidate();
+            state.tlsSession = null;
+        }
     }
 
     protected void notifyClientCertificate(ServerHandshakeState state, Certificate clientCertificate)
@@ -660,6 +685,9 @@ public class DTLSServerProtocol
 
         if (state.clientExtensions != null)
         {
+            // NOTE: Validates the padding extension data, if present
+            TlsExtensionsUtils.getPaddingExtension(state.clientExtensions);
+
             state.server.processClientExtensions(state.clientExtensions);
         }
     }
@@ -691,6 +719,9 @@ public class DTLSServerProtocol
     {
         TlsServer server = null;
         TlsServerContextImpl serverContext = null;
+        TlsSession tlsSession = null;
+        SessionParameters sessionParameters = null;
+        SessionParameters.Builder sessionParametersBuilder = null;
         int[] offeredCipherSuites = null;
         short[] offeredCompressionMethods = null;
         Hashtable clientExtensions = null;

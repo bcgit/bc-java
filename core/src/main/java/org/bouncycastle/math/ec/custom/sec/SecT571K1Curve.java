@@ -5,9 +5,11 @@ import java.math.BigInteger;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECCurve.AbstractF2m;
 import org.bouncycastle.math.ec.ECFieldElement;
+import org.bouncycastle.math.ec.ECLookupTable;
 import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.WTauNafMultiplier;
+import org.bouncycastle.math.raw.Nat576;
 import org.bouncycastle.util.encoders.Hex;
 
 public class SecT571K1Curve extends AbstractF2m
@@ -104,5 +106,50 @@ public class SecT571K1Curve extends AbstractF2m
     public int getK3()
     {
         return 10;
+    }
+
+    public ECLookupTable createCacheSafeLookupTable(ECPoint[] points, int off, final int len)
+    {
+        final int FE_LONGS = 9;
+
+        final long[] table = new long[len * FE_LONGS * 2];
+        {
+            int pos = 0;
+            for (int i = 0; i < len; ++i)
+            {
+                ECPoint p = points[off + i];
+                Nat576.copy64(((SecT571FieldElement)p.getRawXCoord()).x, 0, table, pos); pos += FE_LONGS;
+                Nat576.copy64(((SecT571FieldElement)p.getRawYCoord()).x, 0, table, pos); pos += FE_LONGS;
+            }
+        }
+
+        return new ECLookupTable()
+        {
+            public int getSize()
+            {
+                return len;
+            }
+
+            public ECPoint lookup(int index)
+            {
+                long[] x = Nat576.create64(), y = Nat576.create64();
+                int pos = 0;
+
+                for (int i = 0; i < len; ++i)
+                {
+                    long MASK = ((i ^ index) - 1) >> 31;
+
+                    for (int j = 0; j < FE_LONGS; ++j)
+                    {
+                        x[j] ^= table[pos + j] & MASK;
+                        y[j] ^= table[pos + FE_LONGS + j] & MASK;
+                    }
+
+                    pos += (FE_LONGS * 2);
+                }
+
+                return createRawPoint(new SecT571FieldElement(x), new SecT571FieldElement(y), false);
+            }
+        };
     }
 }

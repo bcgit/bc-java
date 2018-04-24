@@ -17,7 +17,6 @@ public abstract class ASN1Null
      * <li> {@link ASN1Null} object
      * <li> a byte[] containing ASN.1 NULL object
      * </ul>
-     * </p>
      *
      * @param o object to be converted.
      * @return an instance of ASN1Null, or null.

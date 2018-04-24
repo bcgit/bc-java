@@ -10,7 +10,6 @@ import org.bouncycastle.pqc.asn1.ParSet;
 import org.bouncycastle.pqc.crypto.gmss.GMSSParameters;
 import org.bouncycastle.pqc.crypto.gmss.GMSSPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.KeyUtil;
-import org.bouncycastle.pqc.jcajce.spec.GMSSPublicKeySpec;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -18,7 +17,6 @@ import org.bouncycastle.util.encoders.Hex;
  * href="GMSSKeyPairGenerator">GMSSKeyPairGenerator</a>.
  *
  * @see org.bouncycastle.pqc.crypto.gmss.GMSSKeyPairGenerator
- * @see org.bouncycastle.pqc.jcajce.spec.GMSSPublicKeySpec
  */
 public class BCGMSSPublicKey
     implements CipherParameters, PublicKey
@@ -53,16 +51,6 @@ public class BCGMSSPublicKey
     {
         this.gmssParameterSet = gmssParameterSet;
         this.publicKeyBytes = pub;
-    }
-
-    /**
-     * The constructor
-     *
-     * @param keySpec a GMSS key specification
-     */
-    protected BCGMSSPublicKey(GMSSPublicKeySpec keySpec)
-    {
-        this(keySpec.getPublicKey(), keySpec.getParameters());
     }
 
     public BCGMSSPublicKey(

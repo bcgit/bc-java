@@ -159,7 +159,7 @@ public class X931Signer
     public byte[] generateSignature()
         throws CryptoException
     {
-        createSignatureBlock();
+        createSignatureBlock(trailer);
 
         BigInteger t = new BigInteger(1, cipher.processBlock(block, 0, block.length));
         clearBlock(block);
@@ -169,7 +169,7 @@ public class X931Signer
         return BigIntegers.asUnsignedByteArray((kParam.getModulus().bitLength() + 7) / 8, t);
     }
 
-    private void createSignatureBlock()
+    private void createSignatureBlock(int trailer)
     {
         int     digSize = digest.getDigestSize();
 
@@ -198,7 +198,7 @@ public class X931Signer
     }
 
     /**
-     * return true if the signature represents a ISO9796-2 signature
+     * return true if the signature represents a X9.31 signature
      * for the passed in message.
      */
     public boolean verifySignature(
@@ -233,12 +233,19 @@ public class X931Signer
             }
         }
 
-        createSignatureBlock();
+        createSignatureBlock(trailer);
 
         byte[] fBlock = BigIntegers.asUnsignedByteArray(block.length, f);
 
         boolean rv = Arrays.constantTimeAreEqual(block, fBlock);
 
+        // check for old NIST tool value
+        if (trailer == ISOTrailers.TRAILER_SHA512_256 && !rv)
+        {
+            block[block.length - 2] = (byte)0x40;   // old NIST CAVP tool value
+            rv = Arrays.constantTimeAreEqual(block, fBlock);
+        }
+        
         clearBlock(block);
         clearBlock(fBlock);
 

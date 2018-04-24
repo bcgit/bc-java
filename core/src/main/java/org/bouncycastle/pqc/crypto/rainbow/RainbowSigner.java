@@ -21,6 +21,8 @@ import org.bouncycastle.pqc.crypto.rainbow.util.GF2Field;
 public class RainbowSigner
     implements MessageSigner
 {
+    private static final int MAXITS = 65536;
+    
     // Source of randomness
     private SecureRandom random;
 
@@ -69,7 +71,7 @@ public class RainbowSigner
      * @param layer the current layer for which a LES is to be solved.
      * @param msg   the message that should be signed.
      * @return Y_ the modified document needed for solving LES, (Y_ =
-     *         A1^{-1}*(Y-b1)) linear map L1 = A1 x + b1.
+     * A1^{-1}*(Y-b1)) linear map L1 = A1 x + b1.
      */
     private short[] initSign(Layer[] layer, short[] msg)
     {
@@ -125,6 +127,7 @@ public class RainbowSigner
         byte[] S = new byte[layer[numberOfLayers - 1].getViNext()];
 
         short[] msgHashVals = makeMessageRepresentative(message);
+        int itCount = 0;
 
         // shows if an exception is caught
         boolean ok;
@@ -150,9 +153,9 @@ public class RainbowSigner
                     }
 
                     /*
-                          * plug in the vars of the previous layer in order to get
-                          * the vars of the current layer
-                          */
+                     * plug in the vars of the previous layer in order to get
+                     * the vars of the current layer
+                     */
                     solVec = cf.solveEquation(layer[i].plugInVinegars(x), y_i);
 
                     if (solVec == null)
@@ -183,8 +186,14 @@ public class RainbowSigner
                 ok = false;
             }
         }
-        while (!ok);
+        while (!ok && ++itCount < MAXITS);
         /* return the signature in bytes */
+
+        if (itCount == MAXITS)
+        {
+            throw new IllegalStateException("unable to generate signature - LES not solvable");
+        }
+
         return S;
     }
 
@@ -192,7 +201,7 @@ public class RainbowSigner
      * This function verifies the signature of the message that has been
      * updated, with the aid of the public key.
      *
-     * @param message the message
+     * @param message   the message
      * @param signature the signature of the message
      * @return true if the signature has been verified, false otherwise.
      */

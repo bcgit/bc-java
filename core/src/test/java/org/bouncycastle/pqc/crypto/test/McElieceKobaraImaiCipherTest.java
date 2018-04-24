@@ -11,7 +11,6 @@ import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2KeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2KeyPairGenerator;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2Parameters;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceKobaraImaiCipher;
-import org.bouncycastle.pqc.crypto.mceliece.McElieceKobaraImaiDigestCipher;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class McElieceKobaraImaiCipherTest
@@ -28,6 +27,7 @@ public class McElieceKobaraImaiCipherTest
 
 
     public void performTest()
+        throws Exception
     {
         int numPassesKPG = 0;   // TODO: this algorithm is broken
         int numPassesEncDec = 10;
@@ -36,7 +36,7 @@ public class McElieceKobaraImaiCipherTest
         for (int j = 0; j < numPassesKPG; j++)
         {
 
-            McElieceCCA2Parameters params = new McElieceCCA2Parameters();
+            McElieceCCA2Parameters params = new McElieceCCA2Parameters("SHA-256");
             McElieceCCA2KeyPairGenerator mcElieceCCA2KeyGen = new McElieceCCA2KeyPairGenerator();
             McElieceCCA2KeyGenerationParameters genParam = new McElieceCCA2KeyGenerationParameters(keyRandom, params);
 
@@ -45,7 +45,7 @@ public class McElieceKobaraImaiCipherTest
 
             ParametersWithRandom param = new ParametersWithRandom(pair.getPublic(), keyRandom);
             Digest msgDigest = new SHA256Digest();
-            McElieceKobaraImaiDigestCipher mcElieceKobaraImaiDigestCipher = new McElieceKobaraImaiDigestCipher(new McElieceKobaraImaiCipher(), msgDigest);
+            McElieceKobaraImaiCipher mcElieceKobaraImaiDigestCipher = new McElieceKobaraImaiCipher();
 
 
             for (int k = 1; k <= numPassesEncDec; k++)
@@ -59,18 +59,18 @@ public class McElieceKobaraImaiCipherTest
                 mBytes = new byte[mLength];
                 rand.nextBytes(mBytes);
 
+                msgDigest.update(mBytes, 0, mBytes.length);
+                byte[] hash = new byte[msgDigest.getDigestSize()];
+                msgDigest.doFinal(hash, 0);
+
                 // encrypt
-                mcElieceKobaraImaiDigestCipher.update(mBytes, 0, mBytes.length);
-                byte[] enc = mcElieceKobaraImaiDigestCipher.messageEncrypt();
+                byte[] enc = mcElieceKobaraImaiDigestCipher.messageEncrypt(hash);
 
                 // initialize for decryption
                 mcElieceKobaraImaiDigestCipher.init(false, pair.getPrivate());
                 byte[] constructedmessage = mcElieceKobaraImaiDigestCipher.messageDecrypt(enc);
 
                 // XXX write in McElieceFujisakiDigestCipher?
-                msgDigest.update(mBytes, 0, mBytes.length);
-                byte[] hash = new byte[msgDigest.getDigestSize()];
-                msgDigest.doFinal(hash, 0);
 
                 boolean verified = true;
                 for (int i = 0; i < hash.length; i++)

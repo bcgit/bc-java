@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.engines.AESWrapPadEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -69,6 +70,31 @@ public class AESWrapPadTest
         }
     }
 
+    private void wrapWithIVTest()
+        throws Exception
+    {
+        byte[] kek = Hex.decode("5840df6e29b02af1ab493b705bf16ea1ae8338f4dcc176a8");
+        byte[] key = Hex.decode("c37b7e6492584340bed12207808941155068f738");
+        byte[] expected = Hex.decode("5cbdb3fb71351d0e628b85dbcba1a1890d4db26d1335e11d1aabea11124caad0");
+
+        Wrapper wrapper = new AESWrapPadEngine();
+
+        wrapper.init(true, new ParametersWithIV(new KeyParameter(kek), Hex.decode("33333333")));
+
+        byte[] cipherText = wrapper.wrap(key, 0, key.length);
+        if (!areEqual(cipherText, expected))
+        {
+            fail("Wrapped value does not match expected.");
+        }
+        wrapper.init(false, new ParametersWithIV(new KeyParameter(kek), Hex.decode("33333333")));
+        byte[] plainText = wrapper.unwrap(cipherText, 0, cipherText.length);
+
+        if (!areEqual(key, plainText))
+        {
+            fail("Unwrapped value does not match original.");
+        }
+    }
+
     public String getName()
     {
         return "AESWrapPad";
@@ -88,6 +114,7 @@ public class AESWrapPadTest
         key = Hex.decode("466f7250617369");
         wrapAndUnwrap(kek, key, wrap);
 
+        wrapWithIVTest();
 
         //
         // offset test

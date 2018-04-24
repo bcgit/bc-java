@@ -110,10 +110,24 @@ public abstract class Nat128
         z[3] = x[3];
     }
 
+    public static void copy(int[] x, int xOff, int[] z, int zOff)
+    {
+        z[zOff + 0] = x[xOff + 0];
+        z[zOff + 1] = x[xOff + 1];
+        z[zOff + 2] = x[xOff + 2];
+        z[zOff + 3] = x[xOff + 3];
+    }
+
     public static void copy64(long[] x, long[] z)
     {
         z[0] = x[0];
         z[1] = x[1];
+    }
+
+    public static void copy64(long[] x, int xOff, long[] z, int zOff)
+    {
+        z[zOff + 0] = x[xOff + 0];
+        z[zOff + 1] = x[xOff + 1];
     }
 
     public static int[] create()
@@ -636,8 +650,8 @@ public abstract class Nat128
         }
 
         long x_3 = x[3] & M;
-        long zz_5 = zz[5] & M;
-        long zz_6 = zz[6] & M;
+        long zz_5 = (zz[5] & M) + (zz_4 >>> 32); zz_4 &= M;
+        long zz_6 = (zz[6] & M) + (zz_5 >>> 32); zz_5 &= M;
         {
             zz_3 += x_3 * x_0;
             w = (int)zz_3;
@@ -658,7 +672,7 @@ public abstract class Nat128
         w = (int)zz_6;
         zz[6] = (w << 1) | c;
         c = w >>> 31;
-        w = zz[7] + (int)(zz_6 >> 32);
+        w = zz[7] + (int)(zz_6 >>> 32);
         zz[7] = (w << 1) | c;
     }
 
@@ -713,8 +727,8 @@ public abstract class Nat128
         }
 
         long x_3 = x[xOff + 3] & M;
-        long zz_5 = zz[zzOff + 5] & M;
-        long zz_6 = zz[zzOff + 6] & M;
+        long zz_5 = (zz[zzOff + 5] & M) + (zz_4 >>> 32); zz_4 &= M;
+        long zz_6 = (zz[zzOff + 6] & M) + (zz_5 >>> 32); zz_5 &= M;
         {
             zz_3 += x_3 * x_0;
             w = (int)zz_3;
@@ -734,7 +748,7 @@ public abstract class Nat128
         w = (int)zz_6;
         zz[zzOff + 6] = (w << 1) | c;
         c = w >>> 31;
-        w = zz[zzOff + 7] + (int)(zz_6 >> 32);
+        w = zz[zzOff + 7] + (int)(zz_6 >>> 32);
         zz[zzOff + 7] = (w << 1) | c;
     }
 

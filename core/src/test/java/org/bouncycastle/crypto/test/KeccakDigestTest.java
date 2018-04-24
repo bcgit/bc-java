@@ -257,6 +257,7 @@ public class KeccakDigestTest
         //
         // extremely long data test
         //
+//        long start = System.currentTimeMillis();
 //        System.out.println("Starting very long");
 //        for (int i = 0; i != 16384; i++)
 //        {
@@ -272,7 +273,7 @@ public class KeccakDigestTest
 //        {
 //            fail("Keccak mismatch on " + digest.getAlgorithmName() + " extreme data test");
 //        }
-//        System.out.println("Done");
+//        System.out.println("Done " + (System.currentTimeMillis() - start));
     }
 
     private void testDigestDoFinal(Digest digest)

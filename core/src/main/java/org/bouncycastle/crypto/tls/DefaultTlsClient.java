@@ -44,6 +44,7 @@ public abstract class DefaultTlsClient
 
         switch (keyExchangeAlgorithm)
         {
+        case KeyExchangeAlgorithm.DH_anon:
         case KeyExchangeAlgorithm.DH_DSS:
         case KeyExchangeAlgorithm.DH_RSA:
             return createDHKeyExchange(keyExchangeAlgorithm);
@@ -52,6 +53,7 @@ public abstract class DefaultTlsClient
         case KeyExchangeAlgorithm.DHE_RSA:
             return createDHEKeyExchange(keyExchangeAlgorithm);
 
+        case KeyExchangeAlgorithm.ECDH_anon:
         case KeyExchangeAlgorithm.ECDH_ECDSA:
         case KeyExchangeAlgorithm.ECDH_RSA:
             return createECDHKeyExchange(keyExchangeAlgorithm);

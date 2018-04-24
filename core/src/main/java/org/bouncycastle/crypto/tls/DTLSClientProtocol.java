@@ -61,19 +61,29 @@ public class DTLSClientProtocol
         }
         catch (TlsFatalAlert fatalAlert)
         {
-            recordLayer.fail(fatalAlert.getAlertDescription());
+            abortClientHandshake(state, recordLayer, fatalAlert.getAlertDescription());
             throw fatalAlert;
         }
         catch (IOException e)
         {
-            recordLayer.fail(AlertDescription.internal_error);
+            abortClientHandshake(state, recordLayer, AlertDescription.internal_error);
             throw e;
         }
         catch (RuntimeException e)
         {
-            recordLayer.fail(AlertDescription.internal_error);
+            abortClientHandshake(state, recordLayer, AlertDescription.internal_error);
             throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
+        finally
+        {
+            securityParameters.clear();
+        }
+    }
+
+    protected void abortClientHandshake(ClientHandshakeState state, DTLSRecordLayer recordLayer, short alertDescription)
+    {
+        recordLayer.fail(alertDescription);
+        invalidateSession(state);
     }
 
     protected DTLSTransport clientHandshake(ClientHandshakeState state, DTLSRecordLayer recordLayer)
@@ -446,10 +456,11 @@ public class DTLSClientProtocol
             }
 
             /*
-             * draft-ietf-tls-downgrade-scsv-00 4. If a client sends a ClientHello.client_version
-             * containing a lower value than the latest (highest-valued) version supported by the
-             * client, it SHOULD include the TLS_FALLBACK_SCSV cipher suite value in
-             * ClientHello.cipher_suites.
+             * RFC 7507 4. If a client sends a ClientHello.client_version containing a lower value
+             * than the latest (highest-valued) version supported by the client, it SHOULD include
+             * the TLS_FALLBACK_SCSV cipher suite value in ClientHello.cipher_suites [..]. (The
+             * client SHOULD put TLS_FALLBACK_SCSV after all cipher suites that it actually intends
+             * to negotiate.)
              */
             if (fallback && !Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV))
             {
@@ -807,7 +818,7 @@ public class DTLSClientProtocol
             securityParameters.getCipherSuite());
 
         /*
-         * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify verify_data_length has
+         * RFC 5246 7.4.9. Any cipher suite which does not explicitly specify verify_data_length has
          * a verify_data_length equal to 12. This includes all existing cipher suites.
          */
         securityParameters.verifyDataLength = 12;

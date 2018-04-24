@@ -1,6 +1,7 @@
 package org.bouncycastle.cms.bc;
 
 import java.security.SecureRandom;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,9 +26,15 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.Wrapper;
+import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA224Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.CAST5Engine;
 import org.bouncycastle.crypto.engines.DESEngine;
@@ -43,11 +50,58 @@ import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.RC2Parameters;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.bc.BcDigestProvider;
 
 class EnvelopedDataHelper
 {
     protected static final Map BASE_CIPHER_NAMES = new HashMap();
     protected static final Map MAC_ALG_NAMES = new HashMap();
+
+    private static final Map prfs = createTable();
+
+    private static Map createTable()
+    {
+        Map table = new HashMap();
+
+        table.put(PKCSObjectIdentifiers.id_hmacWithSHA1, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new SHA1Digest();
+            }
+        });
+        table.put(PKCSObjectIdentifiers.id_hmacWithSHA224, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new SHA224Digest();
+            }
+        });
+        table.put(PKCSObjectIdentifiers.id_hmacWithSHA256, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new SHA256Digest();
+            }
+        });
+        table.put(PKCSObjectIdentifiers.id_hmacWithSHA384, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new SHA384Digest();
+            }
+        });
+        table.put(PKCSObjectIdentifiers.id_hmacWithSHA512, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new SHA512Digest();
+            }
+        });
+
+        return Collections.unmodifiableMap(table);
+    }
 
     static
     {
@@ -115,6 +169,12 @@ class EnvelopedDataHelper
         }
 
         return name;
+    }
+
+    static ExtendedDigest getPRF(AlgorithmIdentifier algID)
+        throws OperatorCreationException
+    {
+        return ((BcDigestProvider)prfs.get(algID.getAlgorithm())).get(null);
     }
 
     static BufferedBlockCipher createCipher(ASN1ObjectIdentifier algorithm)

@@ -5,6 +5,7 @@ import java.security.spec.ECFieldFp;
 import java.security.spec.ECPoint;
 import java.security.spec.EllipticCurve;
 
+import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.math.ec.ECCurve;
 
 /**
@@ -48,9 +49,7 @@ public class ECPointUtil
                         ((ECFieldF2m)curve.getField()).getM(), k[0], curve.getA(), curve.getB());
             }
         }
-        
-        org.bouncycastle.math.ec.ECPoint p = c.decodePoint(encoded);
 
-        return new ECPoint(p.getAffineXCoord().toBigInteger(), p.getAffineYCoord().toBigInteger());
+        return EC5Util.convertPoint(c.decodePoint(encoded));
     }
 }

@@ -1,4 +1,9 @@
+/***************************************************************/
+/******    DO NOT EDIT THIS CLASS bc-java SOURCE FILE     ******/
+/***************************************************************/
 package org.bouncycastle.asn1.dvcs;
+
+import java.util.Arrays;
 
 import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -89,6 +94,9 @@ public class PathProcInput
                     case 1:
                         x = ASN1Boolean.getInstance(t, false);
                         result.setInhibitAnyPolicy(x.isTrue());
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unknown tag encountered: " + t.getTagNo());
                     }
                 }
             }
@@ -119,15 +127,15 @@ public class PathProcInput
 
         if (inhibitPolicyMapping)
         {
-            v.add(new ASN1Boolean(inhibitPolicyMapping));
+            v.add(ASN1Boolean.getInstance(inhibitPolicyMapping));
         }
         if (explicitPolicyReqd)
         {
-            v.add(new DERTaggedObject(false, 0, new ASN1Boolean(explicitPolicyReqd)));
+            v.add(new DERTaggedObject(false, 0, ASN1Boolean.getInstance(explicitPolicyReqd)));
         }
         if (inhibitAnyPolicy)
         {
-            v.add(new DERTaggedObject(false, 1, new ASN1Boolean(inhibitAnyPolicy)));
+            v.add(new DERTaggedObject(false, 1, ASN1Boolean.getInstance(inhibitAnyPolicy)));
         }
 
         return new DERSequence(v);
@@ -136,7 +144,7 @@ public class PathProcInput
     public String toString()
     {
         return "PathProcInput: {\n" +
-            "acceptablePolicySet: " + acceptablePolicySet + "\n" +
+            "acceptablePolicySet: " + Arrays.asList(acceptablePolicySet) + "\n" +
             "inhibitPolicyMapping: " + inhibitPolicyMapping + "\n" +
             "explicitPolicyReqd: " + explicitPolicyReqd + "\n" +
             "inhibitAnyPolicy: " + inhibitAnyPolicy + "\n" +

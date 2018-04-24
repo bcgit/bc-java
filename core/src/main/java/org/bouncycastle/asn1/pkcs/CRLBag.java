@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
@@ -22,7 +23,7 @@ public class CRLBag
         ASN1Sequence seq)
     {
         this.crlId = (ASN1ObjectIdentifier)seq.getObjectAt(0);
-        this.crlValue = ((DERTaggedObject)seq.getObjectAt(1)).getObject();
+        this.crlValue = ((ASN1TaggedObject)seq.getObjectAt(1)).getObject();
     }
 
     public static CRLBag getInstance(Object o)

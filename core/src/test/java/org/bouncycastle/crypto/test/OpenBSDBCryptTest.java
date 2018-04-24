@@ -74,6 +74,28 @@ public class OpenBSDBCryptTest
         {"8nv;PAN~-FQ]Emh@.TKG=^.t8R0EQC0T?x9|9g4xzxYmSbBO1qDx8kv-ehh0IBv>3KWhz.Z~jUF0tt8[5U@8;5:=[v6pf.IEJ", "$2a$08$eXo9KDc1BZyybBgMurpcD.GA1/ch3XhgBnIH10Xvjc2ogZaGg3t/m"},
     };
 
+
+    // 2y vectors generated from htpasswd -nB -C 12, nb leading username was removed.
+    private static final String[][] twoYVec = new String[][]{
+        {"a", "$2y$12$DB3BUbYa/SsEL7kCOVji0OauTkPkB5Y1OeyfxJHM7jvMrbml5sgD2"},
+        {"abc", "$2y$12$p.xODEbFcXUlHGbNxWZqAe6AA5FWupqXmN9tZea2ACDhwIx4EA2a6"},
+        {"hello world", "$2y$12$wfkxITYXjNLVpEi9nOjz7uXMhCXKSTY7O2y7X4bwY89aGSvRziguq"},
+        {"ABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXY", "$2y$12$QwAt5kuG68nW7v.87q0QPuwdki3romFc/RU/RV3Qqk4FPw6WdbQzu"}
+    };
+
+    // Same as 2y vectors only version changed to 2b to verify handling of that version.
+    private static final String[][] twoBVec = new String[][]{
+        {"a", "$2b$12$DB3BUbYa/SsEL7kCOVji0OauTkPkB5Y1OeyfxJHM7jvMrbml5sgD2"},
+        {"abc", "$2b$12$p.xODEbFcXUlHGbNxWZqAe6AA5FWupqXmN9tZea2ACDhwIx4EA2a6"},
+        {"hello world", "$2b$12$wfkxITYXjNLVpEi9nOjz7uXMhCXKSTY7O2y7X4bwY89aGSvRziguq"},
+        {"ABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXYABCDEFGHIJKLMNOPQRSTUVWXY", "$2b$12$QwAt5kuG68nW7v.87q0QPuwdki3romFc/RU/RV3Qqk4FPw6WdbQzu"}
+    };
+
+    public static void main(String[] args)
+    {
+        runTest(new OpenBSDBCryptTest());
+    }
+
     public String getName()
     {
         return "OpenBSDBCrypt";
@@ -131,11 +153,28 @@ public class OpenBSDBCryptTest
                 fail("test4 mismatch: " + "[" + i + "] " + password);
             }
         }
-    }
 
-    public static void main(String[] args)
-    {
-        runTest(new OpenBSDBCryptTest());
+        for (int i = 0; i < twoYVec.length; i++)
+        {
+            password = twoYVec[i][0];
+            encoded = twoYVec[i][1];
+
+            if (!OpenBSDBCrypt.checkPassword(encoded, password.toCharArray()))
+            {
+                fail("twoYVec mismatch: " + "[" + i + "] " + password);
+            }
+        }
+
+        for (int i = 0; i < twoBVec.length; i++)
+        {
+            password = twoBVec[i][0];
+            encoded = twoBVec[i][1];
+
+            if (!OpenBSDBCrypt.checkPassword(encoded, password.toCharArray()))
+            {
+                fail("twoBVec mismatch: " + "[" + i + "] " + password);
+            }
+        }
     }
 }
 

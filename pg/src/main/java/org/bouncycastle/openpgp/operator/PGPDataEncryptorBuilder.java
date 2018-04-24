@@ -28,9 +28,10 @@ public interface PGPDataEncryptorBuilder
         throws PGPException;
 
     /**
-     * Gets the SecureRandom instance used by this builder. <br/>
+     * Gets the SecureRandom instance used by this builder.
+     * <p>
      * If a SecureRandom has not been explicitly configured, a default {@link SecureRandom} is
-     * constructed and retained by the this builder.
+     * constructed and retained by the this builder.</p>
      */
     SecureRandom getSecureRandom();
 }

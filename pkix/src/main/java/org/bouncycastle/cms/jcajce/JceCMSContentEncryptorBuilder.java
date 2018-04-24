@@ -22,6 +22,9 @@ import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.operator.SecretKeySizeProvider;
 import org.bouncycastle.operator.jcajce.JceGenericKey;
 
+/**
+ * Builder for the content encryptor in EnvelopedData - used to encrypt the actual transmitted content.
+ */
 public class JceCMSContentEncryptorBuilder
 {
     private static final SecretKeySizeProvider KEY_SIZE_PROVIDER = DefaultSecretKeySizeProvider.INSTANCE;
@@ -32,6 +35,7 @@ public class JceCMSContentEncryptorBuilder
 
     private EnvelopedDataHelper helper = new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
     private SecureRandom random;
+    private AlgorithmParameters algorithmParameters;
 
     public JceCMSContentEncryptorBuilder(ASN1ObjectIdentifier encryptionOID)
     {
@@ -70,6 +74,12 @@ public class JceCMSContentEncryptorBuilder
         }
     }
 
+    /**
+     * Set the provider to use for content encryption.
+     *
+     * @param provider the provider object to use for cipher and default parameters creation.
+     * @return the current builder instance.
+     */
     public JceCMSContentEncryptorBuilder setProvider(Provider provider)
     {
         this.helper = new EnvelopedDataHelper(new ProviderJcaJceExtHelper(provider));
@@ -77,6 +87,12 @@ public class JceCMSContentEncryptorBuilder
         return this;
     }
 
+    /**
+     * Set the provider to use for content encryption (by name)
+     *
+     * @param providerName the name of the provider to use for cipher and default parameters creation.
+     * @return the current builder instance.
+     */
     public JceCMSContentEncryptorBuilder setProvider(String providerName)
     {
         this.helper = new EnvelopedDataHelper(new NamedJcaJceExtHelper(providerName));
@@ -84,6 +100,12 @@ public class JceCMSContentEncryptorBuilder
         return this;
     }
 
+    /**
+     * Provide a specified source of randomness to be used for session key and IV/nonce generation.
+     *
+     * @param random the secure random to use.
+     * @return the current builder instance.
+     */
     public JceCMSContentEncryptorBuilder setSecureRandom(SecureRandom random)
     {
         this.random = random;
@@ -91,10 +113,23 @@ public class JceCMSContentEncryptorBuilder
         return this;
     }
 
+    /**
+     * Provide a set of algorithm parameters for the content encryption cipher to use.
+     *
+     * @param algorithmParameters algorithmParameters for content encryption.
+     * @return the current builder instance.
+     */
+    public JceCMSContentEncryptorBuilder setAlgorithmParameters(AlgorithmParameters algorithmParameters)
+    {
+        this.algorithmParameters = algorithmParameters;
+
+        return this;
+    }
+
     public OutputEncryptor build()
         throws CMSException
     {
-        return new CMSOutputEncryptor(encryptionOID, keySize, random);
+        return new CMSOutputEncryptor(encryptionOID, keySize, algorithmParameters, random);
     }
 
     private class CMSOutputEncryptor
@@ -104,7 +139,7 @@ public class JceCMSContentEncryptorBuilder
         private AlgorithmIdentifier algorithmIdentifier;
         private Cipher              cipher;
 
-        CMSOutputEncryptor(ASN1ObjectIdentifier encryptionOID, int keySize, SecureRandom random)
+        CMSOutputEncryptor(ASN1ObjectIdentifier encryptionOID, int keySize, AlgorithmParameters params, SecureRandom random)
             throws CMSException
         {
             KeyGenerator keyGen = helper.createKeyGenerator(encryptionOID);
@@ -125,7 +160,11 @@ public class JceCMSContentEncryptorBuilder
 
             cipher = helper.createCipher(encryptionOID);
             encKey = keyGen.generateKey();
-            AlgorithmParameters params = helper.generateParameters(encryptionOID, encKey, random);
+
+            if (params == null)
+            {
+                params = helper.generateParameters(encryptionOID, encKey, random);
+            }
 
             try
             {

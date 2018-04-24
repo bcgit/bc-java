@@ -57,18 +57,11 @@ public class RainbowParameterSpec
     public RainbowParameterSpec(int[] vi)
     {
         this.vi = vi;
-        try
-        {
-            checkParams();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
+
+        checkParams();
     }
 
     private void checkParams()
-        throws Exception
     {
         if (vi == null)
         {

@@ -4,15 +4,17 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.modes.gcm.BasicGCMMultiplier;
 import org.bouncycastle.crypto.modes.gcm.GCMMultiplier;
+import org.bouncycastle.crypto.modes.gcm.Tables4kGCMMultiplier;
 import org.bouncycastle.crypto.modes.gcm.Tables64kGCMMultiplier;
 import org.bouncycastle.crypto.modes.gcm.Tables8kGCMMultiplier;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.Times;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -309,7 +311,7 @@ public class GCMTest
 
     protected BlockCipher createAESEngine()
     {
-        return new AESFastEngine();
+        return new AESEngine();
     }
 
     private void testExceptions() throws InvalidCipherTextException
@@ -338,12 +340,38 @@ public class GCMTest
             // expected
         }
 
-        AEADTestUtil.testReset(this, new GCMBlockCipher(createAESEngine()), new GCMBlockCipher(createAESEngine()), new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[16]));
         AEADTestUtil.testTampering(this, gcm, new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[16]));
-        AEADTestUtil.testOutputSizes(this, new GCMBlockCipher(createAESEngine()), new AEADParameters(new KeyParameter(
-                new byte[16]), 128, new byte[16]));
-        AEADTestUtil.testBufferSizeChecks(this, new GCMBlockCipher(createAESEngine()), new AEADParameters(
-                new KeyParameter(new byte[16]), 128, new byte[16]));
+
+        byte[] P = Strings.toByteArray("Hello world!");
+        byte[] buf = new byte[100];
+
+        GCMBlockCipher c = new GCMBlockCipher(createAESEngine());
+        AEADParameters aeadParameters = new AEADParameters(new KeyParameter(new byte[16]), 128, new byte[16]);
+        c.init(true, aeadParameters);
+
+        c.processBytes(P, 0, P.length, buf, 0);
+
+        c.doFinal(buf, 0);
+        
+        try
+        {
+            c.doFinal(buf, 0);
+            fail("no exception on reuse");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("wrong message", e.getMessage().equals("GCM cipher cannot be reused for encryption"));
+        }
+
+        try
+        {
+            c.init(true, aeadParameters);
+            fail("no exception on reuse");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong message", e.getMessage().equals("cannot reuse nonce for GCM encryption"));
+        }
     }
 
     private void runTestCase(String[] testVector)
@@ -375,6 +403,7 @@ public class GCMTest
         runTestCase(null, null, testName, K, IV, A, P, C, T);
 
         runTestCase(new BasicGCMMultiplier(), new BasicGCMMultiplier(), testName, K, IV, A, P, C, T);
+        runTestCase(new Tables4kGCMMultiplier(), new Tables4kGCMMultiplier(), testName, K, IV, A, P, C, T);
         runTestCase(new Tables8kGCMMultiplier(), new Tables8kGCMMultiplier(), testName, K, IV, A, P, C, T);
         runTestCase(new Tables64kGCMMultiplier(), new Tables64kGCMMultiplier(), testName, K, IV, A, P, C, T);
     }
@@ -418,13 +447,21 @@ public class GCMTest
         GCMBlockCipher encCipher = initCipher(encM, true, parameters);
         GCMBlockCipher decCipher = initCipher(decM, false, parameters);
         checkTestCase(encCipher, decCipher, testName, SA, P, C, T);
+        encCipher = initCipher(encM, true, parameters);
         checkTestCase(encCipher, decCipher, testName + " (reused)", SA, P, C, T);
 
         // Key reuse
         AEADParameters keyReuseParams = AEADTestUtil.reuseKey(parameters);
-        encCipher.init(true, keyReuseParams);
-        decCipher.init(false, keyReuseParams);
-        checkTestCase(encCipher, decCipher, testName + " (key reuse)", SA, P, C, T);
+
+        try
+        {
+            encCipher.init(true, keyReuseParams);
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong message", "cannot reuse nonce for GCM encryption".equals(e.getMessage()));
+        }
     }
 
     private GCMBlockCipher initCipher(GCMMultiplier m, boolean forEncryption, AEADParameters parameters)
@@ -505,6 +542,7 @@ public class GCMTest
         srng.setSeed(Times.nanoTime());
         randomTests(srng, null);
         randomTests(srng, new BasicGCMMultiplier());
+        randomTests(srng, new Tables4kGCMMultiplier());
         randomTests(srng, new Tables8kGCMMultiplier());
         randomTests(srng, new Tables64kGCMMultiplier());
     }

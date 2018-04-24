@@ -67,4 +67,22 @@ public class SP800SecureRandom
     {
         return EntropyUtil.generateSeed(entropySource, numBytes);
     }
+
+    /**
+     * Force a reseed of the DRBG
+     *
+     * @param additionalInput optional additional input
+     */
+    public void reseed(byte[] additionalInput)
+    {
+        synchronized (this)
+        {
+            if (drbg == null)
+            {
+                drbg = drbgProvider.get(entropySource);
+            }
+
+            drbg.reseed(additionalInput);
+        }
+    }
 }

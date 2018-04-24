@@ -5,7 +5,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.BERSequence;
@@ -23,26 +25,6 @@ import org.bouncycastle.util.test.SimpleTest;
 public class MiscTest
     extends SimpleTest
 {
-    private boolean isSameAs(
-        byte[]  a,
-        byte[]  b)
-    {
-        if (a.length != b.length)
-        {
-            return false;
-        }
-        
-        for (int i = 0; i != a.length; i++)
-        {
-            if (a[i] != b[i])
-            {
-                return false;
-            }
-        }
-        
-        return true;
-    }
-
     public void shouldFailOnExtraData()
         throws Exception
     {
@@ -64,6 +46,46 @@ public class MiscTest
             {
                 fail("wrong exception");
             }
+        }
+    }
+
+    public void derIntegerTest()
+        throws Exception
+    {
+        try
+        {
+            new ASN1Integer(new byte[] { 0, 0, 0, 1});
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong exc", "malformed integer".equals(e.getMessage()));
+        }
+
+        try
+        {
+            new ASN1Integer(new byte[] {(byte)0xff, (byte)0x80, 0, 1});
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong exc", "malformed integer".equals(e.getMessage()));
+        }
+
+        try
+        {
+            new ASN1Enumerated(new byte[] { 0, 0, 0, 1});
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong exc", "malformed enumerated".equals(e.getMessage()));
+        }
+
+        try
+        {
+            new ASN1Enumerated(new byte[] {(byte)0xff, (byte)0x80, 0, 1});
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong exc", "malformed enumerated".equals(e.getMessage()));
         }
     }
 
@@ -92,7 +114,7 @@ public class MiscTest
 
         ASN1Primitive[] readValues = new ASN1Primitive[values.length];
 
-        if (!isSameAs(bOut.toByteArray(), data))
+        if (!areEqual(bOut.toByteArray(), data))
         {
             fail("Failed data check");
         }
@@ -115,6 +137,7 @@ public class MiscTest
         }
 
         shouldFailOnExtraData();
+        derIntegerTest();
     }
 
     public String getName()

@@ -29,6 +29,7 @@ import org.bouncycastle.eac.operator.jcajce.JcaEACSignerBuilder;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
 public class AllTests
@@ -75,6 +76,20 @@ public class AllTests
         {
             fail("signature test failed");
         }
+    }
+
+    public void testLoadCSR() throws Exception
+    {
+        // this request contains invalid unsigned integers (see D 2.1.1)
+        byte[] input = getInput("UTIS00100072.csr");
+   
+        EACCertificateRequestHolder requestHolder = new EACCertificateRequestHolder(input);
+
+        PublicKey pubKey = new JcaPublicKeyConverter().setProvider(BC).getKey(requestHolder.getPublicKeyDataObject());
+        EACSignatureVerifier verifier = new JcaEACSignatureVerifierBuilder().build(requestHolder.getPublicKeyDataObject().getUsage(), pubKey);
+
+        TestCase.assertTrue("signature test failed", requestHolder.isInnerSignatureValid(verifier));
+        TestCase.assertTrue("comparison failed", Arrays.areEqual(input, requestHolder.toASN1Structure().getEncoded()));
     }
 
     public void testLoadRefCert() throws Exception

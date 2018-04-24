@@ -16,7 +16,7 @@ public class SecP256R1Field
         0xFFFFFFFF, 0xFFFFFFFE, 0x00000001, 0xFFFFFFFE, 0x00000001, 0xFFFFFFFE, 0x00000001, 0x00000001, 0xFFFFFFFE,
         0x00000002, 0xFFFFFFFE };
     private static final int P7 = 0xFFFFFFFF;
-    private static final int PExt15 = 0xFFFFFFFF;
+    private static final int PExt15s1 = 0xFFFFFFFE >>> 1;
 
     public static void add(int[] x, int[] y, int[] z)
     {
@@ -30,7 +30,7 @@ public class SecP256R1Field
     public static void addExt(int[] xx, int[] yy, int[] zz)
     {
         int c = Nat.add(16, xx, yy, zz);
-        if (c != 0 || (zz[15] == PExt15 && Nat.gte(16, zz, PExt)))
+        if (c != 0 || ((zz[15] >>> 1) >= PExt15s1 && Nat.gte(16, zz, PExt)))
         {
             Nat.subFrom(16, PExt, zz);
         }
@@ -78,7 +78,7 @@ public class SecP256R1Field
     public static void multiplyAddToExt(int[] x, int[] y, int[] zz)
     {
         int c = Nat256.mulAddTo(x, y, zz);
-        if (c != 0 || (zz[15] == PExt15 && Nat.gte(16, zz, PExt)))
+        if (c != 0 || ((zz[15] >>> 1) >= PExt15s1 && Nat.gte(16, zz, PExt)))
         {
             Nat.subFrom(16, PExt, zz);
         }
@@ -112,9 +112,10 @@ public class SecP256R1Field
         long t4 = xx12 + xx13;
         long t5 = xx13 + xx14;
         long t6 = xx14 + xx15;
+        long t7 = t5 - t0;
 
         long cc = 0;
-        cc += (xx[0] & M) + t0 - t3 - t5;
+        cc += (xx[0] & M) - t3 - t7;
         z[0] = (int)cc;
         cc >>= 32;
         cc += (xx[1] & M) + t1 - t4 - t6;
@@ -123,7 +124,7 @@ public class SecP256R1Field
         cc += (xx[2] & M) + t2 - t5;
         z[2] = (int)cc;
         cc >>= 32;
-        cc += (xx[3] & M) + (t3 << 1) + xx13 - xx15 - t0;
+        cc += (xx[3] & M) + (t3 << 1) + t7 - t6;
         z[3] = (int)cc;
         cc >>= 32;
         cc += (xx[4] & M) + (t4 << 1) + xx14 - t1;
@@ -132,7 +133,7 @@ public class SecP256R1Field
         cc += (xx[5] & M) + (t5 << 1) - t2;
         z[5] = (int)cc;
         cc >>= 32;
-        cc += (xx[6] & M) + (t6 << 1) + t5 - t0;
+        cc += (xx[6] & M) + (t6 << 1) + t7;
         z[6] = (int)cc;
         cc >>= 32;
         cc += (xx[7] & M) + (xx15 << 1) + xx08 - t2 - t4;

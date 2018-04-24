@@ -40,9 +40,17 @@ public interface NISTObjectIdentifiers
     /** 2.16.840.1.101.3.4.2.10 */
     static final ASN1ObjectIdentifier    id_sha3_512 = hashAlgs.branch("10");
     /** 2.16.840.1.101.3.4.2.11 */
-    static final ASN1ObjectIdentifier    id_shake128             = hashAlgs.branch("11");
+    static final ASN1ObjectIdentifier    id_shake128 = hashAlgs.branch("11");
     /** 2.16.840.1.101.3.4.2.12 */
-    static final ASN1ObjectIdentifier    id_shake256             = hashAlgs.branch("12");
+    static final ASN1ObjectIdentifier    id_shake256 = hashAlgs.branch("12");
+    /** 2.16.840.1.101.3.4.2.13 */
+    static final ASN1ObjectIdentifier    id_hmacWithSHA3_224 = hashAlgs.branch("13");
+    /** 2.16.840.1.101.3.4.2.14 */
+    static final ASN1ObjectIdentifier    id_hmacWithSHA3_256 = hashAlgs.branch("14");
+    /** 2.16.840.1.101.3.4.2.15 */
+    static final ASN1ObjectIdentifier    id_hmacWithSHA3_384 = hashAlgs.branch("15");
+    /** 2.16.840.1.101.3.4.2.16 */
+    static final ASN1ObjectIdentifier    id_hmacWithSHA3_512 = hashAlgs.branch("16");
 
     /** 2.16.840.1.101.3.4.1 */
     static final ASN1ObjectIdentifier    aes                     = nistAlgorithm.branch("1");
@@ -61,7 +69,9 @@ public interface NISTObjectIdentifiers
     static final ASN1ObjectIdentifier    id_aes128_GCM           = aes.branch("6");
     /** 2.16.840.1.101.3.4.1.7 */
     static final ASN1ObjectIdentifier    id_aes128_CCM           = aes.branch("7");
-    
+    /** 2.16.840.1.101.3.4.1.28 */
+    static final ASN1ObjectIdentifier    id_aes128_wrap_pad      = aes.branch("8");
+
     /** 2.16.840.1.101.3.4.1.21 */
     static final ASN1ObjectIdentifier    id_aes192_ECB           = aes.branch("21"); 
     /** 2.16.840.1.101.3.4.1.22 */
@@ -76,7 +86,9 @@ public interface NISTObjectIdentifiers
     static final ASN1ObjectIdentifier    id_aes192_GCM           = aes.branch("26");
     /** 2.16.840.1.101.3.4.1.27 */
     static final ASN1ObjectIdentifier    id_aes192_CCM           = aes.branch("27");
-    
+    /** 2.16.840.1.101.3.4.1.28 */
+    static final ASN1ObjectIdentifier    id_aes192_wrap_pad      = aes.branch("28");
+
     /** 2.16.840.1.101.3.4.1.41 */
     static final ASN1ObjectIdentifier    id_aes256_ECB           = aes.branch("41"); 
     /** 2.16.840.1.101.3.4.1.42 */
@@ -91,19 +103,51 @@ public interface NISTObjectIdentifiers
     static final ASN1ObjectIdentifier    id_aes256_GCM           = aes.branch("46");
     /** 2.16.840.1.101.3.4.1.47 */
     static final ASN1ObjectIdentifier    id_aes256_CCM           = aes.branch("47");
+    /** 2.16.840.1.101.3.4.1.48 */
+    static final ASN1ObjectIdentifier    id_aes256_wrap_pad      = aes.branch("48");
 
     //
     // signatures
     //
     /** 2.16.840.1.101.3.4.3 */
-    static final ASN1ObjectIdentifier    id_dsa_with_sha2        = nistAlgorithm.branch("3");
+    static final ASN1ObjectIdentifier    sigAlgs        = nistAlgorithm.branch("3");
+
+    static final ASN1ObjectIdentifier    id_dsa_with_sha2        = sigAlgs;
 
     /** 2.16.840.1.101.3.4.3.1 */
-    static final ASN1ObjectIdentifier    dsa_with_sha224         = id_dsa_with_sha2.branch("1");
+    static final ASN1ObjectIdentifier    dsa_with_sha224         = sigAlgs.branch("1");
     /** 2.16.840.1.101.3.4.3.2 */
-    static final ASN1ObjectIdentifier    dsa_with_sha256         = id_dsa_with_sha2.branch("2");
+    static final ASN1ObjectIdentifier    dsa_with_sha256         = sigAlgs.branch("2");
     /** 2.16.840.1.101.3.4.3.3 */
-    static final ASN1ObjectIdentifier    dsa_with_sha384         = id_dsa_with_sha2.branch("3");
+    static final ASN1ObjectIdentifier    dsa_with_sha384         = sigAlgs.branch("3");
     /** 2.16.840.1.101.3.4.3.4 */
-    static final ASN1ObjectIdentifier    dsa_with_sha512         = id_dsa_with_sha2.branch("4");
+    static final ASN1ObjectIdentifier    dsa_with_sha512         = sigAlgs.branch("4");
+    /** 2.16.840.1.101.3.4.3.5 */
+    static final ASN1ObjectIdentifier    id_dsa_with_sha3_224       = sigAlgs.branch("5");
+    /** 2.16.840.1.101.3.4.3.6 */
+    static final ASN1ObjectIdentifier    id_dsa_with_sha3_256       = sigAlgs.branch("6");
+    /** 2.16.840.1.101.3.4.3.7 */
+    static final ASN1ObjectIdentifier    id_dsa_with_sha3_384       = sigAlgs.branch("7");
+    /** 2.16.840.1.101.3.4.3.8 */
+    static final ASN1ObjectIdentifier    id_dsa_with_sha3_512       = sigAlgs.branch("8");
+
+    // ECDSA with SHA-3
+    /** 2.16.840.1.101.3.4.3.9 */
+    static final ASN1ObjectIdentifier    id_ecdsa_with_sha3_224       = sigAlgs.branch("9");
+    /** 2.16.840.1.101.3.4.3.10 */
+    static final ASN1ObjectIdentifier    id_ecdsa_with_sha3_256       = sigAlgs.branch("10");
+    /** 2.16.840.1.101.3.4.3.11 */
+    static final ASN1ObjectIdentifier    id_ecdsa_with_sha3_384       = sigAlgs.branch("11");
+    /** 2.16.840.1.101.3.4.3.12 */
+    static final ASN1ObjectIdentifier    id_ecdsa_with_sha3_512       = sigAlgs.branch("12");
+
+    // RSA PKCS #1 v1.5 Signature with SHA-3 family.
+    /** 2.16.840.1.101.3.4.3.9 */
+    static final ASN1ObjectIdentifier    id_rsassa_pkcs1_v1_5_with_sha3_224       = sigAlgs.branch("13");
+    /** 2.16.840.1.101.3.4.3.10 */
+    static final ASN1ObjectIdentifier    id_rsassa_pkcs1_v1_5_with_sha3_256       = sigAlgs.branch("14");
+    /** 2.16.840.1.101.3.4.3.11 */
+    static final ASN1ObjectIdentifier    id_rsassa_pkcs1_v1_5_with_sha3_384       = sigAlgs.branch("15");
+    /** 2.16.840.1.101.3.4.3.12 */
+    static final ASN1ObjectIdentifier    id_rsassa_pkcs1_v1_5_with_sha3_512       = sigAlgs.branch("16");
 }

@@ -53,7 +53,6 @@ public abstract class CipherSpiExt
      * </p><p>
      * Note: If the mode needs an initialization vector, a blank array is used
      * in this case.
-     * </p>
      * @param opMode the operation mode ({@link #ENCRYPT_MODE} or
      *               {@link #DECRYPT_MODE})
      * @param key    the key
@@ -379,7 +378,7 @@ public abstract class CipherSpiExt
     /**
      * Initialize this cipher with a key, a set of algorithm parameters, and a
      * source of randomness for encryption.
-     * </p><p>
+     * <p>
      * If this cipher requires any algorithm parameters and paramSpec is null,
      * the underlying cipher implementation is supposed to generate the required
      * parameters itself (using provider-specific default or random values) if
@@ -411,7 +410,7 @@ public abstract class CipherSpiExt
     /**
      * Initialize this cipher with a key, a set of algorithm parameters, and a
      * source of randomness for decryption.
-     * </p><p>
+     * <p>
      * If this cipher requires any algorithm parameters and paramSpec is null,
      * the underlying cipher implementation is supposed to generate the required
      * parameters itself (using provider-specific default or random values) if
@@ -455,7 +454,7 @@ public abstract class CipherSpiExt
      * Returns the length in bytes that an output buffer would need to be in
      * order to hold the result of the next update or doFinal operation, given
      * the input length inputLen (in bytes).
-     * </p><p>
+     * <p>
      * This call takes into account any unprocessed (buffered) data from a
      * previous update call, and padding.
      * </p><p>
@@ -479,7 +478,7 @@ public abstract class CipherSpiExt
 
     /**
      * Returns the parameters used with this cipher.
-     * </p><p>
+     * <p>
      * The returned parameters may be the same that were used to initialize this
      * cipher, or may contain the default set of parameters or a set of randomly
      * generated parameters used by the underlying cipher implementation

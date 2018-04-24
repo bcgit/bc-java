@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.esf.SignerLocation;
+import org.bouncycastle.asn1.x500.DirectoryString;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class SignerLocationUnitTest 
@@ -26,17 +27,17 @@ public class SignerLocationUnitTest
         
         SignerLocation sl = new SignerLocation(countryName, null, null);
 
-        checkConstruction(sl, countryName, null, null);
+        checkConstruction(sl, DirectoryString.getInstance(countryName), null, null);
 
         DERUTF8String localityName = new DERUTF8String("Melbourne");
         
         sl = new SignerLocation(null, localityName, null);
 
-        checkConstruction(sl, null, localityName, null);
+        checkConstruction(sl, null, DirectoryString.getInstance(localityName), null);
         
         sl = new SignerLocation(countryName, localityName, null);
 
-        checkConstruction(sl, countryName, localityName, null);
+        checkConstruction(sl, DirectoryString.getInstance(countryName), DirectoryString.getInstance(localityName), null);
         
         ASN1EncodableVector v = new ASN1EncodableVector();
         
@@ -51,11 +52,11 @@ public class SignerLocationUnitTest
         
         sl = new SignerLocation(countryName, null, postalAddress);
         
-        checkConstruction(sl, countryName, null, postalAddress);
+        checkConstruction(sl, DirectoryString.getInstance(countryName), null, postalAddress);
         
         sl = new SignerLocation(countryName, localityName, postalAddress);
         
-        checkConstruction(sl, countryName, localityName, postalAddress);
+        checkConstruction(sl, DirectoryString.getInstance(countryName), DirectoryString.getInstance(localityName), postalAddress);
         
         sl = SignerLocation.getInstance(null);
         
@@ -126,8 +127,8 @@ public class SignerLocationUnitTest
 
     private void checkConstruction(
         SignerLocation sl,
-        DERUTF8String  countryName,
-        DERUTF8String  localityName,
+        DirectoryString  countryName,
+        DirectoryString  localityName,
         ASN1Sequence   postalAddress) 
         throws IOException
     {
@@ -148,8 +149,8 @@ public class SignerLocationUnitTest
     
     private void checkValues(
         SignerLocation sl,
-        DERUTF8String  countryName,
-        DERUTF8String  localityName,
+        DirectoryString countryName,
+        DirectoryString  localityName,
         ASN1Sequence   postalAddress)
     {
         if (countryName != null)

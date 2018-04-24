@@ -12,6 +12,7 @@ import java.util.Enumeration;
 
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
+import javax.mail.Multipart;
 import javax.mail.Part;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.MimeBodyPart;
@@ -282,7 +283,17 @@ public class SMIMEUtil
 
             if (isMultipartContent(mimePart))
             {
-                MimeMultipart mp = (MimeMultipart)bodyPart.getContent();
+                Object content = bodyPart.getContent();
+                Multipart mp;
+                if (content instanceof Multipart)
+                {
+                    mp = (Multipart)content;
+                }
+                else
+                {
+                    mp = new MimeMultipart(bodyPart.getDataHandler().getDataSource());
+                }
+
                 ContentType contentType = new ContentType(mp.getContentType());
                 String boundary = "--" + contentType.getParameter("boundary");
 
@@ -464,8 +475,7 @@ public class SMIMEUtil
     }
 
     /**
-     * return a file backed MimeBodyPart described in {@link CMSTypedStream} content. 
-     * </p>
+     * return a file backed MimeBodyPart described in {@link CMSTypedStream} content.
      */
     public static FileBackedMimeBodyPart toMimeBodyPart(
         CMSTypedStream    content)

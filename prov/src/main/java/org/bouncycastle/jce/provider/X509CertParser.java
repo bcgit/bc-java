@@ -19,6 +19,9 @@ import org.bouncycastle.asn1.pkcs.SignedData;
 import org.bouncycastle.x509.X509StreamParserSpi;
 import org.bouncycastle.x509.util.StreamParsingException;
 
+/**
+ * @deprecated use CertificateFactory or the PEMParser in the openssl package (pkix jar).
+ */
 public class X509CertParser
     extends X509StreamParserSpi
 {

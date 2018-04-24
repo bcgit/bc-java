@@ -18,7 +18,6 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class X9Test
@@ -166,7 +165,7 @@ public class X9Test
     {
         return "X9";
     }
-
+                                                      
     public static void main(
         String[]    args)
     {

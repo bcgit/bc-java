@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.DerivationParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.DigestDerivationFunction;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.ISO18033KDFParameters;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.util.Pack;
@@ -54,7 +55,7 @@ public class BaseKDFBytesGenerator
         }
         else
         {
-            throw new IllegalArgumentException("KDF parameters required for KDF2Generator");
+            throw new IllegalArgumentException("KDF parameters required for generator");
         }
     }
 
@@ -80,7 +81,7 @@ public class BaseKDFBytesGenerator
     {
         if ((out.length - len) < outOff)
         {
-            throw new DataLengthException("output buffer too small");
+            throw new OutputLengthException("output buffer too small");
         }
 
         long oBytes = len;

@@ -18,6 +18,7 @@ import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.PasswordConverter;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.engines.RFC3211WrapEngine;
 import org.bouncycastle.crypto.generators.DESKeyGenerator;
@@ -30,6 +31,7 @@ import org.bouncycastle.crypto.paddings.ISO7816d4Padding;
 import org.bouncycastle.crypto.params.DESParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.jcajce.PBKDF1Key;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGenerator;
@@ -319,7 +321,15 @@ public final class DES
 
                 if (pbeSpec.getSalt() == null)
                 {
-                    return new BCPBEKey(this.algName, this.algOid, scheme, digest, keySize, ivSize, pbeSpec, null);
+                    if (scheme == PKCS5S1 || scheme == PKCS5S1_UTF8)
+                    {
+                        return new PBKDF1Key(pbeSpec.getPassword(),
+                            scheme == PKCS5S1 ? PasswordConverter.ASCII : PasswordConverter.UTF8);
+                    }
+                    else
+                    {
+                        return new BCPBEKey(this.algName, this.algOid, scheme, digest, keySize, ivSize, pbeSpec, null);
+                    }
                 }
 
                 if (forCipher)

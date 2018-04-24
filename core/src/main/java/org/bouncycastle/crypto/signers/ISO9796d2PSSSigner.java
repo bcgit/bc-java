@@ -248,9 +248,13 @@ public class ISO9796d2PSSSigner
 
             if (trailerObj != null)
             {
-                if (sigTrail != trailerObj.intValue())
+                int trailer = trailerObj.intValue();
+                if (sigTrail != trailer)
                 {
-                    throw new IllegalStateException("signer initialised with wrong digest for trailer " + sigTrail);
+                    if (!(trailer == ISOTrailers.TRAILER_SHA512_256 && sigTrail == 0x40CC))
+                    {
+                        throw new IllegalStateException("signer initialised with wrong digest for trailer " + sigTrail);
+                    }
                 }
             }
             else
@@ -551,6 +555,7 @@ public class ISO9796d2PSSSigner
         if (!isOkay)
         {
             fullMessage = false;
+            messageLength = 0;
             clearBlock(recoveredMessage);
             return false;
         }
@@ -563,11 +568,14 @@ public class ISO9796d2PSSSigner
         {
             if (!isSameAs(mBuf, recoveredMessage))
             {
+                messageLength = 0;
                 clearBlock(mBuf);
                 return false;
             }
-            messageLength = 0;
+
         }
+        
+        messageLength = 0;
 
         clearBlock(mBuf);
         return true;

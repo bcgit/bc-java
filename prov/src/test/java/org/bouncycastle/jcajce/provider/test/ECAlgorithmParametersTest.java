@@ -136,47 +136,54 @@ public class ECAlgorithmParametersTest
         "X9.62 c2pnb304w1",
         "1.2.840.10045.3.0.17",
         "X9.62 c2pnb368w1",
-        "1.2.840.10045.3.0.19" };
+        "1.2.840.10045.3.0.19"};
 
     public void testRecogniseStandardCurveNames()
         throws Exception
     {
         Security.addProvider(new BouncyCastleProvider());
 
-         for (int i = 0; i != entries.length; i++)
-         {
-             AlgorithmParameters algParams = AlgorithmParameters.getInstance("EC", "BC");
+        int testCount = 0;
 
-             algParams.init(new ECGenParameterSpec(entries[i]));
+        for (int i = 0; i != entries.length; i++)
+        {
+            AlgorithmParameters algParams = AlgorithmParameters.getInstance("EC", "BC");
 
-             ECParameterSpec ecSpec = null;
+            try
+            {
+                algParams.init(new ECGenParameterSpec(entries[i]));
+            }
+            catch (IllegalArgumentException e)
+            {
+                // ignore - this is due to a JDK 1.5 bug
+                continue;
+            }
 
-             try
-             {
-                 ecSpec = algParams.getParameterSpec(ECParameterSpec.class);
-             }
-             catch (IllegalArgumentException e)
-             {
-                 // ignore - this is due to a JDK 1.5 bug
-             }
+            testCount++;
+            ECParameterSpec ecSpec = null;
 
-             ECGenParameterSpec spec = algParams.getParameterSpec(ECGenParameterSpec.class);
+            ecSpec = algParams.getParameterSpec(ECParameterSpec.class);
 
-             TestCase.assertEquals(nextOid(i), spec.getName());
 
-             if (ecSpec != null)
-             {
-                 AlgorithmParameters algParams2 = AlgorithmParameters.getInstance("EC", "BC");
+            ECGenParameterSpec spec = algParams.getParameterSpec(ECGenParameterSpec.class);
 
-                 algParams2.init(new ECParameterSpec(ecSpec.getCurve(), ecSpec.getGenerator(), ecSpec.getOrder(), ecSpec.getCofactor()));
+            TestCase.assertEquals(nextOid(i), spec.getName());
 
-                 spec = algParams2.getParameterSpec(ECGenParameterSpec.class);
+            if (ecSpec != null)
+            {
+                AlgorithmParameters algParams2 = AlgorithmParameters.getInstance("EC", "BC");
 
-                 TestCase.assertEquals(nextOid(i), spec.getName());
+                algParams2.init(new ECParameterSpec(ecSpec.getCurve(), ecSpec.getGenerator(), ecSpec.getOrder(), ecSpec.getCofactor()));
 
-                 algParams.getEncoded();        // check that we can get an encoded spec.
-             }
-         }
+                spec = algParams2.getParameterSpec(ECGenParameterSpec.class);
+
+                TestCase.assertEquals(nextOid(i), spec.getName());
+
+                algParams.getEncoded();        // check that we can get an encoded spec.
+            }
+        }
+
+        TestCase.assertTrue(testCount != 0); // at least one test must work!
     }
 
     private String nextOid(int index)

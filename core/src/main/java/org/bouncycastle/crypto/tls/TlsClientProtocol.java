@@ -39,15 +39,13 @@ public class TlsClientProtocol
     /**
      * Constructor for non-blocking mode.<br>
      * <br>
-     * When data is received, use {@link #offerInput(java.nio.ByteBuffer)} to
-     * provide the received ciphertext, then use
-     * {@link #readInput(byte[], int, int)} to read the corresponding cleartext.<br>
+     * When data is received, use {@link #offerInput(byte[])} to provide the received ciphertext,
+     * then use {@link #readInput(byte[], int, int)} to read the corresponding cleartext.<br>
      * <br>
-     * Similarly, when data needs to be sent, use
-     * {@link #offerOutput(byte[], int, int)} to provide the cleartext, then use
-     * {@link #readOutput(byte[], int, int)} to get the corresponding
+     * Similarly, when data needs to be sent, use {@link #offerOutput(byte[], int, int)} to provide
+     * the cleartext, then use {@link #readOutput(byte[], int, int)} to get the corresponding
      * ciphertext.
-     * 
+     *
      * @param secureRandom
      *            Random number generator for various cryptographic functions
      */
@@ -133,11 +131,9 @@ public class TlsClientProtocol
         return tlsClient;
     }
 
-    protected void handleHandshakeMessage(short type, byte[] data)
+    protected void handleHandshakeMessage(short type, ByteArrayInputStream buf)
         throws IOException
     {
-        ByteArrayInputStream buf = new ByteArrayInputStream(data);
-
         if (this.resumedSession)
         {
             if (type != HandshakeType.finished || this.connection_state != CS_SERVER_HELLO)
@@ -148,9 +144,9 @@ public class TlsClientProtocol
             processFinishedMessage(buf);
             this.connection_state = CS_SERVER_FINISHED;
 
+            sendChangeCipherSpecMessage();
             sendFinishedMessage();
             this.connection_state = CS_CLIENT_FINISHED;
-            this.connection_state = CS_END;
 
             completeHandshake();
             return;
@@ -246,7 +242,6 @@ public class TlsClientProtocol
             {
                 processFinishedMessage(buf);
                 this.connection_state = CS_SERVER_FINISHED;
-                this.connection_state = CS_END;
 
                 completeHandshake();
                 break;
@@ -273,8 +268,6 @@ public class TlsClientProtocol
                 {
                     this.securityParameters.masterSecret = Arrays.clone(this.sessionParameters.getMasterSecret());
                     this.recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
-
-                    sendChangeCipherSpecMessage();
                 }
                 else
                 {
@@ -386,10 +379,19 @@ public class TlsClientProtocol
                 sendClientKeyExchangeMessage();
                 this.connection_state = CS_CLIENT_KEY_EXCHANGE;
 
+                if (TlsUtils.isSSL(getContext()))
+                {
+                    establishMasterSecret(getContext(), keyExchange);
+                }
+
                 TlsHandshakeHash prepareFinishHash = recordStream.prepareToFinish();
                 this.securityParameters.sessionHash = getCurrentPRFHash(getContext(), prepareFinishHash, null);
 
-                establishMasterSecret(getContext(), keyExchange);
+                if (!TlsUtils.isSSL(getContext()))
+                {
+                    establishMasterSecret(getContext(), keyExchange);
+                }
+
                 recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
 
                 if (clientCreds != null && clientCreds instanceof TlsSignerCredentials)
@@ -424,7 +426,7 @@ public class TlsClientProtocol
                 break;
             }
             default:
-                throw new TlsFatalAlert(AlertDescription.handshake_failure);
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
 
             this.connection_state = CS_CLIENT_FINISHED;
@@ -810,7 +812,7 @@ public class TlsClientProtocol
             this.securityParameters.getCipherSuite());
 
         /*
-         * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify
+         * RFC 5246 7.4.9. Any cipher suite which does not explicitly specify
          * verify_data_length has a verify_data_length equal to 12. This includes all
          * existing cipher suites.
          */
@@ -900,10 +902,11 @@ public class TlsClientProtocol
             }
 
             /*
-             * draft-ietf-tls-downgrade-scsv-00 4. If a client sends a ClientHello.client_version
-             * containing a lower value than the latest (highest-valued) version supported by the
-             * client, it SHOULD include the TLS_FALLBACK_SCSV cipher suite value in
-             * ClientHello.cipher_suites.
+             * RFC 7507 4. If a client sends a ClientHello.client_version containing a lower value
+             * than the latest (highest-valued) version supported by the client, it SHOULD include
+             * the TLS_FALLBACK_SCSV cipher suite value in ClientHello.cipher_suites [..]. (The
+             * client SHOULD put TLS_FALLBACK_SCSV after all cipher suites that it actually intends
+             * to negotiate.)
              */
             if (fallback && !Arrays.contains(offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV))
             {

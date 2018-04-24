@@ -23,6 +23,7 @@ import javax.crypto.Cipher;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
@@ -34,6 +35,7 @@ import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
+import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -65,6 +67,8 @@ class OperatorHelper
         oids.put(PKCSObjectIdentifiers.sha512WithRSAEncryption, "SHA512WITHRSA");
         oids.put(CryptoProObjectIdentifiers.gostR3411_94_with_gostR3410_94, "GOST3411WITHGOST3410");
         oids.put(CryptoProObjectIdentifiers.gostR3411_94_with_gostR3410_2001, "GOST3411WITHECGOST3410");
+        oids.put(RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_256, "GOST3411-2012-256WITHECGOST3410-2012-256");
+        oids.put(RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_512, "GOST3411-2012-512WITHECGOST3410-2012-512");
         oids.put(BSIObjectIdentifiers.ecdsa_plain_SHA1, "SHA1WITHPLAIN-ECDSA");
         oids.put(BSIObjectIdentifiers.ecdsa_plain_SHA224, "SHA224WITHPLAIN-ECDSA");
         oids.put(BSIObjectIdentifiers.ecdsa_plain_SHA256, "SHA256WITHPLAIN-ECDSA");
@@ -91,16 +95,18 @@ class OperatorHelper
         oids.put(NISTObjectIdentifiers.dsa_with_sha256, "SHA256WITHDSA");
         oids.put(EdwardsCurvesObjectIdentifiers.id_Ed25519, "SHA512WITHED25519");
 
-        oids.put(OIWObjectIdentifiers.idSHA1, "SHA-1");
-        oids.put(NISTObjectIdentifiers.id_sha224, "SHA-224");
-        oids.put(NISTObjectIdentifiers.id_sha256, "SHA-256");
-        oids.put(NISTObjectIdentifiers.id_sha384, "SHA-384");
-        oids.put(NISTObjectIdentifiers.id_sha512, "SHA-512");
+        oids.put(OIWObjectIdentifiers.idSHA1, "SHA1");
+        oids.put(NISTObjectIdentifiers.id_sha224, "SHA224");
+        oids.put(NISTObjectIdentifiers.id_sha256, "SHA256");
+        oids.put(NISTObjectIdentifiers.id_sha384, "SHA384");
+        oids.put(NISTObjectIdentifiers.id_sha512, "SHA512");
         oids.put(TeleTrusTObjectIdentifiers.ripemd128, "RIPEMD128");
         oids.put(TeleTrusTObjectIdentifiers.ripemd160, "RIPEMD160");
         oids.put(TeleTrusTObjectIdentifiers.ripemd256, "RIPEMD256");
 
         asymmetricWrapperAlgNames.put(PKCSObjectIdentifiers.rsaEncryption, "RSA/ECB/PKCS1Padding");
+
+        asymmetricWrapperAlgNames.put(CryptoProObjectIdentifiers.gostR3410_2001, "ECGOST3410");
 
         symmetricWrapperAlgNames.put(PKCSObjectIdentifiers.id_alg_CMS3DESwrap, "DESEDEWrap");
         symmetricWrapperAlgNames.put(PKCSObjectIdentifiers.id_alg_CMSRC2wrap, "RC2Wrap");
@@ -315,6 +321,27 @@ class OperatorHelper
             }
         }
 
+        if (sigAlgId.getAlgorithm().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
+        {
+            ASN1Sequence seq = ASN1Sequence.getInstance(sigAlgId.getParameters());
+          
+            if (notDefaultPSSParams(seq))
+            {
+                try
+                {
+                    AlgorithmParameters algParams = helper.createAlgorithmParameters("PSS");
+
+                    algParams.init(seq.getEncoded());
+
+                    sig.setParameter(algParams.getParameterSpec(PSSParameterSpec.class));
+                }
+                catch (IOException e)
+                {
+                    throw new GeneralSecurityException("unable to process PSS parameters: " + e.getMessage());
+                }
+            }
+        }
+
         return sig;
     }
 
@@ -379,7 +406,7 @@ class OperatorHelper
         String name = MessageDigestUtils.getDigestName(oid);
 
         int dIndex = name.indexOf('-');
-        if (dIndex > 0)
+        if (dIndex > 0 && !name.startsWith("SHA3"))
         {
             return name.substring(0, dIndex) + name.substring(dIndex + 1);
         }
@@ -390,7 +417,6 @@ class OperatorHelper
     public X509Certificate convertCertificate(X509CertificateHolder certHolder)
         throws CertificateException
     {
-
         try
         {
             CertificateFactory certFact = helper.createCertificateFactory("X.509");
@@ -464,5 +490,32 @@ class OperatorHelper
         }
 
         return oid.getId();
+    }
+
+    // for our purposes default includes varient digest with salt the same size as digest
+    private boolean notDefaultPSSParams(ASN1Sequence seq)
+        throws GeneralSecurityException
+    {
+        if (seq == null || seq.size() == 0)
+        {
+            return false;
+        }
+
+        RSASSAPSSparams pssParams = RSASSAPSSparams.getInstance(seq);
+
+        if (!pssParams.getMaskGenAlgorithm().getAlgorithm().equals(PKCSObjectIdentifiers.id_mgf1))
+        {
+            return true;
+        }
+
+        // same digest for sig and MGF1
+        if (!pssParams.getHashAlgorithm().equals(AlgorithmIdentifier.getInstance(pssParams.getMaskGenAlgorithm().getParameters())))
+        {
+            return true;
+        }
+
+        MessageDigest digest = createDigest(pssParams.getHashAlgorithm());
+
+        return pssParams.getSaltLength().intValue() != digest.getDigestLength();
     }
 }

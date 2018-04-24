@@ -13,7 +13,7 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
- * elliptic curves defined in "ECC Brainpool Standard Curves and Curve Generation"
+ * Elliptic curves defined in "ECC Brainpool Standard Curves and Curve Generation"
  * http://www.ecc-brainpool.org/download/draft_pkix_additional_ecc_dp.txt
  */
 public class TeleTrusTNamedCurves
@@ -307,7 +307,7 @@ public class TeleTrusTNamedCurves
 
     static void defineCurve(String name, ASN1ObjectIdentifier oid, X9ECParametersHolder holder)
     {
-        objIds.put(name.toLowerCase(), oid);
+        objIds.put(Strings.toLowerCase(name), oid);
         names.put(oid, name);
         curves.put(oid, holder);
     }
@@ -333,8 +333,14 @@ public class TeleTrusTNamedCurves
     public static X9ECParameters getByName(
         String name)
     {
-        ASN1ObjectIdentifier oid = getOID(name);
-        return oid == null ? null : getByOID(oid);
+        ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)objIds.get(Strings.toLowerCase(name));
+
+        if (oid != null)
+        {
+            return getByOID(oid);
+        }
+
+        return null;
     }
 
     /**
@@ -347,7 +353,13 @@ public class TeleTrusTNamedCurves
         ASN1ObjectIdentifier oid)
     {
         X9ECParametersHolder holder = (X9ECParametersHolder)curves.get(oid);
-        return holder == null ? null : holder.getParameters();
+
+        if (holder != null)
+        {
+            return holder.getParameters();
+        }
+
+        return null;
     }
 
     /**

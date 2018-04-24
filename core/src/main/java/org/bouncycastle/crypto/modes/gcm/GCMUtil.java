@@ -1,33 +1,12 @@
 package org.bouncycastle.crypto.modes.gcm;
 
+import org.bouncycastle.math.raw.Interleave;
 import org.bouncycastle.util.Pack;
 
 public abstract class GCMUtil
 {
     private static final int E1 = 0xe1000000;
     private static final long E1L = (E1 & 0xFFFFFFFFL) << 32;
-
-    private static int[] generateLookup()
-    {
-        int[] lookup = new int[256];
-
-        for (int c = 0; c < 256; ++c)
-        {
-            int v = 0;
-            for (int i = 7; i >= 0; --i)
-            {
-                if ((c & (1 << i)) != 0)
-                {
-                    v ^= (E1 >>> (7 - i));
-                }
-            }
-            lookup[c] = v;
-        }
-
-        return lookup;
-    }
-
-    private static final int[] LOOKUP = generateLookup();
 
     public static byte[] oneAsBytes()
     {
@@ -98,216 +77,214 @@ public abstract class GCMUtil
         Pack.bigEndianToLong(x, 0, z);
     }
 
+    public static void copy(int[] x, int[] z)
+    {
+        z[0] = x[0];
+        z[1] = x[1];
+        z[2] = x[2];
+        z[3] = x[3];
+    }
+
+    public static void copy(long[] x, long[] z)
+    {
+        z[0] = x[0];
+        z[1] = x[1];
+    }
+
+    public static void divideP(long[] x, long[] z)
+    {
+        long x0 = x[0], x1 = x[1];
+        long m = x0 >> 63;
+        x0 ^= (m & E1L);
+        z[0] = (x0 << 1) | (x1 >>> 63);
+        z[1] = (x1 << 1) | -m;
+    }
+
     public static void multiply(byte[] x, byte[] y)
     {
-        int[] t1 = GCMUtil.asInts(x);
-        int[] t2 = GCMUtil.asInts(y);
+        long[] t1 = GCMUtil.asLongs(x);
+        long[] t2 = GCMUtil.asLongs(y);
         GCMUtil.multiply(t1, t2);
         GCMUtil.asBytes(t1, x);
     }
 
     public static void multiply(int[] x, int[] y)
     {
-        int r00 = x[0], r01 = x[1], r02 = x[2], r03 = x[3];
-        int r10 = 0, r11 = 0, r12 = 0, r13 = 0;
-        
+        int y0 = y[0], y1 = y[1], y2 = y[2], y3 = y[3];
+        int z0 = 0, z1 = 0, z2 = 0, z3 = 0;
+
         for (int i = 0; i < 4; ++i)
         {
-            int bits = y[i];
+            int bits = x[i];
             for (int j = 0; j < 32; ++j)
             {
                 int m1 = bits >> 31; bits <<= 1;
-                r10 ^= (r00 & m1);
-                r11 ^= (r01 & m1);
-                r12 ^= (r02 & m1);
-                r13 ^= (r03 & m1);
+                z0 ^= (y0 & m1);
+                z1 ^= (y1 & m1);
+                z2 ^= (y2 & m1);
+                z3 ^= (y3 & m1);
 
-                int m2 = (r03 << 31) >> 8;
-                r03 = (r03 >>> 1) | (r02 << 31);
-                r02 = (r02 >>> 1) | (r01 << 31);
-                r01 = (r01 >>> 1) | (r00 << 31);
-                r00 = (r00 >>> 1) ^ (m2 & E1);
+                int m2 = (y3 << 31) >> 8;
+                y3 = (y3 >>> 1) | (y2 << 31);
+                y2 = (y2 >>> 1) | (y1 << 31);
+                y1 = (y1 >>> 1) | (y0 << 31);
+                y0 = (y0 >>> 1) ^ (m2 & E1);
             }
         }
 
-        x[0] = r10;
-        x[1] = r11;
-        x[2] = r12;
-        x[3] = r13;
+        x[0] = z0;
+        x[1] = z1;
+        x[2] = z2;
+        x[3] = z3;
     }
 
     public static void multiply(long[] x, long[] y)
     {
-        long r00 = x[0], r01 = x[1], r10 = 0, r11 = 0;
+        long x0 = x[0], x1 = x[1];
+        long y0 = y[0], y1 = y[1];
+        long z0 = 0, z1 = 0, z2 = 0;
 
-        for (int i = 0; i < 2; ++i)
+        for (int j = 0; j < 64; ++j)
         {
-            long bits = y[i];
-            for (int j = 0; j < 64; ++j)
-            {
-                long m1 = bits >> 63; bits <<= 1;
-                r10 ^= (r00 & m1);
-                r11 ^= (r01 & m1);
+            long m0 = x0 >> 63; x0 <<= 1;
+            z0 ^= (y0 & m0);
+            z1 ^= (y1 & m0);
 
-                long m2 = (r01 << 63) >> 8;
-                r01 = (r01 >>> 1) | (r00 << 63);
-                r00 = (r00 >>> 1) ^ (m2 & E1L);
-            }
+            long m1 = x1 >> 63; x1 <<= 1;
+            z1 ^= (y0 & m1);
+            z2 ^= (y1 & m1);
+
+            long c = (y1 << 63) >> 8;
+            y1 = (y1 >>> 1) | (y0 << 63);
+            y0 = (y0 >>> 1) ^ (c & E1L);
         }
 
-        x[0] = r10;
-        x[1] = r11;
+        z0 ^= z2 ^ (z2 >>>  1) ^ (z2 >>>  2) ^ (z2 >>>  7);
+        z1 ^=      (z2 <<  63) ^ (z2 <<  62) ^ (z2 <<  57);
+
+        x[0] = z0;
+        x[1] = z1;
     }
 
-    // P is the value with only bit i=1 set
     public static void multiplyP(int[] x)
     {
-        int m = shiftRight(x) >> 8;
-        x[0] ^= (m & E1);
+        int x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3];
+        int m = (x3 << 31) >> 31;
+        x[0] = (x0 >>> 1) ^ (m & E1);
+        x[1] = (x1 >>> 1) | (x0 << 31);
+        x[2] = (x2 >>> 1) | (x1 << 31);
+        x[3] = (x3 >>> 1) | (x2 << 31);
     }
 
     public static void multiplyP(int[] x, int[] z)
     {
-        int m = shiftRight(x, z) >> 8;
-        z[0] ^= (m & E1);
+        int x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3];
+        int m = (x3 << 31) >> 31;
+        z[0] = (x0 >>> 1) ^ (m & E1);
+        z[1] = (x1 >>> 1) | (x0 << 31);
+        z[2] = (x2 >>> 1) | (x1 << 31);
+        z[3] = (x3 >>> 1) | (x2 << 31);
     }
 
-    // P is the value with only bit i=1 set
+    public static void multiplyP(long[] x)
+    {
+        long x0 = x[0], x1 = x[1];
+        long m = (x1 << 63) >> 63;
+        x[0] = (x0 >>> 1) ^ (m & E1L);
+        x[1] = (x1 >>> 1) | (x0 << 63);
+    }
+
+    public static void multiplyP(long[] x, long[] z)
+    {
+        long x0 = x[0], x1 = x[1];
+        long m = (x1 << 63) >> 63;
+        z[0] = (x0 >>> 1) ^ (m & E1L);
+        z[1] = (x1 >>> 1) | (x0 << 63);
+    }
+
+    public static void multiplyP3(long[] x, long[] z)
+    {
+        long x0 = x[0], x1 = x[1];
+        long c = x1 << 61;
+        z[0] = (x0 >>> 3) ^ c ^ (c >>> 1) ^ (c >>> 2) ^ (c >>> 7);
+        z[1] = (x1 >>> 3) | (x0 << 61);
+    }
+
+    public static void multiplyP4(long[] x, long[] z)
+    {
+        long x0 = x[0], x1 = x[1];
+        long c = x1 << 60;
+        z[0] = (x0 >>> 4) ^ c ^ (c >>> 1) ^ (c >>> 2) ^ (c >>> 7);
+        z[1] = (x1 >>> 4) | (x0 << 60);
+    }
+
+    public static void multiplyP7(long[] x, long[] z)
+    {
+        long x0 = x[0], x1 = x[1];
+        long c = x1 << 57;
+        z[0] = (x0 >>> 7) ^ c ^ (c >>> 1) ^ (c >>> 2) ^ (c >>> 7);
+        z[1] = (x1 >>> 7) | (x0 << 57);
+    }
+
     public static void multiplyP8(int[] x)
     {
-//        for (int i = 8; i != 0; --i)
-//        {
-//            multiplyP(x);
-//        }
-
-        int c = shiftRightN(x, 8);
-        x[0] ^= LOOKUP[c >>> 24];
+        int x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3];
+        int c = x3 << 24;
+        x[0] = (x0 >>> 8) ^ c ^ (c >>> 1) ^ (c >>> 2) ^ (c >>> 7);
+        x[1] = (x1 >>> 8) | (x0 << 24);
+        x[2] = (x2 >>> 8) | (x1 << 24);
+        x[3] = (x3 >>> 8) | (x2 << 24);
     }
 
     public static void multiplyP8(int[] x, int[] y)
     {
-        int c = shiftRightN(x, 8, y);
-        y[0] ^= LOOKUP[c >>> 24];
+        int x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3];
+        int c = x3 << 24;
+        y[0] = (x0 >>> 8) ^ c ^ (c >>> 1) ^ (c >>> 2) ^ (c >>> 7);
+        y[1] = (x1 >>> 8) | (x0 << 24);
+        y[2] = (x2 >>> 8) | (x1 << 24);
+        y[3] = (x3 >>> 8) | (x2 << 24);
     }
 
-    static int shiftRight(int[] x)
+    public static void multiplyP8(long[] x)
     {
-//        int c = 0;
-//        for (int i = 0; i < 4; ++i)
-//        {
-//            int b = x[i];
-//            x[i] = (b >>> 1) | c;
-//            c = b << 31;
-//        }
-//        return c;
-
-        int b = x[0];
-        x[0] = b >>> 1;
-        int c = b << 31;
-        b = x[1];
-        x[1] = (b >>> 1) | c;
-        c = b << 31;
-        b = x[2];
-        x[2] = (b >>> 1) | c;
-        c = b << 31;
-        b = x[3];
-        x[3] = (b >>> 1) | c;
-        return b << 31;
+        long x0 = x[0], x1 = x[1];
+        long c = x1 << 56;
+        x[0] = (x0 >>> 8) ^ c ^ (c >>> 1) ^ (c >>> 2) ^ (c >>> 7);
+        x[1] = (x1 >>> 8) | (x0 << 56);
     }
 
-    static int shiftRight(int[] x, int[] z)
+    public static void multiplyP8(long[] x, long[] y)
     {
-//      int c = 0;
-//      for (int i = 0; i < 4; ++i)
-//      {
-//          int b = x[i];
-//          z[i] = (b >>> 1) | c;
-//          c = b << 31;
-//      }
-//      return c;
-
-        int b = x[0];
-        z[0] = b >>> 1;
-        int c = b << 31;
-        b = x[1];
-        z[1] = (b >>> 1) | c;
-        c = b << 31;
-        b = x[2];
-        z[2] = (b >>> 1) | c;
-        c = b << 31;
-        b = x[3];
-        z[3] = (b >>> 1) | c;
-        return b << 31;
+        long x0 = x[0], x1 = x[1];
+        long c = x1 << 56;
+        y[0] = (x0 >>> 8) ^ c ^ (c >>> 1) ^ (c >>> 2) ^ (c >>> 7);
+        y[1] = (x1 >>> 8) | (x0 << 56);
     }
 
-    static long shiftRight(long[] x)
+    public static long[] pAsLongs()
     {
-        long b = x[0];
-        x[0] = b >>> 1;
-        long c = b << 63; 
-        b = x[1];
-        x[1] = (b >>> 1) | c;
-        return b << 63;
+        long[] tmp = new long[2];
+        tmp[0] = 1L << 62;
+        return tmp;
     }
 
-    static long shiftRight(long[] x, long[] z)
+    public static void square(long[] x, long[] z)
     {
-        long b = x[0];
-        z[0] = b >>> 1;
-        long c = b << 63; 
-        b = x[1];
-        z[1] = (b >>> 1) | c;
-        return b << 63;
-    }
+        long[] t  = new long[4];
+        Interleave.expand64To128Rev(x[0], t, 0);
+        Interleave.expand64To128Rev(x[1], t, 2);
 
-    static int shiftRightN(int[] x, int n)
-    {
-//        int c = 0, nInv = 32 - n;
-//        for (int i = 0; i < 4; ++i)
-//        {
-//            int b = x[i];
-//            x[i] = (b >>> n) | c;
-//            c = b << nInv;
-//        }
-//        return c;
+        long z0 = t[0], z1 = t[1], z2 = t[2], z3 = t[3];
 
-        int b = x[0], nInv = 32 - n;
-        x[0] = b >>> n;
-        int c = b << nInv;
-        b = x[1];
-        x[1] = (b >>> n) | c;
-        c = b << nInv;
-        b = x[2];
-        x[2] = (b >>> n) | c;
-        c = b << nInv;
-        b = x[3];
-        x[3] = (b >>> n) | c;
-        return b << nInv;
-    }
+        z1 ^= z3 ^ (z3 >>>  1) ^ (z3 >>>  2) ^ (z3 >>>  7);
+        z2 ^=      (z3 <<  63) ^ (z3 <<  62) ^ (z3 <<  57);
 
-    static int shiftRightN(int[] x, int n, int[] z)
-    {
-//        int c = 0, nInv = 32 - n;
-//        for (int i = 0; i < 4; ++i)
-//        {
-//            int b = x[i];
-//            z[i] = (b >>> n) | c;
-//            c = b << nInv;
-//        }
-//        return c;
+        z0 ^= z2 ^ (z2 >>>  1) ^ (z2 >>>  2) ^ (z2 >>>  7);
+        z1 ^=      (z2 <<  63) ^ (z2 <<  62) ^ (z2 <<  57);
 
-        int b = x[0], nInv = 32 - n;
-        z[0] = b >>> n;
-        int c = b << nInv;
-        b = x[1];
-        z[1] = (b >>> n) | c;
-        c = b << nInv;
-        b = x[2];
-        z[2] = (b >>> n) | c;
-        c = b << nInv;
-        b = x[3];
-        z[3] = (b >>> n) | c;
-        return b << nInv;
+        z[0] = z0;
+        z[1] = z1;
     }
 
     public static void xor(byte[] x, byte[] y)
@@ -323,11 +300,45 @@ public abstract class GCMUtil
         while (i < 16);
     }
 
+    public static void xor(byte[] x, byte[] y, int yOff)
+    {
+        int i = 0;
+        do
+        {
+            x[i] ^= y[yOff + i]; ++i;
+            x[i] ^= y[yOff + i]; ++i;
+            x[i] ^= y[yOff + i]; ++i;
+            x[i] ^= y[yOff + i]; ++i;
+        }
+        while (i < 16);
+    }
+
+    public static void xor(byte[] x, int xOff, byte[] y, int yOff, byte[] z, int zOff)
+    {
+        int i = 0;
+        do
+        {
+            z[zOff + i] = (byte)(x[xOff + i] ^ y[yOff + i]); ++i;
+            z[zOff + i] = (byte)(x[xOff + i] ^ y[yOff + i]); ++i;
+            z[zOff + i] = (byte)(x[xOff + i] ^ y[yOff + i]); ++i;
+            z[zOff + i] = (byte)(x[xOff + i] ^ y[yOff + i]); ++i;
+        }
+        while (i < 16);
+    }
+
     public static void xor(byte[] x, byte[] y, int yOff, int yLen)
     {
         while (--yLen >= 0)
         {
             x[yLen] ^= y[yOff + yLen];
+        }
+    }
+
+    public static void xor(byte[] x, int xOff, byte[] y, int yOff, int len)
+    {
+        while (--len >= 0)
+        {
+            x[xOff + len] ^= y[yOff + len];
         }
     }
 

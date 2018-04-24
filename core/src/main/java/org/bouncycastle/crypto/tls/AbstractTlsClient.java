@@ -42,6 +42,16 @@ public abstract class AbstractTlsClient
              */
             TlsECCUtils.readSupportedEllipticCurvesExtension(extensionData);
             return true;
+
+        case ExtensionType.ec_point_formats:
+            /*
+             * Exception added based on field reports that some servers send this even when they
+             * didn't negotiate an ECC cipher suite. If present, we still require that it is a valid
+             * ECPointFormatList.
+             */
+            TlsECCUtils.readSupportedPointFormatsExtension(extensionData);
+            return true;
+
         default:
             return false;
         }
@@ -87,9 +97,9 @@ public abstract class AbstractTlsClient
     public boolean isFallback()
     {
         /*
-         * draft-ietf-tls-downgrade-scsv-00 4. [..] is meant for use by clients that repeat a
-         * connection attempt with a downgraded protocol in order to avoid interoperability problems
-         * with legacy servers.
+         * RFC 7507 4. The TLS_FALLBACK_SCSV cipher suite value is meant for use by clients that
+         * repeat a connection attempt with a downgraded protocol (perform a "fallback retry") in
+         * order to work around interoperability problems with legacy servers.
          */
         return false;
     }
@@ -199,6 +209,11 @@ public abstract class AbstractTlsClient
             {
                 checkForUnexpectedServerExtension(serverExtensions, TlsECCUtils.EXT_ec_point_formats);
             }
+
+            /*
+             * RFC 7685 3. The server MUST NOT echo the extension.
+             */
+            checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_padding);
         }
     }
 

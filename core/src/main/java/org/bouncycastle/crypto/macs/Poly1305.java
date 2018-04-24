@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Mac;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -111,24 +112,27 @@ public class Poly1305
 
     private void setKey(final byte[] key, final byte[] nonce)
     {
+        if (key.length != 32)
+        {
+            throw new IllegalArgumentException("Poly1305 key must be 256 bits.");
+        }
         if (cipher != null && (nonce == null || nonce.length != BLOCK_SIZE))
         {
             throw new IllegalArgumentException("Poly1305 requires a 128 bit IV.");
         }
 
-        Poly1305KeyGenerator.checkKey(key);
+        // Extract r portion of key (and "clamp" the values)
+        int t0 = Pack.littleEndianToInt(key, 0);
+        int t1 = Pack.littleEndianToInt(key, 4);
+        int t2 = Pack.littleEndianToInt(key, 8);
+        int t3 = Pack.littleEndianToInt(key, 12);
 
-        // Extract r portion of key
-        int t0 = Pack.littleEndianToInt(key, BLOCK_SIZE + 0);
-        int t1 = Pack.littleEndianToInt(key, BLOCK_SIZE + 4);
-        int t2 = Pack.littleEndianToInt(key, BLOCK_SIZE + 8);
-        int t3 = Pack.littleEndianToInt(key, BLOCK_SIZE + 12);
-
-        r0 = t0 & 0x3ffffff; t0 >>>= 26; t0 |= t1 << 6;
-        r1 = t0 & 0x3ffff03; t1 >>>= 20; t1 |= t2 << 12;
-        r2 = t1 & 0x3ffc0ff; t2 >>>= 14; t2 |= t3 << 18;
-        r3 = t2 & 0x3f03fff; t3 >>>= 8;
-        r4 = t3 & 0x00fffff;
+        // NOTE: The masks perform the key "clamping" implicitly
+        r0 =   t0                       & 0x03FFFFFF;
+        r1 = ((t0 >>> 26) | (t1 <<  6)) & 0x03FFFF03;
+        r2 = ((t1 >>> 20) | (t2 << 12)) & 0x03FFC0FF;
+        r3 = ((t2 >>> 14) | (t3 << 18)) & 0x03F03FFF;
+        r4 =  (t3 >>>  8)               & 0x000FFFFF;
 
         // Precompute multipliers
         s1 = r1 * 5;
@@ -137,22 +141,27 @@ public class Poly1305
         s4 = r4 * 5;
 
         final byte[] kBytes;
+        final int kOff;
+
         if (cipher == null)
         {
             kBytes = key;
+            kOff = BLOCK_SIZE;
         }
         else
         {
             // Compute encrypted nonce
             kBytes = new byte[BLOCK_SIZE];
-            cipher.init(true, new KeyParameter(key, 0, BLOCK_SIZE));
+            kOff = 0;
+
+            cipher.init(true, new KeyParameter(key, BLOCK_SIZE, BLOCK_SIZE));
             cipher.processBlock(nonce, 0, kBytes, 0);
         }
 
-        k0 = Pack.littleEndianToInt(kBytes, 0);
-        k1 = Pack.littleEndianToInt(kBytes, 4);
-        k2 = Pack.littleEndianToInt(kBytes, 8);
-        k3 = Pack.littleEndianToInt(kBytes, 12);
+        k0 = Pack.littleEndianToInt(kBytes, kOff + 0);
+        k1 = Pack.littleEndianToInt(kBytes, kOff + 4);
+        k2 = Pack.littleEndianToInt(kBytes, kOff + 8);
+        k3 = Pack.littleEndianToInt(kBytes, kOff + 12);
     }
 
     public String getAlgorithmName()
@@ -226,13 +235,13 @@ public class Poly1305
         long tp3 = mul32x32_64(h0,r3) + mul32x32_64(h1,r2) + mul32x32_64(h2,r1) + mul32x32_64(h3,r0) + mul32x32_64(h4,s4);
         long tp4 = mul32x32_64(h0,r4) + mul32x32_64(h1,r3) + mul32x32_64(h2,r2) + mul32x32_64(h3,r1) + mul32x32_64(h4,r0);
 
-        long b;
-        h0 = (int)tp0 & 0x3ffffff; b = (tp0 >>> 26);
-        tp1 += b; h1 = (int)tp1 & 0x3ffffff; b = ((tp1 >>> 26) & 0xffffffff);
-        tp2 += b; h2 = (int)tp2 & 0x3ffffff; b = ((tp2 >>> 26) & 0xffffffff);
-        tp3 += b; h3 = (int)tp3 & 0x3ffffff; b = (tp3 >>> 26);
-        tp4 += b; h4 = (int)tp4 & 0x3ffffff; b = (tp4 >>> 26);
-        h0 += b * 5;
+        h0 = (int)tp0 & 0x3ffffff; tp1 += (tp0 >>> 26);
+        h1 = (int)tp1 & 0x3ffffff; tp2 += (tp1 >>> 26);
+        h2 = (int)tp2 & 0x3ffffff; tp3 += (tp2 >>> 26);
+        h3 = (int)tp3 & 0x3ffffff; tp4 += (tp3 >>> 26);
+        h4 = (int)tp4 & 0x3ffffff;
+        h0 += (int)(tp4 >>> 26) * 5;
+        h1 += (h0 >>> 26); h0 &= 0x3ffffff;
     }
 
     public int doFinal(final byte[] out, final int outOff)
@@ -241,7 +250,7 @@ public class Poly1305
     {
         if (outOff + BLOCK_SIZE > out.length)
         {
-            throw new DataLengthException("Output buffer is too short.");
+            throw new OutputLengthException("Output buffer is too short.");
         }
 
         if (currentBlockOffset > 0)
@@ -250,17 +259,14 @@ public class Poly1305
             processBlock();
         }
 
-        long f0, f1, f2, f3;
+        h1 += (h0 >>> 26); h0 &= 0x3ffffff;
+        h2 += (h1 >>> 26); h1 &= 0x3ffffff;
+        h3 += (h2 >>> 26); h2 &= 0x3ffffff;
+        h4 += (h3 >>> 26); h3 &= 0x3ffffff;
+        h0 += (h4 >>> 26) * 5; h4 &= 0x3ffffff;
+        h1 += (h0 >>> 26); h0 &= 0x3ffffff;
 
-        int b = h0 >>> 26;
-        h0 = h0 & 0x3ffffff;
-        h1 += b; b = h1 >>> 26; h1 = h1 & 0x3ffffff;
-        h2 += b; b = h2 >>> 26; h2 = h2 & 0x3ffffff;
-        h3 += b; b = h3 >>> 26; h3 = h3 & 0x3ffffff;
-        h4 += b; b = h4 >>> 26; h4 = h4 & 0x3ffffff;
-        h0 += b * 5;
-
-        int g0, g1, g2, g3, g4;
+        int g0, g1, g2, g3, g4, b;
         g0 = h0 + 5; b = g0 >>> 26; g0 &= 0x3ffffff;
         g1 = h1 + b; b = g1 >>> 26; g1 &= 0x3ffffff;
         g2 = h2 + b; b = g2 >>> 26; g2 &= 0x3ffffff;
@@ -275,6 +281,7 @@ public class Poly1305
         h3 = (h3 & nb) | (g3 & b);
         h4 = (h4 & nb) | (g4 & b);
 
+        long f0, f1, f2, f3;
         f0 = (((h0       ) | (h1 << 26)) & 0xffffffffl) + (0xffffffffL & k0);
         f1 = (((h1 >>> 6 ) | (h2 << 20)) & 0xffffffffl) + (0xffffffffL & k1);
         f2 = (((h2 >>> 12) | (h3 << 14)) & 0xffffffffl) + (0xffffffffL & k2);
@@ -301,6 +308,6 @@ public class Poly1305
 
     private static final long mul32x32_64(int i1, int i2)
     {
-        return ((long)i1) * i2;
+        return (i1 & 0xFFFFFFFFL) * i2;
     }
 }

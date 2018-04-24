@@ -1,14 +1,23 @@
 package org.bouncycastle.crypto.test;
 
+import java.math.BigInteger;
+
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA224Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHA512tDigest;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.signers.RSADigestSigner;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
-
-import java.math.BigInteger;
 
 public class RSADigestSignerTest
     extends SimpleTest
@@ -32,14 +41,32 @@ public class RSADigestSignerTest
         RSAKeyParameters rsaPublic = new RSAKeyParameters(false, rsaPubMod, rsaPubExp);
         RSAPrivateCrtKeyParameters rsaPrivate = new RSAPrivateCrtKeyParameters(rsaPrivMod, rsaPubExp, rsaPrivExp, rsaPrivP, rsaPrivQ, rsaPrivDP, rsaPrivDQ, rsaPrivQinv);
 
+        checkDigest(rsaPublic, rsaPrivate, new SHA1Digest(), X509ObjectIdentifiers.id_SHA1);
+
+        checkDigest(rsaPublic, rsaPrivate, new SHA224Digest(), NISTObjectIdentifiers.id_sha224);
+        checkDigest(rsaPublic, rsaPrivate, new SHA256Digest(), NISTObjectIdentifiers.id_sha256);
+        checkDigest(rsaPublic, rsaPrivate, new SHA384Digest(), NISTObjectIdentifiers.id_sha384);
+        checkDigest(rsaPublic, rsaPrivate, new SHA512Digest(), NISTObjectIdentifiers.id_sha512);
+        checkDigest(rsaPublic, rsaPrivate, new SHA512tDigest(224), NISTObjectIdentifiers.id_sha512_224);
+        checkDigest(rsaPublic, rsaPrivate, new SHA512tDigest(256), NISTObjectIdentifiers.id_sha512_256);
+
+        checkDigest(rsaPublic, rsaPrivate, new SHA3Digest(224), NISTObjectIdentifiers.id_sha3_224);
+        checkDigest(rsaPublic, rsaPrivate, new SHA3Digest(256), NISTObjectIdentifiers.id_sha3_256);
+        checkDigest(rsaPublic, rsaPrivate, new SHA3Digest(384), NISTObjectIdentifiers.id_sha3_384);
+        checkDigest(rsaPublic, rsaPrivate, new SHA3Digest(512), NISTObjectIdentifiers.id_sha3_512);
+    }
+
+    private void checkDigest(RSAKeyParameters rsaPublic, RSAPrivateCrtKeyParameters rsaPrivate, Digest digest, ASN1ObjectIdentifier digOid)
+        throws Exception
+    {
         byte[] msg = new byte[] { 1, 6, 3, 32, 7, 43, 2, 5, 7, 78, 4, 23 };
 
-        RSADigestSigner signer = new RSADigestSigner(new SHA1Digest());
+        RSADigestSigner signer = new RSADigestSigner(digest);
         signer.init(true, rsaPrivate);
         signer.update(msg, 0, msg.length);
         byte[] sig = signer.generateSignature();
 
-        signer = new RSADigestSigner(new SHA1Digest(), X509ObjectIdentifiers.id_SHA1);
+        signer = new RSADigestSigner(digest, digOid);
         signer.init(false, rsaPublic);
         signer.update(msg, 0, msg.length);
         if (!signer.verifySignature(sig))

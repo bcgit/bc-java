@@ -26,7 +26,7 @@ import org.bouncycastle.operator.OutputCompressor;
  *      MimeBodyPart           smime = fact.generate(content, algorithm);
  * </pre>
  *
- * <b>Note:<b> Most clients expect the MimeBodyPart to be in a MimeMultipart
+ * <b>Note:</b> Most clients expect the MimeBodyPart to be in a MimeMultipart
  * when it's sent.
  */
 public class SMIMECompressedGenerator

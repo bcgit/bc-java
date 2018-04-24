@@ -37,7 +37,6 @@ import org.bouncycastle.openssl.PEMDecryptorProvider;
 import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.PasswordFinder;
 import org.bouncycastle.openssl.X509TrustedCertificateBlock;
 import org.bouncycastle.openssl.bc.BcPEMDecryptorProvider;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
@@ -54,23 +53,6 @@ import org.bouncycastle.util.test.SimpleTest;
 public class ParserTest
     extends SimpleTest
 {
-    private static class Password
-        implements PasswordFinder
-    {
-        char[]  password;
-
-        Password(
-            char[] word)
-        {
-            this.password = word;
-        }
-
-        public char[] getPassword()
-        {
-            return password;
-        }
-    }
-
     public String getName()
     {
         return "PEMParserTest";

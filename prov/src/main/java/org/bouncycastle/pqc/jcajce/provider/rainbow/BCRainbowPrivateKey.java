@@ -222,7 +222,6 @@ public class BCRainbowPrivateKey
         }
         catch (IOException e)
         {
-            e.printStackTrace();
             return null;
         }
         try
@@ -232,7 +231,6 @@ public class BCRainbowPrivateKey
         }
         catch (IOException e)
         {
-            e.printStackTrace();
             return null;
         }
     }

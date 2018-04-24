@@ -74,23 +74,24 @@ The Bouncy Castle provider can make use of the following two system properties:
 <h2>4.0 Specifications</h2>
 
 <ul>
-<li> clean room implementation of the JCE API 
+<li> clean room implementation of the JCE API </li>
 <li> light-weight cryptographic API consisting of support for
 	<ul>
-		<li>BlockCipher
-		<li>BufferedBlockCipher
-		<li>AsymmetricBlockCipher
-		<li>BufferedAsymmetricBlockCipher
-		<li>StreamCipher
-		<li>BufferedStreamCipher
-        <li>KeyAgreement
-        <li>IESCipher
-		<li>Digest
-		<li>Mac
-		<li>PBE
-		<li>Signers
-	</ul>
-<li> JCE compatible framework for a Bouncy Castle provider
+		<li>BlockCipher</li>
+		<li>BufferedBlockCipher</li>
+		<li>AsymmetricBlockCipher</li>
+		<li>BufferedAsymmetricBlockCipher</li>
+		<li>StreamCipher</li>
+		<li>BufferedStreamCipher</li>
+        <li>KeyAgreement</li>
+        <li>IESCipher</li>
+		<li>Digest</li>
+		<li>Mac</li>
+		<li>PBE</li>
+		<li>Signers</li>
+	</ul></li>
+<li> JCE compatible framework for a Bouncy Castle provider "BC".</li>
+<li> JCE compatible framework for a Bouncy Castle post-quantum provider "BCPQC".</li>
 </ul>
 
 <h2>5.0 Light-weight API</h2>
@@ -154,13 +155,12 @@ be operated in.
 <tr><td><b>BufferedBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 <tr><td><b>CBCBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 <tr><td><b>CFBBlockCipher</b></td><td>BlockCipher, block size (in bits)</td><td>&nbsp;</td></tr>
-<tr><td><b>CCMBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - requires all data up front.</td></tr>
-<tr><td><b>GCMBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - NIST SP 800-38D.</td></tr>
 <tr><td><b>GCFBlockCipher</b></td><td>BlockCipher</td><td>GOST CFB mode with CryptoPro key meshing.</td></tr>
 <tr><td><b>EAXBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 <tr><td><b>OCBBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 <tr><td><b>OFBBlockCipher</b></td><td>BlockCipher, block size (in bits)</td><td>&nbsp;</td></tr>
 <tr><td><b>SICBlockCipher</b></td><td>BlockCipher, block size (in bits)</td><td>Also known as CTR mode</td></tr>
+<tr><td><b>KCTRBlockCipher</b></td><td>BlockCipher, block size (in bits)</td><td>DSTU7624 CTR mode</td></tr>
 <tr><td><b>OpenPGPCFBBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 <tr><td><b>GOFBBlockCipher</b></td><td>BlockCipher</td><td>GOST OFB mode</td></tr>
 </table>
@@ -173,7 +173,9 @@ and has the following implemenations.
 <tr><th>Name</th><th>Constructor</th><th>Notes</th></tr>
 <tr><td><b>CCMBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - requires all data up front.</td></tr>
 <tr><td><b>EAXBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
+<tr><td><b>CCMBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - requires all data up front.</td></tr>
 <tr><td><b>GCMBlockCipher</b></td><td>BlockCipher</td><td>Packet mode - NIST SP 800-38D.</td></tr>
+<tr><td><b>KCCMBlockCipher</b></td><td>BlockCipher</td><td>DSTU 7624 Packet mode - requires all data up front.</td></tr>
 <tr><td><b>OCBBlockCipher</b></td><td>BlockCipher</td><td>&nbsp;</td></tr>
 </table>
 </p>
@@ -185,6 +187,7 @@ and has the following implemenations.
 <tr><th>Name</th><th>Constructor</th><th>Notes</th></tr>
 <tr><td><b>PaddedBufferedBlockCipher</b></td><td>BlockCipher</td><td>a buffered block cipher that can use padding - default PKCS5/7 padding</td></tr>
 <tr><td><b>CTSBlockCipher</b></td><td>BlockCipher</td><td>Cipher Text Stealing</td></tr>
+<tr><td><b>NISTCTSBlockCipher</b></td><td>BlockCipher</td><td>Cipher Text Stealing - NIST mode set.</td></tr>
 </table>
 
 <p>The following paddings can be used with the PaddedBufferedBlockCipher.
@@ -213,7 +216,10 @@ used with the above modes.
 <tr><td><b>DESEngine</b></td><td>64</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>DESedeEngine</b></td><td>128, 192</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>DESedeWrapEngine</b></td><td>128, 192</td><td>64 bit</td><td>Implements Draft IETF DESede key wrapping</td></tr>
+<tr><td><b>DSTU7624Engine</b></td><td>128, 256, 512</td><td>128/256/512 bit</td><td>DSTU7624 Block Cipher</td></tr>
+<tr><td><b>DSTU7624WrapEngine</b></td><td>128, 256, 512</td><td>128/256/512 bit</td><td>DSTU7624 key wrapper</td></tr>
 <tr><td><b>GOST28147Engine</b></td><td>256</td><td>64 bit</td><td>Has a range of S-boxes</td></tr>
+<tr><td><b>GOST3412_2015Engine</b></td><td>256</td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>IDEAEngine</b></td><td>128</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>NoekeonEngine</b></td><td>128</td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>RC2Engine</b></td><td>0 .. 1024 </td><td>64 bit</td><td>&nbsp;</td></tr>
@@ -226,6 +232,7 @@ used with the above modes.
 <tr><td><b>Shacal2Engine</b></td><td>512</td><td>256 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>SerpentEngine</b></td><td>128, 192, 256 </td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>SkipjackEngine</b></td><td>0 .. 128 </td><td>64 bit</td><td>&nbsp;</td></tr>
+<tr><td><b>SM4Engine</b></td><td>128</td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>TEAEngine</b></td><td>128</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>ThreefishEngine</b></td><td>256/512/1024 </td><td>256 bit/512 bit/1024 bit</td><td>Tweakable block cipher</td></tr>
 <tr><td><b>TwofishEngine</b></td><td>128, 192, 256 </td><td>128 bit</td><td>&nbsp;</td></tr>
@@ -288,6 +295,12 @@ used with the above modes.
 <tr><td><b>ElGamalEngine</b></td><td>any multiple of 8 large enough for the encoding.</td><td>&nbsp;</td></tr>
 <tr><td><b>NTRUEngine</b></td><td>any multiple of 8 large enough for the encoding.</td><td>&nbsp;</td></tr>
 </table>
+<p>The following asymmetric ciphers are also supported and allow variable block sizes:
+<ul>
+<li>IESEngine</li>
+<li>SM2Engine</li>
+</ul>
+</p>
 
 <h4>Digest</h4>
 
@@ -297,6 +310,9 @@ implementations
 <p>
 <table cellpadding=5 cellspacing=0 border=1 width=80%>
 <tr><th>Name</th><th>Output (in bits)</th><th>Notes</th></tr>
+<tr><td><b>Blake2sDigest</b></td><td>128, 160, 224, 256</td><td></td></tr>
+<tr><td><b>Blake2bDigest</b></td><td>224, 256, 384, 512</td><td></td></tr>
+<tr><td><b>DSTU7564Digest</b></td><td>256, 384, 512</td><td></td></tr>
 <tr><td><b>KeccakDigest</b></td><td>224, 256, 288, 384, 512</td><td></td></tr>
 <tr><td><b>MD2Digest</b></td><td>128</td><td>&nbsp;</td></tr>
 <tr><td><b>MD4Digest</b></td><td>128</td><td>&nbsp;</td></tr>
@@ -316,6 +332,8 @@ implementations
 <tr><td><b>SM3Digest</b></td><td>256</td><td>The SM3 Digest.</td></tr>
 <tr><td><b>TigerDigest</b></td><td>192</td><td>The Tiger Digest.</td></tr>
 <tr><td><b>GOST3411Digest</b></td><td>256</td><td>The GOST-3411 Digest.</td></tr>
+<tr><td><b>GOST3411_2012_256Digest</b></td><td>256</td><td>The GOST-3411-2012-256 Digest.</td></tr>
+<tr><td><b>GOST3411_2012_512Digest</b></td><td>512</td><td>The GOST-3411-2012-512 Digest.</td></tr>
 <tr><td><b>WhirlpoolDigest</b></td><td>512</td><td>The Whirlpool Digest.</td></tr>
 </table>
 
@@ -334,6 +352,8 @@ implementations
 <tr><td><b>GOST28147Mac</b></td><td>32 bits</td><td>&nbsp;</td></tr>
 <tr><td><b>ISO9797Alg3Mac</b></td><td>multiple of 8 bits up to underlying cipher size.</td><td>&nbsp;</td></tr>
 <tr><td><b>HMac</b></td><td>digest length</td><td>&nbsp;</td></tr>
+<tr><td><b>DSTU7564</b></td><td>256, 384, 512 bits</td><td>&nbsp;</td></tr>
+<tr><td><b>DSTU7624</b></td><td>128, 256, 512 bits</td><td>&nbsp;</td></tr>
 <tr><td><b>Poly1305</b></td><td>128 bits</td><td>Usable with 128 bit block ciphers. Use Poly1305KeyGenerator to generate keys.</td></tr>
 <tr><td><b>SkeinMac</b></td><td>any byte length</td><td>256 bit, 512 bit and 1024 state size variants. Additional parameterisation using SkeinParameters.</td></tr>
 <tr><td><b>SipHash</b></td><td>64 bits</td><td>&nbsp;</td></tr>
@@ -410,7 +430,7 @@ sub-classes
 
 <h4>Signers</h4>
 <p>
-DSA, ECDSA, ISO-9796-2, GOST-3410-94, GOST-3410-2001, DSTU-4145-2002, and RSA-PSS are supported by the <b>org.bouncycastle.crypto.signers</b>
+DSA, ECDSA, ISO-9796-2, GOST-3410-94, GOST-3410-2001, GOST-3410-2012, DSTU-4145-2002, and RSA-PSS are supported by the <b>org.bouncycastle.crypto.signers</b>
 package. Note: as these are light weight classes, if you need to use SHA1 or GOST-3411
 (as defined in the relevant standards) you'll also need to make use of the appropriate
 digest class in conjunction with these.
@@ -445,8 +465,7 @@ OutputStream classes are provided as well.
 <h2>6.0 Bouncy Castle Provider</h2>
 
 <p>The Bouncy Castle provider is a JCE compliant provider that
-is a wrapper built on top of the light-weight API.</p>
-
+is a wrapper built on top of the light-weight API. The main provider is referred to with the name "BC", the post quantum provider is indicated by "BCPQC".</p>
 <p>
 The advantage for writing application code that uses the 
 provider interface to cryptographic algorithms is that the
@@ -590,6 +609,8 @@ Note: default key sizes are in bold.
 <tr><th>Name</th><th>KeySizes (in bits) </th><th>Block Size</th><th>Notes</th></tr>
 <tr><td>AES</td><td>0 .. 256 <b>(192)</b></td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td>AESWrap</td><td>0 .. 256 <b>(192)</b></td><td>128 bit</td><td>A FIPS AES key wrapper</td></tr>
+<tr><td>ARIA</td><td>0 .. 256 <b>(192)</b></td><td>128 bit</td><td>&nbsp;</td></tr>
+<tr><td>ARIAWrap</td><td>0 .. 256 <b>(192)</b></td><td>128 bit</td><td>An ARIA key wrapper (based on RFC 5649)</td></tr>
 <tr><td>Blowfish</td><td>0 .. 448 <b>(448)</b></td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td>Camellia</td><td>128, 192, 256</td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td>CamelliaWrap</td><td>128, 192, 256</td><td>128 bit</td><td>&nbsp;</td></tr>
@@ -598,6 +619,8 @@ Note: default key sizes are in bold.
 <tr><td>DES</td><td>64</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td>DESede</td><td>128, 192</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td>DESedeWrap</td><td>128, 192</td><td>128 bit</td><td>A Draft IETF DESede key wrapper</td></tr>
+<tr><td>DSTU7624</td><td>128, 256, 512</td><td>128/256/512 bit</td><td>DSTU7624 Block Cipher</td></tr>
+<tr><td>DSTU7624Wrap</td><td>128, 256, 512</td><td>128/256/512 bit</td><td>DSTU7624 key wrapper</td></tr>
 <tr><td>GCM</td><td>128, 192, 256<b>(192)</b></td><td>AEAD Mode Cipher</td><td>Galois/Counter Mode, as defined in NIST Special Publication SP 800-38D.</td></tr>
 <tr><td>GOST28147</td><td>256</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td>IDEA</td><td>128 <b>(128)</b></td><td>64 bit</td><td>&nbsp;</td></tr>
@@ -611,6 +634,7 @@ Note: default key sizes are in bold.
 <tr><td>SEEDWrap</td><td>128<b>(128)</b></td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td>Serpent</td><td>128, 192, 256 <b>(256)</b></td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td>Skipjack</td><td>0 .. 128 <b>(128)</b></td><td>64 bit</td><td>&nbsp;</td></tr>
+<tr><td>SM4</td><td>128<b>(128)</b></td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td>TEA</td><td>128 <b>(128)</b></td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td>Threefish-256</td><td>256</td><td>256 bit</td><td>&nbsp;</td></tr>
 <tr><td>Threefish-512</td><td>512</td><td>512 bit</td><td>&nbsp;</td></tr>
@@ -660,6 +684,10 @@ as;
 <li>RSA/NONE/OAEPWithSHA256AndMGF1Padding
 <li>RSA/NONE/OAEPWithSHA384AndMGF1Padding
 <li>RSA/NONE/OAEPWithSHA512AndMGF1Padding
+<li>RSA/NONE/OAEPWithSHA3-224AndMGF1Padding
+<li>RSA/NONE/OAEPWithSHA3-256AndMGF1Padding
+<li>RSA/NONE/OAEPWithSHA3-384AndMGF1Padding
+<li>RSA/NONE/OAEPWithSHA3-512AndMGF1Padding
 <li>RSA/NONE/ISO9796-1Padding
 </ul>
 
@@ -673,7 +701,7 @@ as;
 
 <p>
 Diffie-Hellman key agreement is supported using the "DH", "ECDH",
-"ECCDH" (EC cofactor DH) and "ECMQV" key agreement instances and their variations.
+"ECCDH" (EC Cofactor DH), "ECMQV" and "ECCDHU" (EC Cofactor DH Unified) key agreement instances and their variations. Key exchange, which also uses the KeyAgreement API is supported by "NH" (the NewHope algorithm (BCPQC)). SM2 key exchange is currently supported in the lightweight API.
 </p>
 <p>
 Support is provided for the standard SEC algorithm set for EC. Names appear
@@ -696,6 +724,8 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <table cellpadding=5 cellspacing=0 border=1 width=80%>
 <tr><th>Name</th><th>Output (in bits)</th><th>Notes</th></tr>
 <tr><td>GOST3411</td><td>256</td><td>&nbsp;</td></tr>
+<tr><td>GOST3411-2012-256</td><td>256</td><td>&nbsp;</td></tr>
+<tr><td>GOST3411-2012-512</td><td>512</td><td>&nbsp;</td></tr>
 <tr><td>MD2</td><td>128</td><td>&nbsp;</td></tr>
 <tr><td>MD4</td><td>128</td><td>&nbsp;</td></tr>
 <tr><td>MD5</td><td>128</td><td>&nbsp;</td></tr>
@@ -727,6 +757,9 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <tr><td>Any MAC based on a block cipher, CBC (the default) and CFB modes.</td><td>half the cipher's block size (usually 32 bits)</td><td>&nbsp;</td></tr>
 <tr><td>*-GMAC</td><td>32 to 128 bits</td><td>Usable with GCM mode ciphers, defined for AES, NIST SP 800-38D. e.g. AES-GMAC.</td></tr>
 <tr><td>VMPC-MAC</td><td>128</td><td>&nbsp;</td></tr>
+<tr><td>HMac-GOST3411</td><td>256</td><td>&nbsp;</td></tr>
+<tr><td>HMac-GOST3411-2012-256</td><td>256</td><td>&nbsp;</td></tr>
+<tr><td>HMac-GOST3411-2012-512</td><td>512</td><td>&nbsp;</td></tr>
 <tr><td>HMac-KECCAK224</td><td>224</td><td>&nbsp;</td></tr>
 <tr><td>HMac-KECCAK256</td><td>256</td><td>&nbsp;</td></tr>
 <tr><td>HMac-KECCAK288</td><td>288</td><td>&nbsp;</td></tr>
@@ -742,6 +775,10 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <tr><td>HMac-SHA256</td><td>256</td><td>&nbsp;</td></tr>
 <tr><td>HMac-SHA384</td><td>384</td><td>&nbsp;</td></tr>
 <tr><td>HMac-SHA512</td><td>512</td><td>&nbsp;</td></tr>
+<tr><td>HMac-SHA3-224</td><td>224</td><td>&nbsp;</td></tr>
+<tr><td>HMac-SHA3-256</td><td>256</td><td>&nbsp;</td></tr>
+<tr><td>HMac-SHA3-384</td><td>384</td><td>&nbsp;</td></tr>
+<tr><td>HMac-SHA3-512</td><td>512</td><td>&nbsp;</td></tr>
 <tr><td>HMAC-Skein-256-*</td><td>128, 160, 224, 256</td><td>e.g. HMAC-Skein-256-160</td></tr>
 <tr><td>HMAC-Skein-512-*</td><td>128, 160, 224, 256, 384, 512</td><td>e.g. HMAC-Skein-512-256</td></tr>
 <tr><td>HMAC-Skein-1024-*</td><td>384, 512, 1024</td><td>e.g. HMAC-Skein-1024-1024</td></tr>
@@ -792,11 +829,19 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>SHA256withDSA</li>
 <li>SHA384withDSA</li>
 <li>SHA512withDSA</li>
+<li>SHA3-224withDSA</li>
+<li>SHA3-256withDSA</li>
+<li>SHA3-384withDSA</li>
+<li>SHA3-512withDSA</li>
 <li>SHA1withDDSA</li>
 <li>SHA224withDDSA</li>
 <li>SHA256withDDSA</li>
 <li>SHA384withDDSA</li>
 <li>SHA512withDDSA</li>
+<li>SHA3-224withDDSA</li>
+<li>SHA3-256withDDSA</li>
+<li>SHA3-384withDDSA</li>
+<li>SHA3-512withDDSA</li>
 <li>NONEwithDSA</li>
 <li>SHA1withDetECDSA</li>
 <li>SHA224withECDDSA</li>
@@ -809,6 +854,10 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>SHA256withECDSA</li>
 <li>SHA384withECDSA</li>
 <li>SHA512withECDSA</li>
+<li>SHA3-224withECDSA</li>
+<li>SHA3-256withECDSA</li>
+<li>SHA3-384withECDSA</li>
+<li>SHA3-512withECDSA</li>
 <li>SHA1withECNR</li>
 <li>SHA224withECNR</li>
 <li>SHA256withECNR</li>
@@ -820,6 +869,10 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>SHA512withRSA</li>
 <li>SHA512(224)withRSA</li>
 <li>SHA512(256)withRSA</li>
+<li>SHA3-224withRSA</li>
+<li>SHA3-256withRSA</li>
+<li>SHA3-384withRSA</li>
+<li>SHA3-512withRSA</li>
 <li>SHA1withRSAandMGF1</li>
 <li>SHA256withRSAandMGF1</li>
 <li>SHA384withRSAandMGF1</li>
@@ -838,6 +891,17 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>RIPEMD128withRSA/X9.31</li>
 <li>RIPEMD160withRSA/X9.31</li>
 <li>WHIRLPOOLwithRSA/X9.31</li>
+<li>SHA512withSPHINCS256 (BCPQC)</li>
+<li>SHA3-512withSPHINCS256 (BCPQC)</li>
+<li>SM3withSM2</li>
+<li>SHA256withXMSS</li>
+<li>SHA512withXMSS</li>
+<li>SHAKE128withXMSS</li>
+<li>SHAKE256withXMSS</li>
+<li>SHA256withXMSSMT</li>
+<li>SHA512withXMSSMT</li>
+<li>SHAKE128withXMSSMT</li>
+<li>SHAKE256withXMSSMT</li>
 </ul>
 
 <h4>Password Hashing and PBE</h4>
@@ -848,7 +912,7 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>OpenBSDBcyrpt</li>
 <li>SCrypt</li>
 <li>PKCS5S1, any Digest, any symmetric Cipher, ASCII </li>
-<li>PKCS5S2, SHA1/HMac, any symmetric Cipher, ASCII, UTF8</li>
+<li>PKCS5S2, any HMac, any symmetric Cipher, ASCII, UTF8</li>
 <li>PKCS12, any Digest, any symmetric Cipher, Unicode </li>
 </ul>
 
@@ -865,6 +929,15 @@ Defined in Bouncy Castle JCE Provider
 <tr><td>PBKDF2WithHmacSHA1</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
 <tr><td>PBKDF2WithHmacSHA1AndUTF8</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
 <tr><td>PBKDF2WithHmacSHA1And8bit</td><td>PKCS5 Scheme 2</td><td>variable</td><td>8 bit chars</td></tr>
+<tr><td>PBKDF2WithHmacSHA224</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
+<tr><td>PBKDF2WithHmacSHA256</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
+<tr><td>PBKDF2WithHmacSHA384</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
+<tr><td>PBKDF2WithHmacSHA512</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
+<tr><td>PBKDF2WithHmacSHA3-224</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
+<tr><td>PBKDF2WithHmacSHA3-256</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
+<tr><td>PBKDF2WithHmacSHA3-384</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
+<tr><td>PBKDF2WithHmacSHA3-512</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
+<tr><td>PBKDF2WithHmacGOST3411</td><td>PKCS5 Scheme 2</td><td>variable</td><td>UTF-8 chars</td></tr>
 <tr><td>PBEWithSHAAnd2-KeyTripleDES-CBC</td><td>PKCS12</td><td>128</td><td>16 bit chars</td></tr>
 <tr><td>PBEWithSHAAnd3-KeyTripleDES-CBC</td><td>PKCS12</td><td>192</td><td>16 bit chars</td></tr>
 <tr><td>PBEWithSHAAnd128BitRC2-CBC</td><td>PKCS12</td><td>128</td><td>16 bit chars</td></tr>

@@ -32,19 +32,19 @@ public class ComputeInField
      * @param b the right part of the equation
      *          (b in the equation above)
      * @return x  the solution of the equation if it is solvable
-     *         null otherwise
+     * null otherwise
      * @throws RuntimeException if LES is not solvable
      */
     public short[] solveEquation(short[][] B, short[] b)
     {
+        if (B.length != b.length)
+        {
+            return null;   // not solvable in this form
+        }
+
         try
         {
 
-            if (B.length != b.length)
-            {
-                throw new RuntimeException(
-                    "The equation system is not solvable");
-            }
 
             /** initialize **/
             // this matrix stores B and b from the equation B*x = b
@@ -93,7 +93,7 @@ public class ComputeInField
      *
      * @param coef the matrix which inverse matrix is needed
      * @return inverse matrix of the input matrix.
-     *         If the matrix is singular, null is returned.
+     * If the matrix is singular, null is returned.
      * @throws RuntimeException if the given matrix is not invertible
      */
     public short[][] inverse(short[][] coef)
@@ -173,6 +173,7 @@ public class ComputeInField
      * </p><p>
      * The result is stored in the global matrix A
      * </p>
+     *
      * @param usedForInverse This parameter shows if the function is used by the
      *                       solveEquation-function or by the inverse-function and according
      *                       to this creates matrices of different sizes.
@@ -209,7 +210,7 @@ public class ComputeInField
                 //in this case is the input matrix not invertible
                 if (factor2 == 0)
                 {
-                    throw new RuntimeException("Matrix not invertible! We have to choose another one!");
+                    throw new IllegalStateException("Matrix not invertible! We have to choose another one!");
                 }
 
                 for (int j = k; j < length; j++)
@@ -233,6 +234,7 @@ public class ComputeInField
      * It is used in the inverse-function
      * The result is stored in the global matrix A
      * </p>
+     *
      * @throws RuntimeException in case a multiplicative inverse of 0 is needed
      */
     private void computeZerosAbove()
@@ -272,10 +274,11 @@ public class ComputeInField
      * If the multiplicative inverse of 0 is needed, an exception is thrown.
      * In this case is the LES not solvable
      * </p>
+     *
      * @throws RuntimeException in case a multiplicative inverse of 0 is needed
      */
     private void substitute()
-        throws RuntimeException
+        throws IllegalStateException
     {
 
         // for the temporary results of the operations in field
@@ -284,7 +287,7 @@ public class ComputeInField
         temp = GF2Field.invElem(A[A.length - 1][A.length - 1]);
         if (temp == 0)
         {
-            throw new RuntimeException("The equation system is not solvable");
+            throw new IllegalStateException("The equation system is not solvable");
         }
 
         /** backward substitution **/
@@ -301,7 +304,7 @@ public class ComputeInField
             temp = GF2Field.invElem(A[i][i]);
             if (temp == 0)
             {
-                throw new RuntimeException("Not solvable equation system");
+                throw new IllegalStateException("Not solvable equation system");
             }
             x[i] = GF2Field.multElem(tmp, temp);
         }

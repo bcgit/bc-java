@@ -1,5 +1,6 @@
 package org.bouncycastle.x509;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
@@ -11,7 +12,6 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Iterator;
@@ -19,19 +19,21 @@ import java.util.Iterator;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.V1TBSCertificateGenerator;
 import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.jcajce.provider.asymmetric.x509.CertificateFactory;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.X509Principal;
-import org.bouncycastle.jce.provider.X509CertificateObject;
 
 /**
  * class to produce an X.509 Version 1 certificate.
@@ -39,6 +41,9 @@ import org.bouncycastle.jce.provider.X509CertificateObject;
  */
 public class X509V1CertificateGenerator
 {
+    private final JcaJceHelper bcHelper = new BCJcaJceHelper(); // needed to force provider loading
+    private final CertificateFactory certificateFactory = new CertificateFactory();
+
     private V1TBSCertificateGenerator   tbsGen;
     private ASN1ObjectIdentifier         sigOID;
     private AlgorithmIdentifier         sigAlgId;
@@ -353,9 +358,10 @@ public class X509V1CertificateGenerator
 
         try
         {
-            return new X509CertificateObject(Certificate.getInstance(new DERSequence(v)));
+            return (X509Certificate)certificateFactory.engineGenerateCertificate(
+                new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
         }
-        catch (CertificateParsingException e)
+        catch (Exception e)
         {
             throw new ExtCertificateEncodingException("exception producing certificate object", e);
         }

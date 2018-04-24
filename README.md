@@ -25,6 +25,8 @@ The **mail** module provides an S/MIME API built on top of CMS.
 
 The **pg** module is the home for code used to support OpenPGP.
 
+The **tls** module is the home for code used to a general TLS API and JSSE Provider (as at 1.56 this should be considered a beta).
+
 The build scripts that come with the full distribution allow creation of the different releases by using the different source trees while excluding classes that are not appropriate and copying in the required compatibility classes from the directories containing compatibility classes appropriate for the distribution.
 
 If you want to try create a build for yourself, using your own environment, the best way to do it is to start with the build for the distribution you are interested in, make sure that builds, and then modify your build scripts to do the required exclusions and file copies for your setup, otherwise you are likely to get class not found exceptions. The final caveat to this is that as the j2me distribution includes some compatibility classes starting in the java package, you need to use an obfuscator to change the package names before attempting to import a midlet using the BC API.
@@ -67,7 +69,7 @@ For those who are interested, there are 2 mailing lists for participation in thi
 
 If you want to provide feedback directly to the members of **The Legion** then please use [feedback-crypto@bouncycastle.org](mailto:feedback-crypto@bouncycastle.org), if you want to help this project survive please consider [donating](https://www.bouncycastle.org/donate).
 
-For bug reporting/requests you can report issues here on github, via feedback-crypto if required, and we also have a [Jira issue tracker](http://www.bouncycastle.org/jira). We will accept pull requests based on this repository as well.
+For bug reporting/requests you can report issues here on github, or via feedback-crypto if required. We will accept pull requests based on this repository as well.
 
 ## Finally
 

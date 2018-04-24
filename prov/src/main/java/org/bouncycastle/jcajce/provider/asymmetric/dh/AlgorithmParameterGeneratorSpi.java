@@ -11,12 +11,13 @@ import javax.crypto.spec.DHParameterSpec;
 import org.bouncycastle.crypto.generators.DHParametersGenerator;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAlgorithmParameterGeneratorSpi;
+import org.bouncycastle.jcajce.provider.asymmetric.util.PrimeCertaintyCalculator;
 
 public class AlgorithmParameterGeneratorSpi
     extends BaseAlgorithmParameterGeneratorSpi
 {
     protected SecureRandom random;
-    protected int strength = 1024;
+    protected int strength = 2048;
 
     private int l = 0;
 
@@ -48,13 +49,15 @@ public class AlgorithmParameterGeneratorSpi
     {
         DHParametersGenerator pGen = new DHParametersGenerator();
 
+        int certainty = PrimeCertaintyCalculator.getDefaultCertainty(strength);
+
         if (random != null)
         {
-            pGen.init(strength, 20, random);
+            pGen.init(strength, certainty, random);
         }
         else
         {
-            pGen.init(strength, 20, new SecureRandom());
+            pGen.init(strength, certainty, new SecureRandom());
         }
 
         DHParameters p = pGen.generateParameters();

@@ -5,13 +5,13 @@ import java.util.Random;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2KeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2KeyPairGenerator;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2Parameters;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceFujisakiCipher;
-import org.bouncycastle.pqc.crypto.mceliece.McElieceFujisakiDigestCipher;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class McElieceFujisakiCipherTest
@@ -28,6 +28,7 @@ public class McElieceFujisakiCipherTest
 
 
     public void performTest()
+        throws InvalidCipherTextException
     {
         int numPassesKPG = 1;
         int numPassesEncDec = 10;
@@ -35,7 +36,6 @@ public class McElieceFujisakiCipherTest
         byte[] mBytes;
         for (int j = 0; j < numPassesKPG; j++)
         {
-
             McElieceCCA2Parameters params = new McElieceCCA2Parameters();
             McElieceCCA2KeyPairGenerator mcElieceCCA2KeyGen = new McElieceCCA2KeyPairGenerator();
             McElieceCCA2KeyGenerationParameters genParam = new McElieceCCA2KeyGenerationParameters(keyRandom, params);
@@ -45,7 +45,7 @@ public class McElieceFujisakiCipherTest
 
             ParametersWithRandom param = new ParametersWithRandom(pair.getPublic(), keyRandom);
             Digest msgDigest = new SHA256Digest();
-            McElieceFujisakiDigestCipher mcElieceFujisakiDigestCipher = new McElieceFujisakiDigestCipher(new McElieceFujisakiCipher(), msgDigest);
+            McElieceFujisakiCipher mcElieceFujisakiDigestCipher = new McElieceFujisakiCipher();
 
 
             for (int k = 1; k <= numPassesEncDec; k++)
@@ -59,18 +59,19 @@ public class McElieceFujisakiCipherTest
                 mBytes = new byte[mLength];
                 rand.nextBytes(mBytes);
 
+                msgDigest.update(mBytes, 0, mBytes.length);
+                byte[] hash = new byte[msgDigest.getDigestSize()];
+                msgDigest.doFinal(hash, 0);
+
                 // encrypt
-                mcElieceFujisakiDigestCipher.update(mBytes, 0, mBytes.length);
-                byte[] enc = mcElieceFujisakiDigestCipher.messageEncrypt();
+                byte[] enc = mcElieceFujisakiDigestCipher.messageEncrypt(hash);
 
                 // initialize for decryption
                 mcElieceFujisakiDigestCipher.init(false, pair.getPrivate());
                 byte[] constructedmessage = mcElieceFujisakiDigestCipher.messageDecrypt(enc);
 
                 // XXX write in McElieceFujisakiDigestCipher?
-                msgDigest.update(mBytes, 0, mBytes.length);
-                byte[] hash = new byte[msgDigest.getDigestSize()];
-                msgDigest.doFinal(hash, 0);
+
 
                 boolean verified = true;
                 for (int i = 0; i < hash.length; i++)

@@ -28,6 +28,7 @@ import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cms.CMSAlgorithm;
@@ -95,6 +96,8 @@ public class SMIMESignedGenerator
     public static final String  ENCRYPTION_RSA_PSS = PKCSObjectIdentifiers.id_RSASSA_PSS.getId();
     public static final String  ENCRYPTION_GOST3410 = CryptoProObjectIdentifiers.gostR3410_94.getId();
     public static final String  ENCRYPTION_ECGOST3410 = CryptoProObjectIdentifiers.gostR3410_2001.getId();
+    public static final String  ENCRYPTION_ECGOST3410_2012_256 = RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256.getId();
+    public static final String  ENCRYPTION_ECGOST3410_2012_512 = RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512.getId();
 
     private static final String CERTIFICATE_MANAGEMENT_CONTENT = "application/pkcs7-mime; name=smime.p7c; smime-type=certs-only";
     private static final String DETACHED_SIGNATURE_TYPE = "application/pkcs7-signature; name=smime.p7s; smime-type=signed-data";
@@ -141,6 +144,8 @@ public class SMIMESignedGenerator
         stdMicAlgs.put(CMSAlgorithm.SHA384, "sha-384");
         stdMicAlgs.put(CMSAlgorithm.SHA512, "sha-512");
         stdMicAlgs.put(CMSAlgorithm.GOST3411, "gostr3411-94");
+        stdMicAlgs.put(CMSAlgorithm.GOST3411_2012_256, "gostr3411-2012-256");
+        stdMicAlgs.put(CMSAlgorithm.GOST3411_2012_512, "gostr3411-2012-512");
 
         RFC5751_MICALGS = Collections.unmodifiableMap(stdMicAlgs);
 
@@ -153,6 +158,8 @@ public class SMIMESignedGenerator
         oldMicAlgs.put(CMSAlgorithm.SHA384, "sha384");
         oldMicAlgs.put(CMSAlgorithm.SHA512, "sha512");
         oldMicAlgs.put(CMSAlgorithm.GOST3411, "gostr3411-94");
+        oldMicAlgs.put(CMSAlgorithm.GOST3411_2012_256, "gostr3411-2012-256");
+        oldMicAlgs.put(CMSAlgorithm.GOST3411_2012_512, "gostr3411-2012-512");
 
         RFC3851_MICALGS = Collections.unmodifiableMap(oldMicAlgs);
 
@@ -543,7 +550,17 @@ public class SMIMESignedGenerator
         {
             if (SMIMEUtil.isMultipartContent(bodyPart))
             {
-                Multipart mp = (Multipart)bodyPart.getContent();
+                Object content = bodyPart.getContent();
+                Multipart mp;
+                if (content instanceof Multipart)
+                {
+                    mp = (Multipart)content;
+                }
+                else
+                {
+                    mp = new MimeMultipart(bodyPart.getDataHandler().getDataSource());
+                }
+
                 ContentType contentType = new ContentType(mp.getContentType());
                 String boundary = "--" + contentType.getParameter("boundary");
 
@@ -565,7 +582,7 @@ public class SMIMESignedGenerator
                     writeBodyPart(out, (MimeBodyPart)mp.getBodyPart(i));
                     lOut.writeln();       // CRLF terminator
                 }
-                
+
                 lOut.writeln(boundary + "--");
             }
             else

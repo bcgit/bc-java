@@ -39,15 +39,13 @@ public class TlsServerProtocol
     /**
      * Constructor for non-blocking mode.<br>
      * <br>
-     * When data is received, use {@link #offerInput(java.nio.ByteBuffer)} to
-     * provide the received ciphertext, then use
-     * {@link #readInput(byte[], int, int)} to read the corresponding cleartext.<br>
+     * When data is received, use {@link #offerInput(byte[])} to provide the received ciphertext,
+     * then use {@link #readInput(byte[], int, int)} to read the corresponding cleartext.<br>
      * <br>
-     * Similarly, when data needs to be sent, use
-     * {@link #offerOutput(byte[], int, int)} to provide the cleartext, then use
-     * {@link #readOutput(byte[], int, int)} to get the corresponding
+     * Similarly, when data needs to be sent, use {@link #offerOutput(byte[], int, int)} to provide
+     * the cleartext, then use {@link #readOutput(byte[], int, int)} to get the corresponding
      * ciphertext.
-     * 
+     *
      * @param secureRandom
      *            Random number generator for various cryptographic functions
      */
@@ -121,11 +119,9 @@ public class TlsServerProtocol
         return tlsServer;
     }
 
-    protected void handleHandshakeMessage(short type, byte[] data)
+    protected void handleHandshakeMessage(short type, ByteArrayInputStream buf)
         throws IOException
     {
-        ByteArrayInputStream buf = new ByteArrayInputStream(data);
-
         switch (type)
         {
         case HandshakeType.client_hello:
@@ -367,13 +363,12 @@ public class TlsServerProtocol
                 if (this.expectSessionTicket)
                 {
                     sendNewSessionTicketMessage(tlsServer.getNewSessionTicket());
-                    sendChangeCipherSpecMessage();
                 }
                 this.connection_state = CS_SERVER_SESSION_TICKET;
 
+                sendChangeCipherSpecMessage();
                 sendFinishedMessage();
                 this.connection_state = CS_SERVER_FINISHED;
-                this.connection_state = CS_END;
 
                 completeHandshake();
                 break;
@@ -395,10 +390,12 @@ public class TlsServerProtocol
         }
     }
 
-    protected void handleWarningMessage(short description)
+    protected void handleAlertWarningMessage(short alertDescription)
         throws IOException
     {
-        switch (description)
+        super.handleAlertWarningMessage(alertDescription);
+
+        switch (alertDescription)
         {
         case AlertDescription.no_certificate:
         {
@@ -406,16 +403,24 @@ public class TlsServerProtocol
              * SSL 3.0 If the server has sent a certificate request Message, the client must send
              * either the certificate message or a no_certificate alert.
              */
-            if (TlsUtils.isSSL(getContext()) && certificateRequest != null)
+            if (TlsUtils.isSSL(getContext()) && this.certificateRequest != null)
             {
-                notifyClientCertificate(Certificate.EMPTY_CHAIN);
+                switch (this.connection_state)
+                {
+                case CS_SERVER_HELLO_DONE:
+                {
+                    tlsServer.processClientSupplementalData(null);
+                    // NB: Fall through to next case label
+                }
+                case CS_CLIENT_SUPPLEMENTAL_DATA:
+                {
+                    notifyClientCertificate(Certificate.EMPTY_CHAIN);
+                    this.connection_state = CS_CLIENT_CERTIFICATE;
+                    return;
+                }
+                }
             }
-            break;
-        }
-        default:
-        {
-            super.handleWarningMessage(description);
-            break;
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
         }
     }
@@ -640,6 +645,9 @@ public class TlsServerProtocol
 
         if (clientExtensions != null)
         {
+            // NOTE: Validates the padding extension data, if present
+            TlsExtensionsUtils.getPaddingExtension(clientExtensions);
+
             tlsServer.processClientExtensions(clientExtensions);
         }
     }
@@ -651,16 +659,20 @@ public class TlsServerProtocol
 
         assertEmpty(buf);
 
+        if (TlsUtils.isSSL(getContext()))
+        {
+            establishMasterSecret(getContext(), keyExchange);
+        }
+
         this.prepareFinishHash = recordStream.prepareToFinish();
         this.securityParameters.sessionHash = getCurrentPRFHash(getContext(), prepareFinishHash, null);
 
-        establishMasterSecret(getContext(), keyExchange);
-        recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
-
-        if (!expectSessionTicket)
+        if (!TlsUtils.isSSL(getContext()))
         {
-            sendChangeCipherSpecMessage();
+            establishMasterSecret(getContext(), keyExchange);
         }
+
+        recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
     }
 
     protected void sendCertificateRequestMessage(CertificateRequest certificateRequest)
@@ -814,7 +826,7 @@ public class TlsServerProtocol
         securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(), securityParameters.getCipherSuite());
 
         /*
-         * RFC 5264 7.4.9. Any cipher suite which does not explicitly specify verify_data_length has
+         * RFC 5246 7.4.9. Any cipher suite which does not explicitly specify verify_data_length has
          * a verify_data_length equal to 12. This includes all existing cipher suites.
          */
         securityParameters.verifyDataLength = 12;

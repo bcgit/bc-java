@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Mac;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -162,7 +163,7 @@ public class Poly1305Reference
     {
         if (outOff + BLOCK_SIZE > out.length)
         {
-            throw new DataLengthException("Output buffer is too short.");
+            throw new OutputLengthException("Output buffer is too short.");
         }
 
         if (currentBlockOffset > 0)

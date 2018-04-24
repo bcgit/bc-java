@@ -331,36 +331,36 @@ public class CipherSuite
     public static final int TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8 = 0xC0AF;
 
     /*
-     * draft-agl-tls-chacha20poly1305-04
-     */
-    public static final int TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 = 0xCC13;
-    public static final int TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 = 0xCC14;
-    public static final int TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256 = 0xCC15;
-
-    /*
-     * draft-josefsson-salsa20-tls-04
-     */
-    public static final int TLS_RSA_WITH_ESTREAM_SALSA20_SHA1 = 0xE410;
-    public static final int TLS_RSA_WITH_SALSA20_SHA1 = 0xE411;
-    public static final int TLS_ECDHE_RSA_WITH_ESTREAM_SALSA20_SHA1 = 0xE412;
-    public static final int TLS_ECDHE_RSA_WITH_SALSA20_SHA1 = 0xE413;
-    public static final int TLS_ECDHE_ECDSA_WITH_ESTREAM_SALSA20_SHA1 = 0xE414;
-    public static final int TLS_ECDHE_ECDSA_WITH_SALSA20_SHA1 = 0xE415;
-    public static final int TLS_PSK_WITH_ESTREAM_SALSA20_SHA1 = 0xE416;
-    public static final int TLS_PSK_WITH_SALSA20_SHA1 = 0xE417;
-    public static final int TLS_ECDHE_PSK_WITH_ESTREAM_SALSA20_SHA1 = 0xE418;
-    public static final int TLS_ECDHE_PSK_WITH_SALSA20_SHA1 = 0xE419;
-    public static final int TLS_RSA_PSK_WITH_ESTREAM_SALSA20_SHA1 = 0xE41A;
-    public static final int TLS_RSA_PSK_WITH_SALSA20_SHA1 = 0xE41B;
-    public static final int TLS_DHE_PSK_WITH_ESTREAM_SALSA20_SHA1 = 0xE41C;
-    public static final int TLS_DHE_PSK_WITH_SALSA20_SHA1 = 0xE41D;
-    public static final int TLS_DHE_RSA_WITH_ESTREAM_SALSA20_SHA1 = 0xE41E;
-    public static final int TLS_DHE_RSA_WITH_SALSA20_SHA1 = 0xE41F;
-
-    /*
-     * draft-ietf-tls-downgrade-scsv-00
+     * RFC 7507
      */
     public static final int TLS_FALLBACK_SCSV = 0x5600;
+
+    /*
+     * draft-ietf-tls-chacha20-poly1305-04
+     */
+    public static final int DRAFT_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 = 0xCCA8;
+    public static final int DRAFT_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 = 0xCCA9;
+    public static final int DRAFT_TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256 = 0xCCAA;
+    public static final int DRAFT_TLS_PSK_WITH_CHACHA20_POLY1305_SHA256 = 0xCCAB;
+    public static final int DRAFT_TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256 = 0xCCAC;
+    public static final int DRAFT_TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256 = 0xCCAD;
+    public static final int DRAFT_TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256 = 0xCCAE;
+
+    /*
+     * draft-zauner-tls-aes-ocb-04 (code points TBD)
+     */
+    public static final int DRAFT_TLS_DHE_RSA_WITH_AES_128_OCB = 0xFF00;
+    public static final int DRAFT_TLS_DHE_RSA_WITH_AES_256_OCB = 0xFF01;
+    public static final int DRAFT_TLS_ECDHE_RSA_WITH_AES_128_OCB = 0xFF02;
+    public static final int DRAFT_TLS_ECDHE_RSA_WITH_AES_256_OCB = 0xFF03;
+    public static final int DRAFT_TLS_ECDHE_ECDSA_WITH_AES_128_OCB = 0xFF04;
+    public static final int DRAFT_TLS_ECDHE_ECDSA_WITH_AES_256_OCB = 0xFF05;
+    public static final int DRAFT_TLS_PSK_WITH_AES_128_OCB = 0xFF10;
+    public static final int DRAFT_TLS_PSK_WITH_AES_256_OCB = 0xFF11;
+    public static final int DRAFT_TLS_DHE_PSK_WITH_AES_128_OCB = 0xFF12;
+    public static final int DRAFT_TLS_DHE_PSK_WITH_AES_256_OCB = 0xFF13;
+    public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_128_OCB = 0xFF14;
+    public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_256_OCB = 0xFF15;
 
     public static boolean isSCSV(int cipherSuite)
     {

@@ -215,13 +215,13 @@ public class AlertDescription
     public static final short unknown_psk_identity = 115;
 
     /*
-     * draft-ietf-tls-downgrade-scsv-00
+     * RFC 7507
      */
 
     /**
      * If TLS_FALLBACK_SCSV appears in ClientHello.cipher_suites and the highest protocol version
      * supported by the server is higher than the version indicated in ClientHello.client_version,
-     * the server MUST respond with an inappropriate_fallback alert.
+     * the server MUST respond with a fatal inappropriate_fallback alert [..].
      */
     public static final short inappropriate_fallback = 86;
 

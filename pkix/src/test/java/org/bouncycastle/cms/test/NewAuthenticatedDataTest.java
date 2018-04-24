@@ -1,5 +1,7 @@
 package org.bouncycastle.cms.test;
 
+import java.io.IOException;
+import java.security.AlgorithmParameters;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -16,13 +18,18 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cms.AuthenticatedData;
+import org.bouncycastle.asn1.cms.CCMParameters;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
+import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cms.CMSAlgorithm;
@@ -147,6 +154,9 @@ public class NewAuthenticatedDataTest
         throws Exception
     {
         tryKekAlgorithm(CMSTestUtil.makeDesede192Key(), new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.3.6"));
+
+        DEROctetString iv = new DEROctetString(Hex.decode("0001020304050607"));
+        tryKekAlgorithm(CMSTestUtil.makeDesede192Key(), new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.3.6"), iv.getEncoded());
     }
 
     public void testKEKDESedeWithDigest()
@@ -277,6 +287,53 @@ public class NewAuthenticatedDataTest
             byte[] recData = recipient.getContent(new JceKeyTransAuthenticatedRecipient(_reciKP.getPrivate()).setProvider(BC));
 
             assertTrue(Arrays.equals(data, recData));
+            assertTrue(Arrays.equals(ad.getMac(), recipient.getMac()));
+        }
+    }
+
+    public void testAES256CCM()
+        throws Exception
+    {
+        byte[] data = "Eric H. Echidna".getBytes();
+        ASN1ObjectIdentifier macAlg = CMSAlgorithm.AES256_CCM;
+        AlgorithmParameters algParams = AlgorithmParameters.getInstance("CCM", BC);
+
+        algParams.init(new CCMParameters(Hex.decode("000102030405060708090a0b"), 16).getEncoded());
+
+        CMSAuthenticatedDataGenerator adGen = new CMSAuthenticatedDataGenerator();
+
+        X509CertificateHolder origCert = new X509CertificateHolder(_origCert.getEncoded());
+
+        adGen.setOriginatorInfo(new OriginatorInfoGenerator(origCert).generate());
+
+        adGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        CMSAuthenticatedData ad = adGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSMacCalculatorBuilder(macAlg).setAlgorithmParameters(algParams).setProvider(BC).build());
+
+        assertTrue(ad.getOriginatorInfo().getCertificates().getMatches(null).contains(origCert));
+
+        RecipientInformationStore recipients = ad.getRecipientInfos();
+
+        assertEquals(ad.getMacAlgOID(), macAlg.getId());
+
+        Collection c = recipients.getRecipients();
+
+        assertEquals(1, c.size());
+
+        Iterator it = c.iterator();
+
+        while (it.hasNext())
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+
+            assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
+
+            byte[] recData = recipient.getContent(new JceKeyTransAuthenticatedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+            assertTrue(Arrays.equals(data, recData));
+            assertEquals(16, ad.getMac().length);
             assertTrue(Arrays.equals(ad.getMac(), recipient.getMac()));
         }
     }
@@ -462,6 +519,50 @@ public class NewAuthenticatedDataTest
         Iterator it = c.iterator();
 
         assertEquals(ad.getMacAlgOID(), CMSAuthenticatedDataGenerator.DES_EDE3_CBC);
+
+        if (it.hasNext())
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+
+            assertEquals(recipient.getKeyEncryptionAlgOID(), algOid.getId());
+
+            byte[] recData = recipient.getContent(new JceKEKAuthenticatedRecipient(kek).setProvider(BC));
+
+            assertTrue(Arrays.equals(data, recData));
+            assertTrue(Arrays.equals(ad.getMac(), recipient.getMac()));
+        }
+        else
+        {
+            fail("no recipient found");
+        }
+    }
+
+    private void tryKekAlgorithm(SecretKey kek, ASN1ObjectIdentifier algOid, byte[] encodedParameters)
+        throws NoSuchAlgorithmException, NoSuchProviderException, CMSException, OperatorCreationException, IOException
+    {
+        byte[] data = "Eric H. Echidna".getBytes();
+
+        CMSAuthenticatedDataGenerator adGen = new CMSAuthenticatedDataGenerator();
+
+        byte[] kekId = new byte[]{1, 2, 3, 4, 5};
+
+        adGen.addRecipientInfoGenerator(new JceKEKRecipientInfoGenerator(kekId, kek).setProvider(BC));
+
+        AlgorithmParameters algParams = AlgorithmParameters.getInstance(CMSAlgorithm.DES_EDE3_CBC.getId(), "BC");
+
+        algParams.init(encodedParameters);
+
+        CMSAuthenticatedData ad = adGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSMacCalculatorBuilder(CMSAlgorithm.DES_EDE3_CBC).setAlgorithmParameters(algParams).setProvider(BC).build());
+
+        RecipientInformationStore recipients = ad.getRecipientInfos();
+
+        Collection c = recipients.getRecipients();
+        Iterator it = c.iterator();
+
+        assertEquals(ad.getMacAlgOID(), CMSAuthenticatedDataGenerator.DES_EDE3_CBC);
+        assertEquals(ad.getMacAlgorithm().getParameters(), ASN1Primitive.fromByteArray(encodedParameters));
 
         if (it.hasNext())
         {

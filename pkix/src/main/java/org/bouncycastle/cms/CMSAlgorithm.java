@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
@@ -32,6 +33,7 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  CAMELLIA128_CBC = NTTObjectIdentifiers.id_camellia128_cbc.intern();
     public static final ASN1ObjectIdentifier  CAMELLIA192_CBC = NTTObjectIdentifiers.id_camellia192_cbc.intern();
     public static final ASN1ObjectIdentifier  CAMELLIA256_CBC = NTTObjectIdentifiers.id_camellia256_cbc.intern();
+    public static final ASN1ObjectIdentifier  GOST28147_GCFB  = CryptoProObjectIdentifiers.gostR28147_gcfb.intern();
     public static final ASN1ObjectIdentifier  SEED_CBC        = KISAObjectIdentifiers.id_seedCBC.intern();
 
     public static final ASN1ObjectIdentifier  DES_EDE3_WRAP   = PKCSObjectIdentifiers.id_alg_CMS3DESwrap.intern();
@@ -42,6 +44,9 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  CAMELLIA192_WRAP = NTTObjectIdentifiers.id_camellia192_wrap.intern();
     public static final ASN1ObjectIdentifier  CAMELLIA256_WRAP = NTTObjectIdentifiers.id_camellia256_wrap.intern();
     public static final ASN1ObjectIdentifier  SEED_WRAP       = KISAObjectIdentifiers.id_npki_app_cmsSeed_wrap.intern();
+
+    public static final ASN1ObjectIdentifier  GOST28147_WRAP  = CryptoProObjectIdentifiers.id_Gost28147_89_None_KeyWrap.intern();
+    public static final ASN1ObjectIdentifier  GOST28147_CRYPTOPRO_WRAP  = CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_KeyWrap.intern();
 
     public static final ASN1ObjectIdentifier  ECDH_SHA1KDF    = X9ObjectIdentifiers.dhSinglePass_stdDH_sha1kdf_scheme.intern();
     public static final ASN1ObjectIdentifier  ECCDH_SHA1KDF    = X9ObjectIdentifiers.dhSinglePass_cofactorDH_sha1kdf_scheme.intern();
@@ -63,6 +68,10 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  ECCDH_SHA512KDF    = SECObjectIdentifiers.dhSinglePass_cofactorDH_sha512kdf_scheme.intern();
     public static final ASN1ObjectIdentifier  ECMQV_SHA512KDF   = SECObjectIdentifiers.mqvSinglePass_sha512kdf_scheme.intern();
 
+    public static final ASN1ObjectIdentifier  ECDHGOST3410_2001    = CryptoProObjectIdentifiers.gostR3410_2001.intern();
+    public static final ASN1ObjectIdentifier  ECDHGOST3410_2012_256 = RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_256.intern();
+    public static final ASN1ObjectIdentifier  ECDHGOST3410_2012_512 = RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_512.intern();
+
     public static final ASN1ObjectIdentifier  SHA1 = OIWObjectIdentifiers.idSHA1.intern();
     public static final ASN1ObjectIdentifier  SHA224 = NISTObjectIdentifiers.id_sha224.intern();
     public static final ASN1ObjectIdentifier  SHA256 = NISTObjectIdentifiers.id_sha256.intern();
@@ -70,6 +79,8 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  SHA512 = NISTObjectIdentifiers.id_sha512.intern();
     public static final ASN1ObjectIdentifier  MD5 = PKCSObjectIdentifiers.md5.intern();
     public static final ASN1ObjectIdentifier  GOST3411 = CryptoProObjectIdentifiers.gostR3411.intern();
+    public static final ASN1ObjectIdentifier  GOST3411_2012_256 = RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256.intern();
+    public static final ASN1ObjectIdentifier  GOST3411_2012_512 = RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512.intern();
     public static final ASN1ObjectIdentifier  RIPEMD128 = TeleTrusTObjectIdentifiers.ripemd128.intern();
     public static final ASN1ObjectIdentifier  RIPEMD160 = TeleTrusTObjectIdentifiers.ripemd160.intern();
     public static final ASN1ObjectIdentifier  RIPEMD256 = TeleTrusTObjectIdentifiers.ripemd256.intern();

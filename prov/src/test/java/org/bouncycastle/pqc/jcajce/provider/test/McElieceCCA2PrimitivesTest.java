@@ -7,7 +7,7 @@ import java.security.NoSuchAlgorithmException;
 import org.bouncycastle.pqc.jcajce.provider.mceliece.BCMcElieceCCA2PrivateKey;
 import org.bouncycastle.pqc.jcajce.provider.mceliece.BCMcElieceCCA2PublicKey;
 import org.bouncycastle.pqc.jcajce.provider.mceliece.McElieceCCA2Primitives;
-import org.bouncycastle.pqc.jcajce.spec.ECCKeyGenParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.McElieceKeyGenParameterSpec;
 import org.bouncycastle.pqc.math.linearalgebra.GF2Vector;
 
 
@@ -64,7 +64,7 @@ public class McElieceCCA2PrimitivesTest
     private void initKPG(int m, int t)
         throws Exception
     {
-        ECCKeyGenParameterSpec params = new ECCKeyGenParameterSpec(m, t);
+        McElieceKeyGenParameterSpec params = new McElieceKeyGenParameterSpec(m, t);
         kpg.initialize(params);
     }
 

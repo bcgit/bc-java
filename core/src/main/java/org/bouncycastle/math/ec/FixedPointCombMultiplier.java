@@ -2,6 +2,8 @@ package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.math.raw.Nat;
+
 public class FixedPointCombMultiplier extends AbstractECMultiplier
 {
     protected ECPoint multiplyPositive(ECPoint p, BigInteger k)
@@ -20,36 +22,37 @@ public class FixedPointCombMultiplier extends AbstractECMultiplier
             throw new IllegalStateException("fixed-point comb doesn't support scalars larger than the curve order");
         }
 
-        int minWidth = getWidthForCombSize(size);
-
-        FixedPointPreCompInfo info = FixedPointUtil.precompute(p, minWidth);
-        ECPoint[] lookupTable = info.getPreComp();
+        FixedPointPreCompInfo info = FixedPointUtil.precompute(p);
+        ECLookupTable lookupTable = info.getLookupTable();
         int width = info.getWidth();
 
         int d = (size + width - 1) / width;
 
         ECPoint R = c.getInfinity();
 
-        int top = d * width - 1; 
+        int fullComb = d * width;
+        int[] K = Nat.fromBigInteger(fullComb, k);
+
+        int top = fullComb - 1; 
         for (int i = 0; i < d; ++i)
         {
-            int index = 0;
+            int secretIndex = 0;
 
             for (int j = top - i; j >= 0; j -= d)
             {
-                index <<= 1;
-                if (k.testBit(j))
-                {
-                    index |= 1;
-                }
+                secretIndex <<= 1;
+                secretIndex |= Nat.getBit(K, j);
             }
 
-            R = R.twicePlus(lookupTable[index]);
+            ECPoint add = lookupTable.lookup(secretIndex);
+
+            R = R.twicePlus(add);
         }
 
-        return R;
+        return R.add(info.getOffset());
     }
 
+    /** @deprecated Is no longer used; remove any overrides in subclasses. */
     protected int getWidthForCombSize(int combSize)
     {
         return combSize > 257 ? 6 : 5;

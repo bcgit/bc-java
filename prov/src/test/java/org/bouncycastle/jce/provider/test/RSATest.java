@@ -26,6 +26,7 @@ import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.HashSet;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -704,6 +705,112 @@ public class RSATest
         c.init(Cipher.ENCRYPT_MODE, pubKey, rand);
 
         out = c.update(new byte[40]);
+
+        testGetExceptionsPKCS1();
+        zeroMessageTest();
+
+        oaepDigestCheck("SHA3-224", NISTObjectIdentifiers.id_sha3_224, pub2048Key, priv2048Key, rand, Hex.decode("2aa7812d4f7b7766f8625feb58481ef5b5fa6dfafbea543e4bbba89d6708f4900fc9fd55d5c2b83fefefc67e2ba7a4222217efaa9b9d31920bdcd78733319aca910dfd118aae5e901a6d27a56e37b1a6f86e7404f82da248e77845e58b789f10a1af8a1208f77dda384692609339346c4ea57928b890042e7d70b1d5817f8978dcbc9cd2fcdde37a0a41a52dbef701ddc859a5d58efd10aa5bd8d205c10154db906540bf20dedcff721df11a456df201cb9cbbd092a89a1eb3f11e7e34003d7070e02c8db54e5498e7ee262fb9178f5eb85d1db66baafe0a66e8283df9c41bded218e5d906d28f08803deb3cbd1a92777d55fe56ff022a47f673cac2ca145973"));
+        oaepDigestCheck("SHA3-256", NISTObjectIdentifiers.id_sha3_256, pub2048Key, priv2048Key, rand, Hex.decode("4460e68586ac0ca1832274919c6b9159d40ea1d383a32ca28f0e1a81962289c8c904fa117d90afd7bfefa51b6889d2d999efb72bafd4beb5594bb08f62532ecb077e4968f43e70673341e60649ed64ac49cf1a2396a64577767d8958217a251938a7ac1bbc1aec9c9197a2eb9a375c74a01097fe3717c8bde04f8a20df85ef10a59070970a4a6470131654cecb641d46e464f17ddfe7e0595025bf25f025edbd56b19487cfc87de1642ca5190f289cf78e2c4b1cf90e73ffae331581c23febcf490c32299f2e5bd5a354a0cc996cc692b5a318777d17e734b3c487ad615df7af0fc361af564e6970ee0aa9b140634cdcf1eda91d1a1156326caaa608c4d43ee4"));
+        oaepDigestCheck("SHA3-384", NISTObjectIdentifiers.id_sha3_384, pub2048Key, priv2048Key, rand, Hex.decode("1b9f490569bddac8ea77e3bec8d6d38b159cb88545de86065dbc8757b35fdeb0cce90eaf93ec6d69d691c590fc3feec9974b80e0c0068929c77533be2066b4002ad6d195e473f72e8581255b8d2dfff016ff27ed50e6d3e63cfaf50851b2d43833eea8dab3b4506f517875659099815a96be6e8fd2dc1417c6e3ffadcfd3f494a5544267688d114d3eeaf43ea954686656afb7a3dc2f8a4cdc5d7b90a97acbbe32ff17b3d26d7eb2a4fbc847d49cc8cb8f837646613d1b5a78096cf3f48acf4be95205e0c4cb283447029eae1442fe3813a017604dfd59a9e841473f4d8914860f785fb2194b21cba47cd401bc32720f3df373e59336c3d64c61babd474b4bbe"));
+        oaepDigestCheck("SHA3-512", NISTObjectIdentifiers.id_sha3_512, pub2048Key, priv2048Key, rand, Hex.decode("7b7870bb5ae52276a8b06b59f7321043afb1fa4e5dbca9f14bcce9efaacded531f090646ab0f8701b012cc93c51e0a8591043e6457cde1950f4ffc8ad87d946622ea48a70f95f40c22d88679eb92c10c19db487fd64857d723daf4ccfe749fdd05e6c0be28de57e09d3b5a0981322b6cc7a9743a50eec355a7af5bdcdcddc5e279ad90f599b68c47fdb39916c7a597cf989169e8667fd8602e88c9c128085d0e158ea75eeb37919a91cdf3f2cd5394adaadc4a2f25a6222d2637cb464841dc5820e54843495cb97af6b19edc72f137123813f5d78503232f79e4f617be3a9f09b0206634a2ecfe457dbd71d2d3d8e3dbca486e75e543f559dcea3112ad50a21d"));
+    }
+
+    public void oaepDigestCheck(String digest, ASN1ObjectIdentifier oid, PublicKey pubKey, PrivateKey privKey, SecureRandom rand, byte[] expected)
+        throws Exception
+    {
+        byte[] input = new byte[]
+            {(byte)0x54, (byte)0x85, (byte)0x9b, (byte)0x34, (byte)0x2c, (byte)0x49, (byte)0xea, (byte)0x2a};
+
+        Cipher c = Cipher.getInstance("RSA/NONE/OAEPPadding", "BC");
+
+        c.init(Cipher.ENCRYPT_MODE, pubKey, new OAEPParameterSpec(digest, "MGF1", new MGF1ParameterSpec(digest), PSource.PSpecified.DEFAULT), rand);
+
+        byte[] out = c.doFinal(input);
+
+        isTrue("OAEP decrypt failed", Arrays.areEqual(expected, out));
+
+        AlgorithmParameters oaepP = c.getParameters();
+
+        if (!areEqual(oaepP.getEncoded(),
+            new RSAESOAEPparams(
+                new AlgorithmIdentifier(oid, DERNull.INSTANCE),
+                new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, new AlgorithmIdentifier(oid, DERNull.INSTANCE)),
+                new AlgorithmIdentifier(PKCSObjectIdentifiers.id_pSpecified, new DEROctetString(new byte[0]))).getEncoded()))
+        {
+            fail("OAEP test failed changed parameters for " + digest);
+        }
+
+        c = Cipher.getInstance("RSA/NONE/OAEPWith" + digest + "AndMGF1Padding", "BC");
+
+        c.init(Cipher.DECRYPT_MODE, privKey);
+
+        byte[] dec = c.doFinal(out);
+
+        isTrue("OAEP decrypt failed", Arrays.areEqual(input, dec));
+
+        AlgorithmParameters parameters = AlgorithmParameters.getInstance("OAEP", "BC");
+
+        parameters.init(oaepP.getEncoded());
+
+        OAEPParameterSpec spec = (OAEPParameterSpec)parameters.getParameterSpec(OAEPParameterSpec.class);
+
+        isTrue("Digest mismatch", digest.equals(spec.getDigestAlgorithm()));
+        isTrue("MGF alg mismatch", OAEPParameterSpec.DEFAULT.getMGFAlgorithm().equals(spec.getMGFAlgorithm()));
+        isTrue("MGF Digest mismatch", digest.equals(((MGF1ParameterSpec)spec.getMGFParameters()).getDigestAlgorithm()));
+
+    }
+
+    public void testGetExceptionsPKCS1()
+        throws Exception
+    {
+        KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA", "BC");
+        keygen.initialize(1024);
+        KeyPair keypair = keygen.genKeyPair();
+        SecureRandom rand = new SecureRandom();
+        Cipher c = Cipher.getInstance("RSA/ECB/PKCS1Padding", "BC");
+        byte[] ciphertext = new byte[1024 / 8];
+        HashSet<String> exceptions = new HashSet<String>();
+        final int SAMPLES = 1000;
+        for (int i = 0; i < SAMPLES; i++)
+        {
+            rand.nextBytes(ciphertext);
+            ciphertext[0] = (byte)0;
+            try
+            {
+                c.init(Cipher.DECRYPT_MODE, keypair.getPrivate());
+                c.doFinal(ciphertext);
+            }
+            catch (Exception ex)
+            {
+                String message = ex.toString();
+                exceptions.add(message);
+            }
+        }
+        isTrue("exception count wrong", 1 == exceptions.size());
+    }
+
+    public void zeroMessageTest()
+        throws Exception
+    {
+        KeyPairGenerator kgen = KeyPairGenerator.getInstance("RSA", "BC");
+
+        RSAKeyGenParameterSpec rsaSpec = new RSAKeyGenParameterSpec(2048, RSAKeyGenParameterSpec.F4);
+
+        kgen.initialize(rsaSpec);
+
+        KeyPair kp = kgen.generateKeyPair();
+
+        byte[] plain = new byte[0];
+
+        Cipher rsaCipher = Cipher.getInstance("RSA/NONE/OAEPWithSHA1AndMGF1Padding", "BC");
+        rsaCipher.init(Cipher.ENCRYPT_MODE, kp.getPublic());
+        byte[] encrypted = rsaCipher.doFinal(plain);
+
+        rsaCipher = Cipher.getInstance("RSA/NONE/OAEPWithSHA1AndMGF1Padding", "BC");
+        rsaCipher.init(Cipher.DECRYPT_MODE, kp.getPrivate());
+        byte[] decrypted  = rsaCipher.doFinal(encrypted);
+
+        isTrue("zero mismatch", Arrays.areEqual(plain, decrypted));
     }
 
     private void oaepCompatibilityTest(String digest, PrivateKey privKey, PublicKey pubKey)

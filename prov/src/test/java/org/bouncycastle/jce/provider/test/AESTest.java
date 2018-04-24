@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.Security;
 
@@ -286,6 +287,34 @@ public class AESTest
         {
             // expected
         }
+
+
+        // reuse test
+        in = Cipher.getInstance("AES/GCM/NoPadding", "BC");
+        
+        in.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(N));
+
+        enc = in.doFinal(P);
+
+        try
+        {
+            in.doFinal(P);
+            fail("no exception on reuse");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("wrong message", e.getMessage().equals("GCM cipher cannot be reused for encryption"));
+        }
+
+        try
+        {
+            in.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(N));
+            fail("no exception on reuse");
+        }
+        catch (InvalidKeyException e)
+        {
+            isTrue("wrong message", e.getMessage().equals("cannot reuse nonce for GCM encryption"));
+        }
     }
 
     private void ocbTest()
@@ -399,12 +428,20 @@ public class AESTest
 
 
         String[] wrapOids = {
-                NISTObjectIdentifiers.id_aes128_wrap.getId(),
-                NISTObjectIdentifiers.id_aes192_wrap.getId(),
-                NISTObjectIdentifiers.id_aes256_wrap.getId()
+            NISTObjectIdentifiers.id_aes128_wrap.getId(),
+            NISTObjectIdentifiers.id_aes192_wrap.getId(),
+            NISTObjectIdentifiers.id_aes256_wrap.getId(),
         };
 
         wrapOidTest(wrapOids, "AESWrap");
+
+        wrapOids = new String[] {
+                NISTObjectIdentifiers.id_aes128_wrap_pad.getId(),
+                NISTObjectIdentifiers.id_aes192_wrap_pad.getId(),
+                NISTObjectIdentifiers.id_aes256_wrap_pad.getId()
+        };
+
+        wrapOidTest(wrapOids, "AESWrapPad");
 
         eaxTest();
         ccmTest();

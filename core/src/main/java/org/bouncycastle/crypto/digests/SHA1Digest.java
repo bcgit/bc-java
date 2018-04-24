@@ -39,6 +39,11 @@ public class SHA1Digest
         copyIn(t);
     }
 
+    /**
+     * State constructor - create a digest initialised with the state of a previous one.
+     *
+     * @param encodedState the encoded state from the originating digest.
+     */
     public SHA1Digest(byte[] encodedState)
     {
         super(encodedState);
@@ -105,7 +110,7 @@ public class SHA1Digest
         }
 
         X[14] = (int)(bitLength >>> 32);
-        X[15] = (int)(bitLength & 0xffffffff);
+        X[15] = (int)bitLength;
     }
 
     public int doFinal(

@@ -7,6 +7,7 @@ import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -21,7 +22,7 @@ public class BouncyCastlePQCProvider
     extends Provider
     implements ConfigurableProvider
 {
-    private static String info = "BouncyCastle Post-Quantum Security Provider v1.54";
+    private static String info = "BouncyCastle Post-Quantum Security Provider v1.59";
 
     public static String PROVIDER_NAME = "BCPQC";
 
@@ -36,7 +37,7 @@ public class BouncyCastlePQCProvider
     private static final String ALGORITHM_PACKAGE = "org.bouncycastle.pqc.jcajce.provider.";
     private static final String[] ALGORITHMS =
         {
-            "Rainbow", "McEliece"
+            "Rainbow", "McEliece", "SPHINCS", "NH", "XMSS"
         };
 
     /**
@@ -46,7 +47,7 @@ public class BouncyCastlePQCProvider
      */
     public BouncyCastlePQCProvider()
     {
-        super(PROVIDER_NAME, 1.54, info);
+        super(PROVIDER_NAME, 1.59, info);
 
         AccessController.doPrivileged(new PrivilegedAction()
         {
@@ -67,24 +68,7 @@ public class BouncyCastlePQCProvider
     {
         for (int i = 0; i != names.length; i++)
         {
-            Class clazz = null;
-            try
-            {
-                ClassLoader loader = this.getClass().getClassLoader();
-
-                if (loader != null)
-                {
-                    clazz = loader.loadClass(packageName + names[i] + "$Mappings");
-                }
-                else
-                {
-                    clazz = Class.forName(packageName + names[i] + "$Mappings");
-                }
-            }
-            catch (ClassNotFoundException e)
-            {
-                // ignore
-            }
+            Class clazz = loadClass(BouncyCastlePQCProvider.class, packageName + names[i] + "$Mappings");
 
             if (clazz != null)
             {
@@ -137,13 +121,39 @@ public class BouncyCastlePQCProvider
 
     public void addKeyInfoConverter(ASN1ObjectIdentifier oid, AsymmetricKeyInfoConverter keyInfoConverter)
     {
-        keyInfoConverters.put(oid, keyInfoConverter);
+        synchronized (keyInfoConverters)
+        {
+            keyInfoConverters.put(oid, keyInfoConverter);
+        }
+    }
+
+    public void addAttributes(String key, Map<String, String> attributeMap)
+    {
+        for (Iterator it = attributeMap.keySet().iterator(); it.hasNext();)
+        {
+            String attributeName = (String)it.next();
+            String attributeKey = key + " " + attributeName;
+            if (containsKey(attributeKey))
+            {
+                throw new IllegalStateException("duplicate provider attribute key (" + attributeKey + ") found");
+            }
+
+            put(attributeKey, attributeMap.get(attributeName));
+        }
+    }
+
+    private static AsymmetricKeyInfoConverter getAsymmetricKeyInfoConverter(ASN1ObjectIdentifier algorithm)
+    {
+        synchronized (keyInfoConverters)
+        {
+            return (AsymmetricKeyInfoConverter)keyInfoConverters.get(algorithm);
+        }
     }
 
     public static PublicKey getPublicKey(SubjectPublicKeyInfo publicKeyInfo)
         throws IOException
     {
-        AsymmetricKeyInfoConverter converter = (AsymmetricKeyInfoConverter)keyInfoConverters.get(publicKeyInfo.getAlgorithm().getAlgorithm());
+        AsymmetricKeyInfoConverter converter = getAsymmetricKeyInfoConverter(publicKeyInfo.getAlgorithm().getAlgorithm());
 
         if (converter == null)
         {
@@ -156,7 +166,7 @@ public class BouncyCastlePQCProvider
     public static PrivateKey getPrivateKey(PrivateKeyInfo privateKeyInfo)
         throws IOException
     {
-        AsymmetricKeyInfoConverter converter = (AsymmetricKeyInfoConverter)keyInfoConverters.get(privateKeyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+        AsymmetricKeyInfoConverter converter = getAsymmetricKeyInfoConverter(privateKeyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
         if (converter == null)
         {
@@ -164,5 +174,42 @@ public class BouncyCastlePQCProvider
         }
 
         return converter.generatePrivate(privateKeyInfo);
+    }
+
+    static Class loadClass(Class sourceClass, final String className)
+    {
+        try
+        {
+            ClassLoader loader = sourceClass.getClassLoader();
+            if (loader != null)
+            {
+                return loader.loadClass(className);
+            }
+            else
+            {
+                return (Class)AccessController.doPrivileged(new PrivilegedAction()
+                {
+                    public Object run()
+                    {
+                        try
+                        {
+                            return Class.forName(className);
+                        }
+                        catch (Exception e)
+                        {
+                            // ignore - maybe log?
+                        }
+
+                        return null;
+                    }
+                });
+            }
+        }
+        catch (ClassNotFoundException e)
+        {
+            // ignore - maybe log?
+        }
+
+        return null;
     }
 }

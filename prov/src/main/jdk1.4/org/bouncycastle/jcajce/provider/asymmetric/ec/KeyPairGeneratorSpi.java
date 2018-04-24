@@ -26,6 +26,7 @@ import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 
 public abstract class KeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
@@ -119,46 +120,23 @@ public abstract class KeyPairGeneratorSpi
 
                 curveName = ((ECNamedCurveGenParameterSpec)params).getName();
 
-                X9ECParameters  ecP = X962NamedCurves.getByName(curveName);
+                X9ECParameters  ecP = ECUtil.getNamedCurveByName(curveName);
+
                 if (ecP == null)
                 {
-                    ecP = SECNamedCurves.getByName(curveName);
-                    if (ecP == null)
+                    // See if it's actually an OID string (SunJSSE ServerHandshaker setupEphemeralECDHKeys bug)
+                    try
                     {
-                        ecP = NISTNamedCurves.getByName(curveName);
-                    }
-                    if (ecP == null)
-                    {
-                        ecP = TeleTrusTNamedCurves.getByName(curveName);
-                    }
-                    if (ecP == null)
-                    {
-                        // See if it's actually an OID string (SunJSSE ServerHandshaker setupEphemeralECDHKeys bug)
-                        try
+                        ASN1ObjectIdentifier oid = new ASN1ObjectIdentifier(curveName);
+                        ecP = ECUtil.getNamedCurveByOid(oid);
+                        if (ecP == null)
                         {
-                            ASN1ObjectIdentifier oid = new ASN1ObjectIdentifier(curveName);
-                            ecP = X962NamedCurves.getByOID(oid);
-                            if (ecP == null)
-                            {
-                                ecP = SECNamedCurves.getByOID(oid);
-                            }
-                            if (ecP == null)
-                            {
-                                ecP = NISTNamedCurves.getByOID(oid);
-                            }
-                            if (ecP == null)
-                            {
-                                ecP = TeleTrusTNamedCurves.getByOID(oid);
-                            }
-                            if (ecP == null)
-                            {
-                                throw new InvalidAlgorithmParameterException("unknown curve OID: " + curveName);
-                            }
+                            throw new InvalidAlgorithmParameterException("unknown curve OID: " + curveName);
                         }
-                        catch (IllegalArgumentException ex)
-                        {
-                            throw new InvalidAlgorithmParameterException("unknown curve name: " + curveName);
-                        }
+                    }
+                    catch (IllegalArgumentException ex)
+                    {
+                        throw new InvalidAlgorithmParameterException("unknown curve name: " + curveName);
                     }
                 }
 

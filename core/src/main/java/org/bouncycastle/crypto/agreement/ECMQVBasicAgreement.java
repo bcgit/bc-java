@@ -41,8 +41,14 @@ public class ECMQVBasicAgreement
         MQVPublicParameters pubParams = (MQVPublicParameters)pubKey;
 
         ECPrivateKeyParameters staticPrivateKey = privParams.getStaticPrivateKey();
+        ECDomainParameters parameters = staticPrivateKey.getParameters();
 
-        ECPoint agreement = calculateMqvAgreement(staticPrivateKey.getParameters(), staticPrivateKey,
+        if (!parameters.equals(pubParams.getStaticPublicKey().getParameters()))
+        {
+            throw new IllegalStateException("ECMQV public key components have wrong domain parameters");
+        }
+
+        ECPoint agreement = calculateMqvAgreement(parameters, staticPrivateKey,
             privParams.getEphemeralPrivateKey(), privParams.getEphemeralPublicKey(),
             pubParams.getStaticPublicKey(), pubParams.getEphemeralPublicKey()).normalize();
 
@@ -70,8 +76,8 @@ public class ECMQVBasicAgreement
         ECCurve curve = parameters.getCurve();
 
         ECPoint[] points = new ECPoint[]{
-            // The Q2U public key is optional
-            ECAlgorithms.importPoint(curve, Q2U == null ? parameters.getG().multiply(d2U.getD()) : Q2U.getQ()),
+            // The Q2U public key is optional - but will be calculated for us if it wasn't present
+            ECAlgorithms.importPoint(curve, Q2U.getQ()),
             ECAlgorithms.importPoint(curve, Q1V.getQ()),
             ECAlgorithms.importPoint(curve, Q2V.getQ())
         };
