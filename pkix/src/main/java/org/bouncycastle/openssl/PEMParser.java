@@ -79,6 +79,13 @@ public class PEMParser
         parsers.put("PRIVATE KEY", new PrivateKeyParser());
     }
 
+    /**
+     * Read the next PEM object attempting to interpret the header and
+     * create a higher level object from the content.
+     *
+     * @return the next object in the stream, null if no objects left.
+     * @throws IOException in case of a parse error.
+     */
     public Object readObject()
         throws IOException
     {
