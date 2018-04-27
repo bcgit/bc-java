@@ -23,8 +23,8 @@ import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UserAttributePacket;
 import org.bouncycastle.bcpg.UserIDPacket;
-import org.bouncycastle.jcajce.provider.asymmetric.eddsa.spec.EdDSANamedCurveSpec;
-import org.bouncycastle.jcajce.provider.asymmetric.eddsa.spec.EdDSANamedCurveTable;
+import org.bouncycastle.jcajce.provider.asymmetric.rfc7748.spec.RFC7748NamedCurveSpec;
+import org.bouncycastle.jcajce.provider.asymmetric.rfc7748.spec.RFC7748NamedCurveTable;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Arrays;
 
@@ -90,8 +90,8 @@ public class PGPPublicKey
             {
                 if (key instanceof EdDSAPublicBCPGKey)
                 {
-                    EdDSANamedCurveSpec eddsaSpec =
-                            EdDSANamedCurveTable.getByName("ed25519");
+                    RFC7748NamedCurveSpec eddsaSpec =
+                            RFC7748NamedCurveTable.getByName("ed25519");
                     this.keyStrength = eddsaSpec.getCurve().getField().getb();
                 }
                 else

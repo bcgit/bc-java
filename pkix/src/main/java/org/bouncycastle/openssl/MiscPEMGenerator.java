@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.asn1.rfc7748.RFC7748ObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -128,6 +129,12 @@ public class MiscPEMGenerator
                 type = "EC PRIVATE KEY";
 
                 encoding = info.parsePrivateKey().toASN1Primitive().getEncoded();
+            }
+            else if (algOID.equals(RFC7748ObjectIdentifiers.id_Ed25519))
+            {
+                type = "PRIVATE KEY";
+
+                encoding = info.toASN1Primitive().getEncoded();
             }
             else
             {

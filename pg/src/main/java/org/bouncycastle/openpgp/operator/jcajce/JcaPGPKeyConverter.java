@@ -55,12 +55,12 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 import org.bouncycastle.bcpg.RSASecretBCPGKey;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-import org.bouncycastle.jcajce.provider.asymmetric.eddsa.EdDSAPrivateKey;
-import org.bouncycastle.jcajce.provider.asymmetric.eddsa.EdDSAPublicKey;
-import org.bouncycastle.jcajce.provider.asymmetric.eddsa.spec.EdDSANamedCurveTable;
-import org.bouncycastle.jcajce.provider.asymmetric.eddsa.spec.EdDSAParameterSpec;
-import org.bouncycastle.jcajce.provider.asymmetric.eddsa.spec.EdDSAPrivateKeySpec;
-import org.bouncycastle.jcajce.provider.asymmetric.eddsa.spec.EdDSAPublicKeySpec;
+import org.bouncycastle.jcajce.provider.asymmetric.rfc7748.RFC7748PrivateKey;
+import org.bouncycastle.jcajce.provider.asymmetric.rfc7748.RFC7748PublicKey;
+import org.bouncycastle.jcajce.provider.asymmetric.rfc7748.spec.RFC7748NamedCurveTable;
+import org.bouncycastle.jcajce.provider.asymmetric.rfc7748.spec.RFC7748ParameterSpec;
+import org.bouncycastle.jcajce.provider.asymmetric.rfc7748.spec.RFC7748PrivateKeySpec;
+import org.bouncycastle.jcajce.provider.asymmetric.rfc7748.spec.RFC7748PublicKeySpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -148,10 +148,10 @@ public class JcaPGPKeyConverter
                 return fact.generatePublic(ecDsaSpec);
             case PublicKeyAlgorithmTags.EDDSA:
                 EdDSAPublicBCPGKey eddsaK = ((EdDSAPublicBCPGKey) publicPk.getKey());
-                EdDSAParameterSpec spec = EdDSANamedCurveTable.getByName("ed25519");
+                RFC7748ParameterSpec spec = RFC7748NamedCurveTable.getByName("ed25519");
                 byte[] pointData = eddsaK.getEdDSAEncodedPoint();
 
-                EdDSAPublicKeySpec edDsaSpec = new EdDSAPublicKeySpec(pointData, spec);
+                RFC7748PublicKeySpec edDsaSpec = new RFC7748PublicKeySpec(pointData, spec);
 
                 fact = helper.createKeyFactory("EDDSA");
                 return fact.generatePublic(edDsaSpec);
@@ -206,9 +206,9 @@ public class JcaPGPKeyConverter
 
             bcpgKey = new ElGamalPublicBCPGKey(eS.getP(), eS.getG(), eK.getY());
         }
-        else if (pubKey instanceof EdDSAPublicKey)
+        else if (pubKey instanceof RFC7748PublicKey)
         {
-            EdDSAPublicKey dK = (EdDSAPublicKey) pubKey;
+            RFC7748PublicKey dK = (RFC7748PublicKey) pubKey;
 
             try
             {
@@ -340,8 +340,8 @@ public class JcaPGPKeyConverter
                 return fact.generatePrivate(ecDsaSpec);
             case PublicKeyAlgorithmTags.EDDSA:
                 EdDSASecretBCPGKey eddsaK = (EdDSASecretBCPGKey) privPk;
-                EdDSAPrivateKeySpec edDsaSpec = new EdDSAPrivateKeySpec(eddsaK.getSeed(),
-                        EdDSANamedCurveTable.getByName("ed25519"));
+                RFC7748PrivateKeySpec edDsaSpec = new RFC7748PrivateKeySpec(eddsaK.getSeed(),
+                        RFC7748NamedCurveTable.getByName("ed25519"));
                 fact = helper.createKeyFactory("EDDSA");
 
                 return fact.generatePrivate(edDsaSpec);
@@ -408,7 +408,7 @@ public class JcaPGPKeyConverter
             privPk = new ECSecretBCPGKey(ecK.getS());
             break;
         case PGPPublicKey.EDDSA:
-            EdDSAPrivateKey edK = (EdDSAPrivateKey) privKey;
+            RFC7748PrivateKey edK = (RFC7748PrivateKey) privKey;
 
             privPk = new EdDSASecretBCPGKey(edK.getSeed());
             break;
