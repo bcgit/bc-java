@@ -29,12 +29,12 @@ import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.i18n.ErrorBundle;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.mail.smime.validator.SignedMailValidator;
 import org.bouncycastle.x509.PKIXCertPathReviewer;
-import org.bouncycastle.x509.extension.X509ExtensionUtil;
 
 /**
  * An Example that reads a signed mail and validates its signature. Also
@@ -291,8 +291,8 @@ public class ValidateSignedMail
 
             if (ncBytes != null)
             {
-                ASN1Encodable extValue = X509ExtensionUtil
-                        .fromExtensionValue(ncBytes);
+                ASN1Encodable extValue = JcaX509ExtensionUtils
+                        .parseExtensionValue(ncBytes);
                 return new TrustAnchor(cert, extValue.toASN1Primitive().getEncoded(ASN1Encoding.DER));
             }
             return new TrustAnchor(cert, null);
