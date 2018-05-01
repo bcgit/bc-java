@@ -575,7 +575,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2012, March 30
 <li>An illegal argument exception that could occur with multi-valued RDNs in the X509v3CertificateBuilder has been fixed.</li>
 <li>Shared secret calculation in IES could occasionally add a leading zero byte. This has been fixed.</li>
 <li>PEMReader would choke on a private key with an empty password. This has been fixed.</li>
-<li>The default MAC for a BKS key store was 2 bytes, this has been upgraded to 20 bytes.</li>
+<li>The default MAC for a BKS key store was 2 bytes, this has been upgraded to 20 bytes. This fix is now also referred to in CVE-2018-5382.</li>
 <li>BKS key store loading no longer freezes on negative iteration counts.</li>
 <li>A regression in 1.46 which prevented parsing of PEM files with extra text at the start has been fixed.</li>
 <li>CMS secret key generation now attempts to stop use of invalid lengths with OIDs that predefine a key length.</li>
