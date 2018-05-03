@@ -29,13 +29,15 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2018
 <ul>
 <li>Base64/UrlBase64 would throw an exception on a zero length string. This has been fixed.</li>
 <li>XMSS applies further validation to deserialisation of the BDS tree so that failure occurs as soon as tampering is detected.</li>
-<li>An off by one error in the JsseDefaultHostnameAuthorizer isValidNameMatch method has been fixed.
+<li>An off by one error in the JsseDefaultHostnameAuthorizer isValidNameMatch method has been fixed.</li>
+<li>BCJSSE: Return empty byte array instead of null, for the null session ID.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>TLS: Extended CBC padding is now optional (and disabled by default).</li>
 <li>TLS: Now supports channel binding 'tls-server-end-point'.</li>
 <li>TLS: InterruptedIOException (e.g. socket timeout) during app-data reads no longer fails connection; handshake is optionally resumable after IIOE using 'TlsProtocol.setResumableHandshake()'.</li>
+<li>TLS: Added utility methods and constants for ALPN (RFC 7301).</li>
 <li>BCJSSE: Now supports system property 'jdk.tls.client.protocols'</li>
 <li>BCJSSE: Now supports SSLParameters.setSNIMatchers.</li>
 <li>BCJSSE: SNI can now be used in earlier JDKs via BC extensions.</li>
