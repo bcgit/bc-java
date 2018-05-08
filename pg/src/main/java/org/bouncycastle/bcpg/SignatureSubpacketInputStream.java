@@ -4,7 +4,9 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.bouncycastle.bcpg.sig.EmbeddedSignature;
 import org.bouncycastle.bcpg.sig.Exportable;
+import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.bcpg.sig.KeyFlags;
@@ -12,8 +14,10 @@ import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
 import org.bouncycastle.bcpg.sig.Revocable;
+import org.bouncycastle.bcpg.sig.RevocationReason;
 import org.bouncycastle.bcpg.sig.SignatureCreationTime;
 import org.bouncycastle.bcpg.sig.SignatureExpirationTime;
+import org.bouncycastle.bcpg.sig.SignatureTarget;
 import org.bouncycastle.bcpg.sig.SignerUserID;
 import org.bouncycastle.bcpg.sig.TrustSignature;
 import org.bouncycastle.util.Arrays;
@@ -121,6 +125,8 @@ public class SignatureSubpacketInputStream
         {
         case CREATION_TIME:
             return new SignatureCreationTime(isCritical, isLongLength, data);
+        case EMBEDDED_SIGNATURE:
+            return new EmbeddedSignature(isCritical, isLongLength, data);
         case KEY_EXPIRE_TIME:
             return new KeyExpirationTime(isCritical, isLongLength, data);
         case EXPIRE_TIME:
@@ -129,6 +135,8 @@ public class SignatureSubpacketInputStream
             return new Revocable(isCritical, isLongLength, data);
         case EXPORTABLE:
             return new Exportable(isCritical, isLongLength, data);
+        case FEATURES:
+            return new Features(isCritical, isLongLength, data);
         case ISSUER_KEY_ID:
             return new IssuerKeyID(isCritical, isLongLength, data);
         case TRUST_SIG:
@@ -145,6 +153,10 @@ public class SignatureSubpacketInputStream
             return new SignerUserID(isCritical, isLongLength, data);
         case NOTATION_DATA:
             return new NotationData(isCritical, isLongLength, data);
+        case REVOCATION_REASON:
+            return new RevocationReason(isCritical, isLongLength, data);
+        case SIGNATURE_TARGET:
+            return new SignatureTarget(isCritical, isLongLength, data);
         }
 
         return new SignatureSubpacket(type, isCritical, isLongLength, data);
