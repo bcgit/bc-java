@@ -1,5 +1,6 @@
 package org.bouncycastle.cms;
 
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.cms.PartialHashtree;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 

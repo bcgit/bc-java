@@ -61,7 +61,7 @@ public class EvidenceRecord extends ASN1Object
             ());
     }
 
-    protected EvidenceRecord(
+    public EvidenceRecord(
         final ASN1Sequence digestAlgorithms,
         final CryptoInfos cryptoInfos,
         final EncryptionInfo encryptionInfo,
@@ -186,7 +186,7 @@ public class EvidenceRecord extends ASN1Object
         return ("EvidenceRecord: Oid(" + oid + ")");
     }
 
-    protected void addDigestAlgorithmIdentifier(final AlgorithmIdentifier algId) {
+    public void addDigestAlgorithmIdentifier(final AlgorithmIdentifier algId) {
 
         final ASN1EncodableVector vector = new ASN1EncodableVector();
         final Enumeration enumeration = this.digestAlgorithms.getObjects();
@@ -219,7 +219,7 @@ public class EvidenceRecord extends ASN1Object
      * new sequence (i.e. in the case of hashtree renewal) or not (i.e. in the case of timestamp
      * renewal)
      */
-    protected void addArchiveTimeStamp(final ArchiveTimeStamp ats, final boolean newSequence)
+    public void addArchiveTimeStamp(final ArchiveTimeStamp ats, final boolean newSequence)
     {
         if (newSequence)
         {
@@ -235,7 +235,7 @@ public class EvidenceRecord extends ASN1Object
         }
     }
 
-    protected ArchiveTimeStampSequence getArchiveTimeStampSequence() {
+    public ArchiveTimeStampSequence getArchiveTimeStampSequence() {
         return archiveTimeStampSequence;
     }
 

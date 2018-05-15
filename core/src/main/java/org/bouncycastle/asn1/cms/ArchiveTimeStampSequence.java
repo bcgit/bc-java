@@ -79,7 +79,7 @@ public class ArchiveTimeStampSequence extends ASN1Object
      *
      * @param chain the {@link ArchiveTimeStampChain} to add
      */
-    protected void add(ArchiveTimeStampChain chain) {
+    public void add(ArchiveTimeStampChain chain) {
 
         final ASN1EncodableVector vector = new ASN1EncodableVector();
 

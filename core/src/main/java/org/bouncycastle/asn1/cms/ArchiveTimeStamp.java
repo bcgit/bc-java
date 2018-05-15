@@ -56,8 +56,7 @@ public class ArchiveTimeStamp
         throw new IllegalArgumentException("unknown object in getInstance: " + obj.getClass().getName());
     }
 
-    //todo: remove ?
-    protected ArchiveTimeStamp (
+    public ArchiveTimeStamp (
         final AlgorithmIdentifier digestAlgorithm,
         final ASN1TaggedObject reducedHashTree,
         final ContentInfo timeStamp)

@@ -1,6 +1,7 @@
 package org.bouncycastle.cms;
 
 import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.cms.*;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.tsp.TimeStampToken;
@@ -46,7 +47,7 @@ public class EvidenceRecordGenerator
     private MessageDigest               md;
     private int                         depth;
     private byte[]                      rootHash;
-    private ContentInfo                 timestamp;
+    private ContentInfo timestamp;
     private List<DataGroup>             dataGroups;
     private List<ASN1EncodableVector>   reducedHashtrees = new ArrayList();
     private ASN1TaggedObject            reducedHashtreeForRenewal;

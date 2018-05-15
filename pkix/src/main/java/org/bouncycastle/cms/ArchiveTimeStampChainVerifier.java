@@ -1,5 +1,6 @@
 package org.bouncycastle.cms;
 
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.cms.ArchiveTimeStamp;
 import org.bouncycastle.asn1.cms.ArchiveTimeStampChain;
 import org.bouncycastle.asn1.cms.DataGroup;
