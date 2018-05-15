@@ -7,12 +7,15 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.jsse.BCSSLConnection;
+import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
@@ -21,21 +24,35 @@ class ProvSSLSocketDirect
     extends ProvSSLSocketBase
     implements ProvTlsManager
 {
+    private static Logger LOG = Logger.getLogger(ProvSSLSocketDirect.class.getName());
+
     protected final AppDataInput appDataIn = new AppDataInput();
     protected final AppDataOutput appDataOut = new AppDataOutput();
 
     protected final ProvSSLContextSpi context;
     protected final ContextData contextData;
+    protected final ProvSSLParameters sslParameters;
 
-    protected ProvSSLParameters sslParameters;
     protected boolean enableSessionCreation = true;
     protected boolean useClientMode = true;
 
-    protected boolean initialHandshakeBegun = false;
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
     protected BCSSLConnection connection = null;
     protected SSLSession handshakeSession = null;
+
+    /** This constructor is the one used (only) by ProvSSLServerSocket */
+    ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, boolean enableSessionCreation,
+        boolean useClientMode, ProvSSLParameters sslParameters)
+    {
+        super();
+
+        this.context = context;
+        this.contextData = contextData;
+        this.enableSessionCreation = enableSessionCreation;
+        this.useClientMode = useClientMode;
+        this.sslParameters = sslParameters;
+    }
 
     protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData)
     {
@@ -43,7 +60,7 @@ class ProvSSLSocketDirect
 
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = ProvSSLParameters.extractDefaultParameters(context);
+        this.sslParameters = context.getDefaultParameters(!useClientMode);
     }
 
     protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, InetAddress address, int port, InetAddress clientAddress, int clientPort)
@@ -53,7 +70,7 @@ class ProvSSLSocketDirect
 
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = ProvSSLParameters.extractDefaultParameters(context);
+        this.sslParameters = context.getDefaultParameters(!useClientMode);
     }
 
     protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, InetAddress address, int port) throws IOException
@@ -62,7 +79,7 @@ class ProvSSLSocketDirect
 
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = ProvSSLParameters.extractDefaultParameters(context);
+        this.sslParameters = context.getDefaultParameters(!useClientMode);
     }
 
     protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, String host, int port, InetAddress clientAddress, int clientPort)
@@ -72,7 +89,7 @@ class ProvSSLSocketDirect
 
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = ProvSSLParameters.extractDefaultParameters(context);
+        this.sslParameters = context.getDefaultParameters(!useClientMode);
     }
 
     protected ProvSSLSocketDirect(ProvSSLContextSpi context, ContextData contextData, String host, int port) throws IOException, UnknownHostException
@@ -81,7 +98,7 @@ class ProvSSLSocketDirect
 
         this.context = context;
         this.contextData = contextData;
-        this.sslParameters = ProvSSLParameters.extractDefaultParameters(context);
+        this.sslParameters = context.getDefaultParameters(!useClientMode);
     }
 
     public ProvSSLContextSpi getContext()
@@ -97,22 +114,25 @@ class ProvSSLSocketDirect
     @Override
     public synchronized void close() throws IOException
     {
-        if (protocol != null)
+        if (protocol == null)
+        {
+            closeSocket();
+        }
+        else
         {
             protocol.close();
         }
-        super.close();
     }
 
     public synchronized BCSSLConnection getConnection()
     {
         try
         {
-            handshakeIfNecessary();
+            handshakeIfNecessary(false);
         }
-        catch (Exception e)
+        catch (IOException e)
         {
-            // TODO[jsse] Logging?
+            LOG.log(Level.FINE, "Failed to establish connection", e);
         }
 
         return connection;
@@ -160,6 +180,11 @@ class ProvSSLSocketDirect
         return appDataOut;
     }
 
+    public synchronized BCSSLParameters getParameters()
+    {
+        return SSLParametersUtil.getParameters(sslParameters);
+    }
+
     @Override
     public synchronized SSLSession getSession()
     {
@@ -171,12 +196,7 @@ class ProvSSLSocketDirect
     @Override
     public synchronized SSLParameters getSSLParameters()
     {
-        return SSLParametersUtil.toSSLParameters(sslParameters);
-    }
-
-    public synchronized ProvSSLParameters getProvSSLParameters()
-    {
-        return sslParameters;
+        return SSLParametersUtil.getSSLParameters(sslParameters);
     }
 
     @Override
@@ -206,22 +226,12 @@ class ProvSSLSocketDirect
     @Override
     public synchronized void setEnabledCipherSuites(String[] suites)
     {
-        if (!context.isSupportedCipherSuites(suites))
-        {
-            throw new IllegalArgumentException("'suites' cannot be null, or contain unsupported cipher suites");
-        }
-
         sslParameters.setCipherSuites(suites);
     }
 
     @Override
     public synchronized void setEnabledProtocols(String[] protocols)
     {
-        if (!context.isSupportedProtocols(protocols))
-        {
-            throw new IllegalArgumentException("'protocols' cannot be null, or contain unsupported protocols");
-        }
-
         sslParameters.setProtocols(protocols);
     }
 
@@ -237,21 +247,33 @@ class ProvSSLSocketDirect
         sslParameters.setNeedClientAuth(need);
     }
 
+    public synchronized void setParameters(BCSSLParameters parameters)
+    {
+        SSLParametersUtil.setParameters(this.sslParameters, parameters);
+    }
+
     @Override
     public synchronized void setSSLParameters(SSLParameters sslParameters)
     {
-        this.sslParameters = SSLParametersUtil.toProvSSLParameters(sslParameters);
+        SSLParametersUtil.setSSLParameters(this.sslParameters, sslParameters);
     }
 
     @Override
     public synchronized void setUseClientMode(boolean mode)
     {
-        if (initialHandshakeBegun && mode != this.useClientMode)
+        if (this.useClientMode == mode)
+        {
+            return;
+        }
+
+        if (protocol != null)
         {
             throw new IllegalArgumentException("Mode cannot be changed after the initial handshake has begun");
         }
 
         this.useClientMode = mode;
+
+        context.updateDefaultProtocols(sslParameters, !useClientMode);
     }
 
     @Override
@@ -263,42 +285,50 @@ class ProvSSLSocketDirect
     @Override
     public synchronized void startHandshake() throws IOException
     {
-        if (initialHandshakeBegun)
-        {
-            throw new UnsupportedOperationException("Renegotiation not supported");
-        }
+        startHandshake(true);
+    }
 
-        this.initialHandshakeBegun = true;
-
-        try
+    protected void startHandshake(boolean resumable) throws IOException
+    {
+        if (protocol == null)
         {
             // TODO[jsse] Check for session to re-use and apply to handshake
             // TODO[jsse] Allocate this.handshakeSession and update it during handshake
-    
+
+            InputStream input = super.getInputStream();
+            OutputStream output = super.getOutputStream();
+
             if (this.useClientMode)
             {
-                TlsClientProtocol clientProtocol = new TlsClientProtocol(super.getInputStream(), super.getOutputStream());
+                TlsClientProtocol clientProtocol = new ProvTlsClientProtocol(input, output, socketCloser);
+                clientProtocol.setResumableHandshake(resumable);
                 this.protocol = clientProtocol;
-    
-                ProvTlsClient client = new ProvTlsClient(this);
+
+                ProvTlsClient client = new ProvTlsClient(this, sslParameters.copy());
                 this.protocolPeer = client;
-    
+
                 clientProtocol.connect(client);
             }
             else
             {
-                TlsServerProtocol serverProtocol = new TlsServerProtocol(super.getInputStream(), super.getOutputStream());
+                TlsServerProtocol serverProtocol = new ProvTlsServerProtocol(input, output, socketCloser);
+                serverProtocol.setResumableHandshake(resumable);
                 this.protocol = serverProtocol;
-    
-                ProvTlsServer server = new ProvTlsServer(this);
+
+                ProvTlsServer server = new ProvTlsServer(this, sslParameters.copy());
                 this.protocolPeer = server;
-    
+
                 serverProtocol.accept(server);
             }
         }
-        finally
+        else if (protocol.isHandshaking())
         {
-            this.handshakeSession = null;
+            protocol.setResumableHandshake(resumable);
+            protocol.resumeHandshake();
+        }
+        else
+        {
+            throw new UnsupportedOperationException("Renegotiation not supported");
         }
     }
 
@@ -365,11 +395,11 @@ class ProvSSLSocketDirect
         this.connection = connection;
     }
 
-    synchronized void handshakeIfNecessary() throws IOException
+    synchronized void handshakeIfNecessary(boolean resumable) throws IOException
     {
-        if (!initialHandshakeBegun)
+        if (protocol == null || protocol.isHandshaking())
         {
-            startHandshake();
+            startHandshake(resumable);
         }
     }
 
@@ -395,7 +425,7 @@ class ProvSSLSocketDirect
         @Override
         public int read() throws IOException
         {
-            handshakeIfNecessary();
+            handshakeIfNecessary(true);
 
             byte[] buf = new byte[1];
             int ret = protocol.readApplicationData(buf, 0, 1);
@@ -410,7 +440,7 @@ class ProvSSLSocketDirect
                 return 0;
             }
 
-            handshakeIfNecessary();
+            handshakeIfNecessary(true);
             return protocol.readApplicationData(b, off, len);
         }
     }
@@ -438,7 +468,7 @@ class ProvSSLSocketDirect
         @Override
         public void write(int b) throws IOException
         {
-            handshakeIfNecessary();
+            handshakeIfNecessary(true);
 
             byte[] buf = new byte[]{ (byte)b };
             protocol.writeApplicationData(buf, 0, 1);
@@ -449,7 +479,7 @@ class ProvSSLSocketDirect
         {
             if (len > 0)
             {
-                handshakeIfNecessary();
+                handshakeIfNecessary(true);
                 protocol.writeApplicationData(b, off, len);
             }
         }

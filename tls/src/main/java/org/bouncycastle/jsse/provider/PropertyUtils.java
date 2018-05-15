@@ -6,8 +6,6 @@ import java.security.Security;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.bouncycastle.util.Strings;
-
 /**
  * Settings can either be in java.security or set as system properties.
  * Settings provided in java.security will override system properties.
@@ -16,55 +14,15 @@ class PropertyUtils
 {
     private static Logger LOG = Logger.getLogger(PropertyUtils.class.getName());
 
-    static String getSetting(final String propertyName)
+    static String getSecurityProperty(final String propertyName)
     {
         return AccessController.doPrivileged(new PrivilegedAction<String>()
         {
             public String run()
             {
-                String value = Security.getProperty(propertyName);
-                if (value != null)
-                {
-                    return value;
-                }
-
-                return System.getProperty(propertyName);
+                return Security.getProperty(propertyName);
             }
         });
-    }
-
-    static String getSetting(final String propertyName, final String unsetValue)
-    {
-        String value = getSetting(propertyName);
-
-        if (value == null)
-        {
-            return unsetValue;
-        }
-
-        return value;
-    }
-
-    static String getSettingLowerCase(final String propertyName)
-    {
-        String value = getSetting(propertyName);
-        if (value != null)
-        {
-            return Strings.toLowerCase(value);
-        }
-
-        return null;
-    }
-
-    static String getSettingLowerCase(final String propertyName, String unsetValue)
-    {
-        String value = getSetting(propertyName, unsetValue);
-        if (value != null)
-        {
-            return Strings.toLowerCase(value);
-        }
-
-        return null;
     }
 
     static String getSystemProperty(final String propertyName)
@@ -133,6 +91,17 @@ class PropertyUtils
         }
         LOG.log(Level.FINE, "Integer system property [" + propertyName + "] defaulted to: " + defaultValue);
         return defaultValue;
+    }
+
+    static String getStringSystemProperty(String propertyName)
+    {
+        String propertyValue = getSystemProperty(propertyName);
+        if (null != propertyValue)
+        {
+            LOG.log(Level. INFO, "Found string system property [" + propertyName + "]: " + propertyValue);
+            return propertyValue;
+        }
+        return null;
     }
 
     private static String getRangeString(int minimumValue, int maximumValue)

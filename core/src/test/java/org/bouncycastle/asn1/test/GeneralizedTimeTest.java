@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 
+import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -110,6 +111,40 @@ public class GeneralizedTimeTest
         "20020122022220.000Z"
     };
 
+    String[] derMzOutput = {
+        "20020122122220Z",
+        "20020122122220Z",
+        "20020122222220Z",
+        "20020122122220Z",
+        "20020122122220.1Z",
+        "20020122122220.1Z",
+        "20020122222220.1Z",
+        "20020122122220.1Z",
+        "20020122122220.01Z",
+        "20020122122220.01Z",
+        "20020122222220.01Z",
+        "20020122122220.01Z",
+        "20020122122220.001Z",
+        "20020122122220.001Z",
+        "20020122222220.001Z",
+        "20020122122220.001Z",
+        "20020122122220Z",
+        "20020122122220Z",
+        "20020122222220Z",
+        "20020122122220Z",
+        "20020122022220Z"
+    };
+
+    String[] truncOutput = {
+         "200201221222Z",
+         "2002012212Z"
+     };
+
+     String[] derTruncOutput = {
+         "20020122122200Z",
+         "20020122120000Z"
+     };
+
     public String getName()
     {
         return "GeneralizedTime";
@@ -124,7 +159,7 @@ public class GeneralizedTimeTest
 
         for (int i = 0; i != input.length; i++)
         {
-            DERGeneralizedTime    t = new DERGeneralizedTime(input[i]);
+            ASN1GeneralizedTime    t = new ASN1GeneralizedTime(input[i]);
 
             if (output[i].indexOf('G') > 0)   // don't check local time the same way
             {
@@ -153,11 +188,31 @@ public class GeneralizedTimeTest
 
         for (int i = 0; i != input.length; i++)
         {
-            DERGeneralizedTime    t = new DERGeneralizedTime(input[i]);
+            ASN1GeneralizedTime    t = new ASN1GeneralizedTime(input[i]);
 
             if (!dateF.format(t.getDate()).equals(mzOutput[i]))
             {
                 fail("failed long date conversion test");
+            }
+        }
+
+        for (int i = 0; i != mzOutput.length; i++)
+        {
+            ASN1GeneralizedTime    t = new DERGeneralizedTime(mzOutput[i]);
+
+            if (!areEqual(t.getEncoded(), new ASN1GeneralizedTime(derMzOutput[i]).getEncoded()))
+            {
+                fail("der encoding wrong");
+            }
+        }
+
+        for (int i = 0; i != truncOutput.length; i++)
+        {
+            DERGeneralizedTime    t = new DERGeneralizedTime(truncOutput[i]);
+
+            if (!areEqual(t.getEncoded(), new ASN1GeneralizedTime(derTruncOutput[i]).getEncoded()))
+            {
+                fail("trunc der encoding wrong");
             }
         }
     }

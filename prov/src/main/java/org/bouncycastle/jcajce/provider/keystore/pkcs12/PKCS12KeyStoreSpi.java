@@ -22,6 +22,7 @@ import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -116,7 +117,7 @@ public class PKCS12KeyStoreSpi
     private final JcaJceHelper helper = new BCJcaJceHelper();
 
     private static final int SALT_SIZE = 20;
-    private static final int MIN_ITERATIONS = 1024;
+    private static final int MIN_ITERATIONS = 50 * 1024;
 
     private static final DefaultSecretKeyProvider keySizeProvider = new DefaultSecretKeyProvider();
 
@@ -150,7 +151,7 @@ public class PKCS12KeyStoreSpi
     private ASN1ObjectIdentifier certAlgorithm;
 
     private AlgorithmIdentifier macAlgorithm = new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE);
-    private int itCount = MIN_ITERATIONS;
+    private int itCount = 2 * MIN_ITERATIONS;
     private int saltLength = 20;
 
     private class CertId
@@ -795,8 +796,17 @@ public class PKCS12KeyStoreSpi
         bufIn.reset();
 
         ASN1InputStream bIn = new ASN1InputStream(bufIn);
-        ASN1Sequence obj = (ASN1Sequence)bIn.readObject();
-        Pfx bag = Pfx.getInstance(obj);
+        
+        Pfx bag;
+        try
+        {
+            bag = Pfx.getInstance(bIn.readObject());
+        }
+        catch (Exception e)
+        {
+            throw new IOException(e.getMessage());
+        }
+
         ContentInfo info = bag.getAuthSafe();
         Vector chain = new Vector();
         boolean unmarkedKey = false;
@@ -1734,7 +1744,7 @@ public class PKCS12KeyStoreSpi
     {
         public BCPKCS12KeyStore()
         {
-            super(new BouncyCastleProvider(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd40BitRC2_CBC);
+            super(PKCS12KeyStoreSpi.getBouncyCastleProvider(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd40BitRC2_CBC);
         }
     }
 
@@ -1743,7 +1753,7 @@ public class PKCS12KeyStoreSpi
     {
         public BCPKCS12KeyStore3DES()
         {
-            super(new BouncyCastleProvider(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd3_KeyTripleDES_CBC);
+            super(PKCS12KeyStoreSpi.getBouncyCastleProvider(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd3_KeyTripleDES_CBC);
         }
     }
 
@@ -1853,5 +1863,21 @@ public class PKCS12KeyStoreSpi
 
             return -1;
         }
+    }
+
+    private static Provider provider = null;
+
+    private static synchronized Provider getBouncyCastleProvider()
+    {
+        if (Security.getProvider("BC") != null)
+        {
+            return Security.getProvider("BC");
+        }
+        else if (provider == null)
+        {
+            provider = new BouncyCastleProvider();
+        }
+
+        return provider;
     }
 }

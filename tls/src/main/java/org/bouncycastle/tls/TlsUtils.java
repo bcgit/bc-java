@@ -19,9 +19,13 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
+import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsSecret;
@@ -37,6 +41,60 @@ import org.bouncycastle.util.io.Streams;
  */
 public class TlsUtils
 {
+    // Map OID strings to HashAlgorithm values
+    private static final Hashtable sigHashAlgs = createSigHashAlgs();
+
+    private static void addSigHashAlg(Hashtable h, ASN1ObjectIdentifier oid, short hashAlg)
+    {
+        h.put(oid.getId(), hashAlg);
+    }
+
+    private static Hashtable createSigHashAlgs()
+    {
+        Hashtable h = new Hashtable();
+
+        addSigHashAlg(h, NISTObjectIdentifiers.dsa_with_sha224, HashAlgorithm.sha224);
+        addSigHashAlg(h, NISTObjectIdentifiers.dsa_with_sha256, HashAlgorithm.sha256);
+        addSigHashAlg(h, NISTObjectIdentifiers.dsa_with_sha384, HashAlgorithm.sha384);
+        addSigHashAlg(h, NISTObjectIdentifiers.dsa_with_sha512, HashAlgorithm.sha512);
+
+        addSigHashAlg(h, OIWObjectIdentifiers.dsaWithSHA1, HashAlgorithm.sha1);
+        addSigHashAlg(h, OIWObjectIdentifiers.md5WithRSA, HashAlgorithm.md5);
+        addSigHashAlg(h, OIWObjectIdentifiers.sha1WithRSA, HashAlgorithm.sha1);
+
+        addSigHashAlg(h, PKCSObjectIdentifiers.md5WithRSAEncryption, HashAlgorithm.md5);
+        addSigHashAlg(h, PKCSObjectIdentifiers.sha1WithRSAEncryption, HashAlgorithm.sha1);
+        addSigHashAlg(h, PKCSObjectIdentifiers.sha224WithRSAEncryption, HashAlgorithm.sha224);
+        addSigHashAlg(h, PKCSObjectIdentifiers.sha256WithRSAEncryption, HashAlgorithm.sha256);
+        addSigHashAlg(h, PKCSObjectIdentifiers.sha384WithRSAEncryption, HashAlgorithm.sha384);
+        addSigHashAlg(h, PKCSObjectIdentifiers.sha512WithRSAEncryption, HashAlgorithm.sha512);
+
+        addSigHashAlg(h, X9ObjectIdentifiers.ecdsa_with_SHA1, HashAlgorithm.sha1);
+        addSigHashAlg(h, X9ObjectIdentifiers.ecdsa_with_SHA224, HashAlgorithm.sha224);
+        addSigHashAlg(h, X9ObjectIdentifiers.ecdsa_with_SHA256, HashAlgorithm.sha256);
+        addSigHashAlg(h, X9ObjectIdentifiers.ecdsa_with_SHA384, HashAlgorithm.sha384);
+        addSigHashAlg(h, X9ObjectIdentifiers.ecdsa_with_SHA512, HashAlgorithm.sha512);
+        addSigHashAlg(h, X9ObjectIdentifiers.id_dsa_with_sha1, HashAlgorithm.sha1);
+
+        addSigHashAlg(h, EACObjectIdentifiers.id_TA_ECDSA_SHA_1, HashAlgorithm.sha1);
+        addSigHashAlg(h, EACObjectIdentifiers.id_TA_ECDSA_SHA_224, HashAlgorithm.sha224);
+        addSigHashAlg(h, EACObjectIdentifiers.id_TA_ECDSA_SHA_256, HashAlgorithm.sha256);
+        addSigHashAlg(h, EACObjectIdentifiers.id_TA_ECDSA_SHA_384, HashAlgorithm.sha384);
+        addSigHashAlg(h, EACObjectIdentifiers.id_TA_ECDSA_SHA_512, HashAlgorithm.sha512);
+        addSigHashAlg(h, EACObjectIdentifiers.id_TA_RSA_v1_5_SHA_1, HashAlgorithm.sha1);
+        addSigHashAlg(h, EACObjectIdentifiers.id_TA_RSA_v1_5_SHA_256, HashAlgorithm.sha256);
+        addSigHashAlg(h, EACObjectIdentifiers.id_TA_RSA_PSS_SHA_1, HashAlgorithm.sha1);
+        addSigHashAlg(h, EACObjectIdentifiers.id_TA_RSA_PSS_SHA_256, HashAlgorithm.sha256);
+
+        addSigHashAlg(h, BSIObjectIdentifiers.ecdsa_plain_SHA1, HashAlgorithm.sha1);
+        addSigHashAlg(h, BSIObjectIdentifiers.ecdsa_plain_SHA224, HashAlgorithm.sha224);
+        addSigHashAlg(h, BSIObjectIdentifiers.ecdsa_plain_SHA256, HashAlgorithm.sha256);
+        addSigHashAlg(h, BSIObjectIdentifiers.ecdsa_plain_SHA384, HashAlgorithm.sha384);
+        addSigHashAlg(h, BSIObjectIdentifiers.ecdsa_plain_SHA512, HashAlgorithm.sha512);
+
+        return h;
+    }
+
     public static final byte[] EMPTY_BYTES = new byte[0];
     public static final short[] EMPTY_SHORTS = new short[0];
     public static final int[] EMPTY_INTS = new int[0];
@@ -1074,6 +1132,38 @@ public class TlsUtils
         System.arraycopy(a, 0, c, 0, a.length);
         System.arraycopy(b, 0, c, a.length, b.length);
         return c;
+    }
+
+    static byte[] calculateEndPointHash(TlsContext context, String sigAlgOID, byte[] enc)
+    {
+        return calculateEndPointHash(context, sigAlgOID, enc, 0, enc.length);
+    }
+
+    static byte[] calculateEndPointHash(TlsContext context, String sigAlgOID, byte[] enc, int encOff, int encLen)
+    {
+        if (sigAlgOID != null)
+        {
+            Short hashAlgObj = (Short)sigHashAlgs.get(sigAlgOID);
+            if (hashAlgObj != null)
+            {
+                short hashAlg = hashAlgObj.shortValue();
+                switch (hashAlg)
+                {
+                case HashAlgorithm.md5:
+                case HashAlgorithm.sha1:
+                    hashAlg = HashAlgorithm.sha256;
+                    break;
+                }
+
+                TlsHash hash = context.getCrypto().createHash(hashAlg);
+                if (hash != null)
+                {                
+                    hash.update(enc, encOff, encLen);
+                    return hash.calculateHash();
+                }
+            }
+        }
+        return EMPTY_BYTES;
     }
 
     static TlsSecret calculateMasterSecret(TlsContext context, TlsSecret preMasterSecret)
@@ -2946,5 +3036,80 @@ public class TlsUtils
         checkTlsFeatures(serverCertificate, clientExtensions, serverExtensions);
         keyExchange.processServerCertificate(serverCertificate);
         clientAuthentication.notifyServerCertificate(new TlsServerCertificateImpl(serverCertificate, serverCertificateStatus));
+    }
+
+    static CertificateRequest validateCertificateRequest(CertificateRequest certificateRequest, TlsKeyExchange keyExchange)
+        throws IOException
+    {
+        short[] validClientCertificateTypes = keyExchange.getClientCertificateTypes();
+        if (validClientCertificateTypes == null || validClientCertificateTypes.length < 1)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        certificateRequest = normalizeCertificateRequest(certificateRequest, validClientCertificateTypes);
+        if (certificateRequest == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        return certificateRequest;
+    }
+
+    static CertificateRequest normalizeCertificateRequest(CertificateRequest certificateRequest, short[] validClientCertificateTypes)
+    {
+        if (containsAll(validClientCertificateTypes, certificateRequest.getCertificateTypes()))
+        {
+            return certificateRequest;
+        }
+
+        short[] retained = retainAll(certificateRequest.getCertificateTypes(), validClientCertificateTypes);
+        if (retained.length < 1)
+        {
+            return null;
+        }
+
+        return new CertificateRequest(retained, certificateRequest.getSupportedSignatureAlgorithms(),
+            certificateRequest.getCertificateAuthorities());
+    }
+
+    static boolean containsAll(short[] container, short[] elements)
+    {
+        for (int i = 0; i < elements.length; ++i)
+        {
+            if (!Arrays.contains(container, elements[i]))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static short[] retainAll(short[] retainer, short[] elements)
+    {
+        short[] retained = new short[Math.min(retainer.length, elements.length)];
+
+        int count = 0;
+        for (int i = 0; i < elements.length; ++i)
+        {
+            if (Arrays.contains(retainer, elements[i]))
+            {
+                retained[count++] = elements[i];
+            }
+        }
+
+        return truncate(retained, count);
+    }
+
+    static short[] truncate(short[] a, int n)
+    {
+        if (n < a.length)
+        {
+            return a;
+        }
+
+        short[] t = new short[n];
+        System.arraycopy(a, 0,  t, 0, n);
+        return t;
     }
 }

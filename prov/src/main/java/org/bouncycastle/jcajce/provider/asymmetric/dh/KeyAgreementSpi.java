@@ -5,6 +5,8 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -16,9 +18,17 @@ import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.crypto.DerivationFunction;
+import org.bouncycastle.crypto.agreement.DHUnifiedAgreement;
+import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
 import org.bouncycastle.crypto.agreement.kdf.DHKEKGenerator;
+import org.bouncycastle.crypto.params.DHParameters;
+import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
+import org.bouncycastle.crypto.params.DHPublicKeyParameters;
+import org.bouncycastle.crypto.params.DHUPrivateParameters;
+import org.bouncycastle.crypto.params.DHUPublicParameters;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAgreementSpi;
+import org.bouncycastle.jcajce.spec.DHUParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 
 /**
@@ -32,15 +42,19 @@ public class KeyAgreementSpi
     private static final BigInteger ONE = BigInteger.valueOf(1);
     private static final BigInteger TWO = BigInteger.valueOf(2);
 
+    private final DHUnifiedAgreement agreement;
+
+    private DHUParameterSpec dheParameters;
+
     private BigInteger      x;
     private BigInteger      p;
     private BigInteger      g;
 
-    private BigInteger     result;
+    private byte[]          result;
 
     public KeyAgreementSpi()
     {
-        super("Diffie-Hellman", null);
+        this("Diffie-Hellman", null);
     }
 
     public KeyAgreementSpi(
@@ -48,6 +62,16 @@ public class KeyAgreementSpi
         DerivationFunction kdf)
     {
         super(kaAlgorithm, kdf);
+        this.agreement = null;
+    }
+
+    public KeyAgreementSpi(
+        String kaAlgorithm,
+        DHUnifiedAgreement agreement,
+        DerivationFunction kdf)
+    {
+        super(kaAlgorithm, kdf);
+        this.agreement = agreement;
     }
 
     protected byte[] bigIntToBytes(
@@ -111,18 +135,39 @@ public class KeyAgreementSpi
             throw new InvalidKeyException("Invalid DH PublicKey");
         }
 
-        result = peerY.modPow(x, p);
-        if (result.compareTo(ONE) == 0)
+        if (agreement != null)
         {
-            throw new InvalidKeyException("Shared key can't be 1");
-        }
+            if (!lastPhase)
+            {
+                throw new IllegalStateException("unified Diffie-Hellman can use only two key pairs");
+            }
 
-        if (lastPhase)
-        {
+            DHPublicKeyParameters staticKey = generatePublicKeyParameter((PublicKey)key);
+            DHPublicKeyParameters ephemKey = generatePublicKeyParameter(dheParameters.getOtherPartyEphemeralKey());
+
+            DHUPublicParameters pKey = new DHUPublicParameters(staticKey, ephemKey);
+
+            result = agreement.calculateAgreement(pKey);
+
             return null;
         }
+        else
+        {
+            BigInteger res = peerY.modPow(x, p);
+            if (res.compareTo(ONE) == 0)
+            {
+                throw new InvalidKeyException("Shared key can't be 1");
+            }
 
-        return new BCDHPublicKey(result, pubKey.getParams());
+            result = bigIntToBytes(res);
+
+            if (lastPhase)
+            {
+                return null;
+            }
+
+            return new BCDHPublicKey(res, pubKey.getParams());
+        }
     }
 
     protected byte[] engineGenerateSecret() 
@@ -158,12 +203,10 @@ public class KeyAgreementSpi
             throw new IllegalStateException("Diffie-Hellman not initialised.");
         }
 
-        byte[] res = bigIntToBytes(result);
-
         // for JSSE compatibility
         if (algorithm.equals("TlsPremasterSecret"))
         {
-            return new SecretKeySpec(trimZeroes(res), algorithm);
+            return new SecretKeySpec(trimZeroes(result), algorithm);
         }
 
         return super.engineGenerateSecret(algorithm);
@@ -189,11 +232,33 @@ public class KeyAgreementSpi
 
                 this.p = p.getP();
                 this.g = p.getG();
+                this.dheParameters = null;
+                this.ukmParameters = null;
+            }
+            else if (params instanceof DHUParameterSpec)
+            {
+                this.p = privKey.getParams().getP();
+                this.g = privKey.getParams().getG();
+                this.dheParameters = (DHUParameterSpec)params;
+                this.ukmParameters = ((DHUParameterSpec)params).getUserKeyingMaterial();
+
+                if (dheParameters.getEphemeralPublicKey() != null)
+                {
+                    agreement.init(new DHUPrivateParameters(generatePrivateKeyParameter(privKey),
+                        generatePrivateKeyParameter(dheParameters.getEphemeralPrivateKey()),
+                        generatePublicKeyParameter(dheParameters.getEphemeralPublicKey())));
+                }
+                else
+                {
+                    agreement.init(new DHUPrivateParameters(generatePrivateKeyParameter(privKey),
+                            generatePrivateKeyParameter(dheParameters.getEphemeralPrivateKey())));
+                }
             }
             else if (params instanceof UserKeyingMaterialSpec)
             {
                 this.p = privKey.getParams().getP();
                 this.g = privKey.getParams().getG();
+                this.dheParameters = null;
                 this.ukmParameters = ((UserKeyingMaterialSpec)params).getUserKeyingMaterial();
             }
             else
@@ -207,7 +272,8 @@ public class KeyAgreementSpi
             this.g = privKey.getParams().getG();
         }
 
-        this.x = this.result = privKey.getX();
+        this.x = privKey.getX();
+        this.result = bigIntToBytes(x);
     }
 
     protected void engineInit(
@@ -224,12 +290,61 @@ public class KeyAgreementSpi
 
         this.p = privKey.getParams().getP();
         this.g = privKey.getParams().getG();
-        this.x = this.result = privKey.getX();
+        this.x = privKey.getX();
+        this.result = bigIntToBytes(x);
     }
 
     protected byte[] calcSecret()
     {
-        return bigIntToBytes(result);
+        return result;
+    }
+
+    private DHPrivateKeyParameters generatePrivateKeyParameter(PrivateKey privKey)
+        throws InvalidKeyException
+    {
+        if (privKey instanceof DHPrivateKey)
+        {
+            if (privKey instanceof BCDHPrivateKey)
+            {
+                return ((BCDHPrivateKey)privKey).engineGetKeyParameters();
+            }
+            else
+            {
+                DHPrivateKey pub = (DHPrivateKey)privKey;
+
+                DHParameterSpec params = pub.getParams();
+                return new DHPrivateKeyParameters(pub.getX(),
+                            new DHParameters(params.getP(), params.getG(), null, params.getL()));
+            }
+        }
+        else
+        {
+            throw new InvalidKeyException("private key not a DHPrivateKey");
+        }
+    }
+
+    private DHPublicKeyParameters generatePublicKeyParameter(PublicKey pubKey)
+        throws InvalidKeyException
+    {
+        if (pubKey instanceof DHPublicKey)
+        {
+            if (pubKey instanceof BCDHPublicKey)
+            {
+                return ((BCDHPublicKey)pubKey).engineGetKeyParameters();
+            }
+            else
+            {
+                DHPublicKey pub = (DHPublicKey)pubKey;
+
+                DHParameterSpec params = pub.getParams();
+                return new DHPublicKeyParameters(pub.getY(),
+                            new DHParameters(params.getP(), params.getG(), null, params.getL()));
+            }
+        }
+        else
+        {
+            throw new InvalidKeyException("public key not a DHPublicKey");
+        }
     }
 
     public static class DHwithRFC2631KDF
@@ -238,6 +353,52 @@ public class KeyAgreementSpi
         public DHwithRFC2631KDF()
         {
             super("DHwithRFC2631KDF", new DHKEKGenerator(DigestFactory.createSHA1()));
+        }
+    }
+
+
+    public static class DHUwithSHA1CKDF
+        extends KeyAgreementSpi
+    {
+        public DHUwithSHA1CKDF()
+        {
+            super("DHUwithSHA1CKDF", new DHUnifiedAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA1()));
+        }
+    }
+
+    public static class DHUwithSHA224CKDF
+        extends KeyAgreementSpi
+    {
+        public DHUwithSHA224CKDF()
+        {
+            super("DHUwithSHA224CKDF", new DHUnifiedAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA224()));
+        }
+    }
+
+    public static class DHUwithSHA256CKDF
+        extends KeyAgreementSpi
+    {
+        public DHUwithSHA256CKDF()
+        {
+            super("DHUwithSHA256CKDF", new DHUnifiedAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA256()));
+        }
+    }
+
+    public static class DHUwithSHA384CKDF
+        extends KeyAgreementSpi
+    {
+        public DHUwithSHA384CKDF()
+        {
+            super("DHUwithSHA384CKDF", new DHUnifiedAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA384()));
+        }
+    }
+
+    public static class DHUwithSHA512CKDF
+        extends KeyAgreementSpi
+    {
+        public DHUwithSHA512CKDF()
+        {
+            super("DHUwithSHA512CKDF", new DHUnifiedAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA512()));
         }
     }
 }

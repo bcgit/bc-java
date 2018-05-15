@@ -4,6 +4,7 @@ import java.security.AccessController;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.PrivilegedAction;
+import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.X509Certificate;
@@ -80,15 +81,19 @@ public class CipherSuitesTestSuite extends TestSuite
 
     public static Test suite() throws Exception
     {
-        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
-        {
-            Security.addProvider(new BouncyCastleProvider());
-        }
-        if (Security.getProvider(BouncyCastleJsseProvider.PROVIDER_NAME) == null)
-        {
-            Security.addProvider(new BouncyCastleJsseProvider());
-        }
+        String javaVersion = System.getProperty("java.version");
+        boolean oldJDK = javaVersion.startsWith("1.5") || javaVersion.startsWith("1.6");
 
+        Provider bc = new BouncyCastleProvider();
+        Provider bcjsse = oldJDK ? new BouncyCastleJsseProvider(bc) : new BouncyCastleJsseProvider();
+
+        Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
+        Security.insertProviderAt(bc, 1);
+
+        Security.removeProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
+        Security.insertProviderAt(bcjsse, 2);
+
+        
         CipherSuitesTestSuite testSuite = new CipherSuitesTestSuite();
 
         char[] serverPassword = "serverPassword".toCharArray();

@@ -1,4 +1,4 @@
-package org.bouncycastle.pkcs;
+package org.bouncycastle.crypto.util;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 

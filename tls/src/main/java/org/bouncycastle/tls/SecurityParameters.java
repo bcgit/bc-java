@@ -16,9 +16,11 @@ public class SecurityParameters
     byte[] sessionHash = null;
     byte[] pskIdentity = null;
     byte[] srpIdentity = null;
+    byte[] tlsServerEndPoint = null;
     byte[] tlsUnique = null;
     boolean encryptThenMAC = false;
     boolean extendedMasterSecret = false;
+    boolean extendedPadding = false;
     boolean truncatedHMac = false;
 
     void clear()
@@ -113,6 +115,11 @@ public class SecurityParameters
         return srpIdentity;
     }
 
+    public byte[] getTLSServerEndPoint()
+    {
+        return tlsServerEndPoint;
+    }
+
     public byte[] getTLSUnique()
     {
         return tlsUnique;
@@ -126,6 +133,11 @@ public class SecurityParameters
     public boolean isExtendedMasterSecret()
     {
         return extendedMasterSecret;
+    }
+
+    public boolean isExtendedPadding()
+    {
+        return extendedPadding;
     }
 
     public boolean isTruncatedHMac()

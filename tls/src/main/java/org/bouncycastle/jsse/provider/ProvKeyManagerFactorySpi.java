@@ -11,6 +11,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactorySpi;
@@ -20,6 +21,8 @@ import javax.net.ssl.ManagerFactoryParameters;
 class ProvKeyManagerFactorySpi
     extends KeyManagerFactorySpi
 {
+    private static Logger LOG = Logger.getLogger(ProvKeyManagerFactorySpi.class.getName());
+
     // at the moment we're only accepting X.509/PKCS#8 key material so there is only one key manager needed
     KeyManager keyManager;
 
@@ -63,12 +66,14 @@ class ProvKeyManagerFactorySpi
                 if (ksPath == null)
                 {
                     ks.load(null, null);
+                    LOG.info("Initialized with empty key store");
                 }
                 else
                 {
                     InputStream tsInput = new BufferedInputStream(new FileInputStream(ksPath));
                     ks.load(tsInput, ksPassword);
                     tsInput.close();
+                    LOG.info("Initialized with key store at path: " + ksPath);
                 }
             }
 

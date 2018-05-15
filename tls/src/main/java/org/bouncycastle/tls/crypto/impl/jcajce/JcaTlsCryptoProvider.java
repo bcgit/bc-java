@@ -65,17 +65,14 @@ public class JcaTlsCryptoProvider
         {
             if (random == null)
             {
-                SecureRandom keyRandom;
                 if (helper instanceof DefaultJcaJceHelper)
                 {
-                    keyRandom = SecureRandom.getInstance("DEFAULT");
+                    random = SecureRandom.getInstance("DEFAULT");
                 }
                 else
                 {
-                    keyRandom = SecureRandom.getInstance("DEFAULT", helper.createDigest("SHA-512").getProvider());
+                    random = SecureRandom.getInstance("DEFAULT", helper.createDigest("SHA-512").getProvider());
                 }
-
-                return create(keyRandom, new NonceEntropySource(helper, keyRandom));
             }
 
             return create(random, new NonceEntropySource(helper, random));
@@ -132,7 +129,7 @@ public class JcaTlsCryptoProvider
             private final byte[] seed;
             private final byte[] state;
 
-            public NonceEntropySourceSpi(SecureRandom source, MessageDigest digest)
+            NonceEntropySourceSpi(SecureRandom source, MessageDigest digest)
             {
                 this.source = source;
                 this.digest = digest;
@@ -141,56 +138,46 @@ public class JcaTlsCryptoProvider
                 this.state = new byte[seed.length];
             }
 
-            @Override
             protected void engineSetSeed(byte[] bytes)
             {
-                digest.update(seed, 0, seed.length);
-                digest.update(bytes, 0, bytes.length);
-
-                try
+                synchronized (digest)
                 {
-                    digest.digest(seed, 0, seed.length);
-                }
-                catch (DigestException e)
-                {
-                    throw new IllegalStateException("unable to generate nonce data: " + e.getMessage(), e);
+                    runDigest(seed, bytes, seed);
                 }
             }
 
-            @Override
             protected void engineNextBytes(byte[] bytes)
             {
-                int stateOff = 0;
-
-                generateState();
-
-                for (int i = 0; i != bytes.length; i++)
+                synchronized (digest)
                 {
-                    if (stateOff == state.length)
+                    int stateOff = state.length;
+    
+                    for (int i = 0; i != bytes.length; i++)
                     {
-                        generateState();
-                        stateOff = 0;
+                        if (stateOff == state.length)
+                        {
+                            source.nextBytes(state);
+                            runDigest(seed, state, state);
+                            stateOff = 0;
+                        }
+                        bytes[i] = state[stateOff++];
                     }
-                    bytes[i] = state[stateOff++];
                 }
             }
 
-            @Override
             protected byte[] engineGenerateSeed(int seedLen)
             {
                 return source.generateSeed(seedLen);
             }
 
-            private void generateState()
+            private void runDigest(byte[] x, byte[] y, byte[] z)
             {
-                source.nextBytes(state);
-
-                digest.update(seed);
-                digest.update(state);
+                digest.update(x);
+                digest.update(y);
 
                 try
                 {
-                    digest.digest(state, 0, state.length);
+                    digest.digest(z, 0, z.length);
                 }
                 catch (DigestException e)
                 {

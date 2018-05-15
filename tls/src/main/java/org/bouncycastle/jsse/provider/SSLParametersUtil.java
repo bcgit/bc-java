@@ -3,8 +3,14 @@ package org.bouncycastle.jsse.provider;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Collection;
+import java.util.List;
 
 import javax.net.ssl.SSLParameters;
+
+import org.bouncycastle.jsse.BCSNIMatcher;
+import org.bouncycastle.jsse.BCSNIServerName;
+import org.bouncycastle.jsse.BCSSLParameters;
 
 abstract class SSLParametersUtil
 {
@@ -12,8 +18,27 @@ abstract class SSLParametersUtil
     private static final Method setAlgorithmConstraints;
     private static final Method getEndpointIdentificationAlgorithm;
     private static final Method setEndpointIdentificationAlgorithm;
+    private static final Method getServerNames;
+    private static final Method setServerNames;
+    private static final Method getSNIMatchers;
+    private static final Method setSNIMatchers;
     private static final Method getUseCipherSuitesOrder;
     private static final Method setUseCipherSuitesOrder;
+
+    private static Method findMethod(Method[] methods, String name)
+    {
+        if (methods != null)
+        {
+            for (Method m : methods)
+            {
+                if (m.getName().equals(name))
+                {
+                    return m;
+                }
+            }
+        }
+        return null;
+    }
 
     private static Class<?> getClassPrivileged(final String className)
     {
@@ -39,20 +64,20 @@ abstract class SSLParametersUtil
         });
     }
 
-    private static Method getMethodPrivileged(final Class<?> clazz, final String methodName)
+    private static Method[] getMethodsPrivileged(final Class<?> clazz)
     {
         if (clazz == null)
         {
             return null;
         }
 
-        return AccessController.doPrivileged(new PrivilegedAction<Method>()
+        return AccessController.doPrivileged(new PrivilegedAction<Method[]>()
         {
-            public Method run()
+            public Method[] run()
             {
                 try
                 {
-                    return clazz.getMethod(methodName);
+                    return clazz.getMethods();
                 }
                 catch (Exception e)
                 {
@@ -104,87 +129,198 @@ abstract class SSLParametersUtil
     {
         Class<?> sslParametersClazz = getClassPrivileged("javax.net.ssl.SSLParameters");
 
-        getAlgorithmConstraints = getMethodPrivileged(sslParametersClazz, "getAlgorithmConstraints");
-        setAlgorithmConstraints = getMethodPrivileged(sslParametersClazz, "setAlgorithmConstraints");
-        getEndpointIdentificationAlgorithm = getMethodPrivileged(sslParametersClazz, "getEndpointIdentificationAlgorithm");
-        setEndpointIdentificationAlgorithm = getMethodPrivileged(sslParametersClazz, "setEndpointIdentificationAlgorithm");
-        getUseCipherSuitesOrder = getMethodPrivileged(sslParametersClazz, "getUseCipherSuitesOrder");
-        setUseCipherSuitesOrder = getMethodPrivileged(sslParametersClazz, "setUseCipherSuitesOrder");
+        Method[] methods = getMethodsPrivileged(sslParametersClazz);
+
+        getAlgorithmConstraints = findMethod(methods, "getAlgorithmConstraints");
+        setAlgorithmConstraints = findMethod(methods, "setAlgorithmConstraints");
+        getEndpointIdentificationAlgorithm = findMethod(methods, "getEndpointIdentificationAlgorithm");
+        setEndpointIdentificationAlgorithm = findMethod(methods, "setEndpointIdentificationAlgorithm");
+        getServerNames = findMethod(methods, "getServerNames");
+        setServerNames = findMethod(methods, "setServerNames");
+        getSNIMatchers = findMethod(methods, "getSNIMatchers");
+        setSNIMatchers = findMethod(methods, "setSNIMatchers");
+        getUseCipherSuitesOrder = findMethod(methods, "getUseCipherSuitesOrder");
+        setUseCipherSuitesOrder = findMethod(methods, "setUseCipherSuitesOrder");
     }
 
-    static SSLParameters toSSLParameters(final ProvSSLParameters provSslParameters)
+    static BCSSLParameters getParameters(ProvSSLParameters prov)
     {
-        final SSLParameters r = new SSLParameters();
-        r.setCipherSuites(provSslParameters.getCipherSuites());
-        r.setProtocols(provSslParameters.getProtocols());
+        BCSSLParameters ssl = new BCSSLParameters(prov.getCipherSuites(), prov.getProtocols());
+
+        // NOTE: The client-auth setters each clear the other client-auth property, so only one can be set
+        if (prov.getNeedClientAuth())
+        {
+            ssl.setNeedClientAuth(true);
+        }
+        else if (prov.getWantClientAuth())
+        {
+            ssl.setWantClientAuth(true);
+        }
+        else
+        {
+            ssl.setWantClientAuth(false);
+        }
+
+        ssl.setServerNames(prov.getServerNames());
+        ssl.setSNIMatchers(prov.getSNIMatchers());
+
+        return ssl;
+    }
+
+    static SSLParameters getSSLParameters(ProvSSLParameters prov)
+    {
+        SSLParameters ssl = new SSLParameters(prov.getCipherSuites(), prov.getProtocols());
+
+        // NOTE: The client-auth setters each clear the other client-auth property, so only one can be set
+        if (prov.getNeedClientAuth())
+        {
+            ssl.setNeedClientAuth(true);
+        }
+        else if (prov.getWantClientAuth())
+        {
+            ssl.setWantClientAuth(true);
+        }
+        else
+        {
+            ssl.setWantClientAuth(false);
+        }
+
         // From JDK 1.7
+
         if (setAlgorithmConstraints != null)
         {
-            invokeSetterPrivileged(r, setAlgorithmConstraints, provSslParameters.getAlgorithmConstraints());
+            invokeSetterPrivileged(ssl, setAlgorithmConstraints, prov.getAlgorithmConstraints());
         }
+
         if (setEndpointIdentificationAlgorithm != null)
         {
-            invokeSetterPrivileged(r, setEndpointIdentificationAlgorithm, provSslParameters.getEndpointIdentificationAlgorithm());
+            invokeSetterPrivileged(ssl, setEndpointIdentificationAlgorithm, prov.getEndpointIdentificationAlgorithm());
         }
-        // TODO[jsse] From JDK 1.8
-//        r.setServerNames(p.getServerNames());
-//        r.setSNIMatchers(p.getSNIMatchers());
+
+        // From JDK 1.8
+
         if (setUseCipherSuitesOrder != null)
         {
-            invokeSetterPrivileged(r, setUseCipherSuitesOrder, provSslParameters.getUseCipherSuitesOrder());
+            invokeSetterPrivileged(ssl, setUseCipherSuitesOrder, prov.getUseCipherSuitesOrder());
         }
 
-        // NOTE: The client-auth setters each clear the other client-auth property, so only one can be set
-        if (provSslParameters.getNeedClientAuth())
+        if (setServerNames != null)
         {
-            r.setNeedClientAuth(true);
+            invokeSetterPrivileged(ssl, setServerNames, JsseUtils_8.exportSNIServerNames(prov.getServerNames()));
         }
-        else if (provSslParameters.getWantClientAuth())
+
+        if (setSNIMatchers != null)
         {
-            r.setWantClientAuth(true);
+            invokeSetterPrivileged(ssl, setSNIMatchers, JsseUtils_8.exportSNIMatchers(prov.getSNIMatchers()));
         }
-        else
-        {
-            r.setWantClientAuth(false);
-        }
-        return r;
+
+        return ssl;
     }
 
-    static ProvSSLParameters toProvSSLParameters(final SSLParameters sslParameters)
+    static void setParameters(ProvSSLParameters prov, BCSSLParameters ssl)
     {
-        final ProvSSLParameters r = new ProvSSLParameters();
-        r.setCipherSuites(sslParameters.getCipherSuites());
-        r.setProtocols(sslParameters.getProtocols());
-        // From JDK 1.7
-        if (getAlgorithmConstraints != null)
+        String[] cipherSuites = ssl.getCipherSuites();
+        if (cipherSuites != null)
         {
-            r.setAlgorithmConstraints(invokeGetterPrivileged(sslParameters, getAlgorithmConstraints));
+            prov.setCipherSuites(cipherSuites);
         }
-        if (getEndpointIdentificationAlgorithm != null)
+
+        String[] protocols = ssl.getProtocols();
+        if (protocols != null)
         {
-            r.setEndpointIdentificationAlgorithm((String)invokeGetterPrivileged(sslParameters, getEndpointIdentificationAlgorithm));
-        }
-        // TODO[jsse] From JDK 1.8
-//        r.setServerNames(p.getServerNames());
-//        r.setSNIMatchers(p.getSNIMatchers());
-        if (getUseCipherSuitesOrder != null)
-        {
-            r.setUseCipherSuitesOrder((Boolean)invokeGetterPrivileged(sslParameters, getUseCipherSuitesOrder));
+            prov.setProtocols(protocols);
         }
 
         // NOTE: The client-auth setters each clear the other client-auth property, so only one can be set
-        if (sslParameters.getNeedClientAuth())
+        if (ssl.getNeedClientAuth())
         {
-            r.setNeedClientAuth(true);
+            prov.setNeedClientAuth(true);
         }
-        else if (sslParameters.getWantClientAuth())
+        else if (ssl.getWantClientAuth())
         {
-            r.setWantClientAuth(true);
+            prov.setWantClientAuth(true);
         }
         else
         {
-            r.setWantClientAuth(false);
+            prov.setWantClientAuth(false);
         }
-        return r;
+
+        List<BCSNIServerName> serverNames = ssl.getServerNames();
+        if (serverNames != null)
+        {
+            prov.setServerNames(serverNames);
+        }
+
+        Collection<BCSNIMatcher> sniMatchers = ssl.getSNIMatchers();
+        if (sniMatchers != null)
+        {
+            prov.setSNIMatchers(sniMatchers);
+        }
+    }
+
+    static void setSSLParameters(ProvSSLParameters prov, SSLParameters ssl)
+    {
+        String[] cipherSuites = ssl.getCipherSuites();
+        if (cipherSuites != null)
+        {
+            prov.setCipherSuites(cipherSuites);
+        }
+
+        String[] protocols = ssl.getProtocols();
+        if (protocols != null)
+        {
+            prov.setProtocols(protocols);
+        }
+
+        // NOTE: The client-auth setters each clear the other client-auth property, so only one can be set
+        if (ssl.getNeedClientAuth())
+        {
+            prov.setNeedClientAuth(true);
+        }
+        else if (ssl.getWantClientAuth())
+        {
+            prov.setWantClientAuth(true);
+        }
+        else
+        {
+            prov.setWantClientAuth(false);
+        }
+
+        // From JDK 1.7
+
+        if (getAlgorithmConstraints != null)
+        {
+            prov.setAlgorithmConstraints(invokeGetterPrivileged(ssl, getAlgorithmConstraints));
+        }
+
+        if (getEndpointIdentificationAlgorithm != null)
+        {
+            prov.setEndpointIdentificationAlgorithm((String)invokeGetterPrivileged(ssl, getEndpointIdentificationAlgorithm));
+        }
+
+        // From JDK 1.8
+
+        if (getUseCipherSuitesOrder != null)
+        {
+            prov.setUseCipherSuitesOrder((Boolean)invokeGetterPrivileged(ssl, getUseCipherSuitesOrder));
+        }
+
+        if (getServerNames != null)
+        {
+            Object serverNames = invokeGetterPrivileged(ssl, getServerNames);
+            if (serverNames != null)
+            {
+                prov.setServerNames(JsseUtils_8.importSNIServerNames(serverNames));
+            }
+        }
+
+        if (getSNIMatchers != null)
+        {
+            Object sniMatchers = invokeGetterPrivileged(ssl, getSNIMatchers);
+            if (sniMatchers != null)
+            {
+                prov.setSNIMatchers(JsseUtils_8.importSNIMatchers(sniMatchers));
+            }
+        }
     }
 }

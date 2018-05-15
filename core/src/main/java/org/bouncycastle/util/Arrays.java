@@ -8,7 +8,7 @@ import java.util.NoSuchElementException;
  */
 public final class Arrays
 {
-    private Arrays() 
+    private Arrays()
     {
         // static class, hide constructor
     }
@@ -356,7 +356,7 @@ public final class Arrays
     }
 
     public static void fill(
-        short[] array, 
+        short[] array,
         short value)
     {
         for (int i = 0; i < array.length; i++)
@@ -374,7 +374,63 @@ public final class Arrays
             array[i] = value;
         }
     }
-    
+
+    public static void fill(
+        byte[] array,
+        int out,
+        byte value)
+    {
+        if(out < array.length)
+        {
+            for (int i = out; i < array.length; i++)
+            {
+                array[i] = value;
+            }
+        }
+    }
+
+    public static void fill(
+        int[] array,
+        int out,
+        int value)
+    {
+        if(out < array.length)
+        {
+            for (int i = out; i < array.length; i++)
+            {
+                array[i] = value;
+            }
+        }
+    }
+
+    public static void fill(
+        short[] array,
+        int out,
+        short value)
+    {
+        if(out < array.length)
+        {
+            for (int i = out; i < array.length; i++)
+            {
+                array[i] = value;
+            }
+        }
+    }
+
+    public static void fill(
+        long[] array,
+        int out,
+        long value)
+    {
+        if(out < array.length)
+        {
+            for (int i = out; i < array.length; i++)
+            {
+                array[i] = value;
+            }
+        }
+    }
+
     public static int hashCode(byte[] data)
     {
         if (data == null)
@@ -682,9 +738,9 @@ public final class Arrays
             return null;
         }
         long[] copy = new long[data.length];
-        
+
         System.arraycopy(data, 0, copy, 0, data.length);
-        
+
         return copy;
     }
 
@@ -1127,7 +1183,7 @@ public final class Arrays
 
         int p1 = 0, p2 = a.length;
         byte[] result = new byte[p2];
-        
+
         while (--p2 >= 0)
         {
             result[p2] = a[p1++];
@@ -1195,6 +1251,22 @@ public final class Arrays
         public void remove()
         {
             throw new UnsupportedOperationException("Cannot remove element from an Array.");
+        }
+    }
+
+    /**
+     * Fill input array by zeros
+     *
+     * @param array input array
+     */
+    public static void clear(byte[] array)
+    {
+        if (array != null)
+        {
+            for (int i = 0; i < array.length; i++)
+            {
+                array[i] = 0;
+            }
         }
     }
 }

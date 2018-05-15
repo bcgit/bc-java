@@ -27,11 +27,6 @@ public class ByteQueue
     }
 
     /**
-     * The initial size for our buffer.
-     */
-    private static final int DEFAULT_CAPACITY = 1024;
-
-    /**
      * The buffer where we store our data.
      */
     private byte[] databuf;
@@ -50,7 +45,7 @@ public class ByteQueue
 
     public ByteQueue()
     {
-        this(DEFAULT_CAPACITY);
+        this(0);
     }
 
     public ByteQueue(int capacity)

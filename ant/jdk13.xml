@@ -55,6 +55,7 @@
                 <exclude name="**/provider/config/PKCS12StoreParameter.java" />
             </fileset>
             <fileset dir="prov/src/main/java">
+                <exclude name="**/BCFKSStoreParameter.java" />
                 <exclude name="**/ec/ECUtils.java" />
                 <exclude name="**/ECPointUtil.java" />
                 <exclude name="**/ECNamedCurveSpec.java" />

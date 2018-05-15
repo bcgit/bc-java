@@ -8,6 +8,7 @@ import java.math.BigInteger;
 import java.security.AlgorithmParameterGenerator;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -21,6 +22,7 @@ import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECFieldFp;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
+import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.EllipticCurve;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -38,6 +40,7 @@ import javax.crypto.spec.DHPublicKeySpec;
 
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
+import org.bouncycastle.jcajce.spec.DHUParameterSpec;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
@@ -709,6 +712,275 @@ public class DHTest
         }
     }
 
+    private void testMinSpecValue()
+        throws Exception
+    {
+        BigInteger p = new BigInteger("16560215747140417249215968347342080587", 16);
+        BigInteger g = new BigInteger("1234567890", 16);
+
+        DHParameterSpec serverParam = new DHParameterSpec(p, g);
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DH", "BC");
+
+        try
+        {
+            keyGen.initialize(serverParam, new SecureRandom());
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isTrue("unsafe p value so small specific l required".equals(e.getMessage()));
+        }
+
+    }
+
+    /*
+     COUNT = 14
+     XstatCAVS = 95fc47b3c755935a5babce2738d70557a43ded59c2ef8926a04e402cdb0c97b8
+     YstatCAVS = 0b7faaefb56ea62937c2210c44feca95037d4cedfe01abd61cd8085ea195547e29aa2162951a73f9acf0f79de9da1ed587a1374d7b9c25a3ac4848a857edf28d4d6b80142871cd3fa984d673945a6ae69fbd0bc559a68330e7ba8556189216fe5d25abd8f1857baea7ab42fbdc3bb482272eca02fd0095c6b53c8d9ffb3ec172d97a3a1bde096178e2aaa3f084717f3e4530f58906f8f509533cead788b4efbb69ed78b91109965018b9a094612e60b1af470ec03565729c38e6d131eebac3483e7fdb24a7c85fd9bd362404956b928d6e1762b91b13825f7769b6e9426936c03f0328d9325f6fdd4af0b53ab1bc4201fedc5961c7f2c3a9668aa90ed2c4bb5d
+     XephemCAVS = 6044f14699de46fe870688b27d5644a78da6e0758f2c999cc5e6d80a69220e2e
+     YephemCAVS = 4a8d5a1a12cc0aeeb409e07dbffa052d289c4cb49d6550d8483fe063eee9d9faa4e918fe4daa858d535c4ed5cd270d96315db210e20b4446db4f460238b9187accc65b6d43e53b3c85eec3053c8bd675ef34dca5f6189f2233ecf0b1eda0995460ccdded4e31bf3170f9ec3941d010bbd1d7a0e017f0d43c0dd1d6435f8523babfa6599120f3cbf718e755cee86189459bcd20f52d2a0ca04bdff38e26197c211fcb64cc3d7d3f2f28ee4f7eb9dbdc84a420442b8481bfa3218f0d40c00abaedff682e7d66f6e891642bdea3e2d9c6240b768376abc50343cc69ab08b0a12cc4c6f1508444fd662c4825bd6da99eaab40ff5547aae539450062ce70b9722091b
+     XstatIUT = 133a7729c7f1c1872438738edfa44d4cf44d3356d47b73b62eab45853ebdc66d
+     YstatIUT = 21e25ee916b7b56a82f9e7622e909bef000997c44434e1149fa30cb1571500be5e61bab977d9ace85ba62a21719199b9a9747e3bcc0fa729a69c17f080633e6c1426db891721ae74b9752effe8a4b9749f8c7d8edd1f4356bab994304d3fde8223de38436a1a7ffb70371d25cf4c75df7f58cd833837318c1c2213f9a058655905d752fb637d3d7f780c3ee4a788120040424199bc99d96f3c3e56a2a9fe8d6d93e60a91b6f61a1cf0559bc68a1e33716a54fdbd2895c0d9d1f7da2cb936ff0c1bc7c60380d9cf4eaa8595366ed86a72cbd964d1e4309b2dd6efad1e944cdb92752ebe13d2e65772295fb13cd9f11d5b89253e4cc109b76d53306a6534be2641
+     XephemIUT = 412a15e0866572a825219d3eaf9a4d6c0ed855180e5bdabc90f6d1a2354c3964
+     YephemIUT = 8e235a5e20d0d1d431eb832a4309de239403a68217a595d30b2e7fd677ad5eb7a2a3cc5fb0793fe466169d8acac366a20de3863adc542a4fc6dd9dcb59126dfd0336b2c7736d26e87ad4fd84d6240e149f50ffcdaa81b60ca04a26f6335e1c41e49f183bf3a7a39ffe6bf2654874399e07d9a52fb34d08a7246929649171f6e7ceceb19016b83093a9a795245ae348346f9aa8f06380cb2b3cc9176e63e107734e23ead912e408c3085b6ba361cb66cf5b25ed03fdc6893646ea3cddd770fcb51d762a8f549b600044946c362f4dda85288fbc4499e022e2b705b4f1151d5206932da92b36c6b121e3a55a2edca4b42407021f4ea3f4748f21a36d722c086cf6
+     CCMNonce = 7def4d439a9b7a6c5700bb9168
+     OI = a1b2c3d4e543415653696412daed24199775845035176e67b0ace1b413e0
+     CAVSTag = df851c60d5336269c68e42cc0d3b6ea5
+     Z = 051f570adc0c2e26f946153f31784409102f5bd9edc2cdc466b14196b7489d2b157847fb7a13bfe89edc9712b2a161be360936802dc2c1158f0a84a2175671a4f46ed6fbadc4238244a217ed21a35e01b966b100daad49e2390e0c11525280b2ecc60ffad1e73ad12aa49e28fd9dfbf7d90ad75514c48a4c05f7bd8482929c68cc62e86424019462b1e2ef6a7a16507577ab144a89dafe57b9b0889d7afda25e62022f69220f0fb32046d0aa478bde5914177aeb4f359e790a6f9fac367f431b4e32acb8616f040c77cd99c1a666d4569c06b62faa4925f9c6f6525fe074cac972aead654c87dcc772b96992202afff62c82cc501b821bf0fd851942f0797dc98be4bdf193bc6d0d95d40146b5dad610bd4123413369686b460018918c493854a14558b302f6bc3d10109cbb549dc624448246e41a32842b1962a3b884b2eb8546f2bb51d30ceb80ae7a631f2f2fb820c7f149d5e53e2ec3d62f1ff5c6cb07f845de1b31be0e1d31143476a22952406c4fa37029b1e4d2107f5efb9df9e04ec2a4d9def274f934a0e34e22003f2142185c1f79d6058f612b1315acff738e94a18a08be36a3b327ae3e28e1c9aa96fe99cbe4fdeb0df92ff133e94929d6d50fad4d5bffe54454832125212c30dad53109e114413f954f02cfa39fcc0ef574074df2f1d6f4fcb9d99dfcbcc252ee42980f1a483508379434e1ef72358f39bb5725
+     MacData = 4b435f325f56434156536964a1b2c3d4e54a8d5a1a12cc0aeeb409e07dbffa052d289c4cb49d6550d8483fe063eee9d9faa4e918fe4daa858d535c4ed5cd270d96315db210e20b4446db4f460238b9187accc65b6d43e53b3c85eec3053c8bd675ef34dca5f6189f2233ecf0b1eda0995460ccdded4e31bf3170f9ec3941d010bbd1d7a0e017f0d43c0dd1d6435f8523babfa6599120f3cbf718e755cee86189459bcd20f52d2a0ca04bdff38e26197c211fcb64cc3d7d3f2f28ee4f7eb9dbdc84a420442b8481bfa3218f0d40c00abaedff682e7d66f6e891642bdea3e2d9c6240b768376abc50343cc69ab08b0a12cc4c6f1508444fd662c4825bd6da99eaab40ff5547aae539450062ce70b9722091b8e235a5e20d0d1d431eb832a4309de239403a68217a595d30b2e7fd677ad5eb7a2a3cc5fb0793fe466169d8acac366a20de3863adc542a4fc6dd9dcb59126dfd0336b2c7736d26e87ad4fd84d6240e149f50ffcdaa81b60ca04a26f6335e1c41e49f183bf3a7a39ffe6bf2654874399e07d9a52fb34d08a7246929649171f6e7ceceb19016b83093a9a795245ae348346f9aa8f06380cb2b3cc9176e63e107734e23ead912e408c3085b6ba361cb66cf5b25ed03fdc6893646ea3cddd770fcb51d762a8f549b600044946c362f4dda85288fbc4499e022e2b705b4f1151d5206932da92b36c6b121e3a55a2edca4b42407021f4ea3f4748f21a36d722c086cf6
+     DKM = 24a246e6cbaae19e4e8bffbe3167fbbc
+     Result = P (10 - Z value should have leading 0 nibble )
+     */
+    private void testDHUnifiedTestVector1()
+        throws Exception
+    {
+        // Test Vector from NIST sample data
+        KeyFactory dhKeyFact = KeyFactory.getInstance("DH", "BC");
+
+        DHParameterSpec dhSpec = new DHParameterSpec(
+            new BigInteger("9a076bb269abfff57c72073053190a2008c3067fdcd9712ec00ee55c8fbf22af7c454dc5f10ae224d1e29fcccb3855a2509b082b934a353c21dfa5d1212f29d24866f022873d1f0b76373d47bb345e7e74f0ffc27e7c6c149282cb68a66705412995ed7a650a784f15107ed14244563b10f61d3f998b1466c9a3dd7c48a1b92d236b99b912a25f1c5279640c29714ce2123d222a6c9775223be80c5a4e9392db9ae45027110b75703c42d53fbfc1484e84cb70cabdcdcdc55066e5c03ce13ad0d7fa3af6f49101d454d5b3b77ce4c8db5772a427af7e351cdad3d7d278f52c3f57fc9274fc101c66d829871435ea2fc1f43f0e0d556a80dba9ab4e57c7b4b5a7", 16),
+            // Q = fdd88b09ff0c6c6c334a598059c1b55396dab2de01af2e8d06481fd5cd506c71
+            new BigInteger("167f9631c8aba192976a396b9df4bca5e54d1c1400eab4bdea27b1ca957211733d847026d2b3e3ea9b4c14d13b6e59f40c0df0c80bdecafb7ac414de2f920642c60d63406d2cc999ad149d24216b08a3952b50a50a088ab747de04bb4fd26899f7052970cfd0f65002cc0639bea634ba5ac2d98170b3a1b3ab5295e9395990b57fbdaf117662a9430da6b74d4e52d3969ce385b2fb61c11febd93867f1062084ca0a62c0de17b1e7265545198355e026818c037c43535de8f0d5cf0159501bcd35a4ba8fe92041a92e85fae03a051dfb3199d9764d17a3b8968eaf32e666ae867d1d0e6178ab31985b665e3178c36565e685046cb1d0611a25b0d559cd31f818", 16));
+
+        KeyPair U1 = new KeyPair(
+            dhKeyFact.generatePublic(new DHPublicKeySpec(
+                new BigInteger("0b7faaefb56ea62937c2210c44feca95037d4cedfe01abd61cd8085ea195547e29aa2162951a73f9acf0f79de9da1ed587a1374d7b9c25a3ac4848a857edf28d4d6b80142871cd3fa984d673945a6ae69fbd0bc559a68330e7ba8556189216fe5d25abd8f1857baea7ab42fbdc3bb482272eca02fd0095c6b53c8d9ffb3ec172d97a3a1bde096178e2aaa3f084717f3e4530f58906f8f509533cead788b4efbb69ed78b91109965018b9a094612e60b1af470ec03565729c38e6d131eebac3483e7fdb24a7c85fd9bd362404956b928d6e1762b91b13825f7769b6e9426936c03f0328d9325f6fdd4af0b53ab1bc4201fedc5961c7f2c3a9668aa90ed2c4bb5d", 16),
+                dhSpec.getP(), dhSpec.getG())),
+            dhKeyFact.generatePrivate(new DHPrivateKeySpec(
+                new BigInteger("95fc47b3c755935a5babce2738d70557a43ded59c2ef8926a04e402cdb0c97b8", 16),
+                dhSpec.getP(), dhSpec.getG())));
+
+        KeyPair U2 = new KeyPair(
+            dhKeyFact.generatePublic(new DHPublicKeySpec(
+                new BigInteger("4a8d5a1a12cc0aeeb409e07dbffa052d289c4cb49d6550d8483fe063eee9d9faa4e918fe4daa858d535c4ed5cd270d96315db210e20b4446db4f460238b9187accc65b6d43e53b3c85eec3053c8bd675ef34dca5f6189f2233ecf0b1eda0995460ccdded4e31bf3170f9ec3941d010bbd1d7a0e017f0d43c0dd1d6435f8523babfa6599120f3cbf718e755cee86189459bcd20f52d2a0ca04bdff38e26197c211fcb64cc3d7d3f2f28ee4f7eb9dbdc84a420442b8481bfa3218f0d40c00abaedff682e7d66f6e891642bdea3e2d9c6240b768376abc50343cc69ab08b0a12cc4c6f1508444fd662c4825bd6da99eaab40ff5547aae539450062ce70b9722091b", 16),
+                dhSpec.getP(), dhSpec.getG())),
+            dhKeyFact.generatePrivate(new DHPrivateKeySpec(
+                new BigInteger("6044f14699de46fe870688b27d5644a78da6e0758f2c999cc5e6d80a69220e2e", 16),
+                dhSpec.getP(), dhSpec.getG())));
+
+        KeyPair V1 = new KeyPair(
+            dhKeyFact.generatePublic(new DHPublicKeySpec(
+                new BigInteger("21e25ee916b7b56a82f9e7622e909bef000997c44434e1149fa30cb1571500be5e61bab977d9ace85ba62a21719199b9a9747e3bcc0fa729a69c17f080633e6c1426db891721ae74b9752effe8a4b9749f8c7d8edd1f4356bab994304d3fde8223de38436a1a7ffb70371d25cf4c75df7f58cd833837318c1c2213f9a058655905d752fb637d3d7f780c3ee4a788120040424199bc99d96f3c3e56a2a9fe8d6d93e60a91b6f61a1cf0559bc68a1e33716a54fdbd2895c0d9d1f7da2cb936ff0c1bc7c60380d9cf4eaa8595366ed86a72cbd964d1e4309b2dd6efad1e944cdb92752ebe13d2e65772295fb13cd9f11d5b89253e4cc109b76d53306a6534be2641", 16),
+                dhSpec.getP(), dhSpec.getG())),
+            dhKeyFact.generatePrivate(new DHPrivateKeySpec(
+                new BigInteger("133a7729c7f1c1872438738edfa44d4cf44d3356d47b73b62eab45853ebdc66d", 16),
+                dhSpec.getP(), dhSpec.getG())));
+
+        KeyPair V2 = new KeyPair(
+            dhKeyFact.generatePublic(new DHPublicKeySpec(
+                new BigInteger("8e235a5e20d0d1d431eb832a4309de239403a68217a595d30b2e7fd677ad5eb7a2a3cc5fb0793fe466169d8acac366a20de3863adc542a4fc6dd9dcb59126dfd0336b2c7736d26e87ad4fd84d6240e149f50ffcdaa81b60ca04a26f6335e1c41e49f183bf3a7a39ffe6bf2654874399e07d9a52fb34d08a7246929649171f6e7ceceb19016b83093a9a795245ae348346f9aa8f06380cb2b3cc9176e63e107734e23ead912e408c3085b6ba361cb66cf5b25ed03fdc6893646ea3cddd770fcb51d762a8f549b600044946c362f4dda85288fbc4499e022e2b705b4f1151d5206932da92b36c6b121e3a55a2edca4b42407021f4ea3f4748f21a36d722c086cf6", 16),
+                dhSpec.getP(), dhSpec.getG())),
+            dhKeyFact.generatePrivate(new DHPrivateKeySpec(
+                new BigInteger("412a15e0866572a825219d3eaf9a4d6c0ed855180e5bdabc90f6d1a2354c3964", 16),
+                dhSpec.getP(), dhSpec.getG())));
+
+        byte[] x = calculateUnifiedAgreement("DHUwithSHA256CKDF", "AES[128]", U1, U2, V1, V2,
+            Hex.decode("a1b2c3d4e543415653696412daed24199775845035176e67b0ace1b413e0"));
+
+        if (x == null
+            || !areEqual(Hex.decode("24a246e6cbaae19e4e8bffbe3167fbbc"), x))
+        {
+            fail("DH unified Test Vector #1 agreement failed, got: " + Hex.toHexString(x));
+        }
+    }
+
+    private void testECUnifiedTestVector1()
+        throws Exception
+    {
+        // Test Vector from NIST sample data
+
+        ECNamedCurveParameterSpec namedSpec = ECNamedCurveTable.getParameterSpec("P-224");
+        KeyFactory ecKeyFact = KeyFactory.getInstance("EC", "BC");
+
+        EllipticCurve ecCurve = new EllipticCurve(
+            new ECFieldFp(namedSpec.getCurve().getField().getCharacteristic()),
+            namedSpec.getCurve().getA().toBigInteger(), namedSpec.getCurve().getB().toBigInteger());
+        ECParameterSpec ecSpec = new ECParameterSpec(ecCurve,
+            new ECPoint(namedSpec.getG().getAffineXCoord().toBigInteger(), namedSpec.getG().getAffineYCoord().toBigInteger()),
+            namedSpec.getN(), namedSpec.getH().intValue());
+
+        System.err.println(ECPointUtil.decodePoint(ecCurve, Hex.decode("040784e946ef1fae0cfe127042a310a018ba639d3f6b41f265904f0a7b21b7953efe638b45e6c0c0d34a883a510ce836d143d831daa9ce8a12")).getAffineX().toString(16));
+        KeyPair U1 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("040784e946ef1fae0cfe127042a310a018ba639d3f6b41f265904f0a7b21b7953efe638b45e6c0c0d34a883a510ce836d143d831daa9ce8a12")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("86d1735ca357890aeec8eccb4859275151356ecee9f1b2effb76b092", 16), ecSpec)));
+
+        KeyPair U2 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("04b33713dc0d56215be26ee6c5e60ad36d12e02e78529ae3ff07873c6b39598bda41c1cf86ee3981f40e102333c15fef214bda034291c1aca6")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("764010b3137ef8d34a3552955ada572a4fa1bb1f5289f27c1bf18344", 16), ecSpec)));
+
+        KeyPair V1 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("0484c22d9575d09e280613c8758467f84869c6eede4f6c1b644517d6a72c4fc5c68fa12b4c259032fc5949c630259948fca38fb3342d9cb0a8")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("e37964e391f5058fb43435352a9913438a1ec10831f755273285230a", 16), ecSpec)));
+
+        KeyPair V2 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("044b917e9ce693b277c8095e535ea81c2dea089446a8c55438eda750fb6170c85b86390481fff2dff94b7dff3e42d35ff623921cb558967b48")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("ab40d67f59ba7265d8ad33ade8f704d13a7ba2298b69172a7cd02515", 16), ecSpec)));
+
+        byte[] x = calculateUnifiedAgreement("ECCDHUwithSHA224CKDF", "AES[128]", U1, U2, V1, V2,
+            Hex.decode("a1b2c3d4e54341565369643dba868da77897b6552f6f767ad873b232aa4a810a91863ec3dc86db53359a772dd76933"));
+
+        if (x == null
+            || !areEqual(Hex.decode("63b7ba5699927cb08e058b76af7fc0b0"), x))
+        {
+            fail("EC unified Test Vector #1 agreement failed, got: " + Hex.toHexString(x));
+        }
+    }
+
+    private void testECUnifiedTestVector2()
+        throws Exception
+    {
+        // Test Vector from NIST sample data
+
+        ECNamedCurveParameterSpec namedSpec = ECNamedCurveTable.getParameterSpec("P-256");
+        KeyFactory ecKeyFact = KeyFactory.getInstance("EC", "BC");
+
+        EllipticCurve ecCurve = new EllipticCurve(
+            new ECFieldFp(namedSpec.getCurve().getField().getCharacteristic()),
+            namedSpec.getCurve().getA().toBigInteger(), namedSpec.getCurve().getB().toBigInteger());
+        ECParameterSpec ecSpec = new ECParameterSpec(ecCurve,
+            new ECPoint(namedSpec.getG().getAffineXCoord().toBigInteger(), namedSpec.getG().getAffineYCoord().toBigInteger()),
+            namedSpec.getN(), namedSpec.getH().intValue());
+
+        KeyPair U1 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("047581b35964a983414ebdd56f4ebb1ddcad10881b200666a51ae41306e1ecf1db368468a5e8a65ca10ccea526472c8982db68316c468800e171c11f4ee694fce4")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("2eb7ef76d4936123b6f13035045aedf45c1c7731f35d529d25941926b5bb38bb", 16), ecSpec)));
+
+        KeyPair U2 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("045b1e4cdeb0728333c0a51631b1a75269e4878d10732f4cb94d600483db4bd9ee625c374592c3db7e9f8b4f2c91a0098a158bc37b922e4243bd9cbdefe67d6ab0")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("78acde388a022261767e6b3dd6dd016c53b70a084260ec87d395aec761c082de", 16), ecSpec)));
+
+        KeyPair V1 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("04e4916d616803ff1bd9569f35b7d06f792f19c1fb4e6fa916d686c027a17d8dffd570193d8e101624ac2ea0bcb762d5613f05452670f09af66ef70861fb528868")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("9c85898640a1b1de8ce7f557492dc1460530b9e17afaaf742eb953bb644e9c5a", 16), ecSpec)));
+
+        KeyPair V2 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("04d1cd23c29d0fc865c316d44a1fd5adb6605ee47c9ddfec3a9b0a5e532d52704e74ff5d149aeb50856fefb38d5907b6dbb580fe6dc166bcfcbee4eb376d77e95c")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("d6e11d5d3b85b201b8f4c12dadfad3000e267961a806a0658a2b859d44389599", 16), ecSpec)));
+
+        byte[] x = calculateUnifiedAgreement("ECCDHUwithSHA256CKDF", "AES[128]",
+            U1, U2, V1, V2, Hex.decode("a1b2c3d4e54341565369649018558dc958160b4b1d240d06ea07c6f321a752496c1a3ff45cbb4b43507c6fe1997d1d"));
+
+        if (x == null
+            || !areEqual(Hex.decode("221d252072d6f85b8298eab6fc38634e"), x))
+        {
+            fail("EC unified Test Vector #2 agreement failed");
+        }
+    }
+
+    private void testECUnifiedTestVector3()
+        throws Exception
+    {
+        // Test Vector from NIST sample data - One pass unified.
+
+        ECNamedCurveParameterSpec namedSpec = ECNamedCurveTable.getParameterSpec("P-224");
+        KeyFactory ecKeyFact = KeyFactory.getInstance("EC", "BC");
+
+        EllipticCurve ecCurve = new EllipticCurve(
+            new ECFieldFp(namedSpec.getCurve().getField().getCharacteristic()),
+            namedSpec.getCurve().getA().toBigInteger(), namedSpec.getCurve().getB().toBigInteger());
+        ECParameterSpec ecSpec = new ECParameterSpec(ecCurve,
+            new ECPoint(namedSpec.getG().getAffineXCoord().toBigInteger(), namedSpec.getG().getAffineYCoord().toBigInteger()),
+            namedSpec.getN(), namedSpec.getH().intValue());
+
+        KeyPair U1 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("04030f136fa7fef90d185655ed1c6d46bacdb82001714e682cc80ca6b2d7c62e2f2e19d11755dba4aafd7e1ee5fda3e5f4d0af9a3ad773c38a")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("6fc464c741f52b2a2e4cde35673b87fdd0f52caf4e716230b11570ba", 16), ecSpec)));
+
+        KeyPair V1 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("048f87f5f8a632c9a3348ea85b596c01c12ca29ca71583dcdc27ff9766351416a707b95fae67d56be5119b460a446b6a02db20a13bbc8ed13b")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("f5cb57a08a6949d3f2c2cc02e7c2252cecb3ebb8b3572943ceb407c7", 16), ecSpec)));
+
+        KeyPair V2 = new KeyPair(
+            ecKeyFact.generatePublic(new ECPublicKeySpec(
+                ECPointUtil.decodePoint(ecCurve, Hex.decode("046fcc7d01f905b279e9413645d24cc30d293b98b0ea7bfe87124e4951eba04a74817f596a67c0bfe3b4f4cee99537a2ac1c6470dd006be8ca")), ecSpec)),
+            ecKeyFact.generatePrivate(new ECPrivateKeySpec(
+                new BigInteger("505b6f372725e293cda07bf0dd14dabe2faf0edaa5ab1c7d187a6138", 16), ecSpec)));
+
+        byte[] x = calculateUnifiedAgreement("ECCDHUwithSHA224CKDF", "AES[128]", U1, U1, V1, V2,
+            Hex.decode("a1b2c3d4e5434156536964b62d3197031c27af0e3b45228a8768efcc0b39a375f8f61852f8765b80c067eed4e4db30"));
+
+        if (x == null
+            || !areEqual(Hex.decode("0c96fa268b89cf664392621ad5e174a6"), x))
+        {
+            fail("EC unified Test Vector #3 agreement failed, got: " + Hex.toHexString(x));
+        }
+    }
+
+    private byte[] calculateUnifiedAgreement(
+        String alg,
+        String keyAlg,
+        KeyPair U1,
+        KeyPair U2,
+        KeyPair V1,
+        KeyPair V2,
+        byte[] oi)
+        throws Exception
+    {
+        KeyAgreement u = KeyAgreement.getInstance(alg, "BC");
+
+        u.init(U1.getPrivate(), new DHUParameterSpec(U2, V2.getPublic(), oi));
+
+        u.doPhase(V1.getPublic(), true);
+
+        SecretKey uk = u.generateSecret(keyAlg);
+        byte[] ux = uk.getEncoded();
+
+        KeyAgreement v = KeyAgreement.getInstance(alg, "BC");
+
+        v.init(V1.getPrivate(), new DHUParameterSpec(V2, U2.getPublic(), oi));
+
+        v.doPhase(U1.getPublic(), true);
+
+        SecretKey vk = v.generateSecret(keyAlg);
+        byte[] vx = vk.getEncoded();
+
+        if (areEqual(ux, vx))
+        {
+            return ux;
+        }
+
+        return null;
+    }
+
     private void testExceptions()
         throws Exception
     {
@@ -1120,6 +1392,14 @@ public class DHTest
         testSmallSecret();
         testConfig();
         testSubgroupConfinement();
+
+        testECUnifiedTestVector1();
+        testECUnifiedTestVector2();
+        testECUnifiedTestVector3();
+
+        testDHUnifiedTestVector1();
+
+        testMinSpecValue();
     }
 
     public static void main(

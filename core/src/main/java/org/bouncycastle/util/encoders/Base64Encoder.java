@@ -149,11 +149,27 @@ public class Base64Encoder
             
             end--;
         }
+
+        // empty data!
+        if (end == 0)
+        {
+            return 0;
+        }
         
-        int  i = off;
-        int  finish = end - 4;
-        
-        i = nextI(data, i, finish);
+        int  i = 0;
+        int  finish = end;
+
+        while (finish > off && i != 4)
+        {
+            if (!ignore((char)data[finish - 1]))
+            {
+                i++;
+            }
+
+            finish--;
+        }
+
+        i = nextI(data, off, finish);
 
         while (i < finish)
         {
@@ -185,8 +201,13 @@ public class Base64Encoder
             i = nextI(data, i, finish);
         }
 
-        outLen += decodeLastBlock(out, (char)data[end - 4], (char)data[end - 3], (char)data[end - 2], (char)data[end - 1]);
-        
+        int e0 = nextI(data, i, end);
+        int e1 = nextI(data, e0 + 1, end);
+        int e2 = nextI(data, e1 + 1, end);
+        int e3 = nextI(data, e2 + 1, end);
+
+        outLen += decodeLastBlock(out, (char)data[e0], (char)data[e1], (char)data[e2], (char)data[e3]);
+
         return outLen;
     }
 
@@ -224,11 +245,27 @@ public class Base64Encoder
             
             end--;
         }
+
+        // empty data!
+        if (end == 0)
+        {
+            return 0;
+        }
         
         int  i = 0;
-        int  finish = end - 4;
+        int  finish = end;
+
+        while (finish > 0 && i != 4)
+        {
+            if (!ignore(data.charAt(finish - 1)))
+            {
+                i++;
+            }
+
+            finish--;
+        }
         
-        i = nextI(data, i, finish);
+        i = nextI(data, 0, finish);
         
         while (i < finish)
         {
@@ -260,8 +297,13 @@ public class Base64Encoder
             i = nextI(data, i, finish);
         }
 
-        length += decodeLastBlock(out, data.charAt(end - 4), data.charAt(end - 3), data.charAt(end - 2), data.charAt(end - 1));
+        int e0 = nextI(data, i, end);
+        int e1 = nextI(data, e0 + 1, end);
+        int e2 = nextI(data, e1 + 1, end);
+        int e3 = nextI(data, e2 + 1, end);
 
+        length += decodeLastBlock(out, data.charAt(e0), data.charAt(e1), data.charAt(e2), data.charAt(e3));
+        
         return length;
     }
 

@@ -12,9 +12,12 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.BasicAgreement;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.agreement.ECDHCBasicAgreement;
+import org.bouncycastle.crypto.agreement.ECDHCUnifiedAgreement;
 import org.bouncycastle.crypto.agreement.ECMQVBasicAgreement;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
+import org.bouncycastle.crypto.params.ECDHUPrivateParameters;
+import org.bouncycastle.crypto.params.ECDHUPublicParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -948,6 +951,120 @@ public class ECTest
         return null;
     }
 
+    private void testECUnifiedTestVector1()
+    {
+        // Test Vector from NIST sample data
+
+        X9ECParameters x9 = NISTNamedCurves.getByName("P-224");
+        ECDomainParameters p = new ECDomainParameters(
+            x9.getCurve(), x9.getG(), x9.getN(), x9.getH(), x9.getSeed());
+
+        AsymmetricCipherKeyPair U1 = new AsymmetricCipherKeyPair(
+            new ECPublicKeyParameters(
+                p.getCurve().decodePoint(Hex.decode("040784e946ef1fae0cfe127042a310a018ba639d3f6b41f265904f0a7b21b7953efe638b45e6c0c0d34a883a510ce836d143d831daa9ce8a12")), p),
+            new ECPrivateKeyParameters(
+                new BigInteger("86d1735ca357890aeec8eccb4859275151356ecee9f1b2effb76b092", 16), p));
+
+        AsymmetricCipherKeyPair U2 = new AsymmetricCipherKeyPair(
+            new ECPublicKeyParameters(
+                p.getCurve().decodePoint(Hex.decode("04b33713dc0d56215be26ee6c5e60ad36d12e02e78529ae3ff07873c6b39598bda41c1cf86ee3981f40e102333c15fef214bda034291c1aca6")), p),
+            new ECPrivateKeyParameters(
+                new BigInteger("764010b3137ef8d34a3552955ada572a4fa1bb1f5289f27c1bf18344", 16), p));
+
+        AsymmetricCipherKeyPair V1 = new AsymmetricCipherKeyPair(
+            new ECPublicKeyParameters(
+                p.getCurve().decodePoint(Hex.decode("0484c22d9575d09e280613c8758467f84869c6eede4f6c1b644517d6a72c4fc5c68fa12b4c259032fc5949c630259948fca38fb3342d9cb0a8")), p),
+            new ECPrivateKeyParameters(
+                new BigInteger("e37964e391f5058fb43435352a9913438a1ec10831f755273285230a", 16), p));
+
+        AsymmetricCipherKeyPair V2 = new AsymmetricCipherKeyPair(
+            new ECPublicKeyParameters(
+                p.getCurve().decodePoint(Hex.decode("044b917e9ce693b277c8095e535ea81c2dea089446a8c55438eda750fb6170c85b86390481fff2dff94b7dff3e42d35ff623921cb558967b48")), p),
+            new ECPrivateKeyParameters(
+                new BigInteger("ab40d67f59ba7265d8ad33ade8f704d13a7ba2298b69172a7cd02515", 16), p));
+
+        byte[] x = calculateUnifiedAgreement(U1, U2, V1, V2);
+
+        if (x == null
+            || !areEqual(Hex.decode("80315a208b1cd6119264e5c03242b7db96379986fdc4c2f06bf88d0655cda75d4dc7e94a8df9f03239d5da9a18d364cebc6c63f01b6f4378"), x))
+        {
+            fail("EC combined Test Vector #1 agreement failed");
+        }
+    }
+
+    private void testECUnifiedTestVector2()
+    {
+        // Test Vector from NIST sample data
+
+        X9ECParameters x9 = NISTNamedCurves.getByName("P-256");
+        ECDomainParameters p = new ECDomainParameters(
+            x9.getCurve(), x9.getG(), x9.getN(), x9.getH(), x9.getSeed());
+
+        AsymmetricCipherKeyPair U1 = new AsymmetricCipherKeyPair(
+            new ECPublicKeyParameters(
+                p.getCurve().decodePoint(Hex.decode("047581b35964a983414ebdd56f4ebb1ddcad10881b200666a51ae41306e1ecf1db368468a5e8a65ca10ccea526472c8982db68316c468800e171c11f4ee694fce4")), p),
+            new ECPrivateKeyParameters(
+                new BigInteger("2eb7ef76d4936123b6f13035045aedf45c1c7731f35d529d25941926b5bb38bb", 16), p));
+
+        AsymmetricCipherKeyPair U2 = new AsymmetricCipherKeyPair(
+            new ECPublicKeyParameters(
+                p.getCurve().decodePoint(Hex.decode("045b1e4cdeb0728333c0a51631b1a75269e4878d10732f4cb94d600483db4bd9ee625c374592c3db7e9f8b4f2c91a0098a158bc37b922e4243bd9cbdefe67d6ab0")), p),
+            new ECPrivateKeyParameters(
+                new BigInteger("78acde388a022261767e6b3dd6dd016c53b70a084260ec87d395aec761c082de", 16), p));
+
+        AsymmetricCipherKeyPair V1 = new AsymmetricCipherKeyPair(
+            new ECPublicKeyParameters(
+                p.getCurve().decodePoint(Hex.decode("04e4916d616803ff1bd9569f35b7d06f792f19c1fb4e6fa916d686c027a17d8dffd570193d8e101624ac2ea0bcb762d5613f05452670f09af66ef70861fb528868")), p),
+            new ECPrivateKeyParameters(
+                new BigInteger("9c85898640a1b1de8ce7f557492dc1460530b9e17afaaf742eb953bb644e9c5a", 16), p));
+
+        AsymmetricCipherKeyPair V2 = new AsymmetricCipherKeyPair(
+            new ECPublicKeyParameters(
+                p.getCurve().decodePoint(Hex.decode("04d1cd23c29d0fc865c316d44a1fd5adb6605ee47c9ddfec3a9b0a5e532d52704e74ff5d149aeb50856fefb38d5907b6dbb580fe6dc166bcfcbee4eb376d77e95c")), p),
+            new ECPrivateKeyParameters(
+                new BigInteger("d6e11d5d3b85b201b8f4c12dadfad3000e267961a806a0658a2b859d44389599", 16), p));
+
+        byte[] x = calculateUnifiedAgreement(U1, U2, V1, V2);
+
+        if (x == null
+            || !areEqual(Hex.decode("02886e53998b06d92f04e4579cbfa5f35c96334d3890298264e7f956da70966af07bf1b3abbaa8d76fbaf435508bdabbbbbdae1a191d91480ed88374c3552233"), x))
+        {
+            fail("EC combined Test Vector #2 agreement failed");
+        }
+    }
+
+    private byte[] calculateUnifiedAgreement(
+        AsymmetricCipherKeyPair U1,
+        AsymmetricCipherKeyPair U2,
+        AsymmetricCipherKeyPair V1,
+        AsymmetricCipherKeyPair V2)
+    {
+        ECDHCUnifiedAgreement u = new ECDHCUnifiedAgreement();
+        u.init(new ECDHUPrivateParameters(
+            (ECPrivateKeyParameters)U1.getPrivate(),
+            (ECPrivateKeyParameters)U2.getPrivate(),
+            (ECPublicKeyParameters)U2.getPublic()));
+        byte[] ux = u.calculateAgreement(new ECDHUPublicParameters(
+            (ECPublicKeyParameters)V1.getPublic(),
+            (ECPublicKeyParameters)V2.getPublic()));
+
+        ECDHCUnifiedAgreement v = new ECDHCUnifiedAgreement();
+        v.init(new ECDHUPrivateParameters(
+            (ECPrivateKeyParameters)V1.getPrivate(),
+            (ECPrivateKeyParameters)V2.getPrivate(),
+            (ECPublicKeyParameters)V2.getPublic()));
+        byte[] vx = v.calculateAgreement(new ECDHUPublicParameters(
+            (ECPublicKeyParameters)U1.getPublic(),
+            (ECPublicKeyParameters)U2.getPublic()));
+
+        if (areEqual(ux, vx))
+        {
+            return ux;
+        }
+
+        return null;
+    }
+
     public String getName()
     {
         return "EC";
@@ -978,6 +1095,9 @@ public class ECTest
         testECMQVTestVector1();
         testECMQVTestVector2();
         testECMQVRandom();
+
+        testECUnifiedTestVector1();
+        testECUnifiedTestVector2();
     }
 
 

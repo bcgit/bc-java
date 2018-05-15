@@ -1,6 +1,7 @@
 package org.bouncycastle.tls;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -79,6 +80,7 @@ public class TlsClientProtocol
         this.tlsClientContext = new TlsClientContextImpl(tlsClient.getCrypto(), securityParameters);
 
         this.securityParameters.clientRandom = createRandomBlock(tlsClient.shouldUseGMTUnixTime(), tlsClientContext);
+        this.securityParameters.extendedPadding = tlsClient.shouldUseExtendedPadding();
 
         this.tlsClient.init(tlsClientContext);
         this.recordStream.init(tlsClientContext);
@@ -97,7 +99,10 @@ public class TlsClientProtocol
         sendClientHelloMessage();
         this.connection_state = CS_CLIENT_HELLO;
 
-        blockForHandshake();
+        if (blocking)
+        {
+            blockForHandshake();
+        }
     }
 
     protected void cleanupHandshake()
@@ -139,6 +144,7 @@ public class TlsClientProtocol
             processFinishedMessage(buf);
             this.connection_state = CS_SERVER_FINISHED;
 
+            sendChangeCipherSpecMessage();
             sendFinishedMessage();
             this.connection_state = CS_CLIENT_FINISHED;
 
@@ -161,9 +167,13 @@ public class TlsClientProtocol
             {
                 // Parse the Certificate message and send to cipher suite
 
-                this.peerCertificate = Certificate.parse(getContext(), buf);
+                ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
+
+                this.peerCertificate = Certificate.parse(getContext(), buf, endPointHash);
 
                 assertEmpty(buf);
+
+                securityParameters.tlsServerEndPoint = endPointHash.toByteArray();
 
                 // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus
                 if (this.peerCertificate == null || this.peerCertificate.isEmpty())
@@ -261,8 +271,6 @@ public class TlsClientProtocol
                 {
                     this.securityParameters.masterSecret = getContext().getCrypto().adoptSecret(sessionParameters.getMasterSecret());
                     this.recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
-
-                    sendChangeCipherSpecMessage();
                 }
                 else
                 {
@@ -354,13 +362,13 @@ public class TlsClientProtocol
                          * 
                          * NOTE: In previous RFCs, this was SHOULD instead of MUST.
                          */
-                        sendCertificateMessage(Certificate.EMPTY_CHAIN);
+                        sendCertificateMessage(Certificate.EMPTY_CHAIN, null);
                     }
                     else
                     {
                         this.keyExchange.processClientCredentials(clientCredentials);
 
-                        sendCertificateMessage(clientCredentials.getCertificate());
+                        sendCertificateMessage(clientCredentials.getCertificate(), null);
 
                         if (clientCredentials instanceof TlsCredentialedSigner)
                         {
@@ -469,7 +477,7 @@ public class TlsClientProtocol
 
                 assertEmpty(buf);
 
-                this.keyExchange.validateCertificateRequest(this.certificateRequest);
+                this.certificateRequest = TlsUtils.validateCertificateRequest(this.certificateRequest, this.keyExchange);
 
                 /*
                  * TODO Give the client a chance to immediately select the CertificateVerify hash
@@ -549,6 +557,7 @@ public class TlsClientProtocol
         if (this.authentication == null)
         {
             // There was no server certificate message; check it's OK
+            securityParameters.tlsServerEndPoint = TlsUtils.EMPTY_BYTES;
             this.keyExchange.skipServerCredentials();
         }
         else

@@ -39,6 +39,11 @@ public class ScryptParams
         this(salt, BigInteger.valueOf(costParameter), BigInteger.valueOf(blockSize), BigInteger.valueOf(parallelizationParameter), null);
     }
 
+    public ScryptParams(byte[] salt, int costParameter, int blockSize, int parallelizationParameter, int keyLength)
+    {
+        this(salt, BigInteger.valueOf(costParameter), BigInteger.valueOf(blockSize), BigInteger.valueOf(parallelizationParameter), BigInteger.valueOf(keyLength));
+    }
+    
     /**
      * Base constructor.
      *

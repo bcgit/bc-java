@@ -146,6 +146,7 @@ public class RegressionTest
         new OpenBSDBCryptTest(),
         new X931SignerTest(),
         new Blake2bDigestTest(),
+        new Blake2sDigestTest(),
         new KeccakDigestTest(),
         new SHAKEDigestTest(),
         new SM2EngineTest(),
@@ -153,7 +154,10 @@ public class RegressionTest
         new SM2SignerTest(),
         new SM4Test(),
         new DSTU7624Test(),
-        new DSTU7564Test()
+        new DSTU7564Test(),
+        new IsoTrailerTest(),
+        new GOST3412Test(),
+        new GOST3412MacTest()
     };
 
     public static void main(

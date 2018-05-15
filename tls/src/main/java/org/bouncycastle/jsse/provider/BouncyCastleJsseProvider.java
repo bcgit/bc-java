@@ -20,8 +20,8 @@ public class BouncyCastleJsseProvider
 {
     public static final String PROVIDER_NAME = "BCJSSE";
 
-    private static final double PROVIDER_VERSION = 1.0;
-    private static final String PROVIDER_INFO = "Bouncy Castle JSSE Provider Version 1.0.0";
+    private static final double PROVIDER_VERSION = 1.0004;
+    private static final String PROVIDER_INFO = "Bouncy Castle JSSE Provider Version 1.0.4";
 
     private Map<String, BcJsseService> serviceMap = new HashMap<String, BcJsseService>();
     private Map<String, EngineCreator> creatorMap = new HashMap<String, EngineCreator>();
@@ -161,7 +161,7 @@ public class BouncyCastleJsseProvider
             {
                 public Object createInstance(Object constructorParameter)
                 {
-                    return new ProvSSLContextSpi(fipsMode, baseCryptoProvider, new String[]{ "TLSv1.2" });
+                    return new ProvSSLContextSpi(fipsMode, baseCryptoProvider, null);
                 }
             });
         addAlgorithmImplementation("SSLContext.TLSV1", "org.bouncycastle.jsse.provider.SSLContext.TLSv1",
@@ -195,7 +195,7 @@ public class BouncyCastleJsseProvider
                 {
                     try
                     {
-                        ProvSSLContextSpi defaultSSLContextSpi = new ProvSSLContextSpi(fipsMode, baseCryptoProvider, new String[]{ "TLSv1.2" });
+                        ProvSSLContextSpi defaultSSLContextSpi = new ProvSSLContextSpi(fipsMode, baseCryptoProvider, null);
                         defaultSSLContextSpi.engineInit(null, null, null);
                         return defaultSSLContextSpi;
                     }

@@ -69,8 +69,23 @@ public class Certificate
      *
      * @param output the {@link OutputStream} to encode to.
      * @throws IOException
+     * @deprecated
      */
     public void encode(OutputStream output)
+        throws IOException
+    {
+        encode(null, output, null);
+    }
+
+    /**
+     * Encode this {@link Certificate} to an {@link OutputStream}, and optionally calculate the
+     * "end point hash" (per RFC 5929's tls-server-end-point binding).
+     *
+     * @param messageOutput the {@link OutputStream} to encode to.
+     * @param endPointHashOutput the {@link OutputStream} to write the "end point hash" (or null).
+     * @throws IOException
+     */
+    public void encode(TlsContext context, OutputStream messageOutput, OutputStream endPointHashOutput)
         throws IOException
     {
         Vector derEncodings = new Vector(this.certificateList.length);
@@ -78,18 +93,25 @@ public class Certificate
         int totalLength = 0;
         for (int i = 0; i < this.certificateList.length; ++i)
         {
-            byte[] derEncoding = certificateList[i].getEncoded();
+            TlsCertificate cert = certificateList[i];
+            byte[] derEncoding = cert.getEncoded();
+
+            if (i == 0 && endPointHashOutput != null)
+            {
+                calculateEndPointHash(context, cert, derEncoding, endPointHashOutput);
+            }
+
             derEncodings.addElement(derEncoding);
             totalLength += derEncoding.length + 3;
         }
 
         TlsUtils.checkUint24(totalLength);
-        TlsUtils.writeUint24(totalLength, output);
+        TlsUtils.writeUint24(totalLength, messageOutput);
 
         for (int i = 0; i < derEncodings.size(); ++i)
         {
             byte[] derEncoding = (byte[])derEncodings.elementAt(i);
-            TlsUtils.writeOpaque24(derEncoding, output);
+            TlsUtils.writeOpaque24(derEncoding, messageOutput);
         }
     }
 
@@ -102,17 +124,35 @@ public class Certificate
      *            the {@link InputStream} to parse from.
      * @return a {@link Certificate} object.
      * @throws IOException
+     * @deprecated
      */
     public static Certificate parse(TlsContext context, InputStream input)
         throws IOException
     {
-        int totalLength = TlsUtils.readUint24(input);
+        return parse(context, input, null);
+    }
+
+    /**
+     * Parse a {@link Certificate} from an {@link InputStream}.
+     *
+     * @param context
+     *            the {@link TlsContext} of the current connection.
+     * @param messageInput
+     *            the {@link InputStream} to parse from.
+     * @param endPointHashOutput the {@link OutputStream} to write the "end point hash" (or null).
+     * @return a {@link Certificate} object.
+     * @throws IOException
+     */
+    public static Certificate parse(TlsContext context, InputStream messageInput, OutputStream endPointHashOutput)
+        throws IOException
+    {
+        int totalLength = TlsUtils.readUint24(messageInput);
         if (totalLength == 0)
         {
             return EMPTY_CHAIN;
         }
 
-        byte[] certListData = TlsUtils.readFully(totalLength, input);
+        byte[] certListData = TlsUtils.readFully(totalLength, messageInput);
 
         ByteArrayInputStream buf = new ByteArrayInputStream(certListData);
 
@@ -120,7 +160,14 @@ public class Certificate
         while (buf.available() > 0)
         {
             byte[] derEncoding = TlsUtils.readOpaque24(buf);
-            certificate_list.addElement(context.getCrypto().createCertificate(derEncoding));
+            TlsCertificate cert = context.getCrypto().createCertificate(derEncoding);
+            
+            if (certificate_list.isEmpty() && endPointHashOutput != null)
+            {
+                calculateEndPointHash(context, cert, derEncoding, endPointHashOutput);
+            }
+
+            certificate_list.addElement(cert);
         }
 
         TlsCertificate[] certificateList = new TlsCertificate[certificate_list.size()];
@@ -129,6 +176,16 @@ public class Certificate
             certificateList[i] = (TlsCertificate)certificate_list.elementAt(i);
         }
         return new Certificate(certificateList);
+    }
+
+    protected static void calculateEndPointHash(TlsContext context, TlsCertificate cert, byte[] encoding, OutputStream output)
+        throws IOException
+    {
+        byte[] endPointHash = TlsUtils.calculateEndPointHash(context, cert.getSigAlgOID(), encoding);
+        if (endPointHash != null && endPointHash.length > 0)
+        {
+            output.write(endPointHash);
+        }
     }
 
     protected TlsCertificate[] cloneCertificateList()

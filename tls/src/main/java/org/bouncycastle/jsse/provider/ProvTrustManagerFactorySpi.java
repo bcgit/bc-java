@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
@@ -18,6 +19,7 @@ import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import javax.net.ssl.CertPathTrustManagerParameters;
 import javax.net.ssl.ManagerFactoryParameters;
@@ -28,27 +30,52 @@ import javax.net.ssl.X509TrustManager;
 class ProvTrustManagerFactorySpi
     extends TrustManagerFactorySpi
 {
-    static final boolean hasExtendedTrustManager;
+    private static Logger LOG = Logger.getLogger(ProvTrustManagerFactorySpi.class.getName());
+
+    static final Constructor<? extends X509TrustManager> extendedTrustManagerConstructor;
+
     static final String CACERTS_PATH;
     static final String JSSECACERTS_PATH;
 
     static
     {
-        Class<?> clazz = null;
+        Constructor<? extends X509TrustManager> cons = null;
         try
         {
-            clazz = JsseUtils.loadClass(ProvTrustManagerFactorySpi.class,"javax.net.ssl.X509ExtendedTrustManager");
+            if (null != JsseUtils.loadClass(ProvTrustManagerFactorySpi.class, "javax.net.ssl.X509ExtendedTrustManager"))
+            {
+                String className = "org.bouncycastle.jsse.provider.ProvX509ExtendedTrustManager_7";
+
+                Class<? extends X509TrustManager> clazz = JsseUtils.loadClass(ProvTrustManagerFactorySpi.class, className);
+
+                cons = JsseUtils.getDeclaredConstructor(clazz, ProvX509TrustManager.class);
+            }
         }
         catch (Exception e)
         {
-            clazz = null;
         }
 
-        hasExtendedTrustManager = (clazz != null);
+        extendedTrustManagerConstructor = cons;
 
         String javaHome = PropertyUtils.getSystemProperty("java.home");
-        CACERTS_PATH =  javaHome + "/lib/security/cacerts".replace('/', File.separatorChar);
-        JSSECACERTS_PATH =  javaHome + "/lib/security/jssecacerts".replace('/', File.separatorChar);
+        CACERTS_PATH = javaHome + "/lib/security/cacerts".replace('/', File.separatorChar);
+        JSSECACERTS_PATH = javaHome + "/lib/security/jssecacerts".replace('/', File.separatorChar);
+    }
+
+    static X509TrustManager makeExportTrustManager(ProvX509TrustManager trustManager)
+    {
+        if (extendedTrustManagerConstructor != null)
+        {
+            try
+            {
+                return extendedTrustManagerConstructor.newInstance(trustManager);
+            }
+            catch (Exception e)
+            {
+            }
+        }
+
+        return trustManager;
     }
 
     protected final Provider pkixProvider;
@@ -103,24 +130,20 @@ class ProvTrustManagerFactorySpi
                 if (tsPath == null)
                 {
                     ks.load(null, null);
+                    LOG.warning("Initialized with empty trust store");
                 }
                 else
                 {
                     InputStream tsInput = new BufferedInputStream(new FileInputStream(tsPath));
                     ks.load(tsInput, tsPassword);
                     tsInput.close();
+                    LOG.info("Initialized with trust store at path: " + tsPath);
                 }
             }
 
             Set<TrustAnchor> trustAnchors = getTrustAnchors(ks);
-            if (hasExtendedTrustManager)
-            {
-                trustManager = new ProvX509ExtendedTrustManager(new ProvX509TrustManager(pkixProvider, trustAnchors));
-            }
-            else
-            {
-                trustManager = new ProvX509TrustManager(pkixProvider, trustAnchors);
-            }
+
+            trustManager = makeExportTrustManager(new ProvX509TrustManagerImpl(pkixProvider, trustAnchors));
         }
         catch (Exception e)
         {
@@ -144,14 +167,7 @@ class ProvTrustManagerFactorySpi
 
                 PKIXParameters pkixParam = (PKIXParameters)param;
 
-                if (hasExtendedTrustManager)
-                {
-                    trustManager = new ProvX509ExtendedTrustManager(new ProvX509TrustManager(pkixProvider, pkixParam));
-                }
-                else
-                {
-                    trustManager = new ProvX509TrustManager(pkixProvider, pkixParam);
-                }
+                trustManager = makeExportTrustManager(new ProvX509TrustManagerImpl(pkixProvider, pkixParam));
             }
             catch (GeneralSecurityException e)
             {

@@ -47,7 +47,14 @@ public class ECDHBasicAgreement
             throw new IllegalStateException("ECDH public key has wrong domain parameters");
         }
 
-        ECPoint P = pub.getQ().multiply(key.getD()).normalize();
+        // Always perform calculations on the exact curve specified by our private key's parameters
+        ECPoint pubPoint = key.getParameters().getCurve().decodePoint(pub.getQ().getEncoded(false));
+        if (pubPoint.isInfinity())
+        {
+            throw new IllegalStateException("Infinity is not a valid public key for ECDH");
+        }
+
+        ECPoint P = pubPoint.multiply(key.getD()).normalize();
 
         if (P.isInfinity())
         {

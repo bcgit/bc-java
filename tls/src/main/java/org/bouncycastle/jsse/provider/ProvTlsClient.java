@@ -6,7 +6,6 @@ import java.net.Socket;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
@@ -30,11 +29,9 @@ import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.NameType;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.ServerName;
-import org.bouncycastle.tls.ServerNameList;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentials;
-import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsSession;
@@ -62,12 +59,12 @@ class ProvTlsClient
     protected ProvSSLSessionImpl sslSession = null;
     protected boolean handshakeComplete = false;
 
-    ProvTlsClient(ProvTlsManager manager)
+    ProvTlsClient(ProvTlsManager manager, ProvSSLParameters sslParameters)
     {
         super(manager.getContextData().getCrypto(), new DefaultTlsKeyExchangeFactory(), new ProvDHConfigVerifier());
 
         this.manager = manager;
-        this.sslParameters = manager.getProvSSLParameters();
+        this.sslParameters = sslParameters;
     }
 
     @Override
@@ -77,11 +74,17 @@ class ProvTlsClient
     }
 
     @Override
+    protected Vector getSupportedGroups(boolean offeringDH, boolean offeringEC)
+    {
+        return SupportedGroups.getClientSupportedGroups(manager.getContext().isFips(), offeringDH, offeringEC);
+    }
+
+    @Override
     protected Vector getSNIServerNames()
     {
         if (provEnableSNIExtension)
         {
-            List<BCSNIServerName> sniServerNames = manager.getProvSSLParameters().getServerNames();
+            List<BCSNIServerName> sniServerNames = sslParameters.getServerNames();
             if (sniServerNames == null)
             {
                 String peerHost = manager.getPeerHost();
@@ -294,50 +297,6 @@ class ProvTlsClient
         return manager.getContext().isFips()
             ?   new short[]{ CompressionMethod._null }
             :   super.getCompressionMethods();
-    }
-
-    @Override
-    public Hashtable getClientExtensions() throws IOException
-    {
-        Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
-
-        if (provEnableSNIExtension)
-        {
-            List<BCSNIServerName> sniServerNames = manager.getProvSSLParameters().getServerNames();
-            if (sniServerNames == null)
-            {
-                String peerHost = manager.getPeerHost();
-                if (peerHost != null && peerHost.indexOf('.') > 0 && !IPAddress.isValid(peerHost))
-                {
-                    Vector serverNames = new Vector(1);
-                    serverNames.addElement(new ServerName(NameType.host_name, peerHost));
-                    TlsExtensionsUtils.addServerNameExtension(clientExtensions, new ServerNameList(serverNames));
-                }
-            }
-            else if (sniServerNames.isEmpty())
-            {
-                // NOTE: We follow SunJSSE behaviour and disable SNI in this case
-            }
-            else
-            {
-                Vector serverNames = new Vector(sniServerNames.size());
-                for (BCSNIServerName sniServerName : sniServerNames)
-                {
-                    /*
-                     * TODO[jsse] Add support for constructing ServerName using
-                     * BCSNIServerName.getEncoded() directly, then remove the 'host_name' limitation
-                     * (although it's currently the only defined type).
-                     */
-                    if (sniServerName.getType() == NameType.host_name)
-                    {
-                        serverNames.addElement(new ServerName((short)sniServerName.getType(), new String(sniServerName.getEncoded(), "ASCII")));
-                    }
-                }
-                TlsExtensionsUtils.addServerNameExtension(clientExtensions, new ServerNameList(serverNames));
-            }
-        }
-
-        return clientExtensions;
     }
 
 //    public TlsKeyExchange getKeyExchange() throws IOException

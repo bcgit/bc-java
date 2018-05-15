@@ -22,6 +22,9 @@ import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.crypto.util.PBKDF2Config;
+import org.bouncycastle.crypto.util.PBKDFConfig;
+import org.bouncycastle.crypto.util.ScryptConfig;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jcajce.spec.ScryptKeySpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
@@ -33,9 +36,6 @@ import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.operator.SecretKeySizeProvider;
-import org.bouncycastle.pkcs.PBKDF2;
-import org.bouncycastle.pkcs.PBKDFConfig;
-import org.bouncycastle.pkcs.Scrypt;
 
 public class JcePKCSPBEOutputEncryptorBuilder
 {
@@ -47,7 +47,7 @@ public class JcePKCSPBEOutputEncryptorBuilder
     private SecureRandom random;
     private SecretKeySizeProvider keySizeProvider = DefaultSecretKeySizeProvider.INSTANCE;
     private int iterationCount = 1024;
-    private PBKDF2.Builder pbkdfBuilder = new PBKDF2.Builder();
+    private PBKDF2Config.Builder pbkdfBuilder = new PBKDF2Config.Builder();
 
     public JcePKCSPBEOutputEncryptorBuilder(ASN1ObjectIdentifier keyEncryptionAlg)
     {
@@ -182,7 +182,7 @@ public class JcePKCSPBEOutputEncryptorBuilder
 
                 if (MiscObjectIdentifiers.id_scrypt.equals(pbkDef.getAlgorithm()))
                 {
-                    Scrypt skdf = (Scrypt)pbkDef;
+                    ScryptConfig skdf = (ScryptConfig)pbkDef;
 
                     byte[] salt = new byte[skdf.getSaltLength()];
 
@@ -212,7 +212,7 @@ public class JcePKCSPBEOutputEncryptorBuilder
                 }
                 else
                 {
-                    PBKDF2 pkdf = (PBKDF2)pbkDef;
+                    PBKDF2Config pkdf = (PBKDF2Config)pbkDef;
 
                     byte[] salt = new byte[pkdf.getSaltLength()];
 

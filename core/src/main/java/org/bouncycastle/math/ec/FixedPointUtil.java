@@ -22,9 +22,18 @@ public class FixedPointUtil
         return new FixedPointPreCompInfo();
     }
 
+    /**
+     * @deprecated Use {@link #precompute(ECPoint)} instead, as minWidth parameter is now ignored.
+     */
     public static FixedPointPreCompInfo precompute(ECPoint p, int minWidth)
     {
+        return precompute(p);
+    }
+
+    public static FixedPointPreCompInfo precompute(ECPoint p)
+    {
         ECCurve c = p.getCurve();
+        int minWidth = getCombSize(c) > 257 ? 6 : 5;
 
         int n = 1 << minWidth;
         FixedPointPreCompInfo info = getFixedPointPreCompInfo(c.getPreCompInfo(p, PRECOMP_NAME));
@@ -63,6 +72,7 @@ public class FixedPointUtil
 
             c.normalizeAll(lookupTable);
 
+            info.setLookupTable(c.createCacheSafeLookupTable(lookupTable, 0, lookupTable.length));
             info.setOffset(pow2Table[minWidth]);
             info.setPreComp(lookupTable);
             info.setWidth(minWidth);

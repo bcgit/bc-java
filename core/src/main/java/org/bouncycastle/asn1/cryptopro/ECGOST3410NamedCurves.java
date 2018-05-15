@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * table of the available named parameters for GOST 3410-2001 / 2012.
@@ -116,20 +117,20 @@ public class ECGOST3410NamedCurves
         params.put(CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_C, ecParams);
 
         //GOST34.10 2012
-        mod_p = new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639319"); //p
-        mod_q = new BigInteger("115792089237316195423570985008687907853073762908499243225378155805079068850323"); //q
+        mod_p = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFD97", 16); //p
+        mod_q = new BigInteger("400000000000000000000000000000000FD8CDDFC87B6635C115AF556C360C67", 16); //q
         curve = new ECCurve.Fp(
                 mod_p, // p
-                new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639316"), // a
-                new BigInteger("166"), // b
+                new BigInteger("C2173F1513981673AF4892C23035A27CE25E2013BF95AA33B22C656F277E7335", 16), // a
+                new BigInteger("295F9BAE7428ED9CCC20E7C359A9D41A22FCCD9108E17BF7BA9337A6F8AE9513", 16), // b
                 mod_q,
                 ECConstants.ONE);
 
         ecParams = new ECDomainParameters(
                 curve,
                 curve.createPoint(
-                        new BigInteger("1"), // x
-                        new BigInteger("64033881142927202683649881450433473985931760268884941288852745803908878638612")), // y
+                        new BigInteger("91E38443A5E82C0D880923425712B2BB658B9196932E02C78B2582FE742DAA28", 16), // x
+                        new BigInteger("32879423AB1A0375895786C4BB46E9565FDE0B5344766740AF268ADB32322E5C", 16)), // y
                 mod_q); // q
         params.put(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetA, ecParams);
 
@@ -253,5 +254,10 @@ public class ECGOST3410NamedCurves
     public static ASN1ObjectIdentifier getOID(String name)
     {
         return (ASN1ObjectIdentifier)objIds.get(name);
+    }
+
+    public static void main(String[] args)
+    {
+          System.err.println(new BigInteger(1, Hex.decode("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFD97")));
     }
 }

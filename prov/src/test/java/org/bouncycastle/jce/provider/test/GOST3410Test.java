@@ -55,6 +55,7 @@ import org.bouncycastle.jce.spec.GOST3410ParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestRandomBigInteger;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
@@ -62,6 +63,13 @@ import org.bouncycastle.x509.X509V3CertificateGenerator;
 public class GOST3410Test
     extends SimpleTest
 {
+    private static byte[] ecgostData = {1, 2, 3, 4, 5, 6, 7, 8, 9, 0};
+    private static byte[] ecgost2012_256Key = Base64.decode("MGgwIQYIKoUDBwEBAQEwFQYJKoUDBwECAQEBBggqhQMHAQECAgNDAARAuSmiubNU4NMTvYsWb59uIa0dvNvikSyafTFTvHYhfoEeyVj5qeCoED1AjraW3Q44EZdNZaS5exAUIHuK5Bhd/Q==");
+    private static byte[] ecgost2012_256Sig = Base64.decode("CNUdC6ny8sryzNcwGy7MG3DUbcU+3RgJNPWb3WVtAwUcbaFKPgL0TERfDM4Vsurwx0POt+PZCTxjaiaoY0UxkQ==");
+
+    private static byte[] ecgost2012_512Key = Base64.decode("MIGqMCEGCCqFAwcBAQECMBUGCSqFAwcBAgECAQYIKoUDBwEBAgMDgYQABIGAhiwvUj3M58X6KQfFmqvQhka/JxigdS6hy6rqoYZec0pAwPKFNJ+AUl70zvNR/GDLB2DNBGryofKFXJk1l8aZCHM6cpuSzJbD7y728U/rclJ4GVDAbb4ktq4UmiYaJ7JZcc/CSL0qoj7w69sY7rWZm/T2o+hb1cM1jVq5/u5zYqo=");
+    private static byte[] ecgost2012_512Sig = Base64.decode("uX4splTTDpH6T04tnElszTSmj+aTAl2LV7JxP+1xRRGoQ0ET2+QniOW+6WIOZzCZxEo75fZfx1jRHa7Eo99KfQNzHqmiN7G1Ch9pHQ7eMMwaLVurmWEFpZqBH4k5XfHTSPIa8mUmCn6808xMNy1VfwppbaJwRjtyW0h/CqeDTr8=");
+
     private void ecGOST3410Test()
         throws Exception
     {
@@ -609,6 +617,24 @@ public class GOST3410Test
 
     }
 
+    private void ecGOST2012VerifyTest(String signatureAlg, byte[] data, byte[] pubEnc, byte[] sig)
+        throws Exception
+    {
+        KeyFactory keyFact = KeyFactory.getInstance("ECGOST3410-2012", "BC");
+
+        PublicKey vKey = keyFact.generatePublic(new X509EncodedKeySpec(pubEnc));
+
+        Signature s = Signature.getInstance(signatureAlg, "BC");
+
+        s.initVerify(vKey);
+
+        s.update(data);
+
+        if (!s.verify(sig))
+        {
+            fail(signatureAlg + " verification failed");
+        }
+    }
 
     private void signatureGost12Test(String signatureAlg, int expectedSignLen, KeyPair p)
         throws Exception
@@ -858,6 +884,8 @@ public class GOST3410Test
             ecGOST34102012256Test();
             ecGOST34102012512Test();
             ecGOST2012NameCurveGenerationTest();
+            ecGOST2012VerifyTest("ECGOST3410-2012-256", ecgostData, ecgost2012_256Key, ecgost2012_256Sig);
+            ecGOST2012VerifyTest("ECGOST3410-2012-512", ecgostData, ecgost2012_512Key, ecgost2012_512Sig);
         }
         
         generationTest();

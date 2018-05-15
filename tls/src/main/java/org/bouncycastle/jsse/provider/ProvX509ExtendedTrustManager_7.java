@@ -7,12 +7,12 @@ import java.security.cert.X509Certificate;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedTrustManager;
 
-class ProvX509ExtendedTrustManager
+class ProvX509ExtendedTrustManager_7
     extends X509ExtendedTrustManager
 {
     private final ProvX509TrustManager trustManager;
 
-    public ProvX509ExtendedTrustManager(ProvX509TrustManager trustManager)
+    public ProvX509ExtendedTrustManager_7(ProvX509TrustManager trustManager)
     {
         this.trustManager = trustManager;
     }
@@ -32,35 +32,26 @@ class ProvX509ExtendedTrustManager
     public void checkClientTrusted(X509Certificate[] x509Certificates, String authType, Socket socket)
         throws CertificateException
     {
-        // TODO: need to confirm cert and client identity match
-        // TODO: need to make sure authType makes sense.
-        trustManager.validatePath(x509Certificates);
+        trustManager.checkClientTrusted(x509Certificates, authType, socket);
     }
 
     public void checkServerTrusted(X509Certificate[] x509Certificates, String authType, Socket socket)
         throws CertificateException
     {
-        // TODO: need to confirm cert and server identity match
-        // TODO: need to make sure authType makes sense.
-        trustManager.validatePath(x509Certificates);
+        trustManager.checkServerTrusted(x509Certificates, authType, socket);
     }
 
     public void checkClientTrusted(X509Certificate[] x509Certificates, String authType, SSLEngine sslEngine)
         throws CertificateException
     {
-        // TODO: need to confirm cert and client identity match
-        // TODO: need to make sure authType makes sense.
-        trustManager.validatePath(x509Certificates);
+        trustManager.checkClientTrusted(x509Certificates, authType, sslEngine);
     }
 
     public void checkServerTrusted(X509Certificate[] x509Certificates, String authType, SSLEngine sslEngine)
         throws CertificateException
     {
-        // TODO: need to confirm cert and server identity match
-        // TODO: need to make sure authType makes sense.
-        trustManager.validatePath(x509Certificates);
+        trustManager.checkServerTrusted(x509Certificates, authType, sslEngine);
     }
-
 
     public X509Certificate[] getAcceptedIssuers()
     {

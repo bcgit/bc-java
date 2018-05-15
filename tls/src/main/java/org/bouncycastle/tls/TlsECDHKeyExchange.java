@@ -151,11 +151,11 @@ public class TlsECDHKeyExchange
         processEphemeral(clientECPointFormats, point);
     }
 
-    public void validateCertificateRequest(CertificateRequest certificateRequest) throws IOException
+    public short[] getClientCertificateTypes()
     {
         if (keyExchange == KeyExchangeAlgorithm.ECDH_anon)
         {
-            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            return null;
         }
 
         /*
@@ -164,18 +164,7 @@ public class TlsECDHKeyExchange
          * the use of a long-term ECDH client key would jeopardize the forward secrecy property of
          * these algorithms.
          */
-        short[] types = certificateRequest.getCertificateTypes();
-        for (int i = 0; i < types.length; ++i)
-        {
-            switch (types[i])
-            {
-            case ClientCertificateType.ecdsa_fixed_ecdh:
-            case ClientCertificateType.rsa_fixed_ecdh:
-                break;
-            default:
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-        }
+        return new short[]{ ClientCertificateType.ecdsa_fixed_ecdh, ClientCertificateType.rsa_fixed_ecdh };
     }
 
     public void processClientCredentials(TlsCredentials clientCredentials) throws IOException

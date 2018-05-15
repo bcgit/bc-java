@@ -49,25 +49,37 @@ public class SM2SignatureTest
 
         signer.setParameter(new SM2ParameterSpec(Strings.toByteArray("ALICE123@YAHOO.COM")));
 
+        // repetition test
+        final int times = 2;
+        String random = "";
+        for (int i = 0; i < times; i++) {
+            random += "6CB28D99385C175C94F94E934817663FC176D925DD72B727260DBAAE1FB2F96F";
+        }
         signer.initSign(kp.getPrivate(),
-                    new TestRandomBigInteger("6CB28D99385C175C94F94E934817663FC176D925DD72B727260DBAAE1FB2F96F", 16));
+                    new TestRandomBigInteger(random, 16));
 
         byte[] msg = Strings.toByteArray("message digest");
 
-        signer.update(msg, 0, msg.length);
+        Signature verifier = Signature.getInstance("SM3withSM2", "BC");
 
-        byte[] sig = signer.sign();
+        verifier.setParameter(new SM2ParameterSpec(Strings.toByteArray("ALICE123@YAHOO.COM")));
 
-        BigInteger[] rs = decode(sig);
+        verifier.initVerify(kp.getPublic());
 
-        isTrue("r wrong", rs[0].equals(new BigInteger("40F1EC59F793D9F49E09DCEF49130D4194F79FB1EED2CAA55BACDB49C4E755D1", 16)));
-        isTrue("s wrong", rs[1].equals(new BigInteger("6FC6DAC32C5D5CF10C77DFB20F7C2EB667A457872FB09EC56327A67EC7DEEBE7", 16)));
+        for (int i = 0; i < times; i++) {
+            signer.update(msg, 0, msg.length);
 
-        signer.initVerify(kp.getPublic());
+            byte[] sig = signer.sign();
 
-        signer.update(msg, 0, msg.length);
+            BigInteger[] rs = decode(sig);
 
-        isTrue("verification failed", signer.verify(sig));
+            isTrue("r wrong", rs[0].equals(new BigInteger("40F1EC59F793D9F49E09DCEF49130D4194F79FB1EED2CAA55BACDB49C4E755D1", 16)));
+            isTrue("s wrong", rs[1].equals(new BigInteger("6FC6DAC32C5D5CF10C77DFB20F7C2EB667A457872FB09EC56327A67EC7DEEBE7", 16)));
+
+            verifier.update(msg, 0, msg.length);
+
+            isTrue("verification failed i=" + i, verifier.verify(sig));
+        }
     }
 
     private static BigInteger[] decode(byte[] sig)

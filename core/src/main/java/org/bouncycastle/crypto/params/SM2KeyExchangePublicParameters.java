@@ -8,8 +8,8 @@ import org.bouncycastle.crypto.CipherParameters;
 public class SM2KeyExchangePublicParameters
     implements CipherParameters
 {
-    private ECPublicKeyParameters staticPublicKey;
-    private ECPublicKeyParameters ephemeralPublicKey;
+    private final ECPublicKeyParameters staticPublicKey;
+    private final ECPublicKeyParameters ephemeralPublicKey;
 
     public SM2KeyExchangePublicParameters(
         ECPublicKeyParameters   staticPublicKey,

@@ -1,6 +1,7 @@
 package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.security.AccessController;
 import java.security.Principal;
 import java.security.PrivateKey;
@@ -25,13 +26,13 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jsse.BCSNIHostName;
 import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
+import org.bouncycastle.jsse.BCStandardConstants;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
-import org.bouncycastle.tls.NameType;
 import org.bouncycastle.tls.ServerName;
 import org.bouncycastle.tls.ServerNameList;
 import org.bouncycastle.tls.SignatureAlgorithm;
@@ -56,6 +57,13 @@ abstract class JsseUtils
             }
         }
         return false;
+    }
+
+    public static String[] copyOf(String[] data, int newLength)
+    {
+        String[] tmp = new String[newLength];
+        System.arraycopy(data, 0, tmp, 0, Math.min(data.length, newLength));
+        return tmp;
     }
 
     public static String getAuthTypeClient(short clientCertificateType) throws IOException
@@ -236,23 +244,31 @@ abstract class JsseUtils
 
     public static boolean isUsableKeyForServer(int keyExchangeAlgorithm, PrivateKey privateKey) throws IOException
     {
+        if (privateKey == null)
+        {
+            return false;
+        }
+
+        String algorithm = privateKey.getAlgorithm();
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DH_DSS:
         case KeyExchangeAlgorithm.DH_DSS_EXPORT:
         case KeyExchangeAlgorithm.DH_RSA:
         case KeyExchangeAlgorithm.DH_RSA_EXPORT:
-            return privateKey instanceof DHPrivateKey;
+            return privateKey instanceof DHPrivateKey || "DH".equals(algorithm);
 
         case KeyExchangeAlgorithm.ECDH_ECDSA:
         case KeyExchangeAlgorithm.ECDH_RSA:
+            return privateKey instanceof ECPrivateKey || "ECDH".equals(algorithm);
+
         case KeyExchangeAlgorithm.ECDHE_ECDSA:
-            return privateKey instanceof ECPrivateKey;
+            return privateKey instanceof ECPrivateKey || "EC".equals(algorithm);
 
         case KeyExchangeAlgorithm.DHE_DSS:
         case KeyExchangeAlgorithm.DHE_DSS_EXPORT:
         case KeyExchangeAlgorithm.SRP_DSS:
-            return privateKey instanceof DSAPrivateKey;
+            return privateKey instanceof DSAPrivateKey || "DSA".equals(algorithm);
 
         case KeyExchangeAlgorithm.DHE_RSA:
         case KeyExchangeAlgorithm.DHE_RSA_EXPORT:
@@ -260,7 +276,7 @@ abstract class JsseUtils
         case KeyExchangeAlgorithm.RSA:
         case KeyExchangeAlgorithm.RSA_PSK:
         case KeyExchangeAlgorithm.SRP_RSA:
-            return privateKey instanceof RSAPrivateKey;
+            return privateKey instanceof RSAPrivateKey || "RSA".equals(algorithm);
 
         default:
             return false;
@@ -334,6 +350,26 @@ abstract class JsseUtils
         }
     }
 
+    static Constructor getDeclaredConstructor(final Class clazz, final Class<?>... parameterTypes)
+    {
+        return AccessController.doPrivileged(new PrivilegedAction<Constructor>()
+        {
+            public Constructor run()
+            {
+                try
+                {
+                    return clazz.getDeclaredConstructor(parameterTypes);
+                }
+                catch (Exception e)
+                {
+                    // ignore - maybe log?
+                }
+
+                return null;
+            }
+        });
+    }
+
     static Class loadClass(Class sourceClass, final String className)
     {
         try
@@ -375,7 +411,7 @@ abstract class JsseUtils
     {
         switch (serverName.getNameType())
         {
-        case NameType.host_name:
+        case BCStandardConstants.SNI_HOST_NAME:
             return new BCSNIHostName(serverName.getHostName());
         default:
             return null;
@@ -400,5 +436,18 @@ abstract class JsseUtils
             }
         }
         return null;
+    }
+
+    static String stripQuotes(String s)
+    {
+        if (s != null)
+        {
+            int sLast = s.length() - 1;
+            if (sLast > 0 && s.charAt(0) == '"' && s.charAt(sLast) == '"')
+            {
+                return s.substring(1, sLast);
+            }
+        }
+        return s;
     }
 }

@@ -1,5 +1,6 @@
 package org.bouncycastle.util.encoders.test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
@@ -32,6 +33,7 @@ public class UrlBase64Test extends AbstractCoderTest
     private static final String invalidc = "mO4TyLWG7vjFWdKT8IJcVbZ_%wc.";
     private static final String invalidd = "F4I4p8Vf_mS-Kxvri3FPoMcqm%1c";
     private static final String invalide = "UJmEdJYodqHJmd7Rtv6/OP29/jUEFw.1";
+    private static final String invalidg = "M";
 
     public UrlBase64Test(
         String name)
@@ -48,6 +50,8 @@ public class UrlBase64Test extends AbstractCoderTest
     public void testSamples()
         throws IOException
     {
+        assertTrue(Arrays.areEqual(new byte[0], UrlBase64.decode("")));
+        assertEquals(0, UrlBase64.decode(new byte[0], new ByteArrayOutputStream()));
         assertTrue(Arrays.areEqual(sample1Bytes, UrlBase64.decode(sample1)));
         assertTrue(Arrays.areEqual(sample1Bytes, UrlBase64.decode(Strings.toByteArray(sample1))));
         assertTrue(Arrays.areEqual(sample2Bytes, UrlBase64.decode(sample2)));
@@ -59,7 +63,10 @@ public class UrlBase64Test extends AbstractCoderTest
     public void testInvalidInput()
         throws IOException
     {
-        String[] invalid = new String[] { invalid1, invalid2, invalid3, invalid4, invalid5, invalid6, invalid7, invalid8, invalid9, invalida, invalidb, invalidc, invalidd, invalide };
+        String[] invalid = new String[] {
+            invalid1, invalid2, invalid3, invalid4, invalid5, invalid6, invalid7,
+            invalid8, invalid9, invalida, invalidb, invalidc, invalidd, invalide,
+            invalidg };
 
         for (int i = 0; i != invalid.length; i++)
         {

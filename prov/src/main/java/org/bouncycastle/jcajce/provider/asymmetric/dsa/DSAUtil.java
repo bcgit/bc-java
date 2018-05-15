@@ -27,9 +27,16 @@ public class DSAUtil
     public static final ASN1ObjectIdentifier[] dsaOids =
     {
         X9ObjectIdentifiers.id_dsa,
-        OIWObjectIdentifiers.dsaWithSHA1
+        OIWObjectIdentifiers.dsaWithSHA1,
+        X9ObjectIdentifiers.id_dsa_with_sha1
     };
 
+    /**
+     * Return true if the passed in OID could be associated with a DSA key.
+     *
+     * @param algOid algorithm OID from a key.
+     * @return true if it's for a DSA key, false otherwise.
+     */
     public static boolean isDsaOid(
         ASN1ObjectIdentifier algOid)
     {

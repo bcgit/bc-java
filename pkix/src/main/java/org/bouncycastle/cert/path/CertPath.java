@@ -43,7 +43,7 @@ public class CertPath
     {
         CertPathValidationContext context = new CertPathValidationContext(CertPathUtils.getCriticalExtensionsOIDs(certificates));
 
-        CertPathValidationResultBuilder builder = new CertPathValidationResultBuilder();
+        CertPathValidationResultBuilder builder = new CertPathValidationResultBuilder(context);
 
         for (int i = 0; i != ruleSet.length; i++)
         {
@@ -56,7 +56,7 @@ public class CertPath
                 }
                 catch (CertPathValidationException e)
                 {
-                   builder.addException(e);
+                   builder.addException(j, i, e);
                 }
             }
         }

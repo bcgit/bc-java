@@ -3,6 +3,7 @@ package org.bouncycastle.jsse.provider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.SequenceInputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -10,12 +11,15 @@ import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.X509TrustManager;
 
 import org.bouncycastle.jsse.BCSSLConnection;
+import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
@@ -24,38 +28,68 @@ class ProvSSLSocketWrap
     extends ProvSSLSocketBase
     implements ProvTlsManager
 {
+    private static Logger LOG = Logger.getLogger(ProvSSLSocketWrap.class.getName());
+
+    private static Socket checkSocket(Socket s) throws SocketException
+    {
+        if (s == null)
+        {
+            throw new NullPointerException("'s' cannot be null");
+        }
+        if (!s.isConnected())
+        {
+            throw new SocketException("'s' is not a connected socket");
+        }
+        return s;
+    }
+
     protected final AppDataInput appDataIn = new AppDataInput();
     protected final AppDataOutput appDataOut = new AppDataOutput();
 
     protected final ProvSSLContextSpi context;
     protected final ContextData contextData;
-
     protected final Socket wrapSocket;
-    protected final String wrapHost;
-    protected final int wrapPort;
-    protected final boolean wrapAutoClose;
+    protected final InputStream consumed;
+    protected final String host;
+    protected final boolean autoClose;
+    protected final ProvSSLParameters sslParameters;
 
-    protected ProvSSLParameters sslParameters;
     protected boolean enableSessionCreation = true;
-    protected boolean useClientMode = true;
+    protected boolean useClientMode;
 
-    protected boolean initialHandshakeBegun = false;
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
     protected BCSSLConnection connection = null;
     protected SSLSession handshakeSession = null;
 
-    protected ProvSSLSocketWrap(ProvSSLContextSpi context, ContextData contextData, Socket s, String host, int port, boolean autoClose)
+    protected ProvSSLSocketWrap(ProvSSLContextSpi context, ContextData contextData, Socket s, InputStream consumed, boolean autoClose)
+        throws IOException
     {
         super();
 
         this.context = context;
         this.contextData = contextData;
-        this.wrapSocket = s;
-        this.wrapHost = host;
-        this.wrapPort = port;
-        this.wrapAutoClose = autoClose;
-        this.sslParameters = ProvSSLParameters.extractDefaultParameters(context);
+        this.wrapSocket = checkSocket(s);
+        this.consumed = consumed;
+        this.host = null;
+        this.autoClose = autoClose;
+        this.useClientMode = false;
+        this.sslParameters = context.getDefaultParameters(!useClientMode);
+    }
+
+    protected ProvSSLSocketWrap(ProvSSLContextSpi context, ContextData contextData, Socket s, String host, int port, boolean autoClose)
+        throws IOException
+    {
+        super();
+
+        this.context = context;
+        this.contextData = contextData;
+        this.wrapSocket = checkSocket(s);
+        this.consumed = null;
+        this.host = host;
+        this.autoClose = autoClose;
+        this.useClientMode = true;
+        this.sslParameters = context.getDefaultParameters(!useClientMode);
     }
 
     public ProvSSLContextSpi getContext()
@@ -78,13 +112,29 @@ class ProvSSLSocketWrap
     @Override
     public synchronized void close() throws IOException
     {
-        if (protocol != null)
+        if (protocol == null)
+        {
+            closeSocket();
+        }
+        else
         {
             protocol.close();
         }
-        if (wrapAutoClose)
+    }
+
+    @Override
+    protected void closeSocket() throws IOException
+    {
+        if (autoClose)
         {
             wrapSocket.close();
+        }
+        else if (protocol != null)
+        {
+            /*
+             * TODO[jsse] If we initiated the close, we need to wait for the close_notify from the
+             * peer to arrive so that the underlying socket can be used after we detach.
+             */
         }
     }
 
@@ -104,11 +154,11 @@ class ProvSSLSocketWrap
     {
         try
         {
-            handshakeIfNecessary();
+            handshakeIfNecessary(false);
         }
         catch (Exception e)
         {
-            // TODO[jsse] Logging?
+            LOG.log(Level.FINE, "Failed to establish connection", e);
         }
 
         return connection;
@@ -236,15 +286,15 @@ class ProvSSLSocketWrap
         return wrapSocket.getSoTimeout();
     }
 
+    public synchronized BCSSLParameters getParameters()
+    {
+        return SSLParametersUtil.getParameters(sslParameters);
+    }
+
     @Override
     public synchronized SSLParameters getSSLParameters()
     {
-        return SSLParametersUtil.toSSLParameters(sslParameters);
-    }
-
-    public synchronized ProvSSLParameters getProvSSLParameters()
-    {
-        return sslParameters;
+        return SSLParametersUtil.getSSLParameters(sslParameters);
     }
 
     @Override
@@ -316,22 +366,12 @@ class ProvSSLSocketWrap
     @Override
     public synchronized void setEnabledCipherSuites(String[] suites)
     {
-        if (!context.isSupportedCipherSuites(suites))
-        {
-            throw new IllegalArgumentException("'suites' cannot be null, or contain unsupported cipher suites");
-        }
-
         sslParameters.setCipherSuites(suites);
     }
 
     @Override
     public synchronized void setEnabledProtocols(String[] protocols)
     {
-        if (!context.isSupportedProtocols(protocols))
-        {
-            throw new IllegalArgumentException("'protocols' cannot be null, or contain unsupported protocols");
-        }
-
         sslParameters.setProtocols(protocols);
     }
 
@@ -351,6 +391,11 @@ class ProvSSLSocketWrap
     public synchronized void setNeedClientAuth(boolean need)
     {
         sslParameters.setNeedClientAuth(need);
+    }
+
+    public synchronized void setParameters(BCSSLParameters parameters)
+    {
+        SSLParametersUtil.setParameters(this.sslParameters, parameters);
     }
 
     @Override
@@ -378,12 +423,6 @@ class ProvSSLSocketWrap
     }
 
     @Override
-    public synchronized void setSSLParameters(SSLParameters sslParameters)
-    {
-        this.sslParameters = SSLParametersUtil.toProvSSLParameters(sslParameters);
-    }
-
-    @Override
     public void setSoLinger(boolean on, int linger) throws SocketException
     {
         wrapSocket.setSoLinger(on, linger);
@@ -393,6 +432,12 @@ class ProvSSLSocketWrap
     public void setSoTimeout(int timeout) throws SocketException
     {
         wrapSocket.setSoTimeout(timeout);
+    }
+
+    @Override
+    public synchronized void setSSLParameters(SSLParameters sslParameters)
+    {
+        SSLParametersUtil.setSSLParameters(this.sslParameters, sslParameters);
     }
 
     @Override
@@ -410,12 +455,19 @@ class ProvSSLSocketWrap
     @Override
     public synchronized void setUseClientMode(boolean mode)
     {
-        if (initialHandshakeBegun && mode != this.useClientMode)
+        if (this.useClientMode == mode)
+        {
+            return;
+        }
+
+        if (protocol != null)
         {
             throw new IllegalArgumentException("Mode cannot be changed after the initial handshake has begun");
         }
 
         this.useClientMode = mode;
+
+        context.updateDefaultProtocols(sslParameters, !useClientMode);
     }
 
     @Override
@@ -427,42 +479,55 @@ class ProvSSLSocketWrap
     @Override
     public synchronized void startHandshake() throws IOException
     {
-        if (initialHandshakeBegun)
-        {
-            throw new UnsupportedOperationException("Renegotiation not supported");
-        }
+        startHandshake(true);
+    }
 
-        this.initialHandshakeBegun = true;
-
-        try
+    protected void startHandshake(boolean resumable) throws IOException
+    {
+        if (protocol == null)
         {
             // TODO[jsse] Check for session to re-use and apply to handshake
             // TODO[jsse] Allocate this.handshakeSession and update it during handshake
-    
+
+            InputStream input = wrapSocket.getInputStream();
+            if (consumed != null)
+            {
+                input = new SequenceInputStream(consumed, input);
+            }
+
+            OutputStream output = wrapSocket.getOutputStream();
+
             if (this.useClientMode)
             {
-                TlsClientProtocol clientProtocol = new TlsClientProtocol(wrapSocket.getInputStream(), wrapSocket.getOutputStream());
+                TlsClientProtocol clientProtocol = new ProvTlsClientProtocol(input, output, socketCloser);
+                clientProtocol.setResumableHandshake(resumable);
                 this.protocol = clientProtocol;
 
-                ProvTlsClient client = new ProvTlsClient(this);
+                ProvTlsClient client = new ProvTlsClient(this, sslParameters.copy());
                 this.protocolPeer = client;
-    
+
                 clientProtocol.connect(client);
             }
             else
             {
-                TlsServerProtocol serverProtocol = new TlsServerProtocol(wrapSocket.getInputStream(), wrapSocket.getOutputStream());
+                TlsServerProtocol serverProtocol = new ProvTlsServerProtocol(input, output, socketCloser);
+                serverProtocol.setResumableHandshake(resumable);
                 this.protocol = serverProtocol;
-    
-                ProvTlsServer server = new ProvTlsServer(this);
+
+                ProvTlsServer server = new ProvTlsServer(this, sslParameters.copy());
                 this.protocolPeer = server;
-    
+
                 serverProtocol.accept(server);
             }
         }
-        finally
+        else if (protocol.isHandshaking())
         {
-            this.handshakeSession = null;
+            protocol.setResumableHandshake(resumable);
+            protocol.resumeHandshake();
+        }
+        else
+        {
+            throw new UnsupportedOperationException("Renegotiation not supported");
         }
     }
 
@@ -475,7 +540,9 @@ class ProvSSLSocketWrap
 
     public String getPeerHost()
     {
-        return wrapHost;
+        // TODO[jsse] See SunJSSE for some attempt at implicit host name determination
+
+        return host;
     }
 
     public int getPeerPort()
@@ -526,11 +593,11 @@ class ProvSSLSocketWrap
         this.connection = connection;
     }
 
-    synchronized void handshakeIfNecessary() throws IOException
+    synchronized void handshakeIfNecessary(boolean resumable) throws IOException
     {
-        if (!initialHandshakeBegun)
+        if (protocol == null || protocol.isHandshaking())
         {
-            startHandshake();
+            startHandshake(resumable);
         }
     }
 
@@ -556,7 +623,7 @@ class ProvSSLSocketWrap
         @Override
         public int read() throws IOException
         {
-            handshakeIfNecessary();
+            handshakeIfNecessary(true);
 
             byte[] buf = new byte[1];
             int ret = protocol.readApplicationData(buf, 0, 1);
@@ -571,7 +638,7 @@ class ProvSSLSocketWrap
                 return 0;
             }
 
-            handshakeIfNecessary();
+            handshakeIfNecessary(true);
             return protocol.readApplicationData(b, off, len);
         }
     }
@@ -599,7 +666,7 @@ class ProvSSLSocketWrap
         @Override
         public void write(int b) throws IOException
         {
-            handshakeIfNecessary();
+            handshakeIfNecessary(true);
 
             byte[] buf = new byte[]{ (byte)b };
             protocol.writeApplicationData(buf, 0, 1);
@@ -610,7 +677,7 @@ class ProvSSLSocketWrap
         {
             if (len > 0)
             {
-                handshakeIfNecessary();
+                handshakeIfNecessary(true);
                 protocol.writeApplicationData(b, off, len);
             }
         }

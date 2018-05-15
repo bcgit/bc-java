@@ -54,7 +54,6 @@ public class PKIXCertPathBuilderSpi
             {
                 ExtendedPKIXBuilderParameters extPKIX = (ExtendedPKIXBuilderParameters)params;
 
- ;
                 for (Iterator it = extPKIX.getAdditionalStores().iterator(); it.hasNext();)
                 {
                      paramsPKIXBldr.addCertificateStore((PKIXCertStore)it.next());

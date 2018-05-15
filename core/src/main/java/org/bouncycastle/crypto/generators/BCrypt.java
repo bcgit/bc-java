@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.generators;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.Strings;
 
 /**
  * Core of password hashing scheme Bcrypt,
@@ -600,6 +601,19 @@ public final class BCrypt
     // Blowfish spec limits keys to 448bit/56 bytes to ensure all bits of key affect all ciphertext
     // bits, but technically algorithm handles 72 byte keys and most implementations support this.
     static final int MAX_PASSWORD_BYTES = 72;
+
+    private static final byte[] oneByte = new byte[1];
+
+    /**
+     * Converts a character password to bytes incorporating the required trailing zero byte.
+     *
+     * @param password the password to be encoded.
+     * @return a byte representation of the password in UTF8 + trailing zero.
+     */
+    public static byte[] passwordToByteArray(char[] password)
+    {
+        return Arrays.concatenate(Strings.toUTF8ByteArray(password), oneByte);
+    }
 
     /**
      * Calculates the <b>bcrypt</b> hash of a password.

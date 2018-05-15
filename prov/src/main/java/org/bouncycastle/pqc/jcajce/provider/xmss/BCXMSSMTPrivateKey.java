@@ -52,7 +52,7 @@ public class BCXMSSMTPrivateKey
 
             if (xmssMtPrivateKey.getBdsState() != null)
             {
-                keyBuilder.withBDSState((BDSStateMap)XMSSUtil.deserialize(xmssMtPrivateKey.getBdsState()));
+                keyBuilder.withBDSState((BDSStateMap)XMSSUtil.deserialize(xmssMtPrivateKey.getBdsState(), BDSStateMap.class));
             }
 
             this.keyParams = keyBuilder.build();

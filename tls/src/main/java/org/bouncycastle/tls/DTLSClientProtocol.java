@@ -38,6 +38,7 @@ public class DTLSClientProtocol
         state.clientContext = new TlsClientContextImpl(client.getCrypto(), securityParameters);
 
         securityParameters.clientRandom = TlsProtocol.createRandomBlock(client.shouldUseGMTUnixTime(), state.clientContext);
+        securityParameters.extendedPadding = client.shouldUseExtendedPadding();
 
         client.init(state.clientContext);
 
@@ -219,6 +220,7 @@ public class DTLSClientProtocol
         if (state.authentication == null)
         {
             // There was no server certificate message; check it's OK
+            state.clientContext.getSecurityParameters().tlsServerEndPoint = TlsUtils.EMPTY_BYTES;
             state.keyExchange.skipServerCredentials();
         }
         else
@@ -297,7 +299,7 @@ public class DTLSClientProtocol
                 clientCertificate = Certificate.EMPTY_CHAIN;
             }
 
-            byte[] certificateBody = generateCertificate(clientCertificate);
+            byte[] certificateBody = generateCertificate(state.clientContext, clientCertificate, null);
             handshake.sendMessage(HandshakeType.certificate, certificateBody);
         }
 
@@ -528,7 +530,7 @@ public class DTLSClientProtocol
 
         TlsProtocol.assertEmpty(buf);
 
-        state.keyExchange.validateCertificateRequest(state.certificateRequest);
+        state.certificateRequest = TlsUtils.validateCertificateRequest(state.certificateRequest, state.keyExchange);
     }
 
     protected void processCertificateStatus(ClientHandshakeState state, byte[] body)
@@ -596,10 +598,13 @@ public class DTLSClientProtocol
         throws IOException
     {
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
+        ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
 
-        Certificate serverCertificate = Certificate.parse(state.clientContext, buf);
+        Certificate serverCertificate = Certificate.parse(state.clientContext, buf, endPointHash);
 
         TlsProtocol.assertEmpty(buf);
+
+        state.clientContext.getSecurityParameters().tlsServerEndPoint = endPointHash.toByteArray();
 
         state.authentication = state.client.getAuthentication();
         if (state.authentication == null)

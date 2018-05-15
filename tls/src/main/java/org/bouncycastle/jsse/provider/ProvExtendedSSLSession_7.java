@@ -2,23 +2,18 @@ package org.bouncycastle.jsse.provider;
 
 import java.security.Principal;
 import java.security.cert.Certificate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 import javax.net.ssl.ExtendedSSLSession;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSessionContext;
 
-import org.bouncycastle.jsse.BCSNIServerName;
-
 // TODO[jsse] Serializable ?
-class ProvExtendedSSLSession
+class ProvExtendedSSLSession_7
     extends ExtendedSSLSession
 {
-    private final ProvSSLSession sslSession;
+    final ProvSSLSession sslSession;
 
-    ProvExtendedSSLSession(ProvSSLSession sslSession)
+    ProvExtendedSSLSession_7(ProvSSLSession sslSession)
     {
         this.sslSession = sslSession;
     }
@@ -58,7 +53,6 @@ class ProvExtendedSSLSession
         return sslSession.getLocalPrincipal();
     }
 
-    @Override
     public String[] getLocalSupportedSignatureAlgorithms()
     {
         return sslSession.getLocalSupportedSignatureAlgorithms();
@@ -102,28 +96,6 @@ class ProvExtendedSSLSession
     public String getProtocol()
     {
         return sslSession.getProtocol();
-    }
-
-    public List getRequestedServerNames()
-    {
-        List<BCSNIServerName> serverNames = sslSession.getRequestedServerNames();
-        if (serverNames != null)
-        {
-            ArrayList result = new ArrayList(serverNames.size());
-            for (BCSNIServerName serverName : serverNames)
-            {
-                Object exported = JsseUtilsv18.exportSNIServerName(serverName);
-                if (exported != null)
-                {
-                    result.add(exported);
-                }
-            }
-            if (!result.isEmpty())
-            {
-                return Collections.unmodifiableList(result);
-            }
-        }
-        return Collections.emptyList();
     }
 
     public SSLSessionContext getSessionContext()

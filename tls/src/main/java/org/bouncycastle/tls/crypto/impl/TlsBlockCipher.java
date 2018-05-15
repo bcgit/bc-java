@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.security.SecureRandom;
 
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
@@ -37,6 +38,8 @@ public class TlsBlockCipher
         this.encryptThenMAC = cryptoParams.getSecurityParameters().isEncryptThenMAC();
         this.useExplicitIV = TlsImplUtils.isTLSv11(cryptoParams);
 
+        SecurityParameters securityParameters = cryptoParams.getSecurityParameters();
+
         /*
          * Don't use variable-length padding with truncated MACs.
          * 
@@ -45,8 +48,9 @@ public class TlsBlockCipher
          *
          * TODO[DTLS] Consider supporting in DTLS (without exceeding send limit though)
          */
-        this.useExtraPadding = !cryptoParams.getServerVersion().isDTLS()
-            && (encryptThenMAC || !cryptoParams.getSecurityParameters().isTruncatedHMac());
+        this.useExtraPadding = securityParameters.isExtendedPadding()
+            && !cryptoParams.getServerVersion().isDTLS()
+            && (encryptThenMAC || !securityParameters.isTruncatedHMac());
 
         this.encryptCipher = encryptCipher;
         this.decryptCipher = decryptCipher;
@@ -108,6 +112,38 @@ public class TlsBlockCipher
             this.writeMac = new TlsSuiteHMac(cryptoParams, clientMac);
             this.readMac = new TlsSuiteHMac(cryptoParams, serverMac);
         }
+    }
+
+    public int getCiphertextLimit(int plaintextLimit)
+    {
+        int blockSize = encryptCipher.getBlockSize();
+        int macSize = writeMac.getSize();
+
+        int ciphertextLimit = plaintextLimit;
+
+        // An explicit IV consumes 1 block
+        if (useExplicitIV)
+        {
+            ciphertextLimit += blockSize;
+        }
+
+        int maxPadding = useExtraPadding ? 255 : blockSize;
+
+        // Leave room for the MAC and (block-aligning) padding
+        if (encryptThenMAC)
+        {
+            ciphertextLimit += maxPadding;
+            ciphertextLimit -= (ciphertextLimit % blockSize);
+            ciphertextLimit += macSize;
+        }
+        else
+        {
+            ciphertextLimit += macSize;
+            ciphertextLimit += maxPadding;
+            ciphertextLimit -= (ciphertextLimit % blockSize);
+        }
+
+        return ciphertextLimit;
     }
 
     public int getPlaintextLimit(int ciphertextLimit)

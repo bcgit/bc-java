@@ -51,14 +51,15 @@ public class DefaultAlgorithmNameFinder
         algorithms.put(EACObjectIdentifiers.id_TA_ECDSA_SHA_256, "SHA256WITHCVC-ECDSA");
         algorithms.put(EACObjectIdentifiers.id_TA_ECDSA_SHA_384, "SHA384WITHCVC-ECDSA");
         algorithms.put(EACObjectIdentifiers.id_TA_ECDSA_SHA_512, "SHA512WITHCVC-ECDSA");
-        algorithms.put(NISTObjectIdentifiers.dsa_with_sha224, "SHA224WITHDSA");
-        algorithms.put(NISTObjectIdentifiers.dsa_with_sha256, "SHA256WITHDSA");
-        algorithms.put(NISTObjectIdentifiers.dsa_with_sha384, "SHA384WITHDSA");
-        algorithms.put(NISTObjectIdentifiers.dsa_with_sha512, "SHA512WITHDSA");
+
         algorithms.put(NISTObjectIdentifiers.id_sha224, "SHA224");
         algorithms.put(NISTObjectIdentifiers.id_sha256, "SHA256");
         algorithms.put(NISTObjectIdentifiers.id_sha384, "SHA384");
         algorithms.put(NISTObjectIdentifiers.id_sha512, "SHA512");
+        algorithms.put(NISTObjectIdentifiers.id_sha3_224, "SHA3-224");
+        algorithms.put(NISTObjectIdentifiers.id_sha3_256, "SHA3-256");
+        algorithms.put(NISTObjectIdentifiers.id_sha3_384, "SHA3-384");
+        algorithms.put(NISTObjectIdentifiers.id_sha3_512, "SHA3-512");
         algorithms.put(OIWObjectIdentifiers.elGamalAlgorithm, "ELGAMAL");
         algorithms.put(OIWObjectIdentifiers.idSHA1, "SHA1");
         algorithms.put(OIWObjectIdentifiers.md5WithRSA, "MD5WITHRSA");
@@ -74,6 +75,10 @@ public class DefaultAlgorithmNameFinder
         algorithms.put(PKCSObjectIdentifiers.sha256WithRSAEncryption, "SHA256WITHRSA");
         algorithms.put(PKCSObjectIdentifiers.sha384WithRSAEncryption, "SHA384WITHRSA");
         algorithms.put(PKCSObjectIdentifiers.sha512WithRSAEncryption, "SHA512WITHRSA");
+        algorithms.put(NISTObjectIdentifiers.id_rsassa_pkcs1_v1_5_with_sha3_224, "SHA3-224WITHRSA");
+        algorithms.put(NISTObjectIdentifiers.id_rsassa_pkcs1_v1_5_with_sha3_256, "SHA3-256WITHRSA");
+        algorithms.put(NISTObjectIdentifiers.id_rsassa_pkcs1_v1_5_with_sha3_384, "SHA3-384WITHRSA");
+        algorithms.put(NISTObjectIdentifiers.id_rsassa_pkcs1_v1_5_with_sha3_512, "SHA3-512WITHRSA");
         algorithms.put(TeleTrusTObjectIdentifiers.ripemd128, "RIPEMD128");
         algorithms.put(TeleTrusTObjectIdentifiers.ripemd160, "RIPEMD160");
         algorithms.put(TeleTrusTObjectIdentifiers.ripemd256, "RIPEMD256");
@@ -86,7 +91,19 @@ public class DefaultAlgorithmNameFinder
         algorithms.put(X9ObjectIdentifiers.ecdsa_with_SHA256, "SHA256WITHECDSA");
         algorithms.put(X9ObjectIdentifiers.ecdsa_with_SHA384, "SHA384WITHECDSA");
         algorithms.put(X9ObjectIdentifiers.ecdsa_with_SHA512, "SHA512WITHECDSA");
+        algorithms.put(NISTObjectIdentifiers.id_ecdsa_with_sha3_224, "SHA3-224WITHECDSA");
+        algorithms.put(NISTObjectIdentifiers.id_ecdsa_with_sha3_256, "SHA3-256WITHECDSA");
+        algorithms.put(NISTObjectIdentifiers.id_ecdsa_with_sha3_384, "SHA3-384WITHECDSA");
+        algorithms.put(NISTObjectIdentifiers.id_ecdsa_with_sha3_512, "SHA3-512WITHECDSA");
         algorithms.put(X9ObjectIdentifiers.id_dsa_with_sha1, "SHA1WITHDSA");
+        algorithms.put(NISTObjectIdentifiers.dsa_with_sha224, "SHA224WITHDSA");
+        algorithms.put(NISTObjectIdentifiers.dsa_with_sha256, "SHA256WITHDSA");
+        algorithms.put(NISTObjectIdentifiers.dsa_with_sha384, "SHA384WITHDSA");
+        algorithms.put(NISTObjectIdentifiers.dsa_with_sha512, "SHA512WITHDSA");
+        algorithms.put(NISTObjectIdentifiers.id_dsa_with_sha3_224, "SHA3-224WITHDSA");
+        algorithms.put(NISTObjectIdentifiers.id_dsa_with_sha3_256, "SHA3-256WITHDSA");
+        algorithms.put(NISTObjectIdentifiers.id_dsa_with_sha3_384, "SHA3-384WITHDSA");
+        algorithms.put(NISTObjectIdentifiers.id_dsa_with_sha3_512, "SHA3-512WITHDSA");
         algorithms.put(GNUObjectIdentifiers.Tiger_192, "Tiger");
 
         algorithms.put(PKCSObjectIdentifiers.RC2_CBC, "RC2/CBC");

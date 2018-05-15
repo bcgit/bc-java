@@ -166,8 +166,17 @@ public class BaseBlockCipher
         org.bouncycastle.crypto.BlockCipher engine,
         int ivLength)
     {
+        this(engine, true, ivLength);
+    }
+
+    protected BaseBlockCipher(
+        org.bouncycastle.crypto.BlockCipher engine,
+        boolean fixedIv,
+        int ivLength)
+    {
         baseEngine = engine;
 
+        this.fixedIv = fixedIv;
         this.cipher = new BufferedGenericBlockCipher(engine);
         this.ivLength = ivLength / 8;
     }
@@ -176,9 +185,18 @@ public class BaseBlockCipher
         BufferedBlockCipher engine,
         int ivLength)
     {
+        this(engine, true, ivLength);
+    }
+
+    protected BaseBlockCipher(
+        BufferedBlockCipher engine,
+        boolean fixedIv,
+        int ivLength)
+    {
         baseEngine = engine.getUnderlyingCipher();
 
         this.cipher = new BufferedGenericBlockCipher(engine);
+        this.fixedIv = fixedIv;
         this.ivLength = ivLength / 8;
     }
 
@@ -369,7 +387,7 @@ public class BaseBlockCipher
         }
         else if (modeName.startsWith("CCM"))
         {
-            ivLength = 13; // CCM nonce 7..13 bytes
+            ivLength = 12; // CCM nonce 7..13 bytes
             if (baseEngine instanceof DSTU7624Engine)
             {
                 cipher = new AEADGenericBlockCipher(new KCCMBlockCipher(baseEngine));

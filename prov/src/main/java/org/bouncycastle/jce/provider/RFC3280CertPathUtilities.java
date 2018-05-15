@@ -59,7 +59,6 @@ import org.bouncycastle.jcajce.PKIXCertStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.jce.PrincipalUtil;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.util.Arrays;
 
@@ -2421,8 +2420,7 @@ class RFC3280CertPathUtilities
             }
             catch (CertPathValidatorException e)
             {
-                throw new ExtCertPathValidatorException("Additional certificate path checker failed.", e, certPath,
-                    index);
+                throw new ExtCertPathValidatorException(e.getMessage(), e, certPath, index);
             }
         }
 

@@ -1,6 +1,7 @@
 package org.bouncycastle.tls;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -75,13 +76,17 @@ public class TlsServerProtocol
         this.tlsServerContext = new TlsServerContextImpl(tlsServer.getCrypto(), securityParameters);
 
         this.securityParameters.serverRandom = createRandomBlock(tlsServer.shouldUseGMTUnixTime(), tlsServerContext);
+        this.securityParameters.extendedPadding = tlsServer.shouldUseExtendedPadding();
 
         this.tlsServer.init(tlsServerContext);
         this.recordStream.init(tlsServerContext);
 
         this.recordStream.setRestrictReadVersion(false);
 
-        blockForHandshake();
+        if (blocking)
+        {
+            blockForHandshake();
+        }
     }
 
     protected void cleanupHandshake()
@@ -150,6 +155,7 @@ public class TlsServerProtocol
 
                 Certificate serverCertificate = null;
 
+                ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
                 if (this.serverCredentials == null)
                 {
                     this.keyExchange.skipServerCredentials();
@@ -159,8 +165,9 @@ public class TlsServerProtocol
                     this.keyExchange.processServerCredentials(this.serverCredentials);
 
                     serverCertificate = this.serverCredentials.getCertificate();
-                    sendCertificateMessage(serverCertificate);
+                    sendCertificateMessage(serverCertificate, endPointHash);
                 }
+                securityParameters.tlsServerEndPoint = endPointHash.toByteArray();
                 this.connection_state = CS_SERVER_CERTIFICATE;
 
                 // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus
@@ -197,7 +204,7 @@ public class TlsServerProtocol
                             throw new TlsFatalAlert(AlertDescription.internal_error);
                         }
 
-                        this.keyExchange.validateCertificateRequest(certificateRequest);
+                        this.certificateRequest = TlsUtils.validateCertificateRequest(this.certificateRequest, this.keyExchange);
 
                         sendCertificateRequestMessage(certificateRequest);
 
@@ -355,10 +362,10 @@ public class TlsServerProtocol
                 if (this.expectSessionTicket)
                 {
                     sendNewSessionTicketMessage(tlsServer.getNewSessionTicket());
-                    sendChangeCipherSpecMessage();
                 }
                 this.connection_state = CS_SERVER_SESSION_TICKET;
 
+                sendChangeCipherSpecMessage();
                 sendFinishedMessage();
                 this.connection_state = CS_SERVER_FINISHED;
 
@@ -441,7 +448,7 @@ public class TlsServerProtocol
     protected void receiveCertificateMessage(ByteArrayInputStream buf)
         throws IOException
     {
-        Certificate clientCertificate = Certificate.parse(getContext(), buf);
+        Certificate clientCertificate = Certificate.parse(getContext(), buf, null);
 
         assertEmpty(buf);
 
@@ -601,11 +608,6 @@ public class TlsServerProtocol
         establishMasterSecret(getContext(), keyExchange);
 
         recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
-
-        if (!expectSessionTicket)
-        {
-            sendChangeCipherSpecMessage();
-        }
     }
 
     protected void sendCertificateRequestMessage(CertificateRequest certificateRequest)

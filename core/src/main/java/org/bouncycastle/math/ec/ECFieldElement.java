@@ -533,7 +533,7 @@ public abstract class ECFieldElement
         /**
          * The <code>LongArray</code> holding the bits.
          */
-        private LongArray x;
+        LongArray x;
 
         /**
          * Constructor for PPB.
@@ -604,7 +604,7 @@ public abstract class ECFieldElement
             this(m, k, 0, 0, x);
         }
 
-        private F2m(int m, int[] ks, LongArray x)
+        F2m(int m, int[] ks, LongArray x)
         {
             this.m = m;
             this.representation = (ks.length == 1) ? TPB : PPB;

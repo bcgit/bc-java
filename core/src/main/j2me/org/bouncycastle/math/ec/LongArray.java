@@ -853,6 +853,11 @@ class LongArray
         }
     }
 
+    void copyTo(long[] z, int zOff)
+    {
+        System.arraycopy(m_ints, 0, z, zOff, m_ints.length);
+    }
+    
     public LongArray modMultiplyLD(LongArray other, int m, int[] ks)
     {
         /*

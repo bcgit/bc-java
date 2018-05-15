@@ -73,6 +73,8 @@ public class SM2SignerTest
         isTrue("r wrong", rs[0].equals(new BigInteger("40F1EC59F793D9F49E09DCEF49130D4194F79FB1EED2CAA55BACDB49C4E755D1", 16)));
         isTrue("s wrong", rs[1].equals(new BigInteger("6FC6DAC32C5D5CF10C77DFB20F7C2EB667A457872FB09EC56327A67EC7DEEBE7", 16)));
 
+        signer = new SM2Signer();
+
         signer.init(false, new ParametersWithID(ecPub, Strings.toByteArray("ALICE123@YAHOO.COM")));
 
         signer.update(msg, 0, msg.length);

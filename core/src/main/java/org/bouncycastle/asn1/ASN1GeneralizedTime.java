@@ -44,7 +44,7 @@ import org.bouncycastle.util.Strings;
 public class ASN1GeneralizedTime
     extends ASN1Primitive
 {
-    private byte[] time;
+    protected byte[] time;
 
     /**
      * return a generalized time from the passed in object
@@ -277,9 +277,17 @@ public class ASN1GeneralizedTime
             {
                 dateF = new SimpleDateFormat("yyyyMMddHHmmss.SSS'Z'");
             }
-            else
+            else if (hasSeconds())
             {
                 dateF = new SimpleDateFormat("yyyyMMddHHmmss'Z'");
+            }
+            else if (hasMinutes())
+            {
+                dateF = new SimpleDateFormat("yyyyMMddHHmm'Z'");
+            }
+            else
+            {
+                dateF = new SimpleDateFormat("yyyyMMddHH'Z'");
             }
 
             dateF.setTimeZone(new SimpleTimeZone(0, "Z"));
@@ -291,9 +299,17 @@ public class ASN1GeneralizedTime
             {
                 dateF = new SimpleDateFormat("yyyyMMddHHmmss.SSSz");
             }
-            else
+            else if (hasSeconds())
             {
                 dateF = new SimpleDateFormat("yyyyMMddHHmmssz");
+            }
+            else if (hasMinutes())
+            {
+                dateF = new SimpleDateFormat("yyyyMMddHHmmz");
+            }
+            else
+            {
+                dateF = new SimpleDateFormat("yyyyMMddHHz");
             }
 
             dateF.setTimeZone(new SimpleTimeZone(0, "Z"));
@@ -304,9 +320,17 @@ public class ASN1GeneralizedTime
             {
                 dateF = new SimpleDateFormat("yyyyMMddHHmmss.SSS");
             }
-            else
+            else if (hasSeconds())
             {
                 dateF = new SimpleDateFormat("yyyyMMddHHmmss");
+            }
+            else if (hasMinutes())
+            {
+                dateF = new SimpleDateFormat("yyyyMMddHHmm");
+            }
+            else
+            {
+                dateF = new SimpleDateFormat("yyyyMMddHH");
             }
 
             dateF.setTimeZone(new SimpleTimeZone(0, TimeZone.getDefault().getID()));
@@ -346,7 +370,7 @@ public class ASN1GeneralizedTime
         return dateF.parse(d);
     }
 
-    private boolean hasFractionalSeconds()
+    protected boolean hasFractionalSeconds()
     {
         for (int i = 0; i != time.length; i++)
         {
@@ -359,6 +383,21 @@ public class ASN1GeneralizedTime
             }
         }
         return false;
+    }
+
+    protected boolean hasSeconds()
+    {
+        return isDigit(12) && isDigit(13);
+    }
+
+    protected boolean hasMinutes()
+    {
+        return isDigit(10) && isDigit(11);
+    }
+
+    private boolean isDigit(int pos)
+    {
+        return time.length > pos && time[pos] >= '0' && time[pos] <= '9';
     }
 
     boolean isConstructed()
@@ -378,6 +417,11 @@ public class ASN1GeneralizedTime
         throws IOException
     {
         out.writeEncoded(BERTags.GENERALIZED_TIME, time);
+    }
+
+    ASN1Primitive toDERObject()
+    {
+        return new DERGeneralizedTime(time);
     }
 
     boolean asn1Equals(

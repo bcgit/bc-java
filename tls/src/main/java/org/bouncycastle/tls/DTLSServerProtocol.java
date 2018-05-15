@@ -48,6 +48,7 @@ public class DTLSServerProtocol
         state.serverContext = new TlsServerContextImpl(server.getCrypto(), securityParameters);
 
         securityParameters.serverRandom = TlsProtocol.createRandomBlock(server.shouldUseGMTUnixTime(), state.serverContext);
+        securityParameters.extendedPadding = server.shouldUseExtendedPadding();
 
         server.init(state.serverContext);
 
@@ -146,6 +147,7 @@ public class DTLSServerProtocol
 
         Certificate serverCertificate = null;
 
+        ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
         if (state.serverCredentials == null)
         {
             state.keyExchange.skipServerCredentials();
@@ -155,9 +157,10 @@ public class DTLSServerProtocol
             state.keyExchange.processServerCredentials(state.serverCredentials);
 
             serverCertificate = state.serverCredentials.getCertificate();
-            byte[] certificateBody = generateCertificate(serverCertificate);
+            byte[] certificateBody = generateCertificate(state.serverContext, serverCertificate, endPointHash);
             handshake.sendMessage(HandshakeType.certificate, certificateBody);
         }
+        securityParameters.tlsServerEndPoint = endPointHash.toByteArray();
 
         // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus
         if (serverCertificate == null || serverCertificate.isEmpty())
@@ -191,7 +194,7 @@ public class DTLSServerProtocol
                     throw new TlsFatalAlert(AlertDescription.internal_error);
                 }
 
-                state.keyExchange.validateCertificateRequest(state.certificateRequest);
+                state.certificateRequest = TlsUtils.validateCertificateRequest(state.certificateRequest, state.keyExchange);
 
                 byte[] certificateRequestBody = generateCertificateRequest(state, state.certificateRequest);
                 handshake.sendMessage(HandshakeType.certificate_request, certificateRequestBody);
@@ -529,7 +532,7 @@ public class DTLSServerProtocol
     {
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
-        Certificate clientCertificate = Certificate.parse(state.serverContext, buf);
+        Certificate clientCertificate = Certificate.parse(state.serverContext, buf, null);
 
         TlsProtocol.assertEmpty(buf);
 

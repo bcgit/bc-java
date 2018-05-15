@@ -28,18 +28,18 @@ import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.CompressionMethod;
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
-import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.ServerNameList;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsCredentials;
+import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.DHGroup;
-import org.bouncycastle.tls.crypto.DHStandardGroups;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
+import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedAgreement;
@@ -56,17 +56,18 @@ class ProvTlsServer
     protected final ProvTlsManager manager;
     protected final ProvSSLParameters sslParameters;
 
+    protected ProvSSLSessionImpl sslSession = null;
     protected BCSNIServerName matchedSNIServerName = null;
     protected Set<String> keyManagerMissCache = null;
     protected TlsCredentials credentials = null;
     protected boolean handshakeComplete = false;
 
-    ProvTlsServer(ProvTlsManager manager) throws SSLException
+    ProvTlsServer(ProvTlsManager manager, ProvSSLParameters sslParameters) throws SSLException
     {
         super(manager.getContextData().getCrypto());
 
         this.manager = manager;
-        this.sslParameters = manager.getProvSSLParameters();
+        this.sslParameters = sslParameters;
 
         if (!manager.getEnableSessionCreation())
         {
@@ -75,70 +76,25 @@ class ProvTlsServer
     }
 
     @Override
-    protected DHGroup getDHParameters()
-    {
-        if (provEphemeralDHKeySize <= 1024)
-        {
-            return DHStandardGroups.rfc2409_1024;
-        }
-        if (provEphemeralDHKeySize <= 1536)
-        {
-            return DHStandardGroups.rfc3526_1536;
-        }
-        if (provEphemeralDHKeySize <= 2048)
-        {
-            return DHStandardGroups.rfc7919_ffdhe2048;
-        }
-        if (provEphemeralDHKeySize <= 3072)
-        {
-            return DHStandardGroups.rfc7919_ffdhe3072;
-        }
-        if (provEphemeralDHKeySize <= 4096)
-        {
-            return DHStandardGroups.rfc7919_ffdhe4096;
-        }
-        if (provEphemeralDHKeySize <= 6144)
-        {
-            return DHStandardGroups.rfc7919_ffdhe6144;
-        }
-        if (provEphemeralDHKeySize <= 8192)
-        {
-            return DHStandardGroups.rfc7919_ffdhe8192;
-        }
-
-        throw new IllegalStateException("Ephemeral DH key size has unexpected value: " + provEphemeralDHKeySize);
-    }
-
-    @Override
     protected int getMaximumNegotiableCurveBits()
     {
         // NOTE: BC supports all the current set of point formats so we don't check them here
 
-        final boolean isFips = manager.getContext().isFips();
+        return SupportedGroups.getServerMaximumNegotiableCurveBits(manager.getContext().isFips(), clientSupportedGroups);
+    }
 
-        if (clientSupportedGroups == null)
-        {
-            /*
-             * RFC 4492 4. A client that proposes ECC cipher suites may choose not to include these
-             * extensions. In this case, the server is free to choose any one of the elliptic curves
-             * or point formats [...].
-             */
-            return isFips
-                ?   FipsUtils.getFipsMaximumCurveBits()
-                :   NamedGroup.getMaximumCurveBits();
-        }
+    @Override
+    protected int getMaximumNegotiableFiniteFieldBits()
+    {
+        int maxBits = SupportedGroups.getServerMaximumNegotiableFiniteFieldBits(manager.getContext().isFips(), clientSupportedGroups);
 
-        int maxBits = 0;
-        for (int i = 0; i < clientSupportedGroups.length; ++i)
-        {
-            int namedGroup = clientSupportedGroups[i];
+        return maxBits >= provEphemeralDHKeySize ? maxBits : 0;
+    }
 
-            if (!isFips || FipsUtils.isFipsCurve(namedGroup))
-            {
-                maxBits = Math.max(maxBits, NamedGroup.getCurveBits(namedGroup));
-            }
-        }
-        return maxBits;
+    @Override
+    protected ProtocolVersion getMaximumVersion()
+    {
+        return manager.getContext().getMaximumVersion(sslParameters.getProtocols());
     }
 
     @Override
@@ -162,34 +118,39 @@ class ProvTlsServer
             return selectDefaultCurve(minimumCurveBits);
         }
 
-        final boolean isFips = manager.getContext().isFips();
+        boolean isFips = manager.getContext().isFips();
 
-        // Try to find a supported named group of the required size from the client's list.
-        for (int i = 0; i < clientSupportedGroups.length; ++i)
-        {
-            int namedGroup = clientSupportedGroups[i];
-            if (NamedGroup.getCurveBits(namedGroup) >= minimumCurveBits)
-            {
-                if (!isFips || FipsUtils.isFipsCurve(namedGroup))
-                {
-                    return namedGroup;
-                }
-            }
-        }
-
-        return -1;
+        return SupportedGroups.getServerSelectedCurve(isFips, minimumCurveBits, clientSupportedGroups);
     }
 
     @Override
     protected int selectDefaultCurve(int minimumCurveBits)
     {
-        /*
-         * NOTE[fips]: These curves are recommended for FIPS. If any changes are made to how
-         * this is configured, FIPS considerations need to be accounted for in BCJSSE.
-         */
-        return minimumCurveBits <= 256 ? NamedGroup.secp256r1
-            :  minimumCurveBits <= 384 ? NamedGroup.secp384r1
-            :  -1;
+        return SupportedGroups.getServerDefaultCurve(manager.getContext().isFips(), minimumCurveBits);
+    }
+
+    @Override
+    protected TlsDHConfig selectDefaultDHConfig(int minimumFiniteFieldBits)
+    {
+        return SupportedGroups.getServerDefaultDHConfig(manager.getContext().isFips(), minimumFiniteFieldBits);
+    }
+
+    @Override
+    protected TlsDHConfig selectDHConfig(int minimumFiniteFieldBits)
+    {
+        minimumFiniteFieldBits = Math.max(minimumFiniteFieldBits, provEphemeralDHKeySize);
+
+        if (clientSupportedGroups == null)
+        {
+            return selectDefaultDHConfig(minimumFiniteFieldBits);
+        }
+
+        boolean isFips = manager.getContext().isFips();
+
+        int namedGroup = SupportedGroups.getServerSelectedFiniteField(isFips, minimumFiniteFieldBits,
+            clientSupportedGroups);
+
+        return TlsDHUtils.createNamedDHConfig(namedGroup);
     }
 
     public synchronized boolean isHandshakeComplete()
@@ -197,12 +158,14 @@ class ProvTlsServer
         return handshakeComplete;
     }
 
+    @Override
     public TlsCredentials getCredentials()
         throws IOException
     {
         return credentials;
     }
 
+    @Override
     public int[] getCipherSuites()
     {
         return TlsUtils.getSupportedCipherSuites(manager.getContextData().getCrypto(),
@@ -283,6 +246,29 @@ class ProvTlsServer
         }
 
         return serverExtensions;
+    }
+
+    @Override
+    public TlsSession getSessionToResume(byte[] sessionID)
+    {
+        ProvSSLSessionContext sessionContext = manager.getContextData().getServerSessionContext();
+        this.sslSession = sessionContext.getSessionImpl(sessionID);
+
+        if (sslSession != null)
+        {
+            TlsSession sessionToResume = sslSession.getTlsSession();
+            if (sessionToResume != null)
+            {
+                return sessionToResume;
+            }
+        }
+
+        if (!manager.getEnableSessionCreation())
+        {
+            throw new IllegalStateException("No resumable sessions and session creation is disabled");
+        }
+
+        return null;
     }
 
     @Override
@@ -380,11 +366,14 @@ class ProvTlsServer
     {
         this.handshakeComplete = true;
 
-        ProvSSLSessionContext sessionContext = manager.getContextData().getServerSessionContext();
-        ProvSSLSessionImpl session = sessionContext.reportSession(context.getSession(), null, -1);
-        ProvSSLConnection connection = new ProvSSLConnection(context, session);
+        TlsSession handshakeSession = context.getSession();
 
-        manager.notifyHandshakeComplete(connection);
+        if (sslSession == null || sslSession.getTlsSession() != handshakeSession)
+        {
+            sslSession = manager.getContextData().getServerSessionContext().reportSession(handshakeSession, null, -1);
+        }
+
+        manager.notifyHandshakeComplete(new ProvSSLConnection(context, sslSession));
     }
 
     @Override
@@ -415,7 +404,7 @@ class ProvTlsServer
              * TODO[jsse] RFC 6066 A server that implements this extension MUST NOT accept the
              * request to resume the session if the server_name extension contains a different name.
              */
-            Collection<BCSNIMatcher> sniMatchers = manager.getProvSSLParameters().getSNIMatchers();
+            Collection<BCSNIMatcher> sniMatchers = sslParameters.getSNIMatchers();
             if (sniMatchers != null && !sniMatchers.isEmpty())
             {
                 ServerNameList serverNameList = TlsExtensionsUtils.getServerNameExtension(clientExtensions);

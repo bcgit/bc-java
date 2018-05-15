@@ -74,6 +74,48 @@ public class DRBG
     // to the JVM's seed generator.
     private static SecureRandom createInitialEntropySource()
     {
+        boolean hasGetInstanceStrong = AccessController.doPrivileged(new PrivilegedAction<Boolean>()
+        {
+            public Boolean run()
+            {
+                try
+                {
+                    Class def = SecureRandom.class;
+
+                    return def.getMethod("getInstanceStrong") != null;
+                }
+                catch (Exception e)
+                {
+                    return false;
+                }
+            }
+        });
+
+        if (hasGetInstanceStrong)
+        {
+            return AccessController.doPrivileged(new PrivilegedAction<SecureRandom>()
+            {
+                public SecureRandom run()
+                {
+                    try
+                    {
+                        return (SecureRandom)SecureRandom.class.getMethod("getInstanceStrong").invoke(null);
+                    }
+                    catch (Exception e)
+                    {
+                        return createCoreSecureRandom();
+                    }
+                }
+            });
+        }
+        else
+        {
+            return createCoreSecureRandom();
+        }
+    }
+
+    private static SecureRandom createCoreSecureRandom()
+    {
         if (initialEntropySourceAndSpi != null)
         {
             return new CoreSecureRandom();
@@ -210,6 +252,15 @@ public class DRBG
             Pack.longToLittleEndian(Thread.currentThread().getId()), Pack.longToLittleEndian(System.currentTimeMillis()));
     }
 
+    private static class HybridRandomProvider
+        extends Provider
+    {
+        protected HybridRandomProvider()
+        {
+            super("BCHEP", 1.0, "Bouncy Castle Hybrid Entropy Provider");
+        }
+    }
+
     private static class HybridSecureRandom
         extends SecureRandom
     {
@@ -221,7 +272,7 @@ public class DRBG
 
         HybridSecureRandom()
         {
-            super(null, null);
+            super(null, new HybridRandomProvider());
             drbg = new SP800SecureRandomBuilder(new EntropySourceProvider()
                 {
                     public EntropySource get(final int bitsRequired)

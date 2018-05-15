@@ -4,6 +4,10 @@ import java.io.OutputStream;
 
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
+/**
+ * General interface for a key initialized operator that is able to calculate a MAC from
+ * a stream of output.
+ */
 public interface MacCalculator
 {
     AlgorithmIdentifier getAlgorithmIdentifier();

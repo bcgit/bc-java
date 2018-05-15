@@ -85,8 +85,8 @@ public class SM2Signer
             pubPoint = ((ECPublicKeyParameters)ecKey).getQ();
         }
 
-        digest.reset();
         z = getZ(userID);
+        
         digest.update(z, 0, z.length);
     }
 
@@ -104,26 +104,17 @@ public class SM2Signer
     {
         try
         {
-            ASN1Sequence s = ASN1Sequence.getInstance(ASN1Primitive.fromByteArray(signature));
-            if (s.size() != 2)
+            BigInteger[] rs = derDecode(signature);
+            if (rs != null)
             {
-                return false;
+                return verifySignature(rs[0], rs[1]);
             }
-            if (!Arrays.constantTimeAreEqual(signature, s.getEncoded(ASN1Encoding.DER)))
-            {
-                return false;
-            }
-
-            return verifySignature(ASN1Integer.getInstance(s.getObjectAt(0)).getValue(),
-                ASN1Integer.getInstance(s.getObjectAt(1)).getValue());
         }
         catch (IOException e)
         {
-            Arrays.constantTimeAreEqual(signature, signature);
-
-            // TODO: maybe introduce arithmetic delay?
-            return false;
         }
+
+        return false;
     }
 
     public void reset()
@@ -175,15 +166,9 @@ public class SM2Signer
         while (s.equals(ZERO));
 
         // A7
-
-        ASN1EncodableVector v = new ASN1EncodableVector();
-
-        v.add(new ASN1Integer(r));
-        v.add(new ASN1Integer(s));
-
         try
         {
-            return new DERSequence(v).getEncoded(ASN1Encoding.DER);
+            return derEncode(r, s);
         }
         catch (IOException ex)
         {
@@ -208,8 +193,6 @@ public class SM2Signer
             return false;
         }
 
-        ECPoint q = ((ECPublicKeyParameters)ecKey).getQ();
-
         // B3
         byte[] eHash = digestDoFinal();
 
@@ -224,6 +207,7 @@ public class SM2Signer
         }
 
         // B6
+        ECPoint q = ((ECPublicKeyParameters)ecKey).getQ();
         ECPoint x1y1 = ECAlgorithms.sumOfTwoMultiplies(ecParams.getG(), s, q, t).normalize();
         if (x1y1.isInfinity())
         {
@@ -240,11 +224,16 @@ public class SM2Signer
     {
         byte[] result = new byte[digest.getDigestSize()];
         digest.doFinal(result, 0);
+
+        reset();
+        
         return result;
     }
 
     private byte[] getZ(byte[] userID)
     {
+        digest.reset();
+
         addUserID(digest, userID);
 
         addFieldElement(digest, ecParams.getCurve().getA());
@@ -254,7 +243,11 @@ public class SM2Signer
         addFieldElement(digest, pubPoint.getAffineXCoord());
         addFieldElement(digest, pubPoint.getAffineYCoord());
 
-        return digestDoFinal();
+        byte[] result = new byte[digest.getDigestSize()];
+
+        digest.doFinal(result, 0);
+
+        return result;
     }
 
     private void addUserID(Digest digest, byte[] userID)
@@ -279,5 +272,36 @@ public class SM2Signer
     protected BigInteger calculateE(byte[] message)
     {
         return new BigInteger(1, message);
+    }
+
+    protected BigInteger[] derDecode(byte[] encoding)
+        throws IOException
+    {
+        ASN1Sequence seq = ASN1Sequence.getInstance(ASN1Primitive.fromByteArray(encoding));
+        if (seq.size() != 2)
+        {
+            return null;
+        }
+
+        BigInteger r = ASN1Integer.getInstance(seq.getObjectAt(0)).getValue();
+        BigInteger s = ASN1Integer.getInstance(seq.getObjectAt(1)).getValue();
+
+        byte[] expectedEncoding = derEncode(r, s);
+        if (!Arrays.constantTimeAreEqual(expectedEncoding, encoding))
+        {
+            return null;
+        }
+
+        return new BigInteger[]{ r, s };
+    }
+
+    protected byte[] derEncode(BigInteger r, BigInteger s)
+        throws IOException
+    {
+
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        v.add(new ASN1Integer(r));
+        v.add(new ASN1Integer(s));
+        return new DERSequence(v).getEncoded(ASN1Encoding.DER);
     }
 }

@@ -64,12 +64,7 @@ class ProvSSLSocketFactory
 
     public Socket createSocket(Socket s, InputStream consumed, boolean autoClose) throws IOException
     {
-        /*
-         * TODO[jsse] "Creates a server mode Socket layered over an existing connected socket,
-         * and is able to read data which has already been consumed/removed from the Socket's
-         * underlying InputStream."
-         */
-        throw new UnsupportedOperationException();
+        return new ProvSSLSocketWrap(context, context.createContextData(), s, consumed, autoClose);
     }
 
     @Override
