@@ -1,5 +1,6 @@
 package org.bouncycastle.jcajce.provider.digest;
 
+import org.bouncycastle.asn1.iso.ISOIECObjectIdentifiers;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.digests.WhirlpoolDigest;
 import org.bouncycastle.crypto.macs.HMac;
@@ -66,6 +67,7 @@ public class Whirlpool
         public void configure(ConfigurableProvider provider)
         {
             provider.addAlgorithm("MessageDigest.WHIRLPOOL", PREFIX + "$Digest");
+            provider.addAlgorithm("MessageDigest", ISOIECObjectIdentifiers.whirlpool, PREFIX + "$Digest");
 
             addHMACAlgorithm(provider, "WHIRLPOOL", PREFIX + "$HashMac", PREFIX + "$KeyGenerator");
         }
