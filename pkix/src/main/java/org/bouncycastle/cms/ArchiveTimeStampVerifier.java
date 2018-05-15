@@ -29,21 +29,24 @@ public class ArchiveTimeStampVerifier
     private ArchiveTimeStamp archiveTimeStamp;
     private PartialHashTreeVerifier partialHashTreeVerifier = new PartialHashTreeVerifier();
 
-    public void validate(final Object data, final Date prevGenTime, final Date prevExpTime,
-        final AlgorithmIdentifier
-        algId)
-        throws ArchiveTimeStampValidationException,
-        NoSuchAlgorithmException,
-        IOException,
-        TSPException,
-        PartialHashTreeVerificationException, CertificateException, OperatorCreationException {
+    public void validate(final Object data,
+                         final Date prevGenTime,
+                         final Date prevExpTime,
+                         final AlgorithmIdentifier algId)
+        throws ArchiveTimeStampValidationException, NoSuchAlgorithmException, IOException, TSPException,
+               PartialHashTreeVerificationException, CertificateException, OperatorCreationException
+    {
         final MessageDigest messageDigest = MessageDigest.getInstance(algId.getAlgorithm().getId());
         final TimeStampToken timeStampToken = new TimeStampToken(archiveTimeStamp.getTimeStamp());
+
         containsObjectHashValue(data, messageDigest);
         checkAlgorithmConsistent(algId);
         checkGenTimeValid(timeStampToken, prevGenTime, prevExpTime);
+
         final byte[] rootHash = getRootHash(messageDigest);
-        if (rootHash != null) {
+
+        if (rootHash != null)
+        {
             checkTimeStampValid(timeStampToken, getRootHash(messageDigest));
         }
         checkTimeStampTokenValid(timeStampToken);
@@ -55,8 +58,8 @@ public class ArchiveTimeStampVerifier
      * @throws NoSuchAlgorithmException
      */
     public void containsObjectHashValue(final Object data, final MessageDigest messageDigest)
-        throws PartialHashTreeVerificationException, NoSuchAlgorithmException {
-
+        throws PartialHashTreeVerificationException, NoSuchAlgorithmException
+    {
         if (data instanceof byte[])
         {
             containsHashValue((byte[]) data, messageDigest);
@@ -76,7 +79,9 @@ public class ArchiveTimeStampVerifier
         throws PartialHashTreeVerificationException
     {
         final ASN1TaggedObject reducedHashTree = archiveTimeStamp.getReducedHashTree();
-        if (reducedHashTree != null) {
+
+        if (reducedHashTree != null)
+        {
             ASN1Sequence partialHashTrees = ASN1Sequence
                 .getInstance(reducedHashTree.getObject());
             PartialHashtree current = PartialHashtree
@@ -88,8 +93,8 @@ public class ArchiveTimeStampVerifier
     }
 
     public void containsDataGroupHashValue(final byte[] hash)
-        throws PartialHashTreeVerificationException {
-
+        throws PartialHashTreeVerificationException
+    {
         final ASN1TaggedObject reducedHashTree = archiveTimeStamp.getReducedHashTree();
 
         ASN1Sequence partialHashTrees = ASN1Sequence
@@ -102,7 +107,8 @@ public class ArchiveTimeStampVerifier
     }
 
     public void containsDataGroupHashValue(final DataGroup data, final MessageDigest messageDigest)
-        throws PartialHashTreeVerificationException {
+        throws PartialHashTreeVerificationException
+    {
         if (data.getHashes(messageDigest).size() == 1)
         {
             containsDataGroupHashValue(data.getHash(messageDigest));
@@ -114,7 +120,8 @@ public class ArchiveTimeStampVerifier
     }
 
     public void containsObjectsHashValues(final Collection<byte[]> data)
-        throws PartialHashTreeVerificationException {
+        throws PartialHashTreeVerificationException
+    {
         final ASN1TaggedObject reducedHashTree = archiveTimeStamp.getReducedHashTree();
         final ASN1Sequence partialHashTrees = ASN1Sequence.getInstance(reducedHashTree.getObject());
         final PartialHashtree current = PartialHashtree.getInstance(partialHashTrees.getObjectAt
@@ -182,7 +189,7 @@ public class ArchiveTimeStampVerifier
                 final PartialHashtree currentNode = PartialHashtree.getInstance(partialHashtrees
                     .getObjectAt(i));
                 byte[] currentHash = partialHashTreeVerifier.getHash(currentNode, messageDigest);
-                final SortedSet<byte[]> hashes = new TreeSet<>(new ByteArrayComparator());
+                final SortedSet<byte[]> hashes = new TreeSet<byte[]>(new ByteArrayComparator());
 
                 hashes.add(currentHash);
                 if (root == null) {
@@ -204,7 +211,8 @@ public class ArchiveTimeStampVerifier
         return getGenTime(timeStampToken);
     }
 
-    private Date getGenTime(final TimeStampToken timeStampToken) {
+    private Date getGenTime(final TimeStampToken timeStampToken)
+    {
         return timeStampToken.getTimeStampInfo().getGenTime();
     }
 
@@ -241,13 +249,14 @@ public class ArchiveTimeStampVerifier
 
     }
 
-    public void setArchiveTimeStamp(ArchiveTimeStamp archiveTimeStamp) {
+    public void setArchiveTimeStamp(ArchiveTimeStamp archiveTimeStamp)
+    {
         this.archiveTimeStamp = archiveTimeStamp;
     }
 
     private void checkTimeStampTokenValid(TimeStampToken timeStampToken)
-        throws TSPException, CertificateException, ArchiveTimeStampValidationException, OperatorCreationException {
-
+        throws TSPException, CertificateException, ArchiveTimeStampValidationException, OperatorCreationException
+    {
         X509CertificateHolder signerCertificateHolder = getSignerCertificateHolder(timeStampToken);
         SignerInformationVerifier verifier = new JcaSimpleSignerInfoVerifierBuilder()
             .build(signerCertificateHolder);

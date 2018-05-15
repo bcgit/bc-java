@@ -48,7 +48,7 @@ public class EvidenceRecordGenerator
     private byte[]                      rootHash;
     private ContentInfo                 timestamp;
     private List<DataGroup>             dataGroups;
-    private List<ASN1EncodableVector>   reducedHashtrees = new ArrayList<> ();
+    private List<ASN1EncodableVector>   reducedHashtrees = new ArrayList();
     private ASN1TaggedObject            reducedHashtreeForRenewal;
 
     public static EvidenceRecordGenerator getInstance(final AlgorithmIdentifier algId)
@@ -78,7 +78,7 @@ public class EvidenceRecordGenerator
             throw new IllegalArgumentException("timestamp has not been provided");
         }
 
-        final List<EvidenceRecord> records = new ArrayList<> ();
+        final List<EvidenceRecord> records = new ArrayList();
         final ASN1EncodableVector algVector = new ASN1EncodableVector();
         algVector.add(algId);
         final ASN1Sequence algos = new DERSequence(algVector);
@@ -152,7 +152,7 @@ public class EvidenceRecordGenerator
             throw new IllegalArgumentException("timestamp has not been provided");
         }
 
-        final List<EvidenceRecord> records = new ArrayList<> ();
+        final List<EvidenceRecord> records = new ArrayList<EvidenceRecord>();
         final ASN1EncodableVector algVector = new ASN1EncodableVector();
         algVector.add(algId);
         final ASN1Sequence algos = new DERSequence(algVector);
