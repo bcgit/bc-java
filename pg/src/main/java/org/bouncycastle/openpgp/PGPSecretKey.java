@@ -112,12 +112,12 @@ public class PGPSecretKey
 
             byte[]    keyData = bOut.toByteArray();
 
-            pOut.write(checksum(checksumCalculator, keyData, keyData.length));
-
             int encAlgorithm = (keyEncryptor != null) ? keyEncryptor.getAlgorithm() : SymmetricKeyAlgorithmTags.NULL;
 
             if (encAlgorithm != SymmetricKeyAlgorithmTags.NULL)
             {
+                pOut.write(checksum(checksumCalculator, keyData, keyData.length));
+
                 keyData = bOut.toByteArray(); // include checksum
 
                 byte[] encData = keyEncryptor.encryptKeyData(keyData, 0, keyData.length);
@@ -151,6 +151,8 @@ public class PGPSecretKey
             }
             else
             {
+                pOut.write(checksum(null, keyData, keyData.length));
+
                 if (isMasterKey)
                 {
                     return new SecretKeyPacket(pubKey.publicPk, encAlgorithm, null, null, bOut.toByteArray());
