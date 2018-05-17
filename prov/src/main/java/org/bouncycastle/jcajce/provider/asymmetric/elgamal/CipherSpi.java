@@ -15,6 +15,7 @@ import java.security.spec.MGF1ParameterSpec;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.ShortBufferException;
 import javax.crypto.interfaces.DHKey;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
@@ -287,9 +288,14 @@ public class CipherSpi
         int     inputOffset,
         int     inputLen,
         byte[]  output,
-        int     outputOffset) 
-        throws IllegalBlockSizeException, BadPaddingException
+        int     outputOffset)
+        throws IllegalBlockSizeException, BadPaddingException, ShortBufferException
     {
+        if (outputOffset + engineGetOutputSize(inputLen) > output.length)
+        {
+            throw new ShortBufferException("output buffer too short for input.");
+        }
+
         cipher.processBytes(input, inputOffset, inputLen);
 
         byte[]  out = getOutput();
