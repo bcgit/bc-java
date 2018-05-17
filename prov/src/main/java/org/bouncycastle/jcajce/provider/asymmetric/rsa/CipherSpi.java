@@ -491,10 +491,11 @@ public class CipherSpi
         int     outputOffset) 
         throws IllegalBlockSizeException, BadPaddingException, ShortBufferException
     {
-        if (engineGetOutputSize(inputLen) > output.length - outputOffset)
+        if (outputOffset + engineGetOutputSize(inputLen) > output.length)
         {
             throw new ShortBufferException("output buffer too short for input.");
         }
+
         if (input != null)
         {
             bOut.write(input, inputOffset, inputLen);
