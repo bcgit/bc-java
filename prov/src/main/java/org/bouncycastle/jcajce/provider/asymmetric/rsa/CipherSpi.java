@@ -18,6 +18,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.ShortBufferException;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 
@@ -488,8 +489,12 @@ public class CipherSpi
         int     inputLen,
         byte[]  output,
         int     outputOffset) 
-        throws IllegalBlockSizeException, BadPaddingException
+        throws IllegalBlockSizeException, BadPaddingException, ShortBufferException
     {
+        if (engineGetOutputSize(inputLen) > output.length - outputOffset)
+        {
+            throw new ShortBufferException("output buffer too short for input.");
+        }
         if (input != null)
         {
             bOut.write(input, inputOffset, inputLen);
