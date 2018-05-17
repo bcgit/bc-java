@@ -12,6 +12,10 @@ import org.bouncycastle.util.Pack;
  * for message hashing and tree construction are now configurable (within limits...) and that the implementation produces
  * detached signatures.
  * </p>
+ * <p>
+ * The SPHINCS reference implementation is public domain, as per the statement in the second last paragraph of
+ * section 1 in https://eprint.iacr.org/2014/795.pdf
+ * </p>
  */
 public class SPHINCS256Signer
     implements MessageSigner
