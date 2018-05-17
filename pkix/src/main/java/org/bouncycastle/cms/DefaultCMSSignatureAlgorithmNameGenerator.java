@@ -92,6 +92,7 @@ public class DefaultCMSSignatureAlgorithmNameGenerator
         encryptionAlgs.put(TeleTrusTObjectIdentifiers.teleTrusTRSAsignatureAlgorithm, "RSA");
         encryptionAlgs.put(X509ObjectIdentifiers.id_ea_rsa, "RSA");
         encryptionAlgs.put(PKCSObjectIdentifiers.id_RSASSA_PSS, "RSAandMGF1");
+        encryptionAlgs.put(X9ObjectIdentifiers.id_ecPublicKey, "ECDSA");
         encryptionAlgs.put(CryptoProObjectIdentifiers.gostR3410_94, "GOST3410");
         encryptionAlgs.put(CryptoProObjectIdentifiers.gostR3410_2001, "ECGOST3410");
         encryptionAlgs.put(new ASN1ObjectIdentifier("1.3.6.1.4.1.5849.1.6.2"), "ECGOST3410");
