@@ -10,11 +10,11 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DSA;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.GOST3411_2012_512Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.ECKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.ECGOST3410_2012Signer;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
@@ -46,11 +46,11 @@ public class ECGOST2012SignatureSpi512
         PublicKey publicKey)
         throws InvalidKeyException
     {
-        CipherParameters param;
+        ECKeyParameters param;
 
         if (publicKey instanceof ECPublicKey)
         {
-            param = generatePublicKeyParameter(publicKey);
+            param = (ECKeyParameters)generatePublicKeyParameter(publicKey);
         }
         else
         {
@@ -60,12 +60,17 @@ public class ECGOST2012SignatureSpi512
 
                 publicKey = BouncyCastleProvider.getPublicKey(SubjectPublicKeyInfo.getInstance(bytes));
 
-                param = ECUtil.generatePublicKeyParameter(publicKey);
+                param = (ECKeyParameters)ECUtil.generatePublicKeyParameter(publicKey);
             }
             catch (Exception e)
             {
                 throw new InvalidKeyException("cannot recognise key type in ECGOST-2012-512 signer");
             }
+        }
+
+        if (param.getParameters().getN().bitLength() < 505)
+        {
+            throw new InvalidKeyException("key too weak for ECGOST-2012-512");
         }
 
         digest.reset();
@@ -76,15 +81,20 @@ public class ECGOST2012SignatureSpi512
         PrivateKey privateKey)
         throws InvalidKeyException
     {
-        CipherParameters param;
+        ECKeyParameters param;
 
         if (privateKey instanceof ECKey)
         {
-            param = ECUtil.generatePrivateKeyParameter(privateKey);
+            param = (ECKeyParameters)ECUtil.generatePrivateKeyParameter(privateKey);
         }
         else
         {
             throw new InvalidKeyException("cannot recognise key type in ECGOST-2012-512 signer");
+        }
+
+        if (param.getParameters().getN().bitLength() < 505)
+        {
+            throw new InvalidKeyException("key too weak for ECGOST-2012-512");
         }
 
         digest.reset();
