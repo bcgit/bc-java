@@ -24,6 +24,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.spec.ECGenParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
@@ -837,6 +838,100 @@ public class GOST3410Test
         keyStoreTest(sKey, vKey);
     }
 
+    private void gost2012MismatchTest()
+        throws Exception
+    {
+        KeyPairGenerator keyPair = KeyPairGenerator.getInstance(
+            "ECGOST3410-2012", "BC");
+
+        keyPair.initialize(new ECGenParameterSpec("Tc26-Gost-3410-12-512-paramSetA"));
+
+        KeyPair kp = keyPair.generateKeyPair();
+
+        testWrong256(kp);
+
+        keyPair = KeyPairGenerator.getInstance(
+            "ECGOST3410-2012", "BC");
+
+        keyPair.initialize(new ECGenParameterSpec("Tc26-Gost-3410-12-512-paramSetB"));
+
+        kp = keyPair.generateKeyPair();
+
+        testWrong256(kp);
+
+        keyPair = KeyPairGenerator.getInstance(
+            "ECGOST3410-2012", "BC");
+
+        keyPair.initialize(new ECGenParameterSpec("Tc26-Gost-3410-12-512-paramSetC"));
+
+        kp = keyPair.generateKeyPair();
+
+        testWrong256(kp);
+
+        keyPair = KeyPairGenerator.getInstance(
+            "ECGOST3410-2012", "BC");
+
+        keyPair.initialize(new ECGenParameterSpec("Tc26-Gost-3410-12-256-paramSetA"));
+
+        kp = keyPair.generateKeyPair();
+
+        testWrong512(kp);
+    }
+
+    private void testWrong512(KeyPair kp)
+        throws NoSuchAlgorithmException, NoSuchProviderException
+    {
+        Signature sig;
+        sig = Signature.getInstance("ECGOST3410-2012-512", "BC");
+
+        try
+        {
+            sig.initSign(kp.getPrivate());
+
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            isEquals("key too weak for ECGOST-2012-512", e.getMessage());
+        }
+
+        try
+        {
+            sig.initVerify(kp.getPublic());
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            isEquals("key too weak for ECGOST-2012-512", e.getMessage());
+        }
+    }
+
+    private void testWrong256(KeyPair kp)
+        throws NoSuchAlgorithmException, NoSuchProviderException
+    {
+        Signature sig = Signature.getInstance("ECGOST3410-2012-256", "BC");
+
+        try
+        {
+            sig.initSign(kp.getPrivate());
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            isEquals("key out of range for ECGOST-2012-256", e.getMessage());
+        }
+
+        try
+        {
+            sig.initVerify(kp.getPublic());
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            isEquals("key out of range for ECGOST-2012-256", e.getMessage());
+        }
+    }
+
     private BigInteger[] decode(
         byte[] encoding)
     {
@@ -890,6 +985,7 @@ public class GOST3410Test
         
         generationTest();
         parametersTest();
+        gost2012MismatchTest();
 
     }
 
