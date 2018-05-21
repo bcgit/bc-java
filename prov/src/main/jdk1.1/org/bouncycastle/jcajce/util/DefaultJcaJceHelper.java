@@ -101,6 +101,6 @@ public class DefaultJcaJceHelper
     public SecureRandom createSecureRandom(String algorithm)
         throws NoSuchAlgorithmException
     {
-        return new SecureRandom();
+        return CryptoServicesRegistrar.getSecureRandom();
     }
 }

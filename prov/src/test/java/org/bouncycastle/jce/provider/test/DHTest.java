@@ -817,8 +817,7 @@ public class DHTest
         ECParameterSpec ecSpec = new ECParameterSpec(ecCurve,
             new ECPoint(namedSpec.getG().getAffineXCoord().toBigInteger(), namedSpec.getG().getAffineYCoord().toBigInteger()),
             namedSpec.getN(), namedSpec.getH().intValue());
-
-        System.err.println(ECPointUtil.decodePoint(ecCurve, Hex.decode("040784e946ef1fae0cfe127042a310a018ba639d3f6b41f265904f0a7b21b7953efe638b45e6c0c0d34a883a510ce836d143d831daa9ce8a12")).getAffineX().toString(16));
+        
         KeyPair U1 = new KeyPair(
             ecKeyFact.generatePublic(new ECPublicKeySpec(
                 ECPointUtil.decodePoint(ecCurve, Hex.decode("040784e946ef1fae0cfe127042a310a018ba639d3f6b41f265904f0a7b21b7953efe638b45e6c0c0d34a883a510ce836d143d831daa9ce8a12")), ecSpec)),
@@ -1162,10 +1161,10 @@ public class DHTest
             new BigInteger("678471b27a9cf44ee91a49c5147db1a9aaf244f05a434d6486931d2d14271b9e35030b71fd73da179069b32e2935630e1c2062354d0da20a6c416e50be794ca4", 16),
             384);
 
-        DHParameterSpec dhSpec768 = new DHParameterSpec(
-            new BigInteger("e9e642599d355f37c97ffd3567120b8e25c9cd43e927b3a9670fbec5d890141922d2c3b3ad2480093799869d1e846aab49fab0ad26d2ce6a22219d470bce7d777d4a21fbe9c270b57f607002f3cef8393694cf45ee3688c11a8c56ab127a3daf", 16),
-            new BigInteger("30470ad5a005fb14ce2d9dcd87e38bc7d1b1c5facbaecbe95f190aa7a31d23c4dbbcbe06174544401a5b2c020965d8c2bd2171d3668445771f74ba084d2029d83c1c158547f3a9f1a2715be23d51ae4d3e5a1f6a7064f316933a346d3f529252", 16),
-            384);
+        DHParameterSpec dhSpec640 = new DHParameterSpec(
+            new BigInteger("c3d5a7f9a1cd7330099cebb60194f5176793a1cf13cd429f37bcbf1a7ddd53893ffdf1228af760c4a448e459d9cbab8302cc8cfc3368db01972108587c72a0f8b512ede0c99a3bef16cda0de529c8be7", 16),
+            new BigInteger("c066a53c43a55e3474e20de07d14a574f6f1febe0b55e4c49bf72b0c712e02a51b03f379f485884bfd1f53819347b69401b9292196092a635320313ec6ee5ee5a5eac7ab9c57f2631a71452feeab3ef", 16),
+            320);
 
         DHParameterSpec dhSpec1024 = new DHParameterSpec(
             new BigInteger("fd7f53811d75122952df4a9c2eece4e7f611b7523cef4400c31e3f80b6512669455d402251fb593d8d58fabfc5f5ba30f6cb9b556cd7813b801d346ff26660b76b9950a5a49f9fe8047b1022c24fbba9d7feb7c61bf83b57e7c6a8a6150f04fb83f6d3c51ec3023554135a169132f675f3ae2b61d72aeff22203199dd14801c7", 16),
@@ -1179,21 +1178,21 @@ public class DHTest
             fail("config mismatch");
         }
 
-        if (BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(768) != null)
+        if (BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(640) != null)
         {
             fail("config found when none expected");
         }
 
-        prov.setParameter(ConfigurableProvider.DH_DEFAULT_PARAMS, new DHParameterSpec[]{dhSpec512, dhSpec768, dhSpec1024});
+        prov.setParameter(ConfigurableProvider.DH_DEFAULT_PARAMS, new DHParameterSpec[]{dhSpec512, dhSpec640, dhSpec1024});
 
         if (!dhSpec512.equals(BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(512)))
         {
             fail("512 config mismatch");
         }
 
-        if (!dhSpec768.equals(BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(768)))
+        if (!dhSpec640.equals(BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(640)))
         {
-            fail("768 config mismatch");
+            fail("640 config mismatch");
         }
 
         if (!dhSpec1024.equals(BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(1024)))
@@ -1202,15 +1201,10 @@ public class DHTest
         }
 
         prov.setParameter(ConfigurableProvider.DH_DEFAULT_PARAMS, null);
-
-        if (BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(512) != null)
+        
+        if (BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(640) != null)
         {
-            fail("config found for 512 when none expected");
-        }
-
-        if (BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(768) != null)
-        {
-            fail("config found for 768 when none expected");
+            fail("config found for 640 when none expected");
         }
 
         prov.setParameter(ConfigurableProvider.THREAD_LOCAL_DH_DEFAULT_PARAMS, dhSpec512);
@@ -1220,21 +1214,21 @@ public class DHTest
             fail("config mismatch");
         }
 
-        if (BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(768) != null)
+        if (BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(640) != null)
         {
             fail("config found when none expected");
         }
 
-        prov.setParameter(ConfigurableProvider.THREAD_LOCAL_DH_DEFAULT_PARAMS, new DHParameterSpec[]{dhSpec512, dhSpec768, dhSpec1024});
+        prov.setParameter(ConfigurableProvider.THREAD_LOCAL_DH_DEFAULT_PARAMS, new DHParameterSpec[]{dhSpec512, dhSpec640, dhSpec1024});
 
         if (!dhSpec512.equals(BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(512)))
         {
             fail("512 config mismatch");
         }
 
-        if (!dhSpec768.equals(BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(768)))
+        if (!dhSpec640.equals(BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(640)))
         {
-            fail("768 config mismatch");
+            fail("640 config mismatch");
         }
 
         if (!dhSpec1024.equals(BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(1024)))
@@ -1244,14 +1238,9 @@ public class DHTest
 
         prov.setParameter(ConfigurableProvider.THREAD_LOCAL_DH_DEFAULT_PARAMS, null);
 
-        if (BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(512) != null)
+        if (BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(640) != null)
         {
-            fail("config found for 512 when none expected");
-        }
-
-        if (BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(768) != null)
-        {
-            fail("config found for 768 when none expected");
+            fail("config found for 640 when none expected");
         }
     }
 

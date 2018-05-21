@@ -5,9 +5,9 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.SecureRandom;
 import java.util.Arrays;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -97,7 +97,7 @@ public class NTRUEncryptionKeyGenerationParameters
      */
     public NTRUEncryptionKeyGenerationParameters(int N, int q, int df, int dm0, int db, int c, int minCallsR, int minCallsMask, boolean hashSeed, byte[] oid, boolean sparse, boolean fastFp, Digest hashAlg)
     {
-        super(new SecureRandom(), db);
+        super(CryptoServicesRegistrar.getSecureRandom(), db);
         this.N = N;
         this.q = q;
         this.df = df;
@@ -136,7 +136,7 @@ public class NTRUEncryptionKeyGenerationParameters
      */
     public NTRUEncryptionKeyGenerationParameters(int N, int q, int df1, int df2, int df3, int dm0, int db, int c, int minCallsR, int minCallsMask, boolean hashSeed, byte[] oid, boolean sparse, boolean fastFp, Digest hashAlg)
     {
-        super(new SecureRandom(), db);
+        super(CryptoServicesRegistrar.getSecureRandom(), db);
 
         this.N = N;
         this.q = q;
@@ -180,7 +180,7 @@ public class NTRUEncryptionKeyGenerationParameters
     public NTRUEncryptionKeyGenerationParameters(InputStream is)
         throws IOException
     {
-        super(new SecureRandom(), -1);
+        super(CryptoServicesRegistrar.getSecureRandom(), -1);
         DataInputStream dis = new DataInputStream(is);
         N = dis.readInt();
         q = dis.readInt();

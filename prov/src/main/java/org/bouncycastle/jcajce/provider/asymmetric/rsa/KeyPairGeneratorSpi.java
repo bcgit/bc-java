@@ -8,6 +8,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.RSAKeyGenParameterSpec;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
 import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
@@ -34,7 +35,7 @@ public class KeyPairGeneratorSpi
 
         engine = new RSAKeyPairGenerator();
         param = new RSAKeyGenerationParameters(defaultPublicExponent,
-            new SecureRandom(), 2048, PrimeCertaintyCalculator.getDefaultCertainty(2048));
+            CryptoServicesRegistrar.getSecureRandom(), 2048, PrimeCertaintyCalculator.getDefaultCertainty(2048));
         engine.init(param);
     }
 

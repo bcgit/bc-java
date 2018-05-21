@@ -8,6 +8,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512tDigest;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCS256KeyGenerationParameters;
@@ -24,7 +25,7 @@ public class Sphincs256KeyPairGeneratorSpi
     SPHINCS256KeyGenerationParameters param;
     SPHINCS256KeyPairGenerator engine = new SPHINCS256KeyPairGenerator();
 
-    SecureRandom random = new SecureRandom();
+    SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     boolean initialised = false;
 
     public Sphincs256KeyPairGeneratorSpi()

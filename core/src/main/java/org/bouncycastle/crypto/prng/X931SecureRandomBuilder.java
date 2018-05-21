@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.prng;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Pack;
 
@@ -23,7 +24,7 @@ public class X931SecureRandomBuilder
      */
     public X931SecureRandomBuilder()
     {
-        this(new SecureRandom(), false);
+        this(CryptoServicesRegistrar.getSecureRandom(), false);
     }
 
     /**

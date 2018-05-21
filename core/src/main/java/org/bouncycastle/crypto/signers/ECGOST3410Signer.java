@@ -1,6 +1,10 @@
 package org.bouncycastle.crypto.signers;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DSA;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyParameters;
@@ -12,9 +16,6 @@ import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
-
-import java.math.BigInteger;
-import java.security.SecureRandom;
 
 /**
  * GOST R 34.10-2001 Signature Algorithm
@@ -41,7 +42,7 @@ public class ECGOST3410Signer
             }
             else
             {
-                this.random = new SecureRandom();
+                this.random = CryptoServicesRegistrar.getSecureRandom();
                 this.key = (ECPrivateKeyParameters)param;
             }
         }

@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -82,7 +83,7 @@ public class OAEPEncoding
         }
         else
         {   
-            this.random = new SecureRandom();
+            this.random = CryptoServicesRegistrar.getSecureRandom();
         }
 
         engine.init(forEncryption, param);

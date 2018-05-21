@@ -9,6 +9,7 @@ import java.security.spec.DSAParameterSpec;
 import java.util.Hashtable;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.generators.DSAKeyPairGenerator;
 import org.bouncycastle.crypto.generators.DSAParametersGenerator;
@@ -18,6 +19,7 @@ import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PrimeCertaintyCalculator;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Properties;
 
@@ -30,7 +32,7 @@ public class KeyPairGeneratorSpi
     DSAKeyGenerationParameters param;
     DSAKeyPairGenerator engine = new DSAKeyPairGenerator();
     int strength = 2048;
-    SecureRandom random = new SecureRandom();
+    SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     boolean initialised = false;
 
     public KeyPairGeneratorSpi()
@@ -47,9 +49,21 @@ public class KeyPairGeneratorSpi
             throw new InvalidParameterException("strength must be from 512 - 4096 and a multiple of 1024 above 1024");
         }
 
-        this.strength = strength;
-        this.random = random;
-        this.initialised = false;
+        DSAParameterSpec spec = BouncyCastleProvider.CONFIGURATION.getDSADefaultParameters(strength);
+
+        if (spec != null)
+        {
+            param = new DSAKeyGenerationParameters(random, new DSAParameters(spec.getP(), spec.getQ(), spec.getG()));
+
+            engine.init(param);
+            this.initialised = true;
+        }
+        else
+        {
+            this.strength = strength;
+            this.random = random;
+            this.initialised = false;
+        }
     }
 
     public void initialize(
