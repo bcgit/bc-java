@@ -8,6 +8,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
@@ -26,7 +27,7 @@ public class XMSSMTKeyPairGeneratorSpi
     private XMSSMTKeyPairGenerator engine = new XMSSMTKeyPairGenerator();
     private ASN1ObjectIdentifier treeDigest;
 
-    private SecureRandom random = new SecureRandom();
+    private SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     private boolean initialised = false;
 
     public XMSSMTKeyPairGeneratorSpi()

@@ -202,7 +202,7 @@ public class JPAKEParticipant
             password,
             group,
             new SHA256Digest(),
-            new SecureRandom());
+            CryptoServicesRegistrar.getSecureRandom());
     }
 
 

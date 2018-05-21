@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.generators.DHKeyPairGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHKeyGenerationParameters;
@@ -47,7 +48,7 @@ public class DHAgreement
         }
         else
         {
-            this.random = new SecureRandom();
+            this.random = CryptoServicesRegistrar.getSecureRandom();
             kParam = (AsymmetricKeyParameter)param;
         }
 

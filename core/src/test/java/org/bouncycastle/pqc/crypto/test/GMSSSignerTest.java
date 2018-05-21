@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.digests.SHA224Digest;
@@ -92,7 +93,7 @@ public class GMSSSignerTest
     private void stateAwareTest(GMSSPrivateKeyParameters privKey, AsymmetricKeyParameter pub)
     {
         DigestingStateAwareMessageSigner statefulSigner = new DigestingStateAwareMessageSigner(new GMSSStateAwareSigner(new SHA224Digest()), new SHA224Digest());
-        statefulSigner.init(true, new ParametersWithRandom(privKey, new SecureRandom()));
+        statefulSigner.init(true, new ParametersWithRandom(privKey, CryptoServicesRegistrar.getSecureRandom()));
 
         byte[] mes1 = Strings.toByteArray("Message One");
         statefulSigner.update(mes1, 0, mes1.length);

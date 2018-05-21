@@ -34,7 +34,7 @@ public class SP800SecureRandomBuilder
      */
     public SP800SecureRandomBuilder()
     {
-        this(new SecureRandom(), false);
+        this(CryptoServicesRegistrar.getSecureRandom(), false);
     }
 
     /**

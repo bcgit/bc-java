@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DSA;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyParameters;
@@ -45,7 +46,7 @@ public class DSTU4145Signer
             }
             else
             {
-                this.random = new SecureRandom();
+                this.random = CryptoServicesRegistrar.getSecureRandom();
             }
 
             this.key = (ECPrivateKeyParameters)param;

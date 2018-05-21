@@ -44,7 +44,7 @@ public abstract class KeyPairGeneratorSpi
         ECParameterSpec             ecParams = null;
         int                         strength = 239;
         int                         certainty = 50;
-        SecureRandom                random = new SecureRandom();
+        SecureRandom                random = CryptoServicesRegistrar.getSecureRandom();
         boolean                     initialised = false;
         String                      algorithm;
         ProviderConfiguration       configuration;

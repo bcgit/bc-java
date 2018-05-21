@@ -7,6 +7,7 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.DSAParameterSpec;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.generators.DSAParametersGenerator;
 import org.bouncycastle.crypto.params.DSAParameterGenerationParameters;
@@ -67,7 +68,7 @@ public class AlgorithmParameterGeneratorSpi
 
         if (random == null)
         {
-            random = new SecureRandom();
+            random = CryptoServicesRegistrar.getSecureRandom();
         }
 
         int certainty = PrimeCertaintyCalculator.getDefaultCertainty(strength);

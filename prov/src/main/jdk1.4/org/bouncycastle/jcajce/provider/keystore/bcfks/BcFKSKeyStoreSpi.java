@@ -447,7 +447,7 @@ class BcFKSKeyStoreSpi
 
     private SecureRandom getDefaultSecureRandom()
     {
-        return new SecureRandom();
+        return CryptoServicesRegistrar.getSecureRandom();
     }
 
     private EncryptedPrivateKeyData createPrivateKeySequence(EncryptedPrivateKeyInfo encryptedPrivateKeyInfo, Certificate[] chain)

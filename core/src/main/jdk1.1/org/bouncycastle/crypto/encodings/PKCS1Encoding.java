@@ -127,7 +127,7 @@ public class PKCS1Encoding
             kParam = (AsymmetricKeyParameter)param;
             if (!kParam.isPrivate() && forEncryption)
             {
-                this.random = new SecureRandom();
+                this.random = CryptoServicesRegistrar.getSecureRandom();
             }
         }
 

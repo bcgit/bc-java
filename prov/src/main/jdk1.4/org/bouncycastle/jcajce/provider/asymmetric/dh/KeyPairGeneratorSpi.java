@@ -28,7 +28,7 @@ public class KeyPairGeneratorSpi
     DHKeyGenerationParameters param;
     DHBasicKeyPairGenerator engine = new DHBasicKeyPairGenerator();
     int strength = 2048;
-    SecureRandom random = new SecureRandom();
+    SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     boolean initialised = false;
 
     public KeyPairGeneratorSpi()

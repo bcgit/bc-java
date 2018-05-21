@@ -2,6 +2,7 @@ package org.bouncycastle.jce.provider.test;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -10,6 +11,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
+import java.security.spec.ECGenParameterSpec;
 
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -38,7 +40,7 @@ public class DSTU4145Test
         DSTU4145Test();
         generationTest();
         //parametersTest();
-
+        generateFromCurveTest();
     }
 
     public static void main(String[] args)
@@ -101,6 +103,27 @@ public class DSTU4145Test
                 ": s component wrong." + Strings.lineSeparator()
                     + " expecting: " + s + Strings.lineSeparator()
                     + " got      : " + sig[1].toString(16));
+        }
+    }
+
+    private void generateFromCurveTest()
+        throws Exception
+    {
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DSTU4145", "BC");
+
+        for (int i = 0; i != 10; i++)
+        {
+            keyGen.initialize(new ECGenParameterSpec("1.2.804.2.1.1.1.1.3.1.1.2." + i));
+        }
+
+        try
+        {
+            keyGen.initialize(new ECGenParameterSpec("1.2.804.2.1.1.1.1.3.1.1.2." + 10));
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isTrue("unknown curve name: 1.2.804.2.1.1.1.1.3.1.1.2.10".equals(e.getMessage()));
         }
     }
 
@@ -187,5 +210,4 @@ public class DSTU4145Test
 
         return sig;
     }
-
 }

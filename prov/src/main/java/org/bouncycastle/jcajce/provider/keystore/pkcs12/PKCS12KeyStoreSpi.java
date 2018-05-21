@@ -90,6 +90,7 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.PKCS12Key;
@@ -143,7 +144,7 @@ public class PKCS12KeyStoreSpi
     static final int KEY_PUBLIC = 1;
     static final int KEY_SECRET = 2;
 
-    protected SecureRandom random = new SecureRandom();
+    protected SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
 
     // use of final causes problems with JDK 1.2 compiler
     private CertificateFactory certFact;

@@ -14,6 +14,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.DESedeWrapEngine;
@@ -158,7 +159,7 @@ public final class DESede
         {
             if (uninitialised)
             {
-                engine.init(new KeyGenerationParameters(new SecureRandom(), defaultKeySize));
+                engine.init(new KeyGenerationParameters(CryptoServicesRegistrar.getSecureRandom(), defaultKeySize));
                 uninitialised = false;
             }
 
@@ -258,7 +259,7 @@ public final class DESede
 
             if (random == null)
             {
-                random = new SecureRandom();
+                random = CryptoServicesRegistrar.getSecureRandom();
             }
 
             random.nextBytes(iv);

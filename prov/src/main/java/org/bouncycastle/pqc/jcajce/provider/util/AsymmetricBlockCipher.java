@@ -12,6 +12,8 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.ShortBufferException;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+
 
 /**
  * The AsymmetricBlockCipher class extends CipherSpiExt.
@@ -145,7 +147,7 @@ public abstract class AsymmetricBlockCipher
     {
         try
         {
-            initEncrypt(key, null, new SecureRandom());
+            initEncrypt(key, null, CryptoServicesRegistrar.getSecureRandom());
         }
         catch (InvalidAlgorithmParameterException e)
         {
@@ -202,7 +204,7 @@ public abstract class AsymmetricBlockCipher
     public final void initEncrypt(Key key, AlgorithmParameterSpec params)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        initEncrypt(key, params, new SecureRandom());
+        initEncrypt(key, params, CryptoServicesRegistrar.getSecureRandom());
     }
 
     /**

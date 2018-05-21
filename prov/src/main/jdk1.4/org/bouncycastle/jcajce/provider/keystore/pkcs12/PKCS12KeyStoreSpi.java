@@ -133,7 +133,7 @@ public class PKCS12KeyStoreSpi
     static final int KEY_PUBLIC = 1;
     static final int KEY_SECRET = 2;
 
-    protected SecureRandom random = new SecureRandom();
+    protected SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
 
     // use of final causes problems with JDK 1.2 compiler
     private CertificateFactory certFact;

@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.SignerWithRecovery;
@@ -158,7 +159,7 @@ public class ISO9796d2PSSSigner
             kParam = (RSAKeyParameters)param;
             if (forSigning)
             {
-                random = new SecureRandom();
+                random = CryptoServicesRegistrar.getSecureRandom();
             }
         }
 

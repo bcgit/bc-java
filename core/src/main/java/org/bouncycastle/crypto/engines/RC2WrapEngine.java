@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.engines;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Wrapper;
@@ -65,7 +66,7 @@ public class RC2WrapEngine
         }
         else
         {
-            sr = new SecureRandom();
+            sr = CryptoServicesRegistrar.getSecureRandom();
         }
         
         if (param instanceof ParametersWithIV)

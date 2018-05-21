@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
@@ -44,8 +45,7 @@ public abstract class KeyPairGeneratorSpi
         ECKeyPairGenerator          engine = new ECKeyPairGenerator();
         Object                      ecParams = null;
         int                         strength = 239;
-        int                         certainty = 50;
-        SecureRandom                random = new SecureRandom();
+        SecureRandom                random = CryptoServicesRegistrar.getSecureRandom();
         boolean                     initialised = false;
         String                      algorithm;
         ProviderConfiguration       configuration;

@@ -8,6 +8,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.spec.DHParameterSpec;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.generators.ElGamalKeyPairGenerator;
 import org.bouncycastle.crypto.generators.ElGamalParametersGenerator;
 import org.bouncycastle.crypto.params.ElGamalKeyGenerationParameters;
@@ -24,7 +25,7 @@ public class KeyPairGeneratorSpi
     ElGamalKeyPairGenerator engine = new ElGamalKeyPairGenerator();
     int strength = 1024;
     int certainty = 20;
-    SecureRandom random = new SecureRandom();
+    SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     boolean initialised = false;
 
     public KeyPairGeneratorSpi()
