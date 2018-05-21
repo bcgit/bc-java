@@ -25,6 +25,7 @@ import javax.crypto.spec.PSource;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.encodings.ISO9796d1Encoding;
@@ -339,7 +340,7 @@ public class CipherSpi
             }
             else
             {
-                param = new ParametersWithRandom(param, new SecureRandom());
+                param = new ParametersWithRandom(param, CryptoServicesRegistrar.getSecureRandom());
             }
         }
 

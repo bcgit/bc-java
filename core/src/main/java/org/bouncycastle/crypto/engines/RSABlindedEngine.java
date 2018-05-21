@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
@@ -45,7 +46,7 @@ public class RSABlindedEngine
         else
         {
             key = (RSAKeyParameters)param;
-            random = new SecureRandom();
+            random = CryptoServicesRegistrar.getSecureRandom();
         }
     }
 

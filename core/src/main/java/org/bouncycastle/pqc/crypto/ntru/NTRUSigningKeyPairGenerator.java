@@ -2,7 +2,6 @@ package org.bouncycastle.pqc.crypto.ntru;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -12,6 +11,7 @@ import java.util.concurrent.Future;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.pqc.math.ntru.euclid.BigIntEuclidean;
 import org.bouncycastle.pqc.math.ntru.polynomial.BigDecimalPolynomial;
@@ -188,7 +188,7 @@ public class NTRUSigningKeyPairGenerator
         {
             do
             {
-                f = params.polyType== NTRUParameters.TERNARY_POLYNOMIAL_TYPE_SIMPLE ? DenseTernaryPolynomial.generateRandom(N, d + 1, d, new SecureRandom()) : ProductFormPolynomial.generateRandom(N, d1, d2, d3 + 1, d3, new SecureRandom());
+                f = params.polyType== NTRUParameters.TERNARY_POLYNOMIAL_TYPE_SIMPLE ? DenseTernaryPolynomial.generateRandom(N, d + 1, d, CryptoServicesRegistrar.getSecureRandom()) : ProductFormPolynomial.generateRandom(N, d1, d2, d3 + 1, d3, CryptoServicesRegistrar.getSecureRandom());
                 fInt = f.toIntegerPolynomial();
             }
             while (primeCheck && fInt.resultant(_2n1).res.equals(ZERO));
@@ -203,7 +203,7 @@ public class NTRUSigningKeyPairGenerator
             {
                 do
                 {
-                    g = params.polyType == NTRUParameters.TERNARY_POLYNOMIAL_TYPE_SIMPLE ? DenseTernaryPolynomial.generateRandom(N, d + 1, d, new SecureRandom()) : ProductFormPolynomial.generateRandom(N, d1, d2, d3 + 1, d3, new SecureRandom());
+                    g = params.polyType == NTRUParameters.TERNARY_POLYNOMIAL_TYPE_SIMPLE ? DenseTernaryPolynomial.generateRandom(N, d + 1, d, CryptoServicesRegistrar.getSecureRandom()) : ProductFormPolynomial.generateRandom(N, d1, d2, d3 + 1, d3, CryptoServicesRegistrar.getSecureRandom());
                     gInt = g.toIntegerPolynomial();
                 }
                 while (primeCheck && gInt.resultant(_2n1).res.equals(ZERO));

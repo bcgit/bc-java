@@ -257,7 +257,7 @@ public class CipherSpi
             }
             else
             {
-                param = new ParametersWithRandom(param, new SecureRandom());
+                param = new ParametersWithRandom(param, CryptoServicesRegistrar.getSecureRandom());
             }
         }
 

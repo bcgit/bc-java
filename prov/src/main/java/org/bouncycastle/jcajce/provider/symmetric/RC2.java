@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
 import org.bouncycastle.crypto.CipherKeyGenerator;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.engines.RC2Engine;
 import org.bouncycastle.crypto.engines.RC2WrapEngine;
 import org.bouncycastle.crypto.macs.CBCBlockCipherMac;
@@ -227,7 +228,7 @@ public final class RC2
 
                 if (random == null)
                 {
-                    random = new SecureRandom();
+                    random = CryptoServicesRegistrar.getSecureRandom();
                 }
 
                 random.nextBytes(iv);

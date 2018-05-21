@@ -24,6 +24,7 @@ import javax.crypto.spec.DHParameterSpec;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -128,11 +129,13 @@ public class ElGamalTest
         
         outLen += c1.doFinal(in, 2, in.length - 2, out1, outLen);
 
+        out2 = new byte[c2.getOutputSize(out1.length)];
+
         outLen = c2.update(out1, 0, 2, out2, 0);
         
         outLen += c2.doFinal(out1, 2, out1.length - 2, out2, outLen);
 
-        if (!areEqual(in, out2))
+        if (!areEqual(in, Arrays.copyOfRange(out2, 0, outLen)))
         {
             fail(size + " encrypt with update test failed");
         }
@@ -376,11 +379,13 @@ public class ElGamalTest
 
         outLen += c1.doFinal(in, 2, in.length - 2, out1, outLen);
 
+        out2 = new byte[c2.getOutputSize(out1.length)];
+
         outLen = c2.update(out1, 0, 2, out2, 0);
 
         outLen += c2.doFinal(out1, 2, out1.length - 2, out2, outLen);
 
-        if (!areEqual(in, out2))
+        if (!areEqual(in, Arrays.copyOfRange(out2, 0, outLen)))
         {
             fail(size + " encrypt with update test failed");
         }

@@ -3,6 +3,7 @@ package org.bouncycastle.pqc.crypto.gmss;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
@@ -133,7 +134,7 @@ public class GMSSSigner
             else
             {
 
-                this.random = new SecureRandom();
+                this.random = CryptoServicesRegistrar.getSecureRandom();
                 this.key = (GMSSPrivateKeyParameters)param;
                 initSign();
             }

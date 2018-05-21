@@ -108,6 +108,6 @@ public class ProviderJcaJceHelper
     public SecureRandom createSecureRandom(String algorithm)
         throws NoSuchAlgorithmException, NoSuchProviderException
     {
-        return new SecureRandom();
+        return CryptoServicesRegistrar.getSecureRandom();
     }
 }
