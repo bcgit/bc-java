@@ -94,6 +94,11 @@ public class JcaTlsCrypto
         return new JceTlsSecret(this, data);
     }
 
+    Cipher createRSADecryptionCipher() throws GeneralSecurityException
+    {
+        return getHelper().createCipher("RSA/NONE/NoPadding");
+    }
+
     Cipher createRSAEncryptionCipher() throws GeneralSecurityException
     {
         try
