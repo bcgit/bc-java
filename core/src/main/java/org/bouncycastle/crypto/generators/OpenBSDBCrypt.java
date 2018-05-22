@@ -208,23 +208,22 @@ public class OpenBSDBCrypt
 
         if (!allowedVersions.contains(version))
         {
-            throw new IllegalArgumentException("Bcrypt version '" + bcryptString.substring(1, 3) + "' is not supported by this implementation");
+            throw new IllegalArgumentException("Bcrypt version '" + version + "' is not supported by this implementation");
         }
 
         int cost = 0;
+        String costStr = bcryptString.substring(4, 6);
         try
         {
-            cost = Integer.parseInt(bcryptString.substring(4, 6));
+            cost = Integer.parseInt(costStr);
         }
         catch (NumberFormatException nfe)
         {
-            throw new IllegalArgumentException("Invalid cost factor: "
-                + bcryptString.substring(4, 6));
+            throw new IllegalArgumentException("Invalid cost factor: " + costStr);
         }
         if (cost < 4 || cost > 31)
         {
-            throw new IllegalArgumentException("Invalid cost factor: "
-                + cost + ", 4 < cost < 31 expected.");
+            throw new IllegalArgumentException("Invalid cost factor: " + cost + ", 4 < cost < 31 expected.");
         }
         // check password:
         if (password == null)
