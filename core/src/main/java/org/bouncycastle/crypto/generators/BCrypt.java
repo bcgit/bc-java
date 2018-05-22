@@ -602,8 +602,6 @@ public final class BCrypt
     // bits, but technically algorithm handles 72 byte keys and most implementations support this.
     static final int MAX_PASSWORD_BYTES = 72;
 
-    private static final byte[] oneByte = new byte[1];
-
     /**
      * Converts a character password to bytes incorporating the required trailing zero byte.
      *
@@ -612,7 +610,7 @@ public final class BCrypt
      */
     public static byte[] passwordToByteArray(char[] password)
     {
-        return Arrays.concatenate(Strings.toUTF8ByteArray(password), oneByte);
+        return Arrays.append(Strings.toUTF8ByteArray(password), (byte)0);
     }
 
     /**
