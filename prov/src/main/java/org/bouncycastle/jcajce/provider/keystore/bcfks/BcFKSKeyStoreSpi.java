@@ -729,6 +729,10 @@ class BcFKSKeyStoreSpi
             {
                 keySizeInBytes = params.getKeyLength().intValue();
             }
+            else if (keySizeInBytes == -1)
+            {
+                throw new IOException("no keyLength found in ScryptParams");
+            }
             return SCrypt.generate(Arrays.concatenate(encPassword, differentiator), params.getSalt(),
                 params.getCostParameter().intValue(), params.getBlockSize().intValue(),
                 params.getBlockSize().intValue(), keySizeInBytes);
@@ -740,6 +744,10 @@ class BcFKSKeyStoreSpi
             if (pbkdf2Params.getKeyLength() != null)
             {
                 keySizeInBytes = pbkdf2Params.getKeyLength().intValue();
+            }
+            else if (keySizeInBytes == -1)
+            {
+                throw new IOException("no keyLength found in PBKDF2Params");
             }
 
             if (pbkdf2Params.getPrf().getAlgorithm().equals(PKCSObjectIdentifiers.id_hmacWithSHA512))
