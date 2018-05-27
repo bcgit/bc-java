@@ -1,8 +1,10 @@
 package org.bouncycastle.jcajce.provider.symmetric.util;
 
+import java.io.ByteArrayOutputStream;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.InvalidParameterException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -68,6 +70,9 @@ public abstract class BaseWrapCipher
 
     private int                       ivSize;
     private byte[]                    iv;
+
+    private ErasableOutputStream wrapStream = null;
+    private boolean                   forWrapping;
 
     private final JcaJceHelper helper = new BCJcaJceHelper();
 
@@ -201,15 +206,26 @@ public abstract class BaseWrapCipher
         {
         case Cipher.WRAP_MODE:
             wrapEngine.init(true, param);
+            this.wrapStream = null;
+            this.forWrapping = true;
             break;
         case Cipher.UNWRAP_MODE:
             wrapEngine.init(false, param);
+            this.wrapStream = null;
+            this.forWrapping = false;
             break;
         case Cipher.ENCRYPT_MODE:
+            wrapEngine.init(true, param);
+            this.wrapStream = new ErasableOutputStream();
+            this.forWrapping = true;
+            break;
         case Cipher.DECRYPT_MODE:
-            throw new IllegalArgumentException("engine only valid for wrapping");
+            wrapEngine.init(false, param);
+            this.wrapStream = new ErasableOutputStream();
+            this.forWrapping = false;
+            break;
         default:
-            System.out.println("eeek!");
+            throw new InvalidParameterException("Unknown mode parameter passed to init.");
         }
     }
 
@@ -268,7 +284,14 @@ public abstract class BaseWrapCipher
         int     inputOffset,
         int     inputLen)
     {
-        throw new RuntimeException("not supported for wrapping");
+        if (wrapStream == null)
+        {
+            throw new IllegalStateException("not supported in a wrapping mode");
+        }
+
+        wrapStream.write(input, inputOffset, inputLen);
+
+        return null;
     }
 
     protected int engineUpdate(
@@ -279,7 +302,14 @@ public abstract class BaseWrapCipher
         int     outputOffset)
         throws ShortBufferException
     {
-        throw new RuntimeException("not supported for wrapping");
+        if (wrapStream == null)
+        {
+            throw new IllegalStateException("not supported in a wrapping mode");
+        }
+
+        wrapStream.write(input, inputOffset, inputLen);
+
+        return 0;
     }
 
     protected byte[] engineDoFinal(
@@ -288,7 +318,35 @@ public abstract class BaseWrapCipher
         int     inputLen)
         throws IllegalBlockSizeException, BadPaddingException
     {
-        return null;
+        if (wrapStream == null)
+        {
+            throw new IllegalStateException("not supported in a wrapping mode");
+        }
+
+        wrapStream.write(input, inputOffset, inputLen);
+
+        try
+        {
+            if (forWrapping)
+            {
+                return wrapEngine.wrap(wrapStream.getBuf(), 0, wrapStream.size());
+            }
+            else
+            {
+                try
+                {
+                    return wrapEngine.unwrap(wrapStream.getBuf(), 0, wrapStream.size());
+                }
+                catch (InvalidCipherTextException e)
+                {
+                    throw new BadPaddingException(e.getMessage());
+                }
+            }
+        }
+        finally
+        {
+            wrapStream.erase();
+        }
     }
 
     protected int engineDoFinal(
@@ -299,7 +357,46 @@ public abstract class BaseWrapCipher
         int     outputOffset)
         throws IllegalBlockSizeException, BadPaddingException, ShortBufferException
     {
-        return 0;
+        if (wrapStream == null)
+        {
+            throw new IllegalStateException("not supported in a wrapping mode");
+        }
+
+        wrapStream.write(input, inputOffset, inputLen);
+
+        try
+        {
+            byte[] enc;
+
+            if (forWrapping)
+            {
+                enc = wrapEngine.wrap(wrapStream.getBuf(), 0, wrapStream.size());
+            }
+            else
+            {
+                try
+                {
+                    enc = wrapEngine.unwrap(wrapStream.getBuf(), 0, wrapStream.size());
+                }
+                catch (InvalidCipherTextException e)
+                {
+                    throw new BadPaddingException(e.getMessage());
+                }
+            }
+
+            if (outputOffset + enc.length > output.length)
+            {
+                throw new ShortBufferException("output buffer too short for input.");
+            }
+
+            System.arraycopy(enc, 0, output, outputOffset, enc.length);
+
+            return enc.length;
+        }
+        finally
+        {
+            wrapStream.erase();
+        }
     }
 
     protected byte[] engineWrap(
@@ -418,4 +515,22 @@ public abstract class BaseWrapCipher
         }
     }
 
+    protected static final class ErasableOutputStream
+        extends ByteArrayOutputStream
+    {
+        public ErasableOutputStream()
+        {
+        }
+
+        public byte[] getBuf()
+        {
+            return buf;
+        }
+
+        public void erase()
+        {
+            Arrays.fill(this.buf, (byte)0);
+            reset();
+        }
+    }
 }

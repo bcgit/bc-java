@@ -1,6 +1,5 @@
 package org.bouncycastle.jcajce.provider.asymmetric.rsa;
 
-import java.io.ByteArrayOutputStream;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -45,12 +44,12 @@ public class CipherSpi
 {
     private final JcaJceHelper helper = new BCJcaJceHelper();
 
-    private AsymmetricBlockCipher cipher;
-    private AlgorithmParameterSpec paramSpec;
-    private AlgorithmParameters engineParams;
+    private AsymmetricBlockCipher   cipher;
+    private AlgorithmParameterSpec  paramSpec;
+    private AlgorithmParameters     engineParams;
     private boolean                 publicKeyOnly = false;
     private boolean                 privateKeyOnly = false;
-    private ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+    private ErasableOutputStream    bOut = new ErasableOutputStream();
 
     public CipherSpi(
         AsymmetricBlockCipher engine)
@@ -532,9 +531,7 @@ public class CipherSpi
     {
         try
         {
-            byte[]  bytes = bOut.toByteArray();
-
-            return cipher.processBlock(bytes, 0, bytes.length);
+            return cipher.processBlock(bOut.getBuf(), 0, bOut.size());
         }
         catch (InvalidCipherTextException e)
         {
@@ -546,7 +543,7 @@ public class CipherSpi
         }
         finally
         {
-            bOut.reset();
+            bOut.erase();
         }
     }
 
