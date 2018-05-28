@@ -163,9 +163,11 @@
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.data" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.crt" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.cvcert" />
+                     <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.kbx" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.csr" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.crl" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.cer" />
+                     <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.kbx" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.key" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.der" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.txt" />
@@ -195,6 +197,7 @@
                             <include name="**/*.sig" />
                             <include name="**/*.data" />
                             <include name="**/*.cer" />
+                            <include name="**/*.kbx" />
                             <include name="**/*.der" />
                             <include name="**/*.message" />
                             <include name="**/*.txt" />
@@ -422,6 +425,7 @@
                  <exclude name="**/*.key" />
                  <exclude name="org/bouncycastle/**.crt" />
                  <exclude name="org/bouncycastle/**/test/*.cer" />
+                 <exclude name="org/bouncycastle/**/test/*.kbx" />
                  <exclude name="org/bouncycastle/**/test/*.csr" />
                  <exclude name="org/bouncycastle/**/test/*.cvcert" />
                  <exclude name="org/bouncycastle/**/test/*.eml" />
@@ -729,6 +733,7 @@
              <fileset dir="${src.dir}" includes="**/*.crt" />
              <fileset dir="${src.dir}" includes="**/*.key" />
              <fileset dir="${src.dir}" includes="**/*.cer" />
+             <fileset dir="${src.dir}" includes="**/*.kbx" />
              <fileset dir="${src.dir}" includes="**/*.crl" />
              <fileset dir="${src.dir}" includes="**/*.csr" />
              <fileset dir="${src.dir}" includes="**/*.txt" />
