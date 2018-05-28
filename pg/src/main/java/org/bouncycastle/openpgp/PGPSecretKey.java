@@ -37,8 +37,6 @@ import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
-import org.bouncycastle.util.Strings;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * general class to handle and construct  a PGP secret key object.
@@ -1031,7 +1029,7 @@ public class PGPSecretKey
     {
         String type;
         SXprUtils.skipOpenParenthesis(inputStream);
-          
+
         String protection;
         S2K s2k;
         byte[] iv;
@@ -1068,7 +1066,7 @@ public class PGPSecretKey
         // parse the secret key S-expr
         //
         InputStream keyIn = new ByteArrayInputStream(data);
-        System.err.println(Strings.fromByteArray(data));
+
         SXprUtils.skipOpenParenthesis(keyIn);
         SXprUtils.skipOpenParenthesis(keyIn);
 
@@ -1098,7 +1096,7 @@ public class PGPSecretKey
         }
         byte[] qBytes = SXprUtils.readBytes(keyIn, keyIn.read());
         SXprUtils.skipCloseParenthesis(keyIn);
-        
+
         SXprUtils.skipOpenParenthesis(keyIn);
 
         type = SXprUtils.readString(keyIn, keyIn.read());
@@ -1118,20 +1116,20 @@ public class PGPSecretKey
 
         SXprUtils.skipOpenParenthesis(keyIn);
         type = SXprUtils.readString(keyIn, keyIn.read());
-        System.err.println(type);
-           if (!type.equals("hash"))
-           {
-               throw new PGPException("hash keyword expected");
-           }
+
+        if (!type.equals("hash"))
+        {
+            throw new PGPException("hash keyword expected");
+        }
         type = SXprUtils.readString(keyIn, keyIn.read());
-           System.err.println(type);
-              if (!type.equals("sha1"))
-              {
-                  throw new PGPException("hash keyword expected");
-              }
-           
+
+        if (!type.equals("sha1"))
+        {
+            throw new PGPException("hash keyword expected");
+        }
+
         byte[] hashBytes = SXprUtils.readBytes(keyIn, keyIn.read());
-           System.err.println(Hex.toHexString(hashBytes));
+
         SXprUtils.skipCloseParenthesis(keyIn);
         // TODO: process hash
         return new BigInteger[]{d, p, q, u};
