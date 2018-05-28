@@ -324,6 +324,7 @@
                  <exclude name="org/bouncycastle/est/**" />
                  <exclude name="org/bouncycastle/cmc/**" />
                  <exclude name="org/bouncycastle/mail/**" />
+                 <exclude name="org/bouncycastle/gpg/**" />
                  <exclude name="org/bouncycastle/openpgp/**" />
                  <exclude name="org/bouncycastle/openssl/**" />
                  <exclude name="org/bouncycastle/mozilla/**" />
@@ -441,6 +442,7 @@
                  <exclude name="org/bouncycastle/operator/**" />
                  <exclude name="org/bouncycastle/sasn1/**" />
                  <exclude name="org/bouncycastle/tsp/**" />
+                 <exclude name="org/bouncycastle/gpg/**" />
                  <exclude name="org/bouncycastle/openpgp/**" />
                  <exclude name="org/bouncycastle/openssl/**" />
                  <exclude name="org/bouncycastle/mozilla/**" />
@@ -661,6 +663,7 @@
              <fileset dir="${src.dir}">
                  <include name="org/bouncycastle/bcpg/**/*.java" />
                  <include name="org/bouncycastle/openpgp/**/*.java" />
+                 <include name="org/bouncycastle/gpg/**/*.java" />
                  <include name="org/bouncycastle/apache/**/*.java" />
                  <exclude name="**/*Test.java" />
                  <exclude name="**/*Tests.java" />
@@ -1026,9 +1029,11 @@
         <copy todir="${pg.target.src.dir}">
              <fileset dir="${src.dir}">
                  <include name="org/bouncycastle/openpgp/**/test/*.java" />
+                 <include name="org/bouncycastle/gpg/**/test/*.java" />
                  <include name="org/bouncycastle/bcpg/**/test/*.java" />
                  <include name="org/bouncycastle/apache/**/*.html" />
                  <include name="org/bouncycastle/openpgp/**/*.html" />
+                 <include name="org/bouncycastle/gpg/**/*.html" />
                  <include name="org/bouncycastle/bcpg/**/*.html" />
              </fileset>
         </copy>
@@ -1036,6 +1041,7 @@
         <compile-doc srcDir="${pg.target.src.dir}" docsDir="${artifacts.docs.dir}/bcpg">
             <docElements>
                 <package name="org.bouncycastle.openpgp.*" />
+                <package name="org.bouncycastle.gpg.*" />
                 <package name="org.bouncycastle.bcpg.*" />
                 <group title="BCPG Support Packages" packages="org.bouncycastle.bcpg*" />
                 <group title="OpenPGP Packages" packages="org.bouncycastle.openpgp*" />
