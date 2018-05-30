@@ -41,25 +41,30 @@ public class PollReqContent
         this(new DERSequence(new DERSequence(certReqId)));
     }
 
-    public ASN1Integer[][] getCertReqIds()
+    public ASN1Integer[] getCertReqIDs()
     {
-        ASN1Integer[][] result = new ASN1Integer[content.size()][];
+        ASN1Integer[] result = new ASN1Integer[content.size()];
 
         for (int i = 0; i != result.length; i++)
         {
-            result[i] = sequenceToASN1IntegerArray((ASN1Sequence)content.getObjectAt(i));
+            ASN1Sequence seq = (ASN1Sequence)content.getObjectAt(i);
+            result[i] = ASN1Integer.getInstance(seq.getObjectAt(0));
         }
 
         return result;
     }
 
-    private static ASN1Integer[] sequenceToASN1IntegerArray(ASN1Sequence seq)
+    /**
+     * @deprecated use {@link #getCertReqIDs()}
+     */
+    public ASN1Integer[][] getCertReqIds()
     {
-         ASN1Integer[] result = new ASN1Integer[seq.size()];
+        ASN1Integer[] certIds = getCertReqIDs();
+        ASN1Integer[][] result = new ASN1Integer[certIds.length][];
 
         for (int i = 0; i != result.length; i++)
         {
-            result[i] = ASN1Integer.getInstance(seq.getObjectAt(i));
+            result[i] = new ASN1Integer[] {certIds[i]};
         }
 
         return result;
