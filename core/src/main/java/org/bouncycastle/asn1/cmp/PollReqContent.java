@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.cmp;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -39,6 +40,21 @@ public class PollReqContent
     public PollReqContent(ASN1Integer certReqId)
     {
         this(new DERSequence(new DERSequence(certReqId)));
+    }
+
+    /**
+     * Create a pollReqContent for multiple certReqIds.
+     *
+     * @param certReqIds the certificate request IDs.
+     */
+    public PollReqContent(ASN1Integer[] certReqIds)
+    {
+        ASN1Encodable[] internSeq = new ASN1Sequence[certReqIds.length];
+        for (int i = 0; i != certReqIds.length; i++) {
+            internSeq[i] = new DERSequence(certReqIds[i]);
+        }
+
+        this.content = new DERSequence(internSeq);
     }
 
     public ASN1Integer[] getCertReqIDs()
