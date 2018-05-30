@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.cmp;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -41,25 +42,45 @@ public class PollReqContent
         this(new DERSequence(new DERSequence(certReqId)));
     }
 
-    public ASN1Integer[][] getCertReqIds()
+    /**
+     * Create a pollReqContent for multiple certReqIds.
+     *
+     * @param certReqIds the certificate request IDs.
+     */
+    public PollReqContent(ASN1Integer[] certReqIds)
     {
-        ASN1Integer[][] result = new ASN1Integer[content.size()][];
+        ASN1Encodable[] internSeq = new ASN1Sequence[certReqIds.length];
+        for (int i = 0; i != certReqIds.length; i++) {
+            internSeq[i] = new DERSequence(certReqIds[i]);
+        }
+
+        this.content = new DERSequence(internSeq);
+    }
+
+    public ASN1Integer[] getCertReqIDs()
+    {
+        ASN1Integer[] result = new ASN1Integer[content.size()];
 
         for (int i = 0; i != result.length; i++)
         {
-            result[i] = sequenceToASN1IntegerArray((ASN1Sequence)content.getObjectAt(i));
+            ASN1Sequence seq = (ASN1Sequence)content.getObjectAt(i);
+            result[i] = ASN1Integer.getInstance(seq.getObjectAt(0));
         }
 
         return result;
     }
 
-    private static ASN1Integer[] sequenceToASN1IntegerArray(ASN1Sequence seq)
+    /**
+     * @deprecated use {@link #getCertReqIDs()}
+     */
+    public ASN1Integer[][] getCertReqIds()
     {
-         ASN1Integer[] result = new ASN1Integer[seq.size()];
+        ASN1Integer[] certIds = getCertReqIDs();
+        ASN1Integer[][] result = new ASN1Integer[certIds.length][];
 
         for (int i = 0; i != result.length; i++)
         {
-            result[i] = ASN1Integer.getInstance(seq.getObjectAt(i));
+            result[i] = new ASN1Integer[] {certIds[i]};
         }
 
         return result;
