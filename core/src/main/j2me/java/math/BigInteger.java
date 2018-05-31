@@ -2,6 +2,7 @@ package java.math;
 
 import java.util.Random;
 import java.util.Stack;
+import java.util.Vector;
 
 import org.bouncycastle.util.Arrays;
 
@@ -3120,6 +3121,25 @@ public class BigInteger
             }
             break;
         }
+        case 32:
+        {
+            long mask = (1L << 60) - 1;
+            BigInteger u = this.abs();
+            int bits = u.bitLength();
+            Stack S = new Stack();
+            while (bits > 60)
+            {
+                S.push(Long.toString((u.longValue() & mask), 32));
+                u = u.shiftRight(60);
+                bits -= 60;
+            }
+            sb.append(Long.toString(u.longValue(), 32));
+            while (!S.empty())
+            {
+                appendZeroExtendedString(sb, (String)S.pop(), 12);
+            }
+            break;
+        }
         default:
         {
             BigInteger q = this.abs();
@@ -3129,39 +3149,47 @@ public class BigInteger
                 break;
             }
 
-            // Based on algorithm 1a from chapter 4.4 in Seminumerical Algorithms (Knuth)
-
-            // Work out the largest power of 'rdx' that is a positive 64-bit integer
-            // TODO possibly cache power/exponent against radix?
-            long limit = Long.MAX_VALUE / rdx;
-            long power = rdx;
-            int exponent = 1;
-            while (power <= limit)
+            // TODO Could cache the moduli for each radix (soft reference?)
+            Vector moduli = new Vector();
+            BigInteger R = BigInteger.valueOf(rdx);
+            while (R.compareTo(q) <= 0)
             {
-                power *= rdx;
-                ++exponent;
+                moduli.addElement(R);
+                R = R.square();
             }
 
-            BigInteger bigPower = BigInteger.valueOf(power);
+            int scale = moduli.size();
+            sb.ensureCapacity(sb.length() + (1 << scale));
 
-            Stack S = new Stack();
-            while (q.compareTo(bigPower) >= 0)
-            {
-                BigInteger[] qr = q.divideAndRemainder(bigPower);
-                S.push(Long.toString(qr[1].longValue(), rdx));
-                q = qr[0];
-            }
+            toString(sb, rdx, moduli, scale, q);
 
-            sb.append(Long.toString(q.longValue(), rdx));
-            while (!S.empty())
-            {
-                appendZeroExtendedString(sb, (String)S.pop(), exponent);
-            }
             break;
         }
         }
 
         return sb.toString();
+    }
+
+    private static void toString(StringBuffer sb, int rdx, Vector moduli, int scale, BigInteger pos)
+    {
+        if (pos.bitLength() < 64)
+        {
+            String s = Long.toString(pos.longValue(), rdx);
+            if (sb.length() > 1 || (sb.length() == 1 && sb.charAt(0) != '-'))
+            {
+                appendZeroExtendedString(sb, s, 1 << scale);
+            }
+            else if (pos.signum() != 0)
+            {
+                sb.append(s);
+            }
+            return;
+        }
+
+        BigInteger[] qr = pos.divideAndRemainder((BigInteger)moduli.elementAt(--scale));
+
+        toString(sb, rdx, moduli, scale, qr[0]);
+        toString(sb, rdx, moduli, scale, qr[1]);
     }
 
     private static void appendZeroExtendedString(StringBuffer sb, String s, int minLength)
