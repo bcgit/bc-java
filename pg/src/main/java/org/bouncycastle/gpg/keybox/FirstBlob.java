@@ -17,6 +17,7 @@ public class FirstBlob
     private final long fileCreatedAt;
     private final long lastMaintenanceRun;
 
+
     private FirstBlob(
         int base,
         long length,
@@ -46,7 +47,7 @@ public class FirstBlob
         }
 
 
-        buffer.u32(); // RFU
+        buffer.u32(); // RFU = Reserved for Future Use
         long fileCreatedAt = buffer.u32();
         long lastMaintenanceRun = buffer.u32();
         buffer.u32();  // RFU

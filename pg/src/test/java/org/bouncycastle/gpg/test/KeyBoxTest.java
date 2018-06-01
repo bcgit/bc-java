@@ -1,7 +1,10 @@
 package org.bouncycastle.gpg.test;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.Security;
+import java.security.cert.CertificateFactory;
 
 import junit.framework.TestCase;
 import org.bouncycastle.gpg.keybox.BlobType;
@@ -18,11 +21,18 @@ import org.bouncycastle.util.test.SimpleTest;
 public class KeyBoxTest
     extends SimpleTest
 {
+    public static void main(
+        String[] args)
+    {
+        Security.addProvider(new BouncyCastleProvider());
+
+        runTest(new KeyBoxTest());
+    }
+
     public String getName()
     {
         return "KeyBoxTest";
     }
-
 
     /**
      * Test loading a key store and extracting information.
@@ -51,8 +61,6 @@ public class KeyBoxTest
 
         for (KeyBlob keyBlob : keyBox.getKeyBlobs())
         {
-            System.out.println(new String(keyBlob.getUserIds().get(0).getUserID()));
-
 
             switch (keyBlob.getType())
             {
@@ -66,13 +74,15 @@ public class KeyBoxTest
                 TestCase.assertEquals("CN=Peggy Shippen", keyBlob.getUserIds().get(1).getUserIDAsString());
 
                 // It can be successfully parsed into a certificate.
-                ((CertificateBlob)keyBlob).getEncodedCertificate();
+
+
+                byte[] certData = ((CertificateBlob)keyBlob).getEncodedCertificate();
+                CertificateFactory factory = CertificateFactory.getInstance("X509");
+                factory.generateCertificate(new ByteArrayInputStream(certData));
 
                 TestCase.assertEquals(1, keyBlob.getKeyInformation().size());
                 TestCase.assertEquals(20, keyBlob.getKeyInformation().get(0).getFingerprint().length);
-
                 TestCase.assertNull(keyBlob.getKeyInformation().get(0).getKeyID());
-
             }
             break;
 
@@ -127,20 +137,106 @@ public class KeyBoxTest
         }
     }
 
+    public void testBrokenMagic()
+        throws Exception
+    {
+        byte[] raw = Streams.readAll(KeyBoxTest.class.getResourceAsStream("/pgpdata/pubring.kbx"));
+
+        raw[8] ^= 1; // Single bit error in magic number.
+
+        try
+        {
+            new KeyBox(raw, new BcKeyFingerprintCalculator());
+            fail("Must have invalid magic");
+        }
+        catch (IOException ioex)
+        {
+            isEquals("Incorrect magic expecting 4b425866 but got 4a425866", ioex.getMessage());
+        }
+    }
+
+    public void testNullSource()
+        throws Exception
+    {
+        InputStream zulu = null;
+
+        try
+        {
+            new KeyBox(zulu, new BcKeyFingerprintCalculator());
+            fail("Must fail.");
+        }
+        catch (IllegalArgumentException ioex)
+        {
+            isEquals("Cannot take get instance of null", ioex.getMessage());
+        }
+    }
+
+    public void testDoubleFirstBlob()
+        throws Exception
+    {
+        try
+        {
+            new KeyBox(new byte[0], new BcKeyFingerprintCalculator());
+            fail("Must fail.");
+        }
+        catch (IOException ioex)
+        {
+            isEquals("No first blob, is the source zero length?", ioex.getMessage());
+        }
+    }
+
+    public void testNoFirstBlob()
+        throws Exception
+    {
+        try
+        {
+            new KeyBox(KeyBoxTest.class.getResourceAsStream("/pgpdata/doublefirst.kbx"), new BcKeyFingerprintCalculator());
+            fail("Must fail.");
+        }
+        catch (IOException ioex)
+        {
+            isEquals("Unexpected second 'FirstBlob', there should only be one FirstBlob at the start of the file.", ioex.getMessage());
+        }
+    }
+
+    public void testKeyBoxWithMD5Sanity()
+        throws Exception
+    {
+        //
+        // Expect no failure.
+        //
+        new KeyBox(KeyBoxTest.class.getResourceAsStream("/pgpdata/md5kbx.kbx"), new BcKeyFingerprintCalculator());
+    }
+
+    public void testKeyBoxWithBrokenMD5()
+        throws Exception
+    {
+        byte[] raw = Streams.readAll(KeyBoxTest.class.getResourceAsStream("/pgpdata/md5kbx.kbx"));
+
+        raw[36] ^= 1; // Single bit error in first key block.
+
+        try
+        {
+            new KeyBox(raw, new BcKeyFingerprintCalculator());
+            fail("Must have invalid checksum");
+        }
+        catch (IOException ioex)
+        {
+            isEquals("Blob with base offset of 32 has incorrect digest.", ioex.getMessage());
+        }
+
+    }
+
     public void performTest()
         throws Exception
     {
+        testKeyBoxWithBrokenMD5();
+        testKeyBoxWithMD5Sanity();
+        testDoubleFirstBlob();
+        testNullSource();
+        testBrokenMagic();
         testSuccessfulLoad();
         testInducedChecksumFailed();
-    }
-
-
-    public static void main(
-        String[] args)
-    {
-        Security.addProvider(new BouncyCastleProvider());
-
-        runTest(new KeyBoxTest());
     }
 
 }

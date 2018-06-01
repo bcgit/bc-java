@@ -65,7 +65,7 @@ public class Blob
         case FIRST_BLOB:
             return FirstBlob.parseContent(base, len, type, version, buffer);
         case X509_BLOB:
-            return CertificateBlob.parseContent(base, len, type, version, buffer, keyFingerPrintCalculator);
+            return CertificateBlob.parseContent(base, len, type, version, buffer);
         case OPEN_PGP_BLOB:
             return PublicKeyRingBlob.parseContent(base, len, type, version, buffer, keyFingerPrintCalculator);
         }
@@ -74,10 +74,6 @@ public class Blob
 
     }
 
-    public long getLength()
-    {
-        return length;
-    }
 
     public BlobType getType()
     {

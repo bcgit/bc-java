@@ -14,11 +14,6 @@ public enum BlobType
         this.byteValue = byteValue;
     }
 
-    public int getByteValue()
-    {
-        return byteValue;
-    }
-
     public static BlobType fromByte(int byteVal)
     {
         for (BlobType blobType : BlobType.values())
@@ -29,6 +24,11 @@ public enum BlobType
             }
         }
         throw new IllegalArgumentException("Unknown blob type " + Integer.toHexString(byteVal));
+    }
+
+    public int getByteValue()
+    {
+        return byteValue;
     }
 
 }
