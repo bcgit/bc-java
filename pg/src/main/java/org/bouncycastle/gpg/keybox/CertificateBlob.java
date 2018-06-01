@@ -1,11 +1,8 @@
 package org.bouncycastle.gpg.keybox;
 
 import java.io.IOException;
-import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 
 /**
  * A PGP blob holds key material.
@@ -17,37 +14,30 @@ public class CertificateBlob
                             BlobType type,
                             int version,
                             int blobFlags,
-                            long keyBlockOffset,
-                            long keyBlockLength,
                             int keyNumber,
-                            int additionalKeyInfoSize,
                             List<KeyInformation> keyInformation,
-                            int sizeOfSerialNumber,
                             byte[] serialNumber,
                             int numberOfUserIDs,
-                            int sizeOfUserIdInformation,
                             List<UserID> userIds,
                             int numberOfSignatures,
-                            int sizeOfSignatureInfo,
                             List<Long> expirationTime,
                             int assignedOwnerTrust,
                             int allValidity,
                             long recheckAfter,
                             long newestTimestamp,
                             long blobCreatedAt,
-                            long sizeOfReservedSpace,
                             byte[] keyBytes,
                             byte[] reserveBytes,
                             byte[] sha1Checksum)
     {
-        super(base, length, type, version, blobFlags, keyBlockOffset, keyBlockLength, keyNumber, additionalKeyInfoSize,
-       keyInformation, sizeOfSerialNumber, serialNumber, numberOfUserIDs, sizeOfUserIdInformation, userIds, numberOfSignatures,
-       sizeOfSignatureInfo, expirationTime, assignedOwnerTrust, allValidity, recheckAfter, newestTimestamp, blobCreatedAt,
-       sizeOfReservedSpace, keyBytes, reserveBytes, sha1Checksum);
+        super(base, length, type, version, blobFlags, keyNumber,
+            keyInformation, serialNumber, numberOfUserIDs, userIds, numberOfSignatures,
+            expirationTime, assignedOwnerTrust, allValidity, recheckAfter, newestTimestamp, blobCreatedAt,
+            keyBytes, reserveBytes, sha1Checksum);
     }
 
 
-    static Blob parseContent(int base, long length, BlobType type, int version, KeyBoxByteBuffer buffer, KeyFingerPrintCalculator fingerPrintCalculator)
+    static Blob parseContent(int base, long length, BlobType type, int version, KeyBoxByteBuffer buffer)
         throws IOException
     {
 
@@ -80,7 +70,7 @@ public class CertificateBlob
         //
         // Load the additional key information.
         //
-        List<KeyInformation> keyInformation = new ArrayList<KeyInformation> ();
+        List<KeyInformation> keyInformation = new ArrayList<KeyInformation>();
 
         for (int t = keyNumber - 1; t >= 0; t--)
         {
@@ -93,7 +83,7 @@ public class CertificateBlob
         buffer.bN(serialNumber); // n  u16 (see above) bytes of serial number
 
         int numberOfUserIDs = buffer.u16(); //  u16  number of user IDs
-        int sizeOfUserIdInformation = buffer.u16(); // size of additional user ID information
+        buffer.u16(); // size of additional user ID information
 
         //
         // User IDS.
@@ -105,7 +95,7 @@ public class CertificateBlob
         }
 
         int numberOfSignatures = buffer.u16();
-        int sizeOfSignatureInfo = buffer.u16();
+        buffer.u16();
 
 
         List<Long> signatureExpirationTime = new ArrayList<Long>();
@@ -131,7 +121,7 @@ public class CertificateBlob
 
 
         //
-        // Keyblock
+        // Key block is loaded based from the start of the blob rather than
         //
 
         byte[] keyData = buffer.rangeOf(
@@ -140,7 +130,7 @@ public class CertificateBlob
 
 
         //
-        // Reserved space not covered by checksum.
+        // Reserve space.
         //
         int dataSize = (int)(length - (buffer.position() - base) - 20);
         byte[] data = new byte[dataSize];
@@ -154,30 +144,35 @@ public class CertificateBlob
             type,
             version,
             blobFlags,
-            keyBlockOffset,
-            keyBlockLength,
             keyNumber,
-            keyInformationStructureSize,
             keyInformation,
-            sizeOfSerialNumber,
             serialNumber,
             numberOfUserIDs,
-            sizeOfUserIdInformation,
             userIds,
             numberOfSignatures,
-            sizeOfSignatureInfo,
             signatureExpirationTime,
             assignedOwnerTrust,
             allValidity,
             recheckAfter,
             newestTimestamp,
             blobCreatedAt,
-            sizeOfReservedSpace,
             keyData, reserveData, sha1Checksum);
     }
 
+    /**
+     * Return the encoded certificate.
+     * <p>
+     * This is the raw certificate data, if you are using the JCA then you can
+     * convert it back to an X509 Certificate using.
+     * <p>
+     * Example:
+     * byte[] certData = keyBlob.getEncodedCertificate();
+     * CertificateFactory factory = CertificateFactory.getInstance("X509");
+     * certificate = factory.generateCertificate(new ByteArrayInputStream(certData));
+     *
+     * @return
+     */
     public byte[] getEncodedCertificate()
-        throws IOException, CertificateException
     {
         return getKeyBytes();
     }

@@ -14,80 +14,59 @@ public class KeyBlob
     extends Blob
 {
     private final int blobFlags;
-    private final long keyBlockOffset;
-    private final long keyBlockLength;
     private final int keyNumber;
-    private final int additionalKeyInfoSize;
     private final List<KeyInformation> keyInformation;
-    private final int sizeOfSerialNumber;
     private final byte[] serialNumber;
     private final int numberOfUserIDs;
-    private final int sizeOfUserIdInformation;
     private final List<UserID> userIds;
     private final int numberOfSignatures;
-    private final int sizeOfSignatureInfo;
     private final List<Long> expirationTime;
     private final int assignedOwnerTrust;
     private final int allValidity;
     private final long recheckAfter;
     private final long newestTimestamp;
     private final long blobCreatedAt;
-    private final long sizeOfReservedSpace;
     private final byte[] keyBytes;
     private final byte[] reserveBytes;
-    private final byte[] sha1Checksum;
+    private final byte[] checksum;
 
     protected KeyBlob(int base, long length,
-                   BlobType type,
-                   int version,
-                   int blobFlags,
-                   long keyBlockOffset,
-                   long keyBlockLength,
-                   int keyNumber,
-                   int additionalKeyInfoSize,
-                   List<KeyInformation> keyInformation,
-                   int sizeOfSerialNumber,
-                   byte[] serialNumber,
-                   int numberOfUserIDs,
-                   int sizeOfUserIdInformation,
-                   List<UserID> userIds,
-                   int numberOfSignatures,
-                   int sizeOfSignatureInfo,
-                   List<Long> expirationTime,
-                   int assignedOwnerTrust,
-                   int allValidity,
-                   long recheckAfter,
-                   long newestTimestamp,
-                   long blobCreatedAt,
-                   long sizeOfReservedSpace,
-                   byte[] keyBytes,
-                   byte[] reserveBytes,
-                   byte[] sha1Checksum)
+                      BlobType type,
+                      int version,
+                      int blobFlags,
+                      int keyNumber,
+                      List<KeyInformation> keyInformation,
+                      byte[] serialNumber,
+                      int numberOfUserIDs,
+                      List<UserID> userIds,
+                      int numberOfSignatures,
+                      List<Long> expirationTime,
+                      int assignedOwnerTrust,
+                      int allValidity,
+                      long recheckAfter,
+                      long newestTimestamp,
+                      long blobCreatedAt,
+                      byte[] keyBytes,
+                      byte[] reserveBytes,
+                      byte[] checksum)
     {
         super(base, length, type, version);
         this.blobFlags = blobFlags;
-        this.keyBlockOffset = keyBlockOffset;
-        this.keyBlockLength = keyBlockLength;
         this.keyNumber = keyNumber;
-        this.additionalKeyInfoSize = additionalKeyInfoSize;
         this.keyInformation = keyInformation;
-        this.sizeOfSerialNumber = sizeOfSerialNumber;
         this.serialNumber = serialNumber;
         this.numberOfUserIDs = numberOfUserIDs;
-        this.sizeOfUserIdInformation = sizeOfUserIdInformation;
         this.userIds = userIds;
         this.numberOfSignatures = numberOfSignatures;
-        this.sizeOfSignatureInfo = sizeOfSignatureInfo;
         this.expirationTime = expirationTime;
         this.assignedOwnerTrust = assignedOwnerTrust;
         this.allValidity = allValidity;
         this.recheckAfter = recheckAfter;
         this.newestTimestamp = newestTimestamp;
         this.blobCreatedAt = blobCreatedAt;
-        this.sizeOfReservedSpace = sizeOfReservedSpace;
         this.keyBytes = keyBytes;
         this.reserveBytes = reserveBytes;
-        this.sha1Checksum = sha1Checksum;
+        this.checksum = checksum;
     }
 
     protected static void verifyDigest(int base, long length, KeyBoxByteBuffer buffer)
@@ -127,7 +106,7 @@ public class KeyBlob
                 boolean ok = true;
                 for (int t = 4; t < blobDigest.length; t++)
                 {
-                    if (calculatedDigest[t - 4] != blobData[t])
+                    if (calculatedDigest[t - 4] != blobDigest[t])
                     {
                         ok = false;
                         break;
@@ -147,34 +126,14 @@ public class KeyBlob
         return blobFlags;
     }
 
-    public long getKeyBlockOffset()
-    {
-        return keyBlockOffset;
-    }
-
-    public long getKeyBlockLength()
-    {
-        return keyBlockLength;
-    }
-
     public int getKeyNumber()
     {
         return keyNumber;
     }
 
-    public int getAdditionalKeyInfoSize()
-    {
-        return additionalKeyInfoSize;
-    }
-
     public List<KeyInformation> getKeyInformation()
     {
         return keyInformation;
-    }
-
-    public int getSizeOfSerialNumber()
-    {
-        return sizeOfSerialNumber;
     }
 
     public byte[] getSerialNumber()
@@ -187,11 +146,6 @@ public class KeyBlob
         return numberOfUserIDs;
     }
 
-    public int getSizeOfUserIdInformation()
-    {
-        return sizeOfUserIdInformation;
-    }
-
     public List<UserID> getUserIds()
     {
         return userIds;
@@ -202,10 +156,6 @@ public class KeyBlob
         return numberOfSignatures;
     }
 
-    public int getSizeOfSignatureInfo()
-    {
-        return sizeOfSignatureInfo;
-    }
 
     public List<Long> getExpirationTime()
     {
@@ -237,11 +187,6 @@ public class KeyBlob
         return blobCreatedAt;
     }
 
-    public long getSizeOfReservedSpace()
-    {
-        return sizeOfReservedSpace;
-    }
-
     public byte[] getKeyBytes()
     {
         return keyBytes;
@@ -250,5 +195,10 @@ public class KeyBlob
     public byte[] getReserveBytes()
     {
         return reserveBytes;
+    }
+
+    public byte[] getChecksum()
+    {
+        return checksum;
     }
 }

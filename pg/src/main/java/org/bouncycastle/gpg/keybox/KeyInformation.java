@@ -12,6 +12,15 @@ public class KeyInformation
     private final byte[] filler;
     private final byte[] keyID;
 
+    public KeyInformation(byte[] fingerprint, long offsetToKeyID, int keyFlags, byte[] filler, byte[] keyID)
+    {
+        this.fingerprint = Arrays.clone(fingerprint);
+        this.offsetToKeyID = offsetToKeyID;
+        this.keyFlags = keyFlags;
+        this.filler = Arrays.clone(filler);
+        this.keyID = Arrays.clone(keyID);
+    }
+
     public static KeyInformation getInstance(Object src, int expectedSize, int base)
         throws IOException
     {
@@ -41,7 +50,7 @@ public class KeyInformation
 
 
         int keyFlags = buffer.u16(); // key flags,  bit 0 = qualified signature (not yet implemented}
-        buffer.u16();  // reserved
+        buffer.u16();  // RFU = Reserved for Future Use
 
         byte[] filler = new byte[expectedSize - (buffer.position() - start)];
         buffer.bN(filler);
@@ -50,24 +59,9 @@ public class KeyInformation
 
     }
 
-
-    public KeyInformation(byte[] fingerprint, long offsetToKeyID, int keyFlags, byte[] filler, byte[] keyID)
-    {
-        this.fingerprint = Arrays.clone(fingerprint);
-        this.offsetToKeyID = offsetToKeyID;
-        this.keyFlags = keyFlags;
-        this.filler = Arrays.clone(filler);
-        this.keyID = Arrays.clone(keyID);
-    }
-
     public byte[] getFingerprint()
     {
         return Arrays.clone(fingerprint);
-    }
-
-    public long getOffsetToKeyID()
-    {
-        return offsetToKeyID;
     }
 
     public int getKeyFlags()
