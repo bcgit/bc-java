@@ -1,4 +1,4 @@
-package org.bouncycastle.openpgp;
+package org.bouncycastle.gpg;
 
 import java.io.IOException;
 import java.io.InputStream;

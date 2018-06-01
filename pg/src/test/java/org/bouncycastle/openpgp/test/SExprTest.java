@@ -3,9 +3,11 @@ package org.bouncycastle.openpgp.test;
 import java.io.ByteArrayInputStream;
 import java.security.Security;
 
+import org.bouncycastle.gpg.SExprParser;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEProtectionRemoverFactory;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
@@ -70,6 +72,19 @@ public class SExprTest
       + "aUy2CI2eyCdx2IIENDwe3fd+lNNgkDKXFBtWYP9OQ4MESZuL7HC4ZikoMTI6"
       + "cHJvdGVjdGVkLWF0MTU6MjAxODA1MjhUMDIyMjAyKSkp");
 
+    byte[] key3 =
+        Base64.decode(
+            "KDIxOnByb3RlY3RlZC1wcml2YXRlLWtleSgzOmVjYyg1OmN1cnZlMTU6YnJh"
+                + "aW5wb29sUDM4NHIxKSgxOnE5NzoEi29XCqkugtlRvONnpAVMQgfecL+Gk86O"
+                + "t8LnUizfHG2TqRrtqlMg1DdU8Z8dJWmhJG84IUOURCyjt8nE4BeeCfRIbTU5"
+                + "7CB13OqveBdNIRfK45UQnxHLO2MPVXf4GMdtKSg5OnByb3RlY3RlZDI1Om9w"
+                + "ZW5wZ3AtczJrMy1zaGExLWFlcy1jYmMoKDQ6c2hhMTg6itLEzGV4Cfg4OjEy"
+                + "OTA1NDcyKTE2OgxmufENKFTZUB72+X7AwkgpMTEyOvMWNLZgaGdlTN8XCxa6"
+                + "8ia0Xqqb9RvHgTh+iBf0RgY5Tx5hqO9fHOi76LTBMfxs9VC4f1rTketjEUKR"
+                + "f5amKb8lrJ67kKEsny4oRtP9ejkNzcvHFqRdxmHyL10ui8M8rJN9OU8ArqWf"
+                + "g22dTcKu02cpKDEyOnByb3RlY3RlZC1hdDE1OjIwMTQwNjA4VDE2MDg1MCkp"
+                + "KQ==");
+
     public String getName()
     {
         return "SExprTest";
@@ -78,8 +93,11 @@ public class SExprTest
     public void performTest()
         throws Exception
     {
-        PGPSecretKey k1 = PGPSecretKey.parseSecretKeyFromSExpr(new ByteArrayInputStream(key1), new JcePBEProtectionRemoverFactory("fred".toCharArray()), new JcaKeyFingerprintCalculator());
-        PGPSecretKey k2 = PGPSecretKey.parseSecretKeyFromSExpr(new ByteArrayInputStream(key2), new JcePBEProtectionRemoverFactory("fred".toCharArray()), new JcaKeyFingerprintCalculator());
+        SExprParser parser = new SExprParser(new JcaPGPDigestCalculatorProviderBuilder().build());
+
+        PGPSecretKey k1 = parser.parseSecretKey(new ByteArrayInputStream(key1), new JcePBEProtectionRemoverFactory("fred".toCharArray()), new JcaKeyFingerprintCalculator());
+        PGPSecretKey k2 = parser.parseSecretKey(new ByteArrayInputStream(key2), new JcePBEProtectionRemoverFactory("fred".toCharArray()), new JcaKeyFingerprintCalculator());
+        PGPSecretKey k3 = parser.parseSecretKey(new ByteArrayInputStream(key3), new JcePBEProtectionRemoverFactory("test".toCharArray()), new JcaKeyFingerprintCalculator());
     }
 
     public static void main(
