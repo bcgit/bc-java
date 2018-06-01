@@ -5,25 +5,19 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGObject;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.DSASecretBCPGKey;
-import org.bouncycastle.bcpg.ECDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.ECSecretBCPGKey;
 import org.bouncycastle.bcpg.ElGamalSecretBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
-import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
-import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 import org.bouncycastle.bcpg.RSASecretBCPGKey;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SecretKeyPacket;
@@ -31,6 +25,7 @@ import org.bouncycastle.bcpg.SecretSubkeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.UserAttributePacket;
 import org.bouncycastle.bcpg.UserIDPacket;
+import org.bouncycastle.gpg.SExprParser;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PBEProtectionRemoverFactory;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
@@ -46,7 +41,7 @@ public class PGPSecretKey
     SecretKeyPacket secret;
     PGPPublicKey pub;
 
-    PGPSecretKey(
+    public PGPSecretKey(
         SecretKeyPacket secret,
         PGPPublicKey pub)
     {
@@ -800,338 +795,23 @@ public class PGPSecretKey
      * Parse a secret key from one of the GPG S expression keys associating it with the passed in public key.
      *
      * @return a secret key object.
+     * @deprecated use org.bouncycastle.gpg.SExprParser - it will also allow you to verify the protection checksum if it is available.
      */
     public static PGPSecretKey parseSecretKeyFromSExpr(InputStream inputStream, PBEProtectionRemoverFactory keyProtectionRemoverFactory, PGPPublicKey pubKey)
         throws IOException, PGPException
     {
-        SXprUtils.skipOpenParenthesis(inputStream);
-
-        String type;
-
-        type = SXprUtils.readString(inputStream, inputStream.read());
-        if (type.equals("protected-private-key"))
-        {
-            SXprUtils.skipOpenParenthesis(inputStream);
-
-            String curveName;
-
-            String keyType = SXprUtils.readString(inputStream, inputStream.read());
-            if (keyType.equals("ecc"))
-            {
-                SXprUtils.skipOpenParenthesis(inputStream);
-
-                String curveID = SXprUtils.readString(inputStream, inputStream.read());
-                curveName = SXprUtils.readString(inputStream, inputStream.read());
-
-                SXprUtils.skipCloseParenthesis(inputStream);
-            }
-            else
-            {
-                throw new PGPException("no curve details found");
-            }
-
-            byte[] qVal;
-
-            SXprUtils.skipOpenParenthesis(inputStream);
-
-            type = SXprUtils.readString(inputStream, inputStream.read());
-            if (type.equals("q"))
-            {
-                qVal = SXprUtils.readBytes(inputStream, inputStream.read());
-            }
-            else
-            {
-                throw new PGPException("no q value found");
-            }
-
-            SXprUtils.skipCloseParenthesis(inputStream);
-
-            byte[] dValue = getDValue(inputStream, keyProtectionRemoverFactory);
-            // TODO: check SHA-1 hash.
-
-            return new PGPSecretKey(new SecretKeyPacket(pubKey.getPublicKeyPacket(), SymmetricKeyAlgorithmTags.NULL, null, null, new ECSecretBCPGKey(new BigInteger(1, dValue)).getEncoded()), pubKey);
-        }
-
-        throw new PGPException("unknown key type found");
+        return new SExprParser(null).parseSecretKey(inputStream, keyProtectionRemoverFactory, pubKey);
     }
 
     /**
      * Parse a secret key from one of the GPG S expression keys.
      *
      * @return a secret key object.
+     * @deprecated use org.bouncycastle.gpg.SExprParser - it will also allow you to verify the protection checksum if it is available.
      */
     public static PGPSecretKey parseSecretKeyFromSExpr(InputStream inputStream, PBEProtectionRemoverFactory keyProtectionRemoverFactory, KeyFingerPrintCalculator fingerPrintCalculator)
         throws IOException, PGPException
     {
-        SXprUtils.skipOpenParenthesis(inputStream);
-
-        String type;
-
-        type = SXprUtils.readString(inputStream, inputStream.read());
-        if (type.equals("protected-private-key"))
-        {
-            SXprUtils.skipOpenParenthesis(inputStream);
-
-            String curveName;
-
-            String keyType = SXprUtils.readString(inputStream, inputStream.read());
-            if (keyType.equals("ecc"))
-            {
-                SXprUtils.skipOpenParenthesis(inputStream);
-
-                String curveID = SXprUtils.readString(inputStream, inputStream.read());
-                curveName = SXprUtils.readString(inputStream, inputStream.read());
-
-                if (curveName.startsWith("NIST "))
-                {
-                    curveName = curveName.substring("NIST ".length());
-                }
-
-                SXprUtils.skipCloseParenthesis(inputStream);
-
-                byte[] qVal;
-
-                SXprUtils.skipOpenParenthesis(inputStream);
-
-                type = SXprUtils.readString(inputStream, inputStream.read());
-                if (type.equals("q"))
-                {
-                    qVal = SXprUtils.readBytes(inputStream, inputStream.read());
-                }
-                else
-                {
-                    throw new PGPException("no q value found");
-                }
-
-                PublicKeyPacket pubPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.ECDSA, new Date(), new ECDSAPublicBCPGKey(ECNamedCurveTable.getOID(curveName), new BigInteger(1, qVal)));
-
-                SXprUtils.skipCloseParenthesis(inputStream);
-
-                byte[] dValue = getDValue(inputStream, keyProtectionRemoverFactory);
-                // TODO: check SHA-1 hash.
-
-                return new PGPSecretKey(new SecretKeyPacket(pubPacket, SymmetricKeyAlgorithmTags.NULL, null, null, new ECSecretBCPGKey(new BigInteger(1, dValue)).getEncoded()), new PGPPublicKey(pubPacket, fingerPrintCalculator));
-            }
-            else if (keyType.equals("rsa"))
-            {
-                SXprUtils.skipOpenParenthesis(inputStream);
-
-                type = SXprUtils.readString(inputStream, inputStream.read());
-                if (!type.equals("n"))
-                {
-                    throw new PGPException("n value expected");
-                }
-                byte[] nBytes = SXprUtils.readBytes(inputStream, inputStream.read());
-                BigInteger n = new BigInteger(1, nBytes);
-                SXprUtils.skipCloseParenthesis(inputStream);
-
-                SXprUtils.skipOpenParenthesis(inputStream);
-
-                type = SXprUtils.readString(inputStream, inputStream.read());
-                if (!type.equals("e"))
-                {
-                    throw new PGPException("e value expected");
-                }
-                byte[] eBytes = SXprUtils.readBytes(inputStream, inputStream.read());
-                BigInteger e = new BigInteger(1, eBytes);
-
-                SXprUtils.skipCloseParenthesis(inputStream);
-
-                BigInteger[] values = getValues(inputStream, keyProtectionRemoverFactory);
-
-                // TODO: type of RSA key?
-                PublicKeyPacket pubPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), new RSAPublicBCPGKey(n, e));
-
-//                ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-//
-//                bOut.write(Strings.toByteArray("(3:rsa)"));
-//                bOut.write(Strings.toByteArray("(1:n" + n.toByteArray().length + ":")); bOut.write(Strings.toByteArray(Hex.toHexString(n.toByteArray()))); bOut.write(Strings.toByteArray(")"));
-//                bOut.write(Strings.toByteArray("(1:e" + e.toByteArray().length + ":")); bOut.write(Strings.toByteArray(Hex.toHexString(e.toByteArray()))); bOut.write(Strings.toByteArray(")"));
-//                bOut.write(Strings.toByteArray("(1:d" + values[0].toByteArray().length + ":")); bOut.write(Strings.toByteArray(Hex.toHexString(values[0].toByteArray()))); bOut.write(Strings.toByteArray(")"));
-//                bOut.write(Strings.toByteArray("(1:p" + values[1].toByteArray().length + ":")); bOut.write(Strings.toByteArray(Hex.toHexString(values[1].toByteArray()))); bOut.write(Strings.toByteArray(")"));
-//                bOut.write(Strings.toByteArray("(1:q" + values[2].toByteArray().length + ":")); bOut.write(Strings.toByteArray(Hex.toHexString(values[2].toByteArray()))); bOut.write(Strings.toByteArray(")"));
-//                bOut.write(Strings.toByteArray("(1:u" + values[3].toByteArray().length + ":")); bOut.write(Strings.toByteArray(Hex.toHexString(values[3].toByteArray()))); bOut.write(Strings.toByteArray("))"));
-//                bOut.write(Strings.toByteArray("(12:protected-at15:20180528T022202)"));
-//                bOut.write(Strings.toByteArray(")"));
-//
-//                try
-//                {
-//                    System.err.println(Hex.toHexString(MessageDigest.getInstance("SHA1").digest(bOut.toByteArray())));
-//                }
-//                catch (NoSuchAlgorithmException e1)
-//                {
-//                    e1.printStackTrace();
-//                }
-
-                return new PGPSecretKey(new SecretKeyPacket(pubPacket, SymmetricKeyAlgorithmTags.NULL, null, null, new RSASecretBCPGKey(values[0], values[1], values[2]).getEncoded()), new PGPPublicKey(pubPacket, fingerPrintCalculator));
-            }
-            else
-            {
-                throw new PGPException("unknown key type: " + keyType);
-            }
-        }
-
-        throw new PGPException("unknown key type found");
-    }
-
-    private static byte[] getDValue(InputStream inputStream, PBEProtectionRemoverFactory keyProtectionRemoverFactory)
-        throws IOException, PGPException
-    {
-        String type;
-        SXprUtils.skipOpenParenthesis(inputStream);
-
-        String protection;
-        S2K s2k;
-        byte[] iv;
-        byte[] secKeyData;
-
-        type = SXprUtils.readString(inputStream, inputStream.read());
-        if (type.equals("protected"))
-        {
-            protection = SXprUtils.readString(inputStream, inputStream.read());
-
-            SXprUtils.skipOpenParenthesis(inputStream);
-
-            s2k = SXprUtils.parseS2K(inputStream);
-
-            iv = SXprUtils.readBytes(inputStream, inputStream.read());
-
-            SXprUtils.skipCloseParenthesis(inputStream);
-
-            secKeyData = SXprUtils.readBytes(inputStream, inputStream.read());
-        }
-        else
-        {
-            throw new PGPException("protected block not found");
-        }
-
-        PBESecretKeyDecryptor keyDecryptor = keyProtectionRemoverFactory.createDecryptor(protection);
-
-        // TODO: recognise other algorithms
-        byte[] key = keyDecryptor.makeKeyFromPassPhrase(SymmetricKeyAlgorithmTags.AES_128, s2k);
-
-        byte[] data = keyDecryptor.recoverKeyData(SymmetricKeyAlgorithmTags.AES_128, key, iv, secKeyData, 0, secKeyData.length);
-
-        //
-        // parse the secret key S-expr
-        //
-        InputStream keyIn = new ByteArrayInputStream(data);
-
-        SXprUtils.skipOpenParenthesis(keyIn);
-        SXprUtils.skipOpenParenthesis(keyIn);
-        SXprUtils.skipOpenParenthesis(keyIn);
-        String name = SXprUtils.readString(keyIn, keyIn.read());
-        return SXprUtils.readBytes(keyIn, keyIn.read());
-    }
-
-    private static BigInteger[] getValues(InputStream inputStream, PBEProtectionRemoverFactory keyProtectionRemoverFactory)
-        throws IOException, PGPException
-    {
-        String type;
-        SXprUtils.skipOpenParenthesis(inputStream);
-
-        String protection;
-        S2K s2k;
-        byte[] iv;
-        byte[] secKeyData;
-
-        type = SXprUtils.readString(inputStream, inputStream.read());
-        if (type.equals("protected"))
-        {
-            protection = SXprUtils.readString(inputStream, inputStream.read());
-
-            SXprUtils.skipOpenParenthesis(inputStream);
-
-            s2k = SXprUtils.parseS2K(inputStream);
-
-            iv = SXprUtils.readBytes(inputStream, inputStream.read());
-
-            SXprUtils.skipCloseParenthesis(inputStream);
-
-            secKeyData = SXprUtils.readBytes(inputStream, inputStream.read());
-        }
-        else
-        {
-            throw new PGPException("protected block not found");
-        }
-
-        PBESecretKeyDecryptor keyDecryptor = keyProtectionRemoverFactory.createDecryptor(protection);
-
-        // TODO: recognise other algorithms
-        byte[] key = keyDecryptor.makeKeyFromPassPhrase(SymmetricKeyAlgorithmTags.AES_128, s2k);
-
-        byte[] data = keyDecryptor.recoverKeyData(SymmetricKeyAlgorithmTags.AES_128, key, iv, secKeyData, 0, secKeyData.length);
-
-        //
-        // parse the secret key S-expr
-        //
-        InputStream keyIn = new ByteArrayInputStream(data);
-
-        SXprUtils.skipOpenParenthesis(keyIn);
-        SXprUtils.skipOpenParenthesis(keyIn);
-
-        SXprUtils.skipOpenParenthesis(keyIn);
-        type = SXprUtils.readString(keyIn, keyIn.read());
-        if (!type.equals("d"))
-        {
-            throw new PGPException("d value expected");
-        }
-        byte[] dBytes = SXprUtils.readBytes(keyIn, keyIn.read());
-        SXprUtils.skipCloseParenthesis(keyIn);
-
-        SXprUtils.skipOpenParenthesis(keyIn);
-        type = SXprUtils.readString(keyIn, keyIn.read());
-        if (!type.equals("p"))
-        {
-            throw new PGPException("p value expected");
-        }
-        byte[] pBytes = SXprUtils.readBytes(keyIn, keyIn.read());
-        SXprUtils.skipCloseParenthesis(keyIn);
-
-        SXprUtils.skipOpenParenthesis(keyIn);
-        type = SXprUtils.readString(keyIn, keyIn.read());
-        if (!type.equals("q"))
-        {
-            throw new PGPException("q value expected");
-        }
-        byte[] qBytes = SXprUtils.readBytes(keyIn, keyIn.read());
-        SXprUtils.skipCloseParenthesis(keyIn);
-
-        SXprUtils.skipOpenParenthesis(keyIn);
-
-        type = SXprUtils.readString(keyIn, keyIn.read());
-        if (!type.equals("u"))
-        {
-            throw new PGPException("u value expected");
-        }
-
-        byte[] uBytes = SXprUtils.readBytes(keyIn, keyIn.read());
-        SXprUtils.skipCloseParenthesis(keyIn);
-        SXprUtils.skipCloseParenthesis(keyIn);
-
-        BigInteger d = new BigInteger(1, dBytes);
-        BigInteger p = new BigInteger(1, pBytes);
-        BigInteger q = new BigInteger(1, qBytes);
-        BigInteger u = new BigInteger(1, uBytes);
-
-        SXprUtils.skipOpenParenthesis(keyIn);
-        type = SXprUtils.readString(keyIn, keyIn.read());
-
-        if (!type.equals("hash"))
-        {
-            throw new PGPException("hash keyword expected");
-        }
-        type = SXprUtils.readString(keyIn, keyIn.read());
-
-        if (!type.equals("sha1"))
-        {
-            throw new PGPException("hash keyword expected");
-        }
-
-        byte[] hashBytes = SXprUtils.readBytes(keyIn, keyIn.read());
-
-        SXprUtils.skipCloseParenthesis(keyIn);
-        // TODO: process hash
-        return new BigInteger[]{d, p, q, u};
+        return new SExprParser(null).parseSecretKey(inputStream, keyProtectionRemoverFactory, fingerPrintCalculator);
     }
 }
