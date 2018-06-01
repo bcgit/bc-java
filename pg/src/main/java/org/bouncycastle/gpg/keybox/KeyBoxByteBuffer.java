@@ -1,8 +1,6 @@
 package org.bouncycastle.gpg.keybox;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -15,6 +13,10 @@ class KeyBoxByteBuffer
 {
     private final ByteBuffer buffer;
 
+    public KeyBoxByteBuffer(ByteBuffer buffer)
+    {
+        this.buffer = buffer;
+    }
 
     static KeyBoxByteBuffer wrap(Object src)
         throws IOException
@@ -40,10 +42,6 @@ class KeyBoxByteBuffer
         {
             return wrap(((ByteArrayOutputStream)src).toByteArray());
         }
-        else if (src instanceof File)
-        { // File
-            return wrap(new FileInputStream((File)src));
-        }
         else if (src instanceof InputStream) // InputStream
         {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -63,12 +61,6 @@ class KeyBoxByteBuffer
         }
 
         throw new IllegalStateException("Could not convert " + src.getClass().getCanonicalName() + " to KeyBoxByteBuffer");
-    }
-
-
-    public KeyBoxByteBuffer(ByteBuffer buffer)
-    {
-        this.buffer = buffer;
     }
 
     public int size()
