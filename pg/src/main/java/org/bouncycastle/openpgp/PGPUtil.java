@@ -282,7 +282,7 @@ public class PGPUtil
     {
         PGPLiteralDataGenerator lData = new PGPLiteralDataGenerator();
         OutputStream pOut = lData.open(out, fileType, file);
-        pipeFileContents(file, pOut, 4096);
+        pipeFileContents(file, pOut, new byte[4096]);
     }
 
     /**
@@ -305,23 +305,25 @@ public class PGPUtil
     {
         PGPLiteralDataGenerator lData = new PGPLiteralDataGenerator();
         OutputStream pOut = lData.open(out, fileType, file.getName(), new Date(file.lastModified()), buffer);
-        pipeFileContents(file, pOut, buffer.length);
+        pipeFileContents(file, pOut, buffer);
     }
 
-    private static void pipeFileContents(File file, OutputStream pOut, int bufSize)
+    private static void pipeFileContents(File file, OutputStream pOut, byte[] buf)
         throws IOException
     {
         FileInputStream in = new FileInputStream(file);
-        byte[] buf = new byte[bufSize];
-
-        int len;
-        while ((len = in.read(buf)) > 0)
+        try
         {
-            pOut.write(buf, 0, len);
-        }
+            int len;
+            while ((len = in.read(buf)) > 0)
+            {
+                pOut.write(buf, 0, len);
+            }
 
-        pOut.close();
-        in.close();
+            pOut.close();
+        } finally {
+            try { in.close(); } catch (IOException ignored) { /* */ }
+        }
     }
 
     private static final int READ_AHEAD = 60;
