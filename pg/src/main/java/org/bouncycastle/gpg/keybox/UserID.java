@@ -24,7 +24,7 @@ public class UserID
         this.userID = userID;
     }
 
-    public static UserID getInstance(Object src, int base)
+    static UserID getInstance(Object src, int base)
         throws IOException
     {
         if (src instanceof UserID)
