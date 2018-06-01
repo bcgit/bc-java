@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.Security;
 import java.security.cert.CertificateFactory;
+import java.util.Iterator;
 
 import junit.framework.TestCase;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.gpg.keybox.BlobType;
 import org.bouncycastle.gpg.keybox.CertificateBlob;
 import org.bouncycastle.gpg.keybox.FirstBlob;
@@ -14,6 +16,8 @@ import org.bouncycastle.gpg.keybox.KeyBlob;
 import org.bouncycastle.gpg.keybox.KeyBox;
 import org.bouncycastle.gpg.keybox.PublicKeyRingBlob;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
@@ -112,6 +116,44 @@ public class KeyBoxTest
         }
 
     }
+
+    /**
+     * Test load kb with El Gamal keys in it.
+     *
+     * @throws Exception
+     */
+    public void testSanityElGamal()
+        throws Exception
+    {
+        KeyBox keyBox = new KeyBox(KeyBoxTest.class.getResourceAsStream("/pgpdata/eg_pubring.kbx"), new BcKeyFingerprintCalculator());
+        FirstBlob firstBlob = keyBox.getFirstBlob();
+
+
+        //
+        // Check the first blob.
+        //
+        TestCase.assertEquals(BlobType.FIRST_BLOB, firstBlob.getType());
+        TestCase.assertEquals("Version", 1, firstBlob.getVersion());
+        TestCase.assertEquals("Header flags.", 2, firstBlob.getHeaderFlags());
+        TestCase.assertEquals("Created at date.", 1527840866, firstBlob.getFileCreatedAt());
+        TestCase.assertEquals("Last maintained date.", 1527840866, firstBlob.getLastMaintenanceRun());
+
+        // Number of blobs.
+        TestCase.assertEquals("One material blobs.", 1, keyBox.getKeyBlobs().size());
+
+        TestCase.assertEquals("Pgp type", BlobType.OPEN_PGP_BLOB, keyBox.getKeyBlobs().get(0).getType());
+
+        PublicKeyRingBlob pgkr = (PublicKeyRingBlob)keyBox.getKeyBlobs().get(0);
+        PGPPublicKeyRing ring = pgkr.getPGPPublicKeyRing();
+
+        TestCase.assertEquals("Must be DSA", PublicKeyAlgorithmTags.DSA, ring.getPublicKey().getAlgorithm());
+
+        Iterator<PGPPublicKey> it = ring.getPublicKeys();
+        it.next();
+        TestCase.assertEquals("Must be ELGAMAL_ENCRYPT", PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT, it.next().getAlgorithm());
+
+    }
+
 
     /**
      * Induce a checksum failure in the first key block.
@@ -230,6 +272,7 @@ public class KeyBoxTest
     public void performTest()
         throws Exception
     {
+        testSanityElGamal();
         testKeyBoxWithBrokenMD5();
         testKeyBoxWithMD5Sanity();
         testDoubleFirstBlob();
