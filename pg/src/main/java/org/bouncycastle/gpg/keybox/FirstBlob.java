@@ -12,11 +12,9 @@ import org.bouncycastle.util.encoders.Hex;
 public class FirstBlob
     extends Blob
 {
-
     private final int headerFlags;
     private final long fileCreatedAt;
     private final long lastMaintenanceRun;
-
 
     private FirstBlob(
         int base,
@@ -33,7 +31,7 @@ public class FirstBlob
         this.lastMaintenanceRun = lastMaintenanceRun;
     }
 
-    public static FirstBlob parseContent(int base, long length, BlobType type, int version, KeyBoxByteBuffer buffer)
+    static FirstBlob parseContent(int base, long length, BlobType type, int version, KeyBoxByteBuffer buffer)
         throws IOException
     {
 
