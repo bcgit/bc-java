@@ -105,8 +105,7 @@ public class EncryptedValueBuilder
         try
         {
             PKCS8EncryptedPrivateKeyInfo encInfo = encInfoBldr.build(encryptor);
-
-            wrapper.generateWrappedKey(encryptor.getKey());
+            
             encSymmKey = new DERBitString(wrapper.generateWrappedKey(encryptor.getKey()));
 
             AlgorithmIdentifier keyAlg = wrapper.getAlgorithmIdentifier();
