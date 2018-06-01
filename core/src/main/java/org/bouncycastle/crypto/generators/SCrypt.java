@@ -11,7 +11,7 @@ import org.bouncycastle.util.Pack;
  * Implementation of the scrypt a password-based key derivation function.
  * <p>
  * Scrypt was created by Colin Percival and is specified in <a
- * href="http://tools.ietf.org/html/draft-josefsson-scrypt-kdf-01">draft-josefsson-scrypt-kd</a>
+ * href="https://tools.ietf.org/html/rfc7914">RFC 7914 - The scrypt Password-Based Key Derivation Function</a>
  */
 public class SCrypt
 {
