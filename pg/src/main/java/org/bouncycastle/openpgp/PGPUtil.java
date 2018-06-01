@@ -17,6 +17,7 @@ import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.DecoderException;
 
@@ -68,7 +69,7 @@ public class PGPUtil
      * Return an appropriate name for the signature algorithm represented by the passed
      * in public key and hash algorithm ID numbers.
      *
-     * @param keyAlgorithm the algorithm ID for the public key algorithm used in the signature.
+     * @param keyAlgorithm  the algorithm ID for the public key algorithm used in the signature.
      * @param hashAlgorithm the algorithm ID for the hash algorithm used.
      * @return a String representation of the signature name.
      */
@@ -282,7 +283,7 @@ public class PGPUtil
     {
         PGPLiteralDataGenerator lData = new PGPLiteralDataGenerator();
         OutputStream pOut = lData.open(out, fileType, file);
-        pipeFileContents(file, pOut, new byte[4096]);
+        pipeFileContents(file, pOut, new byte[32768]);
     }
 
     /**
@@ -321,8 +322,18 @@ public class PGPUtil
             }
 
             pOut.close();
-        } finally {
-            try { in.close(); } catch (IOException ignored) { /* */ }
+        }
+        finally
+        {
+            Arrays.fill(buf, (byte)0);
+            try
+            {
+                in.close();
+            }
+            catch (IOException ignored)
+            {
+                // ignore...
+            }
         }
     }
 
@@ -433,7 +444,7 @@ public class PGPUtil
             }
             catch (DecoderException e)
             {
-                 throw new IOException(e.getMessage());
+                throw new IOException(e.getMessage());
             }
         }
     }
