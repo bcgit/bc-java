@@ -12,7 +12,7 @@ public class KeyInformation
     private final byte[] filler;
     private final byte[] keyID;
 
-    public KeyInformation(byte[] fingerprint, long offsetToKeyID, int keyFlags, byte[] filler, byte[] keyID)
+    KeyInformation(byte[] fingerprint, long offsetToKeyID, int keyFlags, byte[] filler, byte[] keyID)
     {
         this.fingerprint = Arrays.clone(fingerprint);
         this.offsetToKeyID = offsetToKeyID;
@@ -21,7 +21,7 @@ public class KeyInformation
         this.keyID = Arrays.clone(keyID);
     }
 
-    public static KeyInformation getInstance(Object src, int expectedSize, int base)
+    static KeyInformation getInstance(Object src, int expectedSize, int base)
         throws IOException
     {
 

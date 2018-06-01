@@ -69,7 +69,7 @@ public class KeyBlob
         this.checksum = checksum;
     }
 
-    protected static void verifyDigest(int base, long length, KeyBoxByteBuffer buffer)
+    static void verifyDigest(int base, long length, KeyBoxByteBuffer buffer)
         throws IOException
     {
         byte[] blobData = buffer.rangeOf(base, (int)(base + length - 20));
