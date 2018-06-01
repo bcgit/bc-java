@@ -85,6 +85,54 @@ public class SExprTest
                 + "g22dTcKu02cpKDEyOnByb3RlY3RlZC1hdDE1OjIwMTQwNjA4VDE2MDg1MCkp"
                 + "KQ==");
 
+    byte[] key4 =
+        Base64.decode(
+                "KDIxOnByb3RlY3RlZC1wcml2YXRlLWtleSgzOmRzYSgxOnAyNTc6AMHFMd60"
+              + "YUInMjCRGdYoRr28qY3n9g4h5IifzZLSBObcbw6ZwGf7YAkoW9WsfmIXz4Oa"
+              + "nfaDtKg+nn2ZZK5xn6Gy0XoakpZzx8NHELDzigPpQINWkPeqrZu+6fpSfPVK"
+              + "mMlpdwcMPrpOIwzd+DKk6neVN53g20olop4ZF2mRvOETb/9gtiyPxYplKf7P"
+              + "KhcyOkuzoWyD5sOoz9IFt2Si7YHzua51tHH1OdNyvzARDpwGcYZR8VUz6ByI"
+              + "edz4bTYFTJZ28iJKkI18lIBujmOGdwGBkLEukraatT5T9xltEbU5CS6XJ4cf"
+              + "vBOSLm/vWGIhLRz/o508nKxlMuDcxeeCw+cpKDE6cTMzOgDMQ4GqwbRNx1CV"
+              + "qtq7DL+1oJBbQrP9jMIc3nz7+RwZ8SkoMTpnMjU2Oi2foWK1Y4SQKVaK0xte"
+              + "8Hko17VoVNsSZl8G6KDoLG3FJwE+/yVWsIkLhIwUSpUfVqZJnKDKaHbGSmxx"
+              + "3PnI6Xjoc+fpF7E+Elb9/yv14aY1uGVyrOyXwU7yNX6Q1GPpxdLNwBx/SLB3"
+              + "/V11ZsCwfv+NBVVXZbSzNootGD6IOX4zbhQkQbFq8IGaRseajJw4iqf1Cupl"
+              + "3hltx+FGZeWZDXj90s0vwozo340HVkLHk7Aetiw77BOixGnAVXDklUlJ9iRQ"
+              + "V6lsFsJXgVsWAntzDDfVOGaTw+VdM77FczWcyFif58BNHuyU+Aympx11KNRU"
+              + "mOYSfqAxP+IQWVDx8XvMU6spKDE6eTI1Njp4VTTwZGheAVhn7awdTdcI4F3d"
+              + "e1TIltw4qPglMByAofC49TxadCUDWd8HeG/1MRAgGsZegOxGtmqiKS58cG6G"
+              + "H9KxzdC+uckOzRy4qY4KautM3diw8nzi8n2+Y+YTU+Igm+RZiPMRh/jxGLrm"
+              + "R74GQKAS6djk+A+IhMUhmCQFJ/Zf5s9D+BfHJ7Xjf8FkD4zpPGAosBaRIA+4"
+              + "ShOK6w+lTE/KC3N7ECz7KE9w0Yjxv98Vufgo+HR1sq7DywpelUOqVAQoOOXL"
+              + "albefAICx70trulvpIfQ/KV55oWmLMxxVJD5MOMshEs21sto0HfowR2WFflK"
+              + "YKTRHv+6z9GNfiCoKSg5OnByb3RlY3RlZDI1Om9wZW5wZ3AtczJrMy1zaGEx"
+              + "LWFlcy1jYmMoKDQ6c2hhMTg6+Uk/PB0KkKk4OjI3OTYxMzQ0KTE2OkMBz/vJ"
+              + "A+EPamZWvQo8/7ApOTY6MdZ/lchdZNf6cUtELu7k6LarhLeAyZVs0FB4Ubz4"
+              + "oixL+vegLulZaQzszza/7UCFbJps9s8WbdAbIXjjUvvc3i+B/BvfnLmsa/Pw"
+              + "VRB6xidUoejtb3Brk9fmkdA0AkUDKSgxMjpwcm90ZWN0ZWQtYXQxNToyMDE4"
+              + "MDYwMVQwODE2MzkpKSk=");
+
+    byte[] key5 = Base64.decode(
+                "KDIxOnByb3RlY3RlZC1wcml2YXRlLWtleSgzOmVsZygxOnAyNTc6AOoshx4L"
+               + "r3OMs3bBA5fs2g+OiPWuHdLsL454IJ/MBHjUEn3IFD2HHfArsT4pBgfJHlIz"
+               + "9Ps0TNqWLl5oSi4I6AT3BBLgwq6+5hiQ9ag6RDoavOLHEKvDeldjYzye4fpq"
+               + "3FP+oTJ8aO6gyp6HQ+TujZIziZjJDvPqTBFK4es7ZaaQb+WNEr8/suh3cNkz"
+               + "LIpDBGlsv+1VwQHfqRax/FhAdRpRQOHPAe1dAQAr2iRLhMj2EzguWAFMXaUy"
+               + "V8LIbaMz0aQW0qVlarr9lYzRJUySsbVPAECKBy/AzKHOSQuBOsRWwtQY07MC"
+               + "AI1TX2EiKYh2yJcEwfclXrYxieOWwdVvRhMpKDE6ZzE6BSkoMTp5MjU3OgDd"
+               + "zHOLWfCKAiN66m374sqMEYhmC0H+4Bgt2xZ1Z5f9vADhGDtI/ngETqEUdIKP"
+               + "gyMsMmSS+KlgQ78AlCwvMi9NJJM3/DFQzXwr00ewGt0g0cLEXWtKJS5r8dlC"
+               + "B8fUFl9QKGqUgXe2+kH7Ldbbjae4D9A9AT131y25XYPjpvIiD3rh0iJSdIds"
+               + "WIpxl91p4kaehMQ/Dhx+LNmt/oiy7X+Z65u8rlGtdIHgmCBeAWG12LqOjC90"
+               + "x4hBBrhEmOWhTOfNzhZ2FfJo/14Wup4UuHJ8Fp5q170SRurnpX4nIGkoJOoM"
+               + "Q1cM4/ahKvv7k4F+tK26fr2JJU7ULyrTe5Ksq9xaKSg5OnByb3RlY3RlZDI1"
+               + "Om9wZW5wZ3AtczJrMy1zaGExLWFlcy1jYmMoKDQ6c2hhMTg6F2rxIl6yf204"
+               + "OjI3OTYxMzQ0KTE2Oj7HodA1Q71ZwKGnZRpRbLIpOTY6aI8AIcRIyzUcM9KQ"
+               + "9XPYt3PuXK96y18qc7xaN17BHmU6t9etfiO/wu7fzn3hkkCxKcXKIhSDj4PN"
+               + "MCQbDVASwzdgVIDC0V/yhkRwN8CKhnCoiZ4O3NWaLwq0QGrcRtGDKSgxMjpw"
+               + "cm90ZWN0ZWQtYXQxNToyMDE4MDYwMVQwODE2NDApKSk=");
+
     public String getName()
     {
         return "SExprTest";
@@ -98,6 +146,16 @@ public class SExprTest
         PGPSecretKey k1 = parser.parseSecretKey(new ByteArrayInputStream(key1), new JcePBEProtectionRemoverFactory("fred".toCharArray()), new JcaKeyFingerprintCalculator());
         PGPSecretKey k2 = parser.parseSecretKey(new ByteArrayInputStream(key2), new JcePBEProtectionRemoverFactory("fred".toCharArray()), new JcaKeyFingerprintCalculator());
         PGPSecretKey k3 = parser.parseSecretKey(new ByteArrayInputStream(key3), new JcePBEProtectionRemoverFactory("test".toCharArray()), new JcaKeyFingerprintCalculator());
+
+        PGPSecretKey k4 = parser.parseSecretKey(new ByteArrayInputStream(key4), new JcePBEProtectionRemoverFactory("fredfred".toCharArray()), new JcaKeyFingerprintCalculator());
+        PGPSecretKey k5 = parser.parseSecretKey(new ByteArrayInputStream(key5), new JcePBEProtectionRemoverFactory("fredfred".toCharArray()), new JcaKeyFingerprintCalculator());
+
+        k1 = parser.parseSecretKey(new ByteArrayInputStream(key1), new JcePBEProtectionRemoverFactory("fred".toCharArray()), k1.getPublicKey());
+        k2 = parser.parseSecretKey(new ByteArrayInputStream(key2), new JcePBEProtectionRemoverFactory("fred".toCharArray()), k2.getPublicKey());
+        k3 = parser.parseSecretKey(new ByteArrayInputStream(key3), new JcePBEProtectionRemoverFactory("test".toCharArray()), k3.getPublicKey());
+
+        k4 = parser.parseSecretKey(new ByteArrayInputStream(key4), new JcePBEProtectionRemoverFactory("fredfred".toCharArray()), k4.getPublicKey());
+        k5 = parser.parseSecretKey(new ByteArrayInputStream(key5), new JcePBEProtectionRemoverFactory("fredfred".toCharArray()), k5.getPublicKey());
     }
 
     public static void main(
