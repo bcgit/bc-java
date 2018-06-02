@@ -77,11 +77,6 @@ public class SExprParser
                 String curveID = SXprUtils.readString(inputStream, inputStream.read());
                 String curveName = SXprUtils.readString(inputStream, inputStream.read());
 
-                if (curveName.startsWith("NIST "))
-                {
-                    curveName = curveName.substring("NIST ".length());
-                }
-
                 SXprUtils.skipCloseParenthesis(inputStream);
 
                 byte[] qVal;
@@ -101,6 +96,11 @@ public class SExprParser
                 SXprUtils.skipCloseParenthesis(inputStream);
 
                 BigInteger d = processECSecretKey(inputStream, curveID, curveName, qVal, keyProtectionRemoverFactory);
+
+                if (curveName.startsWith("NIST "))
+                {
+                    curveName = curveName.substring("NIST ".length());
+                }
 
                 ECPublicBCPGKey basePubKey = new ECDSAPublicBCPGKey(ECNamedCurveTable.getOID(curveName), new BigInteger(1, qVal));
                 ECPublicBCPGKey assocPubKey = (ECPublicBCPGKey)pubKey.getPublicKeyPacket().getKey();
