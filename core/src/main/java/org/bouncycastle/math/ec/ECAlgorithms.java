@@ -225,7 +225,7 @@ public class ECAlgorithms
             throw new IllegalArgumentException("Point must be on the same curve");
         }
 
-        return c.decodePoint(c.importPoint(p).getEncoded(false));
+        return c.decodePoint(p.getEncoded(false));
     }
 
     static ECPoint implShamirsTrickJsf(ECPoint P, BigInteger k,
