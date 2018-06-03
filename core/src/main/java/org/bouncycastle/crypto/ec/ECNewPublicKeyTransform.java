@@ -74,7 +74,7 @@ public class ECNewPublicKeyTransform
 
         ECPoint[] gamma_phi = new ECPoint[]{
             basePointMultiplier.multiply(ec.getG(), k),
-            key.getQ().multiply(k).add(cipherText.getY())
+            key.getQ().multiply(k).add(ECUtil.cleanPoint(ec.getCurve(), cipherText.getY()))
         };
 
         ec.getCurve().normalizeAll(gamma_phi);
