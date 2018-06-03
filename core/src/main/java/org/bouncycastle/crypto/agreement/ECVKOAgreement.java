@@ -45,8 +45,8 @@ public class ECVKOAgreement
         CipherParameters pubKey)
     {
         ECPublicKeyParameters pub = (ECPublicKeyParameters)pubKey;
-        ECDomainParameters params = pub.getParameters();
-        if (!params.equals(key.getParameters()))
+        ECDomainParameters params = key.getParameters();
+        if (!params.equals(pub.getParameters()))
         {
             throw new IllegalStateException("ECVKO public key has wrong domain parameters");
         }
@@ -67,7 +67,7 @@ public class ECVKOAgreement
             throw new IllegalStateException("Infinity is not a valid agreement value for ECVKO");
         }
 
-        return fromPoint(P.normalize());
+        return fromPoint(P);
     }
 
     private static BigInteger toInteger(byte[] ukm)
