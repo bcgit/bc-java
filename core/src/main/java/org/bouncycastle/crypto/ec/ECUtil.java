@@ -4,8 +4,6 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.math.ec.ECConstants;
-import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECPoint;
 
 class ECUtil
 {
@@ -19,10 +17,5 @@ class ECUtil
         }
         while (k.equals(ECConstants.ZERO) || (k.compareTo(n) >= 0));
         return k;
-    }
-
-    static ECPoint cleanPoint(ECCurve curve, ECPoint p)
-    {
-        return curve.decodePoint(p.getEncoded(false));
     }
 }

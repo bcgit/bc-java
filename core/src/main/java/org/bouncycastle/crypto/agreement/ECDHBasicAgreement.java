@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.BasicAgreement;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECPoint;
 
 /**
@@ -48,7 +49,7 @@ public class ECDHBasicAgreement
         }
 
         // Always perform calculations on the exact curve specified by our private key's parameters
-        ECPoint pubPoint = key.getParameters().getCurve().decodePoint(pub.getQ().getEncoded(false));
+        ECPoint pubPoint = ECAlgorithms.cleanPoint(key.getParameters().getCurve(), pub.getQ());
         if (pubPoint.isInfinity())
         {
             throw new IllegalStateException("Infinity is not a valid public key for ECDH");
