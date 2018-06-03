@@ -217,6 +217,11 @@ public class ECAlgorithms
         return p;
     }
 
+    public static ECPoint cleanPoint(ECCurve curve, ECPoint p)
+    {
+        return curve.decodePoint(p.getEncoded(false));
+    }
+
     static ECPoint implShamirsTrickJsf(ECPoint P, BigInteger k,
         ECPoint Q, BigInteger l)
     {

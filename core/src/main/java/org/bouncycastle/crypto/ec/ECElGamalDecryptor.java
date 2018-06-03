@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.ec;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 
@@ -43,8 +44,8 @@ public class ECElGamalDecryptor
         }
 
         ECCurve curve = key.getParameters().getCurve();
-        ECPoint tmp = ECUtil.cleanPoint(curve, pair.getX()).multiply(key.getD());
+        ECPoint tmp = ECAlgorithms.cleanPoint(curve, pair.getX()).multiply(key.getD());
 
-        return ECUtil.cleanPoint(curve, pair.getY()).subtract(tmp).normalize();
+        return ECAlgorithms.cleanPoint(curve, pair.getY()).subtract(tmp).normalize();
     }
 }
