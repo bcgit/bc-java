@@ -100,6 +100,9 @@ public class EC
             provider.addAlgorithm("KeyAgreement", BSIObjectIdentifiers.ecka_eg_X963kdf_SHA384, PREFIX + "KeyAgreementSpi$ECKAEGwithSHA384KDF");
             provider.addAlgorithm("KeyAgreement", BSIObjectIdentifiers.ecka_eg_X963kdf_SHA512, PREFIX + "KeyAgreementSpi$ECKAEGwithSHA512KDF");
 
+            provider.addAlgorithm("KeyAgreement", BSIObjectIdentifiers.ecka_eg_X963kdf_RIPEMD160, PREFIX + "KeyAgreementSpi$ECKAEGwithRIPEMD160KDF");
+            provider.addAlgorithm("KeyAgreement.ECKAEGWITHRIPEMD160KDF", PREFIX + "KeyAgreementSpi$ECKAEGwithRIPEMD160KDF");
+
             registerOid(provider, X9ObjectIdentifiers.id_ecPublicKey, "EC", new KeyFactorySpi.EC());
 
             registerOid(provider, X9ObjectIdentifiers.dhSinglePass_cofactorDH_sha1kdf_scheme, "EC", new KeyFactorySpi.EC());

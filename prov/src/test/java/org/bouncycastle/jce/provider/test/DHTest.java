@@ -1426,6 +1426,7 @@ public class DHTest
         testECDH("ECKAEGWITHSHA256KDF", "secp256r1", BSIObjectIdentifiers.ecka_eg_X963kdf_SHA256, "DESEDE", 192);
         testECDH("ECKAEGWITHSHA384KDF", "secp256r1", BSIObjectIdentifiers.ecka_eg_X963kdf_SHA384,"AES", 256);
         testECDH("ECKAEGWITHSHA512KDF", "secp256r1", BSIObjectIdentifiers.ecka_eg_X963kdf_SHA512,"DESEDE", 192);
+        testECDH("ECKAEGWITHRIPEMD160KDF", "secp256r1", BSIObjectIdentifiers.ecka_eg_X963kdf_RIPEMD160, "AES", 256);
 
         testExceptions();
         testDESAndDESede(g768, p768);
