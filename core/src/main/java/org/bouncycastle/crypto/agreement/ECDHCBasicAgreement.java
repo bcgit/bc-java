@@ -56,7 +56,14 @@ public class ECDHCBasicAgreement
 
         BigInteger hd = params.getH().multiply(key.getD()).mod(params.getN());
 
-        ECPoint P = pub.getQ().multiply(hd).normalize();
+        // Always perform calculations on the exact curve specified by our private key's parameters
+        ECPoint pubPoint = key.getParameters().getCurve().decodePoint(pub.getQ().getEncoded(false));
+        if (pubPoint.isInfinity())
+        {
+            throw new IllegalStateException("Infinity is not a valid public key for ECDHC");
+        }
+
+        ECPoint P = pubPoint.multiply(hd).normalize();
 
         if (P.isInfinity())
         {
