@@ -72,7 +72,7 @@ public class ECElGamalEncryptor
 
         ECPoint[] gamma_phi = new ECPoint[]{
             basePointMultiplier.multiply(ec.getG(), k),
-            key.getQ().multiply(k).add(point)
+            key.getQ().multiply(k).add(ECUtil.cleanPoint(ec.getCurve(), point))
         };
 
         ec.getCurve().normalizeAll(gamma_phi);
