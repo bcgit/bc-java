@@ -217,9 +217,15 @@ public class ECAlgorithms
         return p;
     }
 
-    public static ECPoint cleanPoint(ECCurve curve, ECPoint p)
+    public static ECPoint cleanPoint(ECCurve c, ECPoint p)
     {
-        return curve.decodePoint(p.getEncoded(false));
+        ECCurve cp = p.getCurve();
+        if (!c.equals(cp))
+        {
+            throw new IllegalArgumentException("Point must be on the same curve");
+        }
+
+        return c.decodePoint(c.importPoint(p).getEncoded(false));
     }
 
     static ECPoint implShamirsTrickJsf(ECPoint P, BigInteger k,
