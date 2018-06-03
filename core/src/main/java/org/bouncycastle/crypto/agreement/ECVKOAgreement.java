@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithUKM;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.BigIntegers;
 
@@ -49,10 +50,17 @@ public class ECVKOAgreement
         {
             throw new IllegalStateException("ECVKO public key has wrong domain parameters");
         }
-        
+
         BigInteger hd = params.getH().multiply(ukm).multiply(key.getD()).mod(params.getN());
 
-        ECPoint P = pub.getQ().multiply(hd).normalize();
+        // Always perform calculations on the exact curve specified by our private key's parameters
+        ECPoint pubPoint = ECAlgorithms.cleanPoint(params.getCurve(), pub.getQ());
+        if (pubPoint.isInfinity())
+        {
+            throw new IllegalStateException("Infinity is not a valid public key for ECDHC");
+        }
+
+        ECPoint P = pubPoint.multiply(hd).normalize();
 
         if (P.isInfinity())
         {
@@ -88,7 +96,7 @@ public class ECVKOAgreement
         {
             size = 32;
         }
-   
+
         byte[] bytes = new byte[2 * size];
         byte[] x = BigIntegers.asUnsignedByteArray(size, bX);
         byte[] y = BigIntegers.asUnsignedByteArray(size, bY);
