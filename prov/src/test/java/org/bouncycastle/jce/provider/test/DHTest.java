@@ -38,6 +38,8 @@ import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPrivateKeySpec;
 import javax.crypto.spec.DHPublicKeySpec;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.spec.DHUParameterSpec;
@@ -601,6 +603,52 @@ public class DHTest
         KeyPair bKeyPair = g.generateKeyPair();
 
         KeyAgreement bKeyAgree = KeyAgreement.getInstance(algorithm, "BC");
+
+        bKeyAgree.init(bKeyPair.getPrivate());
+
+        //
+        // agreement
+        //
+        aKeyAgree.doPhase(bKeyPair.getPublic(), true);
+        bKeyAgree.doPhase(aKeyPair.getPublic(), true);
+
+        SecretKey k1 = aKeyAgree.generateSecret(cipher);
+        SecretKey k2 = bKeyAgree.generateSecret(cipher + "[" + keyLen + "]");  // explicit key-len
+
+        if (!k1.equals(k2))
+        {
+            fail(algorithm + " 2-way test failed");
+        }
+
+        if (k1.getEncoded().length != keyLen / 8)
+        {
+            fail("key for " + cipher + " the wrong size expected " + keyLen / 8 + " got " + k1.getEncoded().length);
+        }
+    }
+
+    private void testECDH(String algorithm, String curveName, ASN1ObjectIdentifier algorithmOid, String cipher, int keyLen)
+        throws Exception
+    {
+        ECNamedCurveParameterSpec parameterSpec = ECNamedCurveTable.getParameterSpec(curveName);
+        KeyPairGenerator g = KeyPairGenerator.getInstance("EC", "BC");
+
+        g.initialize(parameterSpec);
+
+        //
+        // a side
+        //
+        KeyPair aKeyPair = g.generateKeyPair();
+
+        KeyAgreement aKeyAgree = KeyAgreement.getInstance(algorithm, "BC");
+
+        aKeyAgree.init(aKeyPair.getPrivate());
+
+        //
+        // b side
+        //
+        KeyPair bKeyPair = g.generateKeyPair();
+
+        KeyAgreement bKeyAgree = KeyAgreement.getInstance(algorithmOid.getId(), "BC");
 
         bKeyAgree.init(bKeyPair.getPrivate());
 
@@ -1373,7 +1421,11 @@ public class DHTest
         testECDH("ECDH", "Curve25519", "DESEDE", 192);
         testECDH("ECDH", "Curve25519", "DES", 64);
         testECDH("ECDHwithSHA1KDF", "Curve25519", "AES", 256);
-        testECDH("ECDHwithSHA1KDF", "Curve25519", "DESEDE", 192);
+        testECDH("ECKAEGWITHSHA1KDF", "secp256r1", BSIObjectIdentifiers.ecka_eg_X963kdf_SHA1, "DESEDE", 192);
+        testECDH("ECKAEGWITHSHA224KDF", "secp256r1", BSIObjectIdentifiers.ecka_eg_X963kdf_SHA224, "DESEDE", 192);
+        testECDH("ECKAEGWITHSHA256KDF", "secp256r1", BSIObjectIdentifiers.ecka_eg_X963kdf_SHA256, "DESEDE", 192);
+        testECDH("ECKAEGWITHSHA384KDF", "secp256r1", BSIObjectIdentifiers.ecka_eg_X963kdf_SHA384,"AES", 256);
+        testECDH("ECKAEGWITHSHA512KDF", "secp256r1", BSIObjectIdentifiers.ecka_eg_X963kdf_SHA512,"DESEDE", 192);
 
         testExceptions();
         testDESAndDESede(g768, p768);
