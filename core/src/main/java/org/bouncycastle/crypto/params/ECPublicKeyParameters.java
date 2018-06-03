@@ -13,29 +13,7 @@ public class ECPublicKeyParameters
     {
         super(false, params);
 
-        this.Q = validate(Q);
-    }
-
-    private ECPoint validate(ECPoint q)
-    {
-        if (q == null)
-        {
-            throw new IllegalArgumentException("point has null value");
-        }
-
-        if (q.isInfinity())
-        {
-            throw new IllegalArgumentException("point at infinity");
-        }
-
-        q = q.normalize();
-
-        if (!q.isValid())
-        {
-            throw new IllegalArgumentException("point not on curve");
-        }
-
-        return q;
+        this.Q = ECDomainParameters.validate(params.getCurve(), Q);
     }
 
     public ECPoint getQ()

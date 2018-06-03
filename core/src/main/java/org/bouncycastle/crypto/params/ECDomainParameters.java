@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.params;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
@@ -41,7 +42,7 @@ public class ECDomainParameters
         byte[]      seed)
     {
         this.curve = curve;
-        this.G = G.normalize();
+        this.G = validate(curve, G);
         this.n = n;
         this.h = h;
         this.seed = seed;
@@ -100,5 +101,27 @@ public class ECDomainParameters
         hc *= 37;
         hc ^= h.hashCode();
         return hc;
+    }
+
+    static ECPoint validate(ECCurve c, ECPoint q)
+    {
+        if (q == null)
+        {
+            throw new IllegalArgumentException("point has null value");
+        }
+
+        if (q.isInfinity())
+        {
+            throw new IllegalArgumentException("point at infinity");
+        }
+
+        q = q.normalize();
+
+        if (!q.isValid())
+        {
+            throw new IllegalArgumentException("point not on curve");
+        }
+
+        return ECAlgorithms.importPoint(c, q);
     }
 }
