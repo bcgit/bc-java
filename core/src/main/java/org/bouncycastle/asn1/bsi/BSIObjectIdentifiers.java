@@ -36,8 +36,20 @@ public interface BSIObjectIdentifiers
 	/** 0.4.0.127.0.7.1 */
 	static final ASN1ObjectIdentifier algorithm = bsi_de.branch("1");
 
+	static final ASN1ObjectIdentifier ecka_eg = id_ecc.branch("5.1");
+
 	/** ElGamal Elliptic Curve Key Agreement and Key Derivation according to X963 OID: 0.4.0.127.0.7.1.1.5.1.1 */
-	static final ASN1ObjectIdentifier ecka_eg_X963kdf = id_ecc.branch("5.1.1");
+	static final ASN1ObjectIdentifier ecka_eg_X963kdf = ecka_eg.branch("1");
+
+	/** ElGamal Elliptic Curve Key Agreement and Key Derivation according to X963
+	 * with hash function SHA-1
+	 * OID: 0.4.0.127.0.7.1.1.5.1.1.1 */
+	static final ASN1ObjectIdentifier ecka_eg_X963kdf_SHA1 = ecka_eg_X963kdf.branch("1");
+
+	/** ElGamal Elliptic Curve Key Agreement and Key Derivation according to X963
+	 * with hash function SHA224
+	 * OID: 0.4.0.127.0.7.1.1.5.1.1.2 */
+	static final ASN1ObjectIdentifier ecka_eg_X963kdf_SHA224 = ecka_eg_X963kdf.branch("2");
 
 	/** ElGamal Elliptic Curve Key Agreement and Key Derivation according to X963
 	 * with hash function SHA256
@@ -53,6 +65,21 @@ public interface BSIObjectIdentifiers
 	 * with hash function SHA512
 	 * OID: 0.4.0.127.0.7.1.1.5.1.1.5 */
 	static final ASN1ObjectIdentifier ecka_eg_X963kdf_SHA512 = ecka_eg_X963kdf.branch("5");
+
+	/** ElGamal Elliptic Curve Key Agreement and Key Derivation according to X963
+	 * with hash function RIPEMD160
+	 * OID: 0.4.0.127.0.7.1.1.5.1.1.6 */
+	static final ASN1ObjectIdentifier ecka_eg_X963kdf_RIPEMD160 = ecka_eg_X963kdf.branch("6");
+
+	/**
+	 * 	Key Derivation Function for Session Keys
+	 */
+	static final ASN1ObjectIdentifier ecka_eg_SessionKDF = ecka_eg.branch("2");
+
+	static final ASN1ObjectIdentifier ecka_eg_SessionKDF_3DES    = ecka_eg_SessionKDF.branch("1");
+	static final ASN1ObjectIdentifier ecka_eg_SessionKDF_AES128  = ecka_eg_SessionKDF.branch("2");
+	static final ASN1ObjectIdentifier ecka_eg_SessionKDF_AES192  = ecka_eg_SessionKDF.branch("3");
+	static final ASN1ObjectIdentifier ecka_eg_SessionKDF_AES256  = ecka_eg_SessionKDF.branch("4");
 
 	/** AES encryption (CBC) and authentication (CMAC)
 	 * OID: 0.4.0.127.0.7.1.x */
