@@ -18,6 +18,7 @@ import org.bouncycastle.crypto.agreement.ECDHCBasicAgreement;
 import org.bouncycastle.crypto.agreement.ECDHCUnifiedAgreement;
 import org.bouncycastle.crypto.agreement.ECMQVBasicAgreement;
 import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
+import org.bouncycastle.crypto.digests.RIPEMD160Digest;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.params.ECDHUPrivateParameters;
 import org.bouncycastle.crypto.params.ECDHUPublicParameters;
@@ -622,6 +623,19 @@ public class KeyAgreementSpi
    		{
    			super("ECKAEGwithSHA1KDF", new ECDHBasicAgreement(),
                    new KDF2BytesGenerator(DigestFactory.createSHA1()));
+   		}
+   	}
+
+    /**
+   	 * KeyAgreement according to BSI TR-03111 chapter 4.3.1
+   	 */
+   	public static class ECKAEGwithRIPEMD160KDF
+   			extends KeyAgreementSpi
+   	{
+   		public ECKAEGwithRIPEMD160KDF()
+   		{
+   			super("ECKAEGwithRIPEMD160KDF", new ECDHBasicAgreement(),
+                   new KDF2BytesGenerator(new RIPEMD160Digest()));
    		}
    	}
 
