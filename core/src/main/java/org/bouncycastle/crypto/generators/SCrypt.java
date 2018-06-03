@@ -15,6 +15,11 @@ import org.bouncycastle.util.Pack;
  */
 public class SCrypt
 {
+    private SCrypt()
+    {
+         // not used.
+    }
+
     /**
      * Generate a key using the scrypt key derivation function.
      *
