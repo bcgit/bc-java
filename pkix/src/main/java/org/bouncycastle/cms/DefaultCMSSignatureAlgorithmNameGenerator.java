@@ -112,6 +112,10 @@ public class DefaultCMSSignatureAlgorithmNameGenerator
         digestAlgs.put(NISTObjectIdentifiers.id_sha256, "SHA256");
         digestAlgs.put(NISTObjectIdentifiers.id_sha384, "SHA384");
         digestAlgs.put(NISTObjectIdentifiers.id_sha512, "SHA512");
+        digestAlgs.put(NISTObjectIdentifiers.id_sha3_224, "SHA3-224");
+        digestAlgs.put(NISTObjectIdentifiers.id_sha3_256, "SHA3-256");
+        digestAlgs.put(NISTObjectIdentifiers.id_sha3_384, "SHA3-384");
+        digestAlgs.put(NISTObjectIdentifiers.id_sha3_512, "SHA3-512");
         digestAlgs.put(TeleTrusTObjectIdentifiers.ripemd128, "RIPEMD128");
         digestAlgs.put(TeleTrusTObjectIdentifiers.ripemd160, "RIPEMD160");
         digestAlgs.put(TeleTrusTObjectIdentifiers.ripemd256, "RIPEMD256");
