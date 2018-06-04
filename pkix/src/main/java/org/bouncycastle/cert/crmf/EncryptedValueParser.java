@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.bouncycastle.asn1.crmf.EncryptedValue;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.InputDecryptor;
@@ -42,13 +44,14 @@ public class EncryptedValueParser
         this.padder = padder;
     }
 
+    public AlgorithmIdentifier getIntendedAlg()
+    {
+        return value.getIntendedAlg();
+    }
+
     private byte[] decryptValue(ValueDecryptorGenerator decGen)
         throws CRMFException
     {
-        if (value.getIntendedAlg() != null)
-        {
-            throw new UnsupportedOperationException();
-        }
         if (value.getValueHint() != null)
         {
             throw new UnsupportedOperationException();
@@ -86,6 +89,19 @@ public class EncryptedValueParser
         throws CRMFException
     {
         return new X509CertificateHolder(Certificate.getInstance(decryptValue(decGen)));
+    }
+
+    /**
+     * Read a PKCS#8 PrivateKeyInfo.
+     *
+     * @param decGen the decryptor generator to decrypt the encrypted value.
+     * @return an PrivateKeyInfo containing the private key that was read.
+     * @throws CRMFException if the decrypted data cannot be parsed, or a decryptor cannot be generated.
+     */
+    public PrivateKeyInfo readPrivateKeyInfo(ValueDecryptorGenerator decGen)
+        throws CRMFException
+    {
+        return PrivateKeyInfo.getInstance(decryptValue(decGen));
     }
 
     /**
