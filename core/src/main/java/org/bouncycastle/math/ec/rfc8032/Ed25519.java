@@ -10,6 +10,9 @@ import org.bouncycastle.util.BigIntegers;
 
 public abstract class Ed25519
 {
+    private static final long M28L = 0x0FFFFFFFL;
+    private static final long M32L = 0xFFFFFFFFL;
+
     private static final int POINT_BYTES = 32;
     private static final int SCALAR_INTS = 8;
     private static final int SCALAR_BYTES = SCALAR_INTS * 4;
@@ -20,6 +23,12 @@ public abstract class Ed25519
 
     private static final BigInteger P = BigInteger.ONE.shiftLeft(255).subtract(BigInteger.valueOf(19));
     private static final BigInteger L = BigInteger.ONE.shiftLeft(252).add(new BigInteger("14DEF9DEA2F79CD65812631A5CF5D3ED", 16));
+
+    private static final int L0 = 0xFCF5D3ED;
+    private static final int L1 = 0x012631A6;
+    private static final int L2 = 0x079CD658;
+    private static final int L3 = 0xFF9DEA2F;
+    private static final int L4 = 0x000014DF;
 
     private static final int[] B_x = new int[]{ 0x0325D51A, 0x018B5823, 0x007B2C95, 0x0304A92D, 0x00D2598E, 0x01D6DC5C,
         0x01388C7F, 0x013FEC0A, 0x029E6B72, 0x0042D26D };    
@@ -60,6 +69,14 @@ public abstract class Ed25519
     private static boolean checkScalar(byte[] s)
     {
         return big(s).compareTo(L) < 0;
+    }
+
+    private static int decode24(byte[] bs, int off)
+    {
+        int n = bs[  off] & 0xFF;
+        n |= (bs[++off] & 0xFF) << 8;
+        n |= (bs[++off] & 0xFF) << 16;
+        return n;
     }
 
     private static int decode32(byte[] bs, int off)
@@ -123,6 +140,27 @@ public abstract class Ed25519
     private static void dom2(SHA512Digest d)
     {
         
+    }
+
+    private static void encode24(int n, byte[] bs, int off)
+    {
+        bs[  off] = (byte)(n       );
+        bs[++off] = (byte)(n >>>  8);
+        bs[++off] = (byte)(n >>> 16);
+    }
+
+    private static void encode32(int n, byte[] bs, int off)
+    {
+        bs[  off] = (byte)(n       );
+        bs[++off] = (byte)(n >>>  8);
+        bs[++off] = (byte)(n >>> 16);
+        bs[++off] = (byte)(n >>> 24);
+    }
+
+    private static void encode56(long n, byte[] bs, int off)
+    {
+        encode32((int)n, bs, off);
+        encode24((int)(n >>> 32), bs, off + 4);
     }
 
     private static void encodePoint(PointXYTZ p, byte[] r, int rOff)
@@ -260,9 +298,147 @@ public abstract class Ed25519
         r[SCALAR_BYTES - 1] |= 0x40;
     }
 
-    private static byte[] reduceScalarVar(byte[] n)
+    private static byte[] reduceScalar(byte[] n)
     {
-        return Arrays.reverse(BigIntegers.asUnsignedByteArray(SCALAR_BYTES, big(n).mod(L)));
+        long x00 =  decode32(n,  0)       & M32L;
+        long x01 = (decode24(n,  4) << 4) & M32L;
+        long x02 =  decode32(n,  7)       & M32L;
+        long x03 = (decode24(n, 11) << 4) & M32L;
+        long x04 =  decode32(n, 14)       & M32L;
+        long x05 = (decode24(n, 18) << 4) & M32L;
+        long x06 =  decode32(n, 21)       & M32L;
+        long x07 = (decode24(n, 25) << 4) & M32L;
+        long x08 =  decode32(n, 28)       & M32L;
+        long x09 = (decode24(n, 32) << 4) & M32L;
+        long x10 =  decode32(n, 35)       & M32L;
+        long x11 = (decode24(n, 39) << 4) & M32L;
+        long x12 =  decode32(n, 42)       & M32L;
+        long x13 = (decode24(n, 46) << 4) & M32L;
+        long x14 =  decode32(n, 49)       & M32L;
+        long x15 = (decode24(n, 53) << 4) & M32L;
+        long x16 =  decode32(n, 56)       & M32L;
+        long x17 = (decode24(n, 60) << 4) & M32L;
+        long x18 =  n[63]                 & 0xFFL;
+        long t;
+
+//        x18 += (x17 >> 28); x17 &= L28;
+        x09 -= x18 * L0;
+        x10 -= x18 * L1;
+        x11 -= x18 * L2;
+        x12 -= x18 * L3;
+        x13 -= x18 * L4;
+
+        x17 += (x16 >> 28); x16 &= M28L;
+        x08 -= x17 * L0;
+        x09 -= x17 * L1;
+        x10 -= x17 * L2;
+        x11 -= x17 * L3;
+        x12 -= x17 * L4;
+
+//        x16 += (x15 >> 28); x15 &= L28;
+        x07 -= x16 * L0;
+        x08 -= x16 * L1;
+        x09 -= x16 * L2;
+        x10 -= x16 * L3;
+        x11 -= x16 * L4;
+
+        x15 += (x14 >> 28); x14 &= M28L;
+        x06 -= x15 * L0;
+        x07 -= x15 * L1;
+        x08 -= x15 * L2;
+        x09 -= x15 * L3;
+        x10 -= x15 * L4;
+
+//        x14 += (x13 >> 28); x13 &= L28;
+        x05 -= x14 * L0;
+        x06 -= x14 * L1;
+        x07 -= x14 * L2;
+        x08 -= x14 * L3;
+        x09 -= x14 * L4;
+
+        x13 += (x12 >> 28); x12 &= M28L;
+        x04 -= x13 * L0;
+        x05 -= x13 * L1;
+        x06 -= x13 * L2;
+        x07 -= x13 * L3;
+        x08 -= x13 * L4;
+
+        x12 += (x11 >> 28); x11 &= M28L;
+        x03 -= x12 * L0;
+        x04 -= x12 * L1;
+        x05 -= x12 * L2;
+        x06 -= x12 * L3;
+        x07 -= x12 * L4;
+
+        x11 += (x10 >> 28); x10 &= M28L;
+        x02 -= x11 * L0;
+        x03 -= x11 * L1;
+        x04 -= x11 * L2;
+        x05 -= x11 * L3;
+        x06 -= x11 * L4;
+
+        x10 += (x09 >> 28); x09 &= M28L;
+        x01 -= x10 * L0;
+        x02 -= x10 * L1;
+        x03 -= x10 * L2;
+        x04 -= x10 * L3;
+        x05 -= x10 * L4;
+
+        x01 += (x00 >> 28); x00 &= M28L;
+        x02 += (x01 >> 28); x01 &= M28L;
+        x03 += (x02 >> 28); x02 &= M28L;
+        x04 += (x03 >> 28); x03 &= M28L;
+        x05 += (x04 >> 28); x04 &= M28L;
+        x06 += (x05 >> 28); x05 &= M28L;
+        x07 += (x06 >> 28); x06 &= M28L;
+        x08 += (x07 >> 28); x07 &= M28L;
+        x09 += (x08 >> 28); x08 &= M28L;
+
+        t    = x09 >>> 63;
+        x09 += t;
+
+        x00 -= x09 * L0;
+        x01 -= x09 * L1;
+        x02 -= x09 * L2;
+        x03 -= x09 * L3;
+        x04 -= x09 * L4;
+
+        x01 += (x00 >> 28); x00 &= M28L;
+        x02 += (x01 >> 28); x01 &= M28L;
+        x03 += (x02 >> 28); x02 &= M28L;
+        x04 += (x03 >> 28); x03 &= M28L;
+        x05 += (x04 >> 28); x04 &= M28L;
+        x06 += (x05 >> 28); x05 &= M28L;
+        x07 += (x06 >> 28); x06 &= M28L;
+        x08 += (x07 >> 28); x07 &= M28L;
+        x09  = (x08 >> 28); x08 &= M28L;
+
+        x09 -= t;
+
+//        assert x09 == 0L || x09 == -1L;
+
+        x00 -= x09 * L0;
+        x01 -= x09 * L1;
+        x02 -= x09 * L2;
+        x03 -= x09 * L3;
+        x04 -= x09 * L4;
+
+        x01 += (x00 >> 28); x00 &= M28L;
+        x02 += (x01 >> 28); x01 &= M28L;
+        x03 += (x02 >> 28); x02 &= M28L;
+        x04 += (x03 >> 28); x03 &= M28L;
+        x05 += (x04 >> 28); x04 &= M28L;
+        x06 += (x05 >> 28); x05 &= M28L;
+        x07 += (x06 >> 28); x06 &= M28L;
+        x08 += (x07 >> 28); x07 &= M28L;
+
+        byte[] r = new byte[SCALAR_BYTES];
+        encode56(x00 | (x01 << 28), r,  0);
+        encode56(x02 | (x03 << 28), r,  7);
+        encode56(x04 | (x05 << 28), r, 14);
+        encode56(x06 | (x07 << 28), r, 21);
+        encode32((int)x08,          r, 28);
+        return r;
     }
 
     private static void scalarMultVar(int[] n, PointXYTZ p, PointXYTZ r)
@@ -339,7 +515,7 @@ public abstract class Ed25519
         ph(d, m, mOff, mLen);
         d.doFinal(h,  0);
 
-        byte[] r = reduceScalarVar(h);
+        byte[] r = reduceScalar(h);
         byte[] R = new byte[POINT_BYTES];
         scalarMultBaseEncodedVar(r, R, 0);
 
@@ -349,7 +525,7 @@ public abstract class Ed25519
         ph(d, m, mOff, mLen);
         d.doFinal(h,  0);
 
-        byte[] k = reduceScalarVar(h);
+        byte[] k = reduceScalar(h);
         byte[] S = calculateS(r, k, s);
 
         System.arraycopy(R, 0, sig, sigOff, POINT_BYTES);
@@ -374,7 +550,7 @@ public abstract class Ed25519
         ph(d, m, mOff, mLen);
         d.doFinal(h,  0);
 
-        byte[] r = reduceScalarVar(h);
+        byte[] r = reduceScalar(h);
         byte[] R = new byte[POINT_BYTES];
         scalarMultBaseEncodedVar(r, R, 0);
 
@@ -384,7 +560,7 @@ public abstract class Ed25519
         ph(d, m, mOff, mLen);
         d.doFinal(h,  0);
 
-        byte[] k = reduceScalarVar(h);
+        byte[] k = reduceScalar(h);
         byte[] S = calculateS(r, k, s);
 
         System.arraycopy(R, 0, sig, sigOff, POINT_BYTES);
@@ -424,7 +600,7 @@ public abstract class Ed25519
         ph(d, m, mOff, mLen);
         d.doFinal(h,  0);
 
-        byte[] k = reduceScalarVar(h);
+        byte[] k = reduceScalar(h);
 
         byte[] lhs = new byte[POINT_BYTES];
         scalarMultBaseEncodedVar(S, lhs, 0);
