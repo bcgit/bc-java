@@ -17,7 +17,7 @@ public class Ed25519Test
         Ed25519.precompute();
     }
 
-//  @Test
+//    @Test
     public void testEd25519Vector1()
     {
         checkEd25519Vector(
@@ -33,7 +33,7 @@ public class Ed25519Test
             "Ed25519 Vector #1");
     }
 
-//  @Test
+//    @Test
     public void testEd25519Vector2()
     {
         checkEd25519Vector(
@@ -49,7 +49,7 @@ public class Ed25519Test
             "Ed25519 Vector #2");
     }
 
-//  @Test
+//    @Test
     public void testEd25519Vector3()
     {
         checkEd25519Vector(
@@ -65,8 +65,8 @@ public class Ed25519Test
             "Ed25519 Vector #3");
     }
 
-//  @Test
-    public void testEd25519Vector1024()
+//    @Test
+    public void testEd25519Vector1023()
     {
         String m =
             "08b8b2b733424243760fe426a4b54908" +
@@ -144,10 +144,10 @@ public class Ed25519Test
             + "87df5e4843b2cbdb67cbf6e460fec350"
             + "aa5371b1508f9f4528ecea23c436d94b"
             + "5e8fcd4f681e30a6ac00a9704a188a03"),
-            "Ed25519 Vector #1024");
+            "Ed25519 Vector #1023");
     }
 
-//  @Test
+//    @Test
     public void testEd25519VectorSHAabc()
     {
         checkEd25519Vector(
@@ -187,7 +187,7 @@ public class Ed25519Test
         boolean verified = Ed25519.verify(sig, 0, pk, 0, m, 0, m.length);
         assertTrue(text, verified);
 
-        sig[31] ^= 0x80;
+        sig[Ed25519.SIGNATURE_SIZE - 1] ^= 0x80;
         verified = Ed25519.verify(sig, 0, pk, 0, m, 0, m.length);
         assertFalse(text, verified);
     }
