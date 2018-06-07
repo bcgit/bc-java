@@ -357,7 +357,7 @@ public class PGPSecretKey
      *
      * @return an iterator of Strings.
      */
-    public Iterator getUserIDs()
+    public Iterator<String> getUserIDs()
     {
         return pub.getUserIDs();
     }
