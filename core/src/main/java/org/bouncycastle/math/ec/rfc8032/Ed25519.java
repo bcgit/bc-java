@@ -2,7 +2,6 @@ package org.bouncycastle.math.ec.rfc8032;
 
 import java.math.BigInteger;
 
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.math.ec.rfc7748.X25519Field;
 import org.bouncycastle.util.Arrays;
@@ -20,6 +19,8 @@ public abstract class Ed25519
     public static final int PUBLIC_KEY_SIZE = POINT_BYTES;
     public static final int SECRET_KEY_SIZE = 32;
     public static final int SIGNATURE_SIZE = POINT_BYTES + SCALAR_BYTES;
+
+//    private static final byte[] DOM2_PREFIX = Strings.toByteArray("SigEd25519 no Ed25519 collisions");
 
     private static final BigInteger P = BigInteger.ONE.shiftLeft(255).subtract(BigInteger.valueOf(19));
     private static final BigInteger L = BigInteger.ONE.shiftLeft(252).add(new BigInteger("14DEF9DEA2F79CD65812631A5CF5D3ED", 16));
@@ -137,11 +138,6 @@ public abstract class Ed25519
         }
     }
 
-    private static void dom2(SHA512Digest d)
-    {
-        
-    }
-
     private static void encode24(int n, byte[] bs, int off)
     {
         bs[  off] = (byte)(n       );
@@ -182,21 +178,16 @@ public abstract class Ed25519
     {
         // TODO Not currently constant-time (see use of ...Var methods)
 
-        Digest d = new SHA512Digest();
-        d.update(sk, skOff, SECRET_KEY_SIZE);
-
+        SHA512Digest d = new SHA512Digest();
         byte[] h = new byte[d.getDigestSize()];
+
+        d.update(sk, skOff, SECRET_KEY_SIZE);
         d.doFinal(h, 0);
 
         byte[] s = new byte[SCALAR_BYTES];
         pruneScalar(h, 0, s);
 
         scalarMultBaseEncodedVar(s, pk, pkOff);
-    }
-
-    private static void ph(SHA512Digest d, byte[] m, int mOff, int mLen)
-    {
-        d.update(m, mOff, mLen);
     }
 
     private static void pointAdd(PointXYTZ p, PointXYTZ r)
@@ -291,7 +282,7 @@ public abstract class Ed25519
 
     private static void pruneScalar(byte[] n, int nOff, byte[] r)
     {
-        System.arraycopy(n,  nOff, r, 0, SCALAR_BYTES);
+        System.arraycopy(n, nOff, r, 0, SCALAR_BYTES);
 
         r[0] &= 0xF8;
         r[SCALAR_BYTES - 1] &= 0x7F;
@@ -507,23 +498,21 @@ public abstract class Ed25519
         byte[] s = new byte[SCALAR_BYTES];
         pruneScalar(h, 0, s);
 
-        byte[] A = new byte[POINT_BYTES];
-        scalarMultBaseEncodedVar(s, A, 0);
+        byte[] pk = new byte[POINT_BYTES];
+        scalarMultBaseEncodedVar(s, pk, 0);
 
-        dom2(d);
-        d.update(h, 32, 32);
-        ph(d, m, mOff, mLen);
-        d.doFinal(h,  0);
+        d.update(h, SCALAR_BYTES, SCALAR_BYTES);
+        d.update(m, mOff, mLen);
+        d.doFinal(h, 0);
 
         byte[] r = reduceScalar(h);
         byte[] R = new byte[POINT_BYTES];
         scalarMultBaseEncodedVar(r, R, 0);
 
-        dom2(d);
         d.update(R, 0, POINT_BYTES);
-        d.update(A, 0, POINT_BYTES);
-        ph(d, m, mOff, mLen);
-        d.doFinal(h,  0);
+        d.update(pk, 0, POINT_BYTES);
+        d.update(m, mOff, mLen);
+        d.doFinal(h, 0);
 
         byte[] k = reduceScalar(h);
         byte[] S = calculateS(r, k, s);
@@ -545,20 +534,18 @@ public abstract class Ed25519
         byte[] s = new byte[SCALAR_BYTES];
         pruneScalar(h, 0, s);
 
-        dom2(d);
-        d.update(h, 32, 32);
-        ph(d, m, mOff, mLen);
-        d.doFinal(h,  0);
+        d.update(h, SCALAR_BYTES, SCALAR_BYTES);
+        d.update(m, mOff, mLen);
+        d.doFinal(h, 0);
 
         byte[] r = reduceScalar(h);
         byte[] R = new byte[POINT_BYTES];
         scalarMultBaseEncodedVar(r, R, 0);
 
-        dom2(d);
         d.update(R, 0, POINT_BYTES);
         d.update(pk, pkOff, POINT_BYTES);
-        ph(d, m, mOff, mLen);
-        d.doFinal(h,  0);
+        d.update(m, mOff, mLen);
+        d.doFinal(h, 0);
 
         byte[] k = reduceScalar(h);
         byte[] S = calculateS(r, k, s);
@@ -594,11 +581,10 @@ public abstract class Ed25519
         SHA512Digest d = new SHA512Digest();
         byte[] h = new byte[d.getDigestSize()];
 
-        dom2(d);
         d.update(R, 0, POINT_BYTES);
         d.update(pk, pkOff, POINT_BYTES);
-        ph(d, m, mOff, mLen);
-        d.doFinal(h,  0);
+        d.update(m, mOff, mLen);
+        d.doFinal(h, 0);
 
         byte[] k = reduceScalar(h);
 
