@@ -10,6 +10,10 @@ import org.bouncycastle.util.Strings;
 
 public abstract class Ed448
 {
+    private static final long M26L = 0x03FFFFFFL;
+    private static final long M28L = 0x0FFFFFFFL;
+    private static final long M32L = 0xFFFFFFFFL;
+
     private static final int POINT_BYTES = 57;
     private static final int SCALAR_INTS = 14;
     private static final int SCALAR_BYTES = SCALAR_INTS * 4 + 1;
@@ -23,6 +27,24 @@ public abstract class Ed448
     private static final BigInteger P = BigInteger.ONE.shiftLeft(448).subtract(BigInteger.ONE.shiftLeft(224)).subtract(BigInteger.ONE);
     private static final BigInteger L = BigInteger.ONE.shiftLeft(446).subtract(
         new BigInteger("8335DC163BB124B65129C96FDE933D8D723A70AADC873D6D54A7BB0D", 16));
+
+    private static final int LL_0 = 0x04A7BB0D;
+    private static final int LL_1 = 0x0873D6D5;
+    private static final int LL_2 = 0x0A70AADC;
+    private static final int LL_3 = 0x03D8D723;
+    private static final int LL_4 = 0x096FDE93;
+    private static final int LL_5 = 0x0B65129C;
+    private static final int LL_6 = 0x063BB124;
+    private static final int LL_7 = 0x08335DC1;
+
+    private static final int LL4_0 = 0x029EEC34;
+    private static final int LL4_1 = 0x01CF5B55;
+    private static final int LL4_2 = 0x09C2AB72;
+    private static final int LL4_3 = 0x0F635C8E;
+    private static final int LL4_4 = 0x05BF7A4C;
+    private static final int LL4_5 = 0x0D944A72;
+    private static final int LL4_6 = 0x08EEC492;
+    private static final int LL4_7 = 0x20CD7705;    // NOTE: 30 bits
 
     private static final int[] B_x = new int[] { 0x070CC05E, 0x026A82BC, 0x00938E26, 0x080E18B0, 0x0511433B, 0x0F72AB66, 0x0412AE1A,
         0x0A3D3A46, 0x0A6DE324, 0x00F1767E, 0x04657047, 0x036DA9E1, 0x05A622BF, 0x0ED221D1, 0x066BED0D, 0x04F1970C };
@@ -62,6 +84,21 @@ public abstract class Ed448
     private static boolean checkScalar(byte[] s)
     {
         return big(s).compareTo(L) < 0;
+    }
+
+    private static int decode16(byte[] bs, int off)
+    {
+        int n = bs[off] & 0xFF;
+        n |= (bs[++off] & 0xFF) << 8;
+        return n;
+    }
+
+    private static int decode24(byte[] bs, int off)
+    {
+        int n = bs[  off] & 0xFF;
+        n |= (bs[++off] & 0xFF) << 8;
+        n |= (bs[++off] & 0xFF) << 16;
+        return n;
     }
 
     private static int decode32(byte[] bs, int off)
@@ -135,6 +172,27 @@ public abstract class Ed448
         d.update(x);
         d.update((byte)y.length);
         d.update(y, 0, y.length);
+    }
+
+    private static void encode24(int n, byte[] bs, int off)
+    {
+        bs[  off] = (byte)(n       );
+        bs[++off] = (byte)(n >>>  8);
+        bs[++off] = (byte)(n >>> 16);
+    }
+
+    private static void encode32(int n, byte[] bs, int off)
+    {
+        bs[  off] = (byte)(n       );
+        bs[++off] = (byte)(n >>>  8);
+        bs[++off] = (byte)(n >>> 16);
+        bs[++off] = (byte)(n >>> 24);
+    }
+
+    private static void encode56(long n, byte[] bs, int off)
+    {
+        encode32((int)n, bs, off);
+        encode24((int)(n >>> 32), bs, off + 4);
     }
 
     private static void encodePoint(PointXYZ p, byte[] r, int rOff)
@@ -280,9 +338,281 @@ public abstract class Ed448
         r[SCALAR_BYTES - 2] |= 0x80;
     }
 
-    private static byte[] reduceScalarVar(byte[] n)
+    private static byte[] reduceScalar(byte[] n)
     {
-        return Arrays.reverse(BigIntegers.asUnsignedByteArray(SCALAR_BYTES, big(n).mod(L)));
+        long x00 =  decode32(n,   0)       & M32L;  // x00:32/00
+        long x01 = (decode24(n,   4) << 4) & M32L;  // x01:28/00
+        long x02 =  decode32(n,   7)       & M32L;  // x02:32/00
+        long x03 = (decode24(n,  11) << 4) & M32L;  // x03:28/00
+        long x04 =  decode32(n,  14)       & M32L;  // x04:32/00
+        long x05 = (decode24(n,  18) << 4) & M32L;  // x05:28/00
+        long x06 =  decode32(n,  21)       & M32L;  // x06:32/00
+        long x07 = (decode24(n,  25) << 4) & M32L;  // x07:28/00
+        long x08 =  decode32(n,  28)       & M32L;  // x08:32/00
+        long x09 = (decode24(n,  32) << 4) & M32L;  // x09:28/00
+        long x10 =  decode32(n,  35)       & M32L;  // x10:32/00
+        long x11 = (decode24(n,  39) << 4) & M32L;  // x11:28/00
+        long x12 =  decode32(n,  42)       & M32L;  // x12:32/00
+        long x13 = (decode24(n,  46) << 4) & M32L;  // x13:28/00
+        long x14 =  decode32(n,  49)       & M32L;  // x14:32/00
+        long x15 = (decode24(n,  53) << 4) & M32L;  // x15:28/00
+        long x16 =  decode32(n,  56)       & M32L;  // x16:32/00
+        long x17 = (decode24(n,  60) << 4) & M32L;  // x17:28/00
+        long x18 =  decode32(n,  63)       & M32L;  // x18:32/00
+        long x19 = (decode24(n,  67) << 4) & M32L;  // x19:28/00
+        long x20 =  decode32(n,  70)       & M32L;  // x20:32/00
+        long x21 = (decode24(n,  74) << 4) & M32L;  // x21:28/00
+        long x22 =  decode32(n,  77)       & M32L;  // x22:32/00
+        long x23 = (decode24(n,  81) << 4) & M32L;  // x23:28/00
+        long x24 =  decode32(n,  84)       & M32L;  // x24:32/00
+        long x25 = (decode24(n,  88) << 4) & M32L;  // x25:28/00
+        long x26 =  decode32(n,  91)       & M32L;  // x26:32/00
+        long x27 = (decode24(n,  95) << 4) & M32L;  // x27:28/00
+        long x28 =  decode32(n,  98)       & M32L;  // x28:32/00
+        long x29 = (decode24(n, 102) << 4) & M32L;  // x29:28/00
+        long x30 =  decode32(n, 105)       & M32L;  // x30:32/00
+        long x31 = (decode24(n, 109) << 4) & M32L;  // x31:28/00
+        long x32 =  decode16(n, 112)       & M32L;  // x32:16/00
+
+//        x32 += (x31 >>> 28); x31 &= M28L;
+        x16 += x32 * LL4_0;                         // x16:44/00
+        x17 += x32 * LL4_1;                         // x17:44/00
+        x18 += x32 * LL4_2;                         // x18:44/00
+        x19 += x32 * LL4_3;                         // x19:44/00
+        x20 += x32 * LL4_4;                         // x20:44/00
+        x21 += x32 * LL4_5;                         // x21:44/00
+        x22 += x32 * LL4_6;                         // x22:44/00
+        x23 += x32 * LL4_7;                         // x23:46/00
+
+        x31 += (x30 >>> 28); x30 &= M28L;           // x31:28/00, x30:28/00
+        x15 += x31 * LL4_0;                         // x15:56/28
+        x16 += x31 * LL4_1;                         // x16:56/44
+        x17 += x31 * LL4_2;                         // x17:56/44
+        x18 += x31 * LL4_3;                         // x18:56/44
+        x19 += x31 * LL4_4;                         // x19:56/44
+        x20 += x31 * LL4_5;                         // x20:56/44
+        x21 += x31 * LL4_6;                         // x21:56/44
+        x22 += x31 * LL4_7;                         // x22:58/44
+
+//        x30 += (x29 >>> 28); x29 &= M28L;
+        x14 += x30 * LL4_0;                         // x14:56/32
+        x15 += x30 * LL4_1;                         // x15:57/28
+        x16 += x30 * LL4_2;                         // x16:57/44
+        x17 += x30 * LL4_3;                         // x17:57/44
+        x18 += x30 * LL4_4;                         // x18:57/44
+        x19 += x30 * LL4_5;                         // x19:57/44
+        x20 += x30 * LL4_6;                         // x20:57/44
+        x21 += x30 * LL4_7;                         // x21:58/57
+
+        x29 += (x28 >>> 28); x28 &= M28L;           // x29:28/00, x28:28/00
+        x13 += x29 * LL4_0;                         // x13:56/28
+        x14 += x29 * LL4_1;                         // x14:57/32
+        x15 += x29 * LL4_2;                         // x15:58/00
+        x16 += x29 * LL4_3;                         // x16:58/00
+        x17 += x29 * LL4_4;                         // x17:58/00
+        x18 += x29 * LL4_5;                         // x18:58/00
+        x19 += x29 * LL4_6;                         // x19:58/00
+        x20 += x29 * LL4_7;                         // x20:59/00
+
+//        x28 += (x27 >>> 28); x27 &= M28L;
+        x12 += x28 * LL4_0;                         // x12:56/32
+        x13 += x28 * LL4_1;                         // x13:57/28
+        x14 += x28 * LL4_2;                         // x14:58/00
+        x15 += x28 * LL4_3;                         // x15:58/56
+        x16 += x28 * LL4_4;                         // x16:58/56
+        x17 += x28 * LL4_5;                         // x17:58/56
+        x18 += x28 * LL4_6;                         // x18:58/56
+        x19 += x28 * LL4_7;                         // x19:59/00
+
+        x27 += (x26 >>> 28); x26 &= M28L;           // x27:28/00, x26:28/00
+        x11 += x27 * LL4_0;                         // x11:56/28
+        x12 += x27 * LL4_1;                         // x12:57/32
+        x13 += x27 * LL4_2;                         // x13:58/00
+        x14 += x27 * LL4_3;                         // x14:58/56
+        x15 += x27 * LL4_4;                         // x15:58/57
+        x16 += x27 * LL4_5;                         // x16:58/57
+        x17 += x27 * LL4_6;                         // x17:58/57
+        x18 += x27 * LL4_7;                         // x18:59/56
+
+//        x26 += (x25 >>> 28); x25 &= M28L;
+        x10 += x26 * LL4_0;                         // x10:56/32
+        x11 += x26 * LL4_1;                         // x11:57/28
+        x12 += x26 * LL4_2;                         // x12:58/00
+        x13 += x26 * LL4_3;                         // x13:58/56
+        x14 += x26 * LL4_4;                         // x14:58/57
+        x15 += x26 * LL4_5;                         // x15:59/00
+        x16 += x26 * LL4_6;                         // x16:59/00
+        x17 += x26 * LL4_7;                         // x17:59/57
+
+        x25 += (x24 >>> 28); x24 &= M28L;           // x25:28/00, x24:28/00
+        x09 += x25 * LL4_0;                         // x09:56/28
+        x10 += x25 * LL4_1;                         // x10:57/32
+        x11 += x25 * LL4_2;                         // x11:58/00
+        x12 += x25 * LL4_3;                         // x12:58/56
+        x13 += x25 * LL4_4;                         // x13:58/57
+        x14 += x25 * LL4_5;                         // x14:59/00
+        x15 += x25 * LL4_6;                         // x15:59/56
+        x16 += x25 * LL4_7;                         // x16:59/58
+
+        x21 += (x20 >>> 28); x20 &= M28L;           // x21:59/00, x20:28/00
+        x22 += (x21 >>> 28); x21 &= M28L;           // x22:58/45, x21:28/00
+        x23 += (x22 >>> 28); x22 &= M28L;           // x23:46/31, x22:28/00
+        x24 += (x23 >>> 28); x23 &= M28L;           // x24:28/19, x23:28/00
+
+        x08 += x24 * LL4_0;                         // x08:56/48
+        x09 += x24 * LL4_1;                         // x09:57/48
+        x10 += x24 * LL4_2;                         // x10:58/00
+        x11 += x24 * LL4_3;                         // x11:58/57
+        x12 += x24 * LL4_4;                         // x12:59/00
+        x13 += x24 * LL4_5;                         // x13:59/00
+        x14 += x24 * LL4_6;                         // x14:59/57
+        x15 += x24 * LL4_7;                         // x15:60/00
+
+        x07 += x23 * LL4_0;                         // x07:56/28
+        x08 += x23 * LL4_1;                         // x08:57/48
+        x09 += x23 * LL4_2;                         // x09:58/00
+        x10 += x23 * LL4_3;                         // x10:58/56
+        x11 += x23 * LL4_4;                         // x11:59/00
+        x12 += x23 * LL4_5;                         // x12:59/56
+        x13 += x23 * LL4_6;                         // x13:59/56
+        x14 += x23 * LL4_7;                         // x14:60/00
+
+        x06 += x22 * LL4_0;                         // x06:56/32
+        x07 += x22 * LL4_1;                         // x07:57/28
+        x08 += x22 * LL4_2;                         // x08:58/00
+        x09 += x22 * LL4_3;                         // x09:58/56
+        x10 += x22 * LL4_4;                         // x10:58/57
+        x11 += x22 * LL4_5;                         // x11:59/56
+        x12 += x22 * LL4_6;                         // x12:59/57
+        x13 += x22 * LL4_7;                         // x13:60/00
+
+        x18 += (x17 >>> 28); x17 &= M28L;           // x18:59/57, x17:28/00
+        x19 += (x18 >>> 28); x18 &= M28L;           // x19:59/32, x18:28/00
+        x20 += (x19 >>> 28); x19 &= M28L;           // x20:31/29, x19:28/00
+        x21 += (x20 >>> 28); x20 &= M28L;           // x21:28/04, x20:28/00
+
+        x05 += x21 * LL4_0;                         // x05:56/33
+        x06 += x21 * LL4_1;                         // x06:57/33
+        x07 += x21 * LL4_2;                         // x07:58/00
+        x08 += x21 * LL4_3;                         // x08:58/57
+        x09 += x21 * LL4_4;                         // x09:59/00
+        x10 += x21 * LL4_5;                         // x10:59/00
+        x11 += x21 * LL4_6;                         // x11:59/58
+        x12 += x21 * LL4_7;                         // x12:60/00
+
+        x04 += x20 * LL4_0;                         // x04:56/32
+        x05 += x20 * LL4_1;                         // x05:57/33
+        x06 += x20 * LL4_2;                         // x06:58/00
+        x07 += x20 * LL4_3;                         // x07:58/56
+        x08 += x20 * LL4_4;                         // x08:59/00
+        x09 += x20 * LL4_5;                         // x09:59/56
+        x10 += x20 * LL4_6;                         // x10:59/56
+        x11 += x20 * LL4_7;                         // x11:60/00
+
+        x03 += x19 * LL4_0;                         // x03:56/28
+        x04 += x19 * LL4_1;                         // x04:57/32
+        x05 += x19 * LL4_2;                         // x05:58/00
+        x06 += x19 * LL4_3;                         // x06:58/56
+        x07 += x19 * LL4_4;                         // x07:58/57
+        x08 += x19 * LL4_5;                         // x08:59/56
+        x09 += x19 * LL4_6;                         // x09:59/57
+        x10 += x19 * LL4_7;                         // x10:60/00
+
+        x15 += (x14 >>> 28); x14 &= M28L;           // x15:60/32, x14:28/00
+        x16 += (x15 >>> 28); x15 &= M28L;           // x16:60/00, x15:28/00
+        x17 += (x16 >>> 28); x16 &= M28L;           // x17:32/28, x16:28/00
+        x18 += (x17 >>> 28); x17 &= M28L;           // x18:28/05, x17:28/00
+
+        x02 += x18 * LL4_0;                         // x02:56/34
+        x03 += x18 * LL4_1;                         // x03:57/34
+        x04 += x18 * LL4_2;                         // x04:58/00
+        x05 += x18 * LL4_3;                         // x05:58/57
+        x06 += x18 * LL4_4;                         // x06:59/00
+        x07 += x18 * LL4_5;                         // x07:59/00
+        x08 += x18 * LL4_6;                         // x08:59/58
+        x09 += x18 * LL4_7;                         // x09:60/00
+
+        x01 += x17 * LL4_0;                         // x01:56/28
+        x02 += x17 * LL4_1;                         // x02:57/34
+        x03 += x17 * LL4_2;                         // x03:58/00
+        x04 += x17 * LL4_3;                         // x04:58/56
+        x05 += x17 * LL4_4;                         // x05:59/00
+        x06 += x17 * LL4_5;                         // x06:59/56
+        x07 += x17 * LL4_6;                         // x07:59/56
+        x08 += x17 * LL4_7;                         // x08:60/00
+
+        x16 *= 4;
+        x16 += (x15 >>> 26); x15 &= M26L;
+        x16 += 1;                                   // x16:30/01
+
+        x00 += x16 * LL_0;
+        x01 += x16 * LL_1;
+        x02 += x16 * LL_2;
+        x03 += x16 * LL_3;
+        x04 += x16 * LL_4;
+        x05 += x16 * LL_5;
+        x06 += x16 * LL_6;
+        x07 += x16 * LL_7;
+
+        x01 += (x00 >>> 28); x00 &= M28L;
+        x02 += (x01 >>> 28); x01 &= M28L;
+        x03 += (x02 >>> 28); x02 &= M28L;
+        x04 += (x03 >>> 28); x03 &= M28L;
+        x05 += (x04 >>> 28); x04 &= M28L;
+        x06 += (x05 >>> 28); x05 &= M28L;
+        x07 += (x06 >>> 28); x06 &= M28L;
+        x08 += (x07 >>> 28); x07 &= M28L;
+        x09 += (x08 >>> 28); x08 &= M28L;
+        x10 += (x09 >>> 28); x09 &= M28L;
+        x11 += (x10 >>> 28); x10 &= M28L;
+        x12 += (x11 >>> 28); x11 &= M28L;
+        x13 += (x12 >>> 28); x12 &= M28L;
+        x14 += (x13 >>> 28); x13 &= M28L;
+        x15 += (x14 >>> 28); x14 &= M28L;
+        x16  = (x15 >>> 26); x15 &= M26L;
+
+        x16 -= 1;
+
+//        assert x16 == 0L || x16 == -1L;
+
+        x00 -= x16 & LL_0;
+        x01 -= x16 & LL_1;
+        x02 -= x16 & LL_2;
+        x03 -= x16 & LL_3;
+        x04 -= x16 & LL_4;
+        x05 -= x16 & LL_5;
+        x06 -= x16 & LL_6;
+        x07 -= x16 & LL_7;
+
+        x01 += (x00 >> 28); x00 &= M28L;
+        x02 += (x01 >> 28); x01 &= M28L;
+        x03 += (x02 >> 28); x02 &= M28L;
+        x04 += (x03 >> 28); x03 &= M28L;
+        x05 += (x04 >> 28); x04 &= M28L;
+        x06 += (x05 >> 28); x05 &= M28L;
+        x07 += (x06 >> 28); x06 &= M28L;
+        x08 += (x07 >> 28); x07 &= M28L;
+        x09 += (x08 >> 28); x08 &= M28L;
+        x10 += (x09 >> 28); x09 &= M28L;
+        x11 += (x10 >> 28); x10 &= M28L;
+        x12 += (x11 >> 28); x11 &= M28L;
+        x13 += (x12 >> 28); x12 &= M28L;
+        x14 += (x13 >> 28); x13 &= M28L;
+        x15 += (x14 >> 28); x14 &= M28L;
+
+//        assert x15 >>> 26 == 0L;
+
+        byte[] r = new byte[SCALAR_BYTES];
+        encode56(x00 | (x01 << 28), r,  0);
+        encode56(x02 | (x03 << 28), r,  7);
+        encode56(x04 | (x05 << 28), r, 14);
+        encode56(x06 | (x07 << 28), r, 21);
+        encode56(x08 | (x09 << 28), r, 28);
+        encode56(x10 | (x11 << 28), r, 35);
+        encode56(x12 | (x13 << 28), r, 42);
+        encode56(x14 | (x15 << 28), r, 49);
+//        r[SCALAR_BYTES - 1] = 0;
+        return r;
     }
 
     private static void scalarMultVar(int[] n, PointXYZ p, PointXYZ r)
@@ -365,7 +695,7 @@ public abstract class Ed448
         d.update(m, mOff, mLen);
         d.doFinal(h, 0, h.length);
 
-        byte[] r = reduceScalarVar(h);
+        byte[] r = reduceScalar(h);
         byte[] R = new byte[POINT_BYTES];
         scalarMultBaseEncodedVar(r, R, 0);
 
@@ -375,7 +705,7 @@ public abstract class Ed448
         d.update(m, mOff, mLen);
         d.doFinal(h, 0, h.length);
 
-        byte[] k = reduceScalarVar(h);
+        byte[] k = reduceScalar(h);
         byte[] S = calculateS(r, k, s);
 
         System.arraycopy(R, 0, sig, sigOff, POINT_BYTES);
@@ -408,7 +738,7 @@ public abstract class Ed448
         d.update(m, mOff, mLen);
         d.doFinal(h, 0, h.length);
 
-        byte[] r = reduceScalarVar(h);
+        byte[] r = reduceScalar(h);
         byte[] R = new byte[POINT_BYTES];
         scalarMultBaseEncodedVar(r, R, 0);
 
@@ -418,7 +748,7 @@ public abstract class Ed448
         d.update(m, mOff, mLen);
         d.doFinal(h, 0, h.length);
 
-        byte[] k = reduceScalarVar(h);
+        byte[] k = reduceScalar(h);
         byte[] S = calculateS(r, k, s);
 
         System.arraycopy(R, 0, sig, sigOff, POINT_BYTES);
@@ -465,7 +795,7 @@ public abstract class Ed448
         d.update(m, mOff, mLen);
         d.doFinal(h, 0, h.length);
 
-        byte[] k = reduceScalarVar(h);
+        byte[] k = reduceScalar(h);
 
         byte[] lhs = new byte[POINT_BYTES];
         scalarMultBaseEncodedVar(S, lhs, 0);
