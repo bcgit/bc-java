@@ -367,7 +367,7 @@ public class PGPSecretKey
      *
      * @return an iterator of PGPUserAttributeSubpacketVector.
      */
-    public Iterator getUserAttributes()
+    public Iterator<PGPUserAttributeSubpacketVector> getUserAttributes()
     {
         return pub.getUserAttributes();
     }
