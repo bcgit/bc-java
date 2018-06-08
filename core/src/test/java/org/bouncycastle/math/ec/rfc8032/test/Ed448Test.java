@@ -21,7 +21,6 @@ public class Ed448Test
     public void testEd448Vector1()
     {
         checkEd448Vector(
-            "",
             ( "6c82a562cb808d10d632be89c8513ebf"
             + "6c929f34ddfa8c9f63c9960ef6e348a3"
             + "528c8a3fcc2f044e39a3fc5b94492f8f"
@@ -30,6 +29,7 @@ public class Ed448Test
             + "1da1342485a70e1f8a0ea75d80e96778"
             + "edf124769b46c7061bd6783df1e50f6c"
             + "d1fa1abeafe8256180"),
+            "",
             "",
             ( "533a37f6bbe457251f023c0d88f976ae"
             + "2dfb504a843e34d2074fd823d41a591f"
@@ -46,7 +46,6 @@ public class Ed448Test
     public void testEd448Vector2()
     {
         checkEd448Vector(
-            "",
             ( "c4eab05d357007c632f3dbb48489924d"
             + "552b08fe0c353a0d4a1f00acda2c463a"
             + "fbea67c5e8d2877c5e3bc397a659949e"
@@ -56,6 +55,7 @@ public class Ed448Test
             + "6aea01eb00742802b8438ea4cb82169c"
             + "235160627b4c3a9480"),
             "03",
+            "",
             ( "26b8f91727bd62897af15e41eb43c377"
             + "efb9c610d48f2335cb0bd0087810f435"
             + "2541b143c4b981b7e18f62de8ccdf633"
@@ -71,7 +71,6 @@ public class Ed448Test
     public void testEd448Vector3()
     {
         checkEd448Vector(
-            "666f6f",
             ( "c4eab05d357007c632f3dbb48489924d"
             + "552b08fe0c353a0d4a1f00acda2c463a"
             + "fbea67c5e8d2877c5e3bc397a659949e"
@@ -81,6 +80,7 @@ public class Ed448Test
             + "6aea01eb00742802b8438ea4cb82169c"
             + "235160627b4c3a9480"),
             "03",
+            "666f6f",
             ( "d4f8f6131770dd46f40867d6fd5d5055"
             + "de43541f8c5e35abbcd001b32a89f7d2"
             + "151f7647f11d8ca2ae279fb842d60721"
@@ -96,7 +96,6 @@ public class Ed448Test
     public void testEd448Vector4()
     {
         checkEd448Vector(
-            "",
             ( "cd23d24f714274e744343237b93290f5"
             + "11f6425f98e64459ff203e8985083ffd"
             + "f60500553abc0e05cd02184bdb89c4cc"
@@ -106,6 +105,7 @@ public class Ed448Test
             + "65fce161d71ce7131a543ea4cb5f7e9f"
             + "1d8b00696447001400"),
             "0c3e544074ec63b0265e0c",
+            "",
             ( "1f0a8888ce25e8d458a21130879b840a"
             + "9089d999aaba039eaf3e3afa090a09d3"
             + "89dba82c4ff2ae8ac5cdfb7c55e94d5d"
@@ -121,7 +121,6 @@ public class Ed448Test
     public void testEd448Vector5()
     {
         checkEd448Vector(
-            "",
             ( "258cdd4ada32ed9c9ff54e63756ae582"
             + "fb8fab2ac721f2c8e676a72768513d93"
             + "9f63dddb55609133f29adf86ec9929dc"
@@ -131,6 +130,7 @@ public class Ed448Test
             + "24d8e968b6e46e6f94d19b945361726b"
             + "d75e149ef09817f580"),
             "64a65f3cdedcdd66811e2915",
+            "",
             ( "7eeeab7c4e50fb799b418ee5e3197ff6"
             + "bf15d43a14c34389b59dd1a7b1b85b4a"
             + "e90438aca634bea45e3a2695f1270f07"
@@ -146,7 +146,6 @@ public class Ed448Test
     public void testEd448Vector6()
     {
         checkEd448Vector(
-            "",
             ( "7ef4e84544236752fbb56b8f31a23a10"
             + "e42814f5f55ca037cdcc11c64c9a3b29"
             + "49c1bb60700314611732a6c2fea98eeb"
@@ -156,6 +155,7 @@ public class Ed448Test
             + "5c5dc59e176b4d9f381ca0938e13c6c0"
             + "7b174be65dfa578e80"),
             "64a65f3cdedcdd66811e2915e7",
+            "",
             ( "6a12066f55331b6c22acd5d5bfc5d712"
             + "28fbda80ae8dec26bdd306743c5027cb"
             + "4890810c162c027468675ecf645a8317"
@@ -177,7 +177,6 @@ public class Ed448Test
             "12182da3005835461113718d1a5ef944";
 
         checkEd448Vector(
-            "",
             ( "d65df341ad13e008567688baedda8e9d"
             + "cdc17dc024974ea5b4227b6530e339bf"
             + "f21f99e68ca6968f3cca6dfe0fb9f4fa"
@@ -187,6 +186,7 @@ public class Ed448Test
             + "39d6808bf4a1dfbd261b099bb03b3fb5"
             + "0906cb28bd8a081f00"),
             m,
+            "",
             ( "554bc2480860b49eab8532d2a533b7d5"
             + "78ef473eeb58c98bb2d0e1ce488a98b1"
             + "8dfde9b9b90775e67f47d4a1c3482058"
@@ -220,7 +220,6 @@ public class Ed448Test
             "a69ccce38fabdf86f3bef6044819de11";
 
         checkEd448Vector(
-            "",
             ( "2ec5fe3c17045abdb136a5e6a913e32a"
             + "b75ae68b53d2fc149b77e504132d3756"
             + "9b7e766ba74a19bd6162343a21c8590a"
@@ -230,6 +229,7 @@ public class Ed448Test
             + "fe12402b08ae65798a3d81e22e9ec80e"
             + "7690862ef3d4ed3a00"),
             m,
+            "",
             ( "c650ddbb0601c19ca11439e1640dd931"
             + "f43c518ea5bea70d3dcde5f4191fe53f"
             + "00cf966546b72bcc7d58be2b9badef28"
@@ -311,7 +311,6 @@ public class Ed448Test
             "b997cafc5abf9dd102e62ff66cba87";
 
         checkEd448Vector(
-            "",
             ( "872d093780f5d3730df7c212664b37b8"
             + "a0f24f56810daa8382cd4fa3f77634ec"
             + "44dc54f1c2ed9bea86fafb7632d8be19"
@@ -321,6 +320,7 @@ public class Ed448Test
             + "a08effb81c5d685c0c56f64eecaef8cd"
             + "f11cc38737838cf400"),
             m,
+            "",
             ( "e301345a41a39a4d72fff8df69c98075"
             + "a0cc082b802fc9b2b6bc503f926b65bd"
             + "df7f4c8f1cb49f6396afc8a70abe6d8a"
@@ -332,30 +332,30 @@ public class Ed448Test
             "Ed448 Vector #1023");
     }
 
-    private static void checkEd448Vector(String sCTX, String sSK, String sPK, String sM, String sSig, String text)
+    private static void checkEd448Vector(String sSK, String sPK, String sM, String sCTX, String sSig, String text)
     {
-        byte[] ctx = Hex.decode(sCTX);
         byte[] sk = Hex.decode(sSK);
 
         byte[] pk = Hex.decode(sPK);
         byte[] pkGen = new byte[Ed448.PUBLIC_KEY_SIZE];
-        Ed448.generatePublicKey(ctx, sk, 0, pkGen, 0);
+        Ed448.generatePublicKey(sk, 0, pkGen, 0);
         assertArrayEquals(text, pk, pkGen);
 
         byte[] m = Hex.decode(sM);
+        byte[] ctx = Hex.decode(sCTX);
         byte[] sig = Hex.decode(sSig);
         byte[] sigGen = new byte[Ed448.SIGNATURE_SIZE];
-        Ed448.sign(ctx, sk, 0, m, 0, m.length, sigGen, 0);
+        Ed448.sign(sk, 0, ctx, m, 0, m.length, sigGen, 0);
         assertArrayEquals(text, sig, sigGen);
 
-        Ed448.sign(ctx, sk, 0, pk, 0, m, 0, m.length, sigGen, 0);
+        Ed448.sign(sk, 0, pk, 0, ctx, m, 0, m.length, sigGen, 0);
         assertArrayEquals(text, sig, sigGen);
 
-        boolean verified = Ed448.verify(ctx, sig, 0, pk, 0, m, 0, m.length);
+        boolean verified = Ed448.verify(sig, 0, pk, 0, ctx, m, 0, m.length);
         assertTrue(text, verified);
 
         sig[Ed448.SIGNATURE_SIZE - 1] ^= 0x80;
-        verified = Ed448.verify(ctx, sig, 0, pk, 0, m, 0, m.length);
+        verified = Ed448.verify(sig, 0, pk, 0, ctx, m, 0, m.length);
         assertFalse(text, verified);
     }
 }
