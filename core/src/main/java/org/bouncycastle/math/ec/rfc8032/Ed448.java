@@ -152,20 +152,13 @@ public abstract class Ed448
         r[rOff + POINT_BYTES - 1] = (byte)((x[0] & 1) << 7);
     }
 
-    public static void generatePublicKey(byte[] ctx, byte[] sk, int skOff, byte[] pk, int pkOff)
+    public static void generatePublicKey(byte[] sk, int skOff, byte[] pk, int pkOff)
     {
         // TODO Not currently constant-time (see use of ...Var methods)
-
-        if (!checkContext(ctx))
-        {
-            throw new IllegalArgumentException("ctx");
-        }
 
         SHAKEDigest d = new SHAKEDigest(256);
         byte[] h = new byte[SCALAR_BYTES * 2];
 
-//        byte phflag = 0x00;
-//        dom4(d, phflag, ctx);
         d.update(sk, skOff, SECRET_KEY_SIZE);
         d.doFinal(h, 0, h.length);
 
@@ -343,7 +336,7 @@ public abstract class Ed448
         encodePoint(p, r, rOff);
     }
 
-    public static void sign(byte[] ctx, byte[] sk, int skOff, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
+    public static void sign(byte[] sk, int skOff, byte[] ctx, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
     {
         // TODO Not currently constant-time (see use of ...Var methods)
 
@@ -389,7 +382,7 @@ public abstract class Ed448
         System.arraycopy(S, 0, sig, sigOff + POINT_BYTES, SCALAR_BYTES);
     }
 
-    public static void sign(byte[] ctx, byte[] sk, int skOff, byte[] pk, int pkOff, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
+    public static void sign(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
     {
         // TODO Not currently constant-time (see use of ...Var methods)
 
@@ -432,7 +425,7 @@ public abstract class Ed448
         System.arraycopy(S, 0, sig, sigOff + POINT_BYTES, SCALAR_BYTES);
     }
 
-    public static boolean verify(byte[] ctx, byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] m, int mOff, int mLen)
+    public static boolean verify(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen)
     {
         // TODO Not currently constant-time (see use of ...Var methods)
 
@@ -440,8 +433,6 @@ public abstract class Ed448
         {
             throw new IllegalArgumentException("ctx");
         }
-
-        byte phflag = 0x00;
 
         PointXYZ pA = new PointXYZ();
         if (!decodePointVar(pk, pkOff, pA))
@@ -462,6 +453,8 @@ public abstract class Ed448
         {
             return false;
         }
+
+        byte phflag = 0x00;
 
         SHAKEDigest d = new SHAKEDigest(256);
         byte[] h = new byte[SCALAR_BYTES * 2];
