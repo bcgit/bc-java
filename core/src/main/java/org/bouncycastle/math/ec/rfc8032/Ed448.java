@@ -1,7 +1,5 @@
 package org.bouncycastle.math.ec.rfc8032;
 
-import java.math.BigInteger;
-
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.math.ec.rfc7748.X448Field;
 import org.bouncycastle.math.raw.Nat;
@@ -24,27 +22,28 @@ public abstract class Ed448
 
     private static final byte[] DOM4_PREFIX = Strings.toByteArray("SigEd448");
 
-    private static final BigInteger P = BigInteger.ONE.shiftLeft(448).subtract(BigInteger.ONE.shiftLeft(224)).subtract(BigInteger.ONE);
-    private static final BigInteger L = BigInteger.ONE.shiftLeft(446).subtract(
-        new BigInteger("8335DC163BB124B65129C96FDE933D8D723A70AADC873D6D54A7BB0D", 16));
+    private static final int[] P = new int[] { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+    private static final int[] L = new int[] { 0xAB5844F3, 0x2378C292, 0x8DC58F55, 0x216CC272, 0xAED63690, 0xC44EDB49, 0x7CCA23E9,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x3FFFFFFF };
 
-    private static final int LL_0 = 0x04A7BB0D;
-    private static final int LL_1 = 0x0873D6D5;
-    private static final int LL_2 = 0x0A70AADC;
-    private static final int LL_3 = 0x03D8D723;
-    private static final int LL_4 = 0x096FDE93;
-    private static final int LL_5 = 0x0B65129C;
-    private static final int LL_6 = 0x063BB124;
-    private static final int LL_7 = 0x08335DC1;
+    private static final int L_0 = 0x04A7BB0D;
+    private static final int L_1 = 0x0873D6D5;
+    private static final int L_2 = 0x0A70AADC;
+    private static final int L_3 = 0x03D8D723;
+    private static final int L_4 = 0x096FDE93;
+    private static final int L_5 = 0x0B65129C;
+    private static final int L_6 = 0x063BB124;
+    private static final int L_7 = 0x08335DC1;
 
-    private static final int LL4_0 = 0x029EEC34;
-    private static final int LL4_1 = 0x01CF5B55;
-    private static final int LL4_2 = 0x09C2AB72;
-    private static final int LL4_3 = 0x0F635C8E;
-    private static final int LL4_4 = 0x05BF7A4C;
-    private static final int LL4_5 = 0x0D944A72;
-    private static final int LL4_6 = 0x08EEC492;
-    private static final int LL4_7 = 0x20CD7705;    // NOTE: 30 bits
+    private static final int L4_0 = 0x029EEC34;
+    private static final int L4_1 = 0x01CF5B55;
+    private static final int L4_2 = 0x09C2AB72;
+    private static final int L4_3 = 0x0F635C8E;
+    private static final int L4_4 = 0x05BF7A4C;
+    private static final int L4_5 = 0x0D944A72;
+    private static final int L4_6 = 0x08EEC492;
+    private static final int L4_7 = 0x20CD7705;    // NOTE: 30 bits
 
     private static final int[] B_x = new int[] { 0x070CC05E, 0x026A82BC, 0x00938E26, 0x080E18B0, 0x0511433B, 0x0F72AB66, 0x0412AE1A,
         0x0A3D3A46, 0x0A6DE324, 0x00F1767E, 0x04657047, 0x036DA9E1, 0x05A622BF, 0x0ED221D1, 0x066BED0D, 0x04F1970C };
@@ -57,11 +56,6 @@ public abstract class Ed448
         int[] x = X448Field.create();
         int[] y = X448Field.create();
         int[] z = X448Field.create();
-    }
-
-    private static BigInteger big(byte[] bs)
-    {
-        return new BigInteger(1, Arrays.reverse(bs));
     }
 
     private static byte[] calculateS(byte[] r, byte[] k, byte[] s)
@@ -80,19 +74,33 @@ public abstract class Ed448
         return reduceScalar(result);
     }
 
-    private static boolean checkContext(byte[] ctx)
+    private static boolean checkContextVar(byte[] ctx)
     {
         return ctx != null && ctx.length < 256;
     }
 
-    private static boolean checkFieldElement(byte[] fe)
+    private static boolean checkFieldElementVar(byte[] fe)
     {
-        return big(fe).compareTo(P) < 0;
+        if (fe[POINT_BYTES - 1] != 0x00)
+        {
+            return false;
+        }
+
+        int[] t = new int[14];
+        decode32(fe, 0, t, 0, 14);
+        return !Nat.gte(14, t, P);
     }
 
-    private static boolean checkScalar(byte[] s)
+    private static boolean checkScalarVar(byte[] s)
     {
-        return big(s).compareTo(L) < 0;
+        if (s[SCALAR_BYTES - 1] != 0x00)
+        {
+            return false;
+        }
+
+        int[] n = new int[SCALAR_INTS];
+        decodeScalar(s, 0, n);
+        return !Nat.gte(SCALAR_INTS, n, L);
     }
 
     private static int decode16(byte[] bs, int off)
@@ -119,13 +127,21 @@ public abstract class Ed448
         return n;
     }
 
+    private static void decode32(byte[] bs, int bsOff, int[] n, int nOff, int nLen)
+    {
+        for (int i = 0; i < nLen; ++i)
+        {
+            n[nOff + i] = decode32(bs, bsOff + i * 4);
+        }
+    }
+
     private static boolean decodePointVar(byte[] p, int pOff, PointXYZ r)
     {
         byte[] py = Arrays.copyOfRange(p, pOff, pOff + POINT_BYTES);
         int x_0 = (py[POINT_BYTES - 1] & 0x80) >>> 7;
         py[POINT_BYTES - 1] &= 0x7F;
 
-        if (!checkFieldElement(py))
+        if (!checkFieldElementVar(py))
         {
             return false;
         }
@@ -169,10 +185,7 @@ public abstract class Ed448
     {
 //        assert k[kOff + SCALAR_BYTES - 1] == 0x00;
 
-        for (int i = 0; i < SCALAR_INTS; ++i)
-        {
-            n[i] = decode32(k, kOff + i * 4);
-        }
+        decode32(k, kOff, n, 0, SCALAR_INTS);
     }
 
     private static void dom4(SHAKEDigest d, byte x, byte[] y)
@@ -334,7 +347,7 @@ public abstract class Ed448
         X448Field.one(p.z);
     }
 
-    public static void precompute()
+    public synchronized static void precompute()
     {
     }
 
@@ -343,8 +356,8 @@ public abstract class Ed448
         System.arraycopy(n, nOff, r, 0, SCALAR_BYTES);
 
         r[0] &= 0xFC;
-        r[SCALAR_BYTES - 1] &= 0x00;
         r[SCALAR_BYTES - 2] |= 0x80;
+        r[SCALAR_BYTES - 1] &= 0x00;
     }
 
     private static byte[] reduceScalar(byte[] n)
@@ -384,184 +397,184 @@ public abstract class Ed448
         long x32 =  decode16(n, 112)       & M32L;  // x32:16/00
 
 //        x32 += (x31 >>> 28); x31 &= M28L;
-        x16 += x32 * LL4_0;                         // x16:44/00
-        x17 += x32 * LL4_1;                         // x17:44/00
-        x18 += x32 * LL4_2;                         // x18:44/00
-        x19 += x32 * LL4_3;                         // x19:44/00
-        x20 += x32 * LL4_4;                         // x20:44/00
-        x21 += x32 * LL4_5;                         // x21:44/00
-        x22 += x32 * LL4_6;                         // x22:44/00
-        x23 += x32 * LL4_7;                         // x23:46/00
+        x16 += x32 * L4_0;                          // x16:44/00
+        x17 += x32 * L4_1;                          // x17:44/00
+        x18 += x32 * L4_2;                          // x18:44/00
+        x19 += x32 * L4_3;                          // x19:44/00
+        x20 += x32 * L4_4;                          // x20:44/00
+        x21 += x32 * L4_5;                          // x21:44/00
+        x22 += x32 * L4_6;                          // x22:44/00
+        x23 += x32 * L4_7;                          // x23:46/00
 
         x31 += (x30 >>> 28); x30 &= M28L;           // x31:28/00, x30:28/00
-        x15 += x31 * LL4_0;                         // x15:56/28
-        x16 += x31 * LL4_1;                         // x16:56/44
-        x17 += x31 * LL4_2;                         // x17:56/44
-        x18 += x31 * LL4_3;                         // x18:56/44
-        x19 += x31 * LL4_4;                         // x19:56/44
-        x20 += x31 * LL4_5;                         // x20:56/44
-        x21 += x31 * LL4_6;                         // x21:56/44
-        x22 += x31 * LL4_7;                         // x22:58/44
+        x15 += x31 * L4_0;                          // x15:56/28
+        x16 += x31 * L4_1;                          // x16:56/44
+        x17 += x31 * L4_2;                          // x17:56/44
+        x18 += x31 * L4_3;                          // x18:56/44
+        x19 += x31 * L4_4;                          // x19:56/44
+        x20 += x31 * L4_5;                          // x20:56/44
+        x21 += x31 * L4_6;                          // x21:56/44
+        x22 += x31 * L4_7;                          // x22:58/44
 
 //        x30 += (x29 >>> 28); x29 &= M28L;
-        x14 += x30 * LL4_0;                         // x14:56/32
-        x15 += x30 * LL4_1;                         // x15:57/28
-        x16 += x30 * LL4_2;                         // x16:57/44
-        x17 += x30 * LL4_3;                         // x17:57/44
-        x18 += x30 * LL4_4;                         // x18:57/44
-        x19 += x30 * LL4_5;                         // x19:57/44
-        x20 += x30 * LL4_6;                         // x20:57/44
-        x21 += x30 * LL4_7;                         // x21:58/57
+        x14 += x30 * L4_0;                          // x14:56/32
+        x15 += x30 * L4_1;                          // x15:57/28
+        x16 += x30 * L4_2;                          // x16:57/44
+        x17 += x30 * L4_3;                          // x17:57/44
+        x18 += x30 * L4_4;                          // x18:57/44
+        x19 += x30 * L4_5;                          // x19:57/44
+        x20 += x30 * L4_6;                          // x20:57/44
+        x21 += x30 * L4_7;                          // x21:58/57
 
         x29 += (x28 >>> 28); x28 &= M28L;           // x29:28/00, x28:28/00
-        x13 += x29 * LL4_0;                         // x13:56/28
-        x14 += x29 * LL4_1;                         // x14:57/32
-        x15 += x29 * LL4_2;                         // x15:58/00
-        x16 += x29 * LL4_3;                         // x16:58/00
-        x17 += x29 * LL4_4;                         // x17:58/00
-        x18 += x29 * LL4_5;                         // x18:58/00
-        x19 += x29 * LL4_6;                         // x19:58/00
-        x20 += x29 * LL4_7;                         // x20:59/00
+        x13 += x29 * L4_0;                          // x13:56/28
+        x14 += x29 * L4_1;                          // x14:57/32
+        x15 += x29 * L4_2;                          // x15:58/00
+        x16 += x29 * L4_3;                          // x16:58/00
+        x17 += x29 * L4_4;                          // x17:58/00
+        x18 += x29 * L4_5;                          // x18:58/00
+        x19 += x29 * L4_6;                          // x19:58/00
+        x20 += x29 * L4_7;                          // x20:59/00
 
 //        x28 += (x27 >>> 28); x27 &= M28L;
-        x12 += x28 * LL4_0;                         // x12:56/32
-        x13 += x28 * LL4_1;                         // x13:57/28
-        x14 += x28 * LL4_2;                         // x14:58/00
-        x15 += x28 * LL4_3;                         // x15:58/56
-        x16 += x28 * LL4_4;                         // x16:58/56
-        x17 += x28 * LL4_5;                         // x17:58/56
-        x18 += x28 * LL4_6;                         // x18:58/56
-        x19 += x28 * LL4_7;                         // x19:59/00
+        x12 += x28 * L4_0;                          // x12:56/32
+        x13 += x28 * L4_1;                          // x13:57/28
+        x14 += x28 * L4_2;                          // x14:58/00
+        x15 += x28 * L4_3;                          // x15:58/56
+        x16 += x28 * L4_4;                          // x16:58/56
+        x17 += x28 * L4_5;                          // x17:58/56
+        x18 += x28 * L4_6;                          // x18:58/56
+        x19 += x28 * L4_7;                          // x19:59/00
 
         x27 += (x26 >>> 28); x26 &= M28L;           // x27:28/00, x26:28/00
-        x11 += x27 * LL4_0;                         // x11:56/28
-        x12 += x27 * LL4_1;                         // x12:57/32
-        x13 += x27 * LL4_2;                         // x13:58/00
-        x14 += x27 * LL4_3;                         // x14:58/56
-        x15 += x27 * LL4_4;                         // x15:58/57
-        x16 += x27 * LL4_5;                         // x16:58/57
-        x17 += x27 * LL4_6;                         // x17:58/57
-        x18 += x27 * LL4_7;                         // x18:59/56
+        x11 += x27 * L4_0;                          // x11:56/28
+        x12 += x27 * L4_1;                          // x12:57/32
+        x13 += x27 * L4_2;                          // x13:58/00
+        x14 += x27 * L4_3;                          // x14:58/56
+        x15 += x27 * L4_4;                          // x15:58/57
+        x16 += x27 * L4_5;                          // x16:58/57
+        x17 += x27 * L4_6;                          // x17:58/57
+        x18 += x27 * L4_7;                          // x18:59/56
 
 //        x26 += (x25 >>> 28); x25 &= M28L;
-        x10 += x26 * LL4_0;                         // x10:56/32
-        x11 += x26 * LL4_1;                         // x11:57/28
-        x12 += x26 * LL4_2;                         // x12:58/00
-        x13 += x26 * LL4_3;                         // x13:58/56
-        x14 += x26 * LL4_4;                         // x14:58/57
-        x15 += x26 * LL4_5;                         // x15:59/00
-        x16 += x26 * LL4_6;                         // x16:59/00
-        x17 += x26 * LL4_7;                         // x17:59/57
+        x10 += x26 * L4_0;                          // x10:56/32
+        x11 += x26 * L4_1;                          // x11:57/28
+        x12 += x26 * L4_2;                          // x12:58/00
+        x13 += x26 * L4_3;                          // x13:58/56
+        x14 += x26 * L4_4;                          // x14:58/57
+        x15 += x26 * L4_5;                          // x15:59/00
+        x16 += x26 * L4_6;                          // x16:59/00
+        x17 += x26 * L4_7;                          // x17:59/57
 
         x25 += (x24 >>> 28); x24 &= M28L;           // x25:28/00, x24:28/00
-        x09 += x25 * LL4_0;                         // x09:56/28
-        x10 += x25 * LL4_1;                         // x10:57/32
-        x11 += x25 * LL4_2;                         // x11:58/00
-        x12 += x25 * LL4_3;                         // x12:58/56
-        x13 += x25 * LL4_4;                         // x13:58/57
-        x14 += x25 * LL4_5;                         // x14:59/00
-        x15 += x25 * LL4_6;                         // x15:59/56
-        x16 += x25 * LL4_7;                         // x16:59/58
+        x09 += x25 * L4_0;                          // x09:56/28
+        x10 += x25 * L4_1;                          // x10:57/32
+        x11 += x25 * L4_2;                          // x11:58/00
+        x12 += x25 * L4_3;                          // x12:58/56
+        x13 += x25 * L4_4;                          // x13:58/57
+        x14 += x25 * L4_5;                          // x14:59/00
+        x15 += x25 * L4_6;                          // x15:59/56
+        x16 += x25 * L4_7;                          // x16:59/58
 
         x21 += (x20 >>> 28); x20 &= M28L;           // x21:59/00, x20:28/00
         x22 += (x21 >>> 28); x21 &= M28L;           // x22:58/45, x21:28/00
         x23 += (x22 >>> 28); x22 &= M28L;           // x23:46/31, x22:28/00
         x24 += (x23 >>> 28); x23 &= M28L;           // x24:28/19, x23:28/00
 
-        x08 += x24 * LL4_0;                         // x08:56/48
-        x09 += x24 * LL4_1;                         // x09:57/48
-        x10 += x24 * LL4_2;                         // x10:58/00
-        x11 += x24 * LL4_3;                         // x11:58/57
-        x12 += x24 * LL4_4;                         // x12:59/00
-        x13 += x24 * LL4_5;                         // x13:59/00
-        x14 += x24 * LL4_6;                         // x14:59/57
-        x15 += x24 * LL4_7;                         // x15:60/00
+        x08 += x24 * L4_0;                          // x08:56/48
+        x09 += x24 * L4_1;                          // x09:57/48
+        x10 += x24 * L4_2;                          // x10:58/00
+        x11 += x24 * L4_3;                          // x11:58/57
+        x12 += x24 * L4_4;                          // x12:59/00
+        x13 += x24 * L4_5;                          // x13:59/00
+        x14 += x24 * L4_6;                          // x14:59/57
+        x15 += x24 * L4_7;                          // x15:60/00
 
-        x07 += x23 * LL4_0;                         // x07:56/28
-        x08 += x23 * LL4_1;                         // x08:57/48
-        x09 += x23 * LL4_2;                         // x09:58/00
-        x10 += x23 * LL4_3;                         // x10:58/56
-        x11 += x23 * LL4_4;                         // x11:59/00
-        x12 += x23 * LL4_5;                         // x12:59/56
-        x13 += x23 * LL4_6;                         // x13:59/56
-        x14 += x23 * LL4_7;                         // x14:60/00
+        x07 += x23 * L4_0;                          // x07:56/28
+        x08 += x23 * L4_1;                          // x08:57/48
+        x09 += x23 * L4_2;                          // x09:58/00
+        x10 += x23 * L4_3;                          // x10:58/56
+        x11 += x23 * L4_4;                          // x11:59/00
+        x12 += x23 * L4_5;                          // x12:59/56
+        x13 += x23 * L4_6;                          // x13:59/56
+        x14 += x23 * L4_7;                          // x14:60/00
 
-        x06 += x22 * LL4_0;                         // x06:56/32
-        x07 += x22 * LL4_1;                         // x07:57/28
-        x08 += x22 * LL4_2;                         // x08:58/00
-        x09 += x22 * LL4_3;                         // x09:58/56
-        x10 += x22 * LL4_4;                         // x10:58/57
-        x11 += x22 * LL4_5;                         // x11:59/56
-        x12 += x22 * LL4_6;                         // x12:59/57
-        x13 += x22 * LL4_7;                         // x13:60/00
+        x06 += x22 * L4_0;                          // x06:56/32
+        x07 += x22 * L4_1;                          // x07:57/28
+        x08 += x22 * L4_2;                          // x08:58/00
+        x09 += x22 * L4_3;                          // x09:58/56
+        x10 += x22 * L4_4;                          // x10:58/57
+        x11 += x22 * L4_5;                          // x11:59/56
+        x12 += x22 * L4_6;                          // x12:59/57
+        x13 += x22 * L4_7;                          // x13:60/00
 
         x18 += (x17 >>> 28); x17 &= M28L;           // x18:59/57, x17:28/00
         x19 += (x18 >>> 28); x18 &= M28L;           // x19:59/32, x18:28/00
         x20 += (x19 >>> 28); x19 &= M28L;           // x20:31/29, x19:28/00
         x21 += (x20 >>> 28); x20 &= M28L;           // x21:28/04, x20:28/00
 
-        x05 += x21 * LL4_0;                         // x05:56/33
-        x06 += x21 * LL4_1;                         // x06:57/33
-        x07 += x21 * LL4_2;                         // x07:58/00
-        x08 += x21 * LL4_3;                         // x08:58/57
-        x09 += x21 * LL4_4;                         // x09:59/00
-        x10 += x21 * LL4_5;                         // x10:59/00
-        x11 += x21 * LL4_6;                         // x11:59/58
-        x12 += x21 * LL4_7;                         // x12:60/00
+        x05 += x21 * L4_0;                          // x05:56/33
+        x06 += x21 * L4_1;                          // x06:57/33
+        x07 += x21 * L4_2;                          // x07:58/00
+        x08 += x21 * L4_3;                          // x08:58/57
+        x09 += x21 * L4_4;                          // x09:59/00
+        x10 += x21 * L4_5;                          // x10:59/00
+        x11 += x21 * L4_6;                          // x11:59/58
+        x12 += x21 * L4_7;                          // x12:60/00
 
-        x04 += x20 * LL4_0;                         // x04:56/32
-        x05 += x20 * LL4_1;                         // x05:57/33
-        x06 += x20 * LL4_2;                         // x06:58/00
-        x07 += x20 * LL4_3;                         // x07:58/56
-        x08 += x20 * LL4_4;                         // x08:59/00
-        x09 += x20 * LL4_5;                         // x09:59/56
-        x10 += x20 * LL4_6;                         // x10:59/56
-        x11 += x20 * LL4_7;                         // x11:60/00
+        x04 += x20 * L4_0;                          // x04:56/32
+        x05 += x20 * L4_1;                          // x05:57/33
+        x06 += x20 * L4_2;                          // x06:58/00
+        x07 += x20 * L4_3;                          // x07:58/56
+        x08 += x20 * L4_4;                          // x08:59/00
+        x09 += x20 * L4_5;                          // x09:59/56
+        x10 += x20 * L4_6;                          // x10:59/56
+        x11 += x20 * L4_7;                          // x11:60/00
 
-        x03 += x19 * LL4_0;                         // x03:56/28
-        x04 += x19 * LL4_1;                         // x04:57/32
-        x05 += x19 * LL4_2;                         // x05:58/00
-        x06 += x19 * LL4_3;                         // x06:58/56
-        x07 += x19 * LL4_4;                         // x07:58/57
-        x08 += x19 * LL4_5;                         // x08:59/56
-        x09 += x19 * LL4_6;                         // x09:59/57
-        x10 += x19 * LL4_7;                         // x10:60/00
+        x03 += x19 * L4_0;                          // x03:56/28
+        x04 += x19 * L4_1;                          // x04:57/32
+        x05 += x19 * L4_2;                          // x05:58/00
+        x06 += x19 * L4_3;                          // x06:58/56
+        x07 += x19 * L4_4;                          // x07:58/57
+        x08 += x19 * L4_5;                          // x08:59/56
+        x09 += x19 * L4_6;                          // x09:59/57
+        x10 += x19 * L4_7;                          // x10:60/00
 
         x15 += (x14 >>> 28); x14 &= M28L;           // x15:60/32, x14:28/00
         x16 += (x15 >>> 28); x15 &= M28L;           // x16:60/00, x15:28/00
         x17 += (x16 >>> 28); x16 &= M28L;           // x17:32/28, x16:28/00
         x18 += (x17 >>> 28); x17 &= M28L;           // x18:28/05, x17:28/00
 
-        x02 += x18 * LL4_0;                         // x02:56/34
-        x03 += x18 * LL4_1;                         // x03:57/34
-        x04 += x18 * LL4_2;                         // x04:58/00
-        x05 += x18 * LL4_3;                         // x05:58/57
-        x06 += x18 * LL4_4;                         // x06:59/00
-        x07 += x18 * LL4_5;                         // x07:59/00
-        x08 += x18 * LL4_6;                         // x08:59/58
-        x09 += x18 * LL4_7;                         // x09:60/00
+        x02 += x18 * L4_0;                          // x02:56/34
+        x03 += x18 * L4_1;                          // x03:57/34
+        x04 += x18 * L4_2;                          // x04:58/00
+        x05 += x18 * L4_3;                          // x05:58/57
+        x06 += x18 * L4_4;                          // x06:59/00
+        x07 += x18 * L4_5;                          // x07:59/00
+        x08 += x18 * L4_6;                          // x08:59/58
+        x09 += x18 * L4_7;                          // x09:60/00
 
-        x01 += x17 * LL4_0;                         // x01:56/28
-        x02 += x17 * LL4_1;                         // x02:57/34
-        x03 += x17 * LL4_2;                         // x03:58/00
-        x04 += x17 * LL4_3;                         // x04:58/56
-        x05 += x17 * LL4_4;                         // x05:59/00
-        x06 += x17 * LL4_5;                         // x06:59/56
-        x07 += x17 * LL4_6;                         // x07:59/56
-        x08 += x17 * LL4_7;                         // x08:60/00
+        x01 += x17 * L4_0;                          // x01:56/28
+        x02 += x17 * L4_1;                          // x02:57/34
+        x03 += x17 * L4_2;                          // x03:58/00
+        x04 += x17 * L4_3;                          // x04:58/56
+        x05 += x17 * L4_4;                          // x05:59/00
+        x06 += x17 * L4_5;                          // x06:59/56
+        x07 += x17 * L4_6;                          // x07:59/56
+        x08 += x17 * L4_7;                          // x08:60/00
 
         x16 *= 4;
         x16 += (x15 >>> 26); x15 &= M26L;
         x16 += 1;                                   // x16:30/01
 
-        x00 += x16 * LL_0;
-        x01 += x16 * LL_1;
-        x02 += x16 * LL_2;
-        x03 += x16 * LL_3;
-        x04 += x16 * LL_4;
-        x05 += x16 * LL_5;
-        x06 += x16 * LL_6;
-        x07 += x16 * LL_7;
+        x00 += x16 * L_0;
+        x01 += x16 * L_1;
+        x02 += x16 * L_2;
+        x03 += x16 * L_3;
+        x04 += x16 * L_4;
+        x05 += x16 * L_5;
+        x06 += x16 * L_6;
+        x07 += x16 * L_7;
 
         x01 += (x00 >>> 28); x00 &= M28L;
         x02 += (x01 >>> 28); x01 &= M28L;
@@ -584,14 +597,14 @@ public abstract class Ed448
 
 //        assert x16 == 0L || x16 == -1L;
 
-        x00 -= x16 & LL_0;
-        x01 -= x16 & LL_1;
-        x02 -= x16 & LL_2;
-        x03 -= x16 & LL_3;
-        x04 -= x16 & LL_4;
-        x05 -= x16 & LL_5;
-        x06 -= x16 & LL_6;
-        x07 -= x16 & LL_7;
+        x00 -= x16 & L_0;
+        x01 -= x16 & L_1;
+        x02 -= x16 & L_2;
+        x03 -= x16 & L_3;
+        x04 -= x16 & L_4;
+        x05 -= x16 & L_5;
+        x06 -= x16 & L_6;
+        x07 -= x16 & L_7;
 
         x01 += (x00 >> 28); x00 &= M28L;
         x02 += (x01 >> 28); x01 &= M28L;
@@ -679,7 +692,7 @@ public abstract class Ed448
     {
         // TODO Not currently constant-time (see use of ...Var methods)
 
-        if (!checkContext(ctx))
+        if (!checkContextVar(ctx))
         {
             throw new IllegalArgumentException("ctx");
         }
@@ -725,7 +738,7 @@ public abstract class Ed448
     {
         // TODO Not currently constant-time (see use of ...Var methods)
 
-        if (!checkContext(ctx))
+        if (!checkContextVar(ctx))
         {
             throw new IllegalArgumentException("ctx");
         }
@@ -768,7 +781,7 @@ public abstract class Ed448
     {
         // TODO Not currently constant-time (see use of ...Var methods)
 
-        if (!checkContext(ctx))
+        if (!checkContextVar(ctx))
         {
             throw new IllegalArgumentException("ctx");
         }
@@ -782,7 +795,7 @@ public abstract class Ed448
         byte[] R = Arrays.copyOfRange(sig, sigOff, sigOff + POINT_BYTES);
         byte[] S = Arrays.copyOfRange(sig, sigOff + POINT_BYTES, sigOff + SIGNATURE_SIZE);
 
-        if (!checkScalar(S))
+        if (!checkScalarVar(S))
         {
             return false;
         }
@@ -809,12 +822,14 @@ public abstract class Ed448
         byte[] lhs = new byte[POINT_BYTES];
         scalarMultBaseEncodedVar(S, lhs, 0);
 
-        byte[] rhs = new byte[POINT_BYTES];
         int[] n = new int[SCALAR_INTS];
-        PointXYZ p = new PointXYZ();
         decodeScalar(k, 0, n);
+
+        PointXYZ p = new PointXYZ();
         scalarMultVar(n, pA, p);
         pointAdd(pR, p);
+
+        byte[] rhs = new byte[POINT_BYTES];
         encodePoint(p, rhs, 0);
 
         return Arrays.areEqual(lhs, rhs);

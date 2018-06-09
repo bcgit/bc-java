@@ -1,7 +1,5 @@
 package org.bouncycastle.math.ec.rfc8032;
 
-import java.math.BigInteger;
-
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.math.ec.rfc7748.X25519Field;
 import org.bouncycastle.math.raw.Nat256;
@@ -22,8 +20,8 @@ public abstract class Ed25519
 
 //    private static final byte[] DOM2_PREFIX = Strings.toByteArray("SigEd25519 no Ed25519 collisions");
 
-    private static final BigInteger P = BigInteger.ONE.shiftLeft(255).subtract(BigInteger.valueOf(19));
-    private static final BigInteger L = BigInteger.ONE.shiftLeft(252).add(new BigInteger("14DEF9DEA2F79CD65812631A5CF5D3ED", 16));
+    private static final int[] P = new int[]{ 0xFFFFFFED, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x7FFFFFFF };
+    private static final int[] L = new int[]{ 0x5CF5D3ED, 0x5812631A, 0xA2F79CD6, 0x14DEF9DE, 0x00000000, 0x00000000, 0x00000000, 0x10000000 };
 
     private static final int L0 = 0xFCF5D3ED;
     private static final int L1 = 0x012631A6;
@@ -50,11 +48,6 @@ public abstract class Ed25519
         int[] z = X25519Field.create();
     }
 
-    private static BigInteger big(byte[] bs)
-    {
-        return new BigInteger(1, Arrays.reverse(bs));
-    }
-
     private static byte[] calculateS(byte[] r, byte[] k, byte[] s)
     {
         int[] t = new int[SCALAR_INTS * 2];     decodeScalar(r, 0, t);
@@ -71,14 +64,18 @@ public abstract class Ed25519
         return reduceScalar(result);
     }
 
-    private static boolean checkFieldElement(byte[] fe)
+    private static boolean checkFieldElementVar(byte[] fe)
     {
-        return big(fe).compareTo(P) < 0;
+        int[] t = new int[8];
+        decode32(fe, 0, t, 0, 8);
+        return !Nat256.gte(t, P);
     }
 
-    private static boolean checkScalar(byte[] s)
+    private static boolean checkScalarVar(byte[] s)
     {
-        return big(s).compareTo(L) < 0;
+        int[] n = new int[SCALAR_INTS];
+        decodeScalar(s, 0, n);
+        return !Nat256.gte(n, L);
     }
 
     private static int decode24(byte[] bs, int off)
@@ -98,13 +95,21 @@ public abstract class Ed25519
         return n;
     }
 
+    private static void decode32(byte[] bs, int bsOff, int[] n, int nOff, int nLen)
+    {
+        for (int i = 0; i < nLen; ++i)
+        {
+            n[nOff + i] = decode32(bs, bsOff + i * 4);
+        }
+    }
+
     private static boolean decodePointVar(byte[] p, int pOff, PointXYTZ r)
     {
         byte[] py = Arrays.copyOfRange(p, pOff, pOff + POINT_BYTES);
         int x_0 = (py[POINT_BYTES - 1] & 0x80) >>> 7;
         py[POINT_BYTES - 1] &= 0x7F;
 
-        if (!checkFieldElement(py))
+        if (!checkFieldElementVar(py))
         {
             return false;
         }
@@ -141,10 +146,7 @@ public abstract class Ed25519
 
     private static void decodeScalar(byte[] k, int kOff, int[] n)
     {
-        for (int i = 0; i < SCALAR_INTS; ++i)
-        {
-            n[i] = decode32(k, kOff + i * 4);
-        }
+        decode32(k, kOff, n, 0, SCALAR_INTS);
     }
 
     private static void encode24(int n, byte[] bs, int off)
@@ -285,7 +287,7 @@ public abstract class Ed25519
         X25519Field.one(p.z);
     }
 
-    public static void precompute()
+    public synchronized static void precompute()
     {
     }
 
@@ -576,7 +578,7 @@ public abstract class Ed25519
         byte[] R = Arrays.copyOfRange(sig, sigOff, sigOff + POINT_BYTES);
         byte[] S = Arrays.copyOfRange(sig, sigOff + POINT_BYTES, sigOff + SIGNATURE_SIZE);
 
-        if (!checkScalar(S))
+        if (!checkScalarVar(S))
         {
             return false;
         }
@@ -600,12 +602,14 @@ public abstract class Ed25519
         byte[] lhs = new byte[POINT_BYTES];
         scalarMultBaseEncodedVar(S, lhs, 0);
 
-        byte[] rhs = new byte[POINT_BYTES];
         int[] n = new int[SCALAR_INTS];
-        PointXYTZ p = new PointXYTZ();
         decodeScalar(k, 0, n);
+
+        PointXYTZ p = new PointXYTZ();
         scalarMultVar(n, pA, p);
         pointAdd(pR, p);
+
+        byte[] rhs = new byte[POINT_BYTES];
         encodePoint(p, rhs, 0);
 
         return Arrays.areEqual(lhs, rhs);
