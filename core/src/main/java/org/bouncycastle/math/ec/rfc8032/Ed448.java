@@ -4,8 +4,8 @@ import java.math.BigInteger;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.math.ec.rfc7748.X448Field;
+import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
 
 public abstract class Ed448
@@ -66,9 +66,18 @@ public abstract class Ed448
 
     private static byte[] calculateS(byte[] r, byte[] k, byte[] s)
     {
-        BigInteger S = big(k).multiply(big(s)).add(big(r)).mod(L);
+        int[] t = new int[SCALAR_INTS * 2];     decodeScalar(r, 0, t);
+        int[] u = new int[SCALAR_INTS];         decodeScalar(k, 0, u);
+        int[] v = new int[SCALAR_INTS];         decodeScalar(s, 0, v);
 
-        return Arrays.reverse(BigIntegers.asUnsignedByteArray(SCALAR_BYTES, S));
+        Nat.mulAddTo(14, u, v, t);
+
+        byte[] result = new byte[SCALAR_BYTES * 2];
+        for (int i = 0; i < t.length; ++i)
+        {
+            encode32(t[i], result, i * 4);
+        }
+        return reduceScalar(result);
     }
 
     private static boolean checkContext(byte[] ctx)
