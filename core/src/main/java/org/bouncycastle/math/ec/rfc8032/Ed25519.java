@@ -201,6 +201,28 @@ public abstract class Ed25519
         scalarMultBaseEncodedVar(s, pk, pkOff);
     }
 
+    private static void implSignVar(SHA512Digest d, byte[] h, byte[] s, byte[] pk, int pkOff, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
+    {
+        d.update(h, SCALAR_BYTES, SCALAR_BYTES);
+        d.update(m, mOff, mLen);
+        d.doFinal(h, 0);
+
+        byte[] r = reduceScalar(h);
+        byte[] R = new byte[POINT_BYTES];
+        scalarMultBaseEncodedVar(r, R, 0);
+
+        d.update(R, 0, POINT_BYTES);
+        d.update(pk, 0, POINT_BYTES);
+        d.update(m, mOff, mLen);
+        d.doFinal(h, 0);
+
+        byte[] k = reduceScalar(h);
+        byte[] S = calculateS(r, k, s);
+
+        System.arraycopy(R, 0, sig, sigOff, POINT_BYTES);
+        System.arraycopy(S, 0, sig, sigOff + POINT_BYTES, SCALAR_BYTES);
+    }
+
     private static void pointAdd(PointXYTZ p, PointXYTZ r)
     {
         int[] A = X25519Field.create();
@@ -512,24 +534,7 @@ public abstract class Ed25519
         byte[] pk = new byte[POINT_BYTES];
         scalarMultBaseEncodedVar(s, pk, 0);
 
-        d.update(h, SCALAR_BYTES, SCALAR_BYTES);
-        d.update(m, mOff, mLen);
-        d.doFinal(h, 0);
-
-        byte[] r = reduceScalar(h);
-        byte[] R = new byte[POINT_BYTES];
-        scalarMultBaseEncodedVar(r, R, 0);
-
-        d.update(R, 0, POINT_BYTES);
-        d.update(pk, 0, POINT_BYTES);
-        d.update(m, mOff, mLen);
-        d.doFinal(h, 0);
-
-        byte[] k = reduceScalar(h);
-        byte[] S = calculateS(r, k, s);
-
-        System.arraycopy(R, 0, sig, sigOff, POINT_BYTES);
-        System.arraycopy(S, 0, sig, sigOff + POINT_BYTES, SCALAR_BYTES);
+        implSignVar(d, h, s, pk, 0, m, mOff, mLen, sig, sigOff);
     }
 
     public static void sign(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
@@ -545,24 +550,7 @@ public abstract class Ed25519
         byte[] s = new byte[SCALAR_BYTES];
         pruneScalar(h, 0, s);
 
-        d.update(h, SCALAR_BYTES, SCALAR_BYTES);
-        d.update(m, mOff, mLen);
-        d.doFinal(h, 0);
-
-        byte[] r = reduceScalar(h);
-        byte[] R = new byte[POINT_BYTES];
-        scalarMultBaseEncodedVar(r, R, 0);
-
-        d.update(R, 0, POINT_BYTES);
-        d.update(pk, pkOff, POINT_BYTES);
-        d.update(m, mOff, mLen);
-        d.doFinal(h, 0);
-
-        byte[] k = reduceScalar(h);
-        byte[] S = calculateS(r, k, s);
-
-        System.arraycopy(R, 0, sig, sigOff, POINT_BYTES);
-        System.arraycopy(S, 0, sig, sigOff + POINT_BYTES, SCALAR_BYTES);
+        implSignVar(d, h, s, pk, pkOff, m, mOff, mLen, sig, sigOff);
     }
 
     public static boolean verify(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] m, int mOff, int mLen)
