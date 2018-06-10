@@ -248,6 +248,32 @@ public abstract class Ed448
         scalarMultBaseEncodedVar(s, pk, pkOff);
     }
 
+    private static void implSignVar(SHAKEDigest d, byte[] h, byte[] s, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
+    {
+        byte phflag = 0x00;
+
+        dom4(d, phflag, ctx);
+        d.update(h, SCALAR_BYTES, SCALAR_BYTES);
+        d.update(m, mOff, mLen);
+        d.doFinal(h, 0, h.length);
+
+        byte[] r = reduceScalar(h);
+        byte[] R = new byte[POINT_BYTES];
+        scalarMultBaseEncodedVar(r, R, 0);
+
+        dom4(d, phflag, ctx);
+        d.update(R, 0, POINT_BYTES);
+        d.update(pk, pkOff, POINT_BYTES);
+        d.update(m, mOff, mLen);
+        d.doFinal(h, 0, h.length);
+
+        byte[] k = reduceScalar(h);
+        byte[] S = calculateS(r, k, s);
+
+        System.arraycopy(R, 0, sig, sigOff, POINT_BYTES);
+        System.arraycopy(S, 0, sig, sigOff + POINT_BYTES, SCALAR_BYTES);
+    }
+
     private static void pointAdd(PointXYZ p, PointXYZ r)
     {
         int[] A = X448Field.create();
@@ -697,8 +723,6 @@ public abstract class Ed448
             throw new IllegalArgumentException("ctx");
         }
 
-        byte phflag = 0x00;
-
         SHAKEDigest d = new SHAKEDigest(256);
         byte[] h = new byte[SCALAR_BYTES * 2];
 
@@ -712,26 +736,7 @@ public abstract class Ed448
         byte[] pk = new byte[POINT_BYTES];
         scalarMultBaseEncodedVar(s, pk, 0);
 
-        dom4(d, phflag, ctx);
-        d.update(h, SCALAR_BYTES, SCALAR_BYTES);
-        d.update(m, mOff, mLen);
-        d.doFinal(h, 0, h.length);
-
-        byte[] r = reduceScalar(h);
-        byte[] R = new byte[POINT_BYTES];
-        scalarMultBaseEncodedVar(r, R, 0);
-
-        dom4(d, phflag, ctx);
-        d.update(R, 0, POINT_BYTES);
-        d.update(pk, 0, POINT_BYTES);
-        d.update(m, mOff, mLen);
-        d.doFinal(h, 0, h.length);
-
-        byte[] k = reduceScalar(h);
-        byte[] S = calculateS(r, k, s);
-
-        System.arraycopy(R, 0, sig, sigOff, POINT_BYTES);
-        System.arraycopy(S, 0, sig, sigOff + POINT_BYTES, SCALAR_BYTES);
+        implSignVar(d, h, s, pk, 0, ctx, m, mOff, mLen, sig, sigOff);
     }
 
     public static void sign(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
@@ -743,8 +748,6 @@ public abstract class Ed448
             throw new IllegalArgumentException("ctx");
         }
 
-        byte phflag = 0x00;
-
         SHAKEDigest d = new SHAKEDigest(256);
         byte[] h = new byte[SCALAR_BYTES * 2];
 
@@ -755,26 +758,7 @@ public abstract class Ed448
         byte[] s = new byte[SCALAR_BYTES];
         pruneScalar(h, 0, s);
 
-        dom4(d, phflag, ctx);
-        d.update(h, SCALAR_BYTES, SCALAR_BYTES);
-        d.update(m, mOff, mLen);
-        d.doFinal(h, 0, h.length);
-
-        byte[] r = reduceScalar(h);
-        byte[] R = new byte[POINT_BYTES];
-        scalarMultBaseEncodedVar(r, R, 0);
-
-        dom4(d, phflag, ctx);
-        d.update(R, 0, POINT_BYTES);
-        d.update(pk, pkOff, POINT_BYTES);
-        d.update(m, mOff, mLen);
-        d.doFinal(h, 0, h.length);
-
-        byte[] k = reduceScalar(h);
-        byte[] S = calculateS(r, k, s);
-
-        System.arraycopy(R, 0, sig, sigOff, POINT_BYTES);
-        System.arraycopy(S, 0, sig, sigOff + POINT_BYTES, SCALAR_BYTES);
+        implSignVar(d, h, s, pk, pkOff, ctx, m, mOff, mLen, sig, sigOff);
     }
 
     public static boolean verify(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen)
