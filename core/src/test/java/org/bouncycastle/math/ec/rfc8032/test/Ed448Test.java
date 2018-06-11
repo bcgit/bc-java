@@ -1,8 +1,9 @@
 package org.bouncycastle.math.ec.rfc8032.test;
 
-import static org.junit.Assert.assertArrayEquals;
+import java.security.SecureRandom;
 
 import org.bouncycastle.math.ec.rfc8032.Ed448;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 import junit.framework.TestCase;
@@ -10,11 +11,49 @@ import junit.framework.TestCase;
 public class Ed448Test
     extends TestCase
 {
+    private static final SecureRandom RANDOM = new SecureRandom();
+
 //    @BeforeClass
 //    public static void init()
     public void setUp()
     {
         Ed448.precompute();
+    }
+
+//    @Test
+    public void testEd448Consistency()
+    {
+        byte[] sk = new byte[Ed448.SECRET_KEY_SIZE];
+        byte[] pk = new byte[Ed448.PUBLIC_KEY_SIZE];
+        byte[] ctx = new byte[RANDOM.nextInt() & 7];
+        byte[] m = new byte[255];
+        byte[] sig1 = new byte[Ed448.SIGNATURE_SIZE];
+        byte[] sig2 = new byte[Ed448.SIGNATURE_SIZE];
+
+        RANDOM.nextBytes(ctx);
+        RANDOM.nextBytes(m);
+
+        for (int i = 0; i < 10; ++i)
+        {
+            RANDOM.nextBytes(sk);
+            Ed448.generatePublicKey(sk, 0, pk, 0);
+
+            int mLen = RANDOM.nextInt() & 255;
+
+            Ed448.sign(sk, 0, ctx, m, 0, mLen, sig1, 0);
+            Ed448.sign(sk, 0, pk, 0, ctx, m, 0, mLen, sig2, 0);
+
+            assertTrue("Consistent signatures #" + i, Arrays.areEqual(sig1, sig2));
+
+            boolean shouldVerify = Ed448.verify(sig1, 0, pk, 0, ctx, m, 0, mLen);
+
+            assertTrue("Consistent sign/verify #" + i, shouldVerify);
+
+            sig1[Ed448.PUBLIC_KEY_SIZE - 1] ^= 0x80;
+            boolean shouldNotVerify = Ed448.verify(sig1, 0, pk, 0, ctx, m, 0, mLen);
+
+            assertFalse("Consistent verification failure #" + i, shouldNotVerify);
+        }
     }
 
 //    @Test
@@ -339,23 +378,23 @@ public class Ed448Test
         byte[] pk = Hex.decode(sPK);
         byte[] pkGen = new byte[Ed448.PUBLIC_KEY_SIZE];
         Ed448.generatePublicKey(sk, 0, pkGen, 0);
-        assertArrayEquals(text, pk, pkGen);
+        assertTrue(text, Arrays.areEqual(pk, pkGen));
 
         byte[] m = Hex.decode(sM);
         byte[] ctx = Hex.decode(sCTX);
         byte[] sig = Hex.decode(sSig);
         byte[] sigGen = new byte[Ed448.SIGNATURE_SIZE];
         Ed448.sign(sk, 0, ctx, m, 0, m.length, sigGen, 0);
-        assertArrayEquals(text, sig, sigGen);
+        assertTrue(text, Arrays.areEqual(sig, sigGen));
 
         Ed448.sign(sk, 0, pk, 0, ctx, m, 0, m.length, sigGen, 0);
-        assertArrayEquals(text, sig, sigGen);
+        assertTrue(text, Arrays.areEqual(sig, sigGen));
 
-        boolean verified = Ed448.verify(sig, 0, pk, 0, ctx, m, 0, m.length);
-        assertTrue(text, verified);
+        boolean shouldVerify = Ed448.verify(sig, 0, pk, 0, ctx, m, 0, m.length);
+        assertTrue(text, shouldVerify);
 
         sig[Ed448.SIGNATURE_SIZE - 1] ^= 0x80;
-        verified = Ed448.verify(sig, 0, pk, 0, ctx, m, 0, m.length);
-        assertFalse(text, verified);
+        boolean shouldNotVerify = Ed448.verify(sig, 0, pk, 0, ctx, m, 0, m.length);
+        assertFalse(text, shouldNotVerify);
     }
 }
