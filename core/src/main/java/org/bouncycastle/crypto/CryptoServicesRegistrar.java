@@ -356,8 +356,36 @@ public final class CryptoServicesRegistrar
 
     private static DHParameters toDH(DSAParameters dsaParams)
     {
-        return new DHParameters(dsaParams.getP(), dsaParams.getG(), dsaParams.getQ(), 160, dsaParams.getP().bitLength(), null,
+        int pSize = dsaParams.getP().bitLength();
+        int m = chooseLowerBound(pSize);
+        return new DHParameters(dsaParams.getP(), dsaParams.getG(), dsaParams.getQ(), m, 0, null,
             new DHValidationParameters(dsaParams.getValidationParameters().getSeed(), dsaParams.getValidationParameters().getCounter()));
+    }
+
+    // based on lower limit of at least 2^{2 * bits_of_security}
+    private static int chooseLowerBound(int pSize)
+    {
+        int m = 160;
+        if (pSize > 512)
+        {
+            if (pSize <= 2048)
+            {
+                m = 224;
+            }
+            else if (pSize <= 3072)
+            {
+                m = 256;
+            }
+            else if (pSize <= 7680)
+            {
+                m = 384;
+            }
+            else
+            {
+                m = 512;
+            }
+        }
+        return m;
     }
 
     /**

@@ -59,11 +59,35 @@ public class DH
             provider.addAlgorithm("Cipher.DHIESWITHAES-CBC", PREFIX + "IESCipher$IESwithAESCBC");
             provider.addAlgorithm("Cipher.DHIESWITHDESEDE-CBC", PREFIX + "IESCipher$IESwithDESedeCBC");
 
+            provider.addAlgorithm("KeyAgreement.DHWITHSHA1KDF", PREFIX + "KeyAgreementSpi$DHwithSHA1KDF");
+            provider.addAlgorithm("KeyAgreement.DHWITHSHA224KDF", PREFIX + "KeyAgreementSpi$DHwithSHA224KDF");
+            provider.addAlgorithm("KeyAgreement.DHWITHSHA256KDF", PREFIX + "KeyAgreementSpi$DHwithSHA256KDF");
+            provider.addAlgorithm("KeyAgreement.DHWITHSHA384KDF", PREFIX + "KeyAgreementSpi$DHwithSHA384KDF");
+            provider.addAlgorithm("KeyAgreement.DHWITHSHA512KDF", PREFIX + "KeyAgreementSpi$DHwithSHA512KDF");
+
+            provider.addAlgorithm("KeyAgreement.DHUWITHSHA1KDF", PREFIX + "KeyAgreementSpi$DHUwithSHA1KDF");
+            provider.addAlgorithm("KeyAgreement.DHUWITHSHA224KDF", PREFIX + "KeyAgreementSpi$DHUwithSHA224KDF");
+            provider.addAlgorithm("KeyAgreement.DHUWITHSHA256KDF", PREFIX + "KeyAgreementSpi$DHUwithSHA256KDF");
+            provider.addAlgorithm("KeyAgreement.DHUWITHSHA384KDF", PREFIX + "KeyAgreementSpi$DHUwithSHA384KDF");
+            provider.addAlgorithm("KeyAgreement.DHUWITHSHA512KDF", PREFIX + "KeyAgreementSpi$DHUwithSHA512KDF");
+
             provider.addAlgorithm("KeyAgreement.DHUWITHSHA1CKDF", PREFIX + "KeyAgreementSpi$DHUwithSHA1CKDF");
             provider.addAlgorithm("KeyAgreement.DHUWITHSHA224CKDF", PREFIX + "KeyAgreementSpi$DHUwithSHA224CKDF");
             provider.addAlgorithm("KeyAgreement.DHUWITHSHA256CKDF", PREFIX + "KeyAgreementSpi$DHUwithSHA256CKDF");
             provider.addAlgorithm("KeyAgreement.DHUWITHSHA384CKDF", PREFIX + "KeyAgreementSpi$DHUwithSHA384CKDF");
             provider.addAlgorithm("KeyAgreement.DHUWITHSHA512CKDF", PREFIX + "KeyAgreementSpi$DHUwithSHA512CKDF");
+
+            provider.addAlgorithm("KeyAgreement.MQVWITHSHA1KDF", PREFIX + "KeyAgreementSpi$MQVwithSHA1KDF");
+            provider.addAlgorithm("KeyAgreement.MQVWITHSHA224KDF", PREFIX + "KeyAgreementSpi$MQVwithSHA224KDF");
+            provider.addAlgorithm("KeyAgreement.MQVWITHSHA256KDF", PREFIX + "KeyAgreementSpi$MQVwithSHA256KDF");
+            provider.addAlgorithm("KeyAgreement.MQVWITHSHA384KDF", PREFIX + "KeyAgreementSpi$MQVwithSHA384KDF");
+            provider.addAlgorithm("KeyAgreement.MQVWITHSHA512KDF", PREFIX + "KeyAgreementSpi$MQVwithSHA512KDF");
+
+            provider.addAlgorithm("KeyAgreement.MQVWITHSHA1CKDF", PREFIX + "KeyAgreementSpi$MQVwithSHA1CKDF");
+            provider.addAlgorithm("KeyAgreement.MQVWITHSHA224CKDF", PREFIX + "KeyAgreementSpi$MQVwithSHA224CKDF");
+            provider.addAlgorithm("KeyAgreement.MQVWITHSHA256CKDF", PREFIX + "KeyAgreementSpi$MQVwithSHA256CKDF");
+            provider.addAlgorithm("KeyAgreement.MQVWITHSHA384CKDF", PREFIX + "KeyAgreementSpi$MQVwithSHA384CKDF");
+            provider.addAlgorithm("KeyAgreement.MQVWITHSHA512CKDF", PREFIX + "KeyAgreementSpi$MQVwithSHA512CKDF");
 
             registerOid(provider, PKCSObjectIdentifiers.dhKeyAgreement, "DH", new KeyFactorySpi());
             registerOid(provider, X9ObjectIdentifiers.dhpublicnumber, "DH", new KeyFactorySpi());

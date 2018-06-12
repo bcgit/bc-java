@@ -43,12 +43,15 @@ import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.spec.DHUParameterSpec;
+import org.bouncycastle.jcajce.spec.MQVParameterSpec;
+import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -274,6 +277,19 @@ public class DHTest
         if (!cShared.equals(bShared))
         {
             fail(size + " bit 3-way test failed (c and b differ)");
+        }
+
+        KeyAgreement noKdf = KeyAgreement.getInstance("DH", "BC");
+        
+
+        try
+        {
+            noKdf.init(aPair.getPrivate(), new UserKeyingMaterialSpec(new byte[20]));
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isTrue("no KDF specified for UserKeyingMaterialSpec".equals(e.getMessage()));
         }
     }
 
@@ -1036,6 +1052,7 @@ public class DHTest
             KeyAgreement aKeyAgree = KeyAgreement.getInstance("DH", "BC");
 
             aKeyAgree.generateSecret("DES");
+            fail("no exception");
         }
         catch (IllegalStateException e)
         {
@@ -1071,6 +1088,18 @@ public class DHTest
         catch (java.security.InvalidKeyException e)
         {
             isTrue("wrong message", "calculation failed: Invalid point".equals(e.getMessage()));
+        }
+
+        agreement = KeyAgreement.getInstance("ECDH", "BC");
+
+        try
+        {
+            agreement.init(kp.getPrivate(), new UserKeyingMaterialSpec(new byte[20]));
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isTrue("no KDF specified for UserKeyingMaterialSpec".equals(e.getMessage()));
         }
     }
 
@@ -1395,10 +1424,76 @@ public class DHTest
         }
     }
 
+    private KeyPair generateDHKeyPair()
+        throws GeneralSecurityException
+    {
+        KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("DH", "BC");
+
+        keyPairGen.initialize(2048);
+
+        return keyPairGen.generateKeyPair();
+    }
+
+    private SecretKey mqvGenerateAESKey(
+        PrivateKey aPriv, PublicKey aPubEph, PrivateKey aPrivEph, PublicKey bPub, PublicKey bPubEph, byte[] keyMaterial)
+        throws GeneralSecurityException
+    {
+        KeyAgreement agreement = KeyAgreement.getInstance("MQVwithSHA256KDF", "BC");
+
+        agreement.init(aPriv, new MQVParameterSpec(aPubEph, aPrivEph, bPubEph, keyMaterial));
+
+        agreement.doPhase(bPub, true);
+
+        return agreement.generateSecret("AES");
+    }
+
+    private void mqvTest()
+        throws Exception
+    {
+        Security.addProvider(new BouncyCastleProvider());
+
+        // Generate the key pairs for party A and party B
+        KeyPair aKpS = generateDHKeyPair();
+        KeyPair aKpE = generateDHKeyPair();    // A's ephemeral pair
+        KeyPair bKpS = generateDHKeyPair();
+        KeyPair bKpE = generateDHKeyPair();    // B's ephemeral pair
+
+        // key agreement generating an AES key
+        byte[] keyMaterial = Strings.toByteArray("For an AES key");
+
+        SecretKey aKey = mqvGenerateAESKey(
+            aKpS.getPrivate(),
+            aKpE.getPublic(), aKpE.getPrivate(),
+            bKpS.getPublic(), bKpE.getPublic(), keyMaterial);
+        SecretKey bKey = mqvGenerateAESKey(
+            bKpS.getPrivate(),
+            bKpE.getPublic(), bKpE.getPrivate(),
+            aKpS.getPublic(), aKpE.getPublic(), keyMaterial);
+
+        // compare the two return values.
+        isTrue(Arrays.areEqual(aKey.getEncoded(), bKey.getEncoded()));
+
+        // check with encoding
+        KeyFactory kFact = KeyFactory.getInstance("DH", "BC");
+
+        aKey = mqvGenerateAESKey(
+            kFact.generatePrivate(new PKCS8EncodedKeySpec(aKpS.getPrivate().getEncoded())),
+            aKpE.getPublic(), aKpE.getPrivate(),
+            bKpS.getPublic(), kFact.generatePublic(new X509EncodedKeySpec(bKpE.getPublic().getEncoded())), keyMaterial);
+        bKey = mqvGenerateAESKey(
+            bKpS.getPrivate(),
+            bKpE.getPublic(), kFact.generatePrivate(new PKCS8EncodedKeySpec(bKpE.getPrivate().getEncoded())),
+            aKpS.getPublic(), aKpE.getPublic(), keyMaterial);
+
+        // compare the two return values.
+        isTrue(Arrays.areEqual(aKey.getEncoded(), bKey.getEncoded()));
+    }
+
     public void performTest()
         throws Exception
     {
         testDefault(64, g512, p512);
+        mqvTest();
 
         testEnc();
         testGP("DH", 512, 0, g512, p512);
