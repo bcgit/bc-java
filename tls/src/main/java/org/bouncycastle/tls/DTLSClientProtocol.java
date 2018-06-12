@@ -55,28 +55,38 @@ public class DTLSClientProtocol
             }
         }
 
+        boolean fatal = false;
         try
         {
             return clientHandshake(state, recordLayer);
         }
         catch (TlsFatalAlert fatalAlert)
         {
+            fatal = true;
             abortClientHandshake(state, recordLayer, fatalAlert.getAlertDescription());
+            securityParameters.clear();
             throw fatalAlert;
         }
         catch (IOException e)
         {
+            fatal = true;
             abortClientHandshake(state, recordLayer, AlertDescription.internal_error);
+            securityParameters.clear();
             throw e;
         }
         catch (RuntimeException e)
         {
+            fatal = true;
             abortClientHandshake(state, recordLayer, AlertDescription.internal_error);
+            securityParameters.clear();
             throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
         finally
         {
+          if (fatal)
+          {
             securityParameters.clear();
+          }
         }
     }
 
@@ -287,7 +297,7 @@ public class DTLSClientProtocol
             /*
              * RFC 5246 If no suitable certificate is available, the client MUST send a certificate
              * message containing no certificates.
-             * 
+             *
              * NOTE: In previous RFCs, this was SHOULD instead of MUST.
              */
             if (state.clientCredentials != null)
@@ -309,7 +319,7 @@ public class DTLSClientProtocol
         if (state.clientCredentials != null)
         {
             state.keyExchange.processClientCredentials(state.clientCredentials);
-            
+
             if (state.clientCredentials instanceof TlsCredentialedSigner)
             {
                 credentialedSigner = (TlsCredentialedSigner)state.clientCredentials;
@@ -809,7 +819,7 @@ public class DTLSClientProtocol
 
         /*
          * TODO[session-hash]
-         * 
+         *
          * draft-ietf-tls-session-hash-04 4. Clients and servers SHOULD NOT accept handshakes
          * that do not use the extended master secret [..]. (and see 5.2, 5.3)
          */
