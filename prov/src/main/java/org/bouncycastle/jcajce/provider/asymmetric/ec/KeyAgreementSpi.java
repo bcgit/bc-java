@@ -190,18 +190,26 @@ public class KeyAgreementSpi
         SecureRandom random)
         throws InvalidKeyException
     {
-        initFromKey(key, null);
+        try
+        {
+            initFromKey(key, null);
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            // this should never occur.
+            throw new InvalidKeyException(e.getMessage());
+        }
     }
 
     private void initFromKey(Key key, AlgorithmParameterSpec parameterSpec)
-        throws InvalidKeyException
+        throws InvalidKeyException, InvalidAlgorithmParameterException
     {
         if (agreement instanceof ECMQVBasicAgreement)
         {
             mqvParameters = null;
             if (!(key instanceof MQVPrivateKey) && !(parameterSpec instanceof MQVParameterSpec))
             {
-                throw new InvalidKeyException(kaAlgorithm + " key agreement requires "
+                throw new InvalidAlgorithmParameterException(kaAlgorithm + " key agreement requires "
                     + getSimpleName(MQVParameterSpec.class) + " for initialisation");
             }
 
@@ -253,7 +261,7 @@ public class KeyAgreementSpi
         {
             if (!(agreement instanceof ECDHCUnifiedAgreement))
             {
-                throw new InvalidKeyException(kaAlgorithm + " key agreement cannot be used with "
+                throw new InvalidAlgorithmParameterException(kaAlgorithm + " key agreement cannot be used with "
                     + getSimpleName(DHUParameterSpec.class));
             }
             DHUParameterSpec dheParameterSpec = (DHUParameterSpec)parameterSpec;
@@ -287,7 +295,10 @@ public class KeyAgreementSpi
                 throw new InvalidKeyException(kaAlgorithm + " key agreement requires "
                     + getSimpleName(ECPrivateKey.class) + " for initialisation");
             }
-
+            if (kdf == null && parameterSpec instanceof UserKeyingMaterialSpec)
+            {
+                throw new InvalidAlgorithmParameterException("no KDF specified for UserKeyingMaterialSpec");
+            }
             ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)ECUtil.generatePrivateKeyParameter((PrivateKey)key);
             this.parameters = privKey.getParameters();
             ukmParameters = (parameterSpec instanceof UserKeyingMaterialSpec) ? ((UserKeyingMaterialSpec)parameterSpec).getUserKeyingMaterial() : null;
