@@ -79,15 +79,15 @@ public abstract class Ed448
         return ctx != null && ctx.length < 256;
     }
 
-    private static boolean checkFieldElementVar(byte[] fe)
+    private static boolean checkPointVar(byte[] p)
     {
-        if (fe[POINT_BYTES - 1] != 0x00)
+        if ((p[POINT_BYTES - 1] & 0x7F) != 0x00)
         {
             return false;
         }
 
         int[] t = new int[14];
-        decode32(fe, 0, t, 0, 14);
+        decode32(p, 0, t, 0, 14);
         return !Nat.gte(14, t, P);
     }
 
@@ -135,16 +135,16 @@ public abstract class Ed448
         }
     }
 
-    private static boolean decodePointVar(byte[] p, int pOff, PointXYZ r)
+    private static boolean decodePointVar(byte[] p, int pOff, boolean negate, PointXYZ r)
     {
         byte[] py = Arrays.copyOfRange(p, pOff, pOff + POINT_BYTES);
-        int x_0 = (py[POINT_BYTES - 1] & 0x80) >>> 7;
-        py[POINT_BYTES - 1] &= 0x7F;
-
-        if (!checkFieldElementVar(py))
+        if (!checkPointVar(py))
         {
             return false;
         }
+
+        int x_0 = (py[POINT_BYTES - 1] & 0x80) >>> 7;
+        py[POINT_BYTES - 1] &= 0x7F;
 
         X448Field.decode(py, 0, r.y);
 
@@ -168,7 +168,7 @@ public abstract class Ed448
             return false;
         }
 
-        if (x_0 != (r.x[0] & 1))
+        if (negate ^ (x_0 != (r.x[0] & 1)))
         {
             X448Field.negate(r.x, r.x);
         }
@@ -659,7 +659,7 @@ public abstract class Ed448
         return r;
     }
 
-    private static void scalarMultVar(int[] n, PointXYZ p, PointXYZ r)
+    private static void scalarMultBaseVar(int[] nb, PointXYZ r)
     {
         X448Field.zero(r.x);
         X448Field.one(r.y);
@@ -668,31 +668,11 @@ public abstract class Ed448
         for (int bit = 447; bit >= 0; --bit)
         {
             int word = bit >>> 5, shift = bit & 0x1F;
-            int kt = (n[word] >>> shift) & 1;
+            int nb_bit = (nb[word] >>> shift) & 1;
 
             pointDouble(r);
 
-            if (kt != 0)
-            {
-                pointAdd(p, r);
-            }
-        }
-    }
-
-    private static void scalarMultBaseVar(int[] n, PointXYZ r)
-    {
-        X448Field.zero(r.x);
-        X448Field.one(r.y);
-        X448Field.one(r.z);
-
-        for (int bit = 447; bit >= 0; --bit)
-        {
-            int word = bit >>> 5, shift = bit & 0x1F;
-            int kt = (n[word] >>> shift) & 1;
-
-            pointDouble(r);
-
-            if (kt != 0)
+            if (nb_bit != 0)
             {
                 pointAddBase(r);
             }
@@ -701,13 +681,48 @@ public abstract class Ed448
 
     private static void scalarMultBaseEncodedVar(byte[] k, byte[] r, int rOff)
     {
-        int[] n = new int[SCALAR_INTS];
-        decodeScalar(k, 0, n);
+        int[] nb = new int[SCALAR_INTS];
+        decodeScalar(k, 0, nb);
 
         PointXYZ p = new PointXYZ();
-        scalarMultBaseVar(n, p);
+        scalarMultBaseVar(nb, p);
 
         encodePoint(p, r, rOff);
+    }
+
+    private static void scalarMultStraussVar(int[] nb, int[] np, PointXYZ p, PointXYZ r)
+    {
+        X448Field.zero(r.x);
+        X448Field.one(r.y);
+        X448Field.one(r.z);
+
+        PointXYZ q = new PointXYZ();
+        X448Field.copy(p.x, 0, q.x, 0);
+        X448Field.copy(p.y, 0, q.y, 0);
+        X448Field.copy(p.z, 0, q.z, 0);
+        pointAddBase(q);
+
+        for (int bit = 447; bit >= 0; --bit)
+        {
+            int word = bit >>> 5, shift = bit & 0x1F;
+            int nb_bit = (nb[word] >>> shift) & 1;
+            int np_bit = (np[word] >>> shift) & 1;
+
+            pointDouble(r);
+
+            if ((nb_bit & np_bit) != 0)
+            {
+                pointAdd(q, r);
+            }
+            else if (nb_bit != 0)
+            {
+                pointAddBase(r);
+            }
+            else if (np_bit != 0)
+            {
+                pointAdd(p, r);
+            }
+        }
     }
 
     public static void sign(byte[] sk, int skOff, byte[] ctx, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
@@ -766,22 +781,20 @@ public abstract class Ed448
             throw new IllegalArgumentException("ctx");
         }
 
-        PointXYZ pA = new PointXYZ();
-        if (!decodePointVar(pk, pkOff, pA))
-        {
-            return false;
-        }
-
         byte[] R = Arrays.copyOfRange(sig, sigOff, sigOff + POINT_BYTES);
         byte[] S = Arrays.copyOfRange(sig, sigOff + POINT_BYTES, sigOff + SIGNATURE_SIZE);
 
+        if (!checkPointVar(R))
+        {
+            return false;
+        }
         if (!checkScalarVar(S))
         {
             return false;
         }
 
-        PointXYZ pR = new PointXYZ();
-        if (!decodePointVar(R, 0, pR))
+        PointXYZ pA = new PointXYZ();
+        if (!decodePointVar(pk, pkOff, true, pA))
         {
             return false;
         }
@@ -799,19 +812,18 @@ public abstract class Ed448
 
         byte[] k = reduceScalar(h);
 
-        byte[] lhs = new byte[POINT_BYTES];
-        scalarMultBaseEncodedVar(S, lhs, 0);
+        int[] nS = new int[SCALAR_INTS];
+        decodeScalar(S, 0, nS);
 
-        int[] n = new int[SCALAR_INTS];
-        decodeScalar(k, 0, n);
+        int[] nA = new int[SCALAR_INTS];
+        decodeScalar(k, 0, nA);
 
-        PointXYZ p = new PointXYZ();
-        scalarMultVar(n, pA, p);
-        pointAdd(pR, p);
+        PointXYZ pR = new PointXYZ();
+        scalarMultStraussVar(nS, nA, pA, pR);
 
-        byte[] rhs = new byte[POINT_BYTES];
-        encodePoint(p, rhs, 0);
+        byte[] check = new byte[POINT_BYTES];
+        encodePoint(pR, check, 0);
 
-        return Arrays.areEqual(lhs, rhs);
+        return Arrays.areEqual(check, R);
     }
 }
