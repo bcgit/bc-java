@@ -26,6 +26,11 @@ public abstract class X25519Field
         z[0] += 1;
     }
 
+    public static void addOne(int[] z, int zOff)
+    {
+        z[zOff] += 1;
+    }
+
     public static void apm(int[] x, int[] y, int[] zp, int[] zm)
     {
         for (int i = 0; i < SIZE; ++i)
@@ -59,6 +64,17 @@ public abstract class X25519Field
         z[5] = z5; z[6] = z6; z[7] = z7; z[8] = z8; z[9] = z9;
     }
 
+    public static void cnegate(int negate, int[] x, int[] z)
+    {
+//      assert negate >>> 1 == 0;
+
+        int mask = 0 - negate;
+        for (int i = 0; i < SIZE; ++i)
+        {
+            z[i] = (x[i] ^ mask) - mask;
+        }
+    }
+
     public static void copy(int[] x, int xOff, int[] z, int zOff)
     {
         for (int i = 0; i < SIZE; ++i)
@@ -70,6 +86,11 @@ public abstract class X25519Field
     public static int[] create()
     {
         return new int[SIZE];
+    }
+
+    public static int[] createTable(int n)
+    {
+        return new int[SIZE * n];
     }
 
     public static void cswap(int swap, int[] a, int[] b)
