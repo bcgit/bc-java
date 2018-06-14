@@ -2,6 +2,7 @@ package org.bouncycastle.math.ec.rfc8032;
 
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.math.ec.rfc7748.X25519Field;
+import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat256;
 import org.bouncycastle.util.Arrays;
 
@@ -39,6 +40,15 @@ public abstract class Ed25519
         0x01D01E5D, 0x01E738CC, 0x03715B7F, 0x00A406D9 };
     private static final int[] C_d2 = new int[]{ 0x02B2F159, 0x01A6E509, 0x01156EBD, 0x00D4141D, 0x0001C029, 0x02F3D130,
         0x03A03CBB, 0x01CE7198, 0x02E2B6FF, 0x00480DB3 };
+
+    private static int[] precompBase = null;
+
+    private static class PointPrecomp
+    {
+        int[] ypx = X25519Field.create();
+        int[] ymx = X25519Field.create();
+        int[] xyd2 = X25519Field.create();
+    }
 
     private static class PointXYTZ
     {
@@ -188,8 +198,6 @@ public abstract class Ed25519
 
     public static void generatePublicKey(byte[] sk, int skOff, byte[] pk, int pkOff)
     {
-        // TODO Not currently constant-time (see use of ...Var methods)
-
         SHA512Digest d = new SHA512Digest();
         byte[] h = new byte[d.getDigestSize()];
 
@@ -199,10 +207,29 @@ public abstract class Ed25519
         byte[] s = new byte[SCALAR_BYTES];
         pruneScalar(h, 0, s);
 
-        scalarMultBaseEncodedVar(s, pk, pkOff);
+        scalarMultBaseEncoded(s, pk, pkOff);
     }
 
-    private static void implSignVar(SHA512Digest d, byte[] h, byte[] s, byte[] pk, int pkOff, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
+    private static void implScalarMultBase(byte[] ws, int off, PointXYTZ r)
+    {
+        PointPrecomp p = new PointPrecomp();
+
+        for (int i = off; i < 64; i += 2)
+        {
+            int w = ws[i];
+            int sign = w >>> 31;
+            int abs = w - ((w << 1) & -sign);
+
+            lookup(i >> 1, abs, p);
+
+            X25519Field.cswap(sign, p.ypx, p.ymx);
+            X25519Field.cnegate(sign, p.xyd2, p.xyd2);
+
+            pointAddPrecomp(p, r);
+        }
+    }
+
+    private static void implSign(SHA512Digest d, byte[] h, byte[] s, byte[] pk, int pkOff, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
     {
         d.update(h, SCALAR_BYTES, SCALAR_BYTES);
         d.update(m, mOff, mLen);
@@ -210,7 +237,7 @@ public abstract class Ed25519
 
         byte[] r = reduceScalar(h);
         byte[] R = new byte[POINT_BYTES];
-        scalarMultBaseEncodedVar(r, R, 0);
+        scalarMultBaseEncoded(r, R, 0);
 
         d.update(R, 0, POINT_BYTES);
         d.update(pk, 0, POINT_BYTES);
@@ -222,6 +249,38 @@ public abstract class Ed25519
 
         System.arraycopy(R, 0, sig, sigOff, POINT_BYTES);
         System.arraycopy(S, 0, sig, sigOff + POINT_BYTES, SCALAR_BYTES);
+    }
+
+    private static void lookup(int pos, int index, PointPrecomp p)
+    {
+        int off = pos * 8 * 3 * X25519Field.SIZE;
+
+//        int[] buf = X25519Field.createTable(3);
+//        X25519Field.addOne(buf, 0);
+//        X25519Field.addOne(buf, X25519Field.SIZE);
+//
+//        for (int i = 1; i <= 8; ++i)
+//        {
+//            int mask = ((i ^ index) - 1) >> 31;
+//            Nat.cmov(buf.length, mask, precompBase, off, buf, 0);
+//            off += buf.length;
+//        }
+//
+//        X25519Field.copy(buf, 0 * X25519Field.SIZE, p.ypx, 0);
+//        X25519Field.copy(buf, 1 * X25519Field.SIZE, p.ymx, 0);
+//        X25519Field.copy(buf, 2 * X25519Field.SIZE, p.xyd2, 0);
+
+        X25519Field.one(p.ypx);
+        X25519Field.one(p.ymx);
+        X25519Field.zero(p.xyd2);
+
+        for (int i = 1; i <= 8; ++i)
+        {
+            int mask = ((i ^ index) - 1) >> 31;
+            Nat.cmov(X25519Field.SIZE, mask, precompBase, off, p.ypx, 0);   off += X25519Field.SIZE;
+            Nat.cmov(X25519Field.SIZE, mask, precompBase, off, p.ymx, 0);   off += X25519Field.SIZE;
+            Nat.cmov(X25519Field.SIZE, mask, precompBase, off, p.xyd2, 0);  off += X25519Field.SIZE;
+        }
     }
 
     private static void pointAdd(PointXYTZ p, PointXYTZ r)
@@ -278,6 +337,31 @@ public abstract class Ed25519
         X25519Field.mul(F, G, r.z);
     }
 
+    private static void pointAddPrecomp(PointPrecomp p, PointXYTZ r)
+    {
+        int[] A = X25519Field.create();
+        int[] B = X25519Field.create();
+        int[] C = X25519Field.create();
+        int[] D = X25519Field.create();
+        int[] E = X25519Field.create();
+        int[] F = X25519Field.create();
+        int[] G = X25519Field.create();
+        int[] H = X25519Field.create();
+
+        X25519Field.apm(r.y, r.x, B, A);
+        X25519Field.mul(A, p.ymx, A);
+        X25519Field.mul(B, p.ypx, B);
+        X25519Field.mul(r.t, p.xyd2, C);
+        X25519Field.add(r.z, r.z, D);
+        X25519Field.apm(B, A, H, E);
+        X25519Field.apm(D, C, G, F);
+        X25519Field.carry(G);
+        X25519Field.mul(E, F, r.x);
+        X25519Field.mul(G, H, r.y);
+        X25519Field.mul(E, H, r.t);
+        X25519Field.mul(F, G, r.z);
+    }
+
     private static void pointDouble(PointXYTZ r)
     {
         int[] A = X25519Field.create();
@@ -310,8 +394,70 @@ public abstract class Ed25519
         X25519Field.one(p.z);
     }
 
+    private static void pointSetNeutral(PointXYTZ p)
+    {
+        X25519Field.zero(p.x);
+        X25519Field.one(p.y);
+        X25519Field.zero(p.t);
+        X25519Field.one(p.z);
+    }
+
     public synchronized static void precompute()
     {
+        if (precompBase != null)
+        {
+            return;
+        }
+
+        precompBase = new int[32 * 8 * 3 * X25519Field.SIZE];
+
+        PointXYTZ p = new PointXYTZ();
+        X25519Field.copy(B_x, 0, p.x, 0);
+        X25519Field.copy(B_y, 0, p.y, 0);
+        pointExtendXY(p);
+
+        int bit = 0, off = 0;
+        for (;;)
+        {
+            PointXYTZ q = new PointXYTZ();
+            pointSetNeutral(q);
+
+            for (int j = 1; j <= 8; ++j)
+            {
+                pointAdd(p, q);
+
+                int[] x = X25519Field.create();
+                int[] y = X25519Field.create();
+
+                // TODO[ed25519] Batch inversion
+                X25519Field.inv(q.z, y);
+                X25519Field.mul(q.x, y, x);
+                X25519Field.mul(q.y, y, y);
+
+                PointPrecomp r = new PointPrecomp();
+                X25519Field.apm(y, x, r.ypx, r.ymx);
+                X25519Field.mul(x, y, r.xyd2);
+                X25519Field.mul(r.xyd2, C_d2, r.xyd2);
+
+                X25519Field.normalize(r.ypx);
+                X25519Field.normalize(r.ymx);
+                X25519Field.normalize(r.xyd2);
+
+                X25519Field.copy(r.ypx, 0, precompBase, off);   off += X25519Field.SIZE;
+                X25519Field.copy(r.ymx, 0, precompBase, off);   off += X25519Field.SIZE;
+                X25519Field.copy(r.xyd2, 0, precompBase, off);  off += X25519Field.SIZE;
+            }
+
+            if ((bit += 8) == 256)
+            {
+                break;
+            }
+
+            for (int k = 0; k < 8; ++k)
+            {
+                pointDouble(p);
+            }
+        }
     }
 
     private static void pruneScalar(byte[] n, int nOff, byte[] r)
@@ -321,6 +467,28 @@ public abstract class Ed25519
         r[0] &= 0xF8;
         r[SCALAR_BYTES - 1] &= 0x7F;
         r[SCALAR_BYTES - 1] |= 0x40;
+    }
+
+    private static void recodeScalar(byte[] n, byte[] ws)
+    {
+        int c = 0, j = 0;
+        for (int i = 0; i < SCALAR_BYTES; ++i)
+        {
+            int ni = n[i] & 0xFF, lo = ni & 0x0F, hi = ni >>> 4;
+
+            lo += c; c = (lo + 8) >> 4; lo -= (c << 4);
+            hi += c; c = (hi + 8) >> 4; hi -= (c << 4);
+
+//            assert -8 <= lo && lo < 8;
+//            assert -8 <= hi && hi < 8;
+
+            ws[j++] = (byte)lo;
+            ws[j++] = (byte)hi;
+        }
+
+        ws[--j] += (c << 4);
+
+//        assert 0 <= ws[j] && ws[j] <= 8;
     }
 
     private static byte[] reduceScalar(byte[] n)
@@ -459,44 +627,35 @@ public abstract class Ed25519
         return r;
     }
 
-    private static void scalarMultBaseVar(int[] nb, PointXYTZ r)
+    private static void scalarMultBase(byte[] k, PointXYTZ r)
     {
-        X25519Field.zero(r.x);
-        X25519Field.one(r.y);
-        X25519Field.zero(r.t);
-        X25519Field.one(r.z);
+        precompute();
 
-        for (int bit = 255; bit >= 0; --bit)
+        pointSetNeutral(r);
+
+        byte[] ws = new byte[SCALAR_BYTES * 2];
+        recodeScalar(k, ws);
+
+        implScalarMultBase(ws, 1, r);
+
+        for (int i = 0; i < 4; ++i)
         {
-            int word = bit >>> 5, shift = bit & 0x1F;
-            int nb_bit = (nb[word] >>> shift) & 1;
-
             pointDouble(r);
-
-            if (nb_bit != 0)
-            {
-                pointAddBase(r);
-            }
         }
+
+        implScalarMultBase(ws, 0, r);
     }
 
-    private static void scalarMultBaseEncodedVar(byte[] k, byte[] r, int rOff)
+    private static void scalarMultBaseEncoded(byte[] k, byte[] r, int rOff)
     {
-        int[] nb = new int[SCALAR_INTS];
-        decodeScalar(k, 0, nb);
-
         PointXYTZ p = new PointXYTZ();
-        scalarMultBaseVar(nb, p);
-
+        scalarMultBase(k, p);
         encodePoint(p, r, rOff);
     }
 
     private static void scalarMultStraussVar(int[] nb, int[] np, PointXYTZ p, PointXYTZ r)
     {
-        X25519Field.zero(r.x);
-        X25519Field.one(r.y);
-        X25519Field.zero(r.t);
-        X25519Field.one(r.z);
+        pointSetNeutral(r);
 
         PointXYTZ q = new PointXYTZ();
         X25519Field.copy(p.x, 0, q.x, 0);
@@ -530,8 +689,6 @@ public abstract class Ed25519
 
     public static void sign(byte[] sk, int skOff, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
     {
-        // TODO Not currently constant-time (see use of ...Var methods)
-
         SHA512Digest d = new SHA512Digest();
         byte[] h = new byte[d.getDigestSize()];
 
@@ -542,15 +699,13 @@ public abstract class Ed25519
         pruneScalar(h, 0, s);
 
         byte[] pk = new byte[POINT_BYTES];
-        scalarMultBaseEncodedVar(s, pk, 0);
+        scalarMultBaseEncoded(s, pk, 0);
 
-        implSignVar(d, h, s, pk, 0, m, mOff, mLen, sig, sigOff);
+        implSign(d, h, s, pk, 0, m, mOff, mLen, sig, sigOff);
     }
 
     public static void sign(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
     {
-        // TODO Not currently constant-time (see use of ...Var methods)
-
         SHA512Digest d = new SHA512Digest();
         byte[] h = new byte[d.getDigestSize()];
 
@@ -560,13 +715,11 @@ public abstract class Ed25519
         byte[] s = new byte[SCALAR_BYTES];
         pruneScalar(h, 0, s);
 
-        implSignVar(d, h, s, pk, pkOff, m, mOff, mLen, sig, sigOff);
+        implSign(d, h, s, pk, pkOff, m, mOff, mLen, sig, sigOff);
     }
 
     public static boolean verify(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] m, int mOff, int mLen)
     {
-        // TODO Not currently constant-time (see use of ...Var methods)
-
         byte[] R = Arrays.copyOfRange(sig, sigOff, sigOff + POINT_BYTES);
         byte[] S = Arrays.copyOfRange(sig, sigOff + POINT_BYTES, sigOff + SIGNATURE_SIZE);
 
