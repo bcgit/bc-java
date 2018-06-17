@@ -150,6 +150,11 @@ public class XMSSSignatureSpi
         throw new UnsupportedOperationException("engineSetParameter unsupported");
     }
 
+    public boolean isSigningCapable()
+    {
+        return treeDigest != null;
+    }
+
     public PrivateKey getUpdatedPrivateKey()
     {
         if (treeDigest == null)
