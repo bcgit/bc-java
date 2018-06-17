@@ -88,6 +88,12 @@ public class EC
             provider.addAlgorithm("KeyAgreement.ECCDHUWITHSHA384CKDF", PREFIX + "KeyAgreementSpi$DHUwithSHA384CKDF");
             provider.addAlgorithm("KeyAgreement.ECCDHUWITHSHA512CKDF", PREFIX + "KeyAgreementSpi$DHUwithSHA512CKDF");
 
+            provider.addAlgorithm("KeyAgreement.ECCDHUWITHSHA1KDF", PREFIX + "KeyAgreementSpi$DHUwithSHA1KDF");
+            provider.addAlgorithm("KeyAgreement.ECCDHUWITHSHA224KDF", PREFIX + "KeyAgreementSpi$DHUwithSHA224KDF");
+            provider.addAlgorithm("KeyAgreement.ECCDHUWITHSHA256KDF", PREFIX + "KeyAgreementSpi$DHUwithSHA256KDF");
+            provider.addAlgorithm("KeyAgreement.ECCDHUWITHSHA384KDF", PREFIX + "KeyAgreementSpi$DHUwithSHA384KDF");
+            provider.addAlgorithm("KeyAgreement.ECCDHUWITHSHA512KDF", PREFIX + "KeyAgreementSpi$DHUwithSHA512KDF");
+
             provider.addAlgorithm("KeyAgreement.ECKAEGWITHSHA1KDF", PREFIX + "KeyAgreementSpi$ECKAEGwithSHA1KDF");
             provider.addAlgorithm("KeyAgreement.ECKAEGWITHSHA224KDF", PREFIX + "KeyAgreementSpi$ECKAEGwithSHA224KDF");
             provider.addAlgorithm("KeyAgreement.ECKAEGWITHSHA256KDF", PREFIX + "KeyAgreementSpi$ECKAEGwithSHA256KDF");
@@ -146,6 +152,12 @@ public class EC
                 provider.addAlgorithm("KeyAgreement.ECMQVWITHSHA256CKDF", PREFIX + "KeyAgreementSpi$MQVwithSHA256CKDF");
                 provider.addAlgorithm("KeyAgreement.ECMQVWITHSHA384CKDF", PREFIX + "KeyAgreementSpi$MQVwithSHA384CKDF");
                 provider.addAlgorithm("KeyAgreement.ECMQVWITHSHA512CKDF", PREFIX + "KeyAgreementSpi$MQVwithSHA512CKDF");
+
+                provider.addAlgorithm("KeyAgreement.ECMQVWITHSHA1KDF", PREFIX + "KeyAgreementSpi$MQVwithSHA1KDF");
+                provider.addAlgorithm("KeyAgreement.ECMQVWITHSHA224KDF", PREFIX + "KeyAgreementSpi$MQVwithSHA224KDF");
+                provider.addAlgorithm("KeyAgreement.ECMQVWITHSHA256KDF", PREFIX + "KeyAgreementSpi$MQVwithSHA256KDF");
+                provider.addAlgorithm("KeyAgreement.ECMQVWITHSHA384KDF", PREFIX + "KeyAgreementSpi$MQVwithSHA384KDF");
+                provider.addAlgorithm("KeyAgreement.ECMQVWITHSHA512KDF", PREFIX + "KeyAgreementSpi$MQVwithSHA512KDF");
 
                 provider.addAlgorithm("KeyAgreement." + X9ObjectIdentifiers.mqvSinglePass_sha1kdf_scheme, PREFIX + "KeyAgreementSpi$MQVwithSHA1KDFAndSharedInfo");
                 provider.addAlgorithm("KeyAgreement." + SECObjectIdentifiers.mqvSinglePass_sha224kdf_scheme, PREFIX + "KeyAgreementSpi$MQVwithSHA224KDFAndSharedInfo");
