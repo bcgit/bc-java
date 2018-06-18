@@ -2,6 +2,7 @@ package org.bouncycastle.math.ec.rfc8032;
 
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.math.ec.rfc7748.X25519Field;
+import org.bouncycastle.math.raw.Interleave;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat256;
 import org.bouncycastle.util.Arrays;
@@ -40,22 +41,24 @@ public abstract class Ed25519
         0x01D01E5D, 0x01E738CC, 0x03715B7F, 0x00A406D9 };
     private static final int[] C_d2 = new int[]{ 0x02B2F159, 0x01A6E509, 0x01156EBD, 0x00D4141D, 0x0001C029, 0x02F3D130,
         0x03A03CBB, 0x01CE7198, 0x02E2B6FF, 0x00480DB3 };
+    private static final int[] C_d4 = new int[]{ 0x0165E2B2, 0x034DCA13, 0x002ADD7A, 0x01A8283B, 0x00038052, 0x01E7A260,
+        0x03407977, 0x019CE331, 0x01C56DFF, 0x00901B67 };
 
     private static int[] precompBase = null;
 
-    private static class PointPrecomp
-    {
-        int[] ypx = X25519Field.create();
-        int[] ymx = X25519Field.create();
-        int[] xyd2 = X25519Field.create();
-    }
-
-    private static class PointXYTZ
+    private static class PointExt
     {
         int[] x = X25519Field.create();
         int[] y = X25519Field.create();
-        int[] t = X25519Field.create();
         int[] z = X25519Field.create();
+        int[] t = X25519Field.create();
+    }
+
+    private static class PointPrecomp
+    {
+        int[] ypx_h = X25519Field.create();
+        int[] ymx_h = X25519Field.create();
+        int[] xyd = X25519Field.create();
     }
 
     private static byte[] calculateS(byte[] r, byte[] k, byte[] s)
@@ -114,7 +117,7 @@ public abstract class Ed25519
         }
     }
 
-    private static boolean decodePointVar(byte[] p, int pOff, boolean negate, PointXYTZ r)
+    private static boolean decodePointVar(byte[] p, int pOff, boolean negate, PointExt r)
     {
         byte[] py = Arrays.copyOfRange(p, pOff, pOff + POINT_BYTES);
         if (!checkPointVar(py))
@@ -181,7 +184,7 @@ public abstract class Ed25519
         encode24((int)(n >>> 32), bs, off + 4);
     }
 
-    private static void encodePoint(PointXYTZ p, byte[] r, int rOff)
+    private static void encodePoint(PointExt p, byte[] r, int rOff)
     {
         int[] x = X25519Field.create();
         int[] y = X25519Field.create();
@@ -210,25 +213,6 @@ public abstract class Ed25519
         scalarMultBaseEncoded(s, pk, pkOff);
     }
 
-    private static void implScalarMultBase(byte[] ws, int off, PointXYTZ r)
-    {
-        PointPrecomp p = new PointPrecomp();
-
-        for (int i = off; i < 64; i += 2)
-        {
-            int w = ws[i];
-            int sign = w >>> 31;
-            int abs = w - ((w << 1) & -sign);
-
-            lookup(i >> 1, abs, p);
-
-            X25519Field.cswap(sign, p.ypx, p.ymx);
-            X25519Field.cnegate(sign, p.xyd2, p.xyd2);
-
-            pointAddPrecomp(p, r);
-        }
-    }
-
     private static void implSign(SHA512Digest d, byte[] h, byte[] s, byte[] pk, int pkOff, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
     {
         d.update(h, SCALAR_BYTES, SCALAR_BYTES);
@@ -251,39 +235,7 @@ public abstract class Ed25519
         System.arraycopy(S, 0, sig, sigOff + POINT_BYTES, SCALAR_BYTES);
     }
 
-    private static void lookup(int pos, int index, PointPrecomp p)
-    {
-        int off = pos * 8 * 3 * X25519Field.SIZE;
-
-//        int[] buf = X25519Field.createTable(3);
-//        X25519Field.addOne(buf, 0);
-//        X25519Field.addOne(buf, X25519Field.SIZE);
-//
-//        for (int i = 1; i <= 8; ++i)
-//        {
-//            int mask = ((i ^ index) - 1) >> 31;
-//            Nat.cmov(buf.length, mask, precompBase, off, buf, 0);
-//            off += buf.length;
-//        }
-//
-//        X25519Field.copy(buf, 0 * X25519Field.SIZE, p.ypx, 0);
-//        X25519Field.copy(buf, 1 * X25519Field.SIZE, p.ymx, 0);
-//        X25519Field.copy(buf, 2 * X25519Field.SIZE, p.xyd2, 0);
-
-        X25519Field.one(p.ypx);
-        X25519Field.one(p.ymx);
-        X25519Field.zero(p.xyd2);
-
-        for (int i = 1; i <= 8; ++i)
-        {
-            int mask = ((i ^ index) - 1) >> 31;
-            Nat.cmov(X25519Field.SIZE, mask, precompBase, off, p.ypx, 0);   off += X25519Field.SIZE;
-            Nat.cmov(X25519Field.SIZE, mask, precompBase, off, p.ymx, 0);   off += X25519Field.SIZE;
-            Nat.cmov(X25519Field.SIZE, mask, precompBase, off, p.xyd2, 0);  off += X25519Field.SIZE;
-        }
-    }
-
-    private static void pointAdd(PointXYTZ p, PointXYTZ r)
+    private static void pointAdd(PointExt p, PointExt r)
     {
         int[] A = X25519Field.create();
         int[] B = X25519Field.create();
@@ -307,11 +259,11 @@ public abstract class Ed25519
         X25519Field.carry(G);
         X25519Field.mul(E, F, r.x);
         X25519Field.mul(G, H, r.y);
-        X25519Field.mul(E, H, r.t);
         X25519Field.mul(F, G, r.z);
+        X25519Field.mul(E, H, r.t);
     }
 
-    private static void pointAddBase(PointXYTZ r)
+    private static void pointAddBase(PointExt r)
     {
         int[] A = X25519Field.create();
         int[] B = X25519Field.create();
@@ -333,36 +285,44 @@ public abstract class Ed25519
         X25519Field.carry(G);
         X25519Field.mul(E, F, r.x);
         X25519Field.mul(G, H, r.y);
-        X25519Field.mul(E, H, r.t);
         X25519Field.mul(F, G, r.z);
+        X25519Field.mul(E, H, r.t);
     }
 
-    private static void pointAddPrecomp(PointPrecomp p, PointXYTZ r)
+    private static void pointAddPrecomp(PointPrecomp p, PointExt r)
     {
         int[] A = X25519Field.create();
         int[] B = X25519Field.create();
         int[] C = X25519Field.create();
-        int[] D = X25519Field.create();
         int[] E = X25519Field.create();
         int[] F = X25519Field.create();
         int[] G = X25519Field.create();
         int[] H = X25519Field.create();
 
         X25519Field.apm(r.y, r.x, B, A);
-        X25519Field.mul(A, p.ymx, A);
-        X25519Field.mul(B, p.ypx, B);
-        X25519Field.mul(r.t, p.xyd2, C);
-        X25519Field.add(r.z, r.z, D);
+        X25519Field.mul(A, p.ymx_h, A);
+        X25519Field.mul(B, p.ypx_h, B);
+        X25519Field.mul(r.t, p.xyd, C);
         X25519Field.apm(B, A, H, E);
-        X25519Field.apm(D, C, G, F);
+        X25519Field.apm(r.z, C, G, F);
         X25519Field.carry(G);
         X25519Field.mul(E, F, r.x);
         X25519Field.mul(G, H, r.y);
-        X25519Field.mul(E, H, r.t);
         X25519Field.mul(F, G, r.z);
+        X25519Field.mul(E, H, r.t);
     }
 
-    private static void pointDouble(PointXYTZ r)
+    private static PointExt pointCopy(PointExt p)
+    {
+        PointExt r = new PointExt();
+        X25519Field.copy(p.x, 0, r.x, 0);
+        X25519Field.copy(p.y, 0, r.y, 0);
+        X25519Field.copy(p.z, 0, r.z, 0);
+        X25519Field.copy(p.t, 0, r.t, 0);
+        return r;
+    }
+
+    private static void pointDouble(PointExt r)
     {
         int[] A = X25519Field.create();
         int[] B = X25519Field.create();
@@ -384,22 +344,41 @@ public abstract class Ed25519
         X25519Field.carry(F);
         X25519Field.mul(E, F, r.x);
         X25519Field.mul(G, H, r.y);
-        X25519Field.mul(E, H, r.t);
         X25519Field.mul(F, G, r.z);
+        X25519Field.mul(E, H, r.t);
     }
 
-    private static void pointExtendXY(PointXYTZ p)
+    private static void pointExtendXY(PointExt p)
     {
-        X25519Field.mul(p.x, p.y, p.t);
         X25519Field.one(p.z);
+        X25519Field.mul(p.x, p.y, p.t);
     }
 
-    private static void pointSetNeutral(PointXYTZ p)
+    private static void pointLookup(int pos, int index, PointPrecomp p)
+    {
+        int off = pos * 8 * 3 * X25519Field.SIZE;
+
+        for (int i = 0; i < 8; ++i)
+        {
+            int mask = ((i ^ index) - 1) >> 31;
+            Nat.cmov(X25519Field.SIZE, mask, precompBase, off, p.ypx_h, 0);    off += X25519Field.SIZE;
+            Nat.cmov(X25519Field.SIZE, mask, precompBase, off, p.ymx_h, 0);    off += X25519Field.SIZE;
+            Nat.cmov(X25519Field.SIZE, mask, precompBase, off, p.xyd, 0);      off += X25519Field.SIZE;
+        }
+    }
+
+    private static void pointNegate(PointExt p)
+    {
+        X25519Field.negate(p.x, p.x);
+        X25519Field.negate(p.t, p.t);
+    }
+
+    private static void pointSetNeutral(PointExt p)
     {
         X25519Field.zero(p.x);
         X25519Field.one(p.y);
-        X25519Field.zero(p.t);
         X25519Field.one(p.z);
+        X25519Field.zero(p.t);
     }
 
     public synchronized static void precompute()
@@ -409,53 +388,82 @@ public abstract class Ed25519
             return;
         }
 
-        precompBase = new int[32 * 8 * 3 * X25519Field.SIZE];
+        final int BLOCKS = 8;
+        final int TEETH = 4;
+        final int SPACING = 8;
+        final int POINTS = 1 << (TEETH - 1);
 
-        PointXYTZ p = new PointXYTZ();
+        precompBase = new int[BLOCKS * POINTS * 3 * X25519Field.SIZE];
+
+        PointExt p = new PointExt();
         X25519Field.copy(B_x, 0, p.x, 0);
         X25519Field.copy(B_y, 0, p.y, 0);
         pointExtendXY(p);
 
-        int bit = 0, off = 0;
-        for (;;)
+        int off = 0;
+        for (int b = 0; b < BLOCKS; ++b)
         {
-            PointXYTZ q = new PointXYTZ();
-            pointSetNeutral(q);
+            PointExt[] ds = new PointExt[TEETH];
 
-            for (int j = 1; j <= 8; ++j)
+            PointExt sum = new PointExt();
+            pointSetNeutral(sum);
+
+            for (int t = 0; t < TEETH; ++t)
             {
-                pointAdd(p, q);
+                pointAdd(p, sum);
+                pointDouble(p);
+
+                ds[t] = pointCopy(p);
+
+                for (int s = 1; s < SPACING; ++s)
+                {
+                    pointDouble(p);
+                }
+            }
+
+            pointNegate(sum);
+
+            PointExt[] points = new PointExt[POINTS];
+            int k = 0;
+            points[k++] = sum;
+
+            for (int t = 0; t < (TEETH - 1); ++t)
+            {
+                int size = 1 << t;
+                for (int j = 0; j < size; ++j)
+                {
+                    points[k] = pointCopy(points[k - size]);
+                    pointAdd(ds[t], points[k++]);
+                }
+            }
+
+//            assert k == POINTS;
+
+            for (int i = 0; i < POINTS; ++i)
+            {
+                PointExt q = points[i];
 
                 int[] x = X25519Field.create();
                 int[] y = X25519Field.create();
 
+                X25519Field.add(q.z, q.z, x);
                 // TODO[ed25519] Batch inversion
-                X25519Field.inv(q.z, y);
+                X25519Field.inv(x, y);
                 X25519Field.mul(q.x, y, x);
                 X25519Field.mul(q.y, y, y);
 
                 PointPrecomp r = new PointPrecomp();
-                X25519Field.apm(y, x, r.ypx, r.ymx);
-                X25519Field.mul(x, y, r.xyd2);
-                X25519Field.mul(r.xyd2, C_d2, r.xyd2);
+                X25519Field.apm(y, x, r.ypx_h, r.ymx_h);
+                X25519Field.mul(x, y, r.xyd);
+                X25519Field.mul(r.xyd, C_d4, r.xyd);
 
-                X25519Field.normalize(r.ypx);
-                X25519Field.normalize(r.ymx);
-                X25519Field.normalize(r.xyd2);
+                X25519Field.normalize(r.ypx_h);
+                X25519Field.normalize(r.ymx_h);
+                X25519Field.normalize(r.xyd);
 
-                X25519Field.copy(r.ypx, 0, precompBase, off);   off += X25519Field.SIZE;
-                X25519Field.copy(r.ymx, 0, precompBase, off);   off += X25519Field.SIZE;
-                X25519Field.copy(r.xyd2, 0, precompBase, off);  off += X25519Field.SIZE;
-            }
-
-            if ((bit += 8) == 256)
-            {
-                break;
-            }
-
-            for (int k = 0; k < 8; ++k)
-            {
-                pointDouble(p);
+                X25519Field.copy(r.ypx_h, 0, precompBase, off);    off += X25519Field.SIZE;
+                X25519Field.copy(r.ymx_h, 0, precompBase, off);    off += X25519Field.SIZE;
+                X25519Field.copy(r.xyd, 0, precompBase, off);      off += X25519Field.SIZE;
             }
         }
     }
@@ -467,28 +475,6 @@ public abstract class Ed25519
         r[0] &= 0xF8;
         r[SCALAR_BYTES - 1] &= 0x7F;
         r[SCALAR_BYTES - 1] |= 0x40;
-    }
-
-    private static void recodeScalar(byte[] n, byte[] ws)
-    {
-        int c = 0, j = 0;
-        for (int i = 0; i < SCALAR_BYTES; ++i)
-        {
-            int ni = n[i] & 0xFF, lo = ni & 0x0F, hi = ni >>> 4;
-
-            lo += c; c = (lo + 8) >> 4; lo -= (c << 4);
-            hi += c; c = (hi + 8) >> 4; hi -= (c << 4);
-
-//            assert -8 <= lo && lo < 8;
-//            assert -8 <= hi && hi < 8;
-
-            ws[j++] = (byte)lo;
-            ws[j++] = (byte)hi;
-        }
-
-        ws[--j] += (c << 4);
-
-//        assert 0 <= ws[j] && ws[j] <= 8;
     }
 
     private static byte[] reduceScalar(byte[] n)
@@ -627,41 +613,71 @@ public abstract class Ed25519
         return r;
     }
 
-    private static void scalarMultBase(byte[] k, PointXYTZ r)
+    private static void scalarMultBase(byte[] k, PointExt r)
     {
         precompute();
 
         pointSetNeutral(r);
 
-        byte[] ws = new byte[SCALAR_BYTES * 2];
-        recodeScalar(k, ws);
+        int[] n = new int[SCALAR_INTS];
+        decodeScalar(k, 0, n);
 
-        implScalarMultBase(ws, 1, r);
-
-        for (int i = 0; i < 4; ++i)
+        // Recode the scalar into signed-digit form, then group comb bits in each block
         {
-            pointDouble(r);
+//            int hi = Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);     assert hi == 0;
+            Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);
+//            int lo = Nat.shiftDownBit(SCALAR_INTS, n, 1);           assert lo == (1 << 31);
+            Nat.shiftDownBit(SCALAR_INTS, n, 1);
+
+            for (int i = 0; i < SCALAR_INTS; ++i)
+            {
+                n[i] = Interleave.shuffle2(n[i]);
+            }
         }
 
-        implScalarMultBase(ws, 0, r);
+        PointPrecomp p = new PointPrecomp();
+
+        int shift = 28;
+        for (;;)
+        {
+            for (int b = 0; b < 8; ++b)
+            {
+                int w = n[b] >>> shift;
+                int sign = (w >>> 3) & 1;
+                int abs = (w ^ -sign) & 0xF;
+
+//                assert sign == 0 || sign == 1;
+//                assert 0 <= abs && abs < 8;
+
+                pointLookup(b, abs, p);
+
+                X25519Field.cswap(sign, p.ypx_h, p.ymx_h);
+                X25519Field.cnegate(sign, p.xyd, p.xyd);
+
+                pointAddPrecomp(p, r);
+            }
+
+            if ((shift -= 4) < 0)
+            {
+                break;
+            }
+
+            pointDouble(r);
+        }
     }
 
     private static void scalarMultBaseEncoded(byte[] k, byte[] r, int rOff)
     {
-        PointXYTZ p = new PointXYTZ();
+        PointExt p = new PointExt();
         scalarMultBase(k, p);
         encodePoint(p, r, rOff);
     }
 
-    private static void scalarMultStraussVar(int[] nb, int[] np, PointXYTZ p, PointXYTZ r)
+    private static void scalarMultStraussVar(int[] nb, int[] np, PointExt p, PointExt r)
     {
         pointSetNeutral(r);
 
-        PointXYTZ q = new PointXYTZ();
-        X25519Field.copy(p.x, 0, q.x, 0);
-        X25519Field.copy(p.y, 0, q.y, 0);
-        X25519Field.copy(p.t, 0, q.t, 0);
-        X25519Field.copy(p.z, 0, q.z, 0);
+        PointExt q = pointCopy(p);
         pointAddBase(q);
 
         for (int bit = 255; bit >= 0; --bit)
@@ -732,7 +748,7 @@ public abstract class Ed25519
             return false;
         }
 
-        PointXYTZ pA = new PointXYTZ();
+        PointExt pA = new PointExt();
         if (!decodePointVar(pk, pkOff, true, pA))
         {
             return false;
@@ -754,7 +770,7 @@ public abstract class Ed25519
         int[] nA = new int[SCALAR_INTS];
         decodeScalar(k, 0, nA);
 
-        PointXYTZ pR = new PointXYTZ();
+        PointExt pR = new PointExt();
         scalarMultStraussVar(nS, nA, pA, pR);
 
         byte[] check = new byte[POINT_BYTES];
