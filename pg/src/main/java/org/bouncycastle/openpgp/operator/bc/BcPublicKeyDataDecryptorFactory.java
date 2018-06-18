@@ -130,7 +130,7 @@ public class BcPublicKeyDataDecryptorFactory
         }
         catch (InvalidCipherTextException e)
         {
-            throw new PGPException("exception encrypting session info: " + e.getMessage(), e);
+            throw new PGPException("exception decrypting session info: " + e.getMessage(), e);
         }
 
     }
