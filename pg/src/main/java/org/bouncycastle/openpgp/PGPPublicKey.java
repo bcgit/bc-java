@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.ContainedPacket;
@@ -85,7 +86,16 @@ public class PGPPublicKey
             }
             else if (key instanceof ECPublicBCPGKey)
             {
-                this.keyStrength = ECNamedCurveTable.getByOID(((ECPublicBCPGKey)key).getCurveOID()).getCurve().getFieldSize();
+                X9ECParameters ecParameters = ECNamedCurveTable.getByOID(((ECPublicBCPGKey)key).getCurveOID());
+
+                if (ecParameters != null)
+                {
+                    this.keyStrength = ecParameters.getCurve().getFieldSize();
+                }
+                else
+                {
+                    this.keyStrength = -1; // unknown
+                }
             }
         }
     }
