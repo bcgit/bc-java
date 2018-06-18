@@ -23,8 +23,8 @@ import java.util.Date;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.bcpg.BCPGKey;
@@ -190,7 +190,7 @@ public class JcaPGPKeyConverter
             // TODO: should probably match curve by comparison as well
             ASN1ObjectIdentifier  curveOid = ASN1ObjectIdentifier.getInstance(keyInfo.getAlgorithm().getParameters());
 
-            X9ECParameters params = NISTNamedCurves.getByOID(curveOid);
+            X9ECParameters params = ECNamedCurveTable.getByOID(curveOid);
 
             ASN1OctetString key = new DEROctetString(keyInfo.getPublicKeyData().getBytes());
             X9ECPoint derQ = new X9ECPoint(params.getCurve(), key);
@@ -284,7 +284,7 @@ public class JcaPGPKeyConverter
                 ECSecretBCPGKey ecdhK = (ECSecretBCPGKey)privPk;
                 ECPrivateKeySpec ecDhSpec = new ECPrivateKeySpec(
                                                     ecdhK.getX(),
-                                                    convertX9Parameters(ecdhPub.getCurveOID(), NISTNamedCurves.getByOID(ecdhPub.getCurveOID())));
+                                                    convertX9Parameters(ecdhPub.getCurveOID(), ECNamedCurveTable.getByOID(ecdhPub.getCurveOID())));
                 fact = helper.createKeyFactory("ECDH");
 
                 return fact.generatePrivate(ecDhSpec);
@@ -293,7 +293,7 @@ public class JcaPGPKeyConverter
                 ECSecretBCPGKey ecdsaK = (ECSecretBCPGKey)privPk;
                 ECPrivateKeySpec ecDsaSpec = new ECPrivateKeySpec(
                                                     ecdsaK.getX(),
-                                                    convertX9Parameters(ecdsaPub.getCurveOID(), NISTNamedCurves.getByOID(ecdsaPub.getCurveOID())));
+                                                    convertX9Parameters(ecdsaPub.getCurveOID(), ECNamedCurveTable.getByOID(ecdsaPub.getCurveOID())));
                 fact = helper.createKeyFactory("ECDSA");
 
                 return fact.generatePrivate(ecDsaSpec);
