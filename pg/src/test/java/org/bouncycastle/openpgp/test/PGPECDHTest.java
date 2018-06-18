@@ -12,7 +12,7 @@ import java.security.spec.ECGenParameterSpec;
 import java.util.Date;
 import java.util.Iterator;
 
-import org.bouncycastle.asn1.nist.NISTNamedCurves;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
@@ -252,7 +252,7 @@ public class PGPECDHTest
         }
     }
 
-    private void encryptDecryptBCTest()
+    private void encryptDecryptBCTest(final String curve)
         throws Exception
     {
         byte[]    text = { (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o', (byte)' ', (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'!', (byte)'\n' };
@@ -260,8 +260,8 @@ public class PGPECDHTest
 
         ECKeyPairGenerator keyGen = new ECKeyPairGenerator();
 
-        X9ECParameters x9ECParameters = NISTNamedCurves.getByName("P-256");
-        keyGen.init(new ECKeyGenerationParameters(new ECNamedDomainParameters(NISTNamedCurves.getOID("P-256"), x9ECParameters.getCurve(), x9ECParameters.getG(), x9ECParameters.getN()), new SecureRandom()));
+        X9ECParameters x9ECParameters = ECNamedCurveTable.getByName(curve);
+        keyGen.init(new ECKeyGenerationParameters(new ECNamedDomainParameters(ECNamedCurveTable.getOID(curve), x9ECParameters.getCurve(), x9ECParameters.getG(), x9ECParameters.getN()), new SecureRandom()));
 
         AsymmetricCipherKeyPair kpEnc = keyGen.generateKeyPair();
 
@@ -336,7 +336,8 @@ public class PGPECDHTest
         testDecrypt(secretKeyRing);
 
         encryptDecryptTest();
-        encryptDecryptBCTest();
+        encryptDecryptBCTest("P-256");
+        encryptDecryptBCTest("brainpoolP512r1");
 
         generate();
     }
