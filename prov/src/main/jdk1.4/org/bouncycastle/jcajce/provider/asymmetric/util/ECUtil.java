@@ -332,6 +332,10 @@ public class ECUtil
             {
                 oid = GMNamedCurves.getOID(name);
             }
+            if (oid == null)
+            {
+                oid = ECNamedCurveTable.getOID(name);
+            }
         }
 
         return oid;
@@ -364,6 +368,10 @@ public class ECUtil
             if (params == null)
             {
                 params = GMNamedCurves.getByOID(oid);
+            }
+            if (params == null)
+            {
+                params = ECNamedCurveTable.getByOID(oid);
             }
         }
 
@@ -398,6 +406,10 @@ public class ECUtil
             {
                 params = GMNamedCurves.getByName(curveName);
             }
+            if (params == null)
+            {
+                params = ECNamedCurveTable.getByName(curveName);
+            }
         }
 
         return params;
@@ -430,6 +442,10 @@ public class ECUtil
             if (name == null)
             {
                 name = GMNamedCurves.getName(oid);
+            }
+            if (name == null)
+            {
+                name = ECNamedCurveTable.getName(oid);
             }
         }
 
