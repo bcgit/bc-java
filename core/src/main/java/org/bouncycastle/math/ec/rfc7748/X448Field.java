@@ -1,5 +1,7 @@
 package org.bouncycastle.math.ec.rfc7748;
 
+import org.bouncycastle.math.raw.Nat;
+
 public abstract class X448Field
 {
     public static final int SIZE = 16;
@@ -19,6 +21,11 @@ public abstract class X448Field
     public static void addOne(int[] z)
     {
         z[0] += 1;
+    }
+
+    public static void addOne(int[] z, int zOff)
+    {
+        z[zOff] += 1;
     }
 
 //    public static void apm(int[] x, int[] y, int[] zp, int[] zm)
@@ -63,6 +70,16 @@ public abstract class X448Field
         z[8] = z8; z[9] = z9; z[10] = z10; z[11] = z11; z[12] = z12; z[13] = z13; z[14] = z14; z[15] = z15;
     }
 
+    public static void cnegate(int negate, int[] z)
+    {
+//        assert negate >>> 1 == 0;
+
+        int[] t = create();
+        sub(t, z, t);
+
+        Nat.cmov(SIZE, negate, t, 0, z, 0);
+    }
+
     public static void copy(int[] x, int xOff, int[] z, int zOff)
     {
         for (int i = 0; i < SIZE; ++i)
@@ -74,6 +91,11 @@ public abstract class X448Field
     public static int[] create()
     {
         return new int[SIZE];
+    }
+
+    public static int[] createTable(int n)
+    {
+        return new int[SIZE * n];
     }
 
     public static void cswap(int swap, int[] a, int[] b)
