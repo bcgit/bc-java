@@ -256,6 +256,19 @@ public abstract class Nat
         return new long[len];
     }
 
+    public static int csub(int len, int mask, int[] x, int[] y, int[] z)
+    {
+        long MASK = -(mask & 1) & M;
+        long c = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            c += (x[i] & M) - (y[i] & MASK);
+            z[i] = (int)c;
+            c >>= 32;
+        }
+        return (int)c;
+    }
+
     public static int dec(int len, int[] z)
     {
         for (int i = 0; i < len; ++i)

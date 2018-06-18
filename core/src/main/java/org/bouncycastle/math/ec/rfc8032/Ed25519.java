@@ -466,6 +466,8 @@ public abstract class Ed25519
                 X25519Field.copy(r.xyd, 0, precompBase, off);      off += X25519Field.SIZE;
             }
         }
+
+//        assert off == precompBase.length;
     }
 
     private static void pruneScalar(byte[] n, int nOff, byte[] r)
@@ -624,9 +626,9 @@ public abstract class Ed25519
 
         // Recode the scalar into signed-digit form, then group comb bits in each block
         {
-//            int hi = Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);     assert hi == 0;
+//            int c1 = Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);     assert c1 == 0;
             Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);
-//            int lo = Nat.shiftDownBit(SCALAR_INTS, n, 1);           assert lo == (1 << 31);
+//            int c2 = Nat.shiftDownBit(SCALAR_INTS, n, 1);           assert c2 == (1 << 31);
             Nat.shiftDownBit(SCALAR_INTS, n, 1);
 
             for (int i = 0; i < SCALAR_INTS; ++i)
@@ -640,7 +642,7 @@ public abstract class Ed25519
         int shift = 28;
         for (;;)
         {
-            for (int b = 0; b < 8; ++b)
+            for (int b = 0; b < SCALAR_INTS; ++b)
             {
                 int w = n[b] >>> shift;
                 int sign = (w >>> 3) & 1;
@@ -652,7 +654,7 @@ public abstract class Ed25519
                 pointLookup(b, abs, p);
 
                 X25519Field.cswap(sign, p.ypx_h, p.ymx_h);
-                X25519Field.cnegate(sign, p.xyd, p.xyd);
+                X25519Field.cnegate(sign, p.xyd);
 
                 pointAddPrecomp(p, r);
             }

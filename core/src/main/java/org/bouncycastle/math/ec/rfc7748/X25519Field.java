@@ -64,14 +64,14 @@ public abstract class X25519Field
         z[5] = z5; z[6] = z6; z[7] = z7; z[8] = z8; z[9] = z9;
     }
 
-    public static void cnegate(int negate, int[] x, int[] z)
+    public static void cnegate(int negate, int[] z)
     {
 //      assert negate >>> 1 == 0;
 
         int mask = 0 - negate;
         for (int i = 0; i < SIZE; ++i)
         {
-            z[i] = (x[i] ^ mask) - mask;
+            z[i] = (z[i] ^ mask) - mask;
         }
     }
 
