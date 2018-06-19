@@ -2,7 +2,6 @@ package org.bouncycastle.math.ec.rfc8032;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.math.ec.rfc7748.X448Field;
-import org.bouncycastle.math.raw.Interleave;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -51,6 +50,12 @@ public abstract class Ed448
     private static final int[] B_y = new int[] { 0x0230FA14, 0x008795BF, 0x07C8AD98, 0x0132C4ED, 0x09C4FDBD, 0x01CE67C3, 0x073AD3FF,
         0x005A0C2D, 0x07789C1E, 0x0A398408, 0x0A73736C, 0x0C7624BE, 0x003756C9, 0x02488762, 0x016EB6BC, 0x0693F467 };
     private static final int C_d = -39081;
+
+    private static final int PRECOMP_BLOCKS = 5;
+    private static final int PRECOMP_TEETH = 5;
+    private static final int PRECOMP_SPACING = 18;
+    private static final int PRECOMP_POINTS = 1 << (PRECOMP_TEETH - 1);
+    private static final int PRECOMP_MASK = PRECOMP_POINTS - 1;
 
     private static int[] precompBase = null;
 
@@ -420,11 +425,14 @@ public abstract class Ed448
         X448Field.one(p.z);
     }
 
-    private static void pointLookup(int pos, int index, PointPrecomp p)
+    private static void pointLookup(int block, int index, PointPrecomp p)
     {
-        int off = pos * 8 * 2 * X448Field.SIZE;
+//        assert 0 <= block && block < PRECOMP_BLOCKS;
+//        assert 0 <= index && index < PRECOMP_POINTS;
 
-        for (int i = 0; i < 8; ++i)
+        int off = block * PRECOMP_POINTS * 2 * X448Field.SIZE;
+
+        for (int i = 0; i < PRECOMP_POINTS; ++i)
         {
             int mask = ((i ^ index) - 1) >> 31;
             Nat.cmov(X448Field.SIZE, mask, precompBase, off, p.x, 0);   off += X448Field.SIZE;
@@ -451,12 +459,7 @@ public abstract class Ed448
             return;
         }
 
-        final int BLOCKS = 14;
-        final int TEETH = 4;
-        final int SPACING = 8;
-        final int POINTS = 1 << (TEETH - 1);
-
-        precompBase = new int[BLOCKS * POINTS * 2 * X448Field.SIZE];
+        precompBase = new int[PRECOMP_BLOCKS * PRECOMP_POINTS * 2 * X448Field.SIZE];
 
         PointExt p = new PointExt();
         X448Field.copy(B_x, 0, p.x, 0);
@@ -464,21 +467,21 @@ public abstract class Ed448
         pointExtendXY(p);
 
         int off = 0;
-        for (int b = 0; b < BLOCKS; ++b)
+        for (int b = 0; b < PRECOMP_BLOCKS; ++b)
         {
-            PointExt[] ds = new PointExt[TEETH];
+            PointExt[] ds = new PointExt[PRECOMP_TEETH];
 
             PointExt sum = new PointExt();
             pointSetNeutral(sum);
 
-            for (int t = 0; t < TEETH; ++t)
+            for (int t = 0; t < PRECOMP_TEETH; ++t)
             {
                 pointAdd(p, sum);
                 pointDouble(p);
 
                 ds[t] = pointCopy(p);
 
-                for (int s = 1; s < SPACING; ++s)
+                for (int s = 1; s < PRECOMP_SPACING; ++s)
                 {
                     pointDouble(p);
                 }
@@ -486,11 +489,11 @@ public abstract class Ed448
 
             pointNegate(sum);
 
-            PointExt[] points = new PointExt[POINTS];
+            PointExt[] points = new PointExt[PRECOMP_POINTS];
             int k = 0;
             points[k++] = sum;
 
-            for (int t = 0; t < (TEETH - 1); ++t)
+            for (int t = 0; t < (PRECOMP_TEETH - 1); ++t)
             {
                 int size = 1 << t;
                 for (int j = 0; j < size; ++j)
@@ -502,7 +505,7 @@ public abstract class Ed448
 
 //            assert k == POINTS;
 
-            for (int i = 0; i < POINTS; ++i)
+            for (int i = 0; i < PRECOMP_POINTS; ++i)
             {
                 PointExt q = points[i];
                 // TODO[ed448] Batch inversion
@@ -510,8 +513,8 @@ public abstract class Ed448
                 X448Field.mul(q.x, q.z, q.x);
                 X448Field.mul(q.y, q.z, q.y);
 
-                X448Field.normalize(q.x);
-                X448Field.normalize(q.y);
+//                X448Field.normalize(q.x);
+//                X448Field.normalize(q.y);
 
                 X448Field.copy(q.x, 0, precompBase, off);   off += X448Field.SIZE;
                 X448Field.copy(q.y, 0, precompBase, off);   off += X448Field.SIZE;
@@ -813,46 +816,50 @@ public abstract class Ed448
 
         pointSetNeutral(r);
 
-        int[] n = new int[SCALAR_INTS];
+        int[] n = new int[SCALAR_INTS + 1];
         decodeScalar(k, 0, n);
 
-        // Recode the scalar into signed-digit form, then group comb bits in each block
+        // Recode the scalar into signed-digit form
         {
-//            int c1 = Nat.csub(SCALAR_INTS, n[SCALAR_INTS - 1] >>> 31, n, L, n);     assert c1 == 0;
-            Nat.csub(SCALAR_INTS, n[SCALAR_INTS - 1] >>> 31, n, L, n);
-//            int c2 = Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);                     assert c2 == 0;
-            Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);
-//            int c3 = Nat.shiftDownBit(SCALAR_INTS, n, 1);                           assert c3 == (1 << 31);
-            Nat.shiftDownBit(SCALAR_INTS, n, 1);
-
-            for (int i = 0; i < SCALAR_INTS; ++i)
-            {
-                n[i] = Interleave.shuffle2(n[i]);
-            }
+            n[SCALAR_INTS] = 4 + Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);
+//            int c = Nat.shiftDownBit(n.length, n, 0);                           assert c == (1 << 31);
+            Nat.shiftDownBit(n.length, n, 0);
         }
 
         PointPrecomp p = new PointPrecomp();
 
-        int shift = 28;
+        int cOff = PRECOMP_SPACING - 1;
         for (;;)
         {
-            for (int b = 0; b < SCALAR_INTS; ++b)
+            int cPos = cOff;
+
+            for (int b = 0; b < PRECOMP_BLOCKS; ++b)
             {
-                int w = n[b] >>> shift;
-                int sign = (w >>> 3) & 1;
-                int abs = (w ^ -sign) & 0xF;
+                int tPos = cPos, w = 0;
+
+                for (int t = 0; t < PRECOMP_TEETH; ++t)
+                {
+                    int tBit = (n[tPos >>> 5] >>> (tPos & 0x1F)) & 1;
+                    w |= tBit << t;
+                    tPos += PRECOMP_SPACING;
+                }
+
+                int sign = (w >>> (PRECOMP_TEETH - 1)) & 1;
+                int abs = (w ^ -sign) & PRECOMP_MASK;
 
 //                assert sign == 0 || sign == 1;
-//                assert 0 <= abs && abs < 8;
+//                assert 0 <= abs && abs < POINTS;
 
                 pointLookup(b, abs, p);
 
                 X448Field.cnegate(sign, p.x);
 
                 pointAddPrecomp(p, r);
+
+                cPos += PRECOMP_BLOCKS * PRECOMP_SPACING;
             }
 
-            if ((shift -= 4) < 0)
+            if (--cOff < 0)
             {
                 break;
             }
