@@ -831,12 +831,11 @@ public abstract class Ed448
         int cOff = PRECOMP_SPACING - 1;
         for (;;)
         {
-            int cPos = cOff;
+            int tPos = cOff;
 
             for (int b = 0; b < PRECOMP_BLOCKS; ++b)
             {
-                int tPos = cPos, w = 0;
-
+                int w = 0;
                 for (int t = 0; t < PRECOMP_TEETH; ++t)
                 {
                     int tBit = (n[tPos >>> 5] >>> (tPos & 0x1F)) & 1;
@@ -848,15 +847,13 @@ public abstract class Ed448
                 int abs = (w ^ -sign) & PRECOMP_MASK;
 
 //                assert sign == 0 || sign == 1;
-//                assert 0 <= abs && abs < POINTS;
+//                assert 0 <= abs && abs < PRECOMP_POINTS;
 
                 pointLookup(b, abs, p);
 
                 X448Field.cnegate(sign, p.x);
 
                 pointAddPrecomp(p, r);
-
-                cPos += PRECOMP_BLOCKS * PRECOMP_SPACING;
             }
 
             if (--cOff < 0)

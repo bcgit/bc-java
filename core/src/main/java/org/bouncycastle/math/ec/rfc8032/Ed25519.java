@@ -44,6 +44,12 @@ public abstract class Ed25519
     private static final int[] C_d4 = new int[]{ 0x0165E2B2, 0x034DCA13, 0x002ADD7A, 0x01A8283B, 0x00038052, 0x01E7A260,
         0x03407977, 0x019CE331, 0x01C56DFF, 0x00901B67 };
 
+    private static final int PRECOMP_BLOCKS = 8;
+    private static final int PRECOMP_TEETH = 4;
+    private static final int PRECOMP_SPACING = 8;
+    private static final int PRECOMP_POINTS = 1 << (PRECOMP_TEETH - 1);
+    private static final int PRECOMP_MASK = PRECOMP_POINTS - 1;
+
     private static int[] precompBase = null;
 
     private static class PointExt
@@ -354,16 +360,19 @@ public abstract class Ed25519
         X25519Field.mul(p.x, p.y, p.t);
     }
 
-    private static void pointLookup(int pos, int index, PointPrecomp p)
+    private static void pointLookup(int block, int index, PointPrecomp p)
     {
-        int off = pos * 8 * 3 * X25519Field.SIZE;
+//        assert 0 <= block && block < PRECOMP_BLOCKS;
+//        assert 0 <= index && index < PRECOMP_POINTS;
 
-        for (int i = 0; i < 8; ++i)
+        int off = block * PRECOMP_POINTS * 3 * X25519Field.SIZE;
+
+        for (int i = 0; i < PRECOMP_POINTS; ++i)
         {
             int mask = ((i ^ index) - 1) >> 31;
             Nat.cmov(X25519Field.SIZE, mask, precompBase, off, p.ypx_h, 0);    off += X25519Field.SIZE;
             Nat.cmov(X25519Field.SIZE, mask, precompBase, off, p.ymx_h, 0);    off += X25519Field.SIZE;
-            Nat.cmov(X25519Field.SIZE, mask, precompBase, off, p.xyd, 0);      off += X25519Field.SIZE;
+            Nat.cmov(X25519Field.SIZE, mask, precompBase, off, p.xyd,   0);    off += X25519Field.SIZE;
         }
     }
 
@@ -388,12 +397,7 @@ public abstract class Ed25519
             return;
         }
 
-        final int BLOCKS = 8;
-        final int TEETH = 4;
-        final int SPACING = 8;
-        final int POINTS = 1 << (TEETH - 1);
-
-        precompBase = new int[BLOCKS * POINTS * 3 * X25519Field.SIZE];
+        precompBase = new int[PRECOMP_BLOCKS * PRECOMP_POINTS * 3 * X25519Field.SIZE];
 
         PointExt p = new PointExt();
         X25519Field.copy(B_x, 0, p.x, 0);
@@ -401,21 +405,21 @@ public abstract class Ed25519
         pointExtendXY(p);
 
         int off = 0;
-        for (int b = 0; b < BLOCKS; ++b)
+        for (int b = 0; b < PRECOMP_BLOCKS; ++b)
         {
-            PointExt[] ds = new PointExt[TEETH];
+            PointExt[] ds = new PointExt[PRECOMP_TEETH];
 
             PointExt sum = new PointExt();
             pointSetNeutral(sum);
 
-            for (int t = 0; t < TEETH; ++t)
+            for (int t = 0; t < PRECOMP_TEETH; ++t)
             {
                 pointAdd(p, sum);
                 pointDouble(p);
 
                 ds[t] = pointCopy(p);
 
-                for (int s = 1; s < SPACING; ++s)
+                for (int s = 1; s < PRECOMP_SPACING; ++s)
                 {
                     pointDouble(p);
                 }
@@ -423,11 +427,11 @@ public abstract class Ed25519
 
             pointNegate(sum);
 
-            PointExt[] points = new PointExt[POINTS];
+            PointExt[] points = new PointExt[PRECOMP_POINTS];
             int k = 0;
             points[k++] = sum;
 
-            for (int t = 0; t < (TEETH - 1); ++t)
+            for (int t = 0; t < (PRECOMP_TEETH - 1); ++t)
             {
                 int size = 1 << t;
                 for (int j = 0; j < size; ++j)
@@ -439,7 +443,7 @@ public abstract class Ed25519
 
 //            assert k == POINTS;
 
-            for (int i = 0; i < POINTS; ++i)
+            for (int i = 0; i < PRECOMP_POINTS; ++i)
             {
                 PointExt q = points[i];
 
@@ -459,11 +463,11 @@ public abstract class Ed25519
 
                 X25519Field.normalize(r.ypx_h);
                 X25519Field.normalize(r.ymx_h);
-                X25519Field.normalize(r.xyd);
+//                X25519Field.normalize(r.xyd);
 
                 X25519Field.copy(r.ypx_h, 0, precompBase, off);    off += X25519Field.SIZE;
                 X25519Field.copy(r.ymx_h, 0, precompBase, off);    off += X25519Field.SIZE;
-                X25519Field.copy(r.xyd, 0, precompBase, off);      off += X25519Field.SIZE;
+                X25519Field.copy(r.xyd,   0, precompBase, off);    off += X25519Field.SIZE;
             }
         }
 
@@ -639,17 +643,17 @@ public abstract class Ed25519
 
         PointPrecomp p = new PointPrecomp();
 
-        int shift = 28;
+        int cOff = (PRECOMP_SPACING - 1) * PRECOMP_TEETH;
         for (;;)
         {
-            for (int b = 0; b < SCALAR_INTS; ++b)
+            for (int b = 0; b < PRECOMP_BLOCKS; ++b)
             {
-                int w = n[b] >>> shift;
-                int sign = (w >>> 3) & 1;
-                int abs = (w ^ -sign) & 0xF;
+                int w = n[b] >>> cOff;
+                int sign = (w >>> (PRECOMP_TEETH - 1)) & 1;
+                int abs = (w ^ -sign) & PRECOMP_MASK;
 
 //                assert sign == 0 || sign == 1;
-//                assert 0 <= abs && abs < 8;
+//                assert 0 <= abs && abs < PRECOMP_POINTS;
 
                 pointLookup(b, abs, p);
 
@@ -659,7 +663,7 @@ public abstract class Ed25519
                 pointAddPrecomp(p, r);
             }
 
-            if ((shift -= 4) < 0)
+            if ((cOff -= PRECOMP_TEETH) < 0)
             {
                 break;
             }
