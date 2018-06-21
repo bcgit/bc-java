@@ -35,8 +35,6 @@ public abstract class Ed25519
         0x01388C7F, 0x013FEC0A, 0x029E6B72, 0x0042D26D };    
     private static final int[] B_y = new int[]{ 0x02666658, 0x01999999, 0x00666666, 0x03333333, 0x00CCCCCC, 0x02666666,
         0x01999999, 0x00666666, 0x03333333, 0x00CCCCCC, };
-    private static final int[] B_t_d2 = new int[]{ 0x037AAA68, 0x02448161, 0x0049EABC, 0x011E6556, 0x004DB3D0,
-        0x0143598C, 0x02DF72F7, 0x005A85A1, 0x0344F863, 0x00DE22F6 };
     private static final int[] C_d = new int[]{ 0x035978A3, 0x02D37284, 0x018AB75E, 0x026A0A0E, 0x0000E014, 0x0379E898,
         0x01D01E5D, 0x01E738CC, 0x03715B7F, 0x00A406D9 };
     private static final int[] C_d2 = new int[]{ 0x02B2F159, 0x01A6E509, 0x01156EBD, 0x00D4141D, 0x0001C029, 0x02F3D130,
@@ -50,6 +48,8 @@ public abstract class Ed25519
     private static final int PRECOMP_POINTS = 1 << (PRECOMP_TEETH - 1);
     private static final int PRECOMP_MASK = PRECOMP_POINTS - 1;
 
+    // TODO[ed25519] Convert to PointPrecomp
+    private static PointExt[] precompBaseTable = null;
     private static int[] precompBase = null;
 
     private static class PointExt
@@ -219,6 +219,59 @@ public abstract class Ed25519
         scalarMultBaseEncoded(s, pk, pkOff);
     }
 
+    private static byte[] getWNAF(int[] n, int width)
+    {
+//        assert n[SCALAR_INTS - 1] >>> 31 == 0;
+
+        int[] t = new int[SCALAR_INTS * 2];
+        {
+            int tPos = t.length, c = 0;
+            int i = SCALAR_INTS;
+            while (--i >= 0)
+            {
+                int next = n[i];
+                t[--tPos] = (next >>> 16) | (c << 16);
+                t[--tPos] = c = next;
+            }
+        }
+
+        byte[] ws = new byte[256];
+
+        final int pow2 = 1 << width;
+        final int mask = pow2 - 1;
+        final int sign = pow2 >>> 1;
+
+        int j = 0, carry = 0;
+        for (int i = 0; i < t.length; ++i, j-= 16)
+        {
+            int word = t[i];
+            while (j < 16)
+            {
+                int word16 = word >>> j;
+                int bit = word16 & 1;
+
+                if (bit == carry)
+                {
+                    ++j;
+                    continue;
+                }
+
+                int digit = (word16 & mask) + carry;
+                carry = digit & sign;
+                digit -= (carry << 1);
+                carry >>>= (width - 1);
+
+                ws[(i << 4) + j] = (byte)digit;
+
+                j += width;
+            }
+        }
+
+//        assert carry == 0;
+
+        return ws;
+    }
+
     private static void implSign(SHA512Digest d, byte[] h, byte[] s, byte[] pk, int pkOff, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
     {
         d.update(h, SCALAR_BYTES, SCALAR_BYTES);
@@ -241,7 +294,7 @@ public abstract class Ed25519
         System.arraycopy(S, 0, sig, sigOff + POINT_BYTES, SCALAR_BYTES);
     }
 
-    private static void pointAdd(PointExt p, PointExt r)
+    private static void pointAddVar(boolean negate, PointExt p, PointExt r)
     {
         int[] A = X25519Field.create();
         int[] B = X25519Field.create();
@@ -252,8 +305,18 @@ public abstract class Ed25519
         int[] G = X25519Field.create();
         int[] H = X25519Field.create();
 
+        int[] c, d, f, g;
+        if (negate)
+        {
+            c = D; d = C; f = G; g = F;
+        }
+        else
+        {
+            c = C; d = D; f = F; g = G;
+        }
+
         X25519Field.apm(r.y, r.x, B, A);
-        X25519Field.apm(p.y, p.x, D, C);
+        X25519Field.apm(p.y, p.x, d, c);
         X25519Field.mul(A, C, A);
         X25519Field.mul(B, D, B);
         X25519Field.mul(r.t, p.t, C);
@@ -261,34 +324,8 @@ public abstract class Ed25519
         X25519Field.mul(r.z, p.z, D);
         X25519Field.add(D, D, D);
         X25519Field.apm(B, A, H, E);
-        X25519Field.apm(D, C, G, F);
-        X25519Field.carry(G);
-        X25519Field.mul(E, F, r.x);
-        X25519Field.mul(G, H, r.y);
-        X25519Field.mul(F, G, r.z);
-        X25519Field.mul(E, H, r.t);
-    }
-
-    private static void pointAddBase(PointExt r)
-    {
-        int[] A = X25519Field.create();
-        int[] B = X25519Field.create();
-        int[] C = X25519Field.create();
-        int[] D = X25519Field.create();
-        int[] E = X25519Field.create();
-        int[] F = X25519Field.create();
-        int[] G = X25519Field.create();
-        int[] H = X25519Field.create();
-
-        X25519Field.apm(r.y, r.x, B, A);
-        X25519Field.apm(B_y, B_x, D, C);
-        X25519Field.mul(A, C, A);
-        X25519Field.mul(B, D, B);
-        X25519Field.mul(r.t, B_t_d2, C);
-        X25519Field.add(r.z, r.z, D);
-        X25519Field.apm(B, A, H, E);
-        X25519Field.apm(D, C, G, F);
-        X25519Field.carry(G);
+        X25519Field.apm(D, C, g, f);
+        X25519Field.carry(g);
         X25519Field.mul(E, F, r.x);
         X25519Field.mul(G, H, r.y);
         X25519Field.mul(F, G, r.z);
@@ -376,10 +413,19 @@ public abstract class Ed25519
         }
     }
 
-    private static void pointNegate(PointExt p)
+    private static PointExt[] pointPrecompVar(PointExt p, int count)
     {
-        X25519Field.negate(p.x, p.x);
-        X25519Field.negate(p.t, p.t);
+        PointExt d = pointCopy(p);
+        pointDouble(d);
+
+        PointExt[] table = new PointExt[count];
+        table[0] = pointCopy(p);
+        for (int i = 1; i < count; ++i)
+        {
+            table[i] = pointCopy(table[i - 1]);
+            pointAddVar(false, d, table[i]);
+        }
+        return table;
     }
 
     private static void pointSetNeutral(PointExt p)
@@ -397,12 +443,16 @@ public abstract class Ed25519
             return;
         }
 
-        precompBase = new int[PRECOMP_BLOCKS * PRECOMP_POINTS * 3 * X25519Field.SIZE];
-
         PointExt p = new PointExt();
         X25519Field.copy(B_x, 0, p.x, 0);
         X25519Field.copy(B_y, 0, p.y, 0);
         pointExtendXY(p);
+
+        final int width = 7;
+        final int tableSize = 1 << (width - 2);
+        precompBaseTable = pointPrecompVar(p, tableSize);
+
+        precompBase = new int[PRECOMP_BLOCKS * PRECOMP_POINTS * 3 * X25519Field.SIZE];
 
         int off = 0;
         for (int b = 0; b < PRECOMP_BLOCKS; ++b)
@@ -414,7 +464,7 @@ public abstract class Ed25519
 
             for (int t = 0; t < PRECOMP_TEETH; ++t)
             {
-                pointAdd(p, sum);
+                pointAddVar(true, p, sum);
                 pointDouble(p);
 
                 ds[t] = pointCopy(p);
@@ -424,8 +474,6 @@ public abstract class Ed25519
                     pointDouble(p);
                 }
             }
-
-            pointNegate(sum);
 
             PointExt[] points = new PointExt[PRECOMP_POINTS];
             int k = 0;
@@ -437,7 +485,7 @@ public abstract class Ed25519
                 for (int j = 0; j < size; ++j)
                 {
                     points[k] = pointCopy(points[k - size]);
-                    pointAdd(ds[t], points[k++]);
+                    pointAddVar(false, ds[t], points[k++]);
                 }
             }
 
@@ -681,31 +729,49 @@ public abstract class Ed25519
 
     private static void scalarMultStraussVar(int[] nb, int[] np, PointExt p, PointExt r)
     {
+        precompute();
+
+        final int width = 5;
+
+        byte[] ws_b = getWNAF(nb, 7);
+        byte[] ws_p = getWNAF(np, width);
+
+        PointExt[] tp = pointPrecompVar(p, 1 << (width - 2));
+
         pointSetNeutral(r);
 
-        PointExt q = pointCopy(p);
-        pointAddBase(q);
-
-        for (int bit = 255; bit >= 0; --bit)
+        int bit = 255;
+        while (bit > 0 && (ws_b[bit] | ws_p[bit]) == 0)
         {
-            int word = bit >>> 5, shift = bit & 0x1F;
-            int nb_bit = (nb[word] >>> shift) & 1;
-            int np_bit = (np[word] >>> shift) & 1;
+            --bit;
+        }
+
+        for (;;)
+        {
+            int wb = ws_b[bit];
+            if (wb != 0)
+            {
+                int sign = wb >> 31;
+                int index = (wb ^ sign) >>> 1;
+
+                pointAddVar((sign != 0), precompBaseTable[index], r);
+            }
+
+            int wp = ws_p[bit];
+            if (wp != 0)
+            {
+                int sign = wp >> 31;
+                int index = (wp ^ sign) >>> 1;
+
+                pointAddVar((sign != 0), tp[index], r);
+            }
+
+            if (--bit < 0)
+            {
+                break;
+            }
 
             pointDouble(r);
-
-            if ((nb_bit & np_bit) != 0)
-            {
-                pointAdd(q, r);
-            }
-            else if (nb_bit != 0)
-            {
-                pointAddBase(r);
-            }
-            else if (np_bit != 0)
-            {
-                pointAdd(p, r);
-            }
         }
     }
 
