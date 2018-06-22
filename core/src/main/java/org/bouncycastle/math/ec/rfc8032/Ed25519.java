@@ -42,6 +42,8 @@ public abstract class Ed25519
     private static final int[] C_d4 = new int[]{ 0x0165E2B2, 0x034DCA13, 0x002ADD7A, 0x01A8283B, 0x00038052, 0x01E7A260,
         0x03407977, 0x019CE331, 0x01C56DFF, 0x00901B67 };
 
+    private static final int WNAF_WIDTH_BASE = 7;
+
     private static final int PRECOMP_BLOCKS = 8;
     private static final int PRECOMP_TEETH = 4;
     private static final int PRECOMP_SPACING = 8;
@@ -242,7 +244,7 @@ public abstract class Ed25519
         final int sign = pow2 >>> 1;
 
         int j = 0, carry = 0;
-        for (int i = 0; i < t.length; ++i, j-= 16)
+        for (int i = 0; i < t.length; ++i, j -= 16)
         {
             int word = t[i];
             while (j < 16)
@@ -448,9 +450,7 @@ public abstract class Ed25519
         X25519Field.copy(B_y, 0, p.y, 0);
         pointExtendXY(p);
 
-        final int width = 7;
-        final int tableSize = 1 << (width - 2);
-        precompBaseTable = pointPrecompVar(p, tableSize);
+        precompBaseTable = pointPrecompVar(p, 1 << (WNAF_WIDTH_BASE - 2));
 
         precompBase = new int[PRECOMP_BLOCKS * PRECOMP_POINTS * 3 * X25519Field.SIZE];
 
@@ -733,7 +733,7 @@ public abstract class Ed25519
 
         final int width = 5;
 
-        byte[] ws_b = getWNAF(nb, 7);
+        byte[] ws_b = getWNAF(nb, WNAF_WIDTH_BASE);
         byte[] ws_p = getWNAF(np, width);
 
         PointExt[] tp = pointPrecompVar(p, 1 << (width - 2));

@@ -51,12 +51,16 @@ public abstract class Ed448
         0x005A0C2D, 0x07789C1E, 0x0A398408, 0x0A73736C, 0x0C7624BE, 0x003756C9, 0x02488762, 0x016EB6BC, 0x0693F467 };
     private static final int C_d = -39081;
 
+    private static final int WNAF_WIDTH_BASE = 7;
+
     private static final int PRECOMP_BLOCKS = 5;
     private static final int PRECOMP_TEETH = 5;
     private static final int PRECOMP_SPACING = 18;
     private static final int PRECOMP_POINTS = 1 << (PRECOMP_TEETH - 1);
     private static final int PRECOMP_MASK = PRECOMP_POINTS - 1;
 
+    // TODO[ed448] Convert to PointPrecomp
+    private static PointExt[] precompBaseTable = null;
     private static int[] precompBase = null;
 
     private static class PointExt
@@ -258,6 +262,59 @@ public abstract class Ed448
         scalarMultBaseEncodedVar(s, pk, pkOff);
     }
 
+    private static byte[] getWNAF(int[] n, int width)
+    {
+//        assert n[SCALAR_INTS - 1] >>> 31 == 0;
+
+        int[] t = new int[SCALAR_INTS * 2];
+        {
+            int tPos = t.length, c = 0;
+            int i = SCALAR_INTS;
+            while (--i >= 0)
+            {
+                int next = n[i];
+                t[--tPos] = (next >>> 16) | (c << 16);
+                t[--tPos] = c = next;
+            }
+        }
+
+        byte[] ws = new byte[448];
+
+        final int pow2 = 1 << width;
+        final int mask = pow2 - 1;
+        final int sign = pow2 >>> 1;
+
+        int j = 0, carry = 0;
+        for (int i = 0; i < t.length; ++i, j -= 16)
+        {
+            int word = t[i];
+            while (j < 16)
+            {
+                int word16 = word >>> j;
+                int bit = word16 & 1;
+
+                if (bit == carry)
+                {
+                    ++j;
+                    continue;
+                }
+
+                int digit = (word16 & mask) + carry;
+                carry = digit & sign;
+                digit -= (carry << 1);
+                carry >>>= (width - 1);
+
+                ws[(i << 4) + j] = (byte)digit;
+
+                j += width;
+            }
+        }
+
+//        assert carry == 0;
+
+        return ws;
+    }
+
     private static void implSignVar(SHAKEDigest d, byte[] h, byte[] s, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
     {
         byte phflag = 0x00;
@@ -284,7 +341,7 @@ public abstract class Ed448
         System.arraycopy(S, 0, sig, sigOff + POINT_BYTES, SCALAR_BYTES);
     }
 
-    private static void pointAdd(PointExt p, PointExt r)
+    private static void pointAddVar(boolean negate, PointExt p, PointExt r)
     {
         int[] A = X448Field.create();
         int[] B = X448Field.create();
@@ -295,6 +352,18 @@ public abstract class Ed448
         int[] G = X448Field.create();
         int[] H = X448Field.create();
 
+        int[] b, e, f, g;
+        if (negate)
+        {
+            b = E; e = B; f = G; g = F;
+            X448Field.sub(p.y, p.x, H);
+        }
+        else
+        {
+            b = B; e = E; f = F; g = G;
+            X448Field.add(p.y, p.x, H);
+        }
+
         X448Field.mul(p.z, r.z, A);
         X448Field.sqr(A, B);
         X448Field.mul(p.x, r.x, C);
@@ -302,51 +371,17 @@ public abstract class Ed448
         X448Field.mul(C, D, E);
         X448Field.mul(E, -C_d, E);
 //        X448Field.apm(B, E, F, G);
-        X448Field.add(B, E, F);
-        X448Field.sub(B, E, G);
-        X448Field.add(p.x, p.y, B);
+        X448Field.add(B, E, f);
+        X448Field.sub(B, E, g);
         X448Field.add(r.x, r.y, E);
-        X448Field.mul(B, E, H);
+        X448Field.mul(H, E, H);
 //        X448Field.apm(D, C, B, E);
-        X448Field.add(D, C, B);
-        X448Field.sub(D, C, E);
-        X448Field.carry(B);
+        X448Field.add(D, C, b);
+        X448Field.sub(D, C, e);
+        X448Field.carry(b);
         X448Field.sub(H, B, H);
         X448Field.mul(H, A, H);
         X448Field.mul(E, A, E);
-        X448Field.mul(F, H, r.x);
-        X448Field.mul(E, G, r.y);
-        X448Field.mul(F, G, r.z);
-    }
-
-    private static void pointAddBase(PointExt r)
-    {
-        int[] B = X448Field.create();
-        int[] C = X448Field.create();
-        int[] D = X448Field.create();
-        int[] E = X448Field.create();
-        int[] F = X448Field.create();
-        int[] G = X448Field.create();
-        int[] H = X448Field.create();
-
-        X448Field.sqr(r.z, B);
-        X448Field.mul(B_x, r.x, C);
-        X448Field.mul(B_y, r.y, D);
-        X448Field.mul(C, D, E);
-        X448Field.mul(E, -C_d, E);
-//        X448Field.apm(B, E, F, G);
-        X448Field.add(B, E, F);
-        X448Field.sub(B, E, G);
-        X448Field.add(B_x, B_y, B);
-        X448Field.add(r.x, r.y, E);
-        X448Field.mul(B, E, H);
-//        X448Field.apm(D, C, B, E);
-        X448Field.add(D, C, B);
-        X448Field.sub(D, C, E);
-        X448Field.carry(B);
-        X448Field.sub(H, B, H);
-        X448Field.mul(H, r.z, H);
-        X448Field.mul(E, r.z, E);
         X448Field.mul(F, H, r.x);
         X448Field.mul(E, G, r.y);
         X448Field.mul(F, G, r.z);
@@ -440,9 +475,19 @@ public abstract class Ed448
         }
     }
 
-    private static void pointNegate(PointExt p)
+    private static PointExt[] pointPrecompVar(PointExt p, int count)
     {
-        X448Field.negate(p.x, p.x);
+        PointExt d = pointCopy(p);
+        pointDouble(d);
+
+        PointExt[] table = new PointExt[count];
+        table[0] = pointCopy(p);
+        for (int i = 1; i < count; ++i)
+        {
+            table[i] = pointCopy(table[i - 1]);
+            pointAddVar(false, d, table[i]);
+        }
+        return table;
     }
 
     private static void pointSetNeutral(PointExt p)
@@ -459,12 +504,14 @@ public abstract class Ed448
             return;
         }
 
-        precompBase = new int[PRECOMP_BLOCKS * PRECOMP_POINTS * 2 * X448Field.SIZE];
-
         PointExt p = new PointExt();
         X448Field.copy(B_x, 0, p.x, 0);
         X448Field.copy(B_y, 0, p.y, 0);
         pointExtendXY(p);
+
+        precompBaseTable = pointPrecompVar(p, 1 << (WNAF_WIDTH_BASE - 2));
+
+        precompBase = new int[PRECOMP_BLOCKS * PRECOMP_POINTS * 2 * X448Field.SIZE];
 
         int off = 0;
         for (int b = 0; b < PRECOMP_BLOCKS; ++b)
@@ -476,7 +523,7 @@ public abstract class Ed448
 
             for (int t = 0; t < PRECOMP_TEETH; ++t)
             {
-                pointAdd(p, sum);
+                pointAddVar(true, p, sum);
                 pointDouble(p);
 
                 ds[t] = pointCopy(p);
@@ -486,8 +533,6 @@ public abstract class Ed448
                     pointDouble(p);
                 }
             }
-
-            pointNegate(sum);
 
             PointExt[] points = new PointExt[PRECOMP_POINTS];
             int k = 0;
@@ -499,7 +544,7 @@ public abstract class Ed448
                 for (int j = 0; j < size; ++j)
                 {
                     points[k] = pointCopy(points[k - size]);
-                    pointAdd(ds[t], points[k++]);
+                    pointAddVar(false, ds[t], points[k++]);
                 }
             }
 
@@ -874,31 +919,49 @@ public abstract class Ed448
 
     private static void scalarMultStraussVar(int[] nb, int[] np, PointExt p, PointExt r)
     {
+        precompute();
+
+        final int width = 5;
+
+        byte[] ws_b = getWNAF(nb, WNAF_WIDTH_BASE);
+        byte[] ws_p = getWNAF(np, width);
+
+        PointExt[] tp = pointPrecompVar(p, 1 << (width - 2));
+
         pointSetNeutral(r);
 
-        PointExt q = pointCopy(p);
-        pointAddBase(q);
-
-        for (int bit = 447; bit >= 0; --bit)
+        int bit = 447;
+        while (bit > 0 && (ws_b[bit] | ws_p[bit]) == 0)
         {
-            int word = bit >>> 5, shift = bit & 0x1F;
-            int nb_bit = (nb[word] >>> shift) & 1;
-            int np_bit = (np[word] >>> shift) & 1;
+            --bit;
+        }
+
+        for (;;)
+        {
+            int wb = ws_b[bit];
+            if (wb != 0)
+            {
+                int sign = wb >> 31;
+                int index = (wb ^ sign) >>> 1;
+
+                pointAddVar((sign != 0), precompBaseTable[index], r);
+            }
+
+            int wp = ws_p[bit];
+            if (wp != 0)
+            {
+                int sign = wp >> 31;
+                int index = (wp ^ sign) >>> 1;
+
+                pointAddVar((sign != 0), tp[index], r);
+            }
+
+            if (--bit < 0)
+            {
+                break;
+            }
 
             pointDouble(r);
-
-            if ((nb_bit & np_bit) != 0)
-            {
-                pointAdd(q, r);
-            }
-            else if (nb_bit != 0)
-            {
-                pointAddBase(r);
-            }
-            else if (np_bit != 0)
-            {
-                pointAdd(p, r);
-            }
         }
     }
 
