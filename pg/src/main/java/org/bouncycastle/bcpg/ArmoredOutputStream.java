@@ -9,6 +9,11 @@ import org.bouncycastle.util.Strings;
 
 /**
  * Output stream that writes data in ASCII Armored format.
+ * <p>
+ * Note 1: close() needs to be called on an ArmoredOutputStream to write the final checksum. flush() will not do this as
+ * other classes assume it is always fine to call flush() - it is not though if the checksum gets output.
+ * Note 2: as multiple PGP blobs are often written to the same stream, close() does not close the underlying stream.
+ * </p>
  */
 public class ArmoredOutputStream
     extends OutputStream
