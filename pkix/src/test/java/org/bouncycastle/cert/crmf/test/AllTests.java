@@ -19,7 +19,6 @@ import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 import javax.security.auth.x500.X500Principal;
 
-import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -370,7 +369,7 @@ public class AllTests
 
         OutputEncryptor outputEncryptor = encryptorBuilder.build();
 
-        Assert.assertEquals(keySize / 8, ((byte[])(outputEncryptor.getKey().getRepresentation())).length);
+        assertEquals(keySize / 8, ((byte[])(outputEncryptor.getKey().getRepresentation())).length);
     }
 
     public void testEncryptedValue()
@@ -440,9 +439,9 @@ public class AllTests
 
         EncryptedValue value = build.build(cert);
 
-        Assert.assertEquals(PKCSObjectIdentifiers.id_RSAES_OAEP, value.getKeyAlg().getAlgorithm());
-        Assert.assertEquals(NISTObjectIdentifiers.id_sha256, RSAESOAEPparams.getInstance(value.getKeyAlg().getParameters()).getHashAlgorithm().getAlgorithm());
-        Assert.assertEquals(new DEROctetString(new byte[2]), RSAESOAEPparams.getInstance(value.getKeyAlg().getParameters()).getPSourceAlgorithm().getParameters());
+        assertEquals(PKCSObjectIdentifiers.id_RSAES_OAEP, value.getKeyAlg().getAlgorithm());
+        assertEquals(NISTObjectIdentifiers.id_sha256, RSAESOAEPparams.getInstance(value.getKeyAlg().getParameters()).getHashAlgorithm().getAlgorithm());
+        assertEquals(new DEROctetString(new byte[2]), RSAESOAEPparams.getInstance(value.getKeyAlg().getParameters()).getPSourceAlgorithm().getParameters());
 
         ValueDecryptorGenerator decGen = new JceAsymmetricValueDecryptorGenerator(kp.getPrivate()).setProvider(BC);
 
