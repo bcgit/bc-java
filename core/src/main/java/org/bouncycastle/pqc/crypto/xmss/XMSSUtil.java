@@ -108,10 +108,7 @@ public class XMSSUtil
             throw new NullPointerException("in == null");
         }
         byte[] out = new byte[in.length];
-        for (int i = 0; i < in.length; i++)
-        {
-            out[i] = in[i];
-        }
+        System.arraycopy(in, 0, out, 0, in.length);
         return out;
     }
 
@@ -131,10 +128,7 @@ public class XMSSUtil
         for (int i = 0; i < in.length; i++)
         {
             out[i] = new byte[in[i].length];
-            for (int j = 0; j < in[i].length; j++)
-            {
-                out[i][j] = in[i][j];
-            }
+            System.arraycopy(in[i], 0, out[i], 0, in[i].length);
         }
         return out;
     }
