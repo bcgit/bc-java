@@ -73,7 +73,8 @@ public class RegressionTest
         new ObjectIdentifierTest(),
         new RFC4519Test(),
         new PolicyConstraintsTest(),
-        new PollReqContentTest()
+        new PollReqContentTest(),
+        new DhSigStaticTest()
     };
 
     public static void main(
