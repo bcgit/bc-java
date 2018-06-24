@@ -78,7 +78,6 @@ public class DhSigStatic
         return Arrays.clone(hashValue.getOctets());
     }
 
-    @Override
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
