@@ -151,16 +151,14 @@ public class Blake2sDigest
     /**
      * BLAKE2s for hashing.
      *
-     * @param digestBits the desired digest length in bits. Must be one of
-     *                   [128, 160, 224, 256].
+     * @param digestBits the desired digest length in bits. Must be a multiple of 8 and less than 256.
      */
     public Blake2sDigest(int digestBits)
     {
-        if (digestBits != 128 && digestBits != 160 &&
-            digestBits != 224 && digestBits != 256)
+        if (digestBits < 8 || digestBits > 256 || digestBits % 8 != 0)
         {
             throw new IllegalArgumentException(
-                "BLAKE2s digest restricted to one of [128, 160, 224, 256]");
+                "BLAKE2s digest bit length must be a multiple of 8 and not greater than 256");
         }
         buffer = new byte[BLOCK_LENGTH_BYTES];
         keyLength = 0;
