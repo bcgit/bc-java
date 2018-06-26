@@ -9,7 +9,6 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.est.jcajce.JsseDefaultHostnameAuthorizer;
 import org.bouncycastle.util.io.pem.PemReader;
-import org.junit.Assert;
 
 /**
  * TestHostNameAuthorizer tests the hostname authorizer only. EST related functions
@@ -38,8 +37,8 @@ public class TestHostNameAuthorizer
     {
         X509Certificate cert = readPemCertificate("san/cert_cn_match_wc.pem");
 
-        Assert.assertTrue("Common Name match", new JsseDefaultHostnameAuthorizer(null).verify("aardvark.cisco.com", cert));
-        Assert.assertFalse("Not match", new JsseDefaultHostnameAuthorizer(null).verify("cisco.com", cert));
+        assertTrue("Common Name match", new JsseDefaultHostnameAuthorizer(null).verify("aardvark.cisco.com", cert));
+        assertFalse("Not match", new JsseDefaultHostnameAuthorizer(null).verify("cisco.com", cert));
     }
 
     public void testCNMismatch_1()
@@ -47,7 +46,7 @@ public class TestHostNameAuthorizer
     {
         X509Certificate cert = readPemCertificate("san/cert_cn_mismatch_wc.pem");
 
-        Assert.assertFalse("Not match", new JsseDefaultHostnameAuthorizer(null).verify("aardvark", cert));
+        assertFalse("Not match", new JsseDefaultHostnameAuthorizer(null).verify("aardvark", cert));
     }
 
 
@@ -57,7 +56,7 @@ public class TestHostNameAuthorizer
     {
         X509Certificate cert = readPemCertificate("san/cert_cn_mismatch_ip.pem");
 
-        Assert.assertFalse("Not match", new JsseDefaultHostnameAuthorizer(null).verify("127.0.0.1", cert));
+        assertFalse("Not match", new JsseDefaultHostnameAuthorizer(null).verify("127.0.0.1", cert));
     }
 
     public void testWCMismatch()
@@ -65,44 +64,44 @@ public class TestHostNameAuthorizer
     {
         X509Certificate cert = readPemCertificate("san/cert_cn_mismatch_ip.pem");
 
-        Assert.assertFalse("Not match", new JsseDefaultHostnameAuthorizer(null).verify("aardvark.cisco.com", cert));
+        assertFalse("Not match", new JsseDefaultHostnameAuthorizer(null).verify("aardvark.cisco.com", cert));
     }
 
     public void testSANMatch()
         throws Exception
     {
         X509Certificate cert = readPemCertificate("san/cert_san_match.pem");
-        Assert.assertTrue("Match", new JsseDefaultHostnameAuthorizer(null).verify("localhost.cisco.com", cert));
+        assertTrue("Match", new JsseDefaultHostnameAuthorizer(null).verify("localhost.cisco.com", cert));
     }
 
     public void testSANMatchIP()
         throws Exception
     {
         X509Certificate cert = readPemCertificate("san/cert_san_match_ip.pem");
-        Assert.assertTrue("Match", new JsseDefaultHostnameAuthorizer(null).verify("192.168.51.140", cert));
-        Assert.assertTrue("Match", new JsseDefaultHostnameAuthorizer(null).verify("127.0.0.1", cert));
-        Assert.assertFalse("Not Match", new JsseDefaultHostnameAuthorizer(null).verify("10.0.0.1", cert));
+        assertTrue("Match", new JsseDefaultHostnameAuthorizer(null).verify("192.168.51.140", cert));
+        assertTrue("Match", new JsseDefaultHostnameAuthorizer(null).verify("127.0.0.1", cert));
+        assertFalse("Not Match", new JsseDefaultHostnameAuthorizer(null).verify("10.0.0.1", cert));
     }
 
     public void testSANMatchWC()
         throws Exception
     {
         X509Certificate cert = readPemCertificate("san/cert_san_mismatch_wc.pem");
-        Assert.assertTrue("Match", new JsseDefaultHostnameAuthorizer(null).verify("roundhouse.yahoo.com", cert));
-        Assert.assertFalse("Not Match", new JsseDefaultHostnameAuthorizer(null).verify("aardvark.cisco.com", cert));
+        assertTrue("Match", new JsseDefaultHostnameAuthorizer(null).verify("roundhouse.yahoo.com", cert));
+        assertFalse("Not Match", new JsseDefaultHostnameAuthorizer(null).verify("aardvark.cisco.com", cert));
     }
 
     public void testSANMismatchIP()
         throws Exception
     {
         X509Certificate cert = readPemCertificate("san/cert_san_mismatch_ip.pem");
-        Assert.assertFalse("Not Match", new JsseDefaultHostnameAuthorizer(null).verify("localhost.me", cert));
+        assertFalse("Not Match", new JsseDefaultHostnameAuthorizer(null).verify("localhost.me", cert));
     }
 
     public void testSANMismatchWC()
         throws Exception
     {
         X509Certificate cert = readPemCertificate("san/cert_san_mismatch_wc.pem");
-        Assert.assertFalse("Not Match", new JsseDefaultHostnameAuthorizer(null).verify("localhost.me", cert));
+        assertFalse("Not Match", new JsseDefaultHostnameAuthorizer(null).verify("localhost.me", cert));
     }
 }
