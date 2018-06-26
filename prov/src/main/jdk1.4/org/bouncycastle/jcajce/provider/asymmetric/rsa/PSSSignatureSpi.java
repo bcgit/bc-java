@@ -235,6 +235,12 @@ public class PSSSignatureSpi
             this.paramSpec = newParamSpec;
             this.saltLength = paramSpec.getSaltLength();
 
+            boolean isSha3 = false;
+            if (paramSpec instanceof PSSParamSpec)
+            {
+                 isSha3 = ((PSSParamSpec)paramSpec).getDigestName().startsWith("SHA3");
+            }
+
             if (mgfDigest == null)
             {
                 switch (saltLength)
@@ -243,16 +249,44 @@ public class PSSSignatureSpi
                     this.mgfDigest = new SHA1Digest();
                     break;
                 case 28:
-                    this.mgfDigest = new SHA224Digest();
+                    if (isSha3)
+                    {
+                        this.mgfDigest = new SHA3Digest(224);
+                    }
+                    else
+                    {
+                        this.mgfDigest = new SHA224Digest();
+                    }
                     break;
                 case 32:
-                    this.mgfDigest = new SHA256Digest();
+                    if (isSha3)
+                    {
+                        this.mgfDigest = new SHA3Digest(256);
+                    }
+                    else
+                    {
+                        this.mgfDigest = new SHA256Digest();
+                    }
                     break;
                 case 48:
-                    this.mgfDigest = new SHA384Digest();
+                    if (isSha3)
+                    {
+                        this.mgfDigest = new SHA3Digest(384);
+                    }
+                    else
+                    {
+                        this.mgfDigest = new SHA384Digest();
+                    }
                     break;
                 case 64:
-                    this.mgfDigest = new SHA512Digest();
+                    if (isSha3)
+                    {
+                        this.mgfDigest = new SHA3Digest(512);
+                    }
+                    else
+                    {
+                        this.mgfDigest = new SHA512Digest();
+                    }
                     break;
                 default:
                     if (saltLength <= 20)
