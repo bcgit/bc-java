@@ -1327,7 +1327,8 @@ public class CertTest
             Certificate cert = fact.generateCertificate(bIn);
 
             PublicKey k = cert.getPublicKey();
-            // System.out.println(cert);
+//            System.out.println("****** " + id + " ******");
+//            System.out.println(cert);
         }
         catch (Exception e)
         {
@@ -3324,7 +3325,7 @@ public class CertTest
 
             cert = (X509Certificate)fact.generateCertificate(bIn);
 
-            //System.out.println(cert);
+//            System.out.println(cert);
         }
     }
 
@@ -3953,7 +3954,7 @@ public class CertTest
         checkCertificate(3, cert3);
         checkCertificate(4, cert4);
         checkCertificate(5, cert5);
-        // checkCertificate(6, oldEcdsa);  no H value, parameters actually invalid.
+//        checkCertificate(6, oldEcdsa); // no H value, EC parameters actually invalid.
         checkCertificate(7, cert7);
 
         checkComparison(cert1);
