@@ -49,7 +49,7 @@ public abstract class AlgorithmParametersSpi
         protected byte[] engineGetEncoded(
             String format)
         {
-            if (isASN1FormatString(format) || format.equalsIgnoreCase("X.509"))
+            if (this.isASN1FormatString(format) || format.equalsIgnoreCase("X.509"))
             {
                 return engineGetEncoded();
             }
@@ -200,7 +200,7 @@ public abstract class AlgorithmParametersSpi
             String format)
             throws IOException
         {
-            if (isASN1FormatString(format) || format.equalsIgnoreCase("X.509"))
+            if (this.isASN1FormatString(format) || format.equalsIgnoreCase("X.509"))
             {
                 engineInit(params);
             }
