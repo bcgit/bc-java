@@ -14,6 +14,8 @@ import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 public class MQVBasicAgreement
     implements BasicAgreement
 {
+    private static final BigInteger ONE = BigInteger.valueOf(1);
+
     DHMQVPrivateParameters privParams;
 
     public void init(
@@ -47,7 +49,7 @@ public class MQVBasicAgreement
             pubParams.getStaticPublicKey(), privParams.getEphemeralPrivateKey(), privParams.getEphemeralPublicKey(),
             pubParams.getEphemeralPublicKey());
 
-        if (agreement.equals(BigInteger.ONE))
+        if (agreement.equals(ONE))
         {
             throw new IllegalStateException("1 is not a valid agreement value for MQV");
         }
