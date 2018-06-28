@@ -84,7 +84,11 @@ public abstract class ECFieldElement
         return BigIntegers.asUnsignedByteArray((getFieldSize() + 7) / 8, toBigInteger());
     }
 
-    public static class Fp extends ECFieldElement
+    public static abstract class AbstractFp extends ECFieldElement
+    {
+    }
+
+    public static class Fp extends AbstractFp
     {
         BigInteger q, r, x;
 
@@ -491,6 +495,49 @@ public abstract class ECFieldElement
         }
     }
 
+    public static abstract class AbstractF2m extends ECFieldElement
+    {
+        public ECFieldElement halfTrace()
+        {
+            int m = getFieldSize();
+            if ((m & 1) == 0)
+            {
+                throw new IllegalStateException("Half-trace only defined for odd m");
+            }
+
+            ECFieldElement fe = this;
+            ECFieldElement ht = fe;
+            for (int i = 2; i < m; i += 2)
+            {
+                fe = fe.squarePow(2);
+                ht = ht.add(fe);
+            }
+
+            return ht;
+        }
+
+        public int trace()
+        {
+            int m = getFieldSize();
+            ECFieldElement fe = this;
+            ECFieldElement tr = fe;
+            for (int i = 1; i < m; ++i)
+            {
+                fe = fe.square();
+                tr = tr.add(fe);
+            }
+            if (tr.isZero())
+            {
+                return 0;
+            }
+            if (tr.isOne())
+            {
+                return 1;
+            }
+            throw new IllegalStateException("Internal error in trace calculation");
+        }
+    }
+
     /**
      * Class representing the Elements of the finite field
      * <code>F<sub>2<sup>m</sup></sub></code> in polynomial basis (PB)
@@ -498,7 +545,7 @@ public abstract class ECFieldElement
      * basis representations are supported. Gaussian normal basis (GNB)
      * representation is not supported.
      */
-    public static class F2m extends ECFieldElement
+    public static class F2m extends AbstractF2m
     {
         /**
          * Indicates gaussian normal basis representation (GNB). Number chosen

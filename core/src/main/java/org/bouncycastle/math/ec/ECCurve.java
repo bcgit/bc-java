@@ -221,7 +221,7 @@ public abstract class ECCurve
         // TODO Default behaviour could be improved if the two curves have the same coordinate system by copying any Z coordinates.
         p = p.normalize();
 
-        return validatePoint(p.getXCoord().toBigInteger(), p.getYCoord().toBigInteger(), p.withCompression);
+        return createPoint(p.getXCoord().toBigInteger(), p.getYCoord().toBigInteger(), p.withCompression);
     }
 
     /**
@@ -391,7 +391,9 @@ public abstract class ECCurve
             BigInteger X = BigIntegers.fromUnsignedByteArray(encoded, 1, expectedLength);
 
             p = decompressPoint(yTilde, X);
-            if (!p.satisfiesCofactor())
+
+            // TODO Skip curve equation check? 
+            if (!p.isValid())
             {
                 throw new IllegalArgumentException("Invalid point");
             }
@@ -870,7 +872,7 @@ public abstract class ECCurve
          * @return the solution for <code>z<sup>2</sup> + z = beta</code> or
          *         <code>null</code> if no solution exists.
          */
-        private ECFieldElement solveQuadraticEquation(ECFieldElement beta)
+        protected ECFieldElement solveQuadraticEquation(ECFieldElement beta)
         {
             if (beta.isZero())
             {

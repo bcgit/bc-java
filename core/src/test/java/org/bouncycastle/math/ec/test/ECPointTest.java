@@ -451,6 +451,22 @@ public class ECPointTest extends TestCase
         }
     }
 
+    private void implValidityTest(ECCurve c, ECPoint g)
+    {
+        assertTrue(g.isValid());
+
+        BigInteger h = c.getCofactor();
+        if (h != null && h.compareTo(ECConstants.ONE) > 0)
+        {
+            if (ECAlgorithms.isF2mCurve(c))
+            {
+                ECPoint order2 = c.createPoint(ECConstants.ZERO, c.getB().sqrt().toBigInteger());
+                ECPoint bad = g.add(order2);
+                assertFalse(bad.isValid());
+            }
+        }
+    }
+
     private void implAddSubtractMultiplyTwiceEncodingTestAllCoords(X9ECParameters x9ECParameters)
     {
         BigInteger n = x9ECParameters.getN();
@@ -479,6 +495,8 @@ public class ECPointTest extends TestCase
                 implAddSubtractMultiplyTwiceEncodingTest(c, q, n);
 
                 implSqrtTest(c);
+
+                implValidityTest(c, g);
             }
         }
     }
