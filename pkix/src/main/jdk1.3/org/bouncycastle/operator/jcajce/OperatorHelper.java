@@ -13,6 +13,7 @@ import java.security.Signature;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.HashMap;
@@ -330,17 +331,15 @@ class OperatorHelper
             // RFC 4056
             // When the id-RSASSA-PSS algorithm identifier is used for a signature,
             // the AlgorithmIdentifier parameters field MUST contain RSASSA-PSS-params.
-/*
             if (algorithm.getAlgorithm().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
             {
                 AlgorithmParameters params = helper.createAlgorithmParameters(algName);
 
                 AlgorithmParametersUtils.loadParameters(params, algorithm.getParameters());
 
-                PSSParameterSpec spec = (PSSParameterSpec)params.getParameterSpec(PSSParameterSpec.class);
+                AlgorithmParameterSpec spec = params.getParameterSpec(AlgorithmParameterSpec.class);
                 sig.setParameter(spec);
             }
-*/
         }
         catch (Exception e)
         {
@@ -378,7 +377,7 @@ class OperatorHelper
         String name = MessageDigestUtils.getDigestName(oid);
 
         int dIndex = name.indexOf('-');
-        if (dIndex > 0)
+        if (dIndex > 0 && !name.startsWith("SHA3"))
         {
             return name.substring(0, dIndex) + name.substring(dIndex + 1);
         }

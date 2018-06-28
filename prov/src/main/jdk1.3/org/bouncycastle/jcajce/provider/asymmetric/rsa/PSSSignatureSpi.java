@@ -31,6 +31,7 @@ public class PSSSignatureSpi
     extends Signature
 {
     private AlgorithmParameters engineParams;
+    private PSSParamSpec paramSpec;
     private AsymmetricBlockCipher signer;
     private Digest contentDigest;
     private Digest mgfDigest;
@@ -274,7 +275,88 @@ public class PSSSignatureSpi
         AlgorithmParameterSpec params)
         throws InvalidParameterException
     {
-            throw new InvalidParameterException("Only PSSParameterSpec supported");
+        if (params instanceof PSSParamSpec)
+        {
+            PSSParamSpec newParamSpec = (PSSParamSpec)params;
+
+            this.engineParams = null;
+            this.paramSpec = newParamSpec;
+            this.saltLength = paramSpec.getSaltLength();
+
+            boolean isSha3 = false;
+            if (paramSpec instanceof PSSParamSpec)
+            {
+                 isSha3 = ((PSSParamSpec)paramSpec).getDigestName().startsWith("SHA3");
+            }
+
+            if (mgfDigest == null)
+            {
+                switch (saltLength)
+                {
+                case 20:
+                    this.mgfDigest = new SHA1Digest();
+                    break;
+                case 28:
+                    if (isSha3)
+                    {
+                        this.mgfDigest = new SHA3Digest(224);
+                    }
+                    else
+                    {
+                        this.mgfDigest = new SHA224Digest();
+                    }
+                    break;
+                case 32:
+                    if (isSha3)
+                    {
+                        this.mgfDigest = new SHA3Digest(256);
+                    }
+                    else
+                    {
+                        this.mgfDigest = new SHA256Digest();
+                    }
+                    break;
+                case 48:
+                    if (isSha3)
+                    {
+                        this.mgfDigest = new SHA3Digest(384);
+                    }
+                    else
+                    {
+                        this.mgfDigest = new SHA384Digest();
+                    }
+                    break;
+                case 64:
+                    if (isSha3)
+                    {
+                        this.mgfDigest = new SHA3Digest(512);
+                    }
+                    else
+                    {
+                        this.mgfDigest = new SHA512Digest();
+                    }
+                    break;
+                default:
+                    if (saltLength <= 20)
+                    {
+                        this.mgfDigest = new SHA1Digest();
+                    }
+                    else if (saltLength <= 28)
+                    {
+                        this.mgfDigest = new SHA224Digest();
+                    }
+                    else if (saltLength <= 32)
+                    {
+                         this.mgfDigest = new SHA256Digest();
+                    }
+                }
+                setupContentDigest();
+            }
+        }
+        else
+        {
+            throw new InvalidParameterException("Only PSSParamSpec supported");
+        }
     }
 
     protected AlgorithmParameters engineGetParameters()
