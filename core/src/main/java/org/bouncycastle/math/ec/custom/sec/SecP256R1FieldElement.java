@@ -7,7 +7,7 @@ import org.bouncycastle.math.raw.Mod;
 import org.bouncycastle.math.raw.Nat256;
 import org.bouncycastle.util.Arrays;
 
-public class SecP256R1FieldElement extends ECFieldElement
+public class SecP256R1FieldElement extends ECFieldElement.AbstractFp
 {
     public static final BigInteger Q = SecP256R1Curve.q;
 

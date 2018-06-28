@@ -19,6 +19,8 @@ import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+
 /**
  * {@link JcaJceHelper} that obtains all algorithms using a specific named provider.
  */

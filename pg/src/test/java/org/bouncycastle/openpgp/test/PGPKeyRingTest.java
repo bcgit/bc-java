@@ -11,6 +11,7 @@ import java.util.Iterator;
 
 import javax.crypto.Cipher;
 
+import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
@@ -3147,6 +3148,15 @@ public class PGPKeyRingTest
         isEquals("key ring length mismatch", length1, length2);
     }
 
+    private void testEdDsaRing()
+        throws Exception
+    {
+        ArmoredInputStream aIn = new ArmoredInputStream(this.getClass().getResourceAsStream("eddsa-pub-keyring.asc"));
+
+        // make sure we can parse it without falling over.
+        PGPPublicKeyRing rng = new PGPPublicKeyRing(aIn, new JcaKeyFingerprintCalculator());
+    }
+
     public void performTest()
         throws Exception
     {
@@ -3177,6 +3187,7 @@ public class PGPKeyRingTest
             testNoExportPrivateKey();
             shouldStripPreserveTrustPackets();
             testNullEncryption();
+            testEdDsaRing();
         }
         catch (PGPException e)
         {

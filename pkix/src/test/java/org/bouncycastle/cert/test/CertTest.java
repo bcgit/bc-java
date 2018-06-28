@@ -1327,7 +1327,8 @@ public class CertTest
             Certificate cert = fact.generateCertificate(bIn);
 
             PublicKey k = cert.getPublicKey();
-            // System.out.println(cert);
+//            System.out.println("****** " + id + " ******");
+//            System.out.println(cert);
         }
         catch (Exception e)
         {
@@ -3324,7 +3325,7 @@ public class CertTest
 
             cert = (X509Certificate)fact.generateCertificate(bIn);
 
-            //System.out.println(cert);
+//            System.out.println(cert);
         }
     }
 

@@ -272,7 +272,36 @@ public class ECDSA5Test
 
         kp = kpGen.generateKeyPair();
     }
-    
+
+    private void testNonsense()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("ECDSA", "BC");
+
+        try
+        {
+            kpGen.initialize(new ECGenParameterSpec("no_such_curve"));
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isEquals("unknown curve name: no_such_curve", e.getMessage());
+        }
+        KeyPair kp = kpGen.generateKeyPair();
+
+        try
+        {
+            kpGen.initialize(new ECNamedCurveGenParameterSpec("1.2.3.4.5"));
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isEquals("unknown curve OID: 1.2.3.4.5", e.getMessage());
+        }
+
+        kp = kpGen.generateKeyPair();
+    }
+
     // test BSI algorithm support.
     private void testBSI()
         throws Exception
@@ -1139,6 +1168,7 @@ public class ECDSA5Test
         testAlgorithmParameters();
         testModified();
         testSM2();
+        testNonsense();
     }
 
     public static void main(

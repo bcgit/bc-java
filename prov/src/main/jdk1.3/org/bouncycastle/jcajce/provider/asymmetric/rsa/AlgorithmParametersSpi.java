@@ -116,6 +116,8 @@ public abstract class AlgorithmParametersSpi
     public static class PSS
         extends AlgorithmParametersSpi
     {  
+        PSSParamSpec currentSpec;
+    
         /**
          * Return the PKCS#1 ASN.1 structure RSASSA-PSS-params.
          */
@@ -124,7 +126,8 @@ public abstract class AlgorithmParametersSpi
         {
             ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
             DEROutputStream         dOut = new DEROutputStream(bOut);
-            RSASSAPSSparams     pssP = new RSASSAPSSparams(RSASSAPSSparams.DEFAULT_HASH_ALGORITHM, RSASSAPSSparams.DEFAULT_MASK_GEN_FUNCTION, new ASN1Integer(20), RSASSAPSSparams.DEFAULT_TRAILER_FIELD);
+            PSSParamSpec    pssSpec = (PSSParamSpec)currentSpec;
+            RSASSAPSSparams     pssP = new RSASSAPSSparams(RSASSAPSSparams.DEFAULT_HASH_ALGORITHM, RSASSAPSSparams.DEFAULT_MASK_GEN_FUNCTION, new ASN1Integer(pssSpec.getSaltLength()), RSASSAPSSparams.DEFAULT_TRAILER_FIELD);
 
             dOut.writeObject(pssP);
             dOut.close();
@@ -149,6 +152,11 @@ public abstract class AlgorithmParametersSpi
             Class paramSpec)
             throws InvalidParameterSpecException
         {
+            if (paramSpec == PSSParamSpec.class && currentSpec != null)
+            {
+                return currentSpec;
+            }
+    
             throw new InvalidParameterSpecException("unknown parameter spec passed to PSS parameters object.");
         }
     
@@ -156,7 +164,12 @@ public abstract class AlgorithmParametersSpi
             AlgorithmParameterSpec paramSpec)
             throws InvalidParameterSpecException
         {
-                throw new InvalidParameterSpecException("Not implemented");
+            if (!(paramSpec instanceof PSSParamSpec))
+            {
+                throw new InvalidParameterSpecException("PSSParameterSpec required to initialise an PSS algorithm parameters object");
+            }
+    
+            this.currentSpec = (PSSParamSpec)paramSpec;
         }
     
         protected void engineInit(
@@ -166,7 +179,11 @@ public abstract class AlgorithmParametersSpi
             try
             {
                 RSASSAPSSparams pssP = RSASSAPSSparams.getInstance(params);
+                String hashName = org.bouncycastle.jcajce.util.MessageDigestUtils.getDigestName(
+                    pssP.getHashAlgorithm().getAlgorithm());
 
+                currentSpec = new PSSParamSpec(
+                                       pssP.getSaltLength().intValue(), hashName);
             }
             catch (ClassCastException e)
             {

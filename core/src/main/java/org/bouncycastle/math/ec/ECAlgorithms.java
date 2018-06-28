@@ -61,10 +61,10 @@ public class ECAlgorithms
         ECEndomorphism endomorphism = c.getEndomorphism();
         if (endomorphism instanceof GLVEndomorphism)
         {
-            return validatePoint(implSumOfMultipliesGLV(imported, ks, (GLVEndomorphism)endomorphism));
+            return implCheckResult(implSumOfMultipliesGLV(imported, ks, (GLVEndomorphism)endomorphism));
         }
 
-        return validatePoint(implSumOfMultiplies(imported, ks));
+        return implCheckResult(implSumOfMultiplies(imported, ks));
     }
 
     public static ECPoint sumOfTwoMultiplies(ECPoint P, BigInteger a,
@@ -79,18 +79,18 @@ public class ECAlgorithms
             ECCurve.AbstractF2m f2mCurve = (ECCurve.AbstractF2m)cp;
             if (f2mCurve.isKoblitz())
             {
-                return validatePoint(P.multiply(a).add(Q.multiply(b)));
+                return implCheckResult(P.multiply(a).add(Q.multiply(b)));
             }
         }
 
         ECEndomorphism endomorphism = cp.getEndomorphism();
         if (endomorphism instanceof GLVEndomorphism)
         {
-            return validatePoint(
+            return implCheckResult(
                 implSumOfMultipliesGLV(new ECPoint[]{ P, Q }, new BigInteger[]{ a, b }, (GLVEndomorphism)endomorphism));
         }
 
-        return validatePoint(implShamirsTrickWNaf(P, a, Q, b));
+        return implCheckResult(implShamirsTrickWNaf(P, a, Q, b));
     }
 
     /*
@@ -118,7 +118,7 @@ public class ECAlgorithms
         ECCurve cp = P.getCurve();
         Q = importPoint(cp, Q);
 
-        return validatePoint(implShamirsTrickJsf(P, k, Q, l));
+        return implCheckResult(implShamirsTrickJsf(P, k, Q, l));
     }
 
     public static ECPoint importPoint(ECCurve c, ECPoint p)
@@ -211,7 +211,28 @@ public class ECAlgorithms
     {
         if (!p.isValid())
         {
-            throw new IllegalArgumentException("Invalid point");
+            throw new IllegalStateException("Invalid point");
+        }
+
+        return p;
+    }
+
+    public static ECPoint cleanPoint(ECCurve c, ECPoint p)
+    {
+        ECCurve cp = p.getCurve();
+        if (!c.equals(cp))
+        {
+            throw new IllegalArgumentException("Point must be on the same curve");
+        }
+
+        return c.decodePoint(p.getEncoded(false));
+    }
+
+    static ECPoint implCheckResult(ECPoint p)
+    {
+        if (!p.isValidPartial())
+        {
+            throw new IllegalStateException("Invalid result");
         }
 
         return p;

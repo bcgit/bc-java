@@ -255,8 +255,8 @@ public class NamedGroup
 
     public static boolean isValid(int namedGroup)
     {
-        return (namedGroup >= sect163k1 && namedGroup <= brainpoolP512r1)
-            || ((namedGroup & 0xFFFFFF00) == 0xFE00)
+        return refersToASpecificGroup(namedGroup)
+            || isPrivate(namedGroup)
             || (namedGroup >= arbitrary_explicit_prime_curves && namedGroup <= arbitrary_explicit_char2_curves);
     }
 

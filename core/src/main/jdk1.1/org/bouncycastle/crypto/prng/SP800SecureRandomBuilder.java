@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.prng;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.prng.drbg.CTRSP800DRBG;

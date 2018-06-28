@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
+import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -20,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.crypto.Cipher;
+import javax.crypto.KeyAgreement;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -40,6 +42,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.jcajce.util.AlgorithmParametersUtils;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.MessageDigestUtils;
@@ -150,6 +153,73 @@ class OperatorHelper
     int getKeySizeInBits(ASN1ObjectIdentifier algOid)
     {
         return ((Integer)symmetricWrapperKeySizes.get(algOid)).intValue();
+    }
+
+    KeyPairGenerator createKeyPairGenerator(ASN1ObjectIdentifier algorithm)
+        throws CMSException
+    {
+        try
+        {
+            String agreementName = null; //(String)BASE_CIPHER_NAMES.get(algorithm);
+
+            if (agreementName != null)
+            {
+                try
+                {
+                    // this is reversed as the Sun policy files now allow unlimited strength RSA
+                    return helper.createKeyPairGenerator(agreementName);
+                }
+                catch (NoSuchAlgorithmException e)
+                {
+                    // Ignore
+                }
+            }
+            return helper.createKeyPairGenerator(algorithm.getId());
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new CMSException("cannot create key agreement: " + e.getMessage(), e);
+        }
+    }
+
+    Cipher createCipher(ASN1ObjectIdentifier algorithm)
+        throws OperatorCreationException
+    {
+        try
+        {
+            return helper.createCipher(algorithm.getId());
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new OperatorCreationException("cannot create cipher: " + e.getMessage(), e);
+        }
+    }
+
+    KeyAgreement createKeyAgreement(ASN1ObjectIdentifier algorithm)
+        throws OperatorCreationException
+    {
+        try
+        {
+            String agreementName = null; //(String)BASE_CIPHER_NAMES.get(algorithm);
+
+            if (agreementName != null)
+            {
+                try
+                {
+                    // this is reversed as the Sun policy files now allow unlimited strength RSA
+                    return helper.createKeyAgreement(agreementName);
+                }
+                catch (NoSuchAlgorithmException e)
+                {
+                    // Ignore
+                }
+            }
+            return helper.createKeyAgreement(algorithm.getId());
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new OperatorCreationException("cannot create key agreement: " + e.getMessage(), e);
+        }
     }
 
     Cipher createAsymmetricWrapper(ASN1ObjectIdentifier algorithm, Map extraAlgNames)
@@ -280,7 +350,7 @@ class OperatorHelper
             //
             if (oids.get(digAlgId.getAlgorithm()) != null)
             {
-                String  digestAlgorithm = (String)oids.get(digAlgId.getAlgorithm());
+                String digestAlgorithm = (String)oids.get(digAlgId.getAlgorithm());
 
                 dig = helper.createDigest(digestAlgorithm);
             }
@@ -296,7 +366,7 @@ class OperatorHelper
     Signature createSignature(AlgorithmIdentifier sigAlgId)
         throws GeneralSecurityException
     {
-        Signature   sig;
+        Signature sig;
 
         try
         {
@@ -309,7 +379,7 @@ class OperatorHelper
             //
             if (oids.get(sigAlgId.getAlgorithm()) != null)
             {
-                String  signatureAlgorithm = (String)oids.get(sigAlgId.getAlgorithm());
+                String signatureAlgorithm = (String)oids.get(sigAlgId.getAlgorithm());
 
                 sig = helper.createSignature(signatureAlgorithm);
             }
@@ -322,7 +392,7 @@ class OperatorHelper
         if (sigAlgId.getAlgorithm().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
         {
             ASN1Sequence seq = ASN1Sequence.getInstance(sigAlgId.getParameters());
-          
+
             if (notDefaultPSSParams(seq))
             {
                 try
@@ -345,7 +415,7 @@ class OperatorHelper
 
     public Signature createRawSignature(AlgorithmIdentifier algorithm)
     {
-        Signature   sig;
+        Signature sig;
 
         try
         {

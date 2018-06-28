@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PrimeCertaintyCalculator;
+import org.bouncycastle.jcajce.spec.DHDomainParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Integers;
 
@@ -59,7 +60,7 @@ public class KeyPairGeneratorSpi
 
         try
         {
-            param = new DHKeyGenerationParameters(random, new DHParameters(dhParams.getP(), dhParams.getG(), null, dhParams.getL()));
+            param = convertParams(random, dhParams);
         }
         catch (IllegalArgumentException e)
         {
@@ -68,6 +69,15 @@ public class KeyPairGeneratorSpi
         
         engine.init(param);
         initialised = true;
+    }
+
+    private DHKeyGenerationParameters convertParams(SecureRandom random, DHParameterSpec dhParams)
+    {
+        if (dhParams instanceof DHDomainParameterSpec)
+        {
+            return new DHKeyGenerationParameters(random, ((DHDomainParameterSpec)dhParams).getDomainParameters());
+        }
+        return new DHKeyGenerationParameters(random, new DHParameters(dhParams.getP(), dhParams.getG(), null, dhParams.getL()));
     }
 
     public KeyPair generateKeyPair()
@@ -85,8 +95,8 @@ public class KeyPairGeneratorSpi
                 DHParameterSpec dhParams = BouncyCastleProvider.CONFIGURATION.getDHDefaultParameters(strength);
 
                 if (dhParams != null)
-                {
-                    param = new DHKeyGenerationParameters(random, new DHParameters(dhParams.getP(), dhParams.getG(), null, dhParams.getL()));
+                {   
+                    param = convertParams(random, dhParams);
                 }
                 else
                 {

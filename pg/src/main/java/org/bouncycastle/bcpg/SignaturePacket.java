@@ -162,6 +162,14 @@ public class SignaturePacket
             signature[0] = ecR;
             signature[1] = ecS;
             break;
+        case EDDSA:
+            MPInteger    edR = new MPInteger(in);
+            MPInteger    edS = new MPInteger(in);
+
+            signature = new MPInteger[2];
+            signature[0] = edR;
+            signature[1] = edS;
+            break;
         default:
             if (keyAlgorithm >= PublicKeyAlgorithmTags.EXPERIMENTAL_1 && keyAlgorithm <= PublicKeyAlgorithmTags.EXPERIMENTAL_11)
             {

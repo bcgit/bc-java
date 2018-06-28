@@ -84,6 +84,7 @@ public class RegressionTest
         new BCFKSStoreTest(),
         new DSTU7624Test(),
         new GOST3412Test(),
+        new GOST3410KeyPairTest()
     };
 
     public static void main(
