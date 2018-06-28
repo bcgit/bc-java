@@ -1902,7 +1902,7 @@ public class CertTest
         checkCertificate(3, cert3);
         checkCertificate(4, cert4);
         checkCertificate(5, cert5);
-//        checkCertificate(6, oldEcdsa); // no H value, EC parameters actually invalid.
+        checkCertificate(6, oldEcdsa);
         checkCertificate(7, cert7);
         checkCertificate(8, sm_sign);
 
