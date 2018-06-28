@@ -248,8 +248,6 @@ public abstract class Ed448
 
     public static void generatePublicKey(byte[] sk, int skOff, byte[] pk, int pkOff)
     {
-        // TODO Not currently constant-time (see use of ...Var methods)
-
         SHAKEDigest d = new SHAKEDigest(256);
         byte[] h = new byte[SCALAR_BYTES * 2];
 
@@ -967,8 +965,6 @@ public abstract class Ed448
 
     public static void sign(byte[] sk, int skOff, byte[] ctx, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
     {
-        // TODO Not currently constant-time (see use of ...Var methods)
-
         if (!checkContextVar(ctx))
         {
             throw new IllegalArgumentException("ctx");
@@ -977,7 +973,6 @@ public abstract class Ed448
         SHAKEDigest d = new SHAKEDigest(256);
         byte[] h = new byte[SCALAR_BYTES * 2];
 
-//        dom4(d, phflag, ctx);
         d.update(sk, skOff, SECRET_KEY_SIZE);
         d.doFinal(h, 0, h.length);
 
@@ -992,8 +987,6 @@ public abstract class Ed448
 
     public static void sign(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
     {
-        // TODO Not currently constant-time (see use of ...Var methods)
-
         if (!checkContextVar(ctx))
         {
             throw new IllegalArgumentException("ctx");
@@ -1002,7 +995,6 @@ public abstract class Ed448
         SHAKEDigest d = new SHAKEDigest(256);
         byte[] h = new byte[SCALAR_BYTES * 2];
 
-//        dom4(d, phflag, ctx);
         d.update(sk, skOff, SECRET_KEY_SIZE);
         d.doFinal(h, 0, h.length);
 
@@ -1014,8 +1006,6 @@ public abstract class Ed448
 
     public static boolean verify(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen)
     {
-        // TODO Not currently constant-time (see use of ...Var methods)
-
         if (!checkContextVar(ctx))
         {
             throw new IllegalArgumentException("ctx");
