@@ -30,56 +30,72 @@ public class FixedPointUtil
         return precompute(p);
     }
 
-    public static FixedPointPreCompInfo precompute(ECPoint p)
+    public static FixedPointPreCompInfo precompute(final ECPoint p)
     {
-        ECCurve c = p.getCurve();
-        int minWidth = getCombSize(c) > 257 ? 6 : 5;
+        final ECCurve c = p.getCurve();
 
-        int n = 1 << minWidth;
-        FixedPointPreCompInfo info = getFixedPointPreCompInfo(c.getPreCompInfo(p, PRECOMP_NAME));
-        ECPoint[] lookupTable = info.getPreComp();
-
-        if (lookupTable == null || lookupTable.length < n)
+        return (FixedPointPreCompInfo)c.precompute(p, PRECOMP_NAME, new PreCompCallback()
         {
-            int bits = getCombSize(c);
-            int d = (bits + minWidth - 1) / minWidth;
-
-            ECPoint[] pow2Table = new ECPoint[minWidth + 1];
-            pow2Table[0] = p;
-            for (int i = 1; i < minWidth; ++i)
+            public PreCompInfo precompute(PreCompInfo existing)
             {
-                pow2Table[i] = pow2Table[i - 1].timesPow2(d);
-            }
+                FixedPointPreCompInfo existingFP = (existing instanceof FixedPointPreCompInfo) ? (FixedPointPreCompInfo)existing : null;
 
-            // This will be the 'offset' value 
-            pow2Table[minWidth] = pow2Table[0].subtract(pow2Table[1]);
+                int bits = getCombSize(c);
+                int minWidth = bits > 257 ? 6 : 5;
+                int n = 1 << minWidth;
 
-            c.normalizeAll(pow2Table);
-
-            lookupTable = new ECPoint[n];
-            lookupTable[0] = pow2Table[0];
-
-            for (int bit = minWidth - 1; bit >= 0; --bit)
-            {
-                ECPoint pow2 = pow2Table[bit];
-
-                int step = 1 << bit;
-                for (int i = step; i < n; i += (step << 1))
+                if (checkExisting(existingFP, n))
                 {
-                    lookupTable[i] = lookupTable[i - step].add(pow2);
+                    return existingFP;
                 }
+
+                int d = (bits + minWidth - 1) / minWidth;
+
+                ECPoint[] pow2Table = new ECPoint[minWidth + 1];
+                pow2Table[0] = p;
+                for (int i = 1; i < minWidth; ++i)
+                {
+                    pow2Table[i] = pow2Table[i - 1].timesPow2(d);
+                }
+
+                // This will be the 'offset' value 
+                pow2Table[minWidth] = pow2Table[0].subtract(pow2Table[1]);
+
+                c.normalizeAll(pow2Table);
+
+                ECPoint[] lookupTable = new ECPoint[n];
+                lookupTable[0] = pow2Table[0];
+
+                for (int bit = minWidth - 1; bit >= 0; --bit)
+                {
+                    ECPoint pow2 = pow2Table[bit];
+
+                    int step = 1 << bit;
+                    for (int i = step; i < n; i += (step << 1))
+                    {
+                        lookupTable[i] = lookupTable[i - step].add(pow2);
+                    }
+                }
+
+                c.normalizeAll(lookupTable);
+
+                FixedPointPreCompInfo result = new FixedPointPreCompInfo();
+                result.setLookupTable(c.createCacheSafeLookupTable(lookupTable, 0, lookupTable.length));
+                result.setOffset(pow2Table[minWidth]);
+                result.setPreComp(lookupTable);
+                result.setWidth(minWidth);
+                return result;
             }
 
-            c.normalizeAll(lookupTable);
+            private boolean checkExisting(FixedPointPreCompInfo existingFP, int n)
+            {
+                return existingFP != null && checkTable(existingFP.getPreComp(), n);
+            }
 
-            info.setLookupTable(c.createCacheSafeLookupTable(lookupTable, 0, lookupTable.length));
-            info.setOffset(pow2Table[minWidth]);
-            info.setPreComp(lookupTable);
-            info.setWidth(minWidth);
-
-            c.setPreCompInfo(p, PRECOMP_NAME, info);
-        }
-
-        return info;
+            private boolean checkTable(ECPoint[] table, int n)
+            {
+                return table != null && table.length >= n;
+            }
+        });
     }
 }
