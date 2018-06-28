@@ -177,7 +177,20 @@ public class JceAsymmetricKeyWrapper
 
                 random.nextBytes(ukm);
 
-                GostR3410TransportParameters transParams = new GostR3410TransportParameters(CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_A_ParamSet, SubjectPublicKeyInfo.getInstance(ephKp.getPublic().getEncoded()), ukm);
+                SubjectPublicKeyInfo ephKeyInfo = SubjectPublicKeyInfo.getInstance(ephKp.getPublic().getEncoded());
+
+                GostR3410TransportParameters transParams;
+
+                if (ephKeyInfo.getAlgorithm().getAlgorithm().on(RosstandartObjectIdentifiers.id_tc26))
+                {
+                    transParams = new GostR3410TransportParameters(
+                        RosstandartObjectIdentifiers.id_tc26_gost_28147_param_Z, ephKeyInfo, ukm);
+                }
+                else
+                {
+                    transParams = new GostR3410TransportParameters(
+                                CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_A_ParamSet, ephKeyInfo, ukm);
+                }
 
                 KeyAgreement agreement = helper.createKeyAgreement(getAlgorithmIdentifier().getAlgorithm());
 
