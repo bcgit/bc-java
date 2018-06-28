@@ -17,6 +17,7 @@ import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jcajce.provider.config.ProviderConfigurationPermission;
+import org.bouncycastle.jcajce.spec.DHDomainParameterSpec;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 
 class BouncyCastleProviderConfiguration
@@ -198,7 +199,7 @@ class BouncyCastleProviderConfiguration
         DHParameters dhParams = CryptoServicesRegistrar.getSizedProperty(CryptoServicesRegistrar.Property.DH_DEFAULT_PARAMS, keySize);
         if (dhParams != null)
         {
-            return new DHParameterSpec(dhParams.getP(), dhParams.getG(), dhParams.getL());
+            return new DHDomainParameterSpec(dhParams);
         }
 
         return null;

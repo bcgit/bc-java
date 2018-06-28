@@ -6,8 +6,14 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import java.security.spec.DSAParameterSpec;
+
 import javax.crypto.spec.DHParameterSpec;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.params.DSAParameters;
+import org.bouncycastle.crypto.params.DHParameters;
+import org.bouncycastle.jcajce.spec.DHDomainParameterSpec;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jce.spec.ECParameterSpec;
@@ -15,6 +21,9 @@ import org.bouncycastle.jce.spec.ECParameterSpec;
 class BouncyCastleProviderConfiguration
     implements ProviderConfiguration
 {
+    private Map ecThreadSpec = new HashMap();
+    private Map dhThreadSpec = new HashMap();
+
     private volatile ECParameterSpec ecImplicitCaParams;
     private volatile Object dhDefaultParams;
     private volatile Set acceptableNamedCurves = new HashSet();
@@ -22,6 +31,8 @@ class BouncyCastleProviderConfiguration
 
     void setParameter(String parameterName, Object parameter)
     {
+        SecurityManager securityManager = System.getSecurityManager();
+
         if (parameterName.equals(ConfigurableProvider.THREAD_LOCAL_EC_IMPLICITLY_CA))
         {
             ECParameterSpec curveSpec;
@@ -35,7 +46,14 @@ class BouncyCastleProviderConfiguration
                 throw new IllegalArgumentException("not a valid ECParameterSpec");
             }
 
-            ecImplicitCaParams = curveSpec;
+            if (curveSpec == null)
+            {
+                ecThreadSpec.remove(Thread.currentThread());
+            }
+            else
+            {
+                ecThreadSpec.put(Thread.currentThread(), curveSpec);
+            }
         }
         else if (parameterName.equals(ConfigurableProvider.EC_IMPLICITLY_CA))
         {
@@ -61,7 +79,14 @@ class BouncyCastleProviderConfiguration
                 throw new IllegalArgumentException("not a valid DHParameterSpec");
             }
 
-            dhDefaultParams = dhSpec;
+            if (dhSpec == null)
+            {
+                dhThreadSpec.remove(Thread.currentThread());
+            }
+            else
+            {
+                dhThreadSpec.put(Thread.currentThread(), dhSpec);
+            }
         }
         else if (parameterName.equals(ConfigurableProvider.DH_DEFAULT_PARAMS))
         {
@@ -86,12 +111,23 @@ class BouncyCastleProviderConfiguration
 
     public ECParameterSpec getEcImplicitlyCa()
     {
+        ECParameterSpec spec = (ECParameterSpec)ecThreadSpec.get(Thread.currentThread());
+
+        if (spec != null)
+        {
+            return spec;
+        }
+
         return ecImplicitCaParams;
     }
 
     public DHParameterSpec getDHDefaultParameters(int keySize)
     {
-        Object params = dhDefaultParams;
+        Object params = dhThreadSpec.get(Thread.currentThread());
+        if (params == null)
+        {
+            params = dhDefaultParams;
+        }
 
         if (params instanceof DHParameterSpec)
         {
@@ -113,6 +149,23 @@ class BouncyCastleProviderConfiguration
                     return specs[i];
                 }
             }
+        }
+
+        DHParameters dhParams = (DHParameters)CryptoServicesRegistrar.getSizedProperty(CryptoServicesRegistrar.Property.DH_DEFAULT_PARAMS, keySize);
+        if (dhParams != null)
+        {
+            return new DHDomainParameterSpec(dhParams);
+        }
+
+        return null;
+    }
+
+    public DSAParameterSpec getDSADefaultParameters(int keySize)
+    {
+        DSAParameters dsaParams = (DSAParameters)CryptoServicesRegistrar.getSizedProperty(CryptoServicesRegistrar.Property.DSA_DEFAULT_PARAMS, keySize);
+        if (dsaParams != null)
+        {
+            return new DSAParameterSpec(dsaParams.getP(), dsaParams.getQ(), dsaParams.getG());
         }
 
         return null;

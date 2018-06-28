@@ -20,10 +20,13 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x9.DomainParameters;
+import org.bouncycastle.asn1.x9.ValidationParams;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
+import org.bouncycastle.crypto.params.DHValidationParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
+import org.bouncycastle.jcajce.spec.DHDomainParameterSpec;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 
 
@@ -90,7 +93,7 @@ public class BCDHPrivateKey
         {
             DomainParameters params = DomainParameters.getInstance(seq);
 
-            this.dhSpec = new DHParameterSpec(params.getP(), params.getG());
+            this.dhSpec = new DHDomainParameterSpec(params.getP(), params.getQ(), params.getG(), params.getJ(), 0);
             this.dhPrivateKey = new DHPrivateKeyParameters(x,
                 new DHParameters(params.getP(), params.getG(), params.getQ(), params.getJ(), null));
         }
@@ -106,7 +109,7 @@ public class BCDHPrivateKey
         DHPrivateKeyParameters params)
     {
         this.x = params.getX();
-        this.dhSpec = new DHParameterSpec(params.getParameters().getP(), params.getParameters().getG(), params.getParameters().getL());
+        this.dhSpec = new DHDomainParameterSpec(params.getParameters());
     }
 
     public String getAlgorithm()
@@ -139,8 +142,22 @@ public class BCDHPrivateKey
                 return info.getEncoded(ASN1Encoding.DER);
             }
 
-            PrivateKeyInfo          info = new PrivateKeyInfo(new AlgorithmIdentifier(PKCSObjectIdentifiers.dhKeyAgreement, new DHParameter(dhSpec.getP(), dhSpec.getG(), dhSpec.getL()).toASN1Primitive()), new ASN1Integer(getX()));
-
+            PrivateKeyInfo          info;
+            if (dhSpec instanceof DHDomainParameterSpec && ((DHDomainParameterSpec)dhSpec).getQ() != null)
+            {
+                DHParameters params = ((DHDomainParameterSpec)dhSpec).getDomainParameters();
+                DHValidationParameters validationParameters = params.getValidationParameters();
+                ValidationParams vParams = null;
+                if (validationParameters == null)
+                {
+                    vParams = new ValidationParams(validationParameters.getSeed(), validationParameters.getCounter());
+                }
+                info = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.dhpublicnumber, new DomainParameters(params.getP(), params.getG(), params.getQ(), params.getJ(), vParams).toASN1Primitive()), new ASN1Integer(getX()));
+            }
+            else
+            {
+                info = new PrivateKeyInfo(new AlgorithmIdentifier(PKCSObjectIdentifiers.dhKeyAgreement, new DHParameter(dhSpec.getP(), dhSpec.getG(), dhSpec.getL()).toASN1Primitive()), new ASN1Integer(getX()));
+            }
             return info.getEncoded(ASN1Encoding.DER);
         }
         catch (Exception e)
@@ -166,6 +183,10 @@ public class BCDHPrivateKey
             return dhPrivateKey;
         }
 
+        if (dhSpec instanceof DHDomainParameterSpec)
+        {
+            return new DHPrivateKeyParameters(x, ((DHDomainParameterSpec)dhSpec).getDomainParameters());
+        }
         return new DHPrivateKeyParameters(x, new DHParameters(dhSpec.getP(), dhSpec.getG(), null, dhSpec.getL()));
     }
 

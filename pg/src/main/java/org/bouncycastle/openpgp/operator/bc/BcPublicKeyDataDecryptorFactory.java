@@ -2,7 +2,7 @@ package org.bouncycastle.openpgp.operator.bc;
 
 import java.io.IOException;
 
-import org.bouncycastle.asn1.nist.NISTNamedCurves;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.ECSecretBCPGKey;
@@ -99,7 +99,7 @@ public class BcPublicKeyDataDecryptorFactory
             else
             {
                 ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)privKey.getPublicKeyPacket().getKey();
-                X9ECParameters x9Params = NISTNamedCurves.getByOID(ecKey.getCurveOID());
+                X9ECParameters x9Params = ECNamedCurveTable.getByOID(ecKey.getCurveOID());
 
                 byte[] enc = secKeyData[0];
 
@@ -130,7 +130,7 @@ public class BcPublicKeyDataDecryptorFactory
         }
         catch (InvalidCipherTextException e)
         {
-            throw new PGPException("exception encrypting session info: " + e.getMessage(), e);
+            throw new PGPException("exception decrypting session info: " + e.getMessage(), e);
         }
 
     }

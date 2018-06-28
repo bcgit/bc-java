@@ -90,6 +90,7 @@
                 <exclude name="**/est/**/*.java" />
             </fileset>
             <fileset dir="pg/src/main/java">
+                <exclude name="**/keybox/*.java" />
             </fileset>
             <fileset dir="mail/src/main/java">
                 <exclude name="**/ValidateSignedMail.java" />
@@ -132,6 +133,7 @@
                 <exclude name="**/jce/provider/test/AEADTest.java" />
             </fileset>
             <fileset dir="prov/src/test/java">
+                <exclude name="**/GOST3410KeyPairTest.java" />
                 <exclude name="**/MQVTest.java" />
                 <exclude name="**/ECDSA5Test.java" />
                 <exclude name="**/NamedCurveTest.java" />
@@ -217,6 +219,7 @@
             <fileset dir="core/src/main/jdk1.4" includes="**/*.java" />
             <fileset dir="prov/src/main/jdk1.4" includes="**/*.java" >
                 <exclude name="**/LDAP*.java" />
+                <exclude name="**/rsa/PSSParamSpec.java" />
             </fileset>
             <fileset dir="pkix/src/main/jdk1.4" includes="**/*.java" />
             <fileset dir="pg/src/main/jdk1.4" includes="**/*.java" />

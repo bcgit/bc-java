@@ -26,4 +26,11 @@ public interface CRMFObjectIdentifiers
 
     /** 1.2.840.113549.1.9.16.1,21 */
     static final ASN1ObjectIdentifier id_ct_encKeyWithID = PKCSObjectIdentifiers.id_ct.branch("21");
+
+    /** 1.3.6.1.5.5.7.6 */
+    static final ASN1ObjectIdentifier id_alg    = id_pkix.branch("6");
+
+    static final ASN1ObjectIdentifier id_dh_sig_hmac_sha1 = id_alg.branch("3");
+
+    static final ASN1ObjectIdentifier id_alg_dh_pop = id_alg.branch("4");
 }

@@ -157,8 +157,10 @@ public class SM2KeyExchange
 
     private ECPoint calculateU(SM2KeyExchangePublicParameters otherPub)
     {
-        ECPoint p1 = otherPub.getStaticPublicKey().getQ();
-        ECPoint p2 = otherPub.getEphemeralPublicKey().getQ();
+        ECDomainParameters params = staticKey.getParameters();
+
+        ECPoint p1 = ECAlgorithms.cleanPoint(params.getCurve(), otherPub.getStaticPublicKey().getQ());
+        ECPoint p2 = ECAlgorithms.cleanPoint(params.getCurve(), otherPub.getEphemeralPublicKey().getQ());
 
         BigInteger x1 = reduce(ephemeralPubPoint.getAffineXCoord().toBigInteger());
         BigInteger x2 = reduce(p2.getAffineXCoord().toBigInteger());

@@ -23,6 +23,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGen
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseSecretKeyFactory;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseWrapCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
@@ -90,6 +91,15 @@ public final class SEED
         public GMAC()
         {
             super(new GMac(new GCMBlockCipher(new SEEDEngine())));
+        }
+    }
+
+    static public class KeyFactory
+         extends BaseSecretKeyFactory
+    {
+        public KeyFactory()
+        {
+            super("SEED", null);
         }
     }
 
@@ -186,6 +196,9 @@ public final class SEED
             provider.addAlgorithm("KeyGenerator.SEED", PREFIX + "$KeyGen");
             provider.addAlgorithm("KeyGenerator", KISAObjectIdentifiers.id_seedCBC, PREFIX + "$KeyGen");
             provider.addAlgorithm("KeyGenerator", KISAObjectIdentifiers.id_npki_app_cmsSeed_wrap, PREFIX + "$KeyGen");
+
+            provider.addAlgorithm("SecretKeyFactory.SEED", PREFIX + "$KeyFactory");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory", KISAObjectIdentifiers.id_seedCBC, "SEED");
 
             addCMacAlgorithm(provider, "SEED", PREFIX + "$CMAC", PREFIX + "$KeyGen");
             addGMacAlgorithm(provider, "SEED", PREFIX + "$GMAC", PREFIX + "$KeyGen");
