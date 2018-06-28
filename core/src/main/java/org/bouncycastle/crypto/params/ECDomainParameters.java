@@ -50,10 +50,7 @@ public class ECDomainParameters
         {
             throw new NullPointerException("n");
         }
-        if (h == null)
-        {
-            throw new NullPointerException("h");
-        }
+        // we can't check for h == null here as h is optional in X9.62 as it is not required for ECDSA
 
         this.curve = curve;
         this.G = validate(curve, G);
