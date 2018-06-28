@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECAlgorithms;
+import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECPoint;
 
 /**
@@ -50,15 +51,23 @@ public class ECDHBasicAgreement
             throw new IllegalStateException("ECDH public key has wrong domain parameters");
         }
 
+        BigInteger d = key.getD();
+
         // Always perform calculations on the exact curve specified by our private key's parameters
-        ECPoint pubPoint = ECAlgorithms.cleanPoint(params.getCurve(), pub.getQ());
-        if (pubPoint.isInfinity())
+        ECPoint Q = ECAlgorithms.cleanPoint(params.getCurve(), pub.getQ());
+        if (Q.isInfinity())
         {
             throw new IllegalStateException("Infinity is not a valid public key for ECDH");
         }
 
-        ECPoint P = pubPoint.multiply(key.getD()).normalize();
+        BigInteger h = params.getH();
+        if (!h.equals(ECConstants.ONE))
+        {
+            d = params.getHInv().multiply(d).mod(params.getN());
+            Q = ECAlgorithms.referenceMultiply(Q, h);
+        }
 
+        ECPoint P = Q.multiply(d).normalize();
         if (P.isInfinity())
         {
             throw new IllegalStateException("Infinity is not a valid agreement value for ECDH");

@@ -16,6 +16,7 @@ public class ECDomainParameters
     private ECPoint     G;
     private BigInteger  n;
     private BigInteger  h;
+    private BigInteger  hInv = null;
 
     public ECDomainParameters(
         ECCurve     curve,
@@ -41,6 +42,19 @@ public class ECDomainParameters
         BigInteger  h,
         byte[]      seed)
     {
+        if (curve == null)
+        {
+            throw new NullPointerException("curve");
+        }
+        if (n == null)
+        {
+            throw new NullPointerException("n");
+        }
+        if (h == null)
+        {
+            throw new NullPointerException("h");
+        }
+
         this.curve = curve;
         this.G = validate(curve, G);
         this.n = n;
@@ -66,6 +80,15 @@ public class ECDomainParameters
     public BigInteger getH()
     {
         return h;
+    }
+
+    public synchronized BigInteger getHInv()
+    {
+        if (hInv == null)
+        {
+            hInv = h.modInverse(n);
+        }
+        return hInv;
     }
 
     public byte[] getSeed()
