@@ -313,45 +313,50 @@ public abstract class ECPoint
         return implIsValid(false);
     }
 
-    boolean implIsValid(boolean checkOrder)
+    boolean implIsValid(final boolean checkOrder)
     {
         if (isInfinity())
         {
             return true;
         }
 
-        ECCurve curve = getCurve();
-        ValidityPrecompInfo info = (ValidityPrecompInfo)curve.getPreCompInfo(this, ValidityPrecompInfo.PRECOMP_NAME);
-        if (info == null)
+        ValidityPrecompInfo validity = (ValidityPrecompInfo)getCurve().precompute(this, ValidityPrecompInfo.PRECOMP_NAME, new PreCompCallback()
         {
-            info = new ValidityPrecompInfo();
-            curve.setPreCompInfo(this, ValidityPrecompInfo.PRECOMP_NAME, info);
-        }
-
-        if (info.hasFailed())
-        {
-            return false;
-        }
-        if (!info.hasCurveEquationPassed())
-        {
-            if (!satisfiesCurveEquation())
+            public PreCompInfo precompute(PreCompInfo existing)
             {
-                info.reportFailed();
-                return false;
-            }
-            info.reportCurveEquationPassed();
-        }
-        if (checkOrder && !info.hasOrderPassed())
-        {
-            if (!satisfiesOrder())
-            {
-                info.reportFailed();
-                return false;
-            }
-            info.reportOrderPassed();
-        }
+                ValidityPrecompInfo info = (existing instanceof ValidityPrecompInfo) ? (ValidityPrecompInfo)existing : null;
+                if (info == null)
+                {
+                    info = new ValidityPrecompInfo();
+                }
 
-        return true;
+                if (info.hasFailed())
+                {
+                    return info;
+                }
+                if (!info.hasCurveEquationPassed())
+                {
+                    if (!satisfiesCurveEquation())
+                    {
+                        info.reportFailed();
+                        return info;
+                    }
+                    info.reportCurveEquationPassed();
+                }
+                if (checkOrder && !info.hasOrderPassed())
+                {
+                    if (!satisfiesOrder())
+                    {
+                        info.reportFailed();
+                        return info;
+                    }
+                    info.reportOrderPassed();
+                }
+                return info;
+            }
+        });
+
+        return !validity.hasFailed();
     }
 
     public ECPoint scaleX(ECFieldElement scale)
