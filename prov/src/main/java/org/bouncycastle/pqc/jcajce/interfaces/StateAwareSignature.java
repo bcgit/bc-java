@@ -54,10 +54,17 @@ public interface StateAwareSignature
     String getAlgorithm();
 
     /**
+     * Return true if this Signature object can be used for signing. False otherwise.
+     *
+     * @return true if we are capable of making signatures.
+     */
+    boolean isSigningCapable();
+
+    /**
      * Return the current version of the private key with the updated state.
      * <p>
      * <b>Note:</b> calling this method will effectively disable the Signature object from being used for further
-     *  signature generation without another call to init().
+     *  signature generation without another call to initSign().
      * </p>
      * @return an updated private key object, which can be used for later signature generation.
      */

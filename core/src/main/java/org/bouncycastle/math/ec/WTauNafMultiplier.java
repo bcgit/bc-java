@@ -36,7 +36,7 @@ public class WTauNafMultiplier extends AbstractECMultiplier
 
         ZTauElement rho = Tnaf.partModReduction(k, m, a, s, mu, (byte)10);
 
-        return multiplyWTnaf(p, rho, curve.getPreCompInfo(p, PRECOMP_NAME), a, mu);
+        return multiplyWTnaf(p, rho, a, mu);
     }
 
     /**
@@ -49,8 +49,7 @@ public class WTauNafMultiplier extends AbstractECMultiplier
      * <code>[&tau;]</code>-adic NAF.
      * @return <code>p</code> multiplied by <code>&lambda;</code>.
      */
-    private ECPoint.AbstractF2m multiplyWTnaf(ECPoint.AbstractF2m p, ZTauElement lambda,
-            PreCompInfo preCompInfo, byte a, byte mu)
+    private ECPoint.AbstractF2m multiplyWTnaf(ECPoint.AbstractF2m p, ZTauElement lambda, byte a, byte mu)
     {
         ZTauElement[] alpha = (a == 0) ? Tnaf.alpha0 : Tnaf.alpha1;
 
@@ -59,7 +58,7 @@ public class WTauNafMultiplier extends AbstractECMultiplier
         byte[]u = Tnaf.tauAdicWNaf(mu, lambda, Tnaf.WIDTH,
             BigInteger.valueOf(Tnaf.POW_2_WIDTH), tw, alpha);
 
-        return multiplyFromWTnaf(p, u, preCompInfo);
+        return multiplyFromWTnaf(p, u);
     }
 
     /**
@@ -71,24 +70,27 @@ public class WTauNafMultiplier extends AbstractECMultiplier
      * @param u The the WTNAF of <code>&lambda;</code>..
      * @return <code>&lambda; * p</code>
      */
-    private static ECPoint.AbstractF2m multiplyFromWTnaf(ECPoint.AbstractF2m p, byte[] u, PreCompInfo preCompInfo)
+    private static ECPoint.AbstractF2m multiplyFromWTnaf(final ECPoint.AbstractF2m p, byte[] u)
     {
         ECCurve.AbstractF2m curve = (ECCurve.AbstractF2m)p.getCurve();
-        byte a = curve.getA().toBigInteger().byteValue();
+        final byte a = curve.getA().toBigInteger().byteValue();
 
-        ECPoint.AbstractF2m[] pu;
-        if ((preCompInfo == null) || !(preCompInfo instanceof WTauNafPreCompInfo))
+        WTauNafPreCompInfo preCompInfo = (WTauNafPreCompInfo)curve.precompute(p, PRECOMP_NAME, new PreCompCallback()
         {
-            pu = Tnaf.getPreComp(p, a);
+            public PreCompInfo precompute(PreCompInfo existing)
+            {
+                if (existing instanceof WTauNafPreCompInfo)
+                {
+                    return existing;
+                }
 
-            WTauNafPreCompInfo pre = new WTauNafPreCompInfo();
-            pre.setPreComp(pu);
-            curve.setPreCompInfo(p, PRECOMP_NAME, pre);
-        }
-        else
-        {
-            pu = ((WTauNafPreCompInfo)preCompInfo).getPreComp();
-        }
+                WTauNafPreCompInfo result = new WTauNafPreCompInfo();
+                result.setPreComp(Tnaf.getPreComp(p, a));
+                return result;
+            }
+        });
+
+        ECPoint.AbstractF2m[] pu = preCompInfo.getPreComp();
 
         // TODO Include negations in precomp (optionally) and use from here
         ECPoint.AbstractF2m[] puNeg = new ECPoint.AbstractF2m[pu.length];

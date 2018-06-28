@@ -75,16 +75,10 @@ public class ECMQVBasicAgreement
 
         ECCurve curve = parameters.getCurve();
 
-        ECPoint[] points = new ECPoint[]{
-            // The Q2U public key is optional - but will be calculated for us if it wasn't present
-            ECAlgorithms.importPoint(curve, Q2U.getQ()),
-            ECAlgorithms.importPoint(curve, Q1V.getQ()),
-            ECAlgorithms.importPoint(curve, Q2V.getQ())
-        };
-
-        curve.normalizeAll(points);
-
-        ECPoint q2u = points[0], q1v = points[1], q2v = points[2];
+        // The Q2U public key is optional - but will be calculated for us if it wasn't present
+        ECPoint q2u = ECAlgorithms.cleanPoint(curve, Q2U.getQ());
+        ECPoint q1v = ECAlgorithms.cleanPoint(curve, Q1V.getQ());
+        ECPoint q2v = ECAlgorithms.cleanPoint(curve, Q2V.getQ());
 
         BigInteger x = q2u.getAffineXCoord().toBigInteger();
         BigInteger xBar = x.mod(powE);

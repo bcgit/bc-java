@@ -18,6 +18,7 @@ import org.bouncycastle.crypto.agreement.ECDHCBasicAgreement;
 import org.bouncycastle.crypto.agreement.ECDHCUnifiedAgreement;
 import org.bouncycastle.crypto.agreement.ECMQVBasicAgreement;
 import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
+import org.bouncycastle.crypto.digests.RIPEMD160Digest;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.params.ECDHUPrivateParameters;
 import org.bouncycastle.crypto.params.ECDHUPublicParameters;
@@ -189,18 +190,26 @@ public class KeyAgreementSpi
         SecureRandom random)
         throws InvalidKeyException
     {
-        initFromKey(key, null);
+        try
+        {
+            initFromKey(key, null);
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            // this should never occur.
+            throw new InvalidKeyException(e.getMessage());
+        }
     }
 
     private void initFromKey(Key key, AlgorithmParameterSpec parameterSpec)
-        throws InvalidKeyException
+        throws InvalidKeyException, InvalidAlgorithmParameterException
     {
         if (agreement instanceof ECMQVBasicAgreement)
         {
             mqvParameters = null;
             if (!(key instanceof MQVPrivateKey) && !(parameterSpec instanceof MQVParameterSpec))
             {
-                throw new InvalidKeyException(kaAlgorithm + " key agreement requires "
+                throw new InvalidAlgorithmParameterException(kaAlgorithm + " key agreement requires "
                     + getSimpleName(MQVParameterSpec.class) + " for initialisation");
             }
 
@@ -252,7 +261,7 @@ public class KeyAgreementSpi
         {
             if (!(agreement instanceof ECDHCUnifiedAgreement))
             {
-                throw new InvalidKeyException(kaAlgorithm + " key agreement cannot be used with "
+                throw new InvalidAlgorithmParameterException(kaAlgorithm + " key agreement cannot be used with "
                     + getSimpleName(DHUParameterSpec.class));
             }
             DHUParameterSpec dheParameterSpec = (DHUParameterSpec)parameterSpec;
@@ -286,7 +295,10 @@ public class KeyAgreementSpi
                 throw new InvalidKeyException(kaAlgorithm + " key agreement requires "
                     + getSimpleName(ECPrivateKey.class) + " for initialisation");
             }
-
+            if (kdf == null && parameterSpec instanceof UserKeyingMaterialSpec)
+            {
+                throw new InvalidAlgorithmParameterException("no KDF specified for UserKeyingMaterialSpec");
+            }
             ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)ECUtil.generatePrivateKeyParameter((PrivateKey)key);
             this.parameters = privKey.getParameters();
             ukmParameters = (parameterSpec instanceof UserKeyingMaterialSpec) ? ((UserKeyingMaterialSpec)parameterSpec).getUserKeyingMaterial() : null;
@@ -563,7 +575,52 @@ public class KeyAgreementSpi
     {
         public MQVwithSHA512CKDF()
         {
-            super("ECDHUwithSHA512CKDF", new ECMQVBasicAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA512()));
+            super("ECMQVwithSHA512CKDF", new ECMQVBasicAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA512()));
+        }
+    }
+
+    public static class MQVwithSHA1KDF
+        extends KeyAgreementSpi
+    {
+        public MQVwithSHA1KDF()
+        {
+            super("ECMQVwithSHA1KDF", new ECMQVBasicAgreement(), new KDF2BytesGenerator(DigestFactory.createSHA1()));
+        }
+    }
+
+    public static class MQVwithSHA224KDF
+        extends KeyAgreementSpi
+    {
+        public MQVwithSHA224KDF()
+        {
+            super("ECMQVwithSHA224KDF", new ECMQVBasicAgreement(), new KDF2BytesGenerator(DigestFactory.createSHA224()));
+        }
+    }
+
+    public static class MQVwithSHA256KDF
+        extends KeyAgreementSpi
+    {
+        public MQVwithSHA256KDF()
+        {
+            super("ECMQVwithSHA256KDF", new ECMQVBasicAgreement(), new KDF2BytesGenerator(DigestFactory.createSHA256()));
+        }
+    }
+
+    public static class MQVwithSHA384KDF
+        extends KeyAgreementSpi
+    {
+        public MQVwithSHA384KDF()
+        {
+            super("ECMQVwithSHA384KDF", new ECMQVBasicAgreement(), new KDF2BytesGenerator(DigestFactory.createSHA384()));
+        }
+    }
+
+    public static class MQVwithSHA512KDF
+        extends KeyAgreementSpi
+    {
+        public MQVwithSHA512KDF()
+        {
+            super("ECMQVwithSHA512KDF", new ECMQVBasicAgreement(), new KDF2BytesGenerator(DigestFactory.createSHA512()));
         }
     }
 
@@ -611,4 +668,127 @@ public class KeyAgreementSpi
             super("ECCDHUwithSHA512CKDF", new ECDHCUnifiedAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA512()));
         }
     }
+
+    public static class DHUwithSHA1KDF
+        extends KeyAgreementSpi
+    {
+        public DHUwithSHA1KDF()
+        {
+            super("ECCDHUwithSHA1KDF", new ECDHCUnifiedAgreement(), new KDF2BytesGenerator(DigestFactory.createSHA1()));
+        }
+    }
+
+    public static class DHUwithSHA224KDF
+        extends KeyAgreementSpi
+    {
+        public DHUwithSHA224KDF()
+        {
+            super("ECCDHUwithSHA224KDF", new ECDHCUnifiedAgreement(), new KDF2BytesGenerator(DigestFactory.createSHA224()));
+        }
+    }
+
+    public static class DHUwithSHA256KDF
+        extends KeyAgreementSpi
+    {
+        public DHUwithSHA256KDF()
+        {
+            super("ECCDHUwithSHA256KDF", new ECDHCUnifiedAgreement(), new KDF2BytesGenerator(DigestFactory.createSHA256()));
+        }
+    }
+
+    public static class DHUwithSHA384KDF
+        extends KeyAgreementSpi
+    {
+        public DHUwithSHA384KDF()
+        {
+            super("ECCDHUwithSHA384KDF", new ECDHCUnifiedAgreement(), new KDF2BytesGenerator(DigestFactory.createSHA384()));
+        }
+    }
+
+    public static class DHUwithSHA512KDF
+        extends KeyAgreementSpi
+    {
+        public DHUwithSHA512KDF()
+        {
+            super("ECCDHUwithSHA512KDF", new ECDHCUnifiedAgreement(), new KDF2BytesGenerator(DigestFactory.createSHA512()));
+        }
+    }
+
+    /**
+   	 * KeyAgreement according to BSI TR-03111 chapter 4.3.1
+   	 */
+   	public static class ECKAEGwithSHA1KDF
+   			extends KeyAgreementSpi
+   	{
+   		public ECKAEGwithSHA1KDF()
+   		{
+   			super("ECKAEGwithSHA1KDF", new ECDHBasicAgreement(),
+                   new KDF2BytesGenerator(DigestFactory.createSHA1()));
+   		}
+   	}
+
+    /**
+   	 * KeyAgreement according to BSI TR-03111 chapter 4.3.1
+   	 */
+   	public static class ECKAEGwithRIPEMD160KDF
+   			extends KeyAgreementSpi
+   	{
+   		public ECKAEGwithRIPEMD160KDF()
+   		{
+   			super("ECKAEGwithRIPEMD160KDF", new ECDHBasicAgreement(),
+                   new KDF2BytesGenerator(new RIPEMD160Digest()));
+   		}
+   	}
+
+    /**
+   	 * KeyAgreement according to BSI TR-03111 chapter 4.3.1
+   	 */
+   	public static class ECKAEGwithSHA224KDF
+   			extends KeyAgreementSpi
+   	{
+   		public ECKAEGwithSHA224KDF()
+   		{
+   			super("ECKAEGwithSHA224KDF", new ECDHBasicAgreement(),
+                   new KDF2BytesGenerator(DigestFactory.createSHA224()));
+   		}
+   	}
+
+	/**
+	 * KeyAgreement according to BSI TR-03111 chapter 4.3.1
+	 */
+	public static class ECKAEGwithSHA256KDF
+			extends KeyAgreementSpi
+	{
+		public ECKAEGwithSHA256KDF()
+		{
+			super("ECKAEGwithSHA256KDF", new ECDHBasicAgreement(),
+                new KDF2BytesGenerator(DigestFactory.createSHA256()));
+		}
+	}
+
+	/**
+	 * KeyAgreement according to BSI TR-03111 chapter 4.3.1
+	 */
+	public static class ECKAEGwithSHA384KDF
+			extends KeyAgreementSpi
+	{
+		public ECKAEGwithSHA384KDF()
+		{
+			super("ECKAEGwithSHA384KDF", new ECDHBasicAgreement(),
+                new KDF2BytesGenerator(DigestFactory.createSHA384()));
+		}
+	}
+
+	/**
+	 * KeyAgreement according to BSI TR-03111 chapter 4.3.1
+	 */
+	public static class ECKAEGwithSHA512KDF
+			extends KeyAgreementSpi
+	{
+		public ECKAEGwithSHA512KDF()
+		{
+			super("ECKAEGwithSHA512KDF", new ECDHBasicAgreement(),
+                new KDF2BytesGenerator(DigestFactory.createSHA512()));
+		}
+	}
 }

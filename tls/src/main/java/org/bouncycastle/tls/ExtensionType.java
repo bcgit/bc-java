@@ -24,7 +24,7 @@ public class ExtensionType
     public static final int server_authz = 8;
 
     /*
-     * RFC RFC6091
+     * RFC 6091
      */
     public static final int cert_type = 9;
 

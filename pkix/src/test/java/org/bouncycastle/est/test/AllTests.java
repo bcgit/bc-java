@@ -35,6 +35,7 @@ public class AllTests
 
         suite.addTestSuite(ESTParsingTest.class);
         suite.addTestSuite(HostNameAuthorizerMatchTest.class);
+        suite.addTestSuite(TestHostNameAuthorizer.class);
 
         return new ESTTestSetup(suite);
     }

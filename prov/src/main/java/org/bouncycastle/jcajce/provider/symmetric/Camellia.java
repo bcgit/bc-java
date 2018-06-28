@@ -23,6 +23,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGen
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseSecretKeyFactory;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseWrapCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
@@ -81,6 +82,15 @@ public final class Camellia
         public GMAC()
         {
             super(new GMac(new GCMBlockCipher(new CamelliaEngine())));
+        }
+    }
+
+    static public class KeyFactory
+         extends BaseSecretKeyFactory
+    {
+        public KeyFactory()
+        {
+            super("Camellia", null);
         }
     }
 
@@ -222,6 +232,11 @@ public final class Camellia
             provider.addAlgorithm("Alg.Alias.Cipher", NTTObjectIdentifiers.id_camellia128_wrap, "CAMELLIAWRAP");
             provider.addAlgorithm("Alg.Alias.Cipher", NTTObjectIdentifiers.id_camellia192_wrap, "CAMELLIAWRAP");
             provider.addAlgorithm("Alg.Alias.Cipher", NTTObjectIdentifiers.id_camellia256_wrap, "CAMELLIAWRAP");
+
+            provider.addAlgorithm("SecretKeyFactory.CAMELLIA", PREFIX + "$KeyFactory");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory", NTTObjectIdentifiers.id_camellia128_cbc, "CAMELLIA");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory", NTTObjectIdentifiers.id_camellia192_cbc, "CAMELLIA");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory", NTTObjectIdentifiers.id_camellia256_cbc, "CAMELLIA");
 
             provider.addAlgorithm("KeyGenerator.CAMELLIA", PREFIX + "$KeyGen");
             provider.addAlgorithm("KeyGenerator", NTTObjectIdentifiers.id_camellia128_wrap, PREFIX + "$KeyGen128");

@@ -64,13 +64,21 @@ public abstract class ECPoint
         this.zs = zs;
     }
 
-    protected boolean satisfiesCofactor()
-    {
-        BigInteger h = curve.getCofactor();
-        return h == null || h.equals(ECConstants.ONE) || !ECAlgorithms.referenceMultiply(this, h).isInfinity();
-    }
-
     protected abstract boolean satisfiesCurveEquation();
+
+    protected boolean satisfiesOrder()
+    {
+        if (ECConstants.ONE.equals(curve.getCofactor()))
+        {
+            return true;
+        }
+
+        BigInteger n = curve.getOrder();
+
+        // TODO Require order to be available for all curves
+
+        return n == null || ECAlgorithms.referenceMultiply(this, n).isInfinity();
+    }
 
     public final ECPoint getDetachedPoint()
     {
@@ -297,28 +305,58 @@ public abstract class ECPoint
 
     public boolean isValid()
     {
+        return implIsValid(true);
+    }
+
+    boolean isValidPartial()
+    {
+        return implIsValid(false);
+    }
+
+    boolean implIsValid(final boolean checkOrder)
+    {
         if (isInfinity())
         {
             return true;
         }
 
-        // TODO Sanity-check the field elements
-
-        ECCurve curve = getCurve();
-        if (curve != null)
+        ValidityPrecompInfo validity = (ValidityPrecompInfo)getCurve().precompute(this, ValidityPrecompInfo.PRECOMP_NAME, new PreCompCallback()
         {
-            if (!satisfiesCurveEquation())
+            public PreCompInfo precompute(PreCompInfo existing)
             {
-                return false;
-            }
+                ValidityPrecompInfo info = (existing instanceof ValidityPrecompInfo) ? (ValidityPrecompInfo)existing : null;
+                if (info == null)
+                {
+                    info = new ValidityPrecompInfo();
+                }
 
-            if (!satisfiesCofactor())
-            {
-                return false;
+                if (info.hasFailed())
+                {
+                    return info;
+                }
+                if (!info.hasCurveEquationPassed())
+                {
+                    if (!satisfiesCurveEquation())
+                    {
+                        info.reportFailed();
+                        return info;
+                    }
+                    info.reportCurveEquationPassed();
+                }
+                if (checkOrder && !info.hasOrderPassed())
+                {
+                    if (!satisfiesOrder())
+                    {
+                        info.reportFailed();
+                        return info;
+                    }
+                    info.reportOrderPassed();
+                }
+                return info;
             }
-        }
+        });
 
-        return true;
+        return !validity.hasFailed();
     }
 
     public ECPoint scaleX(ECFieldElement scale)
@@ -1422,6 +1460,46 @@ public abstract class ECPoint
 
             ECFieldElement rhs = X.add(A).multiply(X.square()).add(B);
             return lhs.equals(rhs);
+        }
+
+        protected boolean satisfiesOrder()
+        {
+            BigInteger cofactor = curve.getCofactor();
+            if (ECConstants.TWO.equals(cofactor))
+            {
+                /*
+                 *  Check that the trace of (X + A) is 0, then there exists a solution to L^2 + L = X + A,
+                 *  and so a halving is possible, so this point is the double of another.  
+                 */
+                ECPoint N = this.normalize();
+                ECFieldElement X = N.getAffineXCoord();
+                ECFieldElement rhs = X.add(curve.getA());
+                return ((ECFieldElement.AbstractF2m)rhs).trace() == 0;
+            }
+            if (ECConstants.FOUR.equals(cofactor))
+            {
+                /*
+                 * Solve L^2 + L = X + A to find the half of this point, if it exists (fail if not).
+                 * Generate both possibilities for the square of the half-point's x-coordinate (w),
+                 * and check if Tr(w + A) == 0 for at least one; then a second halving is possible
+                 * (see comments for cofactor 2 above), so this point is four times another.
+                 * 
+                 * Note: Tr(x^2) == Tr(x). 
+                 */
+                ECPoint N = this.normalize();
+                ECFieldElement X = N.getAffineXCoord();
+                ECFieldElement lambda = ((ECCurve.AbstractF2m)curve).solveQuadraticEquation(X.add(curve.getA()));
+                if (lambda == null)
+                {
+                    return false;
+                }
+                ECFieldElement w = X.multiply(lambda).add(N.getAffineYCoord()); 
+                ECFieldElement t = w.add(curve.getA());
+                return ((ECFieldElement.AbstractF2m)t).trace() == 0
+                    || ((ECFieldElement.AbstractF2m)(t.add(X))).trace() == 0;
+            }
+
+            return super.satisfiesOrder();
         }
 
         public ECPoint scaleX(ECFieldElement scale)

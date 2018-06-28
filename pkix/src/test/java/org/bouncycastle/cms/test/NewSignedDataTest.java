@@ -1421,6 +1421,57 @@ public class NewSignedDataTest
         verifyRSASignatures(s, md.digest("Hello world!".getBytes()));
     }
 
+    public void testLwSHA3_256WithRSAAndAttributeTable()
+        throws Exception
+    {
+        MessageDigest       md = MessageDigest.getInstance("SHA3-256", BC);
+        List                certList = new ArrayList();
+        CMSTypedData        msg = new CMSProcessableByteArray("Hello world!".getBytes());
+
+        certList.add(_origCert);
+        certList.add(_signCert);
+
+        Store           certs = new JcaCertStore(certList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        Attribute attr = new Attribute(CMSAttributes.messageDigest,
+                                       new DERSet(
+                                            new DEROctetString(
+                                                md.digest("Hello world!".getBytes()))));
+
+        ASN1EncodableVector v = new ASN1EncodableVector();
+
+        v.add(attr);
+
+        AsymmetricKeyParameter privKey = PrivateKeyFactory.createKey(_origKP.getPrivate().getEncoded());
+
+        AlgorithmIdentifier sigAlgId = new DefaultSignatureAlgorithmIdentifierFinder().find("SHA3-256withRSA");
+        AlgorithmIdentifier digAlgId = new DefaultDigestAlgorithmIdentifierFinder().find(sigAlgId);
+
+        BcContentSignerBuilder contentSignerBuilder = new BcRSAContentSignerBuilder(sigAlgId, digAlgId);
+
+        gen.addSignerInfoGenerator(
+            new SignerInfoGeneratorBuilder(new BcDigestCalculatorProvider())
+                .setSignedAttributeGenerator(new DefaultSignedAttributeTableGenerator(new AttributeTable(v)))
+                .build(contentSignerBuilder.build(privKey), new JcaX509CertificateHolder(_origCert)));
+
+        gen.addCertificates(certs);
+
+        CMSSignedData s = gen.generate(new CMSAbsentContent(), false);
+
+        //
+        // the signature is detached, so need to add msg before passing on
+        //
+        s = new CMSSignedData(msg, s.getEncoded());
+        //
+        // compute expected content digest
+        //
+
+        verifySignatures(s, md.digest("Hello world!".getBytes()));
+        verifyRSASignatures(s, md.digest("Hello world!".getBytes()));
+    }
+
     public void testSHA1WithRSAEncapsulated()
         throws Exception
     {
@@ -1455,6 +1506,24 @@ public class NewSignedDataTest
         throws Exception
     {
         rsaPSSTest("SHA384withRSAandMGF1");
+    }
+
+    public void testSHA3_224WithRSAPSS()
+        throws Exception
+    {
+        rsaPSSTest("SHA3-224withRSAandMGF1");
+    }
+
+    public void testSHA3_256WithRSAPSS()
+        throws Exception
+    {
+        rsaPSSTest("SHA3-256withRSAandMGF1");
+    }
+
+    public void testSHA3_384WithRSAPSS()
+        throws Exception
+    {
+        rsaPSSTest("SHA3-384withRSAandMGF1");
     }
 
     public void testSHA3_224WithDSAEncapsulated()

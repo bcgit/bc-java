@@ -105,18 +105,13 @@ public class EncryptedValueBuilder
         try
         {
             PKCS8EncryptedPrivateKeyInfo encInfo = encInfoBldr.build(encryptor);
-
-            wrapper.generateWrappedKey(encryptor.getKey());
+            
             encSymmKey = new DERBitString(wrapper.generateWrappedKey(encryptor.getKey()));
 
             AlgorithmIdentifier keyAlg = wrapper.getAlgorithmIdentifier();
             ASN1OctetString valueHint = null;
 
-            return new EncryptedValue(intendedAlg, symmAlg, encSymmKey, keyAlg, valueHint, new DERBitString(encInfo.getEncoded()));
-        }
-        catch (IOException e)
-        {
-            throw new CRMFException("cannot encode encrypted private key: " + e.getMessage(), e);
+            return new EncryptedValue(intendedAlg, symmAlg, encSymmKey, keyAlg, valueHint, new DERBitString(encInfo.getEncryptedData()));
         }
         catch (IllegalStateException e)
         {

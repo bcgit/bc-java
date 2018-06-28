@@ -174,7 +174,7 @@ public abstract class JceKeyTransRecipient
 
                 agreement.doPhase(pubKey, true);
 
-                SecretKey key = agreement.generateSecret("GOST28147");
+                SecretKey key = agreement.generateSecret(CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_KeyWrap.getId());
 
                 Cipher keyCipher = helper.createCipher(CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_KeyWrap);
 

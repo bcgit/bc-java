@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.ec;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.math.ec.ECAlgorithms;
+import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 
 /**
@@ -41,8 +43,9 @@ public class ECElGamalDecryptor
             throw new IllegalStateException("ECElGamalDecryptor not initialised");
         }
 
-        ECPoint tmp = pair.getX().multiply(key.getD());
+        ECCurve curve = key.getParameters().getCurve();
+        ECPoint tmp = ECAlgorithms.cleanPoint(curve, pair.getX()).multiply(key.getD());
 
-        return pair.getY().subtract(tmp).normalize();
+        return ECAlgorithms.cleanPoint(curve, pair.getY()).subtract(tmp).normalize();
     }
 }

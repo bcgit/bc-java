@@ -3,6 +3,7 @@ package org.bouncycastle.openssl;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.util.Arrays;
 
@@ -26,7 +27,17 @@ public class X509TrustedCertificateBlock
         ASN1InputStream aIn = new ASN1InputStream(encoding);
 
         this.certificateHolder = new X509CertificateHolder(aIn.readObject().getEncoded());
-        this.trustBlock = new CertificateTrustBlock(aIn.readObject().getEncoded());
+
+        ASN1Object tBlock = aIn.readObject();
+
+        if (tBlock != null)
+        {
+            this.trustBlock = new CertificateTrustBlock(tBlock.getEncoded());
+        }
+        else
+        {
+            this.trustBlock = null;
+        }
     }
 
     public byte[] getEncoded()

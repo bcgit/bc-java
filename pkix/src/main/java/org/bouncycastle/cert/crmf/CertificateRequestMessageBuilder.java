@@ -13,12 +13,14 @@ import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.crmf.AttributeTypeAndValue;
 import org.bouncycastle.asn1.crmf.CertReqMsg;
 import org.bouncycastle.asn1.crmf.CertRequest;
 import org.bouncycastle.asn1.crmf.CertTemplate;
 import org.bouncycastle.asn1.crmf.CertTemplateBuilder;
 import org.bouncycastle.asn1.crmf.OptionalValidity;
+import org.bouncycastle.asn1.crmf.PKMACValue;
 import org.bouncycastle.asn1.crmf.POPOPrivKey;
 import org.bouncycastle.asn1.crmf.ProofOfPossession;
 import org.bouncycastle.asn1.crmf.SubsequentMessage;
@@ -41,8 +43,10 @@ public class CertificateRequestMessageBuilder
     private PKMACBuilder pkmacBuilder;
     private char[] password;
     private GeneralName sender;
+    private int popoType = ProofOfPossession.TYPE_KEY_ENCIPHERMENT;
     private POPOPrivKey popoPrivKey;
     private ASN1Null popRaVerified;
+    private PKMACValue agreeMAC;
 
     public CertificateRequestMessageBuilder(BigInteger certReqId)
     {
@@ -148,7 +152,7 @@ public class CertificateRequestMessageBuilder
 
     public CertificateRequestMessageBuilder setProofOfPossessionSigningKeySigner(ContentSigner popSigner)
     {
-        if (popoPrivKey != null || popRaVerified != null)
+        if (popoPrivKey != null || popRaVerified != null || agreeMAC != null)
         {
             throw new IllegalStateException("only one proof of possession allowed");
         }
@@ -160,12 +164,42 @@ public class CertificateRequestMessageBuilder
 
     public CertificateRequestMessageBuilder setProofOfPossessionSubsequentMessage(SubsequentMessage msg)
     {
-        if (popSigner != null || popRaVerified != null)
+        if (popSigner != null || popRaVerified != null || agreeMAC != null)
         {
             throw new IllegalStateException("only one proof of possession allowed");
         }
 
+        this.popoType = ProofOfPossession.TYPE_KEY_ENCIPHERMENT;
         this.popoPrivKey = new POPOPrivKey(msg);
+
+        return this;
+    }
+
+    public CertificateRequestMessageBuilder setProofOfPossessionSubsequentMessage(int type, SubsequentMessage msg)
+    {
+        if (popSigner != null || popRaVerified != null || agreeMAC != null)
+        {
+            throw new IllegalStateException("only one proof of possession allowed");
+        }
+        if (type != ProofOfPossession.TYPE_KEY_ENCIPHERMENT && type != ProofOfPossession.TYPE_KEY_AGREEMENT)
+        {
+            throw new IllegalArgumentException("type must be ProofOfPossession.TYPE_KEY_ENCIPHERMENT || ProofOfPossession.TYPE_KEY_AGREEMENT");
+        }
+
+        this.popoType = type;
+        this.popoPrivKey = new POPOPrivKey(msg);
+
+        return this;
+    }
+
+    public CertificateRequestMessageBuilder setProofOfPossessionAgreeMAC(PKMACValue macValue)
+    {
+        if (popSigner != null || popRaVerified != null || popoPrivKey != null)
+        {
+            throw new IllegalStateException("only one proof of possession allowed");
+        }
+
+        this.agreeMAC = macValue;
 
         return this;
     }
@@ -267,7 +301,13 @@ public class CertificateRequestMessageBuilder
         }
         else if (popoPrivKey != null)
         {
-            v.add(new ProofOfPossession(ProofOfPossession.TYPE_KEY_ENCIPHERMENT, popoPrivKey));
+            v.add(new ProofOfPossession(popoType, popoPrivKey));
+        }
+        else if (agreeMAC != null)
+        {
+            v.add(new ProofOfPossession(ProofOfPossession.TYPE_KEY_AGREEMENT,
+                    POPOPrivKey.getInstance(new DERTaggedObject(false, POPOPrivKey.agreeMAC, agreeMAC))));
+
         }
         else if (popRaVerified != null)
         {
