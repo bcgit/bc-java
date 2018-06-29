@@ -6,6 +6,9 @@ import java.util.Vector;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 
+/**
+ * Interface for a key exchange factory offering a variety of specific algorithms.
+ */
 public interface TlsKeyExchangeFactory
 {
     TlsKeyExchange createDHKeyExchangeClient(int keyExchange, Vector supportedSignatureAlgorithms,
