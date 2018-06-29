@@ -280,7 +280,7 @@ public class BCECGOST3410PublicKey
                 ECParameterSpec         p = (ECParameterSpec)ecSpec;
 
                 ECCurve curve = p.getG().getCurve();
-                ECPoint generator = curve.createPoint(p.getG().getX().toBigInteger(), p.getG().getY().toBigInteger(), withCompression);
+                ECPoint generator = curve.createPoint(p.getG().getAffineXCoord().toBigInteger(), p.getG().getAffineYCoord().toBigInteger(), withCompression);
 
                 X9ECParameters ecP = new X9ECParameters(
                     p.getCurve(), generator, p.getN(), p.getH(), p.getSeed());
@@ -289,11 +289,11 @@ public class BCECGOST3410PublicKey
             }
 
             ECPoint qq = this.getQ();
-            ECPoint point = qq.getCurve().createPoint(qq.getX().toBigInteger(), qq.getY().toBigInteger(), false);
+            ECPoint point = qq.getCurve().createPoint(qq.getAffineXCoord().toBigInteger(), qq.getAffineYCoord().toBigInteger(), false);
             ASN1OctetString p = ASN1OctetString.getInstance(new X9ECPoint(point));
 
-            BigInteger      bX = getQ().getX().toBigInteger();
-            BigInteger      bY = getQ().getY().toBigInteger();
+            BigInteger      bX = getQ().getAffineXCoord().toBigInteger();
+            BigInteger      bY = getQ().getAffineYCoord().toBigInteger();
             byte[]          encKey = new byte[64];
             
             byte[] val = bX.toByteArray();
@@ -341,7 +341,7 @@ public class BCECGOST3410PublicKey
                 ECParameterSpec         p = (ECParameterSpec)ecSpec;
 
                 ECCurve curve = p.getG().getCurve();
-                ECPoint generator = curve.createPoint(p.getG().getX().toBigInteger(), p.getG().getY().toBigInteger(), withCompression);
+                ECPoint generator = curve.createPoint(p.getG().getAffineXCoord().toBigInteger(), p.getG().getAffineYCoord().toBigInteger(), withCompression);
 
                 X9ECParameters ecP = new X9ECParameters(
                     p.getCurve(), generator, p.getN(), p.getH(), p.getSeed());
@@ -350,7 +350,7 @@ public class BCECGOST3410PublicKey
             }
 
             ECCurve curve = this.ecPublicKey.getParameters().getCurve();
-            ECPoint point = curve.createPoint(this.getQ().getX().toBigInteger(), this.getQ().getY().toBigInteger(), withCompression);
+            ECPoint point = curve.createPoint(this.getQ().getAffineXCoord().toBigInteger(), this.getQ().getAffineYCoord().toBigInteger(), withCompression);
             ASN1OctetString p = ASN1OctetString.getInstance(new X9ECPoint(point));
 
             info = new SubjectPublicKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), p.getOctets());
@@ -371,21 +371,12 @@ public class BCECGOST3410PublicKey
     
     public org.bouncycastle.math.ec.ECPoint getQ()
     {
-        ECPoint q = ecPublicKey.getQ();
-
         if (ecSpec == null)
         {
-            if (q instanceof org.bouncycastle.math.ec.ECPoint.Fp)
-            {
-                return new org.bouncycastle.math.ec.ECPoint.Fp(null, q.getX(), q.getY());
-            }
-            else
-            {
-                return new org.bouncycastle.math.ec.ECPoint.F2m(null, q.getX(), q.getY());
-            }
+            return ecPublicKey.getQ().getDetachedPoint();
         }
 
-        return q;
+        return ecPublicKey.getQ();
     }
 
     ECPublicKeyParameters engineGetKeyParameters()

@@ -98,7 +98,7 @@ public class DSTU4145NamedCurves
         String oidStr = oid.getId();
         if (oidStr.startsWith(oidBase))
         {
-            int index = Integer.parseInt(oidStr.substring(oidStr.lastIndexOf(".") + 1));
+            int index = Integer.parseInt(oidStr.substring(oidStr.lastIndexOf('.') + 1));
             return (index >= 0 && index < params.length) ? params[index] : null;
         }
         return null;

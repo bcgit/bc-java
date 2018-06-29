@@ -21,6 +21,14 @@ public class FilterOutputStream extends OutputStream
 
     public void write(byte[] b, int offset, int length) throws IOException
     {
+        if (b == null)
+        {
+            throw new NullPointerException();
+        }
+        else if ((offset < 0) || (length < 0) || ((offset + length) > b.length))
+        {
+            throw new IndexOutOfBoundsException();
+        }
         for (int i = 0; i < length; i++)
         {
             write(b[offset + i]);
