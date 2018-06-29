@@ -1,5 +1,8 @@
 package org.bouncycastle.tls;
 
+/**
+ * Processor interface for a PSK identity.
+ */
 public interface TlsPSKIdentity
 {
     void skipIdentityHint();

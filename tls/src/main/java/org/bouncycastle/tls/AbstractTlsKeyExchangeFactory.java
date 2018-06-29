@@ -6,6 +6,9 @@ import java.util.Vector;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 
+/**
+ * Base class for supporting a TLS key exchange factory implementation.
+ */
 public class AbstractTlsKeyExchangeFactory
     implements TlsKeyExchangeFactory
 {

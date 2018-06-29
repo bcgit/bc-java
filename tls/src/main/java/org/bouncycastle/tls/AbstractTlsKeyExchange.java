@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
 
+/**
+ * Base class for supporting a TLS key exchange implementation.
+ */
 public abstract class AbstractTlsKeyExchange
     implements TlsKeyExchange
 {

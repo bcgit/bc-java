@@ -51,7 +51,7 @@ public class PublicKeyPacket
             key = new ECDSAPublicBCPGKey(in);
             break;
         case EDDSA:
-            key = new EDDSAPublicBCPGKey(in);
+            key = new EdDSAPublicBCPGKey(in);
             break;
         default:
             throw new IOException("unknown PGP public key algorithm encountered: " + algorithm);
