@@ -29,6 +29,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2018
 <ul>
 <li>Base64/UrlBase64 would throw an exception on a zero length string. This has been fixed.</li>
 <li>Base64/UrlBase64 would throw an exception if there was whitespace in the last 4 characters. This has been fixed.</li>
+<li>The SM2 Signature JCE class now properly resets of Signature.sign() is called.</li>
 <li>XMSS applies further validation to deserialisation of the BDS tree so that failure occurs as soon as tampering is detected.</li>
 <li>An off by one error in the JsseDefaultHostnameAuthorizer isValidNameMatch method has been fixed.</li>
 <li>BCJSSE: Return empty byte array instead of null, for the null session ID.</li>
@@ -43,6 +44,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2018
 <li>A PEM encoded TRUSTED CERTIFICATE missing a trust block would result in a NullPointerException. This has been fixed.</li>
 <li>If the Sun provider was removed entirely the BC SecureRandom was unable to seed and caused an InstantiationException. A back up seeding strategy has been added to prevent this.</li>
 <li>In some situations the use of sm2p256v1 would result in "unknown curve name". This has been fixed.</li>
+<li>CMP PollReqContent now supports multiple certificate request IDs.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -66,6 +68,9 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2018
 <li>The ECElGamalEncryptor now supports the use of ECGOST curves.</li>
 <li>The number of signature subpackets in OpenPGP signatures that are converted into explicit types automatically has been increased.</li>
 <li>RFC 8032: Added low-level implementations of Ed25519 and Ed448.</li>
+<li>The provider jars now include a services entry for the 2 providers they hold.</li>
+<li>Support has been added for the German BSI KAEG Elliptic Curve key agreement algorithm with X9.63 as the KDF to the JCE.</li>
+<li>Support has been added for the German BSI KAEG Elliptic Curve session key KDF to the lightweight API.</li>
 </ul>
 <h3>2.1.4 Security Related Changes and CVE's Addressed by this Release</h3>
 <ul>
