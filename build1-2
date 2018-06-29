@@ -53,6 +53,7 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
 (
     cd $jdk12src
 
+    rm -rf org/bouncycastle/math/ec/rfc8032/test
     rm -rf org/bouncycastle/crypto/test/ntru
     rm -rf org/bouncycastle/pqc/math/ntru
     rm -rf org/bouncycastle/pqc/crypto/ntru
