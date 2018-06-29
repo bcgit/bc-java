@@ -47,7 +47,7 @@ class ECUtils
             ECParameterSpec         p = (ECParameterSpec)ecSpec;
 
             ECCurve curve = p.getG().getCurve();
-            ECPoint generator = curve.createPoint(p.getG().getX().toBigInteger(), p.getG().getY().toBigInteger(), withCompression);
+            ECPoint generator = curve.createPoint(p.getG().getAffineXCoord().toBigInteger(), p.getG().getAffineYCoord().toBigInteger(), withCompression);
 
             X9ECParameters ecP = new X9ECParameters(
                 p.getCurve(), generator, p.getN(), p.getH(), p.getSeed());
