@@ -367,6 +367,7 @@
                 <attribute name="Codebase" value="*" />
                 <attribute name="Application-Library-Allowable-Codebase" value="*" />
                 <attribute name="Caller-Allowable-Codebase" value="*" />
+                <attribute name="Automatic-Module-Name" value="org.bouncycastle.provider" />
             </manifestElements>
         </compile>
 
@@ -549,6 +550,7 @@
                 <attribute name="Codebase" value="*" />
                 <attribute name="Application-Library-Allowable-Codebase" value="*" />
                 <attribute name="Caller-Allowable-Codebase" value="*" />
+                <attribute name="Automatic-Module-Name" value="org.bouncycastle.mail" />
             </manifestElements>
         </compile>
 
@@ -593,6 +595,7 @@
                 <attribute name="Codebase" value="*" />
                 <attribute name="Application-Library-Allowable-Codebase" value="*" />
                 <attribute name="Caller-Allowable-Codebase" value="*" />
+                <attribute name="Automatic-Module-Name" value="org.bouncycastle.tls" />
             </manifestElements>
         </compile>
 
@@ -644,6 +647,7 @@
                 <attribute name="Codebase" value="*" />
                 <attribute name="Application-Library-Allowable-Codebase" value="*" />
                 <attribute name="Caller-Allowable-Codebase" value="*" />
+                <attribute name="Automatic-Module-Name" value="org.bouncycastle.pkix" />
             </manifestElements>
         </compile>
 
@@ -694,6 +698,7 @@
                 <attribute name="Codebase" value="*" />
                 <attribute name="Application-Library-Allowable-Codebase" value="*" />
                 <attribute name="Caller-Allowable-Codebase" value="*" />
+                <attribute name="Automatic-Module-Name" value="org.bouncycastle.pg" />
             </manifestElements>
         </compile>
 
