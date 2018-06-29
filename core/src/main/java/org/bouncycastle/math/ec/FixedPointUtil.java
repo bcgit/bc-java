@@ -14,20 +14,7 @@ public class FixedPointUtil
 
     public static FixedPointPreCompInfo getFixedPointPreCompInfo(PreCompInfo preCompInfo)
     {
-        if ((preCompInfo != null) && (preCompInfo instanceof FixedPointPreCompInfo))
-        {
-            return (FixedPointPreCompInfo)preCompInfo;
-        }
-
-        return new FixedPointPreCompInfo();
-    }
-
-    /**
-     * @deprecated Use {@link #precompute(ECPoint)} instead, as minWidth parameter is now ignored.
-     */
-    public static FixedPointPreCompInfo precompute(ECPoint p, int minWidth)
-    {
-        return precompute(p);
+        return (preCompInfo instanceof FixedPointPreCompInfo) ? (FixedPointPreCompInfo)preCompInfo : null;
     }
 
     public static FixedPointPreCompInfo precompute(final ECPoint p)
@@ -82,19 +69,18 @@ public class FixedPointUtil
                 FixedPointPreCompInfo result = new FixedPointPreCompInfo();
                 result.setLookupTable(c.createCacheSafeLookupTable(lookupTable, 0, lookupTable.length));
                 result.setOffset(pow2Table[minWidth]);
-                result.setPreComp(lookupTable);
                 result.setWidth(minWidth);
                 return result;
             }
 
             private boolean checkExisting(FixedPointPreCompInfo existingFP, int n)
             {
-                return existingFP != null && checkTable(existingFP.getPreComp(), n);
+                return existingFP != null && checkTable(existingFP.getLookupTable(), n);
             }
 
-            private boolean checkTable(ECPoint[] table, int n)
+            private boolean checkTable(ECLookupTable table, int n)
             {
-                return table != null && table.length >= n;
+                return table != null && table.getSize() >= n;
             }
         });
     }
