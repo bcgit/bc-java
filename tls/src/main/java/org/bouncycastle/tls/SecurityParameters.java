@@ -2,6 +2,9 @@ package org.bouncycastle.tls;
 
 import org.bouncycastle.tls.crypto.TlsSecret;
 
+/**
+ * Carrier class for general security parameters.
+ */
 public class SecurityParameters
 {
     int entity = -1;

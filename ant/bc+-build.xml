@@ -953,7 +953,7 @@
                 <package name="org.bouncycastle.tls.*" />
                 <package name="org.bouncycastle.jsse.*" />
                 <group title="TLS/DTLS Packages" packages="org.bouncycastle.tls,org.bouncycastle.tls.crypto*" />
-                <group title="JSSE Provider Packages" packages="org.bouncycastle.jsse.provider" />
+                <group title="BC JSSE Provider Packages" packages="org.bouncycastle.jsse,org.bouncycastle.jsse.provider" />
                 <group title="TLS/DTLS/JSSE Provider Test and Example Packages" packages="org.bouncycastle.jsse.provider.test*,org.bouncycastle.tls.test*" />
             </docElements>
         </compile-doc>
@@ -1049,8 +1049,8 @@
                 <package name="org.bouncycastle.gpg.*" />
                 <package name="org.bouncycastle.bcpg.*" />
                 <group title="BCPG Support Packages" packages="org.bouncycastle.bcpg*" />
-                <group title="OpenPGP Packages" packages="org.bouncycastle.openpgp*" />
-                <group title="OpenPGP Test and Example Packages" packages="org.bouncycastle.openpgp.test*,org.bouncycastle.openpgp.examples*" />
+                <group title="OpenPGP Packages" packages="org.bouncycastle.gpg,org.bouncycastle.gpg.keybox,org.bouncycastle.openpgp*" />
+                <group title="OpenPGP Test and Example Packages" packages="org.bouncycastle.gpg.test,org.bouncycastle.openpgp.test*,org.bouncycastle.openpgp.examples*" />
             </docElements>
         </compile-doc>
 
