@@ -51,10 +51,4 @@ public class FixedPointCombMultiplier extends AbstractECMultiplier
 
         return R.add(info.getOffset());
     }
-
-    /** @deprecated Is no longer used; remove any overrides in subclasses. */
-    protected int getWidthForCombSize(int combSize)
-    {
-        return combSize > 257 ? 6 : 5;
-    }
 }
