@@ -34,7 +34,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2018
 <li>BCJSSE: Return empty byte array instead of null, for the null session ID.</li>
 <li>If a checksum calculator was passed to a PGPSecretKey constructor, but the encryptor was set to null, the wrong checksum would be calculated for the S2K usage. This has been fixed.</li>
 <li>The CRMF EncryptedValue, when containing a private key, held an encoding of an EncryptedPrivateKeyInfo, rather than just the encrypted bytes. This has been fixed.</li>
-<li>A concurrency issue which could occur if a high load of threads were doing EC math simultaneously has been fixed.</li>
+<li>EC point precomputations could fail due to race conditions in concurrent settings. Point precomputation was reworked to fix this.</li>
 <li>PGP key rings containing EdDSA signatures would cause an exception on parsing. This has been fixed.<li>
 <li>BCJSSE: a mixed case error for brainpool curves in the supported groups set has been fixed.</li>
 <li>getVersion() on the CRMF CertTemplate class could cause a null pointer exception if the optional version field was left out. This has been fixed.</li>
@@ -65,10 +65,11 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2018
 <li>Support has been added for SHA-3 based signatures to the CMS API.</li>
 <li>The ECElGamalEncryptor now supports the use of ECGOST curves.</li>
 <li>The number of signature subpackets in OpenPGP signatures that are converted into explicit types automatically has been increased.</li>
+<li>RFC 8032: Added low-level implementations of Ed25519 and Ed448.</li>
 </ul>
 <h3>2.1.4 Security Related Changes and CVE's Addressed by this Release</h3>
 <ul>
-<li>CVE-2018-1000180: issue around primality tests for RSA key pair generation if down using only the low-level API.
+<li>CVE-2018-1000180: issue around primality tests for RSA key pair generation if done using only the low-level API.
 </ul>
 
 <h3>2.2.1 Version</h3>
