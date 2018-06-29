@@ -31,7 +31,7 @@ public class JceTlsMAC
         }
         catch (InvalidKeyException e)
         {
-            e.printStackTrace();
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
