@@ -31,3 +31,12 @@ else
     fi
 fi
 
+if [ -f build/artifacts/jdk1.5/jars/bcprov-jdk15on*.jar ]
+then
+	tar cf - prov/src/main/resources/META-INF | (cd build/artifacts/jdk1.5/jars/; tar xf -)
+        cd build/artifacts/jdk1.5/jars/
+        mv prov/src/main/resources/META-INF .
+        jar uf bcprov-jdk15on*.jar META-INF
+        jar uf bcprov-ext-jdk15on*.jar META-INF
+        rm -r prov META-INF
+fi
