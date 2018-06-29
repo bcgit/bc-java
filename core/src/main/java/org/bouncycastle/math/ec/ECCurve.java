@@ -625,6 +625,9 @@ public abstract class ECCurve
         BigInteger q, r;
         ECPoint.Fp infinity;
 
+        /**
+         * @deprecated use constructor taking order/cofactor
+         */
         public Fp(BigInteger q, BigInteger a, BigInteger b)
         {
             this(q, a, b, null, null);
@@ -636,7 +639,7 @@ public abstract class ECCurve
 
             this.q = q;
             this.r = ECFieldElement.Fp.calculateResidue(q);
-            this.infinity = new ECPoint.Fp(this, null, null);
+            this.infinity = new ECPoint.Fp(this, null, null, false);
 
             this.a = fromBigInteger(a);
             this.b = fromBigInteger(b);
@@ -645,6 +648,9 @@ public abstract class ECCurve
             this.coord = FP_DEFAULT_COORDS;
         }
 
+        /**
+         * @deprecated use constructor taking order/cofactor
+         */
         protected Fp(BigInteger q, BigInteger r, ECFieldElement a, ECFieldElement b)
         {
             this(q, r, a, b, null, null);
@@ -656,7 +662,7 @@ public abstract class ECCurve
 
             this.q = q;
             this.r = r;
-            this.infinity = new ECPoint.Fp(this, null, null);
+            this.infinity = new ECPoint.Fp(this, null, null, false);
 
             this.a = a;
             this.b = b;
@@ -1011,6 +1017,7 @@ public abstract class ECCurve
          * @param b The coefficient <code>b</code> in the Weierstrass equation
          * for non-supersingular elliptic curves over
          * <code>F<sub>2<sup>m</sup></sub></code>.
+         * @deprecated use constructor taking order/cofactor
          */
         public F2m(
             int m,
@@ -1068,6 +1075,7 @@ public abstract class ECCurve
          * @param b The coefficient <code>b</code> in the Weierstrass equation
          * for non-supersingular elliptic curves over
          * <code>F<sub>2<sup>m</sup></sub></code>.
+         * @deprecated use constructor taking order/cofactor
          */
         public F2m(
             int m,
@@ -1122,7 +1130,7 @@ public abstract class ECCurve
             this.order = order;
             this.cofactor = cofactor;
 
-            this.infinity = new ECPoint.F2m(this, null, null);
+            this.infinity = new ECPoint.F2m(this, null, null, false);
             this.a = fromBigInteger(a);
             this.b = fromBigInteger(b);
             this.coord = F2M_DEFAULT_COORDS;
@@ -1139,7 +1147,7 @@ public abstract class ECCurve
             this.order = order;
             this.cofactor = cofactor;
 
-            this.infinity = new ECPoint.F2m(this, null, null);
+            this.infinity = new ECPoint.F2m(this, null, null, false);
             this.a = a;
             this.b = b;
             this.coord = F2M_DEFAULT_COORDS;
@@ -1226,22 +1234,6 @@ public abstract class ECCurve
         public int getK3()
         {
             return k3;
-        }
-
-        /**
-         * @deprecated use {@link #getOrder()} instead
-         */
-        public BigInteger getN()
-        {
-            return this.order;
-        }
-
-        /**
-         * @deprecated use {@link #getCofactor()} instead
-         */
-        public BigInteger getH()
-        {
-            return this.cofactor;
         }
 
         public ECLookupTable createCacheSafeLookupTable(ECPoint[] points, int off, final int len)

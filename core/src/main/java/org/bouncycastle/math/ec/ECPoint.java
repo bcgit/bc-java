@@ -99,33 +99,6 @@ public abstract class ECPoint
     }
 
     /**
-     * Normalizes this point, and then returns the affine x-coordinate.
-     * 
-     * Note: normalization can be expensive, this method is deprecated in favour
-     * of caller-controlled normalization.
-     * 
-     * @deprecated Use getAffineXCoord(), or normalize() and getXCoord(), instead
-     */
-    public ECFieldElement getX()
-    {
-        return normalize().getXCoord();
-    }
-
-
-    /**
-     * Normalizes this point, and then returns the affine y-coordinate.
-     * 
-     * Note: normalization can be expensive, this method is deprecated in favour
-     * of caller-controlled normalization.
-     * 
-     * @deprecated Use getAffineYCoord(), or normalize() and getYCoord(), instead
-     */
-    public ECFieldElement getY()
-    {
-        return normalize().getYCoord();
-    }
-
-    /**
      * Returns the affine x-coordinate after checking that this point is normalized.
      * 
      * @return The affine x-coordinate of this point
@@ -641,20 +614,6 @@ public abstract class ECPoint
     public static class Fp extends AbstractFp
     {
         /**
-         * Create a point which encodes without point compression.
-         * 
-         * @param curve the curve to use
-         * @param x affine x co-ordinate
-         * @param y affine y co-ordinate
-         * 
-         * @deprecated Use ECCurve.createPoint to construct points
-         */
-        public Fp(ECCurve curve, ECFieldElement x, ECFieldElement y)
-        {
-            this(curve, x, y, false);
-        }
-
-        /**
          * Create a point that encodes with or without point compression.
          * 
          * @param curve the curve to use
@@ -685,7 +644,7 @@ public abstract class ECPoint
 
         protected ECPoint detach()
         {
-            return new ECPoint.Fp(null, this.getAffineXCoord(), this.getAffineYCoord());
+            return new ECPoint.Fp(null, this.getAffineXCoord(), this.getAffineYCoord(), false);
         }
 
         public ECFieldElement getZCoord(int index)
@@ -1659,18 +1618,6 @@ public abstract class ECPoint
          * @param curve base curve
          * @param x x point
          * @param y y point
-         * 
-         * @deprecated Use ECCurve.createPoint to construct points
-         */
-        public F2m(ECCurve curve, ECFieldElement x, ECFieldElement y)
-        {
-            this(curve, x, y, false);
-        }
-        
-        /**
-         * @param curve base curve
-         * @param x x point
-         * @param y y point
          * @param withCompression true if encode with point compression.
          * 
          * @deprecated per-point compression property will be removed, refer {@link #getEncoded(boolean)}
@@ -1712,7 +1659,7 @@ public abstract class ECPoint
 
         protected ECPoint detach()
         {
-            return new ECPoint.F2m(null, this.getAffineXCoord(), this.getAffineYCoord()); // earlier JDK
+            return new ECPoint.F2m(null, this.getAffineXCoord(), this.getAffineYCoord(), false); // earlier JDK
         }
 
         public ECFieldElement getYCoord()
