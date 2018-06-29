@@ -28,6 +28,7 @@ then
     ((cd core/src/main/java; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd core/src/main/javadoc; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd core/src/main/jdk1.4; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd core/src/main/jdk1.1; tar cf - org ) | (cd $target/src && tar xf -))
     ((cd core/src/main/j2me; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd core/src/test/java; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd core/src/test/j2me; tar cf - * ) | (cd $target/src && tar xf -))
@@ -44,6 +45,7 @@ then
         rm src/org/bouncycastle/crypto/test/AllTests.java
         rm src/org/bouncycastle/crypto/test/SHA3DigestTest.java
         rm src/org/bouncycastle/crypto/test/SHAKEDigestTest.java
+        rm src/org/bouncycastle/crypto/CryptoServicesPermission.java
         rm src/org/bouncycastle/util/StreamParser.java
         rm src/org/bouncycastle/util/StreamParsingException.java
         rm src/org/bouncycastle/asn1/util/Dump.java
@@ -69,6 +71,7 @@ then
         rm src/org/bouncycastle/asn1/test/PublishTrustAnchorsTest.java
         rm src/org/bouncycastle/asn1/test/RevokeRequestTest.java
         rm -rf src/org/bouncycastle/math/ec/rfc7748/test
+        rm -rf src/org/bouncycastle/math/ec/rfc8032/test
         rm -rf src/org/bouncycastle/math/raw/test
         rm -rf src/org/bouncycastle/math/test
         rm -rf src/org/bouncycastle/pqc/math/ntru
@@ -78,6 +81,8 @@ then
         rm -rf src/org/bouncycastle/pqc/crypto/*/IndexGenerator*
         rm -rf src/org/bouncycastle/pqc/crypto/xmss
         rm -rf src/org/bouncycastle/pqc/crypto/test/XMSS*
+        rm -rf src/org/bouncycastle/gpg/keybox
+        rm -rf src/org/bouncycastle/gpg/test
         rm src/org/bouncycastle/asn1/test/MonetaryValueUnitTest.java
         rm src/org/bouncycastle/asn1/test/NameOrPseudonymUnitTest.java
         rm src/org/bouncycastle/asn1/test/NetscapeCertTypeTest.java

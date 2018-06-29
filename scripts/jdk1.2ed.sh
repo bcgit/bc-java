@@ -58,3 +58,9 @@ w
 q
 %
 
+ed org/bouncycastle/crypto/CryptoServicesRegistrar.java <<%
+g/private final String/s/final//
+g/private final Class/s/final//
+w
+q
+%
