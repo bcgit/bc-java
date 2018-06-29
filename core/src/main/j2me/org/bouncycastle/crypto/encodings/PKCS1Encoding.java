@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.encodings;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
