@@ -65,6 +65,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2018
 <li>Restrictions on the output sizes of the Blake2b/s digests in the lightweight API have been removed.</li>
 <li>The Whirlpool digest OID has been added to its corresponding mappings for the JCA.</li>
 <li>Support has been added for SHA-3 based signatures to the CMS API.</li>
+<li>Support has been added to the CMS API for the generation of ECGOST key transport messages.</li>
 <li>The ECElGamalEncryptor now supports the use of ECGOST curves.</li>
 <li>The number of signature subpackets in OpenPGP signatures that are converted into explicit types automatically has been increased.</li>
 <li>RFC 8032: Added low-level implementations of Ed25519 and Ed448.</li>
@@ -132,6 +133,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2017, August 18
 <li>Some class resolving used by the provider would fail if the BC jar was loaded on the boot class path. This has been fixed.</li>
 <li>An off-by-one range check in SM2Signer has been fixed.</li>
 <li>Retrieving an SM2 key from a certificate could result in a NullPointerException due to a problem with the curve lookup. This has been fixed.</li> 
+<li>A race condition that could occur inside the HybridSecureRandom on reseed and result in an exception has been fixed.</li>
 <li>DTLS now supports records containing multiple handshake messages.</li>
 </ul>
 <h3>2.3.3 Additional Features and Functionality</h3>
