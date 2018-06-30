@@ -723,6 +723,14 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <p>
 <table cellpadding=5 cellspacing=0 border=1 width=80%>
 <tr><th>Name</th><th>Output (in bits)</th><th>Notes</th></tr>
+<tr><td>Blake2b-160</td><td>160</td><td>&nbsp;</td></tr>
+<tr><td>Blake2b-256</td><td>256</td><td>&nbsp;</td></tr>
+<tr><td>Blake2b-384</td><td>384</td><td>&nbsp;</td></tr>
+<tr><td>Blake2b-512</td><td>512</td><td>&nbsp;</td></tr>
+<tr><td>Blake2s-128</td><td>128</td><td>&nbsp;</td></tr>
+<tr><td>Blake2s-160</td><td>160</td><td>&nbsp;</td></tr>
+<tr><td>Blake2s-224</td><td>224</td><td>&nbsp;</td></tr>
+<tr><td>Blake2s-256</td><td>256</td><td>&nbsp;</td></tr>
 <tr><td>GOST3411</td><td>256</td><td>&nbsp;</td></tr>
 <tr><td>GOST3411-2012-256</td><td>256</td><td>&nbsp;</td></tr>
 <tr><td>GOST3411-2012-512</td><td>512</td><td>&nbsp;</td></tr>
@@ -962,7 +970,7 @@ generation a more JCE "friendly" class is provided in the package org.bouncycast
 <p>
 <h3>6.4 Keystore</h3>
 <p>
-The Bouncy Castle package has three implementation of a keystore.
+The Bouncy Castle package has four implementation of a keystore.
 <p>
 The first "BKS" is a keystore that will work with the keytool in the same
 fashion as the Sun "JKS" keystore. The keystore is resistent to tampering
@@ -994,6 +1002,7 @@ There is an example program that produces PKCS12 files suitable for
 loading into browsers. It is in the package
 org.bouncycastle.jce.examples.
 <p>
+The fourth is the BCFKS key store which is a FIPS compliant key store which is also designed for general key storage and based on ASN.1. This key store type is encrypted and supports the use of SCRYPT and the storage of some symmetric key types.
 <p>
 <h3>6.5 Additional support classes for Elliptic Curve.</h3>
 <p>

@@ -24,19 +24,19 @@ to conform the algorithms to the JCE framework.
 
 <h3>2.1.1 Version</h3>
 Release: 1.60<br/>
-Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2018
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2018, June 30
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>Base64/UrlBase64 would throw an exception on a zero length string. This has been fixed.</li>
 <li>Base64/UrlBase64 would throw an exception if there was whitespace in the last 4 characters. This has been fixed.</li>
 <li>The SM2 Signature JCE class now properly resets of Signature.sign() is called.</li>
-<li>XMSS applies further validation to deserialisation of the BDS tree so that failure occurs as soon as tampering is detected.</li>
+<li>XMSS applies further validation to deserialisation of the BDS tree so that failure occurs as soon as tampering is detected (see CVE below).</li>
 <li>An off by one error in the JsseDefaultHostnameAuthorizer isValidNameMatch method has been fixed.</li>
 <li>BCJSSE: Return empty byte array instead of null, for the null session ID.</li>
 <li>If a checksum calculator was passed to a PGPSecretKey constructor, but the encryptor was set to null, the wrong checksum would be calculated for the S2K usage. This has been fixed.</li>
 <li>The CRMF EncryptedValue, when containing a private key, held an encoding of an EncryptedPrivateKeyInfo, rather than just the encrypted bytes. This has been fixed.</li>
 <li>EC point precomputations could fail due to race conditions in concurrent settings. Point precomputation was reworked to fix this.</li>
-<li>PGP key rings containing EdDSA signatures would cause an exception on parsing. This has been fixed.<li>
+<li>PGP key rings containing EdDSA signatures would cause an exception on parsing. This has been fixed.</li>
 <li>BCJSSE: a mixed case error for brainpool curves in the supported groups set has been fixed.</li>
 <li>getVersion() on the CRMF CertTemplate class could cause a null pointer exception if the optional version field was left out. This has been fixed.</li>
 <li>Use of a short buffer with RSA via the JCE could result in an escaping ArrayIndexOutOfBoundsException. This has been fixed so that a ShortBufferException is now thrown.</li>
@@ -75,7 +75,8 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2018
 </ul>
 <h3>2.1.4 Security Related Changes and CVE's Addressed by this Release</h3>
 <ul>
-<li>CVE-2018-1000180: issue around primality tests for RSA key pair generation if done using only the low-level API.
+<li>CVE-2018-1000180: issue around primality tests for RSA key pair generation if done using only the low-level API.</li>
+<li>CVE-2018-TBA: lack of class checking in deserialization of XMSS/XMSS^MT private keys with BDS state information.</li>
 </ul>
 
 <h3>2.2.1 Version</h3>
