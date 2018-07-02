@@ -54,6 +54,15 @@ public abstract class Ed25519
     private static PointExt[] precompBaseTable = null;
     private static int[] precompBase = null;
 
+    private static class PointAccum
+    {
+        int[] x = X25519Field.create();
+        int[] y = X25519Field.create();
+        int[] z = X25519Field.create();
+        int[] u = X25519Field.create();
+        int[] v = X25519Field.create();
+    }
+
     private static class PointExt
     {
         int[] x = X25519Field.create();
@@ -192,7 +201,7 @@ public abstract class Ed25519
         encode24((int)(n >>> 32), bs, off + 4);
     }
 
-    private static void encodePoint(PointExt p, byte[] r, int rOff)
+    private static void encodePoint(PointAccum p, byte[] r, int rOff)
     {
         int[] x = X25519Field.create();
         int[] y = X25519Field.create();
@@ -296,7 +305,45 @@ public abstract class Ed25519
         System.arraycopy(S, 0, sig, sigOff + POINT_BYTES, SCALAR_BYTES);
     }
 
-    private static void pointAddVar(boolean negate, PointExt p, PointExt r)
+    private static void pointAddVar(boolean negate, PointExt p, PointAccum r)
+    {
+        int[] A = X25519Field.create();
+        int[] B = X25519Field.create();
+        int[] C = X25519Field.create();
+        int[] D = X25519Field.create();
+        int[] E = r.u;
+        int[] F = X25519Field.create();
+        int[] G = X25519Field.create();
+        int[] H = r.v;
+
+        int[] c, d, f, g;
+        if (negate)
+        {
+            c = D; d = C; f = G; g = F;
+        }
+        else
+        {
+            c = C; d = D; f = F; g = G;
+        }
+
+        X25519Field.apm(r.y, r.x, B, A);
+        X25519Field.apm(p.y, p.x, d, c);
+        X25519Field.mul(A, C, A);
+        X25519Field.mul(B, D, B);
+        X25519Field.mul(r.u, r.v, C);
+        X25519Field.mul(C, p.t, C);
+        X25519Field.mul(C, C_d2, C);
+        X25519Field.mul(r.z, p.z, D);
+        X25519Field.add(D, D, D);
+        X25519Field.apm(B, A, H, E);
+        X25519Field.apm(D, C, g, f);
+        X25519Field.carry(g);
+        X25519Field.mul(E, F, r.x);
+        X25519Field.mul(G, H, r.y);
+        X25519Field.mul(F, G, r.z);
+    }
+
+    private static void pointAddVar(boolean negate, PointExt p, PointExt q, PointExt r)
     {
         int[] A = X25519Field.create();
         int[] B = X25519Field.create();
@@ -317,13 +364,13 @@ public abstract class Ed25519
             c = C; d = D; f = F; g = G;
         }
 
-        X25519Field.apm(r.y, r.x, B, A);
-        X25519Field.apm(p.y, p.x, d, c);
+        X25519Field.apm(p.y, p.x, B, A);
+        X25519Field.apm(q.y, q.x, d, c);
         X25519Field.mul(A, C, A);
         X25519Field.mul(B, D, B);
-        X25519Field.mul(r.t, p.t, C);
+        X25519Field.mul(p.t, q.t, C);
         X25519Field.mul(C, C_d2, C);
-        X25519Field.mul(r.z, p.z, D);
+        X25519Field.mul(p.z, q.z, D);
         X25519Field.add(D, D, D);
         X25519Field.apm(B, A, H, E);
         X25519Field.apm(D, C, g, f);
@@ -334,27 +381,37 @@ public abstract class Ed25519
         X25519Field.mul(E, H, r.t);
     }
 
-    private static void pointAddPrecomp(PointPrecomp p, PointExt r)
+    private static void pointAddPrecomp(PointPrecomp p, PointAccum r)
     {
         int[] A = X25519Field.create();
         int[] B = X25519Field.create();
         int[] C = X25519Field.create();
-        int[] E = X25519Field.create();
+        int[] E = r.u;
         int[] F = X25519Field.create();
         int[] G = X25519Field.create();
-        int[] H = X25519Field.create();
+        int[] H = r.v;
 
         X25519Field.apm(r.y, r.x, B, A);
         X25519Field.mul(A, p.ymx_h, A);
         X25519Field.mul(B, p.ypx_h, B);
-        X25519Field.mul(r.t, p.xyd, C);
+        X25519Field.mul(r.u, r.v, C);
+        X25519Field.mul(C, p.xyd, C);
         X25519Field.apm(B, A, H, E);
         X25519Field.apm(r.z, C, G, F);
         X25519Field.carry(G);
         X25519Field.mul(E, F, r.x);
         X25519Field.mul(G, H, r.y);
         X25519Field.mul(F, G, r.z);
-        X25519Field.mul(E, H, r.t);
+    }
+
+    private static PointExt pointCopy(PointAccum p)
+    {
+        PointExt r = new PointExt();
+        X25519Field.copy(p.x, 0, r.x, 0);
+        X25519Field.copy(p.y, 0, r.y, 0);
+        X25519Field.copy(p.z, 0, r.z, 0);
+        X25519Field.mul(p.u, p.v, r.t);
+        return r;
     }
 
     private static PointExt pointCopy(PointExt p)
@@ -367,15 +424,15 @@ public abstract class Ed25519
         return r;
     }
 
-    private static void pointDouble(PointExt r)
+    private static void pointDouble(PointAccum r)
     {
         int[] A = X25519Field.create();
         int[] B = X25519Field.create();
         int[] C = X25519Field.create();
-        int[] E = X25519Field.create();
+        int[] E = r.u;
         int[] F = X25519Field.create();
         int[] G = X25519Field.create();
-        int[] H = X25519Field.create();
+        int[] H = r.v;
 
         X25519Field.sqr(r.x, A);
         X25519Field.sqr(r.y, B);
@@ -390,7 +447,13 @@ public abstract class Ed25519
         X25519Field.mul(E, F, r.x);
         X25519Field.mul(G, H, r.y);
         X25519Field.mul(F, G, r.z);
-        X25519Field.mul(E, H, r.t);
+    }
+
+    private static void pointExtendXY(PointAccum p)
+    {
+        X25519Field.one(p.z);
+        X25519Field.copy(p.x, 0, p.u, 0);
+        X25519Field.copy(p.y, 0, p.v, 0);
     }
 
     private static void pointExtendXY(PointExt p)
@@ -417,17 +480,27 @@ public abstract class Ed25519
 
     private static PointExt[] pointPrecompVar(PointExt p, int count)
     {
-        PointExt d = pointCopy(p);
-        pointDouble(d);
+//        assert count > 0;
+
+        PointExt d = new PointExt();
+        pointAddVar(false, p, p, d);
 
         PointExt[] table = new PointExt[count];
         table[0] = pointCopy(p);
         for (int i = 1; i < count; ++i)
         {
-            table[i] = pointCopy(table[i - 1]);
-            pointAddVar(false, d, table[i]);
+            pointAddVar(false, table[i - 1], d, table[i] = new PointExt());
         }
         return table;
+    }
+
+    private static void pointSetNeutral(PointAccum p)
+    {
+        X25519Field.zero(p.x);
+        X25519Field.one(p.y);
+        X25519Field.one(p.z);
+        X25519Field.zero(p.u);
+        X25519Field.one(p.v);
     }
 
     private static void pointSetNeutral(PointExt p)
@@ -445,12 +518,20 @@ public abstract class Ed25519
             return;
         }
 
-        PointExt p = new PointExt();
+        // Precomputed table for the base point in verification ladder
+        {
+            PointExt b = new PointExt();
+            X25519Field.copy(B_x, 0, b.x, 0);
+            X25519Field.copy(B_y, 0, b.y, 0);
+            pointExtendXY(b);
+
+            precompBaseTable = pointPrecompVar(b, 1 << (WNAF_WIDTH_BASE - 2));
+        }
+
+        PointAccum p = new PointAccum();
         X25519Field.copy(B_x, 0, p.x, 0);
         X25519Field.copy(B_y, 0, p.y, 0);
         pointExtendXY(p);
-
-        precompBaseTable = pointPrecompVar(p, 1 << (WNAF_WIDTH_BASE - 2));
 
         precompBase = new int[PRECOMP_BLOCKS * PRECOMP_POINTS * 3 * X25519Field.SIZE];
 
@@ -464,7 +545,8 @@ public abstract class Ed25519
 
             for (int t = 0; t < PRECOMP_TEETH; ++t)
             {
-                pointAddVar(true, p, sum);
+                PointExt q = pointCopy(p);
+                pointAddVar(true, sum, q, sum);
                 pointDouble(p);
 
                 ds[t] = pointCopy(p);
@@ -484,8 +566,7 @@ public abstract class Ed25519
                 int size = 1 << t;
                 for (int j = 0; j < size; ++j)
                 {
-                    points[k] = pointCopy(points[k - size]);
-                    pointAddVar(false, ds[t], points[k++]);
+                    pointAddVar(false, points[k - size], ds[t], points[k++] = new PointExt());
                 }
             }
 
@@ -667,7 +748,7 @@ public abstract class Ed25519
         return r;
     }
 
-    private static void scalarMultBase(byte[] k, PointExt r)
+    private static void scalarMultBase(byte[] k, PointAccum r)
     {
         precompute();
 
@@ -722,12 +803,12 @@ public abstract class Ed25519
 
     private static void scalarMultBaseEncoded(byte[] k, byte[] r, int rOff)
     {
-        PointExt p = new PointExt();
+        PointAccum p = new PointAccum();
         scalarMultBase(k, p);
         encodePoint(p, r, rOff);
     }
 
-    private static void scalarMultStraussVar(int[] nb, int[] np, PointExt p, PointExt r)
+    private static void scalarMultStraussVar(int[] nb, int[] np, PointExt p, PointAccum r)
     {
         precompute();
 
@@ -842,7 +923,7 @@ public abstract class Ed25519
         int[] nA = new int[SCALAR_INTS];
         decodeScalar(k, 0, nA);
 
-        PointExt pR = new PointExt();
+        PointAccum pR = new PointAccum();
         scalarMultStraussVar(nS, nA, pA, pR);
 
         byte[] check = new byte[POINT_BYTES];
