@@ -475,6 +475,8 @@ public abstract class Ed448
 
     private static PointExt[] pointPrecompVar(PointExt p, int count)
     {
+//        assert count > 0;
+
         PointExt d = pointCopy(p);
         pointDouble(d);
 
