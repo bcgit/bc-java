@@ -40,6 +40,8 @@ import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.CertException;
 import org.bouncycastle.cert.X509CRLEntryHolder;
@@ -807,16 +809,9 @@ public class BcCertTest
       */
      public void checkCreation3()
      {
-         ECCurve curve = new ECCurve.Fp(
-             new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839"), // q
-             new BigInteger("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc", 16), // a
-             new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16)); // b
-
-         ECDomainParameters params = new ECDomainParameters(
-             curve,
-             curve.decodePoint(Hex.decode("020ffa963cdca8816ccc33b8642bedf905c3d358573d3f27fbbd3b3cb9aaaf")), // G
-             new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307")); // n
-
+         X9ECParameters x9 = ECNamedCurveTable.getByName("prime239v1");
+         ECCurve curve = x9.getCurve();
+         ECDomainParameters params = new ECDomainParameters(curve, x9.getG(), x9.getN(), x9.getH());
 
          ECPrivateKeyParameters privKey = new ECPrivateKeyParameters(
              new BigInteger("876300101507107567501066130761671078357010671067781776716671676178726717"), // d

@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.BasicAgreement;
@@ -111,12 +112,8 @@ public class ECTest
 
     private void decodeTest()
     {
-        ECCurve.Fp curve = new ECCurve.Fp(
-            new BigInteger("6277101735386680763835789423207666416083908700390324961279"), // q
-            new BigInteger("fffffffffffffffffffffffffffffffefffffffffffffffc", 16), // a
-            new BigInteger("64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1", 16)); // b
-
-        ECPoint p = curve.decodePoint(Hex.decode("03188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012")).normalize();
+        X9ECParameters x9 = ECNamedCurveTable.getByName("prime192v1");
+        ECPoint p = x9.getG();
 
         if (!p.getAffineXCoord().toBigInteger().equals(new BigInteger("188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012", 16)))
         {
