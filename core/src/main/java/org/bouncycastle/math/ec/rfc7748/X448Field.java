@@ -1,5 +1,7 @@
 package org.bouncycastle.math.ec.rfc7748;
 
+import org.bouncycastle.math.raw.Nat;
+
 public abstract class X448Field
 {
     public static final int SIZE = 16;
@@ -14,6 +16,16 @@ public abstract class X448Field
         {
             z[i] = x[i] + y[i];
         }
+    }
+
+    public static void addOne(int[] z)
+    {
+        z[0] += 1;
+    }
+
+    public static void addOne(int[] z, int zOff)
+    {
+        z[zOff] += 1;
     }
 
 //    public static void apm(int[] x, int[] y, int[] zp, int[] zm)
@@ -58,6 +70,16 @@ public abstract class X448Field
         z[8] = z8; z[9] = z9; z[10] = z10; z[11] = z11; z[12] = z12; z[13] = z13; z[14] = z14; z[15] = z15;
     }
 
+    public static void cnegate(int negate, int[] z)
+    {
+//        assert negate >>> 1 == 0;
+
+        int[] t = create();
+        sub(t, z, t);
+
+        Nat.cmov(SIZE, negate, t, 0, z, 0);
+    }
+
     public static void copy(int[] x, int xOff, int[] z, int zOff)
     {
         for (int i = 0; i < SIZE; ++i)
@@ -69,6 +91,11 @@ public abstract class X448Field
     public static int[] create()
     {
         return new int[SIZE];
+    }
+
+    public static int[] createTable(int n)
+    {
+        return new int[SIZE * n];
     }
 
     public static void cswap(int swap, int[] a, int[] b)
@@ -163,23 +190,21 @@ public abstract class X448Field
         // z = x^(p-2) = x^(2^448 - 2^224 - 3)
         // (223 1s) (1 0s) (222 1s) (1 0s) (1 1s)
         // Addition chain: [1] 2 3 6 9 18 19 37 74 111 [222] [223]
-        int[] x2 = create();    sqr(x, x2);             mul(x, x2, x2);
-        int[] x3 = create();    sqr(x2, x3);            mul(x, x3, x3);
-        int[] x6 = create();    sqr(x3, 3, x6);         mul(x3, x6, x6);
-        int[] x9 = create();    sqr(x6, 3, x9);         mul(x3, x9, x9);
-        int[] x18 = create();   sqr(x9, 9, x18);        mul(x9, x18, x18);
-        int[] x19 = create();   sqr(x18, x19);          mul(x, x19, x19);
-        int[] x37 = create();   sqr(x19, 18, x37);      mul(x18, x37, x37);
-        int[] x74 = create();   sqr(x37, 37, x74);      mul(x37, x74, x74);
-        int[] x111 = create();  sqr(x74, 37, x111);     mul(x37, x111, x111);
-        int[] x222 = create();  sqr(x111, 111, x222);   mul(x111, x222, x222);
-        int[] x223 = create();  sqr(x222, x223);        mul(x, x223, x223);
 
         int[] t = create();
-        sqr(x223, 223, t);
-        mul(t, x222, t);
+        powPm3d4(x, t);
         sqr(t, 2, t);
         mul(t, x, z);
+    }
+
+    public static boolean isZeroVar(int[] x)
+    {
+        int d = 0;
+        for (int i = 0; i < SIZE; ++i)
+        {
+            d |= x[i];
+        }
+        return d == 0;
     }
 
     public static void mul(int[] x, int y, int[] z)
@@ -560,12 +585,49 @@ public abstract class X448Field
         z[15] = z15;
     }
 
+    public static void negate(int[] x, int[] z)
+    {
+        int[] zero = create();
+        sub(zero, x, z);
+    }
+
     public static void normalize(int[] z)
     {
 //        int x = ((z[15] >>> (28 - 1)) & 1);
         reduce(z, 1);
         reduce(z, -1);
 //        assert z[15] >>> 28 == 0;
+    }
+
+    public static void one(int[] z)
+    {
+        z[0] = 1;
+        for (int i = 1; i < SIZE; ++i)
+        {
+            z[i] = 0;
+        }
+    }
+
+    private static void powPm3d4(int[] x, int[] z)
+    {
+        // z = x^((p-3)/4) = x^(2^446 - 2^222 - 1)
+        // (223 1s) (1 0s) (222 1s)
+        // Addition chain: 1 2 3 6 9 18 19 37 74 111 [222] [223]
+        int[] x2 = create();    sqr(x, x2);             mul(x, x2, x2);
+        int[] x3 = create();    sqr(x2, x3);            mul(x, x3, x3);
+        int[] x6 = create();    sqr(x3, 3, x6);         mul(x3, x6, x6);
+        int[] x9 = create();    sqr(x6, 3, x9);         mul(x3, x9, x9);
+        int[] x18 = create();   sqr(x9, 9, x18);        mul(x9, x18, x18);
+        int[] x19 = create();   sqr(x18, x19);          mul(x, x19, x19);
+        int[] x37 = create();   sqr(x19, 18, x37);      mul(x18, x37, x37);
+        int[] x74 = create();   sqr(x37, 37, x74);      mul(x37, x74, x74);
+        int[] x111 = create();  sqr(x74, 37, x111);     mul(x37, x111, x111);
+        int[] x222 = create();  sqr(x111, 111, x222);   mul(x111, x222, x222);
+        int[] x223 = create();  sqr(x222, x223);        mul(x, x223, x223);
+
+        int[] t = create();
+        sqr(x223, 223, t);
+        mul(t, x222, z);
     }
 
     private static void reduce(int[] z, int c)
@@ -831,6 +893,38 @@ public abstract class X448Field
         }
     }
 
+    public static boolean sqrtRatioVar(int[] u, int[] v, int[] z)
+    {
+        int[] u3v = create();
+        int[] u5v3 = create();
+
+        sqr(u, u3v);
+        mul(u3v, v, u3v);
+        sqr(u3v, u5v3);
+        mul(u3v, u, u3v);
+        mul(u5v3, u, u5v3);
+        mul(u5v3, v, u5v3);
+
+        int[] x = create();
+        powPm3d4(u5v3, x);
+        mul(x, u3v, x);
+
+        int[] t = create();
+        sqr(x, t);
+        mul(t, v, t);
+
+        sub(u, t, t);
+        normalize(t);
+
+        if (isZeroVar(t))
+        {
+            copy(x, 0, z, 0);
+            return true;
+        }
+
+        return false;
+    }
+
     public static void sub(int[] x, int[] y, int[] z)
     {
         int x0 = x[0], x1 = x[1], x2 = x[2], x3 = x[3], x4 = x[4], x5 = x[5], x6 = x[6], x7 = x[7];
@@ -894,5 +988,21 @@ public abstract class X448Field
         z[13] = z13;
         z[14] = z14;
         z[15] = z15;
+    }
+
+    public static void subOne(int[] z)
+    {
+        int[] one = create();
+        one[0] = 1;
+
+        sub(z, one, z);
+    }
+
+    public static void zero(int[] z)
+    {
+        for (int i = 0; i < SIZE; ++i)
+        {
+            z[i] = 0;
+        }
     }
 }

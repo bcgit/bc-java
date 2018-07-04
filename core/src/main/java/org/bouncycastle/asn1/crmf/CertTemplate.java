@@ -90,9 +90,19 @@ public class CertTemplate
         return null;
     }
 
+    /**
+     * Return Version - -1 if not set.
+     *
+     * @return Version value.
+     */
     public int getVersion()
     {
-        return version.getValue().intValue();
+        if (version != null)
+        {
+            return version.getValue().intValue();
+        }
+
+        return -1;
     }
 
     public ASN1Integer getSerialNumber()

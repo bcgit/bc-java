@@ -11,12 +11,16 @@ import java.util.Iterator;
 
 import javax.crypto.Cipher;
 
+import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.TrustPacket;
+import org.bouncycastle.bcpg.sig.Features;
+import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
 import org.bouncycastle.openpgp.PGPEncryptedData;
@@ -30,9 +34,11 @@ import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.jcajce.JcaPGPPublicKeyRing;
 import org.bouncycastle.openpgp.jcajce.JcaPGPPublicKeyRingCollection;
 import org.bouncycastle.openpgp.jcajce.JcaPGPSecretKeyRingCollection;
+import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
@@ -3077,6 +3083,80 @@ public class PGPKeyRingTest
         secRing.getEncoded();
     }
 
+    public void testNullEncryption()
+        throws Exception
+    {
+        char[] passPhrase = "fred".toCharArray();
+        KeyPairGenerator bareGenerator = KeyPairGenerator.getInstance("RSA", new BouncyCastleProvider());
+        bareGenerator.initialize(2048);
+        KeyPair rsaPair = bareGenerator.generateKeyPair();
+
+        PGPDigestCalculator calculator = new JcaPGPDigestCalculatorProviderBuilder()
+                    .setProvider(new BouncyCastleProvider())
+                    .build()
+                    .get(HashAlgorithmTags.SHA1);
+
+        PGPKeyPair pgpPair = new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaPair, new Date());
+
+        PGPSignatureSubpacketGenerator subpackets = new PGPSignatureSubpacketGenerator();
+
+        // Key flags
+        subpackets.setKeyFlags(true,
+                KeyFlags.CERTIFY_OTHER
+                            | KeyFlags.SIGN_DATA
+                            | KeyFlags.ENCRYPT_COMMS
+                            | KeyFlags.ENCRYPT_STORAGE
+                            | KeyFlags.AUTHENTICATION);
+
+       // Encryption Algorithms
+       subpackets.setPreferredSymmetricAlgorithms(true, new int[]{
+                    SymmetricKeyAlgorithmTags.AES_256,
+           SymmetricKeyAlgorithmTags.AES_192,
+           SymmetricKeyAlgorithmTags.AES_128,
+           SymmetricKeyAlgorithmTags.TRIPLE_DES
+        });
+
+        // Hash Algorithms
+        subpackets.setPreferredHashAlgorithms(true, new int[] {
+                    HashAlgorithmTags.SHA512,
+            HashAlgorithmTags.SHA384,
+            HashAlgorithmTags.SHA256,
+            HashAlgorithmTags.SHA224,
+            HashAlgorithmTags.SHA1
+        });
+
+        // Compression Algorithms
+        subpackets.setPreferredCompressionAlgorithms(true, new int[] {
+                    CompressionAlgorithmTags.ZLIB,
+            CompressionAlgorithmTags.BZIP2,
+            CompressionAlgorithmTags.ZIP
+        });
+
+        // Modification Detection
+        subpackets.setFeature(true, Features.FEATURE_MODIFICATION_DETECTION);
+
+        PGPContentSignerBuilder signer = new JcaPGPContentSignerBuilder(
+                    pgpPair.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA256);
+
+        PGPKeyRingGenerator ringGenerator = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, pgpPair,
+                    "xmpp:juliet@capulet.lit", calculator, subpackets.generate(), null, signer, null);
+        int length1 = ringGenerator.generateSecretKeyRing().getEncoded().length;
+        ringGenerator = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, pgpPair,
+                    "xmpp:juliet@capulet.lit", null, subpackets.generate(), null, signer, null);
+        int length2 = ringGenerator.generateSecretKeyRing().getEncoded().length;
+
+        isEquals("key ring length mismatch", length1, length2);
+    }
+
+    private void testEdDsaRing()
+        throws Exception
+    {
+        ArmoredInputStream aIn = new ArmoredInputStream(this.getClass().getResourceAsStream("eddsa-pub-keyring.asc"));
+
+        // make sure we can parse it without falling over.
+        PGPPublicKeyRing rng = new PGPPublicKeyRing(aIn, new JcaKeyFingerprintCalculator());
+    }
+
     public void performTest()
         throws Exception
     {
@@ -3106,6 +3186,8 @@ public class PGPKeyRingTest
             testBadUserID();
             testNoExportPrivateKey();
             shouldStripPreserveTrustPackets();
+            testNullEncryption();
+            testEdDsaRing();
         }
         catch (PGPException e)
         {

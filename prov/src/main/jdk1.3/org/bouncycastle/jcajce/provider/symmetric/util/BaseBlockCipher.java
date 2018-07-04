@@ -27,6 +27,7 @@ import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
@@ -828,7 +829,7 @@ public class BaseBlockCipher
 
             if (ivRandom == null)
             {
-                ivRandom = new SecureRandom();
+                ivRandom = CryptoServicesRegistrar.getSecureRandom();
             }
 
             if ((opmode == Cipher.ENCRYPT_MODE) || (opmode == Cipher.WRAP_MODE))

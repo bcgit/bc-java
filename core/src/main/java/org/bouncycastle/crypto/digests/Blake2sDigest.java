@@ -25,6 +25,7 @@ package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 
 /**
  * Implementation of the cryptographic hash function BLAKE2s.
@@ -44,7 +45,7 @@ public class Blake2sDigest
     /**
      * BLAKE2s Initialization Vector
      **/
-    private static final int blake2s_IV[] =
+    private static final int[] blake2s_IV =
         // Produced from the square root of primes 2, 3, 5, 7, 11, 13, 17, 19.
         // The same as SHA-256 IV.
         {
@@ -150,16 +151,14 @@ public class Blake2sDigest
     /**
      * BLAKE2s for hashing.
      *
-     * @param digestBits the desired digest length in bits. Must be one of
-     *                   [128, 160, 224, 256].
+     * @param digestBits the desired digest length in bits. Must be a multiple of 8 and less than 256.
      */
     public Blake2sDigest(int digestBits)
     {
-        if (digestBits != 128 && digestBits != 160 &&
-            digestBits != 224 && digestBits != 256)
+        if (digestBits < 8 || digestBits > 256 || digestBits % 8 != 0)
         {
             throw new IllegalArgumentException(
-                "BLAKE2s digest restricted to one of [128, 160, 224, 256]");
+                "BLAKE2s digest bit length must be a multiple of 8 and not greater than 256");
         }
         buffer = new byte[BLOCK_LENGTH_BYTES];
         keyLength = 0;
@@ -279,16 +278,16 @@ public class Blake2sDigest
             chainValue[5] = blake2s_IV[5];
             if (salt != null)
             {
-                chainValue[4] ^= (bytes2int(salt, 0));
-                chainValue[5] ^= (bytes2int(salt, 4));
+                chainValue[4] ^= Pack.littleEndianToInt(salt, 0);
+                chainValue[5] ^= Pack.littleEndianToInt(salt, 4);
             }
 
             chainValue[6] = blake2s_IV[6];
             chainValue[7] = blake2s_IV[7];
             if (personalization != null)
             {
-                chainValue[6] ^= (bytes2int(personalization, 0));
-                chainValue[7] ^= (bytes2int(personalization, 4));
+                chainValue[6] ^= Pack.littleEndianToInt(personalization, 0);
+                chainValue[7] ^= Pack.littleEndianToInt(personalization, 4);
             }
         }
     }
@@ -421,7 +420,7 @@ public class Blake2sDigest
 
         for (int i = 0; i < chainValue.length && (i * 4 < digestLength); i++)
         {
-            byte[] bytes = int2bytes(chainValue[i]);
+            byte[] bytes = Pack.intToLittleEndian(chainValue[i]);
 
             if (i * 4 < digestLength - 4)
             {
@@ -468,7 +467,7 @@ public class Blake2sDigest
         int[] m = new int[16];
         for (int j = 0; j < 16; j++)
         {
-            m[j] = bytes2int(message, messagePos + j * 4);
+            m[j] = Pack.littleEndianToInt(message, messagePos + j * 4);
         }
 
         for (int round = 0; round < ROUNDS; round++)
@@ -476,71 +475,39 @@ public class Blake2sDigest
 
             // G apply to columns of internalState:m[blake2s_sigma[round][2 *
             // blockPos]] /+1
-            G(m[blake2s_sigma[round][0]], m[blake2s_sigma[round][1]], 0, 4, 8,
-                12);
-            G(m[blake2s_sigma[round][2]], m[blake2s_sigma[round][3]], 1, 5, 9,
-                13);
-            G(m[blake2s_sigma[round][4]], m[blake2s_sigma[round][5]], 2, 6, 10,
-                14);
-            G(m[blake2s_sigma[round][6]], m[blake2s_sigma[round][7]], 3, 7, 11,
-                15);
+            G(m[blake2s_sigma[round][0]], m[blake2s_sigma[round][1]], 0, 4, 8, 12);
+            G(m[blake2s_sigma[round][2]], m[blake2s_sigma[round][3]], 1, 5, 9, 13);
+            G(m[blake2s_sigma[round][4]], m[blake2s_sigma[round][5]], 2, 6, 10, 14);
+            G(m[blake2s_sigma[round][6]], m[blake2s_sigma[round][7]], 3, 7, 11, 15);
             // G apply to diagonals of internalState:
-            G(m[blake2s_sigma[round][8]], m[blake2s_sigma[round][9]], 0, 5, 10,
-                15);
-            G(m[blake2s_sigma[round][10]], m[blake2s_sigma[round][11]], 1, 6,
-                11, 12);
-            G(m[blake2s_sigma[round][12]], m[blake2s_sigma[round][13]], 2, 7,
-                8, 13);
-            G(m[blake2s_sigma[round][14]], m[blake2s_sigma[round][15]], 3, 4,
-                9, 14);
+            G(m[blake2s_sigma[round][8]], m[blake2s_sigma[round][9]], 0, 5, 10, 15);
+            G(m[blake2s_sigma[round][10]], m[blake2s_sigma[round][11]], 1, 6, 11, 12);
+            G(m[blake2s_sigma[round][12]], m[blake2s_sigma[round][13]], 2, 7, 8, 13);
+            G(m[blake2s_sigma[round][14]], m[blake2s_sigma[round][15]], 3, 4, 9, 14);
         }
 
         // update chain values:
         for (int offset = 0; offset < chainValue.length; offset++)
         {
-            chainValue[offset] = chainValue[offset] ^ internalState[offset]
-                ^ internalState[offset + 8];
+            chainValue[offset] = chainValue[offset] ^ internalState[offset] ^ internalState[offset + 8];
         }
     }
 
     private void G(int m1, int m2, int posA, int posB, int posC, int posD)
     {
         internalState[posA] = internalState[posA] + internalState[posB] + m1;
-        internalState[posD] = rotr32(internalState[posD] ^ internalState[posA],
-            16);
+        internalState[posD] = rotr32(internalState[posD] ^ internalState[posA], 16);
         internalState[posC] = internalState[posC] + internalState[posD];
-        internalState[posB] = rotr32(internalState[posB] ^ internalState[posC],
-            12);
+        internalState[posB] = rotr32(internalState[posB] ^ internalState[posC], 12);
         internalState[posA] = internalState[posA] + internalState[posB] + m2;
-        internalState[posD] = rotr32(internalState[posD] ^ internalState[posA],
-            8);
+        internalState[posD] = rotr32(internalState[posD] ^ internalState[posA], 8);
         internalState[posC] = internalState[posC] + internalState[posD];
-        internalState[posB] = rotr32(internalState[posB] ^ internalState[posC],
-            7);
+        internalState[posB] = rotr32(internalState[posB] ^ internalState[posC], 7);
     }
 
     private int rotr32(int x, int rot)
     {
         return x >>> rot | (x << (32 - rot));
-    }
-
-    // convert one int value in byte array
-    // little-endian byte order!
-    private byte[] int2bytes(int intValue)
-    {
-        return new byte[]{
-            (byte)intValue, (byte)(intValue >> 8),
-            (byte)(intValue >> 16), (byte)(intValue >> 24)
-        };
-    }
-
-    // little-endian byte order!
-    private int bytes2int(byte[] byteArray, int offset)
-    {
-        return (((int)byteArray[offset] & 0xFF)
-            | (((int)byteArray[offset + 1] & 0xFF) << 8)
-            | (((int)byteArray[offset + 2] & 0xFF) << 16)
-            | (((int)byteArray[offset + 3] & 0xFF) << 24));
     }
 
     /**

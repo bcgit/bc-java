@@ -29,6 +29,12 @@ public class GostR3410KeyTransport
        this.transportParameters = GostR3410TransportParameters.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(1)), false);
     }
 
+    public GostR3410KeyTransport(Gost2814789EncryptedKey sessionEncryptedKey, GostR3410TransportParameters transportParameters)
+    {
+        this.sessionEncryptedKey = sessionEncryptedKey;
+        this.transportParameters = transportParameters;
+    }
+
     public static GostR3410KeyTransport getInstance(
         Object obj)
     {

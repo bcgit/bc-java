@@ -79,8 +79,8 @@ public class UserNotice
            }
            else
            {
-               noticeRef = null;
                explicitText = DisplayText.getInstance(as.getObjectAt(0));
+               noticeRef = null;
            }
        }
        else if (as.size() == 0)       // neither field set!

@@ -60,6 +60,8 @@ import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestRandomBigInteger;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 
+//import java.security.spec.ECGenParameterSpec;
+
 public class GOST3410Test
     extends SimpleTest
 {
@@ -890,7 +892,6 @@ public class GOST3410Test
         
         generationTest();
         parametersTest();
-
     }
 
     protected byte[] toByteArray(String input)

@@ -2,11 +2,11 @@ package org.bouncycastle.pqc.math.ntru.polynomial;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -83,7 +83,7 @@ public class BigIntPolynomial
         {
             coeffs.add(Constants.BIGINT_ZERO);
         }
-        Collections.shuffle(coeffs, new SecureRandom());
+        Collections.shuffle(coeffs, CryptoServicesRegistrar.getSecureRandom());
 
         BigIntPolynomial poly = new BigIntPolynomial(N);
         for (int i = 0; i < coeffs.size(); i++)

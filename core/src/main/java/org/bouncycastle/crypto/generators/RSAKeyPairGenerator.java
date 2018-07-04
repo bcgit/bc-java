@@ -20,12 +20,10 @@ public class RSAKeyPairGenerator
     private static final BigInteger ONE = BigInteger.valueOf(1);
 
     private RSAKeyGenerationParameters param;
-    private int iterations;
 
     public void init(KeyGenerationParameters param)
     {
         this.param = (RSAKeyGenerationParameters)param;
-        this.iterations = getNumberOfIterations(this.param.getStrength(), this.param.getCertainty());
     }
 
     public AsymmetricCipherKeyPair generateKeyPair()
@@ -191,6 +189,8 @@ public class RSAKeyPairGenerator
 
     protected boolean isProbablePrime(BigInteger x)
     {
+        int iterations = getNumberOfIterations(x.bitLength(), param.getCertainty());
+
         /*
          * Primes class for FIPS 186-4 C.3 primality checking
          */

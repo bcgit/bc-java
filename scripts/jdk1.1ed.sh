@@ -20,6 +20,13 @@ w
 q
 %
 
+ed org/bouncycastle/asn1/BEROctetString.java <<%
+g/private final ASN1OctetString/s/final//
+g/private final int/s/final//
+w
+q
+%
+
 ed org/bouncycastle/asn1/DERIA5String.java <<%
 g/private final byte.. *string;/s/final//
 w
@@ -40,6 +47,12 @@ q
 
 ed org/bouncycastle/asn1/DERT61String.java <<%
 g/private final byte.. *string;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/crmf/DhSigStatic.java <<%
+g/private final /s/final//
 w
 q
 %
@@ -69,6 +82,12 @@ q
 ed org/bouncycastle/asn1/x500/style/RFC4519Style.java <<%
 g/protected final .*defaultLookUp;/s/final//
 g/protected final .*defaultSymbols;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/agreement/kdf/GSKKDFParameters.java <<%
+g/private final /s/final//
 w
 q
 %
@@ -274,3 +293,16 @@ g/private.*final.*;/s/final//
 w
 q
 %
+
+ed org/bouncycastle/jcajce/spec/DHDomainParameterSpec.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/jcajce/provider/asymmetric/dh/KeyAgreementSpi.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+

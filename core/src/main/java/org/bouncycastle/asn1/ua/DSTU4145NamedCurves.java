@@ -12,7 +12,7 @@ public class DSTU4145NamedCurves
     private static final BigInteger ZERO = BigInteger.valueOf(0);
     private static final BigInteger ONE = BigInteger.valueOf(1);
 
-    public static final ECDomainParameters[] params = new ECDomainParameters[10];
+    static final ECDomainParameters[] params = new ECDomainParameters[10];
     static final ASN1ObjectIdentifier[] oids = new ASN1ObjectIdentifier[10];
 
     //All named curves have the following oid format: 1.2.804.2.1.1.1.1.3.1.1.2.X
@@ -98,8 +98,8 @@ public class DSTU4145NamedCurves
         String oidStr = oid.getId();
         if (oidStr.startsWith(oidBase))
         {
-            int index = Integer.parseInt(oidStr.substring(oidStr.length() - 1));
-            return params[index];
+            int index = Integer.parseInt(oidStr.substring(oidStr.lastIndexOf('.') + 1));
+            return (index >= 0 && index < params.length) ? params[index] : null;
         }
         return null;
     }

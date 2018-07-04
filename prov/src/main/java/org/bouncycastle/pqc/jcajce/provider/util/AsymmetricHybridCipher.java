@@ -10,6 +10,8 @@ import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.BadPaddingException;
 import javax.crypto.ShortBufferException;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+
 /**
  * The AsymmetricHybridCipher class extends CipherSpiExt.
  * NOTE: Some Ciphers are using Padding. OneAndZeroesPadding is used as default
@@ -122,7 +124,7 @@ public abstract class AsymmetricHybridCipher
     {
         try
         {
-            initEncrypt(key, null, new SecureRandom());
+            initEncrypt(key, null, CryptoServicesRegistrar.getSecureRandom());
         }
         catch (InvalidAlgorithmParameterException e)
         {
@@ -179,7 +181,7 @@ public abstract class AsymmetricHybridCipher
     public final void initEncrypt(Key key, AlgorithmParameterSpec params)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        initEncrypt(key, params, new SecureRandom());
+        initEncrypt(key, params, CryptoServicesRegistrar.getSecureRandom());
     }
 
     /**

@@ -5,23 +5,18 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGObject;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.DSASecretBCPGKey;
-import org.bouncycastle.bcpg.ECDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.ECSecretBCPGKey;
 import org.bouncycastle.bcpg.ElGamalSecretBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
-import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.RSASecretBCPGKey;
 import org.bouncycastle.bcpg.S2K;
@@ -30,6 +25,7 @@ import org.bouncycastle.bcpg.SecretSubkeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.UserAttributePacket;
 import org.bouncycastle.bcpg.UserIDPacket;
+import org.bouncycastle.gpg.SExprParser;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PBEProtectionRemoverFactory;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
@@ -41,21 +37,21 @@ import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
  * general class to handle and construct  a PGP secret key object.
  */
 public class PGPSecretKey
-{    
+{
     SecretKeyPacket secret;
-    PGPPublicKey    pub;
+    PGPPublicKey pub;
 
-    PGPSecretKey(
+    public PGPSecretKey(
         SecretKeyPacket secret,
-        PGPPublicKey    pub)
+        PGPPublicKey pub)
     {
         this.secret = secret;
         this.pub = pub;
     }
-    
+
     PGPSecretKey(
-        PGPPrivateKey   privKey,
-        PGPPublicKey    pubKey,
+        PGPPrivateKey privKey,
+        PGPPublicKey pubKey,
         PGPDigestCalculator checksumCalculator,
         PBESecretKeyEncryptor keyEncryptor)
         throws PGPException
@@ -67,18 +63,18 @@ public class PGPSecretKey
      * Construct a PGPSecretKey using the passed in private key and public key. This constructor will not add any
      * certifications but assumes that pubKey already has what is required.
      *
-     * @param privKey the private key component.
-     * @param pubKey the public key component.
+     * @param privKey            the private key component.
+     * @param pubKey             the public key component.
      * @param checksumCalculator a calculator for the private key checksum
-     * @param isMasterKey true if the key is a master key, false otherwise.
-     * @param keyEncryptor an encryptor for the key if required (null otherwise).
+     * @param isMasterKey        true if the key is a master key, false otherwise.
+     * @param keyEncryptor       an encryptor for the key if required (null otherwise).
      * @throws PGPException if there is an issue creating the secret key packet.
      */
     public PGPSecretKey(
-        PGPPrivateKey   privKey,
-        PGPPublicKey    pubKey,
+        PGPPrivateKey privKey,
+        PGPPublicKey pubKey,
         PGPDigestCalculator checksumCalculator,
-        boolean         isMasterKey,
+        boolean isMasterKey,
         PBESecretKeyEncryptor keyEncryptor)
         throws PGPException
     {
@@ -110,14 +106,14 @@ public class PGPSecretKey
 
             pOut.writeObject(secKey);
 
-            byte[]    keyData = bOut.toByteArray();
-
-            pOut.write(checksum(checksumCalculator, keyData, keyData.length));
+            byte[] keyData = bOut.toByteArray();
 
             int encAlgorithm = (keyEncryptor != null) ? keyEncryptor.getAlgorithm() : SymmetricKeyAlgorithmTags.NULL;
 
             if (encAlgorithm != SymmetricKeyAlgorithmTags.NULL)
             {
+                pOut.write(checksum(checksumCalculator, keyData, keyData.length));
+
                 keyData = bOut.toByteArray(); // include checksum
 
                 byte[] encData = keyEncryptor.encryptKeyData(keyData, 0, keyData.length);
@@ -151,6 +147,8 @@ public class PGPSecretKey
             }
             else
             {
+                pOut.write(checksum(null, keyData, keyData.length));
+
                 if (isMasterKey)
                 {
                     return new SecretKeyPacket(pubKey.publicPk, encAlgorithm, null, null, bOut.toByteArray());
@@ -176,23 +174,23 @@ public class PGPSecretKey
      * using a generated certification of certificationLevel.The secret key checksum is calculated using the original
      * non-digest based checksum.
      *
-     * @param certificationLevel the type of certification to be added.
-     * @param keyPair the public/private keys to use.
-     * @param id the id to bind to the key.
-     * @param hashedPcks the hashed packets to be added to the certification.
-     * @param unhashedPcks the unhashed packets to be added to the certification.
+     * @param certificationLevel         the type of certification to be added.
+     * @param keyPair                    the public/private keys to use.
+     * @param id                         the id to bind to the key.
+     * @param hashedPcks                 the hashed packets to be added to the certification.
+     * @param unhashedPcks               the unhashed packets to be added to the certification.
      * @param certificationSignerBuilder the builder for generating the certification.
-     * @param keyEncryptor an encryptor for the key if required (null otherwise).
+     * @param keyEncryptor               an encryptor for the key if required (null otherwise).
      * @throws PGPException if there is an issue creating the secret key packet or the certification.
      */
     public PGPSecretKey(
-        int                         certificationLevel,
-        PGPKeyPair                  keyPair,
-        String                      id,
+        int certificationLevel,
+        PGPKeyPair keyPair,
+        String id,
         PGPSignatureSubpacketVector hashedPcks,
         PGPSignatureSubpacketVector unhashedPcks,
-        PGPContentSignerBuilder     certificationSignerBuilder,
-        PBESecretKeyEncryptor       keyEncryptor)
+        PGPContentSignerBuilder certificationSignerBuilder,
+        PBESecretKeyEncryptor keyEncryptor)
         throws PGPException
     {
         this(certificationLevel, keyPair, id, null, hashedPcks, unhashedPcks, certificationSignerBuilder, keyEncryptor);
@@ -202,25 +200,25 @@ public class PGPSecretKey
      * Construct a PGPSecretKey using the passed in private/public key pair and binding it to the passed in id
      * using a generated certification of certificationLevel.
      *
-     * @param certificationLevel the type of certification to be added.
-     * @param keyPair the public/private keys to use.
-     * @param id the id to bind to the key.
-     * @param checksumCalculator a calculator for the private key checksum.
-     * @param hashedPcks the hashed packets to be added to the certification.
-     * @param unhashedPcks the unhashed packets to be added to the certification.
+     * @param certificationLevel         the type of certification to be added.
+     * @param keyPair                    the public/private keys to use.
+     * @param id                         the id to bind to the key.
+     * @param checksumCalculator         a calculator for the private key checksum.
+     * @param hashedPcks                 the hashed packets to be added to the certification.
+     * @param unhashedPcks               the unhashed packets to be added to the certification.
      * @param certificationSignerBuilder the builder for generating the certification.
-     * @param keyEncryptor an encryptor for the key if required (null otherwise).
+     * @param keyEncryptor               an encryptor for the key if required (null otherwise).
      * @throws PGPException if there is an issue creating the secret key packet or the certification.
      */
     public PGPSecretKey(
-        int                         certificationLevel,
-        PGPKeyPair                  keyPair,
-        String                      id,
-        PGPDigestCalculator         checksumCalculator,
+        int certificationLevel,
+        PGPKeyPair keyPair,
+        String id,
+        PGPDigestCalculator checksumCalculator,
         PGPSignatureSubpacketVector hashedPcks,
         PGPSignatureSubpacketVector unhashedPcks,
-        PGPContentSignerBuilder     certificationSignerBuilder,
-        PBESecretKeyEncryptor       keyEncryptor)
+        PGPContentSignerBuilder certificationSignerBuilder,
+        PBESecretKeyEncryptor keyEncryptor)
         throws PGPException
     {
         this(keyPair.getPrivateKey(), certifiedPublicKey(certificationLevel, keyPair, id, hashedPcks, unhashedPcks, certificationSignerBuilder), checksumCalculator, true, keyEncryptor);
@@ -232,10 +230,10 @@ public class PGPSecretKey
         String id,
         PGPSignatureSubpacketVector hashedPcks,
         PGPSignatureSubpacketVector unhashedPcks,
-        PGPContentSignerBuilder     certificationSignerBuilder)
+        PGPContentSignerBuilder certificationSignerBuilder)
         throws PGPException
     {
-        PGPSignatureGenerator    sGen;
+        PGPSignatureGenerator sGen;
 
         try
         {
@@ -256,7 +254,7 @@ public class PGPSecretKey
 
         try
         {
-            PGPSignature    certification = sGen.generateCertification(id, keyPair.getPublicKey());
+            PGPSignature certification = sGen.generateCertification(id, keyPair.getPublicKey());
 
             return PGPPublicKey.addCertification(keyPair.getPublicKey(), id, certification);
         }
@@ -279,11 +277,12 @@ public class PGPSecretKey
         int algorithm = pub.getAlgorithm();
 
         return ((algorithm == PGPPublicKey.RSA_GENERAL) || (algorithm == PGPPublicKey.RSA_SIGN)
-                    || (algorithm == PGPPublicKey.DSA) || (algorithm == PGPPublicKey.ECDSA) || (algorithm == PGPPublicKey.ELGAMAL_GENERAL));
+            || (algorithm == PGPPublicKey.DSA) || (algorithm == PGPPublicKey.ECDSA) || (algorithm == PGPPublicKey.ELGAMAL_GENERAL));
     }
-    
+
     /**
      * Return true if this is a master key.
+     *
      * @return true if a master key.
      */
     public boolean isMasterKey()
@@ -315,7 +314,7 @@ public class PGPSecretKey
 
     /**
      * Return the keyID of the public key associated with this key.
-     * 
+     *
      * @return the keyID associated with this key.
      */
     public long getKeyID()
@@ -345,30 +344,30 @@ public class PGPSecretKey
 
     /**
      * Return the public key associated with this key.
-     * 
+     *
      * @return the public key for this key.
      */
     public PGPPublicKey getPublicKey()
     {
         return pub;
     }
-    
+
     /**
      * Return any userIDs associated with the key.
-     * 
+     *
      * @return an iterator of Strings.
      */
-    public Iterator getUserIDs()
+    public Iterator<String> getUserIDs()
     {
         return pub.getUserIDs();
     }
-    
+
     /**
      * Return any user attribute vectors associated with the key.
-     * 
+     *
      * @return an iterator of PGPUserAttributeSubpacketVector.
      */
-    public Iterator getUserAttributes()
+    public Iterator<PGPUserAttributeSubpacketVector> getUserAttributes()
     {
         return pub.getUserAttributes();
     }
@@ -476,11 +475,11 @@ public class PGPSecretKey
     /**
      * Extract a PGPPrivate key from the SecretKey's encrypted contents.
      *
-     * @param decryptorFactory  factory to use to generate a decryptor for the passed in secretKey.
+     * @param decryptorFactory factory to use to generate a decryptor for the passed in secretKey.
      * @return PGPPrivateKey  the unencrypted private key.
      * @throws PGPException on failure.
      */
-    public  PGPPrivateKey extractPrivateKey(
+    public PGPPrivateKey extractPrivateKey(
         PBESecretKeyDecryptor decryptorFactory)
         throws PGPException
     {
@@ -493,8 +492,8 @@ public class PGPSecretKey
 
         try
         {
-            byte[]             data = extractKeyData(decryptorFactory);
-            BCPGInputStream    in = new BCPGInputStream(new ByteArrayInputStream(data));
+            byte[] data = extractKeyData(decryptorFactory);
+            BCPGInputStream in = new BCPGInputStream(new ByteArrayInputStream(data));
 
 
             switch (pubPk.getAlgorithm())
@@ -502,16 +501,16 @@ public class PGPSecretKey
             case PGPPublicKey.RSA_ENCRYPT:
             case PGPPublicKey.RSA_GENERAL:
             case PGPPublicKey.RSA_SIGN:
-                RSASecretBCPGKey        rsaPriv = new RSASecretBCPGKey(in);
+                RSASecretBCPGKey rsaPriv = new RSASecretBCPGKey(in);
 
                 return new PGPPrivateKey(this.getKeyID(), pubPk, rsaPriv);
             case PGPPublicKey.DSA:
-                DSASecretBCPGKey    dsaPriv = new DSASecretBCPGKey(in);
+                DSASecretBCPGKey dsaPriv = new DSASecretBCPGKey(in);
 
                 return new PGPPrivateKey(this.getKeyID(), pubPk, dsaPriv);
             case PGPPublicKey.ELGAMAL_ENCRYPT:
             case PGPPublicKey.ELGAMAL_GENERAL:
-                ElGamalSecretBCPGKey    elPriv = new ElGamalSecretBCPGKey(in);
+                ElGamalSecretBCPGKey elPriv = new ElGamalSecretBCPGKey(in);
 
                 return new PGPPrivateKey(this.getKeyID(), pubPk, elPriv);
             case PGPPublicKey.ECDH:
@@ -532,7 +531,7 @@ public class PGPSecretKey
             throw new PGPException("Exception constructing key", e);
         }
     }
-    
+
     private static byte[] checksum(PGPDigestCalculator digCalc, byte[] bytes, int length)
         throws PGPException
     {
@@ -548,19 +547,19 @@ public class PGPSecretKey
             }
             catch (Exception e)
             {
-               throw new PGPException("checksum digest calculation failed: " + e.getMessage(), e);
+                throw new PGPException("checksum digest calculation failed: " + e.getMessage(), e);
             }
             return digCalc.getDigest();
         }
         else
         {
-            int       checksum = 0;
-        
+            int checksum = 0;
+
             for (int i = 0; i != length; i++)
             {
                 checksum += bytes[i] & 0xff;
             }
-        
+
             byte[] check = new byte[2];
 
             check[0] = (byte)(checksum >> 8);
@@ -569,23 +568,23 @@ public class PGPSecretKey
             return check;
         }
     }
-    
-    public byte[] getEncoded() 
+
+    public byte[] getEncoded()
         throws IOException
     {
-        ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
-        
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
         this.encode(bOut);
-        
+
         return bOut.toByteArray();
     }
-    
+
     public void encode(
-        OutputStream    outStream) 
+        OutputStream outStream)
         throws IOException
     {
-        BCPGOutputStream    out;
-        
+        BCPGOutputStream out;
+
         if (outStream instanceof BCPGOutputStream)
         {
             out = (BCPGOutputStream)outStream;
@@ -600,36 +599,36 @@ public class PGPSecretKey
         {
             out.writePacket(pub.trustPk);
         }
-        
+
         if (pub.subSigs == null)        // is not a sub key
         {
             for (int i = 0; i != pub.keySigs.size(); i++)
             {
                 ((PGPSignature)pub.keySigs.get(i)).encode(out);
             }
-            
+
             for (int i = 0; i != pub.ids.size(); i++)
             {
                 if (pub.ids.get(i) instanceof UserIDPacket)
                 {
-                    UserIDPacket    id = (UserIDPacket)pub.ids.get(i);
-                    
+                    UserIDPacket id = (UserIDPacket)pub.ids.get(i);
+
                     out.writePacket(id);
                 }
                 else
                 {
-                    PGPUserAttributeSubpacketVector    v = (PGPUserAttributeSubpacketVector)pub.ids.get(i);
+                    PGPUserAttributeSubpacketVector v = (PGPUserAttributeSubpacketVector)pub.ids.get(i);
 
                     out.writePacket(new UserAttributePacket(v.toSubpacketArray()));
                 }
-                
+
                 if (pub.idTrusts.get(i) != null)
                 {
                     out.writePacket((ContainedPacket)pub.idTrusts.get(i));
                 }
-                
-                List         sigs = (ArrayList)pub.idSigs.get(i);
-                
+
+                List sigs = (ArrayList)pub.idSigs.get(i);
+
                 for (int j = 0; j != sigs.size(); j++)
                 {
                     ((PGPSignature)sigs.get(j)).encode(out);
@@ -637,7 +636,7 @@ public class PGPSecretKey
             }
         }
         else
-        {        
+        {
             for (int j = 0; j != pub.subSigs.size(); j++)
             {
                 ((PGPSignature)pub.subSigs.get(j)).encode(out);
@@ -649,14 +648,14 @@ public class PGPSecretKey
      * Return a copy of the passed in secret key, encrypted using a new
      * password and the passed in algorithm.
      *
-     * @param key the PGPSecretKey to be copied.
+     * @param key             the PGPSecretKey to be copied.
      * @param oldKeyDecryptor the current decryptor based on the current password for key.
      * @param newKeyEncryptor a new encryptor based on a new password for encrypting the secret key material.
      */
     public static PGPSecretKey copyWithNewPassword(
-        PGPSecretKey           key,
-        PBESecretKeyDecryptor  oldKeyDecryptor,
-        PBESecretKeyEncryptor  newKeyEncryptor)
+        PGPSecretKey key,
+        PBESecretKeyDecryptor oldKeyDecryptor,
+        PBESecretKeyEncryptor newKeyEncryptor)
         throws PGPException
     {
         if (key.isPrivateKeyEmpty())
@@ -664,12 +663,12 @@ public class PGPSecretKey
             throw new PGPException("no private key in this SecretKey - public key present only.");
         }
 
-        byte[]     rawKeyData = key.extractKeyData(oldKeyDecryptor);
-        int        s2kUsage = key.secret.getS2KUsage();
-        byte[]      iv = null;
-        S2K         s2k = null;
-        byte[]      keyData;
-        int         newEncAlgorithm = SymmetricKeyAlgorithmTags.NULL;
+        byte[] rawKeyData = key.extractKeyData(oldKeyDecryptor);
+        int s2kUsage = key.secret.getS2KUsage();
+        byte[] iv = null;
+        S2K s2k = null;
+        byte[] keyData;
+        int newEncAlgorithm = SymmetricKeyAlgorithmTags.NULL;
 
         if (newKeyEncryptor == null || newKeyEncryptor.getAlgorithm() == SymmetricKeyAlgorithmTags.NULL)
         {
@@ -759,7 +758,7 @@ public class PGPSecretKey
             }
         }
 
-        SecretKeyPacket             secret;
+        SecretKeyPacket secret;
         if (key.secret instanceof SecretSubkeyPacket)
         {
             secret = new SecretSubkeyPacket(key.secret.getPublicKeyPacket(),
@@ -796,174 +795,23 @@ public class PGPSecretKey
      * Parse a secret key from one of the GPG S expression keys associating it with the passed in public key.
      *
      * @return a secret key object.
+     * @deprecated use org.bouncycastle.gpg.SExprParser - it will also allow you to verify the protection checksum if it is available.
      */
     public static PGPSecretKey parseSecretKeyFromSExpr(InputStream inputStream, PBEProtectionRemoverFactory keyProtectionRemoverFactory, PGPPublicKey pubKey)
         throws IOException, PGPException
     {
-        SXprUtils.skipOpenParenthesis(inputStream);
-
-        String type;
-
-        type = SXprUtils.readString(inputStream, inputStream.read());
-        if (type.equals("protected-private-key"))
-        {
-            SXprUtils.skipOpenParenthesis(inputStream);
-
-            String curveName;
-
-            String keyType = SXprUtils.readString(inputStream, inputStream.read());
-            if (keyType.equals("ecc"))
-            {
-                SXprUtils.skipOpenParenthesis(inputStream);
-
-                String curveID = SXprUtils.readString(inputStream, inputStream.read());
-                curveName = SXprUtils.readString(inputStream, inputStream.read());
-
-                SXprUtils.skipCloseParenthesis(inputStream);
-            }
-            else
-            {
-                throw new PGPException("no curve details found");
-            }
-
-            byte[] qVal;
-
-            SXprUtils.skipOpenParenthesis(inputStream);
-
-            type = SXprUtils.readString(inputStream, inputStream.read());
-            if (type.equals("q"))
-            {
-                qVal = SXprUtils.readBytes(inputStream, inputStream.read());
-            }
-            else
-            {
-                throw new PGPException("no q value found");
-            }
-
-            SXprUtils.skipCloseParenthesis(inputStream);
-
-            byte[] dValue = getDValue(inputStream, keyProtectionRemoverFactory, curveName);
-            // TODO: check SHA-1 hash.
-
-            return new PGPSecretKey(new SecretKeyPacket(pubKey.getPublicKeyPacket(), SymmetricKeyAlgorithmTags.NULL, null, null, new ECSecretBCPGKey(new BigInteger(1, dValue)).getEncoded()), pubKey);
-        }
-
-        throw new PGPException("unknown key type found");
+        return new SExprParser(null).parseSecretKey(inputStream, keyProtectionRemoverFactory, pubKey);
     }
 
     /**
      * Parse a secret key from one of the GPG S expression keys.
      *
      * @return a secret key object.
+     * @deprecated use org.bouncycastle.gpg.SExprParser - it will also allow you to verify the protection checksum if it is available.
      */
     public static PGPSecretKey parseSecretKeyFromSExpr(InputStream inputStream, PBEProtectionRemoverFactory keyProtectionRemoverFactory, KeyFingerPrintCalculator fingerPrintCalculator)
         throws IOException, PGPException
     {
-        SXprUtils.skipOpenParenthesis(inputStream);
-
-        String type;
-
-        type = SXprUtils.readString(inputStream, inputStream.read());
-        if (type.equals("protected-private-key"))
-        {
-            SXprUtils.skipOpenParenthesis(inputStream);
-
-            String curveName;
-
-            String keyType = SXprUtils.readString(inputStream, inputStream.read());
-            if (keyType.equals("ecc"))
-            {
-                SXprUtils.skipOpenParenthesis(inputStream);
-
-                String curveID = SXprUtils.readString(inputStream, inputStream.read());
-                curveName = SXprUtils.readString(inputStream, inputStream.read());
-
-                if (curveName.startsWith("NIST "))
-                {
-                    curveName = curveName.substring("NIST ".length());
-                }
-
-                SXprUtils.skipCloseParenthesis(inputStream);
-            }
-            else
-            {
-                throw new PGPException("no curve details found");
-            }
-
-            byte[] qVal;
-
-            SXprUtils.skipOpenParenthesis(inputStream);
-
-            type = SXprUtils.readString(inputStream, inputStream.read());
-            if (type.equals("q"))
-            {
-                qVal = SXprUtils.readBytes(inputStream, inputStream.read());
-            }
-            else
-            {
-                throw new PGPException("no q value found");
-            }
-
-            PublicKeyPacket pubPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.ECDSA, new Date(), new ECDSAPublicBCPGKey(ECNamedCurveTable.getOID(curveName), new BigInteger(1, qVal)));
-
-            SXprUtils.skipCloseParenthesis(inputStream);
-
-            byte[] dValue = getDValue(inputStream, keyProtectionRemoverFactory, curveName);
-            // TODO: check SHA-1 hash.
-
-            return new PGPSecretKey(new SecretKeyPacket(pubPacket, SymmetricKeyAlgorithmTags.NULL, null, null, new ECSecretBCPGKey(new BigInteger(1, dValue)).getEncoded()), new PGPPublicKey(pubPacket, fingerPrintCalculator));
-        }
-
-        throw new PGPException("unknown key type found");
-    }
-
-    private static byte[] getDValue(InputStream inputStream, PBEProtectionRemoverFactory keyProtectionRemoverFactory, String curveName)
-        throws IOException, PGPException
-    {
-        String type;
-        SXprUtils.skipOpenParenthesis(inputStream);
-
-        String protection;
-        S2K s2k;
-        byte[] iv;
-        byte[] secKeyData;
-
-        type = SXprUtils.readString(inputStream, inputStream.read());
-        if (type.equals("protected"))
-        {
-            protection = SXprUtils.readString(inputStream, inputStream.read());
-
-            SXprUtils.skipOpenParenthesis(inputStream);
-
-            s2k = SXprUtils.parseS2K(inputStream);
-
-            iv = SXprUtils.readBytes(inputStream, inputStream.read());
-
-            SXprUtils.skipCloseParenthesis(inputStream);
-
-            secKeyData = SXprUtils.readBytes(inputStream, inputStream.read());
-        }
-        else
-        {
-            throw new PGPException("protected block not found");
-        }
-
-        PBESecretKeyDecryptor keyDecryptor = keyProtectionRemoverFactory.createDecryptor(protection);
-
-        // TODO: recognise other algorithms
-        byte[] key = keyDecryptor.makeKeyFromPassPhrase(SymmetricKeyAlgorithmTags.AES_128, s2k);
-
-        byte[] data = keyDecryptor.recoverKeyData(SymmetricKeyAlgorithmTags.AES_128, key, iv, secKeyData, 0, secKeyData.length);
-
-        //
-        // parse the secret key S-expr
-        //
-        InputStream keyIn = new ByteArrayInputStream(data);
-
-        SXprUtils.skipOpenParenthesis(keyIn);
-        SXprUtils.skipOpenParenthesis(keyIn);
-        SXprUtils.skipOpenParenthesis(keyIn);
-        String name = SXprUtils.readString(keyIn, keyIn.read());
-        return SXprUtils.readBytes(keyIn, keyIn.read());
+        return new SExprParser(null).parseSecretKey(inputStream, keyProtectionRemoverFactory, fingerPrintCalculator);
     }
 }

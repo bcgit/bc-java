@@ -30,9 +30,12 @@ import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.util.Strings;
 
+/**
+ * DecryptorProviderBuilder for producing DecryptorProvider for use with PKCS8EncryptedPrivateKeyInfo.
+ */
 public class JceOpenSSLPKCS8DecryptorProviderBuilder
 {
-    private JcaJceHelper helper = new DefaultJcaJceHelper();
+    private JcaJceHelper helper;
 
     public JceOpenSSLPKCS8DecryptorProviderBuilder()
     {

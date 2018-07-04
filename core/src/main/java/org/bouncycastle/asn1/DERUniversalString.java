@@ -95,7 +95,7 @@ public class DERUniversalString
         }
         catch (IOException e)
         {
-           throw new ASN1ParsingException("internal error encoding BitString");
+           throw new ASN1ParsingException("internal error encoding UniversalString");
         }
         
         byte[]    string = bOut.toByteArray();

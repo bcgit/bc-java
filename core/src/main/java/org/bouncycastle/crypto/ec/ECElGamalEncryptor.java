@@ -4,9 +4,11 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
@@ -47,7 +49,7 @@ public class ECElGamalEncryptor
             }
 
             this.key = (ECPublicKeyParameters)param;
-            this.random = new SecureRandom();
+            this.random = CryptoServicesRegistrar.getSecureRandom();
         }
     }
 
@@ -71,7 +73,7 @@ public class ECElGamalEncryptor
 
         ECPoint[] gamma_phi = new ECPoint[]{
             basePointMultiplier.multiply(ec.getG(), k),
-            key.getQ().multiply(k).add(point)
+            key.getQ().multiply(k).add(ECAlgorithms.cleanPoint(ec.getCurve(), point))
         };
 
         ec.getCurve().normalizeAll(gamma_phi);

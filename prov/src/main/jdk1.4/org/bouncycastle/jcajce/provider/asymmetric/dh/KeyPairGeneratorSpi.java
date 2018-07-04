@@ -9,6 +9,7 @@ import java.util.Hashtable;
 import javax.crypto.spec.DHParameterSpec;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.generators.DHBasicKeyPairGenerator;
 import org.bouncycastle.crypto.generators.DHParametersGenerator;
 import org.bouncycastle.crypto.params.DHKeyGenerationParameters;
@@ -28,7 +29,7 @@ public class KeyPairGeneratorSpi
     DHKeyGenerationParameters param;
     DHBasicKeyPairGenerator engine = new DHBasicKeyPairGenerator();
     int strength = 2048;
-    SecureRandom random = new SecureRandom();
+    SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     boolean initialised = false;
 
     public KeyPairGeneratorSpi()

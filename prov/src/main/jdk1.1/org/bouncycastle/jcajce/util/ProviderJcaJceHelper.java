@@ -21,6 +21,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 
 public class ProviderJcaJceHelper
     implements JcaJceHelper
@@ -108,6 +109,6 @@ public class ProviderJcaJceHelper
     public SecureRandom createSecureRandom(String algorithm)
         throws NoSuchAlgorithmException, NoSuchProviderException
     {
-        return new SecureRandom();
+        return CryptoServicesRegistrar.getSecureRandom();
     }
 }

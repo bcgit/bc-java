@@ -24,11 +24,12 @@ public class CMSConfig
      *
      * @param oid object identifier to map.
      * @param algorithmName algorithm name to use.
+     * @deprecated no longer required.
      */
     public static void setSigningDigestAlgorithmMapping(String oid, String algorithmName)
     {
         ASN1ObjectIdentifier id = new ASN1ObjectIdentifier(oid);
 
-        CMSSignedHelper.INSTANCE.setSigningDigestAlgorithmMapping(id, algorithmName);
+        //CMSSignedHelper.INSTANCE.setSigningDigestAlgorithmMapping(id, algorithmName);
     }
 }

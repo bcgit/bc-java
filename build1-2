@@ -53,6 +53,7 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
 (
     cd $jdk12src
 
+    rm -rf org/bouncycastle/math/ec/rfc8032/test
     rm -rf org/bouncycastle/crypto/test/ntru
     rm -rf org/bouncycastle/pqc/math/ntru
     rm -rf org/bouncycastle/pqc/crypto/ntru
@@ -96,6 +97,7 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/jce/provider/test/X509LDAP*.java
     rm -rf org/bouncycastle/jce/provider/test/MQVTest*.java
     rm -rf org/bouncycastle/jce/provider/test/AlgorithmParametersTest.java
+    rm -rf org/bouncycastle/jce/provider/test/GOST3410KeyPairTest.java
     rm -rf org/bouncycastle/jce/spec/ECNamedCurveSpec.java
     rm -rf org/bouncycastle/util/encoders/test/*.java
     rm -rf org/bouncycastle/x509/PKIXCertPathReviewer.java
@@ -505,8 +507,11 @@ then
     rm -rf src/org/bouncycastle/sasn1
     rm -rf src/org/bouncycastle/est
     rm -rf src/org/bouncycastle/asn1/test
+    rm -rf src/org/bouncycastle/gpg/keybox
+    rm -rf src/org/bouncycastle/gpg/test
     rm -f src/org/bouncycastle/openpgp/test/DSA2Test.java
     rm -f src/org/bouncycastle/openpgp/test/PGPUnicodeTest.java
+    rm -f src/org/bouncycastle/openpgp/test/PGPKeyRingTest.java
     find src -name AllTests.java -exec rm {} \;
 
     javadoc -windowtitle "$WINDOWTITLE" -doctitle "$DOCTITLE" \
@@ -526,6 +531,12 @@ then
 
     ed src/org/bouncycastle/bcpg/ArmoredOutputStream.java <<%
 /@RELEASE_NAME@/s//$version/
+w
+q
+%
+
+    ed src/org/bouncycastle/openpgp/test/RegressionTest.java <<%
+g/new PGPKeyRingTest(),/d
 w
 q
 %

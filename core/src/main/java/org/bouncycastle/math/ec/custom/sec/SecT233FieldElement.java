@@ -6,7 +6,7 @@ import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.raw.Nat256;
 import org.bouncycastle.util.Arrays;
 
-public class SecT233FieldElement extends ECFieldElement
+public class SecT233FieldElement extends ECFieldElement.AbstractF2m
 {
     protected long[] x;
 
@@ -157,6 +157,11 @@ public class SecT233FieldElement extends ECFieldElement
         long[] z = Nat256.create64();
         SecT233Field.squareN(x, pow, z);
         return new SecT233FieldElement(z);
+    }
+
+    public int trace()
+    {
+        return SecT233Field.trace(x);
     }
 
     public ECFieldElement invert()

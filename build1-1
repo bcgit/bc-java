@@ -59,6 +59,9 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
 (
     cd $jdk11src
 
+    rm org/bouncycastle/jce/provider/test/GOST3410KeyPairTest.java
+    rm org/bouncycastle/jce/provider/test/DRBGTest.java
+    rm -rf org/bouncycastle/math/ec/rfc8032/test
     rm -rf org/bouncycastle/crypto/test/ntru
     rm -rf org/bouncycastle/pqc/math/ntru
     rm -rf org/bouncycastle/pqc/crypto/ntru
@@ -75,6 +78,7 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/math/ec/test
     rm -rf org/bouncycastle/math/ec/custom/test
     rm -rf org/bouncycastle/math/ec/custom/sec/test
+    rm -rf org/bouncycastle/crypto/CryptoServicesPermission.java
     rm -rf org/bouncycastle/crypto/tls/test
     rm -rf org/bouncycastle/crypto/test/GCMReorderTest.java
     rm -rf org/bouncycastle/jce/cert
@@ -544,6 +548,8 @@ then
     rm -rf src/org/bouncycastle/voms
     rm -rf src/org/bouncycastle/sasn1
     rm -rf src/org/bouncycastle/asn1/test
+    rm -rf src/org/bouncycastle/gpg/keybox
+    rm -rf src/org/bouncycastle/gpg/test
     rm -f src/org/bouncycastle/openpgp/test/DSA2Test.java
     rm -f src/org/bouncycastle/openpgp/test/PGPUnicodeTest.java
     rm -f src/org/bouncycastle/openpgp/examples/DSAElGamalKeyRingGenerator.java
@@ -567,6 +573,12 @@ then
 
     ed src/org/bouncycastle/bcpg/ArmoredOutputStream.java <<%
 /@RELEASE_NAME@/s//$version/
+w
+q
+%
+
+    ed src/org/bouncycastle/openpgp/test/RegressionTest.java <<%
+g/new PGPKeyRingTest(),/d
 w
 q
 %

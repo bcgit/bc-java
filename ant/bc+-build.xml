@@ -163,9 +163,11 @@
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.data" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.crt" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.cvcert" />
+                     <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.kbx" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.csr" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.crl" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.cer" />
+                     <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.kbx" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.key" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.der" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.txt" />
@@ -195,6 +197,7 @@
                             <include name="**/*.sig" />
                             <include name="**/*.data" />
                             <include name="**/*.cer" />
+                            <include name="**/*.kbx" />
                             <include name="**/*.der" />
                             <include name="**/*.message" />
                             <include name="**/*.txt" />
@@ -324,6 +327,7 @@
                  <exclude name="org/bouncycastle/est/**" />
                  <exclude name="org/bouncycastle/cmc/**" />
                  <exclude name="org/bouncycastle/mail/**" />
+                 <exclude name="org/bouncycastle/gpg/**" />
                  <exclude name="org/bouncycastle/openpgp/**" />
                  <exclude name="org/bouncycastle/openssl/**" />
                  <exclude name="org/bouncycastle/mozilla/**" />
@@ -363,6 +367,7 @@
                 <attribute name="Codebase" value="*" />
                 <attribute name="Application-Library-Allowable-Codebase" value="*" />
                 <attribute name="Caller-Allowable-Codebase" value="*" />
+                <attribute name="Automatic-Module-Name" value="org.bouncycastle.provider" />
             </manifestElements>
         </compile>
 
@@ -421,6 +426,7 @@
                  <exclude name="**/*.key" />
                  <exclude name="org/bouncycastle/**.crt" />
                  <exclude name="org/bouncycastle/**/test/*.cer" />
+                 <exclude name="org/bouncycastle/**/test/*.kbx" />
                  <exclude name="org/bouncycastle/**/test/*.csr" />
                  <exclude name="org/bouncycastle/**/test/*.cvcert" />
                  <exclude name="org/bouncycastle/**/test/*.eml" />
@@ -441,6 +447,7 @@
                  <exclude name="org/bouncycastle/operator/**" />
                  <exclude name="org/bouncycastle/sasn1/**" />
                  <exclude name="org/bouncycastle/tsp/**" />
+                 <exclude name="org/bouncycastle/gpg/**" />
                  <exclude name="org/bouncycastle/openpgp/**" />
                  <exclude name="org/bouncycastle/openssl/**" />
                  <exclude name="org/bouncycastle/mozilla/**" />
@@ -543,6 +550,7 @@
                 <attribute name="Codebase" value="*" />
                 <attribute name="Application-Library-Allowable-Codebase" value="*" />
                 <attribute name="Caller-Allowable-Codebase" value="*" />
+                <attribute name="Automatic-Module-Name" value="org.bouncycastle.mail" />
             </manifestElements>
         </compile>
 
@@ -587,6 +595,7 @@
                 <attribute name="Codebase" value="*" />
                 <attribute name="Application-Library-Allowable-Codebase" value="*" />
                 <attribute name="Caller-Allowable-Codebase" value="*" />
+                <attribute name="Automatic-Module-Name" value="org.bouncycastle.tls" />
             </manifestElements>
         </compile>
 
@@ -638,6 +647,7 @@
                 <attribute name="Codebase" value="*" />
                 <attribute name="Application-Library-Allowable-Codebase" value="*" />
                 <attribute name="Caller-Allowable-Codebase" value="*" />
+                <attribute name="Automatic-Module-Name" value="org.bouncycastle.pkix" />
             </manifestElements>
         </compile>
 
@@ -661,6 +671,7 @@
              <fileset dir="${src.dir}">
                  <include name="org/bouncycastle/bcpg/**/*.java" />
                  <include name="org/bouncycastle/openpgp/**/*.java" />
+                 <include name="org/bouncycastle/gpg/**/*.java" />
                  <include name="org/bouncycastle/apache/**/*.java" />
                  <exclude name="**/*Test.java" />
                  <exclude name="**/*Tests.java" />
@@ -687,6 +698,7 @@
                 <attribute name="Codebase" value="*" />
                 <attribute name="Application-Library-Allowable-Codebase" value="*" />
                 <attribute name="Caller-Allowable-Codebase" value="*" />
+                <attribute name="Automatic-Module-Name" value="org.bouncycastle.pg" />
             </manifestElements>
         </compile>
 
@@ -726,6 +738,7 @@
              <fileset dir="${src.dir}" includes="**/*.crt" />
              <fileset dir="${src.dir}" includes="**/*.key" />
              <fileset dir="${src.dir}" includes="**/*.cer" />
+             <fileset dir="${src.dir}" includes="**/*.kbx" />
              <fileset dir="${src.dir}" includes="**/*.crl" />
              <fileset dir="${src.dir}" includes="**/*.csr" />
              <fileset dir="${src.dir}" includes="**/*.txt" />
@@ -945,7 +958,7 @@
                 <package name="org.bouncycastle.tls.*" />
                 <package name="org.bouncycastle.jsse.*" />
                 <group title="TLS/DTLS Packages" packages="org.bouncycastle.tls,org.bouncycastle.tls.crypto*" />
-                <group title="JSSE Provider Packages" packages="org.bouncycastle.jsse.provider" />
+                <group title="BC JSSE Provider Packages" packages="org.bouncycastle.jsse,org.bouncycastle.jsse.provider" />
                 <group title="TLS/DTLS/JSSE Provider Test and Example Packages" packages="org.bouncycastle.jsse.provider.test*,org.bouncycastle.tls.test*" />
             </docElements>
         </compile-doc>
@@ -1026,9 +1039,11 @@
         <copy todir="${pg.target.src.dir}">
              <fileset dir="${src.dir}">
                  <include name="org/bouncycastle/openpgp/**/test/*.java" />
+                 <include name="org/bouncycastle/gpg/**/test/*.java" />
                  <include name="org/bouncycastle/bcpg/**/test/*.java" />
                  <include name="org/bouncycastle/apache/**/*.html" />
                  <include name="org/bouncycastle/openpgp/**/*.html" />
+                 <include name="org/bouncycastle/gpg/**/*.html" />
                  <include name="org/bouncycastle/bcpg/**/*.html" />
              </fileset>
         </copy>
@@ -1036,10 +1051,11 @@
         <compile-doc srcDir="${pg.target.src.dir}" docsDir="${artifacts.docs.dir}/bcpg">
             <docElements>
                 <package name="org.bouncycastle.openpgp.*" />
+                <package name="org.bouncycastle.gpg.*" />
                 <package name="org.bouncycastle.bcpg.*" />
                 <group title="BCPG Support Packages" packages="org.bouncycastle.bcpg*" />
-                <group title="OpenPGP Packages" packages="org.bouncycastle.openpgp*" />
-                <group title="OpenPGP Test and Example Packages" packages="org.bouncycastle.openpgp.test*,org.bouncycastle.openpgp.examples*" />
+                <group title="OpenPGP Packages" packages="org.bouncycastle.gpg,org.bouncycastle.gpg.keybox,org.bouncycastle.openpgp*" />
+                <group title="OpenPGP Test and Example Packages" packages="org.bouncycastle.gpg.test,org.bouncycastle.openpgp.test*,org.bouncycastle.openpgp.examples*" />
             </docElements>
         </compile-doc>
 

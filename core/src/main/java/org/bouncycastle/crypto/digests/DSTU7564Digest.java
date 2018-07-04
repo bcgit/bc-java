@@ -182,7 +182,7 @@ public class DSTU7564Digest
             bufOff += 4;
             c >>>= 32;
             c += ((inputBlocks >>> 32) * blockSize) << 3;
-            Pack.longToLittleEndian((int)c, buf, bufOff);
+            Pack.longToLittleEndian(c, buf, bufOff);
 //            bufOff += 8;
             processBlock(buf, 0);
         }

@@ -18,6 +18,8 @@ import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+
 /**
  * {@link JcaJceHelper} that obtains all algorithms using the default JCA/JCE mechanism (i.e.
  * without specifying a provider).
@@ -101,6 +103,6 @@ public class DefaultJcaJceHelper
     public SecureRandom createSecureRandom(String algorithm)
         throws NoSuchAlgorithmException
     {
-        return new SecureRandom();
+        return CryptoServicesRegistrar.getSecureRandom();
     }
 }

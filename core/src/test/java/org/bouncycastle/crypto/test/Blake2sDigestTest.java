@@ -3,6 +3,8 @@ package org.bouncycastle.crypto.test;
 import java.util.Random;
 
 import org.bouncycastle.crypto.digests.Blake2sDigest;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -114,6 +116,81 @@ public class Blake2sDigestTest
         }
     }
 
+    private void testLengthConstruction()
+    {
+        try
+        {
+            new Blake2sDigest(-1);
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("BLAKE2s digest bit length must be a multiple of 8 and not greater than 256", e.getMessage());
+        }
+
+        try
+        {
+            new Blake2sDigest(9);
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("BLAKE2s digest bit length must be a multiple of 8 and not greater than 256", e.getMessage());
+        }
+        
+        try
+        {
+            new Blake2sDigest(512);
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("BLAKE2s digest bit length must be a multiple of 8 and not greater than 256", e.getMessage());
+        }
+
+        try
+        {
+            new Blake2sDigest(null, -1, null, null);
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("Invalid digest length (required: 1 - 32)", e.getMessage());
+        }
+
+        try
+        {
+            new Blake2sDigest(null, 33, null, null);
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("Invalid digest length (required: 1 - 32)", e.getMessage());
+        }
+    }
+
+    private void testNullKeyVsUnkeyed()
+    {
+        byte[] abc = Strings.toByteArray("abc");
+
+        for (int i = 1; i != 32; i++)
+        {
+            Blake2sDigest dig1 = new Blake2sDigest(i * 8);
+            Blake2sDigest dig2 = new Blake2sDigest(null, i, null, null);
+
+            byte[] out1 = new byte[i];
+            byte[] out2 = new byte[i];
+
+            dig1.update(abc, 0, abc.length);
+            dig2.update(abc, 0, abc.length);
+
+            dig1.doFinal(out1, 0);
+            dig2.doFinal(out2, 0);
+
+            isTrue(Arrays.areEqual(out1, out2));
+        }
+    }
+
     public void testReset()
     {
         // Generate a non-zero key
@@ -222,6 +299,8 @@ public class Blake2sDigestTest
         testDigestWithKeyedTestVectorsAndRandomUpdate();
         testReset();
         runSelfTest();
+        testNullKeyVsUnkeyed();
+        testLengthConstruction();
     }
 
     public static void main(String[] args)

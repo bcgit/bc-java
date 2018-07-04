@@ -307,32 +307,7 @@ public class ECUtil
 
     private static ASN1ObjectIdentifier lookupOidByName(String name)
     {
-        ASN1ObjectIdentifier oid = X962NamedCurves.getOID(name);
-
-        if (oid == null)
-        {
-            oid = SECNamedCurves.getOID(name);
-            if (oid == null)
-            {
-                oid = NISTNamedCurves.getOID(name);
-            }
-            if (oid == null)
-            {
-                oid = TeleTrusTNamedCurves.getOID(name);
-            }
-            if (oid == null)
-            {
-                oid = ECGOST3410NamedCurves.getOID(name);
-            }
-            if (oid == null)
-            {
-                oid = ANSSINamedCurves.getOID(name);
-            }
-            if (oid == null)
-            {
-                oid = GMNamedCurves.getOID(name);
-            }
-        }
+        ASN1ObjectIdentifier oid = ECNamedCurveTable.getOID(name);
 
         return oid;
     }
@@ -344,27 +319,7 @@ public class ECUtil
 
         if (params == null)
         {
-            params = X962NamedCurves.getByOID(oid);
-            if (params == null)
-            {
-                params = SECNamedCurves.getByOID(oid);
-            }
-            if (params == null)
-            {
-                params = NISTNamedCurves.getByOID(oid);
-            }
-            if (params == null)
-            {
-                params = TeleTrusTNamedCurves.getByOID(oid);
-            }
-            if (params == null)
-            {
-                params = ANSSINamedCurves.getByOID(oid);
-            }
-            if (params == null)
-            {
-                params = GMNamedCurves.getByOID(oid);
-            }
+            params = ECNamedCurveTable.getByOID(oid);
         }
 
         return params;
@@ -377,27 +332,7 @@ public class ECUtil
 
         if (params == null)
         {
-            params = X962NamedCurves.getByName(curveName);
-            if (params == null)
-            {
-                params = SECNamedCurves.getByName(curveName);
-            }
-            if (params == null)
-            {
-                params = NISTNamedCurves.getByName(curveName);
-            }
-            if (params == null)
-            {
-                params = TeleTrusTNamedCurves.getByName(curveName);
-            }
-            if (params == null)
-            {
-                params = ANSSINamedCurves.getByName(curveName);
-            }
-            if (params == null)
-            {
-                params = GMNamedCurves.getByName(curveName);
-            }
+            params = ECNamedCurveTable.getByName(curveName);
         }
 
         return params;
@@ -406,32 +341,7 @@ public class ECUtil
     public static String getCurveName(
         ASN1ObjectIdentifier oid)
     {
-        String name = X962NamedCurves.getName(oid);
-
-        if (name == null)
-        {
-            name = SECNamedCurves.getName(oid);
-            if (name == null)
-            {
-                name = NISTNamedCurves.getName(oid);
-            }
-            if (name == null)
-            {
-                name = TeleTrusTNamedCurves.getName(oid);
-            }
-            if (name == null)
-            {
-                name = ECGOST3410NamedCurves.getName(oid);
-            }
-            if (name == null)
-            {
-                name = ANSSINamedCurves.getName(oid);
-            }
-            if (name == null)
-            {
-                name = GMNamedCurves.getName(oid);
-            }
-        }
+        String name = ECNamedCurveTable.getName(oid);
 
         return name;
     }

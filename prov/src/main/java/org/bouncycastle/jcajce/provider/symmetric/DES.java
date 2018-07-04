@@ -17,6 +17,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.PasswordConverter;
 import org.bouncycastle.crypto.engines.DESEngine;
@@ -171,7 +172,7 @@ public final class DES
 
             if (random == null)
             {
-                random = new SecureRandom();
+                random = CryptoServicesRegistrar.getSecureRandom();
             }
 
             random.nextBytes(iv);
@@ -218,7 +219,7 @@ public final class DES
         {
             if (uninitialised)
             {
-                engine.init(new KeyGenerationParameters(new SecureRandom(), defaultKeySize));
+                engine.init(new KeyGenerationParameters(CryptoServicesRegistrar.getSecureRandom(), defaultKeySize));
                 uninitialised = false;
             }
 

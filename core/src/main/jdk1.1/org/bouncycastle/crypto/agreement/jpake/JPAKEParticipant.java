@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CryptoException;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.util.Arrays;
@@ -202,7 +203,7 @@ public class JPAKEParticipant
             password,
             group,
             new SHA256Digest(),
-            new SecureRandom());
+            CryptoServicesRegistrar.getSecureRandom());
     }
 
 

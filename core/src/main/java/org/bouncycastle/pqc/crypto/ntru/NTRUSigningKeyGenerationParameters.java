@@ -5,9 +5,9 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.SecureRandom;
 import java.text.DecimalFormat;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -92,7 +92,7 @@ public class NTRUSigningKeyGenerationParameters
      */
     public NTRUSigningKeyGenerationParameters(int N, int q, int d, int B, int basisType, double beta, double normBound, double keyNormBound, boolean primeCheck, boolean sparse, int keyGenAlg, Digest hashAlg)
     {
-        super(new SecureRandom(), N);
+        super(CryptoServicesRegistrar.getSecureRandom(), N);
         this.N = N;
         this.q = q;
         this.d = d;
@@ -129,7 +129,7 @@ public class NTRUSigningKeyGenerationParameters
      */
     public NTRUSigningKeyGenerationParameters(int N, int q, int d1, int d2, int d3, int B, int basisType, double beta, double normBound, double keyNormBound, boolean primeCheck, boolean sparse, int keyGenAlg, Digest hashAlg)
     {
-        super(new SecureRandom(), N);
+        super(CryptoServicesRegistrar.getSecureRandom(), N);
         this.N = N;
         this.q = q;
         this.d1 = d1;
@@ -164,7 +164,7 @@ public class NTRUSigningKeyGenerationParameters
     public NTRUSigningKeyGenerationParameters(InputStream is)
         throws IOException
     {
-        super(new SecureRandom(), 0);     // TODO:
+        super(CryptoServicesRegistrar.getSecureRandom(), 0);     // TODO:
         DataInputStream dis = new DataInputStream(is);
         N = dis.readInt();
         q = dis.readInt();

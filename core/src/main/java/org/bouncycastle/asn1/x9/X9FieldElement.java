@@ -22,17 +22,23 @@ public class X9FieldElement
     {
         this.f = f;
     }
-    
+
+    /**
+     * @deprecated Will be removed
+     */
     public X9FieldElement(BigInteger p, ASN1OctetString s)
     {
         this(new ECFieldElement.Fp(p, new BigInteger(1, s.getOctets())));
     }
-    
+
+    /**
+     * @deprecated Will be removed
+     */
     public X9FieldElement(int m, int k1, int k2, int k3, ASN1OctetString s)
     {
         this(new ECFieldElement.F2m(m, k1, k2, k3, new BigInteger(1, s.getOctets())));
     }
-    
+
     public ECFieldElement getValue()
     {
         return f;

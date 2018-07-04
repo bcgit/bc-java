@@ -10,6 +10,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.ua.DSTU4145Params;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DSA;
@@ -27,21 +28,8 @@ public class SignatureSpi
     private Digest digest;
     private DSA signer;
 
-    private static byte[] DEFAULT_SBOX = {
-        0xa, 0x9, 0xd, 0x6, 0xe, 0xb, 0x4, 0x5, 0xf, 0x1, 0x3, 0xc, 0x7, 0x0, 0x8, 0x2,
-        0x8, 0x0, 0xc, 0x4, 0x9, 0x6, 0x7, 0xb, 0x2, 0x3, 0x1, 0xf, 0x5, 0xe, 0xa, 0xd,
-        0xf, 0x6, 0x5, 0x8, 0xe, 0xb, 0xa, 0x4, 0xc, 0x0, 0x3, 0x7, 0x2, 0x9, 0x1, 0xd,
-        0x3, 0x8, 0xd, 0x9, 0x6, 0xb, 0xf, 0x0, 0x2, 0x5, 0xc, 0xa, 0x4, 0xe, 0x1, 0x7,
-        0xf, 0x8, 0xe, 0x9, 0x7, 0x2, 0x0, 0xd, 0xc, 0x6, 0x1, 0x5, 0xb, 0x4, 0x3, 0xa,
-        0x2, 0x8, 0x9, 0x7, 0x5, 0xf, 0x0, 0xb, 0xc, 0x1, 0xd, 0xe, 0xa, 0x3, 0x6, 0x4,
-        0x3, 0x8, 0xb, 0x5, 0x6, 0x4, 0xe, 0xa, 0x2, 0xc, 0x1, 0x7, 0x9, 0xf, 0xd, 0x0,
-        0x1, 0x2, 0x3, 0xe, 0x6, 0xd, 0xb, 0x8, 0xf, 0xa, 0xc, 0x5, 0x7, 0x9, 0x0, 0x4
-    };
-
     public SignatureSpi()
     {
-        //TODO: Add default ua s-box
-        //this.digest = new GOST3411Digest(DEFAULT_SBOX);
         this.signer = new DSTU4145Signer();
     }
 
@@ -54,13 +42,14 @@ public class SignatureSpi
         if (publicKey instanceof BCDSTU4145PublicKey)
         {
             param = ((BCDSTU4145PublicKey)publicKey).engineGetKeyParameters();
+            digest = new GOST3411Digest(expandSbox(((BCDSTU4145PublicKey)publicKey).getSbox()));
         }
         else
         {
             param = ECUtil.generatePublicKeyParameter(publicKey);
+            digest = new GOST3411Digest(expandSbox(DSTU4145Params.getDefaultDKE()));
         }
 
-        digest = new GOST3411Digest(expandSbox(((BCDSTU4145PublicKey)publicKey).getSbox()));
         signer.init(false, param);
     }
 
@@ -82,12 +71,17 @@ public class SignatureSpi
     {
         CipherParameters param = null;
 
-        if (privateKey instanceof ECKey)
+        if (privateKey instanceof BCDSTU4145PrivateKey)
+        {
+            // TODO: add parameters support.
+            param = ECUtil.generatePrivateKeyParameter(privateKey);
+            digest = new GOST3411Digest(expandSbox(DSTU4145Params.getDefaultDKE()));
+        }
+        else if (privateKey instanceof ECKey)
         {
             param = ECUtil.generatePrivateKeyParameter(privateKey);
+            digest = new GOST3411Digest(expandSbox(DSTU4145Params.getDefaultDKE()));
         }
-
-        digest = new GOST3411Digest(DEFAULT_SBOX);
 
         if (appRandom != null)
         {

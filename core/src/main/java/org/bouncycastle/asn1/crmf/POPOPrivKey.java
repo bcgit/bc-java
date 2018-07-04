@@ -68,6 +68,12 @@ public class POPOPrivKey
         return getInstance(ASN1TaggedObject.getInstance(obj, explicit));
     }
 
+    public POPOPrivKey(PKMACValue agreeMac)
+    {
+        this.tagNo = agreeMAC;
+        this.obj = agreeMac;
+    }
+
     public POPOPrivKey(SubsequentMessage msg)
     {
         this.tagNo = subsequentMessage;

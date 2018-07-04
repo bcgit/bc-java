@@ -7,7 +7,7 @@ import org.bouncycastle.math.raw.Mod;
 import org.bouncycastle.math.raw.Nat192;
 import org.bouncycastle.util.Arrays;
 
-public class SecP192R1FieldElement extends ECFieldElement
+public class SecP192R1FieldElement extends ECFieldElement.AbstractFp
 {
     public static final BigInteger Q = SecP192R1Curve.q;
 

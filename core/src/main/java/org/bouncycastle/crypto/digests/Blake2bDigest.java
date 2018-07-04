@@ -25,6 +25,7 @@ package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 
 
 /**
@@ -43,7 +44,7 @@ public class Blake2bDigest
     implements ExtendedDigest
 {
     // Blake2b Initialization Vector:
-    private final static long blake2b_IV[] =
+    private final static long[] blake2b_IV =
         // Produced from the square root of primes 2, 3, 5, 7, 11, 13, 17, 19.
         // The same as SHA-512 IV.
         {
@@ -69,7 +70,7 @@ public class Blake2bDigest
             {14, 10, 4, 8, 9, 15, 13, 6, 1, 12, 0, 2, 11, 7, 5, 3}
         };
 
-    private static int rOUNDS = 12; // to use for Catenas H'
+    private static int ROUNDS = 12; // to use for Catenas H'
     private final static int BLOCK_LENGTH_BYTES = 128;// bytes
 
     // General parameters:
@@ -136,9 +137,10 @@ public class Blake2bDigest
      */
     public Blake2bDigest(int digestSize)
     {
-        if (digestSize != 160 && digestSize != 256 && digestSize != 384 && digestSize != 512)
+        if (digestSize < 8 || digestSize > 512 || digestSize % 8 != 0)
         {
-            throw new IllegalArgumentException("Blake2b digest restricted to one of [160, 256, 384, 512]");
+            throw new IllegalArgumentException(
+                "BLAKE2b digest bit length must be a multiple of 8 and not greater than 512");
         }
 
         buffer = new byte[BLOCK_LENGTH_BYTES];
@@ -260,16 +262,16 @@ public class Blake2bDigest
             chainValue[5] = blake2b_IV[5];
             if (salt != null)
             {
-                chainValue[4] ^= (bytes2long(salt, 0));
-                chainValue[5] ^= (bytes2long(salt, 8));
+                chainValue[4] ^= Pack.littleEndianToLong(salt, 0);
+                chainValue[5] ^= Pack.littleEndianToLong(salt, 8);
             }
 
             chainValue[6] = blake2b_IV[6];
             chainValue[7] = blake2b_IV[7];
             if (personalization != null)
             {
-                chainValue[6] ^= (bytes2long(personalization, 0));
-                chainValue[7] ^= (bytes2long(personalization, 8));
+                chainValue[6] ^= Pack.littleEndianToLong(personalization, 0);
+                chainValue[7] ^= Pack.littleEndianToLong(personalization, 8);
             }
         }
     }
@@ -402,7 +404,7 @@ public class Blake2bDigest
 
         for (int i = 0; i < chainValue.length && (i * 8 < digestLength); i++)
         {
-            byte[] bytes = long2bytes(chainValue[i]);
+            byte[] bytes = Pack.longToLittleEndian(chainValue[i]);
 
             if (i * 8 < digestLength - 8)
             {
@@ -450,38 +452,29 @@ public class Blake2bDigest
         long[] m = new long[16];
         for (int j = 0; j < 16; j++)
         {
-            m[j] = bytes2long(message, messagePos + j * 8);
+            m[j] = Pack.littleEndianToLong(message, messagePos + j * 8);
         }
 
-        for (int round = 0; round < rOUNDS; round++)
+        for (int round = 0; round < ROUNDS; round++)
         {
 
             // G apply to columns of internalState:m[blake2b_sigma[round][2 *
             // blockPos]] /+1
-            G(m[blake2b_sigma[round][0]], m[blake2b_sigma[round][1]], 0, 4, 8,
-                12);
-            G(m[blake2b_sigma[round][2]], m[blake2b_sigma[round][3]], 1, 5, 9,
-                13);
-            G(m[blake2b_sigma[round][4]], m[blake2b_sigma[round][5]], 2, 6, 10,
-                14);
-            G(m[blake2b_sigma[round][6]], m[blake2b_sigma[round][7]], 3, 7, 11,
-                15);
+            G(m[blake2b_sigma[round][0]], m[blake2b_sigma[round][1]], 0, 4, 8, 12);
+            G(m[blake2b_sigma[round][2]], m[blake2b_sigma[round][3]], 1, 5, 9, 13);
+            G(m[blake2b_sigma[round][4]], m[blake2b_sigma[round][5]], 2, 6, 10, 14);
+            G(m[blake2b_sigma[round][6]], m[blake2b_sigma[round][7]], 3, 7, 11, 15);
             // G apply to diagonals of internalState:
-            G(m[blake2b_sigma[round][8]], m[blake2b_sigma[round][9]], 0, 5, 10,
-                15);
-            G(m[blake2b_sigma[round][10]], m[blake2b_sigma[round][11]], 1, 6,
-                11, 12);
-            G(m[blake2b_sigma[round][12]], m[blake2b_sigma[round][13]], 2, 7,
-                8, 13);
-            G(m[blake2b_sigma[round][14]], m[blake2b_sigma[round][15]], 3, 4,
-                9, 14);
+            G(m[blake2b_sigma[round][8]], m[blake2b_sigma[round][9]], 0, 5, 10, 15);
+            G(m[blake2b_sigma[round][10]], m[blake2b_sigma[round][11]], 1, 6, 11, 12);
+            G(m[blake2b_sigma[round][12]], m[blake2b_sigma[round][13]], 2, 7, 8, 13);
+            G(m[blake2b_sigma[round][14]], m[blake2b_sigma[round][15]], 3, 4, 9, 14);
         }
 
         // update chain values:
         for (int offset = 0; offset < chainValue.length; offset++)
         {
-            chainValue[offset] = chainValue[offset] ^ internalState[offset]
-                ^ internalState[offset + 8];
+            chainValue[offset] = chainValue[offset] ^ internalState[offset] ^ internalState[offset + 8];
         }
     }
 
@@ -489,47 +482,18 @@ public class Blake2bDigest
     {
 
         internalState[posA] = internalState[posA] + internalState[posB] + m1;
-        internalState[posD] = rotr64(internalState[posD] ^ internalState[posA],
-            32);
+        internalState[posD] = rotr64(internalState[posD] ^ internalState[posA], 32);
         internalState[posC] = internalState[posC] + internalState[posD];
-        internalState[posB] = rotr64(internalState[posB] ^ internalState[posC],
-            24); // replaces 25 of BLAKE
+        internalState[posB] = rotr64(internalState[posB] ^ internalState[posC], 24); // replaces 25 of BLAKE
         internalState[posA] = internalState[posA] + internalState[posB] + m2;
-        internalState[posD] = rotr64(internalState[posD] ^ internalState[posA],
-            16);
+        internalState[posD] = rotr64(internalState[posD] ^ internalState[posA], 16);
         internalState[posC] = internalState[posC] + internalState[posD];
-        internalState[posB] = rotr64(internalState[posB] ^ internalState[posC],
-            63); // replaces 11 of BLAKE
+        internalState[posB] = rotr64(internalState[posB] ^ internalState[posC], 63); // replaces 11 of BLAKE
     }
 
-    private long rotr64(long x, int rot)
+    private static long rotr64(long x, int rot)
     {
         return x >>> rot | (x << (64 - rot));
-    }
-
-    // convert one long value in byte array
-    // little-endian byte order!
-    private final byte[] long2bytes(long longValue)
-    {
-        return new byte[]
-            {(byte)longValue, (byte)(longValue >> 8),
-                (byte)(longValue >> 16), (byte)(longValue >> 24),
-                (byte)(longValue >> 32), (byte)(longValue >> 40),
-                (byte)(longValue >> 48), (byte)(longValue >> 56)
-            };
-    }
-
-    // little-endian byte order!
-    private final long bytes2long(byte[] byteArray, int offset)
-    {
-        return (((long)byteArray[offset] & 0xFF)
-            | (((long)byteArray[offset + 1] & 0xFF) << 8)
-            | (((long)byteArray[offset + 2] & 0xFF) << 16)
-            | (((long)byteArray[offset + 3] & 0xFF) << 24)
-            | (((long)byteArray[offset + 4] & 0xFF) << 32)
-            | (((long)byteArray[offset + 5] & 0xFF) << 40)
-            | (((long)byteArray[offset + 6] & 0xFF) << 48)
-            | (((long)byteArray[offset + 7] & 0xFF) << 56));
     }
 
     /**
@@ -539,7 +503,7 @@ public class Blake2bDigest
      */
     public String getAlgorithmName()
     {
-        return "Blake2b";
+        return "BLAKE2b";
     }
 
     /**

@@ -6,6 +6,7 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
@@ -16,7 +17,7 @@ public class NHKeyPairGeneratorSpi
 {
     NHKeyPairGenerator engine = new NHKeyPairGenerator();
 
-    SecureRandom random = new SecureRandom();
+    SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     boolean initialised = false;
 
     public NHKeyPairGeneratorSpi()

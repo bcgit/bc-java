@@ -700,8 +700,8 @@ as;
 <h4>Key Agreement</h4>
 
 <p>
-Diffie-Hellman key agreement is supported using the "DH", "ECDH",
-"ECCDH" (EC Cofactor DH), "ECMQV" and "ECCDHU" (EC Cofactor DH Unified) key agreement instances and their variations. Key exchange, which also uses the KeyAgreement API is supported by "NH" (the NewHope algorithm (BCPQC)). SM2 key exchange is currently supported in the lightweight API.
+Diffie-Hellman key agreement is supported using the "DH", "DHU" (Diffie-Hellman Unified", "ECDH",
+"ECCDH" (EC Cofactor DH), "ECKAEG" (BSI EC KAEG key agreement"), "ECMQV" and "ECCDHU" (EC Cofactor DH Unified) key agreement instances and their variations. Key exchange, which also uses the KeyAgreement API is supported by "NH" (the NewHope algorithm (BCPQC)). SM2 key exchange is currently supported in the lightweight API.
 </p>
 <p>
 Support is provided for the standard SEC algorithm set for EC. Names appear
@@ -723,9 +723,25 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <p>
 <table cellpadding=5 cellspacing=0 border=1 width=80%>
 <tr><th>Name</th><th>Output (in bits)</th><th>Notes</th></tr>
+<tr><td>Blake2b-160</td><td>160</td><td>&nbsp;</td></tr>
+<tr><td>Blake2b-256</td><td>256</td><td>&nbsp;</td></tr>
+<tr><td>Blake2b-384</td><td>384</td><td>&nbsp;</td></tr>
+<tr><td>Blake2b-512</td><td>512</td><td>&nbsp;</td></tr>
+<tr><td>Blake2s-128</td><td>128</td><td>&nbsp;</td></tr>
+<tr><td>Blake2s-160</td><td>160</td><td>&nbsp;</td></tr>
+<tr><td>Blake2s-224</td><td>224</td><td>&nbsp;</td></tr>
+<tr><td>Blake2s-256</td><td>256</td><td>&nbsp;</td></tr>
+<tr><td>DSTU7564-256</td><td>256</td><td>&nbsp;</td></tr>
+<tr><td>DSTU7564-384</td><td>384</td><td>&nbsp;</td></tr>
+<tr><td>DSTU7564-512</td><td>512</td><td>&nbsp;</td></tr>
 <tr><td>GOST3411</td><td>256</td><td>&nbsp;</td></tr>
 <tr><td>GOST3411-2012-256</td><td>256</td><td>&nbsp;</td></tr>
 <tr><td>GOST3411-2012-512</td><td>512</td><td>&nbsp;</td></tr>
+<tr><td>Keccak-224</td><td>224</td><td>&nbsp;</td></tr>
+<tr><td>Keccak-288</td><td>288</td><td>&nbsp;</td></tr>
+<tr><td>Keccak-256</td><td>256</td><td>&nbsp;</td></tr>
+<tr><td>Keccak-384</td><td>384</td><td>&nbsp;</td></tr>
+<tr><td>Keccak-512</td><td>512</td><td>&nbsp;</td></tr>
 <tr><td>MD2</td><td>128</td><td>&nbsp;</td></tr>
 <tr><td>MD4</td><td>128</td><td>&nbsp;</td></tr>
 <tr><td>MD5</td><td>128</td><td>&nbsp;</td></tr>
@@ -745,6 +761,7 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <tr><td>Skein-256-*</td><td>128, 160, 224, 256</td><td>e.g. Skein-256-160</td></tr>
 <tr><td>Skein-512-*</td><td>128, 160, 224, 256, 384, 512</td><td>e.g. Skein-512-256</td></tr>
 <tr><td>Skein-1024-*</td><td>384, 512, 1024</td><td>e.g. Skein-1024-1024</td></tr>
+<tr><td>SM3</td><td>256</td><td>&nbsp;</td></tr>
 <tr><td>Tiger</td><td>192</td><td>&nbsp;</td></tr>
 <tr><td>Whirlpool</td><td>512</td><td>&nbsp;</td></tr>
 </table>
@@ -962,7 +979,7 @@ generation a more JCE "friendly" class is provided in the package org.bouncycast
 <p>
 <h3>6.4 Keystore</h3>
 <p>
-The Bouncy Castle package has three implementation of a keystore.
+The Bouncy Castle package has four implementation of a keystore.
 <p>
 The first "BKS" is a keystore that will work with the keytool in the same
 fashion as the Sun "JKS" keystore. The keystore is resistent to tampering
@@ -994,6 +1011,7 @@ There is an example program that produces PKCS12 files suitable for
 loading into browsers. It is in the package
 org.bouncycastle.jce.examples.
 <p>
+The fourth is the BCFKS key store which is a FIPS compliant key store which is also designed for general key storage and based on ASN.1. This key store type is encrypted and supports the use of SCRYPT and the storage of some symmetric key types.
 <p>
 <h3>6.5 Additional support classes for Elliptic Curve.</h3>
 <p>

@@ -8,6 +8,9 @@ public abstract class X25519Field
     private static final int M25 = 0x01FFFFFF;
     private static final int M26 = 0x03FFFFFF;
 
+    private static final int[] ROOT_NEG_ONE = new int[]{ 0x020EA0B0, 0x0386C9D2, 0x00478C4E, 0x0035697F, 0x005E8630,
+        0x01FBD7A7, 0x0340264F, 0x01F0B2B4, 0x00027E0E, 0x00570649 };
+
     private X25519Field() {}
 
     public static void add(int[] x, int[] y, int[] z)
@@ -16,6 +19,16 @@ public abstract class X25519Field
         {
             z[i] = x[i] + y[i];
         }
+    }
+
+    public static void addOne(int[] z)
+    {
+        z[0] += 1;
+    }
+
+    public static void addOne(int[] z, int zOff)
+    {
+        z[zOff] += 1;
     }
 
     public static void apm(int[] x, int[] y, int[] zp, int[] zm)
@@ -51,6 +64,17 @@ public abstract class X25519Field
         z[5] = z5; z[6] = z6; z[7] = z7; z[8] = z8; z[9] = z9;
     }
 
+    public static void cnegate(int negate, int[] z)
+    {
+//      assert negate >>> 1 == 0;
+
+        int mask = 0 - negate;
+        for (int i = 0; i < SIZE; ++i)
+        {
+            z[i] = (z[i] ^ mask) - mask;
+        }
+    }
+
     public static void copy(int[] x, int xOff, int[] z, int zOff)
     {
         for (int i = 0; i < SIZE; ++i)
@@ -62,6 +86,11 @@ public abstract class X25519Field
     public static int[] create()
     {
         return new int[SIZE];
+    }
+
+    public static int[] createTable(int n)
+    {
+        return new int[SIZE * n];
     }
 
     public static void cswap(int swap, int[] a, int[] b)
@@ -139,22 +168,21 @@ public abstract class X25519Field
         // (250 1s) (1 0s) (1 1s) (1 0s) (2 1s)
         // Addition chain: [1] [2] 3 5 10 15 25 50 75 125 [250]
 
-        int[] x2 = create();    sqr(x, x2);             mul(x, x2, x2);
-        int[] x3 = create();    sqr(x2, x3);            mul(x, x3, x3);
-        int[] x5 = x3;          sqr(x3, 2, x5);         mul(x2, x5, x5);
-        int[] x10 = create();   sqr(x5, 5, x10);        mul(x5, x10, x10);
-        int[] x15 = create();   sqr(x10, 5, x15);       mul(x5, x15, x15);
-        int[] x25 = x5;         sqr(x15, 10, x25);      mul(x10, x25, x25);
-        int[] x50 = x10;        sqr(x25, 25, x50);      mul(x25, x50, x50);
-        int[] x75 = x15;        sqr(x50, 25, x75);      mul(x25, x75, x75);
-        int[] x125 = x25;       sqr(x75, 50, x125);     mul(x50, x125, x125);
-        int[] x250 = x50;       sqr(x125, 125, x250);   mul(x125, x250, x250);
-
-        int[] t = x125;
-        sqr(x250, 2, t);
-        mul(t, x, t);
+        int[] x2 = create();
+        int[] t = create();
+        powPm5d8(x, x2, t);
         sqr(t, 3, t);
         mul(t, x2, z);
+    }
+
+    public static boolean isZeroVar(int[] x)
+    {
+        int d = 0;
+        for (int i = 0; i < SIZE; ++i)
+        {
+            d |= x[i];
+        }
+        return d == 0;
     }
 
     public static void mul(int[] x, int y, int[] z)
@@ -341,12 +369,51 @@ public abstract class X25519Field
         z[9]     = z9 + (int)t;
     }
 
+    public static void negate(int[] x, int[] z)
+    {
+        for (int i = 0; i < SIZE; ++i)
+        {
+            z[i] = -x[i];
+        }
+    }
+
     public static void normalize(int[] z)
     {
         int x = ((z[9] >>> 23) & 1);
         reduce(z, x);
         reduce(z, -x);
 //        assert z[9] >>> 24 == 0;
+    }
+
+    public static void one(int[] z)
+    {
+        z[0] = 1;
+        for (int i = 1; i < SIZE; ++i)
+        {
+            z[i] = 0;
+        }
+    }
+
+    private static void powPm5d8(int[] x, int[] rx2, int[] rz)
+    {
+        // z = x^((p-5)/8) = x^FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFD
+        // (250 1s) (1 0s) (1 1s)
+        // Addition chain: [1] 2 3 5 10 15 25 50 75 125 [250]
+
+        int[] x2 = rx2;         sqr(x, x2);             mul(x, x2, x2);
+        int[] x3 = create();    sqr(x2, x3);            mul(x, x3, x3);
+        int[] x5 = x3;          sqr(x3, 2, x5);         mul(x2, x5, x5);
+        int[] x10 = create();   sqr(x5, 5, x10);        mul(x5, x10, x10);
+        int[] x15 = create();   sqr(x10, 5, x15);       mul(x5, x15, x15);
+        int[] x25 = x5;         sqr(x15, 10, x25);      mul(x10, x25, x25);
+        int[] x50 = x10;        sqr(x25, 25, x50);      mul(x25, x50, x50);
+        int[] x75 = x15;        sqr(x50, 25, x75);      mul(x25, x75, x75);
+        int[] x125 = x25;       sqr(x75, 50, x125);     mul(x50, x125, x125);
+        int[] x250 = x50;       sqr(x125, 125, x250);   mul(x125, x250, x250);
+
+        int[] t = x125;
+        sqr(x250, 2, t);
+        mul(t, x, rz);
     }
 
     private static void reduce(int[] z, int c)
@@ -505,11 +572,63 @@ public abstract class X25519Field
         }
     }
 
+    public static boolean sqrtRatioVar(int[] u, int[] v, int[] z)
+    {
+        int[] uv3 = create();
+        int[] uv7 = create();
+
+        mul(u, v, uv3);
+        sqr(v, uv7);
+        mul(uv3, uv7, uv3);
+        sqr(uv7, uv7);
+        mul(uv7, uv3, uv7);
+
+        int[] t = create();
+        int[] x = create();
+        powPm5d8(uv7, t, x);
+        mul(x, uv3, x);
+
+        int[] vx2 = create();
+        sqr(x, vx2);
+        mul(vx2, v, vx2);
+
+        sub(vx2, u, t);
+        normalize(t);
+        if (isZeroVar(t))
+        {
+            copy(x, 0, z, 0);
+            return true;
+        }
+
+        add(vx2, u, t);
+        normalize(t);
+        if (isZeroVar(t))
+        {
+            mul(x, ROOT_NEG_ONE, z);
+            return true;
+        }
+
+        return false;
+    }
+
     public static void sub(int[] x, int[] y, int[] z)
     {
         for (int i = 0; i < SIZE; ++i)
         {
             z[i] = x[i] - y[i];
+        }
+    }
+
+    public static void subOne(int[] z)
+    {
+        z[0] -= 1;
+    }
+
+    public static void zero(int[] z)
+    {
+        for (int i = 0; i < SIZE; ++i)
+        {
+            z[i] = 0;
         }
     }
 }

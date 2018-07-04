@@ -174,15 +174,26 @@ public abstract class ECCurve
     public PreCompInfo getPreCompInfo(ECPoint point, String name)
     {
         checkPoint(point);
+
+        Hashtable table;
         synchronized (point)
         {
-            Hashtable table = point.preCompTable;
-            return table == null ? null : (PreCompInfo)table.get(name);
+            table = point.preCompTable;
+        }
+
+        if (null == table)
+        {
+            return null;
+        }
+
+        synchronized (table)
+        {
+            return (PreCompInfo)table.get(name);
         }
     }
 
     /**
-     * Adds <code>PreCompInfo</code> for a point on this curve, under a given name. Used by
+     * Compute a <code>PreCompInfo</code> for a point on this curve, under a given name. Used by
      * <code>ECMultiplier</code>s to save the precomputation for this <code>ECPoint</code> for use
      * by subsequent multiplication.
      * 
@@ -190,20 +201,34 @@ public abstract class ECCurve
      *            The <code>ECPoint</code> to store precomputations for.
      * @param name
      *            A <code>String</code> used to index precomputations of different types.
-     * @param preCompInfo
-     *            The values precomputed by the <code>ECMultiplier</code>.
+     * @param callback
+     *            Called to calculate the <code>PreCompInfo</code>.
      */
-    public void setPreCompInfo(ECPoint point, String name, PreCompInfo preCompInfo)
+    public PreCompInfo precompute(ECPoint point, String name, PreCompCallback callback)
     {
         checkPoint(point);
+
+        Hashtable table;
         synchronized (point)
         {
-            Hashtable table = point.preCompTable;
+            table = point.preCompTable;
             if (null == table)
             {
                 point.preCompTable = table = new Hashtable(4);
             }
-            table.put(name, preCompInfo);
+        }
+
+        synchronized (table)
+        {
+            PreCompInfo existing = (PreCompInfo)table.get(name);
+            PreCompInfo result = callback.precompute(existing);
+
+            if (result != existing)
+            {
+                table.put(name, result);
+            }
+
+            return result;
         }
     }
 
@@ -221,7 +246,7 @@ public abstract class ECCurve
         // TODO Default behaviour could be improved if the two curves have the same coordinate system by copying any Z coordinates.
         p = p.normalize();
 
-        return validatePoint(p.getXCoord().toBigInteger(), p.getYCoord().toBigInteger(), p.withCompression);
+        return createPoint(p.getXCoord().toBigInteger(), p.getYCoord().toBigInteger(), p.withCompression);
     }
 
     /**
@@ -391,7 +416,9 @@ public abstract class ECCurve
             BigInteger X = BigIntegers.fromUnsignedByteArray(encoded, 1, expectedLength);
 
             p = decompressPoint(yTilde, X);
-            if (!p.satisfiesCofactor())
+
+            // TODO Skip curve equation check? 
+            if (!p.isValid())
             {
                 throw new IllegalArgumentException("Invalid point");
             }
@@ -598,6 +625,9 @@ public abstract class ECCurve
         BigInteger q, r;
         ECPoint.Fp infinity;
 
+        /**
+         * @deprecated use constructor taking order/cofactor
+         */
         public Fp(BigInteger q, BigInteger a, BigInteger b)
         {
             this(q, a, b, null, null);
@@ -609,7 +639,7 @@ public abstract class ECCurve
 
             this.q = q;
             this.r = ECFieldElement.Fp.calculateResidue(q);
-            this.infinity = new ECPoint.Fp(this, null, null);
+            this.infinity = new ECPoint.Fp(this, null, null, false);
 
             this.a = fromBigInteger(a);
             this.b = fromBigInteger(b);
@@ -618,6 +648,9 @@ public abstract class ECCurve
             this.coord = FP_DEFAULT_COORDS;
         }
 
+        /**
+         * @deprecated use constructor taking order/cofactor
+         */
         protected Fp(BigInteger q, BigInteger r, ECFieldElement a, ECFieldElement b)
         {
             this(q, r, a, b, null, null);
@@ -629,7 +662,7 @@ public abstract class ECCurve
 
             this.q = q;
             this.r = r;
-            this.infinity = new ECPoint.Fp(this, null, null);
+            this.infinity = new ECPoint.Fp(this, null, null, false);
 
             this.a = a;
             this.b = b;
@@ -870,7 +903,7 @@ public abstract class ECCurve
          * @return the solution for <code>z<sup>2</sup> + z = beta</code> or
          *         <code>null</code> if no solution exists.
          */
-        private ECFieldElement solveQuadraticEquation(ECFieldElement beta)
+        protected ECFieldElement solveQuadraticEquation(ECFieldElement beta)
         {
             if (beta.isZero())
             {
@@ -984,6 +1017,7 @@ public abstract class ECCurve
          * @param b The coefficient <code>b</code> in the Weierstrass equation
          * for non-supersingular elliptic curves over
          * <code>F<sub>2<sup>m</sup></sub></code>.
+         * @deprecated use constructor taking order/cofactor
          */
         public F2m(
             int m,
@@ -1041,6 +1075,7 @@ public abstract class ECCurve
          * @param b The coefficient <code>b</code> in the Weierstrass equation
          * for non-supersingular elliptic curves over
          * <code>F<sub>2<sup>m</sup></sub></code>.
+         * @deprecated use constructor taking order/cofactor
          */
         public F2m(
             int m,
@@ -1095,7 +1130,7 @@ public abstract class ECCurve
             this.order = order;
             this.cofactor = cofactor;
 
-            this.infinity = new ECPoint.F2m(this, null, null);
+            this.infinity = new ECPoint.F2m(this, null, null, false);
             this.a = fromBigInteger(a);
             this.b = fromBigInteger(b);
             this.coord = F2M_DEFAULT_COORDS;
@@ -1112,7 +1147,7 @@ public abstract class ECCurve
             this.order = order;
             this.cofactor = cofactor;
 
-            this.infinity = new ECPoint.F2m(this, null, null);
+            this.infinity = new ECPoint.F2m(this, null, null, false);
             this.a = a;
             this.b = b;
             this.coord = F2M_DEFAULT_COORDS;
@@ -1199,22 +1234,6 @@ public abstract class ECCurve
         public int getK3()
         {
             return k3;
-        }
-
-        /**
-         * @deprecated use {@link #getOrder()} instead
-         */
-        public BigInteger getN()
-        {
-            return this.order;
-        }
-
-        /**
-         * @deprecated use {@link #getCofactor()} instead
-         */
-        public BigInteger getH()
-        {
-            return this.cofactor;
         }
 
         public ECLookupTable createCacheSafeLookupTable(ECPoint[] points, int off, final int len)

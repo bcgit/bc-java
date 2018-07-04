@@ -2,6 +2,9 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
+/**
+ * Base exception for various TLS alerts.
+ */
 public class TlsException
     extends IOException
 {
