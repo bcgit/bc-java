@@ -52,7 +52,7 @@ public class DTLSServerProtocol
 
         server.init(state.serverContext);
 
-        DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, state.serverContext, server, ContentType.handshake);
+        DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, server, ContentType.handshake);
 
         // TODO Need to handle sending of HelloVerifyRequest without entering a full connection
 
