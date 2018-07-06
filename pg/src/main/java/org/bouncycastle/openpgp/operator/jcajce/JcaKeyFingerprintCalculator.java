@@ -36,7 +36,7 @@ public class JcaKeyFingerprintCalculator
      * Sets the provider to use to obtain cryptographic primitives.
      *
      * @param provider the JCA provider to use.
-     * @return the current builder.
+     * @return a new JceKeyFingerprintCalculator supported by the passed in provider.
      */
     public JcaKeyFingerprintCalculator setProvider(Provider provider)
     {
@@ -47,7 +47,7 @@ public class JcaKeyFingerprintCalculator
      * Sets the provider to use to obtain cryptographic primitives.
      *
      * @param providerName the name of the JCA provider to use.
-     * @return the current builder.
+     * @return a new JceKeyFingerprintCalculator supported by the passed in named provider.
      */
     public JcaKeyFingerprintCalculator setProvider(String providerName)
     {
