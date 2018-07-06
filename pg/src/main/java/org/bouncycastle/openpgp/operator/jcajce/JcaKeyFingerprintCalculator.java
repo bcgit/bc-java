@@ -22,6 +22,9 @@ public class JcaKeyFingerprintCalculator
 {
     private final JcaJceHelper helper;
 
+    /**
+     * Base Constructor - use the JCA defaults.
+     */
     public JcaKeyFingerprintCalculator()
     {
         this(new DefaultJcaJceHelper());
