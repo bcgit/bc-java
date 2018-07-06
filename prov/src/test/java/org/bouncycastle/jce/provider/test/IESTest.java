@@ -12,11 +12,12 @@ import java.security.Security;
 import javax.crypto.Cipher;
 import javax.crypto.spec.DHParameterSpec;
 
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.IEKeySpec;
 import org.bouncycastle.jce.spec.IESParameterSpec;
-import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -41,17 +42,10 @@ public class IESTest
     public void performTest()
         throws Exception
     {
-        KeyPairGenerator    g = KeyPairGenerator.getInstance("ECIES", "BC");
+        KeyPairGenerator g = KeyPairGenerator.getInstance("ECIES", "BC");
 
-        ECCurve curve = new ECCurve.Fp(
-                new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839"), // q
-                new BigInteger("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc", 16), // a
-                new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16)); // b
-
-        ECParameterSpec ecSpec = new ECParameterSpec(
-                curve,
-                curve.decodePoint(Hex.decode("020ffa963cdca8816ccc33b8642bedf905c3d358573d3f27fbbd3b3cb9aaaf")), // G
-                new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307")); // n
+        X9ECParameters x9 = ECNamedCurveTable.getByName("prime239v1");
+        ECParameterSpec ecSpec = new ECParameterSpec(x9.getCurve(), x9.getG(),x9.getN(), x9.getH());
 
         g.initialize(ecSpec, new SecureRandom());
 
