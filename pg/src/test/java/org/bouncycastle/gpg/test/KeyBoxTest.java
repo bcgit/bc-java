@@ -15,6 +15,9 @@ import org.bouncycastle.gpg.keybox.FirstBlob;
 import org.bouncycastle.gpg.keybox.KeyBlob;
 import org.bouncycastle.gpg.keybox.KeyBox;
 import org.bouncycastle.gpg.keybox.PublicKeyRingBlob;
+import org.bouncycastle.gpg.keybox.bc.BcBlobVerifier;
+import org.bouncycastle.gpg.keybox.bc.BcKeyBox;
+import org.bouncycastle.gpg.keybox.jcajce.JcaKeyBoxBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
@@ -46,7 +49,14 @@ public class KeyBoxTest
     public void testSuccessfulLoad()
         throws Exception
     {
-        KeyBox keyBox = new KeyBox(KeyBoxTest.class.getResourceAsStream("/pgpdata/pubring.kbx"), new BcKeyFingerprintCalculator());
+        loadCheck(new BcKeyBox(KeyBoxTest.class.getResourceAsStream("/pgpdata/pubring.kbx")));
+        loadCheck(new JcaKeyBoxBuilder().build(KeyBoxTest.class.getResourceAsStream("/pgpdata/pubring.kbx")));
+    }
+
+    private void loadCheck(KeyBox keyBox)
+        throws Exception
+    {
+
         FirstBlob firstBlob = keyBox.getFirstBlob();
 
 
@@ -125,7 +135,7 @@ public class KeyBoxTest
     public void testSanityElGamal()
         throws Exception
     {
-        KeyBox keyBox = new KeyBox(KeyBoxTest.class.getResourceAsStream("/pgpdata/eg_pubring.kbx"), new BcKeyFingerprintCalculator());
+        KeyBox keyBox = new BcKeyBox(KeyBoxTest.class.getResourceAsStream("/pgpdata/eg_pubring.kbx"));
         FirstBlob firstBlob = keyBox.getFirstBlob();
 
 
@@ -151,7 +161,6 @@ public class KeyBoxTest
         Iterator<PGPPublicKey> it = ring.getPublicKeys();
         it.next();
         TestCase.assertEquals("Must be ELGAMAL_ENCRYPT", PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT, it.next().getAlgorithm());
-
     }
 
 
@@ -170,7 +179,7 @@ public class KeyBoxTest
 
         try
         {
-            new KeyBox(raw, new BcKeyFingerprintCalculator());
+            new KeyBox(raw, new BcKeyFingerprintCalculator(), new BcBlobVerifier());
             fail("Must have invalid checksum");
         }
         catch (IOException ioex)
@@ -188,7 +197,7 @@ public class KeyBoxTest
 
         try
         {
-            new KeyBox(raw, new BcKeyFingerprintCalculator());
+            new KeyBox(raw, new BcKeyFingerprintCalculator(), new BcBlobVerifier());
             fail("Must have invalid magic");
         }
         catch (IOException ioex)
@@ -204,7 +213,7 @@ public class KeyBoxTest
 
         try
         {
-            new KeyBox(zulu, new BcKeyFingerprintCalculator());
+            new KeyBox(zulu, new BcKeyFingerprintCalculator(), new BcBlobVerifier());
             fail("Must fail.");
         }
         catch (IllegalArgumentException ioex)
@@ -218,7 +227,7 @@ public class KeyBoxTest
     {
         try
         {
-            new KeyBox(new byte[0], new BcKeyFingerprintCalculator());
+            new KeyBox(new byte[0], new BcKeyFingerprintCalculator(), new BcBlobVerifier());
             fail("Must fail.");
         }
         catch (IOException ioex)
@@ -232,7 +241,7 @@ public class KeyBoxTest
     {
         try
         {
-            new KeyBox(KeyBoxTest.class.getResourceAsStream("/pgpdata/doublefirst.kbx"), new BcKeyFingerprintCalculator());
+            new KeyBox(KeyBoxTest.class.getResourceAsStream("/pgpdata/doublefirst.kbx"), new BcKeyFingerprintCalculator(), new BcBlobVerifier());
             fail("Must fail.");
         }
         catch (IOException ioex)
@@ -247,7 +256,8 @@ public class KeyBoxTest
         //
         // Expect no failure.
         //
-        new KeyBox(KeyBoxTest.class.getResourceAsStream("/pgpdata/md5kbx.kbx"), new BcKeyFingerprintCalculator());
+        new BcKeyBox(KeyBoxTest.class.getResourceAsStream("/pgpdata/md5kbx.kbx"));
+        new JcaKeyBoxBuilder().build(KeyBoxTest.class.getResourceAsStream("/pgpdata/md5kbx.kbx"));
     }
 
     public void testKeyBoxWithBrokenMD5()
@@ -259,7 +269,7 @@ public class KeyBoxTest
 
         try
         {
-            new KeyBox(raw, new BcKeyFingerprintCalculator());
+            new KeyBox(raw, new BcKeyFingerprintCalculator(), new BcBlobVerifier());
             fail("Must have invalid checksum");
         }
         catch (IOException ioex)
