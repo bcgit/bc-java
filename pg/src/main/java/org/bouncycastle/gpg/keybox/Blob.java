@@ -37,7 +37,7 @@ public class Blob
      * @return
      * @throws Exception
      */
-    static Blob getInstance(Object source, KeyFingerPrintCalculator keyFingerPrintCalculator)
+    static Blob getInstance(Object source, KeyFingerPrintCalculator keyFingerPrintCalculator, BlobVerifier blobVerifier)
         throws IOException
     {
         if (source == null)
@@ -65,9 +65,9 @@ public class Blob
         case FIRST_BLOB:
             return FirstBlob.parseContent(base, len, type, version, buffer);
         case X509_BLOB:
-            return CertificateBlob.parseContent(base, len, type, version, buffer);
+            return CertificateBlob.parseContent(base, len, type, version, buffer, blobVerifier);
         case OPEN_PGP_BLOB:
-            return PublicKeyRingBlob.parseContent(base, len, type, version, buffer, keyFingerPrintCalculator);
+            return PublicKeyRingBlob.parseContent(base, len, type, version, buffer, keyFingerPrintCalculator, blobVerifier);
         }
 
         return null;

@@ -44,7 +44,7 @@ public class PublicKeyRingBlob
     }
 
 
-    static Blob parseContent(int base, long length, BlobType type, int version, KeyBoxByteBuffer buffer, KeyFingerPrintCalculator fingerPrintCalculator)
+    static Blob parseContent(int base, long length, BlobType type, int version, KeyBoxByteBuffer buffer, KeyFingerPrintCalculator fingerPrintCalculator, BlobVerifier blobVerifier)
         throws IOException
     {
 
@@ -61,7 +61,7 @@ public class PublicKeyRingBlob
         //
         // Take checksum first.
         //
-        verifyDigest(base, length, buffer);
+        verifyDigest(base, length, buffer, blobVerifier);
 
 
         int blobFlags = buffer.u16(); //  u16  Blob flags
