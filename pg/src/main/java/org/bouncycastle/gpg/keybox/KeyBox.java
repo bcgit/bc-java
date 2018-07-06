@@ -16,22 +16,22 @@ public class KeyBox
     private final FirstBlob firstBlob;
     private final List<KeyBlob> keyBlobs;
 
-    public KeyBox(InputStream input, KeyFingerPrintCalculator keyFingerPrintCalculator)
+    public KeyBox(InputStream input, KeyFingerPrintCalculator keyFingerPrintCalculator, BlobVerifier blobVerifier)
         throws IOException
     {
-        this(KeyBoxByteBuffer.wrap(input), keyFingerPrintCalculator);
+        this(KeyBoxByteBuffer.wrap(input), keyFingerPrintCalculator, blobVerifier);
     }
 
-    public KeyBox(byte[] encoding, KeyFingerPrintCalculator keyFingerPrintCalculator)
+    public KeyBox(byte[] encoding, KeyFingerPrintCalculator keyFingerPrintCalculator, BlobVerifier blobVerifier)
         throws IOException
     {
-        this(KeyBoxByteBuffer.wrap(encoding), keyFingerPrintCalculator);
+        this(KeyBoxByteBuffer.wrap(encoding), keyFingerPrintCalculator, blobVerifier);
     }
 
-    private KeyBox(KeyBoxByteBuffer buffer, KeyFingerPrintCalculator keyFingerPrintCalculator)
+    private KeyBox(KeyBoxByteBuffer buffer, KeyFingerPrintCalculator keyFingerPrintCalculator, BlobVerifier blobVerifier)
         throws IOException
     {
-        Blob blob = Blob.getInstance(buffer, keyFingerPrintCalculator);
+        Blob blob = Blob.getInstance(buffer, keyFingerPrintCalculator, blobVerifier);
         if (blob == null)
         {
             throw new IOException("No first blob, is the source zero length?");
@@ -46,7 +46,8 @@ public class KeyBox
         FirstBlob firstBlob = (FirstBlob)blob;
         ArrayList<KeyBlob> keyBoxEntries = new ArrayList<KeyBlob>();
 
-        for (Blob materialBlob = Blob.getInstance(buffer, keyFingerPrintCalculator); materialBlob != null; materialBlob = Blob.getInstance(buffer, keyFingerPrintCalculator))
+        for (Blob materialBlob = Blob.getInstance(buffer, keyFingerPrintCalculator, blobVerifier);
+                 materialBlob != null; materialBlob = Blob.getInstance(buffer, keyFingerPrintCalculator, blobVerifier))
         {
             if (materialBlob.getType() == BlobType.FIRST_BLOB)
             {
