@@ -20,32 +20,41 @@ import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 public class JcaKeyFingerprintCalculator
     implements KeyFingerPrintCalculator
 {
-    private JcaJceHelper helper = new DefaultJcaJceHelper();
+    private final JcaJceHelper helper;
+
+    /**
+     * Base Constructor - use the JCA defaults.
+     */
+    public JcaKeyFingerprintCalculator()
+    {
+        this(new DefaultJcaJceHelper());
+    }
+    
+    private JcaKeyFingerprintCalculator(JcaJceHelper helper)
+    {
+        this.helper = helper;
+    }
 
     /**
      * Sets the provider to use to obtain cryptographic primitives.
      *
      * @param provider the JCA provider to use.
-     * @return the current builder.
+     * @return a new JceKeyFingerprintCalculator supported by the passed in provider.
      */
     public JcaKeyFingerprintCalculator setProvider(Provider provider)
     {
-        this.helper = new ProviderJcaJceHelper(provider);
-
-        return this;
+        return new JcaKeyFingerprintCalculator(new ProviderJcaJceHelper(provider));
     }
 
     /**
      * Sets the provider to use to obtain cryptographic primitives.
      *
      * @param providerName the name of the JCA provider to use.
-     * @return the current builder.
+     * @return a new JceKeyFingerprintCalculator supported by the passed in named provider.
      */
     public JcaKeyFingerprintCalculator setProvider(String providerName)
     {
-        this.helper = new NamedJcaJceHelper(providerName);
-
-        return this;
+        return new JcaKeyFingerprintCalculator(new NamedJcaJceHelper(providerName));
     }
 
     public byte[] calculateFingerprint(PublicKeyPacket publicPk)
