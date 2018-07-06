@@ -14,7 +14,6 @@ class DTLSRecordLayer
     private static final long RETRANSMIT_TIMEOUT = TCP_MSL * 2;
 
     private final DatagramTransport transport;
-    private final TlsContext context;
     private final TlsPeer peer;
 
     private final ByteQueue recordQueue = new ByteQueue();
@@ -31,10 +30,9 @@ class DTLSRecordLayer
     private DTLSEpoch retransmitEpoch = null;
     private long retransmitExpiry = 0;
 
-    DTLSRecordLayer(DatagramTransport transport, TlsContext context, TlsPeer peer, short contentType)
+    DTLSRecordLayer(DatagramTransport transport, TlsPeer peer, short contentType)
     {
         this.transport = transport;
-        this.context = context;
         this.peer = peer;
 
         this.inHandshake = true;

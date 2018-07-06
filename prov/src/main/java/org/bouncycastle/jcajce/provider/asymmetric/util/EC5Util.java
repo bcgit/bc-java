@@ -47,12 +47,16 @@ public class EC5Util
             }
         }
 
-        X9ECParameters c25519 = CustomNamedCurves.getByName("Curve25519");
+        X9ECParameters x9_25519 = CustomNamedCurves.getByName("Curve25519");
+        ECCurve c_25519 = x9_25519.getCurve();
 
         customCurves.put(new ECCurve.Fp(
-            c25519.getCurve().getField().getCharacteristic(),
-            c25519.getCurve().getA().toBigInteger(),
-            c25519.getCurve().getB().toBigInteger()), c25519.getCurve());
+            c_25519.getField().getCharacteristic(),
+            c_25519.getA().toBigInteger(),
+            c_25519.getB().toBigInteger(),
+            c_25519.getOrder(),
+            c_25519.getCofactor()
+            ), c_25519);
     }
 
     public static ECCurve getCurve(

@@ -43,16 +43,6 @@ public class X9Curve
         setFieldIdentifier();
     }
 
-    /**
-     * @deprecated use constructor including order/cofactor
-     */
-    public X9Curve(
-        X9FieldID     fieldID,
-        ASN1Sequence  seq)
-    {
-        this(fieldID, null, null, seq);
-    }
-
     public X9Curve(
         X9FieldID     fieldID,
         BigInteger    order,

@@ -8,7 +8,6 @@ import java.util.Vector;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSecret;
-import org.bouncycastle.util.io.Streams;
 
 /**
  * (D)TLS RSA key exchange.

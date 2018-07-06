@@ -41,6 +41,7 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.params.DSAParameters;
@@ -450,26 +451,19 @@ public class DSATest
 
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("700000017569056646655505781757157107570501575775705779575555657156756655"));
 
-        SecureRandom    k = new TestRandomBigInteger(kData);
+        SecureRandom k = new TestRandomBigInteger(kData);
 
-        ECCurve curve = new ECCurve.Fp(
-                new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839"), // q
-                new BigInteger("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc", 16), // a
-                new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16)); // b
-        
-        ECParameterSpec spec = new ECParameterSpec(
-                curve,
-                curve.decodePoint(Hex.decode("020ffa963cdca8816ccc33b8642bedf905c3d358573d3f27fbbd3b3cb9aaaf")), // G
-                new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307")); // n
-        
-        
+        X9ECParameters x9 = ECNamedCurveTable.getByName("prime239v1");
+        ECCurve curve = x9.getCurve();
+        ECParameterSpec spec = new ECParameterSpec(curve, x9.getG(), x9.getN(), x9.getH());
+
         ECPrivateKeySpec priKey = new ECPrivateKeySpec(
-                new BigInteger("876300101507107567501066130761671078357010671067781776716671676178726717"), // d
-                spec);
+            new BigInteger("876300101507107567501066130761671078357010671067781776716671676178726717"), // d
+            spec);
         
         ECPublicKeySpec pubKey = new ECPublicKeySpec(
-                curve.decodePoint(Hex.decode("025b6dc53bc61a2548ffb0f671472de6c9521a9d2d2534e65abfcbd5fe0c70")), // Q
-                spec);
+            curve.decodePoint(Hex.decode("025b6dc53bc61a2548ffb0f671472de6c9521a9d2d2534e65abfcbd5fe0c70")), // Q
+            spec);
         
         Signature           sgr = Signature.getInstance("ECDSA", "BC");
         KeyFactory          f = KeyFactory.getInstance("ECDSA", "BC");
@@ -513,24 +507,17 @@ public class DSATest
     private void testNONEwithECDSA239bitPrime()
         throws Exception
     {
-        ECCurve curve = new ECCurve.Fp(
-                new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839"), // q
-                new BigInteger("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc", 16), // a
-                new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16)); // b
-
-        ECParameterSpec spec = new ECParameterSpec(
-                curve,
-                curve.decodePoint(Hex.decode("020ffa963cdca8816ccc33b8642bedf905c3d358573d3f27fbbd3b3cb9aaaf")), // G
-                new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307")); // n
-
+        X9ECParameters x9 = ECNamedCurveTable.getByName("prime239v1");
+        ECCurve curve = x9.getCurve();
+        ECParameterSpec spec = new ECParameterSpec(curve, x9.getG(), x9.getN(), x9.getH());
 
         ECPrivateKeySpec priKey = new ECPrivateKeySpec(
-                new BigInteger("876300101507107567501066130761671078357010671067781776716671676178726717"), // d
-                spec);
+            new BigInteger("876300101507107567501066130761671078357010671067781776716671676178726717"), // d
+            spec);
 
         ECPublicKeySpec pubKey = new ECPublicKeySpec(
-                curve.decodePoint(Hex.decode("025b6dc53bc61a2548ffb0f671472de6c9521a9d2d2534e65abfcbd5fe0c70")), // Q
-                spec);
+            curve.decodePoint(Hex.decode("025b6dc53bc61a2548ffb0f671472de6c9521a9d2d2534e65abfcbd5fe0c70")), // Q
+            spec);
 
         Signature           sgr = Signature.getInstance("NONEwithECDSA", "BC");
         KeyFactory          f = KeyFactory.getInstance("ECDSA", "BC");
@@ -773,28 +760,20 @@ public class DSATest
     
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("171278725565216523967285789236956265265265235675811949404040041670216363"));
 
-        SecureRandom    k = new TestRandomBigInteger(kData);
+        SecureRandom k = new TestRandomBigInteger(kData);
 
-        ECCurve curve = new ECCurve.F2m(
-            239, // m
-            36, // k
-            new BigInteger("32010857077C5431123A46B808906756F543423E8D27877578125778AC76", 16), // a
-            new BigInteger("790408F2EEDAF392B012EDEFB3392F30F4327C0CA3F31FC383C422AA8C16", 16)); // b
-    
-        ECParameterSpec params = new ECParameterSpec(
-            curve,
-            curve.decodePoint(Hex.decode("0457927098FA932E7C0A96D3FD5B706EF7E5F5C156E16B7E7C86038552E91D61D8EE5077C33FECF6F1A16B268DE469C3C7744EA9A971649FC7A9616305")), // G
-            new BigInteger("220855883097298041197912187592864814557886993776713230936715041207411783"), // n
-            BigInteger.valueOf(4)); // h
-    
+        X9ECParameters x9 = ECNamedCurveTable.getByName("c2tnb239v1");
+        ECCurve curve = x9.getCurve();
+        ECParameterSpec params = new ECParameterSpec(curve, x9.getG(), x9.getN(), x9.getH());
+
         ECPrivateKeySpec priKeySpec = new ECPrivateKeySpec(
             new BigInteger("145642755521911534651321230007534120304391871461646461466464667494947990"), // d
             params);
-        
+
         ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(
             curve.decodePoint(Hex.decode("045894609CCECF9A92533F630DE713A958E96C97CCB8F5ABB5A688A238DEED6DC2D9D0C94EBFB7D526BA6A61764175B99CB6011E2047F9F067293F57F5")), // Q
             params);
-    
+
         Signature   sgr = Signature.getInstance("ECDSA", "BC");
         KeyFactory  f = KeyFactory.getInstance("ECDSA", "BC");
         PrivateKey  sKey = f.generatePrivate(priKeySpec);
@@ -838,19 +817,11 @@ public class DSATest
     {
         byte[] kData = BigIntegers.asUnsignedByteArray(new BigInteger("171278725565216523967285789236956265265265235675811949404040041670216363"));
 
-        SecureRandom    k = new TestRandomBigInteger(kData);
+        SecureRandom k = new TestRandomBigInteger(kData);
 
-        ECCurve curve = new ECCurve.F2m(
-            239, // m
-            36, // k
-            new BigInteger("32010857077C5431123A46B808906756F543423E8D27877578125778AC76", 16), // a
-            new BigInteger("790408F2EEDAF392B012EDEFB3392F30F4327C0CA3F31FC383C422AA8C16", 16)); // b
-
-        ECParameterSpec params = new ECParameterSpec(
-            curve,
-            curve.decodePoint(Hex.decode("0457927098FA932E7C0A96D3FD5B706EF7E5F5C156E16B7E7C86038552E91D61D8EE5077C33FECF6F1A16B268DE469C3C7744EA9A971649FC7A9616305")), // G
-            new BigInteger("220855883097298041197912187592864814557886993776713230936715041207411783"), // n
-            BigInteger.valueOf(4)); // h
+        X9ECParameters x9 = ECNamedCurveTable.getByName("c2tnb239v1");
+        ECCurve curve = x9.getCurve();
+        ECParameterSpec params = new ECParameterSpec(curve, x9.getG(), x9.getN(), x9.getH());
 
         ECPrivateKeySpec priKeySpec = new ECPrivateKeySpec(
             new BigInteger("145642755521911534651321230007534120304391871461646461466464667494947990"), // d
@@ -978,15 +949,9 @@ public class DSATest
         s = Signature.getInstance("ECDSA", "BC");
         g = KeyPairGenerator.getInstance("ECDSA", "BC");
 
-        ECCurve curve = new ECCurve.Fp(
-            new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839"), // q
-            new BigInteger("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc", 16), // a
-            new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16)); // b
-
-        ECParameterSpec ecSpec = new ECParameterSpec(
-            curve,
-            curve.decodePoint(Hex.decode("020ffa963cdca8816ccc33b8642bedf905c3d358573d3f27fbbd3b3cb9aaaf")), // G
-            new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307")); // n
+        X9ECParameters x9 = ECNamedCurveTable.getByName("prime239v1");
+        ECCurve curve = x9.getCurve();
+        ECParameterSpec ecSpec = new ECParameterSpec(curve, x9.getG(), x9.getN(), x9.getH());
 
         g.initialize(ecSpec, new SecureRandom());
 
@@ -1067,18 +1032,10 @@ public class DSATest
         s = Signature.getInstance("ECDSA", "BC");
         g = KeyPairGenerator.getInstance("ECDSA", "BC");
 
-        curve = new ECCurve.F2m(
-                239, // m
-                36, // k
-                new BigInteger("32010857077C5431123A46B808906756F543423E8D27877578125778AC76", 16), // a
-                new BigInteger("790408F2EEDAF392B012EDEFB3392F30F4327C0CA3F31FC383C422AA8C16", 16)); // b
-        
-        ecSpec = new ECParameterSpec(
-            curve,
-            curve.decodePoint(Hex.decode("0457927098FA932E7C0A96D3FD5B706EF7E5F5C156E16B7E7C86038552E91D61D8EE5077C33FECF6F1A16B268DE469C3C7744EA9A971649FC7A9616305")), // G
-            new BigInteger("220855883097298041197912187592864814557886993776713230936715041207411783"), // n
-            BigInteger.valueOf(4)); // h
-        
+        x9 = ECNamedCurveTable.getByName("c2tnb239v1");
+        curve = x9.getCurve();
+        ecSpec = new ECParameterSpec(curve, x9.getG(), x9.getN(), x9.getH());
+
         g.initialize(ecSpec, new SecureRandom());
 
         p = g.generateKeyPair();
