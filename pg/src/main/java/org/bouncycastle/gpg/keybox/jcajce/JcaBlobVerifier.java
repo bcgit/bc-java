@@ -19,7 +19,18 @@ public class JcaBlobVerifier
         throws NoSuchProviderException, NoSuchAlgorithmException
     {
         this.sha1Digest = helper.createDigest("SHA-1");
-        this.md5Digest = helper.createDigest("MD5");
+
+        // MD5 may not always be available - we'll die later if we actually need it.
+        MessageDigest md5;
+        try
+        {
+            md5 = helper.createDigest("MD5");
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            md5 = null;
+        }
+        this.md5Digest = md5;
     }
 
     public boolean isMatched(byte[] blobData, byte[] blobDigest)
