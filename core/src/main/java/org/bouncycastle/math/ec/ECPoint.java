@@ -278,15 +278,15 @@ public abstract class ECPoint
 
     public boolean isValid()
     {
-        return implIsValid(true);
+        return implIsValid(false, true);
     }
 
     boolean isValidPartial()
     {
-        return implIsValid(false);
+        return implIsValid(false, false);
     }
 
-    boolean implIsValid(final boolean checkOrder)
+    boolean implIsValid(final boolean decompressed, final boolean checkOrder)
     {
         if (isInfinity())
         {
@@ -309,7 +309,7 @@ public abstract class ECPoint
                 }
                 if (!info.hasCurveEquationPassed())
                 {
-                    if (!satisfiesCurveEquation())
+                    if (!decompressed && !satisfiesCurveEquation())
                     {
                         info.reportFailed();
                         return info;
