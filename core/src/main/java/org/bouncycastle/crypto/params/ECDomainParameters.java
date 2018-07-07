@@ -127,21 +127,21 @@ public class ECDomainParameters
     {
         if (q == null)
         {
-            throw new IllegalArgumentException("point has null value");
+            throw new IllegalArgumentException("Point has null value");
         }
+
+        q = ECAlgorithms.importPoint(c, q).normalize();
 
         if (q.isInfinity())
         {
-            throw new IllegalArgumentException("point at infinity");
+            throw new IllegalArgumentException("Point at infinity");
         }
-
-        q = q.normalize();
 
         if (!q.isValid())
         {
-            throw new IllegalArgumentException("point not on curve");
+            throw new IllegalArgumentException("Point not on curve");
         }
 
-        return ECAlgorithms.importPoint(c, q);
+        return q;
     }
 }
