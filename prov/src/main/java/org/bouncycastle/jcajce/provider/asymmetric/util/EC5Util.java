@@ -193,6 +193,16 @@ public class EC5Util
             domainParameters.getH().intValue());
     }
 
+    public static ECParameterSpec convertToSpec(
+        ECDomainParameters domainParameters)
+    {
+        return new ECParameterSpec(
+            convertCurve(domainParameters.getCurve(), null),  // JDK 1.5 has trouble with this if it's not null...
+            EC5Util.convertPoint(domainParameters.getG()),
+            domainParameters.getN(),
+            domainParameters.getH().intValue());
+    }
+
     public static EllipticCurve convertCurve(
         ECCurve curve, 
         byte[]  seed)

@@ -24,14 +24,26 @@ public class Fingerprint
      */
     public Fingerprint(byte[] source)
     {
-        this(source, false);
+        this(source, 160);
     }
 
     /**
-     * Base constructor.
+     * Constructor with length - use SHAKE-256 (bitLength bits). This is the recommended one as it is also
+     * produced by the FIPS API.
+     *
+     * @param source original data to calculate the fingerprint from.
+     */
+    public Fingerprint(byte[] source, int bitLength)
+    {
+        this.fingerprint = calculateFingerprint(source, bitLength);
+    }
+
+    /**
+     * Base constructor - for backwards compatibility.
      *
      * @param source original data to calculate the fingerprint from.
      * @param useSHA512t use the old SHA512/160 calculation.
+     * @deprecated use the SHAKE only version.
      */
     public Fingerprint(byte[] source, boolean useSHA512t)
     {
@@ -90,17 +102,35 @@ public class Fingerprint
      * This calculation is compatible with the BC FIPS API.
      *
      * @param input data to base the fingerprint on.
-     * @return a byte array containing a 20 byte fingerprint.
+     * @return a byte array containing a 160 bit fingerprint.
      */
     public static byte[] calculateFingerprint(byte[] input)
     {
+        return calculateFingerprint(input, 160);
+    }
+
+    /**
+     * Return a byte array containing a calculated fingerprint for the passed in input data.
+     * This calculation is compatible with the BC FIPS API.
+     *
+     * @param input data to base the fingerprint on.
+     * @param bitLength bit length of finger print to be produced.
+     * @return a byte array containing a 20 byte fingerprint.
+     */
+    public static byte[] calculateFingerprint(byte[] input, int bitLength)
+    {
+        if (bitLength % 8 != 0)
+        {
+            throw new IllegalArgumentException("bitLength must be a multiple of 8");
+        }
+
         SHAKEDigest digest = new SHAKEDigest(256);
 
         digest.update(input, 0, input.length);
 
-        byte[] rv = new byte[digest.getDigestSize()];
+        byte[] rv = new byte[bitLength / 8];
 
-        digest.doFinal(rv, 0, 16);
+        digest.doFinal(rv, 0, bitLength / 8);
 
         return rv;
     }
@@ -111,6 +141,7 @@ public class Fingerprint
      *
      * @param input data to base the fingerprint on.
      * @return a byte array containing a 20 byte fingerprint.
+     * @deprecated use the SHAKE based version.
      */
     public static byte[] calculateFingerprintSHA512_160(byte[] input)
     {

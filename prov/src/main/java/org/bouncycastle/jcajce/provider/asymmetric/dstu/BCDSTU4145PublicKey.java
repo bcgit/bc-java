@@ -11,6 +11,7 @@ import java.security.spec.ECPublicKeySpec;
 import java.security.spec.EllipticCurve;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -198,54 +199,71 @@ public class BCDSTU4145PublicKey
             reverseBytes(keyEnc);
         }
 
-        dstuParams = DSTU4145Params.getInstance((ASN1Sequence)info.getAlgorithm().getParameters());
-
-        //ECNamedCurveParameterSpec spec = ECGOST3410NamedCurveTable.getParameterSpec(ECGOST3410NamedCurves.getName(gostParams.getPublicKeyParamSet()));
+        ASN1Sequence seq = ASN1Sequence.getInstance(info.getAlgorithm().getParameters());
         org.bouncycastle.jce.spec.ECParameterSpec spec = null;
-        if (dstuParams.isNamedCurve())
-        {
-            ASN1ObjectIdentifier curveOid = dstuParams.getNamedCurve();
-            ECDomainParameters ecP = DSTU4145NamedCurves.getByOID(curveOid);
+        X9ECParameters x9Params = null;
 
-            spec = new ECNamedCurveParameterSpec(curveOid.getId(), ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(), ecP.getSeed());
+        if (seq.getObjectAt(0) instanceof ASN1Integer)
+        {
+            x9Params = X9ECParameters.getInstance(seq);
+            spec = new  org.bouncycastle.jce.spec.ECParameterSpec(x9Params.getCurve(), x9Params.getG(), x9Params.getN(), x9Params.getH(), x9Params.getSeed());
         }
         else
         {
-            DSTU4145ECBinary binary = dstuParams.getECBinary();
-            byte[] b_bytes = binary.getB();
-            if (info.getAlgorithm().getAlgorithm().equals(UAObjectIdentifiers.dstu4145le))
+            dstuParams = DSTU4145Params.getInstance(seq);
+
+            if (dstuParams.isNamedCurve())
             {
-                reverseBytes(b_bytes);
+                ASN1ObjectIdentifier curveOid = dstuParams.getNamedCurve();
+                ECDomainParameters ecP = DSTU4145NamedCurves.getByOID(curveOid);
+
+                spec = new ECNamedCurveParameterSpec(curveOid.getId(), ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(), ecP.getSeed());
             }
-            DSTU4145BinaryField field = binary.getField();
-            ECCurve curve = new ECCurve.F2m(field.getM(), field.getK1(), field.getK2(), field.getK3(), binary.getA(), new BigInteger(1, b_bytes));
-            byte[] g_bytes = binary.getG();
-            if (info.getAlgorithm().getAlgorithm().equals(UAObjectIdentifiers.dstu4145le))
+            else
             {
-                reverseBytes(g_bytes);
+                DSTU4145ECBinary binary = dstuParams.getECBinary();
+                byte[] b_bytes = binary.getB();
+                if (info.getAlgorithm().getAlgorithm().equals(UAObjectIdentifiers.dstu4145le))
+                {
+                    reverseBytes(b_bytes);
+                }
+                DSTU4145BinaryField field = binary.getField();
+                ECCurve curve = new ECCurve.F2m(field.getM(), field.getK1(), field.getK2(), field.getK3(), binary.getA(), new BigInteger(1, b_bytes));
+                byte[] g_bytes = binary.getG();
+                if (info.getAlgorithm().getAlgorithm().equals(UAObjectIdentifiers.dstu4145le))
+                {
+                    reverseBytes(g_bytes);
+                }
+                spec = new org.bouncycastle.jce.spec.ECParameterSpec(curve, DSTU4145PointEncoder.decodePoint(curve, g_bytes), binary.getN());
             }
-            spec = new org.bouncycastle.jce.spec.ECParameterSpec(curve, DSTU4145PointEncoder.decodePoint(curve, g_bytes), binary.getN());
         }
 
         ECCurve curve = spec.getCurve();
         EllipticCurve ellipticCurve = EC5Util.convertCurve(curve, spec.getSeed());
 
-        if (dstuParams.isNamedCurve())
+        if (dstuParams != null)
         {
-            ecSpec = new ECNamedCurveSpec(
-                dstuParams.getNamedCurve().getId(),
-                ellipticCurve,
-                EC5Util.convertPoint(spec.getG()),
-                spec.getN(),
-                spec.getH());
+            if (dstuParams.isNamedCurve())
+            {
+                ecSpec = new ECNamedCurveSpec(
+                    dstuParams.getNamedCurve().getId(),
+                    ellipticCurve,
+                    EC5Util.convertPoint(spec.getG()),
+                    spec.getN(),
+                    spec.getH());
+            }
+            else
+            {
+                ecSpec = new ECParameterSpec(
+                    ellipticCurve,
+                    EC5Util.convertPoint(spec.getG()),
+                    spec.getN(),
+                    spec.getH().intValue());
+            }
         }
         else
         {
-            ecSpec = new ECParameterSpec(
-                ellipticCurve,
-                EC5Util.convertPoint(spec.getG()),
-                spec.getN(),
-                spec.getH().intValue());
+            ecSpec = EC5Util.convertToSpec(x9Params);
         }
 
         //this.q = curve.createPoint(new BigInteger(1, x), new BigInteger(1, y), false);
