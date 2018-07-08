@@ -165,6 +165,11 @@ public class BCDHPublicKey
         return KeyUtil.getEncodedSubjectPublicKeyInfo(new AlgorithmIdentifier(PKCSObjectIdentifiers.dhKeyAgreement, new DHParameter(dhSpec.getP(), dhSpec.getG(), dhSpec.getL()).toASN1Primitive()), new ASN1Integer(y));
     }
 
+    public String toString()
+    {
+        return DHUtil.publicKeyToString("DH", y, new DHParameters(dhSpec.getP(), dhSpec.getG()));
+    }
+
     public DHParameterSpec getParams()
     {
         return dhSpec;
