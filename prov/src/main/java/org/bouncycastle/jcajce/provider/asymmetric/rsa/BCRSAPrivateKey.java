@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KeyUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
+import org.bouncycastle.util.Strings;
 
 public class BCRSAPrivateKey
     implements RSAPrivateKey, PKCS12BagAttributeCarrier
@@ -141,5 +142,17 @@ public class BCRSAPrivateKey
         throws IOException
     {
         out.defaultWriteObject();
+    }
+
+    public String toString()
+    {
+        StringBuffer    buf = new StringBuffer();
+        String          nl = Strings.lineSeparator();
+
+        buf.append("RSA Private Key [").append(
+                    RSAUtil.generateKeyFingerprint(this.getModulus())).append("],[]").append(nl);
+        buf.append("            modulus: ").append(this.getModulus().toString(16)).append(nl);
+
+        return buf.toString();
     }
 }
