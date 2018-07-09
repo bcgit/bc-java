@@ -20,9 +20,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
 public class CAST5Engine
     implements BlockCipher
 {
-    protected final static int M32 = 0xffffffff;
-
-    protected final static int[] 
+    private final static int[]
         S1 = {
 0x30fb40d4, 0x9fa0ff0b, 0x6beccd2f, 0x3f258c7a, 0x1e213f2f, 0x9c004dd3, 0x6003e540, 0xcf9fc949,
 0xbfd4af27, 0x88bbbdb5, 0xe2034090, 0x98d09675, 0x6e63a0e0, 0x15c361d2, 0xc2e7661d, 0x22d4ff8e,
