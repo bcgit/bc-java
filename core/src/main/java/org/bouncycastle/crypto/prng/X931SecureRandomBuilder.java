@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 public class X931SecureRandomBuilder
@@ -58,7 +59,7 @@ public class X931SecureRandomBuilder
 
     public X931SecureRandomBuilder setDateTimeVector(byte[] dateTimeVector)
     {
-        this.dateTimeVector = dateTimeVector;
+        this.dateTimeVector = Arrays.clone(dateTimeVector);
 
         return this;
     }
