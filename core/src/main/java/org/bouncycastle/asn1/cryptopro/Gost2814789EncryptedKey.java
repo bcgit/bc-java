@@ -78,17 +78,17 @@ public class Gost2814789EncryptedKey
 
     public byte[] getEncryptedKey()
     {
-        return encryptedKey;
+        return Arrays.clone(encryptedKey);
     }
 
     public byte[] getMaskKey()
     {
-        return maskKey;
+        return Arrays.clone(maskKey);
     }
 
     public byte[] getMacKey()
     {
-        return macKey;
+        return Arrays.clone(macKey);
     }
 
     public ASN1Primitive toASN1Primitive()

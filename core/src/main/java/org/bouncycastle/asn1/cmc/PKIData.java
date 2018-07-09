@@ -99,21 +99,37 @@ public class PKIData
 
     public TaggedAttribute[] getControlSequence()
     {
-        return controlSequence;
+        TaggedAttribute[] tmp = new TaggedAttribute[controlSequence.length];
+
+        System.arraycopy(controlSequence, 0, tmp, 0, tmp.length);
+
+        return tmp;
     }
 
     public TaggedRequest[] getReqSequence()
     {
-        return reqSequence;
+        TaggedRequest[] tmp = new TaggedRequest[reqSequence.length];
+
+        System.arraycopy(reqSequence, 0, tmp, 0, tmp.length);
+
+        return tmp;
     }
 
     public TaggedContentInfo[] getCmsSequence()
     {
-        return cmsSequence;
+        TaggedContentInfo[] tmp = new TaggedContentInfo[cmsSequence.length];
+
+        System.arraycopy(cmsSequence, 0, tmp, 0, tmp.length);
+
+        return tmp;
     }
 
     public OtherMsg[] getOtherMsgSequence()
     {
-        return otherMsgSequence;
+        OtherMsg[] tmp = new OtherMsg[otherMsgSequence.length];
+
+        System.arraycopy(otherMsgSequence, 0, tmp, 0, tmp.length);
+
+        return tmp;
     }
 }

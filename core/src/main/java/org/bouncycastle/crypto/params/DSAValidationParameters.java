@@ -20,7 +20,7 @@ public class DSAValidationParameters
         int     counter,
         int     usageIndex)
     {
-        this.seed = seed;
+        this.seed = Arrays.clone(seed);
         this.counter = counter;
         this.usageIndex = usageIndex;
     }
@@ -32,7 +32,7 @@ public class DSAValidationParameters
 
     public byte[] getSeed()
     {
-        return seed;
+        return Arrays.clone(seed);
     }
 
     public int getUsageIndex()

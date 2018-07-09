@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.util.Arrays;
 
 /**
  * ISIS-MTT PROFILE: The responder may include this extension in a response to
@@ -94,7 +95,7 @@ public class CertHash
 
     public byte[] getCertificateHash()
     {
-        return certificateHash;
+        return Arrays.clone(certificateHash);
     }
 
     /**

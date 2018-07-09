@@ -196,7 +196,7 @@ public class SkeinParameters
                 throw new IllegalArgumentException("Parameter value must not be null.");
             }
             if ((type != PARAM_TYPE_KEY)
-                && (type <= PARAM_TYPE_CONFIG || type >= PARAM_TYPE_OUTPUT || type == PARAM_TYPE_MESSAGE))
+                && (type < PARAM_TYPE_CONFIG || type >= PARAM_TYPE_OUTPUT || type == PARAM_TYPE_MESSAGE))
             {
                 throw new IllegalArgumentException("Parameter types must be in the range 0,5..47,49..62.");
             }
