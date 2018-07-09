@@ -2,6 +2,8 @@ package org.bouncycastle.pqc.math.linearalgebra;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.util.Arrays;
+
 /**
  * This class describes some operations with matrices over finite field GF(2)
  * and is used in ecc and MQ-PKC (also has some specific methods and
@@ -1230,7 +1232,7 @@ public class GF2Matrix
         int hash = (numRows * 31 + numColumns) * 31 + length;
         for (int i = 0; i < numRows; i++)
         {
-            hash = hash * 31 + matrix[i].hashCode();
+            hash = hash * 31 + Arrays.hashCode(matrix[i]);
         }
         return hash;
     }

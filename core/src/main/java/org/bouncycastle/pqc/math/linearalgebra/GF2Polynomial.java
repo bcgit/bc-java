@@ -4,6 +4,8 @@ package org.bouncycastle.pqc.math.linearalgebra;
 import java.math.BigInteger;
 import java.util.Random;
 
+import org.bouncycastle.util.Arrays;
+
 
 /**
  * This class stores very long strings of bits and does some basic arithmetics.
@@ -572,7 +574,7 @@ public class GF2Polynomial
      */
     public int hashCode()
     {
-        return len + value.hashCode();
+        return len + Arrays.hashCode(value);
     }
 
     /**
