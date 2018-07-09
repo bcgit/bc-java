@@ -4,22 +4,22 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
+import java.security.InvalidKeyException;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.GOST3410PublicKeyParameters;
+import org.bouncycastle.jcajce.provider.asymmetric.util.GOST3410Util;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KeyUtil;
 import org.bouncycastle.jce.interfaces.GOST3410Params;
 import org.bouncycastle.jce.interfaces.GOST3410PublicKey;
 import org.bouncycastle.jce.spec.GOST3410ParameterSpec;
 import org.bouncycastle.jce.spec.GOST3410PublicKeyParameterSetSpec;
 import org.bouncycastle.jce.spec.GOST3410PublicKeySpec;
-import org.bouncycastle.util.Strings;
 
 public class BCGOST3410PublicKey
     implements GOST3410PublicKey
@@ -62,7 +62,7 @@ public class BCGOST3410PublicKey
     BCGOST3410PublicKey(
         SubjectPublicKeyInfo info)
     {
-        GOST3410PublicKeyAlgParameters    params = new GOST3410PublicKeyAlgParameters((ASN1Sequence)info.getAlgorithmId().getParameters());
+        GOST3410PublicKeyAlgParameters    params = GOST3410PublicKeyAlgParameters.getInstance(info.getAlgorithm().getParameters());
         DEROctetString                    derY;
 
         try
@@ -155,13 +155,15 @@ public class BCGOST3410PublicKey
 
     public String toString()
     {
-        StringBuffer    buf = new StringBuffer();
-        String          nl = Strings.lineSeparator();
-
-        buf.append("GOST3410 Public Key").append(nl);
-        buf.append("            y: ").append(this.getY().toString(16)).append(nl);
-
-        return buf.toString();
+        try
+        {
+            return GOSTUtil.publicKeyToString("GOST3410", y,
+                ((GOST3410PublicKeyParameters)GOST3410Util.generatePublicKeyParameter(this)).getParameters());
+        }
+        catch (InvalidKeyException e)
+        {
+            throw new IllegalStateException(e.getMessage()); // should not be possible
+        }
     }
     
     public boolean equals(Object o)

@@ -138,7 +138,7 @@ public class BCDSAPublicKey
         String          nl = Strings.lineSeparator();
 
         buf.append("DSA Public Key [").append(DSAUtil.generateKeyFingerprint(y, getParams())).append("]").append(nl);
-        buf.append("            y: ").append(this.getY().toString(16)).append(nl);
+        buf.append("            Y: ").append(this.getY().toString(16)).append(nl);
 
         return buf.toString();
     }

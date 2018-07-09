@@ -10,7 +10,6 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Fingerprint;
 
 /**
@@ -67,8 +66,13 @@ public class RSAUtil
         }
     }
 
-    static String generateKeyFingerprint(BigInteger modulus, BigInteger publicExponent)
+    static String generateKeyFingerprint(BigInteger modulus)
     {
-        return new Fingerprint(Arrays.concatenate(modulus.toByteArray(), publicExponent.toByteArray())).toString();
+        return new Fingerprint(modulus.toByteArray()).toString();
+    }
+
+    static String generateExponentFingerprint(BigInteger exponent)
+    {
+        return new Fingerprint(exponent.toByteArray(), 32).toString();
     }
 }
