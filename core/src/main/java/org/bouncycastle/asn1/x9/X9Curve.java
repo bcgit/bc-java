@@ -30,9 +30,7 @@ public class X9Curve
     public X9Curve(
         ECCurve     curve)
     {
-        this.curve = curve;
-        this.seed = null;
-        setFieldIdentifier();
+        this(curve, null);
     }
 
     public X9Curve(
@@ -40,7 +38,7 @@ public class X9Curve
         byte[]      seed)
     {
         this.curve = curve;
-        this.seed = seed;
+        this.seed = Arrays.clone(seed);
         setFieldIdentifier();
     }
 
@@ -99,7 +97,7 @@ public class X9Curve
 
         if (seq.size() == 3)
         {
-            seed = ((DERBitString)seq.getObjectAt(2)).getBytes();
+            seed = Arrays.clone(((DERBitString)seq.getObjectAt(2)).getBytes());
         }   
     }   
 
