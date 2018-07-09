@@ -8,7 +8,7 @@ import java.util.Hashtable;
  */
 public abstract class ECPoint
 {
-    protected static ECFieldElement[] EMPTY_ZS = new ECFieldElement[0];
+    protected final static ECFieldElement[] EMPTY_ZS = new ECFieldElement[0];
 
     protected static ECFieldElement[] getInitialZCoords(ECCurve curve)
     {
