@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.params;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.util.Arrays;
 
 public class AEADParameters
     implements CipherParameters
@@ -33,9 +34,9 @@ public class AEADParameters
     public AEADParameters(KeyParameter key, int macSize, byte[] nonce, byte[] associatedText)
     {
         this.key = key;
-        this.nonce = nonce;
+        this.nonce = Arrays.clone(nonce);
         this.macSize = macSize;
-        this.associatedText = associatedText;
+        this.associatedText = Arrays.clone(associatedText);
     }
 
     public KeyParameter getKey()
@@ -50,11 +51,11 @@ public class AEADParameters
 
     public byte[] getAssociatedText()
     {
-        return associatedText;
+        return Arrays.clone(associatedText);
     }
 
     public byte[] getNonce()
     {
-        return nonce;
+        return Arrays.clone(nonce);
     }
 }

@@ -80,7 +80,11 @@ public class TimeStampTokenEvidence
 
     public TimeStampAndCRL[] toTimeStampAndCRLArray()
     {
-        return timeStampAndCRLs;
+        TimeStampAndCRL[] tmp = new TimeStampAndCRL[timeStampAndCRLs.length];
+
+        System.arraycopy(timeStampAndCRLs, 0, tmp, 0, tmp.length);
+
+        return tmp;
     }
     
     public ASN1Primitive toASN1Primitive()
