@@ -3,6 +3,8 @@ package org.bouncycastle.pqc.crypto.xmss;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bouncycastle.util.Arrays;
+
 /**
  * WOTS+.
  */
@@ -369,7 +371,7 @@ final class WOTSPlus
      */
     protected byte[] getSecretKeySeed()
     {
-        return XMSSUtil.cloneArray(getSecretKeySeed());
+        return Arrays.clone(secretKeySeed);
     }
 
     /**
@@ -379,7 +381,7 @@ final class WOTSPlus
      */
     protected byte[] getPublicSeed()
     {
-        return XMSSUtil.cloneArray(publicSeed);
+        return Arrays.clone(publicSeed);
     }
 
     /**
