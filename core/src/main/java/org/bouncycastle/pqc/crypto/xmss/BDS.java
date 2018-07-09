@@ -168,7 +168,7 @@ public final class BDS
             while (!stack.isEmpty() && stack.peek().getHeight() == node.getHeight())
             {
 				/* add to authenticationPath if leafIndex == 1 */
-                int indexOnHeight = ((int)Math.floor(indexLeaf / (1 << node.getHeight())));
+                int indexOnHeight = indexLeaf / (1 << node.getHeight());
                 if (indexOnHeight == 1)
                 {
                     authenticationPath.add(node.clone());
