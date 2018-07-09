@@ -68,7 +68,7 @@ public class Gost2814789KeyWrapParameters
 
     public byte[] getUkm()
     {
-        return ukm;
+        return Arrays.clone(ukm);
     }
 
     public ASN1Primitive toASN1Primitive()

@@ -11,7 +11,7 @@ public class DHValidationParameters
         byte[]  seed,
         int     counter)
     {
-        this.seed = seed;
+        this.seed = Arrays.clone(seed);
         this.counter = counter;
     }
 
@@ -22,7 +22,7 @@ public class DHValidationParameters
 
     public byte[] getSeed()
     {
-        return seed;
+        return Arrays.clone(seed);
     }
 
     public boolean equals(

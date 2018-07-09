@@ -67,7 +67,7 @@ public class PendInfo
 
     public byte[] getPendToken()
     {
-        return pendToken;
+        return Arrays.clone(pendToken);
     }
 
     public ASN1GeneralizedTime getPendTime()

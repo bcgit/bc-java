@@ -56,7 +56,7 @@ public class DSTU4145Params
 
     public byte[] getDKE()
     {
-        return dke;
+        return Arrays.clone(dke);
     }
 
     public static byte[] getDefaultDKE()

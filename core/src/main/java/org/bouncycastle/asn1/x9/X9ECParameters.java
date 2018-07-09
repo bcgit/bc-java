@@ -13,6 +13,7 @@ import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.field.PolynomialExtensionField;
+import org.bouncycastle.util.Arrays;
 
 /**
  * ASN.1 def for Elliptic-Curve ECParameters structure. See
@@ -179,7 +180,7 @@ public class X9ECParameters
 
     public byte[] getSeed()
     {
-        return seed;
+        return Arrays.clone(seed);
     }
 
     /**
