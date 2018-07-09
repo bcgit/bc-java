@@ -13,11 +13,13 @@ import org.bouncycastle.asn1.ua.DSTU4145NamedCurves;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.DSTU4145KeyPairGenerator;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
+import org.bouncycastle.crypto.params.DSTU4145Parameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
+import org.bouncycastle.jcajce.spec.DSTU4145ParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
@@ -88,8 +90,17 @@ public class KeyPairGeneratorSpi
             ECCurve curve = EC5Util.convertCurve(p.getCurve());
             ECPoint g = EC5Util.convertPoint(curve, p.getGenerator(), false);
 
-            param = new ECKeyGenerationParameters(new ECDomainParameters(curve, g, p.getOrder(), BigInteger.valueOf(p.getCofactor())), random);
+            if (p instanceof DSTU4145ParameterSpec)
+            {
+                DSTU4145ParameterSpec dstuSpec = (DSTU4145ParameterSpec)p;
 
+                param = new ECKeyGenerationParameters(new DSTU4145Parameters(
+                    new ECDomainParameters(curve, g, p.getOrder(), BigInteger.valueOf(p.getCofactor())), dstuSpec.getDKE()), random);
+            }
+            else
+            {
+                param = new ECKeyGenerationParameters(new ECDomainParameters(curve, g, p.getOrder(), BigInteger.valueOf(p.getCofactor())), random);
+            }
             engine.init(param);
             initialised = true;
         }

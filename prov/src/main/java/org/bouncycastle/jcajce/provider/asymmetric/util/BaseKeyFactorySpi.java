@@ -27,7 +27,7 @@ public abstract class BaseKeyFactorySpi
                 return generatePrivate(PrivateKeyInfo.getInstance(((PKCS8EncodedKeySpec)keySpec).getEncoded()));
             }
             catch (Exception e)
-            {
+            {                    e.printStackTrace();
                 throw new InvalidKeySpecException("encoded key spec not recognized: " + e.getMessage());
             }
         }

@@ -166,6 +166,11 @@ public class BCDHPrivateKey
         }
     }
 
+    public String toString()
+    {
+        return DHUtil.privateKeyToString("DH", x, new DHParameters(dhSpec.getP(), dhSpec.getG()));
+    }
+
     public DHParameterSpec getParams()
     {
         return dhSpec;

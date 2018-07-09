@@ -135,10 +135,14 @@ public class BCRSAPublicKey
         StringBuffer    buf = new StringBuffer();
         String          nl = Strings.lineSeparator();
 
-        buf.append("RSA Public Key [").append(RSAUtil.generateKeyFingerprint(this.getModulus(), this.getPublicExponent())).append("]").append(nl);
-        buf.append("            modulus: ").append(this.getModulus().toString(16)).append(nl);
-        buf.append("    public exponent: ").append(this.getPublicExponent().toString(16)).append(nl);
-
+        buf.append("RSA Public Key [").append(RSAUtil.generateKeyFingerprint(this.getModulus())).append("]")
+            .append(",[")
+            .append(RSAUtil.generateExponentFingerprint(this.getPublicExponent()))
+            .append("]")
+            .append(nl);
+        buf.append("        modulus: ").append(this.getModulus().toString(16)).append(nl);
+        buf.append("public exponent: ").append(this.getPublicExponent().toString(16)).append(nl);
+        
         return buf.toString();
     }
 

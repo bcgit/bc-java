@@ -416,9 +416,7 @@ public abstract class ECCurve
             BigInteger X = BigIntegers.fromUnsignedByteArray(encoded, 1, expectedLength);
 
             p = decompressPoint(yTilde, X);
-
-            // TODO Skip curve equation check? 
-            if (!p.isValid())
+            if (!p.implIsValid(true, true))
             {
                 throw new IllegalArgumentException("Invalid point");
             }

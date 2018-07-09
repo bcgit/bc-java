@@ -1083,11 +1083,11 @@ public class DHTest
         }
         catch (java.security.spec.InvalidKeySpecException e)
         {
-            isTrue("wrong message", "invalid KeySpec: point not on curve".equals(e.getMessage()));
+            isTrue("wrong message: " + e.getMessage(), "invalid KeySpec: Point not on curve".equals(e.getMessage()));
         }
         catch (java.security.InvalidKeyException e)
         {
-            isTrue("wrong message", "calculation failed: Invalid point".equals(e.getMessage()));
+            isTrue("wrong message: " + e.getMessage(), "calculation failed: Invalid point".equals(e.getMessage()));
         }
 
         agreement = KeyAgreement.getInstance("ECDH", "BC");

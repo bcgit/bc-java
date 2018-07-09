@@ -15,10 +15,15 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.ua.DSTU4145BinaryField;
+import org.bouncycastle.asn1.ua.DSTU4145ECBinary;
 import org.bouncycastle.asn1.ua.DSTU4145NamedCurves;
+import org.bouncycastle.asn1.ua.DSTU4145Params;
+import org.bouncycastle.asn1.ua.DSTU4145PointEncoder;
 import org.bouncycastle.asn1.ua.UAObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -33,6 +38,7 @@ import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrie
 import org.bouncycastle.jce.interfaces.ECPointEncoder;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
 
@@ -182,7 +188,7 @@ public class BCDSTU4145PrivateKey
     private void populateFromPrivKeyInfo(PrivateKeyInfo info)
         throws IOException
     {
-        X962Parameters params = new X962Parameters((ASN1Primitive)info.getPrivateKeyAlgorithm().getParameters());
+        X962Parameters params = X962Parameters.getInstance(info.getPrivateKeyAlgorithm().getParameters());
 
         if (params.isNamedCurve())
         {
@@ -219,14 +225,56 @@ public class BCDSTU4145PrivateKey
         }
         else
         {
-            X9ECParameters ecP = X9ECParameters.getInstance(params.getParameters());
-            EllipticCurve ellipticCurve = EC5Util.convertCurve(ecP.getCurve(), ecP.getSeed());
+            ASN1Sequence seq = ASN1Sequence.getInstance(params.getParameters());
 
-            this.ecSpec = new ECParameterSpec(
-                ellipticCurve,
-                EC5Util.convertPoint(ecP.getG()),
-                ecP.getN(),
-                ecP.getH().intValue());
+            if (seq.getObjectAt(0) instanceof ASN1Integer)
+            {
+                X9ECParameters ecP = X9ECParameters.getInstance(params.getParameters());
+                EllipticCurve ellipticCurve = EC5Util.convertCurve(ecP.getCurve(), ecP.getSeed());
+
+                this.ecSpec = new ECParameterSpec(
+                    ellipticCurve,
+                    EC5Util.convertPoint(ecP.getG()),
+                    ecP.getN(),
+                    ecP.getH().intValue());
+            }
+            else
+            {
+                DSTU4145Params dstuParams = DSTU4145Params.getInstance(seq);
+                org.bouncycastle.jce.spec.ECParameterSpec spec;
+                if (dstuParams.isNamedCurve())
+                {
+                    ASN1ObjectIdentifier curveOid = dstuParams.getNamedCurve();
+                    ECDomainParameters ecP = DSTU4145NamedCurves.getByOID(curveOid);
+
+                    spec = new ECNamedCurveParameterSpec(curveOid.getId(), ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(), ecP.getSeed());
+                }
+                else
+                {
+                    DSTU4145ECBinary binary = dstuParams.getECBinary();
+                    byte[] b_bytes = binary.getB();
+                    if (info.getPrivateKeyAlgorithm().getAlgorithm().equals(UAObjectIdentifiers.dstu4145le))
+                    {
+                        reverseBytes(b_bytes);
+                    }
+                    DSTU4145BinaryField field = binary.getField();
+                    ECCurve curve = new ECCurve.F2m(field.getM(), field.getK1(), field.getK2(), field.getK3(), binary.getA(), new BigInteger(1, b_bytes));
+                    byte[] g_bytes = binary.getG();
+                    if (info.getPrivateKeyAlgorithm().getAlgorithm().equals(UAObjectIdentifiers.dstu4145le))
+                    {
+                        reverseBytes(g_bytes);
+                    }
+                    spec = new org.bouncycastle.jce.spec.ECParameterSpec(curve, DSTU4145PointEncoder.decodePoint(curve, g_bytes), binary.getN());
+                }
+
+                EllipticCurve ellipticCurve = EC5Util.convertCurve(spec.getCurve(), spec.getSeed());
+
+                this.ecSpec = new ECParameterSpec(
+                    ellipticCurve,
+                    EC5Util.convertPoint(spec.getG()),
+                    spec.getN(),
+                    spec.getH().intValue());
+            }
         }
 
         ASN1Encodable privKey = info.parsePrivateKey();
@@ -242,6 +290,18 @@ public class BCDSTU4145PrivateKey
 
             this.d = ec.getKey();
             this.publicKey = ec.getPublicKey();
+        }
+    }
+
+    private void reverseBytes(byte[] bytes)
+    {
+        byte tmp;
+
+        for (int i = 0; i < bytes.length / 2; i++)
+        {
+            tmp = bytes[i];
+            bytes[i] = bytes[bytes.length - 1 - i];
+            bytes[bytes.length - 1 - i] = tmp;
         }
     }
 
