@@ -3,6 +3,8 @@ package org.bouncycastle.pqc.crypto.xmss;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bouncycastle.util.Arrays;
+
 /**
  * XMSS^MT Signature.
  */
@@ -123,7 +125,7 @@ public final class XMSSMTSignature
 
         public Builder withSignature(byte[] val)
         {
-            signature = val;
+            signature = Arrays.clone(val);
             return this;
         }
 
