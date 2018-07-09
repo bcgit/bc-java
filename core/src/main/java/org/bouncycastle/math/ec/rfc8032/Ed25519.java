@@ -564,13 +564,13 @@ public abstract class Ed25519
             for (int t = 0; t < (PRECOMP_TEETH - 1); ++t)
             {
                 int size = 1 << t;
-                for (int j = 0; j < size; ++j)
+                for (int j = 0; j < size; ++j, ++k)
                 {
-                    pointAddVar(false, points[k - size], ds[t], points[k++] = new PointExt());
+                    pointAddVar(false, points[k - size], ds[t], points[k] = new PointExt());
                 }
             }
 
-//            assert k == POINTS;
+//            assert k == PRECOMP_POINTS;
 
             for (int i = 0; i < PRECOMP_POINTS; ++i)
             {

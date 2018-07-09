@@ -174,7 +174,7 @@ public class BCDSAPrivateKey
         BigInteger y = getParams().getG().modPow(x, getParams().getP());
 
         buf.append("DSA Private Key [").append(DSAUtil.generateKeyFingerprint(y, getParams())).append("]").append(nl);
-        buf.append("            y: ").append(y.toString(16)).append(nl);
+        buf.append("            Y: ").append(y.toString(16)).append(nl);
 
         return buf.toString();
     }

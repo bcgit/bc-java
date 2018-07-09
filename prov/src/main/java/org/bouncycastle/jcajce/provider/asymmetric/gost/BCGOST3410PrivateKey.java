@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
+import java.security.InvalidKeyException;
 import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -17,6 +18,7 @@ import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.GOST3410PrivateKeyParameters;
+import org.bouncycastle.jcajce.provider.asymmetric.util.GOST3410Util;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
 import org.bouncycastle.jce.interfaces.GOST3410Params;
 import org.bouncycastle.jce.interfaces.GOST3410PrivateKey;
@@ -199,6 +201,19 @@ public class BCGOST3410PrivateKey
     public int hashCode()
     {
         return this.getX().hashCode() ^ gost3410Spec.hashCode();
+    }
+
+    public String toString()
+    {
+        try
+        {
+            return GOSTUtil.privateKeyToString("GOST3410", x,
+                ((GOST3410PrivateKeyParameters)GOST3410Util.generatePrivateKeyParameter(this)).getParameters());
+        }
+        catch (InvalidKeyException e)
+        {
+            throw new IllegalStateException(e.getMessage()); // should not be possible
+        }
     }
 
     public void setBagAttribute(
