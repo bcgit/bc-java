@@ -4,6 +4,7 @@ import java.math.BigInteger;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.util.Memoable;
 
 public class CramerShoupParameters
     implements CipherParameters
@@ -19,7 +20,8 @@ public class CramerShoupParameters
         this.p = p;
         this.g1 = g1;
         this.g2 = g2;
-        this.H = H;
+        this.H = (Digest)((Memoable)H).copy();
+        this.H.reset();
     }
 
     public boolean equals(Object obj)
@@ -56,8 +58,7 @@ public class CramerShoupParameters
 
     public Digest getH()
     {
-        H.reset();
-        return H;
+        return (Digest)((Memoable)H).copy();
     }
 
 }
