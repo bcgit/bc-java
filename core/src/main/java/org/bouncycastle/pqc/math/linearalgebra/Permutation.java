@@ -2,6 +2,8 @@ package org.bouncycastle.pqc.math.linearalgebra;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.util.Arrays;
+
 /**
  * This class implements permutations of the set {0,1,...,n-1} for some given n
  * &gt; 0, i.e., ordered sequences containing each number <tt>m</tt> (<tt>0 &lt;=
@@ -217,7 +219,7 @@ public class Permutation
      */
     public int hashCode()
     {
-        return perm.hashCode();
+        return Arrays.hashCode(perm);
     }
 
     /**

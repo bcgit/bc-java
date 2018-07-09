@@ -4,6 +4,8 @@ package org.bouncycastle.pqc.math.linearalgebra;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.util.Arrays;
+
 /**
  * This class implements an element of the finite field <i>GF(2<sup>n </sup>)</i>.
  * It is represented in an optimal normal basis representation and holds the
@@ -403,7 +405,7 @@ public class GF2nONBElement
      */
     public int hashCode()
     {
-        return mPol.hashCode();
+        return Arrays.hashCode(mPol);
     }
 
     // /////////////////////////////////////////////////////////////////////
