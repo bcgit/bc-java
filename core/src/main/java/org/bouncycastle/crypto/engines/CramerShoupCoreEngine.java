@@ -12,6 +12,7 @@ import org.bouncycastle.crypto.params.CramerShoupPrivateKeyParameters;
 import org.bouncycastle.crypto.params.CramerShoupPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Strings;
 
 /**
  * Essentially the Cramer-Shoup encryption / decryption algorithms according to
@@ -19,13 +20,12 @@ import org.bouncycastle.util.BigIntegers;
  */
 public class CramerShoupCoreEngine
 {
-
     private static final BigInteger ONE = BigInteger.valueOf(1);
 
     private CramerShoupKeyParameters key;
     private SecureRandom random;
     private boolean forEncryption;
-    private String label = null;
+    private byte[] label = null;
 
     /**
      * initialise the CramerShoup engine.
@@ -38,7 +38,7 @@ public class CramerShoupCoreEngine
     {
         init(forEncryption, param);
 
-        this.label = label;
+        this.label = Strings.toUTF8ByteArray(label);
     }
 
     /**
@@ -217,7 +217,7 @@ public class CramerShoupCoreEngine
             digest.update(eBytes, 0, eBytes.length);
             if (this.label != null)
             {
-                byte[] lBytes = this.label.getBytes();
+                byte[] lBytes = this.label;
                 digest.update(lBytes, 0, lBytes.length);
             }
             byte[] out = new byte[digest.getDigestSize()];
@@ -252,7 +252,7 @@ public class CramerShoupCoreEngine
             digest.update(eBytes, 0, eBytes.length);
             if (this.label != null)
             {
-                byte[] lBytes = this.label.getBytes();
+                byte[] lBytes = this.label;
                 digest.update(lBytes, 0, lBytes.length);
             }
             byte[] out = new byte[digest.getDigestSize()];
