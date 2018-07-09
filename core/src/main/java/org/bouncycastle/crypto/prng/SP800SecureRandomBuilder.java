@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.prng.drbg.CTRSP800DRBG;
 import org.bouncycastle.crypto.prng.drbg.HMacSP800DRBG;
 import org.bouncycastle.crypto.prng.drbg.HashSP800DRBG;
 import org.bouncycastle.crypto.prng.drbg.SP80090DRBG;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Builder class for making SecureRandom objects based on SP 800-90A Deterministic Random Bit Generators (DRBG).
@@ -72,7 +73,7 @@ public class SP800SecureRandomBuilder
      */
     public SP800SecureRandomBuilder setPersonalizationString(byte[] personalizationString)
     {
-        this.personalizationString = personalizationString;
+        this.personalizationString = Arrays.clone(personalizationString);
 
         return this;
     }
