@@ -1,8 +1,20 @@
 package org.bouncycastle.gpg.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.Security;
+import java.security.cert.CertificateFactory;
+import java.util.Iterator;
+
 import junit.framework.TestCase;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
-import org.bouncycastle.gpg.keybox.*;
+import org.bouncycastle.gpg.keybox.BlobType;
+import org.bouncycastle.gpg.keybox.CertificateBlob;
+import org.bouncycastle.gpg.keybox.FirstBlob;
+import org.bouncycastle.gpg.keybox.KeyBlob;
+import org.bouncycastle.gpg.keybox.KeyBox;
+import org.bouncycastle.gpg.keybox.PublicKeyRingBlob;
 import org.bouncycastle.gpg.keybox.bc.BcBlobVerifier;
 import org.bouncycastle.gpg.keybox.bc.BcKeyBox;
 import org.bouncycastle.gpg.keybox.jcajce.JcaKeyBoxBuilder;
@@ -13,23 +25,19 @@ import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.Security;
-import java.security.cert.CertificateFactory;
-import java.util.Iterator;
-
 public class KeyBoxTest
-        extends SimpleTest {
+    extends SimpleTest
+{
     public static void main(
-            String[] args) {
+        String[] args)
+    {
         Security.addProvider(new BouncyCastleProvider());
 
         runTest(new KeyBoxTest());
     }
 
-    public String getName() {
+    public String getName()
+    {
         return "KeyBoxTest";
     }
 
@@ -39,13 +47,15 @@ public class KeyBoxTest
      * @throws Exception
      */
     public void testSuccessfulLoad()
-            throws Exception {
+        throws Exception
+    {
         loadCheck(new BcKeyBox(KeyBoxTest.class.getResourceAsStream("/pgpdata/pubring.kbx")));
         loadCheck(new JcaKeyBoxBuilder().build(KeyBoxTest.class.getResourceAsStream("/pgpdata/pubring.kbx")));
     }
 
     private void loadCheck(KeyBox keyBox)
-            throws Exception {
+        throws Exception
+    {
 
         FirstBlob firstBlob = keyBox.getFirstBlob();
 
@@ -63,52 +73,55 @@ public class KeyBoxTest
         TestCase.assertEquals("Two material blobs.", 2, keyBox.getKeyBlobs().size());
 
 
-        for (KeyBlob keyBlob : keyBox.getKeyBlobs()) {
+        for (KeyBlob keyBlob : keyBox.getKeyBlobs())
+        {
 
-            switch (keyBlob.getType()) {
-                case X509_BLOB: {
-                    TestCase.assertEquals(2, keyBlob.getUserIds().size());
-                    TestCase.assertEquals(keyBlob.getNumberOfUserIDs(), keyBlob.getUserIds().size());
+            switch (keyBlob.getType())
+            {
+            case X509_BLOB:
+            {
+                TestCase.assertEquals(2, keyBlob.getUserIds().size());
+                TestCase.assertEquals(keyBlob.getNumberOfUserIDs(), keyBlob.getUserIds().size());
 
-                    // Self signed.
-                    TestCase.assertEquals("CN=Peggy Shippen", keyBlob.getUserIds().get(0).getUserIDAsString());
-                    TestCase.assertEquals("CN=Peggy Shippen", keyBlob.getUserIds().get(1).getUserIDAsString());
+                // Self signed.
+                TestCase.assertEquals("CN=Peggy Shippen", keyBlob.getUserIds().get(0).getUserIDAsString());
+                TestCase.assertEquals("CN=Peggy Shippen", keyBlob.getUserIds().get(1).getUserIDAsString());
 
-                    // It can be successfully parsed into a certificate.
+                // It can be successfully parsed into a certificate.
 
 
-                    byte[] certData = ((CertificateBlob) keyBlob).getEncodedCertificate();
-                    CertificateFactory factory = CertificateFactory.getInstance("X509");
-                    factory.generateCertificate(new ByteArrayInputStream(certData));
+                byte[] certData = ((CertificateBlob)keyBlob).getEncodedCertificate();
+                CertificateFactory factory = CertificateFactory.getInstance("X509");
+                factory.generateCertificate(new ByteArrayInputStream(certData));
 
-                    TestCase.assertEquals(1, keyBlob.getKeyInformation().size());
-                    TestCase.assertEquals(20, keyBlob.getKeyInformation().get(0).getFingerprint().length);
-                    TestCase.assertNull(keyBlob.getKeyInformation().get(0).getKeyID());
-                }
+                TestCase.assertEquals(1, keyBlob.getKeyInformation().size());
+                TestCase.assertEquals(20, keyBlob.getKeyInformation().get(0).getFingerprint().length);
+                TestCase.assertNull(keyBlob.getKeyInformation().get(0).getKeyID());
+            }
+            break;
+
+
+            case OPEN_PGP_BLOB:
+                TestCase.assertEquals(1, keyBlob.getUserIds().size());
+                TestCase.assertEquals(keyBlob.getNumberOfUserIDs(), keyBlob.getUserIds().size());
+                TestCase.assertEquals("Walter Mitty <walter@mitty.local>", keyBlob.getUserIds().get(0).getUserIDAsString());
+
+                //
+                // It can be successfully parsed.
+                //
+                ((PublicKeyRingBlob)keyBlob).getPGPPublicKeyRing();
+
+                TestCase.assertEquals(2, keyBlob.getKeyInformation().size());
+                TestCase.assertEquals(20, keyBlob.getKeyInformation().get(0).getFingerprint().length);
+                TestCase.assertNotNull(keyBlob.getKeyInformation().get(0).getKeyID());
+
+                TestCase.assertEquals(20, keyBlob.getKeyInformation().get(1).getFingerprint().length);
+                TestCase.assertNotNull(keyBlob.getKeyInformation().get(1).getKeyID());
+
                 break;
 
-
-                case OPEN_PGP_BLOB:
-                    TestCase.assertEquals(1, keyBlob.getUserIds().size());
-                    TestCase.assertEquals(keyBlob.getNumberOfUserIDs(), keyBlob.getUserIds().size());
-                    TestCase.assertEquals("Walter Mitty <walter@mitty.local>", keyBlob.getUserIds().get(0).getUserIDAsString());
-
-                    //
-                    // It can be successfully parsed.
-                    //
-                    ((PublicKeyRingBlob) keyBlob).getPGPPublicKeyRing();
-
-                    TestCase.assertEquals(2, keyBlob.getKeyInformation().size());
-                    TestCase.assertEquals(20, keyBlob.getKeyInformation().get(0).getFingerprint().length);
-                    TestCase.assertNotNull(keyBlob.getKeyInformation().get(0).getKeyID());
-
-                    TestCase.assertEquals(20, keyBlob.getKeyInformation().get(1).getFingerprint().length);
-                    TestCase.assertNotNull(keyBlob.getKeyInformation().get(1).getKeyID());
-
-                    break;
-
-                default:
-                    TestCase.fail("Unexpected blob type: " + keyBlob.getType());
+            default:
+                TestCase.fail("Unexpected blob type: " + keyBlob.getType());
             }
         }
 
@@ -120,12 +133,15 @@ public class KeyBoxTest
      * @throws Exception
      */
     public void testSanityElGamal()
-            throws Exception {
+        throws Exception
+    {
         testSanityElGamal_verify(new BcKeyBox(KeyBoxTest.class.getResourceAsStream("/pgpdata/eg_pubring.kbx")));
         testSanityElGamal_verify(new JcaKeyBoxBuilder().setProvider("BC").build(KeyBoxTest.class.getResourceAsStream("/pgpdata/eg_pubring.kbx")));
     }
 
-    private void testSanityElGamal_verify(KeyBox keyBox) throws Exception {
+    private void testSanityElGamal_verify(KeyBox keyBox)
+        throws Exception
+    {
         FirstBlob firstBlob = keyBox.getFirstBlob();
 
 
@@ -143,7 +159,7 @@ public class KeyBoxTest
 
         TestCase.assertEquals("Pgp type", BlobType.OPEN_PGP_BLOB, keyBox.getKeyBlobs().get(0).getType());
 
-        PublicKeyRingBlob pgkr = (PublicKeyRingBlob) keyBox.getKeyBlobs().get(0);
+        PublicKeyRingBlob pgkr = (PublicKeyRingBlob)keyBox.getKeyBlobs().get(0);
         PGPPublicKeyRing ring = pgkr.getPGPPublicKeyRing();
 
         TestCase.assertEquals("Must be DSA", PublicKeyAlgorithmTags.DSA, ring.getPublicKey().getAlgorithm());
@@ -160,7 +176,8 @@ public class KeyBoxTest
      * @throws Exception
      */
     public void testInducedChecksumFailed()
-            throws Exception {
+        throws Exception
+    {
 
         byte[] raw = Streams.readAll(KeyBoxTest.class.getResourceAsStream("/pgpdata/pubring.kbx"));
 
@@ -168,18 +185,24 @@ public class KeyBoxTest
 
 
         // BC
-        try {
+        try
+        {
             new KeyBox(raw, new BcKeyFingerprintCalculator(), new BcBlobVerifier());
             fail("Must have invalid checksum");
-        } catch (IOException ioex) {
+        }
+        catch (IOException ioex)
+        {
             isEquals("Blob with base offset of 32 has incorrect digest.", ioex.getMessage());
         }
 
         // JCA
-        try {
+        try
+        {
             new JcaKeyBoxBuilder().setProvider("BC").build(raw);
             fail("Must have invalid checksum");
-        } catch (IOException ioex) {
+        }
+        catch (IOException ioex)
+        {
             isEquals("Blob with base offset of 32 has incorrect digest.", ioex.getMessage());
         }
 
@@ -187,46 +210,60 @@ public class KeyBoxTest
 
 
     public void testBrokenMagic()
-            throws Exception {
+        throws Exception
+    {
         byte[] raw = Streams.readAll(KeyBoxTest.class.getResourceAsStream("/pgpdata/pubring.kbx"));
 
         raw[8] ^= 1; // Single bit error in magic number.
 
         // BC
-        try {
+        try
+        {
             new KeyBox(raw, new BcKeyFingerprintCalculator(), new BcBlobVerifier());
             fail("Must have invalid magic");
-        } catch (IOException ioex) {
+        }
+        catch (IOException ioex)
+        {
             isEquals("Incorrect magic expecting 4b425866 but got 4a425866", ioex.getMessage());
         }
 
 
         // JCA
-        try {
+        try
+        {
             new JcaKeyBoxBuilder().setProvider("BC").build(raw);
             fail("Must have invalid checksum");
-        } catch (IOException ioex) {
+        }
+        catch (IOException ioex)
+        {
             isEquals("Incorrect magic expecting 4b425866 but got 4a425866", ioex.getMessage());
         }
     }
 
     public void testNullSource()
-            throws Exception {
+        throws Exception
+    {
         InputStream zulu = null;
 
         // BC
-        try {
+        try
+        {
             new KeyBox(zulu, new BcKeyFingerprintCalculator(), new BcBlobVerifier());
             fail("Must fail.");
-        } catch (IllegalArgumentException ioex) {
+        }
+        catch (IllegalArgumentException ioex)
+        {
             isEquals("Cannot take get instance of null", ioex.getMessage());
         }
 
         // JCA
-        try {
+        try
+        {
             new JcaKeyBoxBuilder().setProvider("BC").build(zulu);
             fail("Must fail.");
-        } catch (IllegalArgumentException ioex) {
+        }
+        catch (IllegalArgumentException ioex)
+        {
             isEquals("Cannot take get instance of null", ioex.getMessage());
         }
 
@@ -234,47 +271,62 @@ public class KeyBoxTest
 
 
     public void testNoFirstBlob()
-            throws Exception {
+        throws Exception
+    {
         // BC
-        try {
+        try
+        {
             new KeyBox(new byte[0], new BcKeyFingerprintCalculator(), new BcBlobVerifier());
             fail("Must fail.");
-        } catch (IOException ioex) {
+        }
+        catch (IOException ioex)
+        {
             isEquals("No first blob, is the source zero length?", ioex.getMessage());
         }
 
         // JCA
-        try {
+        try
+        {
             new JcaKeyBoxBuilder().setProvider("BC").build(new byte[0]);
             fail("Must fail.");
-        } catch (IOException ioex) {
+        }
+        catch (IOException ioex)
+        {
             isEquals("No first blob, is the source zero length?", ioex.getMessage());
         }
 
     }
 
     public void testDoubleFirstBlob()
-            throws Exception {
+        throws Exception
+    {
         // BC
-        try {
+        try
+        {
             new KeyBox(KeyBoxTest.class.getResourceAsStream("/pgpdata/doublefirst.kbx"), new BcKeyFingerprintCalculator(), new BcBlobVerifier());
             fail("Must fail.");
-        } catch (IOException ioex) {
+        }
+        catch (IOException ioex)
+        {
             isEquals("Unexpected second 'FirstBlob', there should only be one FirstBlob at the start of the file.", ioex.getMessage());
         }
 
 
         // JCA
-        try {
+        try
+        {
             new JcaKeyBoxBuilder().setProvider("BC").build(KeyBoxTest.class.getResourceAsStream("/pgpdata/doublefirst.kbx"));
             fail("Must fail.");
-        } catch (IOException ioex) {
+        }
+        catch (IOException ioex)
+        {
             isEquals("Unexpected second 'FirstBlob', there should only be one FirstBlob at the start of the file.", ioex.getMessage());
         }
     }
 
     public void testKeyBoxWithMD5Sanity()
-            throws Exception {
+        throws Exception
+    {
         //
         // Expect no failure.
         //
@@ -283,24 +335,31 @@ public class KeyBoxTest
     }
 
     public void testKeyBoxWithBrokenMD5()
-            throws Exception {
+        throws Exception
+    {
         byte[] raw = Streams.readAll(KeyBoxTest.class.getResourceAsStream("/pgpdata/md5kbx.kbx"));
 
         raw[36] ^= 1; // Single bit error in first key block.
 
         // BC
-        try {
+        try
+        {
             new KeyBox(raw, new BcKeyFingerprintCalculator(), new BcBlobVerifier());
             fail("Must have invalid checksum");
-        } catch (IOException ioex) {
+        }
+        catch (IOException ioex)
+        {
             isEquals("Blob with base offset of 32 has incorrect digest.", ioex.getMessage());
         }
 
         // JCA
-        try {
+        try
+        {
             new JcaKeyBoxBuilder().setProvider("BC").build(raw);
             fail("Must have invalid checksum");
-        } catch (IOException ioex) {
+        }
+        catch (IOException ioex)
+        {
             isEquals("Blob with base offset of 32 has incorrect digest.", ioex.getMessage());
         }
 
@@ -308,7 +367,8 @@ public class KeyBoxTest
     }
 
     public void performTest()
-            throws Exception {
+        throws Exception
+    {
         testNoFirstBlob();
         testSanityElGamal();
         testKeyBoxWithBrokenMD5();

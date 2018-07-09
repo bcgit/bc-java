@@ -47,7 +47,7 @@ public class KeyBox
         ArrayList<KeyBlob> keyBoxEntries = new ArrayList<KeyBlob>();
 
         for (Blob materialBlob = Blob.getInstance(buffer, keyFingerPrintCalculator, blobVerifier);
-                 materialBlob != null; materialBlob = Blob.getInstance(buffer, keyFingerPrintCalculator, blobVerifier))
+             materialBlob != null; materialBlob = Blob.getInstance(buffer, keyFingerPrintCalculator, blobVerifier))
         {
             if (materialBlob.getType() == BlobType.FIRST_BLOB)
             {
