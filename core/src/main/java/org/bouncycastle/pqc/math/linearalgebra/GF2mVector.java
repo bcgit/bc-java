@@ -1,6 +1,8 @@
 package org.bouncycastle.pqc.math.linearalgebra;
 
 
+import org.bouncycastle.util.Arrays;
+
 /**
  * This class implements vectors over the finite field
  * <tt>GF(2<sup>m</sup>)</tt> for small <tt>m</tt> (i.e.,
@@ -222,7 +224,7 @@ public class GF2mVector
     public int hashCode()
     {
         int hash = this.field.hashCode();
-        hash = hash * 31 + vector.hashCode();
+        hash = hash * 31 + Arrays.hashCode(vector);
         return hash;
     }
 

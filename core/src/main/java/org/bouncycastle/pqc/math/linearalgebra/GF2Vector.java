@@ -2,6 +2,8 @@ package org.bouncycastle.pqc.math.linearalgebra;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.util.Arrays;
+
 /**
  * This class implements the abstract class <tt>Vector</tt> for the case of
  * vectors over the finite field GF(2). <br>
@@ -505,7 +507,7 @@ public class GF2Vector
     public int hashCode()
     {
         int hash = length;
-        hash = hash * 31 + v.hashCode();
+        hash = hash * 31 + Arrays.hashCode(v);
         return hash;
     }
 
