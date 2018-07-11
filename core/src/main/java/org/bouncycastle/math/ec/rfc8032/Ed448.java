@@ -257,7 +257,7 @@ public abstract class Ed448
         byte[] s = new byte[SCALAR_BYTES];
         pruneScalar(h, 0, s);
 
-        scalarMultBaseEncodedVar(s, pk, pkOff);
+        scalarMultBaseEncoded(s, pk, pkOff);
     }
 
     private static byte[] getWNAF(int[] n, int width)
@@ -313,7 +313,7 @@ public abstract class Ed448
         return ws;
     }
 
-    private static void implSignVar(SHAKEDigest d, byte[] h, byte[] s, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
+    private static void implSign(SHAKEDigest d, byte[] h, byte[] s, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
     {
         byte phflag = 0x00;
 
@@ -324,7 +324,7 @@ public abstract class Ed448
 
         byte[] r = reduceScalar(h);
         byte[] R = new byte[POINT_BYTES];
-        scalarMultBaseEncodedVar(r, R, 0);
+        scalarMultBaseEncoded(r, R, 0);
 
         dom4(d, phflag, ctx);
         d.update(R, 0, POINT_BYTES);
@@ -910,7 +910,7 @@ public abstract class Ed448
         }
     }
 
-    private static void scalarMultBaseEncodedVar(byte[] k, byte[] r, int rOff)
+    private static void scalarMultBaseEncoded(byte[] k, byte[] r, int rOff)
     {
         PointExt p = new PointExt();
         scalarMultBase(k, p);
@@ -982,9 +982,9 @@ public abstract class Ed448
         pruneScalar(h, 0, s);
 
         byte[] pk = new byte[POINT_BYTES];
-        scalarMultBaseEncodedVar(s, pk, 0);
+        scalarMultBaseEncoded(s, pk, 0);
 
-        implSignVar(d, h, s, pk, 0, ctx, m, mOff, mLen, sig, sigOff);
+        implSign(d, h, s, pk, 0, ctx, m, mOff, mLen, sig, sigOff);
     }
 
     public static void sign(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
@@ -1003,7 +1003,7 @@ public abstract class Ed448
         byte[] s = new byte[SCALAR_BYTES];
         pruneScalar(h, 0, s);
 
-        implSignVar(d, h, s, pk, pkOff, ctx, m, mOff, mLen, sig, sigOff);
+        implSign(d, h, s, pk, pkOff, ctx, m, mOff, mLen, sig, sigOff);
     }
 
     public static boolean verify(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen)
