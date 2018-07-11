@@ -28,7 +28,7 @@ public class FixedPointUtil
                 FixedPointPreCompInfo existingFP = (existing instanceof FixedPointPreCompInfo) ? (FixedPointPreCompInfo)existing : null;
 
                 int bits = getCombSize(c);
-                int minWidth = bits > 257 ? 6 : 5;
+                int minWidth = bits > 250 ? 6 : 5;
                 int n = 1 << minWidth;
 
                 if (checkExisting(existingFP, n))
