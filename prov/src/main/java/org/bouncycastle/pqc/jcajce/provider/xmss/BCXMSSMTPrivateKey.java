@@ -1,6 +1,8 @@
 package org.bouncycastle.pqc.jcajce.provider.xmss;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.security.PrivateKey;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -21,8 +23,8 @@ import org.bouncycastle.util.Arrays;
 public class BCXMSSMTPrivateKey
     implements PrivateKey, XMSSMTKey
 {
-    private final ASN1ObjectIdentifier treeDigest;
-    private final XMSSMTPrivateKeyParameters keyParams;
+    private transient ASN1ObjectIdentifier treeDigest;
+    private transient XMSSMTPrivateKeyParameters keyParams;
 
     public BCXMSSMTPrivateKey(
         ASN1ObjectIdentifier treeDigest,
@@ -33,6 +35,12 @@ public class BCXMSSMTPrivateKey
     }
 
     public BCXMSSMTPrivateKey(PrivateKeyInfo keyInfo)
+        throws IOException
+    {
+        init(keyInfo);
+    }
+
+    private void init(PrivateKeyInfo keyInfo)
         throws IOException
     {
         XMSSMTKeyParams keyParams = XMSSMTKeyParams.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters());
@@ -52,7 +60,8 @@ public class BCXMSSMTPrivateKey
 
             if (xmssMtPrivateKey.getBdsState() != null)
             {
-                keyBuilder.withBDSState((BDSStateMap)XMSSUtil.deserialize(xmssMtPrivateKey.getBdsState(), BDSStateMap.class));
+                BDSStateMap bdsState = (BDSStateMap)XMSSUtil.deserialize(xmssMtPrivateKey.getBdsState(), BDSStateMap.class);
+                keyBuilder.withBDSState(bdsState.withWOTSDigest(treeDigest));
             }
 
             this.keyParams = keyBuilder.build();
@@ -167,5 +176,25 @@ public class BCXMSSMTPrivateKey
     public String getTreeDigest()
     {
         return DigestUtil.getXMSSDigestName(treeDigest);
+    }
+
+    private void readObject(
+        ObjectInputStream in)
+        throws IOException, ClassNotFoundException
+    {
+        in.defaultReadObject();
+
+        byte[] enc = (byte[])in.readObject();
+
+        init(PrivateKeyInfo.getInstance(enc));
+    }
+
+    private void writeObject(
+        ObjectOutputStream out)
+        throws IOException
+    {
+        out.defaultWriteObject();
+
+        out.writeObject(this.getEncoded());
     }
 }

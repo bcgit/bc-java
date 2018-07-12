@@ -8,6 +8,9 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.TreeMap;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.crypto.Digest;
+
 /**
  * BDS.
  */
@@ -120,7 +123,23 @@ public final class BDS
 
         last.used = true;
     }
-    
+
+    private BDS(BDS last, Digest digest)
+    {
+        this.wotsPlus = new WOTSPlus(new WOTSPlusParameters(digest));
+        this.treeHeight = last.treeHeight;
+        this.k = last.k;
+        this.root = last.root;
+        this.authenticationPath = new ArrayList<XMSSNode>(last.authenticationPath);
+        this.retain = last.retain;
+        this.stack = new Stack<XMSSNode>();
+        this.stack.addAll(last.stack);
+        this.treeHashInstances = last.treeHashInstances;
+        this.keep = new TreeMap<Integer, XMSSNode>(last.keep);
+        this.index = last.index;
+        this.used = last.used;
+    }
+
     public BDS getNextState(byte[] publicSeed, byte[] secretKeySeed, OTSHashAddress otsHashAddress)
     {
         return new BDS(this, publicSeed, secretKeySeed, otsHashAddress);
@@ -409,5 +428,10 @@ public final class BDS
     protected int getIndex()
     {
         return index;
+    }
+
+    public BDS withWOTSDigest(ASN1ObjectIdentifier digestName)
+    {
+        return new BDS(this, DigestUtil.getDigest(digestName));
     }
 }
