@@ -5,11 +5,14 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.util.Integers;
 
 public class BDSStateMap
     implements Serializable
 {
+    private static final long serialVersionUID = -3464451825208522308L;
+    
     private final Map<Integer, BDS> bdsState = new TreeMap<Integer, BDS>();
 
     BDSStateMap()
@@ -116,5 +119,19 @@ public class BDSStateMap
     public void put(int index, BDS bds)
     {
         bdsState.put(Integers.valueOf(index), bds);
+    }
+
+    public BDSStateMap withWOTSDigest(ASN1ObjectIdentifier digestName)
+    {
+        BDSStateMap newStateMap = new BDSStateMap();
+
+        for (Iterator<Integer> keys = bdsState.keySet().iterator(); keys.hasNext();)
+        {
+            Integer key = keys.next();
+
+            newStateMap.bdsState.put(key, bdsState.get(key).withWOTSDigest(digestName));
+        }
+
+        return newStateMap;
     }
 }

@@ -1,6 +1,8 @@
 package org.bouncycastle.pqc.jcajce.provider.xmss;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.security.PrivateKey;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -20,8 +22,8 @@ import org.bouncycastle.util.Arrays;
 public class BCXMSSPrivateKey
     implements PrivateKey, XMSSKey
 {
-    private final XMSSPrivateKeyParameters keyParams;
-    private final ASN1ObjectIdentifier treeDigest;
+    private transient XMSSPrivateKeyParameters keyParams;
+    private transient ASN1ObjectIdentifier treeDigest;
 
     public BCXMSSPrivateKey(
         ASN1ObjectIdentifier treeDigest,
@@ -32,6 +34,12 @@ public class BCXMSSPrivateKey
     }
 
     public BCXMSSPrivateKey(PrivateKeyInfo keyInfo)
+        throws IOException
+    {
+        init(keyInfo);
+    }
+
+    private void init(PrivateKeyInfo keyInfo)
         throws IOException
     {
         XMSSKeyParams keyParams = XMSSKeyParams.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters());
@@ -51,7 +59,8 @@ public class BCXMSSPrivateKey
 
             if (xmssPrivateKey.getBdsState() != null)
             {
-                keyBuilder.withBDSState((BDS)XMSSUtil.deserialize(xmssPrivateKey.getBdsState(), BDS.class));
+                BDS bds = (BDS)XMSSUtil.deserialize(xmssPrivateKey.getBdsState(), BDS.class);
+                keyBuilder.withBDSState(bds.withWOTSDigest(treeDigest));
             }
 
             this.keyParams = keyBuilder.build();
@@ -161,5 +170,25 @@ public class BCXMSSPrivateKey
     public String getTreeDigest()
     {
         return DigestUtil.getXMSSDigestName(treeDigest);
+    }
+
+    private void readObject(
+        ObjectInputStream in)
+        throws IOException, ClassNotFoundException
+    {
+        in.defaultReadObject();
+
+        byte[] enc = (byte[])in.readObject();
+
+        init(PrivateKeyInfo.getInstance(enc));
+    }
+
+    private void writeObject(
+        ObjectOutputStream out)
+        throws IOException
+    {
+        out.defaultWriteObject();
+
+        out.writeObject(this.getEncoded());
     }
 }

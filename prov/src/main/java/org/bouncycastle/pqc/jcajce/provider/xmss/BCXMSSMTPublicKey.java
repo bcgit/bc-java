@@ -1,6 +1,8 @@
 package org.bouncycastle.pqc.jcajce.provider.xmss;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.security.PublicKey;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -18,8 +20,8 @@ import org.bouncycastle.util.Arrays;
 public class BCXMSSMTPublicKey
     implements PublicKey, XMSSMTKey
 {
-    private final ASN1ObjectIdentifier treeDigest;
-    private final XMSSMTPublicKeyParameters keyParams;
+    private transient ASN1ObjectIdentifier treeDigest;
+    private transient XMSSMTPublicKeyParameters keyParams;
 
     public BCXMSSMTPublicKey(ASN1ObjectIdentifier treeDigest, XMSSMTPublicKeyParameters keyParams)
     {
@@ -28,6 +30,12 @@ public class BCXMSSMTPublicKey
     }
 
     public BCXMSSMTPublicKey(SubjectPublicKeyInfo keyInfo)
+        throws IOException
+    {
+        init(keyInfo);
+    }
+
+    private void init(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
         XMSSMTKeyParams keyParams = XMSSMTKeyParams.getInstance(keyInfo.getAlgorithm().getParameters());
@@ -110,5 +118,25 @@ public class BCXMSSMTPublicKey
     public String getTreeDigest()
     {
         return DigestUtil.getXMSSDigestName(treeDigest);
+    }
+
+    private void readObject(
+        ObjectInputStream in)
+        throws IOException, ClassNotFoundException
+    {
+        in.defaultReadObject();
+
+        byte[] enc = (byte[])in.readObject();
+
+        init(SubjectPublicKeyInfo.getInstance(enc));
+    }
+
+    private void writeObject(
+        ObjectOutputStream out)
+        throws IOException
+    {
+        out.defaultWriteObject();
+
+        out.writeObject(this.getEncoded());
     }
 }

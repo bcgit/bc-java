@@ -31,10 +31,10 @@ public class PKIData
         TaggedContentInfo[] cmsSequence,
         OtherMsg[] otherMsgSequence)
     {
-        this.controlSequence = controlSequence;
-        this.reqSequence = reqSequence;
-        this.cmsSequence = cmsSequence;
-        this.otherMsgSequence = otherMsgSequence;
+        this.controlSequence = copy(controlSequence);
+        this.reqSequence = copy(reqSequence);
+        this.cmsSequence = copy(cmsSequence);
+        this.otherMsgSequence = copy(otherMsgSequence);
     }
 
     private PKIData(ASN1Sequence seq)
@@ -99,36 +99,56 @@ public class PKIData
 
     public TaggedAttribute[] getControlSequence()
     {
-        TaggedAttribute[] tmp = new TaggedAttribute[controlSequence.length];
+        return copy(controlSequence);
+    }
 
-        System.arraycopy(controlSequence, 0, tmp, 0, tmp.length);
+    private TaggedAttribute[] copy(TaggedAttribute[] taggedAtts)
+    {
+        TaggedAttribute[] tmp = new TaggedAttribute[taggedAtts.length];
+
+        System.arraycopy(taggedAtts, 0, tmp, 0, tmp.length);
 
         return tmp;
     }
 
     public TaggedRequest[] getReqSequence()
     {
-        TaggedRequest[] tmp = new TaggedRequest[reqSequence.length];
+        return copy(reqSequence);
+    }
 
-        System.arraycopy(reqSequence, 0, tmp, 0, tmp.length);
+    private TaggedRequest[] copy(TaggedRequest[] taggedReqs)
+    {
+        TaggedRequest[] tmp = new TaggedRequest[taggedReqs.length];
+
+        System.arraycopy(taggedReqs, 0, tmp, 0, tmp.length);
 
         return tmp;
     }
 
     public TaggedContentInfo[] getCmsSequence()
     {
-        TaggedContentInfo[] tmp = new TaggedContentInfo[cmsSequence.length];
+        return copy(cmsSequence);
+    }
 
-        System.arraycopy(cmsSequence, 0, tmp, 0, tmp.length);
+    private TaggedContentInfo[] copy(TaggedContentInfo[] taggedConts)
+    {
+        TaggedContentInfo[] tmp = new TaggedContentInfo[taggedConts.length];
+
+        System.arraycopy(taggedConts, 0, tmp, 0, tmp.length);
 
         return tmp;
     }
 
     public OtherMsg[] getOtherMsgSequence()
     {
-        OtherMsg[] tmp = new OtherMsg[otherMsgSequence.length];
+        return copy(otherMsgSequence);
+    }
 
-        System.arraycopy(otherMsgSequence, 0, tmp, 0, tmp.length);
+    private OtherMsg[] copy(OtherMsg[] otherMsgs)
+    {
+        OtherMsg[] tmp = new OtherMsg[otherMsgs.length];
+
+        System.arraycopy(otherMsgs, 0, tmp, 0, tmp.length);
 
         return tmp;
     }

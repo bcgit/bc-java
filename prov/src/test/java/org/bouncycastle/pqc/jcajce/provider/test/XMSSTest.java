@@ -1,5 +1,9 @@
 package org.bouncycastle.pqc.jcajce.provider.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -23,6 +27,7 @@ import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.XMSSParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Base64;
 
 /**
  * Test cases for the use of XMSS with the BCPQC provider.
@@ -30,7 +35,46 @@ import org.bouncycastle.util.Strings;
 public class XMSSTest
     extends TestCase
 {
-    byte[] msg = Strings.toByteArray("Cthulhu Fthagn --What a wonderful phrase!Cthulhu Fthagn --Say it and you're crazed!");
+    private static byte[] msg = Strings.toByteArray("Cthulhu Fthagn --What a wonderful phrase!Cthulhu Fthagn --Say it and you're crazed!");
+
+    private static byte[] testPrivKey = Base64.decode(
+        "MIIJUQIBADAhBgorBgEEAYGwGgICMBMCAQACAQowCwYJYIZIAWUDBAIBBIIJJzCCCSMCAQAwgYsCAQAEIJz4Lh9eEhuxG4dgjfRXOw" +
+            "K7Um5YmC6Xf4lkXvtPgsdnBCDNR477ikIt1sOIr3+ElyurEY2gvVYydvk+LZm+OY/pagQgwCnFSoMAerORUDoJHb9tXqrCzIp52yYz" +
+            "gr3TOIKhzcAEIOCommSN0UszkpJUMLzJxe856LQbH7hl73xPpFnCwVJtoIIIjgSCCIqs7QAFc3IAJG9yZy5ib3VuY3ljYXN0bGUucH" +
+            "FjLmNyeXB0by54bXNzLkJEUwAAAAAAAAABAgAKSQAFaW5kZXhJAAFrSQAKdHJlZUhlaWdodFoABHVzZWRMABJhdXRoZW50aWNhdGlv" +
+            "blBhdGh0ABBMamF2YS91dGlsL0xpc3Q7TAAEa2VlcHQAD0xqYXZhL3V0aWwvTWFwO0wABnJldGFpbnEAfgACTAAEcm9vdHQAK0xvcm" +
+            "cvYm91bmN5Y2FzdGxlL3BxYy9jcnlwdG8veG1zcy9YTVNTTm9kZTtMAAVzdGFja3QAEUxqYXZhL3V0aWwvU3RhY2s7TAARdHJlZUhh" +
+            "c2hJbnN0YW5jZXNxAH4AAXhwAAAAAAAAAAIAAAAKAHNyABNqYXZhLnV0aWwuQXJyYXlMaXN0eIHSHZnHYZ0DAAFJAARzaXpleHAAAA" +
+            "AKdwQAAAAKc3IAKW9yZy5ib3VuY3ljYXN0bGUucHFjLmNyeXB0by54bXNzLlhNU1NOb2RlAAAAAAAAAAECAAJJAAZoZWlnaHRbAAV2" +
+            "YWx1ZXQAAltCeHAAAAAAdXIAAltCrPMX+AYIVOACAAB4cAAAACAGQv71vuxiZWXV4/Ju/9iKZCWJJH/tGib2csoUJOc8eHNxAH4ACA" +
+            "AAAAF1cQB+AAsAAAAgsqaSHpyaapwnlBv57C8sKLYUAp3Oe8jY2EZ8hSA7VQVzcQB+AAgAAAACdXEAfgALAAAAIL5Eb9aOASc8bJNt" +
+            "AwbO7pmTD7rMl74XiufBHOqgjXR+c3EAfgAIAAAAA3VxAH4ACwAAACDDX+WyjGU4eUb5OvHYbjVsjUAPHSSGRCfhC8BmTMD8gXNxAH" +
+            "4ACAAAAAR1cQB+AAsAAAAgxdz9x1wcJzZuwWSubFsFwD6IICfG+nj2kRbZtGP0LvlzcQB+AAgAAAAFdXEAfgALAAAAINrZJ2N7sn7i" +
+            "mddC8uuL3kwvsem8S/HLNVvFdu7mDjUVc3EAfgAIAAAABnVxAH4ACwAAACAnH0jqcIwZ43zMTbOz5l/SPBYA8I2G3ThJxyK3+CFqX3" +
+            "NxAH4ACAAAAAd1cQB+AAsAAAAgUesW9Krrb+DRkRfvw1GedWY2mkicW9gWysuxdpcwQpJzcQB+AAgAAAAIdXEAfgALAAAAILTstGe7" +
+            "7ZTz+Tu9hXo6W6Ceek8iqoMWR2LnlB4MlHDNc3EAfgAIAAAACXVxAH4ACwAAACBcak0jZQNXH/RqUaXXchab6lVlt0tFPwjDyjA6zj" +
+            "yigHhzcgARamF2YS51dGlsLlRyZWVNYXAMwfY+LSVq5gMAAUwACmNvbXBhcmF0b3J0ABZMamF2YS91dGlsL0NvbXBhcmF0b3I7eHBw" +
+            "dwQAAAAAeHNxAH4AH3B3BAAAAAFzcgARamF2YS5sYW5nLkludGVnZXIS4qCk94GHOAIAAUkABXZhbHVleHIAEGphdmEubGFuZy5OdW" +
+            "1iZXKGrJUdC5TgiwIAAHhwAAAACHNyABRqYXZhLnV0aWwuTGlua2VkTGlzdAwpU11KYIgiAwAAeHB3BAAAAAFzcQB+AAgAAAAIdXEA" +
+            "fgALAAAAINAd+MxJvrqmIxJYJvpW7TJZBtAw8xVVrWffg0v/FqNgeHhzcQB+AAgAAAAKdXEAfgALAAAAIOCommSN0UszkpJUMLzJxe" +
+            "856LQbH7hl73xPpFnCwVJtc3IAD2phdmEudXRpbC5TdGFjaxD+KsK7CYYdAgAAeHIAEGphdmEudXRpbC5WZWN0b3LZl31bgDuvAQMA" +
+            "A0kAEWNhcGFjaXR5SW5jcmVtZW50SQAMZWxlbWVudENvdW50WwALZWxlbWVudERhdGF0ABNbTGphdmEvbGFuZy9PYmplY3Q7eHAAAA" +
+            "AAAAAAAHVyABNbTGphdmEubGFuZy5PYmplY3Q7kM5YnxBzKWwCAAB4cAAAAApwcHBwcHBwcHBweHNxAH4ABgAAAAh3BAAAAAhzcgAs" +
+            "b3JnLmJvdW5jeWNhc3RsZS5wcWMuY3J5cHRvLnhtc3MuQkRTVHJlZUhhc2gAAAAAAAAAAQIABloACGZpbmlzaGVkSQAGaGVpZ2h0SQ" +
+            "ANaW5pdGlhbEhlaWdodFoAC2luaXRpYWxpemVkSQAJbmV4dEluZGV4TAAIdGFpbE5vZGVxAH4AA3hwAQAAAAAAAAAAAAAAAABzcQB+" +
+            "AAgAAAAAdXEAfgALAAAAIJlIeq2/6feYEOIoFJ14wZsogn4eAI7kNj3Y4NZtAGY0c3EAfgAzAQAAAAEAAAABAAAAAABzcQB+AAgAAA" +
+            "ABdXEAfgALAAAAIO5nPo5M/pLgkDLgzkCTUy+VjaPEo3cgMm5Mrg11jKXoc3EAfgAzAQAAAAIAAAACAAAAAABzcQB+AAgAAAACdXEA" +
+            "fgALAAAAIKGPe8aqDKAN6p7i5wpnVgBr+wigNp8CRKtJI1FjDgnLc3EAfgAzAQAAAAMAAAADAAAAAABzcQB+AAgAAAADdXEAfgALAA" +
+            "AAIEFdO93VUT6Q6tt4ZJaVf+Uh3BJ7ez9megbGCGEvjD1Sc3EAfgAzAQAAAAQAAAAEAAAAAABzcQB+AAgAAAAEdXEAfgALAAAAIGkP" +
+            "gbAYQss69U6Ak7S2yciX1cnj+9C3KjFh5j5pILQoc3EAfgAzAQAAAAUAAAAFAAAAAABzcQB+AAgAAAAFdXEAfgALAAAAICZR+aZttx" +
+            "PqjHYIQlaFac2mK5WiEiSy8Je+XmItQ6Xac3EAfgAzAQAAAAYAAAAGAAAAAABzcQB+AAgAAAAGdXEAfgALAAAAINoMTeI/1jvR+IIh" +
+            "yA+vQ0xR9/8utcwXpV+hT/qkVNtCc3EAfgAzAQAAAAcAAAAHAAAAAABzcQB+AAgAAAAHdXEAfgALAAAAIFmxQ2yQ05Na9oL4WA2Qhp" +
+            "qICwl81rpce4LFUAtTdj95eA==");
+
+    private static final byte[] testPublicKey = Base64.decode(
+        "MIGxMCEGCisGAQQBgbAaAgIwEwIBAAIBCjALBglghkgBZQMEAgMDgYsAMIGHAgEABEDcKHL+5XfQ9jTGJptcqN71MmzT1qe/s42wwR" +
+            "6TkILd1jH6e5vP9Iwp+hANEWJdbxYX4gyyQQpudfOQ6+7xLJNaBEAmGsvLXJAJXu5NTICpC5LpKrWWxrz6tKRiLP10EBbxtLwM3wCW" +
+            "6+d4CehmSP7B0ffx6AzJtD6l6T+lxyO0EMXG");
 
     public void setUp()
     {
@@ -38,6 +82,48 @@ public class XMSSTest
         {
             Security.addProvider(new BouncyCastlePQCProvider());
         }
+    }
+
+    public void testPrivateKeyRecovery()
+        throws Exception
+    {
+        KeyFactory kFact = KeyFactory.getInstance("XMSS", "BCPQC");
+
+        XMSSKey privKey = (XMSSKey)kFact.generatePrivate(new PKCS8EncodedKeySpec(testPrivKey));
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ObjectOutputStream oOut = new ObjectOutputStream(bOut);
+
+        oOut.writeObject(privKey);
+
+        oOut.close();
+
+        ObjectInputStream oIn = new ObjectInputStream(new ByteArrayInputStream(bOut.toByteArray()));
+
+        XMSSKey privKey2 = (XMSSKey)oIn.readObject();
+
+        assertEquals(privKey, privKey2);
+    }
+
+    public void testPublicKeyRecovery()
+        throws Exception
+    {
+        KeyFactory kFact = KeyFactory.getInstance("XMSS", "BCPQC");
+
+        XMSSKey pubKey = (XMSSKey)kFact.generatePublic(new X509EncodedKeySpec(testPublicKey));
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ObjectOutputStream oOut = new ObjectOutputStream(bOut);
+
+        oOut.writeObject(pubKey);
+
+        oOut.close();
+
+        ObjectInputStream oIn = new ObjectInputStream(new ByteArrayInputStream(bOut.toByteArray()));
+
+        XMSSKey pubKey2 = (XMSSKey)oIn.readObject();
+
+        assertEquals(pubKey, pubKey2);
     }
 
     public void testXMSSSha256Signature()
@@ -221,6 +307,8 @@ public class XMSSTest
 
         assertEquals(10, privKey.getHeight());
         assertEquals(XMSSParameterSpec.SHA256, privKey.getTreeDigest());
+
+        testSig("SHA256withXMSS", pubKey, (PrivateKey)privKey);
     }
 
     public void testXMSSSha512KeyFactory()
@@ -247,6 +335,26 @@ public class XMSSTest
 
         assertEquals(10, pubKey.getHeight());
         assertEquals(XMSSParameterSpec.SHA512, pubKey.getTreeDigest());
+    }
+
+    private void testSig(String algorithm, PublicKey pubKey, PrivateKey privKey)
+        throws Exception
+    {
+        byte[] message = Strings.toByteArray("hello, world!");
+
+        Signature s = Signature.getInstance(algorithm, "BCPQC");
+
+        s.initSign(privKey);
+
+        s.update(message, 0, message.length);
+
+        byte[] sig = s.sign();
+
+        s.initVerify(pubKey);
+
+        s.update(message, 0, message.length);
+
+        assertTrue(s.verify(sig));
     }
 
     public void testKeyExtraction()
@@ -366,5 +474,4 @@ public class XMSSTest
         // be in the same state.
         assertTrue(Arrays.areEqual(sig1, sig2));
     }
-
 }

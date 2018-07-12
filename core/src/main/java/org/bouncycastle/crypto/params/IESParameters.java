@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.params;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.util.Arrays;
 
 /**
  * parameters for using an integrated cipher in stream mode.
@@ -22,19 +23,19 @@ public class IESParameters
         byte[]  encoding,
         int     macKeySize)
     {
-        this.derivation = derivation;
-        this.encoding = encoding;
+        this.derivation = Arrays.clone(derivation);
+        this.encoding = Arrays.clone(encoding);
         this.macKeySize = macKeySize;
     }
 
     public byte[] getDerivationV()
     {
-        return derivation;
+        return Arrays.clone(derivation);
     }
 
     public byte[] getEncodingV()
     {
-        return encoding;
+        return Arrays.clone(encoding);
     }
 
     public int getMacKeySize()

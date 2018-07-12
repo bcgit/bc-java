@@ -56,7 +56,7 @@ public class ECDomainParameters
         this.G = validate(curve, G);
         this.n = n;
         this.h = h;
-        this.seed = seed;
+        this.seed = Arrays.clone(seed);
     }
 
     public ECCurve getCurve()

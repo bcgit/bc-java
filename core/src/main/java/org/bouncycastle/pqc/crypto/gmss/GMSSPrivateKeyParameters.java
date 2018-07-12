@@ -198,7 +198,7 @@ public class GMSSPrivateKeyParameters
         this.currentSeeds = currentSeeds;
         this.nextNextSeeds = nextNextSeeds;
 
-        this.currentAuthPaths = currentAuthPaths;
+        this.currentAuthPaths = Arrays.clone(currentAuthPaths);
         this.nextAuthPaths = nextAuthPaths;
 
         // initialize keep if null

@@ -60,7 +60,7 @@ public class CertificatePolicies
     public CertificatePolicies(
         PolicyInformation[] policyInformation)
     {
-        this.policyInformation = policyInformation;
+        this.policyInformation = copyPolicyInfo(policyInformation);
     }
 
     private CertificatePolicies(
@@ -76,9 +76,14 @@ public class CertificatePolicies
 
     public PolicyInformation[] getPolicyInformation()
     {
-        PolicyInformation[] tmp = new PolicyInformation[policyInformation.length];
+        return copyPolicyInfo(policyInformation);
+    }
 
-        System.arraycopy(policyInformation, 0, tmp, 0, policyInformation.length);
+    private PolicyInformation[] copyPolicyInfo(PolicyInformation[] policyInfo)
+    {
+        PolicyInformation[] tmp = new PolicyInformation[policyInfo.length];
+
+        System.arraycopy(policyInfo, 0, tmp, 0, policyInfo.length);
 
         return tmp;
     }
