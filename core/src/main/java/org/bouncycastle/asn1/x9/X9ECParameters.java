@@ -129,7 +129,7 @@ public class X9ECParameters
         this.g = g;
         this.n = n;
         this.h = h;
-        this.seed = seed;
+        this.seed = Arrays.clone(seed);
 
         if (ECAlgorithms.isFpCurve(curve))
         {

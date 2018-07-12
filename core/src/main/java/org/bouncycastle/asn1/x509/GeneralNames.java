@@ -56,7 +56,7 @@ public class GeneralNames
     public GeneralNames(
         GeneralName[]  names)
     {
-        this.names = names;
+        this.names = copy(names);
     }
 
     private GeneralNames(
@@ -72,9 +72,14 @@ public class GeneralNames
 
     public GeneralName[] getNames()
     {
-        GeneralName[] tmp = new GeneralName[names.length];
+        return copy(names);
+    }
 
-        System.arraycopy(names, 0, tmp, 0, names.length);
+    private GeneralName[] copy(GeneralName[] nms)
+    {
+        GeneralName[] tmp = new GeneralName[nms.length];
+
+        System.arraycopy(nms, 0, tmp, 0, tmp.length);
 
         return tmp;
     }

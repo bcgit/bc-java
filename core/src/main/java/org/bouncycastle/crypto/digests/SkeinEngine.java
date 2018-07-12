@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.engines.ThreefishEngine;
 import org.bouncycastle.crypto.macs.SkeinMac;
 import org.bouncycastle.crypto.params.SkeinParameters;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Memoable;
 
 /**
@@ -221,7 +222,7 @@ public class SkeinEngine
 
     private static Integer variantIdentifier(int blockSizeBytes, int outputSizeBytes)
     {
-        return new Integer((outputSizeBytes << 16) | blockSizeBytes);
+        return Integers.valueOf((outputSizeBytes << 16) | blockSizeBytes);
     }
 
     private static class UbiTweak

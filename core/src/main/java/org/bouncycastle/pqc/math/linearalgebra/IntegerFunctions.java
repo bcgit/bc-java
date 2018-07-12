@@ -889,7 +889,7 @@ public final class IntegerFunctions
             n -= 2;
         }
 
-        while (n > 3 & !isPrime(n))
+        while (n > 3 && !isPrime(n))
         {
             n -= 2;
         }
