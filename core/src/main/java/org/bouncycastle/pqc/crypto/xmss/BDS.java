@@ -139,6 +139,7 @@ public final class BDS
         this.keep = new TreeMap<Integer, XMSSNode>(last.keep);
         this.index = last.index;
         this.used = last.used;
+        this.validate();
     }
 
     public BDS getNextState(byte[] publicSeed, byte[] secretKeySeed, OTSHashAddress otsHashAddress)
@@ -368,7 +369,7 @@ public final class BDS
         return ret;
     }
 
-    protected void validate()
+    private void validate()
     {
         if (authenticationPath == null)
         {
@@ -414,16 +415,6 @@ public final class BDS
             authenticationPath.add(node.clone());
         }
         return authenticationPath;
-    }
-
-    protected void setXMSS(XMSSParameters xmss)
-    {
-        if (treeHeight != xmss.getHeight())
-        {
-            throw new IllegalStateException("wrong height");
-        }
-
-        this.wotsPlus = xmss.getWOTSPlus();
     }
 
     protected int getIndex()

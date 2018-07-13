@@ -89,13 +89,11 @@ public final class XMSSPrivateKeyParameters
             try
             {
                 BDS bdsImport = (BDS)XMSSUtil.deserialize(bdsStateBinary, BDS.class);
-                bdsImport.setXMSS(builder.xmss);
-                bdsImport.validate();
                 if (bdsImport.getIndex() != index)
                 {
                     throw new IllegalStateException("serialized BDS has wrong index");
                 }
-                bdsState = bdsImport;
+                bdsState = bdsImport.withWOTSDigest(DigestUtil.getDigestOID(builder.xmss.getDigest().getAlgorithmName()));
             }
             catch (IOException e)
             {
