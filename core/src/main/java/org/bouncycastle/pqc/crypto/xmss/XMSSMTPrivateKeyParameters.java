@@ -72,8 +72,7 @@ public final class XMSSMTPrivateKeyParameters
             {
                 BDSStateMap bdsImport = (BDSStateMap)XMSSUtil.deserialize(bdsStateBinary, BDSStateMap.class);
 
-                bdsImport.setXMSS(builder.xmss);
-                bdsState = bdsImport;
+                bdsState = bdsImport.withWOTSDigest(DigestUtil.getDigestOID(builder.xmss.getDigest().getAlgorithmName()));
             }
             catch (IOException e)
             {

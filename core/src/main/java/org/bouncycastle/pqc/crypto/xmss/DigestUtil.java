@@ -1,5 +1,8 @@
 package org.bouncycastle.pqc.crypto.xmss;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
@@ -10,6 +13,16 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 
 class DigestUtil
 {
+    private static Map<String, ASN1ObjectIdentifier> nameToOid = new HashMap<String, ASN1ObjectIdentifier>();
+
+    static
+    {
+        nameToOid.put("SHA-256", NISTObjectIdentifiers.id_sha256);
+        nameToOid.put("SHA-512", NISTObjectIdentifiers.id_sha512);
+        nameToOid.put("SHAKE128", NISTObjectIdentifiers.id_shake128);
+        nameToOid.put("SHAKE256", NISTObjectIdentifiers.id_shake256);
+    }
+
     static Digest getDigest(ASN1ObjectIdentifier oid)
     {
         if (oid.equals(NISTObjectIdentifiers.id_sha256))
@@ -32,20 +45,15 @@ class DigestUtil
         throw new IllegalArgumentException("unrecognized digest OID: " + oid);
     }
 
-    public static byte[] getDigestResult(Digest digest)
+    static ASN1ObjectIdentifier getDigestOID(String name)
     {
-        byte[] hash = new byte[DigestUtil.getDigestSize(digest)];
-
-        if (digest instanceof Xof)
+        ASN1ObjectIdentifier oid = nameToOid.get(name);
+        if (oid != null)
         {
-            ((Xof)digest).doFinal(hash, 0, hash.length);
-        }
-        else
-        {
-            digest.doFinal(hash, 0);
+            return oid;
         }
 
-        return hash;
+        throw new IllegalArgumentException("unrecognized digest name: " + name);
     }
 
     public static int getDigestSize(Digest digest)

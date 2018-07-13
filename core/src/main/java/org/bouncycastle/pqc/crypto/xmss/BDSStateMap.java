@@ -89,34 +89,22 @@ public class BDSStateMap
         }
     }
 
-    void setXMSS(XMSSParameters xmss)
-    {
-        for (Iterator it = bdsState.keySet().iterator(); it.hasNext();)
-        {
-            Integer key = (Integer)it.next();
-
-            BDS bds = bdsState.get(key);
-            bds.setXMSS(xmss);
-            bds.validate();
-        }
-    }
-
     public boolean isEmpty()
     {
         return bdsState.isEmpty();
     }
 
-    public BDS get(int index)
+    BDS get(int index)
     {
         return bdsState.get(Integers.valueOf(index));
     }
 
-    public BDS update(int index, byte[] publicSeed, byte[] secretKeySeed, OTSHashAddress otsHashAddress)
+    BDS update(int index, byte[] publicSeed, byte[] secretKeySeed, OTSHashAddress otsHashAddress)
     {
         return bdsState.put(Integers.valueOf(index), bdsState.get(Integers.valueOf(index)).getNextState(publicSeed, secretKeySeed, otsHashAddress));
     }
 
-    public void put(int index, BDS bds)
+    void put(int index, BDS bds)
     {
         bdsState.put(Integers.valueOf(index), bds);
     }
