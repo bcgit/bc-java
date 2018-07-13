@@ -3247,7 +3247,7 @@ public class PGPKeyRingTest
     {
         Iterator<PGPPublicKey> iterator;PGPPublicKeyRing publicKeys = new PGPPublicKeyRing(encRing, new BcKeyFingerprintCalculator());
 
-        // Check, if all public keys made it to the new public key ring (they don't)
+        // Check, if all public keys made it to the new public key ring
         iterator = secretKeys.getPublicKeys();
         while (iterator.hasNext())
         {
