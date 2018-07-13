@@ -264,8 +264,9 @@ public class PGPSecretKeyRing
         List pubKeys = new ArrayList();
 
         for (Iterator it = getSecretKeys(); it.hasNext();)
-        {
-            pubKeys.add(((PGPSecretKey)it.next()).getPublicKey());
+        {            
+            PGPPublicKey key = ((PGPSecretKey)it.next()).getPublicKey();
+            pubKeys.add(key);
         }
 
         pubKeys.addAll(extraPubKeys);
