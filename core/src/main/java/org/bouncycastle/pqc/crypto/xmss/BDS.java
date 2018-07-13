@@ -114,7 +114,8 @@ public final class BDS
         this.root = last.root;
         this.authenticationPath = new ArrayList<XMSSNode>(last.authenticationPath);
         this.retain = last.retain;
-        this.stack = (Stack<XMSSNode>)last.stack.clone();
+        this.stack = new Stack<XMSSNode>();
+        this.stack.addAll(last.stack);
         this.treeHashInstances = last.treeHashInstances;
         this.keep = new TreeMap<Integer, XMSSNode>(last.keep);
         this.index = last.index;
