@@ -102,8 +102,13 @@ public class PGPKeyRingGenerator
             List                 subSigs = new ArrayList();
             
             subSigs.add(sGen.generateCertification(masterKey.getPublicKey(), keyPair.getPublicKey()));
-            
-            keys.add(new PGPSecretKey(keyPair.getPrivateKey(), new PGPPublicKey(keyPair.getPublicKey(), null, subSigs), checksumCalculator, keyEncryptor));
+
+            // replace the public key packet structure with a public subkey one.
+            PGPPublicKey pubSubKey = new PGPPublicKey(keyPair.getPublicKey(), null, subSigs);
+
+            pubSubKey.publicPk = new PublicSubkeyPacket(pubSubKey.getAlgorithm(), pubSubKey.getCreationTime(), pubSubKey.publicPk.getKey());
+
+            keys.add(new PGPSecretKey(keyPair.getPrivateKey(), pubSubKey, checksumCalculator, keyEncryptor));
         }
         catch (PGPException e)
         {
@@ -139,11 +144,7 @@ public class PGPKeyRingGenerator
         
         while (it.hasNext())
         {
-            PGPPublicKey k = new PGPPublicKey(((PGPSecretKey)it.next()).getPublicKey());
-            
-            k.publicPk = new PublicSubkeyPacket(k.getAlgorithm(), k.getCreationTime(), k.publicPk.getKey());
-            
-            pubKeys.add(k);
+            pubKeys.add(((PGPSecretKey)it.next()).getPublicKey());
         }
         
         return new PGPPublicKeyRing(pubKeys);
