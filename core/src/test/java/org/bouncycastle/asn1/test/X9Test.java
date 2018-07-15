@@ -17,7 +17,6 @@ import org.bouncycastle.asn1.x9.X9IntegerConverter;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -171,6 +170,5 @@ public class X9Test
         String[]    args)
     {
         runTest(new X9Test());
-        System.err.println(Strings.fromByteArray(Base64.decode("aGhoQGdtYWlsLmNvbQ==")));
     }
 }
