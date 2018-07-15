@@ -172,7 +172,7 @@ public class ASN1StreamParser
 
             if ((tag & BERTags.APPLICATION) != 0)
             {
-                return new DERApplicationSpecific(isConstructed, tagNo, defIn.toByteArray());
+                return new DLApplicationSpecific(isConstructed, tagNo, defIn.toByteArray());
             }
 
             if ((tag & BERTags.TAGGED) != 0)

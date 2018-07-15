@@ -143,7 +143,7 @@ public class ASN1InputStream
 
         if ((tag & APPLICATION) != 0)
         {
-            return new DERApplicationSpecific(isConstructed, tagNo, defIn.toByteArray());
+            return new DLApplicationSpecific(isConstructed, tagNo, defIn.toByteArray());
         }
 
         if ((tag & TAGGED) != 0)
@@ -181,7 +181,7 @@ public class ASN1InputStream
                 case SET:
                     return DERFactory.createSet(buildDEREncodableVector(defIn));
                 case EXTERNAL:
-                    return new DERExternal(buildDEREncodableVector(defIn));                
+                    return new DLExternal(buildDEREncodableVector(defIn));
                 default:
                     throw new IOException("unknown tag " + tagNo + " encountered");
             }

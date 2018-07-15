@@ -3,6 +3,7 @@ package org.bouncycastle.asn1;
 import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Base class for an ASN.1 ApplicationSpecific object
@@ -222,5 +223,30 @@ public abstract class ASN1ApplicationSpecific
         tmp[0] = (byte)newTag;
 
         return tmp;
+    }
+
+    public String toString()
+    {
+        StringBuffer sb = new StringBuffer();
+        sb.append("[");
+        if (isConstructed())
+        {
+            sb.append("CONSTRUCTED ");
+        }
+        sb.append("APPLICATION ");
+        sb.append(Integer.toString(getApplicationTag()));
+        sb.append("]");
+        // @todo content encoding somehow?
+        if (this.octets != null)
+        {
+            sb.append(" #");
+            sb.append(Hex.toHexString(this.octets));
+        }
+        else
+        {
+            sb.append(" #null");
+        }
+        sb.append(" ");
+        return sb.toString();
     }
 }

@@ -3,6 +3,7 @@ package org.bouncycastle.asn1.test;
 import java.io.IOException;
 import java.security.SecureRandom;
 
+import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
@@ -39,7 +40,7 @@ public class TagTest
     {
         ASN1InputStream aIn = new ASN1InputStream(longTagged);
 
-        DERApplicationSpecific app = (DERApplicationSpecific)aIn.readObject();
+        ASN1ApplicationSpecific app = (ASN1ApplicationSpecific)aIn.readObject();
         
         aIn = new ASN1InputStream(app.getContents());
 
