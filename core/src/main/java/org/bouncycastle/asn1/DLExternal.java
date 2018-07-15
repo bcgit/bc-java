@@ -4,13 +4,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 /**
- * Class representing the DER-type External
+ * Class representing the Definite-Length-type External
  */
-public class DERExternal
+public class DLExternal
     extends ASN1External
 {
     /**
-     * Construct a DER EXTERNAL object, the input encoding vector must have exactly two elements on it.
+     * Construct a Definite-Length EXTERNAL object, the input encoding vector must have exactly two elements on it.
      * <p>
      * Acceptable input formats are:
      * <ul>
@@ -21,7 +21,7 @@ public class DERExternal
      *
      * @throws IllegalArgumentException if input size is wrong, or
      */
-    public DERExternal(ASN1EncodableVector vector)
+    public DLExternal(ASN1EncodableVector vector)
     {
         super(vector);
     }
@@ -34,13 +34,13 @@ public class DERExternal
      * @param dataValueDescriptor The data value descriptor or <code>null</code> if not set.
      * @param externalData The external data in its encoded form.
      */
-    public DERExternal(ASN1ObjectIdentifier directReference, ASN1Integer indirectReference, ASN1Primitive dataValueDescriptor, DERTaggedObject externalData)
+    public DLExternal(ASN1ObjectIdentifier directReference, ASN1Integer indirectReference, ASN1Primitive dataValueDescriptor, DERTaggedObject externalData)
     {
         this(directReference, indirectReference, dataValueDescriptor, externalData.getTagNo(), externalData.toASN1Primitive());
     }
 
     /**
-     * Creates a new instance of DERExternal.
+     * Creates a new instance of Definite-Length External.
      * See X.690 for more informations about the meaning of these parameters
      * @param directReference The direct reference or <code>null</code> if not set.
      * @param indirectReference The indirect reference or <code>null</code> if not set.
@@ -48,7 +48,7 @@ public class DERExternal
      * @param encoding The encoding to be used for the external data
      * @param externalData The external data
      */
-    public DERExternal(ASN1ObjectIdentifier directReference, ASN1Integer indirectReference, ASN1Primitive dataValueDescriptor, int encoding, ASN1Primitive externalData)
+    public DLExternal(ASN1ObjectIdentifier directReference, ASN1Integer indirectReference, ASN1Primitive dataValueDescriptor, int encoding, ASN1Primitive externalData)
     {
         super(directReference, indirectReference, dataValueDescriptor, encoding, externalData);
     }
@@ -68,18 +68,18 @@ public class DERExternal
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         if (directReference != null)
         {
-            baos.write(directReference.getEncoded(ASN1Encoding.DER));
+            baos.write(directReference.getEncoded(ASN1Encoding.DL));
         }
         if (indirectReference != null)
         {
-            baos.write(indirectReference.getEncoded(ASN1Encoding.DER));
+            baos.write(indirectReference.getEncoded(ASN1Encoding.DL));
         }
         if (dataValueDescriptor != null)
         {
-            baos.write(dataValueDescriptor.getEncoded(ASN1Encoding.DER));
+            baos.write(dataValueDescriptor.getEncoded(ASN1Encoding.DL));
         }
         DERTaggedObject obj = new DERTaggedObject(true, encoding, externalContent);
-        baos.write(obj.getEncoded(ASN1Encoding.DER));
+        baos.write(obj.getEncoded(ASN1Encoding.DL));
         out.writeEncoded(BERTags.CONSTRUCTED, BERTags.EXTERNAL, baos.toByteArray());
     }
 }

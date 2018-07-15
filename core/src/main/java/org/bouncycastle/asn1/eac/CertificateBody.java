@@ -17,24 +17,24 @@ import org.bouncycastle.asn1.DEROctetString;
  * <pre>
  *  CertificateBody ::= SEQUENCE {
  *      // version of the certificate format. Must be 0 (version 1)
- *      CertificateProfileIdentifer         DERApplicationSpecific,
+ *      CertificateProfileIdentifer         ASN1ApplicationSpecific,
  *      //uniquely identifies the issuinng CA's signature key pair
  *      // contains the iso3166-1 alpha2 encoded country code, the
  *      // name of issuer and the sequence number of the key pair.
- *      CertificationAuthorityReference        DERApplicationSpecific,
+ *      CertificationAuthorityReference        ASN1ApplicationSpecific,
  *      // stores the encoded public key
  *      PublicKey                            Iso7816PublicKey,
  *      //associates the public key contained in the certificate with a unique name
  *      // contains the iso3166-1 alpha2 encoded country code, the
  *      // name of the holder and the sequence number of the key pair.
- *      certificateHolderReference            DERApplicationSpecific,
+ *      certificateHolderReference            ASN1ApplicationSpecific,
  *      // Encodes the role of the holder (i.e. CVCA, DV, IS) and assigns read/write
  *      // access rights to data groups storing sensitive data
  *      certificateHolderAuthorization        Iso7816CertificateHolderAuthorization,
  *      // the date of the certificate generation
- *      CertificateEffectiveDate            DERApplicationSpecific,
+ *      CertificateEffectiveDate            ASN1ApplicationSpecific,
  *      // the date after wich the certificate expires
- *      certificateExpirationDate            DERApplicationSpecific
+ *      certificateExpirationDate            ASN1ApplicationSpecific
  *  }
  * </pre>
  */
@@ -42,13 +42,13 @@ public class CertificateBody
     extends ASN1Object
 {
     ASN1InputStream seq;
-    private DERApplicationSpecific certificateProfileIdentifier;// version of the certificate format. Must be 0 (version 1)
-    private DERApplicationSpecific certificationAuthorityReference;//uniquely identifies the issuinng CA's signature key pair
+    private ASN1ApplicationSpecific certificateProfileIdentifier;// version of the certificate format. Must be 0 (version 1)
+    private ASN1ApplicationSpecific certificationAuthorityReference;//uniquely identifies the issuinng CA's signature key pair
     private PublicKeyDataObject publicKey;// stores the encoded public key
-    private DERApplicationSpecific certificateHolderReference;//associates the public key contained in the certificate with a unique name
+    private ASN1ApplicationSpecific certificateHolderReference;//associates the public key contained in the certificate with a unique name
     private CertificateHolderAuthorization certificateHolderAuthorization;// Encodes the role of the holder (i.e. CVCA, DV, IS) and assigns read/write access rights to data groups storing sensitive data
-    private DERApplicationSpecific certificateEffectiveDate;// the date of the certificate generation
-    private DERApplicationSpecific certificateExpirationDate;// the date after wich the certificate expires
+    private ASN1ApplicationSpecific certificateEffectiveDate;// the date of the certificate generation
+    private ASN1ApplicationSpecific certificateExpirationDate;// the date after wich the certificate expires
     private int certificateType = 0;// bit field of initialized data. This will tell us if the data are valid.
     private static final int CPI = 0x01;//certificate Profile Identifier
     private static final int CAR = 0x02;//certification Authority Reference
@@ -77,15 +77,15 @@ public class CertificateBody
         ASN1Primitive obj;
         while ((obj = aIS.readObject()) != null)
         {
-            DERApplicationSpecific aSpe;
+            ASN1ApplicationSpecific aSpe;
 
-            if (obj instanceof DERApplicationSpecific)
+            if (obj instanceof ASN1ApplicationSpecific)
             {
-                aSpe = (DERApplicationSpecific)obj;
+                aSpe = (ASN1ApplicationSpecific)obj;
             }
             else
             {
-                throw new IOException("Not a valid iso7816 content : not a DERApplicationSpecific Object :" + EACTags.encodeTag(appSpe) + obj.getClass());
+                throw new IOException("Not a valid iso7816 content : not a ASN1ApplicationSpecific Object :" + EACTags.encodeTag(appSpe) + obj.getClass());
             }
             switch (aSpe.getApplicationTag())
             {
@@ -112,7 +112,7 @@ public class CertificateBody
                 break;
             default:
                 certificateType = 0;
-                throw new IOException("Not a valid iso7816 DERApplicationSpecific tag " + aSpe.getApplicationTag());
+                throw new IOException("Not a valid iso7816 ASN1ApplicationSpecific tag " + aSpe.getApplicationTag());
             }
         }
         aIS.close();
@@ -131,7 +131,7 @@ public class CertificateBody
      * @param certificateExpirationDate
      */
     public CertificateBody(
-        DERApplicationSpecific certificateProfileIdentifier,
+        ASN1ApplicationSpecific certificateProfileIdentifier,
         CertificationAuthorityReference certificationAuthorityReference,
         PublicKeyDataObject publicKey,
         CertificateHolderReference certificateHolderReference,
@@ -163,7 +163,7 @@ public class CertificateBody
     /**
      * builds an Iso7816CertificateBody with an ASN1InputStream.
      *
-     * @param obj DERApplicationSpecific containing the whole body.
+     * @param obj ASN1ApplicationSpecific containing the whole body.
      * @throws IOException if the body is not valid.
      */
     private CertificateBody(ASN1ApplicationSpecific obj)
@@ -176,7 +176,7 @@ public class CertificateBody
      * create a profile type Iso7816CertificateBody.
      *
      * @return return the "profile" type certificate body.
-     * @throws IOException if the DERApplicationSpecific cannot be created.
+     * @throws IOException if the ASN1ApplicationSpecific cannot be created.
      */
     private ASN1Primitive profileToASN1Object()
         throws IOException
@@ -193,7 +193,7 @@ public class CertificateBody
         return new DERApplicationSpecific(EACTags.CERTIFICATE_CONTENT_TEMPLATE, v);
     }
 
-    private void setCertificateProfileIdentifier(DERApplicationSpecific certificateProfileIdentifier)
+    private void setCertificateProfileIdentifier(ASN1ApplicationSpecific certificateProfileIdentifier)
         throws IllegalArgumentException
     {
         if (certificateProfileIdentifier.getApplicationTag() == EACTags.INTERCHANGE_PROFILE)
@@ -207,7 +207,7 @@ public class CertificateBody
         }
     }
 
-    private void setCertificateHolderReference(DERApplicationSpecific certificateHolderReference)
+    private void setCertificateHolderReference(ASN1ApplicationSpecific certificateHolderReference)
         throws IllegalArgumentException
     {
         if (certificateHolderReference.getApplicationTag() == EACTags.CARDHOLDER_NAME)
@@ -225,11 +225,11 @@ public class CertificateBody
      * set the CertificationAuthorityReference.
      *
      * @param certificationAuthorityReference
-     *         the DERApplicationSpecific containing the CertificationAuthorityReference.
-     * @throws IllegalArgumentException if the DERApplicationSpecific is not valid.
+     *         the ASN1ApplicationSpecific containing the CertificationAuthorityReference.
+     * @throws IllegalArgumentException if the ASN1ApplicationSpecific is not valid.
      */
     private void setCertificationAuthorityReference(
-        DERApplicationSpecific certificationAuthorityReference)
+        ASN1ApplicationSpecific certificationAuthorityReference)
         throws IllegalArgumentException
     {
         if (certificationAuthorityReference.getApplicationTag() == EACTags.ISSUER_IDENTIFICATION_NUMBER)
@@ -246,7 +246,7 @@ public class CertificateBody
     /**
      * set the public Key
      *
-     * @param publicKey : the DERApplicationSpecific containing the public key
+     * @param publicKey : the ASN1ApplicationSpecific containing the public key
      * @throws java.io.IOException
      */
     private void setPublicKey(PublicKeyDataObject publicKey)
@@ -259,7 +259,7 @@ public class CertificateBody
      * create a request type Iso7816CertificateBody.
      *
      * @return return the "request" type certificate body.
-     * @throws IOException if the DERApplicationSpecific cannot be created.
+     * @throws IOException if the ASN1ApplicationSpecific cannot be created.
      */
     private ASN1Primitive requestToASN1Object()
         throws IOException
@@ -345,10 +345,10 @@ public class CertificateBody
     /**
      * set the date of the certificate generation
      *
-     * @param ced DERApplicationSpecific containing the date of the certificate generation
+     * @param ced ASN1ApplicationSpecific containing the date of the certificate generation
      * @throws IllegalArgumentException if the tag is not Iso7816Tags.APPLICATION_EFFECTIVE_DATE
      */
-    private void setCertificateEffectiveDate(DERApplicationSpecific ced)
+    private void setCertificateEffectiveDate(ASN1ApplicationSpecific ced)
         throws IllegalArgumentException
     {
         if (ced.getApplicationTag() == EACTags.APPLICATION_EFFECTIVE_DATE)
@@ -379,10 +379,10 @@ public class CertificateBody
     /**
      * set the date after wich the certificate expires
      *
-     * @param ced DERApplicationSpecific containing the date after wich the certificate expires
+     * @param ced ASN1ApplicationSpecific containing the date after wich the certificate expires
      * @throws IllegalArgumentException if the tag is not Iso7816Tags.APPLICATION_EXPIRATION_DATE
      */
-    private void setCertificateExpirationDate(DERApplicationSpecific ced)
+    private void setCertificateExpirationDate(ASN1ApplicationSpecific ced)
         throws IllegalArgumentException
     {
         if (ced.getApplicationTag() == EACTags.APPLICATION_EXPIRATION_DATE)
@@ -442,7 +442,7 @@ public class CertificateBody
      *
      * @return the CertificateProfileIdentifier
      */
-    public DERApplicationSpecific getCertificateProfileIdentifier()
+    public ASN1ApplicationSpecific getCertificateProfileIdentifier()
     {
         return certificateProfileIdentifier;
     }
