@@ -502,49 +502,49 @@ public abstract class ASN1Set
     }
 
     protected void sort()
-    {               throw new RuntimeException();
-//        if (!isSorted)
-//        {
-//            isSorted = true;
-//            if (set.size() > 1)
-//            {
-//                boolean    swapped = true;
-//                int        lastSwap = set.size() - 1;
-//
-//                while (swapped)
-//                {
-//                    int    index = 0;
-//                    int    swapIndex = 0;
-//                    byte[] a = getDEREncoded((ASN1Encodable)set.elementAt(0));
-//
-//                    swapped = false;
-//
-//                    while (index != lastSwap)
-//                    {
-//                        byte[] b = getDEREncoded((ASN1Encodable)set.elementAt(index + 1));
-//
-//                        if (lessThanOrEqual(a, b))
-//                        {
-//                            a = b;
-//                        }
-//                        else
-//                        {
-//                            Object  o = set.elementAt(index);
-//
-//                            set.setElementAt(set.elementAt(index + 1), index);
-//                            set.setElementAt(o, index + 1);
-//
-//                            swapped = true;
-//                            swapIndex = index;
-//                        }
-//
-//                        index++;
-//                    }
-//
-//                    lastSwap = swapIndex;
-//                }
-//            }
-//        }
+    {
+        if (!isSorted)
+        {
+            isSorted = true;
+            if (set.size() > 1)
+            {
+                boolean    swapped = true;
+                int        lastSwap = set.size() - 1;
+
+                while (swapped)
+                {
+                    int    index = 0;
+                    int    swapIndex = 0;
+                    byte[] a = getDEREncoded((ASN1Encodable)set.elementAt(0));
+
+                    swapped = false;
+
+                    while (index != lastSwap)
+                    {
+                        byte[] b = getDEREncoded((ASN1Encodable)set.elementAt(index + 1));
+
+                        if (lessThanOrEqual(a, b))
+                        {
+                            a = b;
+                        }
+                        else
+                        {
+                            Object  o = set.elementAt(index);
+
+                            set.setElementAt(set.elementAt(index + 1), index);
+                            set.setElementAt(o, index + 1);
+
+                            swapped = true;
+                            swapIndex = index;
+                        }
+
+                        index++;
+                    }
+
+                    lastSwap = swapIndex;
+                }
+            }
+        }
     }
 
     boolean isConstructed()
