@@ -3177,9 +3177,9 @@ public class PGPKeyRingTest
 
         PGPSignatureSubpacketGenerator subPackets = new PGPSignatureSubpacketGenerator();
         subPackets.setKeyFlags(false, KeyFlags.AUTHENTICATION & KeyFlags.CERTIFY_OTHER & KeyFlags.SIGN_DATA);
-        subPackets.setPreferredCompressionAlgorithms(false, new int[]{
+        subPackets.setPreferredSymmetricAlgorithms(false, new int[]{
             SymmetricKeyAlgorithmTags.AES_256,
-            SymmetricKeyAlgorithmTags.AES_128,
+            SymmetricKeyAlgorithmTags.AES_192,
             SymmetricKeyAlgorithmTags.AES_128});
         subPackets.setPreferredHashAlgorithms(false, new int[]{
             HashAlgorithmTags.SHA512,
