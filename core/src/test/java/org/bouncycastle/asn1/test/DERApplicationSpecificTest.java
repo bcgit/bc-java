@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.test;
 
+import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -92,7 +93,7 @@ public class DERApplicationSpecificTest
     {
         testTaggedObject();
 
-        DERApplicationSpecific appSpec = (DERApplicationSpecific)ASN1Primitive.fromByteArray(sampleData);
+        ASN1ApplicationSpecific appSpec = (ASN1ApplicationSpecific)ASN1Primitive.fromByteArray(sampleData);
 
         if (1 != appSpec.getApplicationTag())
         {
@@ -115,8 +116,7 @@ public class DERApplicationSpecificTest
             fail("implicit read back failed");
         }
 
-        DERApplicationSpecific certObj = (DERApplicationSpecific)
-        ASN1Primitive.fromByteArray(certData);
+        ASN1ApplicationSpecific certObj = (ASN1ApplicationSpecific)ASN1Primitive.fromByteArray(certData);
 
         if (!certObj.isConstructed() || certObj.getApplicationTag() != 33)
         {
