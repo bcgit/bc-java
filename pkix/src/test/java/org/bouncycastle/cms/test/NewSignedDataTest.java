@@ -24,13 +24,13 @@ import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DERApplicationSpecific;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
@@ -2567,7 +2567,7 @@ public class NewSignedDataTest
     public void testMixed()
         throws Exception
     {
-        DERApplicationSpecific derApplicationSpecific = (DERApplicationSpecific)ASN1Primitive.fromByteArray(mixedSignedData);
+        ASN1ApplicationSpecific derApplicationSpecific = (ASN1ApplicationSpecific)ASN1Primitive.fromByteArray(mixedSignedData);
 
         CMSSignedData s = new CMSSignedData(new ByteArrayInputStream(derApplicationSpecific.getContents()));
 
