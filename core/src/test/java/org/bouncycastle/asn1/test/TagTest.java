@@ -44,7 +44,7 @@ public class TagTest
         
         aIn = new ASN1InputStream(app.getContents());
 
-        app = (DERApplicationSpecific)aIn.readObject();
+        app = (ASN1ApplicationSpecific)aIn.readObject();
 
         aIn = new ASN1InputStream(app.getContents());
 
@@ -78,14 +78,14 @@ public class TagTest
 
         aIn = new ASN1InputStream(longAppSpecificTag);
 
-        app = (DERApplicationSpecific)aIn.readObject();
+        app = (ASN1ApplicationSpecific)aIn.readObject();
 
         if (app.getApplicationTag() != 97)
         {
             fail("incorrect tag number read");
         }
 
-        app = (DERApplicationSpecific)ASN1Primitive.fromByteArray(app.getEncoded());
+        app = (ASN1ApplicationSpecific)ASN1Primitive.fromByteArray(app.getEncoded());
 
         if (app.getApplicationTag() != 97)
         {
@@ -97,7 +97,7 @@ public class TagTest
         {
             int testTag = sr.nextInt() >>> (1 + (sr.nextInt() >>> 1) % 26);
             app = new DERApplicationSpecific(testTag, new byte[]{ 1 });
-            app = (DERApplicationSpecific)ASN1Primitive.fromByteArray(app.getEncoded());
+            app = (ASN1ApplicationSpecific)ASN1Primitive.fromByteArray(app.getEncoded());
 
             if (app.getApplicationTag() != testTag)
             {
