@@ -28,7 +28,7 @@ public class CertificateHolderAuthorization
     extends ASN1Object
 {
     ASN1ObjectIdentifier oid;
-    DERApplicationSpecific accessRights;
+    ASN1ApplicationSpecific accessRights;
     public static final ASN1ObjectIdentifier id_role_EAC = EACObjectIdentifiers.bsi_de.branch("3.1.2.1");
     public static final int CVCA = 0xC0;
     public static final int DV_DOMESTIC = 0x80;
@@ -90,9 +90,9 @@ public class CertificateHolderAuthorization
             throw new IllegalArgumentException("no Oid in CerticateHolderAuthorization");
         }
         obj = cha.readObject();
-        if (obj instanceof DERApplicationSpecific)
+        if (obj instanceof ASN1ApplicationSpecific)
         {
-            this.accessRights = (DERApplicationSpecific)obj;
+            this.accessRights = (ASN1ApplicationSpecific)obj;
         }
         else
         {
