@@ -7,6 +7,7 @@ import java.util.Vector;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.DHParameters;
+import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.util.io.TeeInputStream;
 
 public class TlsDHEKeyExchange
@@ -14,9 +15,9 @@ public class TlsDHEKeyExchange
 {
     protected TlsSignerCredentials serverCredentials = null;
 
-    public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, DHParameters dhParameters)
+    public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHVerifier dhVerifier, DHParameters dhParameters)
     {
-        super(keyExchange, supportedSignatureAlgorithms, dhParameters);
+        super(keyExchange, supportedSignatureAlgorithms, dhVerifier, dhParameters);
     }
 
     public void processServerCredentials(TlsCredentials serverCredentials)
@@ -77,7 +78,8 @@ public class TlsDHEKeyExchange
         SignerInputBuffer buf = new SignerInputBuffer();
         InputStream teeIn = new TeeInputStream(input, buf);
 
-        ServerDHParams dhParams = ServerDHParams.parse(teeIn);
+        this.dhParameters = TlsDHUtils.receiveDHParameters(dhVerifier, teeIn);
+        this.dhAgreePublicKey = new DHPublicKeyParameters(TlsDHUtils.readDHParameter(teeIn), dhParameters);
 
         DigitallySigned signed_params = parseSignature(input);
 
@@ -87,9 +89,6 @@ public class TlsDHEKeyExchange
         {
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
-
-        this.dhAgreePublicKey = TlsDHUtils.validateDHPublicKey(dhParams.getPublicKey());
-        this.dhParameters = validateDHParameters(dhAgreePublicKey.getParameters());
     }
 
     protected Signer initVerifyer(TlsSigner tlsSigner, SignatureAndHashAlgorithm algorithm, SecurityParameters securityParameters)
