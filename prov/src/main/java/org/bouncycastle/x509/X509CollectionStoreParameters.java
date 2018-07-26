@@ -61,7 +61,7 @@ public class X509CollectionStoreParameters
      */
     public String toString()
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("X509CollectionStoreParameters: [\n");
         sb.append("  collection: " + collection + "\n");
         sb.append("]");

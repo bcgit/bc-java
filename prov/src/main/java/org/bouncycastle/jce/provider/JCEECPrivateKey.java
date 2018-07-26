@@ -412,7 +412,7 @@ public class JCEECPrivateKey
 
     public String toString()
     {
-        StringBuffer    buf = new StringBuffer();
+        StringBuilder   buf = new StringBuilder();
         String          nl = Strings.lineSeparator();
 
         buf.append("EC Private Key").append(nl);

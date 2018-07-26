@@ -125,8 +125,8 @@ public class DistributionPoint
 
     public String toString()
     {
-        String       sep = Strings.lineSeparator();
-        StringBuffer buf = new StringBuffer();
+        String        sep = Strings.lineSeparator();
+        StringBuilder buf = new StringBuilder();
         buf.append("DistributionPoint: [");
         buf.append(sep);
         if (distributionPoint != null)
@@ -146,7 +146,7 @@ public class DistributionPoint
         return buf.toString();
     }
 
-    private void appendObject(StringBuffer buf, String sep, String name, String value)
+    private void appendObject(StringBuilder buf, String sep, String name, String value)
     {
         String       indent = "    ";
 

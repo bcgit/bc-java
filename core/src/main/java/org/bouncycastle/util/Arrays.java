@@ -952,7 +952,7 @@ public final class Arrays
         int newLength = to - from;
         if (newLength < 0)
         {
-            StringBuffer sb = new StringBuffer(from);
+            StringBuilder sb = new StringBuilder(from);
             sb.append(" > ").append(to);
             throw new IllegalArgumentException(sb.toString());
         }

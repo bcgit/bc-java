@@ -224,7 +224,7 @@ public class JCERSAPrivateCrtKey
 
     public String toString()
     {
-        StringBuffer    buf = new StringBuffer();
+        StringBuilder   buf = new StringBuilder();
         String          nl = Strings.lineSeparator();
 
         buf.append("RSA Private CRT Key").append(nl);

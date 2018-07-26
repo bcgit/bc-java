@@ -192,7 +192,7 @@ public class ArmoredInputStream
 
         if (headerFound)
         {
-            StringBuffer    buf = new StringBuffer("-");
+            StringBuilder   buf = new StringBuilder("-");
             boolean         eolReached = false;
             boolean         crLf = false;
             
