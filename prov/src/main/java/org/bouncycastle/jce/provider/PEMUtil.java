@@ -29,7 +29,7 @@ public class PEMUtil
         throws IOException
     {
         int             c;
-        StringBuffer    l = new StringBuffer();
+        StringBuilder   l = new StringBuilder();
 
         do
         {
@@ -58,7 +58,7 @@ public class PEMUtil
         throws IOException
     {
         String          line;
-        StringBuffer    pemBuf = new StringBuffer();
+        StringBuilder   pemBuf = new StringBuilder();
 
         while ((line = readLine(in)) != null)
         {

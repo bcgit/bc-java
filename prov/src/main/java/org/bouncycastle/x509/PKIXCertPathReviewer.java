@@ -1989,7 +1989,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         }
         catch (Exception e)
         {
-            StringBuffer b = new StringBuffer();
+            StringBuilder b = new StringBuilder();
             
             for (int i = 0; i != ip.length; i++)
             {

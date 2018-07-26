@@ -111,7 +111,7 @@ public class PKIXPolicyNode
     
     public String toString(String _indent)
     {
-        StringBuffer _buf = new StringBuffer();
+        StringBuilder _buf = new StringBuilder();
         _buf.append(_indent);
         _buf.append(validPolicy);
         _buf.append(" {\n");

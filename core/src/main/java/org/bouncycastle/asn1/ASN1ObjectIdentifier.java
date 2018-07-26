@@ -85,7 +85,7 @@ public class ASN1ObjectIdentifier
     ASN1ObjectIdentifier(
         byte[] bytes)
     {
-        StringBuffer objId = new StringBuffer();
+        StringBuilder objId = new StringBuilder();
         long value = 0;
         BigInteger bigValue = null;
         boolean first = true;

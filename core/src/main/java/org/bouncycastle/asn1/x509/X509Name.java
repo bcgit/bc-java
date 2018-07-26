@@ -693,7 +693,7 @@ public class X509Name
         char[] elts = elt.toCharArray();
         boolean escaped = false;
         boolean quoted = false;
-        StringBuffer buf = new StringBuffer(elt.length());
+        StringBuilder buf = new StringBuilder(elt.length());
         int start = 0;
 
         // if it's an escaped hash string and not an actual encoding in string form
@@ -1197,7 +1197,7 @@ public class X509Name
     private String stripInternalSpaces(
         String str)
     {
-        StringBuffer res = new StringBuffer();
+        StringBuilder res = new StringBuilder();
 
         if (str.length() != 0)
         {
@@ -1220,7 +1220,7 @@ public class X509Name
     }
 
     private void appendValue(
-        StringBuffer        buf,
+        StringBuilder       buf,
         Hashtable           oidSymbols,
         ASN1ObjectIdentifier oid,
         String              value)
@@ -1298,11 +1298,11 @@ public class X509Name
         boolean     reverse,
         Hashtable   oidSymbols)
     {
-        StringBuffer            buf = new StringBuffer();
+        StringBuilder           buf = new StringBuilder();
         Vector                  components = new Vector();
         boolean                 first = true;
 
-        StringBuffer ava = null;
+        StringBuilder ava = null;
 
         for (int i = 0; i < ordering.size(); i++)
         {
@@ -1315,7 +1315,7 @@ public class X509Name
             }
             else
             {
-                ava = new StringBuffer();
+                ava = new StringBuilder();
                 appendValue(ava, oidSymbols,
                     (ASN1ObjectIdentifier)ordering.elementAt(i),
                     (String)values.elementAt(i));

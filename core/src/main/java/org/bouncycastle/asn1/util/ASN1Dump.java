@@ -55,7 +55,7 @@ public class ASN1Dump
         String      indent,
         boolean     verbose,
         ASN1Primitive obj,
-        StringBuffer    buf)
+        StringBuilder    buf)
     {
         String nl = Strings.lineSeparator();
         if (obj instanceof ASN1Sequence)
@@ -302,7 +302,7 @@ public class ASN1Dump
     private static String outputApplicationSpecific(String type, String indent, boolean verbose, ASN1Primitive obj, String nl)
     {
         ASN1ApplicationSpecific app = ASN1ApplicationSpecific.getInstance(obj);
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
 
         if (app.isConstructed())
         {
@@ -348,7 +348,7 @@ public class ASN1Dump
         Object   obj,
         boolean  verbose)
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
 
         if (obj instanceof ASN1Primitive)
         {
@@ -369,7 +369,7 @@ public class ASN1Dump
     private static String dumpBinaryDataAsString(String indent, byte[] bytes)
     {
         String nl = Strings.lineSeparator();
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
 
         indent += TAB;
         
@@ -403,7 +403,7 @@ public class ASN1Dump
 
     private static String calculateAscString(byte[] bytes, int off, int len)
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
 
         for (int i = off; i != off + len; i++)
         {

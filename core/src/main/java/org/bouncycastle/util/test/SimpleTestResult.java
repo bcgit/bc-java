@@ -57,7 +57,7 @@ public class SimpleTestResult implements TestResult
     public static String failedMessage(String algorithm, String testName, String expected,
             String actual)
     {
-        StringBuffer sb = new StringBuffer(algorithm);
+        StringBuilder sb = new StringBuilder(algorithm);
         sb.append(" failing ").append(testName);
         sb.append(SEPARATOR).append("    expected: ").append(expected);
         sb.append(SEPARATOR).append("    got     : ").append(actual);

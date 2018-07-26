@@ -80,7 +80,7 @@ public class OpenBSDBCrypt
             throw new IllegalArgumentException("Version " + version + " is not accepted by this implementation.");
         }
 
-        StringBuffer sb = new StringBuffer(60);
+        StringBuilder sb = new StringBuilder(60);
         sb.append('$');
         sb.append(version);
         sb.append('$');
