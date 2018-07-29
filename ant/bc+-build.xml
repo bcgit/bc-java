@@ -326,6 +326,7 @@
                  <exclude name="org/bouncycastle/eac/**" />
                  <exclude name="org/bouncycastle/est/**" />
                  <exclude name="org/bouncycastle/cmc/**" />
+                 <exclude name="org/bouncycastle/mime/**" />
                  <exclude name="org/bouncycastle/mail/**" />
                  <exclude name="org/bouncycastle/gpg/**" />
                  <exclude name="org/bouncycastle/openpgp/**" />
@@ -435,6 +436,7 @@
                  <exclude name="org/bouncycastle/**/test/*.der" />
                  <exclude name="org/bouncycastle/**/test/*.properties" />
                  <exclude name="org/bouncycastle/util/utiltest/**" />
+                 <exclude name="org/bouncycastle/mime/**" />
                  <exclude name="org/bouncycastle/mail/**" />
                  <exclude name="org/bouncycastle/cms/**" />
                  <exclude name="org/bouncycastle/pkix/**" />
@@ -615,6 +617,7 @@
                  <include name="org/bouncycastle/est/**" />
                  <include name="org/bouncycastle/cmc/**" />
                  <include name="org/bouncycastle/cert/**/*.java" />
+                 <include name="org/bouncycastle/mime/**/*.java" />
                  <include name="org/bouncycastle/mozilla/**/*.java" />
                  <include name="org/bouncycastle/openssl/**/*.java" />
                  <include name="org/bouncycastle/operator/**/*.java" />
@@ -981,10 +984,12 @@
                  <include name="org/bouncycastle/est/**/test/*.java" />
                  <include name="org/bouncycastle/cmc/**/test/*.java" />
                  <include name="org/bouncycastle/cert/**/test/*.java" />
+                 <include name="org/bouncycastle/mime/**/test/*.java" />
                  <include name="org/bouncycastle/pkcs/**/test/*.java" />
                  <include name="org/bouncycastle/openssl/**/test/*.java" />
                  <include name="org/bouncycastle/mozilla/**/test/*.java" />
                  <include name="org/bouncycastle/operator/**/test/*.java" />
+                 <include name="org/bouncycastle/mime/**/*.html" />
                  <include name="org/bouncycastle/cms/**/*.html" />
                  <include name="org/bouncycastle/pkix/**/*.html" />
                  <include name="org/bouncycastle/dvcs/**/*.html" />
@@ -1021,9 +1026,10 @@
                 <group title="DVCS Packages" packages="org.bouncycastle.dvcs*" />
                 <group title="Extended Access Control Packages" packages="org.bouncycastle.eac*" />
                 <group title="PKCS Packages" packages="org.bouncycastle.pkcs*" />
+                <group title="MIME Packages" packages="org.bouncycastle.mime*" />
                 <group title="OpenSSL and PEM Support Packages" packages="org.bouncycastle.openssl*" />
                 <group title="TSP Packages" packages="org.bouncycastle.tsp*" />
-                <group title="Test and Example Packages" packages="org.bouncycastle.openssl.test*,org.bouncycastle.mozilla.test*,org.bouncycastle.pkcs.test*,org.bouncycastle.cert.test*,org.bouncycastle.cert.path.test*,org.bouncycastle.cert.ocsp.test*,org.bouncycastle.cert.crmf.test*,org.bouncycastle.cert.cmp.test*,org.bouncycastle.eac.test*,org.bouncycastle.dvcs.test*,org.bouncycastle.est.test*,org.bouncycastle.cms.test*,org.bouncycastle.tsp.test*,org.bouncycastle.operator.test*" />
+                <group title="Test and Example Packages" packages="org.bouncycastle.openssl.test*,org.bouncycastle.mozilla.test*,org.bouncycastle.pkcs.test*,org.bouncycastle.cert.test*,org.bouncycastle.cert.path.test*,org.bouncycastle.cert.ocsp.test*,org.bouncycastle.cert.crmf.test*,org.bouncycastle.cert.cmp.test*,org.bouncycastle.eac.test*,org.bouncycastle.dvcs.test*,org.bouncycastle.est.test*,org.bouncycastle.cms.test*,org.bouncycastle.mime.test*,org.bouncycastle.tsp.test*,org.bouncycastle.operator.test*" />
             </docElements>
         </compile-doc>
 
