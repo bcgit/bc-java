@@ -87,6 +87,6 @@ public class PSKTlsServer
     protected TlsKeyExchange createPSKKeyExchange(int keyExchange)
     {
         return new TlsPSKKeyExchange(keyExchange, supportedSignatureAlgorithms, null, pskIdentityManager,
-            getDHParameters(), namedCurves, clientECPointFormats, serverECPointFormats);
+            null, getDHParameters(), namedCurves, clientECPointFormats, serverECPointFormats);
     }
 }
