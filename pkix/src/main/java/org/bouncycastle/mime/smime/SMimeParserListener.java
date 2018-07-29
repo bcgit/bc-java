@@ -24,7 +24,7 @@ import org.bouncycastle.util.io.Streams;
 public abstract class SMimeParserListener
     implements MimeParserListener
 {
-    private DigestCalculator digestCalculator;
+    private DigestCalculator[] digestCalculators;
     private SMimeMultipartContext parent;
 
     public MimeContext createContext(MimeParserContext parserContext, Headers headers)
@@ -32,7 +32,7 @@ public abstract class SMimeParserListener
         if (headers.isMultipart())
         {
             parent = new SMimeMultipartContext(parserContext, headers);
-            this.digestCalculator = parent.getDigestCalculators()[0];
+            this.digestCalculators = parent.getDigestCalculators();
             return parent;
         }
         else
@@ -50,9 +50,12 @@ public abstract class SMimeParserListener
             {
                 Map<ASN1ObjectIdentifier, byte[]> hashes = new HashMap<ASN1ObjectIdentifier, byte[]>();
 
-                digestCalculator.getOutputStream().close();
+                for (int i = 0; i != digestCalculators.length; i++)
+                {
+                    digestCalculators[i].getOutputStream().close();
 
-                hashes.put(digestCalculator.getAlgorithmIdentifier().getAlgorithm(), digestCalculator.getDigest());
+                    hashes.put(digestCalculators[i].getAlgorithmIdentifier().getAlgorithm(), digestCalculators[i].getDigest());
+                }
 
                 CMSSignedData signedData = new CMSSignedData(hashes, Streams.readAll(inputStream));
 
