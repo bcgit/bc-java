@@ -14,6 +14,7 @@ import org.bouncycastle.mime.MimeParserContext;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.util.io.TeeInputStream;
+import org.bouncycastle.util.io.TeeOutputStream;
 
 public class SMimeMultipartContext
     implements MimeMultipartContext
@@ -24,7 +25,7 @@ public class SMimeMultipartContext
     public SMimeMultipartContext(MimeParserContext parserContext, Headers headers)
     {
         this.parserContext = (SMimeParserContext)parserContext;
-        this.calculators = createDigestCalculators();
+        this.calculators = createDigestCalculators(headers);
     }
 
     DigestCalculator[] getDigestCalculators()
@@ -32,7 +33,26 @@ public class SMimeMultipartContext
         return calculators;
     }
 
-    private DigestCalculator[] createDigestCalculators()
+    OutputStream getDigestOutputStream()
+    {
+        if (calculators.length == 1)
+        {
+            return calculators[0].getOutputStream();
+        }
+        else
+        {
+            OutputStream compoundStream = calculators[0].getOutputStream();
+
+            for (int i = 1; i < calculators.length; i++)
+            {
+                compoundStream = new TeeOutputStream(calculators[i].getOutputStream(), compoundStream);
+            }
+
+            return compoundStream;
+        }
+    }
+
+    private DigestCalculator[] createDigestCalculators(Headers headers)
     {
         try
         {
@@ -56,7 +76,7 @@ public class SMimeMultipartContext
             {
                 if (partNo == 0)
                 {
-                    OutputStream digestOut = SMimeMultipartContext.this.getDigestCalculators()[0].getOutputStream();
+                    OutputStream digestOut = getDigestOutputStream();
 
                     headers.dumpHeaders(digestOut);
 
