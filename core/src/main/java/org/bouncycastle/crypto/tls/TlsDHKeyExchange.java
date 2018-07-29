@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.math.BigInteger;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.KeyUsage;
@@ -22,6 +21,7 @@ public class TlsDHKeyExchange
     extends AbstractTlsKeyExchange
 {
     protected TlsSigner tlsSigner;
+    protected TlsDHVerifier dhVerifier;
     protected DHParameters dhParameters;
 
     protected AsymmetricKeyParameter serverPublicKey;
@@ -30,7 +30,7 @@ public class TlsDHKeyExchange
     protected DHPrivateKeyParameters dhAgreePrivateKey;
     protected DHPublicKeyParameters dhAgreePublicKey;
 
-    public TlsDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, DHParameters dhParameters)
+    public TlsDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHVerifier dhVerifier, DHParameters dhParameters)
     {
         super(keyExchange, supportedSignatureAlgorithms);
 
@@ -51,6 +51,7 @@ public class TlsDHKeyExchange
             throw new IllegalArgumentException("unsupported key exchange algorithm");
         }
 
+        this.dhVerifier = dhVerifier;
         this.dhParameters = dhParameters;
     }
 
@@ -101,8 +102,8 @@ public class TlsDHKeyExchange
         {
             try
             {
-                this.dhAgreePublicKey = TlsDHUtils.validateDHPublicKey((DHPublicKeyParameters)this.serverPublicKey);
-                this.dhParameters = validateDHParameters(dhAgreePublicKey.getParameters());
+                this.dhAgreePublicKey = (DHPublicKeyParameters)this.serverPublicKey;
+                this.dhParameters = dhAgreePublicKey.getParameters();
             }
             catch (ClassCastException e)
             {
@@ -161,10 +162,8 @@ public class TlsDHKeyExchange
 
         // DH_anon is handled here, DHE_* in a subclass
 
-        ServerDHParams dhParams = ServerDHParams.parse(input);
-
-        this.dhAgreePublicKey = TlsDHUtils.validateDHPublicKey(dhParams.getPublicKey());
-        this.dhParameters = validateDHParameters(dhAgreePublicKey.getParameters());
+        this.dhParameters = TlsDHUtils.receiveDHParameters(dhVerifier, input);
+        this.dhAgreePublicKey = new DHPublicKeyParameters(TlsDHUtils.readDHParameter(input), dhParameters);
     }
 
     public void validateCertificateRequest(CertificateRequest certificateRequest)
@@ -250,9 +249,7 @@ public class TlsDHKeyExchange
             return;
         }
 
-        BigInteger Yc = TlsDHUtils.readDHParameter(input);
-        
-        this.dhAgreePublicKey = TlsDHUtils.validateDHPublicKey(new DHPublicKeyParameters(Yc, dhParameters));
+        this.dhAgreePublicKey = new DHPublicKeyParameters(TlsDHUtils.readDHParameter(input), dhParameters);
     }
 
     public byte[] generatePremasterSecret()
@@ -269,20 +266,5 @@ public class TlsDHKeyExchange
         }
 
         throw new TlsFatalAlert(AlertDescription.internal_error);
-    }
-
-    protected int getMinimumPrimeBits()
-    {
-        return 1024;
-    }
-
-    protected DHParameters validateDHParameters(DHParameters params) throws IOException
-    {
-        if (params.getP().bitLength() < getMinimumPrimeBits())
-        {
-            throw new TlsFatalAlert(AlertDescription.insufficient_security);
-        }
-
-        return TlsDHUtils.validateDHParameters(params);
     }
 }
