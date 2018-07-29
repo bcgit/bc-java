@@ -1,0 +1,19 @@
+Content-type: multipart/alternative; boundary="Apple-Mail=_8B1F6ECB-9629-424B-B871-1357CCDBCC84"
+
+--Apple-Mail=_8B1F6ECB-9629-424B-B871-1357CCDBCC84
+Content-Transfer-Encoding: 7bit
+Content-Type: text/plain;
+	charset=us-ascii
+
+The cat sat on the mat
+
+Boo!
+
+
+--Apple-Mail=_8B1F6ECB-9629-424B-B871-1357CCDBCC84
+Content-Transfer-Encoding: 7bit
+Content-Type: text/html;
+	charset=us-ascii
+
+<html><head><meta http-equiv="Content-Type" object="text/html; charset=us-ascii"></head><object style="word-wrap: break-word; -webkit-nbsp-mode: space; line-break: after-white-space;" class=""><meta http-equiv="Content-Type" object="text/html; charset=us-ascii" class=""><div style="word-wrap: break-word; -webkit-nbsp-mode: space; line-break: after-white-space;" class="">The cat sat on the mat<div class=""><br class=""></div><div class=""><font size="7" class="">Boo!</font></div><div class=""><font size="7" class=""><br class=""></font></div><div class=""><img src="http://img2.thejournal.ie/inline/1162441/original/?width=630&amp;version=1162441" alt="Image result for cows" class=""></div></div></object></html>
+--Apple-Mail=_8B1F6ECB-9629-424B-B871-1357CCDBCC84--
