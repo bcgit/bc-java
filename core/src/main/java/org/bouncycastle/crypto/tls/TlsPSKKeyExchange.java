@@ -30,6 +30,7 @@ public class TlsPSKKeyExchange
     protected TlsPSKIdentity pskIdentity;
     protected TlsPSKIdentityManager pskIdentityManager;
 
+    protected TlsDHVerifier dhVerifier;
     protected DHParameters dhParameters;
     protected int[] namedCurves;
     protected short[] clientECPointFormats, serverECPointFormats;
@@ -49,7 +50,7 @@ public class TlsPSKKeyExchange
     protected byte[] premasterSecret;
 
     public TlsPSKKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsPSKIdentity pskIdentity,
-        TlsPSKIdentityManager pskIdentityManager, DHParameters dhParameters, int[] namedCurves,
+        TlsPSKIdentityManager pskIdentityManager, TlsDHVerifier dhVerifier, DHParameters dhParameters, int[] namedCurves,
         short[] clientECPointFormats, short[] serverECPointFormats)
     {
         super(keyExchange, supportedSignatureAlgorithms);
@@ -67,6 +68,7 @@ public class TlsPSKKeyExchange
 
         this.pskIdentity = pskIdentity;
         this.pskIdentityManager = pskIdentityManager;
+        this.dhVerifier = dhVerifier;
         this.dhParameters = dhParameters;
         this.namedCurves = namedCurves;
         this.clientECPointFormats = clientECPointFormats;
@@ -186,10 +188,8 @@ public class TlsPSKKeyExchange
 
         if (this.keyExchange == KeyExchangeAlgorithm.DHE_PSK)
         {
-            ServerDHParams serverDHParams = ServerDHParams.parse(input);
-
-            this.dhAgreePublicKey = TlsDHUtils.validateDHPublicKey(serverDHParams.getPublicKey());
-            this.dhParameters = dhAgreePublicKey.getParameters();
+            this.dhParameters = TlsDHUtils.receiveDHParameters(dhVerifier, input);
+            this.dhAgreePublicKey = new DHPublicKeyParameters(TlsDHUtils.readDHParameter(input), dhParameters);
         }
         else if (this.keyExchange == KeyExchangeAlgorithm.ECDHE_PSK)
         {
@@ -270,9 +270,7 @@ public class TlsPSKKeyExchange
 
         if (this.keyExchange == KeyExchangeAlgorithm.DHE_PSK)
         {
-            BigInteger Yc = TlsDHUtils.readDHParameter(input);
-
-            this.dhAgreePublicKey = TlsDHUtils.validateDHPublicKey(new DHPublicKeyParameters(Yc, dhParameters));
+            this.dhAgreePublicKey = new DHPublicKeyParameters(TlsDHUtils.readDHParameter(input), dhParameters);
         }
         else if (this.keyExchange == KeyExchangeAlgorithm.ECDHE_PSK)
         {
