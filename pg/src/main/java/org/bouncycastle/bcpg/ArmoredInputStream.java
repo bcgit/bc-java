@@ -3,8 +3,6 @@ package org.bouncycastle.bcpg;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Vector;
 
 import org.bouncycastle.util.StringList;
 import org.bouncycastle.util.Strings;
@@ -25,6 +23,11 @@ public class ArmoredInputStream
     static
     {
         decodingTable = new byte[128];
+
+        for (int i = 0; i < decodingTable.length; i++)
+        {
+            decodingTable[i] = (byte)0xff;
+        }
 
         for (int i = 'A'; i <= 'Z'; i++)
         {
@@ -56,7 +59,7 @@ public class ArmoredInputStream
         int      in2,
         int      in3,
         int[]    out)
-        throws EOFException
+        throws IOException
     {
         int    b1, b2, b3, b4;
 
@@ -70,6 +73,11 @@ public class ArmoredInputStream
             b1 = decodingTable[in0] &0xff;
             b2 = decodingTable[in1] & 0xff;
 
+            if ((b1 | b2) < 0)
+            {
+                throw new IOException("invalid armor");
+            }
+
             out[2] = ((b1 << 2) | (b2 >> 4)) & 0xff;
 
             return 2;
@@ -79,6 +87,11 @@ public class ArmoredInputStream
             b1 = decodingTable[in0];
             b2 = decodingTable[in1];
             b3 = decodingTable[in2];
+
+            if ((b1 | b2 | b3) < 0)
+            {
+                throw new IOException("invalid armor");
+            }
 
             out[1] = ((b1 << 2) | (b2 >> 4)) & 0xff;
             out[2] = ((b2 << 4) | (b3 >> 2)) & 0xff;
@@ -91,6 +104,11 @@ public class ArmoredInputStream
             b2 = decodingTable[in1];
             b3 = decodingTable[in2];
             b4 = decodingTable[in3];
+
+            if ((b1 | b2 | b3 | b4) < 0)
+            {
+                throw new IOException("invalid armor");
+            }
 
             out[0] = ((b1 << 2) | (b2 >> 4)) & 0xff;
             out[1] = ((b2 << 4) | (b3 >> 2)) & 0xff;
@@ -308,7 +326,12 @@ public class ArmoredInputStream
         {
             c = in.read();
         }
-        
+
+        if (c >= 128)
+        {
+            throw new IOException("invalid armor");
+        }
+
         return c;
     }
     
