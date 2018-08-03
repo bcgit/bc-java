@@ -2,22 +2,24 @@ package org.bouncycastle.mime.smime;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.cms.CMSAlgorithm;
+import org.bouncycastle.util.Strings;
 
 class SMimeUtils
 {
 
 
-    public static final Map RFC5751_MICALGS;
-    public static final Map RFC3851_MICALGS;
-    public static final Map STANDARD_MICALGS;
-    public static final Map forMic;
+    private static final Map RFC5751_MICALGS;
+    private static final Map RFC3851_MICALGS;
+    private static final Map STANDARD_MICALGS;
+    private static final Map forMic;
 
-    public static final byte[] nl = new byte[2];
+    private static final byte[] nl = new byte[2];
 
 
     static
@@ -74,8 +76,7 @@ class SMimeUtils
 
     }
 
-
-    public static String lessQuotes(String in)
+    static String lessQuotes(String in)
     {
         if (in == null || in.length() == 0)
         {
@@ -84,22 +85,34 @@ class SMimeUtils
 
         if (in.charAt(0) == '"' && in.charAt(in.length() - 1) == '"')
         {
-            // Two quotes, no content.
-            if (in.length() == 2)
-            {
-                return "";
-            }
-
-            // Avoiding any locale issues, we use char arrays.
-
-            char[] original = in.toCharArray();
-            char[] trimmed = new char[in.length() - 2];
-            System.arraycopy(original, 1, trimmed, 0, trimmed.length);
-            return new String(trimmed);
+            return in.substring(1, in.length() - 1);
         }
 
         return in;
-
     }
 
+    static String getParameter(String startsWith, List<String> parameters)
+    {
+        for (String param : parameters)
+        {
+            if (param.startsWith(startsWith))
+            {
+                return param;
+            }
+        }
+
+        return null;
+    }
+
+    static ASN1ObjectIdentifier getDigestOID(String alg)
+    {
+        ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)forMic.get(Strings.toLowerCase(alg));
+
+        if (oid == null)
+        {
+            throw new IllegalArgumentException("unknown micalg passed: " + alg);
+        }
+
+        return oid;
+    }
 }
