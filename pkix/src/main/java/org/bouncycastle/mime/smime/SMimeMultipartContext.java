@@ -3,7 +3,7 @@ package org.bouncycastle.mime.smime;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.List;
+import java.util.Map;
 
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.mime.CanonicalOutputStream;
@@ -58,9 +58,9 @@ public class SMimeMultipartContext
     {
         try
         {
-            List<String> contentTypeFields = headers.getContentTypeParameters();
+            Map<String, String> contentTypeFields = headers.getContentTypeAttributes();
 
-            String micalgs = SMimeUtils.getParameter("micalg", contentTypeFields);
+            String micalgs = contentTypeFields.get("micalg");
             if (micalgs == null)
             {
                 throw new IllegalStateException("No micalg field on content-type header");
