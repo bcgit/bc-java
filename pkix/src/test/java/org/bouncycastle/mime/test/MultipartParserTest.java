@@ -8,7 +8,7 @@ import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Map;
 
 import junit.framework.TestCase;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -64,9 +64,9 @@ public class MultipartParserTest
 
         Headers headers = new Headers(values, value);
         TestCase.assertEquals("multipart/alternative", headers.getContentType());
-        List<String> fieldValues = headers.getContentTypeParameters();
+        Map<String, String> fieldValues = headers.getContentTypeAttributes();
         TestCase.assertEquals(1, fieldValues.size());
-        TestCase.assertEquals("[boundary=\"Apple-Mail=_8B1F6ECB-9629-424B-B871-1357CCDBCC84\"]", fieldValues.toString());
+        TestCase.assertEquals("{boundary=\"Apple-Mail=_8B1F6ECB-9629-424B-B871-1357CCDBCC84\"}", fieldValues.toString());
     }
 
 
@@ -86,9 +86,9 @@ public class MultipartParserTest
 
         Headers headers = new Headers(values, value);
         TestCase.assertEquals("multipart/signed", headers.getContentType());
-        List<String>  fieldValues = headers.getContentTypeParameters();
+        Map<String, String> fieldValues = headers.getContentTypeAttributes();
         TestCase.assertEquals(2, fieldValues.size());
-        TestCase.assertEquals("[boundary=\"Apple-Mail=_8B1F6ECB-9629-424B-B871-1357CCDBCC84\", micalg=\"SHA1\"]", fieldValues.toString());
+        TestCase.assertEquals("{boundary=\"Apple-Mail=_8B1F6ECB-9629-424B-B871-1357CCDBCC84\", micalg=\"SHA1\"}", fieldValues.toString());
     }
 
 
@@ -111,9 +111,9 @@ public class MultipartParserTest
 
         Headers headers = new Headers(values, value);
         TestCase.assertEquals("multipart/alternative", headers.getContentType());
-        List<String> fieldValues = headers.getContentTypeParameters();
+        Map<String, String> fieldValues = headers.getContentTypeAttributes();
         TestCase.assertEquals(2, fieldValues.size());
-        TestCase.assertEquals("[boundary=\"cats\", micalg=]", fieldValues.toString());
+        TestCase.assertEquals("{boundary=\"cats\", micalg=}", fieldValues.toString());
     }
 
     /**
@@ -135,9 +135,9 @@ public class MultipartParserTest
 
         Headers headers = new Headers(values, value);
         TestCase.assertEquals("multipart/alternative", headers.getContentType());
-        List<String> fieldValues = headers.getContentTypeParameters();
+        Map<String, String> fieldValues = headers.getContentTypeAttributes();
         TestCase.assertEquals(2, fieldValues.size());
-        TestCase.assertEquals("[boundary=\"cats\", micalg=\"\"]", headers.getContentTypeParameters().toString());
+        TestCase.assertEquals("{boundary=\"cats\", micalg=\"\"}", headers.getContentTypeAttributes().toString());
     }
 
 

@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +23,7 @@ public class Headers
     private String boundary;
     private boolean multipart;
     private String contentType;
-    private String contentTypeParameters;
+    private Map<String, String> contentTypeParameters;
 
     private static List<String> parseHeaders(InputStream src)
         throws IOException
@@ -81,12 +82,12 @@ public class Headers
         if (parameterIndex < 0)
         {
             contentType = contentTypeHeader;
-            contentTypeParameters = "";
+            contentTypeParameters = Collections.emptyMap();
         }
         else
         {
             contentType = contentTypeHeader.substring(0, parameterIndex);
-            contentTypeParameters = contentTypeHeader.substring(parameterIndex + 1).trim();
+            contentTypeParameters = createContentTypeParameters(contentTypeHeader.substring(parameterIndex + 1).trim());
         }
 
         contentTransferEncoding = this.getValues("Content-Transfer-Encoding") == null ? defaultContentTransferEncoding : this.getValues("Content-Transfer-Encoding")[0];
@@ -94,8 +95,8 @@ public class Headers
         if (contentType.contains("multipart"))
         {
             multipart = true;
-            String bound = contentTypeParameters.substring(contentTypeParameters.indexOf("boundary=\"") + 10);
-            boundary = bound.substring(0, bound.indexOf('"'));
+            String bound = contentTypeParameters.get("boundary");
+            boundary = bound.substring(1, bound.length() - 1); // quoted-string
         }
         else
         {
@@ -104,23 +105,40 @@ public class Headers
         }
     }
 
+    /**
+     * Return the a Map of the ContentType attributes and their values.
+     *
+     * @return a Map of ContentType parameters - empty if none present.
+     */
+    public Map<String, String> getContentTypeAttributes()
+    {
+        return contentTypeParameters;
+    }
 
     /**
      * Return the a list of the ContentType parameters.
      *
      * @return a list of ContentType parameters - empty if none present.
      */
-    public List<String> getContentTypeParameters()
+    private Map<String, String> createContentTypeParameters(String contentTypeParameters)
     {
         String[] parameterSplit = contentTypeParameters.split(";");
-        List<String> rv = new ArrayList<>();
+        Map<String, String> rv = new HashMap<String, String>();
 
         for (int i = 0; i != parameterSplit.length; i++)
         {
-            rv.add(parameterSplit[i].trim());
+            String parameter = parameterSplit[i];
+
+            int eqIndex = parameter.indexOf('=');
+            if (eqIndex < 0)
+            {
+                throw new IllegalArgumentException("malformed Content-Type header");
+            }
+
+            rv.put(parameter.substring(0, eqIndex).trim(), parameter.substring(eqIndex + 1).trim());
         }
 
-        return Collections.unmodifiableList(rv);
+        return Collections.unmodifiableMap(rv);
     }
 
     public boolean isMultipart()
