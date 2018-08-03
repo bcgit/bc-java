@@ -30,7 +30,6 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
-import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -1242,7 +1241,7 @@ public class NewSMIMESignedTest
             X509CertificateHolder certHolder = (X509CertificateHolder)certIt.next();
 
             // in this case the sig is invalid, but it's the lack of an exception from the content digest we're looking for
-            Assert.assertFalse(signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(certHolder)));
+            assertFalse(signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(certHolder)));
         }
     }
 

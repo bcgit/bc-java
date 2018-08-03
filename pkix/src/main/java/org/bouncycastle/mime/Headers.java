@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +22,7 @@ public class Headers
     private String boundary;
     private boolean multipart;
     private String contentType;
+    private String contentTypeParameters;
 
     private static List<String> parseHeaders(InputStream src)
         throws IOException
@@ -74,13 +75,26 @@ public class Headers
             this.put(header.substring(0, header.indexOf(':')).trim(), header.substring(header.indexOf(':') + 1).trim());
         }
 
-        contentType = (this.getValues("Content-Type") == null) ? "text/plain" : this.getValues("Content-Type")[0];
+        String contentTypeHeader = (this.getValues("Content-Type") == null) ? "text/plain" : this.getValues("Content-Type")[0];
+
+        int parameterIndex = contentTypeHeader.indexOf(';');
+        if (parameterIndex < 0)
+        {
+            contentType = contentTypeHeader;
+            contentTypeParameters = "";
+        }
+        else
+        {
+            contentType = contentTypeHeader.substring(0, parameterIndex);
+            contentTypeParameters = contentTypeHeader.substring(parameterIndex + 1).trim();
+        }
+
         contentTransferEncoding = this.getValues("Content-Transfer-Encoding") == null ? defaultContentTransferEncoding : this.getValues("Content-Transfer-Encoding")[0];
 
         if (contentType.contains("multipart"))
         {
             multipart = true;
-            String bound = contentType.substring(contentType.indexOf("boundary=\"") + 10);
+            String bound = contentTypeParameters.substring(contentTypeParameters.indexOf("boundary=\"") + 10);
             boundary = bound.substring(0, bound.indexOf('"'));
         }
         else
@@ -92,67 +106,22 @@ public class Headers
 
 
     /**
-     * Return the fields associated with the content type field.
-     * Eg boundary=xxx; micalg=SHA1 etc.
+     * Return the a list of the ContentType parameters.
      *
-     * @return
+     * @return a list of ContentType parameters - empty if none present.
      */
-    public Map<String, String> getContentTypeFieldValues()
+    public List<String> getContentTypeParameters()
     {
-        String[] parts = contentType.split(";");
-        Map<String, String> values = new HashMap<String, String>();
+        String[] parameterSplit = contentTypeParameters.split(";");
+        List<String> rv = new ArrayList<>();
 
-
-        for (String part : parts)
+        for (int i = 0; i != parameterSplit.length; i++)
         {
-            int a = part.indexOf("=");
-            if (a < 0)
-            {
-                continue;
-            }
-
-            String key = part.substring(0, a);
-
-            if (a + 1 >= part.length())
-            {
-                continue;
-            }
-
-            String value = lessQuotes(part.substring(a + 1));
-            values.put(key.trim(), value);
+            rv.add(parameterSplit[i].trim());
         }
 
-        return values;
+        return Collections.unmodifiableList(rv);
     }
-
-
-    private String lessQuotes(String in)
-    {
-        if (in == null || in.length() == 0)
-        {
-            return in;
-        }
-
-        if (in.charAt(0) == '"' && in.charAt(in.length() - 1) == '"')
-        {
-            // Two quotes, no content.
-            if (in.length() == 2)
-            {
-                return "";
-            }
-
-            // Avoiding any locale issues, we use char arrays.
-
-            char[] original = in.toCharArray();
-            char[] trimmed = new char[in.length() - 2];
-            System.arraycopy(original, 1, trimmed, 0, trimmed.length);
-            return new String(trimmed);
-        }
-
-        return in;
-
-    }
-
 
     public boolean isMultipart()
     {
@@ -260,29 +229,6 @@ public class Headers
         {
             this.key = kv.key;
             this.value = kv.value;
-        }
-
-        /**
-         * Canonical form.
-         *
-         * @return The header with properly terminated lineendings and so on.
-         */
-        public String canonicalForm()
-        {
-            StringBuffer stringBuffer = new StringBuffer();
-            for (String s : value.split("\n"))
-            {
-                stringBuffer.append(s);
-                if (s.endsWith("\r"))
-                {
-                    stringBuffer.append("\n");
-                }
-                else
-                {
-                    stringBuffer.append("\r\n");
-                }
-            }
-            return key + ":" + stringBuffer.toString();
         }
     }
 }

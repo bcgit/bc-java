@@ -8,7 +8,7 @@ import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.List;
 
 import junit.framework.TestCase;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -63,11 +63,10 @@ public class MultipartParserTest
         values.add("Content-type: " + value);
 
         Headers headers = new Headers(values, value);
-        TestCase.assertEquals(value, headers.getContentType());
-        Map<String, String> fieldValues = headers.getContentTypeFieldValues();
+        TestCase.assertEquals("multipart/alternative", headers.getContentType());
+        List<String> fieldValues = headers.getContentTypeParameters();
         TestCase.assertEquals(1, fieldValues.size());
-        TestCase.assertTrue(fieldValues.containsKey("boundary"));
-        TestCase.assertEquals("Apple-Mail=_8B1F6ECB-9629-424B-B871-1357CCDBCC84", fieldValues.get("boundary"));
+        TestCase.assertEquals("[boundary=\"Apple-Mail=_8B1F6ECB-9629-424B-B871-1357CCDBCC84\"]", fieldValues.toString());
     }
 
 
@@ -79,22 +78,17 @@ public class MultipartParserTest
     public void testParseContentTypeHeader_wellformed_multi()
         throws Exception
     {
-        String value = "multipart/alternative;\n" +
+        String value = "multipart/signed;\n" +
             " boundary=\"Apple-Mail=_8B1F6ECB-9629-424B-B871-1357CCDBCC84\"; micalg=\"SHA1\"";
 
         ArrayList<String> values = new ArrayList<String>();
         values.add("Content-type: " + value);
 
         Headers headers = new Headers(values, value);
-        TestCase.assertEquals(value, headers.getContentType());
-        Map<String, String> fieldValues = headers.getContentTypeFieldValues();
+        TestCase.assertEquals("multipart/signed", headers.getContentType());
+        List<String>  fieldValues = headers.getContentTypeParameters();
         TestCase.assertEquals(2, fieldValues.size());
-        TestCase.assertTrue(fieldValues.containsKey("boundary"));
-        TestCase.assertEquals("Apple-Mail=_8B1F6ECB-9629-424B-B871-1357CCDBCC84", fieldValues.get("boundary"));
-
-        TestCase.assertTrue(fieldValues.containsKey("micalg"));
-        TestCase.assertEquals("SHA1", fieldValues.get("micalg"));
-
+        TestCase.assertEquals("[boundary=\"Apple-Mail=_8B1F6ECB-9629-424B-B871-1357CCDBCC84\", micalg=\"SHA1\"]", fieldValues.toString());
     }
 
 
@@ -116,10 +110,10 @@ public class MultipartParserTest
         values.add("Content-type: " + value);
 
         Headers headers = new Headers(values, value);
-        TestCase.assertEquals(value, headers.getContentType());
-        Map<String, String> fieldValues = headers.getContentTypeFieldValues();
-        TestCase.assertEquals(1, fieldValues.size());
-        TestCase.assertFalse(fieldValues.containsKey("micalg"));
+        TestCase.assertEquals("multipart/alternative", headers.getContentType());
+        List<String> fieldValues = headers.getContentTypeParameters();
+        TestCase.assertEquals(2, fieldValues.size());
+        TestCase.assertEquals("[boundary=\"cats\", micalg=]", fieldValues.toString());
     }
 
     /**
@@ -140,10 +134,10 @@ public class MultipartParserTest
         values.add("Content-type: " + value);
 
         Headers headers = new Headers(values, value);
-        TestCase.assertEquals(value, headers.getContentType());
-        Map<String, String> fieldValues = headers.getContentTypeFieldValues();
+        TestCase.assertEquals("multipart/alternative", headers.getContentType());
+        List<String> fieldValues = headers.getContentTypeParameters();
         TestCase.assertEquals(2, fieldValues.size());
-        TestCase.assertEquals("", fieldValues.get("micalg"));
+        TestCase.assertEquals("[boundary=\"cats\", micalg=\"\"]", headers.getContentTypeParameters().toString());
     }
 
 
@@ -188,6 +182,62 @@ public class MultipartParserTest
                     try
                     {
                         assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(certHolder)));
+                    }
+                    catch (OperatorCreationException e)
+                    {
+                        e.printStackTrace();
+                    }
+                    catch (CertificateException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+        });
+    }
+
+    public void testInvalidSha256SignedMultipart()
+        throws Exception
+    {
+        final ArrayList<Object> results = new ArrayList<Object>();
+
+        MimeParserProvider provider = new SMimeParserProvider("7bit", new BcDigestCalculatorProvider());
+
+        MimeParser p = provider.createParser(this.getClass().getResourceAsStream("3nnn_smime.eml"));
+
+        p.parse(new SMimeParserListener()
+        {
+            public void content(MimeParserContext parserContext, Headers headers, InputStream inputStream)
+                throws IOException
+            {
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                Streams.pipeAll((InputStream)inputStream, bos);
+                results.add(bos.toString());
+                System.out.println("#######################################################################");
+                System.out.println(bos.toString());
+                System.out.println("#######################################################################");
+            }
+
+            @Override
+            public void signedData(MimeParserContext parserContext, Headers headers, Store certificates, Store CRLs, Store attributeCertificates, SignerInformationStore signers)
+                throws CMSException
+            {
+                Collection c = signers.getSigners();
+                Iterator it = c.iterator();
+
+                while (it.hasNext())
+                {
+                    SignerInformation signer = (SignerInformation)it.next();
+                    Collection certCollection = certificates.getMatches(signer.getSID());
+
+                    Iterator certIt = certCollection.iterator();
+                    X509CertificateHolder certHolder = (X509CertificateHolder)certIt.next();
+
+                    try
+                    {
+                        // in this case the signature is invalid
+                        assertEquals(false, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(certHolder)));
                     }
                     catch (OperatorCreationException e)
                     {
