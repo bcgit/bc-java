@@ -3,10 +3,12 @@ package org.bouncycastle.mime.test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.Security;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 
 import junit.framework.TestCase;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -14,6 +16,7 @@ import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.mime.BasicMimeParser;
 import org.bouncycastle.mime.ConstantMimeContext;
 import org.bouncycastle.mime.Headers;
@@ -34,159 +37,117 @@ import org.bouncycastle.util.io.Streams;
 public class MultipartParserTest
     extends TestCase
 {
-//    /**
-//     * Parse content header good.
-//     *
-//     * @throws Exception
-//     */
-//    public void testParseContentTypeHeader()
-//        throws Exception
-//    {
-//
-//        Map<String, List<String>> headers = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
-//
-//        ArrayList<String> values = new ArrayList<String>();
-//        values.add("multipart/alternative;\n" +
-//            " boundary=\"Apple-Mail=_8B1F6ECB-9629-424B-B871-1357CCDBCC84\"");
-//
-//        headers.put("Content-Type", values);
-//
-//        MimeUtils.ContentTypeInfo tinfo = MimeUtils.getContentTypeInfo(headers);
-//
-//        TestCase.assertEquals("multipart/alternative", tinfo.getName());
-//        TestCase.assertEquals("Apple-Mail=_8B1F6ECB-9629-424B-B871-1357CCDBCC84", tinfo.getFields().get("boundary"));
-//    }
-//
-//
-//    public void testParseContentTypeHeaderSort()
-//        throws Exception
-//    {
-//
-//        Map<String, List<String>> headers = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
-//
-//        ArrayList<String> values = new ArrayList<String>();
-//        values.add("text/plain");
-//
-//        headers.put("Content-Type", values);
-//
-//        MimeUtils.ContentTypeInfo tinfo = MimeUtils.getContentTypeInfo(headers);
-//
-//        TestCase.assertEquals("text/plain", tinfo.getName());
-//        TestCase.assertEquals(0, tinfo.getFields().size());
-//    }
-//
-//
-//    public void testParseContentTypeNoHeader()
-//        throws Exception
-//    {
-//
-//        Map<String, List<String>> headers = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
-//
-//        ArrayList<String> values = new ArrayList<String>();
-//
-//        MimeUtils.ContentTypeInfo tinfo = MimeUtils.getContentTypeInfo(headers);
-//
-//        TestCase.assertNull(tinfo);
-//    }
-//
-//
-//    public void testParseContentTypeBroken()
-//        throws Exception
-//    {
-//
-//
-//        //
-//        // Semicolon only
-//        //
-//
-//        {
-//            // No name just a semicolon.
-//            Map<String, List<String>> headers = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
-//
-//            ArrayList<String> values = new ArrayList<String>();
-//            values.add(";");
-//
-//            headers.put("Content-Type", values);
-//
-//            MimeUtils.ContentTypeInfo tinfo = MimeUtils.getContentTypeInfo(headers);
-//
-//            TestCase.assertEquals("", tinfo.getName());
-//            TestCase.assertEquals(0, tinfo.getFields().size());
-//        }
-//
-//
-//        {
-//            // No field value
-//            Map<String, List<String>> headers = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
-//
-//            ArrayList<String> values = new ArrayList<String>();
-//            values.add("foo; cats=");
-//
-//            headers.put("Content-Type", values);
-//
-//            MimeUtils.ContentTypeInfo tinfo = MimeUtils.getContentTypeInfo(headers);
-//
-//            TestCase.assertEquals("foo", tinfo.getName());
-//            TestCase.assertEquals("", tinfo.getFields().get("cats"));
-//        }
-//
-//
-//        {
-//            // No equals
-//            Map<String, List<String>> headers = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
-//
-//            ArrayList<String> values = new ArrayList<String>();
-//            values.add("foo; cats");
-//
-//            headers.put("Content-Type", values);
-//
-//            MimeUtils.ContentTypeInfo tinfo = MimeUtils.getContentTypeInfo(headers);
-//
-//            TestCase.assertEquals("foo", tinfo.getName());
-//            TestCase.assertNull(tinfo.getFields().get("cats")); // No = so no decode.
-//        }
-//
-//
-//        {
-//            // Extra white space.
-//            Map<String, List<String>> headers = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
-//
-//            ArrayList<String> values = new ArrayList<String>();
-//            values.add("foo; cats\n=\nfish");
-//
-//            headers.put("Content-Type", values);
-//
-//            MimeUtils.ContentTypeInfo tinfo = MimeUtils.getContentTypeInfo(headers);
-//
-//            TestCase.assertEquals("foo", tinfo.getName());
-//            TestCase.assertEquals("fish", tinfo.getFields().get("cats")); // No = so no decode.
-//        }
-//
-//
-//        {  // Just an equals not fieldName or value
-//            Map<String, List<String>> headers = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
-//
-//            ArrayList<String> values = new ArrayList<String>();
-//            values.add("foo;=");
-//
-//            headers.put("Content-Type", values);
-//
-//            MimeUtils.ContentTypeInfo tinfo = MimeUtils.getContentTypeInfo(headers);
-//
-//            TestCase.assertEquals("foo", tinfo.getName());
-//            TestCase.assertEquals(0, tinfo.getFields().size());
-//        }
-//
-//        { // Null value in map
-//            Map<String, List<String>> headers = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
-//            headers.put("Content-Type", null);
-//            MimeUtils.ContentTypeInfo tinfo = MimeUtils.getContentTypeInfo(headers);
-//            TestCase.assertNull(tinfo);
-//        }
-//
-//    }
 
-    
+    protected void setUp()
+        throws Exception
+    {
+        if (Security.getProvider("BC") == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+    }
+
+
+    /**
+     * Parse content header good.
+     *
+     * @throws Exception
+     */
+    public void testParseContentTypeHeader_wellformed()
+        throws Exception
+    {
+        String value = "multipart/alternative;\n" +
+            " boundary=\"Apple-Mail=_8B1F6ECB-9629-424B-B871-1357CCDBCC84\"";
+
+        ArrayList<String> values = new ArrayList<String>();
+        values.add("Content-type: " + value);
+
+        Headers headers = new Headers(values, value);
+        TestCase.assertEquals(value, headers.getContentType());
+        Map<String, String> fieldValues = headers.getContentTypeFieldValues();
+        TestCase.assertEquals(1, fieldValues.size());
+        TestCase.assertTrue(fieldValues.containsKey("boundary"));
+        TestCase.assertEquals("Apple-Mail=_8B1F6ECB-9629-424B-B871-1357CCDBCC84", fieldValues.get("boundary"));
+    }
+
+
+    /**
+     * Parse content header good.
+     *
+     * @throws Exception
+     */
+    public void testParseContentTypeHeader_wellformed_multi()
+        throws Exception
+    {
+        String value = "multipart/alternative;\n" +
+            " boundary=\"Apple-Mail=_8B1F6ECB-9629-424B-B871-1357CCDBCC84\"; micalg=\"SHA1\"";
+
+        ArrayList<String> values = new ArrayList<String>();
+        values.add("Content-type: " + value);
+
+        Headers headers = new Headers(values, value);
+        TestCase.assertEquals(value, headers.getContentType());
+        Map<String, String> fieldValues = headers.getContentTypeFieldValues();
+        TestCase.assertEquals(2, fieldValues.size());
+        TestCase.assertTrue(fieldValues.containsKey("boundary"));
+        TestCase.assertEquals("Apple-Mail=_8B1F6ECB-9629-424B-B871-1357CCDBCC84", fieldValues.get("boundary"));
+
+        TestCase.assertTrue(fieldValues.containsKey("micalg"));
+        TestCase.assertEquals("SHA1", fieldValues.get("micalg"));
+
+    }
+
+
+    /**
+     * Parse content header good.
+     *
+     * @throws Exception
+     */
+    public void testParseContentTypeHeader_broken()
+        throws Exception
+    {
+
+        // Verify limit checking
+
+        String value = "multipart/alternative;\n" +
+            " boundary=\"cats\"; micalg=";
+
+        ArrayList<String> values = new ArrayList<String>();
+        values.add("Content-type: " + value);
+
+        Headers headers = new Headers(values, value);
+        TestCase.assertEquals(value, headers.getContentType());
+        Map<String, String> fieldValues = headers.getContentTypeFieldValues();
+        TestCase.assertEquals(1, fieldValues.size());
+        TestCase.assertFalse(fieldValues.containsKey("micalg"));
+    }
+
+    /**
+     * Parse content header good.
+     *
+     * @throws Exception
+     */
+    public void testParseContentTypeHeader_empty_micalg()
+        throws Exception
+    {
+
+        // Verify limit checking
+
+        String value = "multipart/alternative;\n" +
+            " boundary=\"cats\"; micalg=\"\"";
+
+        ArrayList<String> values = new ArrayList<String>();
+        values.add("Content-type: " + value);
+
+        Headers headers = new Headers(values, value);
+        TestCase.assertEquals(value, headers.getContentType());
+        Map<String, String> fieldValues = headers.getContentTypeFieldValues();
+        TestCase.assertEquals(2, fieldValues.size());
+        TestCase.assertEquals("", fieldValues.get("micalg"));
+    }
+
+
+
     public void testSignedMultipart()
         throws Exception
     {
@@ -195,7 +156,7 @@ public class MultipartParserTest
         MimeParserProvider provider = new SMimeParserProvider("7bit", new BcDigestCalculatorProvider());
 
         MimeParser p = provider.createParser(this.getClass().getResourceAsStream("quotable.message"));
-        
+
         p.parse(new SMimeParserListener()
         {
             public void content(MimeParserContext parserContext, Headers headers, InputStream inputStream)
@@ -218,10 +179,10 @@ public class MultipartParserTest
 
                 while (it.hasNext())
                 {
-                    SignerInformation   signer = (SignerInformation)it.next();
-                    Collection          certCollection = certificates.getMatches(signer.getSID());
+                    SignerInformation signer = (SignerInformation)it.next();
+                    Collection certCollection = certificates.getMatches(signer.getSID());
 
-                    Iterator        certIt = certCollection.iterator();
+                    Iterator certIt = certCollection.iterator();
                     X509CertificateHolder certHolder = (X509CertificateHolder)certIt.next();
 
                     try
@@ -248,7 +209,7 @@ public class MultipartParserTest
         final ArrayList<Object> results = new ArrayList<Object>();
 
         MimeParserProvider provider = new SMimeParserProvider("7bit", new BcDigestCalculatorProvider());
-    
+
         MimeParser p = provider.createParser(this.getClass().getResourceAsStream("embeddedmulti.message"));
 
         p.parse(new SMimeParserListener()
@@ -273,10 +234,10 @@ public class MultipartParserTest
 
                 while (it.hasNext())
                 {
-                    SignerInformation   signer = (SignerInformation)it.next();
-                    Collection          certCollection = certificates.getMatches(signer.getSID());
+                    SignerInformation signer = (SignerInformation)it.next();
+                    Collection certCollection = certificates.getMatches(signer.getSID());
 
-                    Iterator        certIt = certCollection.iterator();
+                    Iterator certIt = certCollection.iterator();
                     X509CertificateHolder certHolder = (X509CertificateHolder)certIt.next();
 
                     try
@@ -437,4 +398,7 @@ public class MultipartParserTest
         }
 
     }
+
+
+
 }
