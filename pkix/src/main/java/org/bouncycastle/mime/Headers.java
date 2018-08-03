@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +89,70 @@ public class Headers
             multipart = false;
         }
     }
+
+
+    /**
+     * Return the fields associated with the content type field.
+     * Eg boundary=xxx; micalg=SHA1 etc.
+     *
+     * @return
+     */
+    public Map<String, String> getContentTypeFieldValues()
+    {
+        String[] parts = contentType.split(";");
+        Map<String, String> values = new HashMap<String, String>();
+
+
+        for (String part : parts)
+        {
+            int a = part.indexOf("=");
+            if (a < 0)
+            {
+                continue;
+            }
+
+            String key = part.substring(0, a);
+
+            if (a + 1 >= part.length())
+            {
+                continue;
+            }
+
+            String value = lessQuotes(part.substring(a + 1));
+            values.put(key.trim(), value);
+        }
+
+        return values;
+    }
+
+
+    private String lessQuotes(String in)
+    {
+        if (in == null || in.length() == 0)
+        {
+            return in;
+        }
+
+        if (in.charAt(0) == '"' && in.charAt(in.length() - 1) == '"')
+        {
+            // Two quotes, no content.
+            if (in.length() == 2)
+            {
+                return "";
+            }
+
+            // Avoiding any locale issues, we use char arrays.
+
+            char[] original = in.toCharArray();
+            char[] trimmed = new char[in.length() - 2];
+            System.arraycopy(original, 1, trimmed, 0, trimmed.length);
+            return new String(trimmed);
+        }
+
+        return in;
+
+    }
+
 
     public boolean isMultipart()
     {

@@ -73,4 +73,33 @@ class SMimeUtils
         forMic = Collections.unmodifiableMap(mic);
 
     }
+
+
+    public static String lessQuotes(String in)
+    {
+        if (in == null || in.length() == 0)
+        {
+            return in;
+        }
+
+        if (in.charAt(0) == '"' && in.charAt(in.length() - 1) == '"')
+        {
+            // Two quotes, no content.
+            if (in.length() == 2)
+            {
+                return "";
+            }
+
+            // Avoiding any locale issues, we use char arrays.
+
+            char[] original = in.toCharArray();
+            char[] trimmed = new char[in.length() - 2];
+            System.arraycopy(original, 1, trimmed, 0, trimmed.length);
+            return new String(trimmed);
+        }
+
+        return in;
+
+    }
+
 }
