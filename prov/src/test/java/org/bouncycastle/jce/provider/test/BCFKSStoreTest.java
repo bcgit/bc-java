@@ -1095,6 +1095,7 @@ public class BCFKSStoreTest
         shouldStoreUsingPBKDF2();
         shouldFailOnWrongPassword();
         shouldParseKWPKeyStore();
+        //shouldRejectInconsistentKeys();
     }
 
     public static void main(
