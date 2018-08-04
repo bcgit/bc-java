@@ -78,7 +78,7 @@ class SMimeUtils
 
     static String lessQuotes(String in)
     {
-        if (in == null || in.length() == 0)
+        if (in == null || in.length() <= 1)  // make sure we have at least 2 characters
         {
             return in;
         }
