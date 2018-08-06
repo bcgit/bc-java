@@ -21,14 +21,12 @@ public class SMimeParserProvider
         this.digestCalculatorProvider = digestCalculatorProvider;
     }
 
-    @Override
     public MimeParser createParser(InputStream source)
         throws IOException
     {
         return new BasicMimeParser(new SMimeParserContext(defaultContentTransferEncoding, digestCalculatorProvider), source);
     }
 
-    @Override
     public MimeParser createParser(Headers headers, InputStream source)
         throws IOException
     {
