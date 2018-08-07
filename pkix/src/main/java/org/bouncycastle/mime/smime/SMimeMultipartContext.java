@@ -110,7 +110,6 @@ public class SMimeMultipartContext
         };
     }
 
-    @Override
     public InputStream applyContext(Headers headers, InputStream contentStream)
         throws IOException
     {
