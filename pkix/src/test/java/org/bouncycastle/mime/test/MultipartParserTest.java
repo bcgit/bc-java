@@ -327,13 +327,11 @@ public class MultipartParserTest
 
                 basicMimeParser.parse(new MimeParserListener()
                 {
-                    @Override
                     public MimeContext createContext(MimeParserContext parserContext, Headers headers)
                     {
                         return new ConstantMimeContext();
                     }
 
-                    @Override
                     public void object(MimeParserContext parserContext, Headers headers, InputStream inputStream)
                         throws IOException
                     {
@@ -394,26 +392,21 @@ public class MultipartParserTest
 
         p.parse(new MimeParserListener()
         {
-            @Override
             public MimeContext createContext(MimeParserContext parserContext, Headers headers)
             {
                 return new MimeMultipartContext()
                 {
-
-                    @Override
                     public InputStream applyContext(Headers headers, InputStream contentStream)
                         throws IOException
                     {
                         return contentStream;
                     }
 
-                    @Override
                     public MimeContext createContext(int partNo)
                         throws IOException
                     {
                         return new MimeContext()
                         {
-                            @Override
                             public InputStream applyContext(Headers headers, InputStream contentStream)
                                 throws IOException
                             {
