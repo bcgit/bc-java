@@ -215,7 +215,6 @@ public class Headers
         return headers.containsKey(s);
     }
 
-    @Override
     public Iterator<String> iterator()
     {
         return headers.keySet().iterator();
