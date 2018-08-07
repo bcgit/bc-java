@@ -124,7 +124,7 @@ public class DLBitString
     }
 
     void encode(
-        ASN1OutputStream  out)
+        ASN1OutputStream out)
         throws IOException
     {
         byte[] string = data;

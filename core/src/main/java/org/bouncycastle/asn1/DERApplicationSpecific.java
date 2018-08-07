@@ -3,8 +3,6 @@ package org.bouncycastle.asn1;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import org.bouncycastle.util.encoders.Hex;
-
 /**
  * A DER encoding version of an application specific object.
  */
@@ -122,30 +120,5 @@ public class DERApplicationSpecific
         }
 
         out.writeEncoded(classBits, tag, octets);
-    }
-
-    public String toString()
-    {
-        StringBuffer sb = new StringBuffer();
-        sb.append("[");
-        if (isConstructed())
-        {
-            sb.append("CONSTRUCTED ");
-        }
-        sb.append("APPLICATION ");
-        sb.append(Integer.toString(getApplicationTag()));
-        sb.append("]");
-        // @todo content encoding somehow?
-        if (this.octets != null)
-        {
-            sb.append(" #");
-            sb.append(Hex.toHexString(this.octets));
-        }
-        else
-        {
-            sb.append(" #null");
-        }
-        sb.append(" ");
-        return sb.toString();
     }
 }

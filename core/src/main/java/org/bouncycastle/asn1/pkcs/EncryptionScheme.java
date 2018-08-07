@@ -13,6 +13,12 @@ public class EncryptionScheme
     private AlgorithmIdentifier algId;
 
     public EncryptionScheme(
+        ASN1ObjectIdentifier objectId)
+    {
+        this.algId = new AlgorithmIdentifier(objectId);
+    }
+
+    public EncryptionScheme(
         ASN1ObjectIdentifier objectId,
         ASN1Encodable parameters)
     {

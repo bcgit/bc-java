@@ -1,3 +1,6 @@
+/***************************************************************/
+/******    DO NOT EDIT THIS CLASS bc-java SOURCE FILE     ******/
+/***************************************************************/
 package org.bouncycastle.asn1;
 
 import java.io.IOException;
@@ -8,6 +11,11 @@ import java.io.IOException;
 public abstract class ASN1Null
     extends ASN1Primitive
 {
+    ASN1Null()
+    {
+
+    }
+
     /**
      * Return an instance of ASN.1 NULL from the passed in object.
      * <p>
@@ -17,6 +25,7 @@ public abstract class ASN1Null
      * <li> {@link ASN1Null} object
      * <li> a byte[] containing ASN.1 NULL object
      * </ul>
+     * </p>
      *
      * @param o object to be converted.
      * @return an instance of ASN1Null, or null.
