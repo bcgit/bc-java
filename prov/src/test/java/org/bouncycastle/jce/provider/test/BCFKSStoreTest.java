@@ -43,7 +43,6 @@ import org.bouncycastle.crypto.util.PBKDF2Config;
 import org.bouncycastle.crypto.util.PBKDFConfig;
 import org.bouncycastle.crypto.util.ScryptConfig;
 import org.bouncycastle.jcajce.BCFKSLoadStoreParameter;
-import org.bouncycastle.jcajce.BCFKSStoreParameter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
@@ -1260,7 +1259,7 @@ public class BCFKSStoreTest
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
-        store1.store(new BCFKSStoreParameter(bOut, config, testPassword));
+        store1.store(new BCFKSLoadStoreParameter.Builder(bOut, testPassword).withStorePBKDFConfig(config).build());
 
         KeyStore store2 = KeyStore.getInstance("BCFKS", "BC");
 
