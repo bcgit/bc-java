@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.util.PBKDFConfig;
 /**
  * LoadStoreParameter to allow configuring of the PBKDF used to generate encryption keys for
  * use in the keystore.
+ * @deprecated This class does not support configuration on creation, use BCFKSLoadStoreParameter for best results.
  */
 public class BCFKSStoreParameter
     implements KeyStore.LoadStoreParameter

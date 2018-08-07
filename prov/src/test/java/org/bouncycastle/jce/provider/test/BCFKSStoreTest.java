@@ -33,6 +33,7 @@ import org.bouncycastle.asn1.bc.ObjectStoreIntegrityCheck;
 import org.bouncycastle.asn1.bc.PbkdMacIntegrityCheck;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.misc.ScryptParams;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PBES2Parameters;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -41,12 +42,14 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.util.PBKDF2Config;
 import org.bouncycastle.crypto.util.PBKDFConfig;
 import org.bouncycastle.crypto.util.ScryptConfig;
+import org.bouncycastle.jcajce.BCFKSLoadStoreParameter;
 import org.bouncycastle.jcajce.BCFKSStoreParameter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
+import org.junit.Assert;
 
 /**
  * Exercise the  BCFKS KeyStore,
@@ -101,6 +104,52 @@ public class BCFKSStoreTest
             "tac4cwgbcwDAYIKoZIhvcNAgsFADBlBgkqhkiG9w0BBQwwWARAvH3U5H5R/XeTJYthNF/5aUAsqnHPEeperLR1iXVAiVH8t4iby2WP" +
             "FbvQtoKDbREOo9NaULKIWlDlimxCJosvygIDAMgAAgFAMAwGCCqGSIb3DQILBQAEQGeIvocQlW6yjPCczqj+yNdn6sTcmuHI9AnFtn" +
             "aY0K7Ki2oIlXl5D9TLznFhJuHDtrIA3VYy2XTCvyrY3qEIySo=");
+
+    static byte[] oldKeyStoreNoPW = Base64.decode(
+        "MIIF/jCCBUEwgZQGCSqGSIb3DQEFDTCBhjBkBgkqhkiG9w0BBQwwVwRAr1ik7Ut78AkRAXYcwhwjOjlSjfjzLzCqFFFsT2OHXWtCK1h" +
+            "FEnbVpdi5OFL+TQ6g8kU9w8EYrIZH7elwkMt+6wICBAACASAwDAYIKoZIhvcNAgsFADAeBglghkgBZQMEAS8wEQQMi3d/cdRmlkhW1" +
+            "B43AgEIBIIEpvp3Y9FgZwdOCGGd3pJmhTy4z3FQ+xQD5yQizR3GtuNwLQvrsDfaZOPdmt6bKSLQdjVXX214d2JmBlKNOj9MD6SDIsW" +
+            "+yEVoqk4asmQjY5KZi/l7o9IRMTAVFBSKyXYcmnV/0Wqpv/AEOaV1ytrxwu2TOW3gZcbNHs3YQvAArxMcqCLyyGJYJ73Qt2xuccZa8" +
+            "YgagCovr0t2KJYHdpeTIFvhaAU7/iHKa0z4ES0YjZoEKNu7jA91WCnKIaFdJCRLS5NKqcuHw93KgGNelEEJt9BbhmddlzZ3upxdw9Q" +
+            "vZsaasD30ezK6viROxAkerfXzI5QVS8Qlz1/TQ10/ri8Lf04H3+HNRV5YS0cH9ghoBxKvvu8whcA43FdvGE7MREIEykJBWWWK5bgul" +
+            "duf2ONNA5cIBTLwLOmPdT2I4PkXUjCROHBmX9m4F0p41+9DCpqS2z5H2oS4+n+sBLHFWZbsOu/NAXKswLDVRaBbSGJW270dc8Gv1Vo" +
+            "B9VWlkqX4wLZTLp+Gbk2aJaKlp9zeN5EHG/vh1wJWYq138h2MB+cYZ2TCl3+orhzlzx6xfRVAtbBz9kpPDpfgpnahM0+IdcuVc5B2s" +
+            "UR6hBM/GQY4cgFdsBI1XhoEjLxzD8PxF4Se2KbseB6fq0+h1GKSB8YXv+IVvroF1ueqsi8DisNcrkN3Bdbl28gopF7kG+aJ84JkEHP" +
+            "bmN+EaYIZZ6yRBHa/nfXltblCIRbSfB0x4L8Uz+/lbEen5hov7v/60+v+6nAlNWs3Af0ZlmOU4KAcSgmLBJzh3+83qld8BlJH1t1HI" +
+            "Ct/md7BQLXn4fRWeKUhbwvSvlut7knai1ZKaLxEhNCh+/7UDE7Y1wvzBfWJYfyAFkCxW9U0erkwp8euea7OgMd1U+6R9H8FEgEjzaj" +
+            "maMCKqmAizZromgxsiPzZgMkz9J1eY/VtWqk1Gu3mq7O/6ilWh/dogxVfeVZ2kyS17rXL152pcJHIx20Vsd4gnFx8sLqfqiO5n/qoA" +
+            "8BkbbwdrBmURNCVmDMuqlMl/yiOpqohQ8kcp81l6B6NHAtxAWCSz7ypfKw43G80tTKhHYDguCUvdbLCuR43DJj22SuuxoRKHjnhtYD" +
+            "xKL58W5HhIcSFliI5qBuRc+EHVOdHfFfqNhisitOzuTk9z1Emg0lweVFzaWkpqxiwtNfOmiYrg+EzDYiGmiQ7/r5Uxqku+aX69khXN" +
+            "OKQbx1d48PI/0mNJV7qUY6k1hhU3ZkMSnuR1akaq/Skds7BnC3yj8byDlWouJ5AYreHPc4uxoH6YwSrBGBWw9omxGPFE6aGWze8pV/" +
+            "95HOrftINptVRDPtuBvV8fo9qPJ7Xr6unG3kEbKoflYTbolguI4YN338+QIc6+53I7N7H+3kkb8TJhUPj4ImS1dvN5KfkSwYuKX8sQ" +
+            "r4MGUVTfJwbRCKkbimtJ1MY/Rcpe9No1xQObp/3G4Tfam1KlhhLaM3A9fCLm+WwS7zlemJ+KcWa7iOyoS5f646+aLRZ7sNeuoxYecq" +
+            "9ybT5W8mYitUdvxcPwMlh2w1DqwmDqXVqkevs8WnDBJM2FYWVJenoU98oPd3pbFicZsjuMIG2MAwGCCqGSIb3DQILBQAwZAYJKoZIh" +
+            "vcNAQUMMFcEQAI9+HvmFMWhbl/EmZBy/B2CDIKcCs4AuhrKu50UVHSHobnuX7phOAtxdI9VevE2ehMCbWkLrUa3Qtkv4CmozFwCAgQ" +
+            "AAgFAMAwGCCqGSIb3DQILBQAEQHGAl3x6ij1f4oSoeKX/KQOYByXY/Kk4BinJM0cG0zXapG4vYidgmTMPTguuWXxL1u3+ncAGmW2EY" +
+            "gEAHiOUu5c=");
+
+    static byte[] oldKeyStore = Base64.decode(
+        "MIIF/jCCBUEwgZQGCSqGSIb3DQEFDTCBhjBkBgkqhkiG9w0BBQwwVwRA1njcCRF+e+s3pQsVaifZNKCablZ+5cLEeJXEdsAtJt7ZG2" +
+            "6dq5iYzBhbol5L5D0n9RLYFW5IoK9rCd8UpD61GAICBAACASAwDAYIKoZIhvcNAgsFADAeBglghkgBZQMEAS8wEQQMhT2rGv09UX8P" +
+            "pmcZAgEIBIIEpu8KeIMyG7FZL+rxPCJ7YFNRXEjykNt70W1BD8VDsN/bGuW4kCnKXNlzV2SAx/44mhdR47qiKrXziCwZUgpck9d1R5" +
+            "nQQtTKw0Q2F1EuWGm9ErFpCMYl6E43/URmkmjuCMIpEbrKHTmuEjqsdHJ7+CST4cFU3lCsBj7dMl9G7tLxJhq5aCTYxhFX6R5kM5QH" +
+            "t/pkxE/5Ei94nh606cKNjLA7Zlrbn1c5WlTpesOjE1pZp/QY9UuSiSA0nucNd8Ir0H4PK120QerdQQ4EWY/KHEDn4EqGpaE1Z6WVAS" +
+            "qyYING7g1q4YeYeJjFA2V8fqsj0j/wxG29x5J5ghcERnrcQGTL2P3uLvy2chgHdqIaFxKStANVntW+dy9MD/uCZnYi7DzeS3qWEZcl" +
+            "cpp5oImL79k08uc9jpfOnNaqbxz8b76ABH39OVQVSGRhh7fkYYSlUEWpSlaFoKaywV3yJwXlilhX7JqyiqRt/hrlVLTlQZZeJbYMrE" +
+            "KA/Fn2ePmNt5hJRiHzF5w/YVd5My27QtPvInCgJ2bV+Z0Di3l+Sd4SCS1NiHtR6uB7G3xlI8E3uQVV4dRNXM8drb1Uu/eTGxGSH0hY" +
+            "2Z0N8TvSGdz+TAQRNn/nXaMA2nZdfhVmwiRPPP3BaiBCJM6y5FroOT1rkPupA+gpmlw1M7Ey+rABphsqEig2XyRe4FMMmIc4i8ga6m" +
+            "KH+F0e26ycsb+nSycdhLIs5Dcdo42wzmvmoG8fvM+/C1N98TfB0m2KbtS1TV9dohagJi4l685iUMnUbH3nmha7RPYUVnpZdDokiATV" +
+            "WjuSezCdpIxv1m6HOqXuArvDtvExDzyVZnPoIF4DEuRypDpW8tkppvLGA6VEo1TPJvjvyrX6SqorwDa1JINVnQGPpx5StjL+eIQBzV" +
+            "RHoy+NP2dcPBHUlAfwWrkk7V7CwST6uNYBL+YVhTYYIN1HnJY0CkmmraqMvkMks17WAd9hONzSLmNT3St6s3VIQMMPC7qNatB+570Q" +
+            "BxgiQC7ieFu1wqy9ZNnNLU9DC69HR37uUFyiCnbCb54XY/zmCUhc8ONBi3L8DwmiDZ2oF7WIEmWvblcbWaQNFPNBMS9KzejHLpvopW" +
+            "+XcfRX4jCz9PwZ9HhUwGk8R7b1MALgJhXxuAD/a4VQK2OtlTHeAgSGBrGcGgjzSa7JWM5ks+EHdTuLaiU3ViVXLrZq4lr/D8ni1Ipt" +
+            "kKPaVcWnl56i7AXZtPj5xVE5v2eVual3sBOkObpoObyrDfmouZW0A9GPk69jGTm5j2FU+50p7JxSfR78BZJitBqrcYS4boVDFmTZYN" +
+            "MBpgGkHqW79gWKIde/pf6nf9cSnDEjZEIZJQI5rnLqmGG6+vKxJQJt7be4vCzGTVMqiY3+QgVCuwtK7Vd44RaPDnzQDxC9OwJOhIUF" +
+            "s1UwoS/vU/n5kbaYmD+py3dgffw4EicaOv5hG7NELZRKxueCjnVwdeCGH+WgJL7AIUdruK/SvsQbJX1asEFKU5KCG4Z9Sw0Sw4MjL+" +
+            "OAiyIbpQpMfHtG+9ORfWWmlH8McA3rjT07fKelhPn1YauY2jGZLfBrpBrQKxvcL82og7rUMIG2MAwGCCqGSIb3DQILBQAwZAYJKoZI" +
+            "hvcNAQUMMFcEQOchs+KAXDWhUaENOgpSls0plNpIUYDkgnMa/iL4RzEOCwiZBOuBdGsEfP3oKLWUS3wO83vrgetSLK5fkN6QNnoCAg" +
+            "QAAgFAMAwGCCqGSIb3DQILBQAEQBLCR5e4teCd8JX0xJbGadSCFaO1oEehyXSZrnKahsYJ7yTHqJTvlcWvqTiwn7Gud/SJmMXPQkZC" +
+            "SQhMQ5k+xZ4=");
 
     public void shouldCreateEmptyBCFKSNoPassword()
         throws Exception
@@ -442,7 +491,7 @@ public class BCFKSStoreTest
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         store1.store(bOut, testPassword);
-     
+
         KeyStore store2 = KeyStore.getInstance("BCFKS", "BC");
 
         store2.load(new ByteArrayInputStream(bOut.toByteArray()), testPassword);
@@ -631,11 +680,19 @@ public class BCFKSStoreTest
             null,
             kp1.getPublic());
 
-        KeyStore store1 = KeyStore.getInstance(storeName, "BC");
+        KeyStore store1 = KeyStore.getInstance("BCFKS", "BC");
 
         store1.load(null, null);
 
         store1.setKeyEntry("privkey", kp1.getPrivate(), testPassword, new X509Certificate[]{interCert, finalCert});
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        store1.store(bOut, testPassword);
+
+        store1 = KeyStore.getInstance(storeName, "BC");
+
+        store1.load(new ByteArrayInputStream(bOut.toByteArray()), testPassword);
 
         isTrue("privKey test 1", store1.getKey("privkey", testPassword) != null);
 
@@ -697,6 +754,77 @@ public class BCFKSStoreTest
         }
 
         return privKey;
+    }
+
+    public void shouldFailOnRemovesOrOverwrite()
+        throws Exception
+    {
+        failOnRemovesOrOverwrite("BCSFKS");
+        failOnRemovesOrOverwrite("BCSFKS-DEF");
+    }
+
+    private void failOnRemovesOrOverwrite(String storeName)
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", "BC");
+
+        kpGen.initialize(512);
+
+        KeyPair kp1 = kpGen.generateKeyPair();
+        KeyPair kp2 = kpGen.generateKeyPair();
+
+        X509Certificate finalCert = TestUtils.createSelfSignedCert("CN=Final", "SHA1withRSA", kp2);
+        X509Certificate interCert = TestUtils.createCert(
+            X500Name.getInstance(finalCert.getSubjectX500Principal().getEncoded()),
+            kp2.getPrivate(),
+            "CN=EE",
+            "SHA1withRSA",
+            null,
+            kp1.getPublic());
+
+        KeyStore store1 = KeyStore.getInstance(storeName, "BC");
+
+        store1.load(new ByteArrayInputStream(oldKeyStoreNoPW), null);
+
+        try
+        {
+            store1.setKeyEntry("privkey", kp1.getPrivate(), testPassword, new X509Certificate[]{interCert, finalCert});
+            fail("no exception");
+        }
+        catch (KeyStoreException e)
+        {
+            isTrue("set operation not supported in shared mode".equals(e.getMessage()));
+        }
+
+        try
+        {
+            store1.setKeyEntry("privkey", kp1.getPrivate().getEncoded(), new X509Certificate[]{interCert, finalCert});
+            fail("no exception");
+        }
+        catch (KeyStoreException e)
+        {
+            isTrue("set operation not supported in shared mode".equals(e.getMessage()));
+        }
+
+        try
+        {
+            store1.setCertificateEntry("cert", interCert);
+            fail("no exception");
+        }
+        catch (KeyStoreException e)
+        {
+            isTrue("set operation not supported in shared mode".equals(e.getMessage()));
+        }
+
+        try
+        {
+            store1.deleteEntry("privkey");
+            fail("no exception");
+        }
+        catch (KeyStoreException e)
+        {
+            isTrue("delete operation not supported in shared mode".equals(e.getMessage()));
+        }
     }
 
     public void shouldStoreOneSecretKey()
@@ -922,11 +1050,70 @@ public class BCFKSStoreTest
         }
     }
 
+    private void shouldParseOldStores()
+        throws Exception
+    {
+        KeyStore store = KeyStore.getInstance("BCFKS", "BC");
+
+        store.load(new ByteArrayInputStream(oldKeyStore), testPassword);
+
+        checkStore(store, oldKeyStore, testPassword);
+
+        store.load(new ByteArrayInputStream(oldKeyStoreNoPW), null);
+
+        checkStore(store, oldKeyStoreNoPW, null);
+    }
+
+    private void checkStore(KeyStore store1, byte[] data, char[] passwd)
+        throws Exception
+    {
+        Assert.assertEquals(store1.getCertificateChain("privkey").length, 2);
+        Assert.assertEquals(1, store1.size());
+        Enumeration<String> en2 = store1.aliases();
+
+        Assert.assertEquals("privkey", en2.nextElement());
+        Assert.assertFalse(en2.hasMoreElements());
+
+        // check invalid load with content
+
+        checkInvalidLoad(store1, passwd, data);
+
+        try
+        {
+            store1.store(new ByteArrayOutputStream(), passwd);
+            Assert.fail();
+        }
+        catch (IOException e)
+        {
+            Assert.assertEquals("KeyStore not initialized", e.getMessage());
+        }
+
+        // check deletion on purpose
+
+        store1.load(new ByteArrayInputStream(data), passwd);
+
+        store1.deleteEntry("privkey");
+
+        Assert.assertEquals(0, store1.size());
+        Assert.assertFalse(store1.aliases().hasMoreElements());
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        store1.store(bOut, passwd);
+
+        KeyStore store2 = KeyStore.getInstance("BCFKS", "BC");
+
+        store2.load(new ByteArrayInputStream(bOut.toByteArray()), passwd);
+
+        Assert.assertEquals(0, store2.size());
+        Assert.assertFalse(store2.aliases().hasMoreElements());
+    }
+
     private void shouldStoreUsingSCRYPT()
         throws Exception
     {
         byte[] enc = doStoreUsingStoreParameter(new ScryptConfig.Builder(1024, 8, 1)
-                                                        .withSaltLength(20).build());
+            .withSaltLength(20).build());
 
         ObjectStore store = ObjectStore.getInstance(enc);
 
@@ -963,6 +1150,46 @@ public class BCFKSStoreTest
         isEquals(1, sParams.getParallelizationParameter().intValue());
     }
 
+    private void shouldStoreUsingKWP()
+        throws Exception
+    {
+        X509Certificate cert = (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(new ByteArrayInputStream(trustedCertData));
+
+        KeyStore store1 = KeyStore.getInstance("BCFKS", "BC");
+
+        store1.load(new BCFKSLoadStoreParameter.Builder().withStoreEncryptionAlgorithm(BCFKSLoadStoreParameter.EncryptionAlgorithm.AES256_KWP).build());
+
+        store1.setCertificateEntry("cert", cert);
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        store1.store(bOut, testPassword);
+
+        byte[] enc = bOut.toByteArray();
+
+        ObjectStore store = ObjectStore.getInstance(enc);
+
+        ObjectStoreIntegrityCheck integrityCheck = store.getIntegrityCheck();
+
+        Assert.assertEquals(integrityCheck.getType(), ObjectStoreIntegrityCheck.PBKD_MAC_CHECK);
+
+        PbkdMacIntegrityCheck check = PbkdMacIntegrityCheck.getInstance(integrityCheck.getIntegrityCheck());
+
+        isTrue("wrong MAC", check.getMacAlgorithm().getAlgorithm().equals(PKCSObjectIdentifiers.id_hmacWithSHA512));
+        isTrue("wrong PBE", check.getPbkdAlgorithm().getAlgorithm().equals(PKCSObjectIdentifiers.id_PBKDF2));
+
+        EncryptedObjectStoreData objStore = EncryptedObjectStoreData.getInstance(store.getStoreData());
+
+        AlgorithmIdentifier encryptionAlgorithm = objStore.getEncryptionAlgorithm();
+        isTrue(encryptionAlgorithm.getAlgorithm().equals(PKCSObjectIdentifiers.id_PBES2));
+
+        PBES2Parameters pbeParams = PBES2Parameters.getInstance(encryptionAlgorithm.getParameters());
+
+        isTrue(pbeParams.getKeyDerivationFunc().getAlgorithm().equals(PKCSObjectIdentifiers.id_PBKDF2));
+
+        isTrue(pbeParams.getEncryptionScheme().getAlgorithm().equals(NISTObjectIdentifiers.id_aes256_wrap_pad));
+    }
+
     private void shouldStoreUsingPBKDF2()
         throws Exception
     {
@@ -974,9 +1201,9 @@ public class BCFKSStoreTest
         throws Exception
     {
         byte[] enc = doStoreUsingStoreParameter(new PBKDF2Config.Builder()
-                                                        .withPRF(prf)
-                                                        .withIterationCount(1024)
-                                                        .withSaltLength(20).build());
+            .withPRF(prf)
+            .withIterationCount(1024)
+            .withSaltLength(20).build());
 
         ObjectStore store = ObjectStore.getInstance(enc);
 
@@ -1073,7 +1300,7 @@ public class BCFKSStoreTest
 
         return bOut.toByteArray();
     }
-    
+
     public String getName()
     {
         return "BCFKS";
@@ -1095,11 +1322,14 @@ public class BCFKSStoreTest
         shouldStoreUsingPBKDF2();
         shouldFailOnWrongPassword();
         shouldParseKWPKeyStore();
+        shouldFailOnRemovesOrOverwrite();
+        shouldParseOldStores();
+        shouldStoreUsingKWP();
         //shouldRejectInconsistentKeys();
     }
 
     public static void main(
-        String[]    args)
+        String[] args)
     {
         Security.addProvider(new BouncyCastleProvider());
 
