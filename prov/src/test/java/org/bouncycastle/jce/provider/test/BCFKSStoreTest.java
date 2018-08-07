@@ -49,7 +49,6 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-import org.junit.Assert;
 
 /**
  * Exercise the  BCFKS KeyStore,
@@ -1067,12 +1066,12 @@ public class BCFKSStoreTest
     private void checkStore(KeyStore store1, byte[] data, char[] passwd)
         throws Exception
     {
-        Assert.assertEquals(store1.getCertificateChain("privkey").length, 2);
-        Assert.assertEquals(1, store1.size());
+        isEquals(store1.getCertificateChain("privkey").length, 2);
+        isEquals(1, store1.size());
         Enumeration<String> en2 = store1.aliases();
 
-        Assert.assertEquals("privkey", en2.nextElement());
-        Assert.assertFalse(en2.hasMoreElements());
+        isEquals("privkey", en2.nextElement());
+        isTrue(!en2.hasMoreElements());
 
         // check invalid load with content
 
@@ -1081,11 +1080,11 @@ public class BCFKSStoreTest
         try
         {
             store1.store(new ByteArrayOutputStream(), passwd);
-            Assert.fail();
+            fail("no exception");
         }
         catch (IOException e)
         {
-            Assert.assertEquals("KeyStore not initialized", e.getMessage());
+            isEquals("KeyStore not initialized", e.getMessage());
         }
 
         // check deletion on purpose
@@ -1094,8 +1093,8 @@ public class BCFKSStoreTest
 
         store1.deleteEntry("privkey");
 
-        Assert.assertEquals(0, store1.size());
-        Assert.assertFalse(store1.aliases().hasMoreElements());
+        isEquals(0, store1.size());
+        isTrue(!store1.aliases().hasMoreElements());
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
@@ -1105,8 +1104,8 @@ public class BCFKSStoreTest
 
         store2.load(new ByteArrayInputStream(bOut.toByteArray()), passwd);
 
-        Assert.assertEquals(0, store2.size());
-        Assert.assertFalse(store2.aliases().hasMoreElements());
+        isEquals(0, store2.size());
+        isTrue(!store2.aliases().hasMoreElements());
     }
 
     private void shouldStoreUsingSCRYPT()
@@ -1171,7 +1170,7 @@ public class BCFKSStoreTest
 
         ObjectStoreIntegrityCheck integrityCheck = store.getIntegrityCheck();
 
-        Assert.assertEquals(integrityCheck.getType(), ObjectStoreIntegrityCheck.PBKD_MAC_CHECK);
+        isEquals(integrityCheck.getType(), ObjectStoreIntegrityCheck.PBKD_MAC_CHECK);
 
         PbkdMacIntegrityCheck check = PbkdMacIntegrityCheck.getInstance(integrityCheck.getIntegrityCheck());
 
