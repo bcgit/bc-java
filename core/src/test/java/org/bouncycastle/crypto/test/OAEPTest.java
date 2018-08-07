@@ -10,12 +10,16 @@ import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
 import org.bouncycastle.asn1.pkcs.RSAPublicKey;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.encodings.OAEPEncoding;
 import org.bouncycastle.crypto.engines.RSAEngine;
+import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.util.encoders.Hex;
@@ -779,6 +783,8 @@ public class OAEPTest
         oaepVecTest(1027, 5, pubParam, privParam, seed_1027_5, input_1027_5, output_1027_5);
         oaepVecTest(1027, 6, pubParam, privParam, seed_1027_6, input_1027_6, output_1027_6);
 
+        testForHighByteError("invalidCiphertextOaepTest 2048", 2048);
+
         //
         // OAEP - public encrypt, private decrypt  differring hashes
         //
@@ -818,6 +824,77 @@ public class OAEPTest
             {
                 fail("mixed digest failed decoding");
             }
+        }
+    }
+
+    private void testForHighByteError(String label, int keySizeBits) throws Exception
+    {
+        // draw a key of the size asked
+        BigInteger e = BigInteger.ONE.shiftLeft(16).add(BigInteger.ONE);
+
+        AsymmetricCipherKeyPairGenerator kpGen = new RSAKeyPairGenerator();
+
+        kpGen.init(new RSAKeyGenerationParameters(e, new SecureRandom(), 2048, 100));
+
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+
+        AsymmetricBlockCipher cipher = new OAEPEncoding(new RSAEngine());
+
+        // obtain a known good ciphertext
+        cipher.init(true, new ParametersWithRandom(kp.getPublic(), new VecRand(seed)));
+        byte[] m = { 42 };
+        byte[] c = cipher.processBlock(m, 0, m.length);
+        int keySizeBytes = (keySizeBits+7)>>>3;
+        if (c.length!=keySizeBytes)
+        {
+            fail(label + " failed ciphertext size");
+        }
+
+        BigInteger n  = ((RSAPrivateCrtKeyParameters)kp.getPrivate()).getModulus();
+
+        // decipher
+        cipher.init(false, kp.getPrivate());
+        byte[] r = cipher.processBlock(c, 0, keySizeBytes);
+        if (r.length!=1 || r[0]!=42)
+        {
+            fail(label + " failed first decryption of test message");
+        }
+
+        // decipher again
+        r = cipher.processBlock(c, 0, keySizeBytes);
+        if (r.length!=1 || r[0]!=42)
+        {
+            fail(label + " failed second decryption of test message");
+        }
+
+        // check hapazard incorrect ciphertexts
+        for(int i=keySizeBytes*8; --i>=0;)
+        {
+            c[i>>>3] ^= 1<<(i&7);
+            boolean ko = true;
+            try
+            {
+                BigInteger cV = new BigInteger(1, c);
+
+                // don't pass in c if it will be rejected trivially
+                if (cV.compareTo(n) < 0)
+                {
+                    r = cipher.processBlock(c, 0, keySizeBytes);
+                }
+                else
+                {
+                    ko = false; // size errors are picked up at start
+                }
+            }
+            catch (InvalidCipherTextException exception)
+            {
+                ko = false;
+            }
+            if (ko)
+            {
+                fail(label + " invalid ciphertext caused no exception");
+            }
+            c[i>>>3] ^= 1<<(i&7);
         }
     }
 
