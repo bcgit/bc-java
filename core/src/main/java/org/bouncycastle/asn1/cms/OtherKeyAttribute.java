@@ -53,10 +53,7 @@ public class OtherKeyAttribute
         return null;
     }
 
-    /**
-     * @deprecated use getInstance()
-     */
-    public OtherKeyAttribute(
+    private OtherKeyAttribute(
         ASN1Sequence seq)
     {
         keyAttrId = (ASN1ObjectIdentifier)seq.getObjectAt(0);

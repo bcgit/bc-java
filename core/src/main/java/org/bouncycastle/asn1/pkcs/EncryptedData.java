@@ -35,8 +35,6 @@ public class EncryptedData
     extends ASN1Object
 {
     ASN1Sequence                data;
-    ASN1ObjectIdentifier bagId;
-    ASN1Primitive bagValue;
 
     public static EncryptedData getInstance(
          Object  obj)

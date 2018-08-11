@@ -389,7 +389,7 @@ public class TeleTrusTNamedCurves
      */
     public static Enumeration getNames()
     {
-        return names.elements();
+        return objIds.keys();
     }
 
     public static ASN1ObjectIdentifier getOID(short curvesize, boolean twisted)
