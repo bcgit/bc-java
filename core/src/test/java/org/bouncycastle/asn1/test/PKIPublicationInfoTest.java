@@ -31,6 +31,12 @@ public class PKIPublicationInfoTest
 
         encEqualTest(pkiPubInfo);
 
+        pkiPubInfo = new PKIPublicationInfo(PKIPublicationInfo.dontPublish.getValue());
+
+        isEquals(PKIPublicationInfo.dontPublish, pkiPubInfo.getAction());
+
+        encEqualTest(pkiPubInfo);
+
         SinglePubInfo singlePubInfo1 = new SinglePubInfo(SinglePubInfo.x500, new GeneralName(new X500Name("CN=TEST")));
         pkiPubInfo = new PKIPublicationInfo(singlePubInfo1);
 
