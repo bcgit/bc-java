@@ -9,8 +9,6 @@ import java.security.spec.InvalidParameterSpecException;
 
 import javax.crypto.spec.IvParameterSpec;
 
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.misc.IDEACBCPar;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.crypto.CipherKeyGenerator;
@@ -193,8 +191,7 @@ public final class IDEA
             }
             if (format.equals("ASN.1"))
             {
-                ASN1InputStream aIn = new ASN1InputStream(params);
-                IDEACBCPar      oct = new IDEACBCPar((ASN1Sequence)aIn.readObject());
+                IDEACBCPar      oct = IDEACBCPar.getInstance(params);
 
                 engineInit(oct.getIV());
                 return;
