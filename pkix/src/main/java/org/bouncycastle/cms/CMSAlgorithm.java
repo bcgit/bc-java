@@ -31,9 +31,9 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  AES192_GCM      = NISTObjectIdentifiers.id_aes192_GCM.intern();
     public static final ASN1ObjectIdentifier  AES256_GCM      = NISTObjectIdentifiers.id_aes256_GCM.intern();
 
-	public static final ASN1ObjectIdentifier  AES128_CBC_CMAC      = BSIObjectIdentifiers.id_aes128_CBC_CMAC;
-	public static final ASN1ObjectIdentifier  AES192_CBC_CMAC      = BSIObjectIdentifiers.id_aes192_CBC_CMAC;
-	public static final ASN1ObjectIdentifier  AES256_CBC_CMAC      = BSIObjectIdentifiers.id_aes256_CBC_CMAC;
+//	public static final ASN1ObjectIdentifier  AES128_CBC_CMAC      = BSIObjectIdentifiers.id_aes128_CBC_CMAC;
+//	public static final ASN1ObjectIdentifier  AES192_CBC_CMAC      = BSIObjectIdentifiers.id_aes192_CBC_CMAC;
+//	public static final ASN1ObjectIdentifier  AES256_CBC_CMAC      = BSIObjectIdentifiers.id_aes256_CBC_CMAC;
 
     public static final ASN1ObjectIdentifier  CAMELLIA128_CBC = NTTObjectIdentifiers.id_camellia128_cbc.intern();
     public static final ASN1ObjectIdentifier  CAMELLIA192_CBC = NTTObjectIdentifiers.id_camellia192_cbc.intern();
