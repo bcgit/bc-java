@@ -74,7 +74,9 @@ public class RegressionTest
         new RFC4519Test(),
         new PolicyConstraintsTest(),
         new PollReqContentTest(),
-        new DhSigStaticTest()
+        new DhSigStaticTest(),
+        new PKIPublicationInfoTest(),
+        new CertifiedKeyPairTest()
     };
 
     public static void main(
