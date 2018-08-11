@@ -31,11 +31,8 @@ public class OtherRecipientInfo
         this.oriType = oriType;
         this.oriValue = oriValue;
     }
-
-    /**
-     * @deprecated use getInstance().
-     */
-    public OtherRecipientInfo(
+    
+    private OtherRecipientInfo(
         ASN1Sequence seq)
     {
         oriType = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));

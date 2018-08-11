@@ -83,22 +83,22 @@ public interface BSIObjectIdentifiers
 
 	/** AES encryption (CBC) and authentication (CMAC)
 	 * OID: 0.4.0.127.0.7.1.x */
-	//FIXME replace "1" with correct OID
-	static final ASN1ObjectIdentifier aes_cbc_cmac = algorithm.branch("1");
+	//TODO: replace "1" with correct OID
+	//static final ASN1ObjectIdentifier aes_cbc_cmac = algorithm.branch("1");
 
 	/** AES encryption (CBC) and authentication (CMAC) with 128 bit
 	 * OID: 0.4.0.127.0.7.1.x.y1 */
-	//FIXME replace "1" with correct OID
-	static final ASN1ObjectIdentifier id_aes128_CBC_CMAC = aes_cbc_cmac.branch("1");
+	//TODO:  replace "1" with correct OID
+	//static final ASN1ObjectIdentifier id_aes128_CBC_CMAC = aes_cbc_cmac.branch("1");
 
 
 	/** AES encryption (CBC) and authentication (CMAC) with 192 bit
 	 * OID: 0.4.0.127.0.7.1.x.y2 */
-	//FIXME replace "1" with correct OID
-	static final ASN1ObjectIdentifier id_aes192_CBC_CMAC = aes_cbc_cmac.branch("1");
+	//TODO:  replace "1" with correct OID
+	//static final ASN1ObjectIdentifier id_aes192_CBC_CMAC = aes_cbc_cmac.branch("1");
 
 	/** AES encryption (CBC) and authentication (CMAC) with 256 bit
 	 * OID: 0.4.0.127.0.7.1.x.y3 */
-	//FIXME replace "1" with correct OID
-	static final ASN1ObjectIdentifier id_aes256_CBC_CMAC = aes_cbc_cmac.branch("1");
+	//TODO:  replace "1" with correct OID
+	//static final ASN1ObjectIdentifier id_aes256_CBC_CMAC = aes_cbc_cmac.branch("1");
 }

@@ -61,7 +61,7 @@ public class DSTU4145Params
 
     public static byte[] getDefaultDKE()
     {
-        return DEFAULT_DKE;
+        return Arrays.clone(DEFAULT_DKE);
     }
 
     public ASN1ObjectIdentifier getNamedCurve()

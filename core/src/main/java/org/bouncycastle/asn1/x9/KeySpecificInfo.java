@@ -92,7 +92,7 @@ public class KeySpecificInfo
     /**
      * Return an ASN.1 primitive representation of this object.
      *
-     * @return a DERSequence containing the parameter values.
+     * @return a DERSequence containing the KeySpecificInfo values.
      */
     public ASN1Primitive toASN1Primitive()
     {

@@ -39,7 +39,7 @@ public class CAST5CBCParameters
         this.keyLength = new ASN1Integer(keyLength);
     }
 
-    public CAST5CBCParameters(
+    private CAST5CBCParameters(
         ASN1Sequence  seq)
     {
         iv = (ASN1OctetString)seq.getObjectAt(0);

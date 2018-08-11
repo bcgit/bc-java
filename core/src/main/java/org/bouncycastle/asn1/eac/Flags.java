@@ -62,7 +62,7 @@ public class Flags
         return joiner.toString();
     }
 
-    private class StringJoiner
+    private static class StringJoiner
     {
 
         String mSeparator;

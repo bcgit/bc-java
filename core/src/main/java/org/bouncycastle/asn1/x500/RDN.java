@@ -108,7 +108,7 @@ public class RDN
      * <pre>
      * RelativeDistinguishedName ::=
      *                     SET OF AttributeTypeAndValue
-     *
+
      * AttributeTypeAndValue ::= SEQUENCE {
      *        type     AttributeType,
      *        value    AttributeValue }

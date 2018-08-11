@@ -21,7 +21,7 @@ public class AlgorithmIdentifier
     {
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
-
+    
     public static AlgorithmIdentifier getInstance(
         Object  obj)
     {
@@ -59,7 +59,7 @@ public class AlgorithmIdentifier
             throw new IllegalArgumentException("Bad sequence size: "
                     + seq.size());
         }
-
+        
         algorithm = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
 
         if (seq.size() == 2)
