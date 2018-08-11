@@ -783,10 +783,10 @@ public class OAEPTest
         oaepVecTest(1027, 5, pubParam, privParam, seed_1027_5, input_1027_5, output_1027_5);
         oaepVecTest(1027, 6, pubParam, privParam, seed_1027_6, input_1027_6, output_1027_6);
 
-        testForHighByteError("invalidCiphertextOaepTest 2048", 2048);
+        testForHighByteError("invalidCiphertextOaepTest 1024", 1024);
 
         //
-        // OAEP - public encrypt, private decrypt  differring hashes
+        // OAEP - public encrypt, private decrypt, differing hashes
         //
         AsymmetricBlockCipher cipher = new OAEPEncoding(new RSAEngine(), new SHA256Digest(), new SHA1Digest(), new byte[10]);
 
@@ -834,7 +834,7 @@ public class OAEPTest
 
         AsymmetricCipherKeyPairGenerator kpGen = new RSAKeyPairGenerator();
 
-        kpGen.init(new RSAKeyGenerationParameters(e, new SecureRandom(), 2048, 100));
+        kpGen.init(new RSAKeyGenerationParameters(e, new SecureRandom(), keySizeBits, 100));
 
         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
