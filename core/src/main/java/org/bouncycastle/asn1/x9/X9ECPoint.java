@@ -9,7 +9,7 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
 
 /**
- * class for describing an ECPoint as a DER object.
+ * Class for describing an ECPoint as a DER object.
  */
 public class X9ECPoint
     extends ASN1Object

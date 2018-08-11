@@ -1077,6 +1077,6 @@ public class SECNamedCurves
      */
     public static Enumeration getNames()
     {
-        return names.elements();
+        return objIds.keys();
     }
 }

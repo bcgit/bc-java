@@ -7,7 +7,7 @@ import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
- *  <pre>
+ * <pre>
  *  SignedPublicKeyAndChallenge ::= SEQUENCE {
  *    publicKeyAndChallenge PublicKeyAndChallenge,
  *    signatureAlgorithm AlgorithmIdentifier,
@@ -20,7 +20,7 @@ public class SignedPublicKeyAndChallenge
     extends ASN1Object
 {
     private final PublicKeyAndChallenge pubKeyAndChal;
-    private final ASN1Sequence          pkacSeq;
+    private final ASN1Sequence pkacSeq;
 
     public static SignedPublicKeyAndChallenge getInstance(Object obj)
     {

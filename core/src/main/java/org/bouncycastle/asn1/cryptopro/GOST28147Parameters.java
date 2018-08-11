@@ -53,10 +53,7 @@ public class GOST28147Parameters
         this.paramSet = paramSet;
     }
 
-    /**
-     * @deprecated use the getInstance() method. This constructor will vanish!
-     */
-    public GOST28147Parameters(
+    private GOST28147Parameters(
         ASN1Sequence  seq)
     {
         Enumeration     e = seq.getObjects();

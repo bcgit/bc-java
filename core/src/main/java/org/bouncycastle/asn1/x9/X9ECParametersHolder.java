@@ -1,5 +1,8 @@
 package org.bouncycastle.asn1.x9;
 
+/**
+ * A holding class that allows for X9ECParameters to be lazily constructed.
+ */
 public abstract class X9ECParametersHolder
 {
     private X9ECParameters params;

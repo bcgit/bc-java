@@ -127,15 +127,6 @@ public class AuthenticatedDataParser
         return null;
     }
 
-    /**
-     * @deprecated use getEncapsulatedContentInfo()
-     */
-    public ContentInfoParser getEnapsulatedContentInfo()
-        throws IOException
-    {
-        return getEncapsulatedContentInfo();
-    }
-
     public ContentInfoParser getEncapsulatedContentInfo()
         throws IOException
     {

@@ -35,7 +35,7 @@ public class IDEACBCPar
         this.iv = new DEROctetString(iv);
     }
 
-    public IDEACBCPar(
+    private IDEACBCPar(
         ASN1Sequence  seq)
     {
         if (seq.size() == 1)
