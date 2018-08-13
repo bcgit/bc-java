@@ -1,7 +1,9 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
+import java.security.AccessController;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
+import java.security.PrivilegedAction;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -18,6 +20,28 @@ import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
 public class JceAEADCipherImpl
     implements TlsAEADCipherImpl
 {
+    private static boolean checkForAEAD()
+    {
+        return AccessController.doPrivileged(new PrivilegedAction<Boolean>()
+        {
+            @Override
+            public Boolean run()
+            {
+                try
+                {
+                    return Cipher.class.getMethod("updateAAD", byte[].class) != null;
+                }
+                catch (Exception ignore)
+                {
+                    // TODO[logging] Log the fact that we are falling back to BC-specific class
+                    return Boolean.FALSE;
+                }
+            }
+        });
+    }
+
+    private static final boolean canDoAEAD = checkForAEAD();
+
     private static String getAlgParamsName(JcaJceHelper helper, String cipherName)
     {
         try
@@ -59,7 +83,7 @@ public class JceAEADCipherImpl
     {
         try
         {
-            if (algorithmParamsName != null)
+            if (canDoAEAD && algorithmParamsName != null)
             {
                 AlgorithmParameters algParams = helper.createAlgorithmParameters(algorithmParamsName);
 
