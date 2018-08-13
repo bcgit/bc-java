@@ -223,7 +223,7 @@ public abstract class BaseAgreementSpi
             byte[] secret = calcSecret();
             try
             {
-                return getSharedSecretBytes(calcSecret(), null, secret.length * 8);
+                return getSharedSecretBytes(secret, null, secret.length * 8);
             }
             catch (NoSuchAlgorithmException e)
             {
