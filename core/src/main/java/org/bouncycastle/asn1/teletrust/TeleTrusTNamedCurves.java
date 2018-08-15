@@ -388,8 +388,8 @@ public class TeleTrusTNamedCurves
      * contained in this structure.
      */
     public static Enumeration getNames()
-    {
-        return objIds.keys();
+    {    // we need to use names so we get the mixed case names.
+        return names.elements();
     }
 
     public static ASN1ObjectIdentifier getOID(short curvesize, boolean twisted)
