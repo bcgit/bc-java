@@ -6,7 +6,6 @@ import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.SerpentEngine;
 import org.bouncycastle.crypto.engines.TnepresEngine;
-import org.bouncycastle.crypto.engines.TwofishEngine;
 import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
 import org.bouncycastle.crypto.macs.GMac;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
@@ -124,7 +123,7 @@ public final class Serpent
     {
         public Poly1305()
         {
-            super(new org.bouncycastle.crypto.macs.Poly1305(new TwofishEngine()));
+            super(new org.bouncycastle.crypto.macs.Poly1305(new SerpentEngine()));
         }
     }
 
