@@ -53,7 +53,7 @@ public class TestSMIMEEnvelope
 
         Security.addProvider(new BouncyCastleProvider());
 
-        AtomicBoolean dataParsed = new AtomicBoolean(false);
+        final AtomicBoolean dataParsed = new AtomicBoolean(false);
 
         p.parse(new SMimeParserListener()
         {
