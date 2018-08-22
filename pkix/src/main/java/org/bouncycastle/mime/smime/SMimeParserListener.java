@@ -85,18 +85,18 @@ public abstract class SMimeParserListener
     public void content(MimeParserContext parserContext, Headers headers, InputStream inputStream)
         throws IOException
     {
-
+        throw new IllegalStateException("content handling not implemented");
     }
 
     public void signedData(MimeParserContext parserContext, Headers headers, Store certificates, Store CRLs, Store attributeCertificates, SignerInformationStore signers)
         throws IOException, CMSException
     {
-        
+        throw new IllegalStateException("signedData handling not implemented");
     }
 
     public void envelopedData(MimeParserContext parserContext, Headers headers, OriginatorInformation originatorInformation, RecipientInformationStore recipients)
         throws IOException, CMSException
     {
-
+        throw new IllegalStateException("envelopedData handling not implemented");
     }
 }
