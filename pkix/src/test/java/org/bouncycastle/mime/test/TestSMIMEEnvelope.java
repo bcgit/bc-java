@@ -7,7 +7,7 @@ import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import junit.framework.TestCase;
 import org.bouncycastle.cms.CMSException;
@@ -19,6 +19,7 @@ import org.bouncycastle.cms.jcajce.JceKeyTransRecipientId;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.mime.Headers;
 import org.bouncycastle.mime.MimeParser;
+import org.bouncycastle.mime.MimeParserContext;
 import org.bouncycastle.mime.MimeParserProvider;
 import org.bouncycastle.mime.smime.SMimeParserListener;
 import org.bouncycastle.mime.smime.SMimeParserProvider;
@@ -44,10 +45,7 @@ public class TestSMIMEEnvelope
     public void testSMIMEEnvelope()
         throws Exception
     {
-
         InputStream inputStream = this.getClass().getResourceAsStream("test256.message");
-
-        final ArrayList<Object> results = new ArrayList<Object>();
 
         MimeParserProvider provider = new SMimeParserProvider("7bit", new BcDigestCalculatorProvider());
 
@@ -55,19 +53,25 @@ public class TestSMIMEEnvelope
 
         Security.addProvider(new BouncyCastleProvider());
 
+        AtomicBoolean dataParsed = new AtomicBoolean(false);
+
         p.parse(new SMimeParserListener()
         {
-            public void envelopedData(Headers headers, OriginatorInformation originator, RecipientInformationStore recipients)
+            public void envelopedData(MimeParserContext parserContext, Headers headers, OriginatorInformation originator, RecipientInformationStore recipients)
                 throws IOException, CMSException
             {
                 RecipientInformation recipInfo = recipients.get(new JceKeyTransRecipientId(loadCert("cert.pem")));
 
                 assertNotNull(recipInfo);
-                
-                    byte[] content = recipInfo.getContent(new JceKeyTransEnvelopedRecipient(loadKey("key.pem")));
-                    assertTrue(org.bouncycastle.util.Arrays.areEqual(testMessage, content));
+
+                byte[] content = recipInfo.getContent(new JceKeyTransEnvelopedRecipient(loadKey("key.pem")));
+                assertTrue(org.bouncycastle.util.Arrays.areEqual(testMessage, content));
+
+                dataParsed.set(true);
             }
         });
+
+        assertTrue(dataParsed.get());
     }
 
     private X509Certificate loadCert(String name)
