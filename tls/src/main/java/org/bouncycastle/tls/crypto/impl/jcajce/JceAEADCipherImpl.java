@@ -22,10 +22,9 @@ public class JceAEADCipherImpl
 {
     private static boolean checkForAEAD()
     {
-        return AccessController.doPrivileged(new PrivilegedAction<Boolean>()
+        return (Boolean)AccessController.doPrivileged(new PrivilegedAction()
         {
-            @Override
-            public Boolean run()
+            public Object run()
             {
                 try
                 {

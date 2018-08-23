@@ -1,8 +1,7 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.security.InvalidKeyException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Hashtable;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -15,7 +14,7 @@ import org.bouncycastle.tls.crypto.TlsHMAC;
 public class JceTlsHMAC
     implements TlsHMAC
 {
-    private static final Map<String, Integer> internalBlockSizes = new HashMap<String, Integer>();
+    private static final Hashtable internalBlockSizes = new Hashtable();
 
     static
     {
@@ -48,7 +47,7 @@ public class JceTlsHMAC
             throw new IllegalArgumentException("HMAC " + algorithm + " unknown");
         }
 
-        return internalBlockSizes.get(algorithm);
+        return (Integer)internalBlockSizes.get(algorithm);
     }
 
     /**
