@@ -1,8 +1,12 @@
 package org.bouncycastle.mime.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.CertificateFactory;
@@ -10,17 +14,22 @@ import java.security.cert.X509Certificate;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import junit.framework.TestCase;
+import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.OriginatorInformation;
 import org.bouncycastle.cms.RecipientInformation;
 import org.bouncycastle.cms.RecipientInformationStore;
+import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
 import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientId;
+import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
+import org.bouncycastle.cms.test.CMSTestUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.mime.Headers;
 import org.bouncycastle.mime.MimeParser;
 import org.bouncycastle.mime.MimeParserContext;
 import org.bouncycastle.mime.MimeParserProvider;
+import org.bouncycastle.mime.smime.SMIMEEnvelopedWriter;
 import org.bouncycastle.mime.smime.SMimeParserListener;
 import org.bouncycastle.mime.smime.SMimeParserProvider;
 import org.bouncycastle.openssl.PEMKeyPair;
@@ -32,6 +41,18 @@ import org.bouncycastle.util.encoders.Base64;
 public class TestSMIMEEnvelope
     extends TestCase
 {
+    private static final String BC = BouncyCastleProvider.PROVIDER_NAME;
+
+    private static String          _signDN;
+    private static KeyPair          _signKP;
+
+    private static String          _reciDN;
+    private static KeyPair          _reciKP;
+
+    private static X509Certificate _reciCert;
+
+    private static boolean         _initialised = false;
+
     private static final byte[] testMessage = Base64.decode(
         "TUlNRS1WZXJzaW9uOiAxLjANCkNvbnRlbnQtVHlwZTogbXVsdGlwYXJ0L21peGVkOyANCglib3VuZGFye" +
         "T0iLS0tLT1fUGFydF8wXzI2MDM5NjM4Ni4xMzUyOTA0NzUwMTMyIg0KQ29udGVudC1MYW5ndWFnZTogZW" +
@@ -42,7 +63,34 @@ public class TestSMIMEEnvelope
         "1udWxsDQoNCkNpYW8gZnJvbSB2aWVubmENCi0tLS0tLT1fUGFydF8wXzI2MDM5NjM4Ni4xMzUyOTA0NzU" +
         "wMTMyLS0NCg==");
 
-    public void testSMIMEEnvelope()
+    private static void init()
+        throws Exception
+    {
+        if (!_initialised)
+        {
+            if (Security.getProvider("BC") == null)
+            {
+                Security.addProvider(new BouncyCastleProvider());
+            }
+
+            _initialised = true;
+
+            _signDN   = "O=Bouncy Castle, C=AU";
+            _signKP   = CMSTestUtil.makeKeyPair();
+
+            _reciDN   = "CN=Doug, OU=Sales, O=Bouncy Castle, C=AU";
+            _reciKP   = CMSTestUtil.makeKeyPair();
+            _reciCert = CMSTestUtil.makeCertificate(_reciKP, _reciDN, _signKP, _signDN);
+        }
+    }
+
+    public void setUp()
+        throws Exception
+    {
+        init();
+    }
+    
+    public void testSMIMEEnveloped()
         throws Exception
     {
         InputStream inputStream = this.getClass().getResourceAsStream("test256.message");
@@ -50,8 +98,6 @@ public class TestSMIMEEnvelope
         MimeParserProvider provider = new SMimeParserProvider("7bit", new BcDigestCalculatorProvider());
 
         MimeParser p = provider.createParser(inputStream);
-
-        Security.addProvider(new BouncyCastleProvider());
 
         AtomicBoolean dataParsed = new AtomicBoolean(false);
 
@@ -65,6 +111,53 @@ public class TestSMIMEEnvelope
                 assertNotNull(recipInfo);
 
                 byte[] content = recipInfo.getContent(new JceKeyTransEnvelopedRecipient(loadKey("key.pem")));
+                assertTrue(org.bouncycastle.util.Arrays.areEqual(testMessage, content));
+
+                dataParsed.set(true);
+            }
+        });
+
+        assertTrue(dataParsed.get());
+    }
+
+    public void testKeyTransAES128()
+        throws Exception
+    {
+        //
+        // output
+        //
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        SMIMEEnvelopedWriter.Builder envBldr = new SMIMEEnvelopedWriter.Builder();
+
+        envBldr.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        SMIMEEnvelopedWriter envWrt = envBldr.build(bOut, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+
+        OutputStream out = envWrt.getContentStream();
+
+        out.write(testMessage);
+
+        out.close();
+        
+        //
+        // parse
+        //
+        AtomicBoolean dataParsed = new AtomicBoolean(false);
+
+        MimeParserProvider provider = new SMimeParserProvider("7bit", new BcDigestCalculatorProvider());
+
+        MimeParser p = provider.createParser(new ByteArrayInputStream(bOut.toByteArray()));
+
+        p.parse(new SMimeParserListener()
+        {
+            public void envelopedData(MimeParserContext parserContext, Headers headers, OriginatorInformation originator, RecipientInformationStore recipients)
+                throws IOException, CMSException
+            {
+                RecipientInformation recipInfo = recipients.get(new JceKeyTransRecipientId(_reciCert));
+
+                assertNotNull(recipInfo);
+
+                byte[] content = recipInfo.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()));
                 assertTrue(org.bouncycastle.util.Arrays.areEqual(testMessage, content));
 
                 dataParsed.set(true);

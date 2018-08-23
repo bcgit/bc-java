@@ -70,8 +70,8 @@ public class BasicMimeParser
             String startBoundary = "--" + boundary;
             boolean startFound = false;
             int partNo = 0;
-            
-            while ((s = MimeUtils.readLine(src)) != null && !"--".equals(s))
+            LineReader rd = new LineReader(src);
+            while ((s = rd.readLine()) != null && !"--".equals(s))
             {
                 if (startFound)
                 {

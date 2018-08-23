@@ -30,8 +30,9 @@ public class Headers
     {
         String s;
         List<String> headerLines = new ArrayList<String>();
+        LineReader   rd = new LineReader(src);
 
-        while ((s = MimeUtils.readLine(src)) != null)
+        while ((s = rd.readLine()) != null)
         {
             if (s.length() == 0)
             {
