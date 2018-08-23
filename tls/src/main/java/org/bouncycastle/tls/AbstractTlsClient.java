@@ -94,8 +94,7 @@ public abstract class AbstractTlsClient
 
     protected short[] getSupportedPointFormats()
     {
-        return new short[]{ ECPointFormat.uncompressed, ECPointFormat.ansiX962_compressed_prime,
-            ECPointFormat.ansiX962_compressed_char2, };
+        return new short[]{ ECPointFormat.uncompressed };
     }
 
     /**
