@@ -1,6 +1,5 @@
 package org.bouncycastle.tls.test;
 
-import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyPair;
@@ -45,7 +44,7 @@ public class TestOCSPCertServer
     private final DigestCalculatorProvider digCalcProv;
     private final X509CertificateHolder[] chain;
 
-    private final Set<BigInteger> revocations = new HashSet<BigInteger>();
+    private final Set revocations = new HashSet();
 
     public TestOCSPCertServer()
         throws Exception
