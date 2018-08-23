@@ -6,7 +6,6 @@ import java.security.Security;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.List;
 
 import org.bouncycastle.asn1.ocsp.BasicOCSPResponse;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
@@ -58,7 +57,7 @@ public class OCSPTest
             throws IOException
         {
             TlsCertificate[] certList = certs.getCertificateList();
-            List<OCSPResponse> responses = new ArrayList<OCSPResponse>();
+            ArrayList responses = new ArrayList();
 
             for (int i = 0; i != certList.length; i++)
             {
@@ -84,7 +83,7 @@ public class OCSPTest
                 }
             }
 
-            return responses.toArray(new OCSPResponse[responses.size()]);
+            return (OCSPResponse[])responses.toArray(new OCSPResponse[responses.size()]);
         }
     }
 

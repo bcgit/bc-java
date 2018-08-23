@@ -2881,26 +2881,26 @@ public class TlsUtils
         return v;
     }
 
-    public static int[] getSupportedCipherSuites(TlsCrypto crypto, int[] baseCipherSuiteList)
+    public static int[] getSupportedCipherSuites(TlsCrypto crypto, int[] suites)
     {
-        List<Integer> supported = new ArrayList<Integer>();
+        int[] supported = new int[suites.length];
+        int count = 0;
 
-        for (int i = 0; i != baseCipherSuiteList.length; i++)
+        for (int i = 0; i < suites.length; ++i)
         {
-            if (isSupportedCipherSuite(crypto, baseCipherSuiteList[i]))
+            int suite = suites[i];
+            if (isSupportedCipherSuite(crypto, suite))
             {
-                supported.add(baseCipherSuiteList[i]);
+                supported[count++] = suite;
             }
         }
 
-        int[] rv = new int[supported.size()];
-
-        for (int i = 0; i != rv.length; i++)
+        if (count < supported.length)
         {
-            rv[i] = supported.get(i);
+            supported = Arrays.copyOf(supported, count);
         }
 
-        return rv;
+        return supported;
     }
 
     public static boolean isSupportedCipherSuite(TlsCrypto crypto, int cipherSuite)
