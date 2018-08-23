@@ -112,23 +112,19 @@ public abstract class AbstractTlsClient
      */
     protected Vector getSupportedGroups(boolean offeringDH, boolean offeringEC)
     {
+        TlsCrypto crypto = getCrypto();
         Vector supportedGroups = new Vector();
 
         if (offeringEC)
         {
-            /*
-             * NOTE[fips]: These curves are recommended for FIPS. If any changes are made to how
-             * this is configured, FIPS considerations need to be accounted for in BCJSSE.
-             */
-            supportedGroups.addElement(NamedGroup.secp256r1);
-            supportedGroups.addElement(NamedGroup.secp384r1);
+            TlsUtils.addIfSupported(supportedGroups, crypto, new int[]{
+                NamedGroup.secp256r1, NamedGroup.secp384r1 });
         }
 
         if (offeringDH)
         {
-            supportedGroups.addElement(NamedGroup.ffdhe2048);
-            supportedGroups.addElement(NamedGroup.ffdhe3072);
-            supportedGroups.addElement(NamedGroup.ffdhe4096);
+            TlsUtils.addIfSupported(supportedGroups, crypto, new int[]{
+                NamedGroup.ffdhe2048, NamedGroup.ffdhe3072, NamedGroup.ffdhe4096 });
         }
 
         return supportedGroups;

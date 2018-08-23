@@ -384,6 +384,13 @@ public class JcaTlsCrypto
 
     public boolean hasNamedGroup(int namedGroup)
     {
+        switch (namedGroup)
+        {
+        case NamedGroup.x25519:
+        case NamedGroup.x448:
+            return false;
+        }
+
         // TODO[tls] Actually check for DH support for the individual groups
         if (NamedGroup.refersToASpecificFiniteField(namedGroup))
         {
