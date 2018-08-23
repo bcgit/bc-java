@@ -76,7 +76,7 @@ class ProvTlsClient
     @Override
     protected Vector getSupportedGroups(boolean offeringDH, boolean offeringEC)
     {
-        return SupportedGroups.getClientSupportedGroups(manager.getContext().isFips(), offeringDH, offeringEC);
+        return SupportedGroups.getClientSupportedGroups(getCrypto(), manager.getContext().isFips(), offeringDH, offeringEC);
     }
 
     @Override
