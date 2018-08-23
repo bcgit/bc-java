@@ -48,6 +48,12 @@ public class NamedGroup
     public static final int brainpoolP512r1 = 28;
 
     /*
+     * RFC 8422
+     */
+    public static final int x25519 = 29;
+    public static final int x448 = 30;
+
+    /*
      * RFC 7919 2. Codepoints in the "Supported Groups Registry" with a high byte of 0x01 (that is,
      * between 256 and 511, inclusive) are set aside for FFDHE groups, though only a small number of
      * them are initially defined and we do not expect many other FFDHE groups to be added to this
@@ -60,7 +66,11 @@ public class NamedGroup
     public static final int ffdhe8192 = 260;
 
     /*
-     * RFC 4492 reserved (0xFE00..0xFEFF)
+     * RFC 8446 reserved ffdhe_private_use (0x01FC..0x01FF)
+     */
+
+    /*
+     * RFC 4492 reserved ecdhe_private_use (0xFE00..0xFEFF)
      */
 
     /*
@@ -73,7 +83,7 @@ public class NamedGroup
         "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1", "sect283r1", "sect409k1", "sect409r1",
         "sect571k1", "sect571r1", "secp160k1", "secp160r1", "secp160r2", "secp192k1", "secp192r1", "secp224k1",
         "secp224r1", "secp256k1", "secp256r1", "secp384r1", "secp521r1",
-        "brainpoolp256r1", "brainpoolp384r1", "brainpoolp512r1"};
+        "brainpoolp256r1", "brainpoolp384r1", "brainpoolp512r1", "x25519", "x448" };
 
     private static final String[] FINITE_FIELD_NAMES = new String[] { "ffdhe2048", "ffdhe3072", "ffdhe4096", "ffdhe6144", "ffdhe8192" };
 
@@ -132,6 +142,9 @@ public class NamedGroup
         case sect239k1:
             return 239;
 
+        case x25519:
+            return 252;
+
         case brainpoolP256r1:
         case secp256k1:
         case secp256r1:
@@ -148,6 +161,9 @@ public class NamedGroup
         case sect409k1:
         case sect409r1:
             return 409;
+
+        case x448:
+            return 446;
 
         case brainpoolP512r1:
             return 512;
@@ -205,12 +221,12 @@ public class NamedGroup
 
     public static String getName(int namedGroup)
     {
-        if ((namedGroup & 0xFFFFFF00) == 0xFE00)
+        if (isPrivate(namedGroup))
         {
             return "PRIVATE";
         }
 
-        if (namedGroup >= sect163k1 && namedGroup <= brainpoolP512r1)
+        if (namedGroup >= sect163k1 && namedGroup <= x448)
         {
             return CURVE_NAMES[namedGroup - sect163k1];
         }
@@ -244,13 +260,13 @@ public class NamedGroup
 
     public static boolean isPrimeCurve(int namedGroup)
     {
-        return (namedGroup >= secp160k1 && namedGroup <= brainpoolP512r1)
+        return (namedGroup >= secp160k1 && namedGroup <= x448)
             || (namedGroup == arbitrary_explicit_prime_curves);
     }
 
     public static boolean isPrivate(int namedGroup)
     {
-        return (namedGroup & 0xFFFFFF00) == 0xFE00;
+        return (namedGroup >>> 2) == 0x7F || (namedGroup >>> 8) == 0xFE;
     }
 
     public static boolean isValid(int namedGroup)
@@ -262,7 +278,7 @@ public class NamedGroup
 
     public static boolean refersToASpecificCurve(int namedGroup)
     {
-        return namedGroup >= sect163k1 && namedGroup <= brainpoolP512r1;
+        return namedGroup >= sect163k1 && namedGroup <= x448;
     }
 
     public static boolean refersToASpecificFiniteField(int namedGroup)
@@ -272,7 +288,7 @@ public class NamedGroup
 
     public static boolean refersToASpecificGroup(int namedGroup)
     {
-        return (namedGroup >= sect163k1 && namedGroup <= brainpoolP512r1)
-            || (namedGroup >= ffdhe2048 && namedGroup <= ffdhe8192);
+        return refersToASpecificCurve(namedGroup)
+            || refersToASpecificFiniteField(namedGroup);
     }
 }

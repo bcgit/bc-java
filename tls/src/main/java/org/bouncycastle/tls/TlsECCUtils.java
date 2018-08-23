@@ -96,6 +96,13 @@ public class TlsECCUtils
 
     public static short getCompressionFormat(int namedGroup) throws IOException
     {
+        switch (namedGroup)
+        {
+        case NamedGroup.x25519:
+        case NamedGroup.x448:
+            return ECPointFormat.uncompressed;
+        }
+
         if (NamedGroup.isPrimeCurve(namedGroup))
         {
             return ECPointFormat.ansiX962_compressed_prime;
@@ -109,7 +116,14 @@ public class TlsECCUtils
 
     public static boolean isCompressionPreferred(short[] peerECPointFormats, int namedGroup) throws IOException
     {
-        return isCompressionPreferred(peerECPointFormats, getCompressionFormat(namedGroup));
+        switch (namedGroup)
+        {
+        case NamedGroup.x25519:
+        case NamedGroup.x448:
+            return false;
+        default:
+            return isCompressionPreferred(peerECPointFormats, getCompressionFormat(namedGroup));
+        }
     }
 
     public static boolean isCompressionPreferred(short[] peerECPointFormats, short compressionFormat)
@@ -155,6 +169,13 @@ public class TlsECCUtils
 
     public static short getActualFormat(int namedGroup, byte[] encoding) throws IOException
     {
+        switch (namedGroup)
+        {
+        case NamedGroup.x25519:
+        case NamedGroup.x448:
+            return ECPointFormat.uncompressed;
+        }
+
         switch (encoding[0])
         {
         case 0x02: // compressed

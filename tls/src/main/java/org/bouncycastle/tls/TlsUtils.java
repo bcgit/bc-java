@@ -7,10 +7,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.List;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -807,6 +805,22 @@ public class TlsUtils
     {
         buf[offset] = (byte)version.getMajorVersion();
         buf[offset + 1] = (byte)version.getMinorVersion();
+    }
+
+    public static void addIfSupported(Vector supportedGroups, TlsCrypto crypto, int namedGroup)
+    {
+        if (crypto.hasNamedGroup(namedGroup))
+        {
+            supportedGroups.addElement(namedGroup);
+        }
+    }
+
+    public static void addIfSupported(Vector supportedGroups, TlsCrypto crypto, int[] namedGroups)
+    {
+        for (int i = 0; i < namedGroups.length; ++i)
+        {
+            addIfSupported(supportedGroups, crypto, namedGroups[i]);
+        }
     }
 
     public static Vector getAllSignatureAlgorithms()
