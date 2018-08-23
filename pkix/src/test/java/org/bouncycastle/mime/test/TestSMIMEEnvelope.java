@@ -142,7 +142,7 @@ public class TestSMIMEEnvelope
         //
         // parse
         //
-        AtomicBoolean dataParsed = new AtomicBoolean(false);
+        final AtomicBoolean dataParsed = new AtomicBoolean(false);
 
         MimeParserProvider provider = new SMimeParserProvider("7bit", new BcDigestCalculatorProvider());
 
