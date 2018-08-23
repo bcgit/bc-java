@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.crypto.DHStandardGroups;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.util.Arrays;
 
@@ -100,7 +101,7 @@ abstract class SupportedGroups
         return result;
     }
 
-    static Vector getClientSupportedGroups(boolean isFips, boolean offeringDH, boolean offeringEC)
+    static Vector getClientSupportedGroups(TlsCrypto crypto, boolean isFips, boolean offeringDH, boolean offeringEC)
     {
         int[] namedGroups = provJdkTlsNamedGroups != null ? provJdkTlsNamedGroups : defaultClientNamedGroups;
 
@@ -112,7 +113,10 @@ abstract class SupportedGroups
             {
                 if (!isFips || FipsUtils.isFipsNamedGroup(namedGroup))
                 {
-                    result.addElement(namedGroup);
+                    if (crypto.hasNamedGroup(namedGroup))
+                    {
+                        result.addElement(namedGroup);
+                    }
                 }
             }
         }
@@ -287,7 +291,7 @@ abstract class SupportedGroups
         }
     }
 
-    static int getServerSelectedCurve(boolean isFips, int minimumCurveBits, int[] clientSupportedGroups)
+    static int getServerSelectedCurve(TlsCrypto crypto, boolean isFips, int minimumCurveBits, int[] clientSupportedGroups)
     {
         /*
          * If supported groups wasn't explicitly configured, servers support all available curves
@@ -310,7 +314,10 @@ abstract class SupportedGroups
                 {
                     if (!isFips || FipsUtils.isFipsNamedGroup(namedGroup))
                     {
-                        return namedGroup;
+                        if (crypto.hasNamedGroup(namedGroup))
+                        {
+                            return namedGroup;
+                        }
                     }
                 }
             }
@@ -319,7 +326,7 @@ abstract class SupportedGroups
         return -1;
     }
 
-    static int getServerSelectedFiniteField(boolean isFips, int minimumFiniteFieldBits, int[] clientSupportedGroups)
+    static int getServerSelectedFiniteField(TlsCrypto crypto, boolean isFips, int minimumFiniteFieldBits, int[] clientSupportedGroups)
     {
         /*
          * If supported groups wasn't explicitly configured, servers support all available finite fields.
@@ -336,7 +343,10 @@ abstract class SupportedGroups
                 {
                     if (!isFips || FipsUtils.isFipsNamedGroup(namedGroup))
                     {
-                        return namedGroup;
+                        if (crypto.hasNamedGroup(namedGroup))
+                        {
+                            return namedGroup;
+                        }
                     }
                 }
             }

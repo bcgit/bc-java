@@ -120,7 +120,7 @@ class ProvTlsServer
 
         boolean isFips = manager.getContext().isFips();
 
-        return SupportedGroups.getServerSelectedCurve(isFips, minimumCurveBits, clientSupportedGroups);
+        return SupportedGroups.getServerSelectedCurve(getCrypto(), isFips, minimumCurveBits, clientSupportedGroups);
     }
 
     @Override
@@ -147,7 +147,7 @@ class ProvTlsServer
 
         boolean isFips = manager.getContext().isFips();
 
-        int namedGroup = SupportedGroups.getServerSelectedFiniteField(isFips, minimumFiniteFieldBits,
+        int namedGroup = SupportedGroups.getServerSelectedFiniteField(getCrypto(), isFips, minimumFiniteFieldBits,
             clientSupportedGroups);
 
         return TlsDHUtils.createNamedDHConfig(namedGroup);
