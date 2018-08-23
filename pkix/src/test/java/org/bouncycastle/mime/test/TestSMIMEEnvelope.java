@@ -99,7 +99,7 @@ public class TestSMIMEEnvelope
 
         MimeParser p = provider.createParser(inputStream);
 
-        AtomicBoolean dataParsed = new AtomicBoolean(false);
+        final AtomicBoolean dataParsed = new AtomicBoolean(false);
 
         p.parse(new SMimeParserListener()
         {
