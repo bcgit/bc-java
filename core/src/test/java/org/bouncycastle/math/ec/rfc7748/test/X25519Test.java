@@ -22,10 +22,10 @@ public class X25519Test
 //    @Test
     public void testConsistency()
     {
-        byte[] u = new byte[32];    u[0] = 9;
-        byte[] k = new byte[32];
-        byte[] rF = new byte[32];
-        byte[] rV = new byte[32];
+        byte[] u = new byte[X25519.POINT_SIZE];     u[0] = 9;
+        byte[] k = new byte[X25519.SCALAR_SIZE];
+        byte[] rF = new byte[X25519.POINT_SIZE];
+        byte[] rV = new byte[X25519.POINT_SIZE];
 
         for (int i = 1; i <= 100; ++i)
         {
@@ -39,12 +39,12 @@ public class X25519Test
 //    @Test
     public void testECDH()
     {
-        byte[] kA = new byte[32];
-        byte[] kB = new byte[32];
-        byte[] qA = new byte[32];
-        byte[] qB = new byte[32];
-        byte[] sA = new byte[32];
-        byte[] sB = new byte[32];
+        byte[] kA = new byte[X25519.SCALAR_SIZE];
+        byte[] kB = new byte[X25519.SCALAR_SIZE];
+        byte[] qA = new byte[X25519.POINT_SIZE];
+        byte[] qB = new byte[X25519.POINT_SIZE];
+        byte[] sA = new byte[X25519.POINT_SIZE];
+        byte[] sB = new byte[X25519.POINT_SIZE];
 
         for (int i = 1; i <= 100; ++i)
         {
@@ -113,38 +113,43 @@ public class X25519Test
     private static void checkECDHVector(String sA, String sAPub, String sB, String sBPub, String sK, String text)
     {
         byte[] a = Hex.decode(sA);
-        byte[] b = Hex.decode(sB);
+        assertEquals(X25519.SCALAR_SIZE, a.length);
 
-        byte[] aPub = new byte[32];
+        byte[] b = Hex.decode(sB);
+        assertEquals(X25519.SCALAR_SIZE, b.length);
+
+        byte[] aPub = new byte[X25519.POINT_SIZE];
         X25519.scalarMultBase(a, 0, aPub, 0);
         checkValue(aPub, text, sAPub);
 
-        byte[] bPub = new byte[32];
+        byte[] bPub = new byte[X25519.POINT_SIZE];
         X25519.scalarMultBase(b, 0, bPub, 0);
         checkValue(bPub, text, sBPub);
 
-        byte[] aK = new byte[32];
+        byte[] aK = new byte[X25519.POINT_SIZE];
         X25519.scalarMult(a, 0, bPub, 0, aK, 0);
         checkValue(aK, text, sK);
 
-        byte[] bK = new byte[32];
+        byte[] bK = new byte[X25519.POINT_SIZE];
         X25519.scalarMult(b, 0, aPub, 0, bK, 0);
         checkValue(bK, text, sK);
     }
 
     private static void checkIterated(int count)
     {
-        byte[] k = new byte[32]; k[0] = 9;
-        byte[] u = new byte[32]; u[0] = 9;
-        byte[] r = new byte[32];
+        assertEquals(X25519.POINT_SIZE, X25519.SCALAR_SIZE);
+
+        byte[] k = new byte[X25519.POINT_SIZE];     k[0] = 9;
+        byte[] u = new byte[X25519.POINT_SIZE];     u[0] = 9;
+        byte[] r = new byte[X25519.POINT_SIZE];
 
         int iterations = 0;
         while (iterations < count)
         {
             X25519.scalarMult(k, 0, u, 0, r, 0);
 
-            System.arraycopy(k, 0, u, 0, 32);
-            System.arraycopy(r, 0, k, 0, 32);
+            System.arraycopy(k, 0, u, 0, X25519.POINT_SIZE);
+            System.arraycopy(r, 0, k, 0, X25519.POINT_SIZE);
 
             switch (++iterations)
             {
@@ -172,8 +177,12 @@ public class X25519Test
     private static void checkX25519Vector(String sk, String su, String se, String text)
     {
         byte[] k = Hex.decode(sk);
+        assertEquals(X25519.SCALAR_SIZE, k.length);
+
         byte[] u = Hex.decode(su);
-        byte[] r = new byte[32];
+        assertEquals(X25519.POINT_SIZE, u.length);
+
+        byte[] r = new byte[X25519.POINT_SIZE];
         X25519.scalarMult(k, 0, u, 0, r, 0);
         checkValue(r, text, se);
     }
