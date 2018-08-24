@@ -166,6 +166,7 @@ public class EACTags
                 retValue <<= 8;
 
                 currentByte = tag & 0x7F;
+                retValue |= currentByte;
                 tag >>= 7;
             }
         }
