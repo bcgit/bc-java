@@ -195,25 +195,19 @@ public abstract class ASN1ApplicationSpecific
         //
         if (tagNo == 0x1f)
         {
-            tagNo = 0;
-
             int b = input[index++] & 0xff;
 
             // X.690-0207 8.1.2.4.2
             // "c) bits 7 to 1 of the first subsequent octet shall not all be zero."
             if ((b & 0x7f) == 0) // Note: -1 will pass
             {
-                throw new ASN1ParsingException("corrupted stream - invalid high tag number found");
+                throw new IOException("corrupted stream - invalid high tag number found");
             }
 
-            while ((b >= 0) && ((b & 0x80) != 0))
+            while ((b & 0x80) != 0)
             {
-                tagNo |= (b & 0x7f);
-                tagNo <<= 7;
                 b = input[index++] & 0xff;
             }
-
-//            tagNo |= (b & 0x7f);
         }
 
         byte[] tmp = new byte[input.length - index + 1];
