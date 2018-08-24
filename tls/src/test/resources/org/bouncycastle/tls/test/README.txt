@@ -1,5 +1,5 @@
 # The key and certificate .pem files here were generated using GnuTLS certtool and the accompanying
-# template files.
+# template files. (Note that the ed25519 files needed GnuTLS 3.6+)
 
 # CA (signing) credentials:
 
@@ -12,6 +12,11 @@
         --pkcs8 --password '' --ecdsa --curve secp256r1
     certtool --generate-self-signed --template ca.tmpl --outfile x509-ca-ecdsa.pem \
         --load-privkey x509-ca-key-ecdsa.pem --hash sha256
+
+    certtool --generate-privkey --outfile x509-ca-key-ed25519.pem \
+        --pkcs8 --password '' --key-type=ed25519
+    certtool --generate-self-signed --template ca.tmpl --outfile x509-ca-ed25519.pem \
+        --load-privkey x509-ca-key-ed25519.pem
 
     certtool --generate-privkey --outfile x509-ca-key-rsa.pem \
         --pkcs8 --password '' --rsa --bits 2048
@@ -39,6 +44,12 @@
     certtool --generate-certificate --template client_sign.tmpl --outfile x509-client-ecdsa.pem \
         --load-privkey x509-client-key-ecdsa.pem --hash sha256 \
         --load-ca-privkey x509-ca-key-ecdsa.pem --load-ca-certificate x509-ca-ecdsa.pem
+
+    certtool --generate-privkey --outfile x509-client-key-ed25519.pem \
+        --pkcs8 --password '' --key-type=ed25519
+    certtool --generate-certificate --template client_sign.tmpl --outfile x509-client-ed25519.pem \
+        --load-privkey x509-client-key-ed25519.pem \
+        --load-ca-privkey x509-ca-key-ed25519.pem --load-ca-certificate x509-ca-ed25519.pem
 
     certtool --generate-privkey --outfile x509-client-key-rsa.pem \
         --pkcs8 --password '' --rsa --bits 2048
@@ -76,6 +87,12 @@
     certtool --generate-certificate --template server_sign.tmpl --outfile x509-server-ecdsa.pem \
         --load-privkey x509-server-key-ecdsa.pem --hash sha256 \
         --load-ca-privkey x509-ca-key-ecdsa.pem --load-ca-certificate x509-ca-ecdsa.pem
+
+    certtool --generate-privkey --outfile x509-server-key-ed25519.pem \
+        --pkcs8 --password '' --key-type=ed25519
+    certtool --generate-certificate --template server_sign.tmpl --outfile x509-server-ed25519.pem \
+        --load-privkey x509-server-key-ed25519.pem \
+        --load-ca-privkey x509-ca-key-ed25519.pem --load-ca-certificate x509-ca-ed25519.pem
 
     certtool --generate-privkey --outfile x509-server-key-rsa-sign.pem \
         --pkcs8 --password '' --rsa --bits 2048
