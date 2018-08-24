@@ -494,6 +494,16 @@ public abstract class Nat
         }
     }
 
+    public static void mul(int[] x, int xOff, int xLen, int[] y, int yOff, int yLen, int[] zz, int zzOff)
+    {
+        zz[zzOff + yLen] = mulWord(yLen, x[xOff], y, yOff, zz, zzOff);
+
+        for (int i = 1; i < xLen; ++i)
+        {
+            zz[zzOff + i + yLen] = mulWordAddTo(yLen, x[xOff + i], y, yOff, zz, zzOff + i);
+        }
+    }
+
     public static int mulAddTo(int len, int[] x, int[] y, int[] zz)
     {
         long zc = 0;
