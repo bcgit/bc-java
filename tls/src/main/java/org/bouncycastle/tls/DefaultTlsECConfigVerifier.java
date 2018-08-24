@@ -18,9 +18,21 @@ public class DefaultTlsECConfigVerifier
 
     public boolean accept(TlsECConfig ecConfig)
     {
-        // NOTE: Any value of ecConfig.pointCompression is acceptable
-
         int namedGroup = ecConfig.getNamedGroup();
+
+        if (ecConfig.getPointCompression())
+        {
+            switch (namedGroup)
+            {
+            case NamedGroup.x25519:
+            case NamedGroup.x448:
+                return false;
+            default:
+                // NOTE: Any value of ecConfig.pointCompression is acceptable
+                break;
+            }
+        }
+
         if (namedGroup < 0)
         {
             return false;

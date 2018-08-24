@@ -10,7 +10,6 @@ import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.RuntimeCryptoException;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.agreement.srp.SRP6Client;
@@ -61,7 +60,6 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
-import org.bouncycastle.tls.crypto.TlsMAC;
 import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.tls.crypto.TlsSRP6Client;
 import org.bouncycastle.tls.crypto.TlsSRP6Server;
@@ -184,7 +182,15 @@ public class BcTlsCrypto
 
     public TlsECDomain createECDomain(TlsECConfig ecConfig)
     {
-        return new BcTlsECDomain(this, ecConfig);
+        switch (ecConfig.getNamedGroup())
+        {
+        case NamedGroup.x25519:
+            return new BcX25519Domain(this);
+        case NamedGroup.x448:
+            return new BcX448Domain(this);
+        default:
+            return new BcTlsECDomain(this, ecConfig);
+        }
     }
 
     protected TlsEncryptor createEncryptor(TlsCertificate certificate)

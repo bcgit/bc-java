@@ -10,6 +10,12 @@ public class SignatureAlgorithm
     public static final short dsa = 2;
     public static final short ecdsa = 3;
 
+    /*
+     * RFC 8422
+     */
+    public static final short ed25519 = 7;
+    public static final short ed448 = 8;
+
     public static String getName(short signatureAlgorithm)
     {
         switch (signatureAlgorithm)
@@ -22,6 +28,10 @@ public class SignatureAlgorithm
             return "dsa";
         case ecdsa:
             return "ecdsa";
+        case ed25519:
+            return "ed25519";
+        case ed448:
+            return "ed448";
         default:
             return "UNKNOWN";
         }
