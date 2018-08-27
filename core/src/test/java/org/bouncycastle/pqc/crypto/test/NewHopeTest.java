@@ -138,6 +138,45 @@ public class NewHopeTest
         areEqual(otherInfoU.getEncoded(), otherInfoV.getEncoded());
     }
 
+    private void testReuse()
+        throws IOException
+    {
+        SecureRandom random = new SecureRandom();
+        NHOtherInfoGenerator.PartyU partyU = new NHOtherInfoGenerator.PartyU(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), random);
+
+        byte[] partA = partyU.getSuppPrivInfoPartA();
+
+        NHOtherInfoGenerator.PartyV partyV = new NHOtherInfoGenerator.PartyV(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), random);
+
+        byte[] partB = partyV.getSuppPrivInfoPartB(partA);
+
+        DEROtherInfo otherInfoU = partyU.generate(partB);
+
+        DEROtherInfo otherInfoV = partyV.generate();
+
+        areEqual(otherInfoU.getEncoded(), otherInfoV.getEncoded());
+
+        try
+        {
+            partyV.generate();
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            isEquals("builder already used", e.getMessage());
+        }
+
+        try
+        {
+            partyU.generate(partB);
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            isEquals("builder already used", e.getMessage());
+        }
+    }
+
     private void testInterop()
     {
         /*
@@ -177,6 +216,7 @@ public class NewHopeTest
         testKeyExchange();
         testInterop();
         testPrivInfoGeneration();
+        testReuse();
     }
 
     public static void main(
