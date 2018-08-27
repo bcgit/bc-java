@@ -112,7 +112,7 @@ public class GMSSLeaf
      * The constructor precomputes some needed variables for distributed leaf
      * calculation
      *
-     * @param digest     an array of strings, containing the digest of the used hash
+     * @param digest   an array of strings, containing the digest of the used hash
      *                 function and PRNG and the digest of the corresponding
      *                 provider
      * @param w        the winterniz parameter of that tree the leaf is computed
@@ -231,7 +231,7 @@ public class GMSSLeaf
      */
     private void updateLeafCalc()
     {
-         byte[] buf = new byte[messDigestOTS.getDigestSize()];
+        byte[] buf = new byte[messDigestOTS.getDigestSize()];
 
         // steps times do
         // TODO: this really needs to be looked at, the 10000 has been added as
@@ -273,7 +273,7 @@ public class GMSSLeaf
             }
         }
 
-       throw new IllegalStateException("unable to updateLeaf in steps: " + steps + " " + i + " " + j);
+        throw new IllegalStateException("unable to updateLeaf in steps: " + steps + " " + i + " " + j);
     }
 
     /**
@@ -292,7 +292,7 @@ public class GMSSLeaf
      *
      * @param intValue an integer
      * @return The least integer greater or equal to the logarithm to the base 2
-     *         of <code>intValue</code>
+     * of <code>intValue</code>
      */
     private int getLog(int intValue)
     {
@@ -315,10 +315,6 @@ public class GMSSLeaf
     {
 
         byte[][] statByte = new byte[4][];
-        statByte[0] = new byte[mdsize];
-        statByte[1] = new byte[mdsize];
-        statByte[2] = new byte[mdsize * keysize];
-        statByte[3] = new byte[mdsize];
         statByte[0] = privateKeyOTS;
         statByte[1] = seed;
         statByte[2] = concHashs;
