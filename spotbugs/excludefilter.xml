@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FindBugsFilter>
+    <Match>
+        <!-- clone calls copy constructor -->
+        <Class name="org.bouncycastle.jcajce.PKIXCertStoreSelector"/>
+        <Method name="clone"/>
+        <Bug code="CN"/>
+    </Match>
+
+    <Match>
+        <!-- $$ Needs review, clone returns this, need reason. -->
+        <Class name="org.bouncycastle.jcajce.PKIXCRLStoreSelector"/>
+        <Method name="clone"/>
+        <Bug code="CN"/>
+    </Match>
+
+    <Match>
+        <!-- $$ Needs review, clone returns this, need reason. -->
+        <Class name="org.bouncycastle.jcajce.PKIXExtendedParameters"/>
+        <Method name="clone"/>
+        <Bug code="CN"/>
+    </Match>
+
+    <Match>
+        <!-- $$ Needs review, clone returns this, need reason. -->
+        <Class name="org.bouncycastle.jcajce.PKIXExtendedBuilderParameters"/>
+        <Method name="clone"/>
+        <Bug code="CN"/>
+    </Match>
+
+    <Match>
+        <Class name="org.bouncycastle.asn1.x500.X500Name"/>
+        <Method name="equals"/>
+    </Match>
+
+
+    <Match>
+
+        <!-- Per: FI_FINALIZER_ONLY_NULLS_FIELDS: Finalizer only nulls fields
+            This finalizer does nothing except null out fields.
+            This is completely pointless, and requires that the object be garbage collected, finalized, and then garbage collected again.
+            You should just remove the finalize method.
+          -->
+
+        <Class name="org.bouncycastle.crypto.general.ElGamalPrivateKeyParameters"/>
+        <Method name="finalize"/>
+        <Bug code="FI"/>
+    </Match>
+
+
+    <Match>
+        <!-- Nm: The class name org.bouncycastle.util.Iterable shadows the simple name of implemented interface java.lang.Iterable -->
+        <!-- Suggests a rename but I fear that may break some peoples code. -->
+        <Class name="org.bouncycastle.util.Iterable"/>
+    </Match>
+
+
+    <!-- Fixed: Added close in finally block to org.bouncycastle.asn1.ASN1Primitive.fromByteArray(byte[]) -->
+    <!--- Fixed: Added close in finally block to: org.bouncycastle.jcajce.provider.ProvJKS$JKSKeyStoreSpi.engineLoad(InputStream, char[]) -->
+    <!-- Added try / finally close blocks to streams.   org.bouncycastle.jcajce.provider ProvPKCS12 -->
+
+    <!-- Added transient to fields in BouncyCastleFipsProvider -->
+
+
+    <Match>
+        <!-- Complaining about a transient 'this' -->
+
+        <Class name="org.bouncycastle.jcajce.provider.ProvRandom$1$1"/>
+        <Class name="org.bouncycastle.jcajce.provider.ProvRandom$2$1"/>
+    </Match>
+
+
+    <!-- removed unnecessary condition statement from org.bouncycastle.asn1.ASN1ApplicationSpecific.replaceTagNumber(int, byte[]) @212 -->
+    <!-- commented out if statement as it cannot fire:  org.bouncycastle.crypto.fips.BaseKDFBytesGenerator.generateBytes(byte[], int, int) @87 -->
+
+    <Match>
+        <Class name="org.bouncycastle.asn1.ASN1OctetString"/>
+        <Method name="getOctets()"/>
+    </Match>
+
+
+</FindBugsFilter>
+
