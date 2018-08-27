@@ -20,6 +20,8 @@ public class NHOtherInfoGenerator
     protected final DEROtherInfo.Builder otherInfoBuilder;
     protected final SecureRandom random;
 
+    protected boolean used = false;
+    
     /**
      * Create a basic builder with just the compulsory fields.
      *
@@ -76,6 +78,13 @@ public class NHOtherInfoGenerator
 
         public DEROtherInfo generate(byte[] suppPrivInfoPartB)
         {
+            if (used)
+            {
+                throw new IllegalStateException("builder already used");
+            }
+
+            used = true;
+
             this.otherInfoBuilder.withSuppPrivInfo(agreement.calculateAgreement(NHOtherInfoGenerator.getPublicKey(suppPrivInfoPartB)));
 
             return otherInfoBuilder.build();
@@ -119,6 +128,13 @@ public class NHOtherInfoGenerator
 
         public DEROtherInfo generate()
         {
+            if (used)
+            {
+                throw new IllegalStateException("builder already used");
+            }
+
+            used = true;
+
             return otherInfoBuilder.build();
         }
     }
