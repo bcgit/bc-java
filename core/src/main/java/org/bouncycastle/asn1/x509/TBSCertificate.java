@@ -8,7 +8,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERBitString;
-import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x500.X500Name;
 
 /**
@@ -149,6 +148,9 @@ public class TBSCertificate
                     throw new IllegalArgumentException("version 2 certificate cannot contain extensions");
                 }
                 extensions = Extensions.getInstance(ASN1Sequence.getInstance(extra, true));
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown tag encountered in structure: " + extra.getTagNo());
             }
             extras--;
         }
