@@ -3,6 +3,8 @@ package org.bouncycastle.math.ec.rfc7748.test;
 import java.security.SecureRandom;
 
 import junit.framework.TestCase;
+
+import org.bouncycastle.math.ec.rfc7748.X25519;
 import org.bouncycastle.math.ec.rfc7748.X448;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -22,10 +24,10 @@ public class X448Test
 //    @Test
     public void testConsistency()
     {
-        byte[] u = new byte[56];    u[0] = 5;
-        byte[] k = new byte[56];
-        byte[] rF = new byte[56];
-        byte[] rV = new byte[56];
+        byte[] u = new byte[X448.POINT_SIZE];   u[0] = 5;
+        byte[] k = new byte[X448.SCALAR_SIZE];
+        byte[] rF = new byte[X448.POINT_SIZE];
+        byte[] rV = new byte[X448.POINT_SIZE];
 
         for (int i = 1; i <= 100; ++i)
         {
@@ -39,12 +41,12 @@ public class X448Test
 //    @Test
     public void testECDH()
     {
-        byte[] kA = new byte[56];
-        byte[] kB = new byte[56];
-        byte[] qA = new byte[56];
-        byte[] qB = new byte[56];
-        byte[] sA = new byte[56];
-        byte[] sB = new byte[56];
+        byte[] kA = new byte[X448.SCALAR_SIZE];
+        byte[] kB = new byte[X448.SCALAR_SIZE];
+        byte[] qA = new byte[X448.POINT_SIZE];
+        byte[] qB = new byte[X448.POINT_SIZE];
+        byte[] sA = new byte[X448.POINT_SIZE];
+        byte[] sB = new byte[X448.POINT_SIZE];
 
         for (int i = 1; i <= 100; ++i)
         {
@@ -113,38 +115,43 @@ public class X448Test
     private static void checkECDHVector(String sA, String sAPub, String sB, String sBPub, String sK, String text)
     {
         byte[] a = Hex.decode(sA);
-        byte[] b = Hex.decode(sB);
+        assertEquals(X448.SCALAR_SIZE, a.length);
 
-        byte[] aPub = new byte[56];
+        byte[] b = Hex.decode(sB);
+        assertEquals(X448.SCALAR_SIZE, b.length);
+
+        byte[] aPub = new byte[X448.POINT_SIZE];
         X448.scalarMultBase(a, 0, aPub, 0);
         checkValue(aPub, text, sAPub);
 
-        byte[] bPub = new byte[56];
+        byte[] bPub = new byte[X448.POINT_SIZE];
         X448.scalarMultBase(b, 0, bPub, 0);
         checkValue(bPub, text, sBPub);
 
-        byte[] aK = new byte[56];
+        byte[] aK = new byte[X448.POINT_SIZE];
         X448.scalarMult(a, 0, bPub, 0, aK, 0);
         checkValue(aK, text, sK);
 
-        byte[] bK = new byte[56];
+        byte[] bK = new byte[X448.POINT_SIZE];
         X448.scalarMult(b, 0, aPub, 0, bK, 0);
         checkValue(bK, text, sK);
     }
 
     private static void checkIterated(int count)
     {
-        byte[] k = new byte[56]; k[0] = 5;
-        byte[] u = new byte[56]; u[0] = 5;
-        byte[] r = new byte[56];
+        assertEquals(X448.POINT_SIZE, X448.SCALAR_SIZE);
+
+        byte[] k = new byte[X448.POINT_SIZE];   k[0] = 5;
+        byte[] u = new byte[X448.POINT_SIZE];   u[0] = 5;
+        byte[] r = new byte[X448.POINT_SIZE];
 
         int iterations = 0;
         while (iterations < count)
         {
             X448.scalarMult(k, 0, u, 0, r, 0);
 
-            System.arraycopy(k, 0, u, 0, 56);
-            System.arraycopy(r, 0, k, 0, 56);
+            System.arraycopy(k, 0, u, 0, X448.POINT_SIZE);
+            System.arraycopy(r, 0, k, 0, X448.POINT_SIZE);
 
             switch (++iterations)
             {
@@ -175,8 +182,12 @@ public class X448Test
     private static void checkX448Vector(String sk, String su, String se, String text)
     {
         byte[] k = Hex.decode(sk);
+        assertEquals(X448.SCALAR_SIZE, k.length);
+
         byte[] u = Hex.decode(su);
-        byte[] r = new byte[56];
+        assertEquals(X448.POINT_SIZE, u.length);
+
+        byte[] r = new byte[X448.POINT_SIZE];
         X448.scalarMult(k, 0, u, 0, r, 0);
         checkValue(r, text, se);
     }

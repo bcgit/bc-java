@@ -2,6 +2,9 @@ package org.bouncycastle.math.ec.rfc7748;
 
 public abstract class X25519
 {
+    public static final int POINT_SIZE = 32;
+    public static final int SCALAR_SIZE = 32;
+
     private static final int C_A = 486662;
     private static final int C_A24 = (C_A + 2)/4;
 
