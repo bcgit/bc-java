@@ -1,0 +1,3 @@
+include "core","mail","pg","pkix","prov","tls"
+
+rootProject.buildFileName = 'spotbugs.gradle'
