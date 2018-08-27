@@ -1,0 +1,68 @@
+buildscript {
+  repositories {
+    maven {
+      url "https://plugins.gradle.org/m2/"
+    }
+  }
+
+  dependencies {
+    classpath "gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:1.6.2"
+    classpath "net.saliman:gradle-cobertura-plugin:2.2.8"
+  }
+
+}
+
+
+
+
+allprojects {
+  apply plugin: 'java'
+  apply plugin: "com.github.spotbugs"
+  apply plugin: 'net.saliman.cobertura'
+
+  repositories {
+    mavenCentral()
+  }
+
+  dependencies {
+
+  }
+
+  compileJava {
+    options.debug = true
+  }
+
+  spotbugs {
+    toolVersion = '3.1.6'
+  }
+
+  tasks.withType(com.github.spotbugs.SpotBugsTask) {
+    reports {
+      xml.enabled = false
+      html.enabled = true
+    }
+  }
+
+  spotbugs {
+    excludeFilter = file("${rootDir}/spotbugs/excludeFilter.xml");
+  }
+
+}
+
+test {
+  exclude('**/*')
+}
+
+subprojects {
+  apply plugin: 'eclipse'
+  sourceCompatibility = 1.5
+  targetCompatibility = 1.5
+}
+
+
+
+
+
+
+
+
