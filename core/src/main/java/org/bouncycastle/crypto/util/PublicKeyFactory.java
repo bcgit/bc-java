@@ -52,9 +52,13 @@ import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
+import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalParameters;
 import org.bouncycastle.crypto.params.ElGamalPublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
+import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
 
 /**
@@ -80,6 +84,14 @@ public class PublicKeyFactory
         converters.put(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512, new GOST3410_2012Converter());
         converters.put(UAObjectIdentifiers.dstu4145be, new DSTUConverter());
         converters.put(UAObjectIdentifiers.dstu4145le, new DSTUConverter());
+
+        // TODO[RFC 8422]
+        {
+            converters.put(new ASN1ObjectIdentifier("1.3.101.110"), new X25519Converter());
+            converters.put(new ASN1ObjectIdentifier("1.3.101.111"), new X448Converter());
+            converters.put(new ASN1ObjectIdentifier("1.3.101.112"), new Ed25519Converter());
+            converters.put(new ASN1ObjectIdentifier("1.3.101.113"), new Ed448Converter());
+        }
     }
 
     /**
@@ -467,5 +479,50 @@ public class PublicKeyFactory
                 bytes[bytes.length - 1 - i] = tmp;
             }
         }
+    }
+
+    private static class X25519Converter extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+        {
+            return new X25519PublicKeyParameters(getRawKey(keyInfo, defaultParams), 0);
+        }
+    }
+
+    private static class X448Converter extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+        {
+            return new X448PublicKeyParameters(getRawKey(keyInfo, defaultParams), 0);
+        }
+    }
+
+    private static class Ed25519Converter extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+        {
+            return new Ed25519PublicKeyParameters(getRawKey(keyInfo, defaultParams), 0);
+        }
+    }
+
+    private static class Ed448Converter extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+        {
+            return new Ed448PublicKeyParameters(getRawKey(keyInfo, defaultParams), 0);
+        }
+    }
+
+    private static byte[] getRawKey(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+    {
+        /*
+         * TODO[RFC 8422]
+         * - Require defaultParams == null?
+         * - Require keyInfo.getAlgorithm().getParameters() == null?
+         * - Require bits.getPadBits == 0?
+         */
+        DERBitString bits = keyInfo.getPublicKeyData();
+
+        return bits.getBytes();
     }
 }

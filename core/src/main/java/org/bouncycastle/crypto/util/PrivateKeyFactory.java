@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.oiw.ElGamalParameter;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -31,9 +32,13 @@ import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
+import org.bouncycastle.crypto.params.Ed448PrivateKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalParameters;
 import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
+import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
+import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
 
 /**
  * Factory for creating private key objects from PKCS8 PrivateKeyInfo objects.
@@ -75,8 +80,9 @@ public class PrivateKeyFactory
     public static AsymmetricKeyParameter createKey(PrivateKeyInfo keyInfo) throws IOException
     {
         AlgorithmIdentifier algId = keyInfo.getPrivateKeyAlgorithm();
+        ASN1ObjectIdentifier algOID = algId.getAlgorithm();
 
-        if (algId.getAlgorithm().equals(PKCSObjectIdentifiers.rsaEncryption))
+        if (algOID.equals(PKCSObjectIdentifiers.rsaEncryption))
         {
             RSAPrivateKey keyStructure = RSAPrivateKey.getInstance(keyInfo.parsePrivateKey());
 
@@ -86,8 +92,8 @@ public class PrivateKeyFactory
                 keyStructure.getExponent2(), keyStructure.getCoefficient());
         }
         // TODO?
-//      else if (algId.getObjectId().equals(X9ObjectIdentifiers.dhpublicnumber))
-        else if (algId.getAlgorithm().equals(PKCSObjectIdentifiers.dhKeyAgreement))
+//      else if (algOID.equals(X9ObjectIdentifiers.dhpublicnumber))
+        else if (algOID.equals(PKCSObjectIdentifiers.dhKeyAgreement))
         {
             DHParameter params = DHParameter.getInstance(algId.getParameters());
             ASN1Integer derX = (ASN1Integer)keyInfo.parsePrivateKey();
@@ -98,7 +104,7 @@ public class PrivateKeyFactory
 
             return new DHPrivateKeyParameters(derX.getValue(), dhParams);
         }
-        else if (algId.getAlgorithm().equals(OIWObjectIdentifiers.elGamalAlgorithm))
+        else if (algOID.equals(OIWObjectIdentifiers.elGamalAlgorithm))
         {
             ElGamalParameter params = ElGamalParameter.getInstance(algId.getParameters());
             ASN1Integer derX = (ASN1Integer)keyInfo.parsePrivateKey();
@@ -106,7 +112,7 @@ public class PrivateKeyFactory
             return new ElGamalPrivateKeyParameters(derX.getValue(), new ElGamalParameters(
                 params.getP(), params.getG()));
         }
-        else if (algId.getAlgorithm().equals(X9ObjectIdentifiers.id_dsa))
+        else if (algOID.equals(X9ObjectIdentifiers.id_dsa))
         {
             ASN1Integer derX = (ASN1Integer)keyInfo.parsePrivateKey();
             ASN1Encodable de = algId.getParameters();
@@ -120,7 +126,7 @@ public class PrivateKeyFactory
 
             return new DSAPrivateKeyParameters(derX.getValue(), parameters);
         }
-        else if (algId.getAlgorithm().equals(X9ObjectIdentifiers.id_ecPublicKey))
+        else if (algOID.equals(X9ObjectIdentifiers.id_ecPublicKey))
         {
             X962Parameters params = new X962Parameters((ASN1Primitive)algId.getParameters());
 
@@ -151,9 +157,34 @@ public class PrivateKeyFactory
 
             return new ECPrivateKeyParameters(d, dParams);
         }
+        // TODO[RFC 8422]
+        else if (algOID.equals(new ASN1ObjectIdentifier("1.3.101.110")))
+        {
+            return new X25519PrivateKeyParameters(getRawKey(keyInfo), 0);
+        }
+        // TODO[RFC 8422]
+        else if (algOID.equals(new ASN1ObjectIdentifier("1.3.101.111")))
+        {
+            return new X448PrivateKeyParameters(getRawKey(keyInfo), 0);
+        }
+        // TODO[RFC 8422]
+        else if (algOID.equals(new ASN1ObjectIdentifier("1.3.101.112")))
+        {
+            return new Ed25519PrivateKeyParameters(getRawKey(keyInfo), 0);
+        }
+        // TODO[RFC 8422]
+        else if (algOID.equals(new ASN1ObjectIdentifier("1.3.101.113")))
+        {
+            return new Ed448PrivateKeyParameters(getRawKey(keyInfo), 0);
+        }
         else
         {
             throw new RuntimeException("algorithm identifier in key not recognised");
         }
+    }
+
+    private static byte[] getRawKey(PrivateKeyInfo keyInfo) throws IOException
+    {
+        return ((ASN1OctetString)keyInfo.parsePrivateKey()).getOctets();
     }
 }
