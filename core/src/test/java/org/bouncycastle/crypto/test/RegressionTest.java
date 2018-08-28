@@ -158,7 +158,9 @@ public class RegressionTest
         new IsoTrailerTest(),
         new GOST3412Test(),
         new GOST3412MacTest(),
-        new GSKKDFTest()
+        new GSKKDFTest(),
+        new X25519Test(),
+        new X448Test()
     };
 
     public static void main(
