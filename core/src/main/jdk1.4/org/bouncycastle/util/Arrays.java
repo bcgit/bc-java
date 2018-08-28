@@ -335,7 +335,7 @@ public final class Arrays
             array[i] = value;
         }
     }
-    
+
     public static int hashCode(byte[] data)
     {
         if (data == null)
@@ -354,7 +354,7 @@ public final class Arrays
 
         return hc;
     }
-    
+
     public static int hashCode(byte[] data, int off, int len)
     {
         if (data == null)
@@ -443,6 +443,50 @@ public final class Arrays
         return hc;
     }
 
+    public static int hashCode(long[] data)
+    {
+        if (data == null)
+        {
+            return 0;
+        }
+
+        int i = data.length;
+        int hc = i + 1;
+
+        while (--i >= 0)
+        {
+            long di = data[i];
+            hc *= 257;
+            hc ^= (int)di;
+            hc *= 257;
+            hc ^= (int)(di >>> 32);
+        }
+
+        return hc;
+    }
+
+    public static int hashCode(long[] data, int off, int len)
+    {
+        if (data == null)
+        {
+            return 0;
+        }
+
+        int i = len;
+        int hc = i + 1;
+
+        while (--i >= 0)
+        {
+            long di = data[off + i];
+            hc *= 257;
+            hc ^= (int)di;
+            hc *= 257;
+            hc ^= (int)(di >>> 32);
+        }
+
+        return hc;
+    }
+
     public static int hashCode(short[][][] shorts)
     {
         int hc = 0;
@@ -500,28 +544,6 @@ public final class Arrays
         {
             hc *= 257;
             hc ^= data[i].hashCode();
-        }
-
-        return hc;
-    }
-
-    public static int hashCode(long[] data, int off, int len)
-    {
-        if (data == null)
-        {
-            return 0;
-        }
-
-        int i = len;
-        int hc = i + 1;
-
-        while (--i >= 0)
-        {
-            long di = data[off + i];
-            hc *= 257;
-            hc ^= (int)di;
-            hc *= 257;
-            hc ^= (int)(di >>> 32);
         }
 
         return hc;
