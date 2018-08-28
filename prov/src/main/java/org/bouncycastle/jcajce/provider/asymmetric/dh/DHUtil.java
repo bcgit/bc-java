@@ -11,8 +11,8 @@ class DHUtil
 {
     static String privateKeyToString(String algorithm, BigInteger x, DHParameters dhParams)
     {
-        StringBuilder buf = new StringBuilder();
-        String        nl = Strings.lineSeparator();
+        StringBuffer buf = new StringBuffer();
+        String       nl = Strings.lineSeparator();
 
         BigInteger y = dhParams.getG().modPow(x, dhParams.getP());
 
@@ -25,8 +25,8 @@ class DHUtil
 
     static String publicKeyToString(String algorithm, BigInteger y, DHParameters dhParams)
     {
-        StringBuilder buf = new StringBuilder();
-        String        nl = Strings.lineSeparator();
+        StringBuffer buf = new StringBuffer();
+        String       nl = Strings.lineSeparator();
 
         buf.append(algorithm);
         buf.append(" Public Key [").append(generateKeyFingerprint(y, dhParams)).append("]").append(nl);
