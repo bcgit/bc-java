@@ -3234,7 +3234,7 @@ public class PGPKeyRingTest
         Iterator<PGPPublicKey> iterator = secretKeys.getPublicKeys();
         while (iterator.hasNext())
         {
-            bOut.write(iterator.next().getEncoded());
+            bOut.write(((PGPPublicKey)iterator.next()).getEncoded());
         }
 
         checkPublicKeyRing(secretKeys, bOut.toByteArray());
@@ -3251,7 +3251,7 @@ public class PGPKeyRingTest
         iterator = secretKeys.getPublicKeys();
         while (iterator.hasNext())
         {
-            isTrue(publicKeys.getPublicKey(iterator.next().getKeyID()) != null);
+            isTrue(  publicKeys.getPublicKey( ((PGPPublicKey)iterator.next()).getKeyID()) != null);
         }
     }
 
