@@ -9,6 +9,6 @@ public class X448KeyGenerationParameters
 {
     public X448KeyGenerationParameters(SecureRandom random)
     {
-        super(random, 446);
+        super(random, 448);
     }
 }
