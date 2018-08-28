@@ -9,6 +9,6 @@ public class X25519KeyGenerationParameters
 {
     public X25519KeyGenerationParameters(SecureRandom random)
     {
-        super(random, 252);
+        super(random, 256);
     }
 }
