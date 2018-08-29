@@ -519,10 +519,7 @@ public class PublicKeyFactory
          * TODO[RFC 8422]
          * - Require defaultParams == null?
          * - Require keyInfo.getAlgorithm().getParameters() == null?
-         * - Require bits.getPadBits == 0?
          */
-        DERBitString bits = keyInfo.getPublicKeyData();
-
-        return bits.getBytes();
+        return keyInfo.getPublicKeyData().getOctets();
     }
 }

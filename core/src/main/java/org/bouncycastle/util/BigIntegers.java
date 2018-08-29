@@ -8,8 +8,10 @@ import java.security.SecureRandom;
  */
 public final class BigIntegers
 {
+    public static final BigInteger ZERO = BigInteger.valueOf(0);
+    public static final BigInteger ONE = BigInteger.valueOf(1);
+
     private static final int MAX_ITERATIONS = 1000;
-    private static final BigInteger ZERO = BigInteger.valueOf(0);
 
     /**
      * Return the passed in value as an unsigned byte array.

@@ -14,10 +14,11 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
+import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
@@ -62,6 +63,8 @@ public class BcTlsCertificate
 
     protected DHPublicKeyParameters pubKeyDH = null;
     protected ECPublicKeyParameters pubKeyEC = null;
+    protected Ed25519PublicKeyParameters pubKeyEd25519 = null;
+    protected Ed448PublicKeyParameters pubKeyEd448 = null;
     protected RSAKeyParameters pubKeyRSA = null;
 
     public BcTlsCertificate(BcTlsCrypto crypto, byte[] encoding)
@@ -88,79 +91,18 @@ public class BcTlsCertificate
         case SignatureAlgorithm.ecdsa:
             return new BcTlsECDSAVerifier(crypto, getPubKeyEC());
 
+        case SignatureAlgorithm.ed25519:
+            return new BcTlsEd25519Verifier(crypto, getPubKeyEd25519());
+
+        case SignatureAlgorithm.ed448:
+            return new BcTlsEd448Verifier(crypto, getPubKeyEd448());
+
         case SignatureAlgorithm.rsa:
             return new BcTlsRSAVerifier(crypto, getPubKeyRSA());
 
         default:
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);
         }
-    }
-
-    public short getClientCertificateType() throws IOException
-    {
-        AsymmetricKeyParameter publicKey = getPublicKey();
-        if (publicKey.isPrivate())
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        try
-        {
-            /*
-             * TODO RFC 5246 7.4.6. The certificates MUST be signed using an acceptable hash/
-             * signature algorithm pair, as described in Section 7.4.4. Note that this relaxes the
-             * constraints on certificate-signing algorithms found in prior versions of TLS.
-             */
-
-            /*
-             * RFC 5246 7.4.6. Client Certificate
-             */
-
-            /*
-             * RSA public key; the certificate MUST allow the key to be used for signing with the
-             * signature scheme and hash algorithm that will be employed in the certificate verify
-             * message.
-             */
-            if (publicKey instanceof RSAKeyParameters)
-            {
-                validateKeyUsage(KeyUsage.digitalSignature);
-                return ClientCertificateType.rsa_sign;
-            }
-
-            /*
-             * DSA public key; the certificate MUST allow the key to be used for signing with the
-             * hash algorithm that will be employed in the certificate verify message.
-             */
-            if (publicKey instanceof DSAPublicKeyParameters)
-            {
-                validateKeyUsage(KeyUsage.digitalSignature);
-                return ClientCertificateType.dss_sign;
-            }
-
-            /*
-             * ECDSA-capable public key; the certificate MUST allow the key to be used for signing
-             * with the hash algorithm that will be employed in the certificate verify message; the
-             * public key MUST use a curve and point format supported by the server.
-             */
-            if (publicKey instanceof ECPublicKeyParameters)
-            {
-                validateKeyUsage(KeyUsage.digitalSignature);
-                // TODO Check the curve and point format
-                return ClientCertificateType.ecdsa_sign;
-            }
-
-            // TODO Add support for ClientCertificateType.*_fixed_*
-        }
-        catch (IOException e)
-        {
-            throw e;
-        }
-        catch (Exception e)
-        {
-            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
-        }
-
-        throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
     }
 
     public byte[] getEncoded() throws IOException
@@ -190,6 +132,86 @@ public class BcTlsCertificate
     public String getSigAlgOID()
     {
         return certificate.getSignatureAlgorithm().getAlgorithm().getId();
+    }
+
+    public short getSignatureAlgorithm() throws IOException
+    {
+        AsymmetricKeyParameter publicKey = getPublicKey();
+        if (publicKey.isPrivate())
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        try
+        {
+            validateKeyUsage(KeyUsage.digitalSignature);
+        }
+        catch (IOException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            throw new TlsFatalAlert(AlertDescription.unsupported_certificate, e);
+        }
+
+        /*
+         * TODO RFC 5246 7.4.6. The certificates MUST be signed using an acceptable hash/
+         * signature algorithm pair, as described in Section 7.4.4. Note that this relaxes the
+         * constraints on certificate-signing algorithms found in prior versions of TLS.
+         */
+
+        /*
+         * RFC 5246 7.4.6. Client Certificate
+         */
+
+        /*
+         * RSA public key; the certificate MUST allow the key to be used for signing with the
+         * signature scheme and hash algorithm that will be employed in the certificate verify
+         * message.
+         */
+        if (publicKey instanceof RSAKeyParameters)
+        {
+            return SignatureAlgorithm.rsa;
+        }
+
+        /*
+         * DSA public key; the certificate MUST allow the key to be used for signing with the
+         * hash algorithm that will be employed in the certificate verify message.
+         */
+        if (publicKey instanceof DSAPublicKeyParameters)
+        {
+            return SignatureAlgorithm.dsa;
+        }
+
+        /*
+         * ECDSA-capable public key; the certificate MUST allow the key to be used for signing
+         * with the hash algorithm that will be employed in the certificate verify message; the
+         * public key MUST use a curve and point format supported by the server.
+         */
+        if (publicKey instanceof ECPublicKeyParameters)
+        {
+            // TODO Check the curve and point format
+            return SignatureAlgorithm.ecdsa;
+        }
+
+        /*
+         * Ed25519 public key; the certificate MUST allow the key to be used for signing
+         */
+        if (publicKey instanceof Ed25519PublicKeyParameters)
+        {
+            return SignatureAlgorithm.ed25519;
+        }
+
+        /*
+         * Ed448 public key; the certificate MUST allow the key to be used for signing
+         */
+        if (publicKey instanceof Ed448PublicKeyParameters)
+        {
+            return SignatureAlgorithm.ed448;
+        }
+
+        throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
     }
 
     protected DHPublicKeyParameters getPubKeyDH() throws IOException
@@ -232,6 +254,36 @@ public class BcTlsCertificate
         }
 
         return validatePubKeyEC(pubKeyEC);
+    }
+
+    public Ed25519PublicKeyParameters getPubKeyEd25519() throws IOException
+    {
+        Ed25519PublicKeyParameters pubKeyEd25519;
+        try
+        {
+            pubKeyEd25519 = (Ed25519PublicKeyParameters)getPublicKey();
+        }
+        catch (ClassCastException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
+        }
+
+        return validatePubKeyEd25519(pubKeyEd25519);
+    }
+
+    public Ed448PublicKeyParameters getPubKeyEd448() throws IOException
+    {
+        Ed448PublicKeyParameters pubKeyEd448;
+        try
+        {
+            pubKeyEd448 = (Ed448PublicKeyParameters)getPublicKey();
+        }
+        catch (ClassCastException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
+        }
+
+        return validatePubKeyEd448(pubKeyEd448);
     }
 
     public RSAKeyParameters getPubKeyRSA() throws IOException
@@ -328,6 +380,18 @@ public class BcTlsCertificate
     {
         // TODO[tls-ops]
         return pubKeyEC;
+    }
+
+    protected Ed25519PublicKeyParameters validatePubKeyEd25519(Ed25519PublicKeyParameters pubKeyEd25519) throws IOException
+    {
+        // TODO[tls-ops]
+        return pubKeyEd25519;
+    }
+
+    protected Ed448PublicKeyParameters validatePubKeyEd448(Ed448PublicKeyParameters pubKeyEd448) throws IOException
+    {
+        // TODO[tls-ops]
+        return pubKeyEd448;
     }
 
     protected RSAKeyParameters validatePubKeyRSA(RSAKeyParameters pubKeyRSA) throws IOException
