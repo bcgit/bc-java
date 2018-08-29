@@ -48,6 +48,7 @@ import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
@@ -250,7 +251,9 @@ public class BcTlsCrypto
 
     public boolean hasAllRawSignatureAlgorithms()
     {
-        return true;
+        // TODO[RFC 8422] Revisit the need to buffer the handshake for "Intrinsic" hash signatures
+        return !hasSignatureAlgorithm(SignatureAlgorithm.ed25519)
+            && !hasSignatureAlgorithm(SignatureAlgorithm.ed448);
     }
 
     public boolean hasDHAgreement()
@@ -300,14 +303,14 @@ public class BcTlsCrypto
         return true;
     }
 
-    public boolean hasSignatureAlgorithm(int signatureAlgorithm)
+    public boolean hasSignatureAlgorithm(short signatureAlgorithm)
     {
         return true;
     }
 
     public boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm)
     {
-        return true;
+        return hasSignatureAlgorithm(sigAndHashAlgorithm.getSignature());
     }
 
     public boolean hasSRPAuthentication()
@@ -358,7 +361,7 @@ public class BcTlsCrypto
         case HashAlgorithm.sha512:
             return new SHA512Digest();
         default:
-            throw new IllegalArgumentException("unknown HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
+            throw new IllegalArgumentException("invalid HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
         }
     }
 
@@ -419,7 +422,7 @@ public class BcTlsCrypto
         case HashAlgorithm.sha512:
             return new SHA512Digest((SHA512Digest)hash);
         default:
-            throw new IllegalArgumentException("unknown HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
+            throw new IllegalArgumentException("invalid HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
         }
     }
 
