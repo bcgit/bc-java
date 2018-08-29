@@ -160,13 +160,13 @@ public class ECKeyUtil
         {
             PrivateKeyInfo info = PrivateKeyInfo.getInstance(ASN1Primitive.fromByteArray(key.getEncoded()));
 
-            if (info.getAlgorithmId().getAlgorithm().equals(CryptoProObjectIdentifiers.gostR3410_2001))
+            if (info.getPrivateKeyAlgorithm().getAlgorithm().equals(CryptoProObjectIdentifiers.gostR3410_2001))
             {
                 throw new UnsupportedEncodingException("cannot convert GOST key to explicit parameters.");
             }
             else
             {
-                X962Parameters params = X962Parameters.getInstance(info.getAlgorithmId().getParameters());
+                X962Parameters params = X962Parameters.getInstance(info.getPrivateKeyAlgorithm().getParameters());
                 X9ECParameters curveParams;
 
                 if (params.isNamedCurve())
