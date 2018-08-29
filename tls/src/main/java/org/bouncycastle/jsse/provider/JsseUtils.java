@@ -38,6 +38,7 @@ import org.bouncycastle.tls.ServerNameList;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCertificate;
@@ -66,6 +67,27 @@ abstract class JsseUtils
         return tmp;
     }
 
+    static String getAuthStringClient(short signatureAlgorithm) throws IOException
+    {
+        switch (signatureAlgorithm)
+        {
+        case SignatureAlgorithm.dsa:
+            return "DSA";
+        case SignatureAlgorithm.ecdsa:
+            return "EC";
+        // TODO[RFC 8422]
+//        case SignatureAlgorithm.ed25519:
+//            return "Ed25519";
+//        case SignatureAlgorithm.ed448:
+//            return "Ed448";
+        case SignatureAlgorithm.rsa:
+            return "RSA";
+        default:
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
+    // TODO[RFC 8422]
     public static String getAuthTypeClient(short clientCertificateType) throws IOException
     {
         switch (clientCertificateType)
@@ -76,9 +98,6 @@ abstract class JsseUtils
             return "EC";
         case ClientCertificateType.rsa_sign:
             return "RSA";
-
-        // TODO[jsse] "fixed" types and any others
-
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -228,16 +247,18 @@ abstract class JsseUtils
         short[] signatureAlgorithms = new short[]{ SignatureAlgorithm.rsa, SignatureAlgorithm.ecdsa };
 
         Vector result = new Vector();
+        TlsUtils.addIfSupported(result, crypto, SignatureAndHashAlgorithm.ed25519);
+        TlsUtils.addIfSupported(result, crypto, SignatureAndHashAlgorithm.ed448);
         for (int i = 0; i < signatureAlgorithms.length; ++i)
         {
             for (int j = 0; j < hashAlgorithms.length; ++j)
             {
-                addIfSupported(crypto, result, new SignatureAndHashAlgorithm(hashAlgorithms[j], signatureAlgorithms[i]));
+                TlsUtils.addIfSupported(result, crypto, new SignatureAndHashAlgorithm(hashAlgorithms[j], signatureAlgorithms[i]));
             }
         }
 
         // TODO Dynamically detect whether the TlsCrypto implementation can handle DSA2
-        addIfSupported(crypto, result, new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.dsa));
+        TlsUtils.addIfSupported(result, crypto, new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.dsa));
 
         return result;
     }
@@ -340,14 +361,6 @@ abstract class JsseUtils
         }
 
         return names;
-    }
-
-    private static void addIfSupported(TlsCrypto crypto, Vector v, SignatureAndHashAlgorithm alg)
-    {
-        if (crypto.hasSignatureAndHashAlgorithm(alg))
-        {
-            v.addElement(alg);
-        }
     }
 
     static Constructor getDeclaredConstructor(final Class clazz, final Class<?>... parameterTypes)

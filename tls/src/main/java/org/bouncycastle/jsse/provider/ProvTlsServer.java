@@ -334,7 +334,10 @@ class ProvTlsServer
     public void notifyClientCertificate(Certificate clientCertificate) throws IOException
     {
         // NOTE: This method isn't called unless we returned non-null from getCertificateRequest() earlier
-        assert sslParameters.getNeedClientAuth() || sslParameters.getWantClientAuth();
+        if (!sslParameters.getNeedClientAuth() && !sslParameters.getWantClientAuth())
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
 
         boolean noClientCert = clientCertificate == null || clientCertificate.isEmpty();
         if (noClientCert)
@@ -347,8 +350,8 @@ class ProvTlsServer
         else
         {
             X509Certificate[] chain = JsseUtils.getX509CertificateChain(manager.getContextData().getCrypto(), clientCertificate);
-            short clientCertificateType = clientCertificate.getCertificateAt(0).getClientCertificateType();
-            String authType = JsseUtils.getAuthTypeClient(clientCertificateType);
+            short signatureAlgorithm = clientCertificate.getCertificateAt(0).getSignatureAlgorithm();
+            String authType = JsseUtils.getAuthStringClient(signatureAlgorithm);
 
             if (!manager.isClientTrusted(chain, authType))
             {

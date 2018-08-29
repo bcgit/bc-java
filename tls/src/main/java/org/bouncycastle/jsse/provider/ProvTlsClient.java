@@ -182,6 +182,7 @@ class ProvTlsClient
                     return null;
                 }
 
+                // TODO[RFC 8422] Rework this in light of ed25519/ed448 and handle the supported signature algorithms TODO
                 String[] keyTypes = new String[certTypes.length];
                 for (int i = 0; i < certTypes.length; ++i)
                 {
@@ -246,8 +247,7 @@ class ProvTlsClient
                 case KeyExchangeAlgorithm.ECDHE_RSA:
                 case KeyExchangeAlgorithm.RSA:
                 {
-                    short certificateType = certificate.getCertificateAt(0).getClientCertificateType();
-                    short signatureAlgorithm = TlsUtils.getSignatureAlgorithmClient(certificateType);
+                    short signatureAlgorithm = certificate.getCertificateAt(0).getSignatureAlgorithm();
                     SignatureAndHashAlgorithm sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
                         supportedSignatureAlgorithms, signatureAlgorithm);
 

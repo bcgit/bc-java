@@ -41,4 +41,16 @@ public class SignatureAlgorithm
     {
         return getName(signatureAlgorithm) + "(" + signatureAlgorithm + ")";
     }
+
+    public static boolean hasIntrinsicHash(short signatureAlgorithm)
+    {
+        switch (signatureAlgorithm)
+        {
+        case ed25519:
+        case ed448:
+            return true;
+        default:
+            return false;
+        }
+    }
 }
