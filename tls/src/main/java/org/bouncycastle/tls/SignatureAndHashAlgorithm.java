@@ -9,6 +9,9 @@ import java.io.OutputStream;
  */
 public class SignatureAndHashAlgorithm
 {
+    public static final SignatureAndHashAlgorithm ed25519 = new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, SignatureAlgorithm.ed25519);
+    public static final SignatureAndHashAlgorithm ed448 = new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, SignatureAlgorithm.ed448);
+
     protected short hash;
     protected short signature;
 
@@ -29,6 +32,10 @@ public class SignatureAndHashAlgorithm
         if (signature == SignatureAlgorithm.anonymous)
         {
             throw new IllegalArgumentException("'signature' MUST NOT be \"anonymous\"");
+        }
+        if ((hash == HashAlgorithm.Intrinsic) != SignatureAlgorithm.hasIntrinsicHash(signature))
+        {
+            throw new IllegalArgumentException("invalid hash/signature combination");
         }
 
         this.hash = hash;
