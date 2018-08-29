@@ -549,7 +549,7 @@ public class ECDSA5Test
         PublicKey pubKey = ECKeyUtil.publicToExplicitParameters(pair.getPublic(), "BC");
 
         SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(ASN1Primitive.fromByteArray(pubKey.getEncoded()));
-        X962Parameters params = X962Parameters.getInstance(info.getAlgorithmId().getParameters());
+        X962Parameters params = X962Parameters.getInstance(info.getAlgorithm().getParameters());
 
         if (params.isNamedCurve() || params.isImplicitlyCA())
         {
@@ -563,7 +563,7 @@ public class ECDSA5Test
 
         PrivateKey privKey = ECKeyUtil.privateToExplicitParameters(pair.getPrivate(), "BC");
         PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(ASN1Primitive.fromByteArray(privKey.getEncoded()));
-        params = X962Parameters.getInstance(privInfo.getAlgorithmId().getParameters());
+        params = X962Parameters.getInstance(privInfo.getPrivateKeyAlgorithm().getParameters());
 
         if (params.isNamedCurve() || params.isImplicitlyCA())
         {
