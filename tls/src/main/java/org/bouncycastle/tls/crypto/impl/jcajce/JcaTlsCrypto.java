@@ -25,6 +25,7 @@ import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
@@ -302,7 +303,10 @@ public class JcaTlsCrypto
 
     public boolean hasAllRawSignatureAlgorithms()
     {
-        return !JcaUtils.isSunMSCAPIProviderActive();
+        // TODO[RFC 8422] Revisit the need to buffer the handshake for "Intrinsic" hash signatures
+        return !JcaUtils.isSunMSCAPIProviderActive()
+            && !hasSignatureAlgorithm(SignatureAlgorithm.ed25519)
+            && !hasSignatureAlgorithm(SignatureAlgorithm.ed448);
     }
 
     public boolean hasDHAgreement()
@@ -442,10 +446,16 @@ public class JcaTlsCrypto
         }
     }
 
-    public boolean hasSignatureAlgorithm(int signatureAlgorithm)
+    public boolean hasSignatureAlgorithm(short signatureAlgorithm)
     {
-        // TODO: expand
-        return true;
+        switch (signatureAlgorithm)
+        {
+        case SignatureAlgorithm.ed25519:
+        case SignatureAlgorithm.ed448:
+            return false;
+        default:
+            return true;
+        }
     }
 
     public boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm)
@@ -458,8 +468,7 @@ public class JcaTlsCrypto
             return false;
         }
 
-        // TODO: expand
-        return true;
+        return hasSignatureAlgorithm(sigAndHashAlgorithm.getSignature());
     }
 
     public boolean hasSRPAuthentication()
@@ -790,7 +799,7 @@ public class JcaTlsCrypto
             digestName = "SHA-512";
             break;
         default:
-            throw new IllegalArgumentException("unknown HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
+            throw new IllegalArgumentException("invalid HashAlgorithm: " + HashAlgorithm.getText(hashAlgorithm));
         }
         return digestName;
     }

@@ -212,7 +212,7 @@ class TlsTestServerImpl
         }
 
         if (!isEmpty && !TlsTestUtils.isCertificateOneOf(context.getCrypto(), chain[0],
-            new String[]{ "x509-client-dsa.pem", "x509-client-ecdsa.pem", "x509-client-rsa.pem"}))
+            new String[]{ "x509-client-dsa.pem", "x509-client-ecdsa.pem", "x509-client-ed25519.pem", "x509-client-rsa.pem"}))
         {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
@@ -232,14 +232,15 @@ class TlsTestServerImpl
 
     protected TlsCredentialedSigner getDSASignerCredentials() throws IOException
     {
-        return TlsTestUtils.loadSignerCredentials(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.dsa,
-            "x509-server-dsa.pem", "x509-server-key-dsa.pem");
+        return TlsTestUtils.loadSignerCredentialsServer(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.dsa);
     }
 
     protected TlsCredentialedSigner getECDSASignerCredentials() throws IOException
     {
-        return TlsTestUtils.loadSignerCredentials(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.ecdsa,
-            "x509-server-ecdsa.pem", "x509-server-key-ecdsa.pem");
+        // TODO[RFC 8422] Code should choose based on client's supported sig algs?
+        return TlsTestUtils.loadSignerCredentialsServer(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.ecdsa);
+//        return TlsTestUtils.loadSignerCredentialsServer(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.ed25519);
+//        return TlsTestUtils.loadSignerCredentialsServer(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.ed448);
     }
 
     protected TlsCredentialedDecryptor getRSAEncryptionCredentials() throws IOException
@@ -250,8 +251,7 @@ class TlsTestServerImpl
 
     protected TlsCredentialedSigner getRSASignerCredentials() throws IOException
     {
-        return TlsTestUtils.loadSignerCredentials(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.rsa,
-            "x509-server-rsa-sign.pem", "x509-server-key-rsa-sign.pem");
+        return TlsTestUtils.loadSignerCredentialsServer(context, getSupportedSignatureAlgorithms(), SignatureAlgorithm.rsa);
     }
 
     protected String hex(byte[] data)

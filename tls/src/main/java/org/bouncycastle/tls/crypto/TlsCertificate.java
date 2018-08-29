@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
@@ -20,11 +19,6 @@ public interface TlsCertificate
      */
     TlsVerifier createVerifier(short signatureAlgorithm) throws IOException;
 
-    /**
-     * @return {@link ClientCertificateType}
-     */
-    short getClientCertificateType() throws IOException;
-
     byte[] getEncoded() throws IOException;
 
     byte[] getExtension(ASN1ObjectIdentifier extensionOID) throws IOException;
@@ -35,6 +29,11 @@ public interface TlsCertificate
      * @return the OID of this certificate's 'signatureAlgorithm', as a String.
      */
     String getSigAlgOID();
+
+    /**
+     * @return {@link SignatureAlgorithm}
+     */
+    short getSignatureAlgorithm() throws IOException;
 
     /**
      * @param connectionEnd

@@ -59,9 +59,9 @@ public class JCEDHPrivateKey
         PrivateKeyInfo  info)
         throws IOException
     {
-        ASN1Sequence    seq = ASN1Sequence.getInstance(info.getAlgorithmId().getParameters());
+        ASN1Sequence    seq = ASN1Sequence.getInstance(info.getPrivateKeyAlgorithm().getParameters());
         ASN1Integer      derX = ASN1Integer.getInstance(info.parsePrivateKey());
-        ASN1ObjectIdentifier id = info.getAlgorithmId().getAlgorithm();
+        ASN1ObjectIdentifier id = info.getPrivateKeyAlgorithm().getAlgorithm();
 
         this.info = info;
         this.x = derX.getValue();
