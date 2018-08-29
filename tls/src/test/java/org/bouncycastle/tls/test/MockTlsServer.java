@@ -100,7 +100,7 @@ class MockTlsServer
 
         boolean isEmpty = (clientCertificate == null || clientCertificate.isEmpty());
         if (!isEmpty && !TlsTestUtils.isCertificateOneOf(context.getCrypto(), chain[0],
-            new String[]{ "x509-client-dsa.pem", "x509-client-ecdsa.pem", "x509-client-rsa.pem"}))
+            new String[]{ "x509-client-dsa.pem", "x509-client-ecdsa.pem", "x509-client-ed25519.pem", "x509-client-rsa.pem"}))
         {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }

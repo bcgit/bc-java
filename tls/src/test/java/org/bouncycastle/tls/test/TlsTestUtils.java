@@ -111,11 +111,11 @@ public class TlsTestUtils
         switch (signatureAlgorithm)
         {
         case SignatureAlgorithm.dsa:
-            return "x509-ca-dsa.pem";
         case SignatureAlgorithm.ecdsa:
-            return "x509-ca-ecdsa.pem";
+        case SignatureAlgorithm.ed25519:
+        case SignatureAlgorithm.ed448:
         case SignatureAlgorithm.rsa:
-            return "x509-ca-rsa.pem";
+            return "x509-ca-" + SignatureAlgorithm.getName(signatureAlgorithm) + ".pem";
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -212,6 +212,16 @@ public class TlsTestUtils
 
         return loadSignerCredentials(context, new String[]{ certResource, getCACertResource(signatureAlgorithm) },
             keyResource, signatureAndHashAlgorithm);
+    }
+
+    static TlsCredentialedSigner loadSignerCredentialsServer(TlsContext context, Vector supportedSignatureAlgorithms,
+        short signatureAlgorithm) throws IOException
+    {
+        String sigName = SignatureAlgorithm.getName(signatureAlgorithm);
+        String certResource = "x509-server-" + sigName + ".pem";
+        String keyResource = "x509-server-key-" + sigName + ".pem";
+
+        return loadSignerCredentials(context, supportedSignatureAlgorithms, signatureAlgorithm, certResource, keyResource);
     }
 
     static Certificate loadCertificateChain(TlsCrypto crypto, String[] resources)
