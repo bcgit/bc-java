@@ -2,6 +2,7 @@ package org.bouncycastle.math.ec.rfc8032.test;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.math.ec.rfc8032.Ed448;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -43,16 +44,57 @@ public class Ed448Test
             Ed448.sign(sk, 0, ctx, m, 0, mLen, sig1, 0);
             Ed448.sign(sk, 0, pk, 0, ctx, m, 0, mLen, sig2, 0);
 
-            assertTrue("Consistent signatures #" + i, Arrays.areEqual(sig1, sig2));
+            assertTrue("Ed448 consistent signatures #" + i, Arrays.areEqual(sig1, sig2));
 
             boolean shouldVerify = Ed448.verify(sig1, 0, pk, 0, ctx, m, 0, mLen);
 
-            assertTrue("Consistent sign/verify #" + i, shouldVerify);
+            assertTrue("Ed448 consistent sign/verify #" + i, shouldVerify);
 
             sig1[Ed448.PUBLIC_KEY_SIZE - 1] ^= 0x80;
             boolean shouldNotVerify = Ed448.verify(sig1, 0, pk, 0, ctx, m, 0, mLen);
 
-            assertFalse("Consistent verification failure #" + i, shouldNotVerify);
+            assertFalse("Ed448 consistent verification failure #" + i, shouldNotVerify);
+        }
+    }
+
+//    @Test
+    public void testEd448phConsistency()
+    {
+        byte[] sk = new byte[Ed448.SECRET_KEY_SIZE];
+        byte[] pk = new byte[Ed448.PUBLIC_KEY_SIZE];
+        byte[] ctx = new byte[RANDOM.nextInt() & 7];
+        byte[] m = new byte[255];
+        byte[] ph = new byte[Ed448.PREHASH_SIZE];
+        byte[] sig1 = new byte[Ed448.SIGNATURE_SIZE];
+        byte[] sig2 = new byte[Ed448.SIGNATURE_SIZE];
+
+        RANDOM.nextBytes(ctx);
+        RANDOM.nextBytes(m);
+
+        for (int i = 0; i < 10; ++i)
+        {
+            RANDOM.nextBytes(sk);
+            Ed448.generatePublicKey(sk, 0, pk, 0);
+
+            int mLen = RANDOM.nextInt() & 255;
+
+            Xof prehash = Ed448.createPrehash();
+            prehash.update(m, 0, mLen);
+            prehash.doFinal(ph, 0, ph.length);
+
+            Ed448.signPrehash(sk, 0, ctx, ph, 0, sig1, 0);
+            Ed448.signPrehash(sk, 0, pk, 0, ctx, ph, 0, sig2, 0);
+
+            assertTrue("Ed448ph consistent signatures #" + i, Arrays.areEqual(sig1, sig2));
+
+            boolean shouldVerify = Ed448.verifyPrehash(sig1, 0, pk, 0, ctx, ph, 0);
+
+            assertTrue("Ed448ph consistent sign/verify #" + i, shouldVerify);
+
+            sig1[Ed448.PUBLIC_KEY_SIZE - 1] ^= 0x80;
+            boolean shouldNotVerify = Ed448.verifyPrehash(sig1, 0, pk, 0, ctx, ph, 0);
+
+            assertFalse("Ed448ph consistent verification failure #" + i, shouldNotVerify);
         }
     }
 
@@ -371,11 +413,61 @@ public class Ed448Test
             "Ed448 Vector #1023");
     }
 
+//    @Test
+    public void testEd448phVector1()
+    {
+        checkEd448phVector(
+            ( "833fe62409237b9d62ec77587520911e"
+            + "9a759cec1d19755b7da901b96dca3d42"
+            + "ef7822e0d5104127dc05d6dbefde69e3"
+            + "ab2cec7c867c6e2c49"),
+            ( "259b71c19f83ef77a7abd26524cbdb31"
+            + "61b590a48f7d17de3ee0ba9c52beb743"
+            + "c09428a131d6b1b57303d90d8132c276"
+            + "d5ed3d5d01c0f53880"),
+            "616263",
+            "",
+            ( "822f6901f7480f3d5f562c592994d969"
+            + "3602875614483256505600bbc281ae38"
+            + "1f54d6bce2ea911574932f52a4e6cadd"
+            + "78769375ec3ffd1b801a0d9b3f4030cd"
+            + "433964b6457ea39476511214f97469b5"
+            + "7dd32dbc560a9a94d00bff07620464a3"
+            + "ad203df7dc7ce360c3cd3696d9d9fab9"
+            + "0f00"),
+            "Ed448ph Vector #1");
+    }
+
+//    @Test
+    public void testEd448phVector2()
+    {
+        checkEd448phVector(
+            ( "833fe62409237b9d62ec77587520911e"
+            + "9a759cec1d19755b7da901b96dca3d42"
+            + "ef7822e0d5104127dc05d6dbefde69e3"
+            + "ab2cec7c867c6e2c49"),
+            ( "259b71c19f83ef77a7abd26524cbdb31"
+            + "61b590a48f7d17de3ee0ba9c52beb743"
+            + "c09428a131d6b1b57303d90d8132c276"
+            + "d5ed3d5d01c0f53880"),
+            "616263",
+            "666f6f",
+            ( "c32299d46ec8ff02b54540982814dce9"
+            + "a05812f81962b649d528095916a2aa48"
+            + "1065b1580423ef927ecf0af5888f90da"
+            + "0f6a9a85ad5dc3f280d91224ba9911a3"
+            + "653d00e484e2ce232521481c8658df30"
+            + "4bb7745a73514cdb9bf3e15784ab7128"
+            + "4f8d0704a608c54a6b62d97beb511d13"
+            + "2100"),
+            "Ed448ph Vector #2");
+    }
+
     private static void checkEd448Vector(String sSK, String sPK, String sM, String sCTX, String sSig, String text)
     {
         byte[] sk = Hex.decode(sSK);
-
         byte[] pk = Hex.decode(sPK);
+
         byte[] pkGen = new byte[Ed448.PUBLIC_KEY_SIZE];
         Ed448.generatePublicKey(sk, 0, pkGen, 0);
         assertTrue(text, Arrays.areEqual(pk, pkGen));
@@ -383,6 +475,10 @@ public class Ed448Test
         byte[] m = Hex.decode(sM);
         byte[] ctx = Hex.decode(sCTX);
         byte[] sig = Hex.decode(sSig);
+
+        byte[] badsig = sig.clone();
+        badsig[Ed448.SIGNATURE_SIZE - 1] ^= 0x80;
+
         byte[] sigGen = new byte[Ed448.SIGNATURE_SIZE];
         Ed448.sign(sk, 0, ctx, m, 0, m.length, sigGen, 0);
         assertTrue(text, Arrays.areEqual(sig, sigGen));
@@ -393,8 +489,78 @@ public class Ed448Test
         boolean shouldVerify = Ed448.verify(sig, 0, pk, 0, ctx, m, 0, m.length);
         assertTrue(text, shouldVerify);
 
-        sig[Ed448.SIGNATURE_SIZE - 1] ^= 0x80;
-        boolean shouldNotVerify = Ed448.verify(sig, 0, pk, 0, ctx, m, 0, m.length);
+        boolean shouldNotVerify = Ed448.verify(badsig, 0, pk, 0, ctx, m, 0, m.length);
         assertFalse(text, shouldNotVerify);
+    }
+
+    private static void checkEd448phVector(String sSK, String sPK, String sM, String sCTX, String sSig, String text)
+    {
+        byte[] sk = Hex.decode(sSK);
+        byte[] pk = Hex.decode(sPK);
+
+        byte[] pkGen = new byte[Ed448.PUBLIC_KEY_SIZE];
+        Ed448.generatePublicKey(sk, 0, pkGen, 0);
+        assertTrue(text, Arrays.areEqual(pk, pkGen));
+
+        byte[] m = Hex.decode(sM);
+        byte[] ctx = Hex.decode(sCTX);
+        byte[] sig = Hex.decode(sSig);
+
+        byte[] badsig = sig.clone();
+        badsig[Ed448.SIGNATURE_SIZE - 1] ^= 0x80;
+
+        byte[] sigGen = new byte[Ed448.SIGNATURE_SIZE];
+
+        {
+            Xof prehash = Ed448.createPrehash();
+            prehash.update(m, 0, m.length);
+
+            byte[] ph = new byte[Ed448.PREHASH_SIZE];
+            prehash.doFinal(ph, 0, ph.length);
+
+            Ed448.signPrehash(sk, 0, ctx, ph, 0, sigGen, 0);
+            assertTrue(text, Arrays.areEqual(sig, sigGen));
+
+            Ed448.signPrehash(sk, 0, pk, 0, ctx, ph, 0, sigGen, 0);
+            assertTrue(text, Arrays.areEqual(sig, sigGen));
+
+            boolean shouldVerify = Ed448.verifyPrehash(sig, 0, pk, 0, ctx, ph, 0);
+            assertTrue(text, shouldVerify);
+
+            boolean shouldNotVerify = Ed448.verifyPrehash(badsig, 0, pk, 0, ctx, ph, 0);
+            assertFalse(text, shouldNotVerify);
+        }
+
+        {
+            Xof ph = Ed448.createPrehash();
+            ph.update(m, 0, m.length);
+
+            Ed448.signPrehash(sk, 0, ctx, ph, sigGen, 0);
+            assertTrue(text, Arrays.areEqual(sig, sigGen));
+        }
+
+        {
+            Xof ph = Ed448.createPrehash();
+            ph.update(m, 0, m.length);
+
+            Ed448.signPrehash(sk, 0, pk, 0, ctx, ph, sigGen, 0);
+            assertTrue(text, Arrays.areEqual(sig, sigGen));
+        }
+
+        {
+            Xof ph = Ed448.createPrehash();
+            ph.update(m, 0, m.length);
+
+            boolean shouldVerify = Ed448.verifyPrehash(sig, 0, pk, 0, ctx, ph);
+            assertTrue(text, shouldVerify);
+        }
+
+        {
+            Xof ph = Ed448.createPrehash();
+            ph.update(m, 0, m.length);
+
+            boolean shouldNotVerify = Ed448.verifyPrehash(badsig, 0, pk, 0, ctx, ph);
+            assertFalse(text, shouldNotVerify);
+        }
     }
 }

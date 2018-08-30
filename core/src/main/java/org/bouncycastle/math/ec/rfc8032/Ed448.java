@@ -1,5 +1,6 @@
 package org.bouncycastle.math.ec.rfc8032;
 
+import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.math.ec.rfc7748.X448Field;
 import org.bouncycastle.math.raw.Nat;
@@ -16,6 +17,7 @@ public abstract class Ed448
     private static final int SCALAR_INTS = 14;
     private static final int SCALAR_BYTES = SCALAR_INTS * 4 + 1;
 
+    public static final int PREHASH_SIZE = 64;
     public static final int PUBLIC_KEY_SIZE = POINT_BYTES;
     public static final int SECRET_KEY_SIZE = 57;
     public static final int SIGNATURE_SIZE = POINT_BYTES + SCALAR_BYTES;
@@ -121,6 +123,16 @@ public abstract class Ed448
         return !Nat.gte(SCALAR_INTS, n, L);
     }
 
+    public static Xof createPrehash()
+    {
+        return createXof();
+    }
+
+    private static Xof createXof()
+    {
+        return new SHAKEDigest(256);
+    }
+
     private static int decode16(byte[] bs, int off)
     {
         int n = bs[off] & 0xFF;
@@ -202,7 +214,7 @@ public abstract class Ed448
         decode32(k, kOff, n, 0, SCALAR_INTS);
     }
 
-    private static void dom4(SHAKEDigest d, byte x, byte[] y)
+    private static void dom4(Xof d, byte x, byte[] y)
     {
         d.update(DOM4_PREFIX, 0, DOM4_PREFIX.length);
         d.update(x);
@@ -248,7 +260,7 @@ public abstract class Ed448
 
     public static void generatePublicKey(byte[] sk, int skOff, byte[] pk, int pkOff)
     {
-        SHAKEDigest d = new SHAKEDigest(256);
+        Xof d = createXof();
         byte[] h = new byte[SCALAR_BYTES * 2];
 
         d.update(sk, skOff, SECRET_KEY_SIZE);
@@ -313,10 +325,9 @@ public abstract class Ed448
         return ws;
     }
 
-    private static void implSign(SHAKEDigest d, byte[] h, byte[] s, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
+    private static void implSign(Xof d, byte[] h, byte[] s, byte[] pk, int pkOff, byte[] ctx, byte phflag,
+        byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
     {
-        byte phflag = 0x00;
-
         dom4(d, phflag, ctx);
         d.update(h, SCALAR_BYTES, SCALAR_BYTES);
         d.update(m, mOff, mLen);
@@ -337,6 +348,101 @@ public abstract class Ed448
 
         System.arraycopy(R, 0, sig, sigOff, POINT_BYTES);
         System.arraycopy(S, 0, sig, sigOff + POINT_BYTES, SCALAR_BYTES);
+    }
+
+    private static void implSign(byte[] sk, int skOff, byte[] ctx, byte phflag, byte[] m, int mOff, int mLen,
+        byte[] sig, int sigOff)
+    {
+        if (!checkContextVar(ctx))
+        {
+            throw new IllegalArgumentException("ctx");
+        }
+
+        Xof d = createXof();
+        byte[] h = new byte[SCALAR_BYTES * 2];
+
+        d.update(sk, skOff, SECRET_KEY_SIZE);
+        d.doFinal(h, 0, h.length);
+
+        byte[] s = new byte[SCALAR_BYTES];
+        pruneScalar(h, 0, s);
+
+        byte[] pk = new byte[POINT_BYTES];
+        scalarMultBaseEncoded(s, pk, 0);
+
+        implSign(d, h, s, pk, 0, ctx, phflag, m, mOff, mLen, sig, sigOff);
+    }
+
+    private static void implSign(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] ctx, byte phflag,
+        byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
+    {
+        if (!checkContextVar(ctx))
+        {
+            throw new IllegalArgumentException("ctx");
+        }
+
+        Xof d = createXof();
+        byte[] h = new byte[SCALAR_BYTES * 2];
+
+        d.update(sk, skOff, SECRET_KEY_SIZE);
+        d.doFinal(h, 0, h.length);
+
+        byte[] s = new byte[SCALAR_BYTES];
+        pruneScalar(h, 0, s);
+
+        implSign(d, h, s, pk, pkOff, ctx, phflag, m, mOff, mLen, sig, sigOff);
+    }
+
+    private static boolean implVerify(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] ctx, byte phflag,
+        byte[] m, int mOff, int mLen)
+    {
+        if (!checkContextVar(ctx))
+        {
+            throw new IllegalArgumentException("ctx");
+        }
+
+        byte[] R = Arrays.copyOfRange(sig, sigOff, sigOff + POINT_BYTES);
+        byte[] S = Arrays.copyOfRange(sig, sigOff + POINT_BYTES, sigOff + SIGNATURE_SIZE);
+
+        if (!checkPointVar(R))
+        {
+            return false;
+        }
+        if (!checkScalarVar(S))
+        {
+            return false;
+        }
+
+        PointExt pA = new PointExt();
+        if (!decodePointVar(pk, pkOff, true, pA))
+        {
+            return false;
+        }
+
+        Xof d = createXof();
+        byte[] h = new byte[SCALAR_BYTES * 2];
+
+        dom4(d, phflag, ctx);
+        d.update(R, 0, POINT_BYTES);
+        d.update(pk, pkOff, POINT_BYTES);
+        d.update(m, mOff, mLen);
+        d.doFinal(h, 0, h.length);
+
+        byte[] k = reduceScalar(h);
+
+        int[] nS = new int[SCALAR_INTS];
+        decodeScalar(S, 0, nS);
+
+        int[] nA = new int[SCALAR_INTS];
+        decodeScalar(k, 0, nA);
+
+        PointExt pR = new PointExt();
+        scalarMultStraussVar(nS, nA, pA, pR);
+
+        byte[] check = new byte[POINT_BYTES];
+        encodePoint(pR, check, 0);
+
+        return Arrays.areEqual(check, R);
     }
 
     private static void pointAddVar(boolean negate, PointExt p, PointExt r)
@@ -967,95 +1073,82 @@ public abstract class Ed448
 
     public static void sign(byte[] sk, int skOff, byte[] ctx, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
     {
-        if (!checkContextVar(ctx))
-        {
-            throw new IllegalArgumentException("ctx");
-        }
+        byte phflag = 0x00;
 
-        SHAKEDigest d = new SHAKEDigest(256);
-        byte[] h = new byte[SCALAR_BYTES * 2];
-
-        d.update(sk, skOff, SECRET_KEY_SIZE);
-        d.doFinal(h, 0, h.length);
-
-        byte[] s = new byte[SCALAR_BYTES];
-        pruneScalar(h, 0, s);
-
-        byte[] pk = new byte[POINT_BYTES];
-        scalarMultBaseEncoded(s, pk, 0);
-
-        implSign(d, h, s, pk, 0, ctx, m, mOff, mLen, sig, sigOff);
+        implSign(sk, skOff, ctx, phflag, m, mOff, mLen, sig, sigOff);
     }
 
     public static void sign(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
     {
-        if (!checkContextVar(ctx))
+        byte phflag = 0x00;
+
+        implSign(sk, skOff, pk, pkOff, ctx, phflag, m, mOff, mLen, sig, sigOff);
+    }
+
+    public static void signPrehash(byte[] sk, int skOff, byte[] ctx, byte[] ph, int phOff, byte[] sig, int sigOff)
+    {
+        byte phflag = 0x01;
+
+        implSign(sk, skOff, ctx, phflag, ph, phOff, PREHASH_SIZE, sig, sigOff);
+    }
+
+    public static void signPrehash(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] ctx, byte[] ph, int phOff, byte[] sig, int sigOff)
+    {
+        byte phflag = 0x01;
+
+        implSign(sk, skOff, pk, pkOff, ctx, phflag, ph, phOff, PREHASH_SIZE, sig, sigOff);
+    }
+
+    public static void signPrehash(byte[] sk, int skOff, byte[] ctx, Xof ph, byte[] sig, int sigOff)
+    {
+        byte[] m = new byte[PREHASH_SIZE];
+        if (PREHASH_SIZE != ph.doFinal(m, 0, PREHASH_SIZE))
         {
-            throw new IllegalArgumentException("ctx");
+            throw new IllegalArgumentException("ph");
         }
 
-        SHAKEDigest d = new SHAKEDigest(256);
-        byte[] h = new byte[SCALAR_BYTES * 2];
+        byte phflag = 0x01;
 
-        d.update(sk, skOff, SECRET_KEY_SIZE);
-        d.doFinal(h, 0, h.length);
+        implSign(sk, skOff, ctx, phflag, m, 0, m.length, sig, sigOff);
+    }
 
-        byte[] s = new byte[SCALAR_BYTES];
-        pruneScalar(h, 0, s);
+    public static void signPrehash(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] ctx, Xof ph, byte[] sig, int sigOff)
+    {
+        byte[] m = new byte[PREHASH_SIZE];
+        if (PREHASH_SIZE != ph.doFinal(m, 0, PREHASH_SIZE))
+        {
+            throw new IllegalArgumentException("ph");
+        }
 
-        implSign(d, h, s, pk, pkOff, ctx, m, mOff, mLen, sig, sigOff);
+        byte phflag = 0x01;
+
+        implSign(sk, skOff, pk, pkOff, ctx, phflag, m, 0, m.length, sig, sigOff);
     }
 
     public static boolean verify(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen)
     {
-        if (!checkContextVar(ctx))
-        {
-            throw new IllegalArgumentException("ctx");
-        }
-
-        byte[] R = Arrays.copyOfRange(sig, sigOff, sigOff + POINT_BYTES);
-        byte[] S = Arrays.copyOfRange(sig, sigOff + POINT_BYTES, sigOff + SIGNATURE_SIZE);
-
-        if (!checkPointVar(R))
-        {
-            return false;
-        }
-        if (!checkScalarVar(S))
-        {
-            return false;
-        }
-
-        PointExt pA = new PointExt();
-        if (!decodePointVar(pk, pkOff, true, pA))
-        {
-            return false;
-        }
-
         byte phflag = 0x00;
 
-        SHAKEDigest d = new SHAKEDigest(256);
-        byte[] h = new byte[SCALAR_BYTES * 2];
+        return implVerify(sig, sigOff, pk, pkOff, ctx, phflag, m, mOff, mLen);
+    }
 
-        dom4(d, phflag, ctx);
-        d.update(R, 0, POINT_BYTES);
-        d.update(pk, pkOff, POINT_BYTES);
-        d.update(m, mOff, mLen);
-        d.doFinal(h, 0, h.length);
+    public static boolean verifyPrehash(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] ctx, byte[] ph, int phOff)
+    {
+        byte phflag = 0x01;
 
-        byte[] k = reduceScalar(h);
+        return implVerify(sig, sigOff, pk, pkOff, ctx, phflag, ph, phOff, PREHASH_SIZE);
+    }
 
-        int[] nS = new int[SCALAR_INTS];
-        decodeScalar(S, 0, nS);
+    public static boolean verifyPrehash(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] ctx, Xof ph)
+    {
+        byte[] m = new byte[PREHASH_SIZE];
+        if (PREHASH_SIZE != ph.doFinal(m, 0, PREHASH_SIZE))
+        {
+            throw new IllegalArgumentException("ph");
+        }
 
-        int[] nA = new int[SCALAR_INTS];
-        decodeScalar(k, 0, nA);
+        byte phflag = 0x01;
 
-        PointExt pR = new PointExt();
-        scalarMultStraussVar(nS, nA, pA, pR);
-
-        byte[] check = new byte[POINT_BYTES];
-        encodePoint(pR, check, 0);
-
-        return Arrays.areEqual(check, R);
+        return implVerify(sig, sigOff, pk, pkOff, ctx, phflag, m, 0, m.length);
     }
 }

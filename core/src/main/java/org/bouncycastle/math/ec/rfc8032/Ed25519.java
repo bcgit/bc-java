@@ -1,11 +1,13 @@
 package org.bouncycastle.math.ec.rfc8032;
 
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.math.ec.rfc7748.X25519Field;
 import org.bouncycastle.math.raw.Interleave;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat256;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 public abstract class Ed25519
 {
@@ -16,11 +18,12 @@ public abstract class Ed25519
     private static final int SCALAR_INTS = 8;
     private static final int SCALAR_BYTES = SCALAR_INTS * 4;
 
+    public static final int PREHASH_SIZE = 64;
     public static final int PUBLIC_KEY_SIZE = POINT_BYTES;
     public static final int SECRET_KEY_SIZE = 32;
     public static final int SIGNATURE_SIZE = POINT_BYTES + SCALAR_BYTES;
 
-//    private static final byte[] DOM2_PREFIX = Strings.toByteArray("SigEd25519 no Ed25519 collisions");
+    private static final byte[] DOM2_PREFIX = Strings.toByteArray("SigEd25519 no Ed25519 collisions");
 
     private static final int[] P = new int[]{ 0xFFFFFFED, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x7FFFFFFF };
     private static final int[] L = new int[]{ 0x5CF5D3ED, 0x5812631A, 0xA2F79CD6, 0x14DEF9DE, 0x00000000, 0x00000000, 0x00000000, 0x10000000 };
@@ -94,6 +97,12 @@ public abstract class Ed25519
         return reduceScalar(result);
     }
 
+    private static boolean checkContextVar(byte[] ctx , byte phflag)
+    {
+        return ctx == null && phflag == 0x00 
+            || ctx != null && ctx.length < 256;
+    }
+
     private static boolean checkPointVar(byte[] p)
     {
         int[] t = new int[8];
@@ -107,6 +116,16 @@ public abstract class Ed25519
         int[] n = new int[SCALAR_INTS];
         decodeScalar(s, 0, n);
         return !Nat256.gte(n, L);
+    }
+
+    private static Digest createDigest()
+    {
+        return new SHA512Digest();
+    }
+
+    public static Digest createPrehash()
+    {
+        return createDigest();
     }
 
     private static int decode24(byte[] bs, int off)
@@ -180,6 +199,17 @@ public abstract class Ed25519
         decode32(k, kOff, n, 0, SCALAR_INTS);
     }
 
+    private static void dom2(Digest d, byte phflag, byte[] ctx)
+    {
+        if (ctx != null)
+        {
+            d.update(DOM2_PREFIX, 0, DOM2_PREFIX.length);
+            d.update(phflag);
+            d.update((byte)ctx.length);
+            d.update(ctx, 0, ctx.length);
+        }
+    }
+
     private static void encode24(int n, byte[] bs, int off)
     {
         bs[  off] = (byte)(n       );
@@ -218,7 +248,7 @@ public abstract class Ed25519
 
     public static void generatePublicKey(byte[] sk, int skOff, byte[] pk, int pkOff)
     {
-        SHA512Digest d = new SHA512Digest();
+        Digest d = createDigest();
         byte[] h = new byte[d.getDigestSize()];
 
         d.update(sk, skOff, SECRET_KEY_SIZE);
@@ -283,8 +313,10 @@ public abstract class Ed25519
         return ws;
     }
 
-    private static void implSign(SHA512Digest d, byte[] h, byte[] s, byte[] pk, int pkOff, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
+    private static void implSign(Digest d, byte[] h, byte[] s, byte[] pk, int pkOff, byte[] ctx, byte phflag,
+        byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
     {
+        dom2(d, phflag, ctx);
         d.update(h, SCALAR_BYTES, SCALAR_BYTES);
         d.update(m, mOff, mLen);
         d.doFinal(h, 0);
@@ -293,6 +325,7 @@ public abstract class Ed25519
         byte[] R = new byte[POINT_BYTES];
         scalarMultBaseEncoded(r, R, 0);
 
+        dom2(d, phflag, ctx);
         d.update(R, 0, POINT_BYTES);
         d.update(pk, 0, POINT_BYTES);
         d.update(m, mOff, mLen);
@@ -303,6 +336,101 @@ public abstract class Ed25519
 
         System.arraycopy(R, 0, sig, sigOff, POINT_BYTES);
         System.arraycopy(S, 0, sig, sigOff + POINT_BYTES, SCALAR_BYTES);
+    }
+
+    private static void implSign(byte[] sk, int skOff, byte[] ctx, byte phflag, byte[] m, int mOff, int mLen,
+        byte[] sig, int sigOff)
+    {
+        if (!checkContextVar(ctx, phflag))
+        {
+            throw new IllegalArgumentException("ctx");
+        }
+
+        Digest d = createDigest();
+        byte[] h = new byte[d.getDigestSize()];
+
+        d.update(sk, skOff, SECRET_KEY_SIZE);
+        d.doFinal(h, 0);
+
+        byte[] s = new byte[SCALAR_BYTES];
+        pruneScalar(h, 0, s);
+
+        byte[] pk = new byte[POINT_BYTES];
+        scalarMultBaseEncoded(s, pk, 0);
+
+        implSign(d, h, s, pk, 0, ctx, phflag, m, mOff, mLen, sig, sigOff);
+    }
+
+    private static void implSign(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] ctx, byte phflag,
+        byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
+    {
+        if (!checkContextVar(ctx, phflag))
+        {
+            throw new IllegalArgumentException("ctx");
+        }
+
+        Digest d = createDigest();
+        byte[] h = new byte[d.getDigestSize()];
+
+        d.update(sk, skOff, SECRET_KEY_SIZE);
+        d.doFinal(h, 0);
+
+        byte[] s = new byte[SCALAR_BYTES];
+        pruneScalar(h, 0, s);
+
+        implSign(d, h, s, pk, pkOff, ctx, phflag, m, mOff, mLen, sig, sigOff);
+    }
+
+    private static boolean implVerify(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] ctx, byte phflag,
+        byte[] m, int mOff, int mLen)
+    {
+        if (!checkContextVar(ctx, phflag))
+        {
+            throw new IllegalArgumentException("ctx");
+        }
+
+        byte[] R = Arrays.copyOfRange(sig, sigOff, sigOff + POINT_BYTES);
+        byte[] S = Arrays.copyOfRange(sig, sigOff + POINT_BYTES, sigOff + SIGNATURE_SIZE);
+
+        if (!checkPointVar(R))
+        {
+            return false;
+        }
+        if (!checkScalarVar(S))
+        {
+            return false;
+        }
+
+        PointExt pA = new PointExt();
+        if (!decodePointVar(pk, pkOff, true, pA))
+        {
+            return false;
+        }
+
+        Digest d = createDigest();
+        byte[] h = new byte[d.getDigestSize()];
+
+        dom2(d, phflag, ctx);
+        d.update(R, 0, POINT_BYTES);
+        d.update(pk, pkOff, POINT_BYTES);
+        d.update(m, mOff, mLen);
+        d.doFinal(h, 0);
+
+        byte[] k = reduceScalar(h);
+
+        int[] nS = new int[SCALAR_INTS];
+        decodeScalar(S, 0, nS);
+
+        int[] nA = new int[SCALAR_INTS];
+        decodeScalar(k, 0, nA);
+
+        PointAccum pR = new PointAccum();
+        scalarMultStraussVar(nS, nA, pA, pR);
+
+        byte[] check = new byte[POINT_BYTES];
+        encodePoint(pR, check, 0);
+
+        return Arrays.areEqual(check, R);
     }
 
     private static void pointAddVar(boolean negate, PointExt p, PointAccum r)
@@ -858,77 +986,106 @@ public abstract class Ed25519
 
     public static void sign(byte[] sk, int skOff, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
     {
-        SHA512Digest d = new SHA512Digest();
-        byte[] h = new byte[d.getDigestSize()];
+        byte[] ctx = null;
+        byte phflag = 0x00;
 
-        d.update(sk, skOff, SECRET_KEY_SIZE);
-        d.doFinal(h, 0);
-
-        byte[] s = new byte[SCALAR_BYTES];
-        pruneScalar(h, 0, s);
-
-        byte[] pk = new byte[POINT_BYTES];
-        scalarMultBaseEncoded(s, pk, 0);
-
-        implSign(d, h, s, pk, 0, m, mOff, mLen, sig, sigOff);
+        implSign(sk, skOff, ctx, phflag, m, mOff, mLen, sig, sigOff);
     }
 
     public static void sign(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
     {
-        SHA512Digest d = new SHA512Digest();
-        byte[] h = new byte[d.getDigestSize()];
+        byte[] ctx = null;
+        byte phflag = 0x00;
 
-        d.update(sk, skOff, SECRET_KEY_SIZE);
-        d.doFinal(h, 0);
+        implSign(sk, skOff, pk, pkOff, ctx, phflag, m, mOff, mLen, sig, sigOff);
+    }
 
-        byte[] s = new byte[SCALAR_BYTES];
-        pruneScalar(h, 0, s);
+    public static void sign(byte[] sk, int skOff, byte[] ctx, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
+    {
+        byte phflag = 0x00;
 
-        implSign(d, h, s, pk, pkOff, m, mOff, mLen, sig, sigOff);
+        implSign(sk, skOff, ctx, phflag, m, mOff, mLen, sig, sigOff);
+    }
+
+    public static void sign(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
+    {
+        byte phflag = 0x00;
+
+        implSign(sk, skOff, pk, pkOff, ctx, phflag, m, mOff, mLen, sig, sigOff);
+    }
+
+    public static void signPrehash(byte[] sk, int skOff, byte[] ctx, byte[] ph, int phOff, byte[] sig, int sigOff)
+    {
+        byte phflag = 0x01;
+
+        implSign(sk, skOff, ctx, phflag, ph, phOff, PREHASH_SIZE, sig, sigOff);
+    }
+
+    public static void signPrehash(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] ctx, byte[] ph, int phOff, byte[] sig, int sigOff)
+    {
+        byte phflag = 0x01;
+
+        implSign(sk, skOff, pk, pkOff, ctx, phflag, ph, phOff, PREHASH_SIZE, sig, sigOff);
+    }
+
+    public static void signPrehash(byte[] sk, int skOff, byte[] ctx, Digest ph, byte[] sig, int sigOff)
+    {
+        byte[] m = new byte[PREHASH_SIZE];
+        if (PREHASH_SIZE != ph.doFinal(m, 0))
+        {
+            throw new IllegalArgumentException("ph");
+        }
+
+        byte phflag = 0x01;
+
+        implSign(sk, skOff, ctx, phflag, m, 0, m.length, sig, sigOff);
+    }
+
+    public static void signPrehash(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] ctx, Digest ph, byte[] sig, int sigOff)
+    {
+        byte[] m = new byte[PREHASH_SIZE];
+        if (PREHASH_SIZE != ph.doFinal(m, 0))
+        {
+            throw new IllegalArgumentException("ph");
+        }
+
+        byte phflag = 0x01;
+
+        implSign(sk, skOff, pk, pkOff, ctx, phflag, m, 0, m.length, sig, sigOff);
     }
 
     public static boolean verify(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] m, int mOff, int mLen)
     {
-        byte[] R = Arrays.copyOfRange(sig, sigOff, sigOff + POINT_BYTES);
-        byte[] S = Arrays.copyOfRange(sig, sigOff + POINT_BYTES, sigOff + SIGNATURE_SIZE);
+        byte[] ctx = null;
+        byte phflag = 0x00;
 
-        if (!checkPointVar(R))
+        return implVerify(sig, sigOff, pk, pkOff, ctx, phflag, m, mOff, mLen);
+    }
+
+    public static boolean verify(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen)
+    {
+        byte phflag = 0x00;
+
+        return implVerify(sig, sigOff, pk, pkOff, ctx, phflag, m, mOff, mLen);
+    }
+
+    public static boolean verifyPrehash(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] ctx, byte[] ph, int phOff)
+    {
+        byte phflag = 0x01;
+
+        return implVerify(sig, sigOff, pk, pkOff, ctx, phflag, ph, phOff, PREHASH_SIZE);
+    }
+
+    public static boolean verifyPrehash(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] ctx, Digest ph)
+    {
+        byte[] m = new byte[PREHASH_SIZE];
+        if (PREHASH_SIZE != ph.doFinal(m, 0))
         {
-            return false;
-        }
-        if (!checkScalarVar(S))
-        {
-            return false;
+            throw new IllegalArgumentException("ph");
         }
 
-        PointExt pA = new PointExt();
-        if (!decodePointVar(pk, pkOff, true, pA))
-        {
-            return false;
-        }
+        byte phflag = 0x01;
 
-        SHA512Digest d = new SHA512Digest();
-        byte[] h = new byte[d.getDigestSize()];
-
-        d.update(R, 0, POINT_BYTES);
-        d.update(pk, pkOff, POINT_BYTES);
-        d.update(m, mOff, mLen);
-        d.doFinal(h, 0);
-
-        byte[] k = reduceScalar(h);
-
-        int[] nS = new int[SCALAR_INTS];
-        decodeScalar(S, 0, nS);
-
-        int[] nA = new int[SCALAR_INTS];
-        decodeScalar(k, 0, nA);
-
-        PointAccum pR = new PointAccum();
-        scalarMultStraussVar(nS, nA, pA, pR);
-
-        byte[] check = new byte[POINT_BYTES];
-        encodePoint(pR, check, 0);
-
-        return Arrays.areEqual(check, R);
+        return implVerify(sig, sigOff, pk, pkOff, ctx, phflag, m, 0, m.length);
     }
 }
