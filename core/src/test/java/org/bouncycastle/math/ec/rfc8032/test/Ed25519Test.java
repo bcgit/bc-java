@@ -2,6 +2,7 @@ package org.bouncycastle.math.ec.rfc8032.test;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.math.ec.rfc8032.Ed25519;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -51,6 +52,83 @@ public class Ed25519Test
             boolean shouldNotVerify = Ed25519.verify(sig1, 0, pk, 0, m, 0, mLen);
 
             assertFalse("Consistent verification failure #" + i, shouldNotVerify);
+        }
+    }
+    
+//    @Test
+    public void testEd25519ctxConsistency()
+    {
+        byte[] sk = new byte[Ed25519.SECRET_KEY_SIZE];
+        byte[] pk = new byte[Ed25519.PUBLIC_KEY_SIZE];
+        byte[] ctx = new byte[RANDOM.nextInt() & 7];
+        byte[] m = new byte[255];
+        byte[] sig1 = new byte[Ed25519.SIGNATURE_SIZE];
+        byte[] sig2 = new byte[Ed25519.SIGNATURE_SIZE];
+
+        RANDOM.nextBytes(ctx);
+        RANDOM.nextBytes(m);
+
+        for (int i = 0; i < 10; ++i)
+        {
+            RANDOM.nextBytes(sk);
+            Ed25519.generatePublicKey(sk, 0, pk, 0);
+
+            int mLen = RANDOM.nextInt() & 255;
+
+            Ed25519.sign(sk, 0, ctx, m, 0, mLen, sig1, 0);
+            Ed25519.sign(sk, 0, pk, 0, ctx, m, 0, mLen, sig2, 0);
+
+            assertTrue("Ed25519ctx consistent signatures #" + i, Arrays.areEqual(sig1, sig2));
+
+            boolean shouldVerify = Ed25519.verify(sig1, 0, pk, 0, ctx, m, 0, mLen);
+
+            assertTrue("Ed25519ctx consistent sign/verify #" + i, shouldVerify);
+
+            sig1[Ed25519.PUBLIC_KEY_SIZE - 1] ^= 0x80;
+            boolean shouldNotVerify = Ed25519.verify(sig1, 0, pk, 0, ctx, m, 0, mLen);
+
+            assertFalse("Ed25519ctx consistent verification failure #" + i, shouldNotVerify);
+        }
+    }
+    
+//    @Test
+    public void testEd25519phConsistency()
+    {
+        byte[] sk = new byte[Ed25519.SECRET_KEY_SIZE];
+        byte[] pk = new byte[Ed25519.PUBLIC_KEY_SIZE];
+        byte[] ctx = new byte[RANDOM.nextInt() & 7];
+        byte[] m = new byte[255];
+        byte[] ph = new byte[Ed25519.PREHASH_SIZE];
+        byte[] sig1 = new byte[Ed25519.SIGNATURE_SIZE];
+        byte[] sig2 = new byte[Ed25519.SIGNATURE_SIZE];
+
+        RANDOM.nextBytes(ctx);
+        RANDOM.nextBytes(m);
+
+        for (int i = 0; i < 10; ++i)
+        {
+            RANDOM.nextBytes(sk);
+            Ed25519.generatePublicKey(sk, 0, pk, 0);
+
+            int mLen = RANDOM.nextInt() & 255;
+
+            Digest prehash = Ed25519.createPrehash();
+            prehash.update(m, 0, mLen);
+            prehash.doFinal(ph, 0);
+
+            Ed25519.signPrehash(sk, 0, ctx, ph, 0, sig1, 0);
+            Ed25519.signPrehash(sk, 0, pk, 0, ctx, ph, 0, sig2, 0);
+
+            assertTrue("Ed25519ph consistent signatures #" + i, Arrays.areEqual(sig1, sig2));
+
+            boolean shouldVerify = Ed25519.verifyPrehash(sig1, 0, pk, 0, ctx, ph, 0);
+
+            assertTrue("Ed25519ph consistent sign/verify #" + i, shouldVerify);
+
+            sig1[Ed25519.PUBLIC_KEY_SIZE - 1] ^= 0x80;
+            boolean shouldNotVerify = Ed25519.verifyPrehash(sig1, 0, pk, 0, ctx, ph, 0);
+
+            assertFalse("Ed25519ph consistent verification failure #" + i, shouldNotVerify);
         }
     }
 
@@ -203,17 +281,106 @@ public class Ed25519Test
             "Ed25519 Vector SHA(abc)");
     }
 
+//    @Test
+    public void testEd25519ctxVector1()
+    {
+        checkEd25519ctxVector(
+            ( "0305334e381af78f141cb666f6199f57"
+            + "bc3495335a256a95bd2a55bf546663f6"),
+            ( "dfc9425e4f968f7f0c29f0259cf5f9ae"
+            + "d6851c2bb4ad8bfb860cfee0ab248292"),
+            "f726936d19c800494e3fdaff20b276a8",
+            "666f6f",
+            ( "55a4cc2f70a54e04288c5f4cd1e45a7b"
+            + "b520b36292911876cada7323198dd87a"
+            + "8b36950b95130022907a7fb7c4e9b2d5"
+            + "f6cca685a587b4b21f4b888e4e7edb0d"),
+            "Ed25519ctx Vector #1");
+    }
+
+//    @Test
+    public void testEd25519ctxVector2()
+    {
+        checkEd25519ctxVector(
+            ( "0305334e381af78f141cb666f6199f57"
+            + "bc3495335a256a95bd2a55bf546663f6"),
+            ( "dfc9425e4f968f7f0c29f0259cf5f9ae"
+            + "d6851c2bb4ad8bfb860cfee0ab248292"),
+            "f726936d19c800494e3fdaff20b276a8",
+            "626172",
+            ( "fc60d5872fc46b3aa69f8b5b4351d580"
+            + "8f92bcc044606db097abab6dbcb1aee3"
+            + "216c48e8b3b66431b5b186d1d28f8ee1"
+            + "5a5ca2df6668346291c2043d4eb3e90d"),
+            "Ed25519ctx Vector #2");
+    }
+
+//    @Test
+    public void testEd25519ctxVector3()
+    {
+        checkEd25519ctxVector(
+            ( "0305334e381af78f141cb666f6199f57"
+            + "bc3495335a256a95bd2a55bf546663f6"),
+            ( "dfc9425e4f968f7f0c29f0259cf5f9ae"
+            + "d6851c2bb4ad8bfb860cfee0ab248292"),
+            "508e9e6882b979fea900f62adceaca35",
+            "666f6f",
+            ( "8b70c1cc8310e1de20ac53ce28ae6e72"
+            + "07f33c3295e03bb5c0732a1d20dc6490"
+            + "8922a8b052cf99b7c4fe107a5abb5b2c"
+            + "4085ae75890d02df26269d8945f84b0b"),
+            "Ed25519ctx Vector #3");
+    }
+
+//    @Test
+    public void testEd25519ctxVector4()
+    {
+        checkEd25519ctxVector(
+            ( "ab9c2853ce297ddab85c993b3ae14bca"
+            + "d39b2c682beabc27d6d4eb20711d6560"),
+            ( "0f1d1274943b91415889152e893d80e9"
+            + "3275a1fc0b65fd71b4b0dda10ad7d772"),
+            "f726936d19c800494e3fdaff20b276a8",
+            "666f6f",
+            ( "21655b5f1aa965996b3f97b3c849eafb"
+            + "a922a0a62992f73b3d1b73106a84ad85"
+            + "e9b86a7b6005ea868337ff2d20a7f5fb"
+            + "d4cd10b0be49a68da2b2e0dc0ad8960f"),
+            "Ed25519ctx Vector #4");
+    }
+
+//    @Test
+    public void testEd25519phVector1()
+    {
+        checkEd25519phVector(
+            ( "833fe62409237b9d62ec77587520911e"
+            + "9a759cec1d19755b7da901b96dca3d42"),
+            ( "ec172b93ad5e563bf4932c70e1245034"
+            + "c35467ef2efd4d64ebf819683467e2bf"),
+            "616263",
+            "",
+            ( "98a70222f0b8121aa9d30f813d683f80"
+            + "9e462b469c7ff87639499bb94e6dae41"
+            + "31f85042463c2a355a2003d062adf5aa"
+            + "a10b8c61e636062aaad11c2a26083406"),
+            "Ed25519ph Vector #1");
+    }
+
     private static void checkEd25519Vector(String sSK, String sPK, String sM, String sSig, String text)
     {
         byte[] sk = Hex.decode(sSK);
-
         byte[] pk = Hex.decode(sPK);
+
         byte[] pkGen = new byte[Ed25519.PUBLIC_KEY_SIZE];
         Ed25519.generatePublicKey(sk, 0, pkGen, 0);
         assertTrue(text, Arrays.areEqual(pk, pkGen));
 
         byte[] m = Hex.decode(sM);
         byte[] sig = Hex.decode(sSig);
+
+        byte[] badsig = sig.clone();
+        badsig[Ed25519.SIGNATURE_SIZE - 1] ^= 0x80;
+
         byte[] sigGen = new byte[Ed25519.SIGNATURE_SIZE];
         Ed25519.sign(sk, 0, m, 0, m.length, sigGen, 0);
         assertTrue(text, Arrays.areEqual(sig, sigGen));
@@ -224,8 +391,108 @@ public class Ed25519Test
         boolean shouldVerify = Ed25519.verify(sig, 0, pk, 0, m, 0, m.length);
         assertTrue(text, shouldVerify);
 
-        sig[Ed25519.SIGNATURE_SIZE - 1] ^= 0x80;
-        boolean shouldNotVerify = Ed25519.verify(sig, 0, pk, 0, m, 0, m.length);
+        boolean shouldNotVerify = Ed25519.verify(badsig, 0, pk, 0, m, 0, m.length);
         assertFalse(text, shouldNotVerify);
+    }
+
+    private static void checkEd25519ctxVector(String sSK, String sPK, String sM, String sCTX, String sSig, String text)
+    {
+        byte[] sk = Hex.decode(sSK);
+        byte[] pk = Hex.decode(sPK);
+
+        byte[] pkGen = new byte[Ed25519.PUBLIC_KEY_SIZE];
+        Ed25519.generatePublicKey(sk, 0, pkGen, 0);
+        assertTrue(text, Arrays.areEqual(pk, pkGen));
+
+        byte[] m = Hex.decode(sM);
+        byte[] ctx = Hex.decode(sCTX);
+        byte[] sig = Hex.decode(sSig);
+
+        byte[] badsig = sig.clone();
+        badsig[Ed25519.SIGNATURE_SIZE - 1] ^= 0x80;
+
+        byte[] sigGen = new byte[Ed25519.SIGNATURE_SIZE];
+        Ed25519.sign(sk, 0, ctx, m, 0, m.length, sigGen, 0);
+        assertTrue(text, Arrays.areEqual(sig, sigGen));
+
+        Ed25519.sign(sk, 0, pk, 0, ctx, m, 0, m.length, sigGen, 0);
+        assertTrue(text, Arrays.areEqual(sig, sigGen));
+
+        boolean shouldVerify = Ed25519.verify(sig, 0, pk, 0, ctx, m, 0, m.length);
+        assertTrue(text, shouldVerify);
+
+        boolean shouldNotVerify = Ed25519.verify(badsig, 0, pk, 0, ctx, m, 0, m.length);
+        assertFalse(text, shouldNotVerify);
+    }
+
+    private static void checkEd25519phVector(String sSK, String sPK, String sM, String sCTX, String sSig, String text)
+    {
+        byte[] sk = Hex.decode(sSK);
+        byte[] pk = Hex.decode(sPK);
+
+        byte[] pkGen = new byte[Ed25519.PUBLIC_KEY_SIZE];
+        Ed25519.generatePublicKey(sk, 0, pkGen, 0);
+        assertTrue(text, Arrays.areEqual(pk, pkGen));
+
+        byte[] m = Hex.decode(sM);
+        byte[] ctx = Hex.decode(sCTX);
+        byte[] sig = Hex.decode(sSig);
+
+        byte[] badsig = sig.clone();
+        badsig[Ed25519.SIGNATURE_SIZE - 1] ^= 0x80;
+
+        byte[] sigGen = new byte[Ed25519.SIGNATURE_SIZE];
+
+        {
+            Digest prehash = Ed25519.createPrehash();
+            prehash.update(m, 0, m.length);
+
+            byte[] ph = new byte[Ed25519.PREHASH_SIZE];
+            prehash.doFinal(ph, 0);
+
+            Ed25519.signPrehash(sk, 0, ctx, ph, 0, sigGen, 0);
+            assertTrue(text, Arrays.areEqual(sig, sigGen));
+
+            Ed25519.signPrehash(sk, 0, pk, 0, ctx, ph, 0, sigGen, 0);
+            assertTrue(text, Arrays.areEqual(sig, sigGen));
+
+            boolean shouldVerify = Ed25519.verifyPrehash(sig, 0, pk, 0, ctx, ph, 0);
+            assertTrue(text, shouldVerify);
+
+            boolean shouldNotVerify = Ed25519.verifyPrehash(badsig, 0, pk, 0, ctx, ph, 0);
+            assertFalse(text, shouldNotVerify);
+        }
+
+        {
+            Digest ph = Ed25519.createPrehash();
+            ph.update(m, 0, m.length);
+
+            Ed25519.signPrehash(sk, 0, ctx, ph, sigGen, 0);
+            assertTrue(text, Arrays.areEqual(sig, sigGen));
+        }
+
+        {
+            Digest ph = Ed25519.createPrehash();
+            ph.update(m, 0, m.length);
+
+            Ed25519.signPrehash(sk, 0, pk, 0, ctx, ph, sigGen, 0);
+            assertTrue(text, Arrays.areEqual(sig, sigGen));
+        }
+
+        {
+            Digest ph = Ed25519.createPrehash();
+            ph.update(m, 0, m.length);
+
+            boolean shouldVerify = Ed25519.verifyPrehash(sig, 0, pk, 0, ctx, ph);
+            assertTrue(text, shouldVerify);
+        }
+
+        {
+            Digest ph = Ed25519.createPrehash();
+            ph.update(m, 0, m.length);
+
+            boolean shouldNotVerify = Ed25519.verifyPrehash(badsig, 0, pk, 0, ctx, ph);
+            assertFalse(text, shouldNotVerify);
+        }
     }
 }
