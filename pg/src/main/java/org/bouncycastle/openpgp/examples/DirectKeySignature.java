@@ -56,7 +56,7 @@ public class DirectKeySignature
                 
                 System.out.println("Signature date is: " + sig.getHashedSubPackets().getSignatureCreationTime());
 
-                NotationData[] data = sig.getHashedSubPackets().getNotationDataOccurences();//.getSubpacket(SignatureSubpacketTags.NOTATION_DATA);
+                NotationData[] data = sig.getHashedSubPackets().getNotationDataOccurrences();//.getSubpacket(SignatureSubpacketTags.NOTATION_DATA);
                 
                 for (int i = 0; i < data.length; i++)
                 {
@@ -109,6 +109,12 @@ public class DirectKeySignature
 
         sGen.setHashedSubpackets(packetVector);
 
-        return PGPPublicKey.addCertification(keyToBeSigned, sGen.generate()).getEncoded();
+        Iterator<String> ids = keyToBeSigned.getUserIDs();
+        if(!ids.hasNext()) throw new IllegalArgumentException("there is no User ID in the key");
+        String id = ids.next();
+
+        PGPSignature signature = sGen.generateCertification(id, keyToBeSigned);
+
+        return PGPPublicKey.addCertification(keyToBeSigned, id, signature).getEncoded();
     }
 }
