@@ -11,6 +11,13 @@ import org.bouncycastle.util.Strings;
 
 public abstract class Ed25519
 {
+    public final class Algorithm
+    {
+        public static final int Ed25519 = 0;
+        public static final int Ed25519ctx = 1;
+        public static final int Ed25519ph = 2;
+    }
+
     private static final long M28L = 0x0FFFFFFFL;
     private static final long M32L = 0xFFFFFFFFL;
 
