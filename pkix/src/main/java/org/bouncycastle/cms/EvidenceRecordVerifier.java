@@ -1,10 +1,8 @@
 package org.bouncycastle.cms;
 
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.cms.ArchiveTimeStamp;
-import org.bouncycastle.asn1.cms.ArchiveTimeStampChain;
-import org.bouncycastle.asn1.cms.ArchiveTimeStampSequence;
-import org.bouncycastle.asn1.cms.EvidenceRecord;
+import org.bouncycastle.asn1.cms.*;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -31,10 +29,25 @@ public class EvidenceRecordVerifier {
      * Validates a provided {@link EvidenceRecord} against a provided object
      */
     public void validate(final EvidenceRecord evidenceRecord, final Object data)
-        throws ArchiveTimeStampValidationException, NoSuchAlgorithmException, TSPException, IOException, PartialHashTreeVerificationException, CertificateException, OperatorCreationException {
+        throws ArchiveTimeStampValidationException, NoSuchAlgorithmException, TSPException, IOException, PartialHashTreeVerificationException, CertificateException, OperatorCreationException
+    {
+        validate(evidenceRecord, data, null);
+    }
+
+    /**
+     * Validates a provided
+     * @param evidenceRecord
+     * @param data
+     * @param algorithmIdentifier
+     */
+    public void validate(final EvidenceRecord evidenceRecord,
+                         final Object data,
+                         final AlgorithmIdentifier algorithmIdentifier)
+            throws CertificateException, ArchiveTimeStampValidationException, NoSuchAlgorithmException, IOException, OperatorCreationException, TSPException, PartialHashTreeVerificationException
+    {
         ArchiveTimeStampSequence sequence = getArchiveTimestampSequence(evidenceRecord);
         ArchiveTimeStampSequenceVerifier verifier = new ArchiveTimeStampSequenceVerifier(sequence);
-        verifier.validate(data);
+        verifier.validate(data, algorithmIdentifier);
         validateLastATS(sequence);
     }
 

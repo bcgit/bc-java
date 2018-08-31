@@ -21,10 +21,7 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-import java.util.Collection;
-import java.util.Date;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 
 public class ArchiveTimeStampVerifier
 {
@@ -54,6 +51,29 @@ public class ArchiveTimeStampVerifier
         checkTimeStampTokenValid(timeStampToken);
     }
 
+    public void validateHash(final byte[] data,
+                         final Date prevGenTime,
+                         final Date prevExpTime,
+                         final AlgorithmIdentifier algId)
+            throws IOException, TSPException, CertificateException, ArchiveTimeStampValidationException,
+                   OperatorCreationException, NoSuchAlgorithmException, PartialHashTreeVerificationException
+    {
+        final MessageDigest messageDigest = MessageDigest.getInstance(algId.getAlgorithm().getId());
+        final TimeStampToken timeStampToken = new TimeStampToken(archiveTimeStamp.getTimeStamp());
+
+        containsHashValue(data);
+        checkAlgorithmConsistent(algId);
+        checkGenTimeValid(timeStampToken, prevGenTime, prevExpTime);
+
+        final byte[] rootHash = getRootHash(messageDigest);
+
+        if (rootHash != null)
+        {
+            checkTimeStampValid(timeStampToken, getRootHash(messageDigest));
+        }
+        checkTimeStampTokenValid(timeStampToken);
+    }
+
     /**
      * Verify that the Archive Timestamp contains the hash value of the provided object
      * @param data
@@ -65,6 +85,10 @@ public class ArchiveTimeStampVerifier
         if (data instanceof byte[])
         {
             containsHashValue((byte[]) data, messageDigest);
+        }
+        else if (data instanceof Collection)
+        {
+            containsDataGroupHashValues((Collection) data, messageDigest);
         }
         else if (data instanceof DataGroup)
         {
@@ -84,13 +108,25 @@ public class ArchiveTimeStampVerifier
 
         if (reducedHashTree != null)
         {
-            ASN1Sequence partialHashTrees = ASN1Sequence
-                .getInstance(reducedHashTree.getObject());
-            PartialHashtree current = PartialHashtree
-                .getInstance(partialHashTrees.getObjectAt(0));
+            ASN1Sequence partialHashTrees = ASN1Sequence.getInstance(reducedHashTree.getObject());
+            PartialHashtree current = PartialHashtree.getInstance(partialHashTrees.getObjectAt(0));
 
             PartialHashTreeVerifier verifier = new PartialHashTreeVerifier();
             verifier.checkContainsHash(current, messageDigest.digest(data));
+        }
+    }
+
+    public void containsHashValue(final byte[] data) throws PartialHashTreeVerificationException
+    {
+        final ASN1TaggedObject reducedHashTree = archiveTimeStamp.getReducedHashTree();
+
+        if (reducedHashTree != null)
+        {
+            ASN1Sequence partialHashTrees = ASN1Sequence.getInstance(reducedHashTree.getObject());
+            PartialHashtree current = PartialHashtree.getInstance(partialHashTrees.getObjectAt(0));
+
+            PartialHashTreeVerifier verifier = new PartialHashTreeVerifier();
+            verifier.checkContainsHash(current, data);
         }
     }
 
@@ -118,6 +154,21 @@ public class ArchiveTimeStampVerifier
         else
         {
             containsObjectsHashValues(data.getHashes(messageDigest));
+        }
+    }
+
+    public void containsDataGroupHashValues(final Collection<byte[]> hashes, final MessageDigest messageDigest)
+            throws PartialHashTreeVerificationException
+    {
+        final Iterator iterator = hashes.iterator();
+
+        if (hashes.size() == 1)
+        {
+            containsDataGroupHashValue((byte[]) iterator.next());
+        }
+        else
+        {
+            containsObjectsHashValues(hashes);
         }
     }
 

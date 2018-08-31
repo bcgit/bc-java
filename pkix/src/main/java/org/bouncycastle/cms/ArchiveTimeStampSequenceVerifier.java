@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cms.ArchiveTimeStampChain;
 import org.bouncycastle.asn1.cms.ArchiveTimeStampSequence;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.tsp.TSPException;
 
@@ -17,14 +18,15 @@ public class ArchiveTimeStampSequenceVerifier {
 
     private ArchiveTimeStampSequence archiveTimeStampSequence;
 
-    public ArchiveTimeStampSequenceVerifier(final ArchiveTimeStampSequence sequence) {
-
+    public ArchiveTimeStampSequenceVerifier(final ArchiveTimeStampSequence sequence)
+    {
         this.archiveTimeStampSequence = sequence;
     }
 
-    public void validate(final Object data)
-        throws ArchiveTimeStampValidationException, NoSuchAlgorithmException, TSPException, IOException, PartialHashTreeVerificationException, CertificateException, OperatorCreationException {
-
+    public void validate(final Object data,
+                         final AlgorithmIdentifier algorithmIdentifier)
+        throws ArchiveTimeStampValidationException, NoSuchAlgorithmException, TSPException, IOException, PartialHashTreeVerificationException, CertificateException, OperatorCreationException
+    {
         final ArchiveTimeStampChainVerifier verifier = new ArchiveTimeStampChainVerifier();
 
         verifier.setPrevGenTime(new Date(0L)); //Assumes that the EvidenceRecord was not
@@ -40,7 +42,7 @@ public class ArchiveTimeStampSequenceVerifier {
 
             verifier.setAtsc(getAtsc(i));
             verifier.setArchiveTimeStampChain(chain);
-            verifier.validate(data);
+            verifier.validate(data, algorithmIdentifier);
 
             verifier.setPrevExpTime(verifier.getArchiveTimeStampVerifier().getExpiryDate());
             verifier.setPrevGenTime(verifier.getArchiveTimeStampVerifier().getGenTime());

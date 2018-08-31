@@ -20,8 +20,13 @@ if (JavaVersion.current().isJava8Compatible()) {
 
 allprojects {
    apply plugin: 'java'
+   apply plugin: 'maven'
+   apply plugin: 'maven-publish'
    apply plugin: 'idea'
    apply plugin: 'net.saliman.cobertura'
+
+    group = 'org.bouncycastle'
+    version = '1.60'
 
    repositories {
        mavenCentral()
@@ -49,7 +54,7 @@ subprojects {
 
     sourceCompatibility = 1.5
     targetCompatibility = 1.5
-    version = '1.59'
+    version = '1.60'
 
     test {
         systemProperty 'bc.test.data.home', bcTestDataHome

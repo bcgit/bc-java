@@ -14,8 +14,7 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-import java.util.Date;
-import java.util.Enumeration;
+import java.util.*;
 
 public class ArchiveTimeStampChainVerifier
 {
@@ -33,14 +32,26 @@ public class ArchiveTimeStampChainVerifier
         this.archiveTimeStampVerifier = new ArchiveTimeStampVerifier();
     }
 
-    public void validate(Object data)
-        throws ArchiveTimeStampValidationException, NoSuchAlgorithmException, TSPException, IOException, PartialHashTreeVerificationException, CertificateException, OperatorCreationException {
+    public void validate(Object data, final AlgorithmIdentifier algorithmIdentifier)
+        throws ArchiveTimeStampValidationException, NoSuchAlgorithmException, TSPException, IOException, PartialHashTreeVerificationException, CertificateException, OperatorCreationException
+    {
         final ASN1Sequence archiveTimeStamps = ASN1Sequence.getInstance(archiveTimeStampChain
             .toASN1Primitive());
 
         if (atsc != null)
         {
-            data = ByteUtils.concatenate(getDataHash(data), getDataHash(atsc));
+            if (algorithmIdentifier != null && data instanceof byte[])
+            {
+                data = ByteUtils.concatenate((byte[]) data, getDataHash(atsc));
+            }
+            else if (algorithmIdentifier != null && data instanceof List)
+            {
+                data = ByteUtils.concatenate(getDataGroupHash(data), getDataHash(atsc));
+            }
+            else
+            {
+                data = ByteUtils.concatenate(getDataHash(data), getDataHash(atsc));
+            }
             atsc = null; //reset it afterwards
         }
 
@@ -51,7 +62,15 @@ public class ArchiveTimeStampChainVerifier
             Object o = objects.nextElement();
             ArchiveTimeStamp ats = ArchiveTimeStamp.getInstance(o);
             archiveTimeStampVerifier.setArchiveTimeStamp(ats);
-            archiveTimeStampVerifier.validate(data, prevGenTime, prevExpTime, algorithmIdentifier);
+
+            if (algorithmIdentifier != null && data instanceof byte[])
+            {
+                archiveTimeStampVerifier.validateHash((byte[]) data, prevGenTime, prevExpTime, algorithmIdentifier);
+            }
+            else
+            {
+                archiveTimeStampVerifier.validate(data, prevGenTime, prevExpTime, algorithmIdentifier);
+            }
 
             data = ats.getTimeStamp().getEncoded("DER");
 
@@ -75,6 +94,21 @@ public class ArchiveTimeStampChainVerifier
         }
 
         throw new IllegalArgumentException("unknown object in getDataHash: " + data.getClass().getName());
+    }
+
+    private byte[] getDataGroupHash(final Object data) throws NoSuchAlgorithmException
+    {
+        final MessageDigest md = MessageDigest.getInstance(algorithmIdentifier.getAlgorithm().getId());
+        final Collection dataGroupHashes = (Collection) data;
+
+        byte[] concat = new byte[0];
+        Iterator iterator = dataGroupHashes.iterator();
+
+        while(iterator.hasNext()) {
+            concat = ByteUtils.concatenate(concat, (byte[]) iterator.next());
+        }
+
+        return md.digest(concat);
     }
 
     public void setArchiveTimeStampChain(ArchiveTimeStampChain archiveTimeStampChain)
