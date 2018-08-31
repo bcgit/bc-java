@@ -160,7 +160,9 @@ public class RegressionTest
         new GOST3412MacTest(),
         new GSKKDFTest(),
         new X25519Test(),
-        new X448Test()
+        new X448Test(),
+        new Ed25519Test(),
+        new Ed448Test()
     };
 
     public static void main(
