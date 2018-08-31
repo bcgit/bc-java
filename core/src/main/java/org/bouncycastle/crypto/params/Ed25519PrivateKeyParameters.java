@@ -12,6 +12,7 @@ public final class Ed25519PrivateKeyParameters
     extends AsymmetricKeyParameter
 {
     public static final int KEY_SIZE = Ed25519.SECRET_KEY_SIZE;
+    public static final int SIGNATURE_SIZE = Ed25519.SIGNATURE_SIZE;
 
     private final byte[] data = new byte[KEY_SIZE];
 
@@ -49,5 +50,51 @@ public final class Ed25519PrivateKeyParameters
         byte[] publicKey = new byte[Ed25519.PUBLIC_KEY_SIZE];
         Ed25519.generatePublicKey(data, 0, publicKey, 0);
         return new Ed25519PublicKeyParameters(publicKey, 0);
+    }
+
+    public void sign(int algorithm, Ed25519PublicKeyParameters publicKey, byte[] ctx, byte[] msg, int msgOff, int msgLen, byte[] sig, int sigOff)
+    {
+        byte[] pk = new byte[Ed25519.PUBLIC_KEY_SIZE];
+        if (null == publicKey)
+        {
+            Ed25519.generatePublicKey(data, 0, pk, 0);
+        }
+        else
+        {
+            publicKey.encode(pk, 0);
+        }
+
+        switch (algorithm)
+        {
+        case Ed25519.Algorithm.Ed25519:
+        {
+            if (null != ctx)
+            {
+                throw new IllegalArgumentException("ctx");
+            }
+
+            Ed25519.sign(data, 0, pk, 0, msg, msgOff, msgLen, sig, sigOff);
+            break;
+        }
+        case Ed25519.Algorithm.Ed25519ctx:
+        {
+            Ed25519.sign(data, 0, pk, 0, ctx, msg, msgOff, msgLen, sig, sigOff);
+            break;
+        }
+        case Ed25519.Algorithm.Ed25519ph:
+        {
+            if (Ed25519.PREHASH_SIZE != msgLen)
+            {
+                throw new IllegalArgumentException("msgLen");
+            }
+
+            Ed25519.signPrehash(data, 0, pk, 0, ctx, msg, msgOff, sig, sigOff);
+            break;
+        }
+        default:
+        {
+            throw new IllegalArgumentException("algorithm");
+        }
+        }
     }
 }

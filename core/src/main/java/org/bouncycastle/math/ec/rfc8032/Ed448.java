@@ -9,6 +9,12 @@ import org.bouncycastle.util.Strings;
 
 public abstract class Ed448
 {
+    public final class Algorithm
+    {
+        public static final int Ed448 = 0;
+        public static final int Ed448ph = 1;
+    }
+
     private static final long M26L = 0x03FFFFFFL;
     private static final long M28L = 0x0FFFFFFFL;
     private static final long M32L = 0xFFFFFFFFL;
