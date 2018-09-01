@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.ElGamalParameter;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.DHParameter;
@@ -157,23 +158,19 @@ public class PrivateKeyFactory
 
             return new ECPrivateKeyParameters(d, dParams);
         }
-        // TODO[RFC 8422]
-        else if (algOID.equals(new ASN1ObjectIdentifier("1.3.101.110")))
+        else if (algOID.equals(EdECObjectIdentifiers.id_X25519))
         {
             return new X25519PrivateKeyParameters(getRawKey(keyInfo), 0);
         }
-        // TODO[RFC 8422]
-        else if (algOID.equals(new ASN1ObjectIdentifier("1.3.101.111")))
+        else if (algOID.equals(EdECObjectIdentifiers.id_X448))
         {
             return new X448PrivateKeyParameters(getRawKey(keyInfo), 0);
         }
-        // TODO[RFC 8422]
-        else if (algOID.equals(new ASN1ObjectIdentifier("1.3.101.112")))
+        else if (algOID.equals(EdECObjectIdentifiers.id_Ed25519))
         {
             return new Ed25519PrivateKeyParameters(getRawKey(keyInfo), 0);
         }
-        // TODO[RFC 8422]
-        else if (algOID.equals(new ASN1ObjectIdentifier("1.3.101.113")))
+        else if (algOID.equals(EdECObjectIdentifiers.id_Ed448))
         {
             return new Ed448PrivateKeyParameters(getRawKey(keyInfo), 0);
         }
@@ -185,6 +182,6 @@ public class PrivateKeyFactory
 
     private static byte[] getRawKey(PrivateKeyInfo keyInfo) throws IOException
     {
-        return ((ASN1OctetString)keyInfo.parsePrivateKey()).getOctets();
+        return ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
     }
 }
