@@ -995,8 +995,9 @@ public abstract class Ed448
                 int w = 0;
                 for (int t = 0; t < PRECOMP_TEETH; ++t)
                 {
-                    int tBit = (n[tPos >>> 5] >>> (tPos & 0x1F)) & 1;
-                    w |= tBit << t;
+                    int tBit = (n[tPos >>> 5] >>> (tPos & 0x1F));
+                    w &= ~(1 << t);
+                    w |= (tBit << t);
                     tPos += PRECOMP_SPACING;
                 }
 
