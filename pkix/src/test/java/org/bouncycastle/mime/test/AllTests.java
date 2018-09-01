@@ -38,7 +38,8 @@ public class AllTests
         suite.addTestSuite(MultipartParserTest.class);
         suite.addTestSuite(QuotedPrintableTest.class);
         suite.addTestSuite(TestBoundaryLimitedInputStream.class);
-        suite.addTestSuite(TestSMIMEEnvelope.class);
+        suite.addTestSuite(TestSMIMEEnveloped.class);
+        suite.addTestSuite(TestSMIMESigned.class);
 
         return new MIMETestSetup(suite);
     }

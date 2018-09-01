@@ -58,7 +58,9 @@ public abstract class SMimeParserListener
                     hashes.put(digestCalculators[i].getAlgorithmIdentifier().getAlgorithm(), digestCalculators[i].getDigest());
                 }
 
-                CMSSignedData signedData = new CMSSignedData(hashes, Streams.readAll(inputStream));
+                byte[] sigBlock = Streams.readAll(inputStream);
+
+                CMSSignedData signedData = new CMSSignedData(hashes, sigBlock);
 
                 signedData(parserContext, headers, signedData.getCertificates(), signedData.getCRLs(), signedData.getAttributeCertificates(), signedData.getSignerInfos());
             }
