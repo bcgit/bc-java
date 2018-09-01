@@ -275,7 +275,7 @@ public class SMIMESignedWriter
              StringBuffer header,
              String boundary)
         {
-             header.append(";boundary=\"");
+             header.append(";\r\n\tboundary=\"");
              header.append(boundary);
              header.append("\"");
         }
