@@ -155,7 +155,7 @@ public class DSASigner
     protected Object engineGetParameter(
         String      param)
     {
-        throw new UnsupportedOperationException("engineSetParameter unsupported");
+        throw new UnsupportedOperationException("engineGetParameter unsupported");
     }
 
     private byte[] derEncode(

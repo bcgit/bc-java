@@ -32,6 +32,12 @@ public class EdEC
             provider.addAlgorithm("KeyFactory.XDH", PREFIX + "KeyFactorySpi$XDH");
             provider.addAlgorithm("KeyFactory.EDDSA", PREFIX + "KeyFactorySpi$EDDSA");
 
+            provider.addAlgorithm("Signature.EDDSA", PREFIX + "SignatureSpi$EdDSA");
+            provider.addAlgorithm("Signature.ED448", PREFIX + "SignatureSpi$Ed448");
+            provider.addAlgorithm("Signature.ED25519", PREFIX + "SignatureSpi$Ed25519");
+            provider.addAlgorithm("Signature", EdECObjectIdentifiers.id_Ed448, PREFIX + "SignatureSpi$Ed448");
+            provider.addAlgorithm("Signature", EdECObjectIdentifiers.id_Ed25519, PREFIX + "SignatureSpi$Ed25519");
+
             registerOid(provider, EdECObjectIdentifiers.id_X448, "XDH", new KeyFactorySpi("XDH"));
             registerOid(provider, EdECObjectIdentifiers.id_X25519, "XDH", new KeyFactorySpi("XDH"));
             registerOid(provider, EdECObjectIdentifiers.id_Ed448, "EDDSA", new KeyFactorySpi("EdDSA"));

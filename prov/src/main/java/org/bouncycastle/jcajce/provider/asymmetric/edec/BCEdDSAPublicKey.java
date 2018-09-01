@@ -2,7 +2,6 @@ package org.bouncycastle.jcajce.provider.asymmetric.edec;
 
 import java.io.IOException;
 import java.security.PublicKey;
-import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -51,8 +50,8 @@ public class BCEdDSAPublicKey
         }
     }
 
-    public AlgorithmParameterSpec getParams()
+    AsymmetricKeyParameter engineGetKeyParameters()
     {
-        return null;
+        return eddsaPublicKey;
     }
 }
