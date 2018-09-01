@@ -9,7 +9,6 @@ import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * table of the available named parameters for GOST 3410-2001 / 2012.
@@ -245,10 +244,5 @@ public class ECGOST3410NamedCurves
     public static ASN1ObjectIdentifier getOID(String name)
     {
         return (ASN1ObjectIdentifier)objIds.get(name);
-    }
-
-    public static void main(String[] args)
-    {
-          System.err.println(new BigInteger(1, Hex.decode("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFD97")));
     }
 }
