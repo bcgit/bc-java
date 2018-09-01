@@ -16,6 +16,9 @@ import org.bouncycastle.mime.encoding.Base64OutputStream;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.util.Strings;
 
+/**
+ * Writer for SMIME Enveloped objects.
+ */
 public class SMIMEEnvelopedWriter
     extends MimeWriter
 {
@@ -162,7 +165,6 @@ public class SMIMEEnvelopedWriter
             this.backing = backing;
         }
 
-        @Override
         public void write(int i)
             throws IOException
         {
