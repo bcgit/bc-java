@@ -22,11 +22,11 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.util.BigIntegers;
 
 /**
- *  RFC 5958
- * 
- *  <pre>
+ * RFC 5958
+ *
+ * <pre>
  *  [IMPLICIT TAGS]
- *  
+ *
  *  OneAsymmetricKey ::= SEQUENCE {
  *      version                   Version,
  *      privateKeyAlgorithm       PrivateKeyAlgorithmIdentifier,
@@ -36,9 +36,9 @@ import org.bouncycastle.util.BigIntegers;
  *      [[2: publicKey        [1] PublicKey OPTIONAL ]],
  *      ...
  *  }
- * 
+ *
  *  PrivateKeyInfo ::= OneAsymmetricKey
- *  
+ *
  *  Version ::= INTEGER { v1(0), v2(1) } (v1, ..., v2)
  *
  *  PrivateKeyAlgorithmIdentifier ::= AlgorithmIdentifier
@@ -61,11 +61,11 @@ import org.bouncycastle.util.BigIntegers;
 public class PrivateKeyInfo
     extends ASN1Object
 {
-    private ASN1Integer             version;
-    private AlgorithmIdentifier     privateKeyAlgorithm;
-    private ASN1OctetString         privateKey;
-    private ASN1Set                 attributes;
-    private ASN1BitString           publicKey;
+    private ASN1Integer version;
+    private AlgorithmIdentifier privateKeyAlgorithm;
+    private ASN1OctetString privateKey;
+    private ASN1Set attributes;
+    private ASN1BitString publicKey;
 
     public static PrivateKeyInfo getInstance(ASN1TaggedObject obj, boolean explicit)
     {
@@ -98,7 +98,7 @@ public class PrivateKeyInfo
 
     public PrivateKeyInfo(
         AlgorithmIdentifier privateKeyAlgorithm,
-        ASN1Encodable       privateKey)
+        ASN1Encodable privateKey)
         throws IOException
     {
         this(privateKeyAlgorithm, privateKey, null, null);
@@ -106,8 +106,8 @@ public class PrivateKeyInfo
 
     public PrivateKeyInfo(
         AlgorithmIdentifier privateKeyAlgorithm,
-        ASN1Encodable       privateKey,
-        ASN1Set             attributes)
+        ASN1Encodable privateKey,
+        ASN1Set attributes)
         throws IOException
     {
         this(privateKeyAlgorithm, privateKey, attributes, null);
@@ -115,9 +115,9 @@ public class PrivateKeyInfo
 
     public PrivateKeyInfo(
         AlgorithmIdentifier privateKeyAlgorithm,
-        ASN1Encodable       privateKey,
-        ASN1Set             attributes,
-        ASN1Encodable       publicKey)
+        ASN1Encodable privateKey,
+        ASN1Set attributes,
+        byte[] publicKey)
         throws IOException
     {
         this.version = new ASN1Integer(publicKey != null ? BigIntegers.ONE : BigIntegers.ZERO);
@@ -131,7 +131,7 @@ public class PrivateKeyInfo
     {
         Enumeration e = seq.getObjects();
 
-        this.version = (ASN1Integer)e.nextElement();
+        this.version = ASN1Integer.getInstance(e.nextElement());
 
         int versionValue = getVersionValue(version);
 
@@ -192,10 +192,38 @@ public class PrivateKeyInfo
         return ASN1Primitive.fromByteArray(privateKey.getOctets());
     }
 
-    public ASN1Primitive parsePublicKey()
+    /**
+     * Return true if a public key is present, false otherwise.
+     *
+     * @return true if public included, otherwise false.
+     */
+    public boolean hasPublicKey()
+    {
+        return publicKey != null;
+    }
+
+    /**
+     * for when the public key is an encoded object - if the bitstring
+     * can't be decoded this routine throws an IOException.
+     *
+     * @return the public key as an ASN.1 primitive.
+     * @throws IOException - if the bit string doesn't represent a DER
+     * encoded object.
+     */
+    public ASN1Encodable parsePublicKey()
         throws IOException
     {
         return publicKey == null ? null : ASN1Primitive.fromByteArray(publicKey.getOctets());
+    }
+
+    /**
+     * for when the public key is raw bits.
+     *
+     * @return the public key as the raw bit string...
+     */
+    public ASN1BitString getPublicKeyData()
+    {
+        return publicKey;
     }
 
     public ASN1Primitive toASN1Primitive()
