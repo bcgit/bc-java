@@ -2,6 +2,7 @@ package org.bouncycastle.cms;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -15,6 +16,7 @@ import org.bouncycastle.asn1.BERTaggedObject;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.SignerInfo;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
  * General class for generating a pkcs7-signature message stream.
@@ -188,14 +190,16 @@ public class CMSSignedDataStreamGenerator
         sigGen.addObject(calculateVersion(eContentType));
         
         ASN1EncodableVector  digestAlgs = new ASN1EncodableVector();
-        
+
         //
         // add the precalculated SignerInfo digest algorithms.
         //
         for (Iterator it = _signers.iterator(); it.hasNext();)
         {
             SignerInformation signer = (SignerInformation)it.next();
-            digestAlgs.add(CMSSignedHelper.INSTANCE.fixAlgID(signer.getDigestAlgorithmID()));
+            AlgorithmIdentifier digAlg = CMSSignedHelper.INSTANCE.fixAlgID(signer.getDigestAlgorithmID());
+
+            digestAlgs.add(digAlg);
         }
         
         //
@@ -226,6 +230,40 @@ public class CMSSignedDataStreamGenerator
         OutputStream sigStream = CMSUtils.attachSignersToOutputStream(signerGens, contentStream);
 
         return new CmsSignedDataOutputStream(sigStream, eContentType, sGen, sigGen, eiGen);
+    }
+
+    /**
+     * Return a list of the current Digest AlgorithmIdentifiers applying to the next signature.
+     *
+     * @return a list of the Digest AlgorithmIdentifiers
+     */
+    public List<AlgorithmIdentifier> getDigestAlgorithms()
+    {
+        List  digestAlorithms = new ArrayList();
+
+        //
+        // add the precalculated SignerInfo digest algorithms.
+        //
+        for (Iterator it = _signers.iterator(); it.hasNext();)
+        {
+            SignerInformation signer = (SignerInformation)it.next();
+            AlgorithmIdentifier digAlg = CMSSignedHelper.INSTANCE.fixAlgID(signer.getDigestAlgorithmID());
+
+            digestAlorithms.add(digAlg);
+        }
+
+        //
+        // add the new digests
+        //
+
+        for (Iterator it = signerGens.iterator(); it.hasNext();)
+        {
+            SignerInfoGenerator signerGen = (SignerInfoGenerator)it.next();
+
+            digestAlorithms.add(signerGen.getDigestAlgorithm());
+        }
+
+       return digestAlorithms;
     }
 
     // RFC3852, section 5.1:

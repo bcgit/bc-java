@@ -1,6 +1,5 @@
 package org.bouncycastle.mime.test;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,8 +36,9 @@ import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.io.Streams;
 
-public class TestSMIMEEnvelope
+public class TestSMIMEEnveloped
     extends TestCase
 {
     private static final String BC = BouncyCastleProvider.PROVIDER_NAME;
@@ -97,7 +97,7 @@ public class TestSMIMEEnvelope
 
         MimeParserProvider provider = new SMimeParserProvider("7bit", new BcDigestCalculatorProvider());
 
-        MimeParser p = provider.createParser(inputStream);
+        MimeParser p = provider.createParser(new ReadOnceInputStream(Streams.readAll(inputStream)));
 
         final AtomicBoolean dataParsed = new AtomicBoolean(false);
 
@@ -146,7 +146,7 @@ public class TestSMIMEEnvelope
 
         MimeParserProvider provider = new SMimeParserProvider("7bit", new BcDigestCalculatorProvider());
 
-        MimeParser p = provider.createParser(new ByteArrayInputStream(bOut.toByteArray()));
+        MimeParser p = provider.createParser(new ReadOnceInputStream(bOut.toByteArray()));
 
         p.parse(new SMimeParserListener()
         {

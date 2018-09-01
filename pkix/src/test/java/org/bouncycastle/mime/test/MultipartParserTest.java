@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import junit.framework.TestCase;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -140,12 +141,12 @@ public class MultipartParserTest
         TestCase.assertEquals("{boundary=\"cats\", micalg=\"\"}", headers.getContentTypeAttributes().toString());
     }
 
-
-
     public void testSignedMultipart()
         throws Exception
     {
         final ArrayList<Object> results = new ArrayList<Object>();
+
+        final AtomicBoolean dataParsed = new AtomicBoolean(false);
 
         MimeParserProvider provider = new SMimeParserProvider("7bit", new BcDigestCalculatorProvider());
 
@@ -192,9 +193,13 @@ public class MultipartParserTest
                         e.printStackTrace();
                     }
                 }
+
+                dataParsed.set(true);
             }
 
         });
+
+        assertTrue(dataParsed.get());
     }
 
     public void testInvalidSha256SignedMultipart()

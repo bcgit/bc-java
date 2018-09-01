@@ -83,7 +83,7 @@ public class Headers
         if (parameterIndex < 0)
         {
             contentType = contentTypeHeader;
-            contentTypeParameters = Collections.emptyMap();
+            contentTypeParameters = Collections.EMPTY_MAP;
         }
         else
         {
@@ -167,7 +167,7 @@ public class Headers
         synchronized (this)
         {
             KV kv = new KV(field, value);
-            List<KV> list = headers.get(field);
+            List<KV> list = (List<KV>)headers.get(field);
             if (list == null)
             {
                 list = new ArrayList<KV>();
@@ -187,7 +187,7 @@ public class Headers
 
         synchronized (this)
         {
-            List<KV> kvList = headers.get(header);
+            List<KV> kvList = (List<KV>)headers.get(header);
             if (kvList == null)
             {
                 return null;
@@ -196,7 +196,7 @@ public class Headers
 
             for (int t = 0; t < kvList.size(); t++)
             {
-                out[t] = kvList.get(t).value;
+                out[t] = ((KV)kvList.get(t)).value;
             }
 
             return out;

@@ -2,6 +2,7 @@ package org.bouncycastle.mime.smime;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -12,8 +13,6 @@ import org.bouncycastle.util.Strings;
 
 class SMimeUtils
 {
-
-
     private static final Map RFC5751_MICALGS;
     private static final Map RFC3851_MICALGS;
     private static final Map STANDARD_MICALGS;
@@ -62,13 +61,15 @@ class SMimeUtils
 
         Map<String, ASN1ObjectIdentifier> mic = new TreeMap<String, ASN1ObjectIdentifier>(String.CASE_INSENSITIVE_ORDER);
 
-        for (Object key : STANDARD_MICALGS.keySet())
+        for (Iterator it = STANDARD_MICALGS.keySet().iterator(); it.hasNext();)
         {
+            Object key = it.next();
             mic.put(STANDARD_MICALGS.get(key).toString(), (ASN1ObjectIdentifier)key);
         }
 
-        for (Object key : RFC3851_MICALGS.keySet())
+        for (Iterator it = RFC3851_MICALGS.keySet().iterator(); it.hasNext();)
         {
+            Object key = it.next();
             mic.put(RFC3851_MICALGS.get(key).toString(), (ASN1ObjectIdentifier)key);
         }
 
@@ -93,8 +94,9 @@ class SMimeUtils
 
     static String getParameter(String startsWith, List<String> parameters)
     {
-        for (String param : parameters)
+        for (Iterator<String> paramIt = parameters.iterator(); paramIt.hasNext(); )
         {
+            String param = (String)paramIt.next();
             if (param.startsWith(startsWith))
             {
                 return param;
