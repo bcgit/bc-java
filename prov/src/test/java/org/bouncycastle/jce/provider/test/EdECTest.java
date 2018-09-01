@@ -1,6 +1,8 @@
 package org.bouncycastle.jce.provider.test;
 
 import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Security;
@@ -8,8 +10,11 @@ import java.security.Signature;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
+import javax.crypto.KeyAgreement;
+
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -67,6 +72,83 @@ public class EdECTest
         sig.update(x25519Cert.getTBSCertificate().getEncoded());
 
         isTrue(sig.verify(x25519Cert.getSignature().getBytes()));
+
+        x448AgreementTest();
+        x25519AgreementTest();
+        ed448SignatureTest();
+        ed25519SignatureTest();
+    }
+
+    private void x448AgreementTest()
+        throws Exception
+    {
+        agreementTest("X448");
+    }
+
+    private void x25519AgreementTest()
+        throws Exception
+    {
+        agreementTest("X25519");
+    }
+
+    private void ed448SignatureTest()
+        throws Exception
+    {
+        signatureTest("Ed448");
+    }
+
+    private void ed25519SignatureTest()
+        throws Exception
+    {
+        signatureTest("Ed25519");
+    }
+
+    private void agreementTest(String algorithm)
+        throws Exception
+    {
+        KeyAgreement keyAgreement = KeyAgreement.getInstance(algorithm, "BC");
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance(algorithm, "BC");
+
+        KeyPair kp1 = kpGen.generateKeyPair();
+        KeyPair kp2 = kpGen.generateKeyPair();
+
+        keyAgreement.init(kp1.getPrivate());
+
+        keyAgreement.doPhase(kp2.getPublic(), true);
+
+        byte[] sec1 = keyAgreement.generateSecret();
+
+        keyAgreement.init(kp2.getPrivate());
+
+        keyAgreement.doPhase(kp1.getPublic(), true);
+
+        byte[] sec2 = keyAgreement.generateSecret();
+
+        isTrue(areEqual(sec1, sec2));
+    }
+
+    private void signatureTest(String algorithm)
+        throws Exception
+    {
+        byte[] msg = Strings.toByteArray("Hello, world!");
+        Signature signature = Signature.getInstance(algorithm, "BC");
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance(algorithm, "BC");
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        signature.initSign(kp.getPrivate());
+
+        signature.update(msg);
+
+        byte[] sig = signature.sign();
+
+        signature.initVerify(kp.getPublic());
+
+        signature.update(msg);
+        
+        isTrue(signature.verify(sig));
     }
 
     public static void main(
