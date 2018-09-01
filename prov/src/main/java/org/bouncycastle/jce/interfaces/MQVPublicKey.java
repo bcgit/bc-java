@@ -4,6 +4,7 @@ import java.security.PublicKey;
 
 /**
  * Static/ephemeral public key pair for use with ECMQV key agreement
+ * @deprecated use MQVParameterSpec for passing the ephemeral key.
  */
 public interface MQVPublicKey
     extends PublicKey
