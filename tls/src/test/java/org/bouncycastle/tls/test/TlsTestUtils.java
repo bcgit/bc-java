@@ -218,6 +218,13 @@ public class TlsTestUtils
         short signatureAlgorithm) throws IOException
     {
         String sigName = SignatureAlgorithm.getName(signatureAlgorithm);
+
+        // TODO Maybe just change the resource names instead
+        if (SignatureAlgorithm.rsa == signatureAlgorithm)
+        {
+            sigName += "-sign";
+        }
+
         String certResource = "x509-server-" + sigName + ".pem";
         String keyResource = "x509-server-key-" + sigName + ".pem";
 
