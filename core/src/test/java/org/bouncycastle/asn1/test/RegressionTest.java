@@ -76,7 +76,8 @@ public class RegressionTest
         new PollReqContentTest(),
         new DhSigStaticTest(),
         new PKIPublicationInfoTest(),
-        new CertifiedKeyPairTest()
+        new CertifiedKeyPairTest(),
+        new PrivateKeyInfoTest()
     };
 
     public static void main(

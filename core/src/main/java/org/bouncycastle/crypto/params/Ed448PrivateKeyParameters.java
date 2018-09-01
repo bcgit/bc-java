@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.security.SecureRandom;
 
 import org.bouncycastle.math.ec.rfc8032.Ed448;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
 public final class Ed448PrivateKeyParameters
@@ -43,6 +44,11 @@ public final class Ed448PrivateKeyParameters
     public void encode(byte[] buf, int off)
     {
         System.arraycopy(data, 0, buf, off, KEY_SIZE);
+    }
+
+    public byte[] getEncoded()
+    {
+        return Arrays.clone(data);
     }
 
     public Ed448PublicKeyParameters generatePublicKey()

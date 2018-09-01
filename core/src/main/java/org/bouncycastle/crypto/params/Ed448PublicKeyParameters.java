@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.bouncycastle.math.ec.rfc8032.Ed448;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
 public final class Ed448PublicKeyParameters
@@ -38,6 +39,6 @@ public final class Ed448PublicKeyParameters
 
     public byte[] getEncoded()
     {
-        return data.clone();
+        return Arrays.clone(data);
     }
 }
