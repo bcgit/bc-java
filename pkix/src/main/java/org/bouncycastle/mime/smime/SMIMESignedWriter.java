@@ -3,6 +3,8 @@ package org.bouncycastle.mime.smime;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -180,7 +182,7 @@ public class SMIMESignedWriter
             }
             else
             {
-                boundary = "=----F64236F869294814A5429491E2A0401B";
+                boundary = generateBoundary();
 
                 // handle Content-Type specially
                 StringBuffer contValue = new StringBuffer(detValues[0]);
@@ -276,6 +278,13 @@ public class SMIMESignedWriter
              header.append(";boundary=\"");
              header.append(boundary);
              header.append("\"");
+        }
+
+        private String generateBoundary()
+        {
+            SecureRandom random = new SecureRandom();
+
+            return "==" + new BigInteger(180, random).setBit(179).toString(16) + "=";
         }
     }
 
