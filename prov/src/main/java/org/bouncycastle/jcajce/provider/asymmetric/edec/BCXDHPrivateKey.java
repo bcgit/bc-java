@@ -54,7 +54,8 @@ public class BCXDHPrivateKey
     {
         try
         {
-            PrivateKeyInfo privInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(xdhPrivateKey, ASN1Set.getInstance(attributes));
+            ASN1Set attrSet = ASN1Set.getInstance(attributes);
+            PrivateKeyInfo privInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(xdhPrivateKey, attrSet);
 
             if (hasPublicKey)
             {
@@ -62,7 +63,7 @@ public class BCXDHPrivateKey
             }
             else
             {
-                return new PrivateKeyInfo(privInfo.getPrivateKeyAlgorithm(), privInfo.parsePrivateKey(), ASN1Set.getInstance(attributes)).getEncoded();
+                return new PrivateKeyInfo(privInfo.getPrivateKeyAlgorithm(), privInfo.parsePrivateKey(), attrSet).getEncoded();
             }
         }
         catch (IOException e)
