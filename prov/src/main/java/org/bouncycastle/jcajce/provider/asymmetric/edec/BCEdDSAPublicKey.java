@@ -16,6 +16,11 @@ public class BCEdDSAPublicKey
 {
     private transient AsymmetricKeyParameter eddsaPublicKey;
 
+    BCEdDSAPublicKey(AsymmetricKeyParameter pubKey)
+    {
+        this.eddsaPublicKey = pubKey;
+    }
+
     BCEdDSAPublicKey(SubjectPublicKeyInfo keyInfo)
     {
         if (EdECObjectIdentifiers.id_Ed448.equals(keyInfo.getAlgorithm().getAlgorithm()))

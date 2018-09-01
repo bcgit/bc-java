@@ -2,7 +2,6 @@ package org.bouncycastle.jcajce.provider.asymmetric.edec;
 
 import java.io.IOException;
 import java.security.PublicKey;
-import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -16,6 +15,11 @@ public class BCXDHPublicKey
     implements XDHKey, PublicKey
 {
     private transient AsymmetricKeyParameter xdhPublicKey;
+
+    BCXDHPublicKey(AsymmetricKeyParameter pubKey)
+    {
+        this.xdhPublicKey = pubKey;
+    }
 
     BCXDHPublicKey(SubjectPublicKeyInfo keyInfo)
     {
@@ -51,8 +55,8 @@ public class BCXDHPublicKey
         }
     }
 
-    public AlgorithmParameterSpec getParams()
+    AsymmetricKeyParameter engineGetKeyParameters()
     {
-        return null;
+        return xdhPublicKey;
     }
 }

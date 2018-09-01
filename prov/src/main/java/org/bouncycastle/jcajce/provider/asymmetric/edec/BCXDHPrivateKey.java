@@ -2,7 +2,6 @@ package org.bouncycastle.jcajce.provider.asymmetric.edec;
 
 import java.io.IOException;
 import java.security.PrivateKey;
-import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -22,6 +21,13 @@ public class BCXDHPrivateKey
 
     private final boolean hasPublicKey;
     private final byte[] attributes;
+
+    BCXDHPrivateKey(AsymmetricKeyParameter privKey)
+    {
+        this.hasPublicKey = true;
+        this.attributes = null;
+        this.xdhPrivateKey = privKey;
+    }
 
     BCXDHPrivateKey(PrivateKeyInfo keyInfo)
         throws IOException
@@ -72,8 +78,8 @@ public class BCXDHPrivateKey
         }
     }
 
-    public AlgorithmParameterSpec getParams()
+    AsymmetricKeyParameter engineGetKeyParameters()
     {
-        return null;
+        return xdhPrivateKey;
     }
 }

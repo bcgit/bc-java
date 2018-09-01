@@ -23,6 +23,13 @@ public class BCEdDSAPrivateKey
     private final boolean hasPublicKey;
     private final byte[] attributes;
 
+    BCEdDSAPrivateKey(AsymmetricKeyParameter privKey)
+    {
+        this.hasPublicKey = true;
+        this.attributes = null;
+        this.eddsaPrivateKey = privKey;
+    }
+
     BCEdDSAPrivateKey(PrivateKeyInfo keyInfo)
         throws IOException
     {
