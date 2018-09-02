@@ -49,6 +49,15 @@ public class EdEC
             provider.addAlgorithm("KeyAgreement", EdECObjectIdentifiers.id_X448, PREFIX + "KeyAgreementSpi$X448");
             provider.addAlgorithm("KeyAgreement", EdECObjectIdentifiers.id_X25519, PREFIX + "KeyAgreementSpi$X25519");
 
+            provider.addAlgorithm("KeyAgreement.X25519WITHSHA256CKDF", PREFIX + "KeyAgreementSpi$X25519withSHA256CKDF");
+            provider.addAlgorithm("KeyAgreement.X448WITHSHA512CKDF", PREFIX + "KeyAgreementSpi$X448withSHA512CKDF");
+
+            provider.addAlgorithm("KeyAgreement.X25519WITHSHA256KDF", PREFIX + "KeyAgreementSpi$X25519withSHA256KDF");
+            provider.addAlgorithm("KeyAgreement.X448WITHSHA512KDF", PREFIX + "KeyAgreementSpi$X448withSHA512KDF");
+
+            provider.addAlgorithm("KeyAgreement.X25519UWITHSHA256KDF", PREFIX + "KeyAgreementSpi$X25519UwithSHA256KDF");
+            provider.addAlgorithm("KeyAgreement.X448UWITHSHA512KDF", PREFIX + "KeyAgreementSpi$X448UwithSHA512KDF");
+
             provider.addAlgorithm("KeyPairGenerator.X448", PREFIX + "KeyPairGeneratorSpi$X448");
             provider.addAlgorithm("KeyPairGenerator.X25519", PREFIX + "KeyPairGeneratorSpi$X25519");
             provider.addAlgorithm("KeyPairGenerator", EdECObjectIdentifiers.id_X448, PREFIX + "KeyPairGeneratorSpiSpi$X448");
