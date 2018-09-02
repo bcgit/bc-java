@@ -7,15 +7,19 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.Signature;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.KeyAgreement;
 
 import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.jcajce.spec.DHUParameterSpec;
+import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class EdECTest
@@ -77,6 +81,12 @@ public class EdECTest
         x25519AgreementTest();
         ed448SignatureTest();
         ed25519SignatureTest();
+        x448withCKDFTest();
+        x25519withCKDFTest();
+        x448withKDFTest();
+        x25519withKDFTest();
+        x448UwithKDFTest();
+        x25519UwithKDFTest();
     }
 
     private void x448AgreementTest()
@@ -89,6 +99,30 @@ public class EdECTest
         throws Exception
     {
         agreementTest("X25519");
+    }
+
+    private void x448withCKDFTest()
+        throws Exception
+    {
+        agreementTest("X448withSHA512CKDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
+    }
+
+    private void x25519withCKDFTest()
+        throws Exception
+    {
+        agreementTest("X25519withSHA256CKDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
+    }
+
+    private void x448withKDFTest()
+        throws Exception
+    {
+        agreementTest("X448withSHA512KDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
+    }
+
+    private void x25519withKDFTest()
+        throws Exception
+    {
+        agreementTest("X25519withSHA256KDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
     }
 
     private void ed448SignatureTest()
@@ -106,9 +140,16 @@ public class EdECTest
     private void agreementTest(String algorithm)
         throws Exception
     {
+        agreementTest(algorithm, null);
+    }
+
+    private void agreementTest(String algorithm, AlgorithmParameterSpec spec)
+        throws Exception
+    {
         KeyAgreement keyAgreement = KeyAgreement.getInstance(algorithm, "BC");
 
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance(algorithm, "BC");
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance(
+                                    algorithm.startsWith("X448") ? "X448" : "X25519", "BC");
 
         KeyPair kp1 = kpGen.generateKeyPair();
         KeyPair kp2 = kpGen.generateKeyPair();
@@ -126,6 +167,73 @@ public class EdECTest
         byte[] sec2 = keyAgreement.generateSecret();
 
         isTrue(areEqual(sec1, sec2));
+
+        if (spec != null)
+        {
+            keyAgreement.init(kp1.getPrivate(), spec);
+
+            keyAgreement.doPhase(kp2.getPublic(), true);
+
+            byte[] sec3 = keyAgreement.generateSecret();
+
+            keyAgreement.init(kp2.getPrivate(), spec);
+
+            keyAgreement.doPhase(kp1.getPublic(), true);
+
+            byte[] sec4 = keyAgreement.generateSecret();
+
+            isTrue(areEqual(sec3, sec4));
+            isTrue(!areEqual(sec1, sec4));
+        }
+    }
+
+    private void x448UwithKDFTest()
+        throws Exception
+    {
+        unifiedAgreementTest("X448UwithSHA512KDF");
+    }
+
+    private void x25519UwithKDFTest()
+        throws Exception
+    {
+        unifiedAgreementTest("X25519UwithSHA256KDF");
+    }
+
+    private void unifiedAgreementTest(String algorithm)
+        throws Exception
+    {
+        KeyAgreement keyAgreement = KeyAgreement.getInstance(algorithm, "BC");
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance(
+                                    algorithm.startsWith("X448") ? "X448" : "X25519", "BC");
+
+        KeyPair aKp1 = kpGen.generateKeyPair();
+        KeyPair aKp2 = kpGen.generateKeyPair();
+
+        KeyPair bKp1 = kpGen.generateKeyPair();
+        KeyPair bKp2 = kpGen.generateKeyPair();
+
+        keyAgreement.init(aKp1.getPrivate(), new DHUParameterSpec(aKp2, bKp2.getPublic(), Hex.decode("beeffeed")));
+
+        keyAgreement.doPhase(bKp1.getPublic(), true);
+
+        byte[] sec1 = keyAgreement.generateSecret();
+
+        keyAgreement.init(bKp1.getPrivate(), new DHUParameterSpec(aKp2, bKp2.getPublic(), Hex.decode("beeffeed")));
+
+        keyAgreement.doPhase(aKp1.getPublic(), true);
+
+        byte[] sec2 = keyAgreement.generateSecret();
+
+        isTrue(areEqual(sec1, sec2));
+
+        keyAgreement.init(bKp1.getPrivate(), new DHUParameterSpec(aKp2, bKp2.getPublic(), Hex.decode("feed")));
+
+        keyAgreement.doPhase(aKp1.getPublic(), true);
+
+        byte[] sec3 = keyAgreement.generateSecret();
+
+        isTrue(!areEqual(sec1, sec3));
     }
 
     private void signatureTest(String algorithm)
