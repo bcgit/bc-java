@@ -17,6 +17,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.ElGamalParameter;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.DHParameter;
@@ -84,14 +85,10 @@ public class PublicKeyFactory
         converters.put(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512, new GOST3410_2012Converter());
         converters.put(UAObjectIdentifiers.dstu4145be, new DSTUConverter());
         converters.put(UAObjectIdentifiers.dstu4145le, new DSTUConverter());
-
-        // TODO[RFC 8422]
-        {
-            converters.put(new ASN1ObjectIdentifier("1.3.101.110"), new X25519Converter());
-            converters.put(new ASN1ObjectIdentifier("1.3.101.111"), new X448Converter());
-            converters.put(new ASN1ObjectIdentifier("1.3.101.112"), new Ed25519Converter());
-            converters.put(new ASN1ObjectIdentifier("1.3.101.113"), new Ed448Converter());
-        }
+        converters.put(EdECObjectIdentifiers.id_X25519, new X25519Converter());
+        converters.put(EdECObjectIdentifiers.id_X448, new X448Converter());
+        converters.put(EdECObjectIdentifiers.id_Ed25519, new Ed25519Converter());
+        converters.put(EdECObjectIdentifiers.id_Ed448, new Ed448Converter());
     }
 
     /**
