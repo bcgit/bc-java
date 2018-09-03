@@ -12,6 +12,16 @@ import org.bouncycastle.util.Arrays;
  */
 public class TlsImplUtils
 {
+    public static boolean isAllZeroes(byte[] bytes)
+    {
+        int bits = 0;
+        for (int i = 0; i < bytes.length; ++i)
+        {
+            bits |= bytes[i];
+        }
+        return bits == 0;
+    }
+
     public static boolean isTLSv11(ProtocolVersion version)
     {
         return ProtocolVersion.TLSv11.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion());
