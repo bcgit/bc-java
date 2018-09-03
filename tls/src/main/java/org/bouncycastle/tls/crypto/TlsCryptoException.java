@@ -8,6 +8,11 @@ import org.bouncycastle.tls.TlsException;
 public class TlsCryptoException
     extends TlsException
 {
+    public TlsCryptoException(String msg)
+    {
+        super(msg, null);
+    }
+
     public TlsCryptoException(String msg, Throwable cause)
     {
         super(msg, cause);
