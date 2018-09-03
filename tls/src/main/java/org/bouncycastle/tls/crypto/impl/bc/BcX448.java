@@ -7,6 +7,7 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsSecret;
+import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -50,12 +51,7 @@ public class BcX448 implements TlsAgreement
         Arrays.fill(privateKey, (byte)0);
         Arrays.fill(peerPublicKey, (byte)0);
 
-        int bits = 0;
-        for (int i = 0; i < 56; ++i)
-        {
-            bits |= secret[i];
-        }
-        if (bits == 0)
+        if (TlsImplUtils.isAllZeroes(secret))
         {
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }

@@ -388,13 +388,6 @@ public class JcaTlsCrypto
 
     public boolean hasNamedGroup(int namedGroup)
     {
-        switch (namedGroup)
-        {
-        case NamedGroup.x25519:
-        case NamedGroup.x448:
-            return false;
-        }
-
         // TODO[tls] Actually check for DH support for the individual groups
         if (NamedGroup.refersToASpecificFiniteField(namedGroup))
         {
@@ -406,8 +399,8 @@ public class JcaTlsCrypto
             return false;
         }
 
-        String curveName = NamedGroup.getName(namedGroup);
-        if (curveName == null)
+        String groupName = NamedGroup.getName(namedGroup);
+        if (groupName == null)
         {
             return false;
         }
@@ -423,7 +416,38 @@ public class JcaTlsCrypto
             }
         }
 
-        boolean result = isCurveSupported(curveName);
+        boolean result = true;
+        try
+        {
+            switch (namedGroup)
+            {
+            case NamedGroup.x25519:
+            {
+//                helper.createKeyFactory("X25519");
+                helper.createKeyFactory("XDH");
+                helper.createKeyPairGenerator("X25519");
+                helper.createKeyAgreement("X25519");
+                break;
+            }
+            case NamedGroup.x448:
+            {
+//                helper.createKeyFactory("X448");
+                helper.createKeyFactory("XDH");
+                helper.createKeyPairGenerator("X448");
+                helper.createKeyAgreement("X448");
+                break;
+            }
+            default:
+            {
+                result &= isCurveSupported(groupName);
+                break;
+            }
+            }
+        }
+        catch (GeneralSecurityException e)
+        {
+            result = false;
+        }
 
         synchronized (supportedGroups)
         {
@@ -519,7 +543,15 @@ public class JcaTlsCrypto
 
     public TlsECDomain createECDomain(TlsECConfig ecConfig)
     {
-        return new JceTlsECDomain(this, ecConfig);
+        switch (ecConfig.getNamedGroup())
+        {
+        case NamedGroup.x25519:
+            return new JceX25519Domain(this);
+        case NamedGroup.x448:
+            return new JceX448Domain(this);
+        default:
+            return new JceTlsECDomain(this, ecConfig);
+        }
     }
 
     public TlsEncryptor createEncryptor(TlsCertificate certificate)
