@@ -28,7 +28,6 @@ public class XDHUnifiedAgreement
         return xAgreement.getAgreementSize() * 2;
     }
 
-    @Override
     public void calculateAgreement(CipherParameters publicKey, byte[] buf, int off)
     {
         XDHUPublicParameters pubParams = (XDHUPublicParameters)publicKey;
