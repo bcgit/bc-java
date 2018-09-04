@@ -10,7 +10,6 @@ import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import junit.framework.TestCase;
 import org.bouncycastle.cms.CMSAlgorithm;
@@ -99,7 +98,7 @@ public class TestSMIMEEnveloped
 
         MimeParser p = provider.createParser(new ReadOnceInputStream(Streams.readAll(inputStream)));
 
-        final AtomicBoolean dataParsed = new AtomicBoolean(false);
+        final TestDoneFlag dataParsed = new TestDoneFlag();
 
         p.parse(new SMimeParserListener()
         {
@@ -113,11 +112,11 @@ public class TestSMIMEEnveloped
                 byte[] content = recipInfo.getContent(new JceKeyTransEnvelopedRecipient(loadKey("key.pem")));
                 assertTrue(org.bouncycastle.util.Arrays.areEqual(testMessage, content));
 
-                dataParsed.set(true);
+                dataParsed.markDone();
             }
         });
 
-        assertTrue(dataParsed.get());
+        assertTrue(dataParsed.isDone());
     }
 
     public void testKeyTransAES128()
@@ -142,7 +141,7 @@ public class TestSMIMEEnveloped
         //
         // parse
         //
-        final AtomicBoolean dataParsed = new AtomicBoolean(false);
+        final TestDoneFlag dataParsed = new TestDoneFlag();
 
         MimeParserProvider provider = new SMimeParserProvider("7bit", new BcDigestCalculatorProvider());
 
@@ -160,11 +159,11 @@ public class TestSMIMEEnveloped
                 byte[] content = recipInfo.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()));
                 assertTrue(org.bouncycastle.util.Arrays.areEqual(testMessage, content));
 
-                dataParsed.set(true);
+                dataParsed.markDone();
             }
         });
 
-        assertTrue(dataParsed.get());
+        assertTrue(dataParsed.isDone());
     }
 
     private X509Certificate loadCert(String name)

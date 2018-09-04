@@ -158,7 +158,7 @@ public class ImplicitlyCaTest
 
         PrivateKeyInfo sInfo = PrivateKeyInfo.getInstance(new ASN1InputStream(bytes).readObject());
 
-        if (!sInfo.getAlgorithmId().getParameters().equals(DERNull.INSTANCE))
+        if (!sInfo.getPrivateKeyAlgorithm().getParameters().equals(DERNull.INSTANCE))
         {
             fail("private key parameters wrong");
         }
@@ -179,7 +179,7 @@ public class ImplicitlyCaTest
 
         SubjectPublicKeyInfo vInfo = SubjectPublicKeyInfo.getInstance(new ASN1InputStream(bytes).readObject());
 
-        if (!vInfo.getAlgorithmId().getParameters().equals(DERNull.INSTANCE))
+        if (!vInfo.getAlgorithm().getParameters().equals(DERNull.INSTANCE))
         {
             fail("public key parameters wrong");
         }
