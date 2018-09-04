@@ -31,7 +31,7 @@ public abstract class MimeWriter
 
         for (Iterator<String> it = headers.keySet().iterator(); it.hasNext();)
         {
-            String key = it.next();
+            String key = (String)it.next();
 
             hdrs.add(key + ": " + headers.get(key));
         }

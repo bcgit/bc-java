@@ -11,12 +11,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.bouncycastle.util.Iterable;
 import org.bouncycastle.util.Strings;
 
 public class Headers
     implements Iterable<String>
 {
-    private final Map<String, List<KV>> headers = new TreeMap<String, List<KV>>(String.CASE_INSENSITIVE_ORDER);
+    private final Map<String, List> headers = new TreeMap<String, List>(String.CASE_INSENSITIVE_ORDER);
     private final List<String> headersAsPresented;
     private final String contentTransferEncoding;
 
@@ -55,8 +56,9 @@ public class Headers
         this.headersAsPresented = headerLines;
 
         String header = "";
-        for (String line : headerLines)
+        for (Iterator it = headerLines.iterator(); it.hasNext();)
         {
+            String line = (String)it.next();
             if (line.startsWith(" ") || line.startsWith("\t"))
             {
                 header = header + line.trim();
@@ -93,10 +95,10 @@ public class Headers
 
         contentTransferEncoding = this.getValues("Content-Transfer-Encoding") == null ? defaultContentTransferEncoding : this.getValues("Content-Transfer-Encoding")[0];
 
-        if (contentType.contains("multipart"))
+        if (contentType.indexOf("multipart") >= 0)
         {
             multipart = true;
-            String bound = contentTypeParameters.get("boundary");
+            String bound = (String)contentTypeParameters.get("boundary");
             boundary = bound.substring(1, bound.length() - 1); // quoted-string
         }
         else
@@ -224,9 +226,9 @@ public class Headers
     public void dumpHeaders(OutputStream outputStream)
         throws IOException
     {
-        for (String line : headersAsPresented)
+        for (Iterator it = headersAsPresented.iterator(); it.hasNext();)
         {
-            outputStream.write(Strings.toUTF8ByteArray(line));
+            outputStream.write(Strings.toUTF8ByteArray(it.next().toString()));
             outputStream.write('\r');
             outputStream.write('\n');
         }

@@ -60,7 +60,7 @@ public class SMimeMultipartContext
         {
             Map<String, String> contentTypeFields = headers.getContentTypeAttributes();
 
-            String micalgs = contentTypeFields.get("micalg");
+            String micalgs = (String)contentTypeFields.get("micalg");
             if (micalgs == null)
             {
                 throw new IllegalStateException("No micalg field on content-type header");
