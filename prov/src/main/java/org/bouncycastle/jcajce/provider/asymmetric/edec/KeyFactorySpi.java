@@ -5,33 +5,44 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.interfaces.ECPrivateKey;
-import java.security.interfaces.ECPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
-import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jce.spec.ECParameterSpec;
-import org.bouncycastle.jce.spec.ECPrivateKeySpec;
-import org.bouncycastle.jce.spec.ECPublicKeySpec;
+import org.bouncycastle.util.encoders.Hex;
 
 public class KeyFactorySpi
     extends BaseKeyFactorySpi
     implements AsymmetricKeyInfoConverter
 {
+    static final byte[] x448Prefix = Hex.decode("3042300506032b656f033900");
+    static final byte[] x25519Prefix = Hex.decode("302a300506032b656e032100");
+    static final byte[] Ed448Prefix = Hex.decode("3043300506032b6571033a00");
+    static final byte[] Ed25519Prefix = Hex.decode("302a300506032b6570032100");
+
+    private static final byte x448_type = 0x6f;
+    private static final byte x25519_type = 0x6e;
+    private static final byte Ed448_type = 0x71;
+    private static final byte Ed25519_type = 0x70;
+
     String algorithm;
+    private final boolean isXdh;
+    private final int specificBase;
 
     public KeyFactorySpi(
-        String algorithm)
+        String algorithm,
+        boolean isXdh,
+        int     specificBase)
     {
         this.algorithm = algorithm;
+        this.isXdh = isXdh;
+        this.specificBase = specificBase;
     }
 
     protected Key engineTranslateKey(
@@ -46,65 +57,6 @@ public class KeyFactorySpi
         Class    spec)
     throws InvalidKeySpecException
     {
-       if (spec.isAssignableFrom(java.security.spec.ECPublicKeySpec.class) && key instanceof ECPublicKey)
-       {
-           ECPublicKey k = (ECPublicKey)key;
-           if (k.getParams() != null)
-           {
-               return new java.security.spec.ECPublicKeySpec(k.getW(), k.getParams());
-           }
-           else
-           {
-               ECParameterSpec implicitSpec = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
-
-               return new java.security.spec.ECPublicKeySpec(k.getW(), EC5Util.convertSpec(EC5Util.convertCurve(implicitSpec.getCurve(), implicitSpec.getSeed()), implicitSpec));
-           }
-       }
-       else if (spec.isAssignableFrom(java.security.spec.ECPrivateKeySpec.class) && key instanceof ECPrivateKey)
-       {
-           ECPrivateKey k = (ECPrivateKey)key;
-
-           if (k.getParams() != null)
-           {
-               return new java.security.spec.ECPrivateKeySpec(k.getS(), k.getParams());
-           }
-           else
-           {
-               ECParameterSpec implicitSpec = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
-
-               return new java.security.spec.ECPrivateKeySpec(k.getS(), EC5Util.convertSpec(EC5Util.convertCurve(implicitSpec.getCurve(), implicitSpec.getSeed()), implicitSpec)); 
-           }
-       }
-       else if (spec.isAssignableFrom(ECPublicKeySpec.class) && key instanceof ECPublicKey)
-       {
-           ECPublicKey k = (ECPublicKey)key;
-           if (k.getParams() != null)
-           {
-               return new ECPublicKeySpec(EC5Util.convertPoint(k.getParams(), k.getW(), false), EC5Util.convertSpec(k.getParams(), false));
-           }
-           else
-           {
-               ECParameterSpec implicitSpec = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
-
-               return new ECPublicKeySpec(EC5Util.convertPoint(k.getParams(), k.getW(), false), implicitSpec);
-           }
-       }
-       else if (spec.isAssignableFrom(ECPrivateKeySpec.class) && key instanceof ECPrivateKey)
-       {
-           ECPrivateKey k = (ECPrivateKey)key;
-
-           if (k.getParams() != null)
-           {
-               return new ECPrivateKeySpec(k.getS(), EC5Util.convertSpec(k.getParams(), false));
-           }
-           else
-           {
-               ECParameterSpec implicitSpec = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
-
-               return new ECPrivateKeySpec(k.getS(), implicitSpec);
-           }
-       }
-
        return super.engineGetKeySpec(key, spec);
     }
 
@@ -119,6 +71,28 @@ public class KeyFactorySpi
         KeySpec keySpec)
         throws InvalidKeySpecException
     {
+        if (keySpec instanceof X509EncodedKeySpec)
+        {
+            byte[] enc = ((X509EncodedKeySpec)keySpec).getEncoded();
+            // optimise if we can
+            if (specificBase == 0 || specificBase == enc[8])
+            {
+                switch (enc[8])
+                {
+                case x448_type:
+                    return new BCXDHPublicKey(x448Prefix, enc);
+                case x25519_type:
+                    return new BCXDHPublicKey(x25519Prefix, enc);
+                case Ed448_type:
+                    return new BCEdDSAPublicKey(Ed448Prefix, enc);
+                case Ed25519_type:
+                    return new BCEdDSAPublicKey(Ed25519Prefix, enc);
+                default:
+                    return super.engineGeneratePublic(keySpec);
+                }
+            }
+        }
+
         return super.engineGeneratePublic(keySpec);
     }
 
@@ -127,18 +101,30 @@ public class KeyFactorySpi
     {
         ASN1ObjectIdentifier algOid = keyInfo.getPrivateKeyAlgorithm().getAlgorithm();
 
-        if (algOid.equals(EdECObjectIdentifiers.id_X448) || algOid.equals(EdECObjectIdentifiers.id_X25519))
+        if (isXdh)
         {
-            return new BCXDHPrivateKey(keyInfo);
+            if ((specificBase == 0 || specificBase == x448_type) && algOid.equals(EdECObjectIdentifiers.id_X448))
+            {
+                return new BCXDHPrivateKey(keyInfo);
+            }
+            if ((specificBase == 0 || specificBase == x25519_type) && algOid.equals(EdECObjectIdentifiers.id_X25519))
+            {
+                return new BCXDHPrivateKey(keyInfo);
+            }
         }
         else if (algOid.equals(EdECObjectIdentifiers.id_Ed448) || algOid.equals(EdECObjectIdentifiers.id_Ed25519))
         {
-            return new BCEdDSAPrivateKey(keyInfo);
+            if ((specificBase == 0 || specificBase == Ed448_type) && algOid.equals(EdECObjectIdentifiers.id_Ed448))
+            {
+                return new BCEdDSAPrivateKey(keyInfo);
+            }
+            if ((specificBase == 0 || specificBase == Ed25519_type) && algOid.equals(EdECObjectIdentifiers.id_Ed25519))
+            {
+                return new BCEdDSAPrivateKey(keyInfo);
+            }
         }
-        else
-        {
-            throw new IOException("algorithm identifier " + algOid + " in key not recognised");
-        }
+
+        throw new IOException("algorithm identifier " + algOid + " in key not recognized");
     }
 
     public PublicKey generatePublic(SubjectPublicKeyInfo keyInfo)
@@ -146,18 +132,30 @@ public class KeyFactorySpi
     {
         ASN1ObjectIdentifier algOid = keyInfo.getAlgorithm().getAlgorithm();
 
-        if (algOid.equals(EdECObjectIdentifiers.id_X448) || algOid.equals(EdECObjectIdentifiers.id_X25519))
+        if (isXdh)
         {
-            return new BCXDHPublicKey(keyInfo);
+            if ((specificBase == 0 || specificBase == x448_type) && algOid.equals(EdECObjectIdentifiers.id_X448))
+            {
+                return new BCXDHPublicKey(keyInfo);
+            }
+            if ((specificBase == 0 || specificBase == x25519_type) && algOid.equals(EdECObjectIdentifiers.id_X25519))
+            {
+                return new BCXDHPublicKey(keyInfo);
+            }
         }
         else if (algOid.equals(EdECObjectIdentifiers.id_Ed448) || algOid.equals(EdECObjectIdentifiers.id_Ed25519))
         {
-            return new BCEdDSAPublicKey(keyInfo);
+            if ((specificBase == 0 || specificBase == Ed448_type) && algOid.equals(EdECObjectIdentifiers.id_Ed448))
+            {
+                return new BCEdDSAPublicKey(keyInfo);
+            }
+            if ((specificBase == 0 || specificBase == Ed25519_type) && algOid.equals(EdECObjectIdentifiers.id_Ed25519))
+            {
+                return new BCEdDSAPublicKey(keyInfo);
+            }
         }
-        else
-        {
-            throw new IOException("algorithm identifier " + algOid + " in key not recognised");
-        }
+
+        throw new IOException("algorithm identifier " + algOid + " in key not recognized");
     }
 
     public static class XDH
@@ -165,7 +163,25 @@ public class KeyFactorySpi
     {
         public XDH()
         {
-            super("XDH");
+            super("XDH", true, 0);
+        }
+    }
+
+    public static class X448
+        extends KeyFactorySpi
+    {
+        public X448()
+        {
+            super("X448", true, x448_type);
+        }
+    }
+
+    public static class X25519
+        extends KeyFactorySpi
+    {
+        public X25519()
+        {
+            super("X25519", true, x25519_type);
         }
     }
 
@@ -174,7 +190,25 @@ public class KeyFactorySpi
     {
         public EDDSA()
         {
-            super("EdDSA");
+            super("EdDSA", false, 0);
+        }
+    }
+
+    public static class ED448
+        extends KeyFactorySpi
+    {
+        public ED448()
+        {
+            super("Ed448", false, Ed448_type);
+        }
+    }
+
+    public static class ED25519
+        extends KeyFactorySpi
+    {
+        public ED25519()
+        {
+            super("Ed25519", false, Ed25519_type);
         }
     }
 }
