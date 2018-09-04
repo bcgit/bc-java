@@ -108,6 +108,11 @@ public class BCEdDSAPublicKey
         return eddsaPublicKey;
     }
 
+    public String toString()
+    {
+        return Utils.keyToString("Public Key", getAlgorithm(), eddsaPublicKey);
+    }
+
     public boolean equals(Object o)
     {
         if (o == this)

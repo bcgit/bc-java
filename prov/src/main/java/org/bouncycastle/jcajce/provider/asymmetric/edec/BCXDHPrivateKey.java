@@ -94,6 +94,20 @@ public class BCXDHPrivateKey
         return xdhPrivateKey;
     }
 
+    public String toString()
+    {
+        AsymmetricKeyParameter pubKey;
+        if (xdhPrivateKey instanceof X448PrivateKeyParameters)
+        {
+            pubKey = ((X448PrivateKeyParameters)xdhPrivateKey).generatePublicKey();
+        }
+        else
+        {
+            pubKey = ((X25519PrivateKeyParameters)xdhPrivateKey).generatePublicKey();
+        }
+        return Utils.keyToString("Private Key", getAlgorithm(), pubKey);
+    }
+
     public boolean equals(Object o)
     {
         if (o == this)
