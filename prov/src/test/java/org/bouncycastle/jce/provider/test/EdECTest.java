@@ -1,5 +1,11 @@
 package org.bouncycastle.jce.provider.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -8,11 +14,17 @@ import java.security.PublicKey;
 import java.security.Security;
 import java.security.Signature;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 import javax.crypto.KeyAgreement;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.jcajce.spec.DHUParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
@@ -49,7 +61,7 @@ public class EdECTest
     {
         return "EdEC";
     }
-    
+
     public void performTest()
         throws Exception
     {
@@ -87,6 +99,112 @@ public class EdECTest
         x25519withKDFTest();
         x448UwithKDFTest();
         x25519UwithKDFTest();
+
+        keyTest("X448");
+        keyTest("X25519");
+        keyTest("Ed448");
+        keyTest("Ed25519");
+
+        keyFactoryTest("X448", EdECObjectIdentifiers.id_X448);
+        keyFactoryTest("X25519", EdECObjectIdentifiers.id_X25519);
+        keyFactoryTest("Ed448", EdECObjectIdentifiers.id_Ed448);
+        keyFactoryTest("Ed25519", EdECObjectIdentifiers.id_Ed25519);
+    }
+
+    private void keyFactoryTest(String algorithm, ASN1ObjectIdentifier algOid)
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance(algorithm, "BC");
+        KeyFactory kFact = KeyFactory.getInstance((algorithm.startsWith("X") ? "XDH" : "EdDSA"), "BC");
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        Set<String> alts = new HashSet<String>();
+
+        alts.add("X448");
+        alts.add("X25519");
+        alts.add("Ed448");
+        alts.add("Ed25519");
+
+        alts.remove(algorithm);
+
+        PrivateKey k1 = kFact.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
+
+        checkEquals(algorithm, kp.getPrivate(), k1);
+
+        PublicKey k2 = kFact.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
+
+        checkEquals(algorithm, kp.getPublic(), k2);
+
+        for (Iterator<String> it = alts.iterator(); it.hasNext(); )
+        {
+            String altAlg = it.next();
+
+            kFact = KeyFactory.getInstance(altAlg, "BC");
+
+            try
+            {
+                k1 = kFact.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
+                fail("no exception");
+            }
+            catch (InvalidKeySpecException e)
+            {
+                isEquals("encoded key spec not recognized: algorithm identifier " + algOid.getId() + " in key not recognized", e.getMessage());
+            }
+
+            try
+            {
+                k2 = kFact.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
+                fail("no exception");
+            }
+            catch (InvalidKeySpecException e)
+            {
+                isEquals("encoded key spec not recognized: algorithm identifier " + algOid.getId() + " in key not recognized", e.getMessage());
+            }
+        }
+    }
+
+    private void keyTest(String algorithm)
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance(algorithm, "BC");
+
+        KeyFactory kFact = KeyFactory.getInstance(algorithm, "BC");
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        PrivateKey k1 = kFact.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
+
+        checkEquals(algorithm, kp.getPrivate(), k1);
+
+        PublicKey k2 = kFact.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
+
+        checkEquals(algorithm, kp.getPublic(), k2);
+
+        serializationTest(algorithm, kp.getPublic());
+        serializationTest(algorithm, kp.getPrivate());
+    }
+
+    private void checkEquals(String algorithm, Key ka, Key kb)
+    {
+        isEquals(algorithm + " check equals", ka, kb);
+        isEquals(algorithm + " check hashCode", ka.hashCode(), kb.hashCode());
+    }
+
+    private void serializationTest(String algorithm, Key key)
+        throws IOException, ClassNotFoundException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ObjectOutputStream oOut = new ObjectOutputStream(bOut);
+
+        oOut.writeObject(key);
+        oOut.close();
+
+        ObjectInputStream oIn = new ObjectInputStream(new ByteArrayInputStream(bOut.toByteArray()));
+
+        Key rk = (Key)oIn.readObject();
+
+        checkEquals(algorithm, key, rk);
     }
 
     private void x448AgreementTest()
@@ -149,7 +267,7 @@ public class EdECTest
         KeyAgreement keyAgreement = KeyAgreement.getInstance(algorithm, "BC");
 
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance(
-                                    algorithm.startsWith("X448") ? "X448" : "X25519", "BC");
+            algorithm.startsWith("X448") ? "X448" : "X25519", "BC");
 
         KeyPair kp1 = kpGen.generateKeyPair();
         KeyPair kp2 = kpGen.generateKeyPair();
@@ -205,7 +323,7 @@ public class EdECTest
         KeyAgreement keyAgreement = KeyAgreement.getInstance(algorithm, "BC");
 
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance(
-                                    algorithm.startsWith("X448") ? "X448" : "X25519", "BC");
+            algorithm.startsWith("X448") ? "X448" : "X25519", "BC");
 
         KeyPair aKp1 = kpGen.generateKeyPair();
         KeyPair aKp2 = kpGen.generateKeyPair();
@@ -255,12 +373,12 @@ public class EdECTest
         signature.initVerify(kp.getPublic());
 
         signature.update(msg);
-        
+
         isTrue(signature.verify(sig));
     }
 
     public static void main(
-        String[]    args)
+        String[] args)
     {
         Security.addProvider(new BouncyCastleProvider());
 
