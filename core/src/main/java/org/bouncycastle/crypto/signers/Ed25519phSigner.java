@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.math.ec.rfc8032.Ed25519;
+import org.bouncycastle.util.Arrays;
 
 public class Ed25519phSigner
     implements Signer
@@ -19,7 +20,7 @@ public class Ed25519phSigner
 
     public Ed25519phSigner(byte[] context)
     {
-        this.context = context.clone();
+        this.context = Arrays.clone(context);
     }
 
     public void init(boolean forSigning, CipherParameters parameters)

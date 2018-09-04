@@ -336,6 +336,18 @@ public final class Arrays
     }
 
     public static void fill(
+        byte[] array,
+        int start,
+        int finish,
+        byte value)
+    {
+        for (int i = start; i < finish; i++)
+        {
+            array[i] = value;
+        }
+    }
+
+    public static void fill(
         char[] array,
         char value)
     {
