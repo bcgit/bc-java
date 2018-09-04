@@ -71,6 +71,8 @@ public class EdECTest
 
         isTrue("pub failed", areEqual(pubEnc, pub.getEncoded()));
 
+        serializationTest("ref pub", pub);
+
         PrivateKey priv = kFact.generatePrivate(new PKCS8EncodedKeySpec(privEnc));
 
         isTrue("priv failed", areEqual(privEnc, priv.getEncoded()));
@@ -78,6 +80,8 @@ public class EdECTest
         priv = kFact.generatePrivate(new PKCS8EncodedKeySpec(privWithPubEnc));
 
         isTrue("priv with pub failed", areEqual(privWithPubEnc, priv.getEncoded()));
+
+        serializationTest("ref priv", priv);
 
         Signature sig = Signature.getInstance("EDDSA", "BC");
 
@@ -183,6 +187,14 @@ public class EdECTest
 
         serializationTest(algorithm, kp.getPublic());
         serializationTest(algorithm, kp.getPrivate());
+
+        String pubString = kp.getPublic().toString();
+        String privString = kp.getPrivate().toString();
+
+        isTrue(pubString.startsWith(algorithm + " Public Key ["));
+        isTrue(privString.startsWith(algorithm + " Private Key ["));
+        isTrue(privString.substring((algorithm + " Private Key [").length())
+            .equals(pubString.substring((algorithm + " Public Key [").length())));
     }
 
     private void checkEquals(String algorithm, Key ka, Key kb)
