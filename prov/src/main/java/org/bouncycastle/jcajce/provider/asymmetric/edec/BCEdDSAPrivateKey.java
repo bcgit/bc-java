@@ -94,6 +94,20 @@ public class BCEdDSAPrivateKey
         return eddsaPrivateKey;
     }
 
+    public String toString()
+    {
+        AsymmetricKeyParameter pubKey;
+        if (eddsaPrivateKey instanceof Ed448PrivateKeyParameters)
+        {
+            pubKey = ((Ed448PrivateKeyParameters)eddsaPrivateKey).generatePublicKey();
+        }
+        else
+        {
+            pubKey = ((Ed25519PrivateKeyParameters)eddsaPrivateKey).generatePublicKey();
+        }
+        return Utils.keyToString("Private Key", getAlgorithm(), pubKey);
+    }
+
     public boolean equals(Object o)
     {
         if (o == this)

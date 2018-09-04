@@ -68,6 +68,7 @@ public class BCXDHPublicKey
             xdhPublicKey = new X25519PublicKeyParameters(keyInfo.getPublicKeyData().getOctets(), 0);
         }
     }
+
     public String getAlgorithm()
     {
         return (xdhPublicKey instanceof X448PublicKeyParameters) ? "X448" : "X25519";
@@ -105,6 +106,11 @@ public class BCXDHPublicKey
     AsymmetricKeyParameter engineGetKeyParameters()
     {
         return xdhPublicKey;
+    }
+
+    public String toString()
+    {
+        return Utils.keyToString("Public Key", getAlgorithm(), xdhPublicKey);
     }
 
     public boolean equals(Object o)
