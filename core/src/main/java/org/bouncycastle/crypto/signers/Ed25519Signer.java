@@ -1,13 +1,13 @@
 package org.bouncycastle.crypto.signers;
 
 import java.io.ByteArrayOutputStream;
-import java.util.Arrays;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.math.ec.rfc8032.Ed25519;
+import org.bouncycastle.util.Arrays;
 
 public class Ed25519Signer
     implements Signer
