@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import junit.framework.TestCase;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -146,7 +145,7 @@ public class MultipartParserTest
     {
         final ArrayList<Object> results = new ArrayList<Object>();
 
-        final AtomicBoolean dataParsed = new AtomicBoolean(false);
+        final TestDoneFlag dataParsed = new TestDoneFlag();
 
         MimeParserProvider provider = new SMimeParserProvider("7bit", new BcDigestCalculatorProvider());
 
@@ -193,12 +192,12 @@ public class MultipartParserTest
                     }
                 }
 
-                dataParsed.set(true);
+                dataParsed.markDone();
             }
 
         });
 
-        assertTrue(dataParsed.get());
+        assertTrue(dataParsed.isDone());
     }
 
     public void testInvalidSha256SignedMultipart()
