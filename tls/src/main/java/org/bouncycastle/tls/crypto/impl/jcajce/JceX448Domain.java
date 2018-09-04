@@ -71,8 +71,7 @@ public class JceX448Domain implements TlsECDomain
             SubjectPublicKeyInfo spki = new SubjectPublicKeyInfo(algID, encoding);
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(spki.getEncoded(ASN1Encoding.DER));
 
-//            KeyFactory kf = crypto.getHelper().createKeyFactory("X448");
-            KeyFactory kf = crypto.getHelper().createKeyFactory("XDH");
+            KeyFactory kf = crypto.getHelper().createKeyFactory("X448");
             return kf.generatePublic(keySpec);
         }
         catch (Exception e)
