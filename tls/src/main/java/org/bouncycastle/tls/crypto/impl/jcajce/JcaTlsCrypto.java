@@ -423,16 +423,14 @@ public class JcaTlsCrypto
             {
             case NamedGroup.x25519:
             {
-//                helper.createKeyFactory("X25519");
-                helper.createKeyFactory("XDH");
+                helper.createKeyFactory("X25519");
                 helper.createKeyPairGenerator("X25519");
                 helper.createKeyAgreement("X25519");
                 break;
             }
             case NamedGroup.x448:
             {
-//                helper.createKeyFactory("X448");
-                helper.createKeyFactory("XDH");
+                helper.createKeyFactory("X448");
                 helper.createKeyPairGenerator("X448");
                 helper.createKeyAgreement("X448");
                 break;

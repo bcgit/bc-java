@@ -71,8 +71,7 @@ public class JceX25519Domain implements TlsECDomain
             SubjectPublicKeyInfo spki = new SubjectPublicKeyInfo(algID, encoding);
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(spki.getEncoded(ASN1Encoding.DER));
 
-//            KeyFactory kf = crypto.getHelper().createKeyFactory("X25519");
-            KeyFactory kf = crypto.getHelper().createKeyFactory("XDH");
+            KeyFactory kf = crypto.getHelper().createKeyFactory("X25519");
             return kf.generatePublic(keySpec);
         }
         catch (Exception e)
