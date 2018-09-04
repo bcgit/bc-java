@@ -23,7 +23,6 @@ import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
@@ -102,13 +101,13 @@ public class JcaTlsCertificate
         switch (signatureAlgorithm)
         {
         case SignatureAlgorithm.dsa:
-            return new JcaTlsDSAVerifier(getPubKeyDSS(), crypto.getHelper());
+            return new JcaTlsDSAVerifier(crypto, getPubKeyDSS());
 
         case SignatureAlgorithm.ecdsa:
-            return new JcaTlsECDSAVerifier(getPubKeyEC(), crypto.getHelper());
+            return new JcaTlsECDSAVerifier(crypto, getPubKeyEC());
 
         case SignatureAlgorithm.rsa:
-            return new JcaTlsRSAVerifier(getPubKeyRSA(), crypto.getHelper());
+            return new JcaTlsRSAVerifier(crypto, getPubKeyRSA());
 
         default:
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);

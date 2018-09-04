@@ -3,14 +3,13 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.security.GeneralSecurityException;
+import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
-import java.security.interfaces.RSAPublicKey;
 
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DigestInfo;
-import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.SignatureAlgorithm;
@@ -26,20 +25,24 @@ import org.bouncycastle.tls.crypto.TlsVerifier;
 public class JcaTlsRSAVerifier
     implements TlsVerifier
 {
-    private final JcaJceHelper helper;
-    protected RSAPublicKey pubKeyRSA;
+    private final JcaTlsCrypto crypto;
+    private final PublicKey publicKey;
 
     private Signature rawVerifier = null;
 
-    public JcaTlsRSAVerifier(RSAPublicKey pubKeyRSA, JcaJceHelper helper)
+    public JcaTlsRSAVerifier(JcaTlsCrypto crypto, PublicKey publicKey)
     {
-        if (pubKeyRSA == null)
+        if (null == crypto)
         {
-            throw new IllegalArgumentException("'pubKeyRSA' cannot be null");
+            throw new NullPointerException("crypto");
+        }
+        if (null == publicKey)
+        {
+            throw new NullPointerException("publicKey");
         }
 
-        this.pubKeyRSA = pubKeyRSA;
-        this.helper = helper;
+        this.crypto = crypto;
+        this.publicKey = publicKey;
     }
 
     public TlsStreamVerifier getStreamVerifier(final DigitallySigned signature) throws IOException
@@ -59,8 +62,8 @@ public class JcaTlsRSAVerifier
                 {
                     String algorithmName = JcaUtils.getJcaAlgorithmName(algorithm);
 
-                    final Signature verifier = helper.createSignature(algorithmName);
-                    verifier.initVerify(pubKeyRSA);
+                    final Signature verifier = crypto.getHelper().createSignature(algorithmName);
+                    verifier.initVerify(publicKey);
 
                     return new TlsStreamVerifier()
                     {
@@ -137,8 +140,8 @@ public class JcaTlsRSAVerifier
     {
         if (rawVerifier == null)
         {
-            rawVerifier = helper.createSignature("NoneWithRSA");
-            rawVerifier.initVerify(pubKeyRSA);
+            rawVerifier = crypto.getHelper().createSignature("NoneWithRSA");
+            rawVerifier.initVerify(publicKey);
         }
         return rawVerifier;
     }
