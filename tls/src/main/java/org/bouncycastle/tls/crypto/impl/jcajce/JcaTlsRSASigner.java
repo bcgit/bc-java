@@ -24,20 +24,23 @@ import org.bouncycastle.tls.crypto.TlsStreamSigner;
 public class JcaTlsRSASigner
     implements TlsSigner
 {
-    private final PrivateKey privateKey;
     private final JcaTlsCrypto crypto;
+    private final PrivateKey privateKey;
 
     private Signature rawSigner = null;
 
     public JcaTlsRSASigner(JcaTlsCrypto crypto, PrivateKey privateKey)
     {
-        this.crypto = crypto;
-
-        if (privateKey == null)
+        if (null == crypto)
         {
-            throw new IllegalArgumentException("'privateKey' cannot be null");
+            throw new NullPointerException("crypto");
+        }
+        if (null == privateKey)
+        {
+            throw new NullPointerException("privateKey");
         }
 
+        this.crypto = crypto;
         this.privateKey = privateKey;
     }
 
