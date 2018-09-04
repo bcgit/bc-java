@@ -1,13 +1,14 @@
 package org.bouncycastle.crypto.signers;
 
 import java.io.ByteArrayOutputStream;
-import java.util.Arrays;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.Ed448PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
 import org.bouncycastle.math.ec.rfc8032.Ed448;
+import org.bouncycastle.util.Arrays;
+
 
 public class Ed448Signer
     implements Signer
@@ -21,7 +22,7 @@ public class Ed448Signer
 
     public Ed448Signer(byte[] context)
     {
-        this.context = context.clone();
+        this.context = Arrays.clone(context);
     }
 
     public void init(boolean forSigning, CipherParameters parameters)

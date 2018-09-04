@@ -115,7 +115,7 @@ public class SignatureSpi
         }
         catch (CryptoException e)
         {
-            throw new SignatureException(e.getMessage(), e);
+            throw new SignatureException(e.getMessage());
         }
     }
 

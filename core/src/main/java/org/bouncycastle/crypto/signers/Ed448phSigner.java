@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.params.Ed448PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
 import org.bouncycastle.math.ec.rfc8032.Ed448;
+import org.bouncycastle.util.Arrays;
 
 public class Ed448phSigner
     implements Signer
@@ -19,7 +20,7 @@ public class Ed448phSigner
 
     public Ed448phSigner(byte[] context)
     {
-        this.context = context.clone();
+        this.context = Arrays.clone(context);
     }
 
     public void init(boolean forSigning, CipherParameters parameters)

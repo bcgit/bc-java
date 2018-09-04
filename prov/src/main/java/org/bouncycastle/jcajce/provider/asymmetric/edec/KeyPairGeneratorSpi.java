@@ -34,14 +34,12 @@ public class KeyPairGeneratorSpi
         this.generator = generator;
     }
 
-    @Override
     public void initialize(int strength, SecureRandom secureRandom)
     {
         // TODO: should we make sure strength makes sense?
         this.secureRandom = secureRandom;
     }
 
-    @Override
     public KeyPair generateKeyPair()
     {
         if (!initialised)
