@@ -122,13 +122,15 @@ public class BCECGOST3410PrivateKey
 
     BCECGOST3410PrivateKey(
         PrivateKeyInfo      info)
+        throws IOException
     {
         populateFromPrivKeyInfo(info);
     }
 
     private void populateFromPrivKeyInfo(PrivateKeyInfo info)
+        throws IOException
     {
-        X962Parameters      params = X962Parameters.getInstance(info.getAlgorithmId().getParameters());
+        X962Parameters      params = X962Parameters.getInstance(info.getPrivateKeyAlgorithm().getParameters());
 
         if (params.isNamedCurve())
         {
@@ -157,15 +159,15 @@ public class BCECGOST3410PrivateKey
                                             ecP.getSeed());
         }
 
-        if (info.getPrivateKey() instanceof ASN1Integer)
+        if (info.parsePrivateKey() instanceof ASN1Integer)
         {
-            ASN1Integer          derD = ASN1Integer.getInstance(info.getPrivateKey());
+            ASN1Integer          derD = ASN1Integer.getInstance(info.parsePrivateKey());
 
             this.d = derD.getValue();
         }
         else
         {
-            ECPrivateKeyStructure   ec = new ECPrivateKeyStructure((ASN1Sequence)info.getPrivateKey());
+            ECPrivateKeyStructure   ec = new ECPrivateKeyStructure(ASN1Sequence.getInstance(info.parsePrivateKey()));
 
             this.d = ec.getKey();
             this.publicKey = ec.getPublicKey();

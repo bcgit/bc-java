@@ -2,12 +2,11 @@ package org.bouncycastle.math.ec.rfc8032.test;
 
 import java.security.SecureRandom;
 
+import junit.framework.TestCase;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.math.ec.rfc8032.Ed448;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-
-import junit.framework.TestCase;
 
 public class Ed448Test
     extends TestCase
@@ -476,7 +475,7 @@ public class Ed448Test
         byte[] ctx = Hex.decode(sCTX);
         byte[] sig = Hex.decode(sSig);
 
-        byte[] badsig = sig.clone();
+        byte[] badsig = Arrays.clone(sig);
         badsig[Ed448.SIGNATURE_SIZE - 1] ^= 0x80;
 
         byte[] sigGen = new byte[Ed448.SIGNATURE_SIZE];
@@ -506,7 +505,7 @@ public class Ed448Test
         byte[] ctx = Hex.decode(sCTX);
         byte[] sig = Hex.decode(sSig);
 
-        byte[] badsig = sig.clone();
+        byte[] badsig = Arrays.clone(sig);
         badsig[Ed448.SIGNATURE_SIZE - 1] ^= 0x80;
 
         byte[] sigGen = new byte[Ed448.SIGNATURE_SIZE];

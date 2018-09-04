@@ -2,12 +2,11 @@ package org.bouncycastle.math.ec.rfc8032.test;
 
 import java.security.SecureRandom;
 
+import junit.framework.TestCase;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.math.ec.rfc8032.Ed25519;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-
-import junit.framework.TestCase;
 
 public class Ed25519Test
     extends TestCase
@@ -378,7 +377,7 @@ public class Ed25519Test
         byte[] m = Hex.decode(sM);
         byte[] sig = Hex.decode(sSig);
 
-        byte[] badsig = sig.clone();
+        byte[] badsig = Arrays.clone(sig);
         badsig[Ed25519.SIGNATURE_SIZE - 1] ^= 0x80;
 
         byte[] sigGen = new byte[Ed25519.SIGNATURE_SIZE];
@@ -408,7 +407,7 @@ public class Ed25519Test
         byte[] ctx = Hex.decode(sCTX);
         byte[] sig = Hex.decode(sSig);
 
-        byte[] badsig = sig.clone();
+        byte[] badsig = Arrays.clone(sig);
         badsig[Ed25519.SIGNATURE_SIZE - 1] ^= 0x80;
 
         byte[] sigGen = new byte[Ed25519.SIGNATURE_SIZE];
@@ -438,7 +437,7 @@ public class Ed25519Test
         byte[] ctx = Hex.decode(sCTX);
         byte[] sig = Hex.decode(sSig);
 
-        byte[] badsig = sig.clone();
+        byte[] badsig = Arrays.clone(sig);
         badsig[Ed25519.SIGNATURE_SIZE - 1] ^= 0x80;
 
         byte[] sigGen = new byte[Ed25519.SIGNATURE_SIZE];
