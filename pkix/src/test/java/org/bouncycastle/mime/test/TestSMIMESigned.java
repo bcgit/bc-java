@@ -10,7 +10,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import junit.framework.TestCase;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -143,7 +142,7 @@ public class TestSMIMESigned
         //
         // parse
         //
-        final AtomicBoolean dataParsed = new AtomicBoolean(false);
+        final TestDoneFlag dataParsed = new TestDoneFlag();
 
         MimeParserProvider provider = new SMimeParserProvider("7bit", new BcDigestCalculatorProvider());
 
@@ -184,10 +183,10 @@ public class TestSMIMESigned
                     throw new CMSException(e.getMessage(), e);
                 }
 
-                dataParsed.set(true);
+                dataParsed.markDone();
             }
         });
 
-        assertTrue(dataParsed.get());
+        assertTrue(dataParsed.isDone());
     }
 }

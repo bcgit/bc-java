@@ -142,7 +142,7 @@ public class EdECTest
 
         for (Iterator<String> it = alts.iterator(); it.hasNext(); )
         {
-            String altAlg = it.next();
+            String altAlg = (String)it.next();
 
             kFact = KeyFactory.getInstance(altAlg, "BC");
 
