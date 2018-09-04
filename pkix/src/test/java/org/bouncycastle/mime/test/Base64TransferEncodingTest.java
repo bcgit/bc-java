@@ -28,8 +28,10 @@ public class Base64TransferEncodingTest
         //
         // Create 4 lines of 64bytes of base64 encoded data.
         //
-        for (byte[] row : original)
+        for (int i = 0; i != original.length; i++)
         {
+            byte[] row = original[i];
+            
             random.nextBytes(row);
             bos.write(Base64.encode(row));
             bos.write('\r');
@@ -55,8 +57,10 @@ public class Base64TransferEncodingTest
         //
         // Create 4 lines of 64bytes of base64 encoded data.
         //
-        for (byte[] row : original)
+        for (int i = 0; i != original.length; i++)
         {
+            byte[] row = original[i];
+
             random.nextBytes(row);
             bos.write(Base64.encode(row));
             bos.write('\n');
@@ -81,8 +85,9 @@ public class Base64TransferEncodingTest
         //
         // Create 4 lines of 1023 bytes of base64 encoded data.
         //
-        for (byte[] row : original)
+        for (int i = 0; i != original.length; i++)
         {
+            byte[] row = original[i];
             random.nextBytes(row);
             bos.write(Base64.encode(row));
             bos.write('\n');
@@ -107,8 +112,10 @@ public class Base64TransferEncodingTest
         //
         // Create 4 lines of 1023 bytes of base64 encoded data.
         //
-        for (byte[] row : original)
+        for (int i = 0; i != original.length; i++)
         {
+            byte[] row = original[i];
+
             random.nextBytes(row);
             bos.write(Base64.encode(row));
             bos.write('\n');
@@ -173,8 +180,10 @@ public class Base64TransferEncodingTest
         //
         // Create 4 lines of 64bytes of base64 encoded data.
         //
-        for (byte[] row : original)
+        for (int i = 0; i != original.length; i++)
         {
+            byte[] row = original[i];
+
             random.nextBytes(row);
             bos.write(Base64.encode(row));
             bos.write('\r');
@@ -201,8 +210,10 @@ public class Base64TransferEncodingTest
         //
         // Create 4 lines of 64bytes of base64 encoded data.
         //
-        for (byte[] row : original)
+        for (int i = 0; i != original.length; i++)
         {
+            byte[] row = original[i];
+
             random.nextBytes(row);
             bos.write(Base64.encode(row));
             bos.write('\r');

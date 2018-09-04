@@ -31,7 +31,6 @@
             </fileset>
             <fileset dir="pkix/src/main/java">
                 <exclude name="**/est/**/*.java"/>
-                <exclude name="**/mime/**"/>
             </fileset>
             <fileset dir="mail/src/main/java">
                 <exclude name="**/ValidateSignedMail.java"/>

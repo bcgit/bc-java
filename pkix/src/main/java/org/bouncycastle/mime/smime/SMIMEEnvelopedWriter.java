@@ -11,6 +11,7 @@ import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.OriginatorInformation;
 import org.bouncycastle.cms.RecipientInfoGenerator;
 import org.bouncycastle.mime.Headers;
+import org.bouncycastle.mime.MimeIOException;
 import org.bouncycastle.mime.MimeWriter;
 import org.bouncycastle.mime.encoding.Base64OutputStream;
 import org.bouncycastle.operator.OutputEncryptor;
@@ -149,7 +150,7 @@ public class SMIMEEnvelopedWriter
         }
         catch (CMSException e)
         {
-            throw new IOException(e.getMessage(), e);
+            throw new MimeIOException(e.getMessage(), e);
         }
     }
 

@@ -15,6 +15,7 @@ import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.mime.ConstantMimeContext;
 import org.bouncycastle.mime.Headers;
 import org.bouncycastle.mime.MimeContext;
+import org.bouncycastle.mime.MimeIOException;
 import org.bouncycastle.mime.MimeParserContext;
 import org.bouncycastle.mime.MimeParserListener;
 import org.bouncycastle.operator.DigestCalculator;
@@ -80,7 +81,7 @@ public abstract class SMimeParserListener
         }
         catch (CMSException e)
         {
-            throw new IOException("CMS failure: " + e.getMessage(), e);
+            throw new MimeIOException("CMS failure: " + e.getMessage(), e);
         }
     }
 
