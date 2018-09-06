@@ -513,7 +513,7 @@
         </packJar>
     </target>
 
-    <target name="build-libraries" depends="initMacros, build-pkix, build-pg, build-mail" />
+    <target name="build-libraries" depends="initMacros, build-pkix, build-tls, build-pg, build-mail" />
 
     <!--
           SMIME
