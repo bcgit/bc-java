@@ -92,7 +92,6 @@
     </target>
     
     <target name="build" depends="init">
-        <ant antfile="ant/bc+-build.xml" dir="." target="build-tls" />
         <ant antfile="ant/bc+-build.xml" dir="." />
         <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-lw" />
         <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-libraries" />
