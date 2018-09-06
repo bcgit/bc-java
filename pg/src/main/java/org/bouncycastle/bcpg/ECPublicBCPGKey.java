@@ -32,7 +32,7 @@ public abstract class ECPublicBCPGKey
         ASN1ObjectIdentifier oid,
         ECPoint point)
     {
-        this.point = new BigInteger(1, point.getEncoded());
+        this.point = new BigInteger(1, point.getEncoded(false));
         this.oid = oid;
     }
 

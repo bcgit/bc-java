@@ -8,6 +8,7 @@ import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
 
+import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -133,7 +134,7 @@ public class JcaPGPContentSignerBuilder
 
             public OutputStream getOutputStream()
             {
-                return new TeeOutputStream(new SignatureOutputStream(signature), digestCalculator.getOutputStream());
+                return new TeeOutputStream(OutputStreamFactory.createStream(signature), digestCalculator.getOutputStream());
             }
 
             public byte[] getSignature()
