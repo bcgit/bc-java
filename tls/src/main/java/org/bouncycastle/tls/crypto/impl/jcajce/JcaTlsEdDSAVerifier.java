@@ -2,14 +2,12 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.GeneralSecurityException;
 import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
 
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.operator.ContentVerifier;
-import org.bouncycastle.operator.ContentVerifierProvider;
-import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
+import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
@@ -23,9 +21,9 @@ public class JcaTlsEdDSAVerifier
     protected final JcaTlsCrypto crypto;
     protected final PublicKey publicKey;
     protected final short algorithmType;
-    protected final ASN1ObjectIdentifier algorithmOID;
+    protected final String algorithmName;
 
-    public JcaTlsEdDSAVerifier(JcaTlsCrypto crypto, PublicKey publicKey, short algorithmType, ASN1ObjectIdentifier algorithmOID)
+    public JcaTlsEdDSAVerifier(JcaTlsCrypto crypto, PublicKey publicKey, short algorithmType, String algorithmName)
     {
         if (null == crypto)
         {
@@ -39,7 +37,7 @@ public class JcaTlsEdDSAVerifier
         this.crypto = crypto;
         this.publicKey = publicKey;
         this.algorithmType = algorithmType;
-        this.algorithmOID = algorithmOID;
+        this.algorithmName = algorithmName;
     }
 
     public boolean verifyRawSignature(DigitallySigned signature, byte[] hash) throws IOException
@@ -63,27 +61,36 @@ public class JcaTlsEdDSAVerifier
 
         try
         {
-            // TODO[RFC 8422] crypto.getHelper();
-            ContentVerifierProvider cvp = new JcaContentVerifierProviderBuilder().build(publicKey);
+            // TODO[RFC 8422]
+            final Signature verifier = crypto.getHelper().createSignature(algorithmName);
 
-            final ContentVerifier cv = cvp.get(new AlgorithmIdentifier(algorithmOID));
+            verifier.initVerify(publicKey);
+
+            final OutputStream stream = OutputStreamFactory.createStream(verifier);
 
             return new TlsStreamVerifier()
             {
                 public OutputStream getOutputStream() throws IOException
                 {
-                    return cv.getOutputStream();
+                    return stream;
                 }
 
                 public boolean isVerified() throws IOException
                 {
-                    return cv.verify(sig);
+                    try
+                    {
+                        return verifier.verify(sig);
+                    }
+                    catch (SignatureException e)
+                    {
+                        throw new IOException(e.getMessage());
+                    }
                 }
             };
         }
-        catch (OperatorCreationException e)
+        catch (GeneralSecurityException e)
         {
-            throw new TlsCryptoException(algorithmOID.getId() + " verification failed", e);
+            throw new TlsCryptoException(algorithmName + " verification failed", e);
         }
     }
 }

@@ -1,6 +1,5 @@
 package org.bouncycastle.operator.jcajce;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
@@ -16,6 +15,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -24,7 +24,6 @@ import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.OperatorStreamException;
 import org.bouncycastle.operator.RuntimeOperatorException;
 
 public class JcaContentSignerBuilder
@@ -101,7 +100,7 @@ public class JcaContentSignerBuilder
 
             return new ContentSigner()
             {
-                private SignatureOutputStream stream = new SignatureOutputStream(sig);
+                private OutputStream stream = OutputStreamFactory.createStream(sig);
 
                 public AlgorithmIdentifier getAlgorithmIdentifier()
                 {
@@ -117,7 +116,7 @@ public class JcaContentSignerBuilder
                 {
                     try
                     {
-                        return stream.getSignature();
+                        return sig.sign();
                     }
                     catch (SignatureException e)
                     {
@@ -129,62 +128,6 @@ public class JcaContentSignerBuilder
         catch (GeneralSecurityException e)
         {
             throw new OperatorCreationException("cannot create signer: " + e.getMessage(), e);
-        }
-    }
-
-    private class SignatureOutputStream
-        extends OutputStream
-    {
-        private Signature sig;
-
-        SignatureOutputStream(Signature sig)
-        {
-            this.sig = sig;
-        }
-
-        public void write(byte[] bytes, int off, int len)
-            throws IOException
-        {
-            try
-            {
-                sig.update(bytes, off, len);
-            }
-            catch (SignatureException e)
-            {
-                throw new OperatorStreamException("exception in content signer: " + e.getMessage(), e);
-            }
-        }
-
-        public void write(byte[] bytes)
-            throws IOException
-        {
-            try
-            {
-                sig.update(bytes);
-            }
-            catch (SignatureException e)
-            {
-                throw new OperatorStreamException("exception in content signer: " + e.getMessage(), e);
-            }
-        }
-
-        public void write(int b)
-            throws IOException
-        {
-            try
-            {
-                sig.update((byte)b);
-            }
-            catch (SignatureException e)
-            {
-                throw new OperatorStreamException("exception in content signer: " + e.getMessage(), e);
-            }
-        }
-
-        byte[] getSignature()
-            throws SignatureException
-        {
-            return sig.sign();
         }
     }
 
