@@ -2,11 +2,12 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
+import java.security.Signature;
+import java.security.SignatureException;
 
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
@@ -56,23 +57,34 @@ public abstract class JcaTlsEdDSASigner
 
         try
         {
-            // TODO[RFC 8422] crypto.getHelper();
-            final ContentSigner cs = new JcaContentSignerBuilder(algorithmName).build(privateKey);
+            // TODO[RFC 8422]
+            final Signature sig = crypto.getHelper().createSignature(algorithmName);
+
+            sig.initSign(privateKey);
+
+            final OutputStream stream = OutputStreamFactory.createStream(sig);
 
             return new TlsStreamSigner()
             {
                 public OutputStream getOutputStream() throws IOException
                 {
-                    return cs.getOutputStream();
+                    return stream;
                 }
 
                 public byte[] getSignature() throws IOException
                 {
-                    return cs.getSignature();
+                    try
+                    {
+                        return sig.sign();
+                    }
+                    catch (SignatureException e)
+                    {
+                        throw new IOException(e.getMessage());
+                    }
                 }
             };
         }
-        catch (OperatorCreationException e)
+        catch (GeneralSecurityException e)
         {
             throw new TlsCryptoException(algorithmName + " signature failed", e);
         }
