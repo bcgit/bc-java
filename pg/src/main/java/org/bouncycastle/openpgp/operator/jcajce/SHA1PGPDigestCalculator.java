@@ -1,11 +1,11 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 
 class SHA1PGPDigestCalculator
@@ -32,7 +32,7 @@ class SHA1PGPDigestCalculator
 
     public OutputStream getOutputStream()
     {
-        return new DigestOutputStream(digest);
+        return OutputStreamFactory.createStream(digest);
     }
 
     public byte[] getDigest()
@@ -43,39 +43,5 @@ class SHA1PGPDigestCalculator
     public void reset()
     {
         digest.reset();
-    }
-
-    private class DigestOutputStream
-        extends OutputStream
-    {
-        private MessageDigest dig;
-
-        DigestOutputStream(MessageDigest dig)
-        {
-            this.dig = dig;
-        }
-
-        public void write(byte[] bytes, int off, int len)
-            throws IOException
-        {
-            dig.update(bytes, off, len);
-        }
-
-        public void write(byte[] bytes)
-            throws IOException
-        {
-            dig.update(bytes);
-        }
-
-        public void write(int b)
-            throws IOException
-        {
-            dig.update((byte)b);
-        }
-
-        byte[] getDigest()
-        {
-            return dig.digest();
-        }
     }
 }

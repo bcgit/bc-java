@@ -56,11 +56,11 @@ public class DirectKeySignature
                 
                 System.out.println("Signature date is: " + sig.getHashedSubPackets().getSignatureCreationTime());
 
-                NotationData[] data = sig.getHashedSubPackets().getNotationDataOccurences();//.getSubpacket(SignatureSubpacketTags.NOTATION_DATA);
+                NotationData[] data = sig.getHashedSubPackets().getNotationDataOccurrences();//.getSubpacket(SignatureSubpacketTags.NOTATION_DATA);
                 
                 for (int i = 0; i < data.length; i++)
                 {
-                    System.out.println("Found Notaion named '"+data[i].getNotationName()+"' with content '"+data[i].getNotationValue()+"'.");
+                    System.out.println("Found Notation named '"+data[i].getNotationName()+"' with content '"+data[i].getNotationValue()+"'.");
                 }
             }
         }
