@@ -470,14 +470,7 @@ public class JcaTlsCrypto
 
     public boolean hasSignatureAlgorithm(short signatureAlgorithm)
     {
-        switch (signatureAlgorithm)
-        {
-        case SignatureAlgorithm.ed25519:
-        case SignatureAlgorithm.ed448:
-            return false;
-        default:
-            return true;
-        }
+        return true;
     }
 
     public boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm)
@@ -703,7 +696,7 @@ public class JcaTlsCrypto
         return false;
     }
 
-    JcaJceHelper getHelper()
+    public JcaJceHelper getHelper()
     {
         return helper;
     }
