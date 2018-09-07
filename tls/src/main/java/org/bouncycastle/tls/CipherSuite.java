@@ -425,12 +425,12 @@ public class CipherSuite
     public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_256_OCB = 0xFF15;
 
     /*
-     * draft-ietf-tls-ecdhe-psk-aead-05 (code points TBD)
+     * RFC 8442
      */
-    public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256 = 0xD001;
-    public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_256_GCM_SHA384 = 0xD002;
-    public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_128_CCM_8_SHA256 = 0xD003;
-    public static final int DRAFT_TLS_ECDHE_PSK_WITH_AES_128_CCM_SHA256 = 0xD005;
+    public static final int TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256 = 0xD001;
+    public static final int TLS_ECDHE_PSK_WITH_AES_256_GCM_SHA384 = 0xD002;
+    public static final int TLS_ECDHE_PSK_WITH_AES_128_CCM_8_SHA256 = 0xD003;
+    public static final int TLS_ECDHE_PSK_WITH_AES_128_CCM_SHA256 = 0xD005;
 
     public static boolean isSCSV(int cipherSuite)
     {
