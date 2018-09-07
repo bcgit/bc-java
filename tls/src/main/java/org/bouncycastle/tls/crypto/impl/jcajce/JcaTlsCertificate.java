@@ -106,6 +106,12 @@ public class JcaTlsCertificate
         case SignatureAlgorithm.ecdsa:
             return new JcaTlsECDSAVerifier(crypto, getPubKeyEC());
 
+        case SignatureAlgorithm.ed25519:
+            return new JcaTlsEd25519Verifier(crypto, getPubKeyEd25519());
+
+        case SignatureAlgorithm.ed448:
+            return new JcaTlsEd448Verifier(crypto, getPubKeyEd448());
+
         case SignatureAlgorithm.rsa:
             return new JcaTlsRSAVerifier(crypto, getPubKeyRSA());
 
@@ -145,62 +151,70 @@ public class JcaTlsCertificate
 
     DHPublicKey getPubKeyDH() throws IOException
     {
-        DHPublicKey pubKeyDH;
         try
         {
-            pubKeyDH = (DHPublicKey)getPublicKey();
+            return (DHPublicKey)getPublicKey();
         }
         catch (ClassCastException e)
         {
             throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
         }
-
-        return validatePubKeyDH(pubKeyDH);
     }
 
     DSAPublicKey getPubKeyDSS() throws IOException
     {
-        DSAPublicKey pubKeyDSS;
         try
         {
-            pubKeyDSS = (DSAPublicKey)getPublicKey();
+            return (DSAPublicKey)getPublicKey();
         }
         catch (ClassCastException e)
         {
             throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
         }
-
-        return validatePubKeyDSS(pubKeyDSS);
     }
 
     ECPublicKey getPubKeyEC() throws IOException
     {
-        ECPublicKey pubKeyEC;
         try
         {
-            pubKeyEC = (ECPublicKey)getPublicKey();
+            return (ECPublicKey)getPublicKey();
         }
         catch (ClassCastException e)
         {
             throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
         }
+    }
 
-        return validatePubKeyEC(pubKeyEC);
+    PublicKey getPubKeyEd25519() throws IOException
+    {
+        PublicKey publicKey = getPublicKey();
+        if (!"Ed25519".equals(publicKey.getAlgorithm()))
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+        }
+        return publicKey;
+    }
+
+    PublicKey getPubKeyEd448() throws IOException
+    {
+        PublicKey publicKey = getPublicKey();
+        if (!"Ed448".equals(publicKey.getAlgorithm()))
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+        }
+        return publicKey;
     }
 
     RSAPublicKey getPubKeyRSA() throws IOException
     {
-        RSAPublicKey pubKeyRSA;
         try
         {
-            pubKeyRSA = (RSAPublicKey)getPublicKey();
+            return (RSAPublicKey)getPublicKey();
         }
         catch (ClassCastException e)
         {
             throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
         }
-
-        return validatePubKeyRSA(pubKeyRSA);
     }
 
     public short getSignatureAlgorithm() throws IOException
@@ -258,6 +272,22 @@ public class JcaTlsCertificate
          {
              // TODO Check the curve and point format
              return SignatureAlgorithm.ecdsa;
+         }
+
+         /*
+          * Ed25519 public key; the certificate MUST allow the key to be used for signing
+          */
+         if ("Ed25519".equals(publicKey.getAlgorithm()))
+         {
+             return SignatureAlgorithm.ed25519;
+         }
+
+         /*
+          * Ed448 public key; the certificate MUST allow the key to be used for signing
+          */
+         if ("Ed448".equals(publicKey.getAlgorithm()))
+         {
+             return SignatureAlgorithm.ed448;
          }
 
          throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
@@ -343,28 +373,5 @@ public class JcaTlsCertificate
                 }
             }
         }
-    }
-
-    protected DHPublicKey validatePubKeyDH(DHPublicKey pubKeyDH) throws IOException
-    {
-        return pubKeyDH; // TODO: TlsDHUtils.validateDHPublicKey(pubKeyDH);
-    }
-
-    protected DSAPublicKey validatePubKeyDSS(DSAPublicKey pubKeyDSS) throws IOException
-    {
-        // TODO[tls-ops]
-        return pubKeyDSS;
-    }
-
-    protected ECPublicKey validatePubKeyEC(ECPublicKey pubKeyEC) throws IOException
-    {
-        // TODO[tls-ops]
-        return pubKeyEC;
-    }
-
-    protected RSAPublicKey validatePubKeyRSA(RSAPublicKey pubKeyRSA) throws IOException
-    {
-        // TODO[tls-ops]
-        return pubKeyRSA;
     }
 }
