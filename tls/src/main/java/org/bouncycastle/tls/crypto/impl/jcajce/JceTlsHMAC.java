@@ -18,11 +18,11 @@ public class JceTlsHMAC
 
     static
     {
-        internalBlockSizes.put("HmacMD5", 64);
-        internalBlockSizes.put("HmacSHA1", 64);
-        internalBlockSizes.put("HmacSHA256", 64);
-        internalBlockSizes.put("HmacSHA384", 128);
-        internalBlockSizes.put("HmacSHA512", 128);
+        internalBlockSizes.put("HmacMD5", new Integer(64));
+        internalBlockSizes.put("HmacSHA1", new Integer(64));
+        internalBlockSizes.put("HmacSHA256", new Integer(64));
+        internalBlockSizes.put("HmacSHA384", new Integer(128));
+        internalBlockSizes.put("HmacSHA512", new Integer(128));
     }
 
     private final Mac hmac;
@@ -47,7 +47,7 @@ public class JceTlsHMAC
             throw new IllegalArgumentException("HMAC " + algorithm + " unknown");
         }
 
-        return (Integer)internalBlockSizes.get(algorithm);
+        return ((Integer)internalBlockSizes.get(algorithm)).intValue();
     }
 
     /**
@@ -61,7 +61,7 @@ public class JceTlsHMAC
     {
         this.hmac = hmac;
         this.algorithm = algorithm;
-        this.internalBlockSize = internalBlockSize;
+        this.internalBlockSize = new Integer(internalBlockSize);
     }
 
     public void setKey(byte[] key, int keyOff, int keyLen)
@@ -88,7 +88,7 @@ public class JceTlsHMAC
 
     public int getInternalBlockSize()
     {
-        return internalBlockSize;
+        return internalBlockSize.intValue();
     }
 
     public int getMacLength()
