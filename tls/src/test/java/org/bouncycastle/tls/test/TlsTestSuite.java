@@ -1,6 +1,5 @@
 package org.bouncycastle.tls.test;
 
-import java.io.IOException;
 import java.security.SecureRandom;
 import java.security.Security;
 
@@ -21,7 +20,7 @@ import junit.framework.TestSuite;
 public class TlsTestSuite extends TestSuite
 {
     static TlsCrypto BC_CRYPTO = new BcTlsCrypto(new SecureRandom()); 
-    static TlsCrypto JCA_CRYPTO = new JcaTlsCryptoProvider().setProvider(new BouncyCastleProvider()).create(new SecureRandom(), new SecureRandom());
+    static TlsCrypto JCA_CRYPTO = new JcaTlsCryptoProvider().setProvider(new BouncyCastleProvider()).create(new SecureRandom());
 
     // Make the access to constants less verbose 
     static abstract class C extends TlsTestConfig {}

@@ -6,6 +6,7 @@ import java.security.Provider;
 import java.security.Signature;
 import java.security.SignatureException;
 
+import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -105,7 +106,7 @@ public class JcaPGPContentVerifierBuilderProvider
 
                 public OutputStream getOutputStream()
                 {
-                    return new SignatureOutputStream(signature);
+                    return OutputStreamFactory.createStream(signature);
                 }
             };
         }
