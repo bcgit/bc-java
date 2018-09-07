@@ -68,7 +68,7 @@ public abstract class JcaTlsDSSVerifier
         }
         catch (GeneralSecurityException e)
         {
-            throw new org.bouncycastle.exceptions.IllegalStateException("unable to process signature: " + e.getMessage(), e);
+            throw new org.bouncycastle.tls.exceptions.IllegalStateException("unable to process signature: " + e.getMessage(), e);
         }
     }
 }

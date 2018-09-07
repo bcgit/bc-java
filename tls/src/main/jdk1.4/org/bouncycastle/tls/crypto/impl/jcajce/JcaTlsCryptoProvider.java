@@ -79,7 +79,7 @@ public class JcaTlsCryptoProvider
         }
         catch (GeneralSecurityException e)
         {
-            throw new org.bouncycastle.exceptions.IllegalStateException("unable to create TlsCrypto: " + e.getMessage(), e);
+            throw new org.bouncycastle.tls.exceptions.IllegalStateException("unable to create TlsCrypto: " + e.getMessage(), e);
         }
     }
 
@@ -107,7 +107,7 @@ public class JcaTlsCryptoProvider
         }
         catch (GeneralSecurityException e)
         {
-            throw new org.bouncycastle.exceptions.IllegalStateException("unable to find CertificateFactory");
+            throw new org.bouncycastle.tls.exceptions.IllegalStateException("unable to find CertificateFactory");
         }
     }
 
@@ -181,7 +181,7 @@ public class JcaTlsCryptoProvider
                 }
                 catch (DigestException e)
                 {
-                    throw new org.bouncycastle.exceptions.IllegalStateException("unable to generate nonce data: " + e.getMessage(), e);
+                    throw new org.bouncycastle.tls.exceptions.IllegalStateException("unable to generate nonce data: " + e.getMessage(), e);
                 }
             }
         }

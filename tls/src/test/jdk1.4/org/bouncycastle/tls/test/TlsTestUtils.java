@@ -327,7 +327,7 @@ public class TlsTestUtils
         {
             cause = e;
         }
-        throw new org.bouncycastle.exceptions.IllegalArgumentException("'resource' doesn't specify a valid private key " + cause.getMessage());
+        throw new IllegalArgumentException("'resource' doesn't specify a valid private key " + cause.getMessage());
     }
 
     static PrivateKey loadJcaPkcs8PrivateKey(byte[] encoded)
