@@ -18,16 +18,17 @@ import junit.framework.TestSuite;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
-public class CipherSuitesTestSuite extends TestSuite
+public class CipherSuitesTestSuite
+    extends TestSuite
 {
     static final boolean hasSslParameters;
 
     static
     {
-        Class<?> clazz = null;
+        Class clazz = null;
         try
         {
-            clazz = loadClass(CipherSuitesTestSuite.class,"javax.net.ssl.SSLParameters");
+            clazz = loadClass(CipherSuitesTestSuite.class, "javax.net.ssl.SSLParameters");
         }
         catch (Exception e)
         {
@@ -79,7 +80,8 @@ public class CipherSuitesTestSuite extends TestSuite
         super("CipherSuites");
     }
 
-    public static Test suite() throws Exception
+    public static Test suite()
+        throws Exception
     {
         String javaVersion = System.getProperty("java.version");
         boolean oldJDK = javaVersion.startsWith("1.5") || javaVersion.startsWith("1.6");
@@ -93,7 +95,7 @@ public class CipherSuitesTestSuite extends TestSuite
         Security.removeProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
         Security.insertProviderAt(bcjsse, 2);
 
-        
+
         CipherSuitesTestSuite testSuite = new CipherSuitesTestSuite();
 
         char[] serverPassword = "serverPassword".toCharArray();
@@ -108,9 +110,9 @@ public class CipherSuitesTestSuite extends TestSuite
 
         KeyStore ks = KeyStore.getInstance("JKS");
         ks.load(null, null);
-        ks.setKeyEntry("serverDSA", caKeyPairDSA.getPrivate(), serverPassword, new X509Certificate[]{ caCertDSA });
-        ks.setKeyEntry("serverEC", caKeyPairEC.getPrivate(), serverPassword, new X509Certificate[]{ caCertEC });
-        ks.setKeyEntry("serverRSA", caKeyPairRSA.getPrivate(), serverPassword, new X509Certificate[]{ caCertRSA });
+        ks.setKeyEntry("serverDSA", caKeyPairDSA.getPrivate(), serverPassword, new X509Certificate[]{caCertDSA});
+        ks.setKeyEntry("serverEC", caKeyPairEC.getPrivate(), serverPassword, new X509Certificate[]{caCertEC});
+        ks.setKeyEntry("serverRSA", caKeyPairRSA.getPrivate(), serverPassword, new X509Certificate[]{caCertRSA});
 
         KeyStore ts = KeyStore.getInstance("JKS");
         ts.load(null, null);
@@ -127,19 +129,22 @@ public class CipherSuitesTestSuite extends TestSuite
         else
         {
             TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX",
-                      BouncyCastleJsseProvider.PROVIDER_NAME);
+                BouncyCastleJsseProvider.PROVIDER_NAME);
 
             trustMgrFact.init(ts);
 
             sslContext.init(null, trustMgrFact.getTrustManagers(),
-                 SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
+                SecureRandom.getInstance("DEFAULT", BouncyCastleProvider.PROVIDER_NAME));
             cipherSuites = sslContext.getSocketFactory().getSupportedCipherSuites();
         }
 
         Arrays.sort(cipherSuites);
 
-        for (String cipherSuite : cipherSuites)
+
+        for (int t = 0; t < cipherSuites.length; t++)
         {
+            String cipherSuite = cipherSuites[t];
+
             /*
              * TODO[jsse] Note that there may be failures for cipher suites that are listed as supported
              * even though the TlsCrypto instance doesn't implement them (JcaTlsCrypto is dependent on the

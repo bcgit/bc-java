@@ -107,7 +107,7 @@ public class JceX448Domain implements TlsECDomain
         }
         catch (GeneralSecurityException e)
         {
-            throw new org.bouncycastle.exceptions.IllegalStateException("unable to create key pair: " + e.getMessage(), e);
+            throw new org.bouncycastle.tls.exceptions.IllegalStateException("unable to create key pair: " + e.getMessage(), e);
         }
     }
 }

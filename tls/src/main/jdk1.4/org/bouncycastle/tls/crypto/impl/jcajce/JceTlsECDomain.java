@@ -126,7 +126,7 @@ public class JceTlsECDomain
         }
         catch (GeneralSecurityException e)
         {
-            throw new org.bouncycastle.exceptions.IllegalStateException("unable to create key pair: " + e.getMessage(), e);
+            throw new org.bouncycastle.tls.exceptions.IllegalStateException("unable to create key pair: " + e.getMessage(), e);
         }
     }
 
@@ -180,7 +180,7 @@ public class JceTlsECDomain
         }
         catch (GeneralSecurityException e)
         {
-            throw new org.bouncycastle.exceptions.IllegalStateException("unable to create key pair: " + e.getMessage(), e);
+            throw new org.bouncycastle.tls.exceptions.IllegalStateException("unable to create key pair: " + e.getMessage(), e);
         }
     }
 
