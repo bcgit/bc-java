@@ -212,6 +212,11 @@ public class EvidenceRecord extends ASN1Object
         digestAlgorithms = new DERSequence(vector);
     }
 
+    public ASN1Sequence getDigestAlgorithms() {
+
+        return digestAlgorithms;
+    }
+
     /**
      * Adds a new Archive TimeStamp to the Evidence Record
      * @param ats the archive timestamp to add
