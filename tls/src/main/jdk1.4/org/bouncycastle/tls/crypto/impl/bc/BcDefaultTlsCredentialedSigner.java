@@ -44,7 +44,7 @@ public class BcDefaultTlsCredentialedSigner
             }
             catch (IOException e)
             {
-                throw new org.bouncycastle.exceptions.IllegalArgumentException(e);
+                throw new org.bouncycastle.tls.exceptions.IllegalArgumentException(e);
             }
         }
         else if (privateKey instanceof Ed448PrivateKeyParameters)
@@ -56,7 +56,7 @@ public class BcDefaultTlsCredentialedSigner
             }
             catch (IOException e)
             {
-                throw new org.bouncycastle.exceptions.IllegalArgumentException(e);
+                throw new org.bouncycastle.tls.exceptions.IllegalArgumentException(e);
             }
         }
         else

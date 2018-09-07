@@ -531,7 +531,7 @@ public class JcaTlsCrypto
         }
         catch (GeneralSecurityException e)
         {
-            throw new org.bouncycastle.exceptions.IllegalArgumentException("unable to create message digest:" + e.getMessage(), e);
+            throw new org.bouncycastle.tls.exceptions.IllegalArgumentException("unable to create message digest:" + e.getMessage(), e);
         }
     }
 

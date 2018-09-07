@@ -71,7 +71,7 @@ public class JceBlockCipherWithCBCImplicitIVImpl
         }
         catch (GeneralSecurityException e)
         {
-            throw new org.bouncycastle.exceptions.IllegalStateException(e);
+            throw new org.bouncycastle.tls.exceptions.IllegalStateException(e);
         }
     }
 
