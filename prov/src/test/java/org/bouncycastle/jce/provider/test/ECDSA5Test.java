@@ -69,7 +69,6 @@ import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestRandomBigInteger;
-import org.junit.Assert;
 
 public class ECDSA5Test
     extends SimpleTest
@@ -185,7 +184,7 @@ public class ECDSA5Test
         ECParameterSpec ecParamSpec = parameters.getParameterSpec(ECParameterSpec.class);
         PublicKey pubKey = kfBc.generatePublic(new ECPublicKeySpec(point, ecParamSpec));
 
-        Assert.assertArrayEquals(namedPubKey, pubKey.getEncoded());
+        isTrue(Arrays.areEqual(namedPubKey, pubKey.getEncoded()));
     }
 
     private void decodeTest()
