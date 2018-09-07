@@ -63,8 +63,8 @@ public class TlsDHUtils
     {
         /*
          * NOTE: An equivalent mechanism was added to support a minimum bit-size requirement for ECC
-         * mooted in draft-ietf-tls-ecdhe-psk-aead-00. This requirement was removed in later drafts,
-         * so that mechanism is currently somewhat trivial, and this similarly so.
+         * mooted in early drafts of RFC 8442. This requirement was removed in later drafts, so that
+         * mechanism is currently somewhat trivial, and this similarly so.
          */
         return isDHECipherSuite(cipherSuite) ? 1 : 0;
     }

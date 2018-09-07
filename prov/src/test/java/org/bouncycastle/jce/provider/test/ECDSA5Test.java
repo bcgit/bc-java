@@ -64,14 +64,20 @@ import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestRandomBigInteger;
+import org.junit.Assert;
 
 public class ECDSA5Test
     extends SimpleTest
 {
+    private static final byte[] namedPubKey = Base64.decode(
+        "MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEJMeqHZzm+saHt1m3a4u5BIqgSznd8LNvoeS93zzE9Ll31/AMaveAj" +
+            "JqWxGdyCwnqmM5m3IFCZV3abKVGNpnuQwhIOPMm1355YX1JeEy/ifCx7lYe1o8Xs/Ajqz8cJB3j");
+
     byte[] k1 = Hex.decode("d5014e4b60ef2ba8b6211b4062ba3224e0427dd3");
     byte[] k2 = Hex.decode("345e8d05c075c3a508df729a1685690e68fcfb8c8117847e89063bca1f85d968fd281540b6e13bd1af989a1fbf17e06462bf511f9d0b140fb48ac1b1baa5bded");
 
@@ -163,6 +169,23 @@ public class ECDSA5Test
 
             isTrue("sig verified when shouldn't: " + i, failed);
         }
+    }
+
+    public void testNamedCurveInKeyFactory()
+        throws Exception
+    {
+        KeyFactory kfBc = KeyFactory.getInstance("EC", "BC");
+        BigInteger x = new BigInteger("24c7aa1d9ce6fac687b759b76b8bb9048aa04b39ddf0b36fa1e4bddf3cc4f4b977d7f00c6af7808c9a96c467720b09ea", 16);
+        BigInteger y = new BigInteger("98ce66dc8142655dda6ca5463699ee43084838f326d77e79617d49784cbf89f0b1ee561ed68f17b3f023ab3f1c241de3", 16);
+        String curveName = "secp384r1";
+        ECPoint point = new ECPoint(x, y);
+
+        AlgorithmParameters parameters = AlgorithmParameters.getInstance("EC", "BC");
+        parameters.init(new ECGenParameterSpec(curveName));
+        ECParameterSpec ecParamSpec = parameters.getParameterSpec(ECParameterSpec.class);
+        PublicKey pubKey = kfBc.generatePublic(new ECPublicKeySpec(point, ecParamSpec));
+
+        Assert.assertArrayEquals(namedPubKey, pubKey.getEncoded());
     }
 
     private void decodeTest()
@@ -1169,6 +1192,7 @@ public class ECDSA5Test
         testModified();
         testSM2();
         testNonsense();
+        testNamedCurveInKeyFactory();
     }
 
     public static void main(

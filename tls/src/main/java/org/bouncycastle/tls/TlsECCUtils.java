@@ -70,9 +70,9 @@ public class TlsECCUtils
     public static int getMinimumCurveBits(int cipherSuite)
     {
         /*
-         * NOTE: This mechanism was added to support a minimum bit-size requirement mooted in
-         * draft-ietf-tls-ecdhe-psk-aead-00. This requirement was removed in later drafts, so this
-         * mechanism is currently somewhat trivial.
+         * NOTE: This mechanism was added to support a minimum bit-size requirement mooted in early
+         * drafts of RFC 8442. This requirement was removed in later drafts, so this mechanism is
+         * currently somewhat trivial.
          */
         return isECCipherSuite(cipherSuite) ? 1 : 0;
     }
