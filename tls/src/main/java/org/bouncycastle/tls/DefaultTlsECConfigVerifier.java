@@ -43,7 +43,7 @@ public class DefaultTlsECConfigVerifier
             return false;
         }
 
-        if (namedGroups != null && !namedGroups.contains(namedGroup))
+        if (namedGroups != null && !namedGroups.contains(new Integer(namedGroup)))
         {
             /*
              * RFC 4492 4. [...] servers MUST NOT negotiate the use of an ECC cipher suite unless

@@ -16,7 +16,7 @@ public class TlsSRPConfig
      */
     public BigInteger[] getExplicitNG()
     {
-        return explicitNG.clone();
+        return (BigInteger[])explicitNG.clone();
     }
 
     /**
@@ -26,6 +26,6 @@ public class TlsSRPConfig
      */
     public void setExplicitNG(BigInteger[] explicitNG)
     {
-        this.explicitNG = explicitNG.clone();
+        this.explicitNG = (BigInteger[])explicitNG.clone();
     }
 }
