@@ -228,77 +228,62 @@ public class BcTlsCertificate
 
     public DSAPublicKeyParameters getPubKeyDSS() throws IOException
     {
-        DSAPublicKeyParameters pubKeyDSS;
         try
         {
-            pubKeyDSS = (DSAPublicKeyParameters)getPublicKey();
+            return (DSAPublicKeyParameters)getPublicKey();
         }
         catch (ClassCastException e)
         {
             throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
         }
-
-        return validatePubKeyDSS(pubKeyDSS);
     }
 
     public ECPublicKeyParameters getPubKeyEC() throws IOException
     {
-        ECPublicKeyParameters pubKeyEC;
         try
         {
-            pubKeyEC = (ECPublicKeyParameters)getPublicKey();
+            return (ECPublicKeyParameters)getPublicKey();
         }
         catch (ClassCastException e)
         {
             throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
         }
-
-        return validatePubKeyEC(pubKeyEC);
     }
 
     public Ed25519PublicKeyParameters getPubKeyEd25519() throws IOException
     {
-        Ed25519PublicKeyParameters pubKeyEd25519;
         try
         {
-            pubKeyEd25519 = (Ed25519PublicKeyParameters)getPublicKey();
+            return (Ed25519PublicKeyParameters)getPublicKey();
         }
         catch (ClassCastException e)
         {
             throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
         }
-
-        return validatePubKeyEd25519(pubKeyEd25519);
     }
 
     public Ed448PublicKeyParameters getPubKeyEd448() throws IOException
     {
-        Ed448PublicKeyParameters pubKeyEd448;
         try
         {
-            pubKeyEd448 = (Ed448PublicKeyParameters)getPublicKey();
+            return (Ed448PublicKeyParameters)getPublicKey();
         }
         catch (ClassCastException e)
         {
             throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
         }
-
-        return validatePubKeyEd448(pubKeyEd448);
     }
 
     public RSAKeyParameters getPubKeyRSA() throws IOException
     {
-        RSAKeyParameters pubKeyRSA;
         try
         {
-            pubKeyRSA = (RSAKeyParameters)getPublicKey();
+            return (RSAKeyParameters)getPublicKey();
         }
         catch (ClassCastException e)
         {
             throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
         }
-
-        return validatePubKeyRSA(pubKeyRSA);
     }
 
     public TlsCertificate useInRole(int connectionEnd, int keyExchangeAlgorithm) throws IOException
@@ -368,35 +353,5 @@ public class BcTlsCertificate
                 }
             }
         }
-    }
-
-    protected DSAPublicKeyParameters validatePubKeyDSS(DSAPublicKeyParameters pubKeyDSS) throws IOException
-    {
-        // TODO[tls-ops]
-        return pubKeyDSS;
-    }
-
-    protected ECPublicKeyParameters validatePubKeyEC(ECPublicKeyParameters pubKeyEC) throws IOException
-    {
-        // TODO[tls-ops]
-        return pubKeyEC;
-    }
-
-    protected Ed25519PublicKeyParameters validatePubKeyEd25519(Ed25519PublicKeyParameters pubKeyEd25519) throws IOException
-    {
-        // TODO[tls-ops]
-        return pubKeyEd25519;
-    }
-
-    protected Ed448PublicKeyParameters validatePubKeyEd448(Ed448PublicKeyParameters pubKeyEd448) throws IOException
-    {
-        // TODO[tls-ops]
-        return pubKeyEd448;
-    }
-
-    protected RSAKeyParameters validatePubKeyRSA(RSAKeyParameters pubKeyRSA) throws IOException
-    {
-        // TODO[tls-ops]
-        return pubKeyRSA;
     }
 }
