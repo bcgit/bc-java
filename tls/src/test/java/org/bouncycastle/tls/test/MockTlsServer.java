@@ -126,8 +126,7 @@ class MockTlsServer
 
     protected TlsCredentialedSigner getRSASignerCredentials() throws IOException
     {
-        return TlsTestUtils.loadSignerCredentials(context, supportedSignatureAlgorithms, SignatureAlgorithm.rsa,
-            "x509-server-rsa-sign.pem", "x509-server-key-rsa-sign.pem");
+        return TlsTestUtils.loadSignerCredentialsServer(context, supportedSignatureAlgorithms, SignatureAlgorithm.rsa);
     }
 
     protected String hex(byte[] data)
