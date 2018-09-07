@@ -41,7 +41,8 @@ class DeferredHash
         this.sealed = true;
     }
 
-    public void copyBufferTo(OutputStream output) throws IOException
+    public void copyBufferTo(OutputStream output)
+        throws IOException
     {
         if (buf == null)
         {
@@ -67,12 +68,12 @@ class DeferredHash
         int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
         if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
         {
-            checkTrackingHash(HashAlgorithm.md5);
-            checkTrackingHash(HashAlgorithm.sha1);
+            checkTrackingHash(new Short(HashAlgorithm.md5));
+            checkTrackingHash(new Short(HashAlgorithm.sha1));
         }
         else
         {
-            checkTrackingHash(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm));
+            checkTrackingHash(new Short(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm)));
         }
         return this;
     }
@@ -222,9 +223,19 @@ class DeferredHash
         }
     }
 
+    protected TlsHash cloneHash(short hashAlgorithm)
+    {
+        return cloneHash(new Short(hashAlgorithm));
+    }
+
     protected TlsHash cloneHash(Short hashAlgorithm)
     {
-        return (TlsHash)hashes.get(hashAlgorithm).clone();
+        return (TlsHash)(((TlsHash)hashes.get(hashAlgorithm)).clone());
+    }
+
+    protected void cloneHash(Hashtable newHashes, short hashAlgorithm)
+    {
+        cloneHash(newHashes, new Short(hashAlgorithm));
     }
 
     protected void cloneHash(Hashtable newHashes, Short hashAlgorithm)

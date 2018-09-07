@@ -102,7 +102,8 @@ public class JceTlsSecret
     protected byte[] prf_1_2(int prfAlgorithm, byte[] secret, byte[] labelSeed, int length)
         throws GeneralSecurityException
     {
-        String digestName = crypto.getDigestName(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm)).replace("-", "");
+
+        String digestName = crypto.getDigestName(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm)).replaceAll("-", "");
         byte[] result = new byte[length];
         hmacHash(digestName, secret, 0, secret.length, labelSeed, result);
         return result;
