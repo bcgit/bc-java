@@ -42,7 +42,7 @@ public class JceBlockCipherImpl
         }
         catch (GeneralSecurityException e)
         {
-            throw new IllegalStateException(e);
+            throw Exceptions.illegalStateException(e.getMessage(), e);
         }
     }
 
@@ -54,7 +54,7 @@ public class JceBlockCipherImpl
         }
         catch (GeneralSecurityException e)
         {
-            throw new IllegalStateException(e);
+            throw Exceptions.illegalStateException(e.getMessage(), e);
         }
     }
 

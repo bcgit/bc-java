@@ -109,32 +109,12 @@
 
             <fileset dir="tls/src/main/java" includes="**/*.java">
                 <exclude name="**/jsse/**"/>
-                <exclude name="**/JceTlsECDomain.java"/>
-                <exclude name="**/JceX25519Domain.java"/>
-                <exclude name="**/JceX448Domain.java"/>
-                <exclude name="**/JceTlsECDH.java"/>
-                <exclude name="**/JceDefaultTlsCredentialedAgreement.java"/>
-                <exclude name="**/JceAEADCipherImpl.java"/>
-                <exclude name="**/JceBlockCipherWithCBCImplicitIVImpl.java"/>
-                <exclude name="**/JceBlockCipherImpl.java"/>
-                <exclude name="**/JcaTlsRSAVerifier.java"/>
-                <exclude name="**/JcaTlsDSSVerifier.java"/>
-                <exclude name="**/JcaTlsCryptoProvider.java"/>
-                <exclude name="**/JcaTlsCertificate.java"/>
-                <exclude name="**/JcaTlsCrypto.java"/>
-                <exclude name="**/JceTlsSecret.java"/>
-                <exclude name="**/JcaDefaultTlsCredentialedSigner.java"/>
-                <exclude name="**/bc/BcDefaultTlsCredentialedSigner.java"/>
-
             </fileset>
-            <fileset dir="tls/src/main/jdk1.4" includes="**/*.java"/>
             <fileset dir="tls/src/main/javadoc" includes="**/*.html"/>
             <fileset dir="tls/src/test/java" includes="**/*.java">
                 <exclude name="**/jsse/**"/>
                 <exclude name="**/CertChainUtil.java"/>
                 <exclude name="**/TlsTestUtils.java"/>
-            </fileset>
-            <fileset dir="tls/src/test/jdk1.4" includes="**/*.java">
             </fileset>
 
             <fileset dir="tls/src/test/resources" includes="**/*.*"/>
@@ -171,11 +151,13 @@
             <fileset dir="prov/src/main/jdk1.4" includes="**/*.java"/>
             <fileset dir="pkix/src/main/jdk1.4" includes="**/*.java"/>
             <fileset dir="pg/src/main/jdk1.4" includes="**/*.java"/>
+            <fileset dir="tls/src/main/jdk1.4" includes="**/*.java"/>
             <fileset dir="core/src/test/jdk1.4" includes="**/*.java"/>
             <fileset dir="mail/src/test/jdk1.4" includes="**/*.java"/>
             <fileset dir="prov/src/test/jdk1.4" includes="**/*.java"/>
             <fileset dir="pg/src/test/jdk1.4" includes="**/*.java"/>
             <fileset dir="pkix/src/test/jdk1.4" includes="**/*.java"/>
+            <fileset dir="tls/src/test/jdk1.4" includes="**/*.java"/>
         </copy>
 
         <replaceregexp match="${regexp}" replace=" " flags="g" byline="true">

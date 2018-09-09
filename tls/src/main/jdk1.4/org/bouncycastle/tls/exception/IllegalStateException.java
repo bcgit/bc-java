@@ -1,7 +1,7 @@
-package org.bouncycastle.tls.exceptions;
+package org.bouncycastle.tls.exception;
 
 public class IllegalStateException
-    extends java.lang.IllegalArgumentException
+    extends java.lang.IllegalStateException
 {
     final Throwable cause;
 

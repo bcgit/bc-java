@@ -71,7 +71,7 @@ public class JceBlockCipherWithCBCImplicitIVImpl
         }
         catch (GeneralSecurityException e)
         {
-            throw new IllegalStateException(e);
+            throw Exceptions.illegalStateException(e.getMessage(), e);
         }
     }
 

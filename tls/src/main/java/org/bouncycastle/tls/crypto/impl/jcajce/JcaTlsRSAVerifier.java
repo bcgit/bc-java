@@ -132,7 +132,7 @@ public class JcaTlsRSAVerifier
         }
         catch (GeneralSecurityException e)
         {
-            throw new IllegalStateException("unable to process signature: " + e.getMessage(), e);
+            throw Exceptions.illegalStateException("unable to process signature: " + e.getMessage(), e);
         }
     }
 

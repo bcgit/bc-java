@@ -2,7 +2,6 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.security.PrivateKey;
 import java.security.interfaces.DSAPrivateKey;
-import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 
 import org.bouncycastle.tls.Certificate;
@@ -30,7 +29,7 @@ public class JcaDefaultTlsCredentialedSigner
         {
             signer = new JcaTlsDSASigner(crypto, privateKey);
         }
-        else if (privateKey instanceof ECPrivateKey || "EC".equals(algorithm))
+        else if (ECUtil.isECPrivateKey(privateKey))
         {
             signer = new JcaTlsECDSASigner(crypto, privateKey);
         }
