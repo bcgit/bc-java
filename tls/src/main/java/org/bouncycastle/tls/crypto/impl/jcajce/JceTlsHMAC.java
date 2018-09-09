@@ -7,6 +7,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.tls.crypto.TlsHMAC;
+import org.bouncycastle.util.Integers;
 
 /**
  * Wrapper class for a JCE MAC based on HMAC to provide the necessary operations for TLS.
@@ -18,11 +19,11 @@ public class JceTlsHMAC
 
     static
     {
-        internalBlockSizes.put("HmacMD5", new Integer(64));
-        internalBlockSizes.put("HmacSHA1", new Integer(64));
-        internalBlockSizes.put("HmacSHA256", new Integer(64));
-        internalBlockSizes.put("HmacSHA384", new Integer(128));
-        internalBlockSizes.put("HmacSHA512", new Integer(128));
+        internalBlockSizes.put("HmacMD5", Integers.valueOf(64));
+        internalBlockSizes.put("HmacSHA1", Integers.valueOf(64));
+        internalBlockSizes.put("HmacSHA256", Integers.valueOf(64));
+        internalBlockSizes.put("HmacSHA384", Integers.valueOf(128));
+        internalBlockSizes.put("HmacSHA512", Integers.valueOf(128));
     }
 
     private final Mac hmac;
@@ -61,7 +62,7 @@ public class JceTlsHMAC
     {
         this.hmac = hmac;
         this.algorithm = algorithm;
-        this.internalBlockSize = new Integer(internalBlockSize);
+        this.internalBlockSize = Integers.valueOf(internalBlockSize);
     }
 
     public void setKey(byte[] key, int keyOff, int keyLen)
