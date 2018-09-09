@@ -90,6 +90,9 @@ public class CSHAKEDigest
     {
         super.reset();
         
-        diffPadAndAbsorb();
+        if (diff != null)
+        {
+            diffPadAndAbsorb();
+        }
     }
 }
