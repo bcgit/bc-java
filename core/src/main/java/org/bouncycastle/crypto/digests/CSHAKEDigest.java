@@ -1,0 +1,90 @@
+package org.bouncycastle.crypto.digests;
+
+import org.bouncycastle.util.Arrays;
+
+public class CSHAKEDigest
+    extends SHAKEDigest
+{
+    private static final byte[] padding = new byte[100];
+    private final byte[] diff;
+
+    public CSHAKEDigest(int bitLength, byte[] N, byte[] S)
+    {
+        super(bitLength);
+
+        if (N.length == 0 && S.length == 0)
+        {
+            diff = null;
+        }
+        else
+        {
+            diff = Arrays.concatenate(leftEncode(rate / 8), encodeString(N), encodeString(S));
+            diffPadAndAbsorb();
+        }
+    }
+
+    private void diffPadAndAbsorb()
+    {
+        int blockSize = rate / 8;
+        absorb(diff, 0, diff.length);
+
+        int count = diff.length;
+
+        while (blockSize - count > padding.length)
+        {
+            absorb(padding, 0, padding.length);
+            count += padding.length;
+        }
+
+        absorb(padding, 0, blockSize - (count % blockSize));
+    }
+
+    private byte[] encodeString(byte[] str)
+    {
+        return Arrays.concatenate(leftEncode(str.length * 8), str);
+    }
+
+    private byte[] leftEncode(int strLen)
+    {
+    	byte n = 0;
+
+    	for (int v = strLen; v != 0; v = v >> 8)
+        {
+    		n++;
+    	}
+
+        if (n == 0)
+        {
+    		n = 1;
+    	}
+
+        byte[] b = new byte[n + 1];
+
+    	b[0] = n;
+    	for (int i = 1; i <= n; i++)
+    	{
+    		b[i] = (byte)(strLen >> (8 * (i - 1)));
+    	}
+
+    	return b;
+    }
+    
+    public int doOutput(byte[] out, int outOff, int outLen)
+    {
+        if (!squeezing)
+        {
+            absorbBits(0x00, 2);
+        }
+
+        squeeze(out, outOff, ((long)outLen) * 8);
+
+        return outLen;
+    }
+
+    public void reset()
+    {
+        super.reset();
+        
+        diffPadAndAbsorb();
+    }
+}
