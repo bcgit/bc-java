@@ -162,7 +162,8 @@ public class RegressionTest
         new X25519Test(),
         new X448Test(),
         new Ed25519Test(),
-        new Ed448Test()
+        new Ed448Test(),
+        new CSHAKETest()
     };
 
     public static void main(
