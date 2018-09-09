@@ -12,7 +12,7 @@ public class CSHAKEDigest
     {
         super(bitLength);
 
-        if (N.length == 0 && S.length == 0)
+        if ((N == null || N.length == 0) && (S == null || S.length == 0))
         {
             diff = null;
         }
@@ -41,6 +41,11 @@ public class CSHAKEDigest
 
     private byte[] encodeString(byte[] str)
     {
+        if (str == null || str.length == 0)
+        {
+            return leftEncode(0);
+        }
+
         return Arrays.concatenate(leftEncode(str.length * 8), str);
     }
 
