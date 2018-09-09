@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.interfaces.ECPrivateKey;
 
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.DHPrivateKey;
@@ -27,7 +26,7 @@ public class JceDefaultTlsCredentialedAgreement
         {
             return "DH";
         }
-        if (privateKey instanceof ECPrivateKey)
+        if (ECUtil.isECPrivateKey(privateKey))
         {
             return "ECDH";
         }

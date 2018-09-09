@@ -68,12 +68,12 @@ class DeferredHash
         int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
         if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
         {
-            checkTrackingHash(new Short(HashAlgorithm.md5));
-            checkTrackingHash(new Short(HashAlgorithm.sha1));
+            checkTrackingHash(Shorts.valueOf(HashAlgorithm.md5));
+            checkTrackingHash(Shorts.valueOf(HashAlgorithm.sha1));
         }
         else
         {
-            checkTrackingHash(new Short(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm)));
+            checkTrackingHash(Shorts.valueOf(TlsUtils.getHashAlgorithmForPRFAlgorithm(prfAlgorithm)));
         }
         return this;
     }
@@ -225,7 +225,7 @@ class DeferredHash
 
     protected TlsHash cloneHash(short hashAlgorithm)
     {
-        return cloneHash(new Short(hashAlgorithm));
+        return cloneHash(Shorts.valueOf(hashAlgorithm));
     }
 
     protected TlsHash cloneHash(Short hashAlgorithm)
@@ -235,7 +235,7 @@ class DeferredHash
 
     protected void cloneHash(Hashtable newHashes, short hashAlgorithm)
     {
-        cloneHash(newHashes, new Short(hashAlgorithm));
+        cloneHash(newHashes, Shorts.valueOf(hashAlgorithm));
     }
 
     protected void cloneHash(Hashtable newHashes, Short hashAlgorithm)

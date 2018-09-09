@@ -107,7 +107,7 @@ public class JceX25519Domain implements TlsECDomain
         }
         catch (GeneralSecurityException e)
         {
-            throw new IllegalStateException("unable to create key pair: " + e.getMessage(), e);
+            throw Exceptions.illegalStateException("unable to create key pair: " + e.getMessage(), e);
         }
     }
 }

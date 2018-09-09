@@ -79,7 +79,7 @@ public class JcaTlsCryptoProvider
         }
         catch (GeneralSecurityException e)
         {
-            throw new IllegalStateException("unable to create TlsCrypto: " + e.getMessage(), e);
+            throw Exceptions.illegalStateException("unable to create TlsCrypto: " + e.getMessage(), e);
         }
     }
 
@@ -181,7 +181,7 @@ public class JcaTlsCryptoProvider
                 }
                 catch (DigestException e)
                 {
-                    throw new IllegalStateException("unable to generate nonce data: " + e.getMessage(), e);
+                    throw Exceptions.illegalStateException("unable to generate nonce data: " + e.getMessage(), e);
                 }
             }
         }
