@@ -1,4 +1,4 @@
-module org.bouncycastle.prov
+module org.bouncycastle.provider
 {
     exports org.bouncycastle;
     exports org.bouncycastle.asn1;
