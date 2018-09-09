@@ -76,14 +76,21 @@ public class CSHAKEDigest
     
     public int doOutput(byte[] out, int outOff, int outLen)
     {
-        if (!squeezing)
+        if (diff != null)
         {
-            absorbBits(0x00, 2);
+            if (!squeezing)
+            {
+                absorbBits(0x00, 2);
+            }
+
+            squeeze(out, outOff, ((long)outLen) * 8);
+
+            return outLen;
         }
-
-        squeeze(out, outOff, ((long)outLen) * 8);
-
-        return outLen;
+        else
+        {
+            return super.doOutput(out, outOff, outLen);
+        }
     }
 
     public void reset()
