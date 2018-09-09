@@ -44,7 +44,7 @@ public class BcDefaultTlsCredentialedSigner
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException(e);
+                throw Exceptions.illegalArgumentException("exception converting certificate", e);
             }
         }
         else if (privateKey instanceof Ed448PrivateKeyParameters)
@@ -56,7 +56,7 @@ public class BcDefaultTlsCredentialedSigner
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException(e);
+                throw Exceptions.illegalArgumentException("exception converting certificate", e);
             }
         }
         else

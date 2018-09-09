@@ -100,7 +100,7 @@ public class JceAEADCipherImpl
         }
         catch (Exception e)
         {
-            throw new org.bouncycastle.tls.exceptions.IllegalStateException(e.getMessage(), e);
+            throw Exceptions.illegalStateException(e.getMessage(), e);
         }
     }
 
@@ -117,7 +117,7 @@ public class JceAEADCipherImpl
         }
         catch (GeneralSecurityException e)
         {
-            throw new org.bouncycastle.tls.exceptions.IllegalStateException(e);
+            throw Exceptions.illegalStateException("", e);
         }
     }
 }

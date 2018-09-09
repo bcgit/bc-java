@@ -2,14 +2,11 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.ECGenParameterSpec;
-import java.security.spec.ECParameterSpec;
 import java.util.Hashtable;
 
 import javax.crypto.Cipher;
@@ -405,7 +402,7 @@ public class JcaTlsCrypto
             return false;
         }
 
-        int key = Integers.valueOf(namedGroup);
+        Integer key = Integers.valueOf(namedGroup);
 
         synchronized (supportedGroups)
         {
@@ -523,7 +520,7 @@ public class JcaTlsCrypto
         }
         catch (GeneralSecurityException e)
         {
-            throw new IllegalArgumentException("unable to create message digest:" + e.getMessage(), e);
+            throw Exceptions.illegalArgumentException("unable to create message digest:" + e.getMessage(), e);
         }
     }
 
@@ -680,20 +677,7 @@ public class JcaTlsCrypto
 
     protected boolean isCurveSupported(String curveName)
     {
-        try
-        {
-            AlgorithmParameters params = getHelper().createAlgorithmParameters("EC");
-            params.init(new ECGenParameterSpec(curveName));
-            if (params.getParameterSpec(ECParameterSpec.class) != null)
-            {
-                return true;
-            }
-        }
-        catch (Exception e)
-        {
-        }
-
-        return false;
+        return ECUtil.isCurveSupported(curveName, this.getHelper());
     }
 
     public JcaJceHelper getHelper()
