@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.digests.CSHAKEDigest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -30,7 +31,7 @@ public class CSHAKETest
 
         cshake.doOutput(res, 0, res.length);
 
-        isTrue(Arrays.areEqual(Hex.decode("c1c36925b6409a04f1b504fcbca9d82b4017277cb5ed2b2065fc1d3814d5aaf5"), res));
+        isTrue("oops!", Arrays.areEqual(Hex.decode("c1c36925b6409a04f1b504fcbca9d82b4017277cb5ed2b2065fc1d3814d5aaf5"), res));
 
         cshake = new CSHAKEDigest(128, new byte[0], Strings.toByteArray("Email Signature"));
 
@@ -95,8 +96,87 @@ public class CSHAKETest
                     "4B85FB1DEFAF218912AC864302730917"+
                     "27F42B17ED1DF63E8EC118F04B23633C"+
                     "1DFB1574C8FB55CB45DA8E25AFB092BB"), res));
+
+        doFinalTest();
+        longBlockTest();
+        
+        checkSHAKE(128, new CSHAKEDigest(128, new byte[0], new byte[0]), Hex.decode("eeaabeef"));
+        checkSHAKE(256, new CSHAKEDigest(256, new byte[0], null), Hex.decode("eeaabeef"));
+        checkSHAKE(128, new CSHAKEDigest(128, null, new byte[0]), Hex.decode("eeaabeef"));
+        checkSHAKE(128, new CSHAKEDigest(128, null, null), Hex.decode("eeaabeef"));
+        checkSHAKE(256, new CSHAKEDigest(256, null, null), Hex.decode("eeaabeef"));
     }
 
+    private void doFinalTest()
+    {
+        CSHAKEDigest cshake = new CSHAKEDigest(128, new byte[0], Strings.toByteArray("Email Signature"));
+
+        cshake.update(Hex.decode("00010203"), 0, 4);
+
+        byte[] res = new byte[32];
+
+        cshake.doOutput(res, 0, res.length);
+
+        isTrue(Arrays.areEqual(Hex.decode("c1c36925b6409a04f1b504fcbca9d82b4017277cb5ed2b2065fc1d3814d5aaf5"), res));
+
+        cshake.doOutput(res, 0, res.length);
+
+        isTrue(!Arrays.areEqual(Hex.decode("c1c36925b6409a04f1b504fcbca9d82b4017277cb5ed2b2065fc1d3814d5aaf5"), res));
+
+        cshake.doFinal(res, 0, res.length);
+
+        cshake.update(Hex.decode("00010203"), 0, 4);
+
+        cshake.doFinal(res, 0, res.length);
+
+        isTrue(Arrays.areEqual(Hex.decode("c1c36925b6409a04f1b504fcbca9d82b4017277cb5ed2b2065fc1d3814d5aaf5"), res));
+
+        cshake.update(Hex.decode("00010203"), 0, 4);
+
+        cshake.doOutput(res, 0, res.length);
+
+        isTrue(Arrays.areEqual(Hex.decode("c1c36925b6409a04f1b504fcbca9d82b4017277cb5ed2b2065fc1d3814d5aaf5"), res));
+        
+        cshake.doFinal(res, 0, res.length);
+
+        isTrue(Arrays.areEqual(Hex.decode("9cbce830079c452abdeb875366a49ebfe75b89ef17396e34898e904830b0e136"), res));
+    }
+
+    private void longBlockTest()
+    {
+        byte[] data = new byte[16000];
+        byte[] res = new byte[32];
+
+        for (int i = 0; i != data.length; i++)
+        {
+            data[i] = (byte)i;
+        }
+
+        for (int i = 10000; i != data.length; i++)
+        {
+            CSHAKEDigest cshake = new CSHAKEDigest(128, new byte[0], Arrays.copyOfRange(data, 0, i));
+
+            cshake.update(Hex.decode("00010203"), 0, 4);
+
+            cshake.doFinal(res, 0);
+        }
+    }
+
+    private void checkSHAKE(int bitSize, CSHAKEDigest cshake, byte[] msg)
+    {
+        SHAKEDigest ref = new SHAKEDigest(bitSize);
+
+        ref.update(msg, 0, msg.length);
+        cshake.update(msg, 0, msg.length);
+
+        byte[] res1 = new byte[32];
+        byte[] res2 = new byte[32];
+
+        ref.doFinal(res1, 0, res1.length);
+        cshake.doFinal(res2, 0, res2.length);
+
+        isTrue(Arrays.areEqual(res1, res2));
+    }
     public static void main(
         String[] args)
     {
