@@ -28,15 +28,15 @@ public class CSHAKEDigest
         int blockSize = rate / 8;
         absorb(diff, 0, diff.length);
 
-        int count = diff.length;
+        int required = blockSize - (diff.length % blockSize);
 
-        while (blockSize - count > padding.length)
+        while (required > padding.length)
         {
             absorb(padding, 0, padding.length);
-            count += padding.length;
+            required -= padding.length;
         }
-
-        absorb(padding, 0, blockSize - (count % blockSize));
+        
+        absorb(padding, 0, required);
     }
 
     private byte[] encodeString(byte[] str)
