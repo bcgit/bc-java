@@ -41,9 +41,9 @@ public class FixedPointCombMultiplier extends AbstractECMultiplier
             for (int j = top - i; j >= 0; j -= d)
             {
                 int secretBit = K[j >>> 5] >>> (j & 0x1F);
+                secretIndex ^= secretBit >>> 1;
                 secretIndex <<= 1;
                 secretIndex ^= secretBit;
-                secretIndex ^= (secretBit & ~1);
             }
 
             ECPoint add = lookupTable.lookup(secretIndex);
