@@ -33,6 +33,7 @@ import org.bouncycastle.tls.crypto.TlsStreamVerifier;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Shorts;
 import org.bouncycastle.util.io.Streams;
 
 /**
@@ -45,7 +46,7 @@ public class TlsUtils
 
     private static void addSigHashAlg(Hashtable h, ASN1ObjectIdentifier oid, short hashAlg)
     {
-        h.put(oid.getId(), new Short(hashAlg));
+        h.put(oid.getId(), Shorts.valueOf(hashAlg));
     }
 
     private static Hashtable createSigHashAlgs()
@@ -820,7 +821,7 @@ public class TlsUtils
     {
         if (crypto.hasNamedGroup(namedGroup))
         {
-            supportedGroups.addElement(new Integer(namedGroup));
+            supportedGroups.addElement(Integers.valueOf(namedGroup));
         }
     }
 
@@ -835,12 +836,12 @@ public class TlsUtils
     public static Vector getAllSignatureAlgorithms()
     {
         Vector v = new Vector(6);
-        v.addElement(new Short(SignatureAlgorithm.anonymous));
-        v.addElement(new Short(SignatureAlgorithm.rsa));
-        v.addElement(new Short(SignatureAlgorithm.dsa));
-        v.addElement(new Short(SignatureAlgorithm.ecdsa));
-        v.addElement(new Short(SignatureAlgorithm.ed25519));
-        v.addElement(new Short(SignatureAlgorithm.ed448));
+        v.addElement(Shorts.valueOf(SignatureAlgorithm.anonymous));
+        v.addElement(Shorts.valueOf(SignatureAlgorithm.rsa));
+        v.addElement(Shorts.valueOf(SignatureAlgorithm.dsa));
+        v.addElement(Shorts.valueOf(SignatureAlgorithm.ecdsa));
+        v.addElement(Shorts.valueOf(SignatureAlgorithm.ed25519));
+        v.addElement(Shorts.valueOf(SignatureAlgorithm.ed448));
         return v;
     }
 
@@ -2822,23 +2823,23 @@ public class TlsUtils
         case KeyExchangeAlgorithm.DH_anon:
         case KeyExchangeAlgorithm.DH_anon_EXPORT:
         case KeyExchangeAlgorithm.ECDH_anon:
-            return sigAlgs.contains(new Short(SignatureAlgorithm.anonymous));
+            return sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.anonymous));
 
         case KeyExchangeAlgorithm.DHE_RSA:
         case KeyExchangeAlgorithm.DHE_RSA_EXPORT:
         case KeyExchangeAlgorithm.ECDHE_RSA:
         case KeyExchangeAlgorithm.SRP_RSA:
-            return sigAlgs.contains(new Short(SignatureAlgorithm.rsa));
+            return sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.rsa));
 
         case KeyExchangeAlgorithm.DHE_DSS:
         case KeyExchangeAlgorithm.DHE_DSS_EXPORT:
         case KeyExchangeAlgorithm.SRP_DSS:
-            return sigAlgs.contains(new Short(SignatureAlgorithm.dsa));
+            return sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.dsa));
 
         case KeyExchangeAlgorithm.ECDHE_ECDSA:
-            return sigAlgs.contains(new Short(SignatureAlgorithm.ecdsa))
-                || sigAlgs.contains(new Short(SignatureAlgorithm.ed25519))
-                || sigAlgs.contains(new Short(SignatureAlgorithm.ed448));
+            return sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.ecdsa))
+                || sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.ed25519))
+                || sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.ed448));
 
         default:
             return true;
@@ -2912,13 +2913,13 @@ public class TlsUtils
         }
 
         Vector v = new Vector(6);
-        v.addElement(new Short(SignatureAlgorithm.anonymous));
+        v.addElement(Shorts.valueOf(SignatureAlgorithm.anonymous));
         for (int i = 0; i < sigHashAlgs.size(); ++i)
         {
             SignatureAndHashAlgorithm sigHashAlg = (SignatureAndHashAlgorithm)sigHashAlgs.elementAt(i);
             if (sigHashAlg.getHash() >= MINIMUM_HASH_STRICT)
             {
-                Short sigAlg = new Short(sigHashAlg.getSignature());
+                Short sigAlg = Shorts.valueOf(sigHashAlg.getSignature());
                 if (!v.contains(sigAlg))
                 {
                     v.addElement(sigAlg);
