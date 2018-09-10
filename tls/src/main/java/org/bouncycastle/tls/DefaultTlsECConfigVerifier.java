@@ -3,6 +3,7 @@ package org.bouncycastle.tls;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsECConfig;
+import org.bouncycastle.util.Integers;
 
 public class DefaultTlsECConfigVerifier
     implements TlsECConfigVerifier
@@ -43,7 +44,7 @@ public class DefaultTlsECConfigVerifier
             return false;
         }
 
-        if (namedGroups != null && !namedGroups.contains(new Integer(namedGroup)))
+        if (namedGroups != null && !namedGroups.contains(Integers.valueOf(namedGroup)))
         {
             /*
              * RFC 4492 4. [...] servers MUST NOT negotiate the use of an ECC cipher suite unless
