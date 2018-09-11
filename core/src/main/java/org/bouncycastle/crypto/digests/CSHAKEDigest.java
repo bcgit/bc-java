@@ -2,12 +2,22 @@ package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Customizable SHAKE function.
+ */
 public class CSHAKEDigest
     extends SHAKEDigest
 {
     private static final byte[] padding = new byte[100];
     private final byte[] diff;
 
+    /**
+     * Base constructor.
+     *
+     * @param bitLength bit length of the underlying SHAKE function, 128 or 256.
+     * @param N the function name string, note this is reserved for use by NIST. Avoid using it if not required.
+     * @param S the customization string - available for local use.
+     */
     public CSHAKEDigest(int bitLength, byte[] N, byte[] S)
     {
         super(bitLength);
