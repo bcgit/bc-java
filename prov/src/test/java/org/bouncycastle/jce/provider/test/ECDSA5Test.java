@@ -352,6 +352,15 @@ public class ECDSA5Test
             BSIObjectIdentifiers.ecdsa_plain_SHA512.getId(), BSIObjectIdentifiers.ecdsa_plain_RIPEMD160.getId()};
 
         testBsiAlgorithms(kp, data, plainAlgs, plainOids);
+
+        kpGen = KeyPairGenerator.getInstance("ECDSA", "BC");
+
+        kpGen.initialize(new ECGenParameterSpec(SECObjectIdentifiers.secp521r1.getId()));
+
+        kp = kpGen.generateKeyPair();
+
+        ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(SECObjectIdentifiers.secp521r1.getId());
+        testBsiSigSize(kp, spec.getN(), "SHA224WITHPLAIN-ECDSA");
     }
 
     private void testBsiAlgorithms(KeyPair kp, byte[] data, String[] algs, String[] oids)
@@ -379,6 +388,32 @@ public class ECDSA5Test
         }
     }
 
+    private void testBsiSigSize(KeyPair kp, BigInteger order, String alg)
+        throws Exception
+    {
+        for (int i = 0; i != 20; i++)
+        {
+            Signature sig1 = Signature.getInstance(alg, "BC");
+            Signature sig2 = Signature.getInstance(alg, "BC");
+
+            sig1.initSign(kp.getPrivate());
+
+            sig1.update(new byte[]{(byte)i});
+
+            byte[] sig = sig1.sign();
+            
+            isTrue(sig.length == (2 * ((order.bitLength() + 7) / 8)));
+            sig2.initVerify(kp.getPublic());
+
+            sig2.update(new byte[]{(byte)i});
+
+            if (!sig2.verify(sig))
+            {
+                fail("BSI CVC signature failed: " + alg);
+            }
+        }
+    }
+    
     /**
      * X9.62 - 1998,<br>
      * J.2.1, Page 100, ECDSA over the field F2m<br>
