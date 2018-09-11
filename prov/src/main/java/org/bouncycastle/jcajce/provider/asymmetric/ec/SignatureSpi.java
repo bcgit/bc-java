@@ -17,6 +17,9 @@ import org.bouncycastle.crypto.DSA;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.ECNRSigner;
@@ -40,6 +43,11 @@ public class SignatureSpi
     {
         CipherParameters param = ECUtils.generatePublicKeyParameter(publicKey);
 
+        if (encoder instanceof PlainDSAEncoder)
+        {
+            ((PlainDSAEncoder)encoder).setParameters(((ECPublicKeyParameters)param).getParameters());
+        }
+
         digest.reset();
         signer.init(false, param);
     }
@@ -49,6 +57,11 @@ public class SignatureSpi
         throws InvalidKeyException
     {
         CipherParameters param = ECUtil.generatePrivateKeyParameter(privateKey);
+        
+        if (encoder instanceof PlainDSAEncoder)
+        {
+            ((PlainDSAEncoder)encoder).setParameters(((ECPrivateKeyParameters)param).getParameters());
+        }
 
         digest.reset();
 
@@ -383,6 +396,18 @@ public class SignatureSpi
     private static class PlainDSAEncoder
         implements DSAEncoder
     {
+        private ECDomainParameters parameters;
+
+        void setParameters(ECDomainParameters parameters)
+        {
+            this.parameters = parameters;
+        }
+
+        public int getOrderSize()
+        {
+            return (parameters.getCurve().getFieldSize() + 7) / 8;
+        }
+
         public byte[] encode(
             BigInteger r,
             BigInteger s)
@@ -392,14 +417,14 @@ public class SignatureSpi
             byte[] second = makeUnsigned(s);
             byte[] res;
 
-            if (first.length > second.length)
+            int halfResLength = (first.length > second.length) ? first.length : second.length;
+
+            if (halfResLength < getOrderSize())
             {
-                res = new byte[first.length * 2];
+                halfResLength = getOrderSize();
             }
-            else
-            {
-                res = new byte[second.length * 2];
-            }
+
+            res = new byte[halfResLength * 2];
 
             System.arraycopy(first, 0, res, res.length / 2 - first.length, first.length);
             System.arraycopy(second, 0, res, res.length - second.length, second.length);
