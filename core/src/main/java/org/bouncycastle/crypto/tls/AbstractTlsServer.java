@@ -368,4 +368,22 @@ public abstract class AbstractTlsServer
          */
         return new NewSessionTicket(0L, TlsUtils.EMPTY_BYTES);
     }
+
+
+    /*
+     * The next two methods take care about server session handling / resumption. If you need
+     * this, you have to overwrite the next two methods with your own implementation taking
+     * care about session caching and resumption
+     */
+    public TlsSession getResumableSession(byte[] sessionID)
+        throws IOException
+    {
+        return null;
+    }
+
+    public TlsSession getNewResumableSession(byte[] requestedClientSessionID)
+        throws IOException
+    {
+        return null;
+    }
 }

@@ -92,4 +92,10 @@ public interface TlsServer
      */
     NewSessionTicket getNewSessionTicket()
         throws IOException;
+
+    TlsSession getResumableSession(byte[] sessionID)
+        throws IOException;
+
+    TlsSession getNewResumableSession(byte[] requestedClientSessionID)
+        throws IOException;
 }

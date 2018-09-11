@@ -307,6 +307,7 @@ public abstract class TlsProtocol
             {
                 if (this.sessionParameters == null)
                 {
+                    boolean server = getContext().isServer();
                     this.sessionParameters = new SessionParameters.Builder()
                         .setCipherSuite(this.securityParameters.getCipherSuite())
                         .setCompressionAlgorithm(this.securityParameters.getCompressionAlgorithm())
@@ -315,7 +316,7 @@ public abstract class TlsProtocol
                         .setPSKIdentity(this.securityParameters.getPSKIdentity())
                         .setSRPIdentity(this.securityParameters.getSRPIdentity())
                         // TODO Consider filtering extensions that aren't relevant to resumed sessions
-                        .setServerExtensions(this.serverExtensions)
+                        .setPeerExtensions(server ? this.clientExtensions : this.serverExtensions)
                         .build();
 
                     this.tlsSession = new TlsSessionImpl(this.tlsSession.getSessionID(), this.sessionParameters);
