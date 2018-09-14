@@ -41,16 +41,16 @@ public class Ed25519Test
             Ed25519.sign(sk, 0, m, 0, mLen, sig1, 0);
             Ed25519.sign(sk, 0, pk, 0, m, 0, mLen, sig2, 0);
 
-            assertTrue("Consistent signatures #" + i, Arrays.areEqual(sig1, sig2));
+            assertTrue("Ed25519 consistent signatures #" + i, Arrays.areEqual(sig1, sig2));
 
             boolean shouldVerify = Ed25519.verify(sig1, 0, pk, 0, m, 0, mLen);
 
-            assertTrue("Consistent sign/verify #" + i, shouldVerify);
+            assertTrue("Ed25519 consistent sign/verify #" + i, shouldVerify);
 
             sig1[Ed25519.PUBLIC_KEY_SIZE - 1] ^= 0x80;
             boolean shouldNotVerify = Ed25519.verify(sig1, 0, pk, 0, m, 0, mLen);
 
-            assertFalse("Consistent verification failure #" + i, shouldNotVerify);
+            assertFalse("Ed25519 consistent verification failure #" + i, shouldNotVerify);
         }
     }
     
