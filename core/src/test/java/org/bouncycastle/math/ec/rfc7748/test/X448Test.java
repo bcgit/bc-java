@@ -4,7 +4,6 @@ import java.security.SecureRandom;
 
 import junit.framework.TestCase;
 
-import org.bouncycastle.math.ec.rfc7748.X25519;
 import org.bouncycastle.math.ec.rfc7748.X448;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
