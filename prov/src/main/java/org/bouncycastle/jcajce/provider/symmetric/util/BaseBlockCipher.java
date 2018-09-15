@@ -1359,21 +1359,4 @@ public class BaseBlockCipher
             }
         }
     }
-
-    private static class InvalidKeyOrParametersException
-        extends InvalidKeyException
-    {
-        private final Throwable cause;
-
-        InvalidKeyOrParametersException(String msg, Throwable cause)
-        {
-             super(msg);
-            this.cause = cause;
-        }
-
-        public Throwable getCause()
-        {
-            return cause;
-        }
-    }
 }
