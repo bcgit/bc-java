@@ -110,7 +110,7 @@ public class RFC3211WrapTest
         }
         catch (InvalidCipherTextException e)
         {
-            if (!e.getMessage().equals("wrapped key fails checksum"))
+            if (!e.getMessage().equals("wrapped key corrupted"))
             {
                 fail("wrong exception");
             }
