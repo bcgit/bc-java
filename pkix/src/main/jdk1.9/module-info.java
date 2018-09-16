@@ -1,6 +1,6 @@
 module org.bouncycastle.pkix
 {
-    requires org.bouncycastle.prov;
+    requires org.bouncycastle.provider;
 
     exports org.bouncycastle.cert;
     exports org.bouncycastle.cmc;
