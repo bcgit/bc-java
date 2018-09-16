@@ -1,6 +1,6 @@
 module org.bouncycastle.pg
 {
-    requires org.bouncycastle.prov;
+    requires org.bouncycastle.provider;
 
     exports org.bouncycastle.bcpg;
     exports org.bouncycastle.gpg;

@@ -1,6 +1,6 @@
 module org.bouncycastle.tls
 {
-    requires org.bouncycastle.prov;
+    requires org.bouncycastle.provider;
     
     exports org.bouncycastle.jsse;
     exports org.bouncycastle.tls;
