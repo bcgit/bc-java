@@ -324,7 +324,7 @@ public class Sample
         if (q == Parameter.Q_I || q == Parameter.Q_I_P)
         {
 
-            FederalInformationProcessingStandard202.customizableSecureHashAlgorithmKECCAK128Simple(
+            HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
                 buffer, 0, n * numberOfByte, dualModeSampler++, seed, seedOffset, Polynomial.RANDOM
             );
 
@@ -333,7 +333,7 @@ public class Sample
         if (q == Parameter.Q_III_SIZE || q == Parameter.Q_III_SPEED || q == Parameter.Q_III_P)
         {
 
-            FederalInformationProcessingStandard202.customizableSecureHashAlgorithmKECCAK256Simple(
+            HashUtils.customizableSecureHashAlgorithmKECCAK256Simple(
                 buffer, 0, n * numberOfByte, dualModeSampler++, seed, seedOffset, Polynomial.RANDOM
             );
 
@@ -349,11 +349,11 @@ public class Sample
                 {
 
                     numberOfBlock =
-                        FederalInformationProcessingStandard202.SECURE_HASH_ALGORITHM_KECCAK_128_RATE /
+                        HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE /
                             ((bBit + 1 + 7) / 8);
 
-                    FederalInformationProcessingStandard202.customizableSecureHashAlgorithmKECCAK128Simple(
-                        buffer, 0, FederalInformationProcessingStandard202.SECURE_HASH_ALGORITHM_KECCAK_128_RATE,
+                    HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
+                        buffer, 0, HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE,
                         dualModeSampler++,
                         seed, seedOffset, Polynomial.RANDOM
                     );
@@ -364,11 +364,11 @@ public class Sample
                 {
 
                     numberOfBlock =
-                        FederalInformationProcessingStandard202.SECURE_HASH_ALGORITHM_KECCAK_256_RATE /
+                        HashUtils.SECURE_HASH_ALGORITHM_KECCAK_256_RATE /
                             ((bBit + 1 + 7) / 8);
 
-                    FederalInformationProcessingStandard202.customizableSecureHashAlgorithmKECCAK256Simple(
-                        buffer, 0, FederalInformationProcessingStandard202.SECURE_HASH_ALGORITHM_KECCAK_256_RATE,
+                    HashUtils.customizableSecureHashAlgorithmKECCAK256Simple(
+                        buffer, 0, HashUtils.SECURE_HASH_ALGORITHM_KECCAK_256_RATE,
                         dualModeSampler++,
                         seed, seedOffset, Polynomial.RANDOM
                     );
@@ -451,7 +451,7 @@ public class Sample
         long z;
         long buffer;
 
-        FederalInformationProcessingStandard202.customizableSecureHashAlgorithmKECCAK128Simple(
+        HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
             seedExpander, 0, n * Long.SIZE / Byte.SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
         );
 
@@ -461,7 +461,7 @@ public class Sample
             if (j + 46 > n)
             {
 
-                FederalInformationProcessingStandard202.customizableSecureHashAlgorithmKECCAK128Simple(
+                HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
                     seedExpander, 0, n * Long.SIZE / Byte.SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
                 );
 
@@ -636,7 +636,7 @@ public class Sample
         long z;
         long buffer;
 
-        FederalInformationProcessingStandard202.customizableSecureHashAlgorithmKECCAK256Simple(
+        HashUtils.customizableSecureHashAlgorithmKECCAK256Simple(
             seedExpander, 0, n * Long.SIZE / Byte.SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
         );
 
@@ -646,7 +646,7 @@ public class Sample
             if (j + 46 > n)
             {
 
-                FederalInformationProcessingStandard202.customizableSecureHashAlgorithmKECCAK256Simple(
+                HashUtils.customizableSecureHashAlgorithmKECCAK256Simple(
                     seedExpander, 0, n * Long.SIZE / Byte.SIZE, domainSeparator++, seed, seedOffset, Polynomial.RANDOM
                 );
 
@@ -814,11 +814,11 @@ public class Sample
         int position;
         short domainSeparator = 0;
         short[] C = new short[n];
-        byte[] randomness = new byte[FederalInformationProcessingStandard202.SECURE_HASH_ALGORITHM_KECCAK_128_RATE];
+        byte[] randomness = new byte[HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE];
 
         /* Use the Hash Value as Key to Generate Some Randomness */
-        FederalInformationProcessingStandard202.customizableSecureHashAlgorithmKECCAK128Simple(
-            randomness, 0, FederalInformationProcessingStandard202.SECURE_HASH_ALGORITHM_KECCAK_128_RATE,
+        HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
+            randomness, 0, HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE,
             domainSeparator++,
             output, outputOffset, Polynomial.RANDOM
         );
@@ -832,11 +832,11 @@ public class Sample
         for (int i = 0; i < w; )
         {
 
-            if (count > FederalInformationProcessingStandard202.SECURE_HASH_ALGORITHM_KECCAK_128_RATE - 3)
+            if (count > HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE - 3)
             {
 
-                FederalInformationProcessingStandard202.customizableSecureHashAlgorithmKECCAK128Simple(
-                    randomness, 0, FederalInformationProcessingStandard202.SECURE_HASH_ALGORITHM_KECCAK_128_RATE,
+                HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
+                    randomness, 0, HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE,
                     domainSeparator++,
                     output, outputOffset, Polynomial.RANDOM
                 );
