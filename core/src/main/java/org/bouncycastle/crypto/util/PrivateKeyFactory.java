@@ -160,28 +160,33 @@ public class PrivateKeyFactory
         }
         else if (algOID.equals(EdECObjectIdentifiers.id_X25519))
         {
-            return new X25519PrivateKeyParameters(getRawKey(keyInfo), 0);
+            return new X25519PrivateKeyParameters(getRawKey(keyInfo, X25519PrivateKeyParameters.KEY_SIZE), 0);
         }
         else if (algOID.equals(EdECObjectIdentifiers.id_X448))
         {
-            return new X448PrivateKeyParameters(getRawKey(keyInfo), 0);
+            return new X448PrivateKeyParameters(getRawKey(keyInfo, X448PrivateKeyParameters.KEY_SIZE), 0);
         }
         else if (algOID.equals(EdECObjectIdentifiers.id_Ed25519))
         {
-            return new Ed25519PrivateKeyParameters(getRawKey(keyInfo), 0);
+            return new Ed25519PrivateKeyParameters(getRawKey(keyInfo, Ed25519PrivateKeyParameters.KEY_SIZE), 0);
         }
         else if (algOID.equals(EdECObjectIdentifiers.id_Ed448))
         {
-            return new Ed448PrivateKeyParameters(getRawKey(keyInfo), 0);
+            return new Ed448PrivateKeyParameters(getRawKey(keyInfo, Ed448PrivateKeyParameters.KEY_SIZE), 0);
         }
         else
         {
-            throw new RuntimeException("algorithm identifier in key not recognised");
+            throw new RuntimeException("algorithm identifier in private key not recognised");
         }
     }
 
-    private static byte[] getRawKey(PrivateKeyInfo keyInfo) throws IOException
+    private static byte[] getRawKey(PrivateKeyInfo keyInfo, int expectedSize) throws IOException
     {
-        return ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+        byte[] result = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+        if (expectedSize != result.length)
+        {
+            throw new RuntimeException("private key encoding has incorrect length");
+        }
+        return result;
     }
 }
