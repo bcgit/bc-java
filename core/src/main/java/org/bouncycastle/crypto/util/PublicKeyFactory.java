@@ -150,7 +150,7 @@ public class PublicKeyFactory
         }
         else
         {
-            throw new IOException("algorithm identifier in key not recognised: " + algId.getAlgorithm());
+            throw new IOException("algorithm identifier in public key not recognised: " + algId.getAlgorithm());
         }
     }
 
@@ -482,7 +482,7 @@ public class PublicKeyFactory
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
         {
-            return new X25519PublicKeyParameters(getRawKey(keyInfo, defaultParams), 0);
+            return new X25519PublicKeyParameters(getRawKey(keyInfo, defaultParams, X25519PublicKeyParameters.KEY_SIZE), 0);
         }
     }
 
@@ -490,7 +490,7 @@ public class PublicKeyFactory
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
         {
-            return new X448PublicKeyParameters(getRawKey(keyInfo, defaultParams), 0);
+            return new X448PublicKeyParameters(getRawKey(keyInfo, defaultParams, X448PublicKeyParameters.KEY_SIZE), 0);
         }
     }
 
@@ -498,7 +498,7 @@ public class PublicKeyFactory
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
         {
-            return new Ed25519PublicKeyParameters(getRawKey(keyInfo, defaultParams), 0);
+            return new Ed25519PublicKeyParameters(getRawKey(keyInfo, defaultParams, Ed25519PublicKeyParameters.KEY_SIZE), 0);
         }
     }
 
@@ -506,17 +506,22 @@ public class PublicKeyFactory
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
         {
-            return new Ed448PublicKeyParameters(getRawKey(keyInfo, defaultParams), 0);
+            return new Ed448PublicKeyParameters(getRawKey(keyInfo, defaultParams, Ed448PublicKeyParameters.KEY_SIZE), 0);
         }
     }
 
-    private static byte[] getRawKey(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+    private static byte[] getRawKey(SubjectPublicKeyInfo keyInfo, Object defaultParams, int expectedSize)
     {
         /*
          * TODO[RFC 8422]
          * - Require defaultParams == null?
          * - Require keyInfo.getAlgorithm().getParameters() == null?
          */
-        return keyInfo.getPublicKeyData().getOctets();
+        byte[] result = keyInfo.getPublicKeyData().getOctets();
+        if (expectedSize != result.length)
+        {
+            throw new RuntimeException("public key encoding has incorrect length");
+        }
+        return result;
     }
 }
