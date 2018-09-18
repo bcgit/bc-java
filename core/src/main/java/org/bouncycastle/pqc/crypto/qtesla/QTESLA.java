@@ -3,9 +3,6 @@ package org.bouncycastle.pqc.crypto.qtesla;
 import java.security.SecureRandom;
 import java.util.Arrays;
 
-import org.bouncycastle.crypto.digests.SHAKEDigest;
-import org.bouncycastle.util.encoders.Hex;
-
 public class QTESLA
 {
 
@@ -881,14 +878,14 @@ public class QTESLA
         if (q == Parameter.Q_I)
         {
 
-            FederalInformationProcessingStandard202.secureHashAlgorithmKECCAK128(output, outputOffset, Polynomial.HASH, T, 0, messageLength + n);
+            HashUtils.secureHashAlgorithmKECCAK128(output, outputOffset, Polynomial.HASH, T, 0, messageLength + n);
 
         }
 
         if (q == Parameter.Q_III_SIZE || q == Parameter.B_III_SPEED)
         {
 
-            FederalInformationProcessingStandard202.secureHashAlgorithmKECCAK256(output, outputOffset, Polynomial.HASH, T, 0, messageLength + n);
+            HashUtils.secureHashAlgorithmKECCAK256(output, outputOffset, Polynomial.HASH, T, 0, messageLength + n);
 
         }
 
@@ -932,14 +929,14 @@ public class QTESLA
         if (q == Parameter.Q_I_P)
         {
 
-            FederalInformationProcessingStandard202.secureHashAlgorithmKECCAK128(output, outputOffset, Polynomial.HASH, T, 0, messageLength + n * k);
+            HashUtils.secureHashAlgorithmKECCAK128(output, outputOffset, Polynomial.HASH, T, 0, messageLength + n * k);
 
         }
 
         if (q == Parameter.Q_III_P)
         {
 
-            FederalInformationProcessingStandard202.secureHashAlgorithmKECCAK256(output, outputOffset, Polynomial.HASH, T, 0, messageLength + n * k);
+            HashUtils.secureHashAlgorithmKECCAK256(output, outputOffset, Polynomial.HASH, T, 0, messageLength + n * k);
 
         }
 
@@ -1324,14 +1321,14 @@ public class QTESLA
         if (q == Parameter.Q_I)
         {
 
-            FederalInformationProcessingStandard202.secureHashAlgorithmKECCAK128(randomnessExtended, 0, Polynomial.SEED * 4, randomness, 0, Polynomial.RANDOM);
+            HashUtils.secureHashAlgorithmKECCAK128(randomnessExtended, 0, Polynomial.SEED * 4, randomness, 0, Polynomial.RANDOM);
 
         }
 
         if (q == Parameter.Q_III_SIZE || q == Parameter.Q_III_SPEED)
         {
 
-            FederalInformationProcessingStandard202.secureHashAlgorithmKECCAK256(randomnessExtended, 0, Polynomial.SEED * 4, randomness, 0, Polynomial.RANDOM);
+            HashUtils.secureHashAlgorithmKECCAK256(randomnessExtended, 0, Polynomial.SEED * 4, randomness, 0, Polynomial.RANDOM);
 
         }
 
@@ -1567,7 +1564,7 @@ public class QTESLA
         if (q == Parameter.Q_I_P)
         {
 
-            FederalInformationProcessingStandard202.secureHashAlgorithmKECCAK128(
+            HashUtils.secureHashAlgorithmKECCAK128(
                 randomnessExtended, 0, Polynomial.SEED * (k + 3), randomness, 0, Polynomial.RANDOM
             );
 
@@ -1576,7 +1573,7 @@ public class QTESLA
         if (q == Parameter.Q_III_P)
         {
 
-            FederalInformationProcessingStandard202.secureHashAlgorithmKECCAK256(
+            HashUtils.secureHashAlgorithmKECCAK256(
                 randomnessExtended, 0, Polynomial.SEED * (k + 3), randomness, 0, Polynomial.RANDOM
             );
 
@@ -1808,7 +1805,7 @@ public class QTESLA
         if (q == Parameter.Q_I)
         {
 
-            FederalInformationProcessingStandard202.secureHashAlgorithmKECCAK128(
+            HashUtils.secureHashAlgorithmKECCAK128(
                 randomness, 0, Polynomial.SEED, randomnessInput, 0, messageLength + Polynomial.RANDOM + Polynomial.SEED
             );
         }
@@ -1816,7 +1813,7 @@ public class QTESLA
         if (q == Parameter.Q_III_SIZE)
         {
 
-            FederalInformationProcessingStandard202.secureHashAlgorithmKECCAK256(
+            HashUtils.secureHashAlgorithmKECCAK256(
                 randomness, 0, Polynomial.SEED, randomnessInput, 0, messageLength + Polynomial.RANDOM + Polynomial.SEED
             );
 
@@ -1825,7 +1822,7 @@ public class QTESLA
         if (q == Parameter.Q_III_SPEED)
         {
 
-            FederalInformationProcessingStandard202.secureHashAlgorithmKECCAK256(
+            HashUtils.secureHashAlgorithmKECCAK256(
                 randomness, 0, Polynomial.SEED, randomnessInput, 0, messageLength + Polynomial.RANDOM + Polynomial.SEED
             );
 
@@ -2110,7 +2107,7 @@ public class QTESLA
         if (q == Parameter.Q_I_P)
         {
 
-            FederalInformationProcessingStandard202.secureHashAlgorithmKECCAK128(
+            HashUtils.secureHashAlgorithmKECCAK128(
                 randomness, 0, Polynomial.SEED, randomnessInput, 0, messageLength + Polynomial.RANDOM + Polynomial.SEED
             );
 
@@ -2119,7 +2116,7 @@ public class QTESLA
         if (q == Parameter.Q_III_P)
         {
 
-            FederalInformationProcessingStandard202.secureHashAlgorithmKECCAK256(
+            HashUtils.secureHashAlgorithmKECCAK256(
                 randomness, 0, Polynomial.SEED, randomnessInput, 0, messageLength + Polynomial.RANDOM + Polynomial.SEED
             );
 

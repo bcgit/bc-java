@@ -1,7 +1,5 @@
 package org.bouncycastle.pqc.crypto.qtesla;
 
-import org.bouncycastle.util.encoders.Hex;
-
 public class Polynomial
 {
 
@@ -727,10 +725,10 @@ public class Polynomial
         int value4;
         int mask = (1 << qLogarithm) - 1;
 
-        byte[] buffer = new byte[FederalInformationProcessingStandard202.SECURE_HASH_ALGORITHM_KECCAK_128_RATE * numberOfBlock];
+        byte[] buffer = new byte[HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE * numberOfBlock];
 
-        FederalInformationProcessingStandard202.customizableSecureHashAlgorithmKECCAK128Simple(
-            buffer, 0, FederalInformationProcessingStandard202.SECURE_HASH_ALGORITHM_KECCAK_128_RATE * numberOfBlock,
+        HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
+            buffer, 0, HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE * numberOfBlock,
             dualModeSampler++,
             seed, seedOffset, RANDOM
         );
@@ -738,13 +736,13 @@ public class Polynomial
         while (i < n * k)
         {
 
-            if (position > (FederalInformationProcessingStandard202.SECURE_HASH_ALGORITHM_KECCAK_128_RATE * numberOfBlock - Integer.SIZE / Byte.SIZE * numberOfByte))
+            if (position > (HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE * numberOfBlock - Integer.SIZE / Byte.SIZE * numberOfByte))
             {
 
                 numberOfBlock = 1;
 
-                FederalInformationProcessingStandard202.customizableSecureHashAlgorithmKECCAK128Simple(
-                    buffer, 0, FederalInformationProcessingStandard202.SECURE_HASH_ALGORITHM_KECCAK_128_RATE * numberOfBlock,
+                HashUtils.customizableSecureHashAlgorithmKECCAK128Simple(
+                    buffer, 0, HashUtils.SECURE_HASH_ALGORITHM_KECCAK_128_RATE * numberOfBlock,
                     dualModeSampler++,
                     seed, seedOffset, RANDOM
                 );
