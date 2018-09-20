@@ -655,8 +655,8 @@ public class BCFKSStoreTest
     public void shouldFailOnWrongPassword()
         throws Exception
     {
-        failOnWrongPasswordTest("BCSFKS");
-        failOnWrongPasswordTest("BCSFKS-DEF");
+        failOnWrongPasswordTest("IBCFKS");
+        failOnWrongPasswordTest("IBCFKS-DEF");
     }
 
     public void failOnWrongPasswordTest(String storeName)
@@ -757,8 +757,8 @@ public class BCFKSStoreTest
     public void shouldFailOnRemovesOrOverwrite()
         throws Exception
     {
-        failOnRemovesOrOverwrite("BCSFKS");
-        failOnRemovesOrOverwrite("BCSFKS-DEF");
+        failOnRemovesOrOverwrite("IBCFKS");
+        failOnRemovesOrOverwrite("IBCFKS-DEF");
     }
 
     private void failOnRemovesOrOverwrite(String storeName)
