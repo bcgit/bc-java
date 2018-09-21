@@ -334,7 +334,7 @@ public abstract class Ed25519
 
         dom2(d, phflag, ctx);
         d.update(R, 0, POINT_BYTES);
-        d.update(pk, 0, POINT_BYTES);
+        d.update(pk, pkOff, POINT_BYTES);
         d.update(m, mOff, mLen);
         d.doFinal(h, 0);
 
