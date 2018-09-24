@@ -640,9 +640,12 @@ public abstract class Ed448
 
                 ds[t] = pointCopy(p);
 
-                for (int s = 1; s < PRECOMP_SPACING; ++s)
+                if (b + t != PRECOMP_BLOCKS + PRECOMP_TEETH - 2)
                 {
-                    pointDouble(p);
+                    for (int s = 1; s < PRECOMP_SPACING; ++s)
+                    {
+                        pointDouble(p);
+                    }
                 }
             }
 
@@ -995,7 +998,7 @@ public abstract class Ed448
                 int w = 0;
                 for (int t = 0; t < PRECOMP_TEETH; ++t)
                 {
-                    int tBit = (n[tPos >>> 5] >>> (tPos & 0x1F));
+                    int tBit = n[tPos >>> 5] >>> (tPos & 0x1F);
                     w &= ~(1 << t);
                     w ^= (tBit << t);
                     tPos += PRECOMP_SPACING;
