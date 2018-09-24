@@ -686,9 +686,12 @@ public abstract class Ed25519
 
                 ds[t] = pointCopy(p);
 
-                for (int s = 1; s < PRECOMP_SPACING; ++s)
+                if (b + t != PRECOMP_BLOCKS + PRECOMP_TEETH - 2)
                 {
-                    pointDouble(p);
+                    for (int s = 1; s < PRECOMP_SPACING; ++s)
+                    {
+                        pointDouble(p);
+                    }
                 }
             }
 
