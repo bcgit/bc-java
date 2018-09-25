@@ -55,8 +55,8 @@ public class KeyStoreTest
     static
     {
         algIds.put("SHA512WITHSPHINCS256", new AlgorithmIdentifier(BCObjectIdentifiers.sphincs256_with_SHA512));
-        algIds.put("SHA256WITHXMSSMT", new AlgorithmIdentifier(BCObjectIdentifiers.xmss_mt_with_SHA256));
-        algIds.put("SHA512WITHXMSSMT", new AlgorithmIdentifier(BCObjectIdentifiers.xmss_mt_with_SHA512));
+        algIds.put("SHA256WITHXMSSMT", new AlgorithmIdentifier(BCObjectIdentifiers.xmss_mt_SHA256ph));
+        algIds.put("SHA512WITHXMSSMT", new AlgorithmIdentifier(BCObjectIdentifiers.xmss_mt_SHA512ph));
     }
 
     public void setUp()
