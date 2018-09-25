@@ -172,7 +172,7 @@ public class XMSSMTSignatureSpi
     {
         public withSha256()
         {
-            super("SHA256withXMSSMT", new SHA256Digest(), new XMSSMTSigner());
+            super("XMSSMT-SHA256", new DigestUtil.NullDigest(), new XMSSMTSigner());
         }
     }
 
@@ -181,7 +181,7 @@ public class XMSSMTSignatureSpi
     {
         public withShake128()
         {
-            super("SHAKE128withXMSSMT", new SHAKEDigest(128), new XMSSMTSigner());
+            super("XMSSMT-SHAKE128", new DigestUtil.NullDigest(), new XMSSMTSigner());
         }
     }
 
@@ -190,7 +190,7 @@ public class XMSSMTSignatureSpi
     {
         public withSha512()
         {
-            super("SHA512withXMSSMT", new SHA512Digest(), new XMSSMTSigner());
+            super("XMSSMT-SHA512", new DigestUtil.NullDigest(), new XMSSMTSigner());
         }
     }
 
@@ -199,7 +199,43 @@ public class XMSSMTSignatureSpi
     {
         public withShake256()
         {
-            super("SHAKE256withXMSSMT", new SHAKEDigest(256), new XMSSMTSigner());
+            super("XMSSMT-SHAKE256", new DigestUtil.NullDigest(), new XMSSMTSigner());
+        }
+    }
+
+    static public class withSha256andPrehash
+        extends XMSSMTSignatureSpi
+    {
+        public withSha256andPrehash()
+        {
+            super("SHA256withXMSSMT-SHA256", new SHA256Digest(), new XMSSMTSigner());
+        }
+    }
+
+    static public class withShake128andPrehash
+        extends XMSSMTSignatureSpi
+    {
+        public withShake128andPrehash()
+        {
+            super("SHAKE128withXMSSMT-SHAKE128", new SHAKEDigest(128), new XMSSMTSigner());
+        }
+    }
+
+    static public class withSha512andPrehash
+        extends XMSSMTSignatureSpi
+    {
+        public withSha512andPrehash()
+        {
+            super("SHA512withXMSSMT-SHA512", new SHA512Digest(), new XMSSMTSigner());
+        }
+    }
+
+    static public class withShake256andPrehash
+        extends XMSSMTSignatureSpi
+    {
+        public withShake256andPrehash()
+        {
+            super("SHAKE256withXMSSMT-SHAKE256", new SHAKEDigest(256), new XMSSMTSigner());
         }
     }
 }

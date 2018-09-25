@@ -129,15 +129,35 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SHA512WITHSPHINCS256", BCObjectIdentifiers.sphincs256_with_SHA512);
         algorithms.put("SM3WITHSM2", GMObjectIdentifiers.sm2sign_with_sm3);
 
-        algorithms.put("SHA256WITHXMSS", BCObjectIdentifiers.xmss_with_SHA256);
-        algorithms.put("SHA512WITHXMSS", BCObjectIdentifiers.xmss_with_SHA512);
-        algorithms.put("SHAKE128WITHXMSS", BCObjectIdentifiers.xmss_with_SHAKE128);
-        algorithms.put("SHAKE256WITHXMSS", BCObjectIdentifiers.xmss_with_SHAKE256);
+        algorithms.put("SHA256WITHXMSS", BCObjectIdentifiers.xmss_SHA256ph);
+        algorithms.put("SHA512WITHXMSS", BCObjectIdentifiers.xmss_SHA512ph);
+        algorithms.put("SHAKE128WITHXMSS", BCObjectIdentifiers.xmss_SHAKE128ph);
+        algorithms.put("SHAKE256WITHXMSS", BCObjectIdentifiers.xmss_SHAKE256ph);
 
-        algorithms.put("SHA256WITHXMSSMT", BCObjectIdentifiers.xmss_mt_with_SHA256);
-        algorithms.put("SHA512WITHXMSSMT", BCObjectIdentifiers.xmss_mt_with_SHA512);
-        algorithms.put("SHAKE128WITHXMSSMT", BCObjectIdentifiers.xmss_mt_with_SHAKE128);
-        algorithms.put("SHAKE256WITHXMSSMT", BCObjectIdentifiers.xmss_mt_with_SHAKE256);
+        algorithms.put("SHA256WITHXMSSMT", BCObjectIdentifiers.xmss_mt_SHA256ph);
+        algorithms.put("SHA512WITHXMSSMT", BCObjectIdentifiers.xmss_mt_SHA512ph);
+        algorithms.put("SHAKE128WITHXMSSMT", BCObjectIdentifiers.xmss_mt_SHAKE128ph);
+        algorithms.put("SHAKE256WITHXMSSMT", BCObjectIdentifiers.xmss_mt_SHAKE256ph);
+
+        algorithms.put("SHA256WITHXMSS-SHA256", BCObjectIdentifiers.xmss_SHA256ph);
+        algorithms.put("SHA512WITHXMSS-SHA512", BCObjectIdentifiers.xmss_SHA512ph);
+        algorithms.put("SHAKE128WITHXMSS-SHAKE128", BCObjectIdentifiers.xmss_SHAKE128ph);
+        algorithms.put("SHAKE256WITHXMSS-SHAKE256", BCObjectIdentifiers.xmss_SHAKE256ph);
+
+        algorithms.put("SHA256WITHXMSSMT-SHA256", BCObjectIdentifiers.xmss_mt_SHA256ph);
+        algorithms.put("SHA512WITHXMSSMT-SHA512", BCObjectIdentifiers.xmss_mt_SHA512ph);
+        algorithms.put("SHAKE128WITHXMSSMT-SHAKE128", BCObjectIdentifiers.xmss_mt_SHAKE128ph);
+        algorithms.put("SHAKE256WITHXMSSMT-SHAKE256", BCObjectIdentifiers.xmss_mt_SHAKE256ph);
+
+        algorithms.put("XMSS-SHA256", BCObjectIdentifiers.xmss_SHA256);
+        algorithms.put("XMSS-SHA512", BCObjectIdentifiers.xmss_SHA512);
+        algorithms.put("XMSS-SHAKE128", BCObjectIdentifiers.xmss_SHAKE128);
+        algorithms.put("XMSS-SHAKE256", BCObjectIdentifiers.xmss_SHAKE256);
+
+        algorithms.put("XMSSMT-SHA256", BCObjectIdentifiers.xmss_mt_SHA256);
+        algorithms.put("XMSSMT-SHA512", BCObjectIdentifiers.xmss_mt_SHA512);
+        algorithms.put("XMSSMT-SHAKE128", BCObjectIdentifiers.xmss_mt_SHAKE128);
+        algorithms.put("XMSSMT-SHAKE256", BCObjectIdentifiers.xmss_mt_SHAKE256);
 
         //
         // According to RFC 3279, the ASN.1 encoding SHALL (id-dsa-with-sha1) or MUST (ecdsa-with-SHA*) omit the parameters field.
@@ -179,14 +199,14 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         //
         // XMSS
         //
-        noParams.add(BCObjectIdentifiers.xmss_with_SHA256);
-        noParams.add(BCObjectIdentifiers.xmss_with_SHA512);
-        noParams.add(BCObjectIdentifiers.xmss_with_SHAKE128);
-        noParams.add(BCObjectIdentifiers.xmss_with_SHAKE256);
-        noParams.add(BCObjectIdentifiers.xmss_mt_with_SHA256);
-        noParams.add(BCObjectIdentifiers.xmss_mt_with_SHA512);
-        noParams.add(BCObjectIdentifiers.xmss_mt_with_SHAKE128);
-        noParams.add(BCObjectIdentifiers.xmss_mt_with_SHAKE256);
+        noParams.add(BCObjectIdentifiers.xmss_SHA256ph);
+        noParams.add(BCObjectIdentifiers.xmss_SHA512ph);
+        noParams.add(BCObjectIdentifiers.xmss_SHAKE128ph);
+        noParams.add(BCObjectIdentifiers.xmss_SHAKE256ph);
+        noParams.add(BCObjectIdentifiers.xmss_mt_SHA256ph);
+        noParams.add(BCObjectIdentifiers.xmss_mt_SHA512ph);
+        noParams.add(BCObjectIdentifiers.xmss_mt_SHAKE128ph);
+        noParams.add(BCObjectIdentifiers.xmss_mt_SHAKE256ph);
 
         //
         // SM2
