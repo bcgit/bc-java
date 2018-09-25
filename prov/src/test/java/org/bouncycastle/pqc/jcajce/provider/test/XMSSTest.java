@@ -18,9 +18,16 @@ import java.security.spec.X509EncodedKeySpec;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.Xof;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.pqc.jcajce.interfaces.StateAwareSignature;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
@@ -473,5 +480,73 @@ public class XMSSTest
         // make sure we get the same signature as the two keys should now
         // be in the same state.
         assertTrue(Arrays.areEqual(sig1, sig2));
+    }
+
+    public void testPrehashWithWithout()
+        throws Exception
+    {
+        testPrehashAndWithoutPrehash("XMSS-SHA256", "SHA256", new SHA256Digest());
+        testPrehashAndWithoutPrehash("XMSS-SHAKE128", "SHAKE128", new SHAKEDigest(128));
+        testPrehashAndWithoutPrehash("XMSS-SHA512", "SHA512", new SHA512Digest());
+        testPrehashAndWithoutPrehash("XMSS-SHAKE256", "SHAKE256", new SHAKEDigest(256));
+
+        testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_SHA256ph, BCObjectIdentifiers.xmss_SHA256, "SHA256", new SHA256Digest());
+        testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_SHAKE128ph, BCObjectIdentifiers.xmss_SHAKE128, "SHAKE128", new SHAKEDigest(128));
+        testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_SHA512ph, BCObjectIdentifiers.xmss_SHA512, "SHA512", new SHA512Digest());
+        testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_SHAKE256ph, BCObjectIdentifiers.xmss_SHAKE256, "SHAKE256", new SHAKEDigest(256));
+    }
+
+    private void testPrehashAndWithoutPrehash(String baseAlgorithm, String digestName, Digest digest)
+        throws Exception
+    {
+        Signature s1 = Signature.getInstance(digestName + "with" + baseAlgorithm, "BCPQC");
+        Signature s2 = Signature.getInstance(baseAlgorithm, "BCPQC");
+
+        doTestPrehashAndWithoutPrehash(digestName, digest, s1, s2);
+    }
+
+    private void testPrehashAndWithoutPrehash(ASN1ObjectIdentifier oid1, ASN1ObjectIdentifier oid2, String digestName, Digest digest)
+        throws Exception
+    {
+        Signature s1 = Signature.getInstance(oid1.getId(), "BCPQC");
+        Signature s2 = Signature.getInstance(oid2.getId(), "BCPQC");
+
+        doTestPrehashAndWithoutPrehash(digestName, digest, s1, s2);
+    }
+
+    private void doTestPrehashAndWithoutPrehash(String digestName, Digest digest, Signature s1, Signature s2)
+        throws Exception
+    {
+        byte[] message = Strings.toByteArray("hello, world!");
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
+
+        kpg.initialize(new XMSSParameterSpec(2, digestName), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        s1.initSign(kp.getPrivate());
+
+        s1.update(message, 0, message.length);
+
+        byte[] sig = s1.sign();
+
+        s2.initVerify(kp.getPublic());
+
+        digest.update(message, 0, message.length);
+
+        byte[] dig = new byte[(digest instanceof Xof) ? digest.getDigestSize() * 2 : digest.getDigestSize()];
+
+        if (digest instanceof Xof)
+        {
+            ((Xof)digest).doFinal(dig, 0, dig.length);
+        }
+        else
+        {
+            digest.doFinal(dig, 0);
+        }
+        s2.update(dig);
+
+        assertTrue(s2.verify(sig));
     }
 }
