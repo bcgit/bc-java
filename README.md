@@ -12,7 +12,7 @@ Except where otherwise stated, this software is distributed under a license base
 
 ## Code Organisation
 
-The clean room JCE, for use with JDK 1.1 to JDK 1.3 is in the jce/src/main/java directory.
+The clean room JCE, for use with JDK 1.1 to JDK 1.3 is in the jce/src/main/java directory. From JDK 1.4 and later the JCE ships with the JVM, the source for later JDKs follows the progress that was made in the later versions of the JCE. If you are using a later version of the JDK which comes with a JCE install please **do not** include the jce directory as a source file as it will clash with the JCE API installed with your JDK.
 
 The **core** module provides all the functionality in the ligthweight APIs.
 
@@ -25,7 +25,7 @@ The **mail** module provides an S/MIME API built on top of CMS.
 
 The **pg** module is the home for code used to support OpenPGP.
 
-The **tls** module is the home for code used to a general TLS API and JSSE Provider (as at 1.56 this should be considered a beta).
+The **tls** module is the home for code used to a general TLS API and JSSE Provider.
 
 The build scripts that come with the full distribution allow creation of the different releases by using the different source trees while excluding classes that are not appropriate and copying in the required compatibility classes from the directories containing compatibility classes appropriate for the distribution.
 
