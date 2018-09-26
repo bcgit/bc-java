@@ -108,7 +108,7 @@ public abstract class PGPKeyRing
      *
      * @return Iterator
      */
-    public abstract Iterator getPublicKeys();
+    public abstract Iterator<PGPPublicKey> getPublicKeys();
 
     /**
      * Return the public key referred to by the passed in keyID if it
