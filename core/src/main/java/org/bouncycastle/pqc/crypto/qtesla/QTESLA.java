@@ -763,7 +763,7 @@ public class QTESLA
      * Description:	Decode Signature for Heuristic qTESLA Security Category-3 (Option for Speed) and
      * 				Provably-Secure qTESLA Security Category-1
      **********************************************************************************************************************************/
-    private static void decodeSignatureIIISpeedIP(byte[] C, long[] Z, final byte[] signature, int signatureOffset, int n, int d)
+    private static void decodeSignatureIIISpeedIP(byte[] C, long[] Z, final byte[] sig, int sOff, int n, int d)
     {
 
         int j = 0;
@@ -771,54 +771,53 @@ public class QTESLA
         for (int i = 0; i < n; i += Integer.SIZE / 2)
         {
 
-            Z[i + 0] = (CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 0)) << 10) >>> 10;
+            Z[i + 0] = (CommonFunction.load32(sig, sOff + 4 * (j + 0)) << 10) >> 10;
 
-            Z[i + 1] = (CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 0)) >>> 22) |
-                ((CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 1)) << 20) >>> 10);
+            Z[i + 1] = (CommonFunction.load32(sig, sOff + 4 * (j + 0)) >>> 22) |
+                ((CommonFunction.load32(sig, sOff + 4 * (j + 1)) << 20) >> 10);
 
-            Z[i + 2] = (CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 1)) >>> 12) |
-                ((CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 2)) << 30) >>> 10);
+            Z[i + 2] = (CommonFunction.load32(sig, sOff + 4 * (j + 1)) >>> 12) |
+                ((CommonFunction.load32(sig, sOff + 4 * (j + 2)) << 30) >> 10);
 
-            Z[i + 3] = (CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 2)) << 8) >>> 10;
+            Z[i + 3] = (CommonFunction.load32(sig, sOff + 4 * (j + 2)) << 8) >> 10;
 
-            Z[i + 4] = (CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 2)) >>> 24) |
-                ((CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 3)) << 18) >>> 10);
+            Z[i + 4] = (CommonFunction.load32(sig, sOff + 4 * (j + 2)) >>> 24) |
+                ((CommonFunction.load32(sig, sOff + 4 * (j + 3)) << 18) >> 10);
 
-            Z[i + 5] = (CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 3)) >>> 14) |
-                ((CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 4)) << 28) >>> 10);
+            Z[i + 5] = (CommonFunction.load32(sig, sOff + Integer.SIZE / Byte.SIZE * (j + 3)) >>> 14) |
+                ((CommonFunction.load32(sig, sOff + Integer.SIZE / Byte.SIZE * (j + 4)) << 28) >> 10);
 
-            Z[i + 6] = (CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 4)) << 6) >>> 10;
+            Z[i + 6] = (CommonFunction.load32(sig, sOff + Integer.SIZE / Byte.SIZE * (j + 4)) << 6) >> 10;
 
-            Z[i + 7] = (CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 4)) >>> 26) |
-                ((CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 5)) << 16) >>> 10);
+            Z[i + 7] = (CommonFunction.load32(sig, sOff + Integer.SIZE / Byte.SIZE * (j + 4)) >>> 26) |
+                ((CommonFunction.load32(sig, sOff + Integer.SIZE / Byte.SIZE * (j + 5)) << 16) >> 10);
 
-            Z[i + 8] = (CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 5)) >>> 16) |
-                ((CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 6)) << 26) >>> 10);
+            Z[i + 8] = (CommonFunction.load32(sig, sOff + Integer.SIZE / Byte.SIZE * (j + 5)) >>> 16) |
+                ((CommonFunction.load32(sig, sOff + Integer.SIZE / Byte.SIZE * (j + 6)) << 26) >> 10);
 
-            Z[i + 9] = (CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 6)) << 4) >>> 10;
+            Z[i + 9] = (CommonFunction.load32(sig, sOff + Integer.SIZE / Byte.SIZE * (j + 6)) << 4) >> 10;
 
-            Z[i + 10] = (CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 6)) >>> 28) |
-                ((CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 7)) << 14) >>> 10);
+            Z[i + 10] = (CommonFunction.load32(sig, sOff + Integer.SIZE / Byte.SIZE * (j + 6)) >>> 28) |
+                ((CommonFunction.load32(sig, sOff + Integer.SIZE / Byte.SIZE * (j + 7)) << 14) >> 10);
 
-            Z[i + 11] = (CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 7)) >>> 18) |
-                ((CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 8)) << 24) >>> 10);
+            Z[i + 11] = (CommonFunction.load32(sig, sOff + Integer.SIZE / Byte.SIZE * (j + 7)) >>> 18) |
+                ((CommonFunction.load32(sig, sOff + Integer.SIZE / Byte.SIZE * (j + 8)) << 24) >> 10);
 
-            Z[i + 12] = (CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 8)) << 2) >>> 10;
+            Z[i + 12] = (CommonFunction.load32(sig, sOff + Integer.SIZE / Byte.SIZE * (j + 8)) << 2) >> 10;
 
-            Z[i + 13] = (CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 8)) >>> 30) |
-                ((CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 9)) << 12) >>> 10);
+            Z[i + 13] = (CommonFunction.load32(sig, sOff + Integer.SIZE / Byte.SIZE * (j + 8)) >>> 30) |
+                ((CommonFunction.load32(sig, sOff + Integer.SIZE / Byte.SIZE * (j + 9)) << 12) >> 10);
 
-            Z[i + 14] = (CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 9)) >>> 20) |
-                ((CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 10)) << 22) >>> 10);
+            Z[i + 14] = (CommonFunction.load32(sig, sOff + Integer.SIZE / Byte.SIZE * (j + 9)) >>> 20) |
+                ((CommonFunction.load32(sig, sOff + Integer.SIZE / Byte.SIZE * (j + 10)) << 22) >> 10);
 
-            Z[i + 15] = CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 10)) >>> 10;
+            Z[i + 15] = CommonFunction.load32(sig, sOff + Integer.SIZE / Byte.SIZE * (j + 10)) >> 10;
 
             j += d / 2;
 
         }
 
-        System.arraycopy(signature, signatureOffset + n * d / Byte.SIZE, C, 0, Polynomial.HASH);
-
+        System.arraycopy(sig, sOff + n * d / Byte.SIZE, C, 0, Polynomial.HASH);
     }
 
     /**********************************************************************************************************************************
@@ -882,7 +881,7 @@ public class QTESLA
 
         }
 
-        if (q == Parameter.Q_III_SIZE || q == Parameter.B_III_SPEED)
+        if (q == Parameter.Q_III_SIZE || q == Parameter.Q_III_SPEED)
         {
 
             HashUtils.secureHashAlgorithmKECCAK256(output, outputOffset, Polynomial.HASH, T, 0, messageLength + n);
@@ -1816,7 +1815,6 @@ public class QTESLA
             HashUtils.secureHashAlgorithmKECCAK256(
                 randomness, 0, Polynomial.SEED, randomnessInput, 0, messageLength + Polynomial.RANDOM + Polynomial.SEED
             );
-
         }
 
         if (q == Parameter.Q_III_SPEED)
@@ -1831,6 +1829,7 @@ public class QTESLA
         Polynomial.polynomialUniform(
             A, privateKey, privateKeySize - 2 * Polynomial.SEED, n, 1, q, qInverse, qLogarithm, generatorA, inverseNumberTheoreticTransform
         );
+        System.err.println(Long.toHexString(A[0]) + ":" + Long.toHexString(A[1]) + ":" + Long.toHexString(A[2]) + ":" + Long.toHexString(A[3]));
 
         /* Loop Due to Possible Rejection */
         while (true)
@@ -1839,9 +1838,10 @@ public class QTESLA
             /* Sample Y Uniformly Random from -B to B */
             Sample.sampleY(Y, randomness, 0, ++nonce, n, q, b, bBit);
 
+
             /* V = A * Y Modulo Q */
             Polynomial.polynomialMultiplication(V, 0, A, 0, Y, 0, n, q, qInverse, zeta);
-
+         
             hashFunction(C, 0, V, message, messageOffset, messageLength, n, d, q);
 
             /* Generate C = EncodeC (C') Where C' is the Hashing of V Together with Message */
@@ -1913,6 +1913,20 @@ public class QTESLA
 
             }
 
+            if (q == Parameter.Q_I_P)
+            {
+
+                /* Copy the Message into the Signature Package */
+                System.arraycopy(message, messageOffset, signature, signatureOffset + Polynomial.SIGNATURE_III_SPEED, messageLength);
+
+                /* Length of the Output */
+                signatureLength[0] = Polynomial.SIGNATURE_I_P + messageLength;
+
+                /* Pack Signature */
+                encodeSignatureIIISpeedIP(signature, 0, C, 0, Z, n, d);
+
+            }
+            
             return 0;
 
         }
@@ -2235,7 +2249,7 @@ public class QTESLA
      *
      * @return 0                                    Successful Execution
      *****************************************************************************************************************************************************/
-    public static int signingIP(
+    public static int signingPI(
 
         byte[] signature, int signatureOffset, int[] signatureLength,
         final byte[] message, int messageOffset, int messageLength,
@@ -2273,7 +2287,7 @@ public class QTESLA
      *
      * @return 0                                    Successful Execution
      **********************************************************************************************************************************************/
-    public static int signingIIIP(
+    public static int signingPIII(
 
         byte[] signature, int signatureOffset, int[] signatureLength,
         final byte[] message, int messageOffset, int messageLength,
@@ -2690,7 +2704,7 @@ public class QTESLA
      * @return 0                                    Valid Signature
      * 				< 0									Invalid Signature
      *****************************************************************************************************/
-    public static int verifyingIP(
+    public static int verifyingPI(
 
         byte[] message, int messageOffset, int[] messageLength,
         final byte[] signature, int signatureOffset, int signatureLength,
@@ -2730,7 +2744,7 @@ public class QTESLA
      * @return 0                                    Valid Signature
      * 				< 0									Invalid Signature
      *****************************************************************************************************/
-    public static int verifyingIIIP(
+    public static int verifyingPIII(
 
         byte[] message, int messageOffset, int[] messageLength,
         final byte[] signature, int signatureOffset, int signatureLength,

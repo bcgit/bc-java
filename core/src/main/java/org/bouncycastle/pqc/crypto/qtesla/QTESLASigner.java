@@ -317,14 +317,14 @@ public class QTESLASigner
         if (this.securityCategory == PROVABLY_SECURE_I)
         {
 
-            QTESLA.signingIP(this.signature, this.signatureOffset, this.signatureLength, this.message, this.messageOffset, this.messageLength[0], this.privateKey.getSecret(), this.secureRandom);
+            QTESLA.signingPI(this.signature, this.signatureOffset, this.signatureLength, this.message, this.messageOffset, this.messageLength[0], this.privateKey.getSecret(), this.secureRandom);
 
         }
 
         if (this.securityCategory == PROVABLY_SECURE_III)
         {
 
-            QTESLA.signingIIIP(this.signature, this.signatureOffset, this.signatureLength, this.message, this.messageOffset, this.messageLength[0], this.privateKey.getSecret(), this.secureRandom);
+            QTESLA.signingPIII(this.signature, this.signatureOffset, this.signatureLength, this.message, this.messageOffset, this.messageLength[0], this.privateKey.getSecret(), this.secureRandom);
 
         }
 
