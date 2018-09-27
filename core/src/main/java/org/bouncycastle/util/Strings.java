@@ -3,8 +3,6 @@ package org.bouncycastle.util;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.nio.charset.Charset;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -253,23 +251,6 @@ public final class Strings
         return string;
     }
 
-    public static byte[] toByteArray(char[] chars, Charset charset)
-    {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        try
-        {
-            OutputStreamWriter osw = new OutputStreamWriter(bos, charset);
-            osw.write(chars, 0, chars.length);
-            osw.flush();
-            osw.close();
-        }
-        catch (Exception ex)
-        {
-            throw new RuntimeException(ex.getMessage(), ex);
-        }
-        return bos.toByteArray();
-    }
-
     public static byte[] toByteArray(char[] chars)
     {
         byte[] bytes = new byte[chars.length];
@@ -366,24 +347,6 @@ public final class Strings
             res[i] = (String)v.elementAt(i);
         }
         return res;
-    }
-
-
-    public static byte[] toByteArray(String content, Charset encoding)
-    {
-        try
-        {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            OutputStreamWriter osw = new OutputStreamWriter(bos, encoding);
-            osw.write(content);
-            osw.flush();
-            osw.close();
-            return bos.toByteArray();
-        }
-        catch (Exception ex)
-        {
-            throw new RuntimeException(ex.getMessage(), ex);
-        }
     }
 
     public static StringList newList()
