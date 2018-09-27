@@ -119,7 +119,7 @@ public class Polynomial
         u *= q;
         a += u;
 
-        return a >> 32;
+        return a >>> 32;
 
     }
 
@@ -317,10 +317,10 @@ public class Polynomial
     /**************************************************************************************************************************************************************************************************************
      * Description:	Inverse Number Theoretic Transform for Heuristic qTESLA Security Category-3 (Option for Size and Speed) and Provably-Secure qTESLA Security Category-1
      *
-     * @param        destination                    Destination of Inverse Transformation
-     * @param        destinationOffset            Starting Point of the Destination
-     * @param        source                        Source of Inverse Transformation
-     * @param        sourceOffset                Starting Point of the Source
+     * @param        a                    Destination of Inverse Transformation
+     * @param        aOff            Starting Point of the Destination
+     * @param        w                        Source of Inverse Transformation
+     * @param        wOff                Starting Point of the Source
      * @param        n                            Polynomial Degree
      * @param        q                            Modulus
      * @param        qInverse
@@ -329,7 +329,7 @@ public class Polynomial
      *
      * @return none
      **************************************************************************************************************************************************************************************************************/
-    private static void inverseNumberTheoreticTransform(long destination[], int destinationOffset, long source[], int sourceOffset, int n, int q, long qInverse, int barrettMultiplication, int barrettDivision)
+    private static void inverseNumberTheoreticTransform(long a[], int aOff, long w[], int wOff, int n, int q, long qInverse, int barrettMultiplication, int barrettDivision)
     {
 
         int jTwiddle = 0;
@@ -343,16 +343,16 @@ public class Polynomial
             for (jFirst = 0; jFirst < n; jFirst = j + numberOfProblem)
             {
 
-                int omega = (int)source[sourceOffset + (jTwiddle++)];
+                int omega = (int)w[wOff + (jTwiddle++)];
 
                 for (j = jFirst; j < jFirst + numberOfProblem; j++)
                 {
 
-                    int temporary = (int)destination[destinationOffset + j];
+                    int temporary = (int)a[aOff + j];
 
-                    destination[destinationOffset + j] = destination[destinationOffset + j + numberOfProblem] + temporary;
+                    a[aOff + j] = a[aOff + j + numberOfProblem] + temporary;
 
-                    destination[destinationOffset + j + numberOfProblem] = montgomery(omega * (q * 2 + temporary - destination[destinationOffset + j + numberOfProblem]), q, qInverse);
+                    a[aOff + j + numberOfProblem] = montgomery(omega * (temporary + (2 * q -  a[aOff + j + numberOfProblem])), q, qInverse);
 
                 }
 
@@ -363,18 +363,18 @@ public class Polynomial
             for (jFirst = 0; jFirst < n; jFirst = j + numberOfProblem)
             {
 
-                int omega = (int)source[sourceOffset + (jTwiddle++)];
+                int omega = (int)w[wOff + (jTwiddle++)];
 
                 for (j = jFirst; j < jFirst + numberOfProblem; j++)
                 {
 
-                    int temporary = (int)destination[destinationOffset + j];
+                    int temporary = (int)a[aOff + j];
 
                     if (q == Parameter.Q_III_SIZE || q == Parameter.Q_III_SPEED)
                     {
 
-                        destination[destinationOffset + j] = barrett(
-                            destination[destinationOffset + j + numberOfProblem] + temporary,
+                        a[aOff + j] = barrett(
+                            a[aOff + j + numberOfProblem] + temporary,
                             q, barrettMultiplication, barrettDivision
                         );
                     }
@@ -382,13 +382,13 @@ public class Polynomial
                     if (q == Parameter.Q_I_P)
                     {
 
-                        destination[destinationOffset + j] = barrettP(
-                            destination[destinationOffset + j + numberOfProblem] + temporary,
+                        a[aOff + j] = barrettP(
+                            a[aOff + j + numberOfProblem] + temporary,
                             q, barrettMultiplication, barrettDivision
                         );
                     }
 
-                    destination[destinationOffset + j + numberOfProblem] = montgomery(omega * (q * 2 + temporary - destination[destinationOffset + j + numberOfProblem]), q, qInverse);
+                    a[aOff + j + numberOfProblem] = montgomery(omega * (q * 2 + temporary - a[aOff + j + numberOfProblem]), q, qInverse);
 
                 }
 
@@ -553,7 +553,7 @@ public class Polynomial
         {
 
             inverseNumberTheoreticTransform(
-                product, productOffset, PolynomialHeuristic.ZETA_III_SIZE, 0,
+                product, productOffset, PolynomialHeuristic.ZETA_INVERSE_III_SIZE, 0,
                 Parameter.N_III_SIZE, Parameter.Q_III_SIZE, Parameter.Q_INVERSE_III_SIZE,
                 Parameter.BARRETT_MULTIPLICATION_III_SIZE, Parameter.BARRETT_DIVISION_III_SIZE
             );
@@ -564,7 +564,7 @@ public class Polynomial
         {
 
             inverseNumberTheoreticTransform(
-                product, productOffset, PolynomialHeuristic.ZETA_III_SPEED, 0,
+                product, productOffset, PolynomialHeuristic.ZETA_INVERSE_III_SPEED, 0,
                 Parameter.N_III_SPEED, Parameter.Q_III_SPEED, Parameter.Q_INVERSE_III_SPEED,
                 Parameter.BARRETT_MULTIPLICATION_III_SPEED, Parameter.BARRETT_DIVISION_III_SPEED
             );
@@ -657,14 +657,10 @@ public class Polynomial
      ******************************************************************************************************************************************************************************************************************************/
     public static void polynomialSubtraction(long[] difference, int differenceOffset, long[] minuend, int minuendOffset, long[] subtrahend, int subtrahendOffset, int n, int q, int barrettMultiplication, int barrettDivision)
     {
-
         for (int i = 0; i < n; i++)
         {
-
             difference[differenceOffset + i] = barrett(q * 2 + minuend[minuendOffset + i] - subtrahend[subtrahendOffset + i], q, barrettMultiplication, barrettDivision);
-
         }
-
     }
 
     /*******************************************************************************************************************************************************************************************************************************
