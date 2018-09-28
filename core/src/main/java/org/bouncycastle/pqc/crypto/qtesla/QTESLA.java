@@ -639,7 +639,6 @@ public class QTESLA
      ***************************************************************************************************************************************************************/
     private static void encodeSignature(byte[] signature, int signatureOffset, byte[] C, int cOffset, long[] Z)
     {
-
         int j = 0;
 
         for (int i = 0; i < (Parameter.N_III_P * Parameter.D_III_P / Integer.SIZE); i += Parameter.D_III_P / Byte.SIZE)
@@ -831,15 +830,15 @@ public class QTESLA
         for (int i = 0; i < Parameter.N_III_P; i += Byte.SIZE / 2)
         {
 
-            Z[i + 0] = (CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 0)) << 8) >>> 8;
+            Z[i + 0] = (CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 0)) << 8) >> 8;
 
             Z[i + 1] = ((CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 0)) >>> 24) & ((1 << 8) - 1)) |
-                ((CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 1)) << 16) >>> 8);
+                ((CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 1)) << 16) >> 8);
 
             Z[i + 2] = ((CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 1)) >>> 16) & ((1 << 16) - 1)) |
-                ((CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 2)) << 24) >>> 8);
+                ((CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 2)) << 24) >> 8);
 
-            Z[i + 3] = CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 2)) >>> 8;
+            Z[i + 3] = CommonFunction.load32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (j + 2)) >> 8;
 
             j += Byte.SIZE / 2 - 1;
 
@@ -1829,7 +1828,6 @@ public class QTESLA
         Polynomial.polynomialUniform(
             A, privateKey, privateKeySize - 2 * Polynomial.SEED, n, 1, q, qInverse, qLogarithm, generatorA, inverseNumberTheoreticTransform
         );
-        System.err.println(Long.toHexString(A[0]) + ":" + Long.toHexString(A[1]) + ":" + Long.toHexString(A[2]) + ":" + Long.toHexString(A[3]));
 
         /* Loop Due to Possible Rejection */
         while (true)
@@ -2211,7 +2209,7 @@ public class QTESLA
                 signatureLength[0] = messageLength + Polynomial.SIGNATURE_I_P;
 
                 /* Pack Signature */
-                encodeSignatureIIISpeedIP(signature, messageLength, C, 0, Z, n, d);
+                encodeSignatureIIISpeedIP(signature, 0, C, 0, Z, n, d);
 
             }
 
@@ -2225,7 +2223,7 @@ public class QTESLA
                 signatureLength[0] = messageLength + Polynomial.SIGNATURE_III_P;
 
                 /* Pack Signature */
-                encodeSignature(signature, messageLength, C, 0, Z);
+                encodeSignature(signature, 0, C, 0, Z);
 
             }
 
