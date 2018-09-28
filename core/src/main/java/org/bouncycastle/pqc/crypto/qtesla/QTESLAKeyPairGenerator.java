@@ -6,16 +6,23 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 
+/**
+ * Key-pair generator for qTESLA keys.
+ */
 public final class QTESLAKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
 {
-
     /**
-     * qTESLA Security Category (From 4 To 8)
+     * qTESLA Security Category
      */
     private int securityCategory;
     private SecureRandom secureRandom;
 
+    /**
+     * Initialize the generator with a security category and a source of randomness.
+     *
+     * @param param a {@link QTESLAKeyGenerationParameters} object.
+     */
     public void init(
         KeyGenerationParameters param)
     {
@@ -25,6 +32,11 @@ public final class QTESLAKeyPairGenerator
         this.securityCategory = parameters.getSecurityCategory();
     }
 
+    /**
+     * Generate a key-pair.
+     *
+     * @return a matching key-pair consisting of (QTESLAPublicKeyParameters, QTESLAPrivateKeyParameters).
+     */
     public AsymmetricCipherKeyPair generateKeyPair()
     {
         byte[] privateKey = allocatePrivate(securityCategory);

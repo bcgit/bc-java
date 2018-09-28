@@ -7,6 +7,9 @@ import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
 
+/**
+ * Signer for the qTESLA algorithm (https://qtesla.org/)
+ */
 public class QTESLASigner
     implements MessageSigner
 {
@@ -29,6 +32,13 @@ public class QTESLASigner
     {
     }
 
+    /**
+     * Initialise the signer.
+     *
+     * @param forSigning true if we are generating a signature, false
+     *                   otherwise.
+     * @param param      ParametersWithRandom containing a private key for signature generation, public key otherwise.
+     */
     public void init(boolean forSigning, CipherParameters param)
     {
          if (forSigning)
@@ -54,6 +64,12 @@ public class QTESLASigner
          }
     }
 
+    /**
+     * Generate a signature directly for the passed in message.
+     *
+     * @param message the message to be signed.
+     * @return the signature generated.
+     */
     public byte[] generateSignature(byte[] message)
     {
         byte[] sig = new byte[QTESLASecurityCategory.getSignatureSize(privateKey.getSecurityCategory())];
@@ -82,7 +98,13 @@ public class QTESLASigner
         return sig;
     }
 
-
+    /**
+     * Verify the signature against the passed in message.
+     *
+     * @param message the message that was supposed to have been signed.
+     * @param signature the signature of the message
+     * @return true if the signature passes, false otherwise.
+     */
     public boolean verifySignature(byte[] message, byte[] signature)
     {
         int status;
