@@ -89,7 +89,7 @@ public class QTESLATest
         kpGen.init(new QTESLAKeyGenerationParameters(QTESLASecurityCategory.PROVABLY_SECURE_III, secureRandom));
 
         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
-
+        
         doTestSig(kp);
     }
 

@@ -119,7 +119,7 @@ class Polynomial
         u *= q;
         a += u;
 
-        return a >>> 32;
+        return a >> 32;
 
     }
 
@@ -153,7 +153,7 @@ class Polynomial
      *
      * @return Reduced Number
      **********************************************************************************************/
-    public static long barrettP(long number, int q, int barrettMultiplication, int barrettDivision)
+    static long barrettP(long number, int q, int barrettMultiplication, int barrettDivision)
     {
 
         long u = ((number * barrettMultiplication) >> barrettDivision) * q;
@@ -187,18 +187,16 @@ class Polynomial
 
             for (jFirst = 0; jFirst < n; jFirst = j + numberOfProblem)
             {
-
-                long omega = source[jTwiddle++];
+                int omega = (int)source[jTwiddle++];
 
                 for (j = jFirst; j < jFirst + numberOfProblem; j++)
                 {
-                    long temporary = montgomery(omega * destination[j + numberOfProblem], q, qInverse);
+                    int temporary = (int)montgomery(omega * destination[j + numberOfProblem], q, qInverse);
 
                     destination[j + numberOfProblem] = destination[j] + (q - temporary);
-                    destination[j] = destination[j] + (temporary & 0xFFFFFFFFL);
+                    destination[j] = destination[j] + temporary;
 
                 }
-
             }
 
         }
@@ -227,12 +225,12 @@ class Polynomial
             for (jFirst = 0; jFirst < Parameter.N_III_P; jFirst = j + numberOfProblem)
             {
 
-                long omega = source[jTwiddle++];
+                int omega = (int)source[jTwiddle++];
 
                 for (j = jFirst; j < jFirst + numberOfProblem; j++)
                 {
 
-                    long temporary = barrettP(
+                    int temporary = (int)barrettP(
                         montgomery(
                             omega * destination[j + numberOfProblem],
                             Parameter.Q_III_P,
@@ -363,12 +361,12 @@ class Polynomial
             for (jFirst = 0; jFirst < n; jFirst = j + numberOfProblem)
             {
 
-                long omega = w[wOff + (jTwiddle++)];
+                int omega = (int)w[wOff + (jTwiddle++)];
 
                 for (j = jFirst; j < jFirst + numberOfProblem; j++)
                 {
 
-                    long temporary = a[aOff + j];
+                    int temporary = (int)a[aOff + j];
 
                     if (q == Parameter.Q_III_SIZE || q == Parameter.Q_III_SPEED)
                     {
@@ -388,7 +386,7 @@ class Polynomial
                         );
                     }
 
-                    a[aOff + j + numberOfProblem] = montgomery(omega * (q * 2 + temporary - a[aOff + j + numberOfProblem]), q, qInverse);
+                    a[aOff + j + numberOfProblem] = montgomery(omega * (q * 2L + temporary - a[aOff + j + numberOfProblem]), q, qInverse);
 
                 }
 
@@ -422,12 +420,12 @@ class Polynomial
             for (jFirst = 0; jFirst < Parameter.N_III_P; jFirst = j + numberOfProblem)
             {
 
-                long omega = source[sourceOffset + (jTwiddle++)];
+                int omega = (int)source[sourceOffset + (jTwiddle++)];
 
                 for (j = jFirst; j < jFirst + numberOfProblem; j++)
                 {
 
-                    long temporary = destination[destinationOffset + j];
+                    int temporary = (int)destination[destinationOffset + j];
 
                     destination[destinationOffset + j] = barrettP(
                         destination[destinationOffset + j + numberOfProblem] + temporary,
@@ -681,14 +679,10 @@ class Polynomial
      *******************************************************************************************************************************************************************************************************************************/
     public static void polynomialSubtractionP(long[] difference, int differenceOffset, long[] minuend, int minuendOffset, long[] subtrahend, int subtrahendOffset, int n, int q, int barrettMultiplication, int barrettDivision)
     {
-
         for (int i = 0; i < n; i++)
         {
-
             difference[differenceOffset + i] = barrettP(minuend[minuendOffset + i] - subtrahend[subtrahendOffset + i], q, barrettMultiplication, barrettDivision);
-
         }
-
     }
 
     /**************************************************************************************************************************************************************************************
