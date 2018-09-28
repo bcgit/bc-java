@@ -2,10 +2,10 @@ package org.bouncycastle.pqc.crypto.qtesla;
 
 import java.util.Arrays;
 
-public class Sample
+class Sample
 {
 
-    public static final double[][] EXPONENTIAL_DISTRIBUTION_I = {
+    static final double[][] EXPONENTIAL_DISTRIBUTION_I = {
         /* [3][32] */
         {
             1.0000000000000000000000000000000000000000, 0.9991161986946362635440596569713669685880,
@@ -66,7 +66,7 @@ public class Sample
 
     };
 
-    public static final double[][] EXPONENTIAL_DISTRIBUTION_III_SIZE = {
+    static final double[][] EXPONENTIAL_DISTRIBUTION_III_SIZE = {
         /* [3][32] */
         {
             1.0000000000000000000000000000000000000000, 0.9930872609369466438446685776045870783769,
@@ -128,7 +128,7 @@ public class Sample
 
     };
 
-    public static final double[][] EXPONENTIAL_DISTRIBUTION_III_SPEED = {
+    static final double[][] EXPONENTIAL_DISTRIBUTION_III_SPEED = {
         /* [3][32] */
         {
             1.0000000000000000000000000000000000000000, 0.9951980443443537316500388424172839303752,
@@ -189,7 +189,7 @@ public class Sample
 
     };
 
-    public static final double[][] EXPONENTIAL_DISTRIBUTION_P = {
+    static final double[][] EXPONENTIAL_DISTRIBUTION_P = {
         /* [3][32] */
         {
             1.0000000000000000000000000000000000000000, 0.9930924954370359015332102168880765048173,
@@ -250,7 +250,7 @@ public class Sample
 
     };
 
-    public static final long[][] CUMULATIVE_DISTRIBUTION_TABLE_I = {
+    static final long[][] CUMULATIVE_DISTRIBUTION_TABLE_I = {
         /* [12][2] */
         {0x0200000000000000L, 0x0000000000000000L}, {0x0300000000000000L, 0x0000000000000000L},
         {0x0320000000000000L, 0x0000000000000000L}, {0x0321000000000000L, 0x0000000000000000L},
@@ -261,7 +261,7 @@ public class Sample
 
     };
 
-    public static final long[][] CUMULATIVE_DISTRIBUTION_TABLE_III = {
+    static final long[][] CUMULATIVE_DISTRIBUTION_TABLE_III = {
         /* [14][3] */
         {0x0000020000000000L, 0x0000000000000000L, 0x0000000000000000L},
         {0x0000030000000000L, 0x0000000000000000L, 0x0000000000000000L},
@@ -310,7 +310,7 @@ public class Sample
      *
      * @return none
      ******************************************************************************************************************/
-    public static void sampleY(long[] Y, final byte[] seed, int seedOffset, int nonce, int n, int q, int b, int bBit)
+    static void sampleY(long[] Y, final byte[] seed, int seedOffset, int nonce, int n, int q, int b, int bBit)
     {
 
         int i = 0;
@@ -433,7 +433,7 @@ public class Sample
      *
      * @return none
      *****************************************************************************************************************************************************************************/
-    public static void polynomialGaussSamplerI(long[] data, int dataOffset, final byte[] seed, int seedOffset, int nonce, int n, double xi, double[][] exponentialDistribution)
+    static void polynomialGaussSamplerI(long[] data, int dataOffset, final byte[] seed, int seedOffset, int nonce, int n, double xi, double[][] exponentialDistribution)
     {
 
         byte[] seedExpander = new byte[n * Long.SIZE / Byte.SIZE];
@@ -617,7 +617,7 @@ public class Sample
      *
      * @return none
      *******************************************************************************************************************************************************************************/
-    public static void polynomialGaussSamplerIII(long[] data, int dataOffset, final byte[] seed, int seedOffset, int nonce, int n, double xi, double[][] exponentialDistribution)
+    static void polynomialGaussSamplerIII(long[] data, int dataOffset, final byte[] seed, int seedOffset, int nonce, int n, double xi, double[][] exponentialDistribution)
     {
 
         byte[] seedExpander = new byte[n * Long.SIZE / Byte.SIZE];
@@ -798,7 +798,7 @@ public class Sample
     /**********************************************************************************************************************************
      * Description:	Encoding of C' by Mapping the Output of the Hash Function H to An N-Element Vector with Entries {-1, 0, 1}
      *
-     * @param        postionList            {0, ..., n - 1} ^ h
+     * @param        positionList            {0, ..., n - 1} ^ h
      * @param        signList            {-1, +1} ^ h
      * @param        output                Result of the Hash Function H
      * @param        outputOffset        Starting Point of the Result of the Hash Function H
@@ -807,7 +807,7 @@ public class Sample
      *
      * @return none
      **********************************************************************************************************************************/
-    public static void encodeC(int[] positionList, short[] signList, byte[] output, int outputOffset, int n, int w)
+    static void encodeC(int[] positionList, short[] signList, byte[] output, int outputOffset, int n, int w)
     {
 
         int count = 0;

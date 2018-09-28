@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.qtesla;
 
-public class Polynomial
+class Polynomial
 {
 
     /**

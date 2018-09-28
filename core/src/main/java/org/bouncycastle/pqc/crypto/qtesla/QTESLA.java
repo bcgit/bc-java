@@ -3,7 +3,7 @@ package org.bouncycastle.pqc.crypto.qtesla;
 import java.security.SecureRandom;
 import java.util.Arrays;
 
-public class QTESLA
+class QTESLA
 {
 
     /********************************************************************************************************************************************
@@ -865,7 +865,7 @@ public class QTESLA
             mask = (q / 2 - V[i]) >> 63;
             V[i] = ((V[i] - q) & mask) | (V[i] & (~mask));
             cL = V[i] & ((1 << d) - 1);
-            mask = ((1<<(d-1)) - cL) >> 63;
+            mask = ((1 << (d - 1)) - cL) >> 63;
             cL = ((cL - (1 << d)) & mask) | (cL & (~mask));
             T[i] = (byte)((V[i] - cL) >> d);
 
@@ -1740,8 +1740,6 @@ public class QTESLA
      * @param        messageOffset                        Starting Point of the Message to be Signed
      * @param        messageLength                        Length of the Message to be Signed
      * @param        signature                            Output Package Containing Signature
-     * @param        signatureOffset                        Starting Point of the Output Package Containing Signature
-     * @param        signatureLength                        Length of the Output Package Containing Signature
      * @param        privateKey                            Private Key
      * @param        secureRandom                        Source of Randomness
      * @param        n                                    Polynomial Degree
@@ -1764,18 +1762,14 @@ public class QTESLA
      * @return 0                                    Successful Execution
      ******************************************************************************************************************************************************/
     private static int signing(
-
-        byte[] signature, int signatureOffset, int[] signatureLength,
+        byte[] signature,
         final byte[] message, int messageOffset, int messageLength,
         final byte[] privateKey, SecureRandom secureRandom,
         int n, int w, int q, long qInverse, int qLogarithm, int b, int bBit, int d, int u, int rejection,
         int generatorA, int inverseNumberTheoreticTransform, int privateKeySize,
         int barrettMultiplication, int barrettDivision,
-        long[] zeta
-
-    )
+        long[] zeta)
     {
-
         byte[] C = new byte[Polynomial.HASH];
         byte[] randomness = new byte[Polynomial.SEED];
         byte[] randomnessInput = new byte[messageLength + Polynomial.RANDOM + Polynomial.SEED];
@@ -1793,7 +1787,6 @@ public class QTESLA
         /* Domain Separator for Sampling Y */
         int nonce = 0;
 
-        // this.rng.randomByte (randomnessInput, Polynomial.RANDOM, Polynomial.RANDOM);
         secureRandom.nextBytes(temporaryRandomnessInput);
 
         System.arraycopy(temporaryRandomnessInput, 0, randomnessInput, Polynomial.RANDOM, Polynomial.RANDOM);
@@ -1802,27 +1795,15 @@ public class QTESLA
 
         if (q == Parameter.Q_I)
         {
-
             HashUtils.secureHashAlgorithmKECCAK128(
                 randomness, 0, Polynomial.SEED, randomnessInput, 0, messageLength + Polynomial.RANDOM + Polynomial.SEED
             );
         }
-
-        if (q == Parameter.Q_III_SIZE)
+        else
         {
-
             HashUtils.secureHashAlgorithmKECCAK256(
                 randomness, 0, Polynomial.SEED, randomnessInput, 0, messageLength + Polynomial.RANDOM + Polynomial.SEED
             );
-        }
-
-        if (q == Parameter.Q_III_SPEED)
-        {
-
-            HashUtils.secureHashAlgorithmKECCAK256(
-                randomness, 0, Polynomial.SEED, randomnessInput, 0, messageLength + Polynomial.RANDOM + Polynomial.SEED
-            );
-
         }
 
         Polynomial.polynomialUniform(
@@ -1839,7 +1820,7 @@ public class QTESLA
 
             /* V = A * Y Modulo Q */
             Polynomial.polynomialMultiplication(V, 0, A, 0, Y, 0, n, q, qInverse, zeta);
-         
+
             hashFunction(C, 0, V, message, messageOffset, messageLength, n, d, q);
 
             /* Generate C = EncodeC (C') Where C' is the Hashing of V Together with Message */
@@ -1865,66 +1846,24 @@ public class QTESLA
 
             if (testV(V, 0, n, d, q, rejection) == true)
             {
-
                 continue;
-
             }
 
-            if (q == Parameter.Q_I)
+            switch (q)
             {
-
-                /* Copy the Message into the Signature Package */
-                System.arraycopy(message, messageOffset, signature, signatureOffset + Polynomial.SIGNATURE_I, messageLength);
-
-                /* Length of the Output */
-                signatureLength[0] = Polynomial.SIGNATURE_I + messageLength;
-
-                /* Pack Signature */
+            case Parameter.Q_I:
                 encodeSignature(signature, 0, C, 0, Z, n, d);
-            }
-
-            if (q == Parameter.Q_III_SIZE)
-            {
-
-                /* Copy the Message into the Signature Package */
-                System.arraycopy(message, messageOffset, signature, signatureOffset + Polynomial.SIGNATURE_III_SIZE, messageLength);
-
-                /* Length of the Output */
-                signatureLength[0] = Polynomial.SIGNATURE_III_SIZE + messageLength;
-
-                /* Pack Signature */
+                break;
+            case Parameter.Q_III_SIZE:
                 encodeSignature(signature, 0, C, 0, Z, n, d);
-
-            }
-
-            if (q == Parameter.Q_III_SPEED)
-            {
-
-                /* Copy the Message into the Signature Package */
-                System.arraycopy(message, messageOffset, signature, signatureOffset + Polynomial.SIGNATURE_III_SPEED, messageLength);
-
-                /* Length of the Output */
-                signatureLength[0] = Polynomial.SIGNATURE_III_SPEED + messageLength;
-
-                /* Pack Signature */
+                break;
+            case Parameter.Q_III_SPEED:
                 encodeSignatureIIISpeedIP(signature, 0, C, 0, Z, n, d);
-
+                break;
+            default:
+                throw new IllegalStateException("unknown q: " + q);
             }
 
-            if (q == Parameter.Q_I_P)
-            {
-
-                /* Copy the Message into the Signature Package */
-                System.arraycopy(message, messageOffset, signature, signatureOffset + Polynomial.SIGNATURE_III_SPEED, messageLength);
-
-                /* Length of the Output */
-                signatureLength[0] = Polynomial.SIGNATURE_I_P + messageLength;
-
-                /* Pack Signature */
-                encodeSignatureIIISpeedIP(signature, 0, C, 0, Z, n, d);
-
-            }
-            
             return 0;
 
         }
@@ -1938,16 +1877,14 @@ public class QTESLA
      * @param        messageOffset                        Starting Point of the Message to be Signed
      * @param        messageLength                        Length of the Message to be Signed
      * @param        signature                            Output Package Containing Signature
-     * @param        signatureOffset                        Starting Point of the Output Package Containing Signature
-     * @param        signatureLength                        Length of the Output Package Containing Signature
      * @param        privateKey                            Private Key
      * @param        secureRandom                        Source of Randomness
      *
      * @return 0                                    Successful Execution
      *****************************************************************************************************************************************************/
-    public static int signingI(
+    static int signingI(
 
-        byte[] signature, int signatureOffset, int[] signatureLength,
+        byte[] signature,
         final byte[] message, int messageOffset, int messageLength,
         final byte[] privateKey, SecureRandom secureRandom
 
@@ -1956,7 +1893,7 @@ public class QTESLA
 
         return signing(
 
-            signature, signatureOffset, signatureLength,
+            signature,
             message, messageOffset, messageLength,
             privateKey, secureRandom,
             Parameter.N_I, Parameter.W_I, Parameter.Q_I, Parameter.Q_INVERSE_I, Parameter.Q_LOGARITHM_I,
@@ -1977,16 +1914,14 @@ public class QTESLA
      * @param        messageOffset                        Starting Point of the Message to be Signed
      * @param        messageLength                        Length of the Message to be Signed
      * @param        signature                            Output Package Containing Signature
-     * @param        signatureOffset                        Starting Point of the Output Package Containing Signature
-     * @param        signatureLength                        Length of the Output Package Containing Signature
      * @param        privateKey                            Private Key
      * @param        secureRandom                        Source of Randomness
      *
      * @return 0                                    Successful Execution
      *****************************************************************************************************************************************************/
-    public static int signingIIISize(
+    static int signingIIISize(
 
-        byte[] signature, int signatureOffset, int[] signatureLength,
+        byte[] signature,
         final byte[] message, int messageOffset, int messageLength,
         final byte[] privateKey, SecureRandom secureRandom
 
@@ -1995,7 +1930,7 @@ public class QTESLA
 
         return signing(
 
-            signature, signatureOffset, signatureLength,
+            signature,
             message, messageOffset, messageLength,
             privateKey, secureRandom,
             Parameter.N_III_SIZE, Parameter.W_III_SIZE, Parameter.Q_III_SIZE, Parameter.Q_INVERSE_III_SIZE, Parameter.Q_LOGARITHM_III_SIZE,
@@ -2016,16 +1951,14 @@ public class QTESLA
      * @param        messageOffset                        Starting Point of the Message to be Signed
      * @param        messageLength                        Length of the Message to be Signed
      * @param        signature                            Output Package Containing Signature
-     * @param        signatureOffset                        Starting Point of the Output Package Containing Signature
-     * @param        signatureLength                        Length of the Output Package Containing Signature
      * @param        privateKey                            Private Key
      * @param        secureRandom                        Source of Randomness
      *
      * @return 0                                    Successful Execution
      ****************************************************************************************************************************************************/
-    public static int signingIIISpeed(
+    static int signingIIISpeed(
 
-        byte[] signature, int signatureOffset, int[] signatureLength,
+        byte[] signature,
         final byte[] message, int messageOffset, int messageLength,
         final byte[] privateKey, SecureRandom secureRandom
 
@@ -2034,7 +1967,7 @@ public class QTESLA
 
         return signing(
 
-            signature, signatureOffset, signatureLength,
+            signature,
             message, messageOffset, messageLength,
             privateKey, secureRandom,
             Parameter.N_III_SPEED, Parameter.W_III_SPEED, Parameter.Q_III_SPEED, Parameter.Q_INVERSE_III_SPEED, Parameter.Q_LOGARITHM_III_SPEED,
@@ -2055,8 +1988,6 @@ public class QTESLA
      * @param        messageOffset                        Starting Point of the Message to be Signed
      * @param        messageLength                        Length of the Message to be Signed
      * @param        signature                            Output Package Containing Signature
-     * @param        signatureOffset                        Starting Point of the Output Package Containing Signature
-     * @param        signatureLength                        Length of the Output Package Containing Signature
      * @param        privateKey                            Private Key
      * @param        secureRandom                        Source of Randomness
      * @param        n                                    Polynomial Degree
@@ -2080,7 +2011,7 @@ public class QTESLA
      *****************************************************************************************************************************************************/
     private static int signing(
 
-        byte[] signature, int signatureOffset, int[] signatureLength,
+        byte[] signature,
         final byte[] message, int messageOffset, int messageLength,
         final byte[] privateKey, SecureRandom secureRandom,
         int n, int k, int w, int q, long qInverse, int qLogarithm, int b, int bBit, int d, int u, int rejection,
@@ -2201,30 +2132,14 @@ public class QTESLA
 
             if (q == Parameter.Q_I_P)
             {
-
-                /* Copy the Message into the Signature Package */
-                System.arraycopy(message, messageOffset, signature, signatureOffset + Polynomial.SIGNATURE_I_P, messageLength);
-
-                /* Length of the Output */
-                signatureLength[0] = messageLength + Polynomial.SIGNATURE_I_P;
-
                 /* Pack Signature */
                 encodeSignatureIIISpeedIP(signature, 0, C, 0, Z, n, d);
 
             }
-
-            if (q == Parameter.Q_III_P)
+            else
             {
-
-                /* Copy the Message into the Signature Package */
-                System.arraycopy(message, messageOffset, signature, signatureOffset + Polynomial.SIGNATURE_III_P, messageLength);
-
-                /* Length of the Output */
-                signatureLength[0] = messageLength + Polynomial.SIGNATURE_III_P;
-
                 /* Pack Signature */
                 encodeSignature(signature, 0, C, 0, Z);
-
             }
 
             return 0;
@@ -2240,25 +2155,21 @@ public class QTESLA
      * @param        messageOffset                        Starting Point of the Message to be Signed
      * @param        messageLength                        Length of the Message to be Signed
      * @param        signature                            Output Package Containing Signature
-     * @param        signatureOffset                        Starting Point of the Output Package Containing Signature
-     * @param        signatureLength                        Length of the Output Package Containing Signature
      * @param        privateKey                            Private Key
      * @param        secureRandom                        Source of Randomness
      *
      * @return 0                                    Successful Execution
      *****************************************************************************************************************************************************/
-    public static int signingPI(
-
-        byte[] signature, int signatureOffset, int[] signatureLength,
+    static int signingPI(
+        byte[] signature,
         final byte[] message, int messageOffset, int messageLength,
         final byte[] privateKey, SecureRandom secureRandom
-
     )
     {
 
         return signing(
 
-            signature, signatureOffset, signatureLength,
+            signature, 
             message, messageOffset, messageLength,
             privateKey, secureRandom,
             Parameter.N_I_P, Parameter.K_I_P, Parameter.W_I_P, Parameter.Q_I_P, Parameter.Q_INVERSE_I_P, Parameter.Q_LOGARITHM_I_P,
@@ -2278,25 +2189,21 @@ public class QTESLA
      * @param        messageOffset                        Starting Point of the Message to be Signed
      * @param        messageLength                        Length of the Message to be Signed
      * @param        signature                            Output Package Containing Signature
-     * @param        signatureOffset                        Starting Point of the Output Package Containing Signature
-     * @param        signatureLength                        Length of the Output Package Containing Signature
      * @param        privateKey                            Private Key
      * @param        secureRandom                        Source of Randomness
      *
      * @return 0                                    Successful Execution
      **********************************************************************************************************************************************/
-    public static int signingPIII(
-
-        byte[] signature, int signatureOffset, int[] signatureLength,
+    static int signingPIII(
+        byte[] signature,
         final byte[] message, int messageOffset, int messageLength,
         final byte[] privateKey, SecureRandom secureRandom
-
     )
     {
 
         return signing(
 
-            signature, signatureOffset, signatureLength,
+            signature, 
             message, messageOffset, messageLength,
             privateKey, secureRandom,
             Parameter.N_III_P, Parameter.K_III_P, Parameter.W_III_P, Parameter.Q_III_P, Parameter.Q_INVERSE_III_P, Parameter.Q_LOGARITHM_III_P,
@@ -2316,8 +2223,6 @@ public class QTESLA
      * @param        signatureOffset                        Starting Point of the Given Signature Package
      * @param        signatureLength                        Length of the Given Signature Package
      * @param        message                                Original (Signed) Message
-     * @param        messageOffset                        Starting Point of the Original (Signed) Message
-     * @param        messageLength                        Length of the Original (Signed) Message
      * @param        publicKey                            Public Key
      * @param        n                                    Polynomial Degree
      * @param        w                                    Number of Non-Zero Entries of Output Elements of Encryption
@@ -2339,7 +2244,7 @@ public class QTESLA
      *********************************************************************************************************************************/
     private static int verifying(
 
-        byte[] message, int messageOffset, int[] messageLength,
+        byte[] message,
         final byte[] signature, int signatureOffset, int signatureLength,
         final byte[] publicKey,
         int n, int w, int q, long qInverse, int qLogarithm, int b, int d, int u, int signatureSize,
@@ -2413,16 +2318,12 @@ public class QTESLA
         Polynomial.polynomialSubtraction(W, 0, W, 0, TC, 0, n, q, barrettMultiplication, barrettDivision);
 
         /* Obtain the Hash Symbol */
-        hashFunction(cSignature, 0, W, signature, signatureOffset + signatureSize, signatureLength - signatureSize, n, d, q);
+        hashFunction(cSignature, 0, W, message, 0, message.length, n, d, q);
         /* Check if Same With One from Signature */
         if (CommonFunction.memoryEqual(C, 0, cSignature, 0, Polynomial.HASH) == false)
         {
             return -3;
         }
-
-        messageLength[0] = signatureLength - signatureSize;
-
-        System.arraycopy(signature, signatureOffset + signatureSize, message, messageOffset, messageLength[0]);
 
         return 0;
 
@@ -2436,16 +2337,14 @@ public class QTESLA
      * @param        signatureOffset                        Starting Point of the Given Signature Package
      * @param        signatureLength                        Length of the Given Signature Package
      * @param        message                                Original (Signed) Message
-     * @param        messageOffset                        Starting Point of the Original (Signed) Message
-     * @param        messageLength                        Length of the Original (Signed) Message
      * @param        publicKey                            Public Key
      *
      * @return 0                                    Valid Signature
      * 				< 0									Invalid Signature
      *******************************************************************************************************/
-    public static int verifyingI(
+    static int verifyingI(
 
-        byte[] message, int messageOffset, int[] messageLength,
+        byte[] message,
         final byte[] signature, int signatureOffset, int signatureLength,
         final byte[] publicKey
 
@@ -2454,7 +2353,7 @@ public class QTESLA
 
         return verifying(
 
-            message, messageOffset, messageLength,
+            message,
             signature, signatureOffset, signatureLength,
             publicKey,
             Parameter.N_I, Parameter.W_I, Parameter.Q_I, Parameter.Q_INVERSE_I, Parameter.Q_LOGARITHM_I,
@@ -2475,16 +2374,14 @@ public class QTESLA
      * @param        signatureOffset                        Starting Point of the Given Signature Package
      * @param        signatureLength                        Length of the Given Signature Package
      * @param        message                                Original (Signed) Message
-     * @param        messageOffset                        Starting Point of the Original (Signed) Message
-     * @param        messageLength                        Length of the Original (Signed) Message
      * @param        publicKey                            Public Key
      *
      * @return 0                                    Valid Signature
      * 				< 0									Invalid Signature
      ******************************************************************************************************/
-    public static int verifyingIIISize(
+    static int verifyingIIISize(
 
-        byte[] message, int messageOffset, int[] messageLength,
+        byte[] message,
         final byte[] signature, int signatureOffset, int signatureLength,
         final byte[] publicKey
 
@@ -2493,7 +2390,7 @@ public class QTESLA
 
         return verifying(
 
-            message, messageOffset, messageLength,
+            message,
             signature, signatureOffset, signatureLength,
             publicKey,
             Parameter.N_III_SIZE, Parameter.W_III_SIZE,
@@ -2515,16 +2412,14 @@ public class QTESLA
      * @param        signatureOffset                        Starting Point of the Given Signature Package
      * @param        signatureLength                        Length of the Given Signature Package
      * @param        message                                Original (Signed) Message
-     * @param        messageOffset                        Starting Point of the Original (Signed) Message
-     * @param        messageLength                        Length of the Original (Signed) Message
      * @param        publicKey                            Public Key
      *
      * @return 0                                    Valid Signature
      * 				< 0									Invalid Signature
      **********************************************************************************************************/
-    public static int verifyingIIISpeed(
+    static int verifyingIIISpeed(
 
-        byte[] message, int messageOffset, int[] messageLength,
+        byte[] message,
         final byte[] signature, int signatureOffset, int signatureLength,
         final byte[] publicKey
 
@@ -2533,7 +2428,7 @@ public class QTESLA
 
         return verifying(
 
-            message, messageOffset, messageLength,
+            message,
             signature, signatureOffset, signatureLength,
             publicKey,
             Parameter.N_III_SPEED, Parameter.W_III_SPEED,
@@ -2555,8 +2450,6 @@ public class QTESLA
      * @param        signatureOffset                        Starting Point of the Given Signature Package
      * @param        signatureLength                        Length of the Given Signature Package
      * @param        message                                Original (Signed) Message
-     * @param        messageOffset                        Starting Point of the Original (Signed) Message
-     * @param        messageLength                        Length of the Original (Signed) Message
      * @param        publicKey                            Public Key
      * @param        n                                    Polynomial Degree
      * @param        k                                    Number of Ring-Learning-With-Errors Samples
@@ -2567,20 +2460,18 @@ public class QTESLA
      * @param        b                                    Determines the Interval the Randomness is Chosen in During Signing
      * @param        d                                    Number of Rounded Bits
      * @param        u                                    Bound in Checking Secret Polynomial
-     * @param        lowerBound                            Size of the Given Signature Package
      * @param        generatorA
      * @param        inverseNumberTheoreticTransform
      * @param        barrettMultiplication
      * @param        barrettDivision
      * @param        zeta
-     * @param        zetaInverse
      *
      * @return 0                                    Valid Signature
      * 				< 0									Invalid Signature
      ********************************************************************************************************************************/
     private static int verifying(
 
-        byte[] message, int messageOffset, int[] messageLength,
+        byte[] message,
         final byte[] signature, int signatureOffset, int signatureLength,
         final byte[] publicKey,
         int n, int k, int w, int q, long qInverse, int qLogarithm, int b, int d, int u, int signatureSize,
@@ -2607,45 +2498,33 @@ public class QTESLA
 
         if (signatureLength < signatureSize)
         {
-
             return -1;
-
         }
 
         if (q == Parameter.Q_I_P)
         {
-
             decodeSignatureIIISpeedIP(C, Z, signature, signatureOffset, n, d);
-
         }
 
         if (q == Parameter.Q_III_P)
         {
-
             decodeSignature(C, Z, signature, signatureOffset);
-
         }
 
         /* Check Norm of Z */
         if (testZ(Z, n, b, u) == true)
         {
-
             return -2;
-
         }
 
         if (q == Parameter.Q_I_P)
         {
-
             decodePublicKeyIP(newPublicKey, seed, 0, publicKey);
-
         }
 
         if (q == Parameter.Q_III_P)
         {
-
             decodePublicKeyIIIP(newPublicKey, seed, 0, publicKey);
-
         }
 
         /* Generate A Polynomial */
@@ -2658,30 +2537,22 @@ public class QTESLA
         /* W_i = A_i * Z_i - TC_i for All i */
         for (short i = 0; i < k; i++)
         {
-
             Polynomial.polynomialMultiplication(W, n * i, A, n * i, numberTheoreticTransformZ, 0, n, q, qInverse);
 
             sparsePolynomialMultiplication32(
                 TC, n * i, newPublicKey, n * i, positionList, signList, n, w, q, barrettMultiplication, barrettDivision);
 
             Polynomial.polynomialSubtractionP(W, n * i, W, n * i, TC, n * i, n, q, barrettMultiplication, barrettDivision);
-
         }
 
         /* Obtain the Hash Symbol */
-        hashFunction(cSignature, 0, W, signature, signatureOffset + signatureSize, signatureLength - signatureSize, n, k, d, q);
+        hashFunction(cSignature, 0, W, message, 0, message.length, n, k, d, q);
 
         /* Check if Same with One from Signature */
         if (CommonFunction.memoryEqual(C, 0, cSignature, 0, Polynomial.HASH) == false)
         {
-
             return -3;
-
         }
-
-        messageLength[0] = signatureLength - signatureSize;
-
-        System.arraycopy(signature, signatureOffset + signatureSize, message, messageOffset, messageLength[0]);
 
         return 0;
 
@@ -2695,25 +2566,21 @@ public class QTESLA
      * @param        signatureOffset                        Starting Point of the Given Signature Package
      * @param        signatureLength                        Length of the Given Signature Package
      * @param        message                                Original (Signed) Message
-     * @param        messageOffset                        Starting Point of the Original (Signed) Message
-     * @param        messageLength                        Length of the Original (Signed) Message
      * @param        publicKey                            Public Key
      *
      * @return 0                                    Valid Signature
      * 				< 0									Invalid Signature
      *****************************************************************************************************/
-    public static int verifyingPI(
-
-        byte[] message, int messageOffset, int[] messageLength,
+    static int verifyingPI(
+        byte[] message,
         final byte[] signature, int signatureOffset, int signatureLength,
         final byte[] publicKey
-
     )
     {
 
         return verifying(
 
-            message, messageOffset, messageLength,
+            message,
             signature, signatureOffset, signatureLength,
             publicKey,
             Parameter.N_I_P, Parameter.K_I_P, Parameter.W_I_P,
@@ -2735,16 +2602,14 @@ public class QTESLA
      * @param        signatureOffset                        Starting Point of the Given Signature Package
      * @param        signatureLength                        Length of the Given Signature Package
      * @param        message                                Original (Signed) Message
-     * @param        messageOffset                        Starting Point of the Original (Signed) Message
-     * @param        messageLength                        Length of the Original (Signed) Message
      * @param        publicKey                            Public Key
      *
      * @return 0                                    Valid Signature
      * 				< 0									Invalid Signature
      *****************************************************************************************************/
-    public static int verifyingPIII(
+    static int verifyingPIII(
 
-        byte[] message, int messageOffset, int[] messageLength,
+        byte[] message,
         final byte[] signature, int signatureOffset, int signatureLength,
         final byte[] publicKey
 
@@ -2753,7 +2618,7 @@ public class QTESLA
 
         return verifying(
 
-            message, messageOffset, messageLength,
+            message,
             signature, signatureOffset, signatureLength,
             publicKey,
             Parameter.N_III_P, Parameter.K_III_P, Parameter.W_III_P,
