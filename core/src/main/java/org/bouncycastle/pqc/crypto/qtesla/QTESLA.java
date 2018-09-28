@@ -228,25 +228,21 @@ class QTESLA
      ******************************************************************************************************************************************************************************/
     private static void encodePublicKeyIIIP(byte[] publicKey, final long[] T, final byte[] seedA, int seedAOffset)
     {
-
         int j = 0;
 
         for (int i = 0; i < Parameter.N_III_P * Parameter.K_III_P * Parameter.Q_LOGARITHM_III_P / Integer.SIZE; i += Parameter.Q_LOGARITHM_III_P)
         {
-
             for (int index = 0; index < Parameter.Q_LOGARITHM_III_P; index++)
             {
 
-                CommonFunction.store32(publicKey, Integer.SIZE / Byte.SIZE * (i + index), (int)((T[j + index] >> index) | (T[j + index + 1] << (Parameter.Q_LOGARITHM_III_P - index))));
+                CommonFunction.store32(publicKey, Integer.SIZE / Byte.SIZE * (i + index), (int)((T[j + index] >>> index) | (T[j + index + 1] << (Parameter.Q_LOGARITHM_III_P - index))));
 
             }
 
             j += Integer.SIZE;
-
         }
 
         System.arraycopy(seedA, seedAOffset, publicKey, Parameter.N_III_P * Parameter.K_III_P * Parameter.Q_LOGARITHM_III_P / Byte.SIZE, Polynomial.SEED);
-
     }
 
     /*********************************************************************************************************************************************
@@ -2615,9 +2611,7 @@ class QTESLA
 
     )
     {
-
         return verifying(
-
             message,
             signature, signatureOffset, signatureLength,
             publicKey,
@@ -2627,9 +2621,7 @@ class QTESLA
             Parameter.GENERATOR_A_III_P, Parameter.INVERSE_NUMBER_THEORETIC_TRANSFORM_III_P,
             Parameter.BARRETT_MULTIPLICATION_III_P, Parameter.BARRETT_DIVISION_III_P,
             PolynomialProvablySecure.ZETA_III_P
-
         );
-
     }
 
 }
