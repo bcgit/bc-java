@@ -641,8 +641,8 @@ class QTESLA
         {
 
             CommonFunction.store32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (i + 0), (int)(((Z[j + 0] & ((1 << 24) - 1))) | (Z[j + 1] << 24)));
-            CommonFunction.store32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (i + 1), (int)((((Z[j + 1] >>> 8) & ((1 << 16) - 1))) | (Z[j + 2] << 16)));
-            CommonFunction.store32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (i + 2), (int)((((Z[j + 2] >>> 16) & ((1 << 8) - 1))) | (Z[j + 3] << 8)));
+            CommonFunction.store32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (i + 1), (int)((((Z[j + 1] >> 8) & ((1 << 16) - 1))) | (Z[j + 2] << 16)));
+            CommonFunction.store32(signature, signatureOffset + Integer.SIZE / Byte.SIZE * (i + 2), (int)((((Z[j + 2] >> 16) & ((1 << 8) - 1))) | (Z[j + 3] << 8)));
 
             j += Byte.SIZE / 2;
 
@@ -2037,7 +2037,6 @@ class QTESLA
         /* Domain Separator for Sampling Y */
         int nonce = 0;
 
-        // this.rng.randomByte (randomnessInput, Polynomial.RANDOM, Polynomial.RANDOM);
         secureRandom.nextBytes(temporaryRandomnessInput);
         System.arraycopy(temporaryRandomnessInput, 0, randomnessInput, Polynomial.RANDOM, Polynomial.RANDOM);
         System.arraycopy(privateKey, privateKeySize - Polynomial.SEED, randomnessInput, 0, Polynomial.SEED);
@@ -2051,8 +2050,7 @@ class QTESLA
             );
 
         }
-
-        if (q == Parameter.Q_III_P)
+        else
         {
 
             HashUtils.secureHashAlgorithmKECCAK256(
@@ -2068,7 +2066,6 @@ class QTESLA
         /* Loop Due to Possible Rejection */
         while (true)
         {
-
             /* Sample Y Uniformly Random from -B to B */
             Sample.sampleY(Y, randomness, 0, ++nonce, n, q, b, bBit);
 
@@ -2077,9 +2074,7 @@ class QTESLA
             /* V_i = A_i * Y Modulo Q for All i */
             for (short i = 0; i < k; i++)
             {
-
                 Polynomial.polynomialMultiplication(V, n * i, A, n * i, numberTheoreticTransformY, 0, n, q, qInverse);
-
             }
 
             hashFunction(C, 0, V, message, messageOffset, messageLength, n, k, d, q);
