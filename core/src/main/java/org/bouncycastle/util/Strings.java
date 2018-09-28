@@ -17,30 +17,30 @@ public final class Strings
 
     static
     {
-       try
-       {
-           LINE_SEPARATOR = AccessController.doPrivileged(new PrivilegedAction<String>()
-           {
-               public String run()
-               {
-                   // the easy way
-                   return System.getProperty("line.separator");
-               }
-           });
+        try
+        {
+            LINE_SEPARATOR = AccessController.doPrivileged(new PrivilegedAction<String>()
+            {
+                public String run()
+                {
+                    // the easy way
+                    return System.getProperty("line.separator");
+                }
+            });
 
-       }
-       catch (Exception e)
-       {
-           try
-           {
-               // the harder way
-               LINE_SEPARATOR = String.format("%n");
-           }
-           catch (Exception ef)
-           {
-               LINE_SEPARATOR = "\n";   // we're desperate use this...
-           }
-       }
+        }
+        catch (Exception e)
+        {
+            try
+            {
+                // the harder way
+                LINE_SEPARATOR = String.format("%n");
+            }
+            catch (Exception ef)
+            {
+                LINE_SEPARATOR = "\n";   // we're desperate use this...
+            }
+        }
     }
 
     public static String fromUTF8ByteArray(byte[] bytes)
@@ -263,6 +263,7 @@ public final class Strings
         return bytes;
     }
 
+
     public static byte[] toByteArray(String string)
     {
         byte[] bytes = new byte[string.length()];
@@ -401,4 +402,6 @@ public final class Strings
             return strs;
         }
     }
+
+
 }

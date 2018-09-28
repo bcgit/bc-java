@@ -334,7 +334,7 @@ public abstract class Ed25519
 
         dom2(d, phflag, ctx);
         d.update(R, 0, POINT_BYTES);
-        d.update(pk, 0, POINT_BYTES);
+        d.update(pk, pkOff, POINT_BYTES);
         d.update(m, mOff, mLen);
         d.doFinal(h, 0);
 
@@ -686,9 +686,12 @@ public abstract class Ed25519
 
                 ds[t] = pointCopy(p);
 
-                for (int s = 1; s < PRECOMP_SPACING; ++s)
+                if (b + t != PRECOMP_BLOCKS + PRECOMP_TEETH - 2)
                 {
-                    pointDouble(p);
+                    for (int s = 1; s < PRECOMP_SPACING; ++s)
+                    {
+                        pointDouble(p);
+                    }
                 }
             }
 
