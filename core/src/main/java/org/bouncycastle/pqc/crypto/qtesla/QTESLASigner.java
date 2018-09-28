@@ -57,7 +57,6 @@ public class QTESLASigner
     public byte[] generateSignature(byte[] message)
     {
         byte[] sig = new byte[QTESLASecurityCategory.getSignatureSize(privateKey.getSecurityCategory())];
-        int[] sigL = new int[1];
 
         switch (privateKey.getSecurityCategory())
         {
