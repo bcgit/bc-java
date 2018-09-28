@@ -18,9 +18,16 @@ import java.security.spec.X509EncodedKeySpec;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.Xof;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.pqc.jcajce.interfaces.StateAwareSignature;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSMTKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
@@ -129,7 +136,7 @@ public class XMSSMTTest
 
         KeyPair kp = kpg.generateKeyPair();
 
-        Signature sig = Signature.getInstance("SHA256withXMSSMT", "BCPQC");
+        Signature sig = Signature.getInstance("SHA256withXMSSMT-SHA256", "BCPQC");
 
         assertTrue(sig instanceof StateAwareSignature);
 
@@ -192,11 +199,11 @@ public class XMSSMTTest
 
         KeyPair kp = kpg.generateKeyPair();
 
-        StateAwareSignature sig1 = (StateAwareSignature)Signature.getInstance("SHA256withXMSSMT", "BCPQC");
+        StateAwareSignature sig1 = (StateAwareSignature)Signature.getInstance("SHA256withXMSSMT-SHA256", "BCPQC");
 
-        StateAwareSignature sig2 = (StateAwareSignature)Signature.getInstance("SHA256withXMSSMT", "BCPQC");
+        StateAwareSignature sig2 = (StateAwareSignature)Signature.getInstance("SHA256withXMSSMT-SHA256", "BCPQC");
 
-        StateAwareSignature sig3 = (StateAwareSignature)Signature.getInstance("SHA256withXMSSMT", "BCPQC");
+        StateAwareSignature sig3 = (StateAwareSignature)Signature.getInstance("SHA256withXMSSMT-SHA256", "BCPQC");
 
         sig1.initSign(kp.getPrivate());
 
@@ -324,7 +331,7 @@ public class XMSSMTTest
 
         KeyPair kp = kpg.generateKeyPair();
 
-        Signature sig = Signature.getInstance("SHAKE128withXMSSMT", "BCPQC");
+        Signature sig = Signature.getInstance("SHAKE128withXMSSMT-SHAKE128", "BCPQC");
 
         assertTrue(sig instanceof StateAwareSignature);
 
@@ -352,7 +359,7 @@ public class XMSSMTTest
 
         KeyPair kp = kpg.generateKeyPair();
 
-        Signature sig = Signature.getInstance("SHAKE256withXMSSMT", "BCPQC");
+        Signature sig = Signature.getInstance("SHAKE256withXMSSMT-SHAKE256", "BCPQC");
 
         assertTrue(sig instanceof StateAwareSignature);
 
@@ -473,5 +480,73 @@ public class XMSSMTTest
 
             assertTrue(s2.verify(sig));
         }
+    }
+
+    public void testPrehashWithWithout()
+        throws Exception
+    {
+        testPrehashAndWithoutPrehash("XMSSMT-SHA256", "SHA256", new SHA256Digest());
+        testPrehashAndWithoutPrehash("XMSSMT-SHAKE128", "SHAKE128", new SHAKEDigest(128));
+        testPrehashAndWithoutPrehash("XMSSMT-SHA512", "SHA512", new SHA512Digest());
+        testPrehashAndWithoutPrehash("XMSSMT-SHAKE256", "SHAKE256", new SHAKEDigest(256));
+
+        testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_mt_SHA256ph, BCObjectIdentifiers.xmss_mt_SHA256, "SHA256", new SHA256Digest());
+        testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_mt_SHAKE128ph, BCObjectIdentifiers.xmss_mt_SHAKE128, "SHAKE128", new SHAKEDigest(128));
+        testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_mt_SHA512ph, BCObjectIdentifiers.xmss_mt_SHA512, "SHA512", new SHA512Digest());
+        testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_mt_SHAKE256ph, BCObjectIdentifiers.xmss_mt_SHAKE256, "SHAKE256", new SHAKEDigest(256));
+    }
+
+    private void testPrehashAndWithoutPrehash(String baseAlgorithm, String digestName, Digest digest)
+        throws Exception
+    {
+        Signature s1 = Signature.getInstance(digestName + "with" + baseAlgorithm, "BCPQC");
+        Signature s2 = Signature.getInstance(baseAlgorithm, "BCPQC");
+
+        doTestPrehashAndWithoutPrehash(digestName, digest, s1, s2);
+    }
+
+    private void testPrehashAndWithoutPrehash(ASN1ObjectIdentifier oid1, ASN1ObjectIdentifier oid2, String digestName, Digest digest)
+        throws Exception
+    {
+        Signature s1 = Signature.getInstance(oid1.getId(), "BCPQC");
+        Signature s2 = Signature.getInstance(oid2.getId(), "BCPQC");
+
+        doTestPrehashAndWithoutPrehash(digestName, digest, s1, s2);
+    }
+
+    private void doTestPrehashAndWithoutPrehash(String digestName, Digest digest, Signature s1, Signature s2)
+        throws Exception
+    {
+        byte[] message = Strings.toByteArray("hello, world!");
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSSMT", "BCPQC");
+
+        kpg.initialize(new XMSSMTParameterSpec(4, 2, digestName), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        s1.initSign(kp.getPrivate());
+
+        s1.update(message, 0, message.length);
+
+        byte[] sig = s1.sign();
+
+        s2.initVerify(kp.getPublic());
+
+        digest.update(message, 0, message.length);
+
+        byte[] dig = new byte[(digest instanceof Xof) ? digest.getDigestSize() * 2 : digest.getDigestSize()];
+
+        if (digest instanceof Xof)
+        {
+            ((Xof)digest).doFinal(dig, 0, dig.length);
+        }
+        else
+        {
+            digest.doFinal(dig, 0);
+        }
+        s2.update(dig);
+
+        assertTrue(s2.verify(sig));
     }
 }
