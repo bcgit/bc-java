@@ -1,7 +1,5 @@
 package org.bouncycastle.pqc.jcajce.provider.xmss;
 
-import java.io.ByteArrayOutputStream;
-
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
@@ -81,47 +79,5 @@ class DigestUtil
         }
 
         throw new IllegalArgumentException("unrecognized digest OID: " + treeDigest);
-    }
-
-    static class NullDigest
-        implements Digest
-    {
-        private final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-
-        public String getAlgorithmName()
-        {
-            return "Null";
-        }
-
-        public int getDigestSize()
-        {
-            return bOut.size();
-        }
-
-        public void update(byte in)
-        {
-            bOut.write(in);
-        }
-
-        public void update(byte[] in, int inOff, int len)
-        {
-            bOut.write(in, inOff, len);
-        }
-
-        public int doFinal(byte[] out, int outOff)
-        {
-            System.arraycopy(bOut.toByteArray(), 0, out, outOff, bOut.size());
-
-            int rv = bOut.size();
-
-            reset();
-
-            return rv;
-        }
-
-        public void reset()
-        {
-            bOut.reset();
-        }
     }
 }

@@ -11,6 +11,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
@@ -172,7 +173,7 @@ public class XMSSMTSignatureSpi
     {
         public withSha256()
         {
-            super("XMSSMT-SHA256", new DigestUtil.NullDigest(), new XMSSMTSigner());
+            super("XMSSMT-SHA256", new NullDigest(), new XMSSMTSigner());
         }
     }
 
@@ -181,7 +182,7 @@ public class XMSSMTSignatureSpi
     {
         public withShake128()
         {
-            super("XMSSMT-SHAKE128", new DigestUtil.NullDigest(), new XMSSMTSigner());
+            super("XMSSMT-SHAKE128", new NullDigest(), new XMSSMTSigner());
         }
     }
 
@@ -190,7 +191,7 @@ public class XMSSMTSignatureSpi
     {
         public withSha512()
         {
-            super("XMSSMT-SHA512", new DigestUtil.NullDigest(), new XMSSMTSigner());
+            super("XMSSMT-SHA512", new NullDigest(), new XMSSMTSigner());
         }
     }
 
@@ -199,7 +200,7 @@ public class XMSSMTSignatureSpi
     {
         public withShake256()
         {
-            super("XMSSMT-SHAKE256", new DigestUtil.NullDigest(), new XMSSMTSigner());
+            super("XMSSMT-SHAKE256", new NullDigest(), new XMSSMTSigner());
         }
     }
 
