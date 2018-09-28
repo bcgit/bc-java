@@ -192,7 +192,7 @@ public class Polynomial
 
                 for (j = jFirst; j < jFirst + numberOfProblem; j++)
                 {
-                    int temporary = (int)montgomery(omega * destination[j + numberOfProblem], q, qInverse);
+                    long temporary = montgomery(omega * destination[j + numberOfProblem], q, qInverse);
 
                     destination[j + numberOfProblem] = destination[j] + (q - temporary);
                     destination[j] = destination[j] + (temporary & 0xFFFFFFFFL);
@@ -232,7 +232,7 @@ public class Polynomial
                 for (j = jFirst; j < jFirst + numberOfProblem; j++)
                 {
 
-                    int temporary = (int)barrettP(
+                    long temporary = barrettP(
                         montgomery(
                             omega * destination[j + numberOfProblem],
                             Parameter.Q_III_P,
@@ -244,7 +244,7 @@ public class Polynomial
                     );
 
                     destination[j + numberOfProblem] = barrettP(
-                        destination[j] + Parameter.Q_III_P * 2 - temporary,
+                        destination[j] + Parameter.Q_III_P * 2L - temporary,
                         Parameter.Q_III_P,
                         Parameter.BARRETT_MULTIPLICATION_III_P,
                         Parameter.BARRETT_DIVISION_III_P
@@ -363,12 +363,12 @@ public class Polynomial
             for (jFirst = 0; jFirst < n; jFirst = j + numberOfProblem)
             {
 
-                int omega = (int)w[wOff + (jTwiddle++)];
+                long omega = w[wOff + (jTwiddle++)];
 
                 for (j = jFirst; j < jFirst + numberOfProblem; j++)
                 {
 
-                    int temporary = (int)a[aOff + j];
+                    long temporary = a[aOff + j];
 
                     if (q == Parameter.Q_III_SIZE || q == Parameter.Q_III_SPEED)
                     {
@@ -422,12 +422,12 @@ public class Polynomial
             for (jFirst = 0; jFirst < Parameter.N_III_P; jFirst = j + numberOfProblem)
             {
 
-                int omega = (int)source[sourceOffset + (jTwiddle++)];
+                long omega = source[sourceOffset + (jTwiddle++)];
 
                 for (j = jFirst; j < jFirst + numberOfProblem; j++)
                 {
 
-                    int temporary = (int)destination[destinationOffset + j];
+                    long temporary = destination[destinationOffset + j];
 
                     destination[destinationOffset + j] = barrettP(
                         destination[destinationOffset + j + numberOfProblem] + temporary,
@@ -436,7 +436,7 @@ public class Polynomial
 
                     destination[destinationOffset + j + numberOfProblem] = barrettP(
                         montgomery(
-                            omega * (Parameter.Q_III_P * 2 + temporary - destination[destinationOffset + j + numberOfProblem]),
+                            omega * (Parameter.Q_III_P * 2L + temporary - destination[destinationOffset + j + numberOfProblem]),
                             Parameter.Q_III_P, Parameter.Q_INVERSE_III_P
                         ),
                         Parameter.Q_III_P, Parameter.BARRETT_MULTIPLICATION_III_P, Parameter.BARRETT_DIVISION_III_P
