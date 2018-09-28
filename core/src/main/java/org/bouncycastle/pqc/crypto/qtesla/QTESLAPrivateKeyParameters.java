@@ -34,48 +34,6 @@ public final class QTESLAPrivateKeyParameters
         return this.securityCategory;
     }
 
-    public String getAlgorithm()
-    {
-
-        if (this.securityCategory == QTESLASigner.HEURISTIC_I)
-        {
-
-            return "heuristic_qTESLA_security_category_I";
-
-        }
-
-        if (this.securityCategory == QTESLASigner.HEURISTIC_III_SIZE)
-        {
-
-            return "heuristic_qTESLA_security_category_III_option_for_size";
-
-        }
-
-        if (this.securityCategory == QTESLASigner.HEURISTIC_III_SPEED)
-        {
-
-            return "heuristic_qTESLA_security_category_III_option_for_speed";
-
-        }
-
-        if (this.securityCategory == QTESLASigner.PROVABLY_SECURE_I)
-        {
-
-            return "provably_secure_qTESLA_security_category_I";
-
-        }
-
-        if (this.securityCategory == QTESLASigner.PROVABLY_SECURE_III)
-        {
-
-            return "provably_secure_qTESLA_security_category_III";
-
-        }
-
-        return null;
-
-    }
-
     public byte[] getSecret()
     {
         return Arrays.clone(privateKey);

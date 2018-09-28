@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.qtesla;
 
-public final class PolynomialProvablySecure
+final class PolynomialProvablySecure
 {
 
     /* Provably-Secure qTESLA Security Category-1 */
