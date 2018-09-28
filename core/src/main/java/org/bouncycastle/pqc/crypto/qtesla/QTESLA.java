@@ -245,7 +245,7 @@ class QTESLA
 
         }
 
-        System.arraycopy(seedA, seedAOffset, publicKey, Parameter.N_I_P * Parameter.K_I_P * Parameter.Q_LOGARITHM_I_P / Byte.SIZE, Polynomial.SEED);
+        System.arraycopy(seedA, seedAOffset, publicKey, Parameter.N_III_P * Parameter.K_III_P * Parameter.Q_LOGARITHM_III_P / Byte.SIZE, Polynomial.SEED);
 
     }
 
