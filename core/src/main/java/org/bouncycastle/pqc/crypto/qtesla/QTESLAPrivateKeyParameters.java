@@ -3,6 +3,9 @@ package org.bouncycastle.pqc.crypto.qtesla;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * qTESLA private key
+ */
 public final class QTESLAPrivateKeyParameters
     extends AsymmetricKeyParameter
 {
@@ -16,6 +19,12 @@ public final class QTESLAPrivateKeyParameters
      */
     private byte[] privateKey;
 
+    /**
+     * Base constructor.
+     *
+     * @param securityCategory the security category for the passed in public key data.
+     * @param privateKey the private key data.
+     */
     public QTESLAPrivateKeyParameters(int securityCategory, byte[] privateKey)
     {
         super(true);
@@ -29,11 +38,21 @@ public final class QTESLAPrivateKeyParameters
         this.privateKey = Arrays.clone(privateKey);
     }
 
+    /**
+     * Return the security category for this key.
+     *
+     * @return the key's security category.
+     */
     public int getSecurityCategory()
     {
         return this.securityCategory;
     }
 
+    /**
+     * Return the key's secret value.
+     *
+     * @return key private data.
+     */
     public byte[] getSecret()
     {
         return Arrays.clone(privateKey);

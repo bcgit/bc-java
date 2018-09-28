@@ -1,5 +1,8 @@
 package org.bouncycastle.pqc.crypto.qtesla;
 
+/**
+ * The qTESLA security categories.
+ */
 public class QTESLASecurityCategory
 {
     public static final int HEURISTIC_I = 0;
@@ -10,7 +13,6 @@ public class QTESLASecurityCategory
 
     private QTESLASecurityCategory()
     {
-
     }
 
     static void validate(int securityCategory)
@@ -85,20 +87,26 @@ public class QTESLASecurityCategory
         }
     }
 
-    static String getName(int securityCategory)
+    /**
+     * Return a standard name for the security category.
+     *
+     * @param securityCategory the category of interest.
+     * @return the name for the category.
+     */
+    public static String getName(int securityCategory)
     {
         switch (securityCategory)
         {
         case HEURISTIC_I:
-            return "heuristic_qTESLA_security_category_I";
+            return "qTESLA-I";
         case HEURISTIC_III_SIZE:
-            return "heuristic_qTESLA_security_category_III_option_for_size";
+            return "qTESLA-III-size";
         case HEURISTIC_III_SPEED:
-            return "heuristic_qTESLA_security_category_III_option_for_speed";
+            return "qTESLA-III-speed";
         case PROVABLY_SECURE_I:
-            return "provably_secure_qTESLA_security_category_I";
+            return "qTESLA-p-I";
         case PROVABLY_SECURE_III:
-            return "provably_secure_qTESLA_security_category_III";
+            return "qTESLA-p-III";
         default:
             throw new IllegalArgumentException("unknown security category: " + securityCategory);
         }
