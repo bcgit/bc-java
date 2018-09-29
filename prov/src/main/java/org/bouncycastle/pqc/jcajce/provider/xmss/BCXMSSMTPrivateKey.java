@@ -23,6 +23,8 @@ import org.bouncycastle.util.Arrays;
 public class BCXMSSMTPrivateKey
     implements PrivateKey, XMSSMTKey
 {
+    private static final long serialVersionUID = 7682140473044521395L;
+
     private transient ASN1ObjectIdentifier treeDigest;
     private transient XMSSMTPrivateKeyParameters keyParams;
 
