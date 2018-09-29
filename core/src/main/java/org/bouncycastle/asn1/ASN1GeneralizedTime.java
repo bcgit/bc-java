@@ -133,7 +133,7 @@ public class ASN1GeneralizedTime
     public ASN1GeneralizedTime(
         Date time)
     {
-        SimpleDateFormat dateF = new SimpleDateFormat("yyyyMMddHHmmss'Z'");
+        SimpleDateFormat dateF = new SimpleDateFormat("yyyyMMddHHmmss'Z'", DateUtil.EN_Locale);
 
         dateF.setTimeZone(new SimpleTimeZone(0, "Z"));
 
@@ -367,7 +367,7 @@ public class ASN1GeneralizedTime
             }
         }
 
-        return dateF.parse(d);
+        return DateUtil.epochAdjust(dateF.parse(d));
     }
 
     protected boolean hasFractionalSeconds()
