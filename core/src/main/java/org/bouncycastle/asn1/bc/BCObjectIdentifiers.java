@@ -106,6 +106,51 @@ public interface BCObjectIdentifiers
     public static final ASN1ObjectIdentifier xmss_mt_SHAKE128 = xmss_mt.branch("7");
     public static final ASN1ObjectIdentifier xmss_mt_SHAKE256 = xmss_mt.branch("8");
 
+    // old OIDs.
+    /**
+     * @deprecated use xmss_SHA256ph
+     */
+    public static final ASN1ObjectIdentifier xmss_with_SHA256          = xmss_SHA256ph;
+    /**
+     * @deprecated use xmss_SHA512ph
+     */
+    public static final ASN1ObjectIdentifier xmss_with_SHA512 = xmss_SHA512ph;
+    /**
+     * @deprecated use xmss_SHAKE128ph
+     */
+    public static final ASN1ObjectIdentifier xmss_with_SHAKE128 = xmss_SHAKE128ph;
+    /**
+     * @deprecated use xmss_SHAKE256ph
+     */
+    public static final ASN1ObjectIdentifier xmss_with_SHAKE256        = xmss_SHAKE256ph;
+
+    /**
+     * @deprecated use xmss_mt_SHA256ph
+     */
+    public static final ASN1ObjectIdentifier xmss_mt_with_SHA256          = xmss_mt_SHA256ph;
+    /**
+     * @deprecated use xmss_mt_SHA512ph
+     */
+    public static final ASN1ObjectIdentifier xmss_mt_with_SHA512          = xmss_mt_SHA512ph;
+    /**
+     * @deprecated use xmss_mt_SHAKE128ph
+     */
+    public static final ASN1ObjectIdentifier xmss_mt_with_SHAKE128        = xmss_mt_SHAKE128;
+    /**
+     * @deprecated use xmss_mt_SHAKE256ph
+     */
+    public static final ASN1ObjectIdentifier xmss_mt_with_SHAKE256        = xmss_mt_SHAKE256;
+
+    /**
+     * qTESLA
+     */
+    public static final ASN1ObjectIdentifier qTESLA = bc_sig.branch("4");
+    public static final ASN1ObjectIdentifier qTESLA_I = qTESLA.branch("1");
+    public static final ASN1ObjectIdentifier qTESLA_III_size = qTESLA.branch("2");
+    public static final ASN1ObjectIdentifier qTESLA_III_speed = qTESLA.branch("3");
+    public static final ASN1ObjectIdentifier qTESLA_p_I = qTESLA.branch("4");
+    public static final ASN1ObjectIdentifier qTESLA_p_III = qTESLA.branch("5");
+
     /**
      * key_exchange(3) algorithms
      */
