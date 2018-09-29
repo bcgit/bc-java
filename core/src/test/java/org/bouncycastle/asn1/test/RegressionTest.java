@@ -77,7 +77,8 @@ public class RegressionTest
         new DhSigStaticTest(),
         new PKIPublicationInfoTest(),
         new CertifiedKeyPairTest(),
-        new PrivateKeyInfoTest()
+        new PrivateKeyInfoTest(),
+        new LocaleTest()
     };
 
     public static void main(
