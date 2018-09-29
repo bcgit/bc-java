@@ -81,4 +81,49 @@ public interface PQCObjectIdentifiers
     public static final ASN1ObjectIdentifier xmss_mt_SHA512            = BCObjectIdentifiers.xmss_mt_SHA512;
     public static final ASN1ObjectIdentifier xmss_mt_SHAKE128          = BCObjectIdentifiers.xmss_mt_SHAKE128;
     public static final ASN1ObjectIdentifier xmss_mt_SHAKE256          = BCObjectIdentifiers.xmss_mt_SHAKE256;
+
+    // old OIDs.
+    /**
+     * @deprecated use xmss_SHA256ph
+     */
+    public static final ASN1ObjectIdentifier xmss_with_SHA256          = xmss_SHA256ph;
+    /**
+     * @deprecated use xmss_SHA512ph
+     */
+    public static final ASN1ObjectIdentifier xmss_with_SHA512 = xmss_SHA512ph;
+    /**
+     * @deprecated use xmss_SHAKE128ph
+     */
+    public static final ASN1ObjectIdentifier xmss_with_SHAKE128 = xmss_SHAKE128ph;
+    /**
+     * @deprecated use xmss_SHAKE256ph
+     */
+    public static final ASN1ObjectIdentifier xmss_with_SHAKE256        = xmss_SHAKE256ph;
+
+    /**
+     * @deprecated use xmss_mt_SHA256ph
+     */
+    public static final ASN1ObjectIdentifier xmss_mt_with_SHA256          = xmss_mt_SHA256ph;
+    /**
+     * @deprecated use xmss_mt_SHA512ph
+     */
+    public static final ASN1ObjectIdentifier xmss_mt_with_SHA512          = xmss_mt_SHA512ph;
+    /**
+     * @deprecated use xmss_mt_SHAKE128ph
+     */
+    public static final ASN1ObjectIdentifier xmss_mt_with_SHAKE128        = xmss_mt_SHAKE128;
+    /**
+     * @deprecated use xmss_mt_SHAKE256ph
+     */
+    public static final ASN1ObjectIdentifier xmss_mt_with_SHAKE256        = xmss_mt_SHAKE256;
+
+    /**
+     * qTESLA
+     */
+    public static final ASN1ObjectIdentifier qTESLA = BCObjectIdentifiers.qTESLA;
+    public static final ASN1ObjectIdentifier qTESLA_I = BCObjectIdentifiers.qTESLA_I;
+    public static final ASN1ObjectIdentifier qTESLA_III_size = BCObjectIdentifiers.qTESLA_III_size;
+    public static final ASN1ObjectIdentifier qTESLA_III_speed = BCObjectIdentifiers.qTESLA_III_speed;
+    public static final ASN1ObjectIdentifier qTESLA_p_I = BCObjectIdentifiers.qTESLA_p_I;
+    public static final ASN1ObjectIdentifier qTESLA_p_III = BCObjectIdentifiers.qTESLA_p_III;
 }
