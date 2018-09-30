@@ -45,22 +45,24 @@ class DateUtil
 
         synchronized (localeCache)
         {
-            if (!localeCache.containsKey(locale))
+            Long adj = (Long)localeCache.get(locale);
+
+            if (adj == null)
             {
                 SimpleDateFormat dateF = new SimpleDateFormat("yyyyMMddHHmmssz");
                 long v = dateF.parse("19700101000000GMT+00:00").getTime();
 
                 if (v == 0)
                 {
-                    localeCache.put(locale, ZERO);
+                    adj = ZERO;
                 }
                 else
                 {
-                    localeCache.put(locale, Long.valueOf(v));
+                    adj = Long.valueOf(v);
                 }
-            }
 
-            Long adj = (Long)localeCache.get(locale);
+                localeCache.put(locale, adj);
+            }
 
             if (adj != ZERO)
             {
