@@ -112,9 +112,10 @@ public final class BDS
         this.treeHeight = last.treeHeight;
         this.k = last.k;
         this.root = last.root;
-        this.authenticationPath = new ArrayList<XMSSNode>(last.authenticationPath);
+        this.authenticationPath = new ArrayList<XMSSNode>();  // note use of addAll to avoid serialization issues
+        this.authenticationPath.addAll(last.authenticationPath);
         this.retain = last.retain;
-        this.stack = new Stack<XMSSNode>();
+        this.stack = new Stack<XMSSNode>(); // note use of addAll to avoid serialization issues
         this.stack.addAll(last.stack);
         this.treeHashInstances = last.treeHashInstances;
         this.keep = new TreeMap<Integer, XMSSNode>(last.keep);
@@ -131,9 +132,10 @@ public final class BDS
         this.treeHeight = last.treeHeight;
         this.k = last.k;
         this.root = last.root;
-        this.authenticationPath = new ArrayList<XMSSNode>(last.authenticationPath);
+        this.authenticationPath = new ArrayList<XMSSNode>();  // note use of addAll to avoid serialization issues
+        this.authenticationPath.addAll(last.authenticationPath);
         this.retain = last.retain;
-        this.stack = new Stack<XMSSNode>();
+        this.stack = new Stack<XMSSNode>();     // note use of addAll to avoid serialization issues
         this.stack.addAll(last.stack);
         this.treeHashInstances = last.treeHashInstances;
         this.keep = new TreeMap<Integer, XMSSNode>(last.keep);
