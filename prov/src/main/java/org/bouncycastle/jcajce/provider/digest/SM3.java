@@ -1,5 +1,6 @@
 package org.bouncycastle.jcajce.provider.digest;
 
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.crypto.digests.SM3Digest;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 
@@ -41,7 +42,8 @@ public class SM3
         {
             provider.addAlgorithm("MessageDigest.SM3", PREFIX + "$Digest");
             provider.addAlgorithm("Alg.Alias.MessageDigest.SM3", "SM3");
-            provider.addAlgorithm("Alg.Alias.MessageDigest.1.2.156.197.1.401", "SM3");
+            provider.addAlgorithm("Alg.Alias.MessageDigest.1.2.156.197.1.401", "SM3");  // old draft OID - deprecated
+            provider.addAlgorithm("Alg.Alias.MessageDigest." + GMObjectIdentifiers.sm3, "SM3");
         }
     }
 }
