@@ -58,7 +58,7 @@ public class BCqTESLAPrivateKey
 
     public QTESLAParameterSpec getParams()
     {
-        return new QTESLAParameterSpec(keyParams.getSecurityCategory());
+        return new QTESLAParameterSpec(getAlgorithm());
     }
 
     public byte[] getEncoded()
