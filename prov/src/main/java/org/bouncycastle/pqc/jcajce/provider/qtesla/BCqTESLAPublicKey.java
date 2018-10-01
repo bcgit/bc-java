@@ -70,7 +70,7 @@ public class BCqTESLAPublicKey
 
     public QTESLAParameterSpec getParams()
     {
-        return new QTESLAParameterSpec(keyParams.getSecurityCategory());
+        return new QTESLAParameterSpec(getAlgorithm());
     }
     
     CipherParameters getKeyParams()
