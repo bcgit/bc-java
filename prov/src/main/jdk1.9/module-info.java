@@ -126,6 +126,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.gmss.util;
     exports org.bouncycastle.pqc.crypto.mceliece;
     exports org.bouncycastle.pqc.crypto.newhope;
+    exports org.bouncycastle.pqc.crypto.qtesla;
     exports org.bouncycastle.pqc.crypto.rainbow;
     exports org.bouncycastle.pqc.crypto.rainbow.util;
     exports org.bouncycastle.pqc.crypto.sphincs;
