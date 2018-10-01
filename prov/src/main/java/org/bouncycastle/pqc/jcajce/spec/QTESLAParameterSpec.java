@@ -14,20 +14,20 @@ public class QTESLAParameterSpec
     /**
      * Available security categories.
      */
-    public static final int HEURISTIC_I = QTESLASecurityCategory.HEURISTIC_I;
-    public static final int HEURISTIC_III_SIZE = QTESLASecurityCategory.HEURISTIC_III_SIZE;
-    public static final int HEURISTIC_III_SPEED = QTESLASecurityCategory.HEURISTIC_III_SPEED;
-    public static final int PROVABLY_SECURE_I = QTESLASecurityCategory.PROVABLY_SECURE_I;
-    public static final int PROVABLY_SECURE_III = QTESLASecurityCategory.PROVABLY_SECURE_III;
+    public static final String HEURISTIC_I = QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_I);
+    public static final String HEURISTIC_III_SIZE = QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_III_SIZE);
+    public static final String HEURISTIC_III_SPEED = QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_III_SPEED);
+    public static final String PROVABLY_SECURE_I = QTESLASecurityCategory.getName(QTESLASecurityCategory.PROVABLY_SECURE_I);
+    public static final String PROVABLY_SECURE_III = QTESLASecurityCategory.getName(QTESLASecurityCategory.PROVABLY_SECURE_III);
 
-    private int securityCategory;
+    private String securityCategory;
 
     /**
      * Base constructor.
      *
      * @param securityCategory the security category we want this parameterSpec to match.
      */
-    public QTESLAParameterSpec(int securityCategory)
+    public QTESLAParameterSpec(String securityCategory)
     {
         this.securityCategory = securityCategory;
     }
@@ -37,7 +37,7 @@ public class QTESLAParameterSpec
      *
      * @return the security category.
      */
-    public int getSecurityCategory()
+    public String getSecurityCategory()
     {
         return securityCategory;
     }
