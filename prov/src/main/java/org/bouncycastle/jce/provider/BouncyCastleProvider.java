@@ -100,7 +100,7 @@ public final class BouncyCastleProvider extends Provider
 
     private static final String[] ASYMMETRIC_CIPHERS =
     {
-        "DSA", "DH", "EC", "RSA", "GOST", "ECGOST", "ElGamal", "DSTU4145", "GM", "EdEC"
+        "DSA", "DH", "EC", "RSA", "GOST", "ECGOST", "ElGamal", "DSTU4145", "GM", "EdEC", "DHNP"
     };
 
     /*
@@ -181,7 +181,7 @@ public final class BouncyCastleProvider extends Provider
         put("X509Store.CRL/LDAP", "org.bouncycastle.jce.provider.X509StoreLDAPCRLs");
         put("X509Store.ATTRIBUTECERTIFICATE/LDAP", "org.bouncycastle.jce.provider.X509StoreLDAPAttrCerts");
         put("X509Store.CERTIFICATEPAIR/LDAP", "org.bouncycastle.jce.provider.X509StoreLDAPCertPairs");
-        
+
         //
         // X509StreamParser
         //

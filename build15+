@@ -6,7 +6,7 @@
 # otherwise it just creates the docs and class files.
 #
 
-if [ "${JDKPATH}" = "" ] 
+if [ "${JDKPATH}" = "" ]
 then
 	JDKPATH=/usr/lib/jvm/java-8-openjdk-amd64
 fi
