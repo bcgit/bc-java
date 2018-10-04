@@ -14,10 +14,6 @@ import org.bouncycastle.util.test.SimpleTest;
 public class Argon2Test
     extends SimpleTest
 {
-
-    private static final int ARGON2_VERSION_10 = 0x10;
-    private static final int ARGON2_VERSION_13 = 0x13;
-
     private static final int DEFAULT_OUTPUTLEN = 32;
 
     public String getName()
@@ -28,11 +24,14 @@ public class Argon2Test
     public void performTest()
         throws Exception
     {
-
+        if (getJvmVersion() < 7)
+        {
+            return;
+        }
 
         testVectorsFromInternetDraft();
 
-        int version = ARGON2_VERSION_10;
+        int version = Argon2Parameters.ARGON2_VERSION_10;
 
 
         /* Multiple test cases for various input values */
@@ -68,7 +67,7 @@ public class Argon2Test
             112);
 
 
-        version = ARGON2_VERSION_13;
+        version = Argon2Parameters.ARGON2_VERSION_13;
 
 
         /* Multiple test cases for various input values */
@@ -138,7 +137,7 @@ public class Argon2Test
         byte[] password = Hex.decode("0101010101010101010101010101010101010101010101010101010101010101");
 
         Argon2Parameters.Builder builder = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_d)
-            .withVersion(ARGON2_VERSION_13) // 19
+            .withVersion(Argon2Parameters.ARGON2_VERSION_13) // 19
             .withIterations(3)
             .withMemoryAsKB(32)
             .withParallelism(4)
@@ -157,7 +156,7 @@ public class Argon2Test
 
 
         builder = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_i)
-            .withVersion(ARGON2_VERSION_13) // 19
+            .withVersion(Argon2Parameters.ARGON2_VERSION_13) // 19
             .withIterations(3)
             .withMemoryAsKB(32)
             .withParallelism(4)
@@ -176,7 +175,7 @@ public class Argon2Test
 
 
         builder = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
-            .withVersion(ARGON2_VERSION_13) // 19
+            .withVersion(Argon2Parameters.ARGON2_VERSION_13) // 19
             .withIterations(3)
             .withMemoryAsKB(32)
             .withParallelism(4)
@@ -195,6 +194,29 @@ public class Argon2Test
 
     }
 
+    private static int getJvmVersion()
+    {
+        String version = System.getProperty("java.version");
+
+        if (version.startsWith("1.7"))
+        {
+            return 7;
+        }
+        if (version.startsWith("1.8"))
+        {
+            return 8;
+        }
+        if (version.startsWith("1.9"))
+        {
+            return 9;
+        }
+        if (version.startsWith("1.1"))
+        {
+            return 10;
+        }
+
+        return -1;
+    }
 
     public static void main(String[] args)
         throws Exception

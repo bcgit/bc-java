@@ -443,31 +443,30 @@ public abstract class TlsProtocol
                 break;
             }
 
-            checkReceivedChangeCipherSpec(connection_state == CS_END || type == HandshakeType.finished);
-
             /*
              * RFC 2246 7.4.9. The value handshake_messages includes all handshake messages
              * starting at client hello up to, but not including, this finished message.
              * [..] Note: [Also,] Hello Request messages are omitted from handshake hashes.
              */
-            switch (type)
+            if (HandshakeType.hello_request != type)
             {
-            case HandshakeType.hello_request:
-                break;
-            case HandshakeType.finished:
-            {
-                TlsContext ctx = getContext();
-                if (this.expected_verify_data == null
-                    && ctx.getSecurityParameters().getMasterSecret() != null)
+                if (HandshakeType.finished == type)
                 {
-                    this.expected_verify_data = createVerifyData(!ctx.isServer());
+                    checkReceivedChangeCipherSpec(true);
+
+                    TlsContext ctx = getContext();
+                    if (this.expected_verify_data == null
+                        && ctx.getSecurityParameters().getMasterSecret() != null)
+                    {
+                        this.expected_verify_data = createVerifyData(!ctx.isServer());
+                    }
+                }
+                else
+                {
+                    checkReceivedChangeCipherSpec(connection_state == CS_END);
                 }
 
-                // NB: Fall through to next case label
-            }
-            default:
                 queue.copyTo(recordStream.getHandshakeHashUpdater(), totalLength);
-                break;
             }
 
             queue.removeData(4);
