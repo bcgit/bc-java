@@ -566,9 +566,16 @@ public class JcaTlsCrypto
                     }
                     catch (Exception e)
                     {
-                        // okay, maybe the provider does not support wrap mode.
-                        c.init(Cipher.ENCRYPT_MODE, pubKeyRSA, getSecureRandom());
-                        return c.doFinal(input, inOff, length);
+                        try
+                        {
+                            // okay, maybe the provider does not support wrap mode.
+                            c.init(Cipher.ENCRYPT_MODE, pubKeyRSA, getSecureRandom());
+                            return c.doFinal(input, inOff, length);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw e; // okay, if we get here let's rethrow the original one.
+                        }
                     }
                 }
                 catch (GeneralSecurityException e)
