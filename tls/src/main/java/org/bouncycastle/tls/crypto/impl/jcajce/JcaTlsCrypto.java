@@ -574,7 +574,8 @@ public class JcaTlsCrypto
                         }
                         catch (Exception ex)
                         {
-                            throw e; // okay, if we get here let's rethrow the original one.
+                            // okay, if we get here let's rethrow the original one.
+                            throw new TlsFatalAlert(AlertDescription.internal_error, e);
                         }
                     }
                 }
