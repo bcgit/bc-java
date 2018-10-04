@@ -127,6 +127,11 @@ public class PKCS8Test
     public void testScrypt()
         throws Exception
     {
+        if (getJvmVersion() < 7)  // runs out of memory
+        {
+            return;
+        }
+        
         PKCS8EncryptedPrivateKeyInfo info = new PKCS8EncryptedPrivateKeyInfo(pkcs8Scrypt);
 
         PrivateKeyInfo pkInfo = info.decryptPrivateKeyInfo(new JcePKCSPBEInputDecryptorProviderBuilder().setProvider("BC").build("Rabbit".toCharArray()));
@@ -191,6 +196,11 @@ public class PKCS8Test
     public void testScryptEncryption()
         throws Exception
     {
+        if (getJvmVersion() < 7)      // runs out of memory
+        {
+            return;
+        }
+
         PKCS8EncryptedPrivateKeyInfoBuilder bldr = new PKCS8EncryptedPrivateKeyInfoBuilder(scryptKey);
 
         PBKDFConfig scrypt = new ScryptConfig.Builder(1048576, 8, 1)
@@ -208,5 +218,29 @@ public class PKCS8Test
         PrivateKeyInfo pkInfo = info.decryptPrivateKeyInfo(new JcePKCSPBEInputDecryptorProviderBuilder().setProvider("BC").build("Rabbit".toCharArray()));
 
         assertTrue(Arrays.areEqual(scryptKey, pkInfo.getEncoded()));
+    }
+
+    private static int getJvmVersion()
+    {
+        String version = System.getProperty("java.version");
+
+        if (version.startsWith("1.7"))
+        {
+            return 7;
+        }
+        if (version.startsWith("1.8"))
+        {
+            return 8;
+        }
+        if (version.startsWith("1.9"))
+        {
+            return 9;
+        }
+        if (version.startsWith("1.1"))
+        {
+            return 10;
+        }
+
+        return -1;
     }
 }

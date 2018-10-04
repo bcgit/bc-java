@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -14,6 +15,7 @@ import java.security.PublicKey;
 import java.security.Security;
 import java.security.Signature;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.ECGenParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -27,7 +29,9 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.jcajce.spec.DHUParameterSpec;
+import org.bouncycastle.jcajce.spec.EdDSAParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
+import org.bouncycastle.jcajce.spec.XDHParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
@@ -103,6 +107,9 @@ public class EdECTest
         x25519withKDFTest();
         x448UwithKDFTest();
         x25519UwithKDFTest();
+
+        xdhGeneratorTest();
+        eddsaGeneratorTest();
 
         keyTest("X448");
         keyTest("X25519");
@@ -195,6 +202,152 @@ public class EdECTest
         isTrue(privString.startsWith(algorithm + " Private Key ["));
         isTrue(privString.substring((algorithm + " Private Key [").length())
             .equals(pubString.substring((algorithm + " Public Key [").length())));
+    }
+
+    private void xdhGeneratorTest()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("XDH", "BC");
+
+        kpGen.initialize(new XDHParameterSpec(XDHParameterSpec.X448));
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        isTrue("X448".equals(kp.getPublic().getAlgorithm()));
+
+        kpGen.initialize(new ECGenParameterSpec(XDHParameterSpec.X448));
+
+        kp = kpGen.generateKeyPair();
+
+        isTrue("X448".equals(kp.getPublic().getAlgorithm()));
+
+        kpGen = KeyPairGenerator.getInstance("XDH", "BC");
+        
+        kpGen.initialize(new XDHParameterSpec(XDHParameterSpec.X25519));
+
+        kp = kpGen.generateKeyPair();
+
+        isTrue("X25519".equals(kp.getPublic().getAlgorithm()));
+
+        kpGen.initialize(new ECGenParameterSpec(XDHParameterSpec.X25519));
+
+        kp = kpGen.generateKeyPair();
+
+        isTrue("X25519".equals(kp.getPublic().getAlgorithm()));
+
+        kpGen = KeyPairGenerator.getInstance("XDH", "BC");
+
+        try
+        {
+            kpGen.generateKeyPair();
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            isEquals("generator not correctly initialized", e.getMessage());
+        }
+
+        try
+        {
+            kpGen.initialize(new EdDSAParameterSpec(EdDSAParameterSpec.Ed448));
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isEquals("parameterSpec for wrong curve type", e.getMessage());
+        }
+
+        try
+        {
+            kpGen.initialize(new EdDSAParameterSpec(EdDSAParameterSpec.Ed448));
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isEquals("parameterSpec for wrong curve type", e.getMessage());
+        }
+
+        try
+        {
+            new XDHParameterSpec(EdDSAParameterSpec.Ed448);
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("unrecognized curve name: Ed448", e.getMessage());
+        }
+    }
+
+    private void eddsaGeneratorTest()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EdDSA", "BC");
+
+        kpGen.initialize(new EdDSAParameterSpec(EdDSAParameterSpec.Ed448));
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        isTrue("Ed448".equals(kp.getPublic().getAlgorithm()));
+
+        kpGen.initialize(new EdDSAParameterSpec(EdDSAParameterSpec.Ed448));
+
+        kp = kpGen.generateKeyPair();
+
+        isTrue("Ed448".equals(kp.getPublic().getAlgorithm()));
+
+        kpGen = KeyPairGenerator.getInstance("EdDSA", "BC");
+
+        kpGen.initialize(new EdDSAParameterSpec(EdDSAParameterSpec.Ed25519));
+
+        kp = kpGen.generateKeyPair();
+
+        isTrue("Ed25519".equals(kp.getPublic().getAlgorithm()));
+
+        kpGen.initialize(new ECGenParameterSpec(EdDSAParameterSpec.Ed25519));
+
+        kp = kpGen.generateKeyPair();
+
+        isTrue("Ed25519".equals(kp.getPublic().getAlgorithm()));
+
+        kpGen = KeyPairGenerator.getInstance("EdDSA", "BC");
+
+        try
+        {
+            kpGen.generateKeyPair();
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            isEquals("generator not correctly initialized", e.getMessage());
+        }
+
+        try
+        {
+            kpGen.initialize(new XDHParameterSpec(XDHParameterSpec.X448));
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isEquals("parameterSpec for wrong curve type", e.getMessage());
+        }
+
+        try
+        {
+            kpGen.initialize(new XDHParameterSpec(XDHParameterSpec.X25519));
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isEquals("parameterSpec for wrong curve type", e.getMessage());
+        }
+
+        try
+        {
+            new EdDSAParameterSpec(XDHParameterSpec.X448);
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("unrecognized curve name: X448", e.getMessage());
+        }
     }
 
     private void checkEquals(String algorithm, Key ka, Key kb)

@@ -1,7 +1,10 @@
 package org.bouncycastle.jcajce.provider.asymmetric.edec;
 
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.SecureRandom;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.ECGenParameterSpec;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
@@ -13,17 +16,23 @@ import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.Ed448KeyGenerationParameters;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.X448KeyGenerationParameters;
+import org.bouncycastle.jcajce.spec.EdDSAParameterSpec;
+import org.bouncycastle.jcajce.spec.XDHParameterSpec;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 
 public class KeyPairGeneratorSpi
     extends java.security.KeyPairGeneratorSpi
 {
+    private static final int EdDSA = -1;
+    private static final int XDH = -2;
+
     private static final int Ed448 = 0;
     private static final int Ed25519 = 1;
     private static final int X448 = 2;
     private static final int X25519 = 3;
 
-    private final int algorithm;
-    private final AsymmetricCipherKeyPairGenerator generator;
+    private int algorithm;
+    private AsymmetricCipherKeyPairGenerator generator;
 
     private boolean initialised;
     private SecureRandom secureRandom;
@@ -40,32 +49,97 @@ public class KeyPairGeneratorSpi
         this.secureRandom = secureRandom;
     }
 
+    public void initialize(AlgorithmParameterSpec paramSpec, SecureRandom secureRandom)
+        throws InvalidAlgorithmParameterException
+    {
+        if (paramSpec instanceof ECGenParameterSpec)
+        {
+            initializeGenerator(((ECGenParameterSpec)paramSpec).getName());
+        }
+        else if (paramSpec instanceof ECNamedCurveGenParameterSpec)
+        {
+            initializeGenerator(((ECNamedCurveGenParameterSpec)paramSpec).getName());
+        }
+        else if (paramSpec instanceof EdDSAParameterSpec)
+        {
+            initializeGenerator(((EdDSAParameterSpec)paramSpec).getCurveName());
+        }
+        else if (paramSpec instanceof XDHParameterSpec)
+        {
+            initializeGenerator(((XDHParameterSpec)paramSpec).getCurveName());
+        }
+        else
+        {
+            throw new InvalidAlgorithmParameterException("invalid parameterSpec: " + paramSpec);
+        }
+
+        this.secureRandom = secureRandom;
+    }
+
+    private void algorithmCheck(int algorithm)
+        throws InvalidAlgorithmParameterException
+    {
+        if (this.algorithm != algorithm)
+        {
+            if (this.algorithm == Ed25519 || this.algorithm == Ed448)
+            {
+                throw new InvalidAlgorithmParameterException("parameterSpec for wrong curve type");
+            }
+            if (this.algorithm == EdDSA && (algorithm != Ed25519 && algorithm != Ed448))
+            {
+                throw new InvalidAlgorithmParameterException("parameterSpec for wrong curve type");
+            }
+            if (this.algorithm == X25519 || this.algorithm == X448)
+            {
+                throw new InvalidAlgorithmParameterException("parameterSpec for wrong curve type");
+            }
+            if (this.algorithm == XDH && (algorithm != X25519 && algorithm != X448))
+            {
+                throw new InvalidAlgorithmParameterException("parameterSpec for wrong curve type");
+            }
+            this.algorithm = algorithm;
+        }
+    }
+
+    private void initializeGenerator(String name)
+        throws InvalidAlgorithmParameterException
+    {
+        if (name.equalsIgnoreCase(EdDSAParameterSpec.Ed448))
+        {
+            algorithmCheck(Ed448);
+            this.generator = new Ed448KeyPairGenerator();
+            setupGenerator(Ed448);
+        }
+        else if (name.equalsIgnoreCase(EdDSAParameterSpec.Ed25519))
+        {
+            algorithmCheck(Ed25519);
+            this.generator = new Ed25519KeyPairGenerator();
+            setupGenerator(Ed25519);
+        }
+        else if (name.equalsIgnoreCase(XDHParameterSpec.X448))
+        {
+            algorithmCheck(X448);
+            this.generator = new X448KeyPairGenerator();
+            setupGenerator(X448);
+        }
+        else if (name.equalsIgnoreCase(XDHParameterSpec.X25519))
+        {
+            algorithmCheck(X25519);
+            this.generator = new X25519KeyPairGenerator();
+            setupGenerator(X25519);
+        }
+    }
+
     public KeyPair generateKeyPair()
     {
+        if (generator == null)
+        {
+            throw new IllegalStateException("generator not correctly initialized");
+        }
+
         if (!initialised)
         {
-            initialised = true;
-
-            if (secureRandom == null)
-            {
-                secureRandom = new SecureRandom();
-            }
-            
-            switch (algorithm)
-            {
-            case Ed448:
-                generator.init(new Ed448KeyGenerationParameters(secureRandom));
-                break;
-            case Ed25519:
-                generator.init(new Ed25519KeyGenerationParameters(secureRandom));
-                break;
-            case X448:
-                generator.init(new X448KeyGenerationParameters(secureRandom));
-                break;
-            case X25519:
-                generator.init(new X25519KeyGenerationParameters(secureRandom));
-                break;
-            }
+            setupGenerator(algorithm);
         }
 
         AsymmetricCipherKeyPair kp = generator.generateKeyPair();
@@ -82,16 +156,53 @@ public class KeyPairGeneratorSpi
             return new KeyPair(new BCXDHPublicKey(kp.getPublic()), new BCXDHPrivateKey(kp.getPrivate()));
         }
 
-        throw new IllegalStateException("generator not correctly initialised");
+        throw new IllegalStateException("generator not correctly initialized");
+    }
+
+    private void setupGenerator(int algorithm)
+    {
+        initialised = true;
+
+        if (secureRandom == null)
+        {
+            secureRandom = new SecureRandom();
+        }
+
+        switch (algorithm)
+        {
+        case Ed448:
+            generator.init(new Ed448KeyGenerationParameters(secureRandom));
+            break;
+        case EdDSA:
+        case Ed25519:
+            generator.init(new Ed25519KeyGenerationParameters(secureRandom));
+            break;
+        case X448:
+            generator.init(new X448KeyGenerationParameters(secureRandom));
+            break;
+        case XDH:
+        case X25519:
+            generator.init(new X25519KeyGenerationParameters(secureRandom));
+            break;
+        }
+    }
+
+    public static final class EdDSA
+        extends KeyPairGeneratorSpi
+    {
+        public EdDSA()
+        {
+            super(EdDSA, null);
+        }
     }
 
     public static final class Ed448
         extends KeyPairGeneratorSpi
     {
         public Ed448()
-         {
-             super(Ed448, new Ed448KeyPairGenerator());
-         }
+        {
+            super(Ed448, new Ed448KeyPairGenerator());
+        }
     }
 
     public static final class Ed25519
@@ -103,13 +214,22 @@ public class KeyPairGeneratorSpi
         }
     }
 
+    public static final class XDH
+        extends KeyPairGeneratorSpi
+    {
+        public XDH()
+        {
+            super(XDH, null);
+        }
+    }
+
     public static final class X448
         extends KeyPairGeneratorSpi
     {
         public X448()
-         {
-             super(X448, new X448KeyPairGenerator());
-         }
+        {
+            super(X448, new X448KeyPairGenerator());
+        }
     }
 
     public static final class X25519
