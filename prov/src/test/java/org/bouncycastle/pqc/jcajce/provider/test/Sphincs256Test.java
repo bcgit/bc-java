@@ -1132,7 +1132,7 @@ public class Sphincs256Test
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCS256", "BCPQC");
 
-        kpg.initialize(new SPHINCS256KeyGenParameterSpec(SPHINCS256KeyGenParameterSpec.SHA512_256), new RiggedRandom());
+        kpg.initialize(new SPHINCS256KeyGenParameterSpec(SPHINCS256KeyGenParameterSpec.SHA3_256), new RiggedRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
