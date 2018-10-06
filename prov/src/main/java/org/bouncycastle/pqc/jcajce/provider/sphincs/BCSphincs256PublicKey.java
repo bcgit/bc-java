@@ -97,6 +97,11 @@ public class BCSphincs256PublicKey
         return params.getKeyData();
     }
 
+    ASN1ObjectIdentifier getTreeDigest()
+    {
+        return treeDigest;
+    }
+
     CipherParameters getKeyParams()
     {
         return params;
