@@ -20,7 +20,7 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsECDomain;
-import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
+import org.bouncycastle.util.Arrays;
 
 public class JceX25519Domain implements TlsECDomain
 {
@@ -45,7 +45,7 @@ public class JceX25519Domain implements TlsECDomain
             {
                 throw new TlsCryptoException("invalid secret calculated");
             }
-            if (TlsImplUtils.isAllZeroes(secret))
+            if (Arrays.areAllZeroes(secret, 0, secret.length))
             {
                 throw new TlsFatalAlert(AlertDescription.handshake_failure);
             }
