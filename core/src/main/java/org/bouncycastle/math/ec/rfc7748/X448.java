@@ -1,5 +1,7 @@
 package org.bouncycastle.math.ec.rfc7748;
 
+import org.bouncycastle.util.Arrays;
+
 public abstract class X448
 {
     public static final int POINT_SIZE = 56;
@@ -19,6 +21,12 @@ public abstract class X448
         0x05013244, 0x0f0fab72 };
 
     private static int[] precompBase = null;
+
+    public static boolean calculateAgreement(byte[] k, int kOff, byte[] u, int uOff, byte[] r, int rOff)
+    {
+        scalarMult(k, kOff, u, uOff, r, rOff);
+        return !Arrays.areAllZeroes(r, rOff, POINT_SIZE);
+    }
 
     private static int decode32(byte[] bs, int off)
     {
