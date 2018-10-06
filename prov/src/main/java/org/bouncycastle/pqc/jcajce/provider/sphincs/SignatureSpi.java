@@ -7,24 +7,27 @@ import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHA512tDigest;
-import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCS256Signer;
 
 public class SignatureSpi
     extends java.security.SignatureSpi
 {
+    private final ASN1ObjectIdentifier treeDigest;
     private Digest digest;
     private SPHINCS256Signer signer;
     private SecureRandom random;
 
-    protected SignatureSpi(Digest digest, SPHINCS256Signer signer)
+    protected SignatureSpi(Digest digest, ASN1ObjectIdentifier treeDigest, SPHINCS256Signer signer)
     {
         this.digest = digest;
+        this.treeDigest = treeDigest;
         this.signer = signer;
     }
 
@@ -33,7 +36,12 @@ public class SignatureSpi
     {
         if (publicKey instanceof BCSphincs256PublicKey)
         {
-            CipherParameters param = ((BCSphincs256PublicKey)publicKey).getKeyParams();
+            BCSphincs256PublicKey key = (BCSphincs256PublicKey)publicKey;
+            if (!treeDigest.equals(key.getTreeDigest()))
+            {
+                throw new InvalidKeyException("SPHINCS-256 signature for tree digest: " + key.getTreeDigest());
+            }
+            CipherParameters param = key.getKeyParams();
 
             digest.reset();
             signer.init(false, param);
@@ -56,12 +64,19 @@ public class SignatureSpi
     {
         if (privateKey instanceof BCSphincs256PrivateKey)
         {
-            CipherParameters param = ((BCSphincs256PrivateKey)privateKey).getKeyParams();
-
-            if (random != null)
+            BCSphincs256PrivateKey key = (BCSphincs256PrivateKey)privateKey;
+            if (!treeDigest.equals(key.getTreeDigest()))
             {
-                param = new ParametersWithRandom(param, random);
+                throw new InvalidKeyException("SPHINCS-256 signature for tree digest: " + key.getTreeDigest());
             }
+
+            CipherParameters param = key.getKeyParams();
+
+            // random not required for SPHINCS.
+//            if (random != null)
+//            {
+//                param = new ParametersWithRandom(param, random);
+//            }
 
             digest.reset();
             signer.init(true, param);
@@ -106,6 +121,7 @@ public class SignatureSpi
     {
         byte[] hash = new byte[digest.getDigestSize()];
         digest.doFinal(hash, 0);
+
         return signer.verifySignature(hash, sigBytes);
     }
 
@@ -136,7 +152,7 @@ public class SignatureSpi
     {
         public withSha512()
         {
-            super(new SHA512Digest(), new SPHINCS256Signer(new SHA512tDigest(256), new SHA512Digest()));
+            super(new SHA512Digest(), NISTObjectIdentifiers.id_sha512_256, new SPHINCS256Signer(new SHA512tDigest(256), new SHA512Digest()));
         }
     }
 
@@ -145,7 +161,7 @@ public class SignatureSpi
     {
         public withSha3_512()
         {
-            super(new SHA3Digest(512), new SPHINCS256Signer(new SHA3Digest(256), new SHA3Digest(512)));
+            super(new SHA3Digest(512), NISTObjectIdentifiers.id_sha3_256, new SPHINCS256Signer(new SHA3Digest(256), new SHA3Digest(512)));
         }
     }
 }

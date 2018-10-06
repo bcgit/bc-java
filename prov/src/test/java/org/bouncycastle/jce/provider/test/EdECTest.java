@@ -12,6 +12,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
 import java.security.spec.AlgorithmParameterSpec;
@@ -534,6 +535,20 @@ public class EdECTest
         signature.update(msg);
 
         byte[] sig = signature.sign();
+
+        signature.initVerify(kp.getPublic());
+
+        signature.update(msg);
+
+        isTrue(signature.verify(sig));
+
+        // try with random - should be ignored
+
+        signature.initSign(kp.getPrivate(), new SecureRandom());
+
+        signature.update(msg);
+
+        sig = signature.sign();
 
         signature.initVerify(kp.getPublic());
 
