@@ -95,6 +95,11 @@ public class BCSphincs256PrivateKey
         return "PKCS#8";
     }
 
+    ASN1ObjectIdentifier getTreeDigest()
+    {
+        return treeDigest;
+    }
+    
     public byte[] getKeyData()
     {
         return params.getKeyData();
