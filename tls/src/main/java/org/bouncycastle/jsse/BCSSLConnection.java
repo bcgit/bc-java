@@ -8,6 +8,15 @@ import javax.net.ssl.SSLSession;
 public interface BCSSLConnection
 {
     /**
+     * Returns the application protocol negotiated for this connection, or an empty {@code String}
+     * if none was negotiated. See <a href="https://tools.ietf.org/html/rfc7301">RFC 7301</a> for
+     * details.
+     * 
+     * @return The negotiated application protocol, or an empty {@code String}.
+     */
+    String getApplicationProtocol();
+
+    /**
      * Request TLS Channel Bindings for this connection. See
      * <a href="https://tools.ietf.org/html/rfc5929">RFC 5929</a> for details.
      * 

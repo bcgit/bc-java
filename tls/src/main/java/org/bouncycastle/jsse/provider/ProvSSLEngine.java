@@ -157,6 +157,14 @@ class ProvSSLEngine
         }
     }
 
+    // @Override from JDK 9
+    public String getApplicationProtocol()
+    {
+        BCSSLConnection connection = getConnection();
+
+        return connection == null ? null : connection.getApplicationProtocol();
+    }
+
     public synchronized BCSSLConnection getConnection()
     {
         return connection;

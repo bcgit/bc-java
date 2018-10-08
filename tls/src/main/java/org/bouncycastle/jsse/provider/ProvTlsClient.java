@@ -68,6 +68,12 @@ class ProvTlsClient
     }
 
     @Override
+    protected Vector getProtocolNames()
+    {
+        return JsseUtils.getProtocolNames(sslParameters.getApplicationProtocols());
+    }
+
+    @Override
     protected CertificateStatusRequest getCertificateStatusRequest()
     {
         return null;
