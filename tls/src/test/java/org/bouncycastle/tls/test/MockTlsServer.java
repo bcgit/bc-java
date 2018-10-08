@@ -13,6 +13,7 @@ import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.ChannelBinding;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.DefaultTlsServer;
+import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
@@ -29,6 +30,14 @@ class MockTlsServer
     MockTlsServer()
     {
         super(new BcTlsCrypto(new SecureRandom()));
+    }
+
+    protected Vector getProtocolNames()
+    {
+        Vector protocolNames = new Vector();
+        protocolNames.addElement(ProtocolName.HTTP_2_TLS);
+        protocolNames.addElement(ProtocolName.HTTP_1_1);
+        return protocolNames;
     }
 
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
@@ -110,11 +119,17 @@ class MockTlsServer
     {
         super.notifyHandshakeComplete();
 
+        ProtocolName protocolName = context.getSecurityParameters().getApplicationProtocol();
+        if (protocolName != null)
+        {
+            System.out.println("Server ALPN: " + protocolName.getUtf8Decoding());
+        }
+
         byte[] tlsServerEndPoint = context.exportChannelBinding(ChannelBinding.tls_server_end_point);
-        System.out.println("'tls-server-end-point': " + hex(tlsServerEndPoint));
+        System.out.println("Server 'tls-server-end-point': " + hex(tlsServerEndPoint));
 
         byte[] tlsUnique = context.exportChannelBinding(ChannelBinding.tls_unique);
-        System.out.println("'tls-unique': " + hex(tlsUnique));
+        System.out.println("Server 'tls-unique': " + hex(tlsUnique));
     }
 
     protected TlsCredentialedDecryptor getRSAEncryptionCredentials()

@@ -25,6 +25,7 @@ public class SecurityParameters
     boolean extendedMasterSecret = false;
     boolean extendedPadding = false;
     boolean truncatedHMac = false;
+    ProtocolName applicationProtocol = null;
 
     void clear()
     {
@@ -146,5 +147,10 @@ public class SecurityParameters
     public boolean isTruncatedHMac()
     {
         return truncatedHMac;
+    }
+
+    public ProtocolName getApplicationProtocol()
+    {
+        return applicationProtocol;
     }
 }

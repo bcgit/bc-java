@@ -753,7 +753,15 @@ public class DTLSClientProtocol
         // TODO[compat-gnutls] GnuTLS test server fails to send renegotiation_info extension when resuming
         state.client.notifySecureRenegotiation(state.secure_renegotiation);
 
+        /*
+         * RFC 7301 3.1. When session resumption or session tickets [...] are used, the previous
+         * contents of this extension are irrelevant, and only the values in the new handshake
+         * messages are considered.
+         */
+        securityParameters.applicationProtocol = TlsExtensionsUtils.getALPNExtensionServer(state.serverExtensions);
+
         Hashtable sessionClientExtensions = state.clientExtensions, sessionServerExtensions = state.serverExtensions;
+
         if (state.resumedSession)
         {
             if (selectedCipherSuite != state.sessionParameters.getCipherSuite()
