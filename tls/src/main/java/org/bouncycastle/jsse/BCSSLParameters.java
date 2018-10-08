@@ -30,6 +30,7 @@ public final class BCSSLParameters
         return Collections.unmodifiableList(new ArrayList<T>(list));
     }
 
+    private String[] applicationProtocols = new String[0];
     private String[] cipherSuites;
     private String[] protocols;
     private boolean wantClientAuth;
@@ -50,6 +51,30 @@ public final class BCSSLParameters
     {
         setCipherSuites(cipherSuites);
         setProtocols(protocols);
+    }
+
+    public String[] getApplicationProtocols()
+    {
+        return applicationProtocols.clone();
+    }
+
+    public void setApplicationProtocols(String[] applicationProtocols)
+    {
+        if (null == applicationProtocols)
+        {
+            throw new NullPointerException("'applicationProtocols' cannot be null");
+        }
+
+        String[] check = applicationProtocols.clone();
+        for (String entry : check)
+        {
+            if (null == entry || entry.length() < 1)
+            {
+                throw new IllegalArgumentException("'applicationProtocols' entries cannot be null or empty strings");
+            }
+        }
+
+        this.applicationProtocols = check;
     }
 
     public String[] getCipherSuites()

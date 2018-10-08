@@ -33,6 +33,7 @@ import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
+import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ServerName;
 import org.bouncycastle.tls.ServerNameList;
 import org.bouncycastle.tls.SignatureAlgorithm;
@@ -168,6 +169,21 @@ abstract class JsseUtils
         }
 
         return new Certificate(certificateList);
+    }
+
+    public static Vector getProtocolNames(String[] applicationProtocols)
+    {
+        if (null == applicationProtocols || applicationProtocols.length < 1)
+        {
+            return null;
+        }
+
+        Vector protocolNames = new Vector(applicationProtocols.length);
+        for (String applicationProtocol : applicationProtocols)
+        {
+            protocolNames.addElement(ProtocolName.asUtf8Encoding(applicationProtocol));
+        }
+        return protocolNames;
     }
 
     public static X509Certificate[] getX509CertificateChain(TlsCrypto crypto, Certificate certificateMessage)
