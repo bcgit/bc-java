@@ -305,7 +305,7 @@ public class PGPUtil
         throws IOException
     {
         PGPLiteralDataGenerator lData = new PGPLiteralDataGenerator();
-        OutputStream pOut = lData.open(out, fileType, file.getName(), new Date(file.lastModified()), buffer);
+        OutputStream pOut = lData.open(out, fileType, file.getName(), new Date(file.lastModified()), Arrays.clone(buffer));
         pipeFileContents(file, pOut, buffer);
     }
 
