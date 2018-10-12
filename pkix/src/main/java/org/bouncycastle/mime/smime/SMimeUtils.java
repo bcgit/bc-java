@@ -1,5 +1,8 @@
 package org.bouncycastle.mime.smime;
 
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -116,5 +119,17 @@ class SMimeUtils
         }
 
         return oid;
+    }
+
+    static OutputStream createUnclosable(OutputStream destination)
+    {
+        return new FilterOutputStream(destination)
+        {
+            public void close()
+                throws IOException
+            {
+
+            }
+        };
     }
 }
