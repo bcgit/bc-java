@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -52,10 +53,43 @@ public class CCMTest
     private byte[] C5 = Hex.decode("49b17d8d3ea4e6174a48e2b65e6d8b417ac0dd3f8ee46ce4a4a2a509661cef52528c1cd9805333a5cfd482fa3f095a3c2fdd1cc47771c5e55fddd60b5c8d6d3fa5c8dd79d08b16242b6642106e7c0c28bd1064b31e6d7c9800c8397dbc3fa8071e6a38278b386c18d65d39c6ad1ef9501a5c8f68d38eb6474799f3cc898b4b9b97e87f9c95ce5c51bc9d758f17119586663a5684e0a0daf6520ec572b87473eb141d10471e4799ded9e607655402eca5176bbf792ef39dd135ac8d710da8e9e854fd3b95c681023f36b5ebe2fb213d0b62dd6e9e3cfe190b792ccb20c53423b2dca128f861a61d306910e1af418839467e466f0ec361d2539eedd99d4724f1b51c07beb40e875a87491ec8b27cd1");
     private byte[] T5 = Hex.decode("5c768856796b627b13ec8641581b");
 
+    //
+    // short nonce decryption
+    //
+    private byte[] K6 = Hex.decode("404142434445464748494a4b4c4d4e4f");
+    private byte[] C6 = Hex.decode("d5fd123ca49dca7040f3843d");
+    private byte[] A6 = Hex.decode("0001020304050607");
+    private byte[] P6 = Hex.decode("20212223");
+    private byte[] N6 = Hex.decode("1011121314");
+    private byte[] T6 = Hex.decode("6fb0180f3bbd3add");
+
     public void performTest()
         throws Exception
     {
         CCMBlockCipher ccm = new CCMBlockCipher(new AESEngine());
+
+        KeyParameter keyParam = new KeyParameter(K6);
+
+        ccm.init(false, new AEADParameters(keyParam, 64, N6, A6));
+
+        byte[] enc = new byte[P6.length];
+
+        int len = ccm.processBytes(C6, 0, C6.length, enc, 0);
+
+        len += ccm.doFinal(enc, len);
+
+        isTrue(Arrays.areEqual(T6, ccm.getMac()));
+
+        try
+        {
+            ccm.init(true, new AEADParameters(keyParam, 64, N6, A6));
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("nonce must have length from 7 to 13 octets", e.getMessage());
+        }
+
+        ccm = new CCMBlockCipher(new AESEngine());
 
         checkVectors(0, ccm, K1, 32, N1, A1, P1, T1, C1);
         checkVectors(1, ccm, K2, 48, N2, A2, P2, T2, C2);
@@ -88,7 +122,7 @@ public class CCMTest
 
         System.arraycopy(C2, 0, inBuf, 10, C2.length);
 
-        int len = ccm.processPacket(inBuf, 10, C2.length, outBuf, 10);
+        len = ccm.processPacket(inBuf, 10, C2.length, outBuf, 10);
         byte[] out = ccm.processPacket(C2, 0, C2.length);
 
         if (len != out.length || !isEqual(out, outBuf, 10))
