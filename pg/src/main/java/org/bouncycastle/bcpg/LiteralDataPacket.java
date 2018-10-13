@@ -27,10 +27,19 @@ public class LiteralDataPacket
         fileName = new byte[l];
         for (int i = 0; i != fileName.length; i++)
         {
-            fileName[i] = (byte)in.read();
+            int ch = in.read();
+            if (ch < 0)
+            {
+                throw new IOException("literal data truncated in header");
+            }
+            fileName[i] = (byte)ch;
         }
 
         modDate = ((long)in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
+        if (modDate < 0)
+        {
+            throw new IOException("literal data truncated in header");
+        }
     }
 
     /**

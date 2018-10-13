@@ -40,6 +40,7 @@ public class AllTests
         suite.addTestSuite(TestBoundaryLimitedInputStream.class);
         suite.addTestSuite(TestSMIMEEnveloped.class);
         suite.addTestSuite(TestSMIMESigned.class);
+        suite.addTestSuite(TestSMIMESignEncrypt.class);
 
         return new MIMETestSetup(suite);
     }
