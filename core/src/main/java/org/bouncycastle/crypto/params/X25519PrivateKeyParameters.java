@@ -21,7 +21,7 @@ public final class X25519PrivateKeyParameters
     {
         super(true);
 
-        random.nextBytes(data);
+        X25519.generatePrivateKey(random, data);
     }
 
     public X25519PrivateKeyParameters(byte[] buf, int off)

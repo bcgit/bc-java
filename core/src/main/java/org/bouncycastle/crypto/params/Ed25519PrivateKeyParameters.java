@@ -21,7 +21,7 @@ public final class Ed25519PrivateKeyParameters
     {
         super(true);
 
-        random.nextBytes(data);
+        Ed25519.generatePrivateKey(random, data);
     }
 
     public Ed25519PrivateKeyParameters(byte[] buf, int off)
