@@ -1,8 +1,6 @@
 package org.bouncycastle.crypto.util;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -24,9 +22,12 @@ import org.bouncycastle.util.Strings;
 
 public class OpenSSHPrivateKeyUtil
 {
+    private OpenSSHPrivateKeyUtil()
+    {
+
+    }
 
     private static final byte[] AUTH_MAGIC = Strings.toByteArray("openssh-key-v1\0"); // C string so null terminated
-
 
     /**
      * Parse a private key.
@@ -41,14 +42,12 @@ public class OpenSSHPrivateKeyUtil
      * @return A cipher parameters instance.
      */
     public static CipherParameters parsePrivateKeyBlob(byte[] blob)
-
     {
         CipherParameters result = null;
 
         try
         {
             ASN1Sequence sequence = ASN1Sequence.getInstance(blob);
-
 
             if (sequence.size() == 6)
             {
@@ -63,16 +62,12 @@ public class OpenSSHPrivateKeyUtil
                             ((ASN1Integer)sequence.getObjectAt(3)).getPositiveValue())
                     );
                 }
-
-
             }
             else if (sequence.size() == 9)
             {
                 if (allIntegers(sequence) && ((ASN1Integer)sequence.getObjectAt(0)).getPositiveValue().equals(BigInteger.ZERO))
                 {
                     // length of 8 and all Integers -- RSA
-
-
                     RSAPrivateKey rsaPrivateKey = RSAPrivateKey.getInstance(sequence);
 
                     result = new RSAPrivateCrtKeyParameters(
@@ -84,9 +79,7 @@ public class OpenSSHPrivateKeyUtil
                         rsaPrivateKey.getExponent1(),
                         rsaPrivateKey.getExponent2(),
                         rsaPrivateKey.getCoefficient());
-
                 }
-
             }
             else if (sequence.size() == 4)
             {
@@ -109,7 +102,6 @@ public class OpenSSHPrivateKeyUtil
         }
         catch (Throwable t)
         {
-
             SSHBuffer kIn = new SSHBuffer(AUTH_MAGIC, blob);
 
             // Cipher name.
@@ -120,17 +112,13 @@ public class OpenSSHPrivateKeyUtil
                 throw new IllegalStateException("encrypted keys not supported");
             }
 
-
             // KDF name
             kIn.readString();
 
             // KDF
-            byte[] kdf = kIn.readString();
-
+            kIn.readString();
 
             long publicKeyCount = kIn.readU32();
-
-            List<CipherParameters> publicKeys = new ArrayList<CipherParameters>();
 
             for (int l = 0; l != publicKeyCount; l++)
             {
@@ -142,14 +130,12 @@ public class OpenSSHPrivateKeyUtil
             int check1 = pkIn.readU32();
             int check2 = pkIn.readU32();
 
-
             if (check1 != check2)
             {
                 throw new IllegalStateException("private key check values are not the same");
             }
 
-
-            String keyType = pkIn.cString();
+            String keyType = Strings.fromByteArray(pkIn.readString());
 
             if ("ssh-ed25519".equals(keyType))
             {
@@ -160,14 +146,11 @@ public class OpenSSHPrivateKeyUtil
                 byte[] edPrivateKey = pkIn.readString();
 
                 result = new Ed25519PrivateKeyParameters(edPrivateKey, 0);
-
             }
             else
             {
                 throw new IllegalStateException("can not parse private key of type " + keyType);
             }
-
-
         }
 
         if (result == null)
@@ -175,11 +158,8 @@ public class OpenSSHPrivateKeyUtil
             throw new IllegalArgumentException("unable to parse key");
         }
 
-
         return result;
-
     }
-
 
     private static boolean allIntegers(ASN1Sequence sequence)
     {
@@ -193,6 +173,4 @@ public class OpenSSHPrivateKeyUtil
         }
         return true;
     }
-
-
 }
