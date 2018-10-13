@@ -96,7 +96,7 @@ public class CCMBlockCipher
             keyParam = cipherParameters;
         }
 
-        if (nonce == null || nonce.length < 7 || nonce.length > 13)
+        if (nonce == null || (forEncryption && (nonce.length < 7 || nonce.length > 13)))
         {
             throw new IllegalArgumentException("nonce must have length from 7 to 13 octets");
         }
