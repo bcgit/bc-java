@@ -141,11 +141,11 @@ public class SMIMEEnvelopedWriter
             {
                 outStream = new Base64OutputStream(mimeOut);
                 
-                return new ContentOutputStream(envGen.open(outStream, outEnc), outStream);
+                return new ContentOutputStream(envGen.open(SMimeUtils.createUnclosable(outStream), outEnc), outStream);
             }
             else
             {
-                return new ContentOutputStream(envGen.open(mimeOut, outEnc), null);
+                return new ContentOutputStream(envGen.open(SMimeUtils.createUnclosable(mimeOut), outEnc), null);
             }
         }
         catch (CMSException e)
