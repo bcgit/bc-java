@@ -63,7 +63,7 @@ public class KeyPairGeneratorSpi
                 setupGenerator(X25519);
                 break;
             default:
-                throw new InvalidParameterException("key size not configurable.");
+                throw new InvalidParameterException("key size not configurable");
             }
             break;
         case 448:
@@ -78,11 +78,11 @@ public class KeyPairGeneratorSpi
                 setupGenerator(X448);
                 break;
             default:
-                throw new InvalidParameterException("key size not configurable.");
+                throw new InvalidParameterException("key size not configurable");
             }
             break;
         default:
-            throw new InvalidParameterException("unknown key size.");
+            throw new InvalidParameterException("unknown key size");
         }
     }
 
