@@ -303,13 +303,15 @@ public class UTF8Test
 
     private void testLeadingSuffix()
     {
-        byte[] utf8 = new byte[1];
-        char[] utf16 = new char[1];
+        byte[] utf8 = new byte[4];
+        char[] utf16 = new char[4];
 
-        for (int i = 0x80; i <= 0xFF; ++i)
+        for (int i = 0x80; i < 0xC0; ++i)
         {
             utf8[0] = (byte)i;
-            utf16[0] = (char)0xFFFF;
+            utf8[1] = randomSuffix();
+            utf8[2] = randomSuffix();
+            utf8[3] = randomSuffix();
 
             int result = UTF8.transcode(utf8, utf16);
 
