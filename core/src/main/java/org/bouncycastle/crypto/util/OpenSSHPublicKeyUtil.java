@@ -12,9 +12,15 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.Strings;
 
 public class OpenSSHPublicKeyUtil
 {
+    private OpenSSHPublicKeyUtil()
+    {
+
+    }
+
     public static final String RSA = "ssh-rsa";
     public static final String ECDSA = "ecdsa";
     public static final String ED_25519 = "ssh-ed25519";
@@ -30,7 +36,7 @@ public class OpenSSHPublicKeyUtil
     {
         CipherParameters result = null;
 
-        String magic = buffer.cString();
+        String magic = Strings.fromByteArray(buffer.readString());
         if (RSA.equals(magic))
         {
             BigInteger e = buffer.positiveBigNum();
@@ -48,8 +54,9 @@ public class OpenSSHPublicKeyUtil
         }
         else if (magic.startsWith(ECDSA))
         {
-            String curveName = buffer.cString();
+            String curveName = Strings.fromByteArray(buffer.readString());
             String nameToFind = curveName;
+
             if (curveName.startsWith("nist"))
             {
                 //
@@ -62,12 +69,10 @@ public class OpenSSHPublicKeyUtil
 
             X9ECParameters x9ECParameters = ECNamedCurveTable.getByName(nameToFind);
 
-
             if (x9ECParameters == null)
             {
                 throw new IllegalStateException("unable to find curve for " + magic + " using curve name " + nameToFind);
             }
-
 
             //
             // Extract name of digest from magic string value;
@@ -76,12 +81,9 @@ public class OpenSSHPublicKeyUtil
 
             ECCurve curve = x9ECParameters.getCurve();
 
-
             byte[] pointRaw = buffer.readString();
 
-
             result = new ECPublicKeyParameters(curve.decodePoint(pointRaw), new ECDomainParameters(curve, x9ECParameters.getG(), x9ECParameters.getN(), x9ECParameters.getH(), x9ECParameters.getSeed()));
-
         }
         else if (magic.startsWith(ED_25519))
         {
