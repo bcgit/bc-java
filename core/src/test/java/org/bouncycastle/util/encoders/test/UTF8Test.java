@@ -61,7 +61,7 @@ public class UTF8Test
             utf8[1] = randomSuffix();
             utf16[0] = (char)0;
 
-            int result = UTF8.transcode(utf8, utf16);
+            int result = UTF8.transcodeToUTF16(utf8, utf16);
 
             isEquals("testBadPrefix2", result, -1);
         }
@@ -81,7 +81,7 @@ public class UTF8Test
             utf16[0] = (char)0;
             utf16[1] = (char)0;
 
-            int result = UTF8.transcode(utf8, utf16);
+            int result = UTF8.transcodeToUTF16(utf8, utf16);
 
             isEquals("testBadPrefix4", result, -1);
         }
@@ -100,7 +100,7 @@ public class UTF8Test
 
         utf8[1] &= 0x9F;
 
-        int result = UTF8.transcode(utf8, utf16);
+        int result = UTF8.transcodeToUTF16(utf8, utf16);
 
         isEquals("testBadSuffix_E0", result, -1);
     }
@@ -117,7 +117,7 @@ public class UTF8Test
 
         utf8[1] |= 0x20; 
 
-        int result = UTF8.transcode(utf8, utf16);
+        int result = UTF8.transcodeToUTF16(utf8, utf16);
 
         isEquals("testBadSuffix_ED", result, -1);
     }
@@ -136,7 +136,7 @@ public class UTF8Test
 
         utf8[1] &= 0x8F;
 
-        int result = UTF8.transcode(utf8, utf16);
+        int result = UTF8.transcodeToUTF16(utf8, utf16);
 
         isEquals("testBadSuffix_F0", result, -1);
     }
@@ -155,7 +155,7 @@ public class UTF8Test
 
         utf8[1] |= 0x10 << (R.nextInt() & 1);
 
-        int result = UTF8.transcode(utf8, utf16);
+        int result = UTF8.transcodeToUTF16(utf8, utf16);
 
         isEquals("testBadSuffix_F4", result, -1);
     }
@@ -171,7 +171,7 @@ public class UTF8Test
             utf8[1] = randomPrefix();
             utf16[0] = (char)0xFFFF;
 
-            int result = UTF8.transcode(utf8, utf16);
+            int result = UTF8.transcodeToUTF16(utf8, utf16);
 
             isEquals("testIncomplete2_1", result, -1);
         }
@@ -189,7 +189,7 @@ public class UTF8Test
             utf8[2] = randomSuffix();
             utf16[0] = (char)0xFFFF;
 
-            int result = UTF8.transcode(utf8, utf16);
+            int result = UTF8.transcodeToUTF16(utf8, utf16);
 
             isEquals("testIncomplete3_1", result, -1);
         }
@@ -216,7 +216,7 @@ public class UTF8Test
                 utf8[1] &= 0x9F;
             }
 
-            int result = UTF8.transcode(utf8, utf16);
+            int result = UTF8.transcodeToUTF16(utf8, utf16);
 
             isEquals("testIncomplete3_2", result, -1);
         }
@@ -237,7 +237,7 @@ public class UTF8Test
             utf16[0] = (char)0;
             utf16[1] = (char)0;
 
-            int result = UTF8.transcode(utf8, utf16);
+            int result = UTF8.transcodeToUTF16(utf8, utf16);
 
             isEquals("testIncomplete4_1", result, -1);
         }
@@ -266,7 +266,7 @@ public class UTF8Test
                 utf8[1] &= 0x8F;
             }
 
-            int result = UTF8.transcode(utf8, utf16);
+            int result = UTF8.transcodeToUTF16(utf8, utf16);
 
             isEquals("testIncomplete4_2", result, -1);
         }
@@ -295,7 +295,7 @@ public class UTF8Test
                 utf8[1] &= 0x8F;
             }
 
-            int result = UTF8.transcode(utf8, utf16);
+            int result = UTF8.transcodeToUTF16(utf8, utf16);
 
             isEquals("testIncomplete4_3", result, -1);
         }
@@ -313,7 +313,7 @@ public class UTF8Test
             utf8[2] = randomSuffix();
             utf8[3] = randomSuffix();
 
-            int result = UTF8.transcode(utf8, utf16);
+            int result = UTF8.transcodeToUTF16(utf8, utf16);
 
             isEquals("testLeadingSuffix", result, -1);
         }
@@ -329,7 +329,7 @@ public class UTF8Test
             utf8[0] = (byte)(0xC0 | i);
             utf16[0] = (char)0xFFFF;
 
-            int result = UTF8.transcode(utf8, utf16);
+            int result = UTF8.transcodeToUTF16(utf8, utf16);
 
             isEquals("testTruncated2_1", result, -1);
         }
@@ -345,7 +345,7 @@ public class UTF8Test
             utf8[0] = (byte)(0xE0 | i);
             utf16[0] = (char)0xFFFF;
 
-            int result = UTF8.transcode(utf8, utf16);
+            int result = UTF8.transcodeToUTF16(utf8, utf16);
 
             isEquals("testTruncated3_1", result, -1);
         }
@@ -371,7 +371,7 @@ public class UTF8Test
                 utf8[1] &= 0x9F;
             }
 
-            int result = UTF8.transcode(utf8, utf16);
+            int result = UTF8.transcodeToUTF16(utf8, utf16);
 
             isEquals("testTruncated3_2", result, -1);
         }
@@ -389,7 +389,7 @@ public class UTF8Test
             utf16[0] = (char)0;
             utf16[1] = (char)0;
 
-            int result = UTF8.transcode(utf8, utf16);
+            int result = UTF8.transcodeToUTF16(utf8, utf16);
 
             isEquals("testTruncated4_1", result, -1);
         }
@@ -416,7 +416,7 @@ public class UTF8Test
                 utf8[1] &= 0x8F;
             }
 
-            int result = UTF8.transcode(utf8, utf16);
+            int result = UTF8.transcodeToUTF16(utf8, utf16);
 
             isEquals("testTruncated4_2", result, -1);
         }
@@ -444,7 +444,7 @@ public class UTF8Test
                 utf8[1] &= 0x8F;
             }
 
-            int result = UTF8.transcode(utf8, utf16);
+            int result = UTF8.transcodeToUTF16(utf8, utf16);
 
             isEquals("testTruncated4_3", result, -1);
         }
@@ -460,7 +460,7 @@ public class UTF8Test
             utf8[0] = (byte)i;
             utf16[0] = (char)0xFFFF;
 
-            int result = UTF8.transcode(utf8, utf16);
+            int result = UTF8.transcodeToUTF16(utf8, utf16);
 
             isEquals("testValid1.Result", result, 1);
             isEquals("testValid1.Value", utf16[0], i);
@@ -478,7 +478,7 @@ public class UTF8Test
             utf8[1] = randomSuffix();
             utf16[0] = (char)0;
 
-            int result = UTF8.transcode(utf8, utf16);
+            int result = UTF8.transcodeToUTF16(utf8, utf16);
 
             isEquals("testValid2.Result", result, 1);
             isEquals("testValid2.Value", utf16[0], (i << 6) | (utf8[1] & 0x3F));
@@ -506,7 +506,7 @@ public class UTF8Test
                 utf8[1] &= 0x9F;
             }
 
-            int result = UTF8.transcode(utf8, utf16);
+            int result = UTF8.transcodeToUTF16(utf8, utf16);
 
             isEquals("testValid3.Result", result, 1);
             isEquals("testValid3.Value", utf16[0], (i << 12) | ((utf8[1] & 0x3F) << 6) | (utf8[2] & 0x3F));
@@ -536,7 +536,7 @@ public class UTF8Test
                 utf8[1] &= 0x8F;
             }
 
-            int result = UTF8.transcode(utf8, utf16);
+            int result = UTF8.transcodeToUTF16(utf8, utf16);
 
             isEquals("testValid4.Result", result, 2);
             isEquals("testValid4.Value",
