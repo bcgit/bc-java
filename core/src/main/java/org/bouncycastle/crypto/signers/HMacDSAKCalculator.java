@@ -52,12 +52,13 @@ public class HMacDSAKCalculator
         Arrays.fill(V, (byte)0x01);
         Arrays.fill(K, (byte)0);
 
-        byte[] x = new byte[(n.bitLength() + 7) / 8];
+        int size = BigIntegers.getUnsignedByteLength(n);
+        byte[] x = new byte[size];
         byte[] dVal = BigIntegers.asUnsignedByteArray(d);
 
         System.arraycopy(dVal, 0, x, x.length - dVal.length, dVal.length);
 
-        byte[] m = new byte[(n.bitLength() + 7) / 8];
+        byte[] m = new byte[size];
 
         BigInteger mInt = bitsToInt(message);
 
@@ -101,7 +102,7 @@ public class HMacDSAKCalculator
 
     public BigInteger nextK()
     {
-        byte[] t = new byte[((n.bitLength() + 7) / 8)];
+        byte[] t = new byte[BigIntegers.getUnsignedByteLength(n)];
 
         for (;;)
         {
