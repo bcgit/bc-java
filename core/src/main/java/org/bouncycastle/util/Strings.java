@@ -48,7 +48,7 @@ public final class Strings
     public static String fromUTF8ByteArray(byte[] bytes)
     {
         char[] chars = new char[bytes.length];
-        int len = UTF8.transcode(bytes, chars);
+        int len = UTF8.transcodeToUTF16(bytes, chars);
         if (len < 0)
         {
             throw new IllegalArgumentException("Invalid UTF-8 input");
