@@ -104,7 +104,7 @@ public class UTF8
      *         else -1 if the input was either malformed or encoded any unmappable characters, or if
      *         the {@code utf16} is too small.
      */
-    public static int transcode(byte[] utf8, char[] utf16)
+    public static int transcodeToUTF16(byte[] utf8, char[] utf16)
     {
         int i = 0, j = 0;
 
