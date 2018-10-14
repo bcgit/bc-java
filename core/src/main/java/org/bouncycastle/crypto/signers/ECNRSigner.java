@@ -6,7 +6,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.crypto.DSA;
+import org.bouncycastle.crypto.DSAExt;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
@@ -22,7 +22,7 @@ import org.bouncycastle.math.ec.ECPoint;
  * EC-NR as described in IEEE 1363-2000
  */
 public class ECNRSigner
-    implements DSA
+    implements DSAExt
 {
     private boolean             forSigning;
     private ECKeyParameters     key;
@@ -55,6 +55,11 @@ public class ECNRSigner
         }
     }
 
+    public BigInteger getOrder()
+    {
+        return key.getParameters().getN();
+    }
+
     // Section 7.2.5 ECSP-NR, pg 34
     /**
      * generate a signature for the given message using the key we were
@@ -68,12 +73,12 @@ public class ECNRSigner
     public BigInteger[] generateSignature(
         byte[] digest)
     {
-        if (! this.forSigning) 
+        if (!this.forSigning) 
         {
             throw new IllegalStateException("not initialised for signing");
         }
         
-        BigInteger n = ((ECPrivateKeyParameters)this.key).getParameters().getN();
+        BigInteger n = getOrder();
         int nBitLength = n.bitLength();
         
         BigInteger e = new BigInteger(1, digest);
