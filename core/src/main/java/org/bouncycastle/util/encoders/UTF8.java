@@ -113,6 +113,8 @@ public class UTF8
             byte codeUnit = utf8[i++];
             if (codeUnit >= 0)
             {
+                if (j >= utf16.length) { return -1; }
+
                 utf16[j++] = (char)codeUnit;
                 continue;
             }
