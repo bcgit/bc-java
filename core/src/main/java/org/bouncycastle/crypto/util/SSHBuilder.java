@@ -3,6 +3,8 @@ package org.bouncycastle.crypto.util;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.bouncycastle.util.Strings;
+
 class SSHBuilder
 {
     private final ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -42,7 +44,7 @@ class SSHBuilder
 
     public void writeString(String str)
     {
-        rawArray(str.getBytes());
+        rawArray(Strings.toByteArray(str));
     }
 
     public byte[] getBytes()
