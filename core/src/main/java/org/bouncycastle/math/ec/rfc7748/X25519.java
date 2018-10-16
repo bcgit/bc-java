@@ -1,5 +1,7 @@
 package org.bouncycastle.math.ec.rfc7748;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.util.Arrays;
 
 public abstract class X25519
@@ -44,6 +46,15 @@ public abstract class X25519
         n[0] &= 0xFFFFFFF8;
         n[7] &= 0x7FFFFFFF;
         n[7] |= 0x40000000;
+    }
+
+    public static void generatePrivateKey(SecureRandom random, byte[] k)
+    {
+        random.nextBytes(k);
+
+        k[0] &= 0xF8;
+        k[SCALAR_SIZE - 1] &= 0x7F;
+        k[SCALAR_SIZE - 1] |= 0x40;
     }
 
     private static void pointDouble(int[] x, int[] z)

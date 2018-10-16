@@ -1,10 +1,9 @@
-package org.bouncycastle.util.utiltest;
+package org.bouncycastle.crypto.test;
 
 import java.io.StringReader;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-import junit.framework.TestCase;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.engines.RSAEngine;
 import org.bouncycastle.crypto.signers.DSASigner;
@@ -15,9 +14,10 @@ import org.bouncycastle.crypto.util.OpenSSHPublicKeyUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.pem.PemReader;
+import org.bouncycastle.util.test.SimpleTest;
 
 public class OpenSSHKeyParsingTests
-    extends TestCase
+    extends SimpleTest
 {
     private static SecureRandom secureRandom = new SecureRandom();
 
@@ -57,7 +57,7 @@ public class OpenSSHKeyParsingTests
         thomas.init(false, pubSpec);
         byte[] result = thomas.processBlock(ct, 0, ct.length);
 
-        TestCase.assertTrue("Result did not match original message", Arrays.areEqual(originalMessage, result));
+        isTrue("Result did not match original message", Arrays.areEqual(originalMessage, result));
 
     }
 
@@ -90,7 +90,7 @@ public class OpenSSHKeyParsingTests
 
         signer.init(false, pubSpec);
 
-        TestCase.assertTrue("DSA test", signer.verifySignature(originalMessage, rs[0], rs[1]));
+        isTrue("DSA test", signer.verifySignature(originalMessage, rs[0], rs[1]));
 
     }
 
@@ -116,7 +116,7 @@ public class OpenSSHKeyParsingTests
 
         signer.init(false, pubSpec);
 
-        TestCase.assertTrue("ECDSA test", signer.verifySignature(originalMessage, rs[0], rs[1]));
+        isTrue("ECDSA test", signer.verifySignature(originalMessage, rs[0], rs[1]));
 
     }
 
@@ -149,7 +149,7 @@ public class OpenSSHKeyParsingTests
         signer.update(originalMessage, 0, originalMessage.length);
 
 
-        TestCase.assertTrue("ED25519Signer test", signer.verifySignature(sig));
+        isTrue("ED25519Signer test", signer.verifySignature(sig));
 
     }
 
@@ -157,8 +157,6 @@ public class OpenSSHKeyParsingTests
     public void testFailures()
         throws Exception
     {
-
-
         byte[] blob = new PemReader(new StringReader("-----BEGIN OPENSSH PRIVATE KEY-----\n" +
             "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW\n" +
             "QyNTUxOQAAACDOAmle1kHMtJYbdIXJYF3+Dpcr8779n51L0NyfCGLFhQAAAKBTr4PvU6+D\n" +
@@ -181,7 +179,7 @@ public class OpenSSHKeyParsingTests
         }
         catch (IllegalStateException iles)
         {
-            TestCase.assertEquals("Check value mismatch ", iles.getMessage(), "private key check values are not the same");
+            isEquals("Check value mismatch ", iles.getMessage(), "private key check values are not the same");
         }
 
 
@@ -208,11 +206,28 @@ public class OpenSSHKeyParsingTests
         }
         catch (IllegalStateException iles)
         {
-            TestCase.assertEquals("enc keys not supported ", iles.getMessage(), "encrypted keys not supported");
+            isEquals("enc keys not supported ", iles.getMessage(), "encrypted keys not supported");
         }
-
-
     }
 
+    public String getName()
+    {
+        return "OpenSSHParsing";
+    }
 
+    public void performTest()
+        throws Exception
+    {
+        testDSA();
+        testECDSA();
+        testRSA();
+        testED25519();
+        testFailures();
+    }
+
+    public static void main(
+        String[]    args)
+    {
+        runTest(new OpenSSHKeyParsingTests());
+    }
 }

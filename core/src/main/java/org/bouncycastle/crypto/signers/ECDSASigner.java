@@ -5,7 +5,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.crypto.DSA;
+import org.bouncycastle.crypto.DSAExt;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -23,7 +23,7 @@ import org.bouncycastle.math.ec.FixedPointCombMultiplier;
  * EC-DSA as described in X9.62
  */
 public class ECDSASigner
-    implements ECConstants, DSA
+    implements ECConstants, DSAExt
 {
     private final DSAKCalculator kCalculator;
 
@@ -74,6 +74,11 @@ public class ECDSASigner
         }
 
         this.random = initSecureRandom(forSigning && !kCalculator.isDeterministic(), providedRandom);
+    }
+
+    public BigInteger getOrder()
+    {
+        return key.getParameters().getN();
     }
 
     // 5.3 pg 28

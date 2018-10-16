@@ -7,7 +7,7 @@ import org.bouncycastle.util.Arrays;
 /**
  * A Buffer for dealing with SSH key products.
  */
-public class SSHBuffer
+class SSHBuffer
 {
     private final byte[] buffer;
     private int pos = 0;
@@ -63,23 +63,6 @@ public class SSHBuffer
         return true;
     }
 
-    public long u32l()
-    {
-        if (pos + 4 > buffer.length)
-        {
-            throw new IllegalArgumentException("4 bytes for U32 exceeds buffer.");
-        }
-
-        long i = (buffer[pos++] & 0xFF) << 24;
-        i |= (buffer[pos++] & 0xFF) << 16;
-        i |= (buffer[pos++] & 0xFF) << 8;
-        i |= (buffer[pos++] & 0xFF);
-        return i;
-
-
-    }
-
-
     public int readU32()
     {
         if (pos + 4 > buffer.length)
@@ -91,21 +74,8 @@ public class SSHBuffer
         i |= (buffer[pos++] & 0xFF) << 16;
         i |= (buffer[pos++] & 0xFF) << 8;
         i |= (buffer[pos++] & 0xFF);
+
         return i;
-
-    }
-
-    public String cString()
-    {
-        int len = readU32();
-        if (pos + len > buffer.length)
-        {
-            throw new IllegalArgumentException("C string length exceeds buffer length");
-        }
-
-        String rsp = new String(buffer, pos, len);
-        pos += len;
-        return rsp;
     }
 
     public byte[] readString()
@@ -118,7 +88,7 @@ public class SSHBuffer
 
         if (pos + len > buffer.length)
         {
-            throw new IllegalArgumentException("C string length exceeds buffer length");
+            throw new IllegalArgumentException("not enough data for string");
         }
 
         return Arrays.copyOfRange(buffer, pos, pos += len);
@@ -146,7 +116,7 @@ public class SSHBuffer
         int len = readU32();
         if (pos + len > buffer.length)
         {
-            throw new IllegalArgumentException("C string length exceeds buffer length");
+            throw new IllegalArgumentException("not enough data for big num");
         }
 
         byte[] d = new byte[len];
@@ -163,14 +133,5 @@ public class SSHBuffer
     public boolean hasRemaining()
     {
         return pos < buffer.length;
-    }
-
-    public void rewind(int i)
-    {
-        pos -= i;
-        if (pos < 0)
-        {
-            throw new IllegalArgumentException("Rewind places read position before start of buffer. " + pos);
-        }
     }
 }
