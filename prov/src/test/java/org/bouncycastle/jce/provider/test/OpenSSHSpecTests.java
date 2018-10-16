@@ -7,15 +7,11 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 
-import javax.crypto.Cipher;
-
-import junit.framework.TestCase;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.OpenSSHPrivateKeySpec;
 import org.bouncycastle.jce.spec.OpenSSHPublicKeySpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -23,53 +19,6 @@ public class OpenSSHSpecTests
     extends SimpleTest
 {
     private static final SecureRandom secureRandom = new SecureRandom();
-
-    public void testRSA()
-        throws Exception
-    {
-
-
-        OpenSSHPublicKeySpec pubSpec = new OpenSSHPublicKeySpec(Base64.decode("AAAAB3NzaC1yc2EAAAADAQABAAAAgQDvh2BophdIp8ojwGZQR0FQ/awowXnV24nAPm+/na8MOUrdySNhOnlek4LAZl82/+Eu2t21XD6hQUiHKAj6XaNFBthTuss7Cz/tA348DLEMHD9wUtT0FXVmsxqN4BfusunbcULxxVWG2z8FvqeaGgc/Unkp9y7/kyf54pPUCBcClw=="));
-
-        OpenSSHPrivateKeySpec privSpec = new OpenSSHPrivateKeySpec(new PemReader(new StringReader("-----BEGIN RSA PRIVATE KEY-----\n" +
-            "MIICXgIBAAKBgQDvh2BophdIp8ojwGZQR0FQ/awowXnV24nAPm+/na8MOUrdySNh\n" +
-            "Onlek4LAZl82/+Eu2t21XD6hQUiHKAj6XaNFBthTuss7Cz/tA348DLEMHD9wUtT0\n" +
-            "FXVmsxqN4BfusunbcULxxVWG2z8FvqeaGgc/Unkp9y7/kyf54pPUCBcClwIDAQAB\n" +
-            "AoGBAOMXYEoXHgAeREE9CkOWKtDUkEJbnF0rNSB0kZIDt5BJSTeYmNh3jdYi2FX9\n" +
-            "OMx2MFIx4v0tJZvQvyiUxl5IJJ9ZJsYUWF+6VbcTVwYYfdVzZzP2TNyGmF9/ADZW\n" +
-            "wBehqP04uRlYjt94kqb4HoOKF3gJ3LC4uW9xcEltTBeHWCfhAkEA/2biF5St9/Ya\n" +
-            "540E4zu/FKPsxLSaT8LWCo9+X7IqIzlBQCB4GjM+nZeTm7eZOkfAFZoxwfiNde/9\n" +
-            "qleXXf6B2QJBAPAW+jDBC3QF4/g8n9cDxm/A3ICmcOFSychLSrydk9ZyRPbTRyQC\n" +
-            "YlC2mf/pCrO/yO7h189BXyQ3PXOEhnujce8CQQD7gDy0K90EiH0F94AQpA0OLj5B\n" +
-            "lfc/BAXycEtpwPBtrzvqAg9C/aNzXIgmly10jqNAoo7NDA2BTcrlq0uLa8xBAkBl\n" +
-            "7Hs+I1XnZXDIO4Rn1VRysN9rRj15ipnbDAuoUwUl7tDUMBFteg2e0kZCW/6NHIgC\n" +
-            "0aG6fLgVOdY+qi4lYtfFAkEAqqiBgEgSrDmnJLTm6j/Pv1mBA6b9bJbjOqomrDtr\n" +
-            "AWTXe+/kSCv/jYYdpNA/tDgAwEmtkWWEie6+SwJB5cXXqg==\n" +
-            "-----END RSA PRIVATE KEY-----\n")).readPemObject().getContent());
-
-
-        byte[] originalMessage = new byte[10];
-        secureRandom.nextBytes(originalMessage);
-
-        originalMessage[0] |= 1;
-
-        KeyFactory kpf = KeyFactory.getInstance("RSA", "BC");
-
-        PublicKey pk = kpf.generatePublic(pubSpec);
-        PrivateKey prk = kpf.generatePrivate(privSpec);
-
-        Cipher cipher = Cipher.getInstance("RSA", "BC");
-        cipher.init(Cipher.ENCRYPT_MODE, pk);
-
-        byte[] ct = cipher.doFinal(originalMessage);
-        cipher.init(Cipher.DECRYPT_MODE, prk);
-        byte[] result = cipher.doFinal(ct);
-
-        TestCase.assertTrue("Result did not match original message", Arrays.areEqual(originalMessage, result));
-
-
-    }
-
 
     public void testEncodingRSA()
         throws Exception
@@ -111,10 +60,10 @@ public class OpenSSHSpecTests
         OpenSSHPublicKeySpec rcPublicKeySpec = kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
         OpenSSHPrivateKeySpec rcPrivateSpec = kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
 
+
         isTrue("RSAPublic key not same", Arrays.areEqual(rawPub, rcPublicKeySpec.getEncoded()));
         isTrue("RSAPrivate key not same", Arrays.areEqual(rawPriv, rcPrivateSpec.getEncoded()));
     }
-
 
 
     public void testEncodingDSA()
@@ -155,12 +104,8 @@ public class OpenSSHSpecTests
         OpenSSHPrivateKeySpec rcPrivateSpec = kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
 
 
-        System.out.println(Hex.toHexString(rcPrivateSpec.getEncoded()));
-        System.out.println(Hex.toHexString(rawPriv));
-
-
-        TestCase.assertTrue("Public key not same", Arrays.areEqual(rawPub, rcPublicKeySpec.getEncoded()));
-        TestCase.assertTrue("Private key not same", Arrays.areEqual(rawPriv, rcPrivateSpec.getEncoded()));
+        isTrue("DSA Public key not same", Arrays.areEqual(rawPub, rcPublicKeySpec.getEncoded()));
+        isTrue("DSA Private key not same", Arrays.areEqual(rawPriv, rcPrivateSpec.getEncoded()));
 
 
     }
@@ -186,6 +131,7 @@ public class OpenSSHSpecTests
         OpenSSHPublicKeySpec ecdsaPublicKeySpec = kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
         OpenSSHPrivateKeySpec ecdsaPrivateSpec = kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
 
+
         isTrue("ECPublic key not same", Arrays.areEqual(rawPub, ecdsaPublicKeySpec.getEncoded()));
         isTrue("ECPrivate key not same", Arrays.areEqual(rawPriv, ecdsaPrivateSpec.getEncoded()));
     }
@@ -198,6 +144,7 @@ public class OpenSSHSpecTests
     public void performTest()
         throws Exception
     {
+        testEncodingDSA();
         testEncodingRSA();
         testEncodingECDSA();
     }
