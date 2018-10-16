@@ -1,10 +1,12 @@
 package org.bouncycastle.crypto.util;
 
+import java.io.IOException;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -12,7 +14,6 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
-
 import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 import org.bouncycastle.util.Strings;
 
@@ -35,7 +36,8 @@ public class OpenSSHPublicKeyUtil
         return parsePublicKey(buffer);
     }
 
-    public static byte[] encodePublicKey(CipherParameters cipherParameters)
+    public static byte[] encodePublicKey(AsymmetricKeyParameter cipherParameters)
+        throws IOException
     {
         BigInteger e;
         BigInteger n;

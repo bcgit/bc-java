@@ -286,12 +286,25 @@ public class EC5Util
     {
         ECCurve curve = convertCurve(ecSpec.getCurve());
 
-        return new org.bouncycastle.jce.spec.ECParameterSpec(
-            curve,
-            convertPoint(curve, ecSpec.getGenerator(), withCompression),
-            ecSpec.getOrder(),
-            BigInteger.valueOf(ecSpec.getCofactor()),
-            ecSpec.getCurve().getSeed());
+        if (ecSpec instanceof ECNamedCurveSpec)
+        {
+            return new org.bouncycastle.jce.spec.ECNamedCurveParameterSpec(
+                ((ECNamedCurveSpec)ecSpec).getName(),
+                curve,
+                convertPoint(curve, ecSpec.getGenerator(), withCompression),
+                ecSpec.getOrder(),
+                BigInteger.valueOf(ecSpec.getCofactor()),
+                ecSpec.getCurve().getSeed());
+        }
+        else
+        {
+            return new org.bouncycastle.jce.spec.ECParameterSpec(
+                curve,
+                convertPoint(curve, ecSpec.getGenerator(), withCompression),
+                ecSpec.getOrder(),
+                BigInteger.valueOf(ecSpec.getCofactor()),
+                ecSpec.getCurve().getSeed());
+        }
     }
 
     public static org.bouncycastle.math.ec.ECPoint convertPoint(
