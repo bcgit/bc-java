@@ -11,6 +11,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
 import org.bouncycastle.jcajce.provider.symmetric.util.BlockCipherProvider;
+import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
 
 public final class CAST6
 {
@@ -69,6 +70,15 @@ public final class CAST6
         }
     }
 
+    public static class AlgParams
+        extends IvAlgorithmParameters
+    {
+        protected String engineToString()
+        {
+            return "CAST6 IV";
+        }
+    }
+
     public static class Mappings
         extends SymmetricAlgorithmProvider
     {
@@ -82,7 +92,8 @@ public final class CAST6
         {
             provider.addAlgorithm("Cipher.CAST6", PREFIX + "$ECB");
             provider.addAlgorithm("KeyGenerator.CAST6", PREFIX + "$KeyGen");
-
+            provider.addAlgorithm("AlgorithmParameters.CAST6", PREFIX + "$AlgParams");
+            
             addGMacAlgorithm(provider, "CAST6", PREFIX + "$GMAC", PREFIX + "$KeyGen");
             addPoly1305Algorithm(provider, "CAST6", PREFIX + "$Poly1305", PREFIX + "$Poly1305KeyGen");
         }
