@@ -10,8 +10,6 @@ import java.security.Security;
 import javax.crypto.Cipher;
 
 import junit.framework.TestCase;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.OpenSSHPrivateKeySpec;
 import org.bouncycastle.jce.spec.OpenSSHPublicKeySpec;
@@ -19,9 +17,10 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.pem.PemReader;
+import org.bouncycastle.util.test.SimpleTest;
 
 public class OpenSSHSpecTests
-    extends TestCase
+    extends SimpleTest
 {
     private static final SecureRandom secureRandom = new SecureRandom();
 
@@ -223,4 +222,14 @@ public class OpenSSHSpecTests
 
     }
 
+    public String getName()
+    {
+        return "OpenSSHSpec";
+    }
+
+    public void performTest()
+        throws Exception
+    {
+
+    }
 }
