@@ -11,7 +11,7 @@ public class OpenSSHPrivateKeySpec
     public OpenSSHPrivateKeySpec(byte[] encodedKey)
     {
         super(encodedKey);
-        this.format = "raw";
+        this.format = "openssh";
     }
 
 
