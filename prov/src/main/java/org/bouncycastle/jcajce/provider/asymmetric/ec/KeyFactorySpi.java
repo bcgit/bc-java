@@ -12,13 +12,12 @@ import java.security.spec.KeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.crypto.util.OpenSSHPrivateKeyUtil;
 import org.bouncycastle.crypto.util.OpenSSHPublicKeyUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
@@ -131,27 +130,38 @@ public class KeyFactorySpi
             {
                 BCECPublicKey bcPk = (BCECPublicKey)key;
                 ECParameterSpec sc = bcPk.getParameters();
-                return new OpenSSHPublicKeySpec(
-                    OpenSSHPublicKeyUtil.encodePublicKey(
-                        new ECPublicKeyParameters(bcPk.getQ(), new ECDomainParameters(sc.getCurve(), sc.getG(), sc.getN(), sc.getH(), sc.getSeed()))));
+                try
+                {
+                    return new OpenSSHPublicKeySpec(
+                        OpenSSHPublicKeyUtil.encodePublicKey(
+                            new ECPublicKeyParameters(bcPk.getQ(), new ECDomainParameters(sc.getCurve(), sc.getG(), sc.getN(), sc.getH(), sc.getSeed()))));
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalArgumentException("unable to produce encoding: " + e.getMessage());
+                }
             }
             else
             {
-                throw new IllegalArgumentException("Could not cast key to BCECPublicKey");
+                throw new IllegalArgumentException("invalid key type: " + key.getClass().getName());
             }
-
         }
         else if (spec.isAssignableFrom(OpenSSHPrivateKeySpec.class) && key instanceof ECPrivateKey)
         {
             if (key instanceof BCECPrivateKey)
             {
-
-                OpenSSHPrivateKeyUtil.encodePrivateKey(new ECPrivateKeyParameters(((BCECPrivateKey)key).getD(), null));
-                return new OpenSSHPrivateKeySpec(key.getEncoded());
+                try
+                {
+                    return new OpenSSHPrivateKeySpec(PrivateKeyInfo.getInstance(key.getEncoded()).parsePrivateKey().toASN1Primitive().getEncoded());
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalArgumentException("cannot encoded key: " + e.getMessage());
+                }
             }
             else
             {
-                throw new IllegalArgumentException("Could not cast key to BCECPublicKey");
+                throw new IllegalArgumentException("invalid key type: " + key.getClass().getName());
             }
 
         }
@@ -173,14 +183,15 @@ public class KeyFactorySpi
         }
         else if (keySpec instanceof OpenSSHPrivateKeySpec)
         {
-            CipherParameters params = OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(((OpenSSHPrivateKeySpec)keySpec).getEncoded());
-            if (params instanceof ECPrivateKeyParameters)
+            org.bouncycastle.asn1.sec.ECPrivateKey ecKey = org.bouncycastle.asn1.sec.ECPrivateKey.getInstance(((OpenSSHPrivateKeySpec)keySpec).getEncoded());
+
+            try
             {
-                return new BCECPrivateKey(algorithm, (ECPrivateKeyParameters)params, configuration);
+                return new BCECPrivateKey(algorithm, new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, ecKey.getParameters()), ecKey), configuration);
             }
-            else
+            catch (IOException e)
             {
-                throw new IllegalArgumentException("openssh key is not ec private key");
+                throw new InvalidKeySpecException("bad encoding: " + e.getMessage());
             }
         }
 
