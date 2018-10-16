@@ -65,10 +65,17 @@ public class OpenSSHPrivateKeyUtil
         {
             ASN1EncodableVector vec = new ASN1EncodableVector();
             vec.add(new ASN1Integer(0));
-            vec.add(new ASN1Integer(((DSAPrivateKeyParameters)params).getParameters().getG()));
             vec.add(new ASN1Integer(((DSAPrivateKeyParameters)params).getParameters().getP()));
             vec.add(new ASN1Integer(((DSAPrivateKeyParameters)params).getParameters().getQ()));
-            // vec.add(new ASN1Integer(((DSAPrivateKeyParameters)params).()));
+            vec.add(new ASN1Integer(((DSAPrivateKeyParameters)params).getParameters().getG()));
+
+            // public key = g.modPow(x, p);
+
+            BigInteger pubKey = ((DSAPrivateKeyParameters)params).getParameters().getG().modPow(
+                ((DSAPrivateKeyParameters)params).getX(),
+                ((DSAPrivateKeyParameters)params).getParameters().getP());
+            vec.add(new ASN1Integer(pubKey));
+
             vec.add(new ASN1Integer(((DSAPrivateKeyParameters)params).getX()));
             try
             {
