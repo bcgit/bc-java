@@ -6,23 +6,13 @@ public class OpenSSHPrivateKeySpec
     extends EncodedKeySpec
 
 {
-    private final String format;
-
     public OpenSSHPrivateKeySpec(byte[] encodedKey)
     {
         super(encodedKey);
-        this.format = "OpenSSH";
-    }
-
-
-    public OpenSSHPrivateKeySpec(byte[] encodedKey, String format)
-    {
-        super(encodedKey);
-        this.format = format;
     }
 
     public String getFormat()
     {
-        return format;
+        return "OpenSSH";
     }
 }
