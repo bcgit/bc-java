@@ -12,6 +12,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 
 public class OpenSSHPublicKeyUtil
 {
@@ -25,6 +26,75 @@ public class OpenSSHPublicKeyUtil
         SSHBuffer buffer = new SSHBuffer(encoded);
         return parsePublicKey(buffer);
     }
+
+    public static byte[] encodePublicKey(CipherParameters cipherParameters)
+    {
+        BigInteger e;
+        BigInteger n;
+
+        if (cipherParameters == null)
+        {
+            throw new IllegalArgumentException("cipherParameters was null.");
+        }
+
+        if (cipherParameters instanceof RSAKeyParameters)
+        {
+            if (((RSAKeyParameters)cipherParameters).isPrivate())
+            {
+                throw new IllegalArgumentException("RSAKeyParamaters was for encryption");
+            }
+
+            e = ((RSAKeyParameters)cipherParameters).getExponent();
+            n = ((RSAKeyParameters)cipherParameters).getModulus();
+
+            SSHBuilder builder = new SSHBuilder();
+            builder.writeString(RSA);
+            builder.rawArray(e.toByteArray());
+            builder.rawArray(n.toByteArray());
+
+            return builder.getBytes();
+
+        }
+        else if (cipherParameters instanceof ECPublicKeyParameters)
+        {
+            SSHBuilder builder = new SSHBuilder();
+
+            String name = null;
+            if (((ECPublicKeyParameters)cipherParameters).getParameters().getCurve() instanceof SecP256R1Curve)
+            {
+                name = "nistp256";
+            }
+            else
+            {
+                throw new IllegalArgumentException("unable to derive ssh curve name for " + ((ECPublicKeyParameters)cipherParameters).getParameters().getCurve().getClass().getName());
+            }
+
+            builder.writeString(ECDSA + "-sha2-" + name); // Magic
+            builder.writeString(name);
+            builder.rawArray(((ECPublicKeyParameters)cipherParameters).getQ().getEncoded(false)); //Uncompressed
+            return builder.getBytes();
+        }
+        else if (cipherParameters instanceof DSAPublicKeyParameters)
+        {
+            SSHBuilder builder = new SSHBuilder();
+            builder.writeString(DSS);
+            builder.rawArray(((DSAPublicKeyParameters)cipherParameters).getParameters().getP().toByteArray());
+            builder.rawArray(((DSAPublicKeyParameters)cipherParameters).getParameters().getQ().toByteArray());
+            builder.rawArray(((DSAPublicKeyParameters)cipherParameters).getParameters().getG().toByteArray());
+            builder.rawArray(((DSAPublicKeyParameters)cipherParameters).getY().toByteArray());
+            return builder.getBytes();
+        }
+        else if (cipherParameters instanceof Ed25519PublicKeyParameters)
+        {
+            SSHBuilder builder = new SSHBuilder();
+            builder.writeString(ED_25519);
+            builder.rawArray(((Ed25519PublicKeyParameters)cipherParameters).getEncoded());
+            return builder.getBytes();
+        }
+
+        throw new IllegalArgumentException("unable to convert " + cipherParameters.getClass().getName() + " to private key");
+    }
+
 
     public static CipherParameters parsePublicKey(SSHBuffer buffer)
     {

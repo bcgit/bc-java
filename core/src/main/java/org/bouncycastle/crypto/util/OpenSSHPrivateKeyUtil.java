@@ -1,12 +1,15 @@
 package org.bouncycastle.crypto.util;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
@@ -26,6 +29,81 @@ public class OpenSSHPrivateKeyUtil
 {
 
     private static final byte[] AUTH_MAGIC = Strings.toByteArray("openssh-key-v1\0"); // C string so null terminated
+
+
+    /**
+     * Encode a chipher parameters into an openssh private key.
+     * This does not add headers like ----BEGIN RSA PRIVATE KEY----
+     *
+     * @param params the cipher parameters.
+     * @return a byte array
+     */
+    public static byte[] encodePrivateKey(CipherParameters params)
+    {
+        if (params == null)
+        {
+            throw new IllegalArgumentException("param is null");
+        }
+
+
+        if (params instanceof RSAPrivateCrtKeyParameters)
+        {
+            RSAPrivateKey pk = new RSAPrivateKey(
+                ((RSAPrivateCrtKeyParameters)params).getModulus(),
+                ((RSAPrivateCrtKeyParameters)params).getPublicExponent(),
+                ((RSAPrivateCrtKeyParameters)params).getExponent(),
+                ((RSAPrivateCrtKeyParameters)params).getP(),
+                ((RSAPrivateCrtKeyParameters)params).getQ(),
+                ((RSAPrivateCrtKeyParameters)params).getDP(),
+                ((RSAPrivateCrtKeyParameters)params).getDQ(),
+                ((RSAPrivateCrtKeyParameters)params).getQInv());
+
+            try
+            {
+                return pk.toASN1Primitive().getEncoded();
+            }
+            catch (IOException ioex)
+            {
+                throw new RuntimeException(ioex.getMessage(), ioex);
+            }
+        }
+        else if (params instanceof ECPrivateKeyParameters)
+        {
+//            if (((ECPublicKeyParameters)params).getParameters() == null) {
+//                ECPrivateKey ecPrivateKey = new ECPrivateKey()
+//            }
+        }
+        else if (params instanceof DSAPrivateKeyParameters)
+        {
+            ASN1EncodableVector vec = new ASN1EncodableVector();
+            vec.add(new ASN1Integer(0));
+            vec.add(new ASN1Integer(((DSAPrivateKeyParameters)params).getParameters().getG()));
+            vec.add(new ASN1Integer(((DSAPrivateKeyParameters)params).getParameters().getP()));
+            vec.add(new ASN1Integer(((DSAPrivateKeyParameters)params).getParameters().getQ()));
+            // vec.add(new ASN1Integer(((DSAPrivateKeyParameters)params).()));
+            vec.add(new ASN1Integer(((DSAPrivateKeyParameters)params).getX()));
+            try
+            {
+                return new DERSequence(vec).getEncoded();
+            }
+            catch (Exception ex)
+            {
+                throw new IllegalStateException("unable to encode DSAPrivateKeyParameters " + ex.getMessage(), ex);
+            }
+        }
+        else if (params instanceof Ed25519PrivateKeyParameters)
+        {
+            SSHBuilder builder = new SSHBuilder();
+            builder.write(AUTH_MAGIC);
+            builder.writeString("none");
+            builder.writeString("none");
+
+
+        }
+
+        throw new IllegalArgumentException("unable to convert " + params.getClass().getName() + " to openssh private key");
+
+    }
 
 
     /**
