@@ -5,7 +5,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.crypto.DSA;
+import org.bouncycastle.crypto.DSAExt;
 import org.bouncycastle.crypto.params.DSAKeyParameters;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
@@ -17,7 +17,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
  * Cryptography", pages 452 - 453.
  */
 public class DSASigner
-    implements DSA
+    implements DSAExt
 {
     private final DSAKCalculator kCalculator;
 
@@ -68,6 +68,11 @@ public class DSASigner
         }
 
         this.random = initSecureRandom(forSigning && !kCalculator.isDeterministic(), providedRandom);
+    }
+
+    public BigInteger getOrder()
+    {
+        return key.getParameters().getQ();
     }
 
     /**

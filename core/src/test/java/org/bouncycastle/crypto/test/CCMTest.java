@@ -83,6 +83,7 @@ public class CCMTest
         try
         {
             ccm.init(true, new AEADParameters(keyParam, 64, N6, A6));
+            fail("no exception");
         }
         catch (IllegalArgumentException e)
         {

@@ -1,11 +1,13 @@
 package org.bouncycastle.jcajce.provider.asymmetric.edec;
 
 import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidParameterException;
 import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECGenParameterSpec;
 
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
@@ -45,13 +47,51 @@ public class KeyPairGeneratorSpi
 
     public void initialize(int strength, SecureRandom secureRandom)
     {
-        // TODO: should we make sure strength makes sense?
         this.secureRandom = secureRandom;
+
+        switch (strength)
+        {
+        case 255:
+        case 256:
+            switch (algorithm)
+            {
+            case EdDSA:
+            case Ed25519:
+                setupGenerator(Ed25519);
+                break;
+            case XDH:
+            case X25519:
+                setupGenerator(X25519);
+                break;
+            default:
+                throw new InvalidParameterException("key size not configurable");
+            }
+            break;
+        case 448:
+            switch (algorithm)
+            {
+            case EdDSA:
+            case Ed448:
+                setupGenerator(Ed448);
+                break;
+            case XDH:
+            case X448:
+                setupGenerator(X448);
+                break;
+            default:
+                throw new InvalidParameterException("key size not configurable");
+            }
+            break;
+        default:
+            throw new InvalidParameterException("unknown key size");
+        }
     }
 
     public void initialize(AlgorithmParameterSpec paramSpec, SecureRandom secureRandom)
         throws InvalidAlgorithmParameterException
     {
+        this.secureRandom = secureRandom;
+
         if (paramSpec instanceof ECGenParameterSpec)
         {
             initializeGenerator(((ECGenParameterSpec)paramSpec).getName());
@@ -72,8 +112,6 @@ public class KeyPairGeneratorSpi
         {
             throw new InvalidAlgorithmParameterException("invalid parameterSpec: " + paramSpec);
         }
-
-        this.secureRandom = secureRandom;
     }
 
     private void algorithmCheck(int algorithm)
@@ -104,25 +142,25 @@ public class KeyPairGeneratorSpi
     private void initializeGenerator(String name)
         throws InvalidAlgorithmParameterException
     {
-        if (name.equalsIgnoreCase(EdDSAParameterSpec.Ed448))
+        if (name.equalsIgnoreCase(EdDSAParameterSpec.Ed448) || name.equals(EdECObjectIdentifiers.id_Ed448.getId()))
         {
             algorithmCheck(Ed448);
             this.generator = new Ed448KeyPairGenerator();
             setupGenerator(Ed448);
         }
-        else if (name.equalsIgnoreCase(EdDSAParameterSpec.Ed25519))
+        else if (name.equalsIgnoreCase(EdDSAParameterSpec.Ed25519) || name.equals(EdECObjectIdentifiers.id_Ed25519.getId()))
         {
             algorithmCheck(Ed25519);
             this.generator = new Ed25519KeyPairGenerator();
             setupGenerator(Ed25519);
         }
-        else if (name.equalsIgnoreCase(XDHParameterSpec.X448))
+        else if (name.equalsIgnoreCase(XDHParameterSpec.X448) || name.equals(EdECObjectIdentifiers.id_X448.getId()))
         {
             algorithmCheck(X448);
             this.generator = new X448KeyPairGenerator();
             setupGenerator(X448);
         }
-        else if (name.equalsIgnoreCase(XDHParameterSpec.X25519))
+        else if (name.equalsIgnoreCase(XDHParameterSpec.X25519) || name.equals(EdECObjectIdentifiers.id_X25519.getId()))
         {
             algorithmCheck(X25519);
             this.generator = new X25519KeyPairGenerator();

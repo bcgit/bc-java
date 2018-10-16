@@ -1,5 +1,7 @@
 package org.bouncycastle.math.ec.rfc8032;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.math.ec.rfc7748.X25519Field;
@@ -251,6 +253,11 @@ public abstract class Ed25519
 
         X25519Field.encode(y, r, rOff);
         r[rOff + POINT_BYTES - 1] |= ((x[0] & 1) << 7);
+    }
+
+    public static void generatePrivateKey(SecureRandom random, byte[] k)
+    {
+        random.nextBytes(k);
     }
 
     public static void generatePublicKey(byte[] sk, int skOff, byte[] pk, int pkOff)

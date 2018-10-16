@@ -5,7 +5,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.crypto.DSA;
+import org.bouncycastle.crypto.DSAExt;
 import org.bouncycastle.crypto.params.GOST3410KeyParameters;
 import org.bouncycastle.crypto.params.GOST3410Parameters;
 import org.bouncycastle.crypto.params.GOST3410PrivateKeyParameters;
@@ -16,7 +16,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
  * GOST R 34.10-94 Signature Algorithm
  */
 public class GOST3410Signer
-        implements DSA
+        implements DSAExt
 {
         GOST3410KeyParameters key;
 
@@ -45,6 +45,11 @@ public class GOST3410Signer
             {
                 this.key = (GOST3410PublicKeyParameters)param;
             }
+        }
+
+        public BigInteger getOrder()
+        {
+            return key.getParameters().getQ();
         }
 
         /**
