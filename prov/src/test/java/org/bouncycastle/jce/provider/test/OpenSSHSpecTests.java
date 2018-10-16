@@ -121,15 +121,8 @@ public class OpenSSHSpecTests
         OpenSSHPublicKeySpec rcPublicKeySpec = kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
         OpenSSHPrivateKeySpec rcPrivateSpec = kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
 
-
-        System.out.println(Hex.toHexString(rcPrivateSpec.getEncoded()));
-        System.out.println(Hex.toHexString(rawPriv));
-
-
-        TestCase.assertTrue("Public key not same", Arrays.areEqual(rawPub, rcPublicKeySpec.getEncoded()));
-        TestCase.assertTrue("Private key not same", Arrays.areEqual(rawPriv, rcPrivateSpec.getEncoded()));
-
-
+        isTrue("RSAPublic key not same", Arrays.areEqual(rawPub, rcPublicKeySpec.getEncoded()));
+        isTrue("RSAPrivate key not same", Arrays.areEqual(rawPriv, rcPrivateSpec.getEncoded()));
     }
 
 
@@ -182,13 +175,7 @@ public class OpenSSHSpecTests
 
     }
 
-
-
-
-
-
-
-    public void testEncodingECDSA()
+    private void testEncodingECDSA()
         throws Exception
     {
         byte[] rawPub = Base64.decode("AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHq5qxGqnh93Gpbj2w1Avx1UwBl6z5bZC3Viog1yNHDZYcV6Da4YQ3i0/hN7xY7sUy9dNF6g16tJSYXQQ4tvO3g=");
@@ -198,28 +185,19 @@ public class OpenSSHSpecTests
             "eLT+E3vFjuxTL100XqDXq0lJhdBDi287eA==\n" +
             "-----END EC PRIVATE KEY-----\n")).readPemObject().getContent();
 
-
         OpenSSHPublicKeySpec pubSpec = new OpenSSHPublicKeySpec(rawPub);
         OpenSSHPrivateKeySpec privSpec = new OpenSSHPrivateKeySpec(rawPriv);
-
 
         KeyFactory kpf = KeyFactory.getInstance("EC", "BC");
 
         PublicKey pk = kpf.generatePublic(pubSpec);
         PrivateKey prk = kpf.generatePrivate(privSpec);
 
-
         OpenSSHPublicKeySpec ecdsaPublicKeySpec = kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
         OpenSSHPrivateKeySpec ecdsaPrivateSpec = kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
 
-        System.out.println(Hex.toHexString(ecdsaPrivateSpec.getEncoded()));
-        System.out.println(Hex.toHexString(rawPriv));
-
-
-
-        TestCase.assertTrue("Public key not same", Arrays.areEqual(rawPub, ecdsaPublicKeySpec.getEncoded()));
-        TestCase.assertTrue("Private key not same", Arrays.areEqual(rawPriv, ecdsaPrivateSpec.getEncoded()));
-
+        isTrue("ECPublic key not same", Arrays.areEqual(rawPub, ecdsaPublicKeySpec.getEncoded()));
+        isTrue("ECPrivate key not same", Arrays.areEqual(rawPriv, ecdsaPrivateSpec.getEncoded()));
     }
 
     public String getName()
@@ -230,6 +208,14 @@ public class OpenSSHSpecTests
     public void performTest()
         throws Exception
     {
+        testEncodingRSA();
+        testEncodingECDSA();
+    }
 
+    public static void main(String[] args)
+    {
+        Security.addProvider(new BouncyCastleProvider());
+
+        runTest(new OpenSSHSpecTests());
     }
 }

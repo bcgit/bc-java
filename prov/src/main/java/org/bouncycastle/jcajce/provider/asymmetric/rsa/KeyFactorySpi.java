@@ -65,27 +65,41 @@ public class KeyFactorySpi
         }
         else if (spec.isAssignableFrom(OpenSSHPublicKeySpec.class) && key instanceof RSAPublicKey)
         {
-            return new OpenSSHPublicKeySpec(
-                OpenSSHPublicKeyUtil.encodePublicKey(
-                    new RSAKeyParameters(
-                        false,
-                        ((RSAPublicKey)key).getModulus(),
-                        ((RSAPublicKey)key).getPublicExponent())
-                )
-            );
+            try
+            {
+                return new OpenSSHPublicKeySpec(
+                    OpenSSHPublicKeyUtil.encodePublicKey(
+                        new RSAKeyParameters(
+                            false,
+                            ((RSAPublicKey)key).getModulus(),
+                            ((RSAPublicKey)key).getPublicExponent())
+                    )
+                );
+            }
+            catch (IOException e)
+            {
+                throw new IllegalArgumentException("unable to produce encoding: " + e.getMessage());
+            }
         }
         else if (spec.isAssignableFrom(OpenSSHPrivateKeySpec.class) && key instanceof RSAPrivateCrtKey)
         {
-            return new OpenSSHPrivateKeySpec(OpenSSHPrivateKeyUtil.encodePrivateKey(new RSAPrivateCrtKeyParameters(
-                ((RSAPrivateCrtKey)key).getModulus(),
-                ((RSAPrivateCrtKey)key).getPublicExponent(),
-                ((RSAPrivateCrtKey)key).getPrivateExponent(),
-                ((RSAPrivateCrtKey)key).getPrimeP(),
-                ((RSAPrivateCrtKey)key).getPrimeQ(),
-                ((RSAPrivateCrtKey)key).getPrimeExponentP(),
-                ((RSAPrivateCrtKey)key).getPrimeExponentQ(),
-                ((RSAPrivateCrtKey)key).getCrtCoefficient()
-            )));
+            try
+            {
+                return new OpenSSHPrivateKeySpec(OpenSSHPrivateKeyUtil.encodePrivateKey(new RSAPrivateCrtKeyParameters(
+                    ((RSAPrivateCrtKey)key).getModulus(),
+                    ((RSAPrivateCrtKey)key).getPublicExponent(),
+                    ((RSAPrivateCrtKey)key).getPrivateExponent(),
+                    ((RSAPrivateCrtKey)key).getPrimeP(),
+                    ((RSAPrivateCrtKey)key).getPrimeQ(),
+                    ((RSAPrivateCrtKey)key).getPrimeExponentP(),
+                    ((RSAPrivateCrtKey)key).getPrimeExponentQ(),
+                    ((RSAPrivateCrtKey)key).getCrtCoefficient()
+                )));
+            }
+            catch (IOException e)
+            {
+                throw new IllegalArgumentException("unable to produce encoding: " + e.getMessage());
+            }
         }
 
         return super.engineGetKeySpec(key, spec);
