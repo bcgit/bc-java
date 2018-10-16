@@ -1,5 +1,7 @@
 package org.bouncycastle.math.ec.rfc8032;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.math.ec.rfc7748.X448Field;
@@ -262,6 +264,11 @@ public abstract class Ed448
 
         X448Field.encode(y, r, rOff);
         r[rOff + POINT_BYTES - 1] = (byte)((x[0] & 1) << 7);
+    }
+
+    public static void generatePrivateKey(SecureRandom random, byte[] k)
+    {
+        random.nextBytes(k);
     }
 
     public static void generatePublicKey(byte[] sk, int skOff, byte[] pk, int pkOff)

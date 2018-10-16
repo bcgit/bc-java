@@ -166,7 +166,8 @@ public class X931Signer
 
         t = t.min(kParam.getModulus().subtract(t));
 
-        return BigIntegers.asUnsignedByteArray((kParam.getModulus().bitLength() + 7) / 8, t);
+        int size = BigIntegers.getUnsignedByteLength(kParam.getModulus());
+        return BigIntegers.asUnsignedByteArray(size, t);
     }
 
     private void createSignatureBlock(int trailer)

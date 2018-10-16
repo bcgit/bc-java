@@ -120,4 +120,9 @@ public final class BigIntegers
         }
         return new BigInteger(1, mag);
     }
+
+    public static int getUnsignedByteLength(BigInteger n)
+    {
+        return (n.bitLength() + 7) / 8;
+    }
 }

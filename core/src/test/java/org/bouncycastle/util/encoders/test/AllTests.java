@@ -11,6 +11,8 @@ public class AllTests
     public static void main (String[] args)
     {
         junit.textui.TestRunner.run (suite());
+
+        UTF8Test.main(null);
     }
     
     public static Test suite()

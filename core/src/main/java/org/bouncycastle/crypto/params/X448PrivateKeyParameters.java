@@ -21,7 +21,7 @@ public final class X448PrivateKeyParameters
     {
         super(true);
 
-        random.nextBytes(data);
+        X448.generatePrivateKey(random, data);
     }
 
     public X448PrivateKeyParameters(byte[] buf, int off)
