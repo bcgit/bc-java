@@ -22,6 +22,7 @@ public class AllTests
         TestSuite suite = new TestSuite("JCE Tests");
 
         suite.addTestSuite(SimpleTestTest.class);
+        suite.addTestSuite(OpenSSHSpecTests.class);
         
         return new BCTestSetup(suite);
     }
