@@ -12,6 +12,6 @@ public class OpenSSHPublicKeySpec
 
     public String getFormat()
     {
-        return "raw";
+        return "openssh";
     }
 }
