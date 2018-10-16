@@ -24,16 +24,6 @@ public class OpenSSHSpecTests
 {
     private static final SecureRandom secureRandom = new SecureRandom();
 
-    public void setUp()
-        throws Exception
-    {
-        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
-        {
-            Security.addProvider(new BouncyCastleProvider());
-        }
-    }
-
-
     public void testRSA()
         throws Exception
     {
