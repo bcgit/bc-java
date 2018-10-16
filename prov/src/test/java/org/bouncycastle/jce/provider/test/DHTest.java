@@ -1495,10 +1495,10 @@ public class DHTest
         SecureRandom random = new SecureRandom();
 
         int[] keySizes = new int[]{512, 768, 1024, 2048};
-        for (final int keySize : keySizes)
+        for (int i = 0; i != keySizes.length; i++)
         {
             final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DH", "BC");
-            keyPairGenerator.initialize(keySize, random);
+            keyPairGenerator.initialize(keySizes[i], random);
             keyPairGenerator.generateKeyPair();
         }
     }
