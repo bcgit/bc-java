@@ -131,6 +131,7 @@ public class OpenSSHSpecTests
         OpenSSHPrivateKeySpec privSpec = new OpenSSHPrivateKeySpec(rawPriv);
 
         isEquals("ecdsa-sha2-nistp256", pubSpec.getType());
+        isEquals("Spec Type", privSpec.getFormat(), "ASN.1");
 
         KeyFactory kpf = KeyFactory.getInstance("EC", "BC");
 
