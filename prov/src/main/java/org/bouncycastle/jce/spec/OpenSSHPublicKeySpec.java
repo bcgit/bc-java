@@ -2,6 +2,9 @@ package org.bouncycastle.jce.spec;
 
 import java.security.spec.EncodedKeySpec;
 
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
+
 public class OpenSSHPublicKeySpec
     extends EncodedKeySpec
 {
@@ -21,12 +24,12 @@ public class OpenSSHPublicKeySpec
         i |= (encodedKey[pos++] & 0xFF) << 8;
         i |= (encodedKey[pos++] & 0xFF);
 
-        if (i >= encodedKey.length)
+        if ((pos + i) >= encodedKey.length)
         {
-            throw new IllegalArgumentException("invalid public key blob, type field longer than blob");
+            throw new IllegalArgumentException("invalid public key blob: type field longer than blob");
         }
 
-        this.type = new String(encodedKey, pos, i);
+        this.type = Strings.fromByteArray(Arrays.copyOfRange(encodedKey, pos, pos + i));
 
         if (type.startsWith("ecdsa"))
         {
