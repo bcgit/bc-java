@@ -21,7 +21,9 @@ import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
+import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 
@@ -88,10 +90,40 @@ public class OpenSSHPrivateKeyUtil
         }
         else if (params instanceof Ed25519PrivateKeyParameters)
         {
+
+
             SSHBuilder builder = new SSHBuilder();
             builder.write(AUTH_MAGIC);
             builder.writeString("none");
             builder.writeString("none");
+            builder.u32(0); // Zero length of the KDF
+
+            builder.u32(1);
+
+            Ed25519PublicKeyParameters publicKeyParameters = ((Ed25519PrivateKeyParameters)params).generatePublicKey();
+
+
+            byte[] pkEncoded = OpenSSHPublicKeyUtil.encodePublicKey(publicKeyParameters);
+            builder.rawArray(pkEncoded);
+
+
+            SSHBuilder pkBuild = new SSHBuilder();
+
+            pkBuild.u32(0x00ff00ff);
+            pkBuild.u32(0x00ff00ff);
+
+            pkBuild.writeString("ssh-ed25519");
+
+            byte[] pubKeyEncoded = ((Ed25519PrivateKeyParameters)params).generatePublicKey().getEncoded();
+
+            pkBuild.rawArray(pubKeyEncoded); // Public key written as length defined item.
+
+            // The private key in SSH is 64 bytes long and is the concatenation of the private and the public keys
+            pkBuild.rawArray(Arrays.concatenate(((Ed25519PrivateKeyParameters)params).getEncoded(), pubKeyEncoded));
+            pkBuild.u32(0); // No comment.
+            builder.rawArray(pkBuild.getBytes());
+
+            return builder.getBytes();
         }
 
         throw new IllegalArgumentException("unable to convert " + params.getClass().getName() + " to openssh private key");
