@@ -5,7 +5,6 @@ import java.math.BigInteger;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
@@ -33,6 +32,11 @@ public class OpenSSHPublicKeyUtil
     public static final String ED_25519 = "ssh-ed25519";
     private static final String DSS = "ssh-dss";
 
+    public static AsymmetricKeyParameter parsePublicKey(byte[] encoded)
+    {
+        SSHBuffer buffer = new SSHBuffer(encoded);
+        return parsePublicKey(buffer);
+    }
 
     /**
      * Encode a public key from an AsymmetricKeyParameter instance.
@@ -54,7 +58,7 @@ public class OpenSSHPublicKeyUtil
 
         if (cipherParameters instanceof RSAKeyParameters)
         {
-            if (((RSAKeyParameters)cipherParameters).isPrivate())
+            if (cipherParameters.isPrivate())
             {
                 throw new IllegalArgumentException("RSAKeyParamaters was for encryption");
             }
@@ -110,28 +114,15 @@ public class OpenSSHPublicKeyUtil
         throw new IllegalArgumentException("unable to convert " + cipherParameters.getClass().getName() + " to private key");
     }
 
-
-    /**
-     * Parse an encoded public key, returning a CipherParameters instance appropriate for the type.
-     *
-     * @param encoded The encoded public key.
-     * @return A CipherParameters instance.
-     */
-    public static CipherParameters parsePublicKey(byte[] encoded)
-    {
-        SSHBuffer buffer = new SSHBuffer(encoded);
-        return parsePublicKey(buffer);
-    }
-
     /**
      * Parse a public key from an SSHBuffer instance.
      *
      * @param buffer containing the SSH public key.
      * @return A CipherParameters instance.
      */
-    protected static CipherParameters parsePublicKey(SSHBuffer buffer)
+    public static AsymmetricKeyParameter parsePublicKey(SSHBuffer buffer)
     {
-        CipherParameters result = null;
+        AsymmetricKeyParameter result = null;
 
         String magic = Strings.fromByteArray(buffer.readString());
         if (RSA.equals(magic))
