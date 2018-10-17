@@ -366,7 +366,7 @@ public final class CryptoServicesRegistrar
     private static int chooseLowerBound(int pSize)
     {
         int m = 160;
-        if (pSize > 512)
+        if (pSize > 1024)
         {
             if (pSize <= 2048)
             {
