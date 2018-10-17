@@ -60,12 +60,13 @@ public class OpenSSHSpecTests
 
         isTrue("RSAPublic key not same", Arrays.areEqual(rawPub, rcPublicKeySpec.getEncoded()));
         isTrue("RSAPrivate key not same", Arrays.areEqual(rawPriv, rcPrivateSpec.getEncoded()));
+
+        isEquals("ssh-rsa", rcPublicKeySpec.getType());
     }
 
     public void testEncodingDSA()
         throws Exception
     {
-
         byte[] rawPub = Base64.decode("AAAAB3NzaC1kc3MAAACBAJBB5+S4kZZYZLswaQ/zm3GM7YWmHsumwo/Xxu+z6Cg2l5PUoiBBZ4ET9EhhQuL2ja/zrCMCi0ZwiSRuSp36ayPrHLbNJb3VdOuJg8xExRa6F3YfVZfcTPUEKh6FU72fI31HrQmi4rpyHnWxL/iDX496ZG2Hdq6UkPISQpQwj4TtAAAAFQCP9TXcVahR/2rpfEhvdXR0PfhbRwAAAIBdXzAVqoOtb9zog6lNF1cGS1S06W9W/clvuwq2xF1s3bkoI/xUbFSc0IAPsGl2kcB61PAZqcop50lgpvYzt8cq/tbqz3ypq1dCQ0xdmJHj975QsRFax+w6xQ0kgpBhwcS2EOizKb+C+tRzndGpcDSoSMuVXp9i4wn5pJSTZxAYFQAAAIEAhQZc687zYxrEDR/1q6m4hw5GFxuVvLsC+bSHtMF0c11Qy4IPg7mBeP7K5Kq4WyJPtmZhuc5Bb12bJQR6qgd1uLn692fe1UK2kM6eWXBzhlzZ54BslfSKHGNN4qH+ln3Zaf/4rpKE7fvoinkrgkOZmj0PMx9D6wlpHKkXMUxeXtc=");
         byte[] rawPriv = new PemReader(new StringReader("-----BEGIN DSA PRIVATE KEY-----\n" +
             "MIIBuwIBAAKBgQCQQefkuJGWWGS7MGkP85txjO2Fph7LpsKP18bvs+goNpeT1KIg\n" +
@@ -87,6 +88,8 @@ public class OpenSSHSpecTests
         byte[] originalMessage = new byte[10];
         secureRandom.nextBytes(originalMessage);
 
+        isEquals("ssh-dss", pubSpec.getType());
+        
         originalMessage[0] |= 1;
 
         KeyFactory kpf = KeyFactory.getInstance("DSA", "BC");
@@ -99,6 +102,8 @@ public class OpenSSHSpecTests
 
         isTrue("DSA Public key not same", Arrays.areEqual(rawPub, rcPublicKeySpec.getEncoded()));
         isTrue("DSA Private key not same", Arrays.areEqual(rawPriv, rcPrivateSpec.getEncoded()));
+
+        isEquals("ssh-dss", rcPublicKeySpec.getType());
     }
 
     private void testEncodingECDSA()
@@ -114,6 +119,8 @@ public class OpenSSHSpecTests
         OpenSSHPublicKeySpec pubSpec = new OpenSSHPublicKeySpec(rawPub);
         OpenSSHPrivateKeySpec privSpec = new OpenSSHPrivateKeySpec(rawPriv);
 
+        isEquals("ecdsa-sha2-nistp256", pubSpec.getType());
+
         KeyFactory kpf = KeyFactory.getInstance("EC", "BC");
 
         PublicKey pk = kpf.generatePublic(pubSpec);
@@ -124,12 +131,13 @@ public class OpenSSHSpecTests
 
         isTrue("ECPublic key not same", Arrays.areEqual(rawPub, ecdsaPublicKeySpec.getEncoded()));
         isTrue("ECPrivate key not same", Arrays.areEqual(rawPriv, ecdsaPrivateSpec.getEncoded()));
+
+        isEquals("ecdsa-sha2-nistp256", ecdsaPublicKeySpec.getType());
     }
 
     public void testED25519()
         throws Exception
     {
-
         byte[] rawPub = Base64.decode("AAAAC3NzaC1lZDI1NTE5AAAAIM4CaV7WQcy0lht0hclgXf4Olyvzvv2fnUvQ3J8IYsWF");
         byte[] rawPriv = new PemReader(new StringReader("-----BEGIN OPENSSH PRIVATE KEY-----\n" +
             "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW\n" +
@@ -142,23 +150,24 @@ public class OpenSSHSpecTests
         OpenSSHPublicKeySpec pubSpec = new OpenSSHPublicKeySpec(rawPub);
         OpenSSHPrivateKeySpec privSpec = new OpenSSHPrivateKeySpec(rawPriv);
 
+        isEquals("ssh-ed25519", pubSpec.getType());
+
         KeyFactory kpf = KeyFactory.getInstance("ED25519", "BC");
 
         PublicKey pk = kpf.generatePublic(pubSpec);
         PrivateKey prk = kpf.generatePrivate(privSpec);
 
-        OpenSSHPublicKeySpec ecdsaPublicKeySpec = kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
-        OpenSSHPrivateKeySpec ecdsaPrivateSpec = kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
+        OpenSSHPublicKeySpec edDsaPublicKeySpec = kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
+        OpenSSHPrivateKeySpec edDsaPrivateKeySpec = kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
 
-
-        isTrue("EDPublic key not same", Arrays.areEqual(rawPub, ecdsaPublicKeySpec.getEncoded()));
+        isTrue("EDPublic key not same", Arrays.areEqual(rawPub, edDsaPublicKeySpec.getEncoded()));
 
         isTrue("EDPrivate key not same", Arrays.areEqual(
             Hex.decode("6f70656e7373682d6b65792d763100000000046e6f6e65000000046e6f6e650000000000000001000000330000000b7373682d6564323535313900000020ce02695ed641ccb4961b7485c9605dfe0e972bf3befd9f9d4bd0dc9f0862c5850000008300ff00ff00ff00ff0000000b7373682d6564323535313900000020ce02695ed641ccb4961b7485c9605dfe0e972bf3befd9f9d4bd0dc9f0862c58500000040f80531de477603ec2150aaeb33b5f2f92be6120f899118b0706fb8c7897c4824ce02695ed641ccb4961b7485c9605dfe0e972bf3befd9f9d4bd0dc9f0862c58500000000"),
-            ecdsaPrivateSpec.getEncoded()));
+            edDsaPrivateKeySpec.getEncoded()));
 
+        isEquals("ssh-ed25519", edDsaPublicKeySpec.getType());
     }
-
 
     public String getName()
     {
