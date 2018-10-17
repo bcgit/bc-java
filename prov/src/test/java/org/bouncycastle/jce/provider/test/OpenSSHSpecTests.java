@@ -45,6 +45,10 @@ public class OpenSSHSpecTests
         OpenSSHPublicKeySpec pubSpec = new OpenSSHPublicKeySpec(rawPub);
         OpenSSHPrivateKeySpec privSpec = new OpenSSHPrivateKeySpec(rawPriv);
 
+        isEquals("Pk type", pubSpec.getType(), "ssh-rsa");
+        isEquals("Spec Type", privSpec.getFormat(), "ASN.1");
+
+
         byte[] originalMessage = new byte[10];
         secureRandom.nextBytes(originalMessage);
 
@@ -58,10 +62,12 @@ public class OpenSSHSpecTests
         OpenSSHPublicKeySpec rcPublicKeySpec = kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
         OpenSSHPrivateKeySpec rcPrivateSpec = kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
 
+        isEquals("Pk type", rcPublicKeySpec.getType(), "ssh-rsa");
+        isEquals("Spec Type", rcPrivateSpec.getFormat(), "ASN.1");
+
         isTrue("RSAPublic key not same", Arrays.areEqual(rawPub, rcPublicKeySpec.getEncoded()));
         isTrue("RSAPrivate key not same", Arrays.areEqual(rawPriv, rcPrivateSpec.getEncoded()));
 
-        isEquals("ssh-rsa", rcPublicKeySpec.getType());
     }
 
     public void testEncodingDSA()
@@ -85,11 +91,14 @@ public class OpenSSHSpecTests
         OpenSSHPublicKeySpec pubSpec = new OpenSSHPublicKeySpec(rawPub);
         OpenSSHPrivateKeySpec privSpec = new OpenSSHPrivateKeySpec(rawPriv);
 
+        isEquals("Pk type", pubSpec.getType(), "ssh-dss");
+        isEquals("Spec Type", privSpec.getFormat(), "ASN.1");
+
+
         byte[] originalMessage = new byte[10];
         secureRandom.nextBytes(originalMessage);
 
-        isEquals("ssh-dss", pubSpec.getType());
-        
+
         originalMessage[0] |= 1;
 
         KeyFactory kpf = KeyFactory.getInstance("DSA", "BC");
@@ -97,13 +106,15 @@ public class OpenSSHSpecTests
         PublicKey pk = kpf.generatePublic(pubSpec);
         PrivateKey prk = kpf.generatePrivate(privSpec);
 
-        OpenSSHPublicKeySpec rcPublicKeySpec = kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
-        OpenSSHPrivateKeySpec rcPrivateSpec = kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
+        OpenSSHPublicKeySpec dsaPublicKeySpec = kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
+        OpenSSHPrivateKeySpec dsaPrivateSpec = kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
 
-        isTrue("DSA Public key not same", Arrays.areEqual(rawPub, rcPublicKeySpec.getEncoded()));
-        isTrue("DSA Private key not same", Arrays.areEqual(rawPriv, rcPrivateSpec.getEncoded()));
+        isEquals("Pk type", dsaPublicKeySpec.getType(), "ssh-dss");
+        isEquals("Spec Type", dsaPrivateSpec.getFormat(), "ASN.1");
 
-        isEquals("ssh-dss", rcPublicKeySpec.getType());
+        isTrue("DSA Public key not same", Arrays.areEqual(rawPub, dsaPublicKeySpec.getEncoded()));
+        isTrue("DSA Private key not same", Arrays.areEqual(rawPriv, dsaPrivateSpec.getEncoded()));
+
     }
 
     private void testEncodingECDSA()
@@ -129,6 +140,8 @@ public class OpenSSHSpecTests
         OpenSSHPublicKeySpec ecdsaPublicKeySpec = kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
         OpenSSHPrivateKeySpec ecdsaPrivateSpec = kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
 
+        isEquals("Spec Type", ecdsaPrivateSpec.getFormat(), "ASN.1");
+
         isTrue("ECPublic key not same", Arrays.areEqual(rawPub, ecdsaPublicKeySpec.getEncoded()));
         isTrue("ECPrivate key not same", Arrays.areEqual(rawPriv, ecdsaPrivateSpec.getEncoded()));
 
@@ -150,7 +163,8 @@ public class OpenSSHSpecTests
         OpenSSHPublicKeySpec pubSpec = new OpenSSHPublicKeySpec(rawPub);
         OpenSSHPrivateKeySpec privSpec = new OpenSSHPrivateKeySpec(rawPriv);
 
-        isEquals("ssh-ed25519", pubSpec.getType());
+        isEquals("Pk type", pubSpec.getType(), "ssh-ed25519");
+        isEquals("Spec Type", privSpec.getFormat(), "OpenSSH");
 
         KeyFactory kpf = KeyFactory.getInstance("ED25519", "BC");
 
@@ -159,6 +173,10 @@ public class OpenSSHSpecTests
 
         OpenSSHPublicKeySpec edDsaPublicKeySpec = kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
         OpenSSHPrivateKeySpec edDsaPrivateKeySpec = kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
+
+        isEquals("Pk type", edDsaPublicKeySpec.getType(), "ssh-ed25519");
+        isEquals("Spec Type", edDsaPrivateKeySpec.getFormat(), "OpenSSH");
+
 
         isTrue("EDPublic key not same", Arrays.areEqual(rawPub, edDsaPublicKeySpec.getEncoded()));
 

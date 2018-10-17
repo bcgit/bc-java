@@ -34,7 +34,7 @@ public class OpenSSHPrivateKeyUtil
 
     }
 
-    private static final byte[] AUTH_MAGIC = Strings.toByteArray("openssh-key-v1\0"); // C string so null terminated
+    public static final byte[] AUTH_MAGIC = Strings.toByteArray("openssh-key-v1\0"); // C string so null terminated
 
     /**
      * Encode a cipher parameters into an openssh private key.
