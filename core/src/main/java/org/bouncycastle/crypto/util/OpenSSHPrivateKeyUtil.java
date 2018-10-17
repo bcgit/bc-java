@@ -207,7 +207,7 @@ public class OpenSSHPrivateKeyUtil
             SSHBuffer kIn = new SSHBuffer(AUTH_MAGIC, blob);
 
             // Cipher name.
-            String cipherName = new String(kIn.readString());
+            String cipherName = Strings.fromByteArray(kIn.readString());
 
             if (!"none".equals(cipherName))
             {
