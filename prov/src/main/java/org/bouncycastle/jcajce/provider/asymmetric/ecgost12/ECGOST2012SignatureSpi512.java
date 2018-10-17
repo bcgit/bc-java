@@ -10,7 +10,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
-import org.bouncycastle.crypto.DSA;
+import org.bouncycastle.crypto.DSAExt;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.GOST3411_2012_512Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -31,7 +31,7 @@ public class ECGOST2012SignatureSpi512
 {
 
     private Digest digest;
-    private DSA signer;
+    private DSAExt signer;
     private int size = 128;
     private int halfSize = 64;
 

@@ -85,7 +85,8 @@ public class RegressionTest
         new DSTU7624Test(),
         new GOST3412Test(),
         new GOST3410KeyPairTest(),
-        new EdECTest()
+        new EdECTest(),
+        new OpenSSHSpecTests()
     };
 
     public static void main(

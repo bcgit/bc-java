@@ -34,6 +34,7 @@ class ProvSSLParameters
     private boolean useCipherSuitesOrder;
     private List<BCSNIMatcher> sniMatchers;
     private List<BCSNIServerName> sniServerNames;
+    private String[] applicationProtocols = new String[0];
 
     ProvSSLParameters(ProvSSLContextSpi context, String[] cipherSuites, String[] protocols)
     {
@@ -53,7 +54,13 @@ class ProvSSLParameters
         p.useCipherSuitesOrder = useCipherSuitesOrder;
         p.sniMatchers = sniMatchers;
         p.sniServerNames = sniServerNames;
+        p.applicationProtocols = applicationProtocols;
         return p;
+    }
+
+    public String[] getCipherSuites()
+    {
+        return cipherSuites.clone();
     }
 
     public void setCipherSuites(String[] cipherSuites)
@@ -64,6 +71,17 @@ class ProvSSLParameters
         }
 
         this.cipherSuites = cipherSuites.clone();
+    }
+
+    public String[] getProtocols()
+    {
+        return protocols.clone();
+    }
+
+    String[] getProtocolsArray()
+    {
+        // NOTE: The mechanism of ProvSSLContextSpi.updateDefaultProtocols depends on this not making a copy
+        return protocols;
     }
 
     public void setProtocols(String[] protocols)
@@ -82,42 +100,26 @@ class ProvSSLParameters
         this.protocols = protocols;
     }
 
+    public boolean getNeedClientAuth()
+    {
+        return needClientAuth;
+    }
+
     public void setNeedClientAuth(boolean needClientAuth)
     {
         this.needClientAuth = needClientAuth;
         this.wantClientAuth = false;
     }
 
+    public boolean getWantClientAuth()
+    {
+        return wantClientAuth;
+    }
+
     public void setWantClientAuth(boolean wantClientAuth)
     {
         this.needClientAuth = false;
         this.wantClientAuth = wantClientAuth;
-    }
-
-    public String[] getCipherSuites()
-    {
-        return cipherSuites.clone();
-    }
-
-    public String[] getProtocols()
-    {
-        return protocols.clone();
-    }
-
-    String[] getProtocolsArray()
-    {
-        // NOTE: The mechanism of ProvSSLContextSpi.updateDefaultProtocols depends on this not making a copy
-        return protocols;
-    }
-
-    public boolean getNeedClientAuth()
-    {
-        return needClientAuth;
-    }
-
-    public boolean getWantClientAuth()
-    {
-        return wantClientAuth;
     }
 
     public Object getAlgorithmConstraints()
@@ -168,5 +170,15 @@ class ProvSSLParameters
     public void setSNIMatchers(Collection<BCSNIMatcher> matchers)
     {
         this.sniMatchers = copyList(matchers);
+    }
+
+    public String[] getApplicationProtocols()
+    {
+        return applicationProtocols.clone();
+    }
+
+    public void setApplicationProtocols(String[] applicationProtocols)
+    {
+        this.applicationProtocols = applicationProtocols.clone();
     }
 }

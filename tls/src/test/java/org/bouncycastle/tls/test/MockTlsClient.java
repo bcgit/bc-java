@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.security.SecureRandom;
 import java.util.Hashtable;
+import java.util.Vector;
 
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.tls.AlertDescription;
@@ -13,6 +14,7 @@ import org.bouncycastle.tls.ChannelBinding;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.MaxFragmentLength;
+import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
@@ -36,6 +38,14 @@ class MockTlsClient
         super(new BcTlsCrypto(new SecureRandom()));
 
         this.session = session;
+    }
+
+    protected Vector getProtocolNames()
+    {
+        Vector protocolNames = new Vector();
+        protocolNames.addElement(ProtocolName.HTTP_1_1);
+        protocolNames.addElement(ProtocolName.HTTP_2_TLS);
+        return protocolNames;
     }
 
     public TlsSession getSessionToResume()
@@ -133,11 +143,11 @@ class MockTlsClient
     {
         super.notifyHandshakeComplete();
 
-        byte[] tlsServerEndPoint = context.exportChannelBinding(ChannelBinding.tls_server_end_point);
-        System.out.println("'tls-server-end-point': " + hex(tlsServerEndPoint));
-
-        byte[] tlsUnique = context.exportChannelBinding(ChannelBinding.tls_unique);
-        System.out.println("'tls-unique': " + hex(tlsUnique));
+        ProtocolName protocolName = context.getSecurityParameters().getApplicationProtocol();
+        if (protocolName != null)
+        {
+            System.out.println("Client ALPN: " + protocolName.getUtf8Decoding());
+        }
 
         TlsSession newSession = context.getResumableSession();
         if (newSession != null)
@@ -147,12 +157,18 @@ class MockTlsClient
 
             if (this.session != null && Arrays.areEqual(this.session.getSessionID(), newSessionID))
             {
-                System.out.println("Resumed session: " + hex);
+                System.out.println("Client resumed session: " + hex);
             }
             else
             {
-                System.out.println("Established session: " + hex);
+                System.out.println("Client established session: " + hex);
+
+                byte[] tlsServerEndPoint = context.exportChannelBinding(ChannelBinding.tls_server_end_point);
+                System.out.println("Client 'tls-server-end-point': " + hex(tlsServerEndPoint));
             }
+
+            byte[] tlsUnique = context.exportChannelBinding(ChannelBinding.tls_unique);
+            System.out.println("Client 'tls-unique': " + hex(tlsUnique));
 
             this.session = newSession;
         }

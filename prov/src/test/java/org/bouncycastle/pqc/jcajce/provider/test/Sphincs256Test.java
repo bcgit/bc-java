@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.jcajce.provider.test;
 
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -1131,7 +1132,7 @@ public class Sphincs256Test
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCS256", "BCPQC");
 
-        kpg.initialize(new SPHINCS256KeyGenParameterSpec(SPHINCS256KeyGenParameterSpec.SHA512_256), new RiggedRandom());
+        kpg.initialize(new SPHINCS256KeyGenParameterSpec(SPHINCS256KeyGenParameterSpec.SHA3_256), new RiggedRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -1144,6 +1145,102 @@ public class Sphincs256Test
         byte[] s = sig.sign();
 
         assertTrue(Arrays.areEqual(expSha3Sig, s));
+    }
+
+    public void testSphincsRandomSigSHA3()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCS256", "BCPQC");
+
+        kpg.initialize(new SPHINCS256KeyGenParameterSpec(SPHINCS256KeyGenParameterSpec.SHA3_256), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        Signature sig = Signature.getInstance("SHA3-512withSPHINCS256", "BCPQC");
+
+        // random should be ignored...
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+
+        sig.update(msg, 0, msg.length);
+
+        byte[] s = sig.sign();
+
+        sig = Signature.getInstance("SHA3-512withSPHINCS256", "BCPQC");
+
+        sig.initVerify(kp.getPublic());
+
+        sig.update(msg, 0, msg.length);
+
+        assertTrue(sig.verify(s));
+
+        sig = Signature.getInstance("SHA512withSPHINCS256", "BCPQC");
+        try
+        {
+            sig.initVerify(kp.getPublic());
+            fail("no message");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals("SPHINCS-256 signature for tree digest: 2.16.840.1.101.3.4.2.8", e.getMessage());
+        }
+
+        try
+        {
+            sig.initSign(kp.getPrivate());
+            fail("no message");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals("SPHINCS-256 signature for tree digest: 2.16.840.1.101.3.4.2.8", e.getMessage());
+        }
+    }
+
+    public void testSphincsRandomSigSHA2()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCS256", "BCPQC");
+
+        kpg.initialize(new SPHINCS256KeyGenParameterSpec(SPHINCS256KeyGenParameterSpec.SHA512_256), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        Signature sig = Signature.getInstance("SHA512withSPHINCS256", "BCPQC");
+
+        // random should be ignored...
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+
+        sig.update(msg, 0, msg.length);
+
+        byte[] s = sig.sign();
+
+        sig = Signature.getInstance("SHA512withSPHINCS256", "BCPQC");
+
+        sig.initVerify(kp.getPublic());
+
+        sig.update(msg, 0, msg.length);
+  
+        assertTrue(sig.verify(s));
+
+        sig = Signature.getInstance("SHA3-512withSPHINCS256", "BCPQC");
+        try
+        {
+            sig.initVerify(kp.getPublic());
+            fail("no message");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals("SPHINCS-256 signature for tree digest: 2.16.840.1.101.3.4.2.6", e.getMessage());
+        }
+
+        try
+        {
+            sig.initSign(kp.getPrivate());
+            fail("no message");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals("SPHINCS-256 signature for tree digest: 2.16.840.1.101.3.4.2.6", e.getMessage());
+        }
     }
 
     private static class RiggedRandom

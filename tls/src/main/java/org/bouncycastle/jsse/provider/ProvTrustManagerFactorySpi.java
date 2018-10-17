@@ -99,7 +99,7 @@ class ProvTrustManagerFactorySpi
         {
             if (ks == null)
             {
-                ks = createTrustStore();
+                String defaultType = KeyStore.getDefaultType();
 
                 String tsPath = null;
                 char[] tsPassword = null;
@@ -120,12 +120,16 @@ class ProvTrustManagerFactorySpi
                 }
                 else if (new File(JSSECACERTS_PATH).exists())
                 {
+                    defaultType = "jks";
                     tsPath = JSSECACERTS_PATH;
                 }
                 else if (new File(CACERTS_PATH).exists())
                 {
+                    defaultType = "jks";
                     tsPath = CACERTS_PATH;
                 }
+
+                ks = createTrustStore(defaultType);
 
                 if (tsPath == null)
                 {
@@ -184,21 +188,21 @@ class ProvTrustManagerFactorySpi
         }
     }
 
-    private String getTrustStoreType()
+    private String getTrustStoreType(String defaultType)
     {
         String tsType = PropertyUtils.getSystemProperty("javax.net.ssl.trustStoreType");
         if (tsType == null)
         {
-            tsType = KeyStore.getDefaultType();
+            tsType = defaultType;
         }
 
         return tsType;
     }
 
-    private KeyStore createTrustStore()
+    private KeyStore createTrustStore(String defaultType)
         throws NoSuchProviderException, KeyStoreException
     {
-        String tsType = getTrustStoreType();
+        String tsType = getTrustStoreType(defaultType);
         String tsProv = PropertyUtils.getSystemProperty("javax.net.ssl.trustStoreProvider");
         KeyStore ts = (tsProv == null || tsProv.length() < 1)
             ?   KeyStore.getInstance(tsType)

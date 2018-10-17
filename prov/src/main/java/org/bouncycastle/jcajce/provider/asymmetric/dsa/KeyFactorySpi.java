@@ -15,7 +15,15 @@ import java.security.spec.KeySpec;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.params.DSAParameters;
+import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
+import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
+import org.bouncycastle.crypto.util.OpenSSHPrivateKeyUtil;
+import org.bouncycastle.crypto.util.OpenSSHPublicKeyUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
+import org.bouncycastle.jce.spec.OpenSSHPrivateKeySpec;
+import org.bouncycastle.jce.spec.OpenSSHPublicKeySpec;
 
 public class KeyFactorySpi
     extends BaseKeyFactorySpi
@@ -40,6 +48,30 @@ public class KeyFactorySpi
             java.security.interfaces.DSAPrivateKey k = (java.security.interfaces.DSAPrivateKey)key;
 
             return new DSAPrivateKeySpec(k.getX(), k.getParams().getP(), k.getParams().getQ(), k.getParams().getG());
+        }
+        else if (spec.isAssignableFrom(OpenSSHPublicKeySpec.class) && key instanceof java.security.interfaces.DSAPublicKey)
+        {
+            DSAPublicKey k = (DSAPublicKey)key;
+            try
+            {
+                return new OpenSSHPublicKeySpec(OpenSSHPublicKeyUtil.encodePublicKey(new DSAPublicKeyParameters(k.getY(), new DSAParameters(k.getParams().getP(), k.getParams().getQ(), k.getParams().getG()))));
+            }
+            catch (IOException e)
+            {
+                throw new IllegalArgumentException("unable to produce encoding: " + e.getMessage());
+            }
+        }
+        else if (spec.isAssignableFrom(OpenSSHPrivateKeySpec.class) && key instanceof java.security.interfaces.DSAPrivateKey)
+        {
+            DSAPrivateKey k = (DSAPrivateKey)key;
+            try
+            {
+                return new OpenSSHPrivateKeySpec(OpenSSHPrivateKeyUtil.encodePrivateKey(new DSAPrivateKeyParameters(k.getX(), new DSAParameters(k.getParams().getP(), k.getParams().getQ(), k.getParams().getG()))));
+            }
+            catch (IOException e)
+            {
+                throw new IllegalArgumentException("unable to produce encoding: " + e.getMessage());
+            }
         }
 
         return super.engineGetKeySpec(key, spec);
@@ -99,6 +131,24 @@ public class KeyFactorySpi
         {
             return new BCDSAPrivateKey((DSAPrivateKeySpec)keySpec);
         }
+        else if (keySpec instanceof OpenSSHPrivateKeySpec)
+        {
+            CipherParameters params = OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(((OpenSSHPrivateKeySpec)keySpec).getEncoded());
+            if (params instanceof DSAPrivateKeyParameters)
+            {
+                return engineGeneratePrivate(
+                    new DSAPrivateKeySpec(
+                        ((DSAPrivateKeyParameters)params).getX(),
+                        ((DSAPrivateKeyParameters)params).getParameters().getP(),
+                        ((DSAPrivateKeyParameters)params).getParameters().getQ(),
+                        ((DSAPrivateKeyParameters)params).getParameters().getG()));
+            }
+            else
+            {
+                throw new IllegalArgumentException("openssh private key is not dsa privare key");
+            }
+
+        }
 
         return super.engineGeneratePrivate(keySpec);
     }
@@ -118,11 +168,27 @@ public class KeyFactorySpi
                 throw new InvalidKeySpecException("invalid KeySpec: " + e.getMessage())
                 {
                     public Throwable getCause()
-                                {
-                                    return e;
-                                }
+                    {
+                        return e;
+                    }
                 };
             }
+        }
+        else if (keySpec instanceof OpenSSHPublicKeySpec)
+        {
+            CipherParameters parameters = OpenSSHPublicKeyUtil.parsePublicKey(((OpenSSHPublicKeySpec)keySpec).getEncoded());
+
+            if (parameters instanceof DSAPublicKeyParameters)
+            {
+                return engineGeneratePublic(
+                    new DSAPublicKeySpec(((DSAPublicKeyParameters)parameters).getY(),
+                        ((DSAPublicKeyParameters)parameters).getParameters().getP(),
+                        ((DSAPublicKeyParameters)parameters).getParameters().getQ(),
+                        ((DSAPublicKeyParameters)parameters).getParameters().getG()));
+            }
+
+            throw new IllegalArgumentException("openssh public key is not dsa public key");
+
         }
 
         return super.engineGeneratePublic(keySpec);
