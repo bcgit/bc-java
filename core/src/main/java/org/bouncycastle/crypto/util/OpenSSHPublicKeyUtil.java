@@ -18,6 +18,9 @@ import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 import org.bouncycastle.util.Strings;
 
 
+/**
+ * OpenSSHPublicKeyUtil utility classes for parsing OpenSSH public keys.
+ */
 public class OpenSSHPublicKeyUtil
 {
     private OpenSSHPublicKeyUtil()
@@ -30,12 +33,14 @@ public class OpenSSHPublicKeyUtil
     public static final String ED_25519 = "ssh-ed25519";
     private static final String DSS = "ssh-dss";
 
-    public static CipherParameters parsePublicKey(byte[] encoded)
-    {
-        SSHBuffer buffer = new SSHBuffer(encoded);
-        return parsePublicKey(buffer);
-    }
 
+    /**
+     * Encode a public key from an AsymmetricKeyParameter instance.
+     *
+     * @param cipherParameters The key to encode.
+     * @return the key OpenSSH encoded.
+     * @throws IOException
+     */
     public static byte[] encodePublicKey(AsymmetricKeyParameter cipherParameters)
         throws IOException
     {
@@ -106,7 +111,25 @@ public class OpenSSHPublicKeyUtil
     }
 
 
-    public static CipherParameters parsePublicKey(SSHBuffer buffer)
+    /**
+     * Parse an encoded public key, returning a CipherParameters instance appropriate for the type.
+     *
+     * @param encoded The encoded public key.
+     * @return A CipherParameters instance.
+     */
+    public static CipherParameters parsePublicKey(byte[] encoded)
+    {
+        SSHBuffer buffer = new SSHBuffer(encoded);
+        return parsePublicKey(buffer);
+    }
+
+    /**
+     * Parse a public key from an SSHBuffer instance.
+     *
+     * @param buffer containing the SSH public key.
+     * @return A CipherParameters instance.
+     */
+    protected static CipherParameters parsePublicKey(SSHBuffer buffer)
     {
         CipherParameters result = null;
 
