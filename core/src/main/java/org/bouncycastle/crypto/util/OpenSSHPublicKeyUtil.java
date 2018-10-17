@@ -5,7 +5,6 @@ import java.math.BigInteger;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
@@ -30,7 +29,7 @@ public class OpenSSHPublicKeyUtil
     public static final String ED_25519 = "ssh-ed25519";
     private static final String DSS = "ssh-dss";
 
-    public static CipherParameters parsePublicKey(byte[] encoded)
+    public static AsymmetricKeyParameter parsePublicKey(byte[] encoded)
     {
         SSHBuffer buffer = new SSHBuffer(encoded);
         return parsePublicKey(buffer);
@@ -49,7 +48,7 @@ public class OpenSSHPublicKeyUtil
 
         if (cipherParameters instanceof RSAKeyParameters)
         {
-            if (((RSAKeyParameters)cipherParameters).isPrivate())
+            if (cipherParameters.isPrivate())
             {
                 throw new IllegalArgumentException("RSAKeyParamaters was for encryption");
             }
@@ -106,9 +105,9 @@ public class OpenSSHPublicKeyUtil
     }
 
 
-    public static CipherParameters parsePublicKey(SSHBuffer buffer)
+    public static AsymmetricKeyParameter parsePublicKey(SSHBuffer buffer)
     {
-        CipherParameters result = null;
+        AsymmetricKeyParameter result = null;
 
         String magic = Strings.fromByteArray(buffer.readString());
         if (RSA.equals(magic))

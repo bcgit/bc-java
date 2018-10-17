@@ -34,7 +34,7 @@ public class OpenSSHPrivateKeyUtil
 
     }
 
-    public static final byte[] AUTH_MAGIC = Strings.toByteArray("openssh-key-v1\0"); // C string so null terminated
+    static final byte[] AUTH_MAGIC = Strings.toByteArray("openssh-key-v1\0"); // C string so null terminated
 
     /**
      * Encode a cipher parameters into an openssh private key.
@@ -90,9 +90,8 @@ public class OpenSSHPrivateKeyUtil
         }
         else if (params instanceof Ed25519PrivateKeyParameters)
         {
-
-
             SSHBuilder builder = new SSHBuilder();
+
             builder.write(AUTH_MAGIC);
             builder.writeString("none");
             builder.writeString("none");
@@ -102,10 +101,8 @@ public class OpenSSHPrivateKeyUtil
 
             Ed25519PublicKeyParameters publicKeyParameters = ((Ed25519PrivateKeyParameters)params).generatePublicKey();
 
-
             byte[] pkEncoded = OpenSSHPublicKeyUtil.encodePublicKey(publicKeyParameters);
             builder.rawArray(pkEncoded);
-
 
             SSHBuilder pkBuild = new SSHBuilder();
 
@@ -130,7 +127,6 @@ public class OpenSSHPrivateKeyUtil
 
     }
 
-
     /**
      * Parse a private key.
      * <p>
@@ -147,7 +143,7 @@ public class OpenSSHPrivateKeyUtil
     {
         CipherParameters result = null;
 
-        try
+        if  (blob[0] == 0x30)
         {
             ASN1Sequence sequence = ASN1Sequence.getInstance(blob);
 
@@ -202,10 +198,9 @@ public class OpenSSHPrivateKeyUtil
                 }
             }
         }
-        catch (Throwable t)
+        else
         {
             SSHBuffer kIn = new SSHBuffer(AUTH_MAGIC, blob);
-
             // Cipher name.
             String cipherName = Strings.fromByteArray(kIn.readString());
 
@@ -217,7 +212,7 @@ public class OpenSSHPrivateKeyUtil
             // KDF name
             kIn.readString();
 
-            // KDF
+            // KDF options
             kIn.readString();
 
             long publicKeyCount = kIn.readU32();

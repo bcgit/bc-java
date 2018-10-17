@@ -2,32 +2,27 @@ package org.bouncycastle.jce.spec;
 
 import java.security.spec.EncodedKeySpec;
 
-import org.bouncycastle.crypto.util.OpenSSHPrivateKeyUtil;
-
 public class OpenSSHPrivateKeySpec
     extends EncodedKeySpec
-
 {
     private final String format;
 
     public OpenSSHPrivateKeySpec(byte[] encodedKey)
     {
-
         super(encodedKey);
 
-        boolean openssh = true;
-
-        for (int t = 0; t < OpenSSHPrivateKeyUtil.AUTH_MAGIC.length; t++)
+        if  (encodedKey[0] == 0x30)   // DER SEQUENCE
         {
-            if (encodedKey[t] != OpenSSHPrivateKeyUtil.AUTH_MAGIC[t])
-            {
-                openssh = false;
-                break;
-            }
+            format = "ASN.1";
         }
-
-        format = openssh ? "OpenSSH" : "ASN.1";
-
+        else if (encodedKey[0] == 'o')
+        {
+            format = "OpenSSH";
+        }
+        else
+        {
+            throw new IllegalArgumentException("unknown byte encoding");
+        }
     }
 
     public String getFormat()
