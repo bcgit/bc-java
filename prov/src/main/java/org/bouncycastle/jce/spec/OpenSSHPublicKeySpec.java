@@ -5,12 +5,24 @@ import java.security.spec.EncodedKeySpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
+/**
+ * Holds an OpenSSH encoded public key.
+ */
 public class OpenSSHPublicKeySpec
     extends EncodedKeySpec
 {
     private static final String[] allowedTypes = new String[]{"ssh-rsa", "ssh-ed25519", "ssh-dss"};
     private final String type;
 
+
+    /**
+     * Construct and instance and determine the OpenSSH public key type.
+     * The current types are ssh-rsa, ssh-ed25519, ssh-dss and ecdsa-*
+     * <p>
+     * It does not validate the key beyond identifying the type.
+     *
+     * @param encodedKey
+     */
     public OpenSSHPublicKeySpec(byte[] encodedKey)
     {
         super(encodedKey);
@@ -53,6 +65,11 @@ public class OpenSSHPublicKeySpec
         return "OpenSSH";
     }
 
+    /**
+     * The type of OpenSSH public key.
+     *
+     * @return the type.
+     */
     public String getType()
     {
         return type;
