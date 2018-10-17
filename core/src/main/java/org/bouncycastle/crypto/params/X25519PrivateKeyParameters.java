@@ -21,7 +21,7 @@ public final class X25519PrivateKeyParameters
     {
         super(true);
 
-        random.nextBytes(data);
+        X25519.generatePrivateKey(random, data);
     }
 
     public X25519PrivateKeyParameters(byte[] buf, int off)
@@ -62,6 +62,9 @@ public final class X25519PrivateKeyParameters
     {
         byte[] encoded = new byte[X25519.POINT_SIZE];
         publicKey.encode(encoded, 0);
-        X25519.scalarMult(data, 0, encoded, 0, buf, off);
+        if (!X25519.calculateAgreement(data, 0, encoded, 0, buf, off))
+        {
+            throw new IllegalStateException("X25519 agreement failed");
+        }
     }
 }

@@ -38,6 +38,7 @@ public abstract class AbstractTlsServer
     protected ProtocolVersion serverVersion;
     protected int selectedCipherSuite;
     protected short selectedCompressionMethod;
+    protected ProtocolName selectedProtocolName;
     protected Hashtable serverExtensions;
 
     public AbstractTlsServer(TlsCrypto crypto)
@@ -119,6 +120,11 @@ public abstract class AbstractTlsServer
             maxBits = Math.max(maxBits, NamedGroup.getFiniteFieldBits(clientSupportedGroups[i]));
         }
         return maxBits;
+    }
+
+    protected Vector getProtocolNames()
+    {
+        return null;
     }
 
     protected boolean isSelectableCipherSuite(int cipherSuite, int availCurveBits, int availFiniteFieldBits, Vector sigAlgs)
@@ -226,7 +232,20 @@ public abstract class AbstractTlsServer
         ecConfig.setPointCompression(compressed);
         return ecConfig;
     }
-    
+
+    protected ProtocolName selectProtocolName(Vector clientProtocolNames, Vector serverProtocolNames)
+    {
+        for (int i = 0; i < serverProtocolNames.size(); ++i)
+        {
+            ProtocolName serverProtocolName = (ProtocolName)serverProtocolNames.elementAt(i);
+            if (clientProtocolNames.contains(serverProtocolName))
+            {
+                return serverProtocolName;
+            }
+        }
+        return null;
+    }
+
     public void init(TlsServerContext context)
     {
         this.context = context;
@@ -276,6 +295,20 @@ public abstract class AbstractTlsServer
 
         if (clientExtensions != null)
         {
+            Vector clientProtocolNames = TlsExtensionsUtils.getALPNExtensionClient(clientExtensions);
+            if (clientProtocolNames != null && !clientProtocolNames.isEmpty())
+            {
+                Vector serverProtocolNames = getProtocolNames();
+                if (serverProtocolNames != null && !serverProtocolNames.isEmpty())
+                {
+                    this.selectedProtocolName = selectProtocolName(clientProtocolNames, serverProtocolNames);
+                    if (selectedProtocolName == null)
+                    {
+                        throw new TlsFatalAlert(AlertDescription.no_application_protocol);
+                    }
+                }
+            }
+
             this.encryptThenMACOffered = TlsExtensionsUtils.hasEncryptThenMACExtension(clientExtensions);
 
             this.maxFragmentLengthOffered = TlsExtensionsUtils.getMaxFragmentLengthExtension(clientExtensions);
@@ -391,6 +424,11 @@ public abstract class AbstractTlsServer
     public Hashtable getServerExtensions()
         throws IOException
     {
+        if (this.selectedProtocolName != null)
+        {
+            TlsExtensionsUtils.addALPNExtensionServer(checkServerExtensions(), selectedProtocolName);
+        }
+
         if (this.encryptThenMACOffered && allowEncryptThenMAC())
         {
             /*

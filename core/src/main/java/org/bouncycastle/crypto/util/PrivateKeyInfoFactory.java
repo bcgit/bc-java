@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
@@ -110,7 +111,8 @@ public class PrivateKeyInfoFactory
             }
 
             return new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params),
-                new ECPrivateKey(orderBitLength, priv.getD(), params),
+                new ECPrivateKey(orderBitLength, priv.getD(),
+                    new DERBitString(domainParams.getG().multiply(priv.getD()).getEncoded(false)), params),
                 attributes);
         }
         else if (privateKey instanceof X448PrivateKeyParameters)

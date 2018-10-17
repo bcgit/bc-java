@@ -333,7 +333,7 @@ public class SMIMESignedWriter
 
             Base64OutputStream stream = new Base64OutputStream(bOut);
 
-            return new ContentOutputStream(sigGen.open(stream, false, mimeOut), mimeOut, bOut, stream);
+            return new ContentOutputStream(sigGen.open(stream,false, SMimeUtils.createUnclosable(mimeOut)), mimeOut, bOut, stream);
         }
     }
 

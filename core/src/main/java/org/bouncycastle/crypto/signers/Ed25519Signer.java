@@ -54,7 +54,7 @@ public class Ed25519Signer
 
     public byte[] generateSignature()
     {
-        if (!forSigning)
+        if (!forSigning || null == privateKey)
         {
             throw new IllegalStateException("Ed25519Signer not initialised for signature generation.");
         }
@@ -64,7 +64,7 @@ public class Ed25519Signer
 
     public boolean verifySignature(byte[] signature)
     {
-        if (forSigning)
+        if (forSigning || null == publicKey)
         {
             throw new IllegalStateException("Ed25519Signer not initialised for verification");
         }

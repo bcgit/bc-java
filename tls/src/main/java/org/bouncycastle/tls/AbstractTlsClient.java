@@ -82,6 +82,11 @@ public abstract class AbstractTlsClient
         return new DefaultTlsECConfigVerifier(minimumCurveBits, supportedGroups);
     }
 
+    protected Vector getProtocolNames()
+    {
+        return null;
+    }
+
     protected CertificateStatusRequest getCertificateStatusRequest()
     {
         return new CertificateStatusRequest(CertificateStatusType.ocsp, new OCSPStatusRequest(null, null));
@@ -178,6 +183,12 @@ public abstract class AbstractTlsClient
 
         TlsExtensionsUtils.addEncryptThenMACExtension(clientExtensions);
         TlsExtensionsUtils.addExtendedMasterSecretExtension(clientExtensions);
+
+        Vector protocolNames = getProtocolNames();
+        if (protocolNames != null)
+        {
+            TlsExtensionsUtils.addALPNExtensionClient(clientExtensions, protocolNames);
+        }
 
         Vector sniServerNames = getSNIServerNames();
         if (sniServerNames != null)

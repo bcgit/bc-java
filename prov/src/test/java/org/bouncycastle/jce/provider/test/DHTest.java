@@ -1489,9 +1489,24 @@ public class DHTest
         isTrue(Arrays.areEqual(aKey.getEncoded(), bKey.getEncoded()));
     }
 
+    private void generalKeyTest()
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+
+        int[] keySizes = new int[]{512, 768, 1024, 2048};
+        for (int i = 0; i != keySizes.length; i++)
+        {
+            final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DH", "BC");
+            keyPairGenerator.initialize(keySizes[i], random);
+            keyPairGenerator.generateKeyPair();
+        }
+    }
+
     public void performTest()
         throws Exception
     {
+        generalKeyTest();
         testDefault(64, g512, p512);
         mqvTest();
 

@@ -3,6 +3,8 @@ package org.bouncycastle.bcpg;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.bouncycastle.util.Arrays;
+
 /**
  * Basic output stream.
  */
@@ -347,6 +349,7 @@ public class BCPGOutputStream
         if (partialBuffer != null)
         {
             partialFlush(true);
+            Arrays.fill(partialBuffer, (byte)0);
             partialBuffer = null;
         }
     }
