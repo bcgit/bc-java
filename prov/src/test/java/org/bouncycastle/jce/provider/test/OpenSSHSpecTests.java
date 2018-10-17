@@ -12,6 +12,7 @@ import org.bouncycastle.jce.spec.OpenSSHPrivateKeySpec;
 import org.bouncycastle.jce.spec.OpenSSHPublicKeySpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -136,6 +137,40 @@ public class OpenSSHSpecTests
         isTrue("ECPrivate key not same", Arrays.areEqual(rawPriv, ecdsaPrivateSpec.getEncoded()));
     }
 
+    public void testED25519()
+        throws Exception
+    {
+
+        byte[] rawPub = Base64.decode("AAAAC3NzaC1lZDI1NTE5AAAAIM4CaV7WQcy0lht0hclgXf4Olyvzvv2fnUvQ3J8IYsWF");
+        byte[] rawPriv = new PemReader(new StringReader("-----BEGIN OPENSSH PRIVATE KEY-----\n" +
+            "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW\n" +
+            "QyNTUxOQAAACDOAmle1kHMtJYbdIXJYF3+Dpcr8779n51L0NyfCGLFhQAAAKBTr4PvU6+D\n" +
+            "7wAAAAtzc2gtZWQyNTUxOQAAACDOAmle1kHMtJYbdIXJYF3+Dpcr8779n51L0NyfCGLFhQ\n" +
+            "AAAED4BTHeR3YD7CFQqusztfL5K+YSD4mRGLBwb7jHiXxIJM4CaV7WQcy0lht0hclgXf4O\n" +
+            "lyvzvv2fnUvQ3J8IYsWFAAAAG21lZ2Fud29vZHNAdHljaGUtMzI2NS5sb2NhbAEC\n" +
+            "-----END OPENSSH PRIVATE KEY-----\n")).readPemObject().getContent();
+
+        OpenSSHPublicKeySpec pubSpec = new OpenSSHPublicKeySpec(rawPub);
+        OpenSSHPrivateKeySpec privSpec = new OpenSSHPrivateKeySpec(rawPriv);
+
+        KeyFactory kpf = KeyFactory.getInstance("ED25519", "BC");
+
+        PublicKey pk = kpf.generatePublic(pubSpec);
+        PrivateKey prk = kpf.generatePrivate(privSpec);
+
+        OpenSSHPublicKeySpec ecdsaPublicKeySpec = kpf.getKeySpec(pk, OpenSSHPublicKeySpec.class);
+        OpenSSHPrivateKeySpec ecdsaPrivateSpec = kpf.getKeySpec(prk, OpenSSHPrivateKeySpec.class);
+
+
+        isTrue("EDPublic key not same", Arrays.areEqual(rawPub, ecdsaPublicKeySpec.getEncoded()));
+
+        isTrue("EDPrivate key not same", Arrays.areEqual(
+            Hex.decode("6f70656e7373682d6b65792d763100000000046e6f6e65000000046e6f6e650000000000000001000000330000000b7373682d6564323535313900000020ce02695ed641ccb4961b7485c9605dfe0e972bf3befd9f9d4bd0dc9f0862c5850000008300ff00ff00ff00ff0000000b7373682d6564323535313900000020ce02695ed641ccb4961b7485c9605dfe0e972bf3befd9f9d4bd0dc9f0862c58500000040f80531de477603ec2150aaeb33b5f2f92be6120f899118b0706fb8c7897c4824ce02695ed641ccb4961b7485c9605dfe0e972bf3befd9f9d4bd0dc9f0862c58500000000"),
+            ecdsaPrivateSpec.getEncoded()));
+
+    }
+
+
     public String getName()
     {
         return "OpenSSHSpec";
@@ -147,6 +182,7 @@ public class OpenSSHSpecTests
         testEncodingDSA();
         testEncodingRSA();
         testEncodingECDSA();
+        testED25519();
     }
 
     public static void main(String[] args)
