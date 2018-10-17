@@ -14,7 +14,6 @@ import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
@@ -145,9 +144,9 @@ public class OpenSSHPrivateKeyUtil
      * @param blob The key.
      * @return A cipher parameters instance.
      */
-    public static CipherParameters parsePrivateKeyBlob(byte[] blob)
+    public static AsymmetricKeyParameter parsePrivateKeyBlob(byte[] blob)
     {
-        CipherParameters result = null;
+        AsymmetricKeyParameter result = null;
 
         if  (blob[0] == 0x30)
         {

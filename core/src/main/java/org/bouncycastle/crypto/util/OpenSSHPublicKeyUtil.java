@@ -27,11 +27,19 @@ public class OpenSSHPublicKeyUtil
 
     }
 
-    public static final String RSA = "ssh-rsa";
-    public static final String ECDSA = "ecdsa";
-    public static final String ED_25519 = "ssh-ed25519";
+    private static final String RSA = "ssh-rsa";
+    private static final String ECDSA = "ecdsa";
+    private static final String ED_25519 = "ssh-ed25519";
     private static final String DSS = "ssh-dss";
 
+    /**
+     * Parse a public key.
+     * <p>
+     * This method accepts the bytes that are Base64 encoded in an OpenSSH public key file.
+     *
+     * @param encoded The key.
+     * @return An AsymmetricKeyParameter instance.
+     */
     public static AsymmetricKeyParameter parsePublicKey(byte[] encoded)
     {
         SSHBuffer buffer = new SSHBuffer(encoded);
