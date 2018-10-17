@@ -27,6 +27,9 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 
+/**
+ * A collection of utility methods for parsing OpenSSH private keys.
+ */
 public class OpenSSHPrivateKeyUtil
 {
     private OpenSSHPrivateKeyUtil()
@@ -34,10 +37,13 @@ public class OpenSSHPrivateKeyUtil
 
     }
 
+    /**
+     * Magic value for propriety OpenSSH private key.
+     **/
     public static final byte[] AUTH_MAGIC = Strings.toByteArray("openssh-key-v1\0"); // C string so null terminated
 
     /**
-     * Encode a cipher parameters into an openssh private key.
+     * Encode a cipher parameters into an OpenSSH private key.
      * This does not add headers like ----BEGIN RSA PRIVATE KEY----
      *
      * @param params the cipher parameters.
@@ -134,7 +140,7 @@ public class OpenSSHPrivateKeyUtil
     /**
      * Parse a private key.
      * <p>
-     * This method accepts the body of the openssh private key.
+     * This method accepts the body of the OpenSSH private key.
      * The easiest way to extract the body is to use PemReader, for example:
      * <p>
      * byte[] blob = new PemReader([reader]).readPemObject().getContent();
@@ -263,6 +269,9 @@ public class OpenSSHPrivateKeyUtil
         return result;
     }
 
+    /**
+     * allIntegers returns true if the sequence holds only ASN1Integer types.
+     **/
     private static boolean allIntegers(ASN1Sequence sequence)
     {
         for (int t = 0; t < sequence.size(); t++)
