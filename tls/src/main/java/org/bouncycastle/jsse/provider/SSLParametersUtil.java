@@ -16,6 +16,8 @@ abstract class SSLParametersUtil
 {
     private static final Method getAlgorithmConstraints;
     private static final Method setAlgorithmConstraints;
+    private static final Method getApplicationProtocols;
+    private static final Method setApplicationProtocols;
     private static final Method getEndpointIdentificationAlgorithm;
     private static final Method setEndpointIdentificationAlgorithm;
     private static final Method getServerNames;
@@ -133,6 +135,8 @@ abstract class SSLParametersUtil
 
         getAlgorithmConstraints = findMethod(methods, "getAlgorithmConstraints");
         setAlgorithmConstraints = findMethod(methods, "setAlgorithmConstraints");
+        getApplicationProtocols = findMethod(methods, "getApplicationProtocols");
+        setApplicationProtocols = findMethod(methods, "setApplicationProtocols");
         getEndpointIdentificationAlgorithm = findMethod(methods, "getEndpointIdentificationAlgorithm");
         setEndpointIdentificationAlgorithm = findMethod(methods, "setEndpointIdentificationAlgorithm");
         getServerNames = findMethod(methods, "getServerNames");
@@ -163,6 +167,7 @@ abstract class SSLParametersUtil
 
         ssl.setServerNames(prov.getServerNames());
         ssl.setSNIMatchers(prov.getSNIMatchers());
+        ssl.setApplicationProtocols(prov.getApplicationProtocols());
 
         return ssl;
     }
@@ -214,6 +219,13 @@ abstract class SSLParametersUtil
             invokeSetterPrivileged(ssl, setSNIMatchers, JsseUtils_8.exportSNIMatchers(prov.getSNIMatchers()));
         }
 
+        // From JDK 9
+
+        if (setApplicationProtocols != null)
+        {
+            invokeSetterPrivileged(ssl, setApplicationProtocols, prov.getApplicationProtocols());
+        }
+
         return ssl;
     }
 
@@ -256,6 +268,8 @@ abstract class SSLParametersUtil
         {
             prov.setSNIMatchers(sniMatchers);
         }
+
+        prov.setApplicationProtocols(ssl.getApplicationProtocols());
     }
 
     static void setSSLParameters(ProvSSLParameters prov, SSLParameters ssl)
@@ -321,6 +335,13 @@ abstract class SSLParametersUtil
             {
                 prov.setSNIMatchers(JsseUtils_8.importSNIMatchers(sniMatchers));
             }
+        }
+
+        // From JDK 9
+
+        if (getApplicationProtocols != null)
+        {
+            prov.setApplicationProtocols((String[])invokeGetterPrivileged(ssl, getApplicationProtocols));
         }
     }
 }

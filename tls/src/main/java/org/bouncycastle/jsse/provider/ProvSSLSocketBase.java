@@ -13,6 +13,7 @@ import java.util.Set;
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLSocket;
 
+import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.jsse.BCSSLSocket;
 
 abstract class ProvSSLSocketBase
@@ -71,6 +72,14 @@ abstract class ProvSSLSocketBase
     protected void closeSocket() throws IOException
     {
         super.close();
+    }
+
+    // @Override from JDK 9
+    public String getApplicationProtocol()
+    {
+        BCSSLConnection connection = getConnection();
+
+        return connection == null ? null : connection.getApplicationProtocol();
     }
 
     @Override

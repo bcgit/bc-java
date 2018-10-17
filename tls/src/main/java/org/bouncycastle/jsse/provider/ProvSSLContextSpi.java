@@ -38,6 +38,7 @@ class ProvSSLContextSpi
     private static Logger LOG = Logger.getLogger(ProvSSLContextSpi.class.getName());
 
     private static final String PROPERTY_CLIENT_PROTOCOLS = "jdk.tls.client.protocols";
+    private static final String PROPERTY_SERVER_PROTOCOLS = "jdk.tls.server.protocols";
 
     private static final Map<String, Integer> SUPPORTED_CIPHERSUITE_MAP = createSupportedCipherSuiteMap();
     private static final Map<String, Integer> SUPPORTED_CIPHERSUITE_MAP_FIPS = createSupportedCipherSuiteMapFips(SUPPORTED_CIPHERSUITE_MAP);
@@ -179,35 +180,35 @@ class ProvSSLContextSpi
         return Collections.unmodifiableMap(ps);
     }
 
-    private static String[] getDefaultProtocolsClient(String[] specifiedProtocols)
+    private static String[] getDefaultProtocols(String[] specifiedProtocols, String propertyName)
     {
         if (specifiedProtocols != null)
         {
             return specifiedProtocols;
         }
 
-        String[] clientProtocols = getJdkTlsClientProtocols();
-        if (clientProtocols != null)
+        String[] propertyProtocols = getJdkTlsProtocols(propertyName);
+        if (propertyProtocols != null)
         {
-            return clientProtocols;
+            return propertyProtocols;
         }
 
         return DEFAULT_PROTOCOLS;
+    }
+
+    private static String[] getDefaultProtocolsClient(String[] specifiedProtocols)
+    {
+        return getDefaultProtocols(specifiedProtocols, PROPERTY_CLIENT_PROTOCOLS);
     }
 
     private static String[] getDefaultProtocolsServer(String[] specifiedProtocols)
     {
-        if (specifiedProtocols != null)
-        {
-            return specifiedProtocols;
-        }
-
-        return DEFAULT_PROTOCOLS;
+        return getDefaultProtocols(specifiedProtocols, PROPERTY_SERVER_PROTOCOLS);
     }
 
-    private static String[] getJdkTlsClientProtocols()
+    private static String[] getJdkTlsProtocols(String propertyName)
     {
-        String prop = PropertyUtils.getStringSystemProperty(PROPERTY_CLIENT_PROTOCOLS);
+        String prop = PropertyUtils.getStringSystemProperty(propertyName);
         if (prop == null)
         {
             return null;
@@ -224,7 +225,7 @@ class ProvSSLContextSpi
 
             if (!supportedProtocols.containsKey(protocol))
             {
-                LOG.warning("'" + PROPERTY_CLIENT_PROTOCOLS + "' contains unsupported protocol: " + protocol);
+                LOG.warning("'" + propertyName + "' contains unsupported protocol: " + protocol);
             }
             else if (!JsseUtils.contains(result, protocol))
             {
@@ -233,7 +234,7 @@ class ProvSSLContextSpi
         }
         if (count < 1)
         {
-            LOG.severe("'" + PROPERTY_CLIENT_PROTOCOLS + "' contained no usable protocol values (ignoring)");
+            LOG.severe("'" + propertyName + "' contained no usable protocol values (ignoring)");
             return null;
         }
         if (count < result.length)

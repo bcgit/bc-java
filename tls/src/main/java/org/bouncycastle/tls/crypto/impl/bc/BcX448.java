@@ -7,7 +7,6 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsSecret;
-import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -16,8 +15,8 @@ import org.bouncycastle.util.Arrays;
 public class BcX448 implements TlsAgreement
 {
     protected final BcTlsCrypto crypto;
-    protected final byte[] privateKey = new byte[56];
-    protected final byte[] peerPublicKey = new byte[56];
+    protected final byte[] privateKey = new byte[X448.SCALAR_SIZE];
+    protected final byte[] peerPublicKey = new byte[X448.POINT_SIZE];
 
     public BcX448(BcTlsCrypto crypto)
     {
@@ -28,34 +27,37 @@ public class BcX448 implements TlsAgreement
     {
         crypto.getSecureRandom().nextBytes(privateKey);
 
-        byte[] publicKey = new byte[56];
+        byte[] publicKey = new byte[X448.POINT_SIZE];
         X448.scalarMultBase(privateKey, 0, publicKey, 0);
         return publicKey;
     }
 
     public void receivePeerValue(byte[] peerValue) throws IOException
     {
-        if (peerValue == null || peerValue.length != 56)
+        if (peerValue == null || peerValue.length != X448.POINT_SIZE)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        System.arraycopy(peerValue, 0, peerPublicKey, 0, 56);
+        System.arraycopy(peerValue, 0, peerPublicKey, 0, X448.POINT_SIZE);
     }
 
     public TlsSecret calculateSecret() throws IOException
     {
-        byte[] secret = new byte[56];
-        X448.scalarMult(privateKey, 0, peerPublicKey, 0, secret, 0);
-
-        Arrays.fill(privateKey, (byte)0);
-        Arrays.fill(peerPublicKey, (byte)0);
-
-        if (TlsImplUtils.isAllZeroes(secret))
+        try
         {
-            throw new TlsFatalAlert(AlertDescription.handshake_failure);
-        }
+            byte[] secret = new byte[X448.POINT_SIZE];
+            if (!X448.calculateAgreement(privateKey, 0, peerPublicKey, 0, secret, 0))
+            {
+                throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            }
 
-        return crypto.adoptLocalSecret(secret);
+            return crypto.adoptLocalSecret(secret);
+        }
+        finally
+        {
+            Arrays.fill(privateKey, (byte)0);
+            Arrays.fill(peerPublicKey, (byte)0);
+        }
     }
 }

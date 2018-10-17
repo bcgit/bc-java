@@ -12,7 +12,7 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.DSA;
+import org.bouncycastle.crypto.DSAExt;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.GOST3411Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
@@ -29,7 +29,7 @@ public class SignatureSpi
     implements PKCSObjectIdentifiers, X509ObjectIdentifiers
 {
     private Digest                  digest;
-    private DSA                     signer;
+    private DSAExt                  signer;
     private SecureRandom            random;
 
     public SignatureSpi()

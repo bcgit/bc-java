@@ -5,7 +5,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.crypto.DSA;
+import org.bouncycastle.crypto.DSAExt;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -21,7 +21,7 @@ import org.bouncycastle.math.ec.FixedPointCombMultiplier;
  * GOST R 34.10-2012 Signature Algorithm
  */
 public class ECGOST3410_2012Signer
-    implements DSA
+    implements DSAExt
 {
     ECKeyParameters key;
 
@@ -52,6 +52,11 @@ public class ECGOST3410_2012Signer
         }
     }
 
+    public BigInteger getOrder()
+    {
+        return key.getParameters().getN();
+    }
+
     /**
      * generate a signature for the given message using the key we were
      * initialised with. For conventional GOST3410 2012 the message should be a GOST3411 2012
@@ -62,7 +67,6 @@ public class ECGOST3410_2012Signer
     public BigInteger[] generateSignature(
         byte[] message)
     {
-
         byte[] mRev = new byte[message.length]; // conversion is little-endian
         for (int i = 0; i != mRev.length; i++)
         {

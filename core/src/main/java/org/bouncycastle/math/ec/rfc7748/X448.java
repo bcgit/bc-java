@@ -1,5 +1,9 @@
 package org.bouncycastle.math.ec.rfc7748;
 
+import java.security.SecureRandom;
+
+import org.bouncycastle.util.Arrays;
+
 public abstract class X448
 {
     public static final int POINT_SIZE = 56;
@@ -20,6 +24,12 @@ public abstract class X448
 
     private static int[] precompBase = null;
 
+    public static boolean calculateAgreement(byte[] k, int kOff, byte[] u, int uOff, byte[] r, int rOff)
+    {
+        scalarMult(k, kOff, u, uOff, r, rOff);
+        return !Arrays.areAllZeroes(r, rOff, POINT_SIZE);
+    }
+
     private static int decode32(byte[] bs, int off)
     {
         int n = bs[  off] & 0xFF;
@@ -38,6 +48,14 @@ public abstract class X448
 
         n[ 0] &= 0xFFFFFFFC;
         n[13] |= 0x80000000;
+    }
+
+    public static void generatePrivateKey(SecureRandom random, byte[] k)
+    {
+        random.nextBytes(k);
+
+        k[0] &= 0xFC;
+        k[SCALAR_SIZE - 1] |= 0x80;
     }
 
     private static void pointDouble(int[] x, int[] z)

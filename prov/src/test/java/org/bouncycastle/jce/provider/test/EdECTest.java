@@ -6,12 +6,14 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidParameterException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
 import java.security.spec.AlgorithmParameterSpec;
@@ -221,6 +223,12 @@ public class EdECTest
 
         isTrue("X448".equals(kp.getPublic().getAlgorithm()));
 
+        kpGen.initialize(448);
+
+        kp = kpGen.generateKeyPair();
+
+        isTrue("X448".equals(kp.getPublic().getAlgorithm()));
+
         kpGen = KeyPairGenerator.getInstance("XDH", "BC");
         
         kpGen.initialize(new XDHParameterSpec(XDHParameterSpec.X25519));
@@ -230,6 +238,18 @@ public class EdECTest
         isTrue("X25519".equals(kp.getPublic().getAlgorithm()));
 
         kpGen.initialize(new ECGenParameterSpec(XDHParameterSpec.X25519));
+
+        kp = kpGen.generateKeyPair();
+
+        isTrue("X25519".equals(kp.getPublic().getAlgorithm()));
+
+        kpGen.initialize(256);
+
+        kp = kpGen.generateKeyPair();
+
+        isTrue("X25519".equals(kp.getPublic().getAlgorithm()));
+
+        kpGen.initialize(255);
 
         kp = kpGen.generateKeyPair();
 
@@ -257,6 +277,16 @@ public class EdECTest
             isEquals("parameterSpec for wrong curve type", e.getMessage());
         }
 
+        try
+        {
+            kpGen.initialize(1024);
+            fail("no exception");
+        }
+        catch (InvalidParameterException e)
+        {
+            isEquals("unknown key size", e.getMessage());
+        }
+        
         try
         {
             kpGen.initialize(new EdDSAParameterSpec(EdDSAParameterSpec.Ed448));
@@ -294,6 +324,12 @@ public class EdECTest
 
         isTrue("Ed448".equals(kp.getPublic().getAlgorithm()));
 
+        kpGen.initialize(448);
+
+        kp = kpGen.generateKeyPair();
+
+        isTrue("Ed448".equals(kp.getPublic().getAlgorithm()));
+
         kpGen = KeyPairGenerator.getInstance("EdDSA", "BC");
 
         kpGen.initialize(new EdDSAParameterSpec(EdDSAParameterSpec.Ed25519));
@@ -303,6 +339,18 @@ public class EdECTest
         isTrue("Ed25519".equals(kp.getPublic().getAlgorithm()));
 
         kpGen.initialize(new ECGenParameterSpec(EdDSAParameterSpec.Ed25519));
+
+        kp = kpGen.generateKeyPair();
+
+        isTrue("Ed25519".equals(kp.getPublic().getAlgorithm()));
+
+        kpGen.initialize(256);
+
+        kp = kpGen.generateKeyPair();
+
+        isTrue("Ed25519".equals(kp.getPublic().getAlgorithm()));
+
+        kpGen.initialize(255);
 
         kp = kpGen.generateKeyPair();
 
@@ -338,6 +386,16 @@ public class EdECTest
         catch (InvalidAlgorithmParameterException e)
         {
             isEquals("parameterSpec for wrong curve type", e.getMessage());
+        }
+
+        try
+        {
+            kpGen.initialize(1024);
+            fail("no exception");
+        }
+        catch (InvalidParameterException e)
+        {
+            isEquals("unknown key size", e.getMessage());
         }
 
         try
@@ -534,6 +592,20 @@ public class EdECTest
         signature.update(msg);
 
         byte[] sig = signature.sign();
+
+        signature.initVerify(kp.getPublic());
+
+        signature.update(msg);
+
+        isTrue(signature.verify(sig));
+
+        // try with random - should be ignored
+
+        signature.initSign(kp.getPrivate(), new SecureRandom());
+
+        signature.update(msg);
+
+        sig = signature.sign();
 
         signature.initVerify(kp.getPublic());
 

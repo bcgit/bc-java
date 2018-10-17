@@ -4,6 +4,7 @@ import javax.net.ssl.SSLSession;
 
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.tls.ChannelBinding;
+import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.TlsContext;
 
 class ProvSSLConnection
@@ -21,6 +22,13 @@ class ProvSSLConnection
     ProvSSLSessionImpl getSessionImpl()
     {
         return sessionImpl;
+    }
+
+    public String getApplicationProtocol()
+    {
+        ProtocolName applicationProtocol = tlsContext.getSecurityParameters().getApplicationProtocol();
+
+        return null == applicationProtocol ? "" : applicationProtocol.getUtf8Decoding();
     }
 
     public byte[] getChannelBinding(String channelBinding)

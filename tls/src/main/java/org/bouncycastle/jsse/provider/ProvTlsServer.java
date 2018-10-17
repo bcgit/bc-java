@@ -98,6 +98,12 @@ class ProvTlsServer
     }
 
     @Override
+    protected Vector getProtocolNames()
+    {
+        return JsseUtils.getProtocolNames(sslParameters.getApplicationProtocols());
+    }
+
+    @Override
     protected boolean selectCipherSuite(int cipherSuite) throws IOException
     {
         if (!selectCredentials(cipherSuite))

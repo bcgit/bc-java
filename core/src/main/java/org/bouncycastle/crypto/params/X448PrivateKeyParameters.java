@@ -21,7 +21,7 @@ public final class X448PrivateKeyParameters
     {
         super(true);
 
-        random.nextBytes(data);
+        X448.generatePrivateKey(random, data);
     }
 
     public X448PrivateKeyParameters(byte[] buf, int off)
@@ -62,6 +62,9 @@ public final class X448PrivateKeyParameters
     {
         byte[] encoded = new byte[X448.POINT_SIZE];
         publicKey.encode(encoded, 0);
-        X448.scalarMult(data, 0, encoded, 0, buf, off);
+        if (!X448.calculateAgreement(data, 0, encoded, 0, buf, off))
+        {
+            throw new IllegalStateException("X448 agreement failed");
+        }
     }
 }
