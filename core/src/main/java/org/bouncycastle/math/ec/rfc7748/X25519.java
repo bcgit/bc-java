@@ -19,6 +19,7 @@ public abstract class X25519
     private static final int[] PsubS_x = new int[]{ 0x03D48290, 0x02C7804D, 0x01207816, 0x028F5A68, 0x00881ED4, 0x00A2B71D,
         0x0217D1B7, 0x014CB523, 0x0088EC1A, 0x0042A264 };
 
+    private static Object precompLock = new Object();
     private static int[] precompBase = null;
 
     public static boolean calculateAgreement(byte[] k, int kOff, byte[] u, int uOff, byte[] r, int rOff)
@@ -72,68 +73,71 @@ public abstract class X25519
         X25519Field.mul(z, A, z);
     }
 
-    public synchronized static void precompute()
+    public static void precompute()
     {
-        if (precompBase != null)
+        synchronized (precompLock)
         {
-            return;
-        }
-
-        precompBase = new int[X25519Field.SIZE * 252];
-
-        int[] xs = precompBase;
-        int[] zs = new int[X25519Field.SIZE * 251];
-
-        int[] x = X25519Field.create();     x[0] = 9;          
-        int[] z = X25519Field.create();     z[0] = 1;
-
-        int[] n = X25519Field.create();
-        int[] d = X25519Field.create();
-
-        X25519Field.apm(x, z, n, d);
-
-        int[] c = X25519Field.create();     X25519Field.copy(d, 0, c, 0);
-
-        int off = 0;
-        for (;;)
-        {
-            X25519Field.copy(n, 0, xs, off);
-
-            if (off == (X25519Field.SIZE * 251))
+            if (precompBase != null)
             {
-                break;
+                return;
             }
 
-            pointDouble(x, z);
+            precompBase = new int[X25519Field.SIZE * 252];
+
+            int[] xs = precompBase;
+            int[] zs = new int[X25519Field.SIZE * 251];
+
+            int[] x = X25519Field.create();     x[0] = 9;          
+            int[] z = X25519Field.create();     z[0] = 1;
+
+            int[] n = X25519Field.create();
+            int[] d = X25519Field.create();
 
             X25519Field.apm(x, z, n, d);
-            X25519Field.mul(n, c, n);
-            X25519Field.mul(c, d, c);
 
-            X25519Field.copy(d, 0, zs, off);
+            int[] c = X25519Field.create();     X25519Field.copy(d, 0, c, 0);
 
-            off += X25519Field.SIZE;
-        }
-
-        int[] u = X25519Field.create();
-        X25519Field.inv(c, u);
-
-        for (;;)
-        {
-            X25519Field.copy(xs, off, x, 0);
-
-            X25519Field.mul(x, u, x);
-//            X25519Field.normalize(x);
-            X25519Field.copy(x, 0, precompBase, off);
-
-            if (off == 0)
+            int off = 0;
+            for (;;)
             {
-                break;
+                X25519Field.copy(n, 0, xs, off);
+
+                if (off == (X25519Field.SIZE * 251))
+                {
+                    break;
+                }
+
+                pointDouble(x, z);
+
+                X25519Field.apm(x, z, n, d);
+                X25519Field.mul(n, c, n);
+                X25519Field.mul(c, d, c);
+
+                X25519Field.copy(d, 0, zs, off);
+
+                off += X25519Field.SIZE;
             }
 
-            off -= X25519Field.SIZE;
-            X25519Field.copy(zs, off, z, 0);
-            X25519Field.mul(u, z, u);
+            int[] u = X25519Field.create();
+            X25519Field.inv(c, u);
+
+            for (;;)
+            {
+                X25519Field.copy(xs, off, x, 0);
+
+                X25519Field.mul(x, u, x);
+//                X25519Field.normalize(x);
+                X25519Field.copy(x, 0, precompBase, off);
+
+                if (off == 0)
+                {
+                    break;
+                }
+
+                off -= X25519Field.SIZE;
+                X25519Field.copy(zs, off, z, 0);
+                X25519Field.mul(u, z, u);
+            }
         }
     }
 
