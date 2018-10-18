@@ -22,6 +22,7 @@ public abstract class X448
         0x0643ace1, 0x03f1bd65, 0x084c1f82, 0x0954459d, 0x081b9672, 0x0dd1031c, 0x0eb7bdac, 0x03881aff, 0x0423acf0,
         0x05013244, 0x0f0fab72 };
 
+    private static Object precompLock = new Object();
     private static int[] precompBase = null;
 
     public static boolean calculateAgreement(byte[] k, int kOff, byte[] u, int uOff, byte[] r, int rOff)
@@ -75,72 +76,75 @@ public abstract class X448
         X448Field.mul(z, A, z);
     }
 
-    public synchronized static void precompute()
+    public static void precompute()
     {
-        if (precompBase != null)
+        synchronized (precompLock)
         {
-            return;
-        }
-
-        precompBase = new int[X448Field.SIZE * 446];
-
-        int[] xs = precompBase;
-        int[] zs = new int[X448Field.SIZE * 445];
-
-        int[] x = X448Field.create();     x[0] = 5;          
-        int[] z = X448Field.create();     z[0] = 1;
-
-        int[] n = X448Field.create();
-        int[] d = X448Field.create();
-
-//        X448Field.apm(x, z, n, d);
-        X448Field.add(x, z, n);
-        X448Field.sub(x, z, d);
-
-        int[] c = X448Field.create();     X448Field.copy(d, 0, c, 0);
-
-        int off = 0;
-        for (;;)
-        {
-            X448Field.copy(n, 0, xs, off);
-
-            if (off == (X448Field.SIZE * 445))
+            if (precompBase != null)
             {
-                break;
+                return;
             }
 
-            pointDouble(x, z);
+            precompBase = new int[X448Field.SIZE * 446];
+
+            int[] xs = precompBase;
+            int[] zs = new int[X448Field.SIZE * 445];
+
+            int[] x = X448Field.create();     x[0] = 5;          
+            int[] z = X448Field.create();     z[0] = 1;
+
+            int[] n = X448Field.create();
+            int[] d = X448Field.create();
 
 //            X448Field.apm(x, z, n, d);
             X448Field.add(x, z, n);
             X448Field.sub(x, z, d);
-            X448Field.mul(n, c, n);
-            X448Field.mul(c, d, c);
 
-            X448Field.copy(d, 0, zs, off);
+            int[] c = X448Field.create();     X448Field.copy(d, 0, c, 0);
 
-            off += X448Field.SIZE;
-        }
-
-        int[] u = X448Field.create();
-        X448Field.inv(c, u);
-
-        for (;;)
-        {
-            X448Field.copy(xs, off, x, 0);
-
-            X448Field.mul(x, u, x);
-//            X448Field.normalize(x);
-            X448Field.copy(x, 0, precompBase, off);
-
-            if (off == 0)
+            int off = 0;
+            for (;;)
             {
-                break;
+                X448Field.copy(n, 0, xs, off);
+
+                if (off == (X448Field.SIZE * 445))
+                {
+                    break;
+                }
+
+                pointDouble(x, z);
+
+//                X448Field.apm(x, z, n, d);
+                X448Field.add(x, z, n);
+                X448Field.sub(x, z, d);
+                X448Field.mul(n, c, n);
+                X448Field.mul(c, d, c);
+
+                X448Field.copy(d, 0, zs, off);
+
+                off += X448Field.SIZE;
             }
 
-            off -= X448Field.SIZE;
-            X448Field.copy(zs, off, z, 0);
-            X448Field.mul(u, z, u);
+            int[] u = X448Field.create();
+            X448Field.inv(c, u);
+
+            for (;;)
+            {
+                X448Field.copy(xs, off, x, 0);
+
+                X448Field.mul(x, u, x);
+//                X448Field.normalize(x);
+                X448Field.copy(x, 0, precompBase, off);
+
+                if (off == 0)
+                {
+                    break;
+                }
+
+                off -= X448Field.SIZE;
+                X448Field.copy(zs, off, z, 0);
+                X448Field.mul(u, z, u);
+            }
         }
     }
 
