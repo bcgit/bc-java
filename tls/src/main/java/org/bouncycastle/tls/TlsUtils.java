@@ -1466,13 +1466,13 @@ public class TlsUtils
                     // TODO[RFC 8422]
                     handshakeHash.forceBuffering();
                 }
-                else if (HashAlgorithm.isPrivate(hashAlgorithm))
-                {
-                    // TODO Support values in the "Reserved for Private Use" range
-                }
-                else
+                else if (HashAlgorithm.isRecognized(hashAlgorithm))
                 {
                     handshakeHash.trackHashAlgorithm(hashAlgorithm);
+                }
+                else //if (HashAlgorithm.isPrivate(hashAlgorithm))
+                {
+                    // TODO Support values in the "Reserved for Private Use" range
                 }
             }
         }

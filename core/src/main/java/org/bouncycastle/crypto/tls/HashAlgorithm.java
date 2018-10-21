@@ -43,6 +43,22 @@ public class HashAlgorithm
 
     public static boolean isPrivate(short hashAlgorithm)
     {
-        return 224 <= hashAlgorithm && hashAlgorithm <= 255; 
+        return 224 <= hashAlgorithm && hashAlgorithm <= 255;
+    }
+
+    public static boolean isRecognized(short hashAlgorithm)
+    {
+        switch (hashAlgorithm)
+        {
+        case md5:
+        case sha1:
+        case sha224:
+        case sha256:
+        case sha384:
+        case sha512:
+            return true;
+        default:
+            return false;
+        }
     }
 }
