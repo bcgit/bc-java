@@ -1352,10 +1352,13 @@ public class TlsUtils
                     supportedSignatureAlgorithms.elementAt(i);
                 short hashAlgorithm = signatureAndHashAlgorithm.getHash();
 
-                // TODO Support values in the "Reserved for Private Use" range
-                if (!HashAlgorithm.isPrivate(hashAlgorithm))
+                if (HashAlgorithm.isRecognized(hashAlgorithm))
                 {
                     handshakeHash.trackHashAlgorithm(hashAlgorithm);
+                }
+                else //if (HashAlgorithm.isPrivate(hashAlgorithm))
+                {
+                    // TODO Support values in the "Reserved for Private Use" range
                 }
             }
         }
