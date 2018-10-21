@@ -2,28 +2,26 @@ package org.bouncycastle.math.ec.rfc7748;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.math.ec.rfc8032.Ed448;
 import org.bouncycastle.util.Arrays;
 
 public abstract class X448
 {
+    public static class Friend
+    {
+        private static final Friend INSTANCE = new Friend();
+        private Friend() {}
+    }
+
     public static final int POINT_SIZE = 56;
     public static final int SCALAR_SIZE = 56;
 
     private static final int C_A = 156326;
     private static final int C_A24 = (C_A + 2)/4;
 
-    // 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE
-    private static final int[] S_x = new int[]{ 0x0FFFFFFE, 0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF,
-        0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFE, 0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF,
-        0x0FFFFFFF };
-
-    // 0xF0FAB725013244423ACF03881AFFEB7BDACDD1031C81B9672954459D84C1F823F1BD65643ACE1B5123AC33FF1C69BAF8ACB1197DC99D2720
-    private static final int[] PsubS_x = new int[]{ 0x099d2720, 0x0b1197dc, 0x09baf8ac, 0x033ff1c6, 0x0b5123ac,
-        0x0643ace1, 0x03f1bd65, 0x084c1f82, 0x0954459d, 0x081b9672, 0x0dd1031c, 0x0eb7bdac, 0x03881aff, 0x0423acf0,
-        0x05013244, 0x0f0fab72 };
-
-    private static Object precompLock = new Object();
-    private static int[] precompBase = null;
+//    private static final int[] SQRT_156324 = { 0x0551B193, 0x07A21E17, 0x0E635AD3, 0x00812ABB, 0x025B3F99, 0x01605224,
+//        0x0AF8CB32, 0x0D2E7D68, 0x06BA50FD, 0x08E55693, 0x0CB08EB4, 0x02ABEBC1, 0x051BA0BB, 0x02F8812E, 0x0829B611,
+//        0x0BA4D3A0 };
 
     public static boolean calculateAgreement(byte[] k, int kOff, byte[] u, int uOff, byte[] r, int rOff)
     {
@@ -83,74 +81,7 @@ public abstract class X448
 
     public static void precompute()
     {
-        synchronized (precompLock)
-        {
-            if (precompBase != null)
-            {
-                return;
-            }
-
-            precompBase = new int[X448Field.SIZE * 446];
-
-            int[] xs = precompBase;
-            int[] zs = new int[X448Field.SIZE * 445];
-
-            int[] x = X448Field.create();     x[0] = 5;          
-            int[] z = X448Field.create();     z[0] = 1;
-
-            int[] n = X448Field.create();
-            int[] d = X448Field.create();
-
-//            X448Field.apm(x, z, n, d);
-            X448Field.add(x, z, n);
-            X448Field.sub(x, z, d);
-
-            int[] c = X448Field.create();     X448Field.copy(d, 0, c, 0);
-
-            int off = 0;
-            for (;;)
-            {
-                X448Field.copy(n, 0, xs, off);
-
-                if (off == (X448Field.SIZE * 445))
-                {
-                    break;
-                }
-
-                pointDouble(x, z);
-
-//                X448Field.apm(x, z, n, d);
-                X448Field.add(x, z, n);
-                X448Field.sub(x, z, d);
-                X448Field.mul(n, c, n);
-                X448Field.mul(c, d, c);
-
-                X448Field.copy(d, 0, zs, off);
-
-                off += X448Field.SIZE;
-            }
-
-            int[] u = X448Field.create();
-            X448Field.inv(c, u);
-
-            for (;;)
-            {
-                X448Field.copy(xs, off, x, 0);
-
-                X448Field.mul(x, u, x);
-//                X448Field.normalize(x);
-                X448Field.copy(x, 0, precompBase, off);
-
-                if (off == 0)
-                {
-                    break;
-                }
-
-                off -= X448Field.SIZE;
-                X448Field.copy(zs, off, z, 0);
-                X448Field.mul(u, z, u);
-            }
-        }
+        Ed448.precompute();
     }
 
     public static void scalarMult(byte[] k, int kOff, byte[] u, int uOff, byte[] r, int rOff)
@@ -223,63 +154,16 @@ public abstract class X448
 
     public static void scalarMultBase(byte[] k, int kOff, byte[] r, int rOff)
     {
-        precompute();
+        int[] x = X448Field.create();
+        int[] y = X448Field.create();
 
-        int[] n = new int[14];  decodeScalar(k, kOff, n);
+        Ed448.scalarMultBaseXY(Friend.INSTANCE, k, kOff, x, y);
 
-        int[] x0 = X448Field.create();
-        int[] x1 = X448Field.create();        X448Field.copy(S_x, 0, x1, 0);
-        int[] z1 = X448Field.create();        z1[0] = 1;        
-        int[] x2 = X448Field.create();        X448Field.copy(PsubS_x, 0, x2, 0);
-        int[] z2 = X448Field.create();        z2[0] = 1;
+        X448Field.inv(x, x);
+        X448Field.mul(x, y, x);
+        X448Field.sqr(x, x);
 
-        int[] A = X448Field.create();
-        int[] B = z1;
-        int[] C = x0;
-        int[] D = x1;
-        int[] E = B;
-
-//        assert n[13] >>> 31 == 1;
-
-        int off = 0, bit = 2, swap = 1;
-        do
-        {
-            X448Field.copy(precompBase, off, x0, 0);
-            off += X448Field.SIZE;
-
-            int word = bit >>> 5, shift = bit & 0x1F;
-            int kt = (n[word] >>> shift) & 1;
-            swap ^= kt;
-            X448Field.cswap(swap, x1, x2);
-            X448Field.cswap(swap, z1, z2);
-            swap = kt;
-
-//            X448Field.apm(x1, z1, A, B);
-            X448Field.add(x1, z1, A);
-            X448Field.sub(x1, z1, B);
-            X448Field.mul(x0, B, C);
-            X448Field.carry(A);
-//            X448Field.apm(A, C, D, E);
-            X448Field.add(A, C, D);
-            X448Field.sub(A, C, E);
-            X448Field.sqr(D, D);
-            X448Field.sqr(E, E);
-            X448Field.mul(z2, D, x1);
-            X448Field.mul(x2, E, z1);
-        }
-        while (++bit < 448);
-
-//        assert swap == 1;
-
-        for (int i = 0; i < 2; ++i)
-        {
-            pointDouble(x1, z1);
-        }
-
-        X448Field.inv(z1, z1);
-        X448Field.mul(x1, z1, x1);
-
-        X448Field.normalize(x1);
-        X448Field.encode(x1, r, rOff);
+        X448Field.normalize(x);
+        X448Field.encode(x, r, rOff);
     }
 }

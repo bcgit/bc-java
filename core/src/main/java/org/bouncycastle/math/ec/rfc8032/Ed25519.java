@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.math.ec.rfc7748.X25519;
 import org.bouncycastle.math.ec.rfc7748.X25519Field;
 import org.bouncycastle.math.raw.Interleave;
 import org.bouncycastle.math.raw.Nat;
@@ -955,6 +956,25 @@ public abstract class Ed25519
         PointAccum p = new PointAccum();
         scalarMultBase(k, p);
         encodePoint(p, r, rOff);
+    }
+
+    /**
+     * NOTE: Only for use by X25519
+     */
+    public static void scalarMultBaseYZ(X25519.Friend friend, byte[] k, int kOff, int[] y, int[] z)
+    {
+        if (null == friend)
+        {
+            throw new NullPointerException("This method is only for use by X25519");
+        }
+
+        byte[] n = new byte[SCALAR_BYTES];
+        pruneScalar(k, kOff, n);
+
+        PointAccum p = new PointAccum();
+        scalarMultBase(n, p);
+        X25519Field.copy(p.y, 0, y, 0);
+        X25519Field.copy(p.z, 0, z, 0);
     }
 
     private static void scalarMultStraussVar(int[] nb, int[] np, PointExt p, PointAccum r)

@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.math.ec.rfc7748.X448;
 import org.bouncycastle.math.ec.rfc7748.X448Field;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
@@ -697,11 +698,11 @@ public abstract class Ed448
 
     private static void pruneScalar(byte[] n, int nOff, byte[] r)
     {
-        System.arraycopy(n, nOff, r, 0, SCALAR_BYTES);
+        System.arraycopy(n, nOff, r, 0, SCALAR_BYTES - 1);
 
         r[0] &= 0xFC;
         r[SCALAR_BYTES - 2] |= 0x80;
-        r[SCALAR_BYTES - 1] &= 0x00;
+        r[SCALAR_BYTES - 1]  = 0x00;
     }
 
     private static byte[] reduceScalar(byte[] n)
@@ -1042,6 +1043,25 @@ public abstract class Ed448
         PointExt p = new PointExt();
         scalarMultBase(k, p);
         encodePoint(p, r, rOff);
+    }
+
+    /**
+     * NOTE: Only for use by X448
+     */
+    public static void scalarMultBaseXY(X448.Friend friend, byte[] k, int kOff, int[] x, int[] y)
+    {
+        if (null == friend)
+        {
+            throw new NullPointerException("This method is only for use by X448");
+        }
+
+        byte[] n = new byte[SCALAR_BYTES];
+        pruneScalar(k, kOff, n);
+
+        PointExt p = new PointExt();
+        scalarMultBase(n, p);
+        X448Field.copy(p.x, 0, x, 0);
+        X448Field.copy(p.y, 0, y, 0);
     }
 
     private static void scalarMultStraussVar(int[] nb, int[] np, PointExt p, PointExt r)
