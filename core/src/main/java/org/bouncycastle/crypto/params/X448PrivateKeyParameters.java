@@ -54,7 +54,7 @@ public final class X448PrivateKeyParameters
     public X448PublicKeyParameters generatePublicKey()
     {
         byte[] publicKey = new byte[X448.POINT_SIZE];
-        X448.scalarMultBase(data, 0, publicKey, 0);
+        X448.generatePublicKey(data, 0, publicKey, 0);
         return new X448PublicKeyParameters(publicKey, 0);
     }
 

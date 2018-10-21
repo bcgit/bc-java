@@ -54,7 +54,7 @@ public final class X25519PrivateKeyParameters
     public X25519PublicKeyParameters generatePublicKey()
     {
         byte[] publicKey = new byte[X25519.POINT_SIZE];
-        X25519.scalarMultBase(data, 0, publicKey, 0);
+        X25519.generatePublicKey(data, 0, publicKey, 0);
         return new X25519PublicKeyParameters(publicKey, 0);
     }
 
