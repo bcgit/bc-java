@@ -1491,9 +1491,6 @@ public class TlsUtils
         }
     }
 
-    static final byte[] SSL_CLIENT = {0x43, 0x4C, 0x4E, 0x54};
-    static final byte[] SSL_SERVER = {0x53, 0x52, 0x56, 0x52};
-
     private static Vector vectorOfOne(Object obj)
     {
         Vector v = new Vector(1);
