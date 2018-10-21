@@ -58,6 +58,11 @@ public abstract class X25519
         k[SCALAR_SIZE - 1] |= 0x40;
     }
 
+    public static void generatePublicKey(byte[] k, int kOff, byte[] r, int rOff)
+    {
+        scalarMultBase(k, kOff, r, rOff);
+    }
+
     private static void pointDouble(int[] x, int[] z)
     {
         int[] A = X25519Field.create();
