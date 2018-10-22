@@ -22,6 +22,7 @@ public class TlsExtensionsUtils
     public static final Integer EXT_server_name = Integers.valueOf(ExtensionType.server_name);
     public static final Integer EXT_status_request = Integers.valueOf(ExtensionType.status_request);
     public static final Integer EXT_supported_groups = Integers.valueOf(ExtensionType.supported_groups);
+    public static final Integer EXT_supported_versions = Integers.valueOf(ExtensionType.supported_versions);
     public static final Integer EXT_truncated_hmac = Integers.valueOf(ExtensionType.truncated_hmac);
     public static final Integer EXT_trusted_ca_keys = Integers.valueOf(ExtensionType.trusted_ca_keys);
 
@@ -115,6 +116,16 @@ public class TlsExtensionsUtils
     public static void addSupportedGroupsExtension(Hashtable extensions, Vector namedGroups) throws IOException
     {
         extensions.put(EXT_supported_groups, createSupportedGroupsExtension(namedGroups));
+    }
+
+    public static void addSupportedVersionsExtensionClient(Hashtable extensions, Vector versions) throws IOException
+    {
+        extensions.put(EXT_supported_versions, createSupportedVersionsExtensionClient(versions));
+    }
+
+    public static void addSupportedVersionsExtensionServer(Hashtable extensions, ProtocolVersion selectedVersion) throws IOException
+    {
+        extensions.put(EXT_supported_versions, createSupportedVersionsExtensionServer(selectedVersion));
     }
 
     public static void addTruncatedHMacExtension(Hashtable extensions)
@@ -215,6 +226,18 @@ public class TlsExtensionsUtils
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_supported_groups);
         return extensionData == null ? null : readSupportedGroupsExtension(extensionData);
+    }
+
+    public static Vector getSupportedVersionsExtensionClient(Hashtable extensions) throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_supported_versions);
+        return extensionData == null ? null : readSupportedVersionsExtensionClient(extensionData);
+    }
+
+    public static ProtocolVersion getSupportedVersionsExtensionServer(Hashtable extensions) throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_supported_versions);
+        return extensionData == null ? null : readSupportedVersionsExtensionServer(extensionData);
     }
 
     public static Vector getTrustedCAKeysExtensionClient(Hashtable extensions)
@@ -399,6 +422,28 @@ public class TlsExtensionsUtils
         }
 
         return TlsUtils.encodeUint16ArrayWithUint16Length(values);
+    }
+
+    public static byte[] createSupportedVersionsExtensionClient(Vector versions) throws IOException
+    {
+        if (versions == null || versions.size() < 1 || versions.size() > 127)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        int count = versions.size();
+        byte[] data = new byte[1 + count * 2];
+        TlsUtils.writeUint8(count * 2, data, 0);
+        for (int i = 0; i < count; ++i)
+        {
+            TlsUtils.writeVersion((ProtocolVersion)versions.elementAt(i), data, 1 + i * 2);
+        }
+        return data;
+    }
+
+    public static byte[] createSupportedVersionsExtensionServer(ProtocolVersion selectedVersion) throws IOException
+    {
+        return TlsUtils.encodeVersion(selectedVersion);
     }
 
     public static byte[] createTruncatedHMacExtension()
@@ -612,6 +657,45 @@ public class TlsExtensionsUtils
         return namedGroups;
     }
 
+    public static Vector readSupportedVersionsExtensionClient(byte[] extensionData) throws IOException
+    {
+        if (extensionData == null)
+        {
+            throw new IllegalArgumentException("'extensionData' cannot be null");
+        }
+        if (extensionData.length < 3 || extensionData.length > 255 || (extensionData.length & 1) == 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        int length = TlsUtils.readUint8(extensionData, 0);
+        if (length != (extensionData.length - 1))
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        int count = length / 2;
+        Vector versions = new Vector(count);
+        for (int i = 0; i < count; ++i)
+        {
+            versions.addElement(TlsUtils.readVersion(extensionData, 1 + i * 2));
+        }
+        return versions;
+    }
+
+    public static ProtocolVersion readSupportedVersionsExtensionServer(byte[] extensionData) throws IOException
+    {
+        if (extensionData == null)
+        {
+            throw new IllegalArgumentException("'extensionData' cannot be null");
+        }
+        if (extensionData.length != 2)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+        return TlsUtils.readVersion(extensionData, 0);
+    }
+
     public static boolean readTruncatedHMacExtension(byte[] extensionData) throws IOException
     {
         return readEmptyExtensionData(extensionData);
@@ -622,6 +706,10 @@ public class TlsExtensionsUtils
         if (extensionData == null)
         {
             throw new IllegalArgumentException("'extensionData' cannot be null");
+        }
+        if (extensionData.length < 2)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
         }
 
         ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);

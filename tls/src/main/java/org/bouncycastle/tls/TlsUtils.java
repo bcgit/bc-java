@@ -539,6 +539,14 @@ public class TlsUtils
         return result;
     }
 
+    public static byte[] encodeVersion(ProtocolVersion version) throws IOException
+    {
+        return new byte[]{
+            (byte)version.getMajorVersion(),
+            (byte)version.getMinorVersion()
+        };
+    }
+
     public static short readUint8(InputStream input)
         throws IOException
     {
