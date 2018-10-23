@@ -28,13 +28,11 @@ public class BcTlsEd25519Verifier
     public TlsStreamVerifier getStreamVerifier(DigitallySigned signature)
     {
         SignatureAndHashAlgorithm algorithm = signature.getAlgorithm();
-        if (algorithm != null)
+        if (algorithm == null
+            || algorithm.getSignature() != SignatureAlgorithm.ed25519
+            || algorithm.getHash() != HashAlgorithm.Intrinsic)
         {
-            if (algorithm.getSignature() != SignatureAlgorithm.ed25519
-                || algorithm.getHash() != HashAlgorithm.Intrinsic)
-            {
-                throw new IllegalStateException();
-            }
+            throw new IllegalStateException();
         }
 
         final byte[] sig = signature.getSignature();
