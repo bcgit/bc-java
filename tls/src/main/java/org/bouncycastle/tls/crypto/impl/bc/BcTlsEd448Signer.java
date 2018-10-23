@@ -33,13 +33,11 @@ public class BcTlsEd448Signer
 
     public TlsStreamSigner getStreamSigner(SignatureAndHashAlgorithm algorithm)
     {
-        if (algorithm != null)
+        if (algorithm == null
+            || algorithm.getSignature() != SignatureAlgorithm.ed448
+            || algorithm.getHash() != HashAlgorithm.Intrinsic)
         {
-            if (algorithm.getSignature() != SignatureAlgorithm.ed448
-                || algorithm.getHash() != HashAlgorithm.Intrinsic)
-            {
-                throw new IllegalStateException();
-            }
+            throw new IllegalStateException();
         }
 
         final ByteArrayOutputStream buf = new ByteArrayOutputStream();
