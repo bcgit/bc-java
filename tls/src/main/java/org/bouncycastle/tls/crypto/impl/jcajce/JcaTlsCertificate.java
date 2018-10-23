@@ -293,6 +293,38 @@ public class JcaTlsCertificate
          throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
     }
 
+    public boolean supportsSignatureAlgorithm(short signatureAlgorithm)
+        throws IOException
+    {
+        if (!supportsKeyUsage(KeyUsage.digitalSignature))
+        {
+            return false;
+        }
+
+        PublicKey publicKey = getPublicKey();
+
+        switch (signatureAlgorithm)
+        {
+        case SignatureAlgorithm.rsa:
+            return publicKey instanceof RSAPublicKey;
+
+        case SignatureAlgorithm.dsa:
+            return publicKey instanceof DSAPublicKey;
+
+        case SignatureAlgorithm.ecdsa:
+            return publicKey instanceof ECPublicKey;
+
+        case SignatureAlgorithm.ed25519:
+            return "Ed25519".equals(publicKey.getAlgorithm());
+
+        case SignatureAlgorithm.ed448:
+            return "Ed448".equals(publicKey.getAlgorithm());
+
+        default:
+            return false;
+        }
+    }
+
     public TlsCertificate useInRole(int connectionEnd, int keyExchangeAlgorithm) throws IOException
     {
         switch (keyExchangeAlgorithm)
@@ -348,8 +380,7 @@ public class JcaTlsCertificate
         return certificate;
     }
 
-    protected void validateKeyUsage(int keyUsageBits)
-        throws IOException
+    protected boolean supportsKeyUsage(int keyUsageBits)
     {
         Extensions exts;
         try
@@ -358,7 +389,7 @@ public class JcaTlsCertificate
         }
         catch (CertificateEncodingException e)
         {
-            throw new TlsCryptoException("unable to parse certificate extensions: " + e.getMessage(), e);
+            return false;
         }
 
         if (exts != null)
@@ -369,9 +400,20 @@ public class JcaTlsCertificate
                 int bits = ku.getBytes()[0] & 0xff;
                 if ((bits & keyUsageBits) != keyUsageBits)
                 {
-                    throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                    return false;
                 }
             }
+        }
+
+        return true;
+    }
+
+    protected void validateKeyUsage(int keyUsageBits)
+        throws IOException
+    {
+        if (!supportsKeyUsage(keyUsageBits))
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
         }
     }
 }
