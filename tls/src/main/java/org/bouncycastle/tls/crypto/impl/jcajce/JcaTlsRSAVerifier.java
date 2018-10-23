@@ -20,7 +20,7 @@ import org.bouncycastle.tls.crypto.TlsStreamVerifier;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 
 /**
- * Operator supporting the verification of RSA signatures.
+ * Operator supporting the verification of RSASSA-PKCS1-v1_5 signatures.
  */
 public class JcaTlsRSAVerifier
     implements TlsVerifier
