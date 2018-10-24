@@ -479,7 +479,7 @@ class OperatorHelper
             return name.substring(0, dIndex) + name.substring(dIndex + 1);
         }
 
-        return MessageDigestUtils.getDigestName(oid);
+        return name;
     }
 
     public X509Certificate convertCertificate(X509CertificateHolder certHolder)
