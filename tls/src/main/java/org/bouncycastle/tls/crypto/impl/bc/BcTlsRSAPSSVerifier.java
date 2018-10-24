@@ -22,7 +22,7 @@ public class BcTlsRSAPSSVerifier
 {
     private final short signatureAlgorithm;
 
-    public BcTlsRSAPSSVerifier(BcTlsCrypto crypto, short signatureAlgorithm, RSAKeyParameters publicKey)
+    public BcTlsRSAPSSVerifier(BcTlsCrypto crypto, RSAKeyParameters publicKey, short signatureAlgorithm)
    {
         super(crypto, publicKey);
 
