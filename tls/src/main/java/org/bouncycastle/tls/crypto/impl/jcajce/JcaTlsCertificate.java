@@ -17,10 +17,13 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.TBSCertificate;
+import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ConnectionEnd;
@@ -30,6 +33,7 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsVerifier;
+import org.bouncycastle.tls.crypto.impl.RSAPSSUtil;
 
 /**
  * Implementation class for a single X.509 certificate based on the JCA.
@@ -100,6 +104,9 @@ public class JcaTlsCertificate
 
         switch (signatureAlgorithm)
         {
+        case SignatureAlgorithm.rsa:
+            return new JcaTlsRSAVerifier(crypto, getPubKeyRSA());
+
         case SignatureAlgorithm.dsa:
             return new JcaTlsDSAVerifier(crypto, getPubKeyDSS());
 
@@ -112,8 +119,17 @@ public class JcaTlsCertificate
         case SignatureAlgorithm.ed448:
             return new JcaTlsEd448Verifier(crypto, getPubKeyEd448());
 
-        case SignatureAlgorithm.rsa:
-            return new JcaTlsRSAVerifier(crypto, getPubKeyRSA());
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+            validatePSS_RSAE(signatureAlgorithm);
+            return new JcaTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureAlgorithm);
+
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+            validatePSS_PSS(signatureAlgorithm);
+            return new JcaTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureAlgorithm);
 
         default:
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);
@@ -304,6 +320,18 @@ public class JcaTlsCertificate
         case SignatureAlgorithm.ed448:
             return "Ed448".equals(publicKey.getAlgorithm());
 
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+            return supportsPSS_RSAE(signatureAlgorithm)
+                && publicKey instanceof RSAKeyParameters;
+
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+            return supportsPSS_PSS(signatureAlgorithm)
+                && publicKey instanceof RSAKeyParameters;
+
         default:
             return false;
         }
@@ -359,6 +387,11 @@ public class JcaTlsCertificate
         }
     }
 
+    protected SubjectPublicKeyInfo getSubjectPublicKeyInfo() throws IOException
+    {
+        return SubjectPublicKeyInfo.getInstance(getPublicKey().getEncoded());
+    }
+
     public X509Certificate getX509Certificate()
     {
         return certificate;
@@ -392,12 +425,45 @@ public class JcaTlsCertificate
         return true;
     }
 
+
+    protected boolean supportsPSS_PSS(short signatureAlgorithm)
+        throws IOException
+    {
+        AlgorithmIdentifier pubKeyAlgID = getSubjectPublicKeyInfo().getAlgorithm();
+        return RSAPSSUtil.supportsPSS_PSS(signatureAlgorithm, pubKeyAlgID);
+    }
+
+    protected boolean supportsPSS_RSAE(short signatureAlgorithm)
+        throws IOException
+    {
+        AlgorithmIdentifier pubKeyAlgID = getSubjectPublicKeyInfo().getAlgorithm();
+        return RSAPSSUtil.supportsPSS_RSAE(signatureAlgorithm, pubKeyAlgID);
+    }
+
     protected void validateKeyUsage(int keyUsageBits)
         throws IOException
     {
         if (!supportsKeyUsage(keyUsageBits))
         {
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+        }
+    }
+
+    protected void validatePSS_PSS(short signatureAlgorithm)
+        throws IOException
+    {
+        if (!supportsPSS_PSS(signatureAlgorithm))
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_certificate);
+        }
+    }
+
+    protected void validatePSS_RSAE(short signatureAlgorithm)
+        throws IOException
+    {
+        if (!supportsPSS_RSAE(signatureAlgorithm))
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
     }
 }
