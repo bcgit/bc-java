@@ -3,14 +3,8 @@ package org.bouncycastle.tls.crypto.impl.bc;
 import java.io.IOException;
 import java.math.BigInteger;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
@@ -27,13 +21,13 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.ConnectionEnd;
-import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsVerifier;
+import org.bouncycastle.tls.crypto.impl.RSAPSSUtil;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -42,56 +36,6 @@ import org.bouncycastle.util.Arrays;
 public class BcTlsCertificate
     implements TlsCertificate
 {
-    private static final byte[] RSAPSSParams_256_A, RSAPSSParams_384_A, RSAPSSParams_512_A;
-    private static final byte[] RSAPSSParams_256_B, RSAPSSParams_384_B, RSAPSSParams_512_B;
-
-    static
-    {
-        /*
-         * RFC 4055
-         */
-
-        AlgorithmIdentifier sha256Identifier_A = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
-        AlgorithmIdentifier sha384Identifier_A = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384);
-        AlgorithmIdentifier sha512Identifier_A = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
-        AlgorithmIdentifier sha256Identifier_B = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE);
-        AlgorithmIdentifier sha384Identifier_B = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384, DERNull.INSTANCE);
-        AlgorithmIdentifier sha512Identifier_B = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512, DERNull.INSTANCE);
-
-        AlgorithmIdentifier mgf1SHA256Identifier_A = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha256Identifier_A);
-        AlgorithmIdentifier mgf1SHA384Identifier_A = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha384Identifier_A);
-        AlgorithmIdentifier mgf1SHA512Identifier_A = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha512Identifier_A);
-        AlgorithmIdentifier mgf1SHA256Identifier_B = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha256Identifier_B);
-        AlgorithmIdentifier mgf1SHA384Identifier_B = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha384Identifier_B);
-        AlgorithmIdentifier mgf1SHA512Identifier_B = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha512Identifier_B);
-
-        ASN1Integer sha256Size = new ASN1Integer(HashAlgorithm.getOutputSize(HashAlgorithm.sha256));
-        ASN1Integer sha384Size = new ASN1Integer(HashAlgorithm.getOutputSize(HashAlgorithm.sha384));
-        ASN1Integer sha512Size = new ASN1Integer(HashAlgorithm.getOutputSize(HashAlgorithm.sha512));
-
-        ASN1Integer trailerField = new ASN1Integer(1);
-
-        try
-        {
-            RSAPSSParams_256_A = new RSASSAPSSparams(sha256Identifier_A, mgf1SHA256Identifier_A, sha256Size, trailerField)
-                .getEncoded(ASN1Encoding.DER);
-            RSAPSSParams_384_A = new RSASSAPSSparams(sha384Identifier_A, mgf1SHA384Identifier_A, sha384Size, trailerField)
-                .getEncoded(ASN1Encoding.DER);
-            RSAPSSParams_512_A = new RSASSAPSSparams(sha512Identifier_A, mgf1SHA512Identifier_A, sha512Size, trailerField)
-                .getEncoded(ASN1Encoding.DER);
-            RSAPSSParams_256_B = new RSASSAPSSparams(sha256Identifier_B, mgf1SHA256Identifier_B, sha256Size, trailerField)
-                .getEncoded(ASN1Encoding.DER);
-            RSAPSSParams_384_B = new RSASSAPSSparams(sha384Identifier_B, mgf1SHA384Identifier_B, sha384Size, trailerField)
-                .getEncoded(ASN1Encoding.DER);
-            RSAPSSParams_512_B = new RSASSAPSSparams(sha512Identifier_B, mgf1SHA512Identifier_B, sha512Size, trailerField)
-                .getEncoded(ASN1Encoding.DER);
-        }
-        catch (IOException e)
-        {
-            throw new IllegalStateException(e);
-        }
-    }
-
     public static BcTlsCertificate convert(BcTlsCrypto crypto, TlsCertificate certificate)
         throws IOException
     {
@@ -161,7 +105,7 @@ public class BcTlsCertificate
         case SignatureAlgorithm.rsa_pss_rsae_sha256:
         case SignatureAlgorithm.rsa_pss_rsae_sha384:
         case SignatureAlgorithm.rsa_pss_rsae_sha512:
-            validatePSS_RSAE();
+            validatePSS_RSAE(signatureAlgorithm);
             return new BcTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureAlgorithm);
 
         case SignatureAlgorithm.rsa_pss_pss_sha256:
@@ -370,7 +314,7 @@ public class BcTlsCertificate
         case SignatureAlgorithm.rsa_pss_rsae_sha256:
         case SignatureAlgorithm.rsa_pss_rsae_sha384:
         case SignatureAlgorithm.rsa_pss_rsae_sha512:
-            return supportsPSS_RSAE()
+            return supportsPSS_RSAE(signatureAlgorithm)
                 && publicKey instanceof RSAKeyParameters;
 
         case SignatureAlgorithm.rsa_pss_pss_sha256:
@@ -457,47 +401,14 @@ public class BcTlsCertificate
         throws IOException
     {
         AlgorithmIdentifier pubKeyAlgID = certificate.getSubjectPublicKeyInfo().getAlgorithm();
-        if (!PKCSObjectIdentifiers.id_RSASSA_PSS.equals(pubKeyAlgID.getAlgorithm()))
-        {
-            return false;
-        }
-
-        ASN1Encodable pssParams = pubKeyAlgID.getParameters();
-        if (null == pssParams)
-        {
-            return true;
-        }
-
-        byte[] encoded = pssParams.toASN1Primitive().getEncoded(ASN1Encoding.DER);
-
-        byte[] expected_A, expected_B;
-        switch (signatureAlgorithm)
-        {
-        case SignatureAlgorithm.rsa_pss_pss_sha256:
-            expected_A = RSAPSSParams_256_A;
-            expected_B = RSAPSSParams_256_B;
-            break;
-        case SignatureAlgorithm.rsa_pss_pss_sha384:
-            expected_A = RSAPSSParams_384_A;
-            expected_B = RSAPSSParams_384_B;
-            break;
-        case SignatureAlgorithm.rsa_pss_pss_sha512:
-            expected_A = RSAPSSParams_512_A;
-            expected_B = RSAPSSParams_512_B;
-            break;
-        default:
-            throw new IllegalArgumentException("signatureAlgorithm");
-        }
-
-        return Arrays.areEqual(expected_A, encoded)
-            || Arrays.areEqual(expected_B, encoded);
+        return RSAPSSUtil.supportsPSS_PSS(signatureAlgorithm, pubKeyAlgID);
     }
 
-    protected boolean supportsPSS_RSAE()
+    protected boolean supportsPSS_RSAE(short signatureAlgorithm)
         throws IOException
     {
-        return PKCSObjectIdentifiers.rsaEncryption.equals(
-            certificate.getSubjectPublicKeyInfo().getAlgorithm().getAlgorithm());
+        AlgorithmIdentifier pubKeyAlgID = certificate.getSubjectPublicKeyInfo().getAlgorithm();
+        return RSAPSSUtil.supportsPSS_RSAE(signatureAlgorithm, pubKeyAlgID);
     }
 
     protected void validateKeyUsage(int keyUsageBits)
@@ -518,10 +429,10 @@ public class BcTlsCertificate
         }
     }
 
-    protected void validatePSS_RSAE()
+    protected void validatePSS_RSAE(short signatureAlgorithm)
         throws IOException
     {
-        if (!supportsPSS_RSAE())
+        if (!supportsPSS_RSAE(signatureAlgorithm))
         {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
