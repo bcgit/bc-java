@@ -108,14 +108,32 @@ public class TlsTestUtils
 
     static String getCACertResource(short signatureAlgorithm) throws IOException
     {
+        return "x509-ca-" + getResourceName(signatureAlgorithm) + ".pem";
+    }
+
+    static String getResourceName(short signatureAlgorithm) throws IOException
+    {
         switch (signatureAlgorithm)
         {
-        case SignatureAlgorithm.dsa:
-        case SignatureAlgorithm.ecdsa:
-        case SignatureAlgorithm.ed25519:
-        case SignatureAlgorithm.ed448:
         case SignatureAlgorithm.rsa:
-            return "x509-ca-" + SignatureAlgorithm.getName(signatureAlgorithm) + ".pem";
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+            return "rsa";
+        case SignatureAlgorithm.dsa:
+            return "dsa";
+        case SignatureAlgorithm.ecdsa:
+            return "ecdsa";
+        case SignatureAlgorithm.ed25519:
+            return "ed25519";
+        case SignatureAlgorithm.ed448:
+            return "ed448";
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+            return "rsa_pss_256";
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+            return "rsa_pss_384";
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+            return "rsa_pss_512";
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -221,12 +239,16 @@ public class TlsTestUtils
     static TlsCredentialedSigner loadSignerCredentialsServer(TlsContext context, Vector supportedSignatureAlgorithms,
         short signatureAlgorithm) throws IOException
     {
-        String sigName = SignatureAlgorithm.getName(signatureAlgorithm);
+        String sigName = getResourceName(signatureAlgorithm);
 
-        // TODO Maybe just change the resource names instead
-        if (SignatureAlgorithm.rsa == signatureAlgorithm)
+        switch (signatureAlgorithm)
         {
+        case SignatureAlgorithm.rsa:
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
             sigName += "-sign";
+            break;
         }
 
         String certResource = "x509-server-" + sigName + ".pem";
