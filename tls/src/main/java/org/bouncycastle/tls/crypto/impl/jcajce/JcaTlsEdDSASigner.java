@@ -46,18 +46,15 @@ public abstract class JcaTlsEdDSASigner
 
     public TlsStreamSigner getStreamSigner(SignatureAndHashAlgorithm algorithm) throws IOException
     {
-        if (algorithm != null)
+        if (algorithm == null
+            || algorithm.getSignature() != algorithmType
+            || algorithm.getHash() != HashAlgorithm.Intrinsic)
         {
-            if (algorithm.getSignature() != algorithmType
-                || algorithm.getHash() != HashAlgorithm.Intrinsic)
-            {
-                throw new IllegalStateException();
-            }
+            throw new IllegalStateException();
         }
 
         try
         {
-            // TODO[RFC 8422]
             final Signature sig = crypto.getHelper().createSignature(algorithmName);
 
             sig.initSign(privateKey);

@@ -15,6 +15,14 @@ public class TlsDHEKeyExchange
 {
     protected TlsSignerCredentials serverCredentials = null;
 
+    /**
+     * @deprecated Use constructor that takes a TlsDHVerifier
+     */
+    public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, DHParameters dhParameters)
+    {
+        this(keyExchange, supportedSignatureAlgorithms, new DefaultTlsDHVerifier(), dhParameters);
+    }
+
     public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHVerifier dhVerifier, DHParameters dhParameters)
     {
         super(keyExchange, supportedSignatureAlgorithms, dhVerifier, dhParameters);

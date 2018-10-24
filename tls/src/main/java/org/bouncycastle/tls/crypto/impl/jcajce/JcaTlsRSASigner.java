@@ -19,7 +19,7 @@ import org.bouncycastle.tls.crypto.TlsSigner;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 
 /**
- * Operator supporting the generation of RSA signatures.
+ * Operator supporting the generation of RSASSA-PKCS1-v1_5 signatures.
  */
 public class JcaTlsRSASigner
     implements TlsSigner
