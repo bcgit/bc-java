@@ -33,7 +33,7 @@ public interface TlsCertificate
     /**
      * @return {@link SignatureAlgorithm}
      */
-    short getSignatureAlgorithm() throws IOException;
+    short getLegacySignatureAlgorithm() throws IOException;
 
     /**
      * @param signatureAlgorithm {@link SignatureAlgorithm}

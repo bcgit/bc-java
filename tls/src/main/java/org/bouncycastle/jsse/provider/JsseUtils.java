@@ -72,6 +72,8 @@ abstract class JsseUtils
     {
         switch (signatureAlgorithm)
         {
+        case SignatureAlgorithm.rsa:
+            return "RSA";
         case SignatureAlgorithm.dsa:
             return "DSA";
         case SignatureAlgorithm.ecdsa:
@@ -81,8 +83,15 @@ abstract class JsseUtils
 //            return "Ed25519";
 //        case SignatureAlgorithm.ed448:
 //            return "Ed448";
-        case SignatureAlgorithm.rsa:
-            return "RSA";
+        // TODO[RFC 8446]
+//        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+//        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+//        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+//            return "RSA_PSS_RSAE";
+//        case SignatureAlgorithm.rsa_pss_pss_sha256:
+//        case SignatureAlgorithm.rsa_pss_pss_sha384:
+//        case SignatureAlgorithm.rsa_pss_pss_sha512:
+//            return "RSA_PSS_PSS";
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -258,13 +267,20 @@ abstract class JsseUtils
 
     static Vector getSupportedSignatureAlgorithms(TlsCrypto crypto)
     {
+//        SignatureAndHashAlgorithm[] intrinsicSigAlgs = { SignatureAndHashAlgorithm.ed25519,
+//            SignatureAndHashAlgorithm.ed448, SignatureAndHashAlgorithm.rsa_pss_rsae_sha256,
+//            SignatureAndHashAlgorithm.rsa_pss_rsae_sha384, SignatureAndHashAlgorithm.rsa_pss_rsae_sha512,
+//            SignatureAndHashAlgorithm.rsa_pss_pss_sha256, SignatureAndHashAlgorithm.rsa_pss_pss_sha384,
+//            SignatureAndHashAlgorithm.rsa_pss_pss_sha512 };
         short[] hashAlgorithms = new short[]{ HashAlgorithm.sha1, HashAlgorithm.sha224, HashAlgorithm.sha256,
             HashAlgorithm.sha384, HashAlgorithm.sha512 };
         short[] signatureAlgorithms = new short[]{ SignatureAlgorithm.rsa, SignatureAlgorithm.ecdsa };
 
         Vector result = new Vector();
-        TlsUtils.addIfSupported(result, crypto, SignatureAndHashAlgorithm.ed25519);
-        TlsUtils.addIfSupported(result, crypto, SignatureAndHashAlgorithm.ed448);
+//        for (int i = 0; i < intrinsicSigAlgs.length; ++i)
+//        {
+//            TlsUtils.addIfSupported(result, crypto, intrinsicSigAlgs[i]);
+//        }
         for (int i = 0; i < signatureAlgorithms.length; ++i)
         {
             for (int j = 0; j < hashAlgorithms.length; ++j)

@@ -186,7 +186,7 @@ public class BcTlsCertificate
         return certificate.getSignatureAlgorithm().getAlgorithm().getId();
     }
 
-    public short getSignatureAlgorithm() throws IOException
+    public short getLegacySignatureAlgorithm() throws IOException
     {
         AsymmetricKeyParameter publicKey = getPublicKey();
         if (publicKey.isPrivate())
@@ -245,22 +245,6 @@ public class BcTlsCertificate
         {
             // TODO Check the curve and point format
             return SignatureAlgorithm.ecdsa;
-        }
-
-        /*
-         * Ed25519 public key; the certificate MUST allow the key to be used for signing
-         */
-        if (publicKey instanceof Ed25519PublicKeyParameters)
-        {
-            return SignatureAlgorithm.ed25519;
-        }
-
-        /*
-         * Ed448 public key; the certificate MUST allow the key to be used for signing
-         */
-        if (publicKey instanceof Ed448PublicKeyParameters)
-        {
-            return SignatureAlgorithm.ed448;
         }
 
         throw new TlsFatalAlert(AlertDescription.unsupported_certificate);

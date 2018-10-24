@@ -253,7 +253,7 @@ class ProvTlsClient
                 case KeyExchangeAlgorithm.ECDHE_RSA:
                 case KeyExchangeAlgorithm.RSA:
                 {
-                    short signatureAlgorithm = certificate.getCertificateAt(0).getSignatureAlgorithm();
+                    short signatureAlgorithm = certificate.getCertificateAt(0).getLegacySignatureAlgorithm();
                     SignatureAndHashAlgorithm sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
                         supportedSignatureAlgorithms, signatureAlgorithm);
 

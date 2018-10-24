@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsECConfig;
-import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.util.io.TeeInputStream;
 
 /**
@@ -27,7 +26,6 @@ public class TlsECDHEKeyExchange
     }
 
     protected TlsCredentialedSigner serverCredentials = null;
-    protected TlsVerifier verifier = null;
 
     public TlsECDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms,
         TlsECConfigVerifier ecConfigVerifier, short[] clientECPointFormats, short[] serverECPointFormats)
@@ -61,39 +59,35 @@ public class TlsECDHEKeyExchange
 
         checkServerCertSigAlg(serverCertificate);
 
-        this.verifier = serverCertificate.getCertificateAt(0)
-            .createVerifier(TlsUtils.getSignatureAlgorithm(keyExchange));
+        this.ecdhPeerCertificate = serverCertificate.getCertificateAt(0);
     }
 
     public byte[] generateServerKeyExchange() throws IOException
     {
-        DigestInputBuffer buf = new DigestInputBuffer();
+        DigestInputBuffer digestBuffer = new DigestInputBuffer();
 
-        TlsECCUtils.writeECConfig(ecConfig, buf);
+        TlsECCUtils.writeECConfig(ecConfig, digestBuffer);
 
         this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
 
-        generateEphemeral(buf);
+        generateEphemeral(digestBuffer);
 
-        DigitallySigned signedParams = TlsUtils.generateServerKeyExchangeSignature(context, serverCredentials, buf);
+        TlsUtils.generateServerKeyExchangeSignature(context, serverCredentials, digestBuffer);
 
-        signedParams.encode(buf);
-
-        return buf.toByteArray();
+        return digestBuffer.toByteArray();
     }
 
     public void processServerKeyExchange(InputStream input) throws IOException
     {
-        DigestInputBuffer buf = new DigestInputBuffer();
-        InputStream teeIn = new TeeInputStream(input, buf);
+        DigestInputBuffer digestBuffer = new DigestInputBuffer();
+        InputStream teeIn = new TeeInputStream(input, digestBuffer);
 
         this.ecConfig = TlsECCUtils.receiveECConfig(ecConfigVerifier, serverECPointFormats, teeIn);
 
         byte[] point = TlsUtils.readOpaque8(teeIn);
 
-        DigitallySigned signedParams = parseSignature(input);
-
-        TlsUtils.verifyServerKeyExchangeSignature(context, verifier, buf, signedParams);
+        TlsUtils.verifyServerKeyExchangeSignature(context, input, keyExchange, supportedSignatureAlgorithms,
+            ecdhPeerCertificate, digestBuffer);
 
         this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
 

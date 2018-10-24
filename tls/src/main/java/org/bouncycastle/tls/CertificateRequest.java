@@ -94,7 +94,7 @@ public class CertificateRequest
         if (supportedSignatureAlgorithms != null)
         {
             // TODO Check whether SignatureAlgorithm.anonymous is allowed here
-            TlsUtils.encodeSupportedSignatureAlgorithms(supportedSignatureAlgorithms, false, output);
+            TlsUtils.encodeSupportedSignatureAlgorithms(supportedSignatureAlgorithms, output);
         }
 
         if (certificateAuthorities == null || certificateAuthorities.isEmpty())
@@ -153,8 +153,7 @@ public class CertificateRequest
         Vector supportedSignatureAlgorithms = null;
         if (TlsUtils.isTLSv12(context))
         {
-            // TODO Check whether SignatureAlgorithm.anonymous is allowed here
-            supportedSignatureAlgorithms = TlsUtils.parseSupportedSignatureAlgorithms(false, input);
+            supportedSignatureAlgorithms = TlsUtils.parseSupportedSignatureAlgorithms(input);
         }
 
         Vector certificateAuthorities = new Vector();
