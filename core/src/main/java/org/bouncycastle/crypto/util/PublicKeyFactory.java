@@ -73,6 +73,7 @@ public class PublicKeyFactory
     static
     {
         converters.put(PKCSObjectIdentifiers.rsaEncryption, new RSAConverter());
+        converters.put(PKCSObjectIdentifiers.id_RSASSA_PSS, new RSAConverter());
         converters.put(X509ObjectIdentifiers.id_ea_rsa, new RSAConverter());
         converters.put(X9ObjectIdentifiers.dhpublicnumber, new DHPublicNumberConverter());
         converters.put(PKCSObjectIdentifiers.dhKeyAgreement, new DHAgreementConverter());
