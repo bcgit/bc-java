@@ -38,7 +38,7 @@ public class BcDefaultTlsCredentialedSigner
                 case SignatureAlgorithm.rsa_pss_rsae_sha256:
                 case SignatureAlgorithm.rsa_pss_rsae_sha384:
                 case SignatureAlgorithm.rsa_pss_rsae_sha512:
-                    return new BcTlsRSAPSSSigner(crypto, signatureAlgorithm, (RSAKeyParameters)privateKey);
+                    return new BcTlsRSAPSSSigner(crypto, (RSAKeyParameters)privateKey, signatureAlgorithm);
                 }
             }
 
@@ -84,9 +84,10 @@ public class BcDefaultTlsCredentialedSigner
         return signer;
     }
 
-    public BcDefaultTlsCredentialedSigner(TlsCryptoParameters cryptoParams, BcTlsCrypto crypto, AsymmetricKeyParameter privateKey,
-        Certificate certificate, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+    public BcDefaultTlsCredentialedSigner(TlsCryptoParameters cryptoParams, BcTlsCrypto crypto,
+        AsymmetricKeyParameter privateKey, Certificate certificate, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
-        super(cryptoParams, makeSigner(crypto, privateKey, certificate, signatureAndHashAlgorithm), certificate, signatureAndHashAlgorithm);
+        super(cryptoParams, makeSigner(crypto, privateKey, certificate, signatureAndHashAlgorithm), certificate,
+            signatureAndHashAlgorithm);
     }
 }

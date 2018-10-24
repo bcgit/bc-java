@@ -25,7 +25,7 @@ public class BcTlsRSAPSSSigner
 {
     private final short signatureAlgorithm;
 
-    public BcTlsRSAPSSSigner(BcTlsCrypto crypto, short signatureAlgorithm, RSAKeyParameters privateKey)
+    public BcTlsRSAPSSSigner(BcTlsCrypto crypto, RSAKeyParameters privateKey, short signatureAlgorithm)
     {
         super(crypto, privateKey);
 
@@ -54,7 +54,7 @@ public class BcTlsRSAPSSSigner
         short hash = SignatureAlgorithm.getRSAPSSHashAlgorithm(signatureAlgorithm);
         Digest digest = crypto.createDigest(hash);
 
-        PSSSigner signer = new PSSSigner(new RSABlindedEngine(), digest, digest.getDigestSize());
+        PSSSigner signer = new PSSSigner(new RSABlindedEngine(), digest, HashAlgorithm.getOutputSize(hash));
         signer.init(true, new ParametersWithRandom(privateKey, crypto.getSecureRandom()));
 
         final SignerOutputStream sigOut = new SignerOutputStream(signer);
