@@ -366,7 +366,8 @@ public class TlsTestUtils
             // TODO Try ECDH/ECDSA according to intended use?
             name = "EC";
         }
-        else if (PKCSObjectIdentifiers.rsaEncryption.equals(oid))
+        else if (PKCSObjectIdentifiers.rsaEncryption.equals(oid)
+            || PKCSObjectIdentifiers.id_RSASSA_PSS.equals(oid))
         {
             name = "RSA";
         }
