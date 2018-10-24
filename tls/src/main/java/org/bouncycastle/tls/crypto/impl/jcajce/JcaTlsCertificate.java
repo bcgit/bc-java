@@ -217,7 +217,7 @@ public class JcaTlsCertificate
         }
     }
 
-    public short getSignatureAlgorithm() throws IOException
+    public short getLegacySignatureAlgorithm() throws IOException
     {
          PublicKey publicKey = getPublicKey();
 
@@ -272,22 +272,6 @@ public class JcaTlsCertificate
          {
              // TODO Check the curve and point format
              return SignatureAlgorithm.ecdsa;
-         }
-
-         /*
-          * Ed25519 public key; the certificate MUST allow the key to be used for signing
-          */
-         if ("Ed25519".equals(publicKey.getAlgorithm()))
-         {
-             return SignatureAlgorithm.ed25519;
-         }
-
-         /*
-          * Ed448 public key; the certificate MUST allow the key to be used for signing
-          */
-         if ("Ed448".equals(publicKey.getAlgorithm()))
-         {
-             return SignatureAlgorithm.ed448;
          }
 
          throw new TlsFatalAlert(AlertDescription.unsupported_certificate);

@@ -356,7 +356,7 @@ class ProvTlsServer
         else
         {
             X509Certificate[] chain = JsseUtils.getX509CertificateChain(manager.getContextData().getCrypto(), clientCertificate);
-            short signatureAlgorithm = clientCertificate.getCertificateAt(0).getSignatureAlgorithm();
+            short signatureAlgorithm = clientCertificate.getCertificateAt(0).getLegacySignatureAlgorithm();
             String authType = JsseUtils.getAuthStringClient(signatureAlgorithm);
 
             if (!manager.isClientTrusted(chain, authType))
@@ -520,7 +520,7 @@ class ProvTlsServer
         case KeyExchangeAlgorithm.ECDHE_ECDSA:
         case KeyExchangeAlgorithm.ECDHE_RSA:
         {
-            short signatureAlgorithm = TlsUtils.getSignatureAlgorithm(keyExchangeAlgorithm);
+            short signatureAlgorithm = TlsUtils.getLegacySignatureAlgorithm(keyExchangeAlgorithm);
             SignatureAndHashAlgorithm sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
                 supportedSignatureAlgorithms, signatureAlgorithm);
 

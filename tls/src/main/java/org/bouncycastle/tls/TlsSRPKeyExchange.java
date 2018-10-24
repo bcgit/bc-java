@@ -6,11 +6,11 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSRP6Client;
 import org.bouncycastle.tls.crypto.TlsSRP6Server;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
-import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.io.TeeInputStream;
@@ -46,7 +46,7 @@ public class TlsSRPKeyExchange
     protected byte[] srpSalt = null;
 
     protected TlsCredentialedSigner serverCredentials = null;
-    protected TlsVerifier verifier = null;
+    protected TlsCertificate serverCertificate = null;
 
     public TlsSRPKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsSRPConfigVerifier srpConfigVerifier,
         byte[] identity, byte[] password)
@@ -104,8 +104,7 @@ public class TlsSRPKeyExchange
 
         checkServerCertSigAlg(serverCertificate);
 
-        this.verifier = serverCertificate.getCertificateAt(0)
-            .createVerifier(TlsUtils.getSignatureAlgorithm(keyExchange));
+        this.serverCertificate = serverCertificate.getCertificateAt(0);
     }
 
     public boolean requiresServerKeyExchange()
@@ -122,38 +121,35 @@ public class TlsSRPKeyExchange
         BigInteger[] ng = srpConfig.getExplicitNG();
         ServerSRPParams srpParams = new ServerSRPParams(ng[0], ng[1], srpSalt, B);
 
-        DigestInputBuffer buf = new DigestInputBuffer();
+        DigestInputBuffer digestBuffer = new DigestInputBuffer();
 
-        srpParams.encode(buf);
+        srpParams.encode(digestBuffer);
 
         if (serverCredentials != null)
         {
-            DigitallySigned signedParams = TlsUtils.generateServerKeyExchangeSignature(context, serverCredentials, buf);
-
-            signedParams.encode(buf);
+            TlsUtils.generateServerKeyExchangeSignature(context, serverCredentials, digestBuffer);
         }
 
-        return buf.toByteArray();
+        return digestBuffer.toByteArray();
     }
 
     public void processServerKeyExchange(InputStream input) throws IOException
     {
-        DigestInputBuffer buf = null;
+        DigestInputBuffer digestBuffer = null;
         InputStream teeIn = input;
 
         if (keyExchange != KeyExchangeAlgorithm.SRP)
         {
-            buf = new DigestInputBuffer();
-            teeIn = new TeeInputStream(input, buf);
+            digestBuffer = new DigestInputBuffer();
+            teeIn = new TeeInputStream(input, digestBuffer);
         }
 
         ServerSRPParams srpParams = ServerSRPParams.parse(teeIn);
 
-        if (buf != null)
+        if (digestBuffer != null)
         {
-            DigitallySigned signedParams = parseSignature(input);
-
-            TlsUtils.verifyServerKeyExchangeSignature(context, verifier, buf, signedParams);
+            TlsUtils.verifyServerKeyExchangeSignature(context, input, keyExchange, supportedSignatureAlgorithms,
+                serverCertificate, digestBuffer);
         }
 
         this.srpConfig = new TlsSRPConfig();
