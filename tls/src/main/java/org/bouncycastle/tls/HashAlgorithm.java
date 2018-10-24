@@ -43,6 +43,27 @@ public class HashAlgorithm
         }
     }
 
+    public static int getOutputSize(short hashAlgorithm)
+    {
+        switch (hashAlgorithm)
+        {
+        case md5:
+            return 16;
+        case sha1:
+            return 20;
+        case sha224:
+            return 28;
+        case sha256:
+            return 32;
+        case sha384:
+            return 48;
+        case sha512:
+            return 64;
+        default:
+            return -1;
+        }
+    }
+
     public static String getText(short hashAlgorithm)
     {
         return getName(hashAlgorithm) + "(" + hashAlgorithm + ")";
