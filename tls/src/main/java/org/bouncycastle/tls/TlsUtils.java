@@ -972,7 +972,22 @@ public class TlsUtils
         extensions.put(EXT_signature_algorithms, createSignatureAlgorithmsExtension(supportedSignatureAlgorithms));
     }
 
-    public static short getLegacySignatureAlgorithm(int keyExchangeAlgorithm)
+    public static short getLegacySignatureAlgorithmClient(short clientCertificateType)
+    {
+        switch (clientCertificateType)
+        {
+        case ClientCertificateType.dss_sign:
+            return SignatureAlgorithm.dsa;
+        case ClientCertificateType.ecdsa_sign:
+            return SignatureAlgorithm.ecdsa;
+        case ClientCertificateType.rsa_sign:
+            return SignatureAlgorithm.rsa;
+        default:
+            return -1;
+        }
+    }
+
+    public static short getLegacySignatureAlgorithmServer(int keyExchangeAlgorithm)
     {
         switch (keyExchangeAlgorithm)
         {
@@ -996,21 +1011,6 @@ public class TlsUtils
         case KeyExchangeAlgorithm.SRP_RSA:
             return SignatureAlgorithm.rsa;
 
-        default:
-            return -1;
-        }
-    }
-
-    public static short getSignatureAlgorithmClient(short clientCertificateType)
-    {
-        switch (clientCertificateType)
-        {
-        case ClientCertificateType.dss_sign:
-            return SignatureAlgorithm.dsa;
-        case ClientCertificateType.ecdsa_sign:
-            return SignatureAlgorithm.ecdsa;
-        case ClientCertificateType.rsa_sign:
-            return SignatureAlgorithm.rsa;
         default:
             return -1;
         }
@@ -1451,7 +1451,7 @@ public class TlsUtils
 
         if (sigAndHashAlg == null)
         {
-            signatureAlgorithm = getLegacySignatureAlgorithm(keyExchangeAlgorithm);
+            signatureAlgorithm = getLegacySignatureAlgorithmServer(keyExchangeAlgorithm);
         }
         else
         {
@@ -2887,6 +2887,44 @@ public class TlsUtils
     public static boolean isValidCipherSuiteForVersion(int cipherSuite, ProtocolVersion serverVersion)
     {
         return getMinimumVersion(cipherSuite).isEqualOrEarlierVersionOf(serverVersion.getEquivalentTLSVersion());
+    }
+
+    static boolean isValidSignatureAlgorithmForCertificateVerify(short signatureAlgorithm, short clientCertificateType)
+    {
+        switch (clientCertificateType)
+        {
+        case ClientCertificateType.rsa_sign:
+            switch (signatureAlgorithm)
+            {
+            case SignatureAlgorithm.rsa:
+            case SignatureAlgorithm.rsa_pss_rsae_sha256:
+            case SignatureAlgorithm.rsa_pss_rsae_sha384:
+            case SignatureAlgorithm.rsa_pss_rsae_sha512:
+            case SignatureAlgorithm.rsa_pss_pss_sha256:
+            case SignatureAlgorithm.rsa_pss_pss_sha384:
+            case SignatureAlgorithm.rsa_pss_pss_sha512:
+                return true;
+            default:
+                return false;
+            }
+
+        case ClientCertificateType.dss_sign:
+            return SignatureAlgorithm.dsa == signatureAlgorithm;
+
+        case ClientCertificateType.ecdsa_sign:
+            switch (signatureAlgorithm)
+            {
+            case SignatureAlgorithm.ecdsa:
+            case SignatureAlgorithm.ed25519:
+            case SignatureAlgorithm.ed448:
+                return true;
+            default:
+                return false;
+            }
+
+        default:
+            return false;
+        }
     }
 
     static boolean isValidSignatureAlgorithmForServerKeyExchange(short signatureAlgorithm, int keyExchangeAlgorithm)
