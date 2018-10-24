@@ -3,8 +3,15 @@ package org.bouncycastle.tls.crypto.impl.bc;
 import java.io.IOException;
 import java.math.BigInteger;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
@@ -34,6 +41,39 @@ import org.bouncycastle.util.Arrays;
 public class BcTlsCertificate
     implements TlsCertificate
 {
+    private static final byte[] RSAPSSParams_256, RSAPSSParams_384, RSAPSSParams_512;
+
+    static
+    {
+        /*
+         * RFC 4055
+         */
+
+        AlgorithmIdentifier sha256Identifier = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE);
+        AlgorithmIdentifier sha384Identifier = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384, DERNull.INSTANCE);
+        AlgorithmIdentifier sha512Identifier = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512, DERNull.INSTANCE);
+
+        AlgorithmIdentifier mgf1SHA256Identifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha256Identifier);
+        AlgorithmIdentifier mgf1SHA384Identifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha384Identifier);
+        AlgorithmIdentifier mgf1SHA512Identifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha512Identifier);
+
+        ASN1Integer trailerField = new ASN1Integer(1);
+
+        try
+        {
+            RSAPSSParams_256 = new RSASSAPSSparams(sha256Identifier, mgf1SHA256Identifier, new ASN1Integer(32), trailerField)
+                .getEncoded(ASN1Encoding.DER);
+            RSAPSSParams_384 = new RSASSAPSSparams(sha384Identifier, mgf1SHA384Identifier, new ASN1Integer(48), trailerField)
+                .getEncoded(ASN1Encoding.DER);
+            RSAPSSParams_512 = new RSASSAPSSparams(sha512Identifier, mgf1SHA512Identifier, new ASN1Integer(64), trailerField)
+                .getEncoded(ASN1Encoding.DER);
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException(e);
+        }
+    }
+
     public static BcTlsCertificate convert(BcTlsCrypto crypto, TlsCertificate certificate)
         throws IOException
     {
@@ -85,6 +125,9 @@ public class BcTlsCertificate
 
         switch (signatureAlgorithm)
         {
+        case SignatureAlgorithm.rsa:
+            return new BcTlsRSAVerifier(crypto, getPubKeyRSA());
+
         case SignatureAlgorithm.dsa:
             return new BcTlsDSAVerifier(crypto, getPubKeyDSS());
 
@@ -97,8 +140,17 @@ public class BcTlsCertificate
         case SignatureAlgorithm.ed448:
             return new BcTlsEd448Verifier(crypto, getPubKeyEd448());
 
-        case SignatureAlgorithm.rsa:
-            return new BcTlsRSAVerifier(crypto, getPubKeyRSA());
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+            validateSigAlg_PSS_RSAE();
+            return new BcTlsRSAPSSVerifier(crypto, signatureAlgorithm, getPubKeyRSA());
+
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+            validateSigAlg_PSS_PSS(signatureAlgorithm);
+            return new BcTlsRSAPSSVerifier(crypto, signatureAlgorithm, getPubKeyRSA());
 
         default:
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);
@@ -286,6 +338,50 @@ public class BcTlsCertificate
         }
     }
 
+    public boolean supportsSignatureAlgorithm(short signatureAlgorithm)
+        throws IOException
+    {
+        if (!supportsKeyUsage(KeyUsage.digitalSignature))
+        {
+            return false;
+        }
+
+        AsymmetricKeyParameter publicKey = getPublicKey();
+
+        switch (signatureAlgorithm)
+        {
+        case SignatureAlgorithm.rsa:
+            return publicKey instanceof RSAKeyParameters;
+
+        case SignatureAlgorithm.dsa:
+            return publicKey instanceof DSAPublicKeyParameters;
+
+        case SignatureAlgorithm.ecdsa:
+            return publicKey instanceof ECPublicKeyParameters;
+
+        case SignatureAlgorithm.ed25519:
+            return publicKey instanceof Ed25519PublicKeyParameters;
+
+        case SignatureAlgorithm.ed448:
+            return publicKey instanceof Ed448PublicKeyParameters;
+
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+            return sigAlgSupportsPSS_RSAE()
+                && publicKey instanceof RSAKeyParameters;
+
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+            return sigAlgSupportsPSS_PSS(signatureAlgorithm)
+                && publicKey instanceof RSAKeyParameters;
+
+        default:
+            return false;
+        }
+    }
+
     public TlsCertificate useInRole(int connectionEnd, int keyExchangeAlgorithm) throws IOException
     {
         switch (keyExchangeAlgorithm)
@@ -337,8 +433,7 @@ public class BcTlsCertificate
         }
     }
 
-    protected void validateKeyUsage(int keyUsageBits)
-        throws IOException
+    protected boolean supportsKeyUsage(int keyUsageBits)
     {
         Extensions exts = certificate.getTBSCertificate().getExtensions();
         if (exts != null)
@@ -349,9 +444,72 @@ public class BcTlsCertificate
                 int bits = ku.getBytes()[0] & 0xff;
                 if ((bits & keyUsageBits) != keyUsageBits)
                 {
-                    throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                    return false;
                 }
             }
+        }
+        return true;
+    }
+
+    protected boolean sigAlgSupportsPSS_PSS(short signatureAlgorithm)
+        throws IOException
+    {
+        AlgorithmIdentifier sigAlg = certificate.getSignatureAlgorithm();
+        if (!PKCSObjectIdentifiers.id_RSASSA_PSS.equals(sigAlg.getAlgorithm()))
+        {
+            return false;
+        }
+
+        ASN1Encodable pssParams = sigAlg.getParameters();
+        if (null == pssParams)
+        {
+            return true;
+        }
+
+        byte[] encoded = pssParams.toASN1Primitive().getEncoded(ASN1Encoding.DER);
+
+        byte[] expected;
+        switch (signatureAlgorithm)
+        {
+        case SignatureAlgorithm.rsa_pss_pss_sha256: expected = RSAPSSParams_256; break;
+        case SignatureAlgorithm.rsa_pss_pss_sha384: expected = RSAPSSParams_384; break;
+        case SignatureAlgorithm.rsa_pss_pss_sha512: expected = RSAPSSParams_512; break;
+        default: throw new IllegalArgumentException("signatureAlgorithm");
+        }
+
+        return Arrays.areEqual(expected, encoded);
+    }
+
+    protected boolean sigAlgSupportsPSS_RSAE()
+        throws IOException
+    {
+        return PKCSObjectIdentifiers.rsaEncryption.equals(certificate.getSignatureAlgorithm().getAlgorithm());
+    }
+
+    protected void validateKeyUsage(int keyUsageBits)
+        throws IOException
+    {
+        if (!supportsKeyUsage(keyUsageBits))
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+        }
+    }
+
+    protected void validateSigAlg_PSS_PSS(short signatureAlgorithm)
+        throws IOException
+    {
+        if (!sigAlgSupportsPSS_PSS(signatureAlgorithm))
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_certificate);
+        }
+    }
+
+    protected void validateSigAlg_PSS_RSAE()
+        throws IOException
+    {
+        if (!sigAlgSupportsPSS_RSAE())
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
     }
 }

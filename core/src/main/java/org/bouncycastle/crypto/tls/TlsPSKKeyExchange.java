@@ -49,6 +49,17 @@ public class TlsPSKKeyExchange
     protected TlsEncryptionCredentials serverCredentials = null;
     protected byte[] premasterSecret;
 
+    /**
+     * @deprecated Use constructor that takes a TlsDHVerifier
+     */
+    public TlsPSKKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsPSKIdentity pskIdentity,
+        TlsPSKIdentityManager pskIdentityManager, DHParameters dhParameters, int[] namedCurves,
+        short[] clientECPointFormats, short[] serverECPointFormats)
+    {
+        this(keyExchange, supportedSignatureAlgorithms, pskIdentity, pskIdentityManager, new DefaultTlsDHVerifier(),
+            dhParameters, namedCurves, clientECPointFormats, serverECPointFormats);
+    }
+
     public TlsPSKKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsPSKIdentity pskIdentity,
         TlsPSKIdentityManager pskIdentityManager, TlsDHVerifier dhVerifier, DHParameters dhParameters, int[] namedCurves,
         short[] clientECPointFormats, short[] serverECPointFormats)
