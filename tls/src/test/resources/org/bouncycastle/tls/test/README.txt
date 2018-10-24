@@ -23,6 +23,21 @@
     certtool --generate-self-signed --template ca.tmpl --outfile x509-ca-rsa.pem \
         --load-privkey x509-ca-key-rsa.pem --hash sha256
 
+    certtool --generate-privkey --outfile x509-ca-key-rsa_pss_256.pem \
+        --pkcs8 --password '' --key-type='rsa-pss' --bits=2048 --hash=sha256 --salt-size=32
+    certtool --generate-self-signed --template ca.tmpl --outfile x509-ca-rsa_pss_256.pem \
+        --load-privkey x509-ca-key-rsa_pss_256.pem
+
+    certtool --generate-privkey --outfile x509-ca-key-rsa_pss_384.pem \
+        --pkcs8 --password '' --key-type='rsa-pss' --bits=2048 --hash=sha384 --salt-size=48
+    certtool --generate-self-signed --template ca.tmpl --outfile x509-ca-rsa_pss_384.pem \
+        --load-privkey x509-ca-key-rsa_pss_384.pem
+
+    certtool --generate-privkey --outfile x509-ca-key-rsa_pss_512.pem \
+        --pkcs8 --password '' --key-type='rsa-pss' --bits=2048 --hash=sha512 --salt-size=64
+    certtool --generate-self-signed --template ca.tmpl --outfile x509-ca-rsa_pss_512.pem \
+        --load-privkey x509-ca-key-rsa_pss_512.pem
+
 # Client agreement credentials:
 
     certtool --generate-privkey --outfile x509-client-key-ecdh.pem \
@@ -56,6 +71,30 @@
     certtool --generate-certificate --template client_sign.tmpl --outfile x509-client-rsa.pem \
         --load-privkey x509-client-key-rsa.pem --hash sha256 \
         --load-ca-privkey x509-ca-key-rsa.pem --load-ca-certificate x509-ca-rsa.pem
+
+    certtool --generate-privkey --outfile x509-client-key-rsa_pss_256.pem \
+        --pkcs8 --password '' --key-type='rsa-pss' --bits=2048 --hash=sha256 --salt-size=32
+    certtool --generate-certificate --template client_sign.tmpl \
+        --outfile x509-client-rsa_pss_256.pem \
+        --load-privkey x509-client-key-rsa_pss_256.pem \
+        --load-ca-privkey x509-ca-key-rsa_pss_256.pem \
+        --load-ca-certificate x509-ca-rsa_pss_256.pem
+
+    certtool --generate-privkey --outfile x509-client-key-rsa_pss_384.pem \
+        --pkcs8 --password '' --key-type='rsa-pss' --bits=2048 --hash=sha384 --salt-size=48
+    certtool --generate-certificate --template client_sign.tmpl \
+        --outfile x509-client-rsa_pss_384.pem \
+        --load-privkey x509-client-key-rsa_pss_384.pem \
+        --load-ca-privkey x509-ca-key-rsa_pss_384.pem \
+        --load-ca-certificate x509-ca-rsa_pss_384.pem
+
+    certtool --generate-privkey --outfile x509-client-key-rsa_pss_512.pem \
+        --pkcs8 --password '' --key-type='rsa-pss' --bits=2048 --hash=sha512 --salt-size=64
+    certtool --generate-certificate --template client_sign.tmpl \
+        --outfile x509-client-rsa_pss_512.pem \
+        --load-privkey x509-client-key-rsa_pss_512.pem \
+        --load-ca-privkey x509-ca-key-rsa_pss_512.pem \
+        --load-ca-certificate x509-ca-rsa_pss_512.pem
 
 # Server agreement credentials:
 
@@ -100,3 +139,26 @@
         --load-privkey x509-server-key-rsa-sign.pem --hash sha256 \
         --load-ca-privkey x509-ca-key-rsa.pem --load-ca-certificate x509-ca-rsa.pem
 
+    certtool --generate-privkey --outfile x509-server-key-rsa_pss_256.pem \
+        --pkcs8 --password '' --key-type='rsa-pss' --bits=2048 --hash=sha256 --salt-size=32
+    certtool --generate-certificate --template server_sign.tmpl \
+        --outfile x509-server-rsa_pss_256.pem \
+        --load-privkey x509-server-key-rsa_pss_256.pem \
+        --load-ca-privkey x509-ca-key-rsa_pss_256.pem \
+        --load-ca-certificate x509-ca-rsa_pss_256.pem
+
+    certtool --generate-privkey --outfile x509-server-key-rsa_pss_512.pem \
+        --pkcs8 --password '' --key-type='rsa-pss' --bits=2048 --hash=sha512 --salt-size=48
+    certtool --generate-certificate --template server_sign.tmpl \
+        --outfile x509-server-rsa_pss_512.pem \
+        --load-privkey x509-server-key-rsa_pss_512.pem \
+        --load-ca-privkey x509-ca-key-rsa_pss_512.pem \
+        --load-ca-certificate x509-ca-rsa_pss_512.pem
+
+    certtool --generate-privkey --outfile x509-server-key-rsa_pss_512.pem \
+        --pkcs8 --password '' --key-type='rsa-pss' --bits=2048 --hash=sha512 --salt-size=64
+    certtool --generate-certificate --template server_sign.tmpl \
+        --outfile x509-server-rsa_pss_512.pem \
+        --load-privkey x509-server-key-rsa_pss_512.pem \
+        --load-ca-privkey x509-ca-key-rsa_pss_512.pem \
+        --load-ca-certificate x509-ca-rsa_pss_512.pem
