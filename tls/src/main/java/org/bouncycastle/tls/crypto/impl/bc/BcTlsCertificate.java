@@ -143,13 +143,13 @@ public class BcTlsCertificate
         case SignatureAlgorithm.rsa_pss_rsae_sha256:
         case SignatureAlgorithm.rsa_pss_rsae_sha384:
         case SignatureAlgorithm.rsa_pss_rsae_sha512:
-            validateSigAlg_PSS_RSAE();
+            validatePSS_RSAE();
             return new BcTlsRSAPSSVerifier(crypto, signatureAlgorithm, getPubKeyRSA());
 
         case SignatureAlgorithm.rsa_pss_pss_sha256:
         case SignatureAlgorithm.rsa_pss_pss_sha384:
         case SignatureAlgorithm.rsa_pss_pss_sha512:
-            validateSigAlg_PSS_PSS(signatureAlgorithm);
+            validatePSS_PSS(signatureAlgorithm);
             return new BcTlsRSAPSSVerifier(crypto, signatureAlgorithm, getPubKeyRSA());
 
         default:
@@ -352,13 +352,13 @@ public class BcTlsCertificate
         case SignatureAlgorithm.rsa_pss_rsae_sha256:
         case SignatureAlgorithm.rsa_pss_rsae_sha384:
         case SignatureAlgorithm.rsa_pss_rsae_sha512:
-            return sigAlgSupportsPSS_RSAE()
+            return supportsPSS_RSAE()
                 && publicKey instanceof RSAKeyParameters;
 
         case SignatureAlgorithm.rsa_pss_pss_sha256:
         case SignatureAlgorithm.rsa_pss_pss_sha384:
         case SignatureAlgorithm.rsa_pss_pss_sha512:
-            return sigAlgSupportsPSS_PSS(signatureAlgorithm)
+            return supportsPSS_PSS(signatureAlgorithm)
                 && publicKey instanceof RSAKeyParameters;
 
         default:
@@ -435,16 +435,16 @@ public class BcTlsCertificate
         return true;
     }
 
-    protected boolean sigAlgSupportsPSS_PSS(short signatureAlgorithm)
+    protected boolean supportsPSS_PSS(short signatureAlgorithm)
         throws IOException
     {
-        AlgorithmIdentifier sigAlg = certificate.getSignatureAlgorithm();
-        if (!PKCSObjectIdentifiers.id_RSASSA_PSS.equals(sigAlg.getAlgorithm()))
+        AlgorithmIdentifier pubKeyAlgID = certificate.getSubjectPublicKeyInfo().getAlgorithm();
+        if (!PKCSObjectIdentifiers.id_RSASSA_PSS.equals(pubKeyAlgID.getAlgorithm()))
         {
             return false;
         }
 
-        ASN1Encodable pssParams = sigAlg.getParameters();
+        ASN1Encodable pssParams = pubKeyAlgID.getParameters();
         if (null == pssParams)
         {
             return true;
@@ -464,10 +464,11 @@ public class BcTlsCertificate
         return Arrays.areEqual(expected, encoded);
     }
 
-    protected boolean sigAlgSupportsPSS_RSAE()
+    protected boolean supportsPSS_RSAE()
         throws IOException
     {
-        return PKCSObjectIdentifiers.rsaEncryption.equals(certificate.getSignatureAlgorithm().getAlgorithm());
+        return PKCSObjectIdentifiers.rsaEncryption.equals(
+            certificate.getSubjectPublicKeyInfo().getAlgorithm().getAlgorithm());
     }
 
     protected void validateKeyUsage(int keyUsageBits)
@@ -479,19 +480,19 @@ public class BcTlsCertificate
         }
     }
 
-    protected void validateSigAlg_PSS_PSS(short signatureAlgorithm)
+    protected void validatePSS_PSS(short signatureAlgorithm)
         throws IOException
     {
-        if (!sigAlgSupportsPSS_PSS(signatureAlgorithm))
+        if (!supportsPSS_PSS(signatureAlgorithm))
         {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
     }
 
-    protected void validateSigAlg_PSS_RSAE()
+    protected void validatePSS_RSAE()
         throws IOException
     {
-        if (!sigAlgSupportsPSS_RSAE())
+        if (!supportsPSS_RSAE())
         {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
