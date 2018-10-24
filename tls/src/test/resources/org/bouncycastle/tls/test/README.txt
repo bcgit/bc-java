@@ -147,13 +147,13 @@
         --load-ca-privkey x509-ca-key-rsa_pss_256.pem \
         --load-ca-certificate x509-ca-rsa_pss_256.pem
 
-    certtool --generate-privkey --outfile x509-server-key-rsa_pss_512.pem \
-        --pkcs8 --password '' --key-type='rsa-pss' --bits=2048 --hash=sha512 --salt-size=48
+    certtool --generate-privkey --outfile x509-server-key-rsa_pss_384.pem \
+        --pkcs8 --password '' --key-type='rsa-pss' --bits=2048 --hash=sha384 --salt-size=48
     certtool --generate-certificate --template server_sign.tmpl \
-        --outfile x509-server-rsa_pss_512.pem \
-        --load-privkey x509-server-key-rsa_pss_512.pem \
-        --load-ca-privkey x509-ca-key-rsa_pss_512.pem \
-        --load-ca-certificate x509-ca-rsa_pss_512.pem
+        --outfile x509-server-rsa_pss_384.pem \
+        --load-privkey x509-server-key-rsa_pss_384.pem \
+        --load-ca-privkey x509-ca-key-rsa_pss_384.pem \
+        --load-ca-certificate x509-ca-rsa_pss_384.pem
 
     certtool --generate-privkey --outfile x509-server-key-rsa_pss_512.pem \
         --pkcs8 --password '' --key-type='rsa-pss' --bits=2048 --hash=sha512 --salt-size=64
