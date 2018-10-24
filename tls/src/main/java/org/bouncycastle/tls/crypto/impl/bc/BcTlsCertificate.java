@@ -41,7 +41,8 @@ import org.bouncycastle.util.Arrays;
 public class BcTlsCertificate
     implements TlsCertificate
 {
-    private static final byte[] RSAPSSParams_256, RSAPSSParams_384, RSAPSSParams_512;
+    private static final byte[] RSAPSSParams_256_A, RSAPSSParams_384_A, RSAPSSParams_512_A;
+    private static final byte[] RSAPSSParams_256_B, RSAPSSParams_384_B, RSAPSSParams_512_B;
 
     static
     {
@@ -49,23 +50,35 @@ public class BcTlsCertificate
          * RFC 4055
          */
 
-        AlgorithmIdentifier sha256Identifier = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE);
-        AlgorithmIdentifier sha384Identifier = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384, DERNull.INSTANCE);
-        AlgorithmIdentifier sha512Identifier = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512, DERNull.INSTANCE);
+        AlgorithmIdentifier sha256Identifier_A = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
+        AlgorithmIdentifier sha384Identifier_A = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384);
+        AlgorithmIdentifier sha512Identifier_A = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
+        AlgorithmIdentifier sha256Identifier_B = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE);
+        AlgorithmIdentifier sha384Identifier_B = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384, DERNull.INSTANCE);
+        AlgorithmIdentifier sha512Identifier_B = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512, DERNull.INSTANCE);
 
-        AlgorithmIdentifier mgf1SHA256Identifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha256Identifier);
-        AlgorithmIdentifier mgf1SHA384Identifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha384Identifier);
-        AlgorithmIdentifier mgf1SHA512Identifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha512Identifier);
+        AlgorithmIdentifier mgf1SHA256Identifier_A = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha256Identifier_A);
+        AlgorithmIdentifier mgf1SHA384Identifier_A = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha384Identifier_A);
+        AlgorithmIdentifier mgf1SHA512Identifier_A = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha512Identifier_A);
+        AlgorithmIdentifier mgf1SHA256Identifier_B = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha256Identifier_B);
+        AlgorithmIdentifier mgf1SHA384Identifier_B = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha384Identifier_B);
+        AlgorithmIdentifier mgf1SHA512Identifier_B = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha512Identifier_B);
 
         ASN1Integer trailerField = new ASN1Integer(1);
 
         try
         {
-            RSAPSSParams_256 = new RSASSAPSSparams(sha256Identifier, mgf1SHA256Identifier, new ASN1Integer(32), trailerField)
+            RSAPSSParams_256_A = new RSASSAPSSparams(sha256Identifier_A, mgf1SHA256Identifier_A, new ASN1Integer(32), trailerField)
                 .getEncoded(ASN1Encoding.DER);
-            RSAPSSParams_384 = new RSASSAPSSparams(sha384Identifier, mgf1SHA384Identifier, new ASN1Integer(48), trailerField)
+            RSAPSSParams_384_A = new RSASSAPSSparams(sha384Identifier_A, mgf1SHA384Identifier_A, new ASN1Integer(48), trailerField)
                 .getEncoded(ASN1Encoding.DER);
-            RSAPSSParams_512 = new RSASSAPSSparams(sha512Identifier, mgf1SHA512Identifier, new ASN1Integer(64), trailerField)
+            RSAPSSParams_512_A = new RSASSAPSSparams(sha512Identifier_A, mgf1SHA512Identifier_A, new ASN1Integer(64), trailerField)
+                .getEncoded(ASN1Encoding.DER);
+            RSAPSSParams_256_B = new RSASSAPSSparams(sha256Identifier_B, mgf1SHA256Identifier_B, new ASN1Integer(32), trailerField)
+                .getEncoded(ASN1Encoding.DER);
+            RSAPSSParams_384_B = new RSASSAPSSparams(sha384Identifier_B, mgf1SHA384Identifier_B, new ASN1Integer(48), trailerField)
+                .getEncoded(ASN1Encoding.DER);
+            RSAPSSParams_512_B = new RSASSAPSSparams(sha512Identifier_B, mgf1SHA512Identifier_B, new ASN1Integer(64), trailerField)
                 .getEncoded(ASN1Encoding.DER);
         }
         catch (IOException e)
@@ -452,16 +465,27 @@ public class BcTlsCertificate
 
         byte[] encoded = pssParams.toASN1Primitive().getEncoded(ASN1Encoding.DER);
 
-        byte[] expected;
+        byte[] expected_A, expected_B;
         switch (signatureAlgorithm)
         {
-        case SignatureAlgorithm.rsa_pss_pss_sha256: expected = RSAPSSParams_256; break;
-        case SignatureAlgorithm.rsa_pss_pss_sha384: expected = RSAPSSParams_384; break;
-        case SignatureAlgorithm.rsa_pss_pss_sha512: expected = RSAPSSParams_512; break;
-        default: throw new IllegalArgumentException("signatureAlgorithm");
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+            expected_A = RSAPSSParams_256_A;
+            expected_B = RSAPSSParams_256_B;
+            break;
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+            expected_A = RSAPSSParams_384_A;
+            expected_B = RSAPSSParams_384_B;
+            break;
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+            expected_A = RSAPSSParams_512_A;
+            expected_B = RSAPSSParams_512_B;
+            break;
+        default:
+            throw new IllegalArgumentException("signatureAlgorithm");
         }
 
-        return Arrays.areEqual(expected, encoded);
+        return Arrays.areEqual(expected_A, encoded)
+            || Arrays.areEqual(expected_B, encoded);
     }
 
     protected boolean supportsPSS_RSAE()
