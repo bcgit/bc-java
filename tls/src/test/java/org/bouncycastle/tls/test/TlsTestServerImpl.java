@@ -210,7 +210,10 @@ class TlsTestServerImpl
         }
 
         if (!isEmpty && !TlsTestUtils.isCertificateOneOf(context.getCrypto(), chain[0],
-            new String[]{ "x509-client-dsa.pem", "x509-client-ecdsa.pem", "x509-client-ed25519.pem", "x509-client-rsa.pem"}))
+            new String[]
+            { "x509-client-dsa.pem", "x509-client-ecdh.pem", "x509-client-ecdsa.pem", "x509-client-ed25519.pem",
+                "x509-client-rsa_pss_256.pem", "x509-client-rsa_pss_384.pem", "x509-client-rsa_pss_512.pem",
+                "x509-client-rsa.pem" }))
         {
             throw new TlsFatalAlert(AlertDescription.bad_certificate);
         }
