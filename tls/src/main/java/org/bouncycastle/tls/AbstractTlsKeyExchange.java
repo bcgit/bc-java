@@ -114,13 +114,6 @@ public abstract class AbstractTlsKeyExchange
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public void processServerCredentials(TlsCredentials serverCredentials)
-        throws IOException
-    {
-        // TODO[tls-ops] Process the server certificate differently on the server side 
-        processServerCertificate(serverCredentials.getCertificate());
-    }
-
     public boolean requiresServerKeyExchange()
     {
         return false;

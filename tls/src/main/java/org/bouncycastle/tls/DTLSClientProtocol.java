@@ -201,12 +201,6 @@ public class DTLSClientProtocol
             state.authentication = null;
         }
 
-        // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus
-        if (serverCertificate == null || serverCertificate.isEmpty())
-        {
-            state.allowCertificateStatus = false;
-        }
-
         if (serverMessage.getType() == HandshakeType.certificate_status)
         {
             processCertificateStatus(state, serverMessage.getBody());
@@ -598,6 +592,11 @@ public class DTLSClientProtocol
         Certificate serverCertificate = Certificate.parse(state.clientContext, buf, endPointHash);
 
         TlsProtocol.assertEmpty(buf);
+
+        if (serverCertificate.isEmpty())
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_certificate);
+        }
 
         state.clientContext.getSecurityParameters().tlsServerEndPoint = endPointHash.toByteArray();
 

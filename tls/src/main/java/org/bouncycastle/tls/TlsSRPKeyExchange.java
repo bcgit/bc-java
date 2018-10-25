@@ -97,10 +97,6 @@ public class TlsSRPKeyExchange
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
-        if (serverCertificate.isEmpty())
-        {
-            throw new TlsFatalAlert(AlertDescription.bad_certificate);
-        }
 
         checkServerCertSigAlg(serverCertificate);
 

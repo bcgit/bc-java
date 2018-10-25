@@ -52,11 +52,6 @@ public class TlsECDHEKeyExchange
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
-        if (serverCertificate.isEmpty())
-        {
-            throw new TlsFatalAlert(AlertDescription.bad_certificate);
-        }
-
         checkServerCertSigAlg(serverCertificate);
 
         this.ecdhPeerCertificate = serverCertificate.getCertificateAt(0);

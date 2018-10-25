@@ -241,11 +241,6 @@ public class TlsDHKeyExchange
 
     protected TlsCertificate validatePeerCertificate(int connectionEnd, Certificate peerCertificate) throws IOException
     {
-        if (peerCertificate.isEmpty())
-        {
-            throw new TlsFatalAlert(AlertDescription.bad_certificate);
-        }
-
         return peerCertificate.getCertificateAt(0).useInRole(connectionEnd, keyExchange);
     }
 }
