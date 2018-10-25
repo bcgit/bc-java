@@ -5,16 +5,18 @@ import java.io.IOException;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.util.Arrays;
 
-public class RSAPSSUtil
+public class RSAUtil
 {
     private static final byte[] RSAPSSParams_256_A, RSAPSSParams_384_A, RSAPSSParams_512_A;
     private static final byte[] RSAPSSParams_256_B, RSAPSSParams_384_B, RSAPSSParams_512_B;
@@ -66,10 +68,17 @@ public class RSAPSSUtil
         }
     }
 
-    public static boolean supportsPSS_PSS(short signatureAlgorithm, AlgorithmIdentifier pubKeyAlgID)
-        throws IOException
+    public static boolean supportsPKCS1(AlgorithmIdentifier pubKeyAlgID)
     {
-        if (!PKCSObjectIdentifiers.id_RSASSA_PSS.equals(pubKeyAlgID.getAlgorithm()))
+        ASN1ObjectIdentifier oid = pubKeyAlgID.getAlgorithm();
+        return PKCSObjectIdentifiers.rsaEncryption.equals(oid)
+            || X509ObjectIdentifiers.id_ea_rsa.equals(oid);
+    }
+
+    public static boolean supportsPSS_PSS(short signatureAlgorithm, AlgorithmIdentifier pubKeyAlgID)
+    {
+        ASN1ObjectIdentifier oid = pubKeyAlgID.getAlgorithm();
+        if (!PKCSObjectIdentifiers.id_RSASSA_PSS.equals(oid))
         {
             return false;
         }
@@ -77,10 +86,26 @@ public class RSAPSSUtil
         ASN1Encodable pssParams = pubKeyAlgID.getParameters();
         if (null == pssParams)
         {
-            return true;
+            switch (signatureAlgorithm)
+            {
+            case SignatureAlgorithm.rsa_pss_pss_sha256:
+            case SignatureAlgorithm.rsa_pss_pss_sha384:
+            case SignatureAlgorithm.rsa_pss_pss_sha512:
+                return true;
+            default:
+                return false;
+            }
         }
 
-        byte[] encoded = pssParams.toASN1Primitive().getEncoded(ASN1Encoding.DER);
+        byte[] encoded;
+        try
+        {
+            encoded = pssParams.toASN1Primitive().getEncoded(ASN1Encoding.DER);
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
 
         byte[] expected_A, expected_B;
         switch (signatureAlgorithm)
@@ -98,16 +123,16 @@ public class RSAPSSUtil
             expected_B = RSAPSSParams_512_B;
             break;
         default:
-            throw new IllegalArgumentException("signatureAlgorithm");
+            return false;
         }
 
         return Arrays.areEqual(expected_A, encoded)
             || Arrays.areEqual(expected_B, encoded);
     }
 
-    public static boolean supportsPSS_RSAE(short signatureAlgorithm, AlgorithmIdentifier pubKeyAlgID)
-        throws IOException
+    public static boolean supportsPSS_RSAE(AlgorithmIdentifier pubKeyAlgID)
     {
-        return PKCSObjectIdentifiers.rsaEncryption.equals(pubKeyAlgID.getAlgorithm());
+        ASN1ObjectIdentifier oid = pubKeyAlgID.getAlgorithm();
+        return PKCSObjectIdentifiers.rsaEncryption.equals(oid);
     }
 }
