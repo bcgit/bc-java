@@ -382,15 +382,8 @@ public class DTLSServerProtocol
         validateSelectedCipherSuite(selectedCipherSuite, AlertDescription.internal_error);
         securityParameters.cipherSuite = selectedCipherSuite;
 
-        short selectedCompressionMethod = state.server.getSelectedCompressionMethod();
-        if (!Arrays.contains(state.offeredCompressionMethods, selectedCompressionMethod))
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-        securityParameters.compressionAlgorithm = selectedCompressionMethod;
-
         TlsUtils.writeUint16(selectedCipherSuite, buf);
-        TlsUtils.writeUint8(selectedCompressionMethod, buf);
+        TlsUtils.writeUint8(CompressionMethod._null, buf);
 
         state.serverExtensions = state.server.getServerExtensions();
 
@@ -609,7 +602,11 @@ public class DTLSServerProtocol
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        state.offeredCompressionMethods = TlsUtils.readUint8Array(compression_methods_length, buf);
+        short[] offeredCompressionMethods = TlsUtils.readUint8Array(compression_methods_length, buf);
+        if (!Arrays.contains(offeredCompressionMethods, CompressionMethod._null))
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
 
         /*
          * TODO RFC 3546 2.3 If [...] the older session is resumed, then the server MUST ignore
@@ -637,7 +634,6 @@ public class DTLSServerProtocol
         securityParameters.clientRandom = client_random;
 
         state.server.notifyOfferedCipherSuites(state.offeredCipherSuites);
-        state.server.notifyOfferedCompressionMethods(state.offeredCompressionMethods);
 
         /*
          * RFC 5746 3.6. Server Behavior: Initial Handshake
@@ -723,7 +719,6 @@ public class DTLSServerProtocol
         SessionParameters sessionParameters = null;
         SessionParameters.Builder sessionParametersBuilder = null;
         int[] offeredCipherSuites = null;
-        short[] offeredCompressionMethods = null;
         Hashtable clientExtensions = null;
         Hashtable serverExtensions = null;
         boolean resumedSession = false;

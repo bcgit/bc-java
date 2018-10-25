@@ -516,7 +516,12 @@ public class TlsServerProtocol
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
-        this.offeredCompressionMethods = TlsUtils.readUint8Array(compression_methods_length, buf);
+
+        short[] offeredCompressionMethods = TlsUtils.readUint8Array(compression_methods_length, buf);
+        if (!Arrays.contains(offeredCompressionMethods, CompressionMethod._null))
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
 
         /*
          * TODO RFC 3546 2.3 If [...] the older session is resumed, then the server MUST ignore
@@ -541,7 +546,6 @@ public class TlsServerProtocol
         securityParameters.clientRandom = client_random;
 
         tlsServer.notifyOfferedCipherSuites(offeredCipherSuites);
-        tlsServer.notifyOfferedCompressionMethods(offeredCompressionMethods);
 
         /*
          * RFC 5746 3.6. Server Behavior: Initial Handshake
@@ -607,7 +611,7 @@ public class TlsServerProtocol
 
         establishMasterSecret(getContext(), keyExchange);
 
-        recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
+        recordStream.setPendingConnectionState(getPeer().getCipher());
     }
 
     protected void sendCertificateRequestMessage(CertificateRequest certificateRequest)
@@ -683,15 +687,8 @@ public class TlsServerProtocol
         }
         securityParameters.cipherSuite = selectedCipherSuite;
 
-        short selectedCompressionMethod = tlsServer.getSelectedCompressionMethod();
-        if (!Arrays.contains(offeredCompressionMethods, selectedCompressionMethod))
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-        securityParameters.compressionAlgorithm = selectedCompressionMethod;
-
         TlsUtils.writeUint16(selectedCipherSuite, message);
-        TlsUtils.writeUint8(selectedCompressionMethod, message);
+        TlsUtils.writeUint8(CompressionMethod._null, message);
 
         this.serverExtensions = tlsServer.getServerExtensions();
 
