@@ -82,14 +82,7 @@ public class CertificateRequest
     public void encode(OutputStream output)
         throws IOException
     {
-        if (certificateTypes == null || certificateTypes.length == 0)
-        {
-            TlsUtils.writeUint8(0, output);
-        }
-        else
-        {
-            TlsUtils.writeUint8ArrayWithUint8Length(certificateTypes, output);
-        }
+        TlsUtils.writeUint8ArrayWithUint8Length(certificateTypes, output);
 
         if (supportedSignatureAlgorithms != null)
         {
