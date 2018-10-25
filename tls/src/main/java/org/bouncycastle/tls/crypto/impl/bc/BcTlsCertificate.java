@@ -27,7 +27,7 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsVerifier;
-import org.bouncycastle.tls.crypto.impl.RSAPSSUtil;
+import org.bouncycastle.tls.crypto.impl.RSAUtil;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -88,6 +88,7 @@ public class BcTlsCertificate
         switch (signatureAlgorithm)
         {
         case SignatureAlgorithm.rsa:
+            validateRSA_PKCS1();
             return new BcTlsRSAVerifier(crypto, getPubKeyRSA());
 
         case SignatureAlgorithm.dsa:
@@ -105,13 +106,13 @@ public class BcTlsCertificate
         case SignatureAlgorithm.rsa_pss_rsae_sha256:
         case SignatureAlgorithm.rsa_pss_rsae_sha384:
         case SignatureAlgorithm.rsa_pss_rsae_sha512:
-            validatePSS_RSAE(signatureAlgorithm);
+            validateRSA_PSS_RSAE();
             return new BcTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureAlgorithm);
 
         case SignatureAlgorithm.rsa_pss_pss_sha256:
         case SignatureAlgorithm.rsa_pss_pss_sha384:
         case SignatureAlgorithm.rsa_pss_pss_sha512:
-            validatePSS_PSS(signatureAlgorithm);
+            validateRSA_PSS_PSS(signatureAlgorithm);
             return new BcTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureAlgorithm);
 
         default:
@@ -297,7 +298,8 @@ public class BcTlsCertificate
         switch (signatureAlgorithm)
         {
         case SignatureAlgorithm.rsa:
-            return publicKey instanceof RSAKeyParameters;
+            return supportsRSA_PKCS1()
+                && publicKey instanceof RSAKeyParameters;
 
         case SignatureAlgorithm.dsa:
             return publicKey instanceof DSAPublicKeyParameters;
@@ -314,13 +316,13 @@ public class BcTlsCertificate
         case SignatureAlgorithm.rsa_pss_rsae_sha256:
         case SignatureAlgorithm.rsa_pss_rsae_sha384:
         case SignatureAlgorithm.rsa_pss_rsae_sha512:
-            return supportsPSS_RSAE(signatureAlgorithm)
+            return supportsRSA_PSS_RSAE()
                 && publicKey instanceof RSAKeyParameters;
 
         case SignatureAlgorithm.rsa_pss_pss_sha256:
         case SignatureAlgorithm.rsa_pss_pss_sha384:
         case SignatureAlgorithm.rsa_pss_pss_sha512:
-            return supportsPSS_PSS(signatureAlgorithm)
+            return supportsRSA_PSS_PSS(signatureAlgorithm)
                 && publicKey instanceof RSAKeyParameters;
 
         default:
@@ -397,18 +399,22 @@ public class BcTlsCertificate
         return true;
     }
 
-    protected boolean supportsPSS_PSS(short signatureAlgorithm)
-        throws IOException
+    protected boolean supportsRSA_PKCS1()
     {
         AlgorithmIdentifier pubKeyAlgID = certificate.getSubjectPublicKeyInfo().getAlgorithm();
-        return RSAPSSUtil.supportsPSS_PSS(signatureAlgorithm, pubKeyAlgID);
+        return RSAUtil.supportsPKCS1(pubKeyAlgID);
     }
 
-    protected boolean supportsPSS_RSAE(short signatureAlgorithm)
-        throws IOException
+    protected boolean supportsRSA_PSS_PSS(short signatureAlgorithm)
     {
         AlgorithmIdentifier pubKeyAlgID = certificate.getSubjectPublicKeyInfo().getAlgorithm();
-        return RSAPSSUtil.supportsPSS_RSAE(signatureAlgorithm, pubKeyAlgID);
+        return RSAUtil.supportsPSS_PSS(signatureAlgorithm, pubKeyAlgID);
+    }
+
+    protected boolean supportsRSA_PSS_RSAE()
+    {
+        AlgorithmIdentifier pubKeyAlgID = certificate.getSubjectPublicKeyInfo().getAlgorithm();
+        return RSAUtil.supportsPSS_RSAE(pubKeyAlgID);
     }
 
     protected void validateKeyUsage(int keyUsageBits)
@@ -420,21 +426,30 @@ public class BcTlsCertificate
         }
     }
 
-    protected void validatePSS_PSS(short signatureAlgorithm)
+    protected void validateRSA_PKCS1()
         throws IOException
     {
-        if (!supportsPSS_PSS(signatureAlgorithm))
+        if (!supportsRSA_PKCS1())
         {
-            throw new TlsFatalAlert(AlertDescription.bad_certificate);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
         }
     }
 
-    protected void validatePSS_RSAE(short signatureAlgorithm)
+    protected void validateRSA_PSS_PSS(short signatureAlgorithm)
         throws IOException
     {
-        if (!supportsPSS_RSAE(signatureAlgorithm))
+        if (!supportsRSA_PSS_PSS(signatureAlgorithm))
         {
-            throw new TlsFatalAlert(AlertDescription.bad_certificate);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+        }
+    }
+
+    protected void validateRSA_PSS_RSAE()
+        throws IOException
+    {
+        if (!supportsRSA_PSS_RSAE())
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
         }
     }
 }
