@@ -173,13 +173,12 @@ public class TlsClientProtocol
 
                 assertEmpty(buf);
 
-                securityParameters.tlsServerEndPoint = endPointHash.toByteArray();
-
-                // TODO[RFC 3546] Check whether empty certificates is possible, allowed, or excludes CertificateStatus
-                if (this.peerCertificate == null || this.peerCertificate.isEmpty())
+                if (peerCertificate.isEmpty())
                 {
-                    this.allowCertificateStatus = false;
+                    throw new TlsFatalAlert(AlertDescription.bad_certificate);
                 }
+
+                securityParameters.tlsServerEndPoint = endPointHash.toByteArray();
 
                 this.authentication = tlsClient.getAuthentication();
                 if (this.authentication == null)

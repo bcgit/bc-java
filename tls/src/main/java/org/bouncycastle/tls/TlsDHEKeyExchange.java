@@ -46,11 +46,6 @@ public class TlsDHEKeyExchange
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
-        if (serverCertificate.isEmpty())
-        {
-            throw new TlsFatalAlert(AlertDescription.bad_certificate);
-        }
-
         checkServerCertSigAlg(serverCertificate);
 
         this.dhPeerCertificate = serverCertificate.getCertificateAt(0);
