@@ -1,6 +1,7 @@
 package org.bouncycastle.mime.test;
 
 import java.io.ByteArrayOutputStream;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -45,7 +46,7 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.Streams;
 
-public class TestSMIMESignEncrypt
+public class TestSMIMESignEncrypt_commented
     extends TestCase
 {
     private static final String BC = BouncyCastleProvider.PROVIDER_NAME;
@@ -99,10 +100,12 @@ public class TestSMIMESignEncrypt
 
             _initialised = true;
 
+            //create certificate of the sender(signature certificate)
             _signDN = "O=Bouncy Castle, C=AU";
             _signKP = CMSTestUtil.makeKeyPair();
             _signCert = CMSTestUtil.makeCertificate(_signKP, _signDN, _signKP, _signDN);
 
+            //create certificate of the receiver (encryption certificate)
             _reciDN = "CN=Doug, OU=Sales, O=Bouncy Castle, C=AU";
             _reciKP = CMSTestUtil.makeKeyPair();
             _reciCert = CMSTestUtil.makeCertificate(_reciKP, _reciDN, _signKP, _signDN);
@@ -117,14 +120,14 @@ public class TestSMIMESignEncrypt
 
     public void testSignThenEncrypt()
         throws Exception
-    {
-        //
-        // output
-        //
+    { 
+  	
+    	//output that will contain signed and encrypted content
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         SMIMEEnvelopedWriter.Builder envBldr = new SMIMEEnvelopedWriter.Builder();
 
+        //specify encryption certificate
         envBldr.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
 
         SMIMEEnvelopedWriter envWrt = envBldr.build(bOut, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
@@ -133,24 +136,28 @@ public class TestSMIMESignEncrypt
 
         SMIMESignedWriter.Builder sigBldr = new SMIMESignedWriter.Builder();
 
+        //specify signature certificate
         sigBldr.addCertificate(new JcaX509CertificateHolder(_signCert));
 
         sigBldr.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider(BC).build("SHA256withRSA", _signKP.getPrivate(), _signCert));
 
+        //add the encryption stream to the signature stream
         SMIMESignedWriter sigWrt = sigBldr.build(envOut);
 
         OutputStream sigOut = sigWrt.getContentStream();
 
         sigOut.write(simpleMessage);
-
+        
+        //sign file using sender private key
         sigOut.close();
-
+        
+        //write full message to the byte array output stream before actually closing the SMIME Enveloped Writer (before this, bOut contains only the headers?)
         envOut.close();
 
         bOut.close();
         
         //
-        // parse
+        // parse / decrypt and compare to original file 
         //
         final TestDoneFlag dataParsed = new TestDoneFlag();
 
@@ -166,11 +173,12 @@ public class TestSMIMESignEncrypt
                 RecipientInformation recipInfo = recipients.get(new JceKeyTransRecipientId(_reciCert));
 
                 assertNotNull(recipInfo);
-
+                
+                //decrypt the file using the receiver's private key before verifying signature
                 byte[] content = recipInfo.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()));
 
                 MimeParserProvider provider = new SMimeParserProvider("7bit", new BcDigestCalculatorProvider());
-
+                
                 MimeParser p = provider.createParser(new ReadOnceInputStream(content));
 
                 p.parse(new SMimeParserListener()
@@ -187,14 +195,14 @@ public class TestSMIMESignEncrypt
                         throws IOException, CMSException
                     {
                         SignerInformation signerInfo = signers.get(new JcaSignerId(_signCert));
-       
+
                         assertNotNull(signerInfo);
 
                         Collection certCollection = certificates.getMatches(signerInfo.getSID());
 
                         Iterator certIt = certCollection.iterator();
                         X509CertificateHolder certHolder = (X509CertificateHolder)certIt.next();
-                   
+
                         try
                         {
                             assertEquals(true, signerInfo.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(certHolder)));
