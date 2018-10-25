@@ -972,6 +972,21 @@ public class TlsUtils
         extensions.put(EXT_signature_algorithms, createSignatureAlgorithmsExtension(supportedSignatureAlgorithms));
     }
 
+    public static short getLegacyClientCertType(short signatureAlgorithm)
+    {
+        switch (signatureAlgorithm)
+        {
+        case SignatureAlgorithm.rsa:
+            return ClientCertificateType.rsa_sign;
+        case SignatureAlgorithm.dsa:
+            return ClientCertificateType.dss_sign;
+        case SignatureAlgorithm.ecdsa:
+            return ClientCertificateType.ecdsa_sign;
+        default:
+            return -1;
+        }
+    }
+
     public static short getLegacySignatureAlgorithmClient(short clientCertificateType)
     {
         switch (clientCertificateType)
@@ -1358,25 +1373,37 @@ public class TlsUtils
     static void verifyCertificateVerify(TlsContext context, CertificateRequest certificateRequest, Certificate certificate,
         DigitallySigned certificateVerify, TlsHandshakeHash handshakeHash) throws IOException
     {
-        TlsCertificate ee = certificate.getCertificateAt(0);
-        SignatureAndHashAlgorithm sigHashAlg = certificateVerify.getAlgorithm();
-
+        TlsCertificate verifyingCert = certificate.getCertificateAt(0);
+        SignatureAndHashAlgorithm sigAndHashAlg = certificateVerify.getAlgorithm();
         short signatureAlgorithm;
-        if (null != sigHashAlg)
+
+        if (null == sigAndHashAlg)
         {
-            verifySupportedSignatureAlgorithm(certificateRequest.getSupportedSignatureAlgorithms(), sigHashAlg);
-            signatureAlgorithm = sigHashAlg.getSignature();
+            signatureAlgorithm = verifyingCert.getLegacySignatureAlgorithm();
+
+            short clientCertType = getLegacyClientCertType(signatureAlgorithm);
+            if (clientCertType < 0 || !Arrays.contains(certificateRequest.getCertificateTypes(), clientCertType))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
         }
         else
         {
-            signatureAlgorithm = ee.getLegacySignatureAlgorithm();
+            signatureAlgorithm = sigAndHashAlg.getSignature();
+
+            if (!isValidSignatureAlgorithmForCertificateVerify(signatureAlgorithm, certificateRequest.getCertificateTypes()))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+
+            verifySupportedSignatureAlgorithm(certificateRequest.getSupportedSignatureAlgorithms(), sigAndHashAlg);
         }
 
         // Verify the CertificateVerify message contains a correct signature.
         boolean verified;
         try
         {
-            TlsVerifier verifier = ee.createVerifier(signatureAlgorithm);
+            TlsVerifier verifier = verifyingCert.createVerifier(signatureAlgorithm);
             TlsStreamVerifier streamVerifier = verifier.getStreamVerifier(certificateVerify);
 
             if (streamVerifier != null)
@@ -1389,7 +1416,7 @@ public class TlsUtils
                 byte[] hash;
                 if (isTLSv12(context))
                 {
-                    hash = handshakeHash.getFinalHash(sigHashAlg.getHash());
+                    hash = handshakeHash.getFinalHash(sigAndHashAlg.getHash());
                 }
                 else
                 {
@@ -2889,7 +2916,20 @@ public class TlsUtils
         return getMinimumVersion(cipherSuite).isEqualOrEarlierVersionOf(serverVersion.getEquivalentTLSVersion());
     }
 
-    static boolean isValidSignatureAlgorithmForCertificateVerify(short signatureAlgorithm, short clientCertificateType)
+    static boolean isValidSignatureAlgorithmForCertificateVerify(short signatureAlgorithm, short[] clientCertificateTypes)
+    {
+        for (int i = 0; i < clientCertificateTypes.length; ++i)
+        {
+            if (isValidSignatureAlgorithmForClientCertType(signatureAlgorithm, clientCertificateTypes[i]))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    static boolean isValidSignatureAlgorithmForClientCertType(short signatureAlgorithm, short clientCertificateType)
     {
         switch (clientCertificateType)
         {
