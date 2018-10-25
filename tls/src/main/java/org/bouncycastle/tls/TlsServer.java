@@ -29,9 +29,6 @@ public interface TlsServer
     void notifyOfferedCipherSuites(int[] offeredCipherSuites)
         throws IOException;
 
-    void notifyOfferedCompressionMethods(short[] offeredCompressionMethods)
-        throws IOException;
-
     // Hashtable is (Integer -> byte[])
     void processClientExtensions(Hashtable clientExtensions)
         throws IOException;
@@ -40,9 +37,6 @@ public interface TlsServer
         throws IOException;
 
     int getSelectedCipherSuite()
-        throws IOException;
-
-    short getSelectedCompressionMethod()
         throws IOException;
 
     // Hashtable is (Integer -> byte[])

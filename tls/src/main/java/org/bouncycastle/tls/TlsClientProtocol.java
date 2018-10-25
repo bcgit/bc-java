@@ -270,7 +270,7 @@ public class TlsClientProtocol
                 if (this.resumedSession)
                 {
                     this.securityParameters.masterSecret = getContext().getCrypto().adoptSecret(sessionParameters.getMasterSecret());
-                    this.recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
+                    this.recordStream.setPendingConnectionState(getPeer().getCipher());
                 }
                 else
                 {
@@ -395,7 +395,7 @@ public class TlsClientProtocol
 
                 establishMasterSecret(getContext(), keyExchange);
 
-                recordStream.setPendingConnectionState(getPeer().getCompression(), getPeer().getCipher());
+                recordStream.setPendingConnectionState(getPeer().getCipher());
 
                 if (credentialedSigner != null)
                 {
@@ -648,11 +648,10 @@ public class TlsClientProtocol
          * offered ones.
          */
         short selectedCompressionMethod = TlsUtils.readUint8(buf);
-        if (!Arrays.contains(this.offeredCompressionMethods, selectedCompressionMethod))
+        if (CompressionMethod._null != selectedCompressionMethod)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
-        this.tlsClient.notifySelectedCompressionMethod(selectedCompressionMethod);
 
         /*
          * RFC3546 2.2 The extended server hello message format MAY be sent in place of the server
@@ -757,7 +756,7 @@ public class TlsClientProtocol
         if (this.resumedSession)
         {
             if (selectedCipherSuite != this.sessionParameters.getCipherSuite()
-                || selectedCompressionMethod != this.sessionParameters.getCompressionAlgorithm()
+                || CompressionMethod._null != this.sessionParameters.getCompressionAlgorithm()
                 || !server_version.equals(this.sessionParameters.getNegotiatedVersion()))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
@@ -768,7 +767,6 @@ public class TlsClientProtocol
         }
 
         this.securityParameters.cipherSuite = selectedCipherSuite;
-        this.securityParameters.compressionAlgorithm = selectedCompressionMethod;
 
         if (sessionServerExtensions != null)
         {
@@ -871,12 +869,10 @@ public class TlsClientProtocol
 
         this.offeredCipherSuites = this.tlsClient.getCipherSuites();
 
-        this.offeredCompressionMethods = this.tlsClient.getCompressionMethods();
-
         if (session_id.length > 0 && this.sessionParameters != null)
         {
             if (!Arrays.contains(this.offeredCipherSuites, sessionParameters.getCipherSuite())
-                || !Arrays.contains(this.offeredCompressionMethods, sessionParameters.getCompressionAlgorithm()))
+                || CompressionMethod._null != sessionParameters.getCompressionAlgorithm())
             {
                 session_id = TlsUtils.EMPTY_BYTES;
             }
@@ -927,7 +923,7 @@ public class TlsClientProtocol
             TlsUtils.writeUint16ArrayWithUint16Length(offeredCipherSuites, message);
         }
 
-        TlsUtils.writeUint8ArrayWithUint8Length(offeredCompressionMethods, message);
+        TlsUtils.writeUint8ArrayWithUint8Length(new short[]{ CompressionMethod._null }, message);
 
         if (clientExtensions != null)
         {
