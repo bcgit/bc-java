@@ -19,6 +19,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -42,55 +43,58 @@ import org.bouncycastle.util.io.Streams;
 public class TlsUtils
 {
     // Map OID strings to HashAlgorithm values
-    private static final Hashtable sigHashAlgs = createSigHashAlgs();
+    private static final Hashtable CERT_SIGALG_OIDS = createSigHashAlgs();
 
-    private static void addSigHashAlg(Hashtable h, ASN1ObjectIdentifier oid, short hashAlg)
+    private static void addCertSigAlgOID(Hashtable h, ASN1ObjectIdentifier oid, short hashAlgorithm, short signatureAlgorithm)
     {
-        h.put(oid.getId(), Shorts.valueOf(hashAlg));
+        h.put(oid.getId(), SignatureAndHashAlgorithm.getInstance(hashAlgorithm, signatureAlgorithm));
     }
 
     private static Hashtable createSigHashAlgs()
     {
         Hashtable h = new Hashtable();
 
-        addSigHashAlg(h, NISTObjectIdentifiers.dsa_with_sha224, HashAlgorithm.sha224);
-        addSigHashAlg(h, NISTObjectIdentifiers.dsa_with_sha256, HashAlgorithm.sha256);
-        addSigHashAlg(h, NISTObjectIdentifiers.dsa_with_sha384, HashAlgorithm.sha384);
-        addSigHashAlg(h, NISTObjectIdentifiers.dsa_with_sha512, HashAlgorithm.sha512);
+        addCertSigAlgOID(h, NISTObjectIdentifiers.dsa_with_sha224, HashAlgorithm.sha224, SignatureAlgorithm.dsa);
+        addCertSigAlgOID(h, NISTObjectIdentifiers.dsa_with_sha256, HashAlgorithm.sha256, SignatureAlgorithm.dsa);
+        addCertSigAlgOID(h, NISTObjectIdentifiers.dsa_with_sha384, HashAlgorithm.sha384, SignatureAlgorithm.dsa);
+        addCertSigAlgOID(h, NISTObjectIdentifiers.dsa_with_sha512, HashAlgorithm.sha512, SignatureAlgorithm.dsa);
 
-        addSigHashAlg(h, OIWObjectIdentifiers.dsaWithSHA1, HashAlgorithm.sha1);
-        addSigHashAlg(h, OIWObjectIdentifiers.md5WithRSA, HashAlgorithm.md5);
-        addSigHashAlg(h, OIWObjectIdentifiers.sha1WithRSA, HashAlgorithm.sha1);
+        addCertSigAlgOID(h, OIWObjectIdentifiers.dsaWithSHA1, HashAlgorithm.sha1, SignatureAlgorithm.dsa);
+        addCertSigAlgOID(h, OIWObjectIdentifiers.md5WithRSA, HashAlgorithm.md5, SignatureAlgorithm.rsa);
+        addCertSigAlgOID(h, OIWObjectIdentifiers.sha1WithRSA, HashAlgorithm.sha1, SignatureAlgorithm.rsa);
 
-        addSigHashAlg(h, PKCSObjectIdentifiers.md5WithRSAEncryption, HashAlgorithm.md5);
-        addSigHashAlg(h, PKCSObjectIdentifiers.sha1WithRSAEncryption, HashAlgorithm.sha1);
-        addSigHashAlg(h, PKCSObjectIdentifiers.sha224WithRSAEncryption, HashAlgorithm.sha224);
-        addSigHashAlg(h, PKCSObjectIdentifiers.sha256WithRSAEncryption, HashAlgorithm.sha256);
-        addSigHashAlg(h, PKCSObjectIdentifiers.sha384WithRSAEncryption, HashAlgorithm.sha384);
-        addSigHashAlg(h, PKCSObjectIdentifiers.sha512WithRSAEncryption, HashAlgorithm.sha512);
+        addCertSigAlgOID(h, PKCSObjectIdentifiers.md5WithRSAEncryption, HashAlgorithm.md5, SignatureAlgorithm.rsa);
+        addCertSigAlgOID(h, PKCSObjectIdentifiers.sha1WithRSAEncryption, HashAlgorithm.sha1, SignatureAlgorithm.rsa);
+        addCertSigAlgOID(h, PKCSObjectIdentifiers.sha224WithRSAEncryption, HashAlgorithm.sha224, SignatureAlgorithm.rsa);
+        addCertSigAlgOID(h, PKCSObjectIdentifiers.sha256WithRSAEncryption, HashAlgorithm.sha256, SignatureAlgorithm.rsa);
+        addCertSigAlgOID(h, PKCSObjectIdentifiers.sha384WithRSAEncryption, HashAlgorithm.sha384, SignatureAlgorithm.rsa);
+        addCertSigAlgOID(h, PKCSObjectIdentifiers.sha512WithRSAEncryption, HashAlgorithm.sha512, SignatureAlgorithm.rsa);
 
-        addSigHashAlg(h, X9ObjectIdentifiers.ecdsa_with_SHA1, HashAlgorithm.sha1);
-        addSigHashAlg(h, X9ObjectIdentifiers.ecdsa_with_SHA224, HashAlgorithm.sha224);
-        addSigHashAlg(h, X9ObjectIdentifiers.ecdsa_with_SHA256, HashAlgorithm.sha256);
-        addSigHashAlg(h, X9ObjectIdentifiers.ecdsa_with_SHA384, HashAlgorithm.sha384);
-        addSigHashAlg(h, X9ObjectIdentifiers.ecdsa_with_SHA512, HashAlgorithm.sha512);
-        addSigHashAlg(h, X9ObjectIdentifiers.id_dsa_with_sha1, HashAlgorithm.sha1);
+        addCertSigAlgOID(h, X9ObjectIdentifiers.ecdsa_with_SHA1, HashAlgorithm.sha1, SignatureAlgorithm.ecdsa);
+        addCertSigAlgOID(h, X9ObjectIdentifiers.ecdsa_with_SHA224, HashAlgorithm.sha224, SignatureAlgorithm.ecdsa);
+        addCertSigAlgOID(h, X9ObjectIdentifiers.ecdsa_with_SHA256, HashAlgorithm.sha256, SignatureAlgorithm.ecdsa);
+        addCertSigAlgOID(h, X9ObjectIdentifiers.ecdsa_with_SHA384, HashAlgorithm.sha384, SignatureAlgorithm.ecdsa);
+        addCertSigAlgOID(h, X9ObjectIdentifiers.ecdsa_with_SHA512, HashAlgorithm.sha512, SignatureAlgorithm.ecdsa);
+        addCertSigAlgOID(h, X9ObjectIdentifiers.id_dsa_with_sha1, HashAlgorithm.sha1, SignatureAlgorithm.dsa);
 
-        addSigHashAlg(h, EACObjectIdentifiers.id_TA_ECDSA_SHA_1, HashAlgorithm.sha1);
-        addSigHashAlg(h, EACObjectIdentifiers.id_TA_ECDSA_SHA_224, HashAlgorithm.sha224);
-        addSigHashAlg(h, EACObjectIdentifiers.id_TA_ECDSA_SHA_256, HashAlgorithm.sha256);
-        addSigHashAlg(h, EACObjectIdentifiers.id_TA_ECDSA_SHA_384, HashAlgorithm.sha384);
-        addSigHashAlg(h, EACObjectIdentifiers.id_TA_ECDSA_SHA_512, HashAlgorithm.sha512);
-        addSigHashAlg(h, EACObjectIdentifiers.id_TA_RSA_v1_5_SHA_1, HashAlgorithm.sha1);
-        addSigHashAlg(h, EACObjectIdentifiers.id_TA_RSA_v1_5_SHA_256, HashAlgorithm.sha256);
-        addSigHashAlg(h, EACObjectIdentifiers.id_TA_RSA_PSS_SHA_1, HashAlgorithm.sha1);
-        addSigHashAlg(h, EACObjectIdentifiers.id_TA_RSA_PSS_SHA_256, HashAlgorithm.sha256);
+        addCertSigAlgOID(h, EACObjectIdentifiers.id_TA_ECDSA_SHA_1, HashAlgorithm.sha1, SignatureAlgorithm.ecdsa);
+        addCertSigAlgOID(h, EACObjectIdentifiers.id_TA_ECDSA_SHA_224, HashAlgorithm.sha224, SignatureAlgorithm.ecdsa);
+        addCertSigAlgOID(h, EACObjectIdentifiers.id_TA_ECDSA_SHA_256, HashAlgorithm.sha256, SignatureAlgorithm.ecdsa);
+        addCertSigAlgOID(h, EACObjectIdentifiers.id_TA_ECDSA_SHA_384, HashAlgorithm.sha384, SignatureAlgorithm.ecdsa);
+        addCertSigAlgOID(h, EACObjectIdentifiers.id_TA_ECDSA_SHA_512, HashAlgorithm.sha512, SignatureAlgorithm.ecdsa);
+        addCertSigAlgOID(h, EACObjectIdentifiers.id_TA_RSA_v1_5_SHA_1, HashAlgorithm.sha1, SignatureAlgorithm.rsa);
+        addCertSigAlgOID(h, EACObjectIdentifiers.id_TA_RSA_v1_5_SHA_256, HashAlgorithm.sha256, SignatureAlgorithm.rsa);
+        addCertSigAlgOID(h, EACObjectIdentifiers.id_TA_RSA_PSS_SHA_256, HashAlgorithm.Intrinsic, SignatureAlgorithm.rsa_pss_pss_sha256);
+        addCertSigAlgOID(h, EACObjectIdentifiers.id_TA_RSA_PSS_SHA_512, HashAlgorithm.Intrinsic, SignatureAlgorithm.rsa_pss_pss_sha512);
 
-        addSigHashAlg(h, BSIObjectIdentifiers.ecdsa_plain_SHA1, HashAlgorithm.sha1);
-        addSigHashAlg(h, BSIObjectIdentifiers.ecdsa_plain_SHA224, HashAlgorithm.sha224);
-        addSigHashAlg(h, BSIObjectIdentifiers.ecdsa_plain_SHA256, HashAlgorithm.sha256);
-        addSigHashAlg(h, BSIObjectIdentifiers.ecdsa_plain_SHA384, HashAlgorithm.sha384);
-        addSigHashAlg(h, BSIObjectIdentifiers.ecdsa_plain_SHA512, HashAlgorithm.sha512);
+        addCertSigAlgOID(h, BSIObjectIdentifiers.ecdsa_plain_SHA1, HashAlgorithm.sha1, SignatureAlgorithm.ecdsa);
+        addCertSigAlgOID(h, BSIObjectIdentifiers.ecdsa_plain_SHA224, HashAlgorithm.sha224, SignatureAlgorithm.ecdsa);
+        addCertSigAlgOID(h, BSIObjectIdentifiers.ecdsa_plain_SHA256, HashAlgorithm.sha256, SignatureAlgorithm.ecdsa);
+        addCertSigAlgOID(h, BSIObjectIdentifiers.ecdsa_plain_SHA384, HashAlgorithm.sha384, SignatureAlgorithm.ecdsa);
+        addCertSigAlgOID(h, BSIObjectIdentifiers.ecdsa_plain_SHA512, HashAlgorithm.sha512, SignatureAlgorithm.ecdsa);
+
+        addCertSigAlgOID(h, EdECObjectIdentifiers.id_Ed25519, HashAlgorithm.Intrinsic, SignatureAlgorithm.ed25519);
+        addCertSigAlgOID(h, EdECObjectIdentifiers.id_Ed448, HashAlgorithm.Intrinsic, SignatureAlgorithm.ed448);
 
         return h;
     }
@@ -1198,19 +1202,22 @@ public class TlsUtils
     {
         if (sigAlgOID != null)
         {
-            Short hashAlgObj = (Short)sigHashAlgs.get(sigAlgOID);
-            if (hashAlgObj != null)
+            SignatureAndHashAlgorithm sigAndHashAlg = (SignatureAndHashAlgorithm)CERT_SIGALG_OIDS.get(sigAlgOID);
+            if (sigAndHashAlg != null)
             {
-                short hashAlg = hashAlgObj.shortValue();
-                switch (hashAlg)
+                short hashAlgorithm = sigAndHashAlg.getHash();
+                switch (hashAlgorithm)
                 {
                 case HashAlgorithm.md5:
                 case HashAlgorithm.sha1:
-                    hashAlg = HashAlgorithm.sha256;
+                    hashAlgorithm = HashAlgorithm.sha256;
                     break;
+                case HashAlgorithm.none:
+                case HashAlgorithm.Intrinsic:
+                    return EMPTY_BYTES;
                 }
 
-                TlsHash hash = context.getCrypto().createHash(hashAlg);
+                TlsHash hash = context.getCrypto().createHash(hashAlgorithm);
                 if (hash != null)
                 {                
                     hash.update(enc, encOff, encLen);
