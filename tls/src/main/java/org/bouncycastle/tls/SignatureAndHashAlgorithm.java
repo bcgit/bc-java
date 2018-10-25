@@ -18,6 +18,17 @@ public class SignatureAndHashAlgorithm
     public static final SignatureAndHashAlgorithm rsa_pss_pss_sha384 = new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, SignatureAlgorithm.rsa_pss_pss_sha384);
     public static final SignatureAndHashAlgorithm rsa_pss_pss_sha512 = new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, SignatureAlgorithm.rsa_pss_pss_sha512);
 
+    public static SignatureAndHashAlgorithm getInstance(short hashAlgorithm, short signatureAlgorithm)
+    {
+        switch (hashAlgorithm)
+        {
+        case HashAlgorithm.Intrinsic:
+            return getIntrinsicSingleton(signatureAlgorithm);
+        default:
+            return new SignatureAndHashAlgorithm(hashAlgorithm, signatureAlgorithm);
+        }
+    }
+
     public static SignatureAndHashAlgorithm getIntrinsicSingleton(short signatureAlgorithm)
     {
         switch (signatureAlgorithm)
