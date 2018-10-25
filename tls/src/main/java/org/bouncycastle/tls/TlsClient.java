@@ -44,8 +44,6 @@ public interface TlsClient
 
     int[] getCipherSuites();
 
-    short[] getCompressionMethods();
-
     // Hashtable is (Integer -> byte[])
     Hashtable getClientExtensions()
         throws IOException;
@@ -62,8 +60,6 @@ public interface TlsClient
     void notifySessionID(byte[] sessionID);
 
     void notifySelectedCipherSuite(int selectedCipherSuite);
-
-    void notifySelectedCompressionMethod(short selectedCompressionMethod);
 
     // Hashtable is (Integer -> byte[])
     void processServerExtensions(Hashtable serverExtensions)

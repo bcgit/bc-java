@@ -473,12 +473,7 @@ public class DTLSClientProtocol
             TlsUtils.writeUint16ArrayWithUint16Length(state.offeredCipherSuites, buf);
         }
 
-        // TODO Add support for compression
-        // Compression methods
-        // state.offeredCompressionMethods = client.getCompressionMethods();
-        state.offeredCompressionMethods = new short[]{ CompressionMethod._null };
-
-        TlsUtils.writeUint8ArrayWithUint8Length(state.offeredCompressionMethods, buf);
+        TlsUtils.writeUint8ArrayWithUint8Length(new short[]{ CompressionMethod._null }, buf);
 
         // Extensions
         if (state.clientExtensions != null)
@@ -648,11 +643,10 @@ public class DTLSClientProtocol
         state.client.notifySelectedCipherSuite(selectedCipherSuite);
 
         short selectedCompressionMethod = TlsUtils.readUint8(buf);
-        if (!Arrays.contains(state.offeredCompressionMethods, selectedCompressionMethod))
+        if (CompressionMethod._null != selectedCompressionMethod)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
-        state.client.notifySelectedCompressionMethod(selectedCompressionMethod);
 
         /*
          * RFC3546 2.2 The extended server hello message format MAY be sent in place of the server
@@ -765,7 +759,7 @@ public class DTLSClientProtocol
         if (state.resumedSession)
         {
             if (selectedCipherSuite != state.sessionParameters.getCipherSuite()
-                || selectedCompressionMethod != state.sessionParameters.getCompressionAlgorithm()
+                || CompressionMethod._null != state.sessionParameters.getCompressionAlgorithm()
                 || !server_version.equals(state.sessionParameters.getNegotiatedVersion()))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
@@ -776,7 +770,6 @@ public class DTLSClientProtocol
         }
 
         securityParameters.cipherSuite = selectedCipherSuite;
-        securityParameters.compressionAlgorithm = selectedCompressionMethod;
 
         if (sessionServerExtensions != null)
         {
@@ -899,7 +892,6 @@ public class DTLSClientProtocol
         SessionParameters sessionParameters = null;
         SessionParameters.Builder sessionParametersBuilder = null;
         int[] offeredCipherSuites = null;
-        short[] offeredCompressionMethods = null;
         Hashtable clientExtensions = null;
         Hashtable serverExtensions = null;
         byte[] selectedSessionID = null;

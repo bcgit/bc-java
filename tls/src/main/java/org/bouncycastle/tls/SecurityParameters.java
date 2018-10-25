@@ -9,7 +9,7 @@ public class SecurityParameters
 {
     int entity = -1;
     int cipherSuite = -1;
-    short compressionAlgorithm = CompressionMethod._null;
+    final short compressionAlgorithm = CompressionMethod._null;
     short maxFragmentLength = -1;
     int prfAlgorithm = -1;
     int verifyDataLength = -1;
