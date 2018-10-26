@@ -43,14 +43,14 @@ import org.bouncycastle.util.io.Streams;
 public class TlsUtils
 {
     // Map OID strings to HashAlgorithm values
-    private static final Hashtable CERT_SIGALG_OIDS = createSigHashAlgs();
+    private static final Hashtable CERT_SIG_ALG_OIDS = createCertSigAlgOIDs();
 
     private static void addCertSigAlgOID(Hashtable h, ASN1ObjectIdentifier oid, short hashAlgorithm, short signatureAlgorithm)
     {
         h.put(oid.getId(), SignatureAndHashAlgorithm.getInstance(hashAlgorithm, signatureAlgorithm));
     }
 
-    private static Hashtable createSigHashAlgs()
+    private static Hashtable createCertSigAlgOIDs()
     {
         Hashtable h = new Hashtable();
 
@@ -847,45 +847,51 @@ public class TlsUtils
 
     public static Vector getDefaultDSSSignatureAlgorithms()
     {
-        return vectorOfOne(new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.dsa));
+        return getDefaultSignatureAlgorithms(SignatureAlgorithm.dsa);
     }
 
     public static Vector getDefaultECDSASignatureAlgorithms()
     {
-        return vectorOfOne(new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.ecdsa));
+        return getDefaultSignatureAlgorithms(SignatureAlgorithm.ecdsa);
     }
 
     public static Vector getDefaultRSASignatureAlgorithms()
     {
-        return vectorOfOne(new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.rsa));
+        return getDefaultSignatureAlgorithms(SignatureAlgorithm.rsa);
     }
 
-    public static Vector getDefaultSignatureAlgorithms(short signatureAlgorithm)
+    public static SignatureAndHashAlgorithm getDefaultSignatureAlgorithm(short signatureAlgorithm)
     {
-        SignatureAndHashAlgorithm intrinsicSingleton = SignatureAndHashAlgorithm.getIntrinsicSingleton(signatureAlgorithm);
-        if (null != intrinsicSingleton)
-        {
-            return vectorOfOne(intrinsicSingleton);
-        }
+        /*
+         * RFC 5246 7.4.1.4.1. If the client does not send the signature_algorithms extension,
+         * the server MUST do the following:
+         * 
+         * - If the negotiated key exchange algorithm is one of (RSA, DHE_RSA, DH_RSA, RSA_PSK,
+         * ECDH_RSA, ECDHE_RSA), behave as if client had sent the value {sha1,rsa}.
+         * 
+         * - If the negotiated key exchange algorithm is one of (DHE_DSS, DH_DSS), behave as if
+         * the client had sent the value {sha1,dsa}.
+         * 
+         * - If the negotiated key exchange algorithm is one of (ECDH_ECDSA, ECDHE_ECDSA),
+         * behave as if the client had sent value {sha1,ecdsa}.
+         */
 
         switch (signatureAlgorithm)
         {
         case SignatureAlgorithm.dsa:
-            return getDefaultDSSSignatureAlgorithms();
         case SignatureAlgorithm.ecdsa:
-            return getDefaultECDSASignatureAlgorithms();
         case SignatureAlgorithm.rsa:
-            return getDefaultRSASignatureAlgorithms();
+            return SignatureAndHashAlgorithm.getInstance(HashAlgorithm.sha1, signatureAlgorithm);
         default:
-        {
-            if (SignatureAlgorithm.hasIntrinsicHash(signatureAlgorithm))
-            {
-                return vectorOfOne(new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, signatureAlgorithm));
-            }
+            return null;
+        }
+    }
 
-            throw new IllegalArgumentException("unknown SignatureAlgorithm: " + SignatureAlgorithm.getText(signatureAlgorithm));
-        }
-        }
+    public static Vector getDefaultSignatureAlgorithms(short signatureAlgorithm)
+    {
+        SignatureAndHashAlgorithm sigAndHashAlg = getDefaultSignatureAlgorithm(signatureAlgorithm);
+
+        return null == sigAndHashAlg ? new Vector() : vectorOfOne(sigAndHashAlg);
     }
 
     public static Vector getDefaultSupportedSignatureAlgorithms(TlsContext context)
@@ -1010,6 +1016,29 @@ public class TlsUtils
     {
         switch (keyExchangeAlgorithm)
         {
+        case KeyExchangeAlgorithm.DHE_DSS:
+        case KeyExchangeAlgorithm.DHE_DSS_EXPORT:
+        case KeyExchangeAlgorithm.SRP_DSS:
+            return SignatureAlgorithm.dsa;
+
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+            return SignatureAlgorithm.ecdsa;
+
+        case KeyExchangeAlgorithm.DHE_RSA:
+        case KeyExchangeAlgorithm.DHE_RSA_EXPORT:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
+        case KeyExchangeAlgorithm.SRP_RSA:
+            return SignatureAlgorithm.rsa;
+
+        default:
+            return -1;
+        }
+    }
+
+    static short getLegacySignatureAlgorithmServerCert(int keyExchangeAlgorithm)
+    {
+        switch (keyExchangeAlgorithm)
+        {
         case KeyExchangeAlgorithm.DH_DSS:
         case KeyExchangeAlgorithm.DH_DSS_EXPORT:
         case KeyExchangeAlgorithm.DHE_DSS:
@@ -1027,6 +1056,9 @@ public class TlsUtils
         case KeyExchangeAlgorithm.DHE_RSA_EXPORT:
         case KeyExchangeAlgorithm.ECDH_RSA:
         case KeyExchangeAlgorithm.ECDHE_RSA:
+        case KeyExchangeAlgorithm.RSA:
+        case KeyExchangeAlgorithm.RSA_EXPORT:
+        case KeyExchangeAlgorithm.RSA_PSK:
         case KeyExchangeAlgorithm.SRP_RSA:
             return SignatureAlgorithm.rsa;
 
@@ -1135,16 +1167,7 @@ public class TlsUtils
         Vector supportedSignatureAlgorithms = new Vector(count);
         for (int i = 0; i < count; ++i)
         {
-            SignatureAndHashAlgorithm entry = SignatureAndHashAlgorithm.parse(input);
-            if (entry.getSignature() == SignatureAlgorithm.anonymous)
-            {
-                /*
-                 * RFC 5246 7.4.1.4.1 The "anonymous" value is meaningless in this context but used
-                 * in Section 7.4.3. It MUST NOT appear in this extension.
-                 */
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-            supportedSignatureAlgorithms.addElement(entry);
+            supportedSignatureAlgorithms.addElement(SignatureAndHashAlgorithm.parse(input));
         }
         return supportedSignatureAlgorithms;
     }
@@ -1163,19 +1186,26 @@ public class TlsUtils
             throw new IllegalArgumentException("'signatureAlgorithm' cannot be null");
         }
 
-        if (signatureAlgorithm.getSignature() != SignatureAlgorithm.anonymous)
+        if (signatureAlgorithm.getSignature() == SignatureAlgorithm.anonymous
+            || !containsSignatureAlgorithm(supportedSignatureAlgorithms, signatureAlgorithm))
         {
-            for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+    }
+
+    static boolean containsSignatureAlgorithm(Vector supportedSignatureAlgorithms, SignatureAndHashAlgorithm signatureAlgorithm)
+        throws IOException
+    {
+        for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
+        {
+            SignatureAndHashAlgorithm entry = (SignatureAndHashAlgorithm)supportedSignatureAlgorithms.elementAt(i);
+            if (entry.getHash() == signatureAlgorithm.getHash() && entry.getSignature() == signatureAlgorithm.getSignature())
             {
-                SignatureAndHashAlgorithm entry = (SignatureAndHashAlgorithm)supportedSignatureAlgorithms.elementAt(i);
-                if (entry.getHash() == signatureAlgorithm.getHash() && entry.getSignature() == signatureAlgorithm.getSignature())
-                {
-                    return;
-                }
+                return true;
             }
         }
 
-        throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        return false;
     }
 
     public static TlsSecret PRF(TlsContext context, TlsSecret secret, String asciiLabel, byte[] seed, int length)
@@ -1202,7 +1232,7 @@ public class TlsUtils
     {
         if (sigAlgOID != null)
         {
-            SignatureAndHashAlgorithm sigAndHashAlg = (SignatureAndHashAlgorithm)CERT_SIGALG_OIDS.get(sigAlgOID);
+            SignatureAndHashAlgorithm sigAndHashAlg = getCertSigAndHashAlg(sigAlgOID);
             if (sigAndHashAlg != null)
             {
                 short hashAlgorithm = sigAndHashAlg.getHash();
@@ -3267,6 +3297,11 @@ public class TlsUtils
         checkTlsFeatures(serverCertificate, clientExtensions, serverExtensions);
         keyExchange.processServerCertificate(serverCertificate);
         clientAuthentication.notifyServerCertificate(new TlsServerCertificateImpl(serverCertificate, serverCertificateStatus));
+    }
+
+    static SignatureAndHashAlgorithm getCertSigAndHashAlg(String sigAlgOID)
+    {
+        return (SignatureAndHashAlgorithm)CERT_SIG_ALG_OIDS.get(sigAlgOID);
     }
 
     static CertificateRequest validateCertificateRequest(CertificateRequest certificateRequest, TlsKeyExchange keyExchange)
