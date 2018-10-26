@@ -14,7 +14,6 @@ import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
@@ -27,6 +26,9 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 
+/**
+ * A collection of utility methods for parsing OpenSSH private keys.
+ */
 public class OpenSSHPrivateKeyUtil
 {
     private OpenSSHPrivateKeyUtil()
@@ -34,10 +36,13 @@ public class OpenSSHPrivateKeyUtil
 
     }
 
-    private static final byte[] AUTH_MAGIC = Strings.toByteArray("openssh-key-v1\0"); // C string so null terminated
+    /**
+     * Magic value for propriety OpenSSH private key.
+     **/
+    static final byte[] AUTH_MAGIC = Strings.toByteArray("openssh-key-v1\0"); // C string so null terminated
 
     /**
-     * Encode a cipher parameters into an openssh private key.
+     * Encode a cipher parameters into an OpenSSH private key.
      * This does not add headers like ----BEGIN RSA PRIVATE KEY----
      *
      * @param params the cipher parameters.
@@ -90,9 +95,8 @@ public class OpenSSHPrivateKeyUtil
         }
         else if (params instanceof Ed25519PrivateKeyParameters)
         {
-
-
             SSHBuilder builder = new SSHBuilder();
+
             builder.write(AUTH_MAGIC);
             builder.writeString("none");
             builder.writeString("none");
@@ -102,10 +106,8 @@ public class OpenSSHPrivateKeyUtil
 
             Ed25519PublicKeyParameters publicKeyParameters = ((Ed25519PrivateKeyParameters)params).generatePublicKey();
 
-
             byte[] pkEncoded = OpenSSHPublicKeyUtil.encodePublicKey(publicKeyParameters);
             builder.rawArray(pkEncoded);
-
 
             SSHBuilder pkBuild = new SSHBuilder();
 
@@ -130,11 +132,10 @@ public class OpenSSHPrivateKeyUtil
 
     }
 
-
     /**
      * Parse a private key.
      * <p>
-     * This method accepts the body of the openssh private key.
+     * This method accepts the body of the OpenSSH private key.
      * The easiest way to extract the body is to use PemReader, for example:
      * <p>
      * byte[] blob = new PemReader([reader]).readPemObject().getContent();
@@ -143,11 +144,11 @@ public class OpenSSHPrivateKeyUtil
      * @param blob The key.
      * @return A cipher parameters instance.
      */
-    public static CipherParameters parsePrivateKeyBlob(byte[] blob)
+    public static AsymmetricKeyParameter parsePrivateKeyBlob(byte[] blob)
     {
-        CipherParameters result = null;
+        AsymmetricKeyParameter result = null;
 
-        try
+        if  (blob[0] == 0x30)
         {
             ASN1Sequence sequence = ASN1Sequence.getInstance(blob);
 
@@ -202,12 +203,11 @@ public class OpenSSHPrivateKeyUtil
                 }
             }
         }
-        catch (Throwable t)
+        else
         {
             SSHBuffer kIn = new SSHBuffer(AUTH_MAGIC, blob);
-
             // Cipher name.
-            String cipherName = new String(kIn.readString());
+            String cipherName = Strings.fromByteArray(kIn.readString());
 
             if (!"none".equals(cipherName))
             {
@@ -217,7 +217,7 @@ public class OpenSSHPrivateKeyUtil
             // KDF name
             kIn.readString();
 
-            // KDF
+            // KDF options
             kIn.readString();
 
             long publicKeyCount = kIn.readU32();
@@ -263,6 +263,9 @@ public class OpenSSHPrivateKeyUtil
         return result;
     }
 
+    /**
+     * allIntegers returns true if the sequence holds only ASN1Integer types.
+     **/
     private static boolean allIntegers(ASN1Sequence sequence)
     {
         for (int t = 0; t < sequence.size(); t++)

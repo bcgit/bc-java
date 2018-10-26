@@ -44,11 +44,6 @@ public class TlsRSAKeyExchange
     public void processServerCertificate(Certificate serverCertificate)
         throws IOException
     {
-        if (serverCertificate.isEmpty())
-        {
-            throw new TlsFatalAlert(AlertDescription.bad_certificate);
-        }
-
         checkServerCertSigAlg(serverCertificate);
 
         this.serverCertificate = serverCertificate.getCertificateAt(0).useInRole(ConnectionEnd.server, keyExchange);

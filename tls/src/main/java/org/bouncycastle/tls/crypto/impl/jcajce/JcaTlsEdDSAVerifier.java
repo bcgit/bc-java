@@ -48,20 +48,17 @@ public class JcaTlsEdDSAVerifier
     public TlsStreamVerifier getStreamVerifier(DigitallySigned signature) throws IOException
     {
         SignatureAndHashAlgorithm algorithm = signature.getAlgorithm();
-        if (algorithm != null)
+        if (algorithm == null
+            || algorithm.getSignature() != algorithmType
+            || algorithm.getHash() != HashAlgorithm.Intrinsic)
         {
-            if (algorithm.getSignature() != algorithmType
-                || algorithm.getHash() != HashAlgorithm.Intrinsic)
-            {
-                throw new IllegalStateException();
-            }
+            throw new IllegalStateException();
         }
 
         final byte[] sig = signature.getSignature();
 
         try
         {
-            // TODO[RFC 8422]
             final Signature verifier = crypto.getHelper().createSignature(algorithmName);
 
             verifier.initVerify(publicKey);

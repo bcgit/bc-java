@@ -40,17 +40,6 @@ public abstract class AbstractTlsKeyExchange
         }
     }
 
-    protected DigitallySigned parseSignature(InputStream input) throws IOException
-    {
-        DigitallySigned signature = DigitallySigned.parse(context, input);
-        SignatureAndHashAlgorithm signatureAlgorithm = signature.getAlgorithm();
-        if (signatureAlgorithm != null)
-        {
-            TlsUtils.verifySupportedSignatureAlgorithm(supportedSignatureAlgorithms, signatureAlgorithm);
-        }
-        return signature;
-    }
-
     public void init(TlsContext context)
     {
         this.context = context;
@@ -123,13 +112,6 @@ public abstract class AbstractTlsKeyExchange
     public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
-    }
-
-    public void processServerCredentials(TlsCredentials serverCredentials)
-        throws IOException
-    {
-        // TODO[tls-ops] Process the server certificate differently on the server side 
-        processServerCertificate(serverCredentials.getCertificate());
     }
 
     public boolean requiresServerKeyExchange()

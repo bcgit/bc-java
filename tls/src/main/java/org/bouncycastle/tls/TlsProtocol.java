@@ -81,7 +81,6 @@ public abstract class TlsProtocol
     protected Certificate peerCertificate = null;
 
     protected int[] offeredCipherSuites = null;
-    protected short[] offeredCompressionMethods = null;
     protected Hashtable clientExtensions = null;
     protected Hashtable serverExtensions = null;
 
@@ -289,7 +288,6 @@ public abstract class TlsProtocol
         this.peerCertificate = null;
 
         this.offeredCipherSuites = null;
-        this.offeredCompressionMethods = null;
         this.clientExtensions = null;
         this.serverExtensions = null;
 

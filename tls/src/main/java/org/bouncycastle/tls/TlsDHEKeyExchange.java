@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsDHConfig;
-import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.util.io.TeeInputStream;
 
 public class TlsDHEKeyExchange
@@ -24,7 +23,6 @@ public class TlsDHEKeyExchange
     }
 
     protected TlsCredentialedSigner serverCredentials = null;
-    protected TlsVerifier verifier = null;
 
     public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHConfigVerifier dhConfigVerifier)
     {
@@ -48,15 +46,9 @@ public class TlsDHEKeyExchange
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
-        if (serverCertificate.isEmpty())
-        {
-            throw new TlsFatalAlert(AlertDescription.bad_certificate);
-        }
-
         checkServerCertSigAlg(serverCertificate);
 
-        this.verifier = serverCertificate.getCertificateAt(0)
-            .createVerifier(TlsUtils.getSignatureAlgorithm(keyExchange));
+        this.dhPeerCertificate = serverCertificate.getCertificateAt(0);
     }
 
     public byte[] generateServerKeyExchange() throws IOException
@@ -66,33 +58,30 @@ public class TlsDHEKeyExchange
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        DigestInputBuffer buf = new DigestInputBuffer();
+        DigestInputBuffer digestBuffer = new DigestInputBuffer();
 
-        TlsDHUtils.writeDHConfig(dhConfig, buf);
+        TlsDHUtils.writeDHConfig(dhConfig, digestBuffer);
 
         this.agreement = context.getCrypto().createDHDomain(dhConfig).createDH();
 
-        generateEphemeral(buf);
+        generateEphemeral(digestBuffer);
 
-        DigitallySigned signedParams = TlsUtils.generateServerKeyExchangeSignature(context, serverCredentials, buf);
+        TlsUtils.generateServerKeyExchangeSignature(context, serverCredentials, digestBuffer);
 
-        signedParams.encode(buf);
-
-        return buf.toByteArray();
+        return digestBuffer.toByteArray();
     }
 
     public void processServerKeyExchange(InputStream input) throws IOException
     {
-        DigestInputBuffer buf = new DigestInputBuffer();
-        InputStream teeIn = new TeeInputStream(input, buf);
+        DigestInputBuffer digestBuffer = new DigestInputBuffer();
+        InputStream teeIn = new TeeInputStream(input, digestBuffer);
 
         this.dhConfig = TlsDHUtils.receiveDHConfig(dhConfigVerifier, teeIn);
 
         byte[] y = TlsUtils.readOpaque16(teeIn);
 
-        DigitallySigned signedParams = parseSignature(input);
-
-        TlsUtils.verifyServerKeyExchangeSignature(context, verifier, buf, signedParams);
+        TlsUtils.verifyServerKeyExchangeSignature(context, input, keyExchange, supportedSignatureAlgorithms,
+            dhPeerCertificate, digestBuffer);
 
         this.agreement = context.getCrypto().createDHDomain(dhConfig).createDH();
 

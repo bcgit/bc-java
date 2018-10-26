@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.math.ec.rfc7748.X448;
 import org.bouncycastle.math.ec.rfc7748.X448Field;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
@@ -69,6 +70,7 @@ public abstract class Ed448
     private static final int PRECOMP_POINTS = 1 << (PRECOMP_TEETH - 1);
     private static final int PRECOMP_MASK = PRECOMP_POINTS - 1;
 
+    private static Object precompLock = new Object();
     // TODO[ed448] Convert to PointPrecomp
     private static PointExt[] precompBaseTable = null;
     private static int[] precompBase = null;
@@ -616,88 +618,91 @@ public abstract class Ed448
         X448Field.one(p.z);
     }
 
-    public synchronized static void precompute()
+    public static void precompute()
     {
-        if (precompBase != null)
+        synchronized (precompLock)
         {
-            return;
-        }
-
-        PointExt p = new PointExt();
-        X448Field.copy(B_x, 0, p.x, 0);
-        X448Field.copy(B_y, 0, p.y, 0);
-        pointExtendXY(p);
-
-        precompBaseTable = pointPrecompVar(p, 1 << (WNAF_WIDTH_BASE - 2));
-
-        precompBase = new int[PRECOMP_BLOCKS * PRECOMP_POINTS * 2 * X448Field.SIZE];
-
-        int off = 0;
-        for (int b = 0; b < PRECOMP_BLOCKS; ++b)
-        {
-            PointExt[] ds = new PointExt[PRECOMP_TEETH];
-
-            PointExt sum = new PointExt();
-            pointSetNeutral(sum);
-
-            for (int t = 0; t < PRECOMP_TEETH; ++t)
+            if (precompBase != null)
             {
-                pointAddVar(true, p, sum);
-                pointDouble(p);
+                return;
+            }
 
-                ds[t] = pointCopy(p);
+            PointExt p = new PointExt();
+            X448Field.copy(B_x, 0, p.x, 0);
+            X448Field.copy(B_y, 0, p.y, 0);
+            pointExtendXY(p);
 
-                if (b + t != PRECOMP_BLOCKS + PRECOMP_TEETH - 2)
+            precompBaseTable = pointPrecompVar(p, 1 << (WNAF_WIDTH_BASE - 2));
+
+            precompBase = new int[PRECOMP_BLOCKS * PRECOMP_POINTS * 2 * X448Field.SIZE];
+
+            int off = 0;
+            for (int b = 0; b < PRECOMP_BLOCKS; ++b)
+            {
+                PointExt[] ds = new PointExt[PRECOMP_TEETH];
+
+                PointExt sum = new PointExt();
+                pointSetNeutral(sum);
+
+                for (int t = 0; t < PRECOMP_TEETH; ++t)
                 {
-                    for (int s = 1; s < PRECOMP_SPACING; ++s)
+                    pointAddVar(true, p, sum);
+                    pointDouble(p);
+
+                    ds[t] = pointCopy(p);
+
+                    if (b + t != PRECOMP_BLOCKS + PRECOMP_TEETH - 2)
                     {
-                        pointDouble(p);
+                        for (int s = 1; s < PRECOMP_SPACING; ++s)
+                        {
+                            pointDouble(p);
+                        }
                     }
                 }
-            }
 
-            PointExt[] points = new PointExt[PRECOMP_POINTS];
-            int k = 0;
-            points[k++] = sum;
+                PointExt[] points = new PointExt[PRECOMP_POINTS];
+                int k = 0;
+                points[k++] = sum;
 
-            for (int t = 0; t < (PRECOMP_TEETH - 1); ++t)
-            {
-                int size = 1 << t;
-                for (int j = 0; j < size; ++j, ++k)
+                for (int t = 0; t < (PRECOMP_TEETH - 1); ++t)
                 {
-                    points[k] = pointCopy(points[k - size]);
-                    pointAddVar(false, ds[t], points[k]);
+                    int size = 1 << t;
+                    for (int j = 0; j < size; ++j, ++k)
+                    {
+                        points[k] = pointCopy(points[k - size]);
+                        pointAddVar(false, ds[t], points[k]);
+                    }
+                }
+
+//                assert k == PRECOMP_POINTS;
+
+                for (int i = 0; i < PRECOMP_POINTS; ++i)
+                {
+                    PointExt q = points[i];
+                    // TODO[ed448] Batch inversion
+                    X448Field.inv(q.z, q.z);
+                    X448Field.mul(q.x, q.z, q.x);
+                    X448Field.mul(q.y, q.z, q.y);
+
+//                    X448Field.normalize(q.x);
+//                    X448Field.normalize(q.y);
+
+                    X448Field.copy(q.x, 0, precompBase, off);   off += X448Field.SIZE;
+                    X448Field.copy(q.y, 0, precompBase, off);   off += X448Field.SIZE;
                 }
             }
 
-//            assert k == PRECOMP_POINTS;
-
-            for (int i = 0; i < PRECOMP_POINTS; ++i)
-            {
-                PointExt q = points[i];
-                // TODO[ed448] Batch inversion
-                X448Field.inv(q.z, q.z);
-                X448Field.mul(q.x, q.z, q.x);
-                X448Field.mul(q.y, q.z, q.y);
-
-//                X448Field.normalize(q.x);
-//                X448Field.normalize(q.y);
-
-                X448Field.copy(q.x, 0, precompBase, off);   off += X448Field.SIZE;
-                X448Field.copy(q.y, 0, precompBase, off);   off += X448Field.SIZE;
-            }
+//            assert off == precompBase.length;
         }
-
-//        assert off == precompBase.length;
     }
 
     private static void pruneScalar(byte[] n, int nOff, byte[] r)
     {
-        System.arraycopy(n, nOff, r, 0, SCALAR_BYTES);
+        System.arraycopy(n, nOff, r, 0, SCALAR_BYTES - 1);
 
         r[0] &= 0xFC;
         r[SCALAR_BYTES - 2] |= 0x80;
-        r[SCALAR_BYTES - 1] &= 0x00;
+        r[SCALAR_BYTES - 1]  = 0x00;
     }
 
     private static byte[] reduceScalar(byte[] n)
@@ -1038,6 +1043,25 @@ public abstract class Ed448
         PointExt p = new PointExt();
         scalarMultBase(k, p);
         encodePoint(p, r, rOff);
+    }
+
+    /**
+     * NOTE: Only for use by X448
+     */
+    public static void scalarMultBaseXY(X448.Friend friend, byte[] k, int kOff, int[] x, int[] y)
+    {
+        if (null == friend)
+        {
+            throw new NullPointerException("This method is only for use by X448");
+        }
+
+        byte[] n = new byte[SCALAR_BYTES];
+        pruneScalar(k, kOff, n);
+
+        PointExt p = new PointExt();
+        scalarMultBase(n, p);
+        X448Field.copy(p.x, 0, x, 0);
+        X448Field.copy(p.y, 0, y, 0);
     }
 
     private static void scalarMultStraussVar(int[] nb, int[] np, PointExt p, PointExt r)

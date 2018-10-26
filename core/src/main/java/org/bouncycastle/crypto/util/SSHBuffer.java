@@ -31,38 +31,6 @@ class SSHBuffer
         this.buffer = buffer;
     }
 
-    public long readCount()
-    {
-        if (pos + 8 > buffer.length)
-        {
-            throw new IllegalArgumentException("not enough data for long");
-        }
-
-        long rv = org.bouncycastle.util.Pack.bigEndianToLong(buffer, pos);
-
-        pos += 8;
-
-        return rv;
-    }
-
-
-    public boolean nextEquals(byte[] value)
-    {
-        if (pos + value.length > buffer.length)
-        {
-            return false;
-        }
-
-        for (int t = 0; t < value.length; t++)
-        {
-            if (buffer[pos + t] != value[t])
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
     public int readU32()
     {
         if (pos + 4 > buffer.length)

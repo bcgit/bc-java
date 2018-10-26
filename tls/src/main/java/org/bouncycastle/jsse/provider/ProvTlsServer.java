@@ -25,7 +25,6 @@ import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.ClientCertificateType;
-import org.bouncycastle.tls.CompressionMethod;
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.ProtocolVersion;
@@ -176,14 +175,6 @@ class ProvTlsServer
     {
         return TlsUtils.getSupportedCipherSuites(manager.getContextData().getCrypto(),
             manager.getContext().convertCipherSuites(sslParameters.getCipherSuites()));
-    }
-
-    @Override
-    protected short[] getCompressionMethods()
-    {
-        return manager.getContext().isFips()
-            ?   new short[]{ CompressionMethod._null }
-            :   super.getCompressionMethods();
     }
 
 //  public TlsKeyExchange getKeyExchange() throws IOException
@@ -356,7 +347,7 @@ class ProvTlsServer
         else
         {
             X509Certificate[] chain = JsseUtils.getX509CertificateChain(manager.getContextData().getCrypto(), clientCertificate);
-            short signatureAlgorithm = clientCertificate.getCertificateAt(0).getSignatureAlgorithm();
+            short signatureAlgorithm = clientCertificate.getCertificateAt(0).getLegacySignatureAlgorithm();
             String authType = JsseUtils.getAuthStringClient(signatureAlgorithm);
 
             if (!manager.isClientTrusted(chain, authType))
@@ -520,7 +511,7 @@ class ProvTlsServer
         case KeyExchangeAlgorithm.ECDHE_ECDSA:
         case KeyExchangeAlgorithm.ECDHE_RSA:
         {
-            short signatureAlgorithm = TlsUtils.getSignatureAlgorithm(keyExchangeAlgorithm);
+            short signatureAlgorithm = TlsUtils.getLegacySignatureAlgorithmServer(keyExchangeAlgorithm);
             SignatureAndHashAlgorithm sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
                 supportedSignatureAlgorithms, signatureAlgorithm);
 

@@ -5,7 +5,6 @@ import java.math.BigInteger;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
@@ -18,6 +17,9 @@ import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 import org.bouncycastle.util.Strings;
 
 
+/**
+ * OpenSSHPublicKeyUtil utility classes for parsing OpenSSH public keys.
+ */
 public class OpenSSHPublicKeyUtil
 {
     private OpenSSHPublicKeyUtil()
@@ -25,17 +27,32 @@ public class OpenSSHPublicKeyUtil
 
     }
 
-    public static final String RSA = "ssh-rsa";
-    public static final String ECDSA = "ecdsa";
-    public static final String ED_25519 = "ssh-ed25519";
+    private static final String RSA = "ssh-rsa";
+    private static final String ECDSA = "ecdsa";
+    private static final String ED_25519 = "ssh-ed25519";
     private static final String DSS = "ssh-dss";
 
-    public static CipherParameters parsePublicKey(byte[] encoded)
+    /**
+     * Parse a public key.
+     * <p>
+     * This method accepts the bytes that are Base64 encoded in an OpenSSH public key file.
+     *
+     * @param encoded The key.
+     * @return An AsymmetricKeyParameter instance.
+     */
+    public static AsymmetricKeyParameter parsePublicKey(byte[] encoded)
     {
         SSHBuffer buffer = new SSHBuffer(encoded);
         return parsePublicKey(buffer);
     }
 
+    /**
+     * Encode a public key from an AsymmetricKeyParameter instance.
+     *
+     * @param cipherParameters The key to encode.
+     * @return the key OpenSSH encoded.
+     * @throws IOException
+     */
     public static byte[] encodePublicKey(AsymmetricKeyParameter cipherParameters)
         throws IOException
     {
@@ -49,7 +66,7 @@ public class OpenSSHPublicKeyUtil
 
         if (cipherParameters instanceof RSAKeyParameters)
         {
-            if (((RSAKeyParameters)cipherParameters).isPrivate())
+            if (cipherParameters.isPrivate())
             {
                 throw new IllegalArgumentException("RSAKeyParamaters was for encryption");
             }
@@ -105,10 +122,15 @@ public class OpenSSHPublicKeyUtil
         throw new IllegalArgumentException("unable to convert " + cipherParameters.getClass().getName() + " to private key");
     }
 
-
-    public static CipherParameters parsePublicKey(SSHBuffer buffer)
+    /**
+     * Parse a public key from an SSHBuffer instance.
+     *
+     * @param buffer containing the SSH public key.
+     * @return A CipherParameters instance.
+     */
+    public static AsymmetricKeyParameter parsePublicKey(SSHBuffer buffer)
     {
-        CipherParameters result = null;
+        AsymmetricKeyParameter result = null;
 
         String magic = Strings.fromByteArray(buffer.readString());
         if (RSA.equals(magic))

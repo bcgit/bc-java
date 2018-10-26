@@ -5,6 +5,7 @@ import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
@@ -26,6 +27,7 @@ import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsVerifier;
+import org.bouncycastle.tls.crypto.impl.RSAUtil;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -85,6 +87,10 @@ public class BcTlsCertificate
 
         switch (signatureAlgorithm)
         {
+        case SignatureAlgorithm.rsa:
+            validateRSA_PKCS1();
+            return new BcTlsRSAVerifier(crypto, getPubKeyRSA());
+
         case SignatureAlgorithm.dsa:
             return new BcTlsDSAVerifier(crypto, getPubKeyDSS());
 
@@ -97,8 +103,17 @@ public class BcTlsCertificate
         case SignatureAlgorithm.ed448:
             return new BcTlsEd448Verifier(crypto, getPubKeyEd448());
 
-        case SignatureAlgorithm.rsa:
-            return new BcTlsRSAVerifier(crypto, getPubKeyRSA());
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+            validateRSA_PSS_RSAE();
+            return new BcTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureAlgorithm);
+
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+            validateRSA_PSS_PSS(signatureAlgorithm);
+            return new BcTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureAlgorithm);
 
         default:
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);
@@ -134,7 +149,7 @@ public class BcTlsCertificate
         return certificate.getSignatureAlgorithm().getAlgorithm().getId();
     }
 
-    public short getSignatureAlgorithm() throws IOException
+    public short getLegacySignatureAlgorithm() throws IOException
     {
         AsymmetricKeyParameter publicKey = getPublicKey();
         if (publicKey.isPrivate())
@@ -193,22 +208,6 @@ public class BcTlsCertificate
         {
             // TODO Check the curve and point format
             return SignatureAlgorithm.ecdsa;
-        }
-
-        /*
-         * Ed25519 public key; the certificate MUST allow the key to be used for signing
-         */
-        if (publicKey instanceof Ed25519PublicKeyParameters)
-        {
-            return SignatureAlgorithm.ed25519;
-        }
-
-        /*
-         * Ed448 public key; the certificate MUST allow the key to be used for signing
-         */
-        if (publicKey instanceof Ed448PublicKeyParameters)
-        {
-            return SignatureAlgorithm.ed448;
         }
 
         throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
@@ -286,6 +285,51 @@ public class BcTlsCertificate
         }
     }
 
+    public boolean supportsSignatureAlgorithm(short signatureAlgorithm)
+        throws IOException
+    {
+        if (!supportsKeyUsage(KeyUsage.digitalSignature))
+        {
+            return false;
+        }
+
+        AsymmetricKeyParameter publicKey = getPublicKey();
+
+        switch (signatureAlgorithm)
+        {
+        case SignatureAlgorithm.rsa:
+            return supportsRSA_PKCS1()
+                && publicKey instanceof RSAKeyParameters;
+
+        case SignatureAlgorithm.dsa:
+            return publicKey instanceof DSAPublicKeyParameters;
+
+        case SignatureAlgorithm.ecdsa:
+            return publicKey instanceof ECPublicKeyParameters;
+
+        case SignatureAlgorithm.ed25519:
+            return publicKey instanceof Ed25519PublicKeyParameters;
+
+        case SignatureAlgorithm.ed448:
+            return publicKey instanceof Ed448PublicKeyParameters;
+
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+            return supportsRSA_PSS_RSAE()
+                && publicKey instanceof RSAKeyParameters;
+
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+            return supportsRSA_PSS_PSS(signatureAlgorithm)
+                && publicKey instanceof RSAKeyParameters;
+
+        default:
+            return false;
+        }
+    }
+
     public TlsCertificate useInRole(int connectionEnd, int keyExchangeAlgorithm) throws IOException
     {
         switch (keyExchangeAlgorithm)
@@ -337,8 +381,7 @@ public class BcTlsCertificate
         }
     }
 
-    protected void validateKeyUsage(int keyUsageBits)
-        throws IOException
+    protected boolean supportsKeyUsage(int keyUsageBits)
     {
         Extensions exts = certificate.getTBSCertificate().getExtensions();
         if (exts != null)
@@ -349,9 +392,64 @@ public class BcTlsCertificate
                 int bits = ku.getBytes()[0] & 0xff;
                 if ((bits & keyUsageBits) != keyUsageBits)
                 {
-                    throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                    return false;
                 }
             }
+        }
+        return true;
+    }
+
+    protected boolean supportsRSA_PKCS1()
+    {
+        AlgorithmIdentifier pubKeyAlgID = certificate.getSubjectPublicKeyInfo().getAlgorithm();
+        return RSAUtil.supportsPKCS1(pubKeyAlgID);
+    }
+
+    protected boolean supportsRSA_PSS_PSS(short signatureAlgorithm)
+    {
+        AlgorithmIdentifier pubKeyAlgID = certificate.getSubjectPublicKeyInfo().getAlgorithm();
+        return RSAUtil.supportsPSS_PSS(signatureAlgorithm, pubKeyAlgID);
+    }
+
+    protected boolean supportsRSA_PSS_RSAE()
+    {
+        AlgorithmIdentifier pubKeyAlgID = certificate.getSubjectPublicKeyInfo().getAlgorithm();
+        return RSAUtil.supportsPSS_RSAE(pubKeyAlgID);
+    }
+
+    protected void validateKeyUsage(int keyUsageBits)
+        throws IOException
+    {
+        if (!supportsKeyUsage(keyUsageBits))
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+        }
+    }
+
+    protected void validateRSA_PKCS1()
+        throws IOException
+    {
+        if (!supportsRSA_PKCS1())
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+        }
+    }
+
+    protected void validateRSA_PSS_PSS(short signatureAlgorithm)
+        throws IOException
+    {
+        if (!supportsRSA_PSS_PSS(signatureAlgorithm))
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+        }
+    }
+
+    protected void validateRSA_PSS_RSAE()
+        throws IOException
+    {
+        if (!supportsRSA_PSS_RSAE())
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
         }
     }
 }

@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.math.ec.rfc7748.X25519;
 import org.bouncycastle.math.ec.rfc7748.X25519Field;
 import org.bouncycastle.math.raw.Interleave;
 import org.bouncycastle.math.raw.Nat;
@@ -62,6 +63,7 @@ public abstract class Ed25519
     private static final int PRECOMP_POINTS = 1 << (PRECOMP_TEETH - 1);
     private static final int PRECOMP_MASK = PRECOMP_POINTS - 1;
 
+    private static Object precompLock = new Object();
     // TODO[ed25519] Convert to PointPrecomp
     private static PointExt[] precompBaseTable = null;
     private static int[] precompBase = null;
@@ -653,99 +655,102 @@ public abstract class Ed25519
         X25519Field.zero(p.t);
     }
 
-    public synchronized static void precompute()
+    public static void precompute()
     {
-        if (precompBase != null)
+        synchronized (precompLock)
         {
-            return;
-        }
-
-        // Precomputed table for the base point in verification ladder
-        {
-            PointExt b = new PointExt();
-            X25519Field.copy(B_x, 0, b.x, 0);
-            X25519Field.copy(B_y, 0, b.y, 0);
-            pointExtendXY(b);
-
-            precompBaseTable = pointPrecompVar(b, 1 << (WNAF_WIDTH_BASE - 2));
-        }
-
-        PointAccum p = new PointAccum();
-        X25519Field.copy(B_x, 0, p.x, 0);
-        X25519Field.copy(B_y, 0, p.y, 0);
-        pointExtendXY(p);
-
-        precompBase = new int[PRECOMP_BLOCKS * PRECOMP_POINTS * 3 * X25519Field.SIZE];
-
-        int off = 0;
-        for (int b = 0; b < PRECOMP_BLOCKS; ++b)
-        {
-            PointExt[] ds = new PointExt[PRECOMP_TEETH];
-
-            PointExt sum = new PointExt();
-            pointSetNeutral(sum);
-
-            for (int t = 0; t < PRECOMP_TEETH; ++t)
+            if (precompBase != null)
             {
-                PointExt q = pointCopy(p);
-                pointAddVar(true, sum, q, sum);
-                pointDouble(p);
+                return;
+            }
 
-                ds[t] = pointCopy(p);
+            // Precomputed table for the base point in verification ladder
+            {
+                PointExt b = new PointExt();
+                X25519Field.copy(B_x, 0, b.x, 0);
+                X25519Field.copy(B_y, 0, b.y, 0);
+                pointExtendXY(b);
 
-                if (b + t != PRECOMP_BLOCKS + PRECOMP_TEETH - 2)
+                precompBaseTable = pointPrecompVar(b, 1 << (WNAF_WIDTH_BASE - 2));
+            }
+
+            PointAccum p = new PointAccum();
+            X25519Field.copy(B_x, 0, p.x, 0);
+            X25519Field.copy(B_y, 0, p.y, 0);
+            pointExtendXY(p);
+
+            precompBase = new int[PRECOMP_BLOCKS * PRECOMP_POINTS * 3 * X25519Field.SIZE];
+
+            int off = 0;
+            for (int b = 0; b < PRECOMP_BLOCKS; ++b)
+            {
+                PointExt[] ds = new PointExt[PRECOMP_TEETH];
+
+                PointExt sum = new PointExt();
+                pointSetNeutral(sum);
+
+                for (int t = 0; t < PRECOMP_TEETH; ++t)
                 {
-                    for (int s = 1; s < PRECOMP_SPACING; ++s)
+                    PointExt q = pointCopy(p);
+                    pointAddVar(true, sum, q, sum);
+                    pointDouble(p);
+
+                    ds[t] = pointCopy(p);
+
+                    if (b + t != PRECOMP_BLOCKS + PRECOMP_TEETH - 2)
                     {
-                        pointDouble(p);
+                        for (int s = 1; s < PRECOMP_SPACING; ++s)
+                        {
+                            pointDouble(p);
+                        }
                     }
                 }
-            }
 
-            PointExt[] points = new PointExt[PRECOMP_POINTS];
-            int k = 0;
-            points[k++] = sum;
+                PointExt[] points = new PointExt[PRECOMP_POINTS];
+                int k = 0;
+                points[k++] = sum;
 
-            for (int t = 0; t < (PRECOMP_TEETH - 1); ++t)
-            {
-                int size = 1 << t;
-                for (int j = 0; j < size; ++j, ++k)
+                for (int t = 0; t < (PRECOMP_TEETH - 1); ++t)
                 {
-                    pointAddVar(false, points[k - size], ds[t], points[k] = new PointExt());
+                    int size = 1 << t;
+                    for (int j = 0; j < size; ++j, ++k)
+                    {
+                        pointAddVar(false, points[k - size], ds[t], points[k] = new PointExt());
+                    }
+                }
+
+//                assert k == PRECOMP_POINTS;
+
+                for (int i = 0; i < PRECOMP_POINTS; ++i)
+                {
+                    PointExt q = points[i];
+
+                    int[] x = X25519Field.create();
+                    int[] y = X25519Field.create();
+
+                    X25519Field.add(q.z, q.z, x);
+                    // TODO[ed25519] Batch inversion
+                    X25519Field.inv(x, y);
+                    X25519Field.mul(q.x, y, x);
+                    X25519Field.mul(q.y, y, y);
+
+                    PointPrecomp r = new PointPrecomp();
+                    X25519Field.apm(y, x, r.ypx_h, r.ymx_h);
+                    X25519Field.mul(x, y, r.xyd);
+                    X25519Field.mul(r.xyd, C_d4, r.xyd);
+
+                    X25519Field.normalize(r.ypx_h);
+                    X25519Field.normalize(r.ymx_h);
+//                    X25519Field.normalize(r.xyd);
+
+                    X25519Field.copy(r.ypx_h, 0, precompBase, off);    off += X25519Field.SIZE;
+                    X25519Field.copy(r.ymx_h, 0, precompBase, off);    off += X25519Field.SIZE;
+                    X25519Field.copy(r.xyd,   0, precompBase, off);    off += X25519Field.SIZE;
                 }
             }
 
-//            assert k == PRECOMP_POINTS;
-
-            for (int i = 0; i < PRECOMP_POINTS; ++i)
-            {
-                PointExt q = points[i];
-
-                int[] x = X25519Field.create();
-                int[] y = X25519Field.create();
-
-                X25519Field.add(q.z, q.z, x);
-                // TODO[ed25519] Batch inversion
-                X25519Field.inv(x, y);
-                X25519Field.mul(q.x, y, x);
-                X25519Field.mul(q.y, y, y);
-
-                PointPrecomp r = new PointPrecomp();
-                X25519Field.apm(y, x, r.ypx_h, r.ymx_h);
-                X25519Field.mul(x, y, r.xyd);
-                X25519Field.mul(r.xyd, C_d4, r.xyd);
-
-                X25519Field.normalize(r.ypx_h);
-                X25519Field.normalize(r.ymx_h);
-//                X25519Field.normalize(r.xyd);
-
-                X25519Field.copy(r.ypx_h, 0, precompBase, off);    off += X25519Field.SIZE;
-                X25519Field.copy(r.ymx_h, 0, precompBase, off);    off += X25519Field.SIZE;
-                X25519Field.copy(r.xyd,   0, precompBase, off);    off += X25519Field.SIZE;
-            }
+//            assert off == precompBase.length;
         }
-
-//        assert off == precompBase.length;
     }
 
     private static void pruneScalar(byte[] n, int nOff, byte[] r)
@@ -951,6 +956,25 @@ public abstract class Ed25519
         PointAccum p = new PointAccum();
         scalarMultBase(k, p);
         encodePoint(p, r, rOff);
+    }
+
+    /**
+     * NOTE: Only for use by X25519
+     */
+    public static void scalarMultBaseYZ(X25519.Friend friend, byte[] k, int kOff, int[] y, int[] z)
+    {
+        if (null == friend)
+        {
+            throw new NullPointerException("This method is only for use by X25519");
+        }
+
+        byte[] n = new byte[SCALAR_BYTES];
+        pruneScalar(k, kOff, n);
+
+        PointAccum p = new PointAccum();
+        scalarMultBase(n, p);
+        X25519Field.copy(p.y, 0, y, 0);
+        X25519Field.copy(p.z, 0, z, 0);
     }
 
     private static void scalarMultStraussVar(int[] nb, int[] np, PointExt p, PointAccum r)
