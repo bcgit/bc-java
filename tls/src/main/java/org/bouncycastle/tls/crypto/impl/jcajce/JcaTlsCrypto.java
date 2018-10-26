@@ -635,7 +635,7 @@ public class JcaTlsCrypto
     protected TlsBlockCipherImpl createBlockCipher(String cipherName, String algorithm, int keySize, boolean isEncrypting)
         throws GeneralSecurityException
     {
-        return new JceBlockCipherImpl(helper.createCipher(cipherName), algorithm, isEncrypting);
+        return new JceBlockCipherImpl(helper.createCipher(cipherName), algorithm, keySize, isEncrypting);
     }
 
     /**
