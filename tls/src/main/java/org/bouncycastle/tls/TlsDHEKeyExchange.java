@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.util.io.TeeInputStream;
 
@@ -23,6 +24,7 @@ public class TlsDHEKeyExchange
     }
 
     protected TlsCredentialedSigner serverCredentials = null;
+    protected TlsCertificate serverCertificate = null;
 
     public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHConfigVerifier dhConfigVerifier)
     {
@@ -48,7 +50,7 @@ public class TlsDHEKeyExchange
     {
         checkServerCertSigAlg(serverCertificate);
 
-        this.dhPeerCertificate = serverCertificate.getCertificateAt(0);
+        this.serverCertificate = serverCertificate.getCertificateAt(0);
     }
 
     public byte[] generateServerKeyExchange() throws IOException
@@ -81,7 +83,7 @@ public class TlsDHEKeyExchange
         byte[] y = TlsUtils.readOpaque16(teeIn);
 
         TlsUtils.verifyServerKeyExchangeSignature(context, input, keyExchange, supportedSignatureAlgorithms,
-            dhPeerCertificate, digestBuffer);
+            serverCertificate, digestBuffer);
 
         this.agreement = context.getCrypto().createDHDomain(dhConfig).createDH();
 

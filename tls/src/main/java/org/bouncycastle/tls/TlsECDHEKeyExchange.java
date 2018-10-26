@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.util.io.TeeInputStream;
 
@@ -26,6 +27,7 @@ public class TlsECDHEKeyExchange
     }
 
     protected TlsCredentialedSigner serverCredentials = null;
+    protected TlsCertificate serverCertificate = null;
 
     public TlsECDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms,
         TlsECConfigVerifier ecConfigVerifier, short[] clientECPointFormats, short[] serverECPointFormats)
@@ -54,7 +56,7 @@ public class TlsECDHEKeyExchange
     {
         checkServerCertSigAlg(serverCertificate);
 
-        this.ecdhPeerCertificate = serverCertificate.getCertificateAt(0);
+        this.serverCertificate = serverCertificate.getCertificateAt(0);
     }
 
     public byte[] generateServerKeyExchange() throws IOException
@@ -82,7 +84,7 @@ public class TlsECDHEKeyExchange
         byte[] point = TlsUtils.readOpaque8(teeIn);
 
         TlsUtils.verifyServerKeyExchangeSignature(context, input, keyExchange, supportedSignatureAlgorithms,
-            ecdhPeerCertificate, digestBuffer);
+            serverCertificate, digestBuffer);
 
         this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
 
