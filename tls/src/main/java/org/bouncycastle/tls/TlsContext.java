@@ -12,6 +12,8 @@ public interface TlsContext
 
     TlsNonceGenerator getNonceGenerator();
 
+    TlsPeerOptions getPeerOptions();
+
     SecurityParameters getSecurityParameters();
 
     /**
