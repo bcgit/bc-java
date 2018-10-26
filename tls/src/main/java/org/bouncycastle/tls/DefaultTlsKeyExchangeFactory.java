@@ -9,16 +9,28 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 public class DefaultTlsKeyExchangeFactory
     extends AbstractTlsKeyExchangeFactory
 {
-    public TlsKeyExchange createDHKeyExchangeClient(int keyExchange, Vector supportedSignatureAlgorithms,
-        TlsDHConfigVerifier dhConfigVerifier) throws IOException
+    public TlsKeyExchange createDHKeyExchangeClient(int keyExchange, Vector supportedSignatureAlgorithms)
+        throws IOException
     {
-        return new TlsDHKeyExchange(keyExchange, supportedSignatureAlgorithms, dhConfigVerifier);
+        return new TlsDHKeyExchange(keyExchange, supportedSignatureAlgorithms);
     }
 
-    public TlsKeyExchange createDHKeyExchangeServer(int keyExchange, Vector supportedSignatureAlgorithms,
-        TlsDHConfig dhConfig) throws IOException
+    public TlsKeyExchange createDHKeyExchangeServer(int keyExchange, Vector supportedSignatureAlgorithms)
+        throws IOException
     {
-        return new TlsDHKeyExchange(keyExchange, supportedSignatureAlgorithms, dhConfig);
+        return new TlsDHKeyExchange(keyExchange, supportedSignatureAlgorithms);
+    }
+
+    public TlsKeyExchange createDHanonKeyExchangeClient(int keyExchange, TlsDHConfigVerifier dhConfigVerifier)
+        throws IOException
+    {
+        return new TlsDHanonKeyExchange(keyExchange, dhConfigVerifier);
+    }
+
+    public TlsKeyExchange createDHanonKeyExchangeServer(int keyExchange, TlsDHConfig dhConfig)
+        throws IOException
+    {
+        return new TlsDHanonKeyExchange(keyExchange, dhConfig);
     }
 
     public TlsKeyExchange createDHEKeyExchangeClient(int keyExchange, Vector supportedSignatureAlgorithms,
@@ -33,18 +45,28 @@ public class DefaultTlsKeyExchangeFactory
         return new TlsDHEKeyExchange(keyExchange, supportedSignatureAlgorithms, dhConfig);
     }
 
-    public TlsKeyExchange createECDHKeyExchangeClient(int keyExchange, Vector supportedSignatureAlgorithms,
-        TlsECConfigVerifier ecConfigVerifier, short[] clientECPointFormats, short[] serverECPointFormats)
+    public TlsKeyExchange createECDHKeyExchangeClient(int keyExchange, Vector supportedSignatureAlgorithms)
         throws IOException
     {
-        return new TlsECDHKeyExchange(keyExchange, supportedSignatureAlgorithms, ecConfigVerifier, clientECPointFormats,
-            serverECPointFormats);
+        return new TlsECDHKeyExchange(keyExchange, supportedSignatureAlgorithms);
     }
 
-    public TlsKeyExchange createECDHKeyExchangeServer(int keyExchange, Vector supportedSignatureAlgorithms,
-        TlsECConfig ecConfig, short[] serverECPointFormats) throws IOException
+    public TlsKeyExchange createECDHKeyExchangeServer(int keyExchange, Vector supportedSignatureAlgorithms)
+        throws IOException
     {
-        return new TlsECDHKeyExchange(keyExchange, supportedSignatureAlgorithms, ecConfig, serverECPointFormats);
+        return new TlsECDHKeyExchange(keyExchange, supportedSignatureAlgorithms);
+    }
+
+    public TlsKeyExchange createECDHanonKeyExchangeClient(int keyExchange, TlsECConfigVerifier ecConfigVerifier,
+        short[] clientECPointFormats, short[] serverECPointFormats) throws IOException
+    {
+        return new TlsECDHanonKeyExchange(keyExchange, ecConfigVerifier, clientECPointFormats, serverECPointFormats);
+    }
+
+    public TlsKeyExchange createECDHanonKeyExchangeServer(int keyExchange, TlsECConfig ecConfig,
+        short[] serverECPointFormats) throws IOException
+    {
+        return new TlsECDHanonKeyExchange(keyExchange, ecConfig, serverECPointFormats);
     }
 
     public TlsKeyExchange createECDHEKeyExchangeClient(int keyExchange, Vector supportedSignatureAlgorithms,

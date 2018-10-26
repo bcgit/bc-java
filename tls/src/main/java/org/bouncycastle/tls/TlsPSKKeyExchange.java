@@ -95,12 +95,8 @@ public class TlsPSKKeyExchange
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
-        if (!(serverCredentials instanceof TlsCredentialedDecryptor))
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
 
-        this.serverCredentials = (TlsCredentialedDecryptor)serverCredentials;
+        this.serverCredentials = TlsUtils.requireDecryptorCredentials(serverCredentials);
     }
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
@@ -110,9 +106,8 @@ public class TlsPSKKeyExchange
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        checkServerCertSigAlg(serverCertificate);
-
-        this.serverCertificate = serverCertificate.getCertificateAt(0).useInRole(ConnectionEnd.server, keyExchange);
+        this.serverCertificate = checkServerCertSigAlg(serverCertificate).getCertificateAt(0)
+            .useInRole(ConnectionEnd.server, keyExchange);
     }
 
     public byte[] generateServerKeyExchange() throws IOException

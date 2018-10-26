@@ -83,12 +83,8 @@ public class TlsSRPKeyExchange
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
-        if (!(serverCredentials instanceof TlsCredentialedSigner))
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
 
-        this.serverCredentials = (TlsCredentialedSigner)serverCredentials;
+        this.serverCredentials = TlsUtils.requireSignerCredentials(serverCredentials);
     }
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
@@ -98,9 +94,7 @@ public class TlsSRPKeyExchange
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        checkServerCertSigAlg(serverCertificate);
-
-        this.serverCertificate = serverCertificate.getCertificateAt(0);
+        this.serverCertificate = checkServerCertSigAlg(serverCertificate).getCertificateAt(0);
     }
 
     public boolean requiresServerKeyExchange()
