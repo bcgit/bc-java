@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.bouncycastle.crypto.tls.AlertDescription;
+import org.bouncycastle.crypto.tls.TlsFatalAlert;
+
 /**
  * RFC 5246 7.4.1.4.1
  */
@@ -23,13 +26,13 @@ public class SignatureAndHashAlgorithm
         switch (hashAlgorithm)
         {
         case HashAlgorithm.Intrinsic:
-            return getIntrinsicSingleton(signatureAlgorithm);
+            return getInstanceIntrinsic(signatureAlgorithm);
         default:
             return new SignatureAndHashAlgorithm(hashAlgorithm, signatureAlgorithm);
         }
     }
 
-    public static SignatureAndHashAlgorithm getIntrinsicSingleton(short signatureAlgorithm)
+    public static SignatureAndHashAlgorithm getInstanceIntrinsic(short signatureAlgorithm)
     {
         switch (signatureAlgorithm)
         {
@@ -41,12 +44,13 @@ public class SignatureAndHashAlgorithm
         case SignatureAlgorithm.rsa_pss_pss_sha256:     return rsa_pss_pss_sha256;
         case SignatureAlgorithm.rsa_pss_pss_sha384:     return rsa_pss_pss_sha384;
         case SignatureAlgorithm.rsa_pss_pss_sha512:     return rsa_pss_pss_sha512;
-        default:                                        return null;
+        default:
+            return new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, signatureAlgorithm);
         }
     }
 
-    protected short hash;
-    protected short signature;
+    protected final short hash;
+    protected final short signature;
 
     /**
      * @param hash      {@link HashAlgorithm}
@@ -61,14 +65,6 @@ public class SignatureAndHashAlgorithm
         if (!TlsUtils.isValidUint8(signature))
         {
             throw new IllegalArgumentException("'signature' should be a uint8");
-        }
-        if (signature == SignatureAlgorithm.anonymous)
-        {
-            throw new IllegalArgumentException("'signature' MUST NOT be \"anonymous\"");
-        }
-        if ((hash == HashAlgorithm.Intrinsic) != SignatureAlgorithm.hasIntrinsicHash(signature))
-        {
-            throw new IllegalArgumentException("invalid hash/signature combination");
         }
 
         this.hash = hash;
@@ -89,21 +85,6 @@ public class SignatureAndHashAlgorithm
     public short getSignature()
     {
         return signature;
-    }
-
-    public boolean equals(Object obj)
-    {
-        if (!(obj instanceof SignatureAndHashAlgorithm))
-        {
-            return false;
-        }
-        SignatureAndHashAlgorithm other = (SignatureAndHashAlgorithm)obj;
-        return other.getHash() == getHash() && other.getSignature() == getSignature();
-    }
-
-    public int hashCode()
-    {
-        return (getHash() << 16) | getSignature();
     }
 
     /**
@@ -131,6 +112,32 @@ public class SignatureAndHashAlgorithm
     {
         short hash = TlsUtils.readUint8(input);
         short signature = TlsUtils.readUint8(input);
-        return new SignatureAndHashAlgorithm(hash, signature);
+
+        if (signature == SignatureAlgorithm.anonymous)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        return SignatureAndHashAlgorithm.getInstance(hash, signature);
+    }
+
+    public boolean equals(Object obj)
+    {
+        if (!(obj instanceof SignatureAndHashAlgorithm))
+        {
+            return false;
+        }
+        SignatureAndHashAlgorithm other = (SignatureAndHashAlgorithm)obj;
+        return other.getHash() == getHash() && other.getSignature() == getSignature();
+    }
+
+    public int hashCode()
+    {
+        return (getHash() << 16) | getSignature();
+    }
+
+    public String toString()
+    {
+        return "{" + HashAlgorithm.getName(hash) + "," + SignatureAlgorithm.getName(signature) + "}";
     }
 }

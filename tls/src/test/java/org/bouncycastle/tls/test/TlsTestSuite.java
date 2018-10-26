@@ -169,6 +169,21 @@ public class TlsTestSuite extends TestSuite
         }
 
         /*
+         * Server sends SHA-256/RSA certificate, which is not the default {sha1,rsa} implied by the
+         * absent signature_algorithms extension. We expect fatal alert from the client when it
+         * verifies the certificate's 'signatureAlgorithm' against the implicit default signature_algorithms.
+         */
+        if (TlsUtils.isTLSv12(version))
+        {
+            TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
+            c.clientSendSignatureAlgorithms = false;
+            c.serverAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.rsa);
+            c.expectClientFatalAlert(AlertDescription.certificate_unknown);
+
+            addTestCase(testSuite, c, prefix + "BadServerCertSigAlg");
+        }
+
+        /*
          * Server selects MD5/RSA for ServerKeyExchange signature, which is not in the default
          * supported signature algorithms that the client sent. We expect fatal alert from the
          * client when it verifies the selected algorithm against the supported algorithms.
@@ -190,6 +205,7 @@ public class TlsTestSuite extends TestSuite
         if (TlsUtils.isTLSv12(version))
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
+            c.clientCheckServerCertSigAlg = false;
             c.clientSendSignatureAlgorithms = false;
             c.serverAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.md5, SignatureAlgorithm.rsa);
             c.expectClientFatalAlert(AlertDescription.illegal_parameter);
