@@ -74,12 +74,9 @@ public class TlsDHUtils
         switch (TlsUtils.getKeyExchangeAlgorithm(cipherSuite))
         {
         case KeyExchangeAlgorithm.DH_anon:
-        case KeyExchangeAlgorithm.DH_anon_EXPORT:
         case KeyExchangeAlgorithm.DHE_DSS:
-        case KeyExchangeAlgorithm.DHE_DSS_EXPORT:
         case KeyExchangeAlgorithm.DHE_PSK:
         case KeyExchangeAlgorithm.DHE_RSA:
-        case KeyExchangeAlgorithm.DHE_RSA_EXPORT:
             return true;
 
         default:

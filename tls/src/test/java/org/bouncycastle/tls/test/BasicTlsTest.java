@@ -164,13 +164,13 @@ public class BasicTlsTest
 
         try
         {
-            checkConnectionClient(client, CipherSuite.TLS_DH_anon_EXPORT_WITH_DES40_CBC_SHA, TlsTestUtils.rsaCertData);
+            checkConnectionClient(client, CipherSuite.TLS_DH_anon_WITH_AES_128_CBC_SHA, TlsTestUtils.rsaCertData);
 
             fail("wrong certificate not caught");
         }
         catch (TlsFatalAlert e)
         {
-            assertEquals(AlertDescription.internal_error, e.getAlertDescription());
+            assertEquals(AlertDescription.unexpected_message, e.getAlertDescription());
         }
     }
 
