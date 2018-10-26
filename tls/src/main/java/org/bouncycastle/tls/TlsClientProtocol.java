@@ -553,19 +553,8 @@ public class TlsClientProtocol
     protected void handleServerCertificate()
         throws IOException
     {
-        if (this.authentication == null)
-        {
-            // There was no server certificate message; check it's OK
-            securityParameters.tlsServerEndPoint = TlsUtils.EMPTY_BYTES;
-            this.keyExchange.skipServerCredentials();
-        }
-        else
-        {
-            getContext().getPeerOptions().checkPeerCertSigAlg = tlsClient.shouldCheckPeerCertSigAlg();
-
-            TlsUtils.processServerCertificate(peerCertificate, certificateStatus, keyExchange, authentication,
-                clientExtensions, serverExtensions);
-        }
+        TlsUtils.processServerCertificate(tlsClientContext, tlsClient, peerCertificate, certificateStatus, keyExchange,
+            authentication, clientExtensions, serverExtensions);
     }
 
     protected void handleSupplementalData(Vector serverSupplementalData)
