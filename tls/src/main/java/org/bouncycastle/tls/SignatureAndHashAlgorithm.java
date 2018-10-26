@@ -11,6 +11,39 @@ public class SignatureAndHashAlgorithm
 {
     public static final SignatureAndHashAlgorithm ed25519 = new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, SignatureAlgorithm.ed25519);
     public static final SignatureAndHashAlgorithm ed448 = new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, SignatureAlgorithm.ed448);
+    public static final SignatureAndHashAlgorithm rsa_pss_rsae_sha256 = new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, SignatureAlgorithm.rsa_pss_rsae_sha256);
+    public static final SignatureAndHashAlgorithm rsa_pss_rsae_sha384 = new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, SignatureAlgorithm.rsa_pss_rsae_sha384);
+    public static final SignatureAndHashAlgorithm rsa_pss_rsae_sha512 = new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, SignatureAlgorithm.rsa_pss_rsae_sha512);
+    public static final SignatureAndHashAlgorithm rsa_pss_pss_sha256 = new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, SignatureAlgorithm.rsa_pss_pss_sha256);
+    public static final SignatureAndHashAlgorithm rsa_pss_pss_sha384 = new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, SignatureAlgorithm.rsa_pss_pss_sha384);
+    public static final SignatureAndHashAlgorithm rsa_pss_pss_sha512 = new SignatureAndHashAlgorithm(HashAlgorithm.Intrinsic, SignatureAlgorithm.rsa_pss_pss_sha512);
+
+    public static SignatureAndHashAlgorithm getInstance(short hashAlgorithm, short signatureAlgorithm)
+    {
+        switch (hashAlgorithm)
+        {
+        case HashAlgorithm.Intrinsic:
+            return getIntrinsicSingleton(signatureAlgorithm);
+        default:
+            return new SignatureAndHashAlgorithm(hashAlgorithm, signatureAlgorithm);
+        }
+    }
+
+    public static SignatureAndHashAlgorithm getIntrinsicSingleton(short signatureAlgorithm)
+    {
+        switch (signatureAlgorithm)
+        {
+        case SignatureAlgorithm.ed25519:                return ed25519;
+        case SignatureAlgorithm.ed448:                  return ed448;
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:    return rsa_pss_rsae_sha256;
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:    return rsa_pss_rsae_sha384;
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:    return rsa_pss_rsae_sha512;
+        case SignatureAlgorithm.rsa_pss_pss_sha256:     return rsa_pss_pss_sha256;
+        case SignatureAlgorithm.rsa_pss_pss_sha384:     return rsa_pss_pss_sha384;
+        case SignatureAlgorithm.rsa_pss_pss_sha512:     return rsa_pss_pss_sha512;
+        default:                                        return null;
+        }
+    }
 
     protected short hash;
     protected short signature;

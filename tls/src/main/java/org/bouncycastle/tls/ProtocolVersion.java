@@ -152,7 +152,7 @@ public final class ProtocolVersion
         }
         default:
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            return getUnknownVersion(major, minor, "UNKNOWN");
         }
         }
     }

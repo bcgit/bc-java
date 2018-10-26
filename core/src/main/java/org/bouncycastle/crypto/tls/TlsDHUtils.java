@@ -409,6 +409,25 @@ public class TlsDHUtils
         case CipherSuite.DRAFT_TLS_DHE_PSK_WITH_AES_128_OCB:
         case CipherSuite.DRAFT_TLS_DHE_PSK_WITH_AES_256_OCB:
 
+        /*
+         * DH_anon cipher suites are consider ephemeral DH 
+         */
+        case CipherSuite.TLS_DH_anon_WITH_3DES_EDE_CBC_SHA:
+        case CipherSuite.TLS_DH_anon_WITH_AES_128_CBC_SHA:
+        case CipherSuite.TLS_DH_anon_WITH_AES_128_CBC_SHA256:
+        case CipherSuite.TLS_DH_anon_WITH_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_DH_anon_WITH_AES_256_CBC_SHA:
+        case CipherSuite.TLS_DH_anon_WITH_AES_256_CBC_SHA256:
+        case CipherSuite.TLS_DH_anon_WITH_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA:
+        case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256:
+        case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_128_GCM_SHA256:
+        case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA:
+        case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256:
+        case CipherSuite.TLS_DH_anon_WITH_CAMELLIA_256_GCM_SHA384:
+        case CipherSuite.TLS_DH_anon_WITH_RC4_128_MD5:
+        case CipherSuite.TLS_DH_anon_WITH_SEED_CBC_SHA:
+
             return true;
 
         default:

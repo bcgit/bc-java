@@ -178,15 +178,15 @@ class ProvSSLSessionImpl
         /*
          * TODO[jsse] This is the maximum possible per RFC (but see jsse.SSLEngine.acceptLargeFragments System property).
          * It would be nice to dynamically check with the underlying RecordStream, which might know a tighter limit, e.g.
-         * when the max_fragment_length extension has been negotiated, or when no compression was negotiated).
+         * when the max_fragment_length extension has been negotiated. (Compression is not supported, so no expansion needed).
          */
-        // Header size + Fragment length limit + Compression expansion + Cipher expansion
-//        return RecordFormat.FRAGMENT_OFFSET + (1 << 14) + 1024 + 1024;
+        // Header size + Fragment length limit + Cipher expansion
+//        return RecordFormat.FRAGMENT_OFFSET + (1 << 14) + 1024;
 
         /*
          * Worst case accounts for possible application data splitting (before TLS 1.1)
          */
-        return (1 << 14) + 1 + 2 * (RecordFormat.FRAGMENT_OFFSET + 1024 + 1024);
+        return (1 << 14) + 1 + 2 * (RecordFormat.FRAGMENT_OFFSET + 1024);
     }
 
     public javax.security.cert.X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException

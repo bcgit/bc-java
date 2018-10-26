@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.params.Ed448PrivateKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.DefaultTlsCredentialedSigner;
+import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSigner;
@@ -20,11 +21,27 @@ import org.bouncycastle.tls.crypto.TlsSigner;
 public class BcDefaultTlsCredentialedSigner
     extends DefaultTlsCredentialedSigner
 {
-    private static TlsSigner makeSigner(BcTlsCrypto crypto, AsymmetricKeyParameter privateKey, Certificate certificate)
+    private static TlsSigner makeSigner(BcTlsCrypto crypto, AsymmetricKeyParameter privateKey, Certificate certificate,
+        SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
         TlsSigner signer;
         if (privateKey instanceof RSAKeyParameters)
         {
+            if (signatureAndHashAlgorithm != null)
+            {
+                short signatureAlgorithm = signatureAndHashAlgorithm.getSignature();
+                switch (signatureAlgorithm)
+                {
+                case SignatureAlgorithm.rsa_pss_pss_sha256:
+                case SignatureAlgorithm.rsa_pss_pss_sha384:
+                case SignatureAlgorithm.rsa_pss_pss_sha512:
+                case SignatureAlgorithm.rsa_pss_rsae_sha256:
+                case SignatureAlgorithm.rsa_pss_rsae_sha384:
+                case SignatureAlgorithm.rsa_pss_rsae_sha512:
+                    return new BcTlsRSAPSSSigner(crypto, (RSAKeyParameters)privateKey, signatureAlgorithm);
+                }
+            }
+
             signer = new BcTlsRSASigner(crypto, (RSAKeyParameters)privateKey);
         }
         else if (privateKey instanceof DSAPrivateKeyParameters)
@@ -67,9 +84,10 @@ public class BcDefaultTlsCredentialedSigner
         return signer;
     }
 
-    public BcDefaultTlsCredentialedSigner(TlsCryptoParameters cryptoParams, BcTlsCrypto crypto, AsymmetricKeyParameter privateKey,
-        Certificate certificate, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+    public BcDefaultTlsCredentialedSigner(TlsCryptoParameters cryptoParams, BcTlsCrypto crypto,
+        AsymmetricKeyParameter privateKey, Certificate certificate, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
-        super(cryptoParams, makeSigner(crypto, privateKey, certificate), certificate, signatureAndHashAlgorithm);
+        super(cryptoParams, makeSigner(crypto, privateKey, certificate, signatureAndHashAlgorithm), certificate,
+            signatureAndHashAlgorithm);
     }
 }

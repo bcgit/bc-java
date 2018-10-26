@@ -2,12 +2,27 @@ package org.bouncycastle.jce.spec;
 
 import java.security.spec.EncodedKeySpec;
 
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
+
+/**
+ * Holds an OpenSSH encoded public key.
+ */
 public class OpenSSHPublicKeySpec
     extends EncodedKeySpec
 {
     private static final String[] allowedTypes = new String[]{"ssh-rsa", "ssh-ed25519", "ssh-dss"};
     private final String type;
 
+
+    /**
+     * Construct and instance and determine the OpenSSH public key type.
+     * The current types are ssh-rsa, ssh-ed25519, ssh-dss and ecdsa-*
+     * <p>
+     * It does not validate the key beyond identifying the type.
+     *
+     * @param encodedKey
+     */
     public OpenSSHPublicKeySpec(byte[] encodedKey)
     {
         super(encodedKey);
@@ -21,12 +36,12 @@ public class OpenSSHPublicKeySpec
         i |= (encodedKey[pos++] & 0xFF) << 8;
         i |= (encodedKey[pos++] & 0xFF);
 
-        if (i >= encodedKey.length)
+        if ((pos + i) >= encodedKey.length)
         {
-            throw new IllegalArgumentException("invalid public key blob, type field longer than blob");
+            throw new IllegalArgumentException("invalid public key blob: type field longer than blob");
         }
 
-        this.type = new String(encodedKey, pos, i);
+        this.type = Strings.fromByteArray(Arrays.copyOfRange(encodedKey, pos, pos + i));
 
         if (type.startsWith("ecdsa"))
         {
@@ -50,6 +65,11 @@ public class OpenSSHPublicKeySpec
         return "OpenSSH";
     }
 
+    /**
+     * The type of OpenSSH public key.
+     *
+     * @return the type.
+     */
     public String getType()
     {
         return type;
