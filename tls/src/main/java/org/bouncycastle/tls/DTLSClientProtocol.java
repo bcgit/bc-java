@@ -211,19 +211,8 @@ public class DTLSClientProtocol
             // Okay, CertificateStatus is optional
         }
 
-        if (state.authentication == null)
-        {
-            // There was no server certificate message; check it's OK
-            state.clientContext.getSecurityParameters().tlsServerEndPoint = TlsUtils.EMPTY_BYTES;
-            state.keyExchange.skipServerCredentials();
-        }
-        else
-        {
-            state.clientContext.getPeerOptions().checkPeerCertSigAlg = state.client.shouldCheckPeerCertSigAlg();
-
-            TlsUtils.processServerCertificate(serverCertificate, state.certificateStatus, state.keyExchange,
-                state.authentication, state.clientExtensions, state.serverExtensions);
-        }
+        TlsUtils.processServerCertificate(state.clientContext, state.client, serverCertificate, state.certificateStatus,
+            state.keyExchange, state.authentication, state.clientExtensions, state.serverExtensions);
 
         if (serverMessage.getType() == HandshakeType.server_key_exchange)
         {

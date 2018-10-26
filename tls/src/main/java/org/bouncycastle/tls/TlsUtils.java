@@ -3271,12 +3271,52 @@ public class TlsUtils
         }
     }
 
-    static void processServerCertificate(Certificate serverCertificate, CertificateStatus serverCertificateStatus, TlsKeyExchange keyExchange,
-        TlsAuthentication clientAuthentication, Hashtable clientExtensions, Hashtable serverExtensions) throws IOException
+    static void processClientCertificate(TlsContext context, Certificate clientCertificate,
+        CertificateRequest certificateRequest, TlsKeyExchange keyExchange, TlsServer server) throws IOException
     {
-        checkTlsFeatures(serverCertificate, clientExtensions, serverExtensions);
-        keyExchange.processServerCertificate(serverCertificate);
-        clientAuthentication.notifyServerCertificate(new TlsServerCertificateImpl(serverCertificate, serverCertificateStatus));
+        if (certificateRequest == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        if (clientCertificate.isEmpty())
+        {
+            keyExchange.skipClientCredentials();
+        }
+        else
+        {
+            context.getPeerOptions().checkPeerCertSigAlg = server.shouldCheckPeerCertSigAlg();
+            keyExchange.processClientCertificate(clientCertificate);
+        }
+
+        /*
+         * RFC 5246 7.4.6. If the client does not send any certificates, the server MAY at its
+         * discretion either continue the handshake without client authentication, or respond with a
+         * fatal handshake_failure alert. Also, if some aspect of the certificate chain was
+         * unacceptable (e.g., it was not signed by a known, trusted CA), the server MAY at its
+         * discretion either continue the handshake (considering the client unauthenticated) or send
+         * a fatal alert.
+         */
+        server.notifyClientCertificate(clientCertificate);
+    }
+
+    static void processServerCertificate(TlsContext context, TlsClient client, Certificate serverCertificate,
+        CertificateStatus serverCertificateStatus, TlsKeyExchange keyExchange, TlsAuthentication clientAuthentication,
+        Hashtable clientExtensions, Hashtable serverExtensions) throws IOException
+    {
+        if (clientAuthentication == null)
+        {
+            // There was no server certificate message; check it's OK
+            context.getSecurityParameters().tlsServerEndPoint = TlsUtils.EMPTY_BYTES;
+            keyExchange.skipServerCredentials();
+        }
+        else
+        {
+            context.getPeerOptions().checkPeerCertSigAlg = client.shouldCheckPeerCertSigAlg();
+            checkTlsFeatures(serverCertificate, clientExtensions, serverExtensions);
+            keyExchange.processServerCertificate(serverCertificate);
+            clientAuthentication.notifyServerCertificate(new TlsServerCertificateImpl(serverCertificate, serverCertificateStatus));
+        }
     }
 
     static SignatureAndHashAlgorithm getCertSigAndHashAlg(String sigAlgOID)
