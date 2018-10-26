@@ -107,4 +107,9 @@ public class TlsDHEKeyExchange
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
+
+    public void processClientCertificate(Certificate clientCertificate)
+        throws IOException
+    {
+    }
 }

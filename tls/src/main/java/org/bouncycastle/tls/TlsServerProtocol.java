@@ -406,11 +406,6 @@ public class TlsServerProtocol
     protected void notifyClientCertificate(Certificate clientCertificate)
         throws IOException
     {
-        if (certificateRequest == null)
-        {
-            throw new IllegalStateException();
-        }
-
         if (peerCertificate != null)
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
@@ -418,31 +413,8 @@ public class TlsServerProtocol
 
         this.peerCertificate = clientCertificate;
 
-        if (clientCertificate.isEmpty())
-        {
-            this.keyExchange.skipClientCredentials();
-        }
-        else
-        {
-
-            /*
-             * TODO RFC 5246 7.4.6. If the certificate_authorities list in the certificate request
-             * message was non-empty, one of the certificates in the certificate chain SHOULD be
-             * issued by one of the listed CAs.
-             */
-
-            this.keyExchange.processClientCertificate(clientCertificate);
-        }
-
-        /*
-         * RFC 5246 7.4.6. If the client does not send any certificates, the server MAY at its
-         * discretion either continue the handshake without client authentication, or respond with a
-         * fatal handshake_failure alert. Also, if some aspect of the certificate chain was
-         * unacceptable (e.g., it was not signed by a known, trusted CA), the server MAY at its
-         * discretion either continue the handshake (considering the client unauthenticated) or send
-         * a fatal alert.
-         */
-        this.tlsServer.notifyClientCertificate(clientCertificate);
+        TlsUtils.processClientCertificate(tlsServerContext, clientCertificate, certificateRequest, keyExchange,
+            tlsServer);
     }
 
     protected void receiveCertificateMessage(ByteArrayInputStream buf)
