@@ -306,9 +306,7 @@ abstract class JsseUtils
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DH_DSS:
-        case KeyExchangeAlgorithm.DH_DSS_EXPORT:
         case KeyExchangeAlgorithm.DH_RSA:
-        case KeyExchangeAlgorithm.DH_RSA_EXPORT:
             return privateKey instanceof DHPrivateKey || "DH".equals(algorithm);
 
         case KeyExchangeAlgorithm.ECDH_ECDSA:
@@ -319,12 +317,10 @@ abstract class JsseUtils
             return privateKey instanceof ECPrivateKey || "EC".equals(algorithm);
 
         case KeyExchangeAlgorithm.DHE_DSS:
-        case KeyExchangeAlgorithm.DHE_DSS_EXPORT:
         case KeyExchangeAlgorithm.SRP_DSS:
             return privateKey instanceof DSAPrivateKey || "DSA".equals(algorithm);
 
         case KeyExchangeAlgorithm.DHE_RSA:
-        case KeyExchangeAlgorithm.DHE_RSA_EXPORT:
         case KeyExchangeAlgorithm.ECDHE_RSA:
         case KeyExchangeAlgorithm.RSA:
         case KeyExchangeAlgorithm.RSA_PSK:
