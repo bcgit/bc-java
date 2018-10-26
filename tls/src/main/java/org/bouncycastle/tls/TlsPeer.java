@@ -13,6 +13,17 @@ public interface TlsPeer
     TlsCrypto getCrypto();
 
     /**
+     * Controls whether the protocol will check the 'signatureAlgorithm' of received certificates as
+     * specified in RFC 5246 7.4.2, 7.4.4, 7.4.6 and similar rules for earlier TLS versions. We
+     * recommend to enable these checks, but this option is provided for cases where the default
+     * checks are for some reason too strict.
+     * 
+     * @return <code>true</code> if the 'signatureAlgorithm' of received certificates should be
+     *         checked, or <code>false</code> to
+     */
+    boolean shouldCheckPeerCertSigAlg();
+
+    /**
      * See RFC 5246 6.2.3.2. Controls whether block cipher encryption may randomly add extra padding
      * beyond the minimum. Note that in configurations where this is known to be potential security
      * risk this setting will be ignored (and extended padding disabled). Extra padding is always

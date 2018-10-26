@@ -219,6 +219,8 @@ public class DTLSClientProtocol
         }
         else
         {
+            state.clientContext.getPeerOptions().checkPeerCertSigAlg = state.client.shouldCheckPeerCertSigAlg();
+
             TlsUtils.processServerCertificate(serverCertificate, state.certificateStatus, state.keyExchange,
                 state.authentication, state.clientExtensions, state.serverExtensions);
         }
