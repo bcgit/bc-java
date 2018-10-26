@@ -2,17 +2,20 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsECConfig;
+import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.io.TeeInputStream;
 
 /**
  * (D)TLS ECDHE key exchange (see RFC 4492).
  */
 public class TlsECDHEKeyExchange
-    extends TlsECDHKeyExchange
+    extends AbstractTlsKeyExchange
 {
     private static int checkKeyExchange(int keyExchange)
     {
@@ -26,37 +29,57 @@ public class TlsECDHEKeyExchange
         }
     }
 
+    protected TlsECConfigVerifier ecConfigVerifier;
+    protected TlsECConfig ecConfig;
+    protected short[] clientECPointFormats, serverECPointFormats;
+
     protected TlsCredentialedSigner serverCredentials = null;
     protected TlsCertificate serverCertificate = null;
+    protected TlsAgreement agreement;
 
     public TlsECDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms,
         TlsECConfigVerifier ecConfigVerifier, short[] clientECPointFormats, short[] serverECPointFormats)
     {
-        super(checkKeyExchange(keyExchange), supportedSignatureAlgorithms, ecConfigVerifier, clientECPointFormats,
+        this(keyExchange, supportedSignatureAlgorithms, ecConfigVerifier, null, clientECPointFormats,
             serverECPointFormats);
     }
 
     public TlsECDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsECConfig ecConfig,
         short[] serverECPointFormats)
     {
-        super(checkKeyExchange(keyExchange), supportedSignatureAlgorithms, ecConfig, serverECPointFormats);
+        this(keyExchange, supportedSignatureAlgorithms, null, ecConfig, null, serverECPointFormats);
+    }
+
+    private TlsECDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms,
+        TlsECConfigVerifier ecConfigVerifier, TlsECConfig ecConfig, short[] clientECPointFormats,
+        short[] serverECPointFormats)
+    {
+        super(checkKeyExchange(keyExchange), supportedSignatureAlgorithms);
+
+        this.ecConfigVerifier = ecConfigVerifier;
+        this.ecConfig = ecConfig;
+        this.clientECPointFormats = clientECPointFormats;
+        this.serverECPointFormats = serverECPointFormats;
+    }
+
+    public void skipServerCredentials() throws IOException
+    {
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     public void processServerCredentials(TlsCredentials serverCredentials) throws IOException
     {
-        if (!(serverCredentials instanceof TlsCredentialedSigner))
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        this.serverCredentials = (TlsCredentialedSigner)serverCredentials;
+        this.serverCredentials = TlsUtils.requireSignerCredentials(serverCredentials);
     }
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
-        checkServerCertSigAlg(serverCertificate);
+        this.serverCertificate = checkServerCertSigAlg(serverCertificate).getCertificateAt(0);
+    }
 
-        this.serverCertificate = serverCertificate.getCertificateAt(0);
+    public boolean requiresServerKeyExchange()
+    {
+        return true;
     }
 
     public byte[] generateServerKeyExchange() throws IOException
@@ -105,18 +128,37 @@ public class TlsECDHEKeyExchange
 
     public void processClientCredentials(TlsCredentials clientCredentials) throws IOException
     {
-        if (clientCredentials instanceof TlsCredentialedSigner)
-        {
-            // OK
-        }
-        else
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
+        TlsUtils.requireSignerCredentials(clientCredentials);
     }
 
-    public void processClientCertificate(Certificate clientCertificate)
-        throws IOException
+    public void generateClientKeyExchange(OutputStream output) throws IOException
     {
+        generateEphemeral(output);
+    }
+
+    public void processClientKeyExchange(InputStream input) throws IOException
+    {
+        byte[] point = TlsUtils.readOpaque8(input);
+
+        processEphemeral(serverECPointFormats, point);
+    }
+
+    public TlsSecret generatePreMasterSecret() throws IOException
+    {
+        return agreement.calculateSecret();
+    }
+
+    protected void generateEphemeral(OutputStream output) throws IOException
+    {
+        byte[] point = agreement.generateEphemeral();
+
+        TlsUtils.writeOpaque8(point, output);
+    }
+
+    protected void processEphemeral(short[] localECPointFormats, byte[] point) throws IOException
+    {
+        TlsECCUtils.checkPointEncoding(localECPointFormats, ecConfig.getNamedGroup(), point);
+
+        this.agreement.receivePeerValue(point);
     }
 }

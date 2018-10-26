@@ -33,20 +33,14 @@ public class TlsRSAKeyExchange
     public void processServerCredentials(TlsCredentials serverCredentials)
         throws IOException
     {
-        if (!(serverCredentials instanceof TlsCredentialedDecryptor))
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        this.serverCredentials = (TlsCredentialedDecryptor)serverCredentials;
+        this.serverCredentials = TlsUtils.requireDecryptorCredentials(serverCredentials);
     }
 
     public void processServerCertificate(Certificate serverCertificate)
         throws IOException
     {
-        checkServerCertSigAlg(serverCertificate);
-
-        this.serverCertificate = serverCertificate.getCertificateAt(0).useInRole(ConnectionEnd.server, keyExchange);
+        this.serverCertificate = checkServerCertSigAlg(serverCertificate).getCertificateAt(0)
+            .useInRole(ConnectionEnd.server, keyExchange);
     }
 
     public short[] getClientCertificateTypes()
@@ -58,10 +52,7 @@ public class TlsRSAKeyExchange
     public void processClientCredentials(TlsCredentials clientCredentials)
         throws IOException
     {
-        if (!(clientCredentials instanceof TlsCredentialedSigner))
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
+        TlsUtils.requireSignerCredentials(clientCredentials);
     }
 
     public void generateClientKeyExchange(OutputStream output)

@@ -21,11 +21,11 @@ public abstract class AbstractTlsKeyExchange
         this.supportedSignatureAlgorithms = supportedSignatureAlgorithms;
     }
 
-    protected void checkServerCertSigAlg(Certificate serverCertificate) throws IOException
+    protected Certificate checkServerCertSigAlg(Certificate serverCertificate) throws IOException
     {
         if (!context.getPeerOptions().isCheckPeerCertSigAlg())
         {
-            return;
+            return serverCertificate;
         }
 
         String sigAlgOID = serverCertificate.getCertificateAt(0).getSigAlgOID();
@@ -63,6 +63,8 @@ public abstract class AbstractTlsKeyExchange
         {
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);
         }
+
+        return serverCertificate;
     }
 
     public void init(TlsContext context)

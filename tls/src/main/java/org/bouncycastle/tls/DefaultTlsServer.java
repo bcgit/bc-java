@@ -116,6 +116,8 @@ public abstract class DefaultTlsServer
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DH_anon:
+            return createDHanonKeyExchange(keyExchangeAlgorithm);
+
         case KeyExchangeAlgorithm.DH_DSS:
         case KeyExchangeAlgorithm.DH_RSA:
             return createDHKeyExchange(keyExchangeAlgorithm);
@@ -125,6 +127,8 @@ public abstract class DefaultTlsServer
             return createDHEKeyExchange(keyExchangeAlgorithm);
 
         case KeyExchangeAlgorithm.ECDH_anon:
+            return createECDHanonKeyExchange(keyExchangeAlgorithm);
+
         case KeyExchangeAlgorithm.ECDH_ECDSA:
         case KeyExchangeAlgorithm.ECDH_RSA:
             return createECDHKeyExchange(keyExchangeAlgorithm);
@@ -148,7 +152,12 @@ public abstract class DefaultTlsServer
 
     protected TlsKeyExchange createDHKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createDHKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, selectDHConfig());
+        return keyExchangeFactory.createDHKeyExchangeServer(keyExchange, supportedSignatureAlgorithms);
+    }
+
+    protected TlsKeyExchange createDHanonKeyExchange(int keyExchange) throws IOException
+    {
+        return keyExchangeFactory.createDHanonKeyExchangeServer(keyExchange, selectDHConfig());
     }
 
     protected TlsKeyExchange createDHEKeyExchange(int keyExchange) throws IOException
@@ -158,8 +167,12 @@ public abstract class DefaultTlsServer
 
     protected TlsKeyExchange createECDHKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createECDHKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, selectECConfig(),
-            serverECPointFormats);
+        return keyExchangeFactory.createECDHKeyExchangeServer(keyExchange, supportedSignatureAlgorithms);
+    }
+
+    protected TlsKeyExchange createECDHanonKeyExchange(int keyExchange) throws IOException
+    {
+        return keyExchangeFactory.createECDHanonKeyExchangeServer(keyExchange, selectECConfig(), serverECPointFormats);
     }
 
     protected TlsKeyExchange createECDHEKeyExchange(int keyExchange) throws IOException
