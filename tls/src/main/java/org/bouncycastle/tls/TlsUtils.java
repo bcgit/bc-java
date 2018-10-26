@@ -1017,7 +1017,6 @@ public class TlsUtils
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DHE_DSS:
-        case KeyExchangeAlgorithm.DHE_DSS_EXPORT:
         case KeyExchangeAlgorithm.SRP_DSS:
             return SignatureAlgorithm.dsa;
 
@@ -1025,7 +1024,6 @@ public class TlsUtils
             return SignatureAlgorithm.ecdsa;
 
         case KeyExchangeAlgorithm.DHE_RSA:
-        case KeyExchangeAlgorithm.DHE_RSA_EXPORT:
         case KeyExchangeAlgorithm.ECDHE_RSA:
         case KeyExchangeAlgorithm.SRP_RSA:
             return SignatureAlgorithm.rsa;
@@ -1040,9 +1038,7 @@ public class TlsUtils
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DH_DSS:
-        case KeyExchangeAlgorithm.DH_DSS_EXPORT:
         case KeyExchangeAlgorithm.DHE_DSS:
-        case KeyExchangeAlgorithm.DHE_DSS_EXPORT:
         case KeyExchangeAlgorithm.SRP_DSS:
             return SignatureAlgorithm.dsa;
 
@@ -1051,13 +1047,10 @@ public class TlsUtils
             return SignatureAlgorithm.ecdsa;
 
         case KeyExchangeAlgorithm.DH_RSA:
-        case KeyExchangeAlgorithm.DH_RSA_EXPORT:
         case KeyExchangeAlgorithm.DHE_RSA:
-        case KeyExchangeAlgorithm.DHE_RSA_EXPORT:
         case KeyExchangeAlgorithm.ECDH_RSA:
         case KeyExchangeAlgorithm.ECDHE_RSA:
         case KeyExchangeAlgorithm.RSA:
-        case KeyExchangeAlgorithm.RSA_EXPORT:
         case KeyExchangeAlgorithm.RSA_PSK:
         case KeyExchangeAlgorithm.SRP_RSA:
             return SignatureAlgorithm.rsa;
@@ -2917,12 +2910,10 @@ public class TlsUtils
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DH_anon:
-        case KeyExchangeAlgorithm.DH_anon_EXPORT:
         case KeyExchangeAlgorithm.ECDH_anon:
             return true;
 
         case KeyExchangeAlgorithm.DHE_RSA:
-        case KeyExchangeAlgorithm.DHE_RSA_EXPORT:
         case KeyExchangeAlgorithm.ECDHE_RSA:
         case KeyExchangeAlgorithm.SRP_RSA:
             return sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.rsa))
@@ -2934,7 +2925,6 @@ public class TlsUtils
                 || sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.rsa_pss_pss_sha512));
 
         case KeyExchangeAlgorithm.DHE_DSS:
-        case KeyExchangeAlgorithm.DHE_DSS_EXPORT:
         case KeyExchangeAlgorithm.SRP_DSS:
             return sigAlgs.contains(Shorts.valueOf(SignatureAlgorithm.dsa));
 
@@ -3009,7 +2999,6 @@ public class TlsUtils
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DHE_RSA:
-        case KeyExchangeAlgorithm.DHE_RSA_EXPORT:
         case KeyExchangeAlgorithm.ECDHE_RSA:
         case KeyExchangeAlgorithm.SRP_RSA:
             switch (signatureAlgorithm)
@@ -3027,7 +3016,6 @@ public class TlsUtils
             }
 
         case KeyExchangeAlgorithm.DHE_DSS:
-        case KeyExchangeAlgorithm.DHE_DSS_EXPORT:
         case KeyExchangeAlgorithm.SRP_DSS:
             return SignatureAlgorithm.dsa == signatureAlgorithm;
 
@@ -3163,9 +3151,7 @@ public class TlsUtils
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DH_DSS:
-        case KeyExchangeAlgorithm.DH_DSS_EXPORT:
         case KeyExchangeAlgorithm.DH_RSA:
-        case KeyExchangeAlgorithm.DH_RSA_EXPORT:
         case KeyExchangeAlgorithm.ECDH_ECDSA:
         case KeyExchangeAlgorithm.ECDH_RSA:
             return true;
@@ -3180,21 +3166,16 @@ public class TlsUtils
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DH_anon:
-        case KeyExchangeAlgorithm.DH_anon_EXPORT:
         case KeyExchangeAlgorithm.DH_DSS:
-        case KeyExchangeAlgorithm.DH_DSS_EXPORT:
         case KeyExchangeAlgorithm.DH_RSA:
-        case KeyExchangeAlgorithm.DH_RSA_EXPORT:
         case KeyExchangeAlgorithm.DHE_PSK:
             return crypto.hasDHAgreement();
 
         case KeyExchangeAlgorithm.DHE_DSS:
-        case KeyExchangeAlgorithm.DHE_DSS_EXPORT:
             return crypto.hasDHAgreement()
                 && crypto.hasSignatureAlgorithm(SignatureAlgorithm.dsa);
 
         case KeyExchangeAlgorithm.DHE_RSA:
-        case KeyExchangeAlgorithm.DHE_RSA_EXPORT:
             return crypto.hasDHAgreement()
                 && hasAnyRSASigAlgs(crypto);
 
@@ -3219,7 +3200,6 @@ public class TlsUtils
             return true;
 
         case KeyExchangeAlgorithm.RSA:
-        case KeyExchangeAlgorithm.RSA_EXPORT:
         case KeyExchangeAlgorithm.RSA_PSK:
             return crypto.hasRSAEncryption();
 
