@@ -561,6 +561,8 @@ public class TlsClientProtocol
         }
         else
         {
+            getContext().getPeerOptions().checkPeerCertSigAlg = tlsClient.shouldCheckPeerCertSigAlg();
+
             TlsUtils.processServerCertificate(peerCertificate, certificateStatus, keyExchange, authentication,
                 clientExtensions, serverExtensions);
         }
