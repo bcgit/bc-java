@@ -2,14 +2,17 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
+import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.io.TeeInputStream;
 
 public class TlsDHEKeyExchange
-    extends TlsDHKeyExchange
+    extends AbstractTlsKeyExchange
 {
     private static int checkKeyExchange(int keyExchange)
     {
@@ -23,50 +26,63 @@ public class TlsDHEKeyExchange
         }
     }
 
+    protected TlsDHConfigVerifier dhConfigVerifier;
+    protected TlsDHConfig dhConfig;
+
     protected TlsCredentialedSigner serverCredentials = null;
     protected TlsCertificate serverCertificate = null;
+    protected TlsAgreement agreement;
 
     public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHConfigVerifier dhConfigVerifier)
     {
-        super(checkKeyExchange(keyExchange), supportedSignatureAlgorithms, dhConfigVerifier);
+        this(keyExchange, supportedSignatureAlgorithms, dhConfigVerifier, null);
     }
 
     public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHConfig dhConfig)
     {
-        super(checkKeyExchange(keyExchange), supportedSignatureAlgorithms, dhConfig);
+        this(keyExchange, supportedSignatureAlgorithms, null, dhConfig);
+    }
+
+    private TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHConfigVerifier dhConfigVerifier,
+        TlsDHConfig dhConfig)
+    {
+        super(checkKeyExchange(keyExchange), supportedSignatureAlgorithms);
+
+        this.dhConfigVerifier = dhConfigVerifier;
+        this.dhConfig = dhConfig;
+    }
+
+    public void skipServerCredentials() throws IOException
+    {
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     public void processServerCredentials(TlsCredentials serverCredentials) throws IOException
     {
-        if (!(serverCredentials instanceof TlsCredentialedSigner))
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        this.serverCredentials = (TlsCredentialedSigner)serverCredentials;
+        this.serverCredentials = TlsUtils.requireSignerCredentials(serverCredentials);
     }
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
-        checkServerCertSigAlg(serverCertificate);
+        this.serverCertificate = checkServerCertSigAlg(serverCertificate).getCertificateAt(0);
+    }
 
-        this.serverCertificate = serverCertificate.getCertificateAt(0);
+    public boolean requiresServerKeyExchange()
+    {
+        return true;
     }
 
     public byte[] generateServerKeyExchange() throws IOException
     {
-        if (this.dhConfig == null)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
         DigestInputBuffer digestBuffer = new DigestInputBuffer();
 
         TlsDHUtils.writeDHConfig(dhConfig, digestBuffer);
 
         this.agreement = context.getCrypto().createDHDomain(dhConfig).createDH();
 
-        generateEphemeral(digestBuffer);
+        byte[] y = agreement.generateEphemeral();
+
+        TlsUtils.writeOpaque16(y, digestBuffer);
 
         TlsUtils.generateServerKeyExchangeSignature(context, serverCredentials, digestBuffer);
 
@@ -87,7 +103,7 @@ public class TlsDHEKeyExchange
 
         this.agreement = context.getCrypto().createDHDomain(dhConfig).createDH();
 
-        processEphemeral(y);
+        agreement.receivePeerValue(y);
     }
 
     public short[] getClientCertificateTypes()
@@ -98,18 +114,23 @@ public class TlsDHEKeyExchange
 
     public void processClientCredentials(TlsCredentials clientCredentials) throws IOException
     {
-        if (clientCredentials instanceof TlsCredentialedSigner)
-        {
-            // OK
-        }
-        else
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
+        TlsUtils.requireSignerCredentials(clientCredentials);
     }
 
-    public void processClientCertificate(Certificate clientCertificate)
-        throws IOException
+    public void generateClientKeyExchange(OutputStream output) throws IOException
     {
+        byte[] y = agreement.generateEphemeral();
+
+        TlsUtils.writeOpaque16(y, output);
+    }
+
+    public void processClientKeyExchange(InputStream input) throws IOException
+    {
+        agreement.receivePeerValue(TlsUtils.readOpaque16(input));
+    }
+
+    public TlsSecret generatePreMasterSecret() throws IOException
+    {
+        return agreement.calculateSecret();
     }
 }

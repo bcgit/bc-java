@@ -3398,4 +3398,37 @@ public class TlsUtils
         System.arraycopy(a, 0,  t, 0, n);
         return t;
     }
+
+    static TlsCredentialedAgreement requireAgreementCredentials(TlsCredentials credentials)
+        throws IOException
+    {
+        if (!(credentials instanceof TlsCredentialedAgreement))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return (TlsCredentialedAgreement)credentials;
+    }
+
+    static TlsCredentialedDecryptor requireDecryptorCredentials(TlsCredentials credentials)
+        throws IOException
+    {
+        if (!(credentials instanceof TlsCredentialedDecryptor))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return (TlsCredentialedDecryptor)credentials;
+    }
+
+    static TlsCredentialedSigner requireSignerCredentials(TlsCredentials credentials)
+        throws IOException
+    {
+        if (!(credentials instanceof TlsCredentialedSigner))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return (TlsCredentialedSigner)credentials;
+    }
 }
