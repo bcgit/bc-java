@@ -467,7 +467,23 @@ public class JcaTlsCrypto
 
     public boolean hasSignatureAlgorithm(short signatureAlgorithm)
     {
-        return true;
+        switch (signatureAlgorithm)
+        {
+        case SignatureAlgorithm.rsa:
+        case SignatureAlgorithm.dsa:
+        case SignatureAlgorithm.ecdsa:
+        case SignatureAlgorithm.ed25519:
+        case SignatureAlgorithm.ed448:
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+            return true;
+        default:
+            return false;
+        }
     }
 
     public boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm)

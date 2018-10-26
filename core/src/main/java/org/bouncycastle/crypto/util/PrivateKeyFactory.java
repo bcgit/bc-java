@@ -20,6 +20,7 @@ import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DSAParameter;
+import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -83,7 +84,9 @@ public class PrivateKeyFactory
         AlgorithmIdentifier algId = keyInfo.getPrivateKeyAlgorithm();
         ASN1ObjectIdentifier algOID = algId.getAlgorithm();
 
-        if (algOID.equals(PKCSObjectIdentifiers.rsaEncryption))
+        if (algOID.equals(PKCSObjectIdentifiers.rsaEncryption)
+            || algOID.equals(PKCSObjectIdentifiers.id_RSASSA_PSS)
+            || algOID.equals(X509ObjectIdentifiers.id_ea_rsa))
         {
             RSAPrivateKey keyStructure = RSAPrivateKey.getInstance(keyInfo.parsePrivateKey());
 

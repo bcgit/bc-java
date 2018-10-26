@@ -24,7 +24,6 @@ public abstract class AbstractTlsClient
     protected short[] clientECPointFormats, serverECPointFormats;
 
     protected int selectedCipherSuite;
-    protected short selectedCompressionMethod;
 
     public AbstractTlsClient(TlsCrypto crypto)
     {
@@ -251,11 +250,6 @@ public abstract class AbstractTlsClient
         }
     }
 
-    public short[] getCompressionMethods()
-    {
-        return new short[]{CompressionMethod._null};
-    }
-
     public void notifySessionID(byte[] sessionID)
     {
         // Currently ignored
@@ -264,11 +258,6 @@ public abstract class AbstractTlsClient
     public void notifySelectedCipherSuite(int selectedCipherSuite)
     {
         this.selectedCipherSuite = selectedCipherSuite;
-    }
-
-    public void notifySelectedCompressionMethod(short selectedCompressionMethod)
-    {
-        this.selectedCompressionMethod = selectedCompressionMethod;
     }
 
     public void processServerExtensions(Hashtable serverExtensions)
@@ -316,24 +305,6 @@ public abstract class AbstractTlsClient
         throws IOException
     {
         return null;
-    }
-
-    public TlsCompression getCompression()
-        throws IOException
-    {
-        switch (selectedCompressionMethod)
-        {
-        case CompressionMethod._null:
-            return new TlsNullCompression();
-
-        default:
-            /*
-             * Note: internal error here; the TlsProtocol implementation verifies that the
-             * server-selected compression method was in the list of client-offered compression
-             * methods, so if we now can't produce an implementation, we shouldn't have offered it!
-             */
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
     }
 
     public TlsCipher getCipher()

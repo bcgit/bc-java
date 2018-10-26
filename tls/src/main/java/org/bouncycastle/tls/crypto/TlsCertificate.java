@@ -33,7 +33,13 @@ public interface TlsCertificate
     /**
      * @return {@link SignatureAlgorithm}
      */
-    short getSignatureAlgorithm() throws IOException;
+    short getLegacySignatureAlgorithm() throws IOException;
+
+    /**
+     * @param signatureAlgorithm {@link SignatureAlgorithm}
+     * @return true if (and only if) this certificate can be used to verify the given signature algorithm. 
+     */
+    boolean supportsSignatureAlgorithm(short signatureAlgorithm) throws IOException;
 
     /**
      * @param connectionEnd

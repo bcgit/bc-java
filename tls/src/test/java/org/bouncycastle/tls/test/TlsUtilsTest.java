@@ -88,7 +88,7 @@ public class TlsUtilsTest
             }
         };
 
-        short signatureAlgorithm = TlsUtils.getSignatureAlgorithm(keyExchangeAlgorithm);
+        short signatureAlgorithm = TlsUtils.getLegacySignatureAlgorithmServer(keyExchangeAlgorithm);
 
         Vector supportedSignatureAlgorithms = getSignatureAlgorithms(false);
         SignatureAndHashAlgorithm sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,

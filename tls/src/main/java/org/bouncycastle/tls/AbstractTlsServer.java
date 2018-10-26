@@ -24,7 +24,6 @@ public abstract class AbstractTlsServer
 
     protected ProtocolVersion clientVersion;
     protected int[] offeredCipherSuites;
-    protected short[] offeredCompressionMethods;
     protected Hashtable clientExtensions;
 
     protected boolean encryptThenMACOffered;
@@ -37,7 +36,6 @@ public abstract class AbstractTlsServer
 
     protected ProtocolVersion serverVersion;
     protected int selectedCipherSuite;
-    protected short selectedCompressionMethod;
     protected ProtocolName selectedProtocolName;
     protected Hashtable serverExtensions;
 
@@ -69,11 +67,6 @@ public abstract class AbstractTlsServer
     }
 
     protected abstract int[] getCipherSuites();
-
-    protected short[] getCompressionMethods()
-    {
-        return new short[]{ CompressionMethod._null };
-    }
 
     protected ProtocolVersion getMaximumVersion()
     {
@@ -282,12 +275,6 @@ public abstract class AbstractTlsServer
         this.offeredCipherSuites = offeredCipherSuites;
     }
 
-    public void notifyOfferedCompressionMethods(short[] offeredCompressionMethods)
-        throws IOException
-    {
-        this.offeredCompressionMethods = offeredCompressionMethods;
-    }
-
     public void processClientExtensions(Hashtable clientExtensions)
         throws IOException
     {
@@ -406,20 +393,6 @@ public abstract class AbstractTlsServer
         throw new TlsFatalAlert(AlertDescription.handshake_failure);
     }
 
-    public short getSelectedCompressionMethod()
-        throws IOException
-    {
-        short[] compressionMethods = getCompressionMethods();
-        for (int i = 0; i < compressionMethods.length; ++i)
-        {
-            if (Arrays.contains(offeredCompressionMethods, compressionMethods[i]))
-            {
-                return this.selectedCompressionMethod = compressionMethods[i];
-            }
-        }
-        throw new TlsFatalAlert(AlertDescription.handshake_failure);
-    }
-
     // Hashtable is (Integer -> byte[])
     public Hashtable getServerExtensions()
         throws IOException
@@ -509,23 +482,6 @@ public abstract class AbstractTlsServer
         throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
-    }
-
-    public TlsCompression getCompression()
-        throws IOException
-    {
-        switch (selectedCompressionMethod)
-        {
-        case CompressionMethod._null:
-            return new TlsNullCompression();
-
-        default:
-            /*
-             * Note: internal error here; we selected the compression method, so if we now can't
-             * produce an implementation, we shouldn't have chosen it!
-             */
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
     }
 
     public TlsCipher getCipher()

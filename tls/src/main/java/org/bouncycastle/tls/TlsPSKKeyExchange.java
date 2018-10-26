@@ -109,10 +109,6 @@ public class TlsPSKKeyExchange
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
-        if (serverCertificate.isEmpty())
-        {
-            throw new TlsFatalAlert(AlertDescription.bad_certificate);
-        }
 
         checkServerCertSigAlg(serverCertificate);
 

@@ -30,6 +30,14 @@ public class TlsDHKeyExchange
     protected DHPrivateKeyParameters dhAgreePrivateKey;
     protected DHPublicKeyParameters dhAgreePublicKey;
 
+    /**
+     * @deprecated Use constructor that takes a TlsDHVerifier
+     */
+    public TlsDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, DHParameters dhParameters)
+    {
+        this(keyExchange, supportedSignatureAlgorithms, new DefaultTlsDHVerifier(), dhParameters);
+    }
+
     public TlsDHKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHVerifier dhVerifier, DHParameters dhParameters)
     {
         super(keyExchange, supportedSignatureAlgorithms);
