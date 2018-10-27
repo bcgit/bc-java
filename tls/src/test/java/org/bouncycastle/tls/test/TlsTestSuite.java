@@ -205,7 +205,7 @@ public class TlsTestSuite extends TestSuite
         if (TlsUtils.isTLSv12(version))
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
-            c.clientCheckServerCertSigAlg = false;
+            c.clientCheckSigAlgOfServerCerts = false;
             c.clientSendSignatureAlgorithms = false;
             c.serverAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.md5, SignatureAlgorithm.rsa);
             c.expectClientFatalAlert(AlertDescription.illegal_parameter);

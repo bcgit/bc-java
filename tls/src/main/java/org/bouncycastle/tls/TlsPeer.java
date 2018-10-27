@@ -19,9 +19,9 @@ public interface TlsPeer
      * checks are for some reason too strict.
      * 
      * @return <code>true</code> if the 'signatureAlgorithm' of received certificates should be
-     *         checked, or <code>false</code> to
+     *         checked, or <code>false</code> to skip those checks.
      */
-    boolean shouldCheckPeerCertSigAlg();
+    boolean shouldCheckSigAlgOfPeerCerts();
 
     /**
      * See RFC 5246 6.2.3.2. Controls whether block cipher encryption may randomly add extra padding

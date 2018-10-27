@@ -94,7 +94,7 @@ public class TlsSRPKeyExchange
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        this.serverCertificate = checkServerCertSigAlg(serverCertificate).getCertificateAt(0);
+        this.serverCertificate = checkSigAlgOfServerCerts(serverCertificate).getCertificateAt(0);
     }
 
     public boolean requiresServerKeyExchange()
