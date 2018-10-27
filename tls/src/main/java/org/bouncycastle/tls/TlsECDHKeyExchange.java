@@ -46,23 +46,8 @@ public class TlsECDHKeyExchange
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
-        this.ecdhPeerCertificate = checkSigAlgOfServerCerts(serverCertificate).getCertificateAt(0)
+        this.ecdhPeerCertificate = checkSigAlgOfServerCerts(serverCertificate)
             .useInRole(ConnectionEnd.server, keyExchange);
-    }
-
-    public boolean requiresServerKeyExchange()
-    {
-        return false;
-    }
-
-    public byte[] generateServerKeyExchange() throws IOException
-    {
-        return null;
-    }
-
-    public void processServerKeyExchange(InputStream input) throws IOException
-    {
-        throw new TlsFatalAlert(AlertDescription.unexpected_message);
     }
 
     public short[] getClientCertificateTypes()
