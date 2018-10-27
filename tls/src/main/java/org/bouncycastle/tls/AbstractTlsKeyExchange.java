@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsCertificate;
+
 /**
  * Base class for supporting a TLS key exchange implementation.
  */
@@ -21,55 +23,48 @@ public abstract class AbstractTlsKeyExchange
         this.supportedSignatureAlgorithms = supportedSignatureAlgorithms;
     }
 
-    protected Certificate checkSigAlgOfServerCerts(Certificate serverCertificate) throws IOException
+    protected TlsCertificate checkSigAlgOfServerCerts(Certificate serverCertificate) throws IOException
     {
-        if (!context.getPeerOptions().isCheckSigAlgOfPeerCerts())
+        if (context.getPeerOptions().isCheckSigAlgOfPeerCerts())
         {
-            return serverCertificate;
-        }
-
-        int chainLength = serverCertificate.getLength();
-
-        for (int i = 0; i < chainLength; ++i)
-        {
-            String sigAlgOID = serverCertificate.getCertificateAt(i).getSigAlgOID();
-            SignatureAndHashAlgorithm sigAndHashAlg = TlsUtils.getCertSigAndHashAlg(sigAlgOID);
-
-            boolean valid;
-            if (null == sigAndHashAlg)
+            for (int i = 0; i < serverCertificate.getLength(); ++i)
             {
-                /*
-                 * We don't recognize the 'signatureAlgorithm' of the certificate
-                 */
-                valid = false;
-            }
-            else if (null == supportedSignatureAlgorithms)
-            {
-                /*
-                 * RFC 4346 7.4.2. Unless otherwise specified, the signing algorithm for the
-                 * certificate MUST be the same as the algorithm for the certificate key.
-                 */
-                int signatureAlgorithm = TlsUtils.getLegacySignatureAlgorithmServerCert(keyExchange);
+                String sigAlgOID = serverCertificate.getCertificateAt(i).getSigAlgOID();
+                SignatureAndHashAlgorithm sigAndHashAlg = TlsUtils.getCertSigAndHashAlg(sigAlgOID);
 
-                valid = (signatureAlgorithm == sigAndHashAlg.getSignature()); 
-            }
-            else
-            {
-                /*
-                 * RFC 5246 7.4.2. If the client provided a "signature_algorithms" extension, then
-                 * all certificates provided by the server MUST be signed by a hash/signature algorithm
-                 * pair that appears in that extension.
-                 */
-                valid = TlsUtils.containsSignatureAlgorithm(supportedSignatureAlgorithms, sigAndHashAlg);
-            }
+                boolean valid = false;
+                if (null == sigAndHashAlg)
+                {
+                    // We don't recognize the 'signatureAlgorithm' of the certificate
+                }
+                else if (null == supportedSignatureAlgorithms)
+                {
+                    /*
+                     * RFC 4346 7.4.2. Unless otherwise specified, the signing algorithm for the
+                     * certificate MUST be the same as the algorithm for the certificate key.
+                     */
+                    int signatureAlgorithm = TlsUtils.getLegacySignatureAlgorithmServerCert(keyExchange);
 
-            if (!valid)
-            {
-                throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                    valid = (signatureAlgorithm == sigAndHashAlg.getSignature()); 
+                }
+                else
+                {
+                    /*
+                     * RFC 5246 7.4.2. If the client provided a "signature_algorithms" extension, then
+                     * all certificates provided by the server MUST be signed by a hash/signature algorithm
+                     * pair that appears in that extension.
+                     */
+                    valid = TlsUtils.containsSignatureAlgorithm(supportedSignatureAlgorithms, sigAndHashAlg);
+                }
+
+                if (!valid)
+                {
+                    throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                }
             }
         }
 
-        return serverCertificate;
+        return serverCertificate.getCertificateAt(0);
     }
 
     public void init(TlsContext context)

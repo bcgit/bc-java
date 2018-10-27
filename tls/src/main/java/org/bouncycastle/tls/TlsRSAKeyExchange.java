@@ -39,7 +39,7 @@ public class TlsRSAKeyExchange
     public void processServerCertificate(Certificate serverCertificate)
         throws IOException
     {
-        this.serverCertificate = checkSigAlgOfServerCerts(serverCertificate).getCertificateAt(0)
+        this.serverCertificate = checkSigAlgOfServerCerts(serverCertificate)
             .useInRole(ConnectionEnd.server, keyExchange);
     }
 
