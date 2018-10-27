@@ -3285,7 +3285,7 @@ public class TlsUtils
         }
         else
         {
-            context.getPeerOptions().checkPeerCertSigAlg = server.shouldCheckPeerCertSigAlg();
+            context.getPeerOptions().checkSigAlgOfPeerCerts = server.shouldCheckSigAlgOfPeerCerts();
             keyExchange.processClientCertificate(clientCertificate);
         }
 
@@ -3312,7 +3312,7 @@ public class TlsUtils
         }
         else
         {
-            context.getPeerOptions().checkPeerCertSigAlg = client.shouldCheckPeerCertSigAlg();
+            context.getPeerOptions().checkSigAlgOfPeerCerts = client.shouldCheckSigAlgOfPeerCerts();
             checkTlsFeatures(serverCertificate, clientExtensions, serverExtensions);
             keyExchange.processServerCertificate(serverCertificate);
             clientAuthentication.notifyServerCertificate(new TlsServerCertificateImpl(serverCertificate, serverCertificateStatus));

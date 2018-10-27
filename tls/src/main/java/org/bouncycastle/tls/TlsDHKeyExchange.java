@@ -46,7 +46,7 @@ public class TlsDHKeyExchange
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
-        this.dhPeerCertificate = checkServerCertSigAlg(serverCertificate).getCertificateAt(0)
+        this.dhPeerCertificate = checkSigAlgOfServerCerts(serverCertificate).getCertificateAt(0)
             .useInRole(ConnectionEnd.server, keyExchange);
     }
 

@@ -74,7 +74,7 @@ public class TlsECDHEKeyExchange
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
-        this.serverCertificate = checkServerCertSigAlg(serverCertificate).getCertificateAt(0);
+        this.serverCertificate = checkSigAlgOfServerCerts(serverCertificate).getCertificateAt(0);
     }
 
     public boolean requiresServerKeyExchange()

@@ -22,7 +22,7 @@ public abstract class AbstractTlsPeer
         return crypto;
     }
 
-    public boolean shouldCheckPeerCertSigAlg()
+    public boolean shouldCheckSigAlgOfPeerCerts()
     {
         return true;
     }

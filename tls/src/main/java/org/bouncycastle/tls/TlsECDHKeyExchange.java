@@ -46,7 +46,7 @@ public class TlsECDHKeyExchange
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
-        this.ecdhPeerCertificate = checkServerCertSigAlg(serverCertificate).getCertificateAt(0)
+        this.ecdhPeerCertificate = checkSigAlgOfServerCerts(serverCertificate).getCertificateAt(0)
             .useInRole(ConnectionEnd.server, keyExchange);
     }
 

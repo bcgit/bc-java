@@ -2,10 +2,10 @@ package org.bouncycastle.tls;
 
 public class TlsPeerOptions
 {
-    boolean checkPeerCertSigAlg = true;
+    boolean checkSigAlgOfPeerCerts = true;
 
-    public boolean isCheckPeerCertSigAlg()
+    public boolean isCheckSigAlgOfPeerCerts()
     {
-        return checkPeerCertSigAlg;
+        return checkSigAlgOfPeerCerts;
     }
 }

@@ -62,9 +62,9 @@ class TlsTestClientImpl
         return firstFatalAlertDescription;
     }
 
-    public boolean shouldCheckPeerCertSigAlg()
+    public boolean shouldCheckSigAlgOfPeerCerts()
     {
-        return config.clientCheckServerCertSigAlg;
+        return config.clientCheckSigAlgOfServerCerts;
     }
 
     public TlsCrypto getCrypto()

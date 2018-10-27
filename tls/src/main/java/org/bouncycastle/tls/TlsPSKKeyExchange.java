@@ -106,7 +106,7 @@ public class TlsPSKKeyExchange
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        this.serverCertificate = checkServerCertSigAlg(serverCertificate).getCertificateAt(0)
+        this.serverCertificate = checkSigAlgOfServerCerts(serverCertificate).getCertificateAt(0)
             .useInRole(ConnectionEnd.server, keyExchange);
     }
 
