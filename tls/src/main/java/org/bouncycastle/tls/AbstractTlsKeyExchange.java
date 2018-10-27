@@ -21,47 +21,52 @@ public abstract class AbstractTlsKeyExchange
         this.supportedSignatureAlgorithms = supportedSignatureAlgorithms;
     }
 
-    protected Certificate checkServerCertSigAlg(Certificate serverCertificate) throws IOException
+    protected Certificate checkSigAlgOfServerCerts(Certificate serverCertificate) throws IOException
     {
-        if (!context.getPeerOptions().isCheckPeerCertSigAlg())
+        if (!context.getPeerOptions().isCheckSigAlgOfPeerCerts())
         {
             return serverCertificate;
         }
 
-        String sigAlgOID = serverCertificate.getCertificateAt(0).getSigAlgOID();
-        SignatureAndHashAlgorithm sigAndHashAlg = TlsUtils.getCertSigAndHashAlg(sigAlgOID);
+        int chainLength = serverCertificate.getLength();
 
-        boolean valid;
-        if (null == sigAndHashAlg)
+        for (int i = 0; i < chainLength; ++i)
         {
-            /*
-             * We don't recognize the 'signatureAlgorithm' of the certificate
-             */
-            valid = false;
-        }
-        else if (null == supportedSignatureAlgorithms)
-        {
-            /*
-             * RFC 4346 7.4.2. Unless otherwise specified, the signing algorithm for the
-             * certificate MUST be the same as the algorithm for the certificate key.
-             */
-            int signatureAlgorithm = TlsUtils.getLegacySignatureAlgorithmServerCert(keyExchange);
+            String sigAlgOID = serverCertificate.getCertificateAt(i).getSigAlgOID();
+            SignatureAndHashAlgorithm sigAndHashAlg = TlsUtils.getCertSigAndHashAlg(sigAlgOID);
 
-            valid = (signatureAlgorithm == sigAndHashAlg.getSignature()); 
-        }
-        else
-        {
-            /*
-             * RFC 5246 7.4.2. If the client provided a "signature_algorithms" extension, then
-             * all certificates provided by the server MUST be signed by a hash/signature algorithm
-             * pair that appears in that extension.
-             */
-            valid = TlsUtils.containsSignatureAlgorithm(supportedSignatureAlgorithms, sigAndHashAlg);
-        }
+            boolean valid;
+            if (null == sigAndHashAlg)
+            {
+                /*
+                 * We don't recognize the 'signatureAlgorithm' of the certificate
+                 */
+                valid = false;
+            }
+            else if (null == supportedSignatureAlgorithms)
+            {
+                /*
+                 * RFC 4346 7.4.2. Unless otherwise specified, the signing algorithm for the
+                 * certificate MUST be the same as the algorithm for the certificate key.
+                 */
+                int signatureAlgorithm = TlsUtils.getLegacySignatureAlgorithmServerCert(keyExchange);
 
-        if (!valid)
-        {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                valid = (signatureAlgorithm == sigAndHashAlg.getSignature()); 
+            }
+            else
+            {
+                /*
+                 * RFC 5246 7.4.2. If the client provided a "signature_algorithms" extension, then
+                 * all certificates provided by the server MUST be signed by a hash/signature algorithm
+                 * pair that appears in that extension.
+                 */
+                valid = TlsUtils.containsSignatureAlgorithm(supportedSignatureAlgorithms, sigAndHashAlg);
+            }
+
+            if (!valid)
+            {
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            }
         }
 
         return serverCertificate;

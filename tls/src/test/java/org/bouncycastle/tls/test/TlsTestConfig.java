@@ -68,7 +68,7 @@ public class TlsTestConfig
 
     public int clientCrypto = CRYPTO_BC;
 
-    public boolean clientCheckServerCertSigAlg = true;
+    public boolean clientCheckSigAlgOfServerCerts = true;
 
     /**
      * Configures the minimum protocol version the client will accept. If null, uses the library's default.
