@@ -25,6 +25,7 @@ abstract class SupportedGroups
      * IMPORTANT: This list is currently assumed by the code to not contain any char-2 curves.
      */
     private static final int[] defaultClientNamedGroups = new int[]{
+        NamedGroup.x25519,
         NamedGroup.secp256r1,
         NamedGroup.secp384r1,
         NamedGroup.secp521r1,
@@ -101,7 +102,8 @@ abstract class SupportedGroups
         return result;
     }
 
-    static Vector getClientSupportedGroups(TlsCrypto crypto, boolean isFips, boolean offeringDH, boolean offeringEC)
+    static Vector getClientSupportedGroups(TlsCrypto crypto, boolean isFips, boolean offeringDH, boolean offeringECDH,
+        boolean offeringECDSA)
     {
         int[] namedGroups = provJdkTlsNamedGroups != null ? provJdkTlsNamedGroups : defaultClientNamedGroups;
 
@@ -109,7 +111,8 @@ abstract class SupportedGroups
         for (int namedGroup : namedGroups)
         {
             if ((offeringDH && NamedGroup.refersToASpecificFiniteField(namedGroup))
-                || (offeringEC && NamedGroup.refersToASpecificCurve(namedGroup)))
+                || (offeringECDH && NamedGroup.refersToASpecificCurve(namedGroup))
+                || (offeringECDSA && NamedGroup.refersToAnECDSACurve(namedGroup)))
             {
                 if (!isFips || FipsUtils.isFipsNamedGroup(namedGroup))
                 {

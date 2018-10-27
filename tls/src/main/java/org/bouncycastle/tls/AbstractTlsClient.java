@@ -108,17 +108,25 @@ public abstract class AbstractTlsClient
      * @param offeringDH
      *            True if we are offering any DH ciphersuites in ClientHello, so at least one DH
      *            group should be included.
-     * @param offeringEC
-     *            True if we are offering any EC ciphersuites in ClientHello, so at least one EC
-     *            group should be included.
+     * @param offeringECDH
+     *            True if we are offering any ECDH ciphersuites in ClientHello, so at least one
+     *            ECDH-capable group should be included.
+     * @param offeringECDSA
+     *            True if we are offering ECDSA signatures in ClientHello, so at least one
+     *            ECDSA-capable EC group should be included.
      * @return a {@link Vector} of {@link Integer}. See {@link NamedGroup} for group constants.
      */
-    protected Vector getSupportedGroups(boolean offeringDH, boolean offeringEC)
+    protected Vector getSupportedGroups(boolean offeringDH, boolean offeringECDH, boolean offeringECDSA)
     {
         TlsCrypto crypto = getCrypto();
         Vector supportedGroups = new Vector();
 
-        if (offeringEC)
+        if (offeringECDH)
+        {
+            TlsUtils.addIfSupported(supportedGroups, crypto, NamedGroup.x25519);
+        }
+
+        if (offeringECDH || offeringECDSA)
         {
             TlsUtils.addIfSupported(supportedGroups, crypto, new int[]{
                 NamedGroup.secp256r1, NamedGroup.secp384r1 });
@@ -215,22 +223,26 @@ public abstract class AbstractTlsClient
         }
 
         int[] cipherSuites = getCipherSuites();
-        boolean offeringDH = TlsDHUtils.containsDHECipherSuites(cipherSuites);
-        boolean offeringEC = TlsECCUtils.containsECCipherSuites(cipherSuites);
 
-        if (offeringEC)
-        {
-            this.clientECPointFormats = getSupportedPointFormats();
+        boolean offeringDH = TlsDHUtils.containsDHCipherSuites(cipherSuites);
+        boolean offeringECDH = TlsECCUtils.containsECDHCipherSuites(cipherSuites);
+        boolean offeringECDSA = TlsECCUtils.containsECDSACipherSuites(cipherSuites)
+            || (null == supportedSignatureAlgorithms)
+            || TlsUtils.containsAnySignatureAlgorithm(supportedSignatureAlgorithms, SignatureAlgorithm.ecdsa);
 
-            TlsECCUtils.addSupportedPointFormatsExtension(clientExtensions, clientECPointFormats);
-        }
-
-        Vector supportedGroups = getSupportedGroups(offeringDH, offeringEC);
+        Vector supportedGroups = getSupportedGroups(offeringDH, offeringECDH, offeringECDSA);
         if (supportedGroups != null && !supportedGroups.isEmpty())
         {
             this.supportedGroups = supportedGroups;
 
             TlsExtensionsUtils.addSupportedGroupsExtension(clientExtensions, supportedGroups);
+        }
+
+        if (offeringECDH || offeringECDSA)
+        {
+            this.clientECPointFormats = getSupportedPointFormats();
+
+            TlsECCUtils.addSupportedPointFormatsExtension(clientExtensions, clientECPointFormats);
         }
 
         return clientExtensions;

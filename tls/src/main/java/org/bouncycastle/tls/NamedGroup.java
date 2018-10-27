@@ -276,6 +276,11 @@ public class NamedGroup
             || (namedGroup >= arbitrary_explicit_prime_curves && namedGroup <= arbitrary_explicit_char2_curves);
     }
 
+    public static boolean refersToAnECDSACurve(int namedGroup)
+    {
+        return namedGroup >= sect163k1 && namedGroup < x25519;
+    }
+
     public static boolean refersToASpecificCurve(int namedGroup)
     {
         return namedGroup >= sect163k1 && namedGroup <= x448;
