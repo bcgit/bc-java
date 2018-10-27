@@ -619,7 +619,7 @@ public class JcaTlsCrypto
     protected TlsAEADCipherImpl createAEADCipher(String cipherName, String algorithm, int keySize, boolean isEncrypting)
         throws GeneralSecurityException
     {
-        return new JceAEADCipherImpl(helper, cipherName, algorithm, isEncrypting);
+        return new JceAEADCipherImpl(helper, cipherName, algorithm, keySize, isEncrypting);
     }
 
     /**
