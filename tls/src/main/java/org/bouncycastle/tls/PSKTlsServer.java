@@ -84,7 +84,7 @@ public class PSKTlsServer
             return createPSKKeyExchange(keyExchangeAlgorithm, selectDHConfig(), null);
 
         case KeyExchangeAlgorithm.ECDHE_PSK:
-            return createPSKKeyExchange(keyExchangeAlgorithm, null, selectECConfig());
+            return createPSKKeyExchange(keyExchangeAlgorithm, null, selectECDHConfig());
 
         case KeyExchangeAlgorithm.PSK:
         case KeyExchangeAlgorithm.RSA_PSK:

@@ -135,7 +135,7 @@ public abstract class AbstractTlsServer
         return true;
     }
 
-    protected int selectCurve(int minimumCurveBits)
+    protected int selectECDHNamedGroup(int minimumCurveBits)
     {
         if (clientSupportedGroups == null)
         {
@@ -208,11 +208,11 @@ public abstract class AbstractTlsServer
         return null;
     }
 
-    protected TlsECConfig selectECConfig() throws IOException
+    protected TlsECConfig selectECDHConfig() throws IOException
     {
         int minimumCurveBits = TlsECCUtils.getMinimumCurveBits(selectedCipherSuite);
 
-        int namedGroup = selectCurve(minimumCurveBits);
+        int namedGroup = selectECDHNamedGroup(minimumCurveBits);
         if (namedGroup < 0)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
