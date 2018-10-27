@@ -1186,13 +1186,28 @@ public class TlsUtils
         }
     }
 
-    static boolean containsSignatureAlgorithm(Vector supportedSignatureAlgorithms, SignatureAndHashAlgorithm signatureAlgorithm)
+    public static boolean containsSignatureAlgorithm(Vector supportedSignatureAlgorithms, SignatureAndHashAlgorithm signatureAlgorithm)
         throws IOException
     {
         for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
         {
             SignatureAndHashAlgorithm entry = (SignatureAndHashAlgorithm)supportedSignatureAlgorithms.elementAt(i);
             if (entry.getHash() == signatureAlgorithm.getHash() && entry.getSignature() == signatureAlgorithm.getSignature())
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static boolean containsAnySignatureAlgorithm(Vector supportedSignatureAlgorithms, short signatureAlgorithm)
+        throws IOException
+    {
+        for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
+        {
+            SignatureAndHashAlgorithm entry = (SignatureAndHashAlgorithm)supportedSignatureAlgorithms.elementAt(i);
+            if (entry.getSignature() == signatureAlgorithm)
             {
                 return true;
             }

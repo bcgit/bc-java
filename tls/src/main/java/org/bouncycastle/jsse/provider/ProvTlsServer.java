@@ -116,7 +116,7 @@ class ProvTlsServer
     }
 
     @Override
-    protected int selectCurve(int minimumCurveBits)
+    protected int selectECDHNamedGroup(int minimumCurveBits)
     {
         if (clientSupportedGroups == null)
         {

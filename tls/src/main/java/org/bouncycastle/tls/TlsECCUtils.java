@@ -55,11 +55,43 @@ public class TlsECCUtils
         return ecPointFormats;
     }
 
+    /**
+     * @deprecated Will be removed.
+     */
     public static boolean containsECCipherSuites(int[] cipherSuites)
+    {
+        return containsECDHCipherSuites(cipherSuites);
+    }
+
+    public static boolean containsECDHCipherSuites(int[] cipherSuites)
     {
         for (int i = 0; i < cipherSuites.length; ++i)
         {
-            if (isECCipherSuite(cipherSuites[i]))
+            if (isECDHCipherSuite(cipherSuites[i]))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean containsECDHECipherSuites(int[] cipherSuites)
+    {
+        for (int i = 0; i < cipherSuites.length; ++i)
+        {
+            if (isECDHECipherSuite(cipherSuites[i]))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean containsECDSACipherSuites(int[] cipherSuites)
+    {
+        for (int i = 0; i < cipherSuites.length; ++i)
+        {
+            if (isECDSACipherSuite(cipherSuites[i]))
             {
                 return true;
             }
@@ -77,7 +109,15 @@ public class TlsECCUtils
         return isECCipherSuite(cipherSuite) ? 1 : 0;
     }
 
+    /**
+     * @deprecated Will be removed.
+     */
     public static boolean isECCipherSuite(int cipherSuite)
+    {
+        return isECDHCipherSuite(cipherSuite);
+    }
+
+    public static boolean isECDHCipherSuite(int cipherSuite)
     {
         switch (TlsUtils.getKeyExchangeAlgorithm(cipherSuite))
         {
@@ -89,6 +129,34 @@ public class TlsECCUtils
         case KeyExchangeAlgorithm.ECDHE_RSA:
             return true;
             
+        default:
+            return false;
+        }
+    }
+
+    public static boolean isECDHECipherSuite(int cipherSuite)
+    {
+        switch (TlsUtils.getKeyExchangeAlgorithm(cipherSuite))
+        {
+        case KeyExchangeAlgorithm.ECDH_anon:
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+        case KeyExchangeAlgorithm.ECDHE_PSK:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
+            return true;
+            
+        default:
+            return false;
+        }
+    }
+
+    public static boolean isECDSACipherSuite(int cipherSuite)
+    {
+        switch (TlsUtils.getKeyExchangeAlgorithm(cipherSuite))
+        {
+        case KeyExchangeAlgorithm.ECDH_ECDSA:
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+            return true;
+
         default:
             return false;
         }

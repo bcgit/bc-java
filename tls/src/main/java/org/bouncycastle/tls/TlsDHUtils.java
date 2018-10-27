@@ -12,6 +12,18 @@ import org.bouncycastle.util.BigIntegers;
 
 public class TlsDHUtils
 {
+    public static boolean containsDHCipherSuites(int[] cipherSuites)
+    {
+        for (int i = 0; i < cipherSuites.length; ++i)
+        {
+            if (isDHCipherSuite(cipherSuites[i]))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static boolean containsDHECipherSuites(int[] cipherSuites)
     {
         for (int i = 0; i < cipherSuites.length; ++i)
@@ -67,6 +79,23 @@ public class TlsDHUtils
          * mechanism is currently somewhat trivial, and this similarly so.
          */
         return isDHECipherSuite(cipherSuite) ? 1 : 0;
+    }
+
+    public static boolean isDHCipherSuite(int cipherSuite)
+    {
+        switch (TlsUtils.getKeyExchangeAlgorithm(cipherSuite))
+        {
+        case KeyExchangeAlgorithm.DH_anon:
+        case KeyExchangeAlgorithm.DH_DSS:
+        case KeyExchangeAlgorithm.DH_RSA:
+        case KeyExchangeAlgorithm.DHE_DSS:
+        case KeyExchangeAlgorithm.DHE_PSK:
+        case KeyExchangeAlgorithm.DHE_RSA:
+            return true;
+
+        default:
+            return false;
+        }
     }
 
     public static boolean isDHECipherSuite(int cipherSuite)
