@@ -102,6 +102,7 @@ public class TlsTestSuite extends TestSuite
             c.clientAuth = C.CLIENT_AUTH_VALID;
             c.clientAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.md5, SignatureAlgorithm.rsa);
             c.serverCertReqSigAlgs = TlsUtils.getDefaultRSASignatureAlgorithms();
+            c.serverCheckSigAlgOfClientCerts = false;
             c.expectClientFatalAlert(AlertDescription.internal_error);
 
             addTestCase(testSuite, c, prefix + "BadCertificateVerifyHashAlg");
@@ -119,6 +120,7 @@ public class TlsTestSuite extends TestSuite
             c.clientAuth = C.CLIENT_AUTH_VALID;
             c.clientAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.rsa);
             c.serverCertReqSigAlgs = TlsUtils.getDefaultECDSASignatureAlgorithms();
+            c.serverCheckSigAlgOfClientCerts = false;
             c.expectServerFatalAlert(AlertDescription.illegal_parameter);
 
             addTestCase(testSuite, c, prefix + "BadCertificateVerifySigAlg");
