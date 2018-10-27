@@ -1012,6 +1012,27 @@ public class TlsUtils
         }
     }
 
+    public static short getLegacySignatureAlgorithmClientCert(short clientCertificateType)
+    {
+        switch (clientCertificateType)
+        {
+        case ClientCertificateType.dss_sign:
+        case ClientCertificateType.dss_fixed_dh:
+            return SignatureAlgorithm.dsa;
+
+        case ClientCertificateType.ecdsa_sign:
+        case ClientCertificateType.ecdsa_fixed_ecdh:
+            return SignatureAlgorithm.ecdsa;
+
+        case ClientCertificateType.rsa_sign:
+        case ClientCertificateType.rsa_fixed_dh:
+        case ClientCertificateType.rsa_fixed_ecdh:
+            return SignatureAlgorithm.rsa;
+        default:
+            return -1;
+        }
+    }
+
     public static short getLegacySignatureAlgorithmServer(int keyExchangeAlgorithm)
     {
         switch (keyExchangeAlgorithm)
@@ -3260,6 +3281,52 @@ public class TlsUtils
         handshakeHash.sealHashAlgorithms();
     }
 
+    static void checkSigAlgOfClientCerts(TlsContext context, Certificate clientCertificate, CertificateRequest certificateRequest) throws IOException
+    {
+        if (context.getPeerOptions().isCheckSigAlgOfPeerCerts())
+        {
+            Vector supportedSignatureAlgorithms = certificateRequest.getSupportedSignatureAlgorithms();
+
+            for (int i = 0; i < clientCertificate.getLength(); ++i)
+            {
+                String sigAlgOID = clientCertificate.getCertificateAt(i).getSigAlgOID();
+                SignatureAndHashAlgorithm sigAndHashAlg = TlsUtils.getCertSigAndHashAlg(sigAlgOID);
+
+                boolean valid = false;
+                if (null == sigAndHashAlg)
+                {
+                    // We don't recognize the 'signatureAlgorithm' of the certificate
+                }
+                else if (null == supportedSignatureAlgorithms)
+                {
+                    short[] certificateTypes = certificateRequest.getCertificateTypes();
+                    for (int j = 0; j < certificateTypes.length; ++j)
+                    {
+                        if (sigAndHashAlg.getSignature() == getLegacySignatureAlgorithmClientCert(certificateTypes[j]))
+                        {
+                            valid = true;
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    /*
+                     * RFC 5246 7.4.2. If the client provided a "signature_algorithms" extension, then
+                     * all certificates provided by the server MUST be signed by a hash/signature algorithm
+                     * pair that appears in that extension.
+                     */
+                    valid = TlsUtils.containsSignatureAlgorithm(supportedSignatureAlgorithms, sigAndHashAlg);
+                }
+
+                if (!valid)
+                {
+                    throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                }
+            }
+        }
+    }
+
     static void checkTlsFeatures(Certificate serverCertificate, Hashtable clientExtensions, Hashtable serverExtensions) throws IOException
     {
         /*
@@ -3301,6 +3368,7 @@ public class TlsUtils
         else
         {
             context.getPeerOptions().checkSigAlgOfPeerCerts = server.shouldCheckSigAlgOfPeerCerts();
+            checkSigAlgOfClientCerts(context, clientCertificate, certificateRequest);
             keyExchange.processClientCertificate(clientCertificate);
         }
 
@@ -3327,8 +3395,8 @@ public class TlsUtils
         }
         else
         {
-            context.getPeerOptions().checkSigAlgOfPeerCerts = client.shouldCheckSigAlgOfPeerCerts();
             checkTlsFeatures(serverCertificate, clientExtensions, serverExtensions);
+            context.getPeerOptions().checkSigAlgOfPeerCerts = client.shouldCheckSigAlgOfPeerCerts();
             keyExchange.processServerCertificate(serverCertificate);
             clientAuthentication.notifyServerCertificate(new TlsServerCertificateImpl(serverCertificate, serverCertificateStatus));
         }
