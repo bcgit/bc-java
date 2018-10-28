@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.BigIntegers;
 
 public class F2mProofer
 {
@@ -59,7 +60,7 @@ public class F2mProofer
         Properties inputProps = new Properties();
         for (int i = 0; i < NUM_SAMPLES; i++)
         {
-            BigInteger rand = new BigInteger(m, secRand);
+            BigInteger rand = BigIntegers.createRandomBigInteger(m, secRand);
             inputProps.put(Integer.toString(i), rand.toString(16));
         }
         String bits = Integer.toString(m);

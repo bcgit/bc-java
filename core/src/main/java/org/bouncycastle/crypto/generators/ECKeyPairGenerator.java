@@ -16,6 +16,7 @@ import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.math.ec.WNafUtil;
+import org.bouncycastle.util.BigIntegers;
 
 public class ECKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator, ECConstants
@@ -50,7 +51,7 @@ public class ECKeyPairGenerator
         BigInteger d;
         for (;;)
         {
-            d = new BigInteger(nBitLength, random);
+            d = BigIntegers.createRandomBigInteger(nBitLength, random);
 
             if (d.compareTo(TWO) < 0  || (d.compareTo(n) >= 0))
             {

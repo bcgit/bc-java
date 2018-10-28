@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * Class of number-theory related functions for use with integers represented as
@@ -1071,7 +1072,7 @@ public final class IntegerFunctions
 
         for (int i = 0; i < 20; i++)
         {
-            randomNum = new BigInteger(blen, prng);
+            randomNum = BigIntegers.createRandomBigInteger(blen, prng);
             if (randomNum.compareTo(upperBound) < 0)
             {
                 return randomNum;

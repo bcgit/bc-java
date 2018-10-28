@@ -1,5 +1,8 @@
 package org.bouncycastle.crypto.generators;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
@@ -8,9 +11,7 @@ import org.bouncycastle.crypto.params.GOST3410Parameters;
 import org.bouncycastle.crypto.params.GOST3410PrivateKeyParameters;
 import org.bouncycastle.crypto.params.GOST3410PublicKeyParameters;
 import org.bouncycastle.math.ec.WNafUtil;
-
-import java.math.BigInteger;
-import java.security.SecureRandom;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * a GOST3410 key pair generator.
@@ -41,7 +42,7 @@ public class GOST3410KeyPairGenerator
             int minWeight = 64;
             for (;;)
             {
-                x = new BigInteger(256, random);
+                x = BigIntegers.createRandomBigInteger(256, random);
 
                 if (x.signum() < 1 || x.compareTo(q) >= 0)
                 {

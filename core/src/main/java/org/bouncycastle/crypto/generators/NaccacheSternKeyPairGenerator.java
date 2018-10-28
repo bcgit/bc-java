@@ -1,15 +1,16 @@
 package org.bouncycastle.crypto.generators;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.Vector;
+
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.params.NaccacheSternKeyGenerationParameters;
 import org.bouncycastle.crypto.params.NaccacheSternKeyParameters;
 import org.bouncycastle.crypto.params.NaccacheSternPrivateKeyParameters;
-
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.util.Vector;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * Key generation parameters for NaccacheStern cipher. For details on this cipher, please see
@@ -176,7 +177,7 @@ public class NaccacheSternKeyPairGenerator
                 for (;;)
                 {
                     tries++;
-                    g = new BigInteger(strength, certainty, rand);
+                    g = BigIntegers.createRandomPrime(strength, certainty, rand);
                     if (g.modPow(e, n).equals(ONE))
                     {
                         continue;
@@ -284,10 +285,10 @@ public class NaccacheSternKeyPairGenerator
             int certainty,
             SecureRandom rand)
     {
-        BigInteger p_ = new BigInteger(bitLength, certainty, rand);
+        BigInteger p_ = BigIntegers.createRandomPrime(bitLength, certainty, rand);
         while (p_.bitLength() != bitLength)
         {
-            p_ = new BigInteger(bitLength, certainty, rand);
+            p_ = BigIntegers.createRandomPrime(bitLength, certainty, rand);
         }
         return p_;
     }

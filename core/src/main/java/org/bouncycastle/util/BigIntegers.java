@@ -94,7 +94,7 @@ public final class BigIntegers
 
         for (int i = 0; i < MAX_ITERATIONS; ++i)
         {
-            BigInteger x = new BigInteger(max.bitLength(), random);
+            BigInteger x = createRandomBigInteger(max.bitLength(), random);
             if (x.compareTo(min) >= 0 && x.compareTo(max) <= 0)
             {
                 return x;
@@ -102,7 +102,7 @@ public final class BigIntegers
         }
 
         // fall back to a faster (restricted) method
-        return new BigInteger(max.subtract(min).bitLength() - 1, random).add(min);
+        return createRandomBigInteger(max.subtract(min).bitLength() - 1, random).add(min);
     }
 
     public static BigInteger fromUnsignedByteArray(byte[] buf)
@@ -124,5 +124,67 @@ public final class BigIntegers
     public static int getUnsignedByteLength(BigInteger n)
     {
         return (n.bitLength() + 7) / 8;
+    }
+
+    /**
+     * Return a positive BigInteger in the range of 0 to 2**bitLength - 1.
+     *
+     * @param bitLength maximum bit length for the generated BigInteger.
+     * @param random a source of randomness.
+     * @return a positive BigInteger
+     */
+    public static BigInteger createRandomBigInteger(int bitLength, SecureRandom random)
+    {
+        return new BigInteger(1, createRandom(bitLength, random));
+    }
+
+    /**
+     * Return a prime number candidate of the specified bit length.
+     *
+     * @param bitLength bit length for the generated BigInteger.
+     * @param random a source of randomness.
+     * @return a positive BigInteger of numBits length
+     */
+    public static BigInteger createRandomPrime(int bitLength, int certainty, SecureRandom random)
+    {
+        BigInteger rv;
+
+        do
+        {
+            byte[] base = createRandom(bitLength, random);
+
+            int xBits = 8 * base.length - bitLength;
+            byte lead = (byte)(1 << (7 - xBits));
+
+            // ensure top and bottom bit set
+            base[0] |= lead;
+            base[base.length - 1] |= 0x01;
+
+            rv = new BigInteger(1, base);
+        }
+        while (!rv.isProbablePrime(certainty));
+
+        return rv;
+    }
+
+    private static byte[] createRandom(int numBits, SecureRandom random)
+        throws IllegalArgumentException
+    {
+        if (numBits < 1)
+        {
+            throw new IllegalArgumentException("numBits must be at least 1");
+        }
+
+        int nBytes = (numBits + 7) / 8;
+
+        byte[] rv = new byte[nBytes];
+
+        random.nextBytes(rv);
+
+        // strip off any excess bits in the MSB
+        int xBits = 8 * nBytes - numBits;
+        rv[0] &= (byte)(255 >>> xBits);
+
+        return rv;
     }
 }
