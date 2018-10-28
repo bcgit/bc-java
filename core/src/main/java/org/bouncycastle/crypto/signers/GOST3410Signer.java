@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.params.GOST3410Parameters;
 import org.bouncycastle.crypto.params.GOST3410PrivateKeyParameters;
 import org.bouncycastle.crypto.params.GOST3410PublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * GOST R 34.10-94 Signature Algorithm
@@ -74,7 +75,7 @@ public class GOST3410Signer
 
             do
             {
-                k = new BigInteger(params.getQ().bitLength(), random);
+                k = BigIntegers.createRandomBigInteger(params.getQ().bitLength(), random);
             }
             while (k.compareTo(params.getQ()) >= 0);
 

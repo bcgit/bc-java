@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.params.GOST3410Parameters;
 import org.bouncycastle.crypto.params.GOST3410ValidationParameters;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * generate suitable parameters for GOST3410.
@@ -466,7 +467,7 @@ public class GOST3410ParametersGenerator
 
         for(;;)
         {
-            BigInteger d = new BigInteger(length, init_random);
+            BigInteger d = BigIntegers.createRandomBigInteger(length, init_random);
 
             // 1 < d < p-1
             if (d.compareTo(ONE) > 0 && d.compareTo(pSub1) < 0)

@@ -24,7 +24,7 @@ class DHParametersHelper
 
         for (;;)
         {
-            q = new BigInteger(qLength, 2, random);
+            q = BigIntegers.createRandomPrime(qLength, 2, random);
 
             // p <- 2q + 1
             p = q.shiftLeft(1).add(ONE);

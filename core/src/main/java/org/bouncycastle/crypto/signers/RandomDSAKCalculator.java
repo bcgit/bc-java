@@ -3,6 +3,8 @@ package org.bouncycastle.crypto.signers;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.util.BigIntegers;
+
 public class RandomDSAKCalculator
     implements DSAKCalculator
 {
@@ -34,7 +36,7 @@ public class RandomDSAKCalculator
         BigInteger k;
         do
         {
-            k = new BigInteger(qBitLength, random);
+            k = BigIntegers.createRandomBigInteger(qBitLength, random);
         }
         while (k.equals(ZERO) || k.compareTo(q) >= 0);
 
