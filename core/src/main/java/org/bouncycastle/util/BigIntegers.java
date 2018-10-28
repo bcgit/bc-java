@@ -11,6 +11,9 @@ public final class BigIntegers
     public static final BigInteger ZERO = BigInteger.valueOf(0);
     public static final BigInteger ONE = BigInteger.valueOf(1);
 
+    private static final BigInteger TWO = BigInteger.valueOf(2);
+    private static final BigInteger THREE = BigInteger.valueOf(3);
+
     private static final int MAX_ITERATIONS = 1000;
 
     /**
@@ -147,7 +150,17 @@ public final class BigIntegers
      */
     public static BigInteger createRandomPrime(int bitLength, int certainty, SecureRandom random)
     {
+        if (bitLength < 2)
+        {
+            throw new IllegalArgumentException("bitLength < 2");
+        }
+
         BigInteger rv;
+
+        if (bitLength == 2)
+        {
+            return (random.nextInt() < 0) ? TWO : THREE;
+        }
 
         do
         {
@@ -167,22 +180,22 @@ public final class BigIntegers
         return rv;
     }
 
-    private static byte[] createRandom(int numBits, SecureRandom random)
+    private static byte[] createRandom(int bitLength, SecureRandom random)
         throws IllegalArgumentException
     {
-        if (numBits < 1)
+        if (bitLength < 1)
         {
-            throw new IllegalArgumentException("numBits must be at least 1");
+            throw new IllegalArgumentException("bitLength must be at least 1");
         }
 
-        int nBytes = (numBits + 7) / 8;
+        int nBytes = (bitLength + 7) / 8;
 
         byte[] rv = new byte[nBytes];
 
         random.nextBytes(rv);
 
         // strip off any excess bits in the MSB
-        int xBits = 8 * nBytes - numBits;
+        int xBits = 8 * nBytes - bitLength;
         rv[0] &= (byte)(255 >>> xBits);
 
         return rv;
