@@ -16,6 +16,7 @@ import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * GOST R 34.10-2001 Signature Algorithm
@@ -90,7 +91,7 @@ public class ECGOST3410Signer
             {
                 do
                 {
-                    k = new BigInteger(n.bitLength(), random);
+                    k = BigIntegers.createRandomBigInteger(n.bitLength(), random);
                 }
                 while (k.equals(ECConstants.ZERO));
 

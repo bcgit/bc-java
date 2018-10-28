@@ -248,7 +248,7 @@ public class SM2Engine
         BigInteger k;
         do
         {
-            k = new BigInteger(qBitLength, random);
+            k = BigIntegers.createRandomBigInteger(qBitLength, random);
         }
         while (k.equals(ECConstants.ZERO) || k.compareTo(ecParams.getN()) >= 0);
 

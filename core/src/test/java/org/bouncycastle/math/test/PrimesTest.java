@@ -6,7 +6,6 @@ import java.security.SecureRandom;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -179,6 +178,6 @@ public class PrimesTest extends TestCase
 
     private static BigInteger randomPrime()
     {
-        return new BigInteger(PRIME_BITS, PRIME_CERTAINTY, R);
+        return BigIntegers.createRandomPrime(PRIME_BITS, PRIME_CERTAINTY, R);
     }
 }

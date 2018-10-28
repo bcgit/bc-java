@@ -18,6 +18,7 @@ import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * DSTU 4145-2002
@@ -151,7 +152,7 @@ public class DSTU4145Signer
      */
     private static BigInteger generateRandomInteger(BigInteger n, SecureRandom random)
     {
-        return new BigInteger(n.bitLength() - 1, random);
+        return BigIntegers.createRandomBigInteger(n.bitLength() - 1, random);
     }
 
     private static ECFieldElement hash2FieldElement(ECCurve curve, byte[] hash)
