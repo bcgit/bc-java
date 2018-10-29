@@ -26,6 +26,7 @@ import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.DefaultTlsKeyExchangeFactory;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.NameType;
+import org.bouncycastle.tls.NamedGroupTypes;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.ServerName;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
@@ -79,10 +80,9 @@ class ProvTlsClient
     }
 
     @Override
-    protected Vector getSupportedGroups(boolean offeringDH, boolean offeringECDH, boolean offeringECDSA)
+    protected Vector getSupportedGroups(NamedGroupTypes offeringTypes)
     {
-        return SupportedGroups.getClientSupportedGroups(getCrypto(), manager.getContext().isFips(), offeringDH,
-            offeringECDH, offeringECDSA);
+        return SupportedGroups.getClientSupportedGroups(getCrypto(), manager.getContext().isFips(), offeringTypes);
     }
 
     @Override
