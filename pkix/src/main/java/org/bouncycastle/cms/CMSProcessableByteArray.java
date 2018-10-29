@@ -21,7 +21,7 @@ public class CMSProcessableByteArray
     public CMSProcessableByteArray(
         byte[]  bytes)
     {
-        this(new ASN1ObjectIdentifier(CMSObjectIdentifiers.data.getId()), bytes);
+        this(CMSObjectIdentifiers.data, bytes);
     }
 
     public CMSProcessableByteArray(
