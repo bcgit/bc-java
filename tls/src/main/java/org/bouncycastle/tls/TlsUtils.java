@@ -1223,7 +1223,6 @@ public class TlsUtils
     }
 
     public static boolean containsAnySignatureAlgorithm(Vector supportedSignatureAlgorithms, short signatureAlgorithm)
-        throws IOException
     {
         for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
         {
