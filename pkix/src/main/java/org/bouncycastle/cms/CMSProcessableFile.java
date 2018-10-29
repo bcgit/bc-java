@@ -32,7 +32,7 @@ public class CMSProcessableFile
         File file,
         int  bufSize)
     {
-        this(new ASN1ObjectIdentifier(CMSObjectIdentifiers.data.getId()), file, bufSize);
+        this(CMSObjectIdentifiers.data, file, bufSize);
     }
 
     public CMSProcessableFile(
