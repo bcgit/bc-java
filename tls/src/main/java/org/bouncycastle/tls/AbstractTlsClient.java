@@ -65,6 +65,19 @@ public abstract class AbstractTlsClient
         }
     }
 
+    protected NamedGroupTypes getOfferingNamedGroupTypes()
+    {
+        int[] cipherSuites = getCipherSuites();
+
+        NamedGroupTypes offeringTypes = new NamedGroupTypes();
+        offeringTypes.setDH(TlsDHUtils.containsDHCipherSuites(cipherSuites));
+        offeringTypes.setECDH(TlsECCUtils.containsECDHCipherSuites(cipherSuites));
+        offeringTypes.setECDSA(TlsECCUtils.containsECDSACipherSuites(cipherSuites)
+            || (null == supportedSignatureAlgorithms)
+            || TlsUtils.containsAnySignatureAlgorithm(supportedSignatureAlgorithms, SignatureAlgorithm.ecdsa));
+        return offeringTypes;
+    }
+
     protected void checkForUnexpectedServerExtension(Hashtable serverExtensions, Integer extensionType)
         throws IOException
     {
@@ -105,34 +118,28 @@ public abstract class AbstractTlsClient
      * The default {@link #getClientExtensions()} implementation calls this to determine which named
      * groups to include in the supported_groups extension for the ClientHello.
      * 
-     * @param offeringDH
-     *            True if we are offering any DH ciphersuites in ClientHello, so at least one DH
-     *            group should be included.
-     * @param offeringECDH
-     *            True if we are offering any ECDH ciphersuites in ClientHello, so at least one
-     *            ECDH-capable group should be included.
-     * @param offeringECDSA
-     *            True if we are offering ECDSA signatures in ClientHello, so at least one
-     *            ECDSA-capable EC group should be included.
+     * @param offeringTypes
+     *            The types of NamedGroup for which there should be at least one supported group. By
+     *            default this is inferred from the offered cipher suites and signature algorithms.
      * @return a {@link Vector} of {@link Integer}. See {@link NamedGroup} for group constants.
      */
-    protected Vector getSupportedGroups(boolean offeringDH, boolean offeringECDH, boolean offeringECDSA)
+    protected Vector getSupportedGroups(NamedGroupTypes offeringTypes)
     {
         TlsCrypto crypto = getCrypto();
         Vector supportedGroups = new Vector();
 
-        if (offeringECDH)
+        if (offeringTypes.hasECDH())
         {
             TlsUtils.addIfSupported(supportedGroups, crypto, NamedGroup.x25519);
         }
 
-        if (offeringECDH || offeringECDSA)
+        if (offeringTypes.hasECDH() || offeringTypes.hasECDSA())
         {
             TlsUtils.addIfSupported(supportedGroups, crypto, new int[]{
                 NamedGroup.secp256r1, NamedGroup.secp384r1 });
         }
 
-        if (offeringDH)
+        if (offeringTypes.hasECDH())
         {
             TlsUtils.addIfSupported(supportedGroups, crypto, new int[]{
                 NamedGroup.ffdhe2048, NamedGroup.ffdhe3072, NamedGroup.ffdhe4096 });
@@ -222,15 +229,9 @@ public abstract class AbstractTlsClient
             TlsUtils.addSignatureAlgorithmsExtension(clientExtensions, supportedSignatureAlgorithms);
         }
 
-        int[] cipherSuites = getCipherSuites();
+        NamedGroupTypes offeringTypes = getOfferingNamedGroupTypes();
 
-        boolean offeringDH = TlsDHUtils.containsDHCipherSuites(cipherSuites);
-        boolean offeringECDH = TlsECCUtils.containsECDHCipherSuites(cipherSuites);
-        boolean offeringECDSA = TlsECCUtils.containsECDSACipherSuites(cipherSuites)
-            || (null == supportedSignatureAlgorithms)
-            || TlsUtils.containsAnySignatureAlgorithm(supportedSignatureAlgorithms, SignatureAlgorithm.ecdsa);
-
-        Vector supportedGroups = getSupportedGroups(offeringDH, offeringECDH, offeringECDSA);
+        Vector supportedGroups = getSupportedGroups(offeringTypes);
         if (supportedGroups != null && !supportedGroups.isEmpty())
         {
             this.supportedGroups = supportedGroups;
@@ -238,7 +239,7 @@ public abstract class AbstractTlsClient
             TlsExtensionsUtils.addSupportedGroupsExtension(clientExtensions, supportedGroups);
         }
 
-        if (offeringECDH || offeringECDSA)
+        if (offeringTypes.hasECDH() || offeringTypes.hasECDSA())
         {
             this.clientECPointFormats = getSupportedPointFormats();
 

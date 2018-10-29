@@ -5,6 +5,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import org.bouncycastle.tls.NamedGroup;
+import org.bouncycastle.tls.NamedGroupTypes;
 import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.crypto.DHStandardGroups;
 import org.bouncycastle.tls.crypto.TlsCrypto;
@@ -102,17 +103,16 @@ abstract class SupportedGroups
         return result;
     }
 
-    static Vector getClientSupportedGroups(TlsCrypto crypto, boolean isFips, boolean offeringDH, boolean offeringECDH,
-        boolean offeringECDSA)
+    static Vector getClientSupportedGroups(TlsCrypto crypto, boolean isFips, NamedGroupTypes offeringTypes)
     {
         int[] namedGroups = provJdkTlsNamedGroups != null ? provJdkTlsNamedGroups : defaultClientNamedGroups;
 
         Vector result = new Vector();
         for (int namedGroup : namedGroups)
         {
-            if ((offeringDH && NamedGroup.refersToASpecificFiniteField(namedGroup))
-                || (offeringECDH && NamedGroup.refersToASpecificCurve(namedGroup))
-                || (offeringECDSA && NamedGroup.refersToAnECDSACurve(namedGroup)))
+            if ((offeringTypes.hasDH() && NamedGroup.refersToASpecificFiniteField(namedGroup))
+                || (offeringTypes.hasECDH() && NamedGroup.refersToASpecificCurve(namedGroup))
+                || (offeringTypes.hasECDSA() && NamedGroup.refersToAnECDSACurve(namedGroup)))
             {
                 if (!isFips || FipsUtils.isFipsNamedGroup(namedGroup))
                 {
