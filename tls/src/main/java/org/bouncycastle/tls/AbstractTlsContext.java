@@ -149,21 +149,23 @@ abstract class AbstractTlsContext
 
     public byte[] exportKeyingMaterial(String asciiLabel, byte[] context_value, int length)
     {
-        /*
-         * TODO[session-hash]
-         * 
-         * draft-ietf-tls-session-hash-04 5.4. If a client or server chooses to continue with a full
-         * handshake without the extended master secret extension, [..] the client or server MUST
-         * NOT export any key material based on the new master secret for any subsequent
-         * application-level authentication. In particular, it MUST disable [RFC5705] [..].
-         */
-
         if (context_value != null && !TlsUtils.isValidUint16(context_value.length))
         {
             throw new IllegalArgumentException("'context_value' must have length less than 2^16 (or be null)");
         }
 
         SecurityParameters sp = getSecurityParameters();
+        if (!sp.isExtendedMasterSecret())
+        {
+            /*
+             * RFC 7627 5.4. If a client or server chooses to continue with a full handshake without
+             * the extended master secret extension, [..] the client or server MUST NOT export any
+             * key material based on the new master secret for any subsequent application-level
+             * authentication. In particular, it MUST disable [RFC5705] [..].
+             */
+            return null;
+        }
+
         byte[] cr = sp.getClientRandom(), sr = sp.getServerRandom();
 
         int seedLength = cr.length + sr.length;
