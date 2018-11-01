@@ -295,6 +295,7 @@ public class DTLSServerProtocol
         state.sessionParameters = new SessionParameters.Builder()
             .setCipherSuite(securityParameters.getCipherSuite())
             .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
+            .setExtendedMasterSecret(securityParameters.isExtendedMasterSecret())
             .setLocalCertificate(serverCertificate)
             .setMasterSecret(state.serverContext.getCrypto().adoptSecret(securityParameters.getMasterSecret()))
             .setNegotiatedVersion(state.serverContext.getServerVersion())
@@ -385,7 +386,7 @@ public class DTLSServerProtocol
         TlsUtils.writeUint16(selectedCipherSuite, buf);
         TlsUtils.writeUint8(CompressionMethod._null, buf);
 
-        state.serverExtensions = state.server.getServerExtensions();
+        state.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(state.server.getServerExtensions());
 
         /*
          * RFC 5746 3.6. Server Behavior: Initial Handshake
@@ -409,7 +410,6 @@ public class DTLSServerProtocol
                  * If the secure_renegotiation flag is set to TRUE, the server MUST include an empty
                  * "renegotiation_info" extension in the ServerHello message.
                  */
-                state.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(state.serverExtensions);
                 state.serverExtensions.put(TlsProtocol.EXT_RenegotiationInfo,
                     TlsProtocol.createRenegotiationInfo(TlsUtils.EMPTY_BYTES));
             }
@@ -417,7 +417,6 @@ public class DTLSServerProtocol
 
         if (securityParameters.isExtendedMasterSecret())
         {
-            state.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(state.serverExtensions);
             TlsExtensionsUtils.addExtendedMasterSecretExtension(state.serverExtensions);
         }
 
@@ -433,8 +432,7 @@ public class DTLSServerProtocol
          * extensions appearing in the client hello, and send a server hello containing no
          * extensions.
          */
-
-        if (state.serverExtensions != null)
+        if (!state.serverExtensions.isEmpty())
         {
             securityParameters.encryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(state.serverExtensions);
 
@@ -591,12 +589,18 @@ public class DTLSServerProtocol
         SecurityParameters securityParameters = context.getSecurityParameters();
 
         /*
-         * TODO[session-hash]
-         * 
-         * draft-ietf-tls-session-hash-04 4. Clients and servers SHOULD NOT accept handshakes
-         * that do not use the extended master secret [..]. (and see 5.2, 5.3)
+         * TODO[resumption] Check RFC 7627 5.4. for required behaviour 
+         */
+
+        /*
+         * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
+         * master secret [..]. (and see 5.2, 5.3)
          */
         securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(state.clientExtensions);
+        if (!securityParameters.isExtendedMasterSecret() && state.server.requiresExtendedMasterSecret())
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
 
         context.setClientVersion(client_version);
 
