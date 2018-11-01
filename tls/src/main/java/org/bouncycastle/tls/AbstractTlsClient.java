@@ -196,7 +196,6 @@ public abstract class AbstractTlsClient
         Hashtable clientExtensions = new Hashtable();
 
         TlsExtensionsUtils.addEncryptThenMACExtension(clientExtensions);
-        TlsExtensionsUtils.addExtendedMasterSecretExtension(clientExtensions);
 
         Vector protocolNames = getProtocolNames();
         if (protocolNames != null)

@@ -22,6 +22,11 @@ public abstract class AbstractTlsPeer
         return crypto;
     }
 
+    public boolean requiresExtendedMasterSecret()
+    {
+        return false;
+    }
+
     public boolean shouldCheckSigAlgOfPeerCerts()
     {
         return true;

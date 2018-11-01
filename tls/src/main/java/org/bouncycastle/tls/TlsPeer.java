@@ -13,6 +13,19 @@ public interface TlsPeer
     TlsCrypto getCrypto();
 
     /**
+     * This implementation supports RFC 7627 and will always negotiate the extended_master_secret
+     * extension where possible. When connecting to a peer that does not offer/accept this
+     * extension, it is recommended to abort the handshake. This option is provided for
+     * interoperability with legacy peers, although some TLS features will be disabled in that case
+     * (see RFC 7627 5.4).
+     * 
+     * @return <code>true</code> if the handshake should be aborted when the peer does not negotiate
+     *         the extended_master_secret extension, or <code>false</code> to support legacy
+     *         interoperability.
+     */
+    boolean requiresExtendedMasterSecret();
+
+    /**
      * Controls whether the protocol will check the 'signatureAlgorithm' of received certificates as
      * specified in RFC 5246 7.4.2, 7.4.4, 7.4.6 and similar rules for earlier TLS versions. We
      * recommend to enable these checks, but this option is provided for cases where the default
