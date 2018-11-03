@@ -58,7 +58,6 @@ public class SignatureSpi
         {
             CipherParameters param = ((BCSphincs256PrivateKey)privateKey).getKeyParams();
 
-            // TODO consider omitting this, as SPHINCS-256 is deterministic and RNG is not required at this stage anyway.
             if (random != null)
             {
                 param = new ParametersWithRandom(param, random);
