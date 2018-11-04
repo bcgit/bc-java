@@ -17,6 +17,6 @@ public interface Store<T>
      * @return a collection of matching objects, empty if none available.
      * @throws StoreException if there is a failure during matching.
      */
-    Collection<T> getMatches(Selector<T> selector)
+    Collection<T> getMatches(Selector selector)
         throws StoreException;
 }
