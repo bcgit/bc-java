@@ -102,7 +102,7 @@ public class JceX25519Domain implements TlsECDomain
         try
         {
             KeyPairGenerator keyPairGenerator = crypto.getHelper().createKeyPairGenerator("X25519");
-            keyPairGenerator.initialize(256, crypto.getSecureRandom());
+            keyPairGenerator.initialize(255, crypto.getSecureRandom());
             return keyPairGenerator.generateKeyPair();
         }
         catch (GeneralSecurityException e)
