@@ -175,11 +175,11 @@ public class TestSMIMESignEncrypt_commented
                 assertNotNull(recipInfo);
                 
                 //decrypt the file using the receiver's private key before verifying signature
-                byte[] content = recipInfo.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()));
+                CMSTypedStream content = recipInfo.getContentStream(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()));
 
                 MimeParserProvider provider = new SMimeParserProvider("7bit", new BcDigestCalculatorProvider());
                 
-                MimeParser p = provider.createParser(new ReadOnceInputStream(content));
+                MimeParser p = provider.createParser(content.getContentStream());
 
                 p.parse(new SMimeParserListener()
                 {
