@@ -1,7 +1,6 @@
 package org.bouncycastle.mime.test;
 
 import java.io.ByteArrayOutputStream;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -17,6 +16,7 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSException;
+import org.bouncycastle.cms.CMSTypedStream;
 import org.bouncycastle.cms.OriginatorInformation;
 import org.bouncycastle.cms.RecipientInformation;
 import org.bouncycastle.cms.RecipientInformationStore;
@@ -46,7 +46,7 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.Streams;
 
-public class TestSMIMESignEncrypt_commented
+public class TestSMIMESignEncrypt
     extends TestCase
 {
     private static final String BC = BouncyCastleProvider.PROVIDER_NAME;
