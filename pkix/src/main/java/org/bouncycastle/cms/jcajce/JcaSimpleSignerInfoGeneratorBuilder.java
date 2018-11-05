@@ -6,6 +6,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 
 import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cms.CMSAttributeTableGenerator;
 import org.bouncycastle.cms.DefaultSignedAttributeTableGenerator;
@@ -109,6 +110,14 @@ public class JcaSimpleSignerInfoGeneratorBuilder
         this.unsignedGen = unsignedGen;
 
         return this;
+    }
+
+    public SignerInfoGenerator build(String algorithmName, PrivateKey privateKey, X509CertificateHolder certificate)
+        throws OperatorCreationException, CertificateEncodingException
+    {
+        ContentSigner contentSigner = helper.createContentSigner(algorithmName, privateKey);
+
+        return configureAndBuild().build(contentSigner, certificate);
     }
 
     public SignerInfoGenerator build(String algorithmName, PrivateKey privateKey, X509Certificate certificate)
