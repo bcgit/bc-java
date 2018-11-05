@@ -113,7 +113,7 @@ public class JcaSimpleSignerInfoGeneratorBuilder
     }
 
     public SignerInfoGenerator build(String algorithmName, PrivateKey privateKey, X509CertificateHolder certificate)
-        throws OperatorCreationException, CertificateEncodingException
+        throws OperatorCreationException
     {
         ContentSigner contentSigner = helper.createContentSigner(algorithmName, privateKey);
 
@@ -129,7 +129,7 @@ public class JcaSimpleSignerInfoGeneratorBuilder
     }
 
     public SignerInfoGenerator build(String algorithmName, PrivateKey privateKey, byte[] keyIdentifier)
-        throws OperatorCreationException, CertificateEncodingException
+        throws OperatorCreationException
     {
         ContentSigner contentSigner = helper.createContentSigner(algorithmName, privateKey);
 
