@@ -163,7 +163,7 @@ abstract class AbstractTlsContext
              * key material based on the new master secret for any subsequent application-level
              * authentication. In particular, it MUST disable [RFC5705] [..].
              */
-            return null;
+            throw new IllegalStateException("cannot export keying material without extended_master_secret");
         }
 
         byte[] cr = sp.getClientRandom(), sr = sp.getServerRandom();
