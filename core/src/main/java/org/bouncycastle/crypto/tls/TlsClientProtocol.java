@@ -92,7 +92,7 @@ public class TlsClientProtocol
         if (sessionToResume != null && sessionToResume.isResumable())
         {
             SessionParameters sessionParameters = sessionToResume.exportSessionParameters();
-            if (sessionParameters != null)
+            if (sessionParameters != null && sessionParameters.isExtendedMasterSecret())
             {
                 this.tlsSession = sessionToResume;
                 this.sessionParameters = sessionParameters;
@@ -652,7 +652,7 @@ public class TlsClientProtocol
         this.tlsClient.notifySelectedCompressionMethod(selectedCompressionMethod);
 
         /*
-         * RFC3546 2.2 The extended server hello message format MAY be sent in place of the server
+         * RFC 3546 2.2 The extended server hello message format MAY be sent in place of the server
          * hello message when the client has requested extended functionality via the extended
          * client hello message specified in Section 2.1. ... Note that the extended server hello
          * message is only sent in response to an extended client hello message. This prevents the
@@ -660,6 +660,19 @@ public class TlsClientProtocol
          * clients.
          */
         this.serverExtensions = readExtensions(buf);
+
+        /*
+         * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
+         * master secret [..]. (and see 5.2, 5.3)
+         */
+        this.securityParameters.extendedMasterSecret = !TlsUtils.isSSL(tlsClientContext)
+            && TlsExtensionsUtils.hasExtendedMasterSecretExtension(serverExtensions);
+
+        if (!securityParameters.isExtendedMasterSecret()
+            && (resumedSession || tlsClient.requiresExtendedMasterSecret()))
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
 
         /*
          * RFC 3546 2.2 Note that the extended server hello message is only sent in response to an
@@ -759,7 +772,7 @@ public class TlsClientProtocol
         this.securityParameters.cipherSuite = selectedCipherSuite;
         this.securityParameters.compressionAlgorithm = selectedCompressionMethod;
 
-        if (sessionServerExtensions != null)
+        if (sessionServerExtensions != null && !sessionServerExtensions.isEmpty())
         {
             {
                 /*
@@ -775,8 +788,6 @@ public class TlsClientProtocol
                 }
                 this.securityParameters.encryptThenMAC = serverSentEncryptThenMAC;
             }
-
-            this.securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(sessionServerExtensions);
 
             this.securityParameters.maxFragmentLength = processMaxFragmentLengthExtension(sessionClientExtensions,
                 sessionServerExtensions, AlertDescription.illegal_parameter);
@@ -796,13 +807,6 @@ public class TlsClientProtocol
                     AlertDescription.illegal_parameter);
         }
 
-        /*
-         * TODO[session-hash]
-         * 
-         * draft-ietf-tls-session-hash-04 4. Clients and servers SHOULD NOT accept handshakes
-         * that do not use the extended master secret [..]. (and see 5.2, 5.3)
-         */
-        
         if (sessionClientExtensions != null)
         {
             this.tlsClient.processServerExtensions(sessionServerExtensions);
@@ -864,14 +868,20 @@ public class TlsClientProtocol
 
         if (session_id.length > 0 && this.sessionParameters != null)
         {
-            if (!Arrays.contains(this.offeredCipherSuites, sessionParameters.getCipherSuite())
+            if (!sessionParameters.isExtendedMasterSecret()
+                || !Arrays.contains(this.offeredCipherSuites, sessionParameters.getCipherSuite())
                 || !Arrays.contains(this.offeredCompressionMethods, sessionParameters.getCompressionAlgorithm()))
             {
                 session_id = TlsUtils.EMPTY_BYTES;
             }
         }
 
-        this.clientExtensions = this.tlsClient.getClientExtensions();
+        this.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(this.tlsClient.getClientExtensions());
+
+        if (!client_version.isSSL())
+        {
+            TlsExtensionsUtils.addExtendedMasterSecretExtension(this.clientExtensions);
+        }
 
         HandshakeMessage message = new HandshakeMessage(HandshakeType.client_hello);
 
@@ -896,8 +906,6 @@ public class TlsClientProtocol
             if (noRenegExt && noRenegSCSV)
             {
                 // TODO Consider whether to default to a client extension instead
-//                this.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(this.clientExtensions);
-//                this.clientExtensions.put(EXT_RenegotiationInfo, createRenegotiationInfo(TlsUtils.EMPTY_BYTES));
                 this.offeredCipherSuites = Arrays.append(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
             }
 
@@ -918,10 +926,7 @@ public class TlsClientProtocol
 
         TlsUtils.writeUint8ArrayWithUint8Length(offeredCompressionMethods, message);
 
-        if (clientExtensions != null)
-        {
-            writeExtensions(message, clientExtensions);
-        }
+        writeExtensions(message, clientExtensions);
 
         message.writeToRecordStream();
     }
