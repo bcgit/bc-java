@@ -5,6 +5,11 @@ import java.io.IOException;
 public abstract class AbstractTlsPeer
     implements TlsPeer
 {
+    public boolean requiresExtendedMasterSecret()
+    {
+        return false;
+    }
+
     public boolean shouldUseGMTUnixTime()
     {
         /*
