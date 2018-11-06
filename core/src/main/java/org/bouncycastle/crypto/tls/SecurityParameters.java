@@ -105,4 +105,9 @@ public class SecurityParameters
     {
         return srpIdentity;
     }
+
+    public boolean isExtendedMasterSecret()
+    {
+        return extendedMasterSecret;
+    }
 }

@@ -48,7 +48,7 @@ public class DTLSClientProtocol
         if (sessionToResume != null && sessionToResume.isResumable())
         {
             SessionParameters sessionParameters = sessionToResume.exportSessionParameters();
-            if (sessionParameters != null)
+            if (sessionParameters != null && sessionParameters.isExtendedMasterSecret())
             {
                 state.tlsSession = sessionToResume;
                 state.sessionParameters = sessionParameters;
@@ -367,6 +367,7 @@ public class DTLSClientProtocol
             state.sessionParameters = new SessionParameters.Builder()
                 .setCipherSuite(securityParameters.getCipherSuite())
                 .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
+                .setExtendedMasterSecret(securityParameters.isExtendedMasterSecret())
                 .setMasterSecret(securityParameters.getMasterSecret())
                 .setPeerCertificate(serverCertificate)
                 .setPSKIdentity(securityParameters.getPSKIdentity())
@@ -434,8 +435,20 @@ public class DTLSClientProtocol
          */
         state.offeredCipherSuites = client.getCipherSuites();
 
+        if (session_id.length > 0 && state.sessionParameters != null)
+        {
+            if (!state.sessionParameters.isExtendedMasterSecret()
+                || !Arrays.contains(state.offeredCipherSuites, state.sessionParameters.getCipherSuite())
+                || CompressionMethod._null != state.sessionParameters.getCompressionAlgorithm())
+            {
+                session_id = TlsUtils.EMPTY_BYTES;
+            }
+        }
+
         // Integer -> byte[]
-        state.clientExtensions = client.getClientExtensions();
+        state.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(client.getClientExtensions());
+
+        TlsExtensionsUtils.addExtendedMasterSecretExtension(state.clientExtensions);
 
         // Cipher Suites (and SCSV)
         {
@@ -478,10 +491,7 @@ public class DTLSClientProtocol
         TlsUtils.writeUint8ArrayWithUint8Length(state.offeredCompressionMethods, buf);
 
         // Extensions
-        if (state.clientExtensions != null)
-        {
-            TlsProtocol.writeExtensions(buf, state.clientExtensions);
-        }
+        TlsProtocol.writeExtensions(buf, state.clientExtensions);
 
         return buf.toByteArray();
     }
@@ -669,6 +679,18 @@ public class DTLSClientProtocol
         state.serverExtensions = TlsProtocol.readExtensions(buf);
 
         /*
+         * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
+         * master secret [..]. (and see 5.2, 5.3)
+         */
+        securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(state.serverExtensions);
+
+        if (!securityParameters.isExtendedMasterSecret()
+            && (state.resumedSession || state.client.requiresExtendedMasterSecret()))
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
+
+        /*
          * RFC 3546 2.2 Note that the extended server hello message is only sent in response to an
          * extended client hello message. However, see RFC 5746 exception below. We always include
          * the SCSV, so an Extended Server Hello is always allowed.
@@ -765,7 +787,7 @@ public class DTLSClientProtocol
         securityParameters.cipherSuite = selectedCipherSuite;
         securityParameters.compressionAlgorithm = selectedCompressionMethod;
 
-        if (sessionServerExtensions != null)
+        if (sessionServerExtensions != null && !sessionServerExtensions.isEmpty())
         {
             {
                 /*
@@ -781,8 +803,6 @@ public class DTLSClientProtocol
                 }
                 securityParameters.encryptThenMAC = serverSentEncryptThenMAC;
             }
-
-            securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(sessionServerExtensions);
 
             securityParameters.maxFragmentLength = evaluateMaxFragmentLengthExtension(state.resumedSession,
                 sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
@@ -801,13 +821,6 @@ public class DTLSClientProtocol
                 && TlsUtils.hasExpectedEmptyExtensionData(sessionServerExtensions, TlsProtocol.EXT_SessionTicket,
                     AlertDescription.illegal_parameter);
         }
-
-        /*
-         * TODO[session-hash]
-         * 
-         * draft-ietf-tls-session-hash-04 4. Clients and servers SHOULD NOT accept handshakes
-         * that do not use the extended master secret [..]. (and see 5.2, 5.3)
-         */
 
         if (sessionClientExtensions != null)
         {
