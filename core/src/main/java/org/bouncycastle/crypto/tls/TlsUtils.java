@@ -1100,7 +1100,7 @@ public class TlsUtils
         SecurityParameters securityParameters = context.getSecurityParameters();
 
         byte[] seed;
-        if (securityParameters.extendedMasterSecret)
+        if (securityParameters.isExtendedMasterSecret())
         {
             seed = securityParameters.getSessionHash();
         }
@@ -1114,7 +1114,7 @@ public class TlsUtils
             return calculateMasterSecret_SSL(pre_master_secret, seed);
         }
 
-        String asciiLabel = securityParameters.extendedMasterSecret
+        String asciiLabel = securityParameters.isExtendedMasterSecret()
             ?   ExporterLabel.extended_master_secret
             :   ExporterLabel.master_secret;
 

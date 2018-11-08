@@ -583,12 +583,18 @@ public class TlsServerProtocol
         this.clientExtensions = readExtensions(buf);
 
         /*
-         * TODO[session-hash]
-         * 
-         * draft-ietf-tls-session-hash-04 4. Clients and servers SHOULD NOT accept handshakes
-         * that do not use the extended master secret [..]. (and see 5.2, 5.3)
+         * TODO[resumption] Check RFC 7627 5.4. for required behaviour 
+         */
+
+        /*
+         * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
+         * master secret [..]. (and see 5.2, 5.3)
          */
         this.securityParameters.extendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(clientExtensions);
+        if (!securityParameters.isExtendedMasterSecret() && tlsServer.requiresExtendedMasterSecret())
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
 
         getContextAdmin().setClientVersion(client_version);
 
@@ -758,7 +764,7 @@ public class TlsServerProtocol
         TlsUtils.writeUint16(selectedCipherSuite, message);
         TlsUtils.writeUint8(selectedCompressionMethod, message);
 
-        this.serverExtensions = tlsServer.getServerExtensions();
+        this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(tlsServer.getServerExtensions());
 
         /*
          * RFC 5746 3.6. Server Behavior: Initial Handshake
@@ -782,14 +788,16 @@ public class TlsServerProtocol
                  * If the secure_renegotiation flag is set to TRUE, the server MUST include an empty
                  * "renegotiation_info" extension in the ServerHello message.
                  */
-                this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(serverExtensions);
                 this.serverExtensions.put(EXT_RenegotiationInfo, createRenegotiationInfo(TlsUtils.EMPTY_BYTES));
             }
         }
 
-        if (securityParameters.extendedMasterSecret)
+        if (TlsUtils.isSSL(tlsServerContext))
         {
-            this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(serverExtensions);
+            securityParameters.extendedMasterSecret = false;
+        }
+        else if (securityParameters.isExtendedMasterSecret())
+        {
             TlsExtensionsUtils.addExtendedMasterSecretExtension(serverExtensions);
         }
 
@@ -799,7 +807,7 @@ public class TlsServerProtocol
          * extensions.
          */
 
-        if (this.serverExtensions != null)
+        if (!this.serverExtensions.isEmpty())
         {
             this.securityParameters.encryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(serverExtensions);
 
