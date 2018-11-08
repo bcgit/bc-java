@@ -18,6 +18,7 @@ import java.security.spec.X509EncodedKeySpec;
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -27,6 +28,7 @@ import org.bouncycastle.pqc.jcajce.spec.QTESLAParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
+import org.junit.Assert;
 
 public class QTESLATest
     extends TestCase
@@ -104,6 +106,8 @@ public class QTESLATest
 
         KeyPair kp = kpGen.generateKeyPair();
 
+        Assert.assertEquals(BCObjectIdentifiers.qTESLA_I, SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded()).getAlgorithm().getAlgorithm());
+
         doTestSig(kp);
         doTestKey(kp);
     }
@@ -116,6 +120,8 @@ public class QTESLATest
         kpGen.initialize(new QTESLAParameterSpec(QTESLAParameterSpec.HEURISTIC_III_SIZE), secureRandom);
 
         KeyPair kp = kpGen.generateKeyPair();
+
+        Assert.assertEquals(BCObjectIdentifiers.qTESLA_III_size, SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded()).getAlgorithm().getAlgorithm());
 
         doTestSig(kp);
         doTestKey(kp);
@@ -130,6 +136,8 @@ public class QTESLATest
 
         KeyPair kp = kpGen.generateKeyPair();
 
+        Assert.assertEquals(BCObjectIdentifiers.qTESLA_III_speed, SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded()).getAlgorithm().getAlgorithm());
+
         doTestSig(kp);
         doTestKey(kp);
     }
@@ -143,6 +151,8 @@ public class QTESLATest
 
         KeyPair kp = kpGen.generateKeyPair();
 
+        Assert.assertEquals(BCObjectIdentifiers.qTESLA_p_I, SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded()).getAlgorithm().getAlgorithm());
+
         doTestSig(kp);
         doTestKey(kp);
     }
@@ -155,6 +165,8 @@ public class QTESLATest
         kpGen.initialize(new QTESLAParameterSpec(QTESLAParameterSpec.PROVABLY_SECURE_III), secureRandom);
 
         KeyPair kp = kpGen.generateKeyPair();
+
+        Assert.assertEquals(BCObjectIdentifiers.qTESLA_p_III, SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded()).getAlgorithm().getAlgorithm());
 
         doTestSig(kp);
         doTestKey(kp);
