@@ -13,6 +13,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.asn1.cryptopro;
     exports org.bouncycastle.asn1.dvcs;
     exports org.bouncycastle.asn1.eac;
+    exports org.bouncycastle.asn1.edec;
     exports org.bouncycastle.asn1.esf;
     exports org.bouncycastle.asn1.ess;
     exports org.bouncycastle.asn1.est;
