@@ -5,7 +5,8 @@ import org.bouncycastle.util.Arrays;
 class TlsSessionImpl implements TlsSession
 {
     final byte[] sessionID;
-    SessionParameters sessionParameters;
+    final SessionParameters sessionParameters;
+    boolean resumable;
 
     TlsSessionImpl(byte[] sessionID, SessionParameters sessionParameters)
     {
@@ -13,13 +14,16 @@ class TlsSessionImpl implements TlsSession
         {
             throw new IllegalArgumentException("'sessionID' cannot be null");
         }
-        if (sessionID.length < 1 || sessionID.length > 32)
+        if (sessionID.length > 32)
         {
-            throw new IllegalArgumentException("'sessionID' must have length between 1 and 32 bytes, inclusive");
+            throw new IllegalArgumentException("'sessionID' cannot be longer than 32 bytes");
         }
 
         this.sessionID = Arrays.clone(sessionID);
         this.sessionParameters = sessionParameters;
+        this.resumable = sessionID.length > 0
+            && null != sessionParameters
+            && sessionParameters.isExtendedMasterSecret();
     }
 
     public synchronized SessionParameters exportSessionParameters()
@@ -34,15 +38,11 @@ class TlsSessionImpl implements TlsSession
 
     public synchronized void invalidate()
     {
-        if (this.sessionParameters != null)
-        {
-            this.sessionParameters.clear();
-            this.sessionParameters = null;
-        }
+        this.resumable = false;
     }
 
     public synchronized boolean isResumable()
     {
-        return this.sessionParameters != null;
+        return resumable;
     }
 }

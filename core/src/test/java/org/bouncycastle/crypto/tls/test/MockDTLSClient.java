@@ -80,7 +80,6 @@ public class MockDTLSClient
     {
         Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
         TlsExtensionsUtils.addEncryptThenMACExtension(clientExtensions);
-        TlsExtensionsUtils.addExtendedMasterSecretExtension(clientExtensions);
         {
             /*
              * NOTE: If you are copying test code, do not blindly set these extensions in your own client.
