@@ -24,10 +24,10 @@ public class KeyPairGeneratorSpi
     static
     {
         catLookup.put(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_I), QTESLASecurityCategory.HEURISTIC_I);
-        catLookup.put(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_I), QTESLASecurityCategory.HEURISTIC_III_SIZE);
-        catLookup.put(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_I), QTESLASecurityCategory.HEURISTIC_III_SPEED);
-        catLookup.put(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_I), QTESLASecurityCategory.PROVABLY_SECURE_I);
-        catLookup.put(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_I), QTESLASecurityCategory.PROVABLY_SECURE_III);
+        catLookup.put(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_III_SIZE), QTESLASecurityCategory.HEURISTIC_III_SIZE);
+        catLookup.put(QTESLASecurityCategory.getName(QTESLASecurityCategory.HEURISTIC_III_SPEED), QTESLASecurityCategory.HEURISTIC_III_SPEED);
+        catLookup.put(QTESLASecurityCategory.getName(QTESLASecurityCategory.PROVABLY_SECURE_I), QTESLASecurityCategory.PROVABLY_SECURE_I);
+        catLookup.put(QTESLASecurityCategory.getName(QTESLASecurityCategory.PROVABLY_SECURE_III), QTESLASecurityCategory.PROVABLY_SECURE_III);
     }
 
     private QTESLAKeyGenerationParameters param;
