@@ -512,6 +512,19 @@ public class TlsUtils
         return uints;
     }
 
+    public static int decodeUint16(byte[] buf) throws IOException
+    {
+        if (buf == null)
+        {
+            throw new IllegalArgumentException("'buf' cannot be null");
+        }
+        if (buf.length != 2)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+        return readUint16(buf, 0);
+    }
+
     public static byte[] encodeOpaque8(byte[] buf)
         throws IOException
     {
@@ -523,9 +536,9 @@ public class TlsUtils
     {
         checkUint8(uint);
 
-        byte[] extensionData = new byte[1];
-        writeUint8(uint, extensionData, 0);
-        return extensionData;
+        byte[] encoding = new byte[1];
+        writeUint8(uint, encoding, 0);
+        return encoding;
     }
 
     public static byte[] encodeUint8ArrayWithUint8Length(short[] uints) throws IOException
@@ -533,6 +546,15 @@ public class TlsUtils
         byte[] result = new byte[1 + uints.length];
         writeUint8ArrayWithUint8Length(uints, result, 0);
         return result;
+    }
+
+    public static byte[] encodeUint16(int uint) throws IOException
+    {
+        checkUint16(uint);
+
+        byte[] encoding = new byte[2];
+        writeUint16(uint, encoding, 0);
+        return encoding;
     }
 
     public static byte[] encodeUint16ArrayWithUint16Length(int[] uints) throws IOException
