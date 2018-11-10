@@ -105,6 +105,11 @@ public class ExtensionType
     public static final int cached_info = 25;
 
     /*
+     * RFC 8449
+     */
+    public static final int record_size_limit = 28;
+
+    /*
      * RFC 5077 7.
      */
     public static final int session_ticket = 35;
