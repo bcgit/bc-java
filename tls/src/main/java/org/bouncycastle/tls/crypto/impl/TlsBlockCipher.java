@@ -127,19 +127,18 @@ public class TlsBlockCipher
             ciphertextLimit += blockSize;
         }
 
-        int maxPadding = useExtraPadding ? 255 : blockSize;
-
         // Leave room for the MAC and (block-aligning) padding
+
+        ciphertextLimit += useExtraPadding ? 256 : blockSize;
+
         if (encryptThenMAC)
         {
-            ciphertextLimit += maxPadding;
             ciphertextLimit -= (ciphertextLimit % blockSize);
             ciphertextLimit += macSize;
         }
         else
         {
             ciphertextLimit += macSize;
-            ciphertextLimit += maxPadding;
             ciphertextLimit -= (ciphertextLimit % blockSize);
         }
 
@@ -152,12 +151,6 @@ public class TlsBlockCipher
         int macSize = writeMac.getSize();
 
         int plaintextLimit = ciphertextLimit;
-
-        // An explicit IV consumes 1 block
-        if (useExplicitIV)
-        {
-            plaintextLimit -= blockSize;
-        }
 
         // Leave room for the MAC, and require block-alignment
         if (encryptThenMAC)
@@ -174,6 +167,12 @@ public class TlsBlockCipher
         // Minimum 1 byte of padding
         --plaintextLimit;
 
+        // An explicit IV consumes 1 block
+        if (useExplicitIV)
+        {
+            plaintextLimit -= blockSize;
+        }
+
         return plaintextLimit;
     }
 
@@ -189,16 +188,16 @@ public class TlsBlockCipher
             enc_input_length += macSize;
         }
 
-        int padding_length = blockSize - 1 - (enc_input_length % blockSize);
+        int padding_length = blockSize - (enc_input_length % blockSize);
         if (useExtraPadding)
         {
             // Add a random number of extra blocks worth of padding
-            int maxExtraPadBlocks = (255 - padding_length) / blockSize;
+            int maxExtraPadBlocks = (256 - padding_length) / blockSize;
             int actualExtraPadBlocks = chooseExtraPadBlocks(crypto.getSecureRandom(), maxExtraPadBlocks);
             padding_length += actualExtraPadBlocks * blockSize;
         }
 
-        int totalSize = len + macSize + padding_length + 1;
+        int totalSize = len + macSize + padding_length;
         if (useExplicitIV)
         {
             totalSize += blockSize;
@@ -229,9 +228,10 @@ public class TlsBlockCipher
             outOff += mac.length;
         }
 
-        for (int i = 0; i <= padding_length; i++)
+        byte padByte = (byte)(padding_length - 1);
+        for (int i = 0; i < padding_length; ++i)
         {
-            outBuf[outOff++] = (byte)padding_length;
+            outBuf[outOff++] = padByte;
         }
 
         encryptCipher.doFinal(outBuf, blocks_start, outOff - blocks_start, outBuf, blocks_start);
