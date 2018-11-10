@@ -18,6 +18,7 @@ public class TlsExtensionsUtils
     public static final Integer EXT_heartbeat = Integers.valueOf(ExtensionType.heartbeat);
     public static final Integer EXT_max_fragment_length = Integers.valueOf(ExtensionType.max_fragment_length);
     public static final Integer EXT_padding = Integers.valueOf(ExtensionType.padding);
+    public static final Integer EXT_record_size_limit = Integers.valueOf(ExtensionType.record_size_limit);
     public static final Integer EXT_server_certificate_type = Integers.valueOf(ExtensionType.server_certificate_type);
     public static final Integer EXT_server_name = Integers.valueOf(ExtensionType.server_name);
     public static final Integer EXT_status_request = Integers.valueOf(ExtensionType.status_request);
@@ -87,6 +88,12 @@ public class TlsExtensionsUtils
         throws IOException
     {
         extensions.put(EXT_padding, createPaddingExtension(dataLength));
+    }
+
+    public static void addRecordSizeLimitExtension(Hashtable extensions, int recordSizeLimit)
+        throws IOException
+    {
+        extensions.put(EXT_record_size_limit, createRecordSizeLimitExtension(recordSizeLimit));
     }
 
     public static void addServerCertificateTypeExtensionClient(Hashtable extensions, short[] certificateTypes)
@@ -192,6 +199,13 @@ public class TlsExtensionsUtils
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_padding);
         return extensionData == null ? -1 : readPaddingExtension(extensionData);
+    }
+
+    public static int getRecordSizeLimitExtension(Hashtable extensions)
+        throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_record_size_limit);
+        return extensionData == null ? -1 : readRecordSizeLimitExtension(extensionData);
     }
 
     public static short[] getServerCertificateTypeExtensionClient(Hashtable extensions)
@@ -375,6 +389,17 @@ public class TlsExtensionsUtils
     {
         TlsUtils.checkUint16(dataLength);
         return new byte[dataLength];
+    }
+
+    public static byte[] createRecordSizeLimitExtension(int recordSizeLimit)
+        throws IOException
+    {
+        if (recordSizeLimit < 64)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return TlsUtils.encodeUint16(recordSizeLimit);
     }
 
     public static byte[] createServerNameExtension(ServerNameList serverNameList)
@@ -599,6 +624,18 @@ public class TlsExtensionsUtils
             }
         }
         return extensionData.length;
+    }
+
+    public static int readRecordSizeLimitExtension(byte[] extensionData)
+        throws IOException
+    {
+        int recordSizeLimit = TlsUtils.decodeUint16(extensionData);
+        if (recordSizeLimit < 64)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        return recordSizeLimit;
     }
 
     public static ServerNameList readServerNameExtension(byte[] extensionData)
