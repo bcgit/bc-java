@@ -79,7 +79,6 @@ public class TlsClientProtocol
 
         this.tlsClientContext = new TlsClientContextImpl(tlsClient.getCrypto(), securityParameters);
 
-        this.securityParameters.clientRandom = createRandomBlock(tlsClient.shouldUseGMTUnixTime(), tlsClientContext);
         this.securityParameters.extendedPadding = tlsClient.shouldUseExtendedPadding();
 
         this.tlsClient.init(tlsClientContext);
@@ -609,6 +608,10 @@ public class TlsClientProtocol
          * Read the server random
          */
         this.securityParameters.serverRandom = TlsUtils.readFully(32, buf);
+        if (server_version != tlsClientContext.getClientVersion())
+        {
+            TlsUtils.checkDowngradeMarker(server_version, this.securityParameters.serverRandom);
+        }
 
         this.selectedSessionID = TlsUtils.readOpaque8(buf);
         if (this.selectedSessionID.length > 32)
@@ -880,6 +883,7 @@ public class TlsClientProtocol
 
         TlsUtils.writeVersion(client_version, message);
 
+        this.securityParameters.clientRandom = createRandomBlock(tlsClient.shouldUseGMTUnixTime(), tlsClientContext);
         message.write(this.securityParameters.getClientRandom());
 
         TlsUtils.writeOpaque8(session_id, message);

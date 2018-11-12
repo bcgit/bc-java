@@ -47,7 +47,6 @@ public class DTLSServerProtocol
         state.server = server;
         state.serverContext = new TlsServerContextImpl(server.getCrypto(), securityParameters);
 
-        securityParameters.serverRandom = TlsProtocol.createRandomBlock(server.shouldUseGMTUnixTime(), state.serverContext);
         securityParameters.extendedPadding = server.shouldUseExtendedPadding();
 
         server.init(state.serverContext);
@@ -348,8 +347,8 @@ public class DTLSServerProtocol
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
+        ProtocolVersion server_version = state.server.getServerVersion();
         {
-            ProtocolVersion server_version = state.server.getServerVersion();
             if (!server_version.isEqualOrEarlierVersionOf(state.serverContext.getClientVersion()))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -364,6 +363,11 @@ public class DTLSServerProtocol
             TlsUtils.writeVersion(state.serverContext.getServerVersion(), buf);
         }
 
+        securityParameters.serverRandom = TlsProtocol.createRandomBlock(state.server.shouldUseGMTUnixTime(), state.serverContext);
+        if (server_version != state.server.getMaximumVersion())
+        {
+            TlsUtils.writeDowngradeMarker(server_version, securityParameters.getServerRandom());
+        }
         buf.write(securityParameters.getServerRandom());
 
         /*

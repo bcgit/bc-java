@@ -37,7 +37,6 @@ public class DTLSClientProtocol
         state.client = client;
         state.clientContext = new TlsClientContextImpl(client.getCrypto(), securityParameters);
 
-        securityParameters.clientRandom = TlsProtocol.createRandomBlock(client.shouldUseGMTUnixTime(), state.clientContext);
         securityParameters.extendedPadding = client.shouldUseExtendedPadding();
 
         client.init(state.clientContext);
@@ -92,7 +91,7 @@ public class DTLSClientProtocol
         SecurityParameters securityParameters = state.clientContext.getSecurityParameters();
         DTLSReliableHandshake handshake = new DTLSReliableHandshake(state.clientContext, recordLayer);
 
-        byte[] clientHelloBody = generateClientHello(state, state.client);
+        byte[] clientHelloBody = generateClientHello(state);
 
         recordLayer.setWriteVersion(ProtocolVersion.DTLSv10);
 
@@ -382,10 +381,10 @@ public class DTLSClientProtocol
         return buf.toByteArray();
     }
 
-    protected byte[] generateClientHello(ClientHandshakeState state, TlsClient client)
+    protected byte[] generateClientHello(ClientHandshakeState state)
         throws IOException
     {
-        ProtocolVersion client_version = client.getClientVersion();
+        ProtocolVersion client_version = state.client.getClientVersion();
         if (!client_version.isDTLS())
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -394,8 +393,6 @@ public class DTLSClientProtocol
         TlsClientContextImpl context = state.clientContext;
 
         context.setClientVersion(client_version);
-
-        SecurityParameters securityParameters = context.getSecurityParameters();
 
         // Session ID
         byte[] session_id = TlsUtils.EMPTY_BYTES;
@@ -408,9 +405,9 @@ public class DTLSClientProtocol
             }
         }
 
-        boolean fallback = client.isFallback();
+        boolean fallback = state.client.isFallback();
 
-        state.offeredCipherSuites = client.getCipherSuites();
+        state.offeredCipherSuites = state.client.getCipherSuites();
 
         if (session_id.length > 0 && state.sessionParameters != null)
         {
@@ -422,7 +419,7 @@ public class DTLSClientProtocol
             }
         }
 
-        state.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(client.getClientExtensions());
+        state.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(state.client.getClientExtensions());
 
         TlsExtensionsUtils.addExtendedMasterSecretExtension(state.clientExtensions);
 
@@ -430,6 +427,8 @@ public class DTLSClientProtocol
 
         TlsUtils.writeVersion(client_version, buf);
 
+        SecurityParameters securityParameters = context.getSecurityParameters();
+        securityParameters.clientRandom = TlsProtocol.createRandomBlock(state.client.shouldUseGMTUnixTime(), state.clientContext);
         buf.write(securityParameters.getClientRandom());
 
         TlsUtils.writeOpaque8(session_id, buf);
@@ -619,6 +618,10 @@ public class DTLSClientProtocol
         reportServerVersion(state, server_version);
 
         securityParameters.serverRandom = TlsUtils.readFully(32, buf);
+        if (server_version != state.clientContext.getClientVersion())
+        {
+            TlsUtils.checkDowngradeMarker(server_version, securityParameters.serverRandom);
+        }
 
         state.selectedSessionID = TlsUtils.readOpaque8(buf);
         if (state.selectedSessionID.length > 32)
