@@ -129,6 +129,11 @@ public class TlsTestConfig
     public ProtocolVersion serverMinimumVersion = null;
 
     /**
+     * Configures a protocol version the server will unconditionally negotiate. Ignored if null.
+     */
+    public ProtocolVersion serverNegotiateVersion = null;
+
+    /**
      * Configures the connection end that a fatal alert is expected to be raised. Use ConnectionEnd.* constants.
      */
     public int expectFatalAlertConnectionEnd = -1;

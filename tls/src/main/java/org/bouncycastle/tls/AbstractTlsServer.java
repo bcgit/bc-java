@@ -68,16 +68,6 @@ public abstract class AbstractTlsServer
 
     protected abstract int[] getCipherSuites();
 
-    protected ProtocolVersion getMaximumVersion()
-    {
-        return ProtocolVersion.TLSv12;
-    }
-
-    protected ProtocolVersion getMinimumVersion()
-    {
-        return ProtocolVersion.TLSv10;
-    }
-
     protected int getMaximumNegotiableCurveBits()
     {
         // NOTE: BC supports all the current set of point formats so we don't check them here
@@ -339,6 +329,16 @@ public abstract class AbstractTlsServer
 //        {
 //            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
 //        }
+    }
+
+    public ProtocolVersion getMaximumVersion()
+    {
+        return ProtocolVersion.TLSv12;
+    }
+
+    public ProtocolVersion getMinimumVersion()
+    {
+        return ProtocolVersion.TLSv10;
     }
 
     public ProtocolVersion getServerVersion()

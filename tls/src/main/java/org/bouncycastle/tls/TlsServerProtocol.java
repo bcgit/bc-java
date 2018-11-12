@@ -75,7 +75,6 @@ public class TlsServerProtocol
 
         this.tlsServerContext = new TlsServerContextImpl(tlsServer.getCrypto(), securityParameters);
 
-        this.securityParameters.serverRandom = createRandomBlock(tlsServer.shouldUseGMTUnixTime(), tlsServerContext);
         this.securityParameters.extendedPadding = tlsServer.shouldUseExtendedPadding();
 
         this.tlsServer.init(tlsServerContext);
@@ -632,8 +631,8 @@ public class TlsServerProtocol
     {
         HandshakeMessage message = new HandshakeMessage(HandshakeType.server_hello);
 
+        ProtocolVersion server_version = tlsServer.getServerVersion();
         {
-            ProtocolVersion server_version = tlsServer.getServerVersion();
             if (!server_version.isEqualOrEarlierVersionOf(getContext().getClientVersion()))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -647,7 +646,12 @@ public class TlsServerProtocol
             TlsUtils.writeVersion(server_version, message);
         }
 
-        message.write(this.securityParameters.serverRandom);
+        this.securityParameters.serverRandom = createRandomBlock(tlsServer.shouldUseGMTUnixTime(), tlsServerContext);
+        if (server_version != tlsServer.getMaximumVersion())
+        {
+            TlsUtils.writeDowngradeMarker(server_version, this.securityParameters.getServerRandom());
+        }
+        message.write(this.securityParameters.getServerRandom());
 
         /*
          * The server may return an empty session_id to indicate that the session will not be cached

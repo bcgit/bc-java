@@ -55,7 +55,7 @@ class MockPSKTlsServer
         }
     }
 
-    protected ProtocolVersion getMinimumVersion()
+    public ProtocolVersion getMinimumVersion()
     {
         return ProtocolVersion.TLSv12;
     }

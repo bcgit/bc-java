@@ -228,6 +228,20 @@ public class TlsTestSuite extends TestSuite
 
             addTestCase(testSuite, c, prefix + "GoodOptionalCertReqDeclined");
         }
+
+        /*
+         * Server generates downgraded (RFC 8446) 1.1 ServerHello. We expect fatal alert
+         * (illegal_parameter) from the client.
+         */
+        if (!TlsUtils.isTLSv12(version))
+        {
+            TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
+            c.serverMaximumVersion = ProtocolVersion.TLSv12;
+            c.serverNegotiateVersion = version;
+            c.expectClientFatalAlert(AlertDescription.illegal_parameter);
+
+            addTestCase(testSuite, c, prefix + "BadDowngrade");
+        }
     }
 
     private static void addTestCase(TestSuite testSuite, TlsTestConfig config, String name)

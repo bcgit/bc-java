@@ -35,6 +35,7 @@ import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Shorts;
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
 
 /**
@@ -42,6 +43,9 @@ import org.bouncycastle.util.io.Streams;
  */
 public class TlsUtils
 {
+    private static byte[] DOWNGRADE_TLS11 = Hex.decode("444F574E47524400");
+    private static byte[] DOWNGRADE_TLS12 = Hex.decode("444F574E47524401");
+
     // Map OID strings to HashAlgorithm values
     private static final Hashtable CERT_SIG_ALG_OIDS = createCertSigAlgOIDs();
 
@@ -1406,9 +1410,10 @@ public class TlsUtils
             ? new CombinedHash(crypto)
             : crypto.createHash(algorithm.getHash());
 
-        SecurityParameters securityParameters = context.getSecurityParameters();
-        h.update(securityParameters.clientRandom, 0, securityParameters.clientRandom.length);
-        h.update(securityParameters.serverRandom, 0, securityParameters.serverRandom.length);
+        SecurityParameters sp = context.getSecurityParameters();
+        byte[] cr = sp.getClientRandom(), sr = sp.getServerRandom();
+        h.update(cr, 0, cr.length);
+        h.update(sr, 0, sr.length);
         buf.updateDigest(h);
 
         return h.calculateHash();
@@ -1419,7 +1424,7 @@ public class TlsUtils
     {
         SecurityParameters securityParameters = context.getSecurityParameters();
         // NOTE: The implicit copy here is intended (and important)
-        output.write(Arrays.concatenate(securityParameters.clientRandom, securityParameters.serverRandom));
+        output.write(Arrays.concatenate(securityParameters.getClientRandom(), securityParameters.getServerRandom()));
         buf.copyTo(output);
         output.close();
     }
@@ -3534,5 +3539,49 @@ public class TlsUtils
         }
 
         return (TlsCredentialedSigner)credentials;
+    }
+
+    private static void checkDowngradeMarker(byte[] randomBlock, byte[] downgradeMarker) throws IOException
+    {
+        byte[] bytes = Arrays.copyOfRange(randomBlock, randomBlock.length - downgradeMarker.length, randomBlock.length);
+        if (Arrays.constantTimeAreEqual(bytes, downgradeMarker))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+    }
+
+    static void checkDowngradeMarker(ProtocolVersion version, byte[] randomBlock) throws IOException
+    {
+        version = version.getEquivalentTLSVersion();
+
+        if (version.isEqualOrEarlierVersionOf(ProtocolVersion.TLSv11))
+        {
+            checkDowngradeMarker(randomBlock, DOWNGRADE_TLS11);
+        }
+        if (version.isEqualOrEarlierVersionOf(ProtocolVersion.TLSv12))
+        {
+            checkDowngradeMarker(randomBlock, DOWNGRADE_TLS12);
+        }
+    }
+
+    static void writeDowngradeMarker(ProtocolVersion version, byte[] randomBlock) throws IOException
+    {
+        version = version.getEquivalentTLSVersion();
+
+        byte[] marker;
+        if (ProtocolVersion.TLSv12 == version)
+        {
+            marker = DOWNGRADE_TLS12;
+        }
+        else if (version.isEqualOrEarlierVersionOf(ProtocolVersion.TLSv11))
+        {
+            marker = DOWNGRADE_TLS11;
+        }
+        else
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        System.arraycopy(marker, 0, randomBlock, randomBlock.length - marker.length, marker.length);
     }
 }
