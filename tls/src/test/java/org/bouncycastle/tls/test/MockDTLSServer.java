@@ -86,12 +86,12 @@ public class MockDTLSServer
         }
     }
 
-    protected ProtocolVersion getMaximumVersion()
+    public ProtocolVersion getMaximumVersion()
     {
         return ProtocolVersion.DTLSv12;
     }
 
-    protected ProtocolVersion getMinimumVersion()
+    public ProtocolVersion getMinimumVersion()
     {
         return ProtocolVersion.DTLSv10;
     }

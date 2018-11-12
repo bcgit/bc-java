@@ -91,9 +91,15 @@ class ProvTlsServer
     }
 
     @Override
-    protected ProtocolVersion getMaximumVersion()
+    public ProtocolVersion getMaximumVersion()
     {
         return manager.getContext().getMaximumVersion(sslParameters.getProtocols());
+    }
+
+    @Override
+    public ProtocolVersion getMinimumVersion()
+    {
+        return manager.getContext().getMinimumVersion(sslParameters.getProtocols());
     }
 
     @Override

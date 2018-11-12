@@ -19,8 +19,8 @@ public class TlsProtocolTest
     {
         SecureRandom secureRandom = new SecureRandom();
 
-        PipedInputStream clientRead = new PipedInputStream();
-        PipedInputStream serverRead = new PipedInputStream();
+        PipedInputStream clientRead = new PipedInputStream(16384);
+        PipedInputStream serverRead = new PipedInputStream(16384);
         PipedOutputStream clientWrite = new PipedOutputStream(serverRead);
         PipedOutputStream serverWrite = new PipedOutputStream(clientRead);
 

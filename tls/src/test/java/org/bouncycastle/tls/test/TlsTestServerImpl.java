@@ -69,7 +69,7 @@ class TlsTestServerImpl
         }
     }
 
-    protected ProtocolVersion getMaximumVersion()
+    public ProtocolVersion getMaximumVersion()
     {
         if (config.serverMaximumVersion != null)
         {
@@ -79,7 +79,7 @@ class TlsTestServerImpl
         return super.getMaximumVersion();
     }
 
-    protected ProtocolVersion getMinimumVersion()
+    public ProtocolVersion getMinimumVersion()
     {
         if (config.serverMinimumVersion != null)
         {
@@ -145,7 +145,14 @@ class TlsTestServerImpl
 
     public ProtocolVersion getServerVersion() throws IOException
     {
-        ProtocolVersion serverVersion = super.getServerVersion();
+        if (null != config.serverNegotiateVersion)
+        {
+            serverVersion = config.serverNegotiateVersion;
+        }
+        else
+        {
+            super.getServerVersion();
+        }
 
         if (TlsTestConfig.DEBUG)
         {

@@ -73,7 +73,7 @@ class MockSRPTlsServer
         }
     }
 
-    protected ProtocolVersion getMinimumVersion()
+    public ProtocolVersion getMinimumVersion()
     {
         return ProtocolVersion.TLSv12;
     }
