@@ -227,7 +227,6 @@ class Pack
      * Description:	Decode Private Key for Heuristic qTESLA Security Category-3 (Option for Size)
      *
      * @param        seed                    Kappa-Bit Seed
-     * @param        seedOffset                Starting Point of the Kappa-Bit Seed
      * @param        secretPolynomial        Coefficients of the Secret Polynomial
      * @param        errorPolynomial            Coefficients of the Error Polynomial
      * @param        privateKey                Private Key
