@@ -69,9 +69,6 @@ public interface TlsClient
     void processServerSupplementalData(Vector serverSupplementalData)
         throws IOException;
 
-    TlsKeyExchange getKeyExchange()
-        throws IOException;
-
     TlsAuthentication getAuthentication()
         throws IOException;
 
