@@ -5,7 +5,7 @@ final class PolynomialHeuristic
 
     /* Heuristic qTESLA Security Category-1 */
 
-    public static final long[] ZETA_I = {                    /* 512-Entry */
+    public static final int[] ZETA_I = {                    /* 512-Entry */
 
         3359531, 2189080, 370173, 677362, 3132616, 2989204, 2362181, 1720831,
         1203721, 3239574, 641414, 3932234, 3634017, 2251707, 355329, 4152265,
@@ -74,7 +74,7 @@ final class PolynomialHeuristic
 
     };
 
-    public static final long[] ZETA_INVERSE_I = {            /* 512-Entry */
+    public static final int[] ZETA_INVERSE_I = {            /* 512-Entry */
 
         1217030, 3955871, 1857368, 3510054, 4178747, 1460055, 2808982, 11389,
         2418029, 1145469, 2310698, 463612, 2980664, 2626244, 2213336, 4194301,
@@ -145,7 +145,7 @@ final class PolynomialHeuristic
 
     /* Heuristic qTESLA Security Category-3 (Option for Size) */
 
-    public static final long[] ZETA_III_SIZE = {            /* 1024-Entry */
+    public static final int[] ZETA_III_SIZE = {            /* 1024-Entry */
 
         671800, 4181291, 975654, 970836, 1459996, 2949013, 1578790, 3375131,
         177347, 2024971, 3299069, 2879655, 1061156, 3772041, 1726661, 2646527,
@@ -278,7 +278,7 @@ final class PolynomialHeuristic
 
     };
 
-    public static final long[] ZETA_INVERSE_III_SIZE = {    /* 1024-Entry */
+    public static final int[] ZETA_INVERSE_III_SIZE = {    /* 1024-Entry */
 
         1046366, 1210067, 2981999, 3349117, 813668, 527640, 2125575, 3636695,
         1203066, 1990492, 971109, 2183543, 1700032, 155624, 3408997, 1055718,
@@ -413,7 +413,7 @@ final class PolynomialHeuristic
 
     /* Heuristic qTESLA Security Category-3 (Option for Speed) */
 
-    public static final long[] ZETA_III_SPEED = {            /* 1024-Entry */
+    public static final int[] ZETA_III_SPEED = {            /* 1024-Entry */
 
         4751355, 3795849, 4203855, 2135008, 6005859, 8231721, 5028848, 2129664,
         7697675, 4755217, 4725508, 3239612, 6448681, 1076080, 3836135, 157994,
@@ -546,7 +546,7 @@ final class PolynomialHeuristic
 
     };
 
-    public static final long[] ZETA_INVERSE_III_SPEED = {    /* 1024-Entry */
+    public static final int[] ZETA_INVERSE_III_SPEED = {    /* 1024-Entry */
 
         7439044, 4842628, 2695034, 1099954, 2820968, 4605515, 3696040, 7745805,
         3098817, 5485330, 7571874, 817786, 383326, 5571687, 1254444, 7133070,
