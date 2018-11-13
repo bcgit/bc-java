@@ -3,7 +3,6 @@ package org.bouncycastle.tls;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCertificate;
@@ -37,24 +36,21 @@ public class TlsECDHEKeyExchange
     protected TlsCertificate serverCertificate = null;
     protected TlsAgreement agreement;
 
-    public TlsECDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms,
-        TlsECConfigVerifier ecConfigVerifier, short[] clientECPointFormats, short[] serverECPointFormats)
-    {
-        this(keyExchange, supportedSignatureAlgorithms, ecConfigVerifier, null, clientECPointFormats,
-            serverECPointFormats);
-    }
-
-    public TlsECDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsECConfig ecConfig,
+    public TlsECDHEKeyExchange(int keyExchange, TlsECConfigVerifier ecConfigVerifier, short[] clientECPointFormats,
         short[] serverECPointFormats)
     {
-        this(keyExchange, supportedSignatureAlgorithms, null, ecConfig, null, serverECPointFormats);
+        this(keyExchange, ecConfigVerifier, null, clientECPointFormats, serverECPointFormats);
     }
 
-    private TlsECDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms,
-        TlsECConfigVerifier ecConfigVerifier, TlsECConfig ecConfig, short[] clientECPointFormats,
-        short[] serverECPointFormats)
+    public TlsECDHEKeyExchange(int keyExchange, TlsECConfig ecConfig, short[] serverECPointFormats)
     {
-        super(checkKeyExchange(keyExchange), supportedSignatureAlgorithms);
+        this(keyExchange, null, ecConfig, null, serverECPointFormats);
+    }
+
+    private TlsECDHEKeyExchange(int keyExchange, TlsECConfigVerifier ecConfigVerifier, TlsECConfig ecConfig,
+        short[] clientECPointFormats, short[] serverECPointFormats)
+    {
+        super(checkKeyExchange(keyExchange));
 
         this.ecConfigVerifier = ecConfigVerifier;
         this.ecConfig = ecConfig;
@@ -74,7 +70,7 @@ public class TlsECDHEKeyExchange
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
-        this.serverCertificate = checkSigAlgOfServerCerts(serverCertificate);
+        this.serverCertificate = serverCertificate.getCertificateAt(0);
     }
 
     public boolean requiresServerKeyExchange()
@@ -106,8 +102,7 @@ public class TlsECDHEKeyExchange
 
         byte[] point = TlsUtils.readOpaque8(teeIn);
 
-        TlsUtils.verifyServerKeyExchangeSignature(context, input, keyExchange, supportedSignatureAlgorithms,
-            serverCertificate, digestBuffer);
+        TlsUtils.verifyServerKeyExchangeSignature(context, input, keyExchange, serverCertificate, digestBuffer);
 
         this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
 

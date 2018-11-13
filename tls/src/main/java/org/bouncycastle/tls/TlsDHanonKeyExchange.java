@@ -43,7 +43,7 @@ public class TlsDHanonKeyExchange
 
     private TlsDHanonKeyExchange(int keyExchange, TlsDHConfigVerifier dhConfigVerifier, TlsDHConfig dhConfig)
     {
-        super(checkKeyExchange(keyExchange), null);
+        super(checkKeyExchange(keyExchange));
 
         this.dhConfigVerifier = dhConfigVerifier;
         this.dhConfig = dhConfig;

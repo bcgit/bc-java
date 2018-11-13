@@ -562,8 +562,7 @@ public class TlsClientProtocol
         this.tlsClient.processServerSupplementalData(serverSupplementalData);
         this.connection_state = CS_SERVER_SUPPLEMENTAL_DATA;
 
-        this.keyExchange = tlsClient.getKeyExchange();
-        this.keyExchange.init(getContext());
+        this.keyExchange = TlsUtils.initKeyExchange(tlsClientContext, tlsClient);
     }
 
     protected void receiveNewSessionTicketMessage(ByteArrayInputStream buf)
@@ -876,6 +875,8 @@ public class TlsClientProtocol
         }
 
         this.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(this.tlsClient.getClientExtensions());
+
+        this.securityParameters.clientSigAlgs = TlsUtils.getSignatureAlgorithmsExtension(clientExtensions);
 
         TlsExtensionsUtils.addExtendedMasterSecretExtension(this.clientExtensions);
 

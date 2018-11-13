@@ -28,7 +28,6 @@ abstract class AbstractTlsContext
 
     private TlsCrypto crypto;
     private TlsNonceGenerator nonceGenerator;
-    private TlsPeerOptions peerOptions = new TlsPeerOptions();
     private SecurityParameters securityParameters;
 
     private ProtocolVersion clientVersion = null;
@@ -51,11 +50,6 @@ abstract class AbstractTlsContext
     public TlsNonceGenerator getNonceGenerator()
     {
         return nonceGenerator;
-    }
-
-    public TlsPeerOptions getPeerOptions()
-    {
-        return peerOptions;
     }
 
     public SecurityParameters getSecurityParameters()

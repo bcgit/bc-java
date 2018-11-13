@@ -152,7 +152,7 @@ public abstract class DefaultTlsServer
 
     protected TlsKeyExchange createDHKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createDHKeyExchangeServer(keyExchange, supportedSignatureAlgorithms);
+        return keyExchangeFactory.createDHKeyExchangeServer(keyExchange);
     }
 
     protected TlsKeyExchange createDHanonKeyExchange(int keyExchange) throws IOException
@@ -162,27 +162,27 @@ public abstract class DefaultTlsServer
 
     protected TlsKeyExchange createDHEKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createDHEKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, selectDHConfig());
+        return keyExchangeFactory.createDHEKeyExchangeServer(keyExchange, selectDHConfig());
     }
 
     protected TlsKeyExchange createECDHKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createECDHKeyExchangeServer(keyExchange, supportedSignatureAlgorithms);
+        return keyExchangeFactory.createECDHKeyExchangeServer(keyExchange);
     }
 
     protected TlsKeyExchange createECDHanonKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createECDHanonKeyExchangeServer(keyExchange, selectECDHConfig(), serverECPointFormats);
+        return keyExchangeFactory.createECDHanonKeyExchangeServer(keyExchange, selectECDHConfig(),
+            serverECPointFormats);
     }
 
     protected TlsKeyExchange createECDHEKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createECDHEKeyExchangeServer(keyExchange, supportedSignatureAlgorithms, selectECDHConfig(),
-            serverECPointFormats);
+        return keyExchangeFactory.createECDHEKeyExchangeServer(keyExchange, selectECDHConfig(), serverECPointFormats);
     }
 
     protected TlsKeyExchange createRSAKeyExchange() throws IOException
     {
-        return keyExchangeFactory.createRSAKeyExchange(supportedSignatureAlgorithms);
+        return keyExchangeFactory.createRSAKeyExchange();
     }
 }
