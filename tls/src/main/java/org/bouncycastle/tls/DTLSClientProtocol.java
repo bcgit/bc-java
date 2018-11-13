@@ -618,7 +618,7 @@ public class DTLSClientProtocol
         reportServerVersion(state, server_version);
 
         securityParameters.serverRandom = TlsUtils.readFully(32, buf);
-        if (server_version != state.clientContext.getClientVersion())
+        if (!state.clientContext.getClientVersion().equals(server_version))
         {
             TlsUtils.checkDowngradeMarker(server_version, securityParameters.serverRandom);
         }

@@ -608,7 +608,7 @@ public class TlsClientProtocol
          * Read the server random
          */
         this.securityParameters.serverRandom = TlsUtils.readFully(32, buf);
-        if (server_version != tlsClientContext.getClientVersion())
+        if (!tlsClientContext.getClientVersion().equals(server_version))
         {
             TlsUtils.checkDowngradeMarker(server_version, this.securityParameters.serverRandom);
         }
