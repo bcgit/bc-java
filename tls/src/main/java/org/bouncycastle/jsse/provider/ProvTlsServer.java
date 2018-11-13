@@ -320,7 +320,7 @@ class ProvTlsServer
         String[] protocols = sslParameters.getProtocols();
         if (protocols != null && protocols.length > 0)
         {
-            for (ProtocolVersion version = clientVersion; version != null; version = version.getPreviousVersion())
+            for (ProtocolVersion version = context.getClientVersion(); version != null; version = version.getPreviousVersion())
             {
                 String versionString = manager.getContext().getProtocolString(version);
                 if (versionString != null && JsseUtils.contains(protocols, versionString))
@@ -519,7 +519,7 @@ class ProvTlsServer
         {
             short signatureAlgorithm = TlsUtils.getLegacySignatureAlgorithmServer(keyExchangeAlgorithm);
             SignatureAndHashAlgorithm sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
-                supportedSignatureAlgorithms, signatureAlgorithm);
+                context.getSecurityParameters().getClientSigAlgs(), signatureAlgorithm);
 
             // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
             this.credentials = new JcaDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), (JcaTlsCrypto)crypto,

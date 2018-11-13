@@ -1559,9 +1559,8 @@ public class TlsUtils
         digitallySigned.encode(digestBuffer);
     }
 
-    static void verifyServerKeyExchangeSignature(TlsContext context, InputStream signatureInput, int keyExchangeAlgorithm,
-        Vector supportedSignatureAlgorithms, TlsCertificate serverCertificate, DigestInputBuffer digestBuffer
-        ) throws IOException
+    static void verifyServerKeyExchangeSignature(TlsContext context, InputStream signatureInput,
+        int keyExchangeAlgorithm, TlsCertificate serverCertificate, DigestInputBuffer digestBuffer) throws IOException
     {
         DigitallySigned digitallySigned = DigitallySigned.parse(context, signatureInput);
 
@@ -1581,7 +1580,7 @@ public class TlsUtils
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
 
-            verifySupportedSignatureAlgorithm(supportedSignatureAlgorithms, sigAndHashAlg);
+            verifySupportedSignatureAlgorithm(context.getSecurityParameters().getClientSigAlgs(), sigAndHashAlg);
         }
 
         TlsVerifier verifier = serverCertificate.createVerifier(signatureAlgorithm);
@@ -3307,48 +3306,128 @@ public class TlsUtils
         handshakeHash.sealHashAlgorithms();
     }
 
+    static TlsKeyExchange initKeyExchange(TlsContext context, TlsPeer peer) throws IOException
+    {
+        TlsKeyExchange keyExchange = peer.getKeyExchange();
+        keyExchange.init(context);
+
+        /*
+         * Process the raw signature_algorithms extension sent by the client (if any) into an
+         * effective value based on the negotiated protocol version and/or the defaults for the
+         * selected key exchange.
+         */
+        {
+            ProtocolVersion clientVersion = context.getClientVersion(), serverVersion = context.getServerVersion();
+            SecurityParameters securityParameters = context.getSecurityParameters();
+    
+            if (null == securityParameters.getClientSigAlgs())
+            {
+                if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(serverVersion))
+                {
+                    short signatureAlgorithm = TlsUtils.getLegacySignatureAlgorithmServerCert(
+                        keyExchange.getKeyExchangeAlgorithm());
+
+                    securityParameters.clientSigAlgs = TlsUtils.getDefaultSignatureAlgorithms(signatureAlgorithm);
+                }
+            }
+            else
+            {
+                if (!TlsUtils.isSignatureAlgorithmsExtensionAllowed(clientVersion))
+                {
+                    throw new IllegalStateException("signature_algorithms extension not allowed for " + clientVersion);
+                }
+                if (!TlsUtils.isSignatureAlgorithmsExtensionAllowed(serverVersion))
+                {
+                    securityParameters.clientSigAlgs = null;
+                }
+            }
+        }
+
+        return keyExchange;
+    }
+
     static void checkSigAlgOfClientCerts(TlsContext context, Certificate clientCertificate, CertificateRequest certificateRequest) throws IOException
     {
-        if (context.getPeerOptions().isCheckSigAlgOfPeerCerts())
+        Vector supportedSignatureAlgorithms = certificateRequest.getSupportedSignatureAlgorithms();
+
+        for (int i = 0; i < clientCertificate.getLength(); ++i)
         {
-            Vector supportedSignatureAlgorithms = certificateRequest.getSupportedSignatureAlgorithms();
+            String sigAlgOID = clientCertificate.getCertificateAt(i).getSigAlgOID();
+            SignatureAndHashAlgorithm sigAndHashAlg = TlsUtils.getCertSigAndHashAlg(sigAlgOID);
 
-            for (int i = 0; i < clientCertificate.getLength(); ++i)
+            boolean valid = false;
+            if (null == sigAndHashAlg)
             {
-                String sigAlgOID = clientCertificate.getCertificateAt(i).getSigAlgOID();
-                SignatureAndHashAlgorithm sigAndHashAlg = TlsUtils.getCertSigAndHashAlg(sigAlgOID);
-
-                boolean valid = false;
-                if (null == sigAndHashAlg)
+                // We don't recognize the 'signatureAlgorithm' of the certificate
+            }
+            else if (null == supportedSignatureAlgorithms)
+            {
+                short[] certificateTypes = certificateRequest.getCertificateTypes();
+                for (int j = 0; j < certificateTypes.length; ++j)
                 {
-                    // We don't recognize the 'signatureAlgorithm' of the certificate
-                }
-                else if (null == supportedSignatureAlgorithms)
-                {
-                    short[] certificateTypes = certificateRequest.getCertificateTypes();
-                    for (int j = 0; j < certificateTypes.length; ++j)
+                    if (sigAndHashAlg.getSignature() == getLegacySignatureAlgorithmClientCert(certificateTypes[j]))
                     {
-                        if (sigAndHashAlg.getSignature() == getLegacySignatureAlgorithmClientCert(certificateTypes[j]))
-                        {
-                            valid = true;
-                            break;
-                        }
+                        valid = true;
+                        break;
                     }
                 }
-                else
-                {
-                    /*
-                     * RFC 5246 7.4.2. If the client provided a "signature_algorithms" extension, then
-                     * all certificates provided by the server MUST be signed by a hash/signature algorithm
-                     * pair that appears in that extension.
-                     */
-                    valid = TlsUtils.containsSignatureAlgorithm(supportedSignatureAlgorithms, sigAndHashAlg);
-                }
+            }
+            else
+            {
+                /*
+                 * RFC 5246 7.4.2. If the client provided a "signature_algorithms" extension, then
+                 * all certificates provided by the server MUST be signed by a hash/signature algorithm
+                 * pair that appears in that extension.
+                 */
+                valid = TlsUtils.containsSignatureAlgorithm(supportedSignatureAlgorithms, sigAndHashAlg);
+            }
 
-                if (!valid)
-                {
-                    throw new TlsFatalAlert(AlertDescription.certificate_unknown);
-                }
+            if (!valid)
+            {
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            }
+        }
+    }
+
+    static void checkSigAlgOfServerCerts(TlsContext context, Certificate serverCertificate, TlsKeyExchange keyExchange)
+        throws IOException
+    {
+        Vector clientSigAlgs = context.getSecurityParameters().getClientSigAlgs();
+
+        for (int i = 0; i < serverCertificate.getLength(); ++i)
+        {
+            String sigAlgOID = serverCertificate.getCertificateAt(i).getSigAlgOID();
+            SignatureAndHashAlgorithm sigAndHashAlg = TlsUtils.getCertSigAndHashAlg(sigAlgOID);
+
+            boolean valid = false;
+            if (null == sigAndHashAlg)
+            {
+                // We don't recognize the 'signatureAlgorithm' of the certificate
+            }
+            else if (null == clientSigAlgs)
+            {
+                /*
+                 * RFC 4346 7.4.2. Unless otherwise specified, the signing algorithm for the
+                 * certificate MUST be the same as the algorithm for the certificate key.
+                 */
+                int signatureAlgorithm = TlsUtils.getLegacySignatureAlgorithmServerCert(
+                    keyExchange.getKeyExchangeAlgorithm());
+
+                valid = (signatureAlgorithm == sigAndHashAlg.getSignature()); 
+            }
+            else
+            {
+                /*
+                 * RFC 5246 7.4.2. If the client provided a "signature_algorithms" extension, then
+                 * all certificates provided by the server MUST be signed by a hash/signature algorithm
+                 * pair that appears in that extension.
+                 */
+                valid = TlsUtils.containsSignatureAlgorithm(clientSigAlgs, sigAndHashAlg);
+            }
+
+            if (!valid)
+            {
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown);
             }
         }
     }
@@ -3393,8 +3472,10 @@ public class TlsUtils
         }
         else
         {
-            context.getPeerOptions().checkSigAlgOfPeerCerts = server.shouldCheckSigAlgOfPeerCerts();
-            checkSigAlgOfClientCerts(context, clientCertificate, certificateRequest);
+            if (server.shouldCheckSigAlgOfPeerCerts())
+            {
+                checkSigAlgOfClientCerts(context, clientCertificate, certificateRequest);
+            }
             keyExchange.processClientCertificate(clientCertificate);
         }
 
@@ -3418,14 +3499,17 @@ public class TlsUtils
             // There was no server certificate message; check it's OK
             context.getSecurityParameters().tlsServerEndPoint = TlsUtils.EMPTY_BYTES;
             keyExchange.skipServerCredentials();
+            return;
         }
-        else
+
+        checkTlsFeatures(serverCertificate, clientExtensions, serverExtensions);
+        if (client.shouldCheckSigAlgOfPeerCerts())
         {
-            checkTlsFeatures(serverCertificate, clientExtensions, serverExtensions);
-            context.getPeerOptions().checkSigAlgOfPeerCerts = client.shouldCheckSigAlgOfPeerCerts();
-            keyExchange.processServerCertificate(serverCertificate);
-            clientAuthentication.notifyServerCertificate(new TlsServerCertificateImpl(serverCertificate, serverCertificateStatus));
+            checkSigAlgOfServerCerts(context, serverCertificate, keyExchange);
         }
+        keyExchange.processServerCertificate(serverCertificate);
+
+        clientAuthentication.notifyServerCertificate(new TlsServerCertificateImpl(serverCertificate, serverCertificateStatus));
     }
 
     static SignatureAndHashAlgorithm getCertSigAndHashAlg(String sigAlgOID)

@@ -46,7 +46,7 @@ public class TlsECDHanonKeyExchange
     private TlsECDHanonKeyExchange(int keyExchange, TlsECConfigVerifier ecConfigVerifier, TlsECConfig ecConfig,
         short[] clientECPointFormats, short[] serverECPointFormats)
     {
-        super(checkKeyExchange(keyExchange), null);
+        super(checkKeyExchange(keyExchange));
 
         this.ecConfigVerifier = ecConfigVerifier;
         this.ecConfig = ecConfig;

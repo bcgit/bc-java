@@ -184,8 +184,7 @@ public class DTLSClientProtocol
             state.client.processServerSupplementalData(null);
         }
 
-        state.keyExchange = state.client.getKeyExchange();
-        state.keyExchange.init(state.clientContext);
+        state.keyExchange = TlsUtils.initKeyExchange(state.clientContext, state.client);
 
         Certificate serverCertificate = null;
 
@@ -419,7 +418,11 @@ public class DTLSClientProtocol
             }
         }
 
+        SecurityParameters securityParameters = context.getSecurityParameters();
+
         state.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(state.client.getClientExtensions());
+
+        securityParameters.clientSigAlgs = TlsUtils.getSignatureAlgorithmsExtension(state.clientExtensions);
 
         TlsExtensionsUtils.addExtendedMasterSecretExtension(state.clientExtensions);
 
@@ -427,7 +430,6 @@ public class DTLSClientProtocol
 
         TlsUtils.writeVersion(client_version, buf);
 
-        SecurityParameters securityParameters = context.getSecurityParameters();
         securityParameters.clientRandom = TlsProtocol.createRandomBlock(state.client.shouldUseGMTUnixTime(), state.clientContext);
         buf.write(securityParameters.getClientRandom());
 

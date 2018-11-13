@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCertificate;
@@ -37,28 +36,24 @@ public class TlsPSKKeyExchange
     protected TlsCertificate serverCertificate;
     protected TlsSecret preMasterSecret;
 
-    public TlsPSKKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsPSKIdentity pskIdentity,
-        TlsDHConfigVerifier dhConfigVerifier, TlsECConfigVerifier ecConfigVerifier, short[] clientECPointFormats,
-        short[] serverECPointFormats)
+    public TlsPSKKeyExchange(int keyExchange, TlsPSKIdentity pskIdentity, TlsDHConfigVerifier dhConfigVerifier,
+        TlsECConfigVerifier ecConfigVerifier, short[] clientECPointFormats, short[] serverECPointFormats)
     {
-        this(keyExchange, supportedSignatureAlgorithms, pskIdentity, null, dhConfigVerifier, null, ecConfigVerifier,
-            null, clientECPointFormats, serverECPointFormats);
+        this(keyExchange, pskIdentity, null, dhConfigVerifier, null, ecConfigVerifier, null, clientECPointFormats,
+            serverECPointFormats);
     }
 
-    public TlsPSKKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsPSKIdentity pskIdentity,
-        TlsPSKIdentityManager pskIdentityManager, TlsDHConfig dhConfig, TlsECConfig ecConfig,
-        short[] serverECPointFormats)
+    public TlsPSKKeyExchange(int keyExchange, TlsPSKIdentity pskIdentity, TlsPSKIdentityManager pskIdentityManager,
+        TlsDHConfig dhConfig, TlsECConfig ecConfig, short[] serverECPointFormats)
     {
-        this(keyExchange, supportedSignatureAlgorithms, pskIdentity, pskIdentityManager, null, dhConfig, null, ecConfig,
-            null, serverECPointFormats);
+        this(keyExchange, pskIdentity, pskIdentityManager, null, dhConfig, null, ecConfig, null, serverECPointFormats);
     }
 
-    private TlsPSKKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsPSKIdentity pskIdentity,
-        TlsPSKIdentityManager pskIdentityManager, TlsDHConfigVerifier dhConfigVerifier, TlsDHConfig dhConfig,
-        TlsECConfigVerifier ecConfigVerifier, TlsECConfig ecConfig, short[] clientECPointFormats,
-        short[] serverECPointFormats)
+    private TlsPSKKeyExchange(int keyExchange, TlsPSKIdentity pskIdentity, TlsPSKIdentityManager pskIdentityManager,
+        TlsDHConfigVerifier dhConfigVerifier, TlsDHConfig dhConfig, TlsECConfigVerifier ecConfigVerifier,
+        TlsECConfig ecConfig, short[] clientECPointFormats, short[] serverECPointFormats)
     {
-        super(keyExchange, supportedSignatureAlgorithms);
+        super(keyExchange);
 
         switch (keyExchange)
         {
@@ -106,8 +101,7 @@ public class TlsPSKKeyExchange
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        this.serverCertificate = checkSigAlgOfServerCerts(serverCertificate)
-            .useInRole(ConnectionEnd.server, keyExchange);
+        this.serverCertificate = serverCertificate.getCertificateAt(0).useInRole(ConnectionEnd.server, keyExchange);
     }
 
     public byte[] generateServerKeyExchange() throws IOException

@@ -84,7 +84,7 @@ public class PSKTlsClient
     protected TlsKeyExchange createPSKKeyExchange(int keyExchange, TlsDHConfigVerifier dhConfigVerifier,
         TlsECConfigVerifier ecConfigVerifier) throws IOException
     {
-        return keyExchangeFactory.createPSKKeyExchangeClient(keyExchange, supportedSignatureAlgorithms, pskIdentity,
-            dhConfigVerifier, ecConfigVerifier, clientECPointFormats, serverECPointFormats);
+        return keyExchangeFactory.createPSKKeyExchangeClient(keyExchange, pskIdentity, dhConfigVerifier,
+            ecConfigVerifier, clientECPointFormats, serverECPointFormats);
     }
 }

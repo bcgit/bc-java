@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
-import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsSRP6Client;
@@ -48,20 +47,18 @@ public class TlsSRPKeyExchange
     protected TlsCredentialedSigner serverCredentials = null;
     protected TlsCertificate serverCertificate = null;
 
-    public TlsSRPKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsSRPConfigVerifier srpConfigVerifier,
-        byte[] identity, byte[] password)
+    public TlsSRPKeyExchange(int keyExchange, TlsSRPConfigVerifier srpConfigVerifier, byte[] identity, byte[] password)
     {
-        super(checkKeyExchange(keyExchange), supportedSignatureAlgorithms);
+        super(checkKeyExchange(keyExchange));
 
         this.srpConfigVerifier = srpConfigVerifier;
         this.identity = identity;
         this.password = password;
     }
 
-    public TlsSRPKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, byte[] identity,
-        TlsSRPLoginParameters loginParameters)
+    public TlsSRPKeyExchange(int keyExchange, byte[] identity, TlsSRPLoginParameters loginParameters)
     {
-        super(checkKeyExchange(keyExchange), supportedSignatureAlgorithms);
+        super(checkKeyExchange(keyExchange));
 
         this.identity = identity;
         this.srpConfig = loginParameters.getConfig();
@@ -94,7 +91,7 @@ public class TlsSRPKeyExchange
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        this.serverCertificate = checkSigAlgOfServerCerts(serverCertificate);
+        this.serverCertificate = serverCertificate.getCertificateAt(0);
     }
 
     public boolean requiresServerKeyExchange()
@@ -138,8 +135,7 @@ public class TlsSRPKeyExchange
 
         if (digestBuffer != null)
         {
-            TlsUtils.verifyServerKeyExchangeSignature(context, input, keyExchange, supportedSignatureAlgorithms,
-                serverCertificate, digestBuffer);
+            TlsUtils.verifyServerKeyExchangeSignature(context, input, keyExchange, serverCertificate, digestBuffer);
         }
 
         this.srpConfig = new TlsSRPConfig();
