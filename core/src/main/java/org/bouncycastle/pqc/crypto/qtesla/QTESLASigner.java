@@ -86,10 +86,10 @@ public class QTESLASigner
             QTESLA.signingIIISpeed(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
             break;
         case QTESLASecurityCategory.PROVABLY_SECURE_I:
-            QTESLA.signingPI(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
+            QTESLA.signingIP(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
             break;
         case QTESLASecurityCategory.PROVABLY_SECURE_III:
-            QTESLA.signingPIII(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
+            QTESLA.signingIIIP(sig, message, 0, message.length, privateKey.getSecret(), secureRandom);
             break;
         default:
             throw new IllegalArgumentException("unknown security category: " + privateKey.getSecurityCategory());
