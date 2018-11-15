@@ -723,6 +723,17 @@ public class TlsUtils
         return readFully(length, input);
     }
 
+    public static byte[] readOpaque8(InputStream input, int minLength)
+        throws IOException
+    {
+        short length = readUint8(input);
+        if (length < minLength)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+        return readFully(length, input);
+    }
+
     public static byte[] readOpaque16(InputStream input)
         throws IOException
     {
@@ -730,10 +741,32 @@ public class TlsUtils
         return readFully(length, input);
     }
 
+    public static byte[] readOpaque16(InputStream input, int minLength)
+        throws IOException
+    {
+        int length = readUint16(input);
+        if (length < minLength)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+        return readFully(length, input);
+    }
+
     public static byte[] readOpaque24(InputStream input)
         throws IOException
     {
         int length = readUint24(input);
+        return readFully(length, input);
+    }
+
+    public static byte[] readOpaque24(InputStream input, int minLength)
+        throws IOException
+    {
+        int length = readUint24(input);
+        if (length < minLength)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
         return readFully(length, input);
     }
 

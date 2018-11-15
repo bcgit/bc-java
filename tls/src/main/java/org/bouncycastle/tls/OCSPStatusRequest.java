@@ -102,14 +102,13 @@ public class OCSPStatusRequest
     {
         Vector responderIDList = new Vector();
         {
-            int length = TlsUtils.readUint16(input);
-            if (length > 0)
+            byte[] data = TlsUtils.readOpaque16(input);
+            if (data.length > 0)
             {
-                byte[] data = TlsUtils.readFully(length, input);
                 ByteArrayInputStream buf = new ByteArrayInputStream(data);
                 do
                 {
-                    byte[] derEncoding = TlsUtils.readOpaque16(buf);
+                    byte[] derEncoding = TlsUtils.readOpaque16(buf, 1);
                     ResponderID responderID = ResponderID.getInstance(TlsUtils.readDERObject(derEncoding));
                     responderIDList.addElement(responderID);
                 }
@@ -119,10 +118,9 @@ public class OCSPStatusRequest
 
         Extensions requestExtensions = null;
         {
-            int length = TlsUtils.readUint16(input);
-            if (length > 0)
+            byte[] derEncoding = TlsUtils.readOpaque16(input);
+            if (derEncoding.length > 0)
             {
-                byte[] derEncoding = TlsUtils.readFully(length, input);
                 requestExtensions = Extensions.getInstance(TlsUtils.readDERObject(derEncoding));
             }
         }

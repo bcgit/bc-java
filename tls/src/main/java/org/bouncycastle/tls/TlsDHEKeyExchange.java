@@ -94,7 +94,7 @@ public class TlsDHEKeyExchange
 
         this.dhConfig = TlsDHUtils.receiveDHConfig(dhConfigVerifier, teeIn);
 
-        byte[] y = TlsUtils.readOpaque16(teeIn);
+        byte[] y = TlsUtils.readOpaque16(teeIn, 1);
 
         TlsUtils.verifyServerKeyExchangeSignature(context, input, keyExchange, serverCertificate, digestBuffer);
 
@@ -123,7 +123,7 @@ public class TlsDHEKeyExchange
 
     public void processClientKeyExchange(InputStream input) throws IOException
     {
-        agreement.receivePeerValue(TlsUtils.readOpaque16(input));
+        agreement.receivePeerValue(TlsUtils.readOpaque16(input, 1));
     }
 
     public TlsSecret generatePreMasterSecret() throws IOException

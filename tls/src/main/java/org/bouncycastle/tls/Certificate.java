@@ -159,7 +159,7 @@ public class Certificate
         Vector certificate_list = new Vector();
         while (buf.available() > 0)
         {
-            byte[] derEncoding = TlsUtils.readOpaque24(buf);
+            byte[] derEncoding = TlsUtils.readOpaque24(buf, 1);
             TlsCertificate cert = context.getCrypto().createCertificate(derEncoding);
             
             if (certificate_list.isEmpty() && endPointHashOutput != null)
