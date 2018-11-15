@@ -174,7 +174,7 @@ public class TlsPSKKeyExchange
         {
             this.dhConfig = TlsDHUtils.receiveDHConfig(dhConfigVerifier, input);
 
-            byte[] y = TlsUtils.readOpaque16(input);
+            byte[] y = TlsUtils.readOpaque16(input, 1);
 
             this.agreement = context.getCrypto().createDHDomain(dhConfig).createDH();
 
@@ -184,7 +184,7 @@ public class TlsPSKKeyExchange
         {
             this.ecConfig = TlsECCUtils.receiveECConfig(ecConfigVerifier, serverECPointFormats, input);
 
-            byte[] point = TlsUtils.readOpaque8(input);
+            byte[] point = TlsUtils.readOpaque8(input, 1);
 
             this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
 
@@ -252,13 +252,13 @@ public class TlsPSKKeyExchange
 
         if (this.keyExchange == KeyExchangeAlgorithm.DHE_PSK)
         {
-            byte[] y = TlsUtils.readOpaque16(input);
+            byte[] y = TlsUtils.readOpaque16(input, 1);
 
             processEphemeralDH(y);
         }
         else if (this.keyExchange == KeyExchangeAlgorithm.ECDHE_PSK)
         {
-            byte[] point = TlsUtils.readOpaque8(input);
+            byte[] point = TlsUtils.readOpaque8(input, 1);
 
             processEphemeralECDH(serverECPointFormats, point);
         }

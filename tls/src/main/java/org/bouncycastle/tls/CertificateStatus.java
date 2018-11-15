@@ -81,7 +81,7 @@ public class CertificateStatus
         {
         case CertificateStatusType.ocsp:
         {
-            byte[] derEncoding = TlsUtils.readOpaque24(input);
+            byte[] derEncoding = TlsUtils.readOpaque24(input, 1);
             response = OCSPResponse.getInstance(TlsUtils.readDERObject(derEncoding));
             break;
         }

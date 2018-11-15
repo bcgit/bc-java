@@ -100,7 +100,7 @@ public class TlsECDHEKeyExchange
 
         this.ecConfig = TlsECCUtils.receiveECConfig(ecConfigVerifier, serverECPointFormats, teeIn);
 
-        byte[] point = TlsUtils.readOpaque8(teeIn);
+        byte[] point = TlsUtils.readOpaque8(teeIn, 1);
 
         TlsUtils.verifyServerKeyExchangeSignature(context, input, keyExchange, serverCertificate, digestBuffer);
 
@@ -133,7 +133,7 @@ public class TlsECDHEKeyExchange
 
     public void processClientKeyExchange(InputStream input) throws IOException
     {
-        byte[] point = TlsUtils.readOpaque8(input);
+        byte[] point = TlsUtils.readOpaque8(input, 1);
 
         processEphemeral(serverECPointFormats, point);
     }
