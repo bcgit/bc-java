@@ -64,10 +64,8 @@ public class TlsUtils
         addCertSigAlgOID(h, NISTObjectIdentifiers.dsa_with_sha512, HashAlgorithm.sha512, SignatureAlgorithm.dsa);
 
         addCertSigAlgOID(h, OIWObjectIdentifiers.dsaWithSHA1, HashAlgorithm.sha1, SignatureAlgorithm.dsa);
-        addCertSigAlgOID(h, OIWObjectIdentifiers.md5WithRSA, HashAlgorithm.md5, SignatureAlgorithm.rsa);
         addCertSigAlgOID(h, OIWObjectIdentifiers.sha1WithRSA, HashAlgorithm.sha1, SignatureAlgorithm.rsa);
 
-        addCertSigAlgOID(h, PKCSObjectIdentifiers.md5WithRSAEncryption, HashAlgorithm.md5, SignatureAlgorithm.rsa);
         addCertSigAlgOID(h, PKCSObjectIdentifiers.sha1WithRSAEncryption, HashAlgorithm.sha1, SignatureAlgorithm.rsa);
         addCertSigAlgOID(h, PKCSObjectIdentifiers.sha224WithRSAEncryption, HashAlgorithm.sha224, SignatureAlgorithm.rsa);
         addCertSigAlgOID(h, PKCSObjectIdentifiers.sha256WithRSAEncryption, HashAlgorithm.sha256, SignatureAlgorithm.rsa);
@@ -3441,7 +3439,7 @@ public class TlsUtils
 
             if (!valid)
             {
-                throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                throw new TlsFatalAlert(AlertDescription.bad_certificate);
             }
         }
     }
@@ -3484,7 +3482,7 @@ public class TlsUtils
 
             if (!valid)
             {
-                throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                throw new TlsFatalAlert(AlertDescription.bad_certificate);
             }
         }
     }
