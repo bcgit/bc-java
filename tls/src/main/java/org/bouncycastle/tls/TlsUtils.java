@@ -109,6 +109,7 @@ public class TlsUtils
     public static final long[] EMPTY_LONGS = new long[0];
 
     public static final Integer EXT_signature_algorithms = Integers.valueOf(ExtensionType.signature_algorithms);
+    public static final Integer EXT_signature_algorithms_cert = Integers.valueOf(ExtensionType.signature_algorithms_cert);
 
     protected static short MINIMUM_HASH_STRICT = HashAlgorithm.sha1;
     protected static short MINIMUM_HASH_PREFERRED = HashAlgorithm.sha256;
@@ -1023,9 +1024,9 @@ public class TlsUtils
         return new TlsSessionImpl(sessionID, sessionParameters);
     }
 
-    public static boolean isSignatureAlgorithmsExtensionAllowed(ProtocolVersion clientVersion)
+    public static boolean isSignatureAlgorithmsExtensionAllowed(ProtocolVersion version)
     {
-        return ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(clientVersion.getEquivalentTLSVersion());
+        return ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion());
     }
 
     /**
@@ -1039,6 +1040,19 @@ public class TlsUtils
         throws IOException
     {
         extensions.put(EXT_signature_algorithms, createSignatureAlgorithmsExtension(supportedSignatureAlgorithms));
+    }
+
+    /**
+     * Add a 'signature_algorithms_cert' extension to existing extensions.
+     *
+     * @param extensions                   A {@link Hashtable} to add the extension to.
+     * @param supportedSignatureAlgorithms {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}.
+     * @throws IOException
+     */
+    public static void addSignatureAlgorithmsCertExtension(Hashtable extensions, Vector supportedSignatureAlgorithms)
+        throws IOException
+    {
+        extensions.put(EXT_signature_algorithms_cert, createSignatureAlgorithmsExtension(supportedSignatureAlgorithms));
     }
 
     public static short getLegacyClientCertType(short signatureAlgorithm)
@@ -1151,6 +1165,20 @@ public class TlsUtils
         throws IOException
     {
         byte[] extensionData = getExtensionData(extensions, EXT_signature_algorithms);
+        return extensionData == null ? null : readSignatureAlgorithmsExtension(extensionData);
+    }
+
+    /**
+     * Get a 'signature_algorithms_cert' extension from extensions.
+     *
+     * @param extensions A {@link Hashtable} to get the extension from, if it is present.
+     * @return A {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}, or null.
+     * @throws IOException
+     */
+    public static Vector getSignatureAlgorithmsCertExtension(Hashtable extensions)
+        throws IOException
+    {
+        byte[] extensionData = getExtensionData(extensions, EXT_signature_algorithms_cert);
         return extensionData == null ? null : readSignatureAlgorithmsExtension(extensionData);
     }
 
@@ -3349,31 +3377,27 @@ public class TlsUtils
          * effective value based on the negotiated protocol version and/or the defaults for the
          * selected key exchange.
          */
+        SecurityParameters securityParameters = context.getSecurityParameters();
+
+        if (isSignatureAlgorithmsExtensionAllowed(context.getServerVersion()))
         {
-            ProtocolVersion clientVersion = context.getClientVersion(), serverVersion = context.getServerVersion();
-            SecurityParameters securityParameters = context.getSecurityParameters();
-    
             if (null == securityParameters.getClientSigAlgs())
             {
-                if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(serverVersion))
-                {
-                    short signatureAlgorithm = TlsUtils.getLegacySignatureAlgorithmServerCert(
-                        keyExchange.getKeyExchangeAlgorithm());
+                short signatureAlgorithm = getLegacySignatureAlgorithmServerCert(
+                    keyExchange.getKeyExchangeAlgorithm());
 
-                    securityParameters.clientSigAlgs = TlsUtils.getDefaultSignatureAlgorithms(signatureAlgorithm);
-                }
+                securityParameters.clientSigAlgs = getDefaultSignatureAlgorithms(signatureAlgorithm);
             }
-            else
+
+            if (null == securityParameters.getClientSigAlgsCert())
             {
-                if (!TlsUtils.isSignatureAlgorithmsExtensionAllowed(clientVersion))
-                {
-                    throw new IllegalStateException("signature_algorithms extension not allowed for " + clientVersion);
-                }
-                if (!TlsUtils.isSignatureAlgorithmsExtensionAllowed(serverVersion))
-                {
-                    securityParameters.clientSigAlgs = null;
-                }
+                securityParameters.clientSigAlgsCert = securityParameters.getClientSigAlgs();
             }
+        }
+        else
+        {
+            securityParameters.clientSigAlgs = null;
+            securityParameters.clientSigAlgsCert = null;
         }
 
         return keyExchange;
@@ -3386,7 +3410,7 @@ public class TlsUtils
         for (int i = 0; i < clientCertificate.getLength(); ++i)
         {
             String sigAlgOID = clientCertificate.getCertificateAt(i).getSigAlgOID();
-            SignatureAndHashAlgorithm sigAndHashAlg = TlsUtils.getCertSigAndHashAlg(sigAlgOID);
+            SignatureAndHashAlgorithm sigAndHashAlg = getCertSigAndHashAlg(sigAlgOID);
 
             boolean valid = false;
             if (null == sigAndHashAlg)
@@ -3412,7 +3436,7 @@ public class TlsUtils
                  * all certificates provided by the server MUST be signed by a hash/signature algorithm
                  * pair that appears in that extension.
                  */
-                valid = TlsUtils.containsSignatureAlgorithm(supportedSignatureAlgorithms, sigAndHashAlg);
+                valid = containsSignatureAlgorithm(supportedSignatureAlgorithms, sigAndHashAlg);
             }
 
             if (!valid)
@@ -3425,25 +3449,25 @@ public class TlsUtils
     static void checkSigAlgOfServerCerts(TlsContext context, Certificate serverCertificate, TlsKeyExchange keyExchange)
         throws IOException
     {
-        Vector clientSigAlgs = context.getSecurityParameters().getClientSigAlgs();
+        Vector clientSigAlgsCert = context.getSecurityParameters().getClientSigAlgsCert();
 
         for (int i = 0; i < serverCertificate.getLength(); ++i)
         {
             String sigAlgOID = serverCertificate.getCertificateAt(i).getSigAlgOID();
-            SignatureAndHashAlgorithm sigAndHashAlg = TlsUtils.getCertSigAndHashAlg(sigAlgOID);
+            SignatureAndHashAlgorithm sigAndHashAlg = getCertSigAndHashAlg(sigAlgOID);
 
             boolean valid = false;
             if (null == sigAndHashAlg)
             {
                 // We don't recognize the 'signatureAlgorithm' of the certificate
             }
-            else if (null == clientSigAlgs)
+            else if (null == clientSigAlgsCert)
             {
                 /*
                  * RFC 4346 7.4.2. Unless otherwise specified, the signing algorithm for the
                  * certificate MUST be the same as the algorithm for the certificate key.
                  */
-                int signatureAlgorithm = TlsUtils.getLegacySignatureAlgorithmServerCert(
+                short signatureAlgorithm = getLegacySignatureAlgorithmServerCert(
                     keyExchange.getKeyExchangeAlgorithm());
 
                 valid = (signatureAlgorithm == sigAndHashAlg.getSignature()); 
@@ -3455,7 +3479,7 @@ public class TlsUtils
                  * all certificates provided by the server MUST be signed by a hash/signature algorithm
                  * pair that appears in that extension.
                  */
-                valid = TlsUtils.containsSignatureAlgorithm(clientSigAlgs, sigAndHashAlg);
+                valid = containsSignatureAlgorithm(clientSigAlgsCert, sigAndHashAlg);
             }
 
             if (!valid)
@@ -3530,8 +3554,8 @@ public class TlsUtils
         if (clientAuthentication == null)
         {
             // There was no server certificate message; check it's OK
-            context.getSecurityParameters().tlsServerEndPoint = TlsUtils.EMPTY_BYTES;
             keyExchange.skipServerCredentials();
+            context.getSecurityParameters().tlsServerEndPoint = EMPTY_BYTES;
             return;
         }
 

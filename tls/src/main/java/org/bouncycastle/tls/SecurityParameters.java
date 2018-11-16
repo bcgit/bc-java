@@ -29,6 +29,7 @@ public class SecurityParameters
     boolean truncatedHMac = false;
     ProtocolName applicationProtocol = null;
     Vector clientSigAlgs = null;
+    Vector clientSigAlgsCert = null;
 
     void clear()
     {
@@ -58,6 +59,11 @@ public class SecurityParameters
     public Vector getClientSigAlgs()
     {
         return clientSigAlgs;
+    }
+
+    public Vector getClientSigAlgsCert()
+    {
+        return clientSigAlgsCert;
     }
 
     /**
