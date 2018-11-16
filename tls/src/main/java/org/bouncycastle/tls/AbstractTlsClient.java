@@ -289,7 +289,7 @@ public abstract class AbstractTlsClient
 
             checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_supported_groups);
 
-            if (TlsECCUtils.isECCipherSuite(this.selectedCipherSuite))
+            if (TlsECCUtils.isECDHCipherSuite(this.selectedCipherSuite))
             {
                 this.serverECPointFormats = TlsECCUtils.getSupportedPointFormatsExtension(serverExtensions);
             }
