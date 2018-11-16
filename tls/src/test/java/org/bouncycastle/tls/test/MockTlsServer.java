@@ -144,7 +144,8 @@ class MockTlsServer
 
     protected TlsCredentialedSigner getRSASignerCredentials() throws IOException
     {
-        return TlsTestUtils.loadSignerCredentialsServer(context, supportedSignatureAlgorithms, SignatureAlgorithm.rsa);
+        return TlsTestUtils.loadSignerCredentialsServer(context, context.getSecurityParameters().getClientSigAlgs(),
+            SignatureAlgorithm.rsa);
     }
 
     protected String hex(byte[] data)

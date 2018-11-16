@@ -74,9 +74,6 @@ public interface TlsServer
     CertificateStatus getCertificateStatus()
         throws IOException;
 
-    TlsKeyExchange getKeyExchange()
-        throws IOException;
-
     CertificateRequest getCertificateRequest()
         throws IOException;
 

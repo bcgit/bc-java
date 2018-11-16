@@ -46,7 +46,7 @@ public class TlsECDHanonKeyExchange
     private TlsECDHanonKeyExchange(int keyExchange, TlsECConfigVerifier ecConfigVerifier, TlsECConfig ecConfig,
         short[] clientECPointFormats, short[] serverECPointFormats)
     {
-        super(checkKeyExchange(keyExchange), null);
+        super(checkKeyExchange(keyExchange));
 
         this.ecConfigVerifier = ecConfigVerifier;
         this.ecConfig = ecConfig;
@@ -90,7 +90,7 @@ public class TlsECDHanonKeyExchange
     {
         this.ecConfig = TlsECCUtils.receiveECConfig(ecConfigVerifier, serverECPointFormats, input);
 
-        byte[] point = TlsUtils.readOpaque8(input);
+        byte[] point = TlsUtils.readOpaque8(input, 1);
 
         this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
 
@@ -119,7 +119,7 @@ public class TlsECDHanonKeyExchange
 
     public void processClientKeyExchange(InputStream input) throws IOException
     {
-        byte[] point = TlsUtils.readOpaque8(input);
+        byte[] point = TlsUtils.readOpaque8(input, 1);
 
         processEphemeral(serverECPointFormats, point);
     }

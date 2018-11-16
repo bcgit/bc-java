@@ -139,8 +139,7 @@ public class DTLSServerProtocol
             handshake.sendMessage(HandshakeType.supplemental_data, supplementalDataBody);
         }
 
-        state.keyExchange = state.server.getKeyExchange();
-        state.keyExchange.init(state.serverContext);
+        state.keyExchange = TlsUtils.initKeyExchange(state.serverContext, state.server);
 
         state.serverCredentials = TlsProtocol.validateCredentials(state.server.getCredentials());
 
@@ -364,7 +363,7 @@ public class DTLSServerProtocol
         }
 
         securityParameters.serverRandom = TlsProtocol.createRandomBlock(state.server.shouldUseGMTUnixTime(), state.serverContext);
-        if (server_version != state.server.getMaximumVersion())
+        if (!state.server.getMaximumVersion().equals(server_version))
         {
             TlsUtils.writeDowngradeMarker(server_version, securityParameters.getServerRandom());
         }
@@ -662,6 +661,19 @@ public class DTLSServerProtocol
         {
             // NOTE: Validates the padding extension data, if present
             TlsExtensionsUtils.getPaddingExtension(state.clientExtensions);
+
+            securityParameters.clientSigAlgs = TlsUtils.getSignatureAlgorithmsExtension(state.clientExtensions);
+            if (null != securityParameters.getClientSigAlgs())
+            {
+                /*
+                 * RFC 5246 7.4.1.4.1. Note: this extension is not meaningful for TLS versions prior
+                 * to 1.2. Clients MUST NOT offer it if they are offering prior versions.
+                 */
+                if (!TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
+            }
 
             state.server.processClientExtensions(state.clientExtensions);
         }

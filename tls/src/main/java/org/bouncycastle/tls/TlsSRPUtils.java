@@ -43,7 +43,7 @@ public class TlsSRPUtils
         }
 
         ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
-        byte[] identity = TlsUtils.readOpaque8(buf);
+        byte[] identity = TlsUtils.readOpaque8(buf, 1);
 
         TlsProtocol.assertEmpty(buf);
 
@@ -52,7 +52,7 @@ public class TlsSRPUtils
 
     public static BigInteger readSRPParameter(InputStream input) throws IOException
     {
-        return new BigInteger(1, TlsUtils.readOpaque16(input));
+        return new BigInteger(1, TlsUtils.readOpaque16(input, 1));
     }
 
     public static void writeSRPParameter(BigInteger x, OutputStream output) throws IOException

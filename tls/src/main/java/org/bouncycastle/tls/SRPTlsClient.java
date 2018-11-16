@@ -106,7 +106,6 @@ public class SRPTlsClient
 
     protected TlsKeyExchange createSRPKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createSRPKeyExchangeClient(keyExchange, supportedSignatureAlgorithms,
-            srpConfigVerifier, identity, password);
+        return keyExchangeFactory.createSRPKeyExchangeClient(keyExchange, srpConfigVerifier, identity, password);
     }
 }

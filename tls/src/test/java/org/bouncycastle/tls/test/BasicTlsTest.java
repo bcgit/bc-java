@@ -14,7 +14,6 @@ import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.HashAlgorithm;
-import org.bouncycastle.tls.TlsPeerOptions;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.ServerOnlyTlsAuthentication;
@@ -247,9 +246,8 @@ public class BasicTlsTest
     static class MyTlsClientContext
         implements TlsClientContext
     {
-        TlsPeerOptions peerOptions = new TlsPeerOptions();
-
         TlsCrypto crypto;
+        SecurityParameters securityParameters = new SecurityParameters();
 
         MyTlsClientContext(TlsCrypto crypto)
         {
@@ -266,11 +264,6 @@ public class BasicTlsTest
             throw new UnsupportedOperationException();
         }
 
-        public TlsPeerOptions getPeerOptions()
-        {
-            return peerOptions;
-        }
-
         public SecureRandom getSecureRandom()
         {
             throw new UnsupportedOperationException();
@@ -278,7 +271,7 @@ public class BasicTlsTest
 
         public SecurityParameters getSecurityParameters()
         {
-            throw new UnsupportedOperationException();
+            return securityParameters;
         }
 
         public boolean isServer()

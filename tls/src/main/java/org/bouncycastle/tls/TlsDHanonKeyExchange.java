@@ -43,7 +43,7 @@ public class TlsDHanonKeyExchange
 
     private TlsDHanonKeyExchange(int keyExchange, TlsDHConfigVerifier dhConfigVerifier, TlsDHConfig dhConfig)
     {
-        super(checkKeyExchange(keyExchange), null);
+        super(checkKeyExchange(keyExchange));
 
         this.dhConfigVerifier = dhConfigVerifier;
         this.dhConfig = dhConfig;
@@ -87,7 +87,7 @@ public class TlsDHanonKeyExchange
     {
         this.dhConfig = TlsDHUtils.receiveDHConfig(dhConfigVerifier, input);
 
-        byte[] y = TlsUtils.readOpaque16(input);
+        byte[] y = TlsUtils.readOpaque16(input, 1);
 
         this.agreement = context.getCrypto().createDHDomain(dhConfig).createDH();
 
@@ -118,7 +118,7 @@ public class TlsDHanonKeyExchange
 
     public void processClientKeyExchange(InputStream input) throws IOException
     {
-        byte[] y = TlsUtils.readOpaque16(input);
+        byte[] y = TlsUtils.readOpaque16(input, 1);
 
         agreement.receivePeerValue(y);
     }

@@ -157,7 +157,7 @@ public class TlsDHUtils
 
     public static BigInteger readDHParameter(InputStream input) throws IOException
     {
-        return new BigInteger(1, TlsUtils.readOpaque16(input));
+        return new BigInteger(1, TlsUtils.readOpaque16(input, 1));
     }
 
     public static void writeDHConfig(TlsDHConfig dhConfig, OutputStream output)
