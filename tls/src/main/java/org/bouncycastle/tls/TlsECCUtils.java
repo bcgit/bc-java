@@ -106,11 +106,11 @@ public class TlsECCUtils
          * drafts of RFC 8442. This requirement was removed in later drafts, so this mechanism is
          * currently somewhat trivial.
          */
-        return isECCipherSuite(cipherSuite) ? 1 : 0;
+        return isECDHCipherSuite(cipherSuite) ? 1 : 0;
     }
 
     /**
-     * @deprecated Will be removed.
+     * @deprecated Use {@link #isECDHCipherSuite(int)} instead.
      */
     public static boolean isECCipherSuite(int cipherSuite)
     {
