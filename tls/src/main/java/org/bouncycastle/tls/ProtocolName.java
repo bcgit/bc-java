@@ -88,13 +88,7 @@ public final class ProtocolName
      */
     public static ProtocolName parse(InputStream input) throws IOException
     {
-        byte[] bytes = TlsUtils.readOpaque8(input);
-        if (bytes.length < 1)
-        {
-            throw new TlsFatalAlert(AlertDescription.decode_error);
-        }
-
-        return new ProtocolName(bytes);
+        return new ProtocolName(TlsUtils.readOpaque8(input, 1));
     }
 
     public boolean equals(Object obj)

@@ -147,8 +147,7 @@ public class TlsServerProtocol
                 }
                 this.connection_state = CS_SERVER_SUPPLEMENTAL_DATA;
 
-                this.keyExchange = tlsServer.getKeyExchange();
-                this.keyExchange.init(getContext());
+                this.keyExchange = TlsUtils.initKeyExchange(tlsServerContext, tlsServer);
 
                 this.serverCredentials = validateCredentials(tlsServer.getCredentials());
 
@@ -572,6 +571,19 @@ public class TlsServerProtocol
             // NOTE: Validates the padding extension data, if present
             TlsExtensionsUtils.getPaddingExtension(clientExtensions);
 
+            securityParameters.clientSigAlgs = TlsUtils.getSignatureAlgorithmsExtension(clientExtensions);
+            if (null != securityParameters.getClientSigAlgs())
+            {
+                /*
+                 * RFC 5246 7.4.1.4.1. Note: this extension is not meaningful for TLS versions prior
+                 * to 1.2. Clients MUST NOT offer it if they are offering prior versions.
+                 */
+                if (!TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
+            }
+
             tlsServer.processClientExtensions(clientExtensions);
         }
     }
@@ -647,7 +659,7 @@ public class TlsServerProtocol
         }
 
         this.securityParameters.serverRandom = createRandomBlock(tlsServer.shouldUseGMTUnixTime(), tlsServerContext);
-        if (server_version != tlsServer.getMaximumVersion())
+        if (!tlsServer.getMaximumVersion().equals(server_version))
         {
             TlsUtils.writeDowngradeMarker(server_version, this.securityParameters.getServerRandom());
         }

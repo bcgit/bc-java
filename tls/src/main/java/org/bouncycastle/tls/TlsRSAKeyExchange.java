@@ -3,7 +3,6 @@ package org.bouncycastle.tls;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
@@ -19,9 +18,9 @@ public class TlsRSAKeyExchange
     protected TlsCertificate serverCertificate;
     protected TlsSecret preMasterSecret;
 
-    public TlsRSAKeyExchange(Vector supportedSignatureAlgorithms)
+    public TlsRSAKeyExchange()
     {
-        super(KeyExchangeAlgorithm.RSA, supportedSignatureAlgorithms);
+        super(KeyExchangeAlgorithm.RSA);
     }
 
     public void skipServerCredentials()
@@ -39,8 +38,7 @@ public class TlsRSAKeyExchange
     public void processServerCertificate(Certificate serverCertificate)
         throws IOException
     {
-        this.serverCertificate = checkSigAlgOfServerCerts(serverCertificate)
-            .useInRole(ConnectionEnd.server, keyExchange);
+        this.serverCertificate = serverCertificate.getCertificateAt(0).useInRole(ConnectionEnd.server, keyExchange);
     }
 
     public short[] getClientCertificateTypes()

@@ -22,14 +22,12 @@ public abstract class AbstractTlsServer
 
     protected TlsServerContext context;
 
-    protected ProtocolVersion clientVersion;
     protected int[] offeredCipherSuites;
     protected Hashtable clientExtensions;
 
     protected boolean encryptThenMACOffered;
     protected short maxFragmentLengthOffered;
     protected boolean truncatedHMacOffered;
-    protected Vector supportedSignatureAlgorithms;
     protected int[] clientSupportedGroups;
     protected short[] clientECPointFormats, serverECPointFormats;
     protected CertificateStatusRequest certificateStatusRequest;
@@ -242,7 +240,6 @@ public abstract class AbstractTlsServer
     public void notifyClientVersion(ProtocolVersion clientVersion)
         throws IOException
     {
-        this.clientVersion = clientVersion;
     }
 
     public void notifyFallback(boolean isFallback) throws IOException
@@ -253,7 +250,7 @@ public abstract class AbstractTlsServer
          * ClientHello.client_version, the server MUST respond with a fatal inappropriate_fallback
          * alert [..].
          */
-        if (isFallback && getMaximumVersion().isLaterVersionOf(clientVersion))
+        if (isFallback && getMaximumVersion().isLaterVersionOf(context.getClientVersion()))
         {
             throw new TlsFatalAlert(AlertDescription.inappropriate_fallback);
         }
@@ -296,19 +293,6 @@ public abstract class AbstractTlsServer
 
             this.truncatedHMacOffered = TlsExtensionsUtils.hasTruncatedHMacExtension(clientExtensions);
 
-            this.supportedSignatureAlgorithms = TlsUtils.getSignatureAlgorithmsExtension(clientExtensions);
-            if (this.supportedSignatureAlgorithms != null)
-            {
-                /*
-                 * RFC 5246 7.4.1.4.1. Note: this extension is not meaningful for TLS versions prior
-                 * to 1.2. Clients MUST NOT offer it if they are offering prior versions.
-                 */
-                if (!TlsUtils.isSignatureAlgorithmsExtensionAllowed(clientVersion))
-                {
-                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-                }
-            }
-
             this.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientExtensions);
             this.clientECPointFormats = TlsECCUtils.getSupportedPointFormatsExtension(clientExtensions);
 
@@ -344,6 +328,7 @@ public abstract class AbstractTlsServer
     public ProtocolVersion getServerVersion()
         throws IOException
     {
+        ProtocolVersion clientVersion = context.getClientVersion();
         if (getMinimumVersion().isEqualOrEarlierVersionOf(clientVersion))
         {
             ProtocolVersion maximumVersion = getMaximumVersion();
@@ -368,7 +353,7 @@ public abstract class AbstractTlsServer
          * somewhat inelegant but is a compromise designed to minimize changes to the original
          * cipher suite design.
          */
-        Vector sigAlgs = TlsUtils.getUsableSignatureAlgorithms(supportedSignatureAlgorithms);
+        Vector sigAlgs = TlsUtils.getUsableSignatureAlgorithms(context.getSecurityParameters().getClientSigAlgs());
 
         /*
          * RFC 4429 5.1. A server that receives a ClientHello containing one or both of these

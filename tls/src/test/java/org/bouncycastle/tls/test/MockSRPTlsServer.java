@@ -89,13 +89,14 @@ class MockSRPTlsServer
 
     protected TlsCredentialedSigner getDSASignerCredentials() throws IOException
     {
-        return TlsTestUtils.loadSignerCredentials(context, supportedSignatureAlgorithms, SignatureAlgorithm.dsa,
-            "x509-server-dsa.pem", "x509-server-key-dsa.pem");
+        return TlsTestUtils.loadSignerCredentials(context, context.getSecurityParameters().getClientSigAlgs(),
+            SignatureAlgorithm.dsa, "x509-server-dsa.pem", "x509-server-key-dsa.pem");
     }
 
     protected TlsCredentialedSigner getRSASignerCredentials() throws IOException
     {
-        return TlsTestUtils.loadSignerCredentialsServer(context, supportedSignatureAlgorithms, SignatureAlgorithm.rsa);
+        return TlsTestUtils.loadSignerCredentialsServer(context, context.getSecurityParameters().getClientSigAlgs(),
+            SignatureAlgorithm.rsa);
     }
 
     static class MyIdentityManager

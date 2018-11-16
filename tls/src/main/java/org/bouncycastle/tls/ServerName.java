@@ -82,11 +82,7 @@ public class ServerName
         {
         case NameType.host_name:
         {
-            byte[] asciiEncoding = TlsUtils.readOpaque16(input);
-            if (asciiEncoding.length < 1)
-            {
-                throw new TlsFatalAlert(AlertDescription.decode_error);
-            }
+            byte[] asciiEncoding = TlsUtils.readOpaque16(input, 1);
             name = new String(asciiEncoding, "ASCII");
             break;
         }

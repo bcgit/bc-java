@@ -11,7 +11,6 @@ import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
-import org.bouncycastle.tls.TlsPeerOptions;
 import org.bouncycastle.tls.TlsServerContext;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
@@ -28,8 +27,6 @@ public class TlsUtilsTest
 
         TlsContext context = new TlsServerContext()
         {
-            TlsPeerOptions peerOptions = new TlsPeerOptions();
-
             public TlsCrypto getCrypto()
             {
                 return null;
@@ -38,11 +35,6 @@ public class TlsUtilsTest
             public TlsNonceGenerator getNonceGenerator()
             {
                 return null;
-            }
-
-            public TlsPeerOptions getPeerOptions()
-            {
-                return peerOptions;
             }
 
             public SecurityParameters getSecurityParameters()

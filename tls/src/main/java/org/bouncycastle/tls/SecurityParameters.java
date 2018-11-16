@@ -1,5 +1,7 @@
 package org.bouncycastle.tls;
 
+import java.util.Vector;
+
 import org.bouncycastle.tls.crypto.TlsSecret;
 
 /**
@@ -26,6 +28,7 @@ public class SecurityParameters
     boolean extendedPadding = false;
     boolean truncatedHMac = false;
     ProtocolName applicationProtocol = null;
+    Vector clientSigAlgs = null;
 
     void clear()
     {
@@ -50,6 +53,11 @@ public class SecurityParameters
     public int getCipherSuite()
     {
         return cipherSuite;
+    }
+
+    public Vector getClientSigAlgs()
+    {
+        return clientSigAlgs;
     }
 
     /**
