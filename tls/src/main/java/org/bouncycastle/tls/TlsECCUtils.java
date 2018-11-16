@@ -55,50 +55,6 @@ public class TlsECCUtils
         return ecPointFormats;
     }
 
-    /**
-     * @deprecated Will be removed.
-     */
-    public static boolean containsECCipherSuites(int[] cipherSuites)
-    {
-        return containsECDHCipherSuites(cipherSuites);
-    }
-
-    public static boolean containsECDHCipherSuites(int[] cipherSuites)
-    {
-        for (int i = 0; i < cipherSuites.length; ++i)
-        {
-            if (isECDHCipherSuite(cipherSuites[i]))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static boolean containsECDHECipherSuites(int[] cipherSuites)
-    {
-        for (int i = 0; i < cipherSuites.length; ++i)
-        {
-            if (isECDHECipherSuite(cipherSuites[i]))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static boolean containsECDSACipherSuites(int[] cipherSuites)
-    {
-        for (int i = 0; i < cipherSuites.length; ++i)
-        {
-            if (isECDSACipherSuite(cipherSuites[i]))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public static int getMinimumCurveBits(int cipherSuite)
     {
         /*
@@ -106,18 +62,10 @@ public class TlsECCUtils
          * drafts of RFC 8442. This requirement was removed in later drafts, so this mechanism is
          * currently somewhat trivial.
          */
-        return isECDHCipherSuite(cipherSuite) ? 1 : 0;
+        return isECCCipherSuite(cipherSuite) ? 1 : 0;
     }
 
-    /**
-     * @deprecated Use {@link #isECDHCipherSuite(int)} instead.
-     */
-    public static boolean isECCipherSuite(int cipherSuite)
-    {
-        return isECDHCipherSuite(cipherSuite);
-    }
-
-    public static boolean isECDHCipherSuite(int cipherSuite)
+    public static boolean isECCCipherSuite(int cipherSuite)
     {
         switch (TlsUtils.getKeyExchangeAlgorithm(cipherSuite))
         {
@@ -129,34 +77,6 @@ public class TlsECCUtils
         case KeyExchangeAlgorithm.ECDHE_RSA:
             return true;
             
-        default:
-            return false;
-        }
-    }
-
-    public static boolean isECDHECipherSuite(int cipherSuite)
-    {
-        switch (TlsUtils.getKeyExchangeAlgorithm(cipherSuite))
-        {
-        case KeyExchangeAlgorithm.ECDH_anon:
-        case KeyExchangeAlgorithm.ECDHE_ECDSA:
-        case KeyExchangeAlgorithm.ECDHE_PSK:
-        case KeyExchangeAlgorithm.ECDHE_RSA:
-            return true;
-            
-        default:
-            return false;
-        }
-    }
-
-    public static boolean isECDSACipherSuite(int cipherSuite)
-    {
-        switch (TlsUtils.getKeyExchangeAlgorithm(cipherSuite))
-        {
-        case KeyExchangeAlgorithm.ECDH_ECDSA:
-        case KeyExchangeAlgorithm.ECDHE_ECDSA:
-            return true;
-
         default:
             return false;
         }

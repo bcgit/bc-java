@@ -65,17 +65,17 @@ public abstract class AbstractTlsClient
         }
     }
 
-    protected NamedGroupTypes getOfferingNamedGroupTypes()
+    protected Vector getNamedGroupRoles()
     {
-        int[] cipherSuites = getCipherSuites();
+        Vector namedGroupRoles = TlsUtils.getNamedGroupRoles(getCipherSuites());
 
-        NamedGroupTypes offeringTypes = new NamedGroupTypes();
-        offeringTypes.setDH(TlsDHUtils.containsDHCipherSuites(cipherSuites));
-        offeringTypes.setECDH(TlsECCUtils.containsECDHCipherSuites(cipherSuites));
-        offeringTypes.setECDSA(TlsECCUtils.containsECDSACipherSuites(cipherSuites)
-            || (null == supportedSignatureAlgorithms)
-            || TlsUtils.containsAnySignatureAlgorithm(supportedSignatureAlgorithms, SignatureAlgorithm.ecdsa));
-        return offeringTypes;
+        if (null == supportedSignatureAlgorithms
+            || TlsUtils.containsAnySignatureAlgorithm(supportedSignatureAlgorithms, SignatureAlgorithm.ecdsa))
+        {
+            TlsUtils.addToSet(namedGroupRoles, NamedGroupRole.ecdsa);
+        }
+
+        return namedGroupRoles;
     }
 
     protected void checkForUnexpectedServerExtension(Hashtable serverExtensions, Integer extensionType)
@@ -118,28 +118,30 @@ public abstract class AbstractTlsClient
      * The default {@link #getClientExtensions()} implementation calls this to determine which named
      * groups to include in the supported_groups extension for the ClientHello.
      * 
-     * @param offeringTypes
-     *            The types of NamedGroup for which there should be at least one supported group. By
-     *            default this is inferred from the offered cipher suites and signature algorithms.
+     * @param namedGroupRoles
+     *            The {@link NamedGroupRole named group roles} for which there should be at
+     *            least one supported group. By default this is inferred from the offered cipher
+     *            suites and signature algorithms.
      * @return a {@link Vector} of {@link Integer}. See {@link NamedGroup} for group constants.
      */
-    protected Vector getSupportedGroups(NamedGroupTypes offeringTypes)
+    protected Vector getSupportedGroups(Vector namedGroupRoles)
     {
         TlsCrypto crypto = getCrypto();
         Vector supportedGroups = new Vector();
 
-        if (offeringTypes.hasECDH())
+        if (namedGroupRoles.contains(NamedGroupRole.ecdh))
         {
             TlsUtils.addIfSupported(supportedGroups, crypto, NamedGroup.x25519);
         }
 
-        if (offeringTypes.hasECDH() || offeringTypes.hasECDSA())
+        if (namedGroupRoles.contains(NamedGroupRole.ecdh)
+            || namedGroupRoles.contains(NamedGroupRole.ecdsa))
         {
             TlsUtils.addIfSupported(supportedGroups, crypto, new int[]{
                 NamedGroup.secp256r1, NamedGroup.secp384r1 });
         }
 
-        if (offeringTypes.hasECDH())
+        if (namedGroupRoles.contains(NamedGroupRole.dh))
         {
             TlsUtils.addIfSupported(supportedGroups, crypto, new int[]{
                 NamedGroup.ffdhe2048, NamedGroup.ffdhe3072, NamedGroup.ffdhe4096 });
@@ -228,9 +230,9 @@ public abstract class AbstractTlsClient
             TlsUtils.addSignatureAlgorithmsExtension(clientExtensions, supportedSignatureAlgorithms);
         }
 
-        NamedGroupTypes offeringTypes = getOfferingNamedGroupTypes();
+        Vector namedGroupRoles = getNamedGroupRoles();
 
-        Vector supportedGroups = getSupportedGroups(offeringTypes);
+        Vector supportedGroups = getSupportedGroups(namedGroupRoles);
         if (supportedGroups != null && !supportedGroups.isEmpty())
         {
             this.supportedGroups = supportedGroups;
@@ -238,7 +240,8 @@ public abstract class AbstractTlsClient
             TlsExtensionsUtils.addSupportedGroupsExtension(clientExtensions, supportedGroups);
         }
 
-        if (offeringTypes.hasECDH() || offeringTypes.hasECDSA())
+        if (namedGroupRoles.contains(NamedGroupRole.ecdh)
+            || namedGroupRoles.contains(NamedGroupRole.ecdsa))
         {
             this.clientECPointFormats = getSupportedPointFormats();
 
@@ -289,7 +292,7 @@ public abstract class AbstractTlsClient
 
             checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_supported_groups);
 
-            if (TlsECCUtils.isECDHCipherSuite(this.selectedCipherSuite))
+            if (TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite))
             {
                 this.serverECPointFormats = TlsECCUtils.getSupportedPointFormatsExtension(serverExtensions);
             }
