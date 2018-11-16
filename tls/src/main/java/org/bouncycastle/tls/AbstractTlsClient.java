@@ -285,6 +285,7 @@ public abstract class AbstractTlsClient
              * RFC 5246 7.4.1.4.1. Servers MUST NOT send this extension.
              */
             checkForUnexpectedServerExtension(serverExtensions, TlsUtils.EXT_signature_algorithms);
+            checkForUnexpectedServerExtension(serverExtensions, TlsUtils.EXT_signature_algorithms_cert);
 
             checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_supported_groups);
 

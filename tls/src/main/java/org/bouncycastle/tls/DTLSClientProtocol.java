@@ -422,7 +422,11 @@ public class DTLSClientProtocol
 
         state.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(state.client.getClientExtensions());
 
-        securityParameters.clientSigAlgs = TlsUtils.getSignatureAlgorithmsExtension(state.clientExtensions);
+        if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
+        {
+            securityParameters.clientSigAlgs = TlsUtils.getSignatureAlgorithmsExtension(state.clientExtensions);
+            securityParameters.clientSigAlgsCert = TlsUtils.getSignatureAlgorithmsCertExtension(state.clientExtensions);
+        }
 
         TlsExtensionsUtils.addExtendedMasterSecretExtension(state.clientExtensions);
 

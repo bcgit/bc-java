@@ -571,17 +571,14 @@ public class TlsServerProtocol
             // NOTE: Validates the padding extension data, if present
             TlsExtensionsUtils.getPaddingExtension(clientExtensions);
 
-            securityParameters.clientSigAlgs = TlsUtils.getSignatureAlgorithmsExtension(clientExtensions);
-            if (null != securityParameters.getClientSigAlgs())
+            /*
+             * RFC 5246 7.4.1.4.1. Note: this extension is not meaningful for TLS versions prior
+             * to 1.2. Clients MUST NOT offer it if they are offering prior versions.
+             */
+            if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
             {
-                /*
-                 * RFC 5246 7.4.1.4.1. Note: this extension is not meaningful for TLS versions prior
-                 * to 1.2. Clients MUST NOT offer it if they are offering prior versions.
-                 */
-                if (!TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
-                {
-                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-                }
+                securityParameters.clientSigAlgs = TlsUtils.getSignatureAlgorithmsExtension(clientExtensions);
+                securityParameters.clientSigAlgsCert = TlsUtils.getSignatureAlgorithmsCertExtension(clientExtensions);
             }
 
             tlsServer.processClientExtensions(clientExtensions);
