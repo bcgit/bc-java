@@ -156,7 +156,7 @@ public class BCDHPublicKey
             DHParameters params = ((DHDomainParameterSpec)dhSpec).getDomainParameters();
             DHValidationParameters validationParameters = params.getValidationParameters();
             ValidationParams vParams = null;
-            if (validationParameters == null)
+            if (validationParameters != null)
             {
                 vParams = new ValidationParams(validationParameters.getSeed(), validationParameters.getCounter());
             }

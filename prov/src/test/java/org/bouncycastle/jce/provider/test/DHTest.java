@@ -41,7 +41,9 @@ import javax.crypto.spec.DHPublicKeySpec;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.crypto.agreement.DHStandardGroups;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
+import org.bouncycastle.jcajce.spec.DHDomainParameterSpec;
 import org.bouncycastle.jcajce.spec.DHUParameterSpec;
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
@@ -1424,6 +1426,19 @@ public class DHTest
         }
     }
 
+    private void testGenerateUsingStandardGroup()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("DH", "BC");
+        DHDomainParameterSpec mySpec = new DHDomainParameterSpec(DHStandardGroups.rfc7919_ffdhe2048);
+        kpGen.initialize(mySpec, new SecureRandom());
+        KeyPair kp = kpGen.generateKeyPair();
+
+        /* Obtain encoded keys */
+        PKCS8EncodedKeySpec pkcs = new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded());
+        X509EncodedKeySpec x509 = new X509EncodedKeySpec(kp.getPublic().getEncoded());
+    }
+
     private KeyPair generateDHKeyPair()
         throws GeneralSecurityException
     {
@@ -1552,6 +1567,7 @@ public class DHTest
         testDHUnifiedTestVector1();
 
         testMinSpecValue();
+        testGenerateUsingStandardGroup();
     }
 
     public static void main(
