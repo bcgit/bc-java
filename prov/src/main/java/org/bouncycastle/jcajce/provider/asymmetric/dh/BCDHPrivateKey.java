@@ -148,7 +148,7 @@ public class BCDHPrivateKey
                 DHParameters params = ((DHDomainParameterSpec)dhSpec).getDomainParameters();
                 DHValidationParameters validationParameters = params.getValidationParameters();
                 ValidationParams vParams = null;
-                if (validationParameters == null)
+                if (validationParameters != null)
                 {
                     vParams = new ValidationParams(validationParameters.getSeed(), validationParameters.getCounter());
                 }
@@ -161,7 +161,7 @@ public class BCDHPrivateKey
             return info.getEncoded(ASN1Encoding.DER);
         }
         catch (Exception e)
-        {
+        {              
             return null;
         }
     }
