@@ -876,7 +876,11 @@ public class TlsClientProtocol
 
         this.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(this.tlsClient.getClientExtensions());
 
-        this.securityParameters.clientSigAlgs = TlsUtils.getSignatureAlgorithmsExtension(clientExtensions);
+        if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
+        {
+            this.securityParameters.clientSigAlgs = TlsUtils.getSignatureAlgorithmsExtension(clientExtensions);
+            this.securityParameters.clientSigAlgsCert = TlsUtils.getSignatureAlgorithmsCertExtension(clientExtensions);
+        }
 
         TlsExtensionsUtils.addExtendedMasterSecretExtension(this.clientExtensions);
 
