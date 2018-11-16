@@ -5,7 +5,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import org.bouncycastle.tls.NamedGroup;
-import org.bouncycastle.tls.NamedGroupTypes;
+import org.bouncycastle.tls.NamedGroupRole;
 import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.crypto.DHStandardGroups;
 import org.bouncycastle.tls.crypto.TlsCrypto;
@@ -103,16 +103,20 @@ abstract class SupportedGroups
         return result;
     }
 
-    static Vector getClientSupportedGroups(TlsCrypto crypto, boolean isFips, NamedGroupTypes offeringTypes)
+    static Vector getClientSupportedGroups(TlsCrypto crypto, boolean isFips, Vector namedGroupRoles)
     {
         int[] namedGroups = provJdkTlsNamedGroups != null ? provJdkTlsNamedGroups : defaultClientNamedGroups;
+
+        boolean roleDH = namedGroupRoles.contains(NamedGroupRole.dh);
+        boolean roleECDH = namedGroupRoles.contains(NamedGroupRole.ecdh);
+        boolean roleECDSA = namedGroupRoles.contains(NamedGroupRole.ecdsa);
 
         Vector result = new Vector();
         for (int namedGroup : namedGroups)
         {
-            if ((offeringTypes.hasDH() && NamedGroup.refersToASpecificFiniteField(namedGroup))
-                || (offeringTypes.hasECDH() && NamedGroup.refersToASpecificCurve(namedGroup))
-                || (offeringTypes.hasECDSA() && NamedGroup.refersToAnECDSACurve(namedGroup)))
+            if ((roleDH && NamedGroup.refersToASpecificFiniteField(namedGroup))
+                || (roleECDH && NamedGroup.refersToASpecificCurve(namedGroup))
+                || (roleECDSA && NamedGroup.refersToAnECDSACurve(namedGroup)))
             {
                 if (!isFips || FipsUtils.isFipsNamedGroup(namedGroup))
                 {
