@@ -891,7 +891,7 @@ public class TlsUtils
     {
         if (crypto.hasNamedGroup(namedGroup))
         {
-            supportedGroups.addElement(Integers.valueOf(namedGroup));
+            addToSet(supportedGroups, namedGroup);
         }
     }
 
@@ -900,6 +900,14 @@ public class TlsUtils
         for (int i = 0; i < namedGroups.length; ++i)
         {
             addIfSupported(supportedGroups, crypto, namedGroups[i]);
+        }
+    }
+
+    public static void addToSet(Vector s, int i)
+    {
+        if (!s.contains(i))
+        {
+            s.addElement(i);
         }
     }
 
@@ -2479,6 +2487,20 @@ public class TlsUtils
         }
     }
 
+    public static Vector getKeyExchangeAlgorithms(int[] cipherSuites)
+    {
+        Vector result = new Vector();
+        if (null != cipherSuites)
+        {
+            for (int i = 0; i < cipherSuites.length; ++i)
+            {
+                addToSet(result, getKeyExchangeAlgorithm(cipherSuites[i]));
+            }
+            result.removeElement(-1);
+        }
+        return result;
+    }
+
     public static int getMACAlgorithm(int cipherSuite)
     {
         switch (cipherSuite)
@@ -3006,6 +3028,51 @@ public class TlsUtils
         default:
             return ProtocolVersion.SSLv3;
         }
+    }
+
+    public static Vector getNamedGroupRoles(int[] cipherSuites)
+    {
+        return getNamedGroupRoles(getKeyExchangeAlgorithms(cipherSuites));
+    }
+
+    public static Vector getNamedGroupRoles(Vector keyExchangeAlgorithms)
+    {
+        Vector result = new Vector();
+        for (int i = 0; i < keyExchangeAlgorithms.size(); ++i)
+        {
+            int keyExchangeAlgorithm = ((Integer)keyExchangeAlgorithms.elementAt(i)).intValue();
+            switch (keyExchangeAlgorithm)
+            {
+            case KeyExchangeAlgorithm.DH_anon:
+            case KeyExchangeAlgorithm.DH_DSS:
+            case KeyExchangeAlgorithm.DH_RSA:
+            case KeyExchangeAlgorithm.DHE_DSS:
+            case KeyExchangeAlgorithm.DHE_PSK:
+            case KeyExchangeAlgorithm.DHE_RSA:
+            {
+                addToSet(result, NamedGroupRole.dh);
+                break;
+            }
+
+            case KeyExchangeAlgorithm.ECDH_anon:
+            case KeyExchangeAlgorithm.ECDH_RSA:
+            case KeyExchangeAlgorithm.ECDHE_PSK:
+            case KeyExchangeAlgorithm.ECDHE_RSA:
+            {
+                addToSet(result, NamedGroupRole.ecdh);
+                break;
+            }
+
+            case KeyExchangeAlgorithm.ECDH_ECDSA:
+            case KeyExchangeAlgorithm.ECDHE_ECDSA:
+            {
+                addToSet(result, NamedGroupRole.ecdh);
+                addToSet(result, NamedGroupRole.ecdsa);
+                break;
+            }
+            }
+        }
+        return result;
     }
 
     public static boolean isAEADCipherSuite(int cipherSuite) throws IOException
