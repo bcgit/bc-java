@@ -411,7 +411,7 @@ public abstract class AbstractTlsServer
             TlsExtensionsUtils.addTruncatedHMacExtension(checkServerExtensions());
         }
 
-        if (this.clientECPointFormats != null && TlsECCUtils.isECCipherSuite(this.selectedCipherSuite))
+        if (this.clientECPointFormats != null && TlsECCUtils.isECDHCipherSuite(this.selectedCipherSuite))
         {
             /*
              * RFC 4492 5.2. A server that selects an ECC cipher suite in response to a ClientHello
