@@ -94,7 +94,7 @@ public abstract class DefaultTlsClient
 
     protected TlsKeyExchange createDHKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createDHKeyExchangeClient(keyExchange, supportedSignatureAlgorithms);
+        return keyExchangeFactory.createDHKeyExchangeClient(keyExchange);
     }
 
     protected TlsKeyExchange createDHanonKeyExchange(int keyExchange) throws IOException
@@ -104,12 +104,12 @@ public abstract class DefaultTlsClient
 
     protected TlsKeyExchange createDHEKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createDHEKeyExchangeClient(keyExchange, supportedSignatureAlgorithms, dhConfigVerifier);
+        return keyExchangeFactory.createDHEKeyExchangeClient(keyExchange, dhConfigVerifier);
     }
 
     protected TlsKeyExchange createECDHKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createECDHKeyExchangeClient(keyExchange, supportedSignatureAlgorithms);
+        return keyExchangeFactory.createECDHKeyExchangeClient(keyExchange);
     }
 
     protected TlsKeyExchange createECDHanonKeyExchange(int keyExchange) throws IOException
@@ -120,12 +120,12 @@ public abstract class DefaultTlsClient
 
     protected TlsKeyExchange createECDHEKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createECDHEKeyExchangeClient(keyExchange, supportedSignatureAlgorithms,
-            createECConfigVerifier(), clientECPointFormats, serverECPointFormats);
+        return keyExchangeFactory.createECDHEKeyExchangeClient(keyExchange, createECConfigVerifier(),
+            clientECPointFormats, serverECPointFormats);
     }
 
     protected TlsKeyExchange createRSAKeyExchange() throws IOException
     {
-        return keyExchangeFactory.createRSAKeyExchange(supportedSignatureAlgorithms);
+        return keyExchangeFactory.createRSAKeyExchange();
     }
 }

@@ -240,7 +240,7 @@ class TlsTestServerImpl
             return signatureAlgorithms;
         }
 
-        return supportedSignatureAlgorithms;
+        return context.getSecurityParameters().getClientSigAlgs();
     }
 
     protected TlsCredentialedSigner getDSASignerCredentials() throws IOException

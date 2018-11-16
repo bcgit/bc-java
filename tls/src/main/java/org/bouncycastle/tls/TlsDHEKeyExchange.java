@@ -3,7 +3,6 @@ package org.bouncycastle.tls;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCertificate;
@@ -33,20 +32,19 @@ public class TlsDHEKeyExchange
     protected TlsCertificate serverCertificate = null;
     protected TlsAgreement agreement;
 
-    public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHConfigVerifier dhConfigVerifier)
+    public TlsDHEKeyExchange(int keyExchange, TlsDHConfigVerifier dhConfigVerifier)
     {
-        this(keyExchange, supportedSignatureAlgorithms, dhConfigVerifier, null);
+        this(keyExchange, dhConfigVerifier, null);
     }
 
-    public TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHConfig dhConfig)
+    public TlsDHEKeyExchange(int keyExchange, TlsDHConfig dhConfig)
     {
-        this(keyExchange, supportedSignatureAlgorithms, null, dhConfig);
+        this(keyExchange, null, dhConfig);
     }
 
-    private TlsDHEKeyExchange(int keyExchange, Vector supportedSignatureAlgorithms, TlsDHConfigVerifier dhConfigVerifier,
-        TlsDHConfig dhConfig)
+    private TlsDHEKeyExchange(int keyExchange, TlsDHConfigVerifier dhConfigVerifier, TlsDHConfig dhConfig)
     {
-        super(checkKeyExchange(keyExchange), supportedSignatureAlgorithms);
+        super(checkKeyExchange(keyExchange));
 
         this.dhConfigVerifier = dhConfigVerifier;
         this.dhConfig = dhConfig;
@@ -64,7 +62,7 @@ public class TlsDHEKeyExchange
 
     public void processServerCertificate(Certificate serverCertificate) throws IOException
     {
-        this.serverCertificate = checkSigAlgOfServerCerts(serverCertificate);
+        this.serverCertificate = serverCertificate.getCertificateAt(0);
     }
 
     public boolean requiresServerKeyExchange()
@@ -96,10 +94,9 @@ public class TlsDHEKeyExchange
 
         this.dhConfig = TlsDHUtils.receiveDHConfig(dhConfigVerifier, teeIn);
 
-        byte[] y = TlsUtils.readOpaque16(teeIn);
+        byte[] y = TlsUtils.readOpaque16(teeIn, 1);
 
-        TlsUtils.verifyServerKeyExchangeSignature(context, input, keyExchange, supportedSignatureAlgorithms,
-            serverCertificate, digestBuffer);
+        TlsUtils.verifyServerKeyExchangeSignature(context, input, keyExchange, serverCertificate, digestBuffer);
 
         this.agreement = context.getCrypto().createDHDomain(dhConfig).createDH();
 
@@ -126,7 +123,7 @@ public class TlsDHEKeyExchange
 
     public void processClientKeyExchange(InputStream input) throws IOException
     {
-        agreement.receivePeerValue(TlsUtils.readOpaque16(input));
+        agreement.receivePeerValue(TlsUtils.readOpaque16(input, 1));
     }
 
     public TlsSecret generatePreMasterSecret() throws IOException

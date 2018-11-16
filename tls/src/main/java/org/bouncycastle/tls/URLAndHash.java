@@ -75,11 +75,7 @@ public class URLAndHash
     public static URLAndHash parse(TlsContext context, InputStream input)
         throws IOException
     {
-        byte[] urlEncoding = TlsUtils.readOpaque16(input);
-        if (urlEncoding.length < 1)
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
+        byte[] urlEncoding = TlsUtils.readOpaque16(input, 1);
         String url = Strings.fromByteArray(urlEncoding);
 
         byte[] sha1Hash = null;

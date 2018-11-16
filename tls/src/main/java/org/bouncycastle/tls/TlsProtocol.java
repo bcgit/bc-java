@@ -1384,23 +1384,27 @@ public abstract class TlsProtocol
 
         assertEmpty(input);
 
-        ByteArrayInputStream buf = new ByteArrayInputStream(extBytes);
-
         // Integer -> byte[]
         Hashtable extensions = new Hashtable();
 
-        while (buf.available() > 0)
+        if (extBytes.length > 0)
         {
-            Integer extension_type = Integers.valueOf(TlsUtils.readUint16(buf));
-            byte[] extension_data = TlsUtils.readOpaque16(buf);
+            ByteArrayInputStream buf = new ByteArrayInputStream(extBytes);
 
-            /*
-             * RFC 3546 2.3 There MUST NOT be more than one extension of the same type.
-             */
-            if (null != extensions.put(extension_type, extension_data))
+            do
             {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                Integer extension_type = Integers.valueOf(TlsUtils.readUint16(buf));
+                byte[] extension_data = TlsUtils.readOpaque16(buf);
+
+                /*
+                 * RFC 3546 2.3 There MUST NOT be more than one extension of the same type.
+                 */
+                if (null != extensions.put(extension_type, extension_data))
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
             }
+            while (buf.available() > 0);
         }
 
         return extensions;
@@ -1409,7 +1413,7 @@ public abstract class TlsProtocol
     protected static Vector readSupplementalDataMessage(ByteArrayInputStream input)
         throws IOException
     {
-        byte[] supp_data = TlsUtils.readOpaque24(input);
+        byte[] supp_data = TlsUtils.readOpaque24(input, 1);
 
         assertEmpty(input);
 

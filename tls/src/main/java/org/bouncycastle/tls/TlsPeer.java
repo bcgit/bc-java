@@ -61,6 +61,8 @@ public interface TlsPeer
 
     void notifySecureRenegotiation(boolean secureNegotiation) throws IOException;
 
+    TlsKeyExchange getKeyExchange() throws IOException;
+
     TlsCipher getCipher() throws IOException;
 
     /**
