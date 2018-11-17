@@ -62,11 +62,9 @@ public class JceTlsDHDomain
              * used as the pre_master_secret. We use the convention established by the JSSE to signal this
              * by asking for "TlsPremasterSecret".
              */
-            SecretKey secretKey = crypto.calculateKeyAgreement("DH", privateKey, publicKey, "TlsPremasterSecret");
+            byte[] secret = crypto.calculateKeyAgreement("DH", privateKey, publicKey, "TlsPremasterSecret");
 
-            // TODO Need to consider cases where SecretKey may not be encodable
-
-            return crypto.adoptLocalSecret(secretKey.getEncoded());
+            return crypto.adoptLocalSecret(secret);
         }
         catch (GeneralSecurityException e)
         {
