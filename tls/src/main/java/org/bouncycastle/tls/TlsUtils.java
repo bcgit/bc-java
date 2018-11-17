@@ -2076,9 +2076,6 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256:
             return EncryptionAlgorithm.CHACHA20_POLY1305;
 
-        case CipherSuite.TLS_RSA_WITH_NULL_MD5:
-            return EncryptionAlgorithm.NULL;
-
         case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA:
         case CipherSuite.TLS_ECDH_anon_WITH_NULL_SHA:
         case CipherSuite.TLS_ECDH_ECDSA_WITH_NULL_SHA:
@@ -2412,7 +2409,6 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384:
-        case CipherSuite.TLS_RSA_WITH_NULL_MD5:
         case CipherSuite.TLS_RSA_WITH_NULL_SHA:
         case CipherSuite.TLS_RSA_WITH_NULL_SHA256:
         case CipherSuite.TLS_RSA_WITH_SEED_CBC_SHA:
@@ -2599,9 +2595,6 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_128_GCM_SHA256:
         case CipherSuite.TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384:
             return MACAlgorithm._null;
-
-        case CipherSuite.TLS_RSA_WITH_NULL_MD5:
-            return MACAlgorithm.hmac_md5;
 
         case CipherSuite.TLS_DH_anon_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_DH_anon_WITH_AES_128_CBC_SHA:
