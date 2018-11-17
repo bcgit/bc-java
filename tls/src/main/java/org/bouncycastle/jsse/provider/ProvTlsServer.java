@@ -202,7 +202,7 @@ class ProvTlsServer
             ClientCertificateType.dss_sign, ClientCertificateType.ecdsa_sign };
 
         Vector serverSigAlgs = null;
-        if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(serverVersion))
+        if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(context.getServerVersion()))
         {
             serverSigAlgs = JsseUtils.getSupportedSignatureAlgorithms(getCrypto());
         }
@@ -326,7 +326,7 @@ class ProvTlsServer
                 if (versionString != null && JsseUtils.contains(protocols, versionString))
                 {
                     LOG.fine("Server selected protocol version: " + version);
-                    return serverVersion = version;
+                    return version;
                 }
             }
         }
@@ -519,7 +519,7 @@ class ProvTlsServer
         {
             short signatureAlgorithm = TlsUtils.getLegacySignatureAlgorithmServer(keyExchangeAlgorithm);
             SignatureAndHashAlgorithm sigAlg = TlsUtils.chooseSignatureAndHashAlgorithm(context,
-                context.getSecurityParameters().getClientSigAlgs(), signatureAlgorithm);
+                context.getSecurityParametersHandshake().getClientSigAlgs(), signatureAlgorithm);
 
             // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
             this.credentials = new JcaDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), (JcaTlsCrypto)crypto,

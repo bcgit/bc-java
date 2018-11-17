@@ -7,6 +7,7 @@ import java.util.Vector;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
+import org.bouncycastle.tls.crypto.TlsSecret;
 
 /**
  * Base class for a TLS client.
@@ -158,6 +159,15 @@ public abstract class AbstractTlsClient
     public void init(TlsClientContext context)
     {
         this.context = context;
+    }
+
+    public void notifyHandshakeBeginning() throws IOException
+    {
+        this.supportedGroups = null;
+        this.supportedSignatureAlgorithms = null;
+        this.clientECPointFormats = null;
+        this.serverECPointFormats = null;
+        this.selectedCipherSuite = -1;
     }
 
     public TlsSession getSessionToResume()
@@ -334,7 +344,8 @@ public abstract class AbstractTlsClient
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        return context.getSecurityParameters().getMasterSecret().createCipher(new TlsCryptoParameters(context), encryptionAlgorithm, macAlgorithm);
+        TlsSecret masterSecret = context.getSecurityParametersHandshake().getMasterSecret();
+        return masterSecret.createCipher(new TlsCryptoParameters(context), encryptionAlgorithm, macAlgorithm);
     }
 
     public void notifyNewSessionTicket(NewSessionTicket newSessionTicket)

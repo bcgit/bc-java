@@ -35,10 +35,10 @@ public class TlsBlockCipher
         this.crypto = crypto;
         this.randomData = cryptoParams.getNonceGenerator().generateNonce(256);
 
-        this.encryptThenMAC = cryptoParams.getSecurityParameters().isEncryptThenMAC();
-        this.useExplicitIV = TlsImplUtils.isTLSv11(cryptoParams);
+        SecurityParameters securityParameters = cryptoParams.getSecurityParametersHandshake();
 
-        SecurityParameters securityParameters = cryptoParams.getSecurityParameters();
+        this.encryptThenMAC = securityParameters.isEncryptThenMAC();
+        this.useExplicitIV = TlsImplUtils.isTLSv11(cryptoParams);
 
         /*
          * Don't use variable-length padding with truncated MACs.

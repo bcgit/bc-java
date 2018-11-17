@@ -22,6 +22,10 @@ public abstract class AbstractTlsPeer
         return crypto;
     }
 
+    public void notifyHandshakeBeginning() throws IOException
+    {
+    }
+
     public boolean requiresExtendedMasterSecret()
     {
         return false;
@@ -70,5 +74,10 @@ public abstract class AbstractTlsPeer
 
     public void notifyHandshakeComplete() throws IOException
     {
+    }
+
+    public int getRenegotiationPolicy()
+    {
+        return RenegotiationPolicy.DENY;
     }
 }

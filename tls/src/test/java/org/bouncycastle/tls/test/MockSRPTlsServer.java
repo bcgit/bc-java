@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.Vector;
 
 import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
 import org.bouncycastle.crypto.digests.SHA1Digest;
@@ -65,7 +66,7 @@ class MockSRPTlsServer
     {
         super.notifyHandshakeComplete();
 
-        byte[] srpIdentity = context.getSecurityParameters().getSRPIdentity();
+        byte[] srpIdentity = context.getSecurityParametersConnection().getSRPIdentity();
         if (srpIdentity != null)
         {
             String name = Strings.fromUTF8ByteArray(srpIdentity);
@@ -89,14 +90,15 @@ class MockSRPTlsServer
 
     protected TlsCredentialedSigner getDSASignerCredentials() throws IOException
     {
-        return TlsTestUtils.loadSignerCredentials(context, context.getSecurityParameters().getClientSigAlgs(),
-            SignatureAlgorithm.dsa, "x509-server-dsa.pem", "x509-server-key-dsa.pem");
+        Vector clientSigAlgs = context.getSecurityParametersHandshake().getClientSigAlgs();
+        return TlsTestUtils.loadSignerCredentials(context, clientSigAlgs, SignatureAlgorithm.dsa, "x509-server-dsa.pem",
+            "x509-server-key-dsa.pem");
     }
 
     protected TlsCredentialedSigner getRSASignerCredentials() throws IOException
     {
-        return TlsTestUtils.loadSignerCredentialsServer(context, context.getSecurityParameters().getClientSigAlgs(),
-            SignatureAlgorithm.rsa);
+        Vector clientSigAlgs = context.getSecurityParametersHandshake().getClientSigAlgs();
+        return TlsTestUtils.loadSignerCredentialsServer(context, clientSigAlgs, SignatureAlgorithm.rsa);
     }
 
     static class MyIdentityManager

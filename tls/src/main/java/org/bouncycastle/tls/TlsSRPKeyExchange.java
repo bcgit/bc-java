@@ -166,7 +166,7 @@ public class TlsSRPKeyExchange
         BigInteger A = srpClient.generateClientCredentials(srpSalt, identity, password);
         TlsSRPUtils.writeSRPParameter(A, output);
 
-        context.getSecurityParameters().srpIdentity = Arrays.clone(identity);
+        context.getSecurityParametersHandshake().srpIdentity = Arrays.clone(identity);
     }
 
     public void processClientKeyExchange(InputStream input) throws IOException
@@ -176,7 +176,7 @@ public class TlsSRPKeyExchange
          * A % N = 0.
          */
         this.srpPeerCredentials = validatePublicValue(srpConfig.getExplicitNG()[0], TlsSRPUtils.readSRPParameter(input));
-        context.getSecurityParameters().srpIdentity = Arrays.clone(identity);
+        context.getSecurityParametersHandshake().srpIdentity = Arrays.clone(identity);
     }
 
     public TlsSecret generatePreMasterSecret() throws IOException

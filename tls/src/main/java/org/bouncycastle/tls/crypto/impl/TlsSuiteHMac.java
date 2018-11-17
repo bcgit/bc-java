@@ -15,7 +15,7 @@ class TlsSuiteHMac
     static int getMacSize(TlsCryptoParameters cryptoParams, TlsMAC mac)
     {
         int macSize = mac.getMacLength();
-        if (cryptoParams.getSecurityParameters().isTruncatedHMac())
+        if (cryptoParams.getSecurityParametersHandshake().isTruncatedHMac())
         {
             macSize = Math.min(macSize, 10);
         }

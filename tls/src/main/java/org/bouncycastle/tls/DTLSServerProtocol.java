@@ -40,16 +40,14 @@ public class DTLSServerProtocol
             throw new IllegalArgumentException("'transport' cannot be null");
         }
 
-        SecurityParameters securityParameters = new SecurityParameters();
-        securityParameters.entity = ConnectionEnd.server;
-
         ServerHandshakeState state = new ServerHandshakeState();
         state.server = server;
-        state.serverContext = new TlsServerContextImpl(server.getCrypto(), securityParameters);
-
-        securityParameters.extendedPadding = server.shouldUseExtendedPadding();
-
+        state.serverContext = new TlsServerContextImpl(server.getCrypto());
         server.init(state.serverContext);
+        state.serverContext.handshakeBeginning(server);
+
+        SecurityParameters securityParameters = state.serverContext.getSecurityParametersHandshake();
+        securityParameters.extendedPadding = server.shouldUseExtendedPadding();
 
         DTLSRecordLayer recordLayer = new DTLSRecordLayer(transport, server, ContentType.handshake);
 
@@ -89,7 +87,7 @@ public class DTLSServerProtocol
     protected DTLSTransport serverHandshake(ServerHandshakeState state, DTLSRecordLayer recordLayer)
         throws IOException
     {
-        SecurityParameters securityParameters = state.serverContext.getSecurityParameters();
+        SecurityParameters securityParameters = state.serverContext.getSecurityParametersHandshake();
         DTLSReliableHandshake handshake = new DTLSReliableHandshake(state.serverContext, recordLayer);
 
         DTLSReliableHandshake.Message clientMessage = handshake.receiveMessage();
@@ -107,9 +105,10 @@ public class DTLSServerProtocol
         }
 
         /*
-         *  NOTE: Currently no server support for session resumption
-         *  
-         *  If adding support, ensure securityParameters.tlsUnique is set to the serverVerifyData accordingly
+         * NOTE: Currently no server support for session resumption
+         * 
+         * If adding support, ensure securityParameters.tlsUnique is set to the localVerifyData, but
+         * ONLY when extended_master_secret has been negotiated (otherwise NULL).
          */
         {
             invalidateSession(state);
@@ -274,8 +273,8 @@ public class DTLSServerProtocol
         }
 
         // NOTE: Calculated exclusive of the actual Finished message from the client
-        byte[] expectedClientVerifyData = createVerifyData(state.serverContext, handshake, false);
-        processFinished(handshake.receiveMessageBody(HandshakeType.finished), expectedClientVerifyData);
+        securityParameters.peerVerifyData = createVerifyData(state.serverContext, handshake, false);
+        processFinished(handshake.receiveMessageBody(HandshakeType.finished), securityParameters.getPeerVerifyData());
 
         if (state.expectSessionTicket)
         {
@@ -285,8 +284,8 @@ public class DTLSServerProtocol
         }
 
         // NOTE: Calculated exclusive of the Finished message itself
-        byte[] serverVerifyData = createVerifyData(state.serverContext, handshake, true);
-        handshake.sendMessage(HandshakeType.finished, serverVerifyData);
+        securityParameters.localVerifyData = createVerifyData(state.serverContext, handshake, true);
+        handshake.sendMessage(HandshakeType.finished, securityParameters.getLocalVerifyData());
 
         handshake.finish();
 
@@ -306,11 +305,9 @@ public class DTLSServerProtocol
 
         state.tlsSession = TlsUtils.importSession(state.tlsSession.getSessionID(), state.sessionParameters);
 
-        securityParameters.tlsUnique = expectedClientVerifyData;
+        securityParameters.tlsUnique = securityParameters.getPeerVerifyData();
 
-        state.serverContext.setSession(state.tlsSession);
-
-        state.server.notifyHandshakeComplete();
+        state.serverContext.handshakeComplete(state.server, state.tlsSession);
 
         return new DTLSTransport(recordLayer);
     }
@@ -342,7 +339,7 @@ public class DTLSServerProtocol
     protected byte[] generateServerHello(ServerHandshakeState state)
         throws IOException
     {
-        SecurityParameters securityParameters = state.serverContext.getSecurityParameters();
+        SecurityParameters securityParameters = state.serverContext.getSecurityParametersHandshake();
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
@@ -394,7 +391,7 @@ public class DTLSServerProtocol
         /*
          * RFC 5746 3.6. Server Behavior: Initial Handshake
          */
-        if (state.secure_renegotiation)
+        if (securityParameters.isSecureRenegotiation())
         {
             byte[] renegExtData = TlsUtils.getExtensionData(state.serverExtensions, TlsProtocol.EXT_RenegotiationInfo);
             boolean noRenegExt = (null == renegExtData);
@@ -589,7 +586,7 @@ public class DTLSServerProtocol
         state.clientExtensions = TlsProtocol.readExtensions(buf);
 
         TlsServerContextImpl context = state.serverContext;
-        SecurityParameters securityParameters = context.getSecurityParameters();
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
         /*
          * TODO[resumption] Check RFC 7627 5.4. for required behaviour 
@@ -631,7 +628,7 @@ public class DTLSServerProtocol
              */
             if (Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV))
             {
-                state.secure_renegotiation = true;
+                securityParameters.secureRenegotiation = true;
             }
 
             /*
@@ -646,7 +643,7 @@ public class DTLSServerProtocol
                  * server MUST then verify that the length of the "renegotiated_connection"
                  * field is zero, and if it is not, MUST abort the handshake.
                  */
-                state.secure_renegotiation = true;
+                securityParameters.secureRenegotiation = true;
 
                 if (!Arrays.constantTimeAreEqual(renegExtData, TlsProtocol.createRenegotiationInfo(TlsUtils.EMPTY_BYTES)))
                 {
@@ -655,7 +652,7 @@ public class DTLSServerProtocol
             }
         }
 
-        state.server.notifySecureRenegotiation(state.secure_renegotiation);
+        state.server.notifySecureRenegotiation(securityParameters.isSecureRenegotiation());
 
         if (state.clientExtensions != null)
         {
@@ -711,7 +708,6 @@ public class DTLSServerProtocol
         Hashtable clientExtensions = null;
         Hashtable serverExtensions = null;
         boolean resumedSession = false;
-        boolean secure_renegotiation = false;
         boolean allowCertificateStatus = false;
         boolean expectSessionTicket = false;
         TlsKeyExchange keyExchange = null;

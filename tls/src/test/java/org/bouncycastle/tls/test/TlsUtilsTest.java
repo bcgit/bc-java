@@ -42,6 +42,16 @@ public class TlsUtilsTest
                 return null;
             }
 
+            public SecurityParameters getSecurityParametersConnection()
+            {
+                return null;
+            }
+
+            public SecurityParameters getSecurityParametersHandshake()
+            {
+                return null;
+            }
+
             public boolean isServer()
             {
                 return false;

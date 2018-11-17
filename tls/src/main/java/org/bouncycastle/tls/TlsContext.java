@@ -14,6 +14,10 @@ public interface TlsContext
 
     SecurityParameters getSecurityParameters();
 
+    SecurityParameters getSecurityParametersConnection();
+
+    SecurityParameters getSecurityParametersHandshake();
+
     /**
      * Return true if this context is for a server, false otherwise.
      *
