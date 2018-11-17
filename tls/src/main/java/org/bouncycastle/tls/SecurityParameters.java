@@ -10,6 +10,8 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 public class SecurityParameters
 {
     int entity = -1;
+    boolean renegotiating = false;
+    boolean secureRenegotiation = false;
     int cipherSuite = -1;
     final short compressionAlgorithm = CompressionMethod._null;
     short maxFragmentLength = -1;
@@ -31,6 +33,10 @@ public class SecurityParameters
     Vector clientSigAlgs = null;
     Vector clientSigAlgsCert = null;
 
+    // TODO[tls-ops] Investigate whether we can handle verify data using TlsSecret
+    byte[] localVerifyData = null;
+    byte[] peerVerifyData = null;
+
     void clear()
     {
         if (this.masterSecret != null)
@@ -46,6 +52,16 @@ public class SecurityParameters
     public int getEntity()
     {
         return entity;
+    }
+
+    public boolean isRenegotiating()
+    {
+        return renegotiating;
+    }
+
+    public boolean isSecureRenegotiation()
+    {
+        return secureRenegotiation;
     }
 
     /**
@@ -166,5 +182,15 @@ public class SecurityParameters
     public ProtocolName getApplicationProtocol()
     {
         return applicationProtocol;
+    }
+
+    public byte[] getLocalVerifyData()
+    {
+        return localVerifyData;
+    }
+
+    public byte[] getPeerVerifyData()
+    {
+        return peerVerifyData;
     }
 }

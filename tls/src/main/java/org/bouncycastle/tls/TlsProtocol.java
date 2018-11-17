@@ -71,12 +71,8 @@ public abstract class TlsProtocol
     private volatile boolean resumableHandshake = false;
     private volatile int appDataSplitMode = ADS_MODE_1_Nsub1;
 
-    // TODO[tls-ops] Investigate whether we can handle (expected/actual) verify data using TlsSecret
-    private byte[] expected_verify_data = null;
-
     protected TlsSession tlsSession = null;
     protected SessionParameters sessionParameters = null;
-    protected SecurityParameters securityParameters = null;
     protected Certificate localCertificate = null;
     protected Certificate peerCertificate = null;
 
@@ -87,7 +83,6 @@ public abstract class TlsProtocol
     protected short connection_state = CS_START;
     protected boolean resumedSession = false;
     protected boolean receivedChangeCipherSpec = false;
-    protected boolean secure_renegotiation = false;
     protected boolean allowCertificateStatus = false;
     protected boolean expectSessionTicket = false;
 
@@ -108,6 +103,20 @@ public abstract class TlsProtocol
         this.blocking = true;
         this.recordStream = new RecordStream(this, input, output);
     }
+
+//    public boolean renegotiate() throws IOException
+//    {
+//        TlsContext context = getContext();
+//        if (null == context.getSecurityParametersConnection() || isClosed())
+//        {
+//            throw new IllegalStateException("No connection");
+//        }
+//        if (!appDataReady)
+//        {
+//            throw new IllegalStateException("Initial handshake in progress");
+//        }
+//        return null == context.getSecurityParametersHandshake() && CS_END == connection_state;
+//    }
 
     public void resumeHandshake() throws IOException
     {
@@ -134,6 +143,16 @@ public abstract class TlsProtocol
 
     protected abstract TlsPeer getPeer();
 
+    protected int getRenegotiationPolicy()
+    {
+//        SecurityParameters sp = getContext().getSecurityParametersConnection();
+//        if (null != sp && sp.isSecureRenegotiation())
+//        {
+//            return getPeer().getRenegotiationPolicy();
+//        }
+        return RenegotiationPolicy.DENY;
+    }
+
     protected void handleAlertMessage(short alertLevel, short alertDescription)
         throws IOException
     {
@@ -154,17 +173,30 @@ public abstract class TlsProtocol
     protected void handleAlertWarningMessage(short alertDescription)
         throws IOException
     {
+        switch (alertDescription)
+        {
         /*
          * RFC 5246 7.2.1. The other party MUST respond with a close_notify alert of its own
          * and close down the connection immediately, discarding any pending writes.
          */
-        if (alertDescription == AlertDescription.close_notify)
+        case AlertDescription.close_notify:
         {
             if (!appDataReady)
             {
                 throw new TlsFatalAlert(AlertDescription.handshake_failure);
             }
             handleClose(false);
+            break;
+        }
+        case AlertDescription.no_certificate:
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+        case AlertDescription.no_renegotiation:
+        {
+            // TODO[reneg] Give peer the option to tolerate this
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
         }
     }
 
@@ -186,7 +218,7 @@ public abstract class TlsProtocol
 
             raiseAlertWarning(AlertDescription.close_notify, "Connection closed");
 
-            if (!appDataReady)
+            if (connection_state != CS_END)
             {
                 cleanupHandshake();
             }
@@ -223,7 +255,7 @@ public abstract class TlsProtocol
         // TODO This isn't quite in the right place. Also, as of TLS 1.1 the above is obsolete.
         invalidateSession();
 
-        if (!appDataReady)
+        if (connection_state != CS_END)
         {
             cleanupHandshake();
         }
@@ -234,10 +266,32 @@ public abstract class TlsProtocol
     protected abstract void handleHandshakeMessage(short type, ByteArrayInputStream buf)
         throws IOException;
 
+    protected boolean handleRenegotiation() throws IOException
+    {
+        switch (getRenegotiationPolicy())
+        {
+        case RenegotiationPolicy.ACCEPT:
+        {
+            beginHandshake(true);
+            return true;
+        }
+        case RenegotiationPolicy.IGNORE:
+        {
+            return false;
+        }
+        case RenegotiationPolicy.DENY:
+        default:
+        {
+            refuseRenegotiation();
+            return false;
+        }
+        }
+    }
+
     protected void applyMaxFragmentLengthExtension()
         throws IOException
     {
-        short maxFragmentLength = securityParameters.getMaxFragmentLength();
+        short maxFragmentLength = getContext().getSecurityParametersHandshake().getMaxFragmentLength();
         if (maxFragmentLength >= 0)
         {
             if (!MaxFragmentLength.isValid(maxFragmentLength))
@@ -273,17 +327,35 @@ public abstract class TlsProtocol
         }
     }
 
+    protected void beginHandshake(boolean renegotiation)
+        throws IOException
+    {
+        this.connection_state = CS_START;
+
+        AbstractTlsContext context = getContextAdmin(); 
+        TlsPeer peer = getPeer();
+
+        context.handshakeBeginning(peer);
+
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        if (renegotiation != securityParameters.renegotiating)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        securityParameters.extendedPadding = peer.shouldUseExtendedPadding();
+    }
+
     protected void cleanupHandshake()
     {
-        if (this.expected_verify_data != null)
+        SecurityParameters securityParameters = getContext().getSecurityParameters();
+        if (null != securityParameters)
         {
-            Arrays.fill(this.expected_verify_data, (byte)0);
-            this.expected_verify_data = null;
+            securityParameters.clear();
         }
 
         this.tlsSession = null;
         this.sessionParameters = null;
-        this.securityParameters.clear();
         this.localCertificate = null;
         this.peerCertificate = null;
 
@@ -293,7 +365,6 @@ public abstract class TlsProtocol
 
         this.resumedSession = false;
         this.receivedChangeCipherSpec = false;
-        this.secure_renegotiation = false;
         this.allowCertificateStatus = false;
         this.expectSessionTicket = false;
     }
@@ -328,16 +399,17 @@ public abstract class TlsProtocol
 
             if (this.sessionParameters == null)
             {
+                SecurityParameters securityParameters = getContext().getSecurityParametersHandshake();
                 this.sessionParameters = new SessionParameters.Builder()
-                    .setCipherSuite(this.securityParameters.getCipherSuite())
-                    .setCompressionAlgorithm(this.securityParameters.getCompressionAlgorithm())
+                    .setCipherSuite(securityParameters.getCipherSuite())
+                    .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
                     .setExtendedMasterSecret(securityParameters.isExtendedMasterSecret())
                     .setLocalCertificate(this.localCertificate)
-                    .setMasterSecret(getContext().getCrypto().adoptSecret(this.securityParameters.getMasterSecret()))
+                    .setMasterSecret(getContext().getCrypto().adoptSecret(securityParameters.getMasterSecret()))
                     .setNegotiatedVersion(getContext().getServerVersion())
                     .setPeerCertificate(this.peerCertificate)
-                    .setPSKIdentity(this.securityParameters.getPSKIdentity())
-                    .setSRPIdentity(this.securityParameters.getSRPIdentity())
+                    .setPSKIdentity(securityParameters.getPSKIdentity())
+                    .setSRPIdentity(securityParameters.getSRPIdentity())
                     // TODO Consider filtering extensions that aren't relevant to resumed sessions
                     .setServerExtensions(this.serverExtensions)
                     .build();
@@ -345,9 +417,7 @@ public abstract class TlsProtocol
                 this.tlsSession = TlsUtils.importSession(this.tlsSession.getSessionID(), this.sessionParameters);
             }
 
-            getContextAdmin().setSession(this.tlsSession);
-
-            getPeer().notifyHandshakeComplete();
+            getContextAdmin().handshakeComplete(getPeer(), this.tlsSession);
         }
         finally
         {
@@ -454,15 +524,16 @@ public abstract class TlsProtocol
                     checkReceivedChangeCipherSpec(true);
 
                     TlsContext ctx = getContext();
-                    if (this.expected_verify_data == null
-                        && ctx.getSecurityParameters().getMasterSecret() != null)
+                    SecurityParameters securityParameters = ctx.getSecurityParametersHandshake();
+
+                    if (securityParameters.getMasterSecret() != null)
                     {
-                        this.expected_verify_data = createVerifyData(!ctx.isServer());
+                        securityParameters.peerVerifyData = createVerifyData(!ctx.isServer());
                     }
                 }
                 else
                 {
-                    checkReceivedChangeCipherSpec(connection_state == CS_END);
+                    checkReceivedChangeCipherSpec(false);
                 }
 
                 queue.copyTo(recordStream.getHandshakeHashUpdater(), totalLength);
@@ -1150,9 +1221,21 @@ public abstract class TlsProtocol
     protected void processFinishedMessage(ByteArrayInputStream buf)
         throws IOException
     {
+        TlsContext ctx = getContext();
+        SecurityParameters securityParameters = ctx.getSecurityParametersHandshake();
+
+        byte[] expected_verify_data = securityParameters.getPeerVerifyData();
         if (expected_verify_data == null)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        if (ctx.isServer() ^ resumedSession)
+        {
+            if (!resumedSession || securityParameters.isExtendedMasterSecret())
+            {
+                securityParameters.tlsUnique = expected_verify_data;
+            }
         }
 
         byte[] verify_data = TlsUtils.readFully(expected_verify_data.length, buf);
@@ -1168,11 +1251,6 @@ public abstract class TlsProtocol
              * Wrong checksum in the finished message.
              */
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
-        }
-
-        if (null == securityParameters.getTLSUnique())
-        {
-            securityParameters.tlsUnique = verify_data;
         }
     }
 
@@ -1238,18 +1316,24 @@ public abstract class TlsProtocol
     protected void sendFinishedMessage()
         throws IOException
     {
-        byte[] verify_data = createVerifyData(getContext().isServer());
+        TlsContext ctx = getContext();
+        SecurityParameters securityParameters = ctx.getSecurityParametersHandshake();
+
+        byte[] verify_data = securityParameters.localVerifyData = createVerifyData(ctx.isServer());
+
+        if (!ctx.isServer() ^ resumedSession)
+        {
+            if (!resumedSession || securityParameters.isExtendedMasterSecret())
+            {
+                securityParameters.tlsUnique = verify_data;
+            }
+        }
 
         HandshakeMessage message = new HandshakeMessage(HandshakeType.finished, verify_data.length);
 
         message.write(verify_data);
 
         message.writeToRecordStream();
-
-        if (null == securityParameters.getTLSUnique())
-        {
-            securityParameters.tlsUnique = verify_data;
-        }
     }
 
     protected void sendSupplementalDataMessage(Vector supplementalData)
@@ -1291,7 +1375,7 @@ public abstract class TlsProtocol
 
     public boolean isHandshaking()
     {
-        return securityParameters != null && this.connection_state != CS_END && !isClosed();
+        return !isClosed() && null != getContext().getSecurityParametersHandshake();
     }
 
     protected short processMaxFragmentLengthExtension(Hashtable clientExtensions, Hashtable serverExtensions,
@@ -1360,7 +1444,7 @@ public abstract class TlsProtocol
 
         try
         {
-            context.getSecurityParameters().masterSecret = TlsUtils.calculateMasterSecret(context, preMasterSecret);
+            context.getSecurityParametersHandshake().masterSecret = TlsUtils.calculateMasterSecret(context, preMasterSecret);
         }
         finally
         {

@@ -77,7 +77,7 @@ class MockTlsServer
             ClientCertificateType.dss_sign, ClientCertificateType.ecdsa_sign };
 
         Vector serverSigAlgs = null;
-        if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(serverVersion))
+        if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(context.getServerVersion()))
         {
             serverSigAlgs = TlsUtils.getDefaultSupportedSignatureAlgorithms(context);
         }
@@ -122,7 +122,7 @@ class MockTlsServer
     {
         super.notifyHandshakeComplete();
 
-        ProtocolName protocolName = context.getSecurityParameters().getApplicationProtocol();
+        ProtocolName protocolName = context.getSecurityParametersConnection().getApplicationProtocol();
         if (protocolName != null)
         {
             System.out.println("Server ALPN: " + protocolName.getUtf8Decoding());
@@ -144,8 +144,8 @@ class MockTlsServer
 
     protected TlsCredentialedSigner getRSASignerCredentials() throws IOException
     {
-        return TlsTestUtils.loadSignerCredentialsServer(context, context.getSecurityParameters().getClientSigAlgs(),
-            SignatureAlgorithm.rsa);
+        Vector clientSigAlgs = context.getSecurityParametersHandshake().getClientSigAlgs();
+        return TlsTestUtils.loadSignerCredentialsServer(context, clientSigAlgs, SignatureAlgorithm.rsa);
     }
 
     protected String hex(byte[] data)

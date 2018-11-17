@@ -1331,7 +1331,7 @@ public class TlsUtils
 
     public static TlsSecret PRF(TlsContext context, TlsSecret secret, String asciiLabel, byte[] seed, int length)
     {
-        int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
+        int prfAlgorithm = context.getSecurityParametersHandshake().getPrfAlgorithm();
 
         return secret.deriveUsingPRF(prfAlgorithm, asciiLabel, seed, length);
     }
@@ -1381,17 +1381,19 @@ public class TlsUtils
 
     static TlsSecret calculateMasterSecret(TlsContext context, TlsSecret preMasterSecret)
     {
+        SecurityParameters sp = context.getSecurityParametersHandshake();
+
         String asciiLabel;
         byte[] seed;
-        if (context.getSecurityParameters().isExtendedMasterSecret())
+        if (sp.isExtendedMasterSecret())
         {
             asciiLabel = ExporterLabel.extended_master_secret;
-            seed = context.getSecurityParameters().getSessionHash();
+            seed = sp.getSessionHash();
         }
         else
         {
             asciiLabel = ExporterLabel.master_secret;
-            seed = concat(context.getSecurityParameters().getClientRandom(), context.getSecurityParameters().getServerRandom());
+            seed = concat(sp.getClientRandom(), sp.getServerRandom());
         }
 
         return PRF(context, preMasterSecret, asciiLabel, seed, 48);
@@ -1407,7 +1409,7 @@ public class TlsUtils
 
     static byte[] calculateTLSVerifyData(TlsContext context, String asciiLabel, byte[] prfHash)
     {
-        SecurityParameters securityParameters = context.getSecurityParameters();
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
         TlsSecret master_secret = securityParameters.getMasterSecret();
         int verify_data_length = securityParameters.getVerifyDataLength();
 
@@ -1477,7 +1479,7 @@ public class TlsUtils
             ? new CombinedHash(crypto)
             : crypto.createHash(algorithm.getHash());
 
-        SecurityParameters sp = context.getSecurityParameters();
+        SecurityParameters sp = context.getSecurityParametersHandshake();
         byte[] cr = sp.getClientRandom(), sr = sp.getServerRandom();
         h.update(cr, 0, cr.length);
         h.update(sr, 0, sr.length);
@@ -1489,7 +1491,7 @@ public class TlsUtils
     static void sendSignatureInput(TlsContext context, DigestInputBuffer buf, OutputStream output)
         throws IOException
     {
-        SecurityParameters securityParameters = context.getSecurityParameters();
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
         // NOTE: The implicit copy here is intended (and important)
         output.write(Arrays.concatenate(securityParameters.getClientRandom(), securityParameters.getServerRandom()));
         buf.copyTo(output);
@@ -1516,7 +1518,7 @@ public class TlsUtils
             byte[] hash;
             if (signatureAndHashAlgorithm == null)
             {
-                hash = context.getSecurityParameters().getSessionHash();
+                hash = context.getSecurityParametersHandshake().getSessionHash();
             }
             else
             {
@@ -1579,7 +1581,7 @@ public class TlsUtils
                 }
                 else
                 {
-                    hash = context.getSecurityParameters().getSessionHash();
+                    hash = context.getSecurityParametersHandshake().getSessionHash();
                 }
 
                 verified = verifier.verifyRawSignature(certificateVerify, hash);
@@ -1647,7 +1649,8 @@ public class TlsUtils
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
 
-            verifySupportedSignatureAlgorithm(context.getSecurityParameters().getClientSigAlgs(), sigAndHashAlg);
+            Vector clientSigAlgs = context.getSecurityParametersHandshake().getClientSigAlgs();
+            verifySupportedSignatureAlgorithm(clientSigAlgs, sigAndHashAlg);
         }
 
         TlsVerifier verifier = serverCertificate.createVerifier(signatureAlgorithm);
@@ -3395,7 +3398,7 @@ public class TlsUtils
          * effective value based on the negotiated protocol version and/or the defaults for the
          * selected key exchange.
          */
-        SecurityParameters securityParameters = context.getSecurityParameters();
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
         if (isSignatureAlgorithmsExtensionAllowed(context.getServerVersion()))
         {
@@ -3467,7 +3470,7 @@ public class TlsUtils
     static void checkSigAlgOfServerCerts(TlsContext context, Certificate serverCertificate, TlsKeyExchange keyExchange)
         throws IOException
     {
-        Vector clientSigAlgsCert = context.getSecurityParameters().getClientSigAlgsCert();
+        Vector clientSigAlgsCert = context.getSecurityParametersHandshake().getClientSigAlgsCert();
 
         for (int i = 0; i < serverCertificate.getLength(); ++i)
         {
@@ -3573,7 +3576,7 @@ public class TlsUtils
         {
             // There was no server certificate message; check it's OK
             keyExchange.skipServerCredentials();
-            context.getSecurityParameters().tlsServerEndPoint = EMPTY_BYTES;
+            context.getSecurityParametersHandshake().tlsServerEndPoint = EMPTY_BYTES;
             return;
         }
 

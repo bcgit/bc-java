@@ -13,6 +13,11 @@ public interface TlsPeer
     TlsCrypto getCrypto();
 
     /**
+     * Notifies the peer that a new handshake is about to begin.
+     */
+    void notifyHandshakeBeginning() throws IOException;
+
+    /**
      * This implementation supports RFC 7627 and will always negotiate the extended_master_secret
      * extension where possible. When connecting to a peer that does not offer/accept this
      * extension, it is recommended to abort the handshake. This option is provided for
@@ -87,4 +92,17 @@ public interface TlsPeer
      * Notifies the peer that the handshake has been successfully completed.
      */
     void notifyHandshakeComplete() throws IOException;
+
+    /**
+     * WARNING: EXPERIMENTAL FEATURE
+     * 
+     * Return this peer's policy on renegotiation requests from the remote peer. This will be called
+     * only outside of ongoing handshakes, either when a remote server has sent a hello_request, or
+     * a remote client has sent a new ClientHello, and only when the requirements for secure
+     * renegotiation (including those of RFC 5746) have been met.
+     * 
+     * @return The {@link RenegotiationPolicy} constant corresponding to the desired policy.
+     * @see RenegotiationPolicy
+     */
+    int getRenegotiationPolicy();
 }

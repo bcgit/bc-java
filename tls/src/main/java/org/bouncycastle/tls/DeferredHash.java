@@ -65,7 +65,7 @@ class DeferredHash
 
     public TlsHandshakeHash notifyPRFDetermined()
     {
-        int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
+        int prfAlgorithm = context.getSecurityParametersHandshake().getPrfAlgorithm();
         if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
         {
             checkTrackingHash(Shorts.valueOf(HashAlgorithm.md5));
@@ -100,7 +100,7 @@ class DeferredHash
     public TlsHandshakeHash stopTracking()
     {
         Hashtable newHashes = new Hashtable();
-        int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
+        int prfAlgorithm = context.getSecurityParametersHandshake().getPrfAlgorithm();
         if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
         {
             cloneHash(newHashes, HashAlgorithm.md5);
@@ -119,7 +119,7 @@ class DeferredHash
 
         TlsHash prfHash;
 
-        int prfAlgorithm = context.getSecurityParameters().getPrfAlgorithm();
+        int prfAlgorithm = context.getSecurityParametersHandshake().getPrfAlgorithm();
         if (prfAlgorithm == PRFAlgorithm.tls_prf_legacy)
         {
             prfHash = new CombinedHash(context, cloneHash(HashAlgorithm.md5), cloneHash(HashAlgorithm.sha1));

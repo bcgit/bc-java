@@ -21,6 +21,7 @@ class RecordStream
     private TlsProtocol handler;
     private InputStream input;
     private OutputStream output;
+    private TlsContext context = null;
     private TlsCipher pendingCipher = null, readCipher = null, writeCipher = null;
     private SequenceNumber readSeqNo = new SequenceNumber(), writeSeqNo = new SequenceNumber();
 
@@ -47,6 +48,7 @@ class RecordStream
 
     void init(TlsContext context)
     {
+        this.context = context;
         this.readCipher = new TlsNullNullCipher();
         this.writeCipher = this.readCipher;
         this.handshakeHash = new DeferredHash(context);
@@ -127,6 +129,7 @@ class RecordStream
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
         this.pendingCipher = null;
+        this.handshakeHash = new DeferredHash(context);
     }
 
     RecordPreview previewRecordHeader(byte[] recordHeader, boolean appDataReady) throws IOException

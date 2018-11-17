@@ -6,9 +6,9 @@ class TlsClientContextImpl
     extends AbstractTlsContext
     implements TlsClientContext
 {
-    TlsClientContextImpl(TlsCrypto crypto, SecurityParameters securityParameters)
+    TlsClientContextImpl(TlsCrypto crypto)
     {
-        super(crypto, securityParameters);
+        super(crypto, ConnectionEnd.client);
     }
 
     public boolean isServer()

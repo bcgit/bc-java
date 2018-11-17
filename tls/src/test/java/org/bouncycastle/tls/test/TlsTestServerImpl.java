@@ -145,14 +145,9 @@ class TlsTestServerImpl
 
     public ProtocolVersion getServerVersion() throws IOException
     {
-        if (null != config.serverNegotiateVersion)
-        {
-            serverVersion = config.serverNegotiateVersion;
-        }
-        else
-        {
-            super.getServerVersion();
-        }
+        ProtocolVersion serverVersion = (null != config.serverNegotiateVersion)
+            ?   config.serverNegotiateVersion
+            :   super.getServerVersion();
 
         if (TlsTestConfig.DEBUG)
         {
@@ -173,7 +168,7 @@ class TlsTestServerImpl
             ClientCertificateType.dss_sign, ClientCertificateType.ecdsa_sign };
 
         Vector serverSigAlgs = null;
-        if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(serverVersion))
+        if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(context.getServerVersion()))
         {
             serverSigAlgs = config.serverCertReqSigAlgs;
             if (serverSigAlgs == null)
@@ -240,7 +235,7 @@ class TlsTestServerImpl
             return signatureAlgorithms;
         }
 
-        return context.getSecurityParameters().getClientSigAlgs();
+        return context.getSecurityParametersHandshake().getClientSigAlgs();
     }
 
     protected TlsCredentialedSigner getDSASignerCredentials() throws IOException

@@ -146,7 +146,7 @@ class MockTlsClient
     {
         super.notifyHandshakeComplete();
 
-        ProtocolName protocolName = context.getSecurityParameters().getApplicationProtocol();
+        ProtocolName protocolName = context.getSecurityParametersConnection().getApplicationProtocol();
         if (protocolName != null)
         {
             System.out.println("Client ALPN: " + protocolName.getUtf8Decoding());
