@@ -3,6 +3,7 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -120,7 +121,20 @@ public class JcaTlsCrypto
         KeyAgreement agreement = helper.createKeyAgreement(agreementAlgorithm);
         agreement.init(privateKey);
         agreement.doPhase(publicKey, true);
-        return agreement.generateSecret(secretAlgorithm);
+
+        try
+        {
+            return agreement.generateSecret(secretAlgorithm);
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            // Oracle provider currently does not support generateSecret(algorithmName) for these.
+            if ("X25519".equals(agreementAlgorithm) || "X448".equals(agreementAlgorithm))
+            {
+                return new SecretKeySpec(agreement.generateSecret(), secretAlgorithm);
+            }
+            throw e;
+        }
     }
 
     public TlsCertificate createCertificate(byte[] encoding)
