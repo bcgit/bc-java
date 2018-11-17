@@ -115,7 +115,7 @@ public class JcaTlsCrypto
         return entropySource;
     }
 
-    public SecretKey calculateKeyAgreement(String agreementAlgorithm, PrivateKey privateKey, PublicKey publicKey, String secretAlgorithm)
+    public byte[] calculateKeyAgreement(String agreementAlgorithm, PrivateKey privateKey, PublicKey publicKey, String secretAlgorithm)
         throws GeneralSecurityException
     {
         KeyAgreement agreement = helper.createKeyAgreement(agreementAlgorithm);
@@ -124,14 +124,14 @@ public class JcaTlsCrypto
 
         try
         {
-            return agreement.generateSecret(secretAlgorithm);
+            return agreement.generateSecret(secretAlgorithm).getEncoded();
         }
         catch (NoSuchAlgorithmException e)
         {
             // Oracle provider currently does not support generateSecret(algorithmName) for these.
             if ("X25519".equals(agreementAlgorithm) || "X448".equals(agreementAlgorithm))
             {
-                return new SecretKeySpec(agreement.generateSecret(), secretAlgorithm);
+                return agreement.generateSecret();
             }
             throw e;
         }

@@ -87,11 +87,9 @@ public class JceDefaultTlsCredentialedAgreement
              */
             PublicKey publicKey = JcaTlsCertificate.convert(crypto, peerCertificate).getPublicKey();
 
-            SecretKey secretKey = crypto.calculateKeyAgreement(agreementAlgorithm, privateKey, publicKey, "TlsPremasterSecret");
+            byte[] secret = crypto.calculateKeyAgreement(agreementAlgorithm, privateKey, publicKey, "TlsPremasterSecret");
 
-            // TODO Need to consider cases where SecretKey may not be encodable
-
-            return crypto.adoptLocalSecret(secretKey.getEncoded());
+            return crypto.adoptLocalSecret(secret);
         }
         catch (GeneralSecurityException e)
         {
