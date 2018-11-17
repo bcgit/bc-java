@@ -36,11 +36,8 @@ public class JceX448Domain implements TlsECDomain
     {
         try
         {
-            SecretKey secretKey = crypto.calculateKeyAgreement("X448", privateKey, publicKey, "TlsPremasterSecret");
+            byte[] secret = crypto.calculateKeyAgreement("X448", privateKey, publicKey, "TlsPremasterSecret");
 
-            // TODO Need to consider cases where SecretKey may not be encodable
-
-            byte[] secret = secretKey.getEncoded();
             if (secret == null || secret.length != 56)
             {
                 throw new TlsCryptoException("invalid secret calculated");

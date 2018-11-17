@@ -62,11 +62,9 @@ public class JceTlsECDomain
              *
              * We use the convention established by the JSSE to signal this by asking for "TlsPremasterSecret".
              */
-            SecretKey secretKey = crypto.calculateKeyAgreement("ECDH", privateKey, publicKey, "TlsPremasterSecret");
+            byte[] secret = crypto.calculateKeyAgreement("ECDH", privateKey, publicKey, "TlsPremasterSecret");
 
-            // TODO Need to consider cases where SecretKey may not be encodable
-
-            return crypto.adoptLocalSecret(secretKey.getEncoded());
+            return crypto.adoptLocalSecret(secret);
         }
         catch (GeneralSecurityException e)
         {
