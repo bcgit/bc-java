@@ -273,6 +273,16 @@ public class BasicTlsTest
             return securityParameters;
         }
 
+        public SecurityParameters getSecurityParametersConnection()
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        public SecurityParameters getSecurityParametersHandshake()
+        {
+            throw new UnsupportedOperationException();
+        }
+
         public boolean isServer()
         {
             return false;

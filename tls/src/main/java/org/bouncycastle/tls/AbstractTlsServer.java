@@ -9,6 +9,7 @@ import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
+import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -111,7 +112,7 @@ public abstract class AbstractTlsServer
     protected boolean isSelectableCipherSuite(int cipherSuite, int availCurveBits, int availFiniteFieldBits, Vector sigAlgs)
     {
         return Arrays.contains(this.offeredCipherSuites, cipherSuite)
-            && TlsUtils.isValidCipherSuiteForVersion(cipherSuite, serverVersion)
+            && TlsUtils.isValidCipherSuiteForVersion(cipherSuite, context.getServerVersion())
             && availCurveBits >= TlsECCUtils.getMinimumCurveBits(cipherSuite)
             && availFiniteFieldBits >= TlsDHUtils.getMinimumFiniteFieldBits(cipherSuite)
             && TlsUtils.isValidCipherSuiteForSignatureAlgorithms(cipherSuite, sigAlgs);
@@ -232,6 +233,22 @@ public abstract class AbstractTlsServer
         this.context = context;
     }
 
+    public void notifyHandshakeBeginning() throws IOException
+    {
+        this.offeredCipherSuites = null;
+        this.clientExtensions = null;
+        this.encryptThenMACOffered = false;
+        this.maxFragmentLengthOffered = 0;
+        this.truncatedHMacOffered = false;
+        this.clientSupportedGroups = null;
+        this.clientECPointFormats = null;
+        this.serverECPointFormats = null;
+        this.certificateStatusRequest = null;
+        this.selectedCipherSuite = -1;
+        this.selectedProtocolName = null;
+        this.serverExtensions = null;
+    }
+
     public TlsSession getSessionToResume(byte[] sessionID)
     {
         return null;
@@ -334,11 +351,11 @@ public abstract class AbstractTlsServer
             ProtocolVersion maximumVersion = getMaximumVersion();
             if (clientVersion.isEqualOrEarlierVersionOf(maximumVersion))
             {
-                return serverVersion = clientVersion;
+                return clientVersion;
             }
             if (clientVersion.isLaterVersionOf(maximumVersion))
             {
-                return serverVersion = maximumVersion;
+                return maximumVersion;
             }
         }
         throw new TlsFatalAlert(AlertDescription.protocol_version);
@@ -353,7 +370,8 @@ public abstract class AbstractTlsServer
          * somewhat inelegant but is a compromise designed to minimize changes to the original
          * cipher suite design.
          */
-        Vector sigAlgs = TlsUtils.getUsableSignatureAlgorithms(context.getSecurityParameters().getClientSigAlgs());
+        Vector sigAlgs = TlsUtils.getUsableSignatureAlgorithms(
+            context.getSecurityParametersHandshake().getClientSigAlgs());
 
         /*
          * RFC 4429 5.1. A server that receives a ClientHello containing one or both of these
@@ -480,7 +498,8 @@ public abstract class AbstractTlsServer
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        return context.getSecurityParameters().getMasterSecret().createCipher(new TlsCryptoParameters(context), encryptionAlgorithm, macAlgorithm);
+        TlsSecret masterSecret = context.getSecurityParametersHandshake().getMasterSecret();
+        return masterSecret.createCipher(new TlsCryptoParameters(context), encryptionAlgorithm, macAlgorithm);
     }
 
     public NewSessionTicket getNewSessionTicket()
