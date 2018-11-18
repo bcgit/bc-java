@@ -28,30 +28,25 @@ public class TlsECDHanonKeyExchange
 
     protected TlsECConfigVerifier ecConfigVerifier;
     protected TlsECConfig ecConfig;
-    protected short[] clientECPointFormats, serverECPointFormats;
 
     protected TlsAgreement agreement;
 
-    public TlsECDHanonKeyExchange(int keyExchange, TlsECConfigVerifier ecConfigVerifier, short[] clientECPointFormats,
-        short[] serverECPointFormats)
+    public TlsECDHanonKeyExchange(int keyExchange, TlsECConfigVerifier ecConfigVerifier)
     {
-        this(keyExchange, ecConfigVerifier, null, clientECPointFormats, serverECPointFormats);
+        this(keyExchange, ecConfigVerifier, null);
     }
 
-    public TlsECDHanonKeyExchange(int keyExchange, TlsECConfig ecConfig, short[] serverECPointFormats)
+    public TlsECDHanonKeyExchange(int keyExchange, TlsECConfig ecConfig)
     {
-        this(keyExchange, null, ecConfig, null, serverECPointFormats);
+        this(keyExchange, null, ecConfig);
     }
 
-    private TlsECDHanonKeyExchange(int keyExchange, TlsECConfigVerifier ecConfigVerifier, TlsECConfig ecConfig,
-        short[] clientECPointFormats, short[] serverECPointFormats)
+    private TlsECDHanonKeyExchange(int keyExchange, TlsECConfigVerifier ecConfigVerifier, TlsECConfig ecConfig)
     {
         super(checkKeyExchange(keyExchange));
 
         this.ecConfigVerifier = ecConfigVerifier;
         this.ecConfig = ecConfig;
-        this.clientECPointFormats = clientECPointFormats;
-        this.serverECPointFormats = serverECPointFormats;
     }
 
     public void skipServerCredentials() throws IOException
@@ -88,13 +83,13 @@ public class TlsECDHanonKeyExchange
 
     public void processServerKeyExchange(InputStream input) throws IOException
     {
-        this.ecConfig = TlsECCUtils.receiveECConfig(ecConfigVerifier, serverECPointFormats, input);
+        this.ecConfig = TlsECCUtils.receiveECConfig(ecConfigVerifier, input);
 
         byte[] point = TlsUtils.readOpaque8(input, 1);
 
         this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
 
-        processEphemeral(clientECPointFormats, point);
+        processEphemeral(point);
     }
 
     public short[] getClientCertificateTypes()
@@ -121,7 +116,7 @@ public class TlsECDHanonKeyExchange
     {
         byte[] point = TlsUtils.readOpaque8(input, 1);
 
-        processEphemeral(serverECPointFormats, point);
+        processEphemeral(point);
     }
 
     public TlsSecret generatePreMasterSecret() throws IOException
@@ -136,9 +131,9 @@ public class TlsECDHanonKeyExchange
         TlsUtils.writeOpaque8(point, output);
     }
 
-    protected void processEphemeral(short[] localECPointFormats, byte[] point) throws IOException
+    protected void processEphemeral(byte[] point) throws IOException
     {
-        TlsECCUtils.checkPointEncoding(localECPointFormats, ecConfig.getNamedGroup(), point);
+        TlsECCUtils.checkPointEncoding(ecConfig.getNamedGroup(), point);
 
         this.agreement.receivePeerValue(point);
     }

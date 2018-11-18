@@ -98,7 +98,6 @@ public class PSKTlsServer
 
     protected TlsKeyExchange createPSKKeyExchange(int keyExchange, TlsDHConfig dhConfig, TlsECConfig ecConfig) throws IOException
     {
-        return keyExchangeFactory.createPSKKeyExchangeServer(keyExchange, pskIdentityManager, dhConfig, ecConfig,
-            serverECPointFormats);
+        return keyExchangeFactory.createPSKKeyExchangeServer(keyExchange, pskIdentityManager, dhConfig, ecConfig);
     }
 }

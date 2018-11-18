@@ -34,8 +34,8 @@ public class TlsECCUtils
              * contain the value 0 (uncompressed) as one of the items in the list of point formats.
              */
 
-            // NOTE: We add it at the end (lowest preference)
-            ecPointFormats = Arrays.append(ecPointFormats, ECPointFormat.uncompressed);
+            // NOTE: We add it at the start (highest preference)
+            ecPointFormats = Arrays.prepend(ecPointFormats, ECPointFormat.uncompressed);
         }
 
         return TlsUtils.encodeUint8ArrayWithUint8Length(ecPointFormats);
@@ -82,100 +82,28 @@ public class TlsECCUtils
         }
     }
 
-    public static short getCompressionFormat(int namedGroup) throws IOException
-    {
-        switch (namedGroup)
-        {
-        case NamedGroup.x25519:
-        case NamedGroup.x448:
-            return ECPointFormat.uncompressed;
-        }
-
-        if (NamedGroup.isPrimeCurve(namedGroup))
-        {
-            return ECPointFormat.ansiX962_compressed_prime;
-        }
-        if (NamedGroup.isChar2Curve(namedGroup))
-        {
-            return ECPointFormat.ansiX962_compressed_char2;
-        }
-        throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-    }
-
-    public static boolean isCompressionPreferred(short[] peerECPointFormats, int namedGroup) throws IOException
-    {
-        switch (namedGroup)
-        {
-        case NamedGroup.x25519:
-        case NamedGroup.x448:
-            return false;
-        default:
-            return isCompressionPreferred(peerECPointFormats, getCompressionFormat(namedGroup));
-        }
-    }
-
-    public static boolean isCompressionPreferred(short[] peerECPointFormats, short compressionFormat)
-    {
-        if (peerECPointFormats == null || compressionFormat == ECPointFormat.uncompressed)
-        {
-            return false;
-        }
-        for (int i = 0; i < peerECPointFormats.length; ++i)
-        {
-            short ecPointFormat = peerECPointFormats[i];
-            if (ecPointFormat == ECPointFormat.uncompressed)
-            {
-                return false;
-            }
-            if (ecPointFormat == compressionFormat)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static void checkPointEncoding(short[] localECPointFormats, int namedGroup, byte[] encoding) throws IOException
+    public static void checkPointEncoding(int namedGroup, byte[] encoding) throws IOException
     {
         if (encoding == null || encoding.length < 1)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        short actualFormat = getActualFormat(namedGroup, encoding);
-        checkActualFormat(localECPointFormats, actualFormat);
-    }
-
-    public static void checkActualFormat(short[] localECPointFormats, short actualFormat) throws IOException
-    {
-        if (actualFormat != ECPointFormat.uncompressed
-            && (localECPointFormats == null || !Arrays.contains(localECPointFormats, actualFormat)))
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-    }
-
-    public static short getActualFormat(int namedGroup, byte[] encoding) throws IOException
-    {
         switch (namedGroup)
         {
         case NamedGroup.x25519:
         case NamedGroup.x448:
-            return ECPointFormat.uncompressed;
+            return;
         }
 
         switch (encoding[0])
         {
+        case 0x04: // uncompressed
+            return;
+
+        case 0x00: // infinity
         case 0x02: // compressed
         case 0x03: // compressed
-        {
-            return getCompressionFormat(namedGroup);
-        }
-        case 0x04: // uncompressed
-        {
-            return ECPointFormat.uncompressed;
-        }
-        case 0x00: // infinity
         case 0x06: // hybrid
         case 0x07: // hybrid
         default:
@@ -183,7 +111,7 @@ public class TlsECCUtils
         }
     }
 
-    public static TlsECConfig readECConfig(short[] peerECPointFormats, InputStream input)
+    public static TlsECConfig readECConfig(InputStream input)
         throws IOException
     {
         short curveType = TlsUtils.readUint8(input);
@@ -203,18 +131,15 @@ public class TlsECCUtils
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
-        boolean compressed = isCompressionPreferred(peerECPointFormats, namedGroup);
-
         TlsECConfig result = new TlsECConfig();
         result.setNamedGroup(namedGroup);
-        result.setPointCompression(compressed);
         return result;
     }
 
-    public static TlsECConfig receiveECConfig(TlsECConfigVerifier ecConfigVerifier, short[] peerECPointFormats, InputStream input)
+    public static TlsECConfig receiveECConfig(TlsECConfigVerifier ecConfigVerifier, InputStream input)
         throws IOException
     {
-        TlsECConfig ecConfig = readECConfig(peerECPointFormats, input);
+        TlsECConfig ecConfig = readECConfig(input);
         if (!ecConfigVerifier.accept(ecConfig))
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);

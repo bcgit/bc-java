@@ -31,7 +31,7 @@ public abstract class AbstractTlsServer
     protected short maxFragmentLengthOffered;
     protected boolean truncatedHMacOffered;
     protected int[] clientSupportedGroups;
-    protected short[] clientECPointFormats, serverECPointFormats;
+    protected boolean clientSentECPointFormats;
     protected CertificateStatusRequest certificateStatusRequest;
 
     protected ProtocolVersion serverVersion;
@@ -213,11 +213,8 @@ public abstract class AbstractTlsServer
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        boolean compressed = TlsECCUtils.isCompressionPreferred(clientECPointFormats, namedGroup);
-
         TlsECConfig ecConfig = new TlsECConfig();
         ecConfig.setNamedGroup(namedGroup);
-        ecConfig.setPointCompression(compressed);
         return ecConfig;
     }
 
@@ -251,8 +248,7 @@ public abstract class AbstractTlsServer
         this.maxFragmentLengthOffered = 0;
         this.truncatedHMacOffered = false;
         this.clientSupportedGroups = null;
-        this.clientECPointFormats = null;
-        this.serverECPointFormats = null;
+        this.clientSentECPointFormats = false;
         this.certificateStatusRequest = null;
         this.selectedCipherSuite = -1;
         this.selectedProtocolName = null;
@@ -321,25 +317,12 @@ public abstract class AbstractTlsServer
             this.truncatedHMacOffered = TlsExtensionsUtils.hasTruncatedHMacExtension(clientExtensions);
 
             this.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientExtensions);
-            this.clientECPointFormats = TlsECCUtils.getSupportedPointFormatsExtension(clientExtensions);
+
+            // We only support uncompressed format, this is just to validate the extension, and note its presence.
+            this.clientSentECPointFormats = (null != TlsECCUtils.getSupportedPointFormatsExtension(clientExtensions));
 
             this.certificateStatusRequest = TlsExtensionsUtils.getStatusRequestExtension(clientExtensions);
         }
-
-        /*
-         * RFC 4429 4. The client MUST NOT include these extensions in the ClientHello message if it
-         * does not propose any ECC cipher suites.
-         * 
-         * NOTE: This was overly strict as there may be ECC cipher suites that we don't recognize.
-         * Also, RFC 7919 renamed 'elliptic_curves' to 'supported_groups' and now allows FFDHE (i.e.
-         * non-ECC) groups. If ec_point_formats are unnecessarily present, it doesn't seem worth
-         * failing the handshake over.
-         */
-//        if ((this.clientSupportedGroups != null || this.clientECPointFormats != null)
-//            && !TlsECCUtils.containsECCipherSuites(offeredCipherSuites))
-//        {
-//            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-//        }
     }
 
     public ProtocolVersion getMaximumVersion()
@@ -439,16 +422,14 @@ public abstract class AbstractTlsServer
             TlsExtensionsUtils.addTruncatedHMacExtension(checkServerExtensions());
         }
 
-        if (this.clientECPointFormats != null && TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite))
+        if (this.clientSentECPointFormats && TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite))
         {
             /*
              * RFC 4492 5.2. A server that selects an ECC cipher suite in response to a ClientHello
              * message including a Supported Point Formats Extension appends this extension (along
              * with others) to its ServerHello message, enumerating the point formats it can parse.
              */
-            this.serverECPointFormats = new short[]{ ECPointFormat.uncompressed };
-
-            TlsECCUtils.addSupportedPointFormatsExtension(checkServerExtensions(), serverECPointFormats);
+            TlsECCUtils.addSupportedPointFormatsExtension(checkServerExtensions(), new short[]{ ECPointFormat.uncompressed });
         }
 
         if (this.certificateStatusRequest != null)
