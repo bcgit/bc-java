@@ -19,6 +19,7 @@ public abstract class AbstractTlsClient
     protected TlsKeyExchangeFactory keyExchangeFactory;
 
     protected TlsClientContext context;
+    protected int[] cipherSuites;
 
     protected Vector supportedGroups;
     protected Vector supportedSignatureAlgorithms;
@@ -97,7 +98,7 @@ public abstract class AbstractTlsClient
 
     protected Vector getProtocolNames()
     {
-        return null;
+;        return null;
     }
 
     protected CertificateStatusRequest getCertificateStatusRequest()
@@ -109,6 +110,8 @@ public abstract class AbstractTlsClient
     {
         return null;
     }
+
+    protected abstract int[] getSupportedCipherSuites();
 
     protected short[] getSupportedPointFormats()
     {
@@ -159,10 +162,14 @@ public abstract class AbstractTlsClient
     public void init(TlsClientContext context)
     {
         this.context = context;
+
+        this.cipherSuites = getSupportedCipherSuites();
     }
 
     public void notifyHandshakeBeginning() throws IOException
     {
+        super.notifyHandshakeBeginning();
+
         this.supportedGroups = null;
         this.supportedSignatureAlgorithms = null;
         this.clientECPointFormats = null;
@@ -200,6 +207,11 @@ public abstract class AbstractTlsClient
          * order to work around interoperability problems with legacy servers.
          */
         return false;
+    }
+
+    public int[] getCipherSuites()
+    {
+        return cipherSuites;
     }
 
     public Hashtable getClientExtensions()

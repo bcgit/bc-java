@@ -3,13 +3,11 @@ package org.bouncycastle.tls;
 import java.io.IOException;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.util.Arrays;
 
 public abstract class DefaultTlsClient
     extends AbstractTlsClient
 {
-    // TODO[tls] Perhaps not ideal to keep this in a writable array
-    protected static final int[] BASE_CIPHER_SUITES = new int[]
+    private static final int[] DEFAULT_CIPHER_SUITES = new int[]
     {
         CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
         CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
@@ -29,9 +27,6 @@ public abstract class DefaultTlsClient
     };
 
     protected TlsDHConfigVerifier dhConfigVerifier;
-    protected int[] supportedCipherSuites;
-
-    // TODO[tls-ops] Need to restore a default constructor here
 
     public DefaultTlsClient(TlsCrypto crypto)
     {
@@ -42,12 +37,11 @@ public abstract class DefaultTlsClient
     {
         super(crypto, keyExchangeFactory);
         this.dhConfigVerifier = dhConfigVerifier;
-        this.supportedCipherSuites = TlsUtils.getSupportedCipherSuites(crypto, BASE_CIPHER_SUITES);
     }
 
-    public int[] getCipherSuites()
+    protected int[] getSupportedCipherSuites()
     {
-        return Arrays.clone(supportedCipherSuites);
+        return TlsUtils.getSupportedCipherSuites(context.getCrypto(), DEFAULT_CIPHER_SUITES);
     }
 
     public TlsKeyExchange getKeyExchange()
