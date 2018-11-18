@@ -28,24 +28,21 @@ public interface TlsKeyExchangeFactory
 
     TlsKeyExchange createECDHKeyExchangeServer(int keyExchange) throws IOException;
 
-    TlsKeyExchange createECDHanonKeyExchangeClient(int keyExchange, TlsECConfigVerifier ecConfigVerifier,
-        short[] clientECPointFormats, short[] serverECPointFormats) throws IOException;
-
-    TlsKeyExchange createECDHanonKeyExchangeServer(int keyExchange, TlsECConfig ecConfig, short[] serverECPointFormats)
+    TlsKeyExchange createECDHanonKeyExchangeClient(int keyExchange, TlsECConfigVerifier ecConfigVerifier)
         throws IOException;
 
-    TlsKeyExchange createECDHEKeyExchangeClient(int keyExchange, TlsECConfigVerifier ecConfigVerifier,
-        short[] clientECPointFormats, short[] serverECPointFormats) throws IOException;
+    TlsKeyExchange createECDHanonKeyExchangeServer(int keyExchange, TlsECConfig ecConfig) throws IOException;
 
-    TlsKeyExchange createECDHEKeyExchangeServer(int keyExchange, TlsECConfig ecConfig, short[] serverECPointFormats)
+    TlsKeyExchange createECDHEKeyExchangeClient(int keyExchange, TlsECConfigVerifier ecConfigVerifier)
         throws IOException;
+
+    TlsKeyExchange createECDHEKeyExchangeServer(int keyExchange, TlsECConfig ecConfig) throws IOException;
 
     TlsKeyExchange createPSKKeyExchangeClient(int keyExchange, TlsPSKIdentity pskIdentity,
-        TlsDHConfigVerifier dhConfigVerifier, TlsECConfigVerifier ecConfigVerifier, short[] clientECPointFormats,
-        short[] serverECPointFormats) throws IOException;
+        TlsDHConfigVerifier dhConfigVerifier, TlsECConfigVerifier ecConfigVerifier) throws IOException;
 
     TlsKeyExchange createPSKKeyExchangeServer(int keyExchange, TlsPSKIdentityManager pskIdentityManager,
-        TlsDHConfig dhConfig, TlsECConfig ecConfig, short[] serverECPointFormats) throws IOException;
+        TlsDHConfig dhConfig, TlsECConfig ecConfig) throws IOException;
 
     TlsKeyExchange createRSAKeyExchange() throws IOException;
 

@@ -53,39 +53,36 @@ public class AbstractTlsKeyExchangeFactory
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public TlsKeyExchange createECDHanonKeyExchangeClient(int keyExchange, TlsECConfigVerifier ecConfigVerifier,
-        short[] clientECPointFormats, short[] serverECPointFormats) throws IOException
+    public TlsKeyExchange createECDHanonKeyExchangeClient(int keyExchange, TlsECConfigVerifier ecConfigVerifier)
+        throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public TlsKeyExchange createECDHanonKeyExchangeServer(int keyExchange, TlsECConfig ecConfig,
-        short[] serverECPointFormats) throws IOException
+    public TlsKeyExchange createECDHanonKeyExchangeServer(int keyExchange, TlsECConfig ecConfig) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public TlsKeyExchange createECDHEKeyExchangeClient(int keyExchange, TlsECConfigVerifier ecConfigVerifier,
-        short[] clientECPointFormats, short[] serverECPointFormats) throws IOException
+    public TlsKeyExchange createECDHEKeyExchangeClient(int keyExchange, TlsECConfigVerifier ecConfigVerifier)
+        throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public TlsKeyExchange createECDHEKeyExchangeServer(int keyExchange, TlsECConfig ecConfig,
-        short[] serverECPointFormats) throws IOException
+    public TlsKeyExchange createECDHEKeyExchangeServer(int keyExchange, TlsECConfig ecConfig) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     public TlsKeyExchange createPSKKeyExchangeClient(int keyExchange, TlsPSKIdentity pskIdentity,
-        TlsDHConfigVerifier dhConfigVerifier, TlsECConfigVerifier ecConfigVerifier, short[] clientECPointFormats,
-        short[] serverECPointFormats) throws IOException
+        TlsDHConfigVerifier dhConfigVerifier, TlsECConfigVerifier ecConfigVerifier) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     public TlsKeyExchange createPSKKeyExchangeServer(int keyExchange, TlsPSKIdentityManager pskIdentityManager,
-        TlsDHConfig dhConfig, TlsECConfig ecConfig, short[] serverECPointFormats) throws IOException
+        TlsDHConfig dhConfig, TlsECConfig ecConfig) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }

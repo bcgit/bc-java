@@ -164,13 +164,12 @@ public abstract class DefaultTlsServer
 
     protected TlsKeyExchange createECDHanonKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createECDHanonKeyExchangeServer(keyExchange, selectECDHConfig(),
-            serverECPointFormats);
+        return keyExchangeFactory.createECDHanonKeyExchangeServer(keyExchange, selectECDHConfig());
     }
 
     protected TlsKeyExchange createECDHEKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createECDHEKeyExchangeServer(keyExchange, selectECDHConfig(), serverECPointFormats);
+        return keyExchangeFactory.createECDHEKeyExchangeServer(keyExchange, selectECDHConfig());
     }
 
     protected TlsKeyExchange createRSAKeyExchange() throws IOException

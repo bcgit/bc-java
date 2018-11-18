@@ -23,7 +23,6 @@ public class TlsPSKKeyExchange
     protected TlsPSKIdentityManager pskIdentityManager;
     protected TlsDHConfigVerifier dhConfigVerifier;
     protected TlsECConfigVerifier ecConfigVerifier;
-    protected short[] clientECPointFormats, serverECPointFormats;
 
     protected byte[] psk_identity_hint = null;
     protected byte[] psk = null;
@@ -37,21 +36,20 @@ public class TlsPSKKeyExchange
     protected TlsSecret preMasterSecret;
 
     public TlsPSKKeyExchange(int keyExchange, TlsPSKIdentity pskIdentity, TlsDHConfigVerifier dhConfigVerifier,
-        TlsECConfigVerifier ecConfigVerifier, short[] clientECPointFormats, short[] serverECPointFormats)
+        TlsECConfigVerifier ecConfigVerifier)
     {
-        this(keyExchange, pskIdentity, null, dhConfigVerifier, null, ecConfigVerifier, null, clientECPointFormats,
-            serverECPointFormats);
+        this(keyExchange, pskIdentity, null, dhConfigVerifier, null, ecConfigVerifier, null);
     }
 
     public TlsPSKKeyExchange(int keyExchange, TlsPSKIdentity pskIdentity, TlsPSKIdentityManager pskIdentityManager,
-        TlsDHConfig dhConfig, TlsECConfig ecConfig, short[] serverECPointFormats)
+        TlsDHConfig dhConfig, TlsECConfig ecConfig)
     {
-        this(keyExchange, pskIdentity, pskIdentityManager, null, dhConfig, null, ecConfig, null, serverECPointFormats);
+        this(keyExchange, pskIdentity, pskIdentityManager, null, dhConfig, null, ecConfig);
     }
 
     private TlsPSKKeyExchange(int keyExchange, TlsPSKIdentity pskIdentity, TlsPSKIdentityManager pskIdentityManager,
         TlsDHConfigVerifier dhConfigVerifier, TlsDHConfig dhConfig, TlsECConfigVerifier ecConfigVerifier,
-        TlsECConfig ecConfig, short[] clientECPointFormats, short[] serverECPointFormats)
+        TlsECConfig ecConfig)
     {
         super(keyExchange);
 
@@ -72,8 +70,6 @@ public class TlsPSKKeyExchange
         this.dhConfig = dhConfig;
         this.ecConfigVerifier = ecConfigVerifier;
         this.ecConfig = ecConfig;
-        this.clientECPointFormats = clientECPointFormats;
-        this.serverECPointFormats = serverECPointFormats;
     }
 
     public void skipServerCredentials() throws IOException
@@ -182,13 +178,13 @@ public class TlsPSKKeyExchange
         }
         else if (this.keyExchange == KeyExchangeAlgorithm.ECDHE_PSK)
         {
-            this.ecConfig = TlsECCUtils.receiveECConfig(ecConfigVerifier, serverECPointFormats, input);
+            this.ecConfig = TlsECCUtils.receiveECConfig(ecConfigVerifier, input);
 
             byte[] point = TlsUtils.readOpaque8(input, 1);
 
             this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
 
-            processEphemeralECDH(clientECPointFormats, point);
+            processEphemeralECDH(point);
         }
     }
 
@@ -260,7 +256,7 @@ public class TlsPSKKeyExchange
         {
             byte[] point = TlsUtils.readOpaque8(input, 1);
 
-            processEphemeralECDH(serverECPointFormats, point);
+            processEphemeralECDH(point);
         }
         else if (this.keyExchange == KeyExchangeAlgorithm.RSA_PSK)
         {
@@ -328,9 +324,9 @@ public class TlsPSKKeyExchange
         this.agreement.receivePeerValue(y);
     }
 
-    protected void processEphemeralECDH(short[] localECPointFormats, byte[] point) throws IOException
+    protected void processEphemeralECDH(byte[] point) throws IOException
     {
-        TlsECCUtils.checkPointEncoding(localECPointFormats, ecConfig.getNamedGroup(), point);
+        TlsECCUtils.checkPointEncoding(ecConfig.getNamedGroup(), point);
 
         this.agreement.receivePeerValue(point);
     }
