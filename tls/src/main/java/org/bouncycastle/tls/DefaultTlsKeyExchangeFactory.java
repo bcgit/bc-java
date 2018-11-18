@@ -50,42 +50,38 @@ public class DefaultTlsKeyExchangeFactory
         return new TlsECDHKeyExchange(keyExchange);
     }
 
-    public TlsKeyExchange createECDHanonKeyExchangeClient(int keyExchange, TlsECConfigVerifier ecConfigVerifier,
-        short[] clientECPointFormats, short[] serverECPointFormats) throws IOException
+    public TlsKeyExchange createECDHanonKeyExchangeClient(int keyExchange, TlsECConfigVerifier ecConfigVerifier)
+        throws IOException
     {
-        return new TlsECDHanonKeyExchange(keyExchange, ecConfigVerifier, clientECPointFormats, serverECPointFormats);
+        return new TlsECDHanonKeyExchange(keyExchange, ecConfigVerifier);
     }
 
-    public TlsKeyExchange createECDHanonKeyExchangeServer(int keyExchange, TlsECConfig ecConfig,
-        short[] serverECPointFormats) throws IOException
+    public TlsKeyExchange createECDHanonKeyExchangeServer(int keyExchange, TlsECConfig ecConfig) throws IOException
     {
-        return new TlsECDHanonKeyExchange(keyExchange, ecConfig, serverECPointFormats);
+        return new TlsECDHanonKeyExchange(keyExchange, ecConfig);
     }
 
-    public TlsKeyExchange createECDHEKeyExchangeClient(int keyExchange, TlsECConfigVerifier ecConfigVerifier,
-        short[] clientECPointFormats, short[] serverECPointFormats) throws IOException
+    public TlsKeyExchange createECDHEKeyExchangeClient(int keyExchange, TlsECConfigVerifier ecConfigVerifier)
+        throws IOException
     {
-        return new TlsECDHEKeyExchange(keyExchange, ecConfigVerifier, clientECPointFormats, serverECPointFormats);
+        return new TlsECDHEKeyExchange(keyExchange, ecConfigVerifier);
     }
 
-    public TlsKeyExchange createECDHEKeyExchangeServer(int keyExchange, TlsECConfig ecConfig,
-        short[] serverECPointFormats) throws IOException
+    public TlsKeyExchange createECDHEKeyExchangeServer(int keyExchange, TlsECConfig ecConfig) throws IOException
     {
-        return new TlsECDHEKeyExchange(keyExchange, ecConfig, serverECPointFormats);
+        return new TlsECDHEKeyExchange(keyExchange, ecConfig);
     }
 
     public TlsKeyExchange createPSKKeyExchangeClient(int keyExchange, TlsPSKIdentity pskIdentity,
-        TlsDHConfigVerifier dhConfigVerifier, TlsECConfigVerifier ecConfigVerifier, short[] clientECPointFormats,
-        short[] serverECPointFormats) throws IOException
+        TlsDHConfigVerifier dhConfigVerifier, TlsECConfigVerifier ecConfigVerifier) throws IOException
     {
-        return new TlsPSKKeyExchange(keyExchange, pskIdentity, dhConfigVerifier, ecConfigVerifier, clientECPointFormats,
-            serverECPointFormats);
+        return new TlsPSKKeyExchange(keyExchange, pskIdentity, dhConfigVerifier, ecConfigVerifier);
     }
 
     public TlsKeyExchange createPSKKeyExchangeServer(int keyExchange, TlsPSKIdentityManager pskIdentityManager,
-        TlsDHConfig dhConfig, TlsECConfig ecConfig, short[] serverECPointFormats) throws IOException
+        TlsDHConfig dhConfig, TlsECConfig ecConfig) throws IOException
     {
-        return new TlsPSKKeyExchange(keyExchange, null, pskIdentityManager, dhConfig, ecConfig, serverECPointFormats);
+        return new TlsPSKKeyExchange(keyExchange, null, pskIdentityManager, dhConfig, ecConfig);
     }
 
     public TlsKeyExchange createRSAKeyExchange() throws IOException

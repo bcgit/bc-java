@@ -17,8 +17,6 @@ import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.EllipticCurve;
 
-import javax.crypto.SecretKey;
-
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.tls.AlertDescription;
@@ -104,7 +102,7 @@ public class JceTlsECDomain
     public byte[] encodePoint(ECPoint point)
         throws IOException
     {
-        return point.getEncoded(ecConfig.getPointCompression());
+        return point.getEncoded(false);
     }
 
     public byte[] encodePublicKey(ECPublicKey publicKey)

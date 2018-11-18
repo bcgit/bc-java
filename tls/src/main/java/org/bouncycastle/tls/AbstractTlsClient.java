@@ -23,7 +23,6 @@ public abstract class AbstractTlsClient
 
     protected Vector supportedGroups;
     protected Vector supportedSignatureAlgorithms;
-    protected short[] clientECPointFormats, serverECPointFormats;
 
     protected int selectedCipherSuite;
 
@@ -113,11 +112,6 @@ public abstract class AbstractTlsClient
 
     protected abstract int[] getSupportedCipherSuites();
 
-    protected short[] getSupportedPointFormats()
-    {
-        return new short[]{ ECPointFormat.uncompressed };
-    }
-
     /**
      * The default {@link #getClientExtensions()} implementation calls this to determine which named
      * groups to include in the supported_groups extension for the ClientHello.
@@ -172,8 +166,6 @@ public abstract class AbstractTlsClient
 
         this.supportedGroups = null;
         this.supportedSignatureAlgorithms = null;
-        this.clientECPointFormats = null;
-        this.serverECPointFormats = null;
         this.selectedCipherSuite = -1;
     }
 
@@ -265,9 +257,7 @@ public abstract class AbstractTlsClient
         if (namedGroupRoles.contains(NamedGroupRole.ecdh)
             || namedGroupRoles.contains(NamedGroupRole.ecdsa))
         {
-            this.clientECPointFormats = getSupportedPointFormats();
-
-            TlsECCUtils.addSupportedPointFormatsExtension(clientExtensions, clientECPointFormats);
+            TlsECCUtils.addSupportedPointFormatsExtension(clientExtensions, new short[]{ ECPointFormat.uncompressed });
         }
 
         return clientExtensions;
@@ -316,7 +306,8 @@ public abstract class AbstractTlsClient
 
             if (TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite))
             {
-                this.serverECPointFormats = TlsECCUtils.getSupportedPointFormatsExtension(serverExtensions);
+                // We only support uncompressed format, this is just to validate the extension, if present.
+                TlsECCUtils.getSupportedPointFormatsExtension(serverExtensions);
             }
             else
             {

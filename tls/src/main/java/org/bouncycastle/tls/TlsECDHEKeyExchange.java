@@ -30,32 +30,27 @@ public class TlsECDHEKeyExchange
 
     protected TlsECConfigVerifier ecConfigVerifier;
     protected TlsECConfig ecConfig;
-    protected short[] clientECPointFormats, serverECPointFormats;
 
     protected TlsCredentialedSigner serverCredentials = null;
     protected TlsCertificate serverCertificate = null;
     protected TlsAgreement agreement;
 
-    public TlsECDHEKeyExchange(int keyExchange, TlsECConfigVerifier ecConfigVerifier, short[] clientECPointFormats,
-        short[] serverECPointFormats)
+    public TlsECDHEKeyExchange(int keyExchange, TlsECConfigVerifier ecConfigVerifier)
     {
-        this(keyExchange, ecConfigVerifier, null, clientECPointFormats, serverECPointFormats);
+        this(keyExchange, ecConfigVerifier, null);
     }
 
-    public TlsECDHEKeyExchange(int keyExchange, TlsECConfig ecConfig, short[] serverECPointFormats)
+    public TlsECDHEKeyExchange(int keyExchange, TlsECConfig ecConfig)
     {
-        this(keyExchange, null, ecConfig, null, serverECPointFormats);
+        this(keyExchange, null, ecConfig);
     }
 
-    private TlsECDHEKeyExchange(int keyExchange, TlsECConfigVerifier ecConfigVerifier, TlsECConfig ecConfig,
-        short[] clientECPointFormats, short[] serverECPointFormats)
+    private TlsECDHEKeyExchange(int keyExchange, TlsECConfigVerifier ecConfigVerifier, TlsECConfig ecConfig)
     {
         super(checkKeyExchange(keyExchange));
 
         this.ecConfigVerifier = ecConfigVerifier;
         this.ecConfig = ecConfig;
-        this.clientECPointFormats = clientECPointFormats;
-        this.serverECPointFormats = serverECPointFormats;
     }
 
     public void skipServerCredentials() throws IOException
@@ -98,7 +93,7 @@ public class TlsECDHEKeyExchange
         DigestInputBuffer digestBuffer = new DigestInputBuffer();
         InputStream teeIn = new TeeInputStream(input, digestBuffer);
 
-        this.ecConfig = TlsECCUtils.receiveECConfig(ecConfigVerifier, serverECPointFormats, teeIn);
+        this.ecConfig = TlsECCUtils.receiveECConfig(ecConfigVerifier, teeIn);
 
         byte[] point = TlsUtils.readOpaque8(teeIn, 1);
 
@@ -106,7 +101,7 @@ public class TlsECDHEKeyExchange
 
         this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
 
-        processEphemeral(clientECPointFormats, point);
+        processEphemeral(point);
     }
 
     public short[] getClientCertificateTypes()
@@ -135,7 +130,7 @@ public class TlsECDHEKeyExchange
     {
         byte[] point = TlsUtils.readOpaque8(input, 1);
 
-        processEphemeral(serverECPointFormats, point);
+        processEphemeral(point);
     }
 
     public TlsSecret generatePreMasterSecret() throws IOException
@@ -150,9 +145,9 @@ public class TlsECDHEKeyExchange
         TlsUtils.writeOpaque8(point, output);
     }
 
-    protected void processEphemeral(short[] localECPointFormats, byte[] point) throws IOException
+    protected void processEphemeral(byte[] point) throws IOException
     {
-        TlsECCUtils.checkPointEncoding(localECPointFormats, ecConfig.getNamedGroup(), point);
+        TlsECCUtils.checkPointEncoding(ecConfig.getNamedGroup(), point);
 
         this.agreement.receivePeerValue(point);
     }

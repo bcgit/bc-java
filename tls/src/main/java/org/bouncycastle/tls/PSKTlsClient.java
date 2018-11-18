@@ -79,6 +79,6 @@ public class PSKTlsClient
         TlsECConfigVerifier ecConfigVerifier) throws IOException
     {
         return keyExchangeFactory.createPSKKeyExchangeClient(keyExchange, pskIdentity, dhConfigVerifier,
-            ecConfigVerifier, clientECPointFormats, serverECPointFormats);
+            ecConfigVerifier);
     }
 }

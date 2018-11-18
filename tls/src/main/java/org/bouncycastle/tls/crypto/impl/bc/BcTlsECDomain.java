@@ -117,7 +117,7 @@ public class BcTlsECDomain implements TlsECDomain
 
     public byte[] encodePoint(ECPoint point) throws IOException
     {
-        return point.getEncoded(ecConfig.getPointCompression());
+        return point.getEncoded(false);
     }
 
     public byte[] encodePublicKey(ECPublicKeyParameters publicKey) throws IOException

@@ -108,14 +108,12 @@ public abstract class DefaultTlsClient
 
     protected TlsKeyExchange createECDHanonKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createECDHanonKeyExchangeClient(keyExchange, createECConfigVerifier(),
-            clientECPointFormats, serverECPointFormats);
+        return keyExchangeFactory.createECDHanonKeyExchangeClient(keyExchange, createECConfigVerifier());
     }
 
     protected TlsKeyExchange createECDHEKeyExchange(int keyExchange) throws IOException
     {
-        return keyExchangeFactory.createECDHEKeyExchangeClient(keyExchange, createECConfigVerifier(),
-            clientECPointFormats, serverECPointFormats);
+        return keyExchangeFactory.createECDHEKeyExchangeClient(keyExchange, createECConfigVerifier());
     }
 
     protected TlsKeyExchange createRSAKeyExchange() throws IOException
