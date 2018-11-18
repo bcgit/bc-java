@@ -159,6 +159,7 @@ class ProvTlsClient
             {
                 // TODO[jsse] What criteria determines whether we are willing to send client authentication?
 
+                int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
                 int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite);
                 switch (keyExchangeAlgorithm)
                 {
@@ -285,6 +286,7 @@ class ProvTlsClient
                 else
                 {
                     X509Certificate[] chain = JsseUtils.getX509CertificateChain(manager.getContextData().getCrypto(), serverCertificate.getCertificate());
+                    int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
                     String authType = JsseUtils.getAuthTypeServer(TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite));
 
                     if (!manager.isServerTrusted(chain, authType))
