@@ -9,8 +9,7 @@ import org.bouncycastle.util.Arrays;
 public class SRPTlsClient
     extends AbstractTlsClient
 {
-    // TODO[tls] Perhaps not ideal to keep this in a writable array
-    public static final int[] BASE_CIPHER_SUITES = new int[]
+    private static final int[] DEFAULT_CIPHER_SUITES = new int[]
     {
         CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA
     };
@@ -19,10 +18,6 @@ public class SRPTlsClient
 
     protected byte[] identity;
     protected byte[] password;
-
-    protected int[] supportedCipherSuites;
-
-    // TODO[tls-ops] Need to restore a single-arg constructor here
 
     public SRPTlsClient(TlsCrypto crypto, byte[] identity, byte[] password)
     {
@@ -36,18 +31,17 @@ public class SRPTlsClient
         this.srpConfigVerifier = srpConfigVerifier;
         this.identity = Arrays.clone(identity);
         this.password = Arrays.clone(password);
-        this.supportedCipherSuites = TlsUtils.getSupportedCipherSuites(crypto, BASE_CIPHER_SUITES);
+    }
+
+    protected int[] getSupportedCipherSuites()
+    {
+        return TlsUtils.getSupportedCipherSuites(context.getCrypto(), DEFAULT_CIPHER_SUITES);
     }
 
     protected boolean requireSRPServerExtension()
     {
         // No explicit guidance in RFC 5054; by default an (empty) extension from server is optional
         return false;
-    }
-
-    public int[] getCipherSuites()
-    {
-        return Arrays.clone(supportedCipherSuites);
     }
 
     public Hashtable getClientExtensions()

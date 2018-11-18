@@ -9,8 +9,7 @@ import org.bouncycastle.util.Arrays;
 public class SRPTlsServer
     extends AbstractTlsServer
 {
-    // TODO[tls] Perhaps not ideal to keep this in a writable array
-    public static final int[] BASE_CIPHER_SUITES = new int[]
+    private static final int[] DEFAULT_CIPHER_SUITES = new int[]
     {
         CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA,
         CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_128_CBC_SHA,
@@ -21,12 +20,9 @@ public class SRPTlsServer
     };
 
     protected TlsSRPIdentityManager srpIdentityManager;
-    protected int[] supportedCipherSuites;
 
     protected byte[] srpIdentity = null;
     protected TlsSRPLoginParameters loginParameters = null;
-
-    // TODO[tls-ops] Need to restore a single-arg constructor here
 
     public SRPTlsServer(TlsCrypto crypto, TlsSRPIdentityManager srpIdentityManager)
     {
@@ -36,8 +32,8 @@ public class SRPTlsServer
     public SRPTlsServer(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsSRPIdentityManager srpIdentityManager)
     {
         super(crypto, keyExchangeFactory);
+
         this.srpIdentityManager = srpIdentityManager;
-        this.supportedCipherSuites = TlsUtils.getSupportedCipherSuites(crypto, BASE_CIPHER_SUITES);
     }
 
     protected TlsCredentialedSigner getDSASignerCredentials()
@@ -52,9 +48,9 @@ public class SRPTlsServer
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    protected int[] getCipherSuites()
+    protected int[] getSupportedCipherSuites()
     {
-        return Arrays.clone(supportedCipherSuites);
+        return TlsUtils.getSupportedCipherSuites(context.getCrypto(), DEFAULT_CIPHER_SUITES);
     }
 
     public void processClientExtensions(Hashtable clientExtensions) throws IOException

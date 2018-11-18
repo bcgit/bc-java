@@ -134,6 +134,13 @@ class ProvTlsClient
     }
 
     @Override
+    protected int[] getSupportedCipherSuites()
+    {
+        return TlsUtils.getSupportedCipherSuites(manager.getContextData().getCrypto(),
+            manager.getContext().convertCipherSuites(sslParameters.getCipherSuites()));
+    }
+
+    @Override
     protected Vector getSupportedSignatureAlgorithms()
     {
         return JsseUtils.getSupportedSignatureAlgorithms(getCrypto());
@@ -288,19 +295,6 @@ class ProvTlsClient
             }
         };
     }
-
-    @Override
-    public int[] getCipherSuites()
-    {
-        return TlsUtils.getSupportedCipherSuites(manager.getContextData().getCrypto(),
-            manager.getContext().convertCipherSuites(sslParameters.getCipherSuites()));
-    }
-
-//    public TlsKeyExchange getKeyExchange() throws IOException
-//    {
-//        // TODO[jsse] Check that all key exchanges used in JSSE supportedCipherSuites are handled
-//        return super.getKeyExchange();
-//    }
 
     @Override
     public ProtocolVersion getMinimumVersion()

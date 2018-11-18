@@ -10,8 +10,7 @@ import org.bouncycastle.util.Arrays;
 public class PSKTlsServer
     extends AbstractTlsServer
 {
-    // TODO[tls] Perhaps not ideal to keep this in a writable array
-    public static final int[] BASE_CIPHER_SUITES = new int[]
+    private static final int[] DEFAULT_CIPHER_SUITES = new int[]
     {
         CipherSuite.TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256,
         CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384,
@@ -28,9 +27,6 @@ public class PSKTlsServer
     };
 
     protected TlsPSKIdentityManager pskIdentityManager;
-    protected int[] supportedCipherSuites;
-
-    // TODO[tls-ops] Need to restore a single-arg constructor here
 
     public PSKTlsServer(TlsCrypto crypto, TlsPSKIdentityManager pskIdentityManager)
     {
@@ -40,8 +36,8 @@ public class PSKTlsServer
     public PSKTlsServer(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsPSKIdentityManager pskIdentityManager)
     {
         super(crypto, keyExchangeFactory);
+
         this.pskIdentityManager = pskIdentityManager;
-        this.supportedCipherSuites = TlsUtils.getSupportedCipherSuites(crypto, BASE_CIPHER_SUITES);
     }
 
     protected TlsCredentialedDecryptor getRSAEncryptionCredentials() throws IOException
@@ -49,9 +45,9 @@ public class PSKTlsServer
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    protected int[] getCipherSuites()
+    protected int[] getSupportedCipherSuites()
     {
-        return Arrays.clone(supportedCipherSuites);
+        return TlsUtils.getSupportedCipherSuites(context.getCrypto(), DEFAULT_CIPHER_SUITES);
     }
 
     public TlsCredentials getCredentials() throws IOException
