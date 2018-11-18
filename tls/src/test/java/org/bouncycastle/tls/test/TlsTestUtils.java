@@ -3,6 +3,7 @@ package org.bouncycastle.tls.test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PipedInputStream;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -445,6 +446,20 @@ public class TlsTestUtils
         else
         {
             return KeyManagerFactory.getInstance("SunX509");
+        }
+    }
+
+    static PipedInputStream createPipedInputStream()
+    {
+        return new BigPipedInputStream(16384);
+    }
+
+    private static class BigPipedInputStream
+        extends PipedInputStream
+    {
+        BigPipedInputStream(int size)
+        {
+            this.buffer = new byte[size];
         }
     }
 }
