@@ -24,8 +24,6 @@ public abstract class AbstractTlsClient
     protected Vector supportedGroups;
     protected Vector supportedSignatureAlgorithms;
 
-    protected int selectedCipherSuite;
-
     public AbstractTlsClient(TlsCrypto crypto)
     {
         this(crypto, new DefaultTlsKeyExchangeFactory());
@@ -91,6 +89,7 @@ public abstract class AbstractTlsClient
 
     protected TlsECConfigVerifier createECConfigVerifier()
     {
+        int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
         int minimumCurveBits = TlsECCUtils.getMinimumCurveBits(selectedCipherSuite);
         return new DefaultTlsECConfigVerifier(minimumCurveBits, supportedGroups);
     }
@@ -166,7 +165,6 @@ public abstract class AbstractTlsClient
 
         this.supportedGroups = null;
         this.supportedSignatureAlgorithms = null;
-        this.selectedCipherSuite = -1;
     }
 
     public TlsSession getSessionToResume()
@@ -284,7 +282,6 @@ public abstract class AbstractTlsClient
 
     public void notifySelectedCipherSuite(int selectedCipherSuite)
     {
-        this.selectedCipherSuite = selectedCipherSuite;
     }
 
     public void processServerExtensions(Hashtable serverExtensions)
@@ -304,7 +301,9 @@ public abstract class AbstractTlsClient
 
             checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_supported_groups);
 
-            if (TlsECCUtils.isECCCipherSuite(this.selectedCipherSuite))
+            int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
+
+            if (TlsECCUtils.isECCCipherSuite(selectedCipherSuite))
             {
                 // We only support uncompressed format, this is just to validate the extension, if present.
                 TlsECCUtils.getSupportedPointFormatsExtension(serverExtensions);
@@ -339,6 +338,7 @@ public abstract class AbstractTlsClient
     public TlsCipher getCipher()
         throws IOException
     {
+        int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
         int encryptionAlgorithm = TlsUtils.getEncryptionAlgorithm(selectedCipherSuite);
         int macAlgorithm = TlsUtils.getMACAlgorithm(selectedCipherSuite);
 
