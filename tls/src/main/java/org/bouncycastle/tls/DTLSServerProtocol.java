@@ -372,24 +372,27 @@ public class DTLSServerProtocol
          */
         TlsUtils.writeOpaque8(state.tlsSession.getSessionID(), buf);
 
-        int selectedCipherSuite = state.server.getSelectedCipherSuite();
-        if (!Arrays.contains(state.offeredCipherSuites, selectedCipherSuite)
-            || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-            || CipherSuite.isSCSV(selectedCipherSuite)
-            || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, state.serverContext.getServerVersion()))
         {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-        validateSelectedCipherSuite(selectedCipherSuite, AlertDescription.internal_error);
-        securityParameters.cipherSuite = selectedCipherSuite;
+            int selectedCipherSuite = state.server.getSelectedCipherSuite();
+            if (!Arrays.contains(state.offeredCipherSuites, selectedCipherSuite)
+                || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
+                || CipherSuite.isSCSV(selectedCipherSuite)
+                || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, state.serverContext.getServerVersion()))
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+            validateSelectedCipherSuite(selectedCipherSuite, AlertDescription.internal_error);
+            securityParameters.cipherSuite = selectedCipherSuite;
 
-        TlsUtils.writeUint16(selectedCipherSuite, buf);
+            TlsUtils.writeUint16(selectedCipherSuite, buf);
+        }
+
         TlsUtils.writeUint8(CompressionMethod._null, buf);
 
         state.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(state.server.getServerExtensions());
 
         /*
-         * RFC 5746 3.6. Server Behavior: Initial Handshake
+         * RFC 5746 3.6. Server Behavior: Initial Handshake 
          */
         if (securityParameters.isSecureRenegotiation())
         {

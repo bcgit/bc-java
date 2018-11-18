@@ -640,16 +640,19 @@ public class DTLSClientProtocol
         state.resumedSession = state.selectedSessionID.length > 0 && state.tlsSession != null
             && Arrays.areEqual(state.selectedSessionID, state.tlsSession.getSessionID());
 
-        int selectedCipherSuite = TlsUtils.readUint16(buf);
-        if (!Arrays.contains(state.offeredCipherSuites, selectedCipherSuite)
-            || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-            || CipherSuite.isSCSV(selectedCipherSuite)
-            || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, state.clientContext.getServerVersion()))
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            int selectedCipherSuite = TlsUtils.readUint16(buf);
+            if (!Arrays.contains(state.offeredCipherSuites, selectedCipherSuite)
+                || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
+                || CipherSuite.isSCSV(selectedCipherSuite)
+                || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, state.clientContext.getServerVersion()))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+            validateSelectedCipherSuite(selectedCipherSuite, AlertDescription.illegal_parameter);
+            securityParameters.cipherSuite = selectedCipherSuite;
+            state.client.notifySelectedCipherSuite(selectedCipherSuite);
         }
-        validateSelectedCipherSuite(selectedCipherSuite, AlertDescription.illegal_parameter);
-        state.client.notifySelectedCipherSuite(selectedCipherSuite);
 
         short selectedCompressionMethod = TlsUtils.readUint8(buf);
         if (CompressionMethod._null != selectedCompressionMethod)
@@ -779,7 +782,7 @@ public class DTLSClientProtocol
 
         if (state.resumedSession)
         {
-            if (selectedCipherSuite != state.sessionParameters.getCipherSuite()
+            if (securityParameters.getCipherSuite() != state.sessionParameters.getCipherSuite()
                 || CompressionMethod._null != state.sessionParameters.getCompressionAlgorithm()
                 || !server_version.equals(state.sessionParameters.getNegotiatedVersion()))
             {
@@ -789,8 +792,6 @@ public class DTLSClientProtocol
             sessionClientExtensions = null;
             sessionServerExtensions = state.sessionParameters.readServerExtensions();
         }
-
-        securityParameters.cipherSuite = selectedCipherSuite;
 
         if (sessionServerExtensions != null && !sessionServerExtensions.isEmpty())
         {

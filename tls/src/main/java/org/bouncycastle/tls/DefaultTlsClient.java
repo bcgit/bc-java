@@ -47,6 +47,7 @@ public abstract class DefaultTlsClient
     public TlsKeyExchange getKeyExchange()
         throws IOException
     {
+        int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
         int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite);
 
         switch (keyExchangeAlgorithm)

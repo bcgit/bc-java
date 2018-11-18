@@ -70,6 +70,7 @@ public class SRPTlsClient
     public TlsKeyExchange getKeyExchange()
         throws IOException
     {
+        int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
         int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite);
 
         switch (keyExchangeAlgorithm)
