@@ -3,13 +3,11 @@ package org.bouncycastle.tls;
 import java.io.IOException;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.util.Arrays;
 
 public abstract class DefaultTlsServer
     extends AbstractTlsServer
 {
-    // TODO[tls] Perhaps not ideal to keep this in a writable array
-    protected static final int[] BASE_CIPHER_SUITES = new int[]
+    private static final int[] DEFAULT_CIPHER_SUITES = new int[]
     {
         CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
         CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
@@ -33,20 +31,14 @@ public abstract class DefaultTlsServer
         CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
     };
 
-    // TODO[tls-ops] Need to restore a default constructor here
-
-    protected int[] supportedCipherSuites;
-
     public DefaultTlsServer(TlsCrypto crypto)
     {
         super(crypto);
-        this.supportedCipherSuites = TlsUtils.getSupportedCipherSuites(crypto, BASE_CIPHER_SUITES);
     }
 
     public DefaultTlsServer(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory)
     {
         super(crypto, keyExchangeFactory);
-        this.supportedCipherSuites = TlsUtils.getSupportedCipherSuites(crypto, BASE_CIPHER_SUITES);
     }
 
     protected TlsCredentialedSigner getDSASignerCredentials()
@@ -73,9 +65,9 @@ public abstract class DefaultTlsServer
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    protected int[] getCipherSuites()
+    protected int[] getSupportedCipherSuites()
     {
-        return Arrays.clone(supportedCipherSuites);
+        return TlsUtils.getSupportedCipherSuites(context.getCrypto(), DEFAULT_CIPHER_SUITES);
     }
 
     public TlsCredentials getCredentials()

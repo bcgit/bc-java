@@ -22,6 +22,7 @@ public abstract class AbstractTlsServer
     protected TlsKeyExchangeFactory keyExchangeFactory;
 
     protected TlsServerContext context;
+    protected int[] cipherSuites;
 
     protected int[] offeredCipherSuites;
     protected Hashtable clientExtensions;
@@ -65,7 +66,10 @@ public abstract class AbstractTlsServer
         return this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(this.serverExtensions);
     }
 
-    protected abstract int[] getCipherSuites();
+    protected int[] getCipherSuites()
+    {
+        return cipherSuites;
+    }
 
     protected int getMaximumNegotiableCurveBits()
     {
@@ -108,6 +112,8 @@ public abstract class AbstractTlsServer
     {
         return null;
     }
+
+    protected abstract int[] getSupportedCipherSuites();
 
     protected boolean isSelectableCipherSuite(int cipherSuite, int availCurveBits, int availFiniteFieldBits, Vector sigAlgs)
     {
@@ -231,10 +237,14 @@ public abstract class AbstractTlsServer
     public void init(TlsServerContext context)
     {
         this.context = context;
+
+        this.cipherSuites = getSupportedCipherSuites();
     }
 
     public void notifyHandshakeBeginning() throws IOException
     {
+        super.notifyHandshakeBeginning();
+
         this.offeredCipherSuites = null;
         this.clientExtensions = null;
         this.encryptThenMACOffered = false;

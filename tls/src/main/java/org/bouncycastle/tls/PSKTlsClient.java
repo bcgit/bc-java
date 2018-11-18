@@ -3,13 +3,11 @@ package org.bouncycastle.tls;
 import java.io.IOException;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.util.Arrays;
 
 public class PSKTlsClient
     extends AbstractTlsClient
 {
-    // TODO[tls] Perhaps not ideal to keep this in a writable array
-    protected static final int[] BASE_CIPHER_SUITES = new int[]
+    private static final int[] DEFAULT_CIPHER_SUITES = new int[]
     {
         CipherSuite.TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256,
         CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256,
@@ -22,9 +20,6 @@ public class PSKTlsClient
 
     protected TlsDHConfigVerifier dhConfigVerifier;
     protected TlsPSKIdentity pskIdentity;
-    protected int[] supportedCipherSuites;
-
-    // TODO[tls-ops] Need to restore a single-arg constructor here
 
     public PSKTlsClient(TlsCrypto crypto, TlsPSKIdentity pskIdentity)
     {
@@ -38,12 +33,11 @@ public class PSKTlsClient
 
         this.dhConfigVerifier = dhConfigVerifier;
         this.pskIdentity = pskIdentity;
-        this.supportedCipherSuites = TlsUtils.getSupportedCipherSuites(crypto, BASE_CIPHER_SUITES);
     }
 
-    public int[] getCipherSuites()
+    protected int[] getSupportedCipherSuites()
     {
-        return Arrays.clone(supportedCipherSuites);
+        return TlsUtils.getSupportedCipherSuites(context.getCrypto(), DEFAULT_CIPHER_SUITES);
     }
 
     public TlsKeyExchange getKeyExchange() throws IOException
