@@ -3,9 +3,6 @@ package org.bouncycastle.tls;
 import java.io.IOException;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.tls.crypto.TlsDHConfig;
-import org.bouncycastle.tls.crypto.TlsECConfig;
-import org.bouncycastle.util.Arrays;
 
 public class PSKTlsServer
     extends AbstractTlsServer
@@ -30,12 +27,7 @@ public class PSKTlsServer
 
     public PSKTlsServer(TlsCrypto crypto, TlsPSKIdentityManager pskIdentityManager)
     {
-        this(crypto, new DefaultTlsKeyExchangeFactory(), pskIdentityManager);
-    }
-
-    public PSKTlsServer(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsPSKIdentityManager pskIdentityManager)
-    {
-        super(crypto, keyExchangeFactory);
+        super(crypto);
 
         this.pskIdentityManager = pskIdentityManager;
     }
@@ -70,34 +62,8 @@ public class PSKTlsServer
         }
     }
 
-    public TlsKeyExchange getKeyExchange() throws IOException
+    public TlsPSKIdentityManager getPSKIdentityManager()
     {
-        int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite);
-
-        switch (keyExchangeAlgorithm)
-        {
-        case KeyExchangeAlgorithm.DHE_PSK:
-            return createPSKKeyExchange(keyExchangeAlgorithm, selectDHConfig(), null);
-
-        case KeyExchangeAlgorithm.ECDHE_PSK:
-            return createPSKKeyExchange(keyExchangeAlgorithm, null, selectECDHConfig());
-
-        case KeyExchangeAlgorithm.PSK:
-        case KeyExchangeAlgorithm.RSA_PSK:
-            return createPSKKeyExchange(keyExchangeAlgorithm, null, null);
-
-        default:
-            /*
-             * Note: internal error here; the TlsProtocol implementation verifies that the
-             * server-selected cipher suite was in the list of client-offered cipher suites, so if
-             * we now can't produce an implementation, we shouldn't have offered it!
-             */
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-    }
-
-    protected TlsKeyExchange createPSKKeyExchange(int keyExchange, TlsDHConfig dhConfig, TlsECConfig ecConfig) throws IOException
-    {
-        return keyExchangeFactory.createPSKKeyExchangeServer(keyExchange, pskIdentityManager, dhConfig, ecConfig);
+        return pskIdentityManager;
     }
 }

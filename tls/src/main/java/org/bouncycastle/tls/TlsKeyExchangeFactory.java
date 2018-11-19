@@ -1,7 +1,6 @@
 package org.bouncycastle.tls;
 
 import java.io.IOException;
-import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
@@ -44,11 +43,11 @@ public interface TlsKeyExchangeFactory
     TlsKeyExchange createPSKKeyExchangeServer(int keyExchange, TlsPSKIdentityManager pskIdentityManager,
         TlsDHConfig dhConfig, TlsECConfig ecConfig) throws IOException;
 
-    TlsKeyExchange createRSAKeyExchange() throws IOException;
+    TlsKeyExchange createRSAKeyExchange(int keyExchange) throws IOException;
 
-    TlsKeyExchange createSRPKeyExchangeClient(int keyExchange, TlsSRPConfigVerifier srpConfigVerifier, byte[] identity,
-        byte[] password) throws IOException;
+    TlsKeyExchange createSRPKeyExchangeClient(int keyExchange, TlsSRPIdentity srpIdentity,
+        TlsSRPConfigVerifier srpConfigVerifier) throws IOException;
 
-    TlsKeyExchange createSRPKeyExchangeServer(int keyExchange, byte[] identity, TlsSRPLoginParameters loginParameters)
+    TlsKeyExchange createSRPKeyExchangeServer(int keyExchange, TlsSRPLoginParameters loginParameters)
         throws IOException;
 }

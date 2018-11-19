@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsDHConfig;
+import org.bouncycastle.tls.crypto.TlsECConfig;
+
 /**
  * Interface describing a TLS server endpoint.
  */
@@ -76,6 +79,14 @@ public interface TlsServer
 
     CertificateRequest getCertificateRequest()
         throws IOException;
+
+    TlsPSKIdentityManager getPSKIdentityManager() throws IOException;
+
+    TlsSRPLoginParameters getSRPLoginParameters() throws IOException;
+
+    TlsDHConfig getDHConfig() throws IOException;
+
+    TlsECConfig getECDHConfig() throws IOException;
 
     // Vector is (SupplementalDataEntry)
     void processClientSupplementalData(Vector clientSupplementalData)

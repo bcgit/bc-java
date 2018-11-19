@@ -14,13 +14,24 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 public class TlsRSAKeyExchange
     extends AbstractTlsKeyExchange
 {
+    private static int checkKeyExchange(int keyExchange)
+    {
+        switch (keyExchange)
+        {
+        case KeyExchangeAlgorithm.RSA:
+            return keyExchange;
+        default:
+            throw new IllegalArgumentException("unsupported key exchange algorithm");
+        }
+    }
+
     protected TlsCredentialedDecryptor serverCredentials = null;
     protected TlsCertificate serverCertificate;
     protected TlsSecret preMasterSecret;
 
-    public TlsRSAKeyExchange()
+    public TlsRSAKeyExchange(int keyExchange)
     {
-        super(KeyExchangeAlgorithm.RSA);
+        super(checkKeyExchange(keyExchange));
     }
 
     public void skipServerCredentials()

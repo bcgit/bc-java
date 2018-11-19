@@ -64,6 +64,11 @@ public abstract class AbstractTlsPeer
         }
     }
 
+   public TlsKeyExchangeFactory getKeyExchangeFactory() throws IOException
+    {
+        return new DefaultTlsKeyExchangeFactory();
+    }
+
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
     {
     }

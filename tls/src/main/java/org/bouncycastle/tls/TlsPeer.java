@@ -2,7 +2,6 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 
-import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 
 /**
@@ -66,9 +65,7 @@ public interface TlsPeer
 
     void notifySecureRenegotiation(boolean secureNegotiation) throws IOException;
 
-    TlsKeyExchange getKeyExchange() throws IOException;
-
-    TlsCipher getCipher() throws IOException;
+    TlsKeyExchangeFactory getKeyExchangeFactory() throws IOException;
 
     /**
      * This method will be called when an alert is raised by the protocol.

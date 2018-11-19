@@ -69,6 +69,16 @@ public interface TlsClient
     void processServerSupplementalData(Vector serverSupplementalData)
         throws IOException;
 
+    TlsPSKIdentity getPSKIdentity() throws IOException;
+
+    TlsSRPIdentity getSRPIdentity() throws IOException;
+
+    TlsDHConfigVerifier getDHConfigVerifier() throws IOException;
+
+    TlsECConfigVerifier getECDHConfigVerifier() throws IOException;
+
+    TlsSRPConfigVerifier getSRPConfigVerifier() throws IOException;
+
     TlsAuthentication getAuthentication()
         throws IOException;
 

@@ -4,12 +4,9 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
-import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -19,8 +16,6 @@ public abstract class AbstractTlsServer
     extends AbstractTlsPeer
     implements TlsServer
 {
-    protected TlsKeyExchangeFactory keyExchangeFactory;
-
     protected TlsServerContext context;
     protected int[] cipherSuites;
 
@@ -41,14 +36,7 @@ public abstract class AbstractTlsServer
 
     public AbstractTlsServer(TlsCrypto crypto)
     {
-        this(crypto, new DefaultTlsKeyExchangeFactory());
-    }
-
-    public AbstractTlsServer(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory)
-    {
         super(crypto);
-
-        this.keyExchangeFactory = keyExchangeFactory;
     }
 
     protected boolean allowEncryptThenMAC()
@@ -171,18 +159,6 @@ public abstract class AbstractTlsServer
         return TlsDHUtils.createNamedDHConfig(namedGroup);
     }
 
-    protected TlsDHConfig selectDHConfig() throws IOException
-    {
-        int minimumFiniteFieldBits = TlsDHUtils.getMinimumFiniteFieldBits(selectedCipherSuite);
-
-        TlsDHConfig dhConfig = selectDHConfig(minimumFiniteFieldBits);
-        if (dhConfig == null)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-        return dhConfig;
-    }
-
     protected TlsDHConfig selectDHConfig(int minimumFiniteFieldBits)
     {
         if (clientSupportedGroups == null)
@@ -201,21 +177,6 @@ public abstract class AbstractTlsServer
         }
 
         return null;
-    }
-
-    protected TlsECConfig selectECDHConfig() throws IOException
-    {
-        int minimumCurveBits = TlsECCUtils.getMinimumCurveBits(selectedCipherSuite);
-
-        int namedGroup = selectECDHNamedGroup(minimumCurveBits);
-        if (namedGroup < 0)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        TlsECConfig ecConfig = new TlsECConfig();
-        ecConfig.setNamedGroup(namedGroup);
-        return ecConfig;
     }
 
     protected ProtocolName selectProtocolName(Vector clientProtocolNames, Vector serverProtocolNames)
@@ -463,6 +424,43 @@ public abstract class AbstractTlsServer
         return null;
     }
 
+    public TlsPSKIdentityManager getPSKIdentityManager() throws IOException
+    {
+        return null;
+    }
+
+    public TlsSRPLoginParameters getSRPLoginParameters() throws IOException
+    {
+        return null;
+    }
+
+    public TlsDHConfig getDHConfig() throws IOException
+    {
+        int minimumFiniteFieldBits = TlsDHUtils.getMinimumFiniteFieldBits(selectedCipherSuite);
+
+        TlsDHConfig dhConfig = selectDHConfig(minimumFiniteFieldBits);
+        if (dhConfig == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+        return dhConfig;
+    }
+
+    public TlsECConfig getECDHConfig() throws IOException
+    {
+        int minimumCurveBits = TlsECCUtils.getMinimumCurveBits(selectedCipherSuite);
+
+        int namedGroup = selectECDHNamedGroup(minimumCurveBits);
+        if (namedGroup < 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        TlsECConfig ecConfig = new TlsECConfig();
+        ecConfig.setNamedGroup(namedGroup);
+        return ecConfig;
+    }
+
     public void processClientSupplementalData(Vector clientSupplementalData)
         throws IOException
     {
@@ -476,21 +474,6 @@ public abstract class AbstractTlsServer
         throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
-    }
-
-    public TlsCipher getCipher()
-        throws IOException
-    {
-        int encryptionAlgorithm = TlsUtils.getEncryptionAlgorithm(selectedCipherSuite);
-        int macAlgorithm = TlsUtils.getMACAlgorithm(selectedCipherSuite);
-
-        if (encryptionAlgorithm < 0 || macAlgorithm < 0)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        TlsSecret masterSecret = context.getSecurityParametersHandshake().getMasterSecret();
-        return masterSecret.createCipher(new TlsCryptoParameters(context), encryptionAlgorithm, macAlgorithm);
     }
 
     public NewSessionTicket getNewSessionTicket()

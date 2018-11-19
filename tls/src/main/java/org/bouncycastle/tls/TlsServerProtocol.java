@@ -166,7 +166,7 @@ public class TlsServerProtocol
                 }
                 this.connection_state = CS_SERVER_SUPPLEMENTAL_DATA;
 
-                this.keyExchange = TlsUtils.initKeyExchange(tlsServerContext, tlsServer);
+                this.keyExchange = TlsUtils.initKeyExchangeServer(tlsServerContext, tlsServer);
 
                 this.serverCredentials = validateCredentials(tlsServer.getCredentials());
 
@@ -669,8 +669,7 @@ public class TlsServerProtocol
         tlsServerContext.getSecurityParametersHandshake().sessionHash = TlsUtils.getCurrentPRFHash(prepareFinishHash);
 
         establishMasterSecret(getContext(), keyExchange);
-
-        recordStream.setPendingConnectionState(getPeer().getCipher());
+        recordStream.setPendingConnectionState(TlsUtils.initCipher(getContext()));
     }
 
     protected void sendCertificateRequestMessage(CertificateRequest certificateRequest)
@@ -759,17 +758,19 @@ public class TlsServerProtocol
          */
         TlsUtils.writeOpaque8(tlsSession.getSessionID(), message);
 
-        int selectedCipherSuite = tlsServer.getSelectedCipherSuite();
-        if (!Arrays.contains(offeredCipherSuites, selectedCipherSuite)
-            || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-            || CipherSuite.isSCSV(selectedCipherSuite)
-            || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, getContext().getServerVersion()))
         {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            int selectedCipherSuite = tlsServer.getSelectedCipherSuite();
+            if (!Arrays.contains(offeredCipherSuites, selectedCipherSuite)
+                || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
+                || CipherSuite.isSCSV(selectedCipherSuite)
+                || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, getContext().getServerVersion()))
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+            securityParameters.cipherSuite = selectedCipherSuite;
+            TlsUtils.writeUint16(selectedCipherSuite, message);
         }
-        securityParameters.cipherSuite = selectedCipherSuite;
 
-        TlsUtils.writeUint16(selectedCipherSuite, message);
         TlsUtils.writeUint8(CompressionMethod._null, message);
 
         this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(tlsServer.getServerExtensions());

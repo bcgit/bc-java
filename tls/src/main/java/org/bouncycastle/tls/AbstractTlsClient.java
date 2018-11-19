@@ -4,10 +4,7 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.tls.crypto.TlsCryptoParameters;
-import org.bouncycastle.tls.crypto.TlsSecret;
 
 /**
  * Base class for a TLS client.
@@ -16,8 +13,6 @@ public abstract class AbstractTlsClient
     extends AbstractTlsPeer
     implements TlsClient
 {
-    protected TlsKeyExchangeFactory keyExchangeFactory;
-
     protected TlsClientContext context;
     protected int[] cipherSuites;
 
@@ -26,14 +21,7 @@ public abstract class AbstractTlsClient
 
     public AbstractTlsClient(TlsCrypto crypto)
     {
-        this(crypto, new DefaultTlsKeyExchangeFactory());
-    }
-
-    public AbstractTlsClient(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory)
-    {
         super(crypto);
-
-        this.keyExchangeFactory = keyExchangeFactory;
     }
 
     protected boolean allowUnexpectedServerExtension(Integer extensionType, byte[] extensionData)
@@ -87,16 +75,36 @@ public abstract class AbstractTlsClient
         }
     }
 
-    protected TlsECConfigVerifier createECConfigVerifier()
+    public TlsPSKIdentity getPSKIdentity() throws IOException
+    {
+        return null;
+    }
+
+    public TlsSRPIdentity getSRPIdentity() throws IOException
+    {
+        return null;
+    }
+
+    public TlsDHConfigVerifier getDHConfigVerifier()
+    {
+        return new DefaultTlsDHConfigVerifier();
+    }
+
+    public TlsECConfigVerifier getECDHConfigVerifier()
     {
         int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
         int minimumCurveBits = TlsECCUtils.getMinimumCurveBits(selectedCipherSuite);
         return new DefaultTlsECConfigVerifier(minimumCurveBits, supportedGroups);
     }
 
+    public TlsSRPConfigVerifier getSRPConfigVerifier()
+    {
+        return new DefaultTlsSRPConfigVerifier();
+    }
+
     protected Vector getProtocolNames()
     {
-;        return null;
+        return null;
     }
 
     protected CertificateStatusRequest getCertificateStatusRequest()
@@ -333,22 +341,6 @@ public abstract class AbstractTlsClient
         throws IOException
     {
         return null;
-    }
-
-    public TlsCipher getCipher()
-        throws IOException
-    {
-        int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
-        int encryptionAlgorithm = TlsUtils.getEncryptionAlgorithm(selectedCipherSuite);
-        int macAlgorithm = TlsUtils.getMACAlgorithm(selectedCipherSuite);
-
-        if (encryptionAlgorithm < 0 || macAlgorithm < 0)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        TlsSecret masterSecret = context.getSecurityParametersHandshake().getMasterSecret();
-        return masterSecret.createCipher(new TlsCryptoParameters(context), encryptionAlgorithm, macAlgorithm);
     }
 
     public void notifyNewSessionTicket(NewSessionTicket newSessionTicket)

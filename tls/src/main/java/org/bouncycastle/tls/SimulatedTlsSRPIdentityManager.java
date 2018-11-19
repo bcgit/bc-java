@@ -69,6 +69,6 @@ public class SimulatedTlsSRPIdentityManager
         TlsSRPConfig srpConfig = new TlsSRPConfig();
         srpConfig.setExplicitNG(new BigInteger[]{ group.getN(), group.getG() });
 
-        return new TlsSRPLoginParameters(srpConfig, verifier, salt);
+        return new TlsSRPLoginParameters(identity, srpConfig, verifier, salt);
     }
 }

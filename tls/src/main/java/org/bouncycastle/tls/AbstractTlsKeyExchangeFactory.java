@@ -87,19 +87,19 @@ public class AbstractTlsKeyExchangeFactory
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public TlsKeyExchange createRSAKeyExchange() throws IOException
+    public TlsKeyExchange createRSAKeyExchange(int keyExchange) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public TlsKeyExchange createSRPKeyExchangeClient(int keyExchange, TlsSRPConfigVerifier srpConfigVerifier,
-        byte[] identity, byte[] password) throws IOException
+    public TlsKeyExchange createSRPKeyExchangeClient(int keyExchange, TlsSRPIdentity srpIdentity,
+        TlsSRPConfigVerifier srpConfigVerifier) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public TlsKeyExchange createSRPKeyExchangeServer(int keyExchange, byte[] identity,
-        TlsSRPLoginParameters loginParameters) throws IOException
+    public TlsKeyExchange createSRPKeyExchangeServer(int keyExchange, TlsSRPLoginParameters loginParameters)
+        throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }

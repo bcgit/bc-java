@@ -91,7 +91,7 @@ public abstract class DTLSProtocol
         return TlsUtils.calculateTLSVerifyData(context, handshake.getHandshakeHash(), isServer);
     }
 
-    protected static void validateSelectedCipherSuite(int selectedCipherSuite, short alertDescription)
+    protected static int validateSelectedCipherSuite(int selectedCipherSuite, short alertDescription)
         throws IOException
     {
         switch (TlsUtils.getEncryptionAlgorithm(selectedCipherSuite))
@@ -100,6 +100,8 @@ public abstract class DTLSProtocol
         case EncryptionAlgorithm.RC4_128:
         case -1:
             throw new TlsFatalAlert(alertDescription);
+        default:
+            return selectedCipherSuite;
         }
     }
 }
