@@ -145,7 +145,7 @@ public class DTLSClientProtocol
         if (state.resumedSession)
         {
             securityParameters.masterSecret = state.clientContext.getCrypto().adoptSecret(state.sessionParameters.getMasterSecret());
-            recordLayer.initPendingEpoch(state.client.getCipher());
+            recordLayer.initPendingEpoch(TlsUtils.initCipher(state.clientContext));
 
             // NOTE: Calculated exclusive of the actual Finished message from the server
             securityParameters.peerVerifyData = createVerifyData(state.clientContext, handshake, true);
@@ -184,7 +184,7 @@ public class DTLSClientProtocol
             state.client.processServerSupplementalData(null);
         }
 
-        state.keyExchange = TlsUtils.initKeyExchange(state.clientContext, state.client);
+        state.keyExchange = TlsUtils.initKeyExchangeClient(state.clientContext, state.client);
 
         Certificate serverCertificate = null;
 
@@ -314,7 +314,7 @@ public class DTLSClientProtocol
         securityParameters.sessionHash = TlsUtils.getCurrentPRFHash(prepareFinishHash);
 
         TlsProtocol.establishMasterSecret(state.clientContext, state.keyExchange);
-        recordLayer.initPendingEpoch(state.client.getCipher());
+        recordLayer.initPendingEpoch(TlsUtils.initCipher(state.clientContext));
 
         if (credentialedSigner != null)
         {
@@ -649,8 +649,8 @@ public class DTLSClientProtocol
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
-            validateSelectedCipherSuite(selectedCipherSuite, AlertDescription.illegal_parameter);
-            securityParameters.cipherSuite = selectedCipherSuite;
+            securityParameters.cipherSuite = validateSelectedCipherSuite(selectedCipherSuite,
+                AlertDescription.illegal_parameter);
             state.client.notifySelectedCipherSuite(selectedCipherSuite);
         }
 

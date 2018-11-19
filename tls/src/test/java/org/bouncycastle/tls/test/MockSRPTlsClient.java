@@ -13,6 +13,7 @@ import org.bouncycastle.tls.SRPTlsClient;
 import org.bouncycastle.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsExtensionsUtils;
+import org.bouncycastle.tls.TlsSRPIdentity;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.crypto.TlsCertificate;
@@ -25,9 +26,9 @@ class MockSRPTlsClient
 {
     TlsSession session;
 
-    MockSRPTlsClient(TlsSession session, byte[] identity, byte[] password)
+    MockSRPTlsClient(TlsSession session, TlsSRPIdentity srpIdentity)
     {
-        super(new BcTlsCrypto(new SecureRandom()), identity, password);
+        super(new BcTlsCrypto(new SecureRandom()), srpIdentity);
 
         this.session = session;
     }

@@ -31,6 +31,7 @@ import org.bouncycastle.tls.ServerName;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentials;
+import org.bouncycastle.tls.TlsDHConfigVerifier;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsSession;
@@ -60,7 +61,7 @@ class ProvTlsClient
 
     ProvTlsClient(ProvTlsManager manager, ProvSSLParameters sslParameters)
     {
-        super(manager.getContextData().getCrypto(), new DefaultTlsKeyExchangeFactory(), new ProvDHConfigVerifier());
+        super(manager.getContextData().getCrypto());
 
         this.manager = manager;
         this.sslParameters = sslParameters;
@@ -149,6 +150,12 @@ class ProvTlsClient
     public synchronized boolean isHandshakeComplete()
     {
         return handshakeComplete;
+    }
+
+    @Override
+    public TlsDHConfigVerifier getDHConfigVerifier()
+    {
+        return new ProvDHConfigVerifier();
     }
 
     public TlsAuthentication getAuthentication() throws IOException

@@ -84,20 +84,20 @@ public class DefaultTlsKeyExchangeFactory
         return new TlsPSKKeyExchange(keyExchange, null, pskIdentityManager, dhConfig, ecConfig);
     }
 
-    public TlsKeyExchange createRSAKeyExchange() throws IOException
+    public TlsKeyExchange createRSAKeyExchange(int keyExchange) throws IOException
     {
-        return new TlsRSAKeyExchange();
+        return new TlsRSAKeyExchange(keyExchange);
     }
 
-    public TlsKeyExchange createSRPKeyExchangeClient(int keyExchange, TlsSRPConfigVerifier srpConfigVerifier,
-        byte[] identity, byte[] password) throws IOException
+    public TlsKeyExchange createSRPKeyExchangeClient(int keyExchange, TlsSRPIdentity srpIdentity,
+        TlsSRPConfigVerifier srpConfigVerifier) throws IOException
     {
-        return new TlsSRPKeyExchange(keyExchange, srpConfigVerifier, identity, password);
+        return new TlsSRPKeyExchange(keyExchange, srpIdentity, srpConfigVerifier);
     }
 
-    public TlsKeyExchange createSRPKeyExchangeServer(int keyExchange, byte[] identity,
-        TlsSRPLoginParameters loginParameters) throws IOException
+    public TlsKeyExchange createSRPKeyExchangeServer(int keyExchange, TlsSRPLoginParameters loginParameters)
+        throws IOException
     {
-        return new TlsSRPKeyExchange(keyExchange, identity, loginParameters);
+        return new TlsSRPKeyExchange(keyExchange, loginParameters);
     }
 }

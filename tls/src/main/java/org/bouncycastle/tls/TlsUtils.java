@@ -26,7 +26,9 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
@@ -891,7 +893,7 @@ public class TlsUtils
     {
         if (crypto.hasNamedGroup(namedGroup))
         {
-            addToSet(supportedGroups, namedGroup);
+            supportedGroups.addElement(namedGroup);
         }
     }
 
@@ -903,12 +905,14 @@ public class TlsUtils
         }
     }
 
-    public static void addToSet(Vector s, int i)
+    public static boolean addToSet(Vector s, int i)
     {
-        if (!s.contains(i))
+        boolean result = !s.contains(i);
+        if (result)
         {
             s.addElement(i);
         }
+        return result;
     }
 
     public static Vector getDefaultDSSSignatureAlgorithms()
@@ -3388,9 +3392,124 @@ public class TlsUtils
         handshakeHash.sealHashAlgorithms();
     }
 
-    static TlsKeyExchange initKeyExchange(TlsContext context, TlsPeer peer) throws IOException
+    private static TlsKeyExchange createKeyExchangeClient(TlsClient client, int keyExchange) throws IOException
     {
-        TlsKeyExchange keyExchange = peer.getKeyExchange();
+        TlsKeyExchangeFactory factory = client.getKeyExchangeFactory();
+
+        switch (keyExchange)
+        {
+        case KeyExchangeAlgorithm.DH_anon:
+            return factory.createDHanonKeyExchangeClient(keyExchange, client.getDHConfigVerifier());
+
+        case KeyExchangeAlgorithm.DH_DSS:
+        case KeyExchangeAlgorithm.DH_RSA:
+            return factory.createDHKeyExchangeClient(keyExchange);
+
+        case KeyExchangeAlgorithm.DHE_DSS:
+        case KeyExchangeAlgorithm.DHE_RSA:
+            return factory.createDHEKeyExchangeClient(keyExchange, client.getDHConfigVerifier());
+
+        case KeyExchangeAlgorithm.ECDH_anon:
+            return factory.createECDHanonKeyExchangeClient(keyExchange, client.getECDHConfigVerifier());
+
+        case KeyExchangeAlgorithm.ECDH_ECDSA:
+        case KeyExchangeAlgorithm.ECDH_RSA:
+            return factory.createECDHKeyExchangeClient(keyExchange);
+
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
+            return factory.createECDHEKeyExchangeClient(keyExchange, client.getECDHConfigVerifier());
+
+        case KeyExchangeAlgorithm.RSA:
+            return factory.createRSAKeyExchange(keyExchange);
+
+        case KeyExchangeAlgorithm.DHE_PSK:
+            return factory.createPSKKeyExchangeClient(keyExchange, client.getPSKIdentity(),
+                client.getDHConfigVerifier(), null);
+
+        case KeyExchangeAlgorithm.ECDHE_PSK:
+            return factory.createPSKKeyExchangeClient(keyExchange, client.getPSKIdentity(), null,
+                client.getECDHConfigVerifier());
+
+        case KeyExchangeAlgorithm.PSK:
+        case KeyExchangeAlgorithm.RSA_PSK:
+            return factory.createPSKKeyExchangeClient(keyExchange, client.getPSKIdentity(), null, null);
+
+        case KeyExchangeAlgorithm.SRP:
+        case KeyExchangeAlgorithm.SRP_DSS:
+        case KeyExchangeAlgorithm.SRP_RSA:
+            return factory.createSRPKeyExchangeClient(keyExchange, client.getSRPIdentity(),
+                client.getSRPConfigVerifier());
+
+        default:
+            /*
+             * Note: internal error here; the TlsProtocol implementation verifies that the
+             * server-selected cipher suite was in the list of client-offered cipher suites, so if
+             * we now can't produce an implementation, we shouldn't have offered it!
+             */
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
+    private static TlsKeyExchange createKeyExchangeServer(TlsServer server, int keyExchange) throws IOException
+    {
+        TlsKeyExchangeFactory factory = server.getKeyExchangeFactory();
+
+        switch (keyExchange)
+        {
+        case KeyExchangeAlgorithm.DH_anon:
+            return factory.createDHanonKeyExchangeServer(keyExchange, server.getDHConfig());
+
+        case KeyExchangeAlgorithm.DH_DSS:
+        case KeyExchangeAlgorithm.DH_RSA:
+            return factory.createDHKeyExchangeServer(keyExchange);
+
+        case KeyExchangeAlgorithm.DHE_DSS:
+        case KeyExchangeAlgorithm.DHE_RSA:
+            return factory.createDHEKeyExchangeServer(keyExchange, server.getDHConfig());
+
+        case KeyExchangeAlgorithm.ECDH_anon:
+            return factory.createECDHanonKeyExchangeServer(keyExchange, server.getECDHConfig());
+
+        case KeyExchangeAlgorithm.ECDH_ECDSA:
+        case KeyExchangeAlgorithm.ECDH_RSA:
+            return factory.createECDHKeyExchangeServer(keyExchange);
+
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
+            return factory.createECDHEKeyExchangeServer(keyExchange, server.getECDHConfig());
+
+        case KeyExchangeAlgorithm.RSA:
+            return factory.createRSAKeyExchange(keyExchange);
+
+        case KeyExchangeAlgorithm.DHE_PSK:
+            return factory.createPSKKeyExchangeServer(keyExchange, server.getPSKIdentityManager(), server.getDHConfig(),
+                null);
+
+        case KeyExchangeAlgorithm.ECDHE_PSK:
+            return factory.createPSKKeyExchangeServer(keyExchange, server.getPSKIdentityManager(), null, server.getECDHConfig());
+
+        case KeyExchangeAlgorithm.PSK:
+        case KeyExchangeAlgorithm.RSA_PSK:
+            return factory.createPSKKeyExchangeServer(keyExchange, server.getPSKIdentityManager(), null, null);
+
+        case KeyExchangeAlgorithm.SRP:
+        case KeyExchangeAlgorithm.SRP_DSS:
+        case KeyExchangeAlgorithm.SRP_RSA:
+            return factory.createSRPKeyExchangeServer(keyExchange, server.getSRPLoginParameters());
+
+        default:
+            /*
+             * Note: internal error here; the TlsProtocol implementation verifies that the
+             * server-selected cipher suite was in the list of client-offered cipher suites, so if
+             * we now can't produce an implementation, we shouldn't have offered it!
+             */
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+    }
+
+    private static TlsKeyExchange initKeyExchange(TlsContext context, TlsKeyExchange keyExchange) throws IOException
+    {
         keyExchange.init(context);
 
         /*
@@ -3422,6 +3541,38 @@ public class TlsUtils
         }
 
         return keyExchange;
+    }
+
+    static TlsKeyExchange initKeyExchangeClient(TlsClientContext context, TlsClient client) throws IOException
+    {
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        int cipherSuite = securityParameters.getCipherSuite();
+        TlsKeyExchange keyExchange = createKeyExchangeClient(client, getKeyExchangeAlgorithm(cipherSuite));
+        return initKeyExchange(context, keyExchange);
+    }
+
+    static TlsKeyExchange initKeyExchangeServer(TlsServerContext context, TlsServer server) throws IOException
+    {
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        int cipherSuite = securityParameters.getCipherSuite();
+        TlsKeyExchange keyExchange = createKeyExchangeServer(server, getKeyExchangeAlgorithm(cipherSuite));
+        return initKeyExchange(context, keyExchange);
+    }
+
+    static TlsCipher initCipher(TlsContext context) throws IOException
+    {
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        int cipherSuite = securityParameters.getCipherSuite();
+        int encryptionAlgorithm = TlsUtils.getEncryptionAlgorithm(cipherSuite);
+        int macAlgorithm = TlsUtils.getMACAlgorithm(cipherSuite);
+
+        if (encryptionAlgorithm < 0 || macAlgorithm < 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        TlsSecret masterSecret = context.getSecurityParametersHandshake().getMasterSecret();
+        return masterSecret.createCipher(new TlsCryptoParameters(context), encryptionAlgorithm, macAlgorithm);
     }
 
     static void checkSigAlgOfClientCerts(TlsContext context, Certificate clientCertificate, CertificateRequest certificateRequest) throws IOException

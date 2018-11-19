@@ -10,11 +10,13 @@ import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
+import org.bouncycastle.tls.BasicTlsSRPIdentity;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SRPTlsServer;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SimulatedTlsSRPIdentityManager;
 import org.bouncycastle.tls.TlsCredentialedSigner;
+import org.bouncycastle.tls.TlsSRPIdentity;
 import org.bouncycastle.tls.TlsSRPIdentityManager;
 import org.bouncycastle.tls.TlsSRPLoginParameters;
 import org.bouncycastle.tls.crypto.SRP6Group;
@@ -31,6 +33,7 @@ class MockSRPTlsServer
     static final SRP6Group TEST_GROUP = SRP6StandardGroups.rfc5054_1024;
     static final byte[] TEST_IDENTITY = Strings.toUTF8ByteArray("client");
     static final byte[] TEST_PASSWORD = Strings.toUTF8ByteArray("password");
+    static final TlsSRPIdentity TEST_SRP_IDENTITY = new BasicTlsSRPIdentity(TEST_IDENTITY, TEST_PASSWORD);
     static final byte[] TEST_SALT = Strings.toUTF8ByteArray("salt");
     static final byte[] TEST_SEED_KEY = Strings.toUTF8ByteArray("seed_key");
 
@@ -124,7 +127,7 @@ class MockSRPTlsServer
                 TlsSRPConfig srpConfig = new TlsSRPConfig();
                 srpConfig.setExplicitNG(new BigInteger[]{ TEST_GROUP.getN(), TEST_GROUP.getG() });
 
-                return new TlsSRPLoginParameters(srpConfig, verifier, TEST_SALT);
+                return new TlsSRPLoginParameters(identity, srpConfig, verifier, TEST_SALT);
             }
 
             return unknownIdentityManager.getLoginParameters(identity);
