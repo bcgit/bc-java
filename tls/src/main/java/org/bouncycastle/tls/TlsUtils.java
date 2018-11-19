@@ -3393,7 +3393,7 @@ public class TlsUtils
 
         case KeyExchangeAlgorithm.DH_DSS:
         case KeyExchangeAlgorithm.DH_RSA:
-            return factory.createDHKeyExchangeClient(keyExchange);
+            return factory.createDHKeyExchange(keyExchange);
 
         case KeyExchangeAlgorithm.DHE_DSS:
         case KeyExchangeAlgorithm.DHE_RSA:
@@ -3404,7 +3404,7 @@ public class TlsUtils
 
         case KeyExchangeAlgorithm.ECDH_ECDSA:
         case KeyExchangeAlgorithm.ECDH_RSA:
-            return factory.createECDHKeyExchangeClient(keyExchange);
+            return factory.createECDHKeyExchange(keyExchange);
 
         case KeyExchangeAlgorithm.ECDHE_ECDSA:
         case KeyExchangeAlgorithm.ECDHE_RSA:
@@ -3449,7 +3449,7 @@ public class TlsUtils
 
         case KeyExchangeAlgorithm.DH_DSS:
         case KeyExchangeAlgorithm.DH_RSA:
-            return factory.createDHKeyExchangeServer(keyExchange);
+            return factory.createDHKeyExchange(keyExchange);
 
         case KeyExchangeAlgorithm.DHE_DSS:
         case KeyExchangeAlgorithm.DHE_RSA:
@@ -3460,7 +3460,7 @@ public class TlsUtils
 
         case KeyExchangeAlgorithm.ECDH_ECDSA:
         case KeyExchangeAlgorithm.ECDH_RSA:
-            return factory.createECDHKeyExchangeServer(keyExchange);
+            return factory.createECDHKeyExchange(keyExchange);
 
         case KeyExchangeAlgorithm.ECDHE_ECDSA:
         case KeyExchangeAlgorithm.ECDHE_RSA:
