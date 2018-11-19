@@ -11,8 +11,6 @@ import org.bouncycastle.tls.crypto.TlsSecret;
  */
 public interface TlsKeyExchange
 {
-    int getKeyExchangeAlgorithm();
-
     void init(TlsContext context);
 
     void skipServerCredentials()

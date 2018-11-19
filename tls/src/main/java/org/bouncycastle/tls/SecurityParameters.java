@@ -33,6 +33,7 @@ public class SecurityParameters
     Vector clientSigAlgs = null;
     Vector clientSigAlgsCert = null;
     int[] clientSupportedGroups = null;
+    int keyExchangeAlgorithm = -1;
 
     // TODO[tls-ops] Investigate whether we can handle verify data using TlsSecret
     byte[] localVerifyData = null;
@@ -198,5 +199,10 @@ public class SecurityParameters
     public byte[] getPeerVerifyData()
     {
         return peerVerifyData;
+    }
+
+    public int getKeyExchangeAlgorithm()
+    {
+        return keyExchangeAlgorithm;
     }
 }
