@@ -44,7 +44,7 @@ public abstract class AbstractTlsClient
              * didn't negotiate an ECC cipher suite. If present, we still require that it is a valid
              * ECPointFormatList.
              */
-            TlsECCUtils.readSupportedPointFormatsExtension(extensionData);
+            TlsExtensionsUtils.readSupportedPointFormatsExtension(extensionData);
             return true;
 
         default:
@@ -256,7 +256,8 @@ public abstract class AbstractTlsClient
         if (namedGroupRoles.contains(NamedGroupRole.ecdh)
             || namedGroupRoles.contains(NamedGroupRole.ecdsa))
         {
-            TlsECCUtils.addSupportedPointFormatsExtension(clientExtensions, new short[]{ ECPointFormat.uncompressed });
+            TlsExtensionsUtils.addSupportedPointFormatsExtension(clientExtensions,
+                new short[]{ ECPointFormat.uncompressed });
         }
 
         return clientExtensions;
@@ -307,11 +308,11 @@ public abstract class AbstractTlsClient
             if (TlsECCUtils.isECCCipherSuite(selectedCipherSuite))
             {
                 // We only support uncompressed format, this is just to validate the extension, if present.
-                TlsECCUtils.getSupportedPointFormatsExtension(serverExtensions);
+                TlsExtensionsUtils.getSupportedPointFormatsExtension(serverExtensions);
             }
             else
             {
-                checkForUnexpectedServerExtension(serverExtensions, TlsECCUtils.EXT_ec_point_formats);
+                checkForUnexpectedServerExtension(serverExtensions, TlsExtensionsUtils.EXT_ec_point_formats);
             }
 
             /*

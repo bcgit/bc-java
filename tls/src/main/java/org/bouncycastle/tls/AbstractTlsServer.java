@@ -275,7 +275,7 @@ public abstract class AbstractTlsServer
             this.truncatedHMacOffered = TlsExtensionsUtils.hasTruncatedHMacExtension(clientExtensions);
 
             // We only support uncompressed format, this is just to validate the extension, and note its presence.
-            this.clientSentECPointFormats = (null != TlsECCUtils.getSupportedPointFormatsExtension(clientExtensions));
+            this.clientSentECPointFormats = (null != TlsExtensionsUtils.getSupportedPointFormatsExtension(clientExtensions));
 
             this.certificateStatusRequest = TlsExtensionsUtils.getStatusRequestExtension(clientExtensions);
         }
@@ -385,7 +385,8 @@ public abstract class AbstractTlsServer
              * message including a Supported Point Formats Extension appends this extension (along
              * with others) to its ServerHello message, enumerating the point formats it can parse.
              */
-            TlsECCUtils.addSupportedPointFormatsExtension(checkServerExtensions(), new short[]{ ECPointFormat.uncompressed });
+            TlsExtensionsUtils.addSupportedPointFormatsExtension(checkServerExtensions(),
+                new short[]{ ECPointFormat.uncompressed });
         }
 
         if (this.certificateStatusRequest != null)
