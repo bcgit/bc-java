@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
 public class TlsExtensionsUtils
@@ -13,6 +14,7 @@ public class TlsExtensionsUtils
     public static final Integer EXT_application_layer_protocol_negotiation = Integers.valueOf(ExtensionType.application_layer_protocol_negotiation);
     public static final Integer EXT_client_certificate_type = Integers.valueOf(ExtensionType.client_certificate_type);
     public static final Integer EXT_client_certificate_url = Integers.valueOf(ExtensionType.client_certificate_url);
+    public static final Integer EXT_ec_point_formats = Integers.valueOf(ExtensionType.ec_point_formats);
     public static final Integer EXT_encrypt_then_mac = Integers.valueOf(ExtensionType.encrypt_then_mac);
     public static final Integer EXT_extended_master_secret = Integers.valueOf(ExtensionType.extended_master_secret);
     public static final Integer EXT_heartbeat = Integers.valueOf(ExtensionType.heartbeat);
@@ -123,6 +125,12 @@ public class TlsExtensionsUtils
     public static void addSupportedGroupsExtension(Hashtable extensions, Vector namedGroups) throws IOException
     {
         extensions.put(EXT_supported_groups, createSupportedGroupsExtension(namedGroups));
+    }
+
+    public static void addSupportedPointFormatsExtension(Hashtable extensions, short[] ecPointFormats)
+        throws IOException
+    {
+        extensions.put(EXT_ec_point_formats, createSupportedPointFormatsExtension(ecPointFormats));
     }
 
     public static void addSupportedVersionsExtensionClient(Hashtable extensions, Vector versions) throws IOException
@@ -240,6 +248,12 @@ public class TlsExtensionsUtils
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_supported_groups);
         return extensionData == null ? null : readSupportedGroupsExtension(extensionData);
+    }
+
+    public static short[] getSupportedPointFormatsExtension(Hashtable extensions) throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_ec_point_formats);
+        return extensionData == null ? null : readSupportedPointFormatsExtension(extensionData);
     }
 
     public static Vector getSupportedVersionsExtensionClient(Hashtable extensions) throws IOException
@@ -447,6 +461,22 @@ public class TlsExtensionsUtils
         }
 
         return TlsUtils.encodeUint16ArrayWithUint16Length(values);
+    }
+
+    public static byte[] createSupportedPointFormatsExtension(short[] ecPointFormats) throws IOException
+    {
+        if (ecPointFormats == null || !Arrays.contains(ecPointFormats, ECPointFormat.uncompressed))
+        {
+            /*
+             * RFC 4492 5.1. If the Supported Point Formats Extension is indeed sent, it MUST
+             * contain the value 0 (uncompressed) as one of the items in the list of point formats.
+             */
+
+            // NOTE: We add it at the start (highest preference)
+            ecPointFormats = Arrays.prepend(ecPointFormats, ECPointFormat.uncompressed);
+        }
+
+        return TlsUtils.encodeUint8ArrayWithUint8Length(ecPointFormats);
     }
 
     public static byte[] createSupportedVersionsExtensionClient(Vector versions) throws IOException
@@ -692,6 +722,20 @@ public class TlsExtensionsUtils
         TlsProtocol.assertEmpty(buf);
 
         return namedGroups;
+    }
+
+    public static short[] readSupportedPointFormatsExtension(byte[] extensionData) throws IOException
+    {
+        short[] ecPointFormats = TlsUtils.decodeUint8ArrayWithUint8Length(extensionData);
+        if (!Arrays.contains(ecPointFormats, ECPointFormat.uncompressed))
+        {
+            /*
+             * RFC 4492 5.1. If the Supported Point Formats Extension is indeed sent, it MUST
+             * contain the value 0 (uncompressed) as one of the items in the list of point formats.
+             */
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+        return ecPointFormats;
     }
 
     public static Vector readSupportedVersionsExtensionClient(byte[] extensionData) throws IOException
