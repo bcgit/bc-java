@@ -96,7 +96,7 @@ public class TlsDHEKeyExchange
 
         byte[] y = TlsUtils.readOpaque16(teeIn, 1);
 
-        TlsUtils.verifyServerKeyExchangeSignature(context, input, keyExchange, serverCertificate, digestBuffer);
+        TlsUtils.verifyServerKeyExchangeSignature(context, input, serverCertificate, digestBuffer);
 
         this.agreement = context.getCrypto().createDHDomain(dhConfig).createDH();
 

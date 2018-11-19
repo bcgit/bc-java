@@ -49,7 +49,8 @@ public class TlsRSAKeyExchange
     public void processServerCertificate(Certificate serverCertificate)
         throws IOException
     {
-        this.serverCertificate = serverCertificate.getCertificateAt(0).useInRole(ConnectionEnd.server, keyExchange);
+        this.serverCertificate = serverCertificate.getCertificateAt(0).useInRole(ConnectionEnd.server,
+            KeyExchangeAlgorithm.RSA);
     }
 
     public short[] getClientCertificateTypes()
