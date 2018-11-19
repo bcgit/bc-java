@@ -7,52 +7,35 @@ import java.util.Hashtable;
 
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Integers;
 
 public class TlsECCUtils
 {
-    public static final Integer EXT_ec_point_formats = Integers.valueOf(ExtensionType.ec_point_formats);
+    /** @deprecated Use {@link TlsExtensionsUtils#EXT_ec_point_formats} instead. */
+    public static final Integer EXT_ec_point_formats = TlsExtensionsUtils.EXT_ec_point_formats;
 
+    /** @deprecated Use {@link TlsExtensionsUtils#addSupportedPointFormatsExtension(Hashtable, short[])} instead. */
     public static void addSupportedPointFormatsExtension(Hashtable extensions, short[] ecPointFormats)
         throws IOException
     {
-        extensions.put(EXT_ec_point_formats, createSupportedPointFormatsExtension(ecPointFormats));
+        TlsExtensionsUtils.addSupportedPointFormatsExtension(extensions, ecPointFormats);
     }
 
+    /** @deprecated Use {@link TlsExtensionsUtils#getSupportedPointFormatsExtension(Hashtable) instead. */
     public static short[] getSupportedPointFormatsExtension(Hashtable extensions) throws IOException
     {
-        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_ec_point_formats);
-        return extensionData == null ? null : readSupportedPointFormatsExtension(extensionData);
+        return TlsExtensionsUtils.getSupportedPointFormatsExtension(extensions);
     }
 
+    /** @deprecated Use {@link TlsExtensionsUtils#createSupportedPointFormatsExtension(short[]) instead. */
     public static byte[] createSupportedPointFormatsExtension(short[] ecPointFormats) throws IOException
     {
-        if (ecPointFormats == null || !Arrays.contains(ecPointFormats, ECPointFormat.uncompressed))
-        {
-            /*
-             * RFC 4492 5.1. If the Supported Point Formats Extension is indeed sent, it MUST
-             * contain the value 0 (uncompressed) as one of the items in the list of point formats.
-             */
-
-            // NOTE: We add it at the start (highest preference)
-            ecPointFormats = Arrays.prepend(ecPointFormats, ECPointFormat.uncompressed);
-        }
-
-        return TlsUtils.encodeUint8ArrayWithUint8Length(ecPointFormats);
+        return TlsExtensionsUtils.createSupportedPointFormatsExtension(ecPointFormats);
     }
 
+    /** @deprecated Use {@link TlsExtensionsUtils#readSupportedPointFormatsExtension(byte[]) instead. */
     public static short[] readSupportedPointFormatsExtension(byte[] extensionData) throws IOException
     {
-        short[] ecPointFormats = TlsUtils.decodeUint8ArrayWithUint8Length(extensionData);
-        if (!Arrays.contains(ecPointFormats, ECPointFormat.uncompressed))
-        {
-            /*
-             * RFC 4492 5.1. If the Supported Point Formats Extension is indeed sent, it MUST
-             * contain the value 0 (uncompressed) as one of the items in the list of point formats.
-             */
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-        return ecPointFormats;
+        return TlsExtensionsUtils.readSupportedPointFormatsExtension(extensionData);
     }
 
     public static int getMinimumCurveBits(int cipherSuite)
