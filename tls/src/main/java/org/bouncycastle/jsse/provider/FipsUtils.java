@@ -89,20 +89,20 @@ abstract class FipsUtils
         return Collections.unmodifiableSet(cs);
     }
 
-    static int getFipsDefaultCurve(int minimumCurveBits)
-    {
-        return minimumCurveBits <= 256 ? NamedGroup.secp256r1
-            :  minimumCurveBits <= 384 ? NamedGroup.secp384r1
-            :  -1;
-    }
-
-    static int getFipsDefaultFiniteField(int minimumFiniteFieldBits)
+    static int getFipsDefaultDH(int minimumFiniteFieldBits)
     {
         return minimumFiniteFieldBits <= 2048 ? NamedGroup.ffdhe2048
             :  minimumFiniteFieldBits <= 3072 ? NamedGroup.ffdhe3072
             :  minimumFiniteFieldBits <= 4096 ? NamedGroup.ffdhe4096
             :  minimumFiniteFieldBits <= 6144 ? NamedGroup.ffdhe6144
             :  minimumFiniteFieldBits <= 8192 ? NamedGroup.ffdhe8192
+            :  -1;
+    }
+
+    static int getFipsDefaultECDH(int minimumCurveBits)
+    {
+        return minimumCurveBits <= 256 ? NamedGroup.secp256r1
+            :  minimumCurveBits <= 384 ? NamedGroup.secp384r1
             :  -1;
     }
 
