@@ -73,9 +73,7 @@ public interface TlsClient
 
     TlsSRPIdentity getSRPIdentity() throws IOException;
 
-    TlsDHConfigVerifier getDHConfigVerifier() throws IOException;
-
-    TlsECConfigVerifier getECDHConfigVerifier() throws IOException;
+    TlsDHGroupVerifier getDHConfigVerifier() throws IOException;
 
     TlsSRPConfigVerifier getSRPConfigVerifier() throws IOException;
 

@@ -671,6 +671,8 @@ public class DTLSServerProtocol
                 securityParameters.clientSigAlgsCert = TlsUtils.getSignatureAlgorithmsCertExtension(state.clientExtensions);
             }
 
+            securityParameters.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(state.clientExtensions);
+
             state.server.processClientExtensions(state.clientExtensions);
         }
     }

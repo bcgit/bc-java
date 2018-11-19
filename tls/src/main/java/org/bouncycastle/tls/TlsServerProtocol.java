@@ -654,6 +654,8 @@ public class TlsServerProtocol
                 securityParameters.clientSigAlgsCert = TlsUtils.getSignatureAlgorithmsCertExtension(clientExtensions);
             }
 
+            securityParameters.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientExtensions);
+
             tlsServer.processClientExtensions(clientExtensions);
         }
     }

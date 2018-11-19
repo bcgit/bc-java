@@ -19,10 +19,23 @@ import org.bouncycastle.util.Arrays;
 public class TlsPSKKeyExchange
     extends AbstractTlsKeyExchange
 {
+    private static int checkKeyExchange(int keyExchange)
+    {
+        switch (keyExchange)
+        {
+        case KeyExchangeAlgorithm.DHE_PSK:
+        case KeyExchangeAlgorithm.ECDHE_PSK:
+        case KeyExchangeAlgorithm.PSK:
+        case KeyExchangeAlgorithm.RSA_PSK:
+            return keyExchange;
+        default:
+            throw new IllegalArgumentException("unsupported key exchange algorithm");
+        }
+    }
+
     protected TlsPSKIdentity pskIdentity;
     protected TlsPSKIdentityManager pskIdentityManager;
-    protected TlsDHConfigVerifier dhConfigVerifier;
-    protected TlsECConfigVerifier ecConfigVerifier;
+    protected TlsDHGroupVerifier dhGroupVerifier;
 
     protected byte[] psk_identity_hint = null;
     protected byte[] psk = null;
@@ -35,40 +48,26 @@ public class TlsPSKKeyExchange
     protected TlsCertificate serverCertificate;
     protected TlsSecret preMasterSecret;
 
-    public TlsPSKKeyExchange(int keyExchange, TlsPSKIdentity pskIdentity, TlsDHConfigVerifier dhConfigVerifier,
-        TlsECConfigVerifier ecConfigVerifier)
+    public TlsPSKKeyExchange(int keyExchange, TlsPSKIdentity pskIdentity, TlsDHGroupVerifier dhGroupVerifier)
     {
-        this(keyExchange, pskIdentity, null, dhConfigVerifier, null, ecConfigVerifier, null);
+        this(keyExchange, pskIdentity, null, dhGroupVerifier, null, null);
     }
 
-    public TlsPSKKeyExchange(int keyExchange, TlsPSKIdentity pskIdentity, TlsPSKIdentityManager pskIdentityManager,
+    public TlsPSKKeyExchange(int keyExchange, TlsPSKIdentityManager pskIdentityManager,
         TlsDHConfig dhConfig, TlsECConfig ecConfig)
     {
-        this(keyExchange, pskIdentity, pskIdentityManager, null, dhConfig, null, ecConfig);
+        this(keyExchange, null, pskIdentityManager, null, dhConfig, ecConfig);
     }
 
     private TlsPSKKeyExchange(int keyExchange, TlsPSKIdentity pskIdentity, TlsPSKIdentityManager pskIdentityManager,
-        TlsDHConfigVerifier dhConfigVerifier, TlsDHConfig dhConfig, TlsECConfigVerifier ecConfigVerifier,
-        TlsECConfig ecConfig)
+        TlsDHGroupVerifier dhGroupVerifier, TlsDHConfig dhConfig, TlsECConfig ecConfig)
     {
-        super(keyExchange);
-
-        switch (keyExchange)
-        {
-        case KeyExchangeAlgorithm.DHE_PSK:
-        case KeyExchangeAlgorithm.ECDHE_PSK:
-        case KeyExchangeAlgorithm.PSK:
-        case KeyExchangeAlgorithm.RSA_PSK:
-            break;
-        default:
-            throw new IllegalArgumentException("unsupported key exchange algorithm");
-        }
+        super(checkKeyExchange(keyExchange));
 
         this.pskIdentity = pskIdentity;
         this.pskIdentityManager = pskIdentityManager;
-        this.dhConfigVerifier = dhConfigVerifier;
+        this.dhGroupVerifier = dhGroupVerifier;
         this.dhConfig = dhConfig;
-        this.ecConfigVerifier = ecConfigVerifier;
         this.ecConfig = ecConfig;
     }
 
@@ -168,7 +167,7 @@ public class TlsPSKKeyExchange
 
         if (this.keyExchange == KeyExchangeAlgorithm.DHE_PSK)
         {
-            this.dhConfig = TlsDHUtils.receiveDHConfig(dhConfigVerifier, input);
+            this.dhConfig = TlsDHUtils.receiveDHConfig(context, dhGroupVerifier, input);
 
             byte[] y = TlsUtils.readOpaque16(input, 1);
 
@@ -178,7 +177,7 @@ public class TlsPSKKeyExchange
         }
         else if (this.keyExchange == KeyExchangeAlgorithm.ECDHE_PSK)
         {
-            this.ecConfig = TlsECCUtils.receiveECConfig(ecConfigVerifier, input);
+            this.ecConfig = TlsECCUtils.receiveECDHConfig(context, input);
 
             byte[] point = TlsUtils.readOpaque8(input, 1);
 

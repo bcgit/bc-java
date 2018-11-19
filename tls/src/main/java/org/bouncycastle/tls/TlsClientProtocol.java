@@ -968,6 +968,8 @@ public class TlsClientProtocol
             securityParameters.clientSigAlgsCert = TlsUtils.getSignatureAlgorithmsCertExtension(clientExtensions);
         }
 
+        securityParameters.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientExtensions);
+
         TlsExtensionsUtils.addExtendedMasterSecretExtension(this.clientExtensions);
 
         HandshakeMessage message = new HandshakeMessage(HandshakeType.client_hello);

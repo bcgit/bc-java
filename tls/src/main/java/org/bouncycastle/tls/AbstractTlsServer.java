@@ -25,7 +25,6 @@ public abstract class AbstractTlsServer
     protected boolean encryptThenMACOffered;
     protected short maxFragmentLengthOffered;
     protected boolean truncatedHMacOffered;
-    protected int[] clientSupportedGroups;
     protected boolean clientSentECPointFormats;
     protected CertificateStatusRequest certificateStatusRequest;
 
@@ -61,8 +60,7 @@ public abstract class AbstractTlsServer
 
     protected int getMaximumNegotiableCurveBits()
     {
-        // NOTE: BC supports all the current set of point formats so we don't check them here
-
+        int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
         if (clientSupportedGroups == null)
         {
             /*
@@ -83,6 +81,7 @@ public abstract class AbstractTlsServer
 
     protected int getMaximumNegotiableFiniteFieldBits()
     {
+        int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
         if (clientSupportedGroups == null)
         {
             return NamedGroup.getMaximumFiniteFieldBits();
@@ -120,6 +119,7 @@ public abstract class AbstractTlsServer
 
     protected int selectECDHNamedGroup(int minimumCurveBits)
     {
+        int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
         if (clientSupportedGroups == null)
         {
             return selectDefaultCurve(minimumCurveBits);
@@ -161,6 +161,7 @@ public abstract class AbstractTlsServer
 
     protected TlsDHConfig selectDHConfig(int minimumFiniteFieldBits)
     {
+        int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
         if (clientSupportedGroups == null)
         {
             return selectDefaultDHConfig(minimumFiniteFieldBits);
@@ -208,7 +209,6 @@ public abstract class AbstractTlsServer
         this.encryptThenMACOffered = false;
         this.maxFragmentLengthOffered = 0;
         this.truncatedHMacOffered = false;
-        this.clientSupportedGroups = null;
         this.clientSentECPointFormats = false;
         this.certificateStatusRequest = null;
         this.selectedCipherSuite = -1;
@@ -276,8 +276,6 @@ public abstract class AbstractTlsServer
             }
 
             this.truncatedHMacOffered = TlsExtensionsUtils.hasTruncatedHMacExtension(clientExtensions);
-
-            this.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientExtensions);
 
             // We only support uncompressed format, this is just to validate the extension, and note its presence.
             this.clientSentECPointFormats = (null != TlsECCUtils.getSupportedPointFormatsExtension(clientExtensions));
@@ -456,9 +454,7 @@ public abstract class AbstractTlsServer
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        TlsECConfig ecConfig = new TlsECConfig();
-        ecConfig.setNamedGroup(namedGroup);
-        return ecConfig;
+        return new TlsECConfig(namedGroup);
     }
 
     public void processClientSupplementalData(Vector clientSupplementalData)
