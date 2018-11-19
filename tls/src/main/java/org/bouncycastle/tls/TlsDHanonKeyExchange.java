@@ -26,14 +26,14 @@ public class TlsDHanonKeyExchange
         }
     }
 
-    protected TlsDHConfigVerifier dhConfigVerifier;
+    protected TlsDHGroupVerifier dhGroupVerifier;
     protected TlsDHConfig dhConfig;
 
     protected TlsAgreement agreement;
 
-    public TlsDHanonKeyExchange(int keyExchange, TlsDHConfigVerifier dhConfigVerifier)
+    public TlsDHanonKeyExchange(int keyExchange, TlsDHGroupVerifier dhGroupVerifier)
     {
-        this(keyExchange, dhConfigVerifier, null);
+        this(keyExchange, dhGroupVerifier, null);
     }
 
     public TlsDHanonKeyExchange(int keyExchange, TlsDHConfig dhConfig)
@@ -41,11 +41,11 @@ public class TlsDHanonKeyExchange
         this(keyExchange, null, dhConfig);
     }
 
-    private TlsDHanonKeyExchange(int keyExchange, TlsDHConfigVerifier dhConfigVerifier, TlsDHConfig dhConfig)
+    private TlsDHanonKeyExchange(int keyExchange, TlsDHGroupVerifier dhGroupVerifier, TlsDHConfig dhConfig)
     {
         super(checkKeyExchange(keyExchange));
 
-        this.dhConfigVerifier = dhConfigVerifier;
+        this.dhGroupVerifier = dhGroupVerifier;
         this.dhConfig = dhConfig;
     }
 
@@ -85,7 +85,7 @@ public class TlsDHanonKeyExchange
 
     public void processServerKeyExchange(InputStream input) throws IOException
     {
-        this.dhConfig = TlsDHUtils.receiveDHConfig(dhConfigVerifier, input);
+        this.dhConfig = TlsDHUtils.receiveDHConfig(context, dhGroupVerifier, input);
 
         byte[] y = TlsUtils.readOpaque16(input, 1);
 

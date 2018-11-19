@@ -77,16 +77,15 @@ class ProvTlsServer
     @Override
     protected int getMaximumNegotiableCurveBits()
     {
-        // NOTE: BC supports all the current set of point formats so we don't check them here
-
+        int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
         return SupportedGroups.getServerMaximumNegotiableCurveBits(manager.getContext().isFips(), clientSupportedGroups);
     }
 
     @Override
     protected int getMaximumNegotiableFiniteFieldBits()
     {
+        int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
         int maxBits = SupportedGroups.getServerMaximumNegotiableFiniteFieldBits(manager.getContext().isFips(), clientSupportedGroups);
-
         return maxBits >= provEphemeralDHKeySize ? maxBits : 0;
     }
 
@@ -131,6 +130,7 @@ class ProvTlsServer
     @Override
     protected int selectECDHNamedGroup(int minimumCurveBits)
     {
+        int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
         if (clientSupportedGroups == null)
         {
             return selectDefaultCurve(minimumCurveBits);
@@ -158,6 +158,7 @@ class ProvTlsServer
     {
         minimumFiniteFieldBits = Math.max(minimumFiniteFieldBits, provEphemeralDHKeySize);
 
+        int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
         if (clientSupportedGroups == null)
         {
             return selectDefaultDHConfig(minimumFiniteFieldBits);

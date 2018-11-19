@@ -3410,7 +3410,7 @@ public class TlsUtils
             return factory.createDHEKeyExchangeClient(keyExchange, client.getDHConfigVerifier());
 
         case KeyExchangeAlgorithm.ECDH_anon:
-            return factory.createECDHanonKeyExchangeClient(keyExchange, client.getECDHConfigVerifier());
+            return factory.createECDHanonKeyExchangeClient(keyExchange);
 
         case KeyExchangeAlgorithm.ECDH_ECDSA:
         case KeyExchangeAlgorithm.ECDH_RSA:
@@ -3418,22 +3418,19 @@ public class TlsUtils
 
         case KeyExchangeAlgorithm.ECDHE_ECDSA:
         case KeyExchangeAlgorithm.ECDHE_RSA:
-            return factory.createECDHEKeyExchangeClient(keyExchange, client.getECDHConfigVerifier());
+            return factory.createECDHEKeyExchangeClient(keyExchange);
 
         case KeyExchangeAlgorithm.RSA:
             return factory.createRSAKeyExchange(keyExchange);
 
         case KeyExchangeAlgorithm.DHE_PSK:
             return factory.createPSKKeyExchangeClient(keyExchange, client.getPSKIdentity(),
-                client.getDHConfigVerifier(), null);
+                client.getDHConfigVerifier());
 
         case KeyExchangeAlgorithm.ECDHE_PSK:
-            return factory.createPSKKeyExchangeClient(keyExchange, client.getPSKIdentity(), null,
-                client.getECDHConfigVerifier());
-
         case KeyExchangeAlgorithm.PSK:
         case KeyExchangeAlgorithm.RSA_PSK:
-            return factory.createPSKKeyExchangeClient(keyExchange, client.getPSKIdentity(), null, null);
+            return factory.createPSKKeyExchangeClient(keyExchange, client.getPSKIdentity(), null);
 
         case KeyExchangeAlgorithm.SRP:
         case KeyExchangeAlgorithm.SRP_DSS:

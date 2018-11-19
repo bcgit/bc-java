@@ -14,12 +14,12 @@ public interface TlsKeyExchangeFactory
 
     TlsKeyExchange createDHKeyExchangeServer(int keyExchange) throws IOException;
 
-    TlsKeyExchange createDHanonKeyExchangeClient(int keyExchange, TlsDHConfigVerifier dhConfigVerifier)
+    TlsKeyExchange createDHanonKeyExchangeClient(int keyExchange, TlsDHGroupVerifier dhGroupVerifier)
         throws IOException;
 
     TlsKeyExchange createDHanonKeyExchangeServer(int keyExchange, TlsDHConfig dhConfig) throws IOException;
 
-    TlsKeyExchange createDHEKeyExchangeClient(int keyExchange, TlsDHConfigVerifier dhConfigVerifier) throws IOException;
+    TlsKeyExchange createDHEKeyExchangeClient(int keyExchange, TlsDHGroupVerifier dhGroupVerifier) throws IOException;
 
     TlsKeyExchange createDHEKeyExchangeServer(int keyExchange, TlsDHConfig dhConfig) throws IOException;
 
@@ -27,18 +27,16 @@ public interface TlsKeyExchangeFactory
 
     TlsKeyExchange createECDHKeyExchangeServer(int keyExchange) throws IOException;
 
-    TlsKeyExchange createECDHanonKeyExchangeClient(int keyExchange, TlsECConfigVerifier ecConfigVerifier)
-        throws IOException;
+    TlsKeyExchange createECDHanonKeyExchangeClient(int keyExchange) throws IOException;
 
     TlsKeyExchange createECDHanonKeyExchangeServer(int keyExchange, TlsECConfig ecConfig) throws IOException;
 
-    TlsKeyExchange createECDHEKeyExchangeClient(int keyExchange, TlsECConfigVerifier ecConfigVerifier)
-        throws IOException;
+    TlsKeyExchange createECDHEKeyExchangeClient(int keyExchange) throws IOException;
 
     TlsKeyExchange createECDHEKeyExchangeServer(int keyExchange, TlsECConfig ecConfig) throws IOException;
 
     TlsKeyExchange createPSKKeyExchangeClient(int keyExchange, TlsPSKIdentity pskIdentity,
-        TlsDHConfigVerifier dhConfigVerifier, TlsECConfigVerifier ecConfigVerifier) throws IOException;
+        TlsDHGroupVerifier dhGroupVerifier) throws IOException;
 
     TlsKeyExchange createPSKKeyExchangeServer(int keyExchange, TlsPSKIdentityManager pskIdentityManager,
         TlsDHConfig dhConfig, TlsECConfig ecConfig) throws IOException;

@@ -1,10 +1,10 @@
 package org.bouncycastle.jsse.provider;
 
-import org.bouncycastle.tls.DefaultTlsDHConfigVerifier;
-import org.bouncycastle.tls.crypto.TlsDHConfig;
+import org.bouncycastle.tls.DefaultTlsDHGroupVerifier;
+import org.bouncycastle.tls.crypto.DHGroup;
 
 class ProvDHConfigVerifier
-    extends DefaultTlsDHConfigVerifier
+    extends DefaultTlsDHGroupVerifier
 {
     private static final int provMinimumPrimeBits = PropertyUtils.getIntegerSystemProperty("org.bouncycastle.jsse.client.dh.minimumPrimeBits", 2048, 1024, 16384);
     private static final boolean provUnrestrictedGroups = PropertyUtils.getBooleanSystemProperty("org.bouncycastle.jsse.client.dh.unrestrictedGroups", false);
@@ -15,8 +15,8 @@ class ProvDHConfigVerifier
     }
 
     @Override
-    protected boolean checkGroup(TlsDHConfig dhConfig)
+    protected boolean checkGroup(DHGroup dhGroup)
     {
-        return provUnrestrictedGroups || super.checkGroup(dhConfig);
+        return provUnrestrictedGroups || super.checkGroup(dhGroup);
     }
 }

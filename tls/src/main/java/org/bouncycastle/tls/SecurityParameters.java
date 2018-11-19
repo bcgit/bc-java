@@ -32,6 +32,7 @@ public class SecurityParameters
     ProtocolName applicationProtocol = null;
     Vector clientSigAlgs = null;
     Vector clientSigAlgsCert = null;
+    int[] clientSupportedGroups = null;
 
     // TODO[tls-ops] Investigate whether we can handle verify data using TlsSecret
     byte[] localVerifyData = null;
@@ -80,6 +81,11 @@ public class SecurityParameters
     public Vector getClientSigAlgsCert()
     {
         return clientSigAlgsCert;
+    }
+
+    public int[] getClientSupportedGroups()
+    {
+        return clientSupportedGroups;
     }
 
     /**
