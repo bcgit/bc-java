@@ -138,7 +138,7 @@ public class DTLSServerProtocol
             handshake.sendMessage(HandshakeType.supplemental_data, supplementalDataBody);
         }
 
-        state.keyExchange = TlsUtils.initKeyExchange(state.serverContext, state.server);
+        state.keyExchange = TlsUtils.initKeyExchangeServer(state.serverContext, state.server);
 
         state.serverCredentials = TlsProtocol.validateCredentials(state.server.getCredentials());
 
@@ -259,7 +259,7 @@ public class DTLSServerProtocol
         securityParameters.sessionHash = TlsUtils.getCurrentPRFHash(prepareFinishHash);
 
         TlsProtocol.establishMasterSecret(state.serverContext, state.keyExchange);
-        recordLayer.initPendingEpoch(state.server.getCipher());
+        recordLayer.initPendingEpoch(TlsUtils.initCipher(state.serverContext));
 
         /*
          * RFC 5246 7.4.8 This message is only sent following a client certificate that has signing
@@ -381,9 +381,8 @@ public class DTLSServerProtocol
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
-            validateSelectedCipherSuite(selectedCipherSuite, AlertDescription.internal_error);
-            securityParameters.cipherSuite = selectedCipherSuite;
-
+            securityParameters.cipherSuite = validateSelectedCipherSuite(selectedCipherSuite,
+                AlertDescription.internal_error);
             TlsUtils.writeUint16(selectedCipherSuite, buf);
         }
 

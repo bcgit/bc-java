@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Hashtable;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.util.Arrays;
 
 public class SRPTlsServer
     extends AbstractTlsServer
@@ -22,16 +21,11 @@ public class SRPTlsServer
     protected TlsSRPIdentityManager srpIdentityManager;
 
     protected byte[] srpIdentity = null;
-    protected TlsSRPLoginParameters loginParameters = null;
+    protected TlsSRPLoginParameters srpLoginParameters = null;
 
     public SRPTlsServer(TlsCrypto crypto, TlsSRPIdentityManager srpIdentityManager)
     {
-        this(crypto, new DefaultTlsKeyExchangeFactory(), srpIdentityManager);
-    }
-
-    public SRPTlsServer(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsSRPIdentityManager srpIdentityManager)
-    {
-        super(crypto, keyExchangeFactory);
+        super(crypto);
 
         this.srpIdentityManager = srpIdentityManager;
     }
@@ -68,10 +62,10 @@ public class SRPTlsServer
         {
             if (srpIdentity != null)
             {
-                this.loginParameters = srpIdentityManager.getLoginParameters(srpIdentity);
+                this.srpLoginParameters = srpIdentityManager.getLoginParameters(srpIdentity);
             }
 
-            if (loginParameters == null)
+            if (srpLoginParameters == null)
             {
                 throw new TlsFatalAlert(AlertDescription.unknown_psk_identity);
             }
@@ -101,30 +95,8 @@ public class SRPTlsServer
         }
     }
 
-    public TlsKeyExchange getKeyExchange()
-        throws IOException
+    public TlsSRPLoginParameters getSRPLoginParameters() throws IOException
     {
-        int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite);
-
-        switch (keyExchangeAlgorithm)
-        {
-        case KeyExchangeAlgorithm.SRP:
-        case KeyExchangeAlgorithm.SRP_DSS:
-        case KeyExchangeAlgorithm.SRP_RSA:
-            return createSRPKeyExchange(keyExchangeAlgorithm);
-
-        default:
-            /*
-             * Note: internal error here; the TlsProtocol implementation verifies that the
-             * server-selected cipher suite was in the list of client-offered cipher suites, so if
-             * we now can't produce an implementation, we shouldn't have offered it!
-             */
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-    }
-
-    protected TlsKeyExchange createSRPKeyExchange(int keyExchange) throws IOException
-    {
-        return keyExchangeFactory.createSRPKeyExchangeServer(keyExchange, srpIdentity, loginParameters);
+        return srpLoginParameters;
     }
 }

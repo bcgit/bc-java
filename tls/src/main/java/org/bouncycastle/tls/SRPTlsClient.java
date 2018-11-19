@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Hashtable;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.util.Arrays;
 
 public class SRPTlsClient
     extends AbstractTlsClient
@@ -14,23 +13,13 @@ public class SRPTlsClient
         CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA
     };
 
-    protected TlsSRPConfigVerifier srpConfigVerifier;
+    protected TlsSRPIdentity srpIdentity;
 
-    protected byte[] identity;
-    protected byte[] password;
-
-    public SRPTlsClient(TlsCrypto crypto, byte[] identity, byte[] password)
+    public SRPTlsClient(TlsCrypto crypto, TlsSRPIdentity srpIdentity)
     {
-        this(crypto, new DefaultTlsKeyExchangeFactory(), new DefaultTlsSRPConfigVerifier(), identity, password);
-    }
+        super(crypto);
 
-    public SRPTlsClient(TlsCrypto crypto, TlsKeyExchangeFactory keyExchangeFactory, TlsSRPConfigVerifier srpConfigVerifier,
-        byte[] identity, byte[] password)
-    {
-        super(crypto, keyExchangeFactory);
-        this.srpConfigVerifier = srpConfigVerifier;
-        this.identity = Arrays.clone(identity);
-        this.password = Arrays.clone(password);
+        this.srpIdentity = srpIdentity;
     }
 
     protected int[] getSupportedCipherSuites()
@@ -48,7 +37,7 @@ public class SRPTlsClient
         throws IOException
     {
         Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
-        TlsSRPUtils.addSRPExtension(clientExtensions, this.identity);
+        TlsSRPUtils.addSRPExtension(clientExtensions, srpIdentity.getSRPIdentity());
         return clientExtensions;
     }
 
@@ -67,27 +56,9 @@ public class SRPTlsClient
         super.processServerExtensions(serverExtensions);
     }
 
-    public TlsKeyExchange getKeyExchange()
-        throws IOException
+    public TlsSRPIdentity getSRPIdentity()
     {
-        int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
-        int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite);
-
-        switch (keyExchangeAlgorithm)
-        {
-        case KeyExchangeAlgorithm.SRP:
-        case KeyExchangeAlgorithm.SRP_DSS:
-        case KeyExchangeAlgorithm.SRP_RSA:
-            return createSRPKeyExchange(keyExchangeAlgorithm);
-
-        default:
-            /*
-             * Note: internal error here; the TlsProtocol implementation verifies that the
-             * server-selected cipher suite was in the list of client-offered cipher suites, so if
-             * we now can't produce an implementation, we shouldn't have offered it!
-             */
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
+        return srpIdentity;
     }
 
     public TlsAuthentication getAuthentication() throws IOException
@@ -97,10 +68,5 @@ public class SRPTlsClient
          * case e.g. for SRP_DSS or SRP_RSA key exchange.
          */
         throw new TlsFatalAlert(AlertDescription.internal_error);
-    }
-
-    protected TlsKeyExchange createSRPKeyExchange(int keyExchange) throws IOException
-    {
-        return keyExchangeFactory.createSRPKeyExchangeClient(keyExchange, srpConfigVerifier, identity, password);
     }
 }

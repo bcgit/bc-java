@@ -280,7 +280,7 @@ public class TlsClientProtocol
                 {
                     tlsClientContext.getSecurityParametersHandshake().masterSecret = tlsClientContext.getCrypto()
                         .adoptSecret(sessionParameters.getMasterSecret());
-                    this.recordStream.setPendingConnectionState(getPeer().getCipher());
+                    this.recordStream.setPendingConnectionState(TlsUtils.initCipher(getContext()));
                 }
                 else
                 {
@@ -405,8 +405,7 @@ public class TlsClientProtocol
                     .getCurrentPRFHash(prepareFinishHash);
 
                 establishMasterSecret(getContext(), keyExchange);
-
-                recordStream.setPendingConnectionState(getPeer().getCipher());
+                recordStream.setPendingConnectionState(TlsUtils.initCipher(getContext()));
 
                 if (credentialedSigner != null)
                 {
@@ -575,7 +574,7 @@ public class TlsClientProtocol
         this.tlsClient.processServerSupplementalData(serverSupplementalData);
         this.connection_state = CS_SERVER_SUPPLEMENTAL_DATA;
 
-        this.keyExchange = TlsUtils.initKeyExchange(tlsClientContext, tlsClient);
+        this.keyExchange = TlsUtils.initKeyExchangeClient(tlsClientContext, tlsClient);
     }
 
     protected void receiveNewSessionTicketMessage(ByteArrayInputStream buf)
@@ -650,15 +649,18 @@ public class TlsClientProtocol
          * Find out which CipherSuite the server has chosen and check that it was one of the offered
          * ones, and is a valid selection for the negotiated version.
          */
-        int selectedCipherSuite = TlsUtils.readUint16(buf);
-        if (!Arrays.contains(this.offeredCipherSuites, selectedCipherSuite)
-            || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
-            || CipherSuite.isSCSV(selectedCipherSuite)
-            || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, getContext().getServerVersion()))
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            int selectedCipherSuite = TlsUtils.readUint16(buf);
+            if (!Arrays.contains(this.offeredCipherSuites, selectedCipherSuite)
+                || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
+                || CipherSuite.isSCSV(selectedCipherSuite)
+                || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, getContext().getServerVersion()))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+            securityParameters.cipherSuite = selectedCipherSuite;
+            this.tlsClient.notifySelectedCipherSuite(selectedCipherSuite);
         }
-        this.tlsClient.notifySelectedCipherSuite(selectedCipherSuite);
 
         /*
          * Find out which CompressionMethod the server has chosen and check that it was one of the
@@ -832,7 +834,7 @@ public class TlsClientProtocol
         Hashtable sessionClientExtensions = clientExtensions, sessionServerExtensions = serverExtensions;
         if (this.resumedSession)
         {
-            if (selectedCipherSuite != this.sessionParameters.getCipherSuite()
+            if (securityParameters.getCipherSuite() != this.sessionParameters.getCipherSuite()
                 || CompressionMethod._null != this.sessionParameters.getCompressionAlgorithm()
                 || !server_version.equals(this.sessionParameters.getNegotiatedVersion()))
             {
@@ -842,8 +844,6 @@ public class TlsClientProtocol
             sessionClientExtensions = null;
             sessionServerExtensions = this.sessionParameters.readServerExtensions();
         }
-
-        securityParameters.cipherSuite = selectedCipherSuite;
 
         if (sessionServerExtensions != null && !sessionServerExtensions.isEmpty())
         {
@@ -855,7 +855,7 @@ public class TlsClientProtocol
                  * client.
                  */
                 boolean serverSentEncryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(sessionServerExtensions);
-                if (serverSentEncryptThenMAC && !TlsUtils.isBlockCipherSuite(selectedCipherSuite))
+                if (serverSentEncryptThenMAC && !TlsUtils.isBlockCipherSuite(securityParameters.getCipherSuite()))
                 {
                     throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
