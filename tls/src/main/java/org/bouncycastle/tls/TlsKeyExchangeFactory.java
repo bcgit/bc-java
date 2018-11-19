@@ -10,9 +10,7 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
  */
 public interface TlsKeyExchangeFactory
 {
-    TlsKeyExchange createDHKeyExchangeClient(int keyExchange) throws IOException;
-
-    TlsKeyExchange createDHKeyExchangeServer(int keyExchange) throws IOException;
+    TlsKeyExchange createDHKeyExchange(int keyExchange) throws IOException;
 
     TlsKeyExchange createDHanonKeyExchangeClient(int keyExchange, TlsDHGroupVerifier dhGroupVerifier)
         throws IOException;
@@ -23,9 +21,7 @@ public interface TlsKeyExchangeFactory
 
     TlsKeyExchange createDHEKeyExchangeServer(int keyExchange, TlsDHConfig dhConfig) throws IOException;
 
-    TlsKeyExchange createECDHKeyExchangeClient(int keyExchange) throws IOException;
-
-    TlsKeyExchange createECDHKeyExchangeServer(int keyExchange) throws IOException;
+    TlsKeyExchange createECDHKeyExchange(int keyExchange) throws IOException;
 
     TlsKeyExchange createECDHanonKeyExchangeClient(int keyExchange) throws IOException;
 

@@ -11,12 +11,7 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 public class AbstractTlsKeyExchangeFactory
     implements TlsKeyExchangeFactory
 {
-    public TlsKeyExchange createDHKeyExchangeClient(int keyExchange) throws IOException
-    {
-        throw new TlsFatalAlert(AlertDescription.internal_error);
-    }
-
-    public TlsKeyExchange createDHKeyExchangeServer(int keyExchange) throws IOException
+    public TlsKeyExchange createDHKeyExchange(int keyExchange) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
@@ -43,12 +38,7 @@ public class AbstractTlsKeyExchangeFactory
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public TlsKeyExchange createECDHKeyExchangeClient(int keyExchange) throws IOException
-    {
-        throw new TlsFatalAlert(AlertDescription.internal_error);
-    }
-
-    public TlsKeyExchange createECDHKeyExchangeServer(int keyExchange) throws IOException
+    public TlsKeyExchange createECDHKeyExchange(int keyExchange) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }

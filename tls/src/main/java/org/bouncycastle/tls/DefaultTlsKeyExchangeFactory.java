@@ -8,12 +8,7 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 public class DefaultTlsKeyExchangeFactory
     extends AbstractTlsKeyExchangeFactory
 {
-    public TlsKeyExchange createDHKeyExchangeClient(int keyExchange) throws IOException
-    {
-        return new TlsDHKeyExchange(keyExchange);
-    }
-
-    public TlsKeyExchange createDHKeyExchangeServer(int keyExchange) throws IOException
+    public TlsKeyExchange createDHKeyExchange(int keyExchange) throws IOException
     {
         return new TlsDHKeyExchange(keyExchange);
     }
@@ -40,12 +35,7 @@ public class DefaultTlsKeyExchangeFactory
         return new TlsDHEKeyExchange(keyExchange, dhConfig);
     }
 
-    public TlsKeyExchange createECDHKeyExchangeClient(int keyExchange) throws IOException
-    {
-        return new TlsECDHKeyExchange(keyExchange);
-    }
-
-    public TlsKeyExchange createECDHKeyExchangeServer(int keyExchange) throws IOException
+    public TlsKeyExchange createECDHKeyExchange(int keyExchange) throws IOException
     {
         return new TlsECDHKeyExchange(keyExchange);
     }
