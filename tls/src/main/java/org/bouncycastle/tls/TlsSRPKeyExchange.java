@@ -131,7 +131,7 @@ public class TlsSRPKeyExchange
 
         if (digestBuffer != null)
         {
-            TlsUtils.verifyServerKeyExchangeSignature(context, input, keyExchange, serverCertificate, digestBuffer);
+            TlsUtils.verifyServerKeyExchangeSignature(context, input, serverCertificate, digestBuffer);
         }
 
         TlsSRPConfig config = new TlsSRPConfig();
