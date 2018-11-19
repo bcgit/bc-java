@@ -3521,7 +3521,7 @@ public class TlsUtils
             if (null == securityParameters.getClientSigAlgs())
             {
                 short signatureAlgorithm = getLegacySignatureAlgorithmServerCert(
-                    keyExchange.getKeyExchangeAlgorithm());
+                    securityParameters.getKeyExchangeAlgorithm());
 
                 securityParameters.clientSigAlgs = getDefaultSignatureAlgorithms(signatureAlgorithm);
             }
@@ -3544,7 +3544,8 @@ public class TlsUtils
     {
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
         int cipherSuite = securityParameters.getCipherSuite();
-        TlsKeyExchange keyExchange = createKeyExchangeClient(client, getKeyExchangeAlgorithm(cipherSuite));
+        securityParameters.keyExchangeAlgorithm = getKeyExchangeAlgorithm(cipherSuite);
+        TlsKeyExchange keyExchange = createKeyExchangeClient(client, securityParameters.getKeyExchangeAlgorithm());
         return initKeyExchange(context, keyExchange);
     }
 
@@ -3552,7 +3553,8 @@ public class TlsUtils
     {
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
         int cipherSuite = securityParameters.getCipherSuite();
-        TlsKeyExchange keyExchange = createKeyExchangeServer(server, getKeyExchangeAlgorithm(cipherSuite));
+        securityParameters.keyExchangeAlgorithm = getKeyExchangeAlgorithm(cipherSuite);
+        TlsKeyExchange keyExchange = createKeyExchangeServer(server, securityParameters.getKeyExchangeAlgorithm());
         return initKeyExchange(context, keyExchange);
     }
 
@@ -3615,10 +3617,11 @@ public class TlsUtils
         }
     }
 
-    static void checkSigAlgOfServerCerts(TlsContext context, Certificate serverCertificate, TlsKeyExchange keyExchange)
+    static void checkSigAlgOfServerCerts(TlsContext context, Certificate serverCertificate)
         throws IOException
     {
-        Vector clientSigAlgsCert = context.getSecurityParametersHandshake().getClientSigAlgsCert();
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        Vector clientSigAlgsCert = securityParameters.getClientSigAlgsCert();
 
         for (int i = 0; i < serverCertificate.getLength(); ++i)
         {
@@ -3637,7 +3640,7 @@ public class TlsUtils
                  * certificate MUST be the same as the algorithm for the certificate key.
                  */
                 short signatureAlgorithm = getLegacySignatureAlgorithmServerCert(
-                    keyExchange.getKeyExchangeAlgorithm());
+                    securityParameters.getKeyExchangeAlgorithm());
 
                 valid = (signatureAlgorithm == sigAndHashAlg.getSignature()); 
             }
@@ -3731,7 +3734,7 @@ public class TlsUtils
         checkTlsFeatures(serverCertificate, clientExtensions, serverExtensions);
         if (client.shouldCheckSigAlgOfPeerCerts())
         {
-            checkSigAlgOfServerCerts(context, serverCertificate, keyExchange);
+            checkSigAlgOfServerCerts(context, serverCertificate);
         }
         keyExchange.processServerCertificate(serverCertificate);
 
