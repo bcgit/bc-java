@@ -31,14 +31,12 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.ServerNameList;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsCredentials;
-import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
-import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedAgreement;
@@ -128,48 +126,43 @@ class ProvTlsServer
     }
 
     @Override
-    protected int selectECDHNamedGroup(int minimumCurveBits)
-    {
-        int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
-        if (clientSupportedGroups == null)
-        {
-            return selectDefaultCurve(minimumCurveBits);
-        }
-
-        boolean isFips = manager.getContext().isFips();
-
-        return SupportedGroups.getServerSelectedCurve(getCrypto(), isFips, minimumCurveBits, clientSupportedGroups);
-    }
-
-    @Override
-    protected int selectDefaultCurve(int minimumCurveBits)
-    {
-        return SupportedGroups.getServerDefaultCurve(manager.getContext().isFips(), minimumCurveBits);
-    }
-
-    @Override
-    protected TlsDHConfig selectDefaultDHConfig(int minimumFiniteFieldBits)
-    {
-        return SupportedGroups.getServerDefaultDHConfig(manager.getContext().isFips(), minimumFiniteFieldBits);
-    }
-
-    @Override
-    protected TlsDHConfig selectDHConfig(int minimumFiniteFieldBits)
+    protected int selectDH(int minimumFiniteFieldBits)
     {
         minimumFiniteFieldBits = Math.max(minimumFiniteFieldBits, provEphemeralDHKeySize);
 
         int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
         if (clientSupportedGroups == null)
         {
-            return selectDefaultDHConfig(minimumFiniteFieldBits);
+            return selectDHDefault(minimumFiniteFieldBits);
         }
 
-        boolean isFips = manager.getContext().isFips();
+        return SupportedGroups.getServerSelectedFiniteField(getCrypto(), manager.getContext().isFips(),
+            minimumFiniteFieldBits, clientSupportedGroups);
+    }
 
-        int namedGroup = SupportedGroups.getServerSelectedFiniteField(getCrypto(), isFips, minimumFiniteFieldBits,
+    @Override
+    protected int selectDHDefault(int minimumFiniteFieldBits)
+    {
+        return SupportedGroups.getServerDefaultDH(manager.getContext().isFips(), minimumFiniteFieldBits);
+    }
+
+    @Override
+    protected int selectECDH(int minimumCurveBits)
+    {
+        int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
+        if (clientSupportedGroups == null)
+        {
+            return selectECDHDefault(minimumCurveBits);
+        }
+
+        return SupportedGroups.getServerSelectedCurve(getCrypto(), manager.getContext().isFips(), minimumCurveBits,
             clientSupportedGroups);
+    }
 
-        return TlsDHUtils.createNamedDHConfig(namedGroup);
+    @Override
+    protected int selectECDHDefault(int minimumCurveBits)
+    {
+        return SupportedGroups.getServerDefaultECDH(manager.getContext().isFips(), minimumCurveBits);
     }
 
     public synchronized boolean isHandshakeComplete()

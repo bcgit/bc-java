@@ -117,12 +117,43 @@ public abstract class AbstractTlsServer
         return true;
     }
 
-    protected int selectECDHNamedGroup(int minimumCurveBits)
+    protected int selectDH(int minimumFiniteFieldBits)
     {
         int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
         if (clientSupportedGroups == null)
         {
-            return selectDefaultCurve(minimumCurveBits);
+            return selectDHDefault(minimumFiniteFieldBits);
+        }
+
+        // Try to find a supported named group of the required size from the client's list.
+        for (int i = 0; i < clientSupportedGroups.length; ++i)
+        {
+            int namedGroup = clientSupportedGroups[i];
+            if (NamedGroup.getFiniteFieldBits(namedGroup) >= minimumFiniteFieldBits)
+            {
+                return namedGroup;
+            }
+        }
+
+        return -1;
+    }
+
+    protected int selectDHDefault(int minimumFiniteFieldBits)
+    {
+        return minimumFiniteFieldBits <= 2048 ? NamedGroup.ffdhe2048
+            :  minimumFiniteFieldBits <= 3072 ? NamedGroup.ffdhe3072
+            :  minimumFiniteFieldBits <= 4096 ? NamedGroup.ffdhe4096
+            :  minimumFiniteFieldBits <= 6144 ? NamedGroup.ffdhe6144
+            :  minimumFiniteFieldBits <= 8192 ? NamedGroup.ffdhe8192
+            :  -1;
+    }
+
+    protected int selectECDH(int minimumCurveBits)
+    {
+        int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
+        if (clientSupportedGroups == null)
+        {
+            return selectECDHDefault(minimumCurveBits);
         }
 
         // Try to find a supported named group of the required size from the client's list.
@@ -138,46 +169,12 @@ public abstract class AbstractTlsServer
         return -1;
     }
 
-    protected int selectDefaultCurve(int minimumCurveBits)
+    protected int selectECDHDefault(int minimumCurveBits)
     {
         return minimumCurveBits <= 256 ? NamedGroup.secp256r1
             :  minimumCurveBits <= 384 ? NamedGroup.secp384r1
             :  minimumCurveBits <= 521 ? NamedGroup.secp521r1
-            :  minimumCurveBits <= 571 ? NamedGroup.sect571r1
             :  -1;
-    }
-
-    protected TlsDHConfig selectDefaultDHConfig(int minimumFiniteFieldBits)
-    {
-        int namedGroup = minimumFiniteFieldBits <= 2048 ? NamedGroup.ffdhe2048
-                      :  minimumFiniteFieldBits <= 3072 ? NamedGroup.ffdhe3072
-                      :  minimumFiniteFieldBits <= 4096 ? NamedGroup.ffdhe4096
-                      :  minimumFiniteFieldBits <= 6144 ? NamedGroup.ffdhe6144
-                      :  minimumFiniteFieldBits <= 8192 ? NamedGroup.ffdhe8192
-                      :  -1;
-
-        return TlsDHUtils.createNamedDHConfig(namedGroup);
-    }
-
-    protected TlsDHConfig selectDHConfig(int minimumFiniteFieldBits)
-    {
-        int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
-        if (clientSupportedGroups == null)
-        {
-            return selectDefaultDHConfig(minimumFiniteFieldBits);
-        }
-
-        // Try to find a supported named group of the required size from the client's list.
-        for (int i = 0; i < clientSupportedGroups.length; ++i)
-        {
-            int namedGroup = clientSupportedGroups[i];
-            if (NamedGroup.getFiniteFieldBits(namedGroup) >= minimumFiniteFieldBits)
-            {
-                return new TlsDHConfig(namedGroup);
-            }
-        }
-
-        return null;
     }
 
     protected ProtocolName selectProtocolName(Vector clientProtocolNames, Vector serverProtocolNames)
@@ -436,19 +433,20 @@ public abstract class AbstractTlsServer
     {
         int minimumFiniteFieldBits = TlsDHUtils.getMinimumFiniteFieldBits(selectedCipherSuite);
 
-        TlsDHConfig dhConfig = selectDHConfig(minimumFiniteFieldBits);
-        if (dhConfig == null)
+        int namedGroup = selectDH(minimumFiniteFieldBits);
+        if (namedGroup < 0)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
-        return dhConfig;
+
+        return new TlsDHConfig(namedGroup);
     }
 
     public TlsECConfig getECDHConfig() throws IOException
     {
         int minimumCurveBits = TlsECCUtils.getMinimumCurveBits(selectedCipherSuite);
 
-        int namedGroup = selectECDHNamedGroup(minimumCurveBits);
+        int namedGroup = selectECDH(minimumCurveBits);
         if (namedGroup < 0)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
