@@ -26,26 +26,19 @@ public class TlsECDHanonKeyExchange
         }
     }
 
-    protected TlsECConfigVerifier ecConfigVerifier;
     protected TlsECConfig ecConfig;
 
     protected TlsAgreement agreement;
 
-    public TlsECDHanonKeyExchange(int keyExchange, TlsECConfigVerifier ecConfigVerifier)
+    public TlsECDHanonKeyExchange(int keyExchange)
     {
-        this(keyExchange, ecConfigVerifier, null);
+        this(keyExchange, null);
     }
 
     public TlsECDHanonKeyExchange(int keyExchange, TlsECConfig ecConfig)
     {
-        this(keyExchange, null, ecConfig);
-    }
-
-    private TlsECDHanonKeyExchange(int keyExchange, TlsECConfigVerifier ecConfigVerifier, TlsECConfig ecConfig)
-    {
         super(checkKeyExchange(keyExchange));
 
-        this.ecConfigVerifier = ecConfigVerifier;
         this.ecConfig = ecConfig;
     }
 
@@ -83,7 +76,7 @@ public class TlsECDHanonKeyExchange
 
     public void processServerKeyExchange(InputStream input) throws IOException
     {
-        this.ecConfig = TlsECCUtils.receiveECConfig(ecConfigVerifier, input);
+        this.ecConfig = TlsECCUtils.receiveECDHConfig(context, input);
 
         byte[] point = TlsUtils.readOpaque8(input, 1);
 

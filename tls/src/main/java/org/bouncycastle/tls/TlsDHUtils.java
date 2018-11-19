@@ -8,6 +8,7 @@ import java.math.BigInteger;
 import org.bouncycastle.tls.crypto.DHGroup;
 import org.bouncycastle.tls.crypto.DHStandardGroups;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
 public class TlsDHUtils
@@ -92,28 +93,30 @@ public class TlsDHUtils
         return -1;
     }
 
-    public static TlsDHConfig readDHConfig(InputStream input) throws IOException
+    public static TlsDHConfig receiveDHConfig(TlsContext context, TlsDHGroupVerifier dhGroupVerifier,
+        InputStream input) throws IOException
     {
         BigInteger p = readDHParameter(input);
         BigInteger g = readDHParameter(input);
 
         int namedGroup = getNamedGroupForDHParameters(p, g);
-        if (namedGroup >= 0)
+        if (namedGroup < 0)
+        {
+            DHGroup dhGroup = new DHGroup(p, null, g, 0);
+            if (!dhGroupVerifier.accept(dhGroup))
+            {
+                throw new TlsFatalAlert(AlertDescription.insufficient_security);
+            }
+            return new TlsDHConfig(dhGroup);
+        }
+
+        int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
+        if (null == clientSupportedGroups || Arrays.contains(clientSupportedGroups, namedGroup))
         {
             return new TlsDHConfig(namedGroup);
         }
 
-        return new TlsDHConfig(new DHGroup(p, null, g, 0));
-    }
-
-    public static TlsDHConfig receiveDHConfig(TlsDHConfigVerifier dhConfigVerifier, InputStream input) throws IOException
-    {
-        TlsDHConfig dhConfig = readDHConfig(input);
-        if (!dhConfigVerifier.accept(dhConfig))
-        {
-            throw new TlsFatalAlert(AlertDescription.insufficient_security);
-        }
-        return dhConfig;
+        throw new TlsFatalAlert(AlertDescription.illegal_parameter);
     }
 
     public static BigInteger readDHParameter(InputStream input) throws IOException

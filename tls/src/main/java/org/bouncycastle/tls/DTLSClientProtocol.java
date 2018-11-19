@@ -430,6 +430,8 @@ public class DTLSClientProtocol
             securityParameters.clientSigAlgsCert = TlsUtils.getSignatureAlgorithmsCertExtension(state.clientExtensions);
         }
 
+        securityParameters.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(state.clientExtensions);
+
         TlsExtensionsUtils.addExtendedMasterSecretExtension(state.clientExtensions);
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();

@@ -7,8 +7,8 @@ import org.bouncycastle.tls.crypto.DHGroup;
 import org.bouncycastle.tls.crypto.DHStandardGroups;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 
-public class DefaultTlsDHConfigVerifier
-    implements TlsDHConfigVerifier
+public class DefaultTlsDHGroupVerifier
+    implements TlsDHGroupVerifier
 {
     public static final int DEFAULT_MINIMUM_PRIME_BITS = 2048;
 
@@ -21,13 +21,6 @@ public class DefaultTlsDHConfigVerifier
 
     static
     {
-        addDefaultGroup(DHStandardGroups.rfc7919_ffdhe2048);
-        addDefaultGroup(DHStandardGroups.rfc7919_ffdhe3072);
-        addDefaultGroup(DHStandardGroups.rfc7919_ffdhe4096);
-        addDefaultGroup(DHStandardGroups.rfc7919_ffdhe6144);
-        addDefaultGroup(DHStandardGroups.rfc7919_ffdhe8192);
-
-        addDefaultGroup(DHStandardGroups.rfc3526_1536);
         addDefaultGroup(DHStandardGroups.rfc3526_2048);
         addDefaultGroup(DHStandardGroups.rfc3526_3072);
         addDefaultGroup(DHStandardGroups.rfc3526_4096);
@@ -42,7 +35,7 @@ public class DefaultTlsDHConfigVerifier
     /**
      * Accept named groups and various standard DH groups with 'P' at least {@link #DEFAULT_MINIMUM_PRIME_BITS} bits.
      */
-    public DefaultTlsDHConfigVerifier()
+    public DefaultTlsDHGroupVerifier()
     {
         this(DEFAULT_MINIMUM_PRIME_BITS);
     }
@@ -50,7 +43,7 @@ public class DefaultTlsDHConfigVerifier
     /**
      * Accept named groups and various standard DH groups with 'P' at least the specified number of bits.
      */
-    public DefaultTlsDHConfigVerifier(int minimumPrimeBits)
+    public DefaultTlsDHGroupVerifier(int minimumPrimeBits)
     {
         this(DEFAULT_GROUPS, minimumPrimeBits);
     }
@@ -60,15 +53,15 @@ public class DefaultTlsDHConfigVerifier
      * 
      * @param groups a {@link Vector} of acceptable {@link DHGroup}s.
      */
-    public DefaultTlsDHConfigVerifier(Vector groups, int minimumPrimeBits)
+    public DefaultTlsDHGroupVerifier(Vector groups, int minimumPrimeBits)
     {
         this.groups = groups;
         this.minimumPrimeBits = minimumPrimeBits;
     }
 
-    public boolean accept(TlsDHConfig dhConfig)
+    public boolean accept(DHGroup dhGroup)
     {
-        return checkMinimumPrimeBits(dhConfig) && checkGroup(dhConfig);
+        return checkMinimumPrimeBits(dhGroup) && checkGroup(dhGroup);
     }
 
     public int getMinimumPrimeBits()
@@ -86,17 +79,11 @@ public class DefaultTlsDHConfigVerifier
         return a == b || a.equals(b);
     }
 
-    protected boolean checkGroup(TlsDHConfig dhConfig)
+    protected boolean checkGroup(DHGroup dhGroup)
     {
-        if (NamedGroup.refersToASpecificFiniteField(dhConfig.getNamedGroup()))
-        {
-            return true;
-        }
-
-        DHGroup explicitGroup = dhConfig.getExplicitGroup();
         for (int i = 0; i < groups.size(); ++i)
         {
-            if (areGroupsEqual(explicitGroup, (DHGroup)groups.elementAt(i)))
+            if (areGroupsEqual(dhGroup, (DHGroup)groups.elementAt(i)))
             {
                 return true;
             }
@@ -104,17 +91,8 @@ public class DefaultTlsDHConfigVerifier
         return false;
     }
 
-    protected boolean checkMinimumPrimeBits(TlsDHConfig dhConfig)
+    protected boolean checkMinimumPrimeBits(DHGroup dhGroup)
     {
-        int bits = getMinimumPrimeBits();
-
-        int namedGroup = dhConfig.getNamedGroup();
-        if (namedGroup >= 0)
-        {
-            return NamedGroup.getFiniteFieldBits(namedGroup) >= bits;
-        }
-
-        DHGroup explicitGroup = dhConfig.getExplicitGroup();
-        return explicitGroup.getP().bitLength() >= bits;
+        return dhGroup.getP().bitLength() >= getMinimumPrimeBits();
     }
 }

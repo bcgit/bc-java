@@ -85,16 +85,9 @@ public abstract class AbstractTlsClient
         return null;
     }
 
-    public TlsDHConfigVerifier getDHConfigVerifier()
+    public TlsDHGroupVerifier getDHConfigVerifier()
     {
-        return new DefaultTlsDHConfigVerifier();
-    }
-
-    public TlsECConfigVerifier getECDHConfigVerifier()
-    {
-        int selectedCipherSuite = context.getSecurityParametersHandshake().getCipherSuite();
-        int minimumCurveBits = TlsECCUtils.getMinimumCurveBits(selectedCipherSuite);
-        return new DefaultTlsECConfigVerifier(minimumCurveBits, supportedGroups);
+        return new DefaultTlsDHGroupVerifier();
     }
 
     public TlsSRPConfigVerifier getSRPConfigVerifier()

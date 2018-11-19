@@ -28,28 +28,21 @@ public class TlsECDHEKeyExchange
         }
     }
 
-    protected TlsECConfigVerifier ecConfigVerifier;
     protected TlsECConfig ecConfig;
 
     protected TlsCredentialedSigner serverCredentials = null;
     protected TlsCertificate serverCertificate = null;
     protected TlsAgreement agreement;
 
-    public TlsECDHEKeyExchange(int keyExchange, TlsECConfigVerifier ecConfigVerifier)
+    public TlsECDHEKeyExchange(int keyExchange)
     {
-        this(keyExchange, ecConfigVerifier, null);
+        this(keyExchange, null);
     }
 
     public TlsECDHEKeyExchange(int keyExchange, TlsECConfig ecConfig)
     {
-        this(keyExchange, null, ecConfig);
-    }
-
-    private TlsECDHEKeyExchange(int keyExchange, TlsECConfigVerifier ecConfigVerifier, TlsECConfig ecConfig)
-    {
         super(checkKeyExchange(keyExchange));
 
-        this.ecConfigVerifier = ecConfigVerifier;
         this.ecConfig = ecConfig;
     }
 
@@ -93,7 +86,7 @@ public class TlsECDHEKeyExchange
         DigestInputBuffer digestBuffer = new DigestInputBuffer();
         InputStream teeIn = new TeeInputStream(input, digestBuffer);
 
-        this.ecConfig = TlsECCUtils.receiveECConfig(ecConfigVerifier, teeIn);
+        this.ecConfig = TlsECCUtils.receiveECDHConfig(context, teeIn);
 
         byte[] point = TlsUtils.readOpaque8(teeIn, 1);
 

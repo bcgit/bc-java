@@ -21,7 +21,7 @@ public class AbstractTlsKeyExchangeFactory
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public TlsKeyExchange createDHanonKeyExchangeClient(int keyExchange, TlsDHConfigVerifier dhConfigVerifier)
+    public TlsKeyExchange createDHanonKeyExchangeClient(int keyExchange, TlsDHGroupVerifier dhGroupVerifier)
         throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -32,7 +32,7 @@ public class AbstractTlsKeyExchangeFactory
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public TlsKeyExchange createDHEKeyExchangeClient(int keyExchange, TlsDHConfigVerifier dhConfigVerifier)
+    public TlsKeyExchange createDHEKeyExchangeClient(int keyExchange, TlsDHGroupVerifier dhGroupVerifier)
         throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -53,8 +53,7 @@ public class AbstractTlsKeyExchangeFactory
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public TlsKeyExchange createECDHanonKeyExchangeClient(int keyExchange, TlsECConfigVerifier ecConfigVerifier)
-        throws IOException
+    public TlsKeyExchange createECDHanonKeyExchangeClient(int keyExchange) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
@@ -64,8 +63,7 @@ public class AbstractTlsKeyExchangeFactory
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public TlsKeyExchange createECDHEKeyExchangeClient(int keyExchange, TlsECConfigVerifier ecConfigVerifier)
-        throws IOException
+    public TlsKeyExchange createECDHEKeyExchangeClient(int keyExchange) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
@@ -76,7 +74,7 @@ public class AbstractTlsKeyExchangeFactory
     }
 
     public TlsKeyExchange createPSKKeyExchangeClient(int keyExchange, TlsPSKIdentity pskIdentity,
-        TlsDHConfigVerifier dhConfigVerifier, TlsECConfigVerifier ecConfigVerifier) throws IOException
+        TlsDHGroupVerifier dhGroupVerifier) throws IOException
     {
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }

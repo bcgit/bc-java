@@ -31,7 +31,7 @@ import org.bouncycastle.tls.ServerName;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentials;
-import org.bouncycastle.tls.TlsDHConfigVerifier;
+import org.bouncycastle.tls.TlsDHGroupVerifier;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsSession;
@@ -153,7 +153,7 @@ class ProvTlsClient
     }
 
     @Override
-    public TlsDHConfigVerifier getDHConfigVerifier()
+    public TlsDHGroupVerifier getDHConfigVerifier()
     {
         return new ProvDHConfigVerifier();
     }

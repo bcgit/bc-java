@@ -111,8 +111,7 @@ public class TlsECCUtils
         }
     }
 
-    public static TlsECConfig readECConfig(InputStream input)
-        throws IOException
+    public static TlsECConfig receiveECDHConfig(TlsContext context, InputStream input) throws IOException
     {
         short curveType = TlsUtils.readUint8(input);
         if (curveType != ECCurveType.named_curve)
@@ -121,30 +120,16 @@ public class TlsECCUtils
         }
 
         int namedGroup = TlsUtils.readUint16(input);
-        if (!NamedGroup.refersToASpecificCurve(namedGroup))
+        if (NamedGroup.refersToAnECDHCurve(namedGroup))
         {
-            /*
-             * RFC 4492 5.4. All those values of NamedCurve are allowed that refer to a
-             * specific curve. Values of NamedCurve that indicate support for a class of
-             * explicitly defined curves are not allowed here [...].
-             */
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
+            if (null == clientSupportedGroups || Arrays.contains(clientSupportedGroups, namedGroup))
+            {
+                return new TlsECConfig(namedGroup);
+            }
         }
 
-        TlsECConfig result = new TlsECConfig();
-        result.setNamedGroup(namedGroup);
-        return result;
-    }
-
-    public static TlsECConfig receiveECConfig(TlsECConfigVerifier ecConfigVerifier, InputStream input)
-        throws IOException
-    {
-        TlsECConfig ecConfig = readECConfig(input);
-        if (!ecConfigVerifier.accept(ecConfig))
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
-        return ecConfig;
+        throw new TlsFatalAlert(AlertDescription.illegal_parameter);
     }
 
     public static void writeECConfig(TlsECConfig ecConfig, OutputStream output) throws IOException

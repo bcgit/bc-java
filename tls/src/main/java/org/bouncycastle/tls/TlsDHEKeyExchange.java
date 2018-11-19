@@ -25,16 +25,16 @@ public class TlsDHEKeyExchange
         }
     }
 
-    protected TlsDHConfigVerifier dhConfigVerifier;
+    protected TlsDHGroupVerifier dhGroupVerifier;
     protected TlsDHConfig dhConfig;
 
     protected TlsCredentialedSigner serverCredentials = null;
     protected TlsCertificate serverCertificate = null;
     protected TlsAgreement agreement;
 
-    public TlsDHEKeyExchange(int keyExchange, TlsDHConfigVerifier dhConfigVerifier)
+    public TlsDHEKeyExchange(int keyExchange, TlsDHGroupVerifier dhGroupVerifier)
     {
-        this(keyExchange, dhConfigVerifier, null);
+        this(keyExchange, dhGroupVerifier, null);
     }
 
     public TlsDHEKeyExchange(int keyExchange, TlsDHConfig dhConfig)
@@ -42,11 +42,11 @@ public class TlsDHEKeyExchange
         this(keyExchange, null, dhConfig);
     }
 
-    private TlsDHEKeyExchange(int keyExchange, TlsDHConfigVerifier dhConfigVerifier, TlsDHConfig dhConfig)
+    private TlsDHEKeyExchange(int keyExchange, TlsDHGroupVerifier dhGroupVerifier, TlsDHConfig dhConfig)
     {
         super(checkKeyExchange(keyExchange));
 
-        this.dhConfigVerifier = dhConfigVerifier;
+        this.dhGroupVerifier = dhGroupVerifier;
         this.dhConfig = dhConfig;
     }
 
@@ -92,7 +92,7 @@ public class TlsDHEKeyExchange
         DigestInputBuffer digestBuffer = new DigestInputBuffer();
         InputStream teeIn = new TeeInputStream(input, digestBuffer);
 
-        this.dhConfig = TlsDHUtils.receiveDHConfig(dhConfigVerifier, teeIn);
+        this.dhConfig = TlsDHUtils.receiveDHConfig(context, dhGroupVerifier, teeIn);
 
         byte[] y = TlsUtils.readOpaque16(teeIn, 1);
 
