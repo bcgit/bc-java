@@ -18,11 +18,6 @@ public abstract class AbstractTlsKeyExchange
         this.keyExchange = keyExchange;
     }
 
-    public int getKeyExchangeAlgorithm()
-    {
-        return keyExchange;
-    }
-
     public void init(TlsContext context)
     {
         this.context = context;
