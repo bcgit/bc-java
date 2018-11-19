@@ -25,7 +25,6 @@ import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.tls.crypto.impl.RSAUtil;
 import org.bouncycastle.util.Arrays;
@@ -56,7 +55,7 @@ public class BcTlsCertificate
         }
         catch (IllegalArgumentException e)
         {
-            throw new TlsCryptoException("unable to decode certificate: " + e.getMessage(), e);
+            throw new TlsFatalAlert(AlertDescription.bad_certificate, e);
         }
     }
 
