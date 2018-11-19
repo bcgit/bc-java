@@ -1633,9 +1633,12 @@ public class TlsUtils
     }
 
     static void verifyServerKeyExchangeSignature(TlsContext context, InputStream signatureInput,
-        int keyExchangeAlgorithm, TlsCertificate serverCertificate, DigestInputBuffer digestBuffer) throws IOException
+        TlsCertificate serverCertificate, DigestInputBuffer digestBuffer) throws IOException
     {
         DigitallySigned digitallySigned = DigitallySigned.parse(context, signatureInput);
+
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        int keyExchangeAlgorithm = securityParameters.getKeyExchangeAlgorithm();
 
         SignatureAndHashAlgorithm sigAndHashAlg = digitallySigned.getAlgorithm();
         short signatureAlgorithm;
@@ -1653,7 +1656,7 @@ public class TlsUtils
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
 
-            Vector clientSigAlgs = context.getSecurityParametersHandshake().getClientSigAlgs();
+            Vector clientSigAlgs = securityParameters.getClientSigAlgs();
             verifySupportedSignatureAlgorithm(clientSigAlgs, sigAndHashAlg);
         }
 
@@ -3143,6 +3146,8 @@ public class TlsUtils
 
     static boolean isValidSignatureAlgorithmForServerKeyExchange(short signatureAlgorithm, int keyExchangeAlgorithm)
     {
+        // TODO [tls13]
+
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DHE_RSA:
@@ -3291,21 +3296,6 @@ public class TlsUtils
         return isSupportedKeyExchange(crypto, getKeyExchangeAlgorithm(cipherSuite))
             && crypto.hasEncryptionAlgorithm(getEncryptionAlgorithm(cipherSuite))
             && crypto.hasMacAlgorithm(getMACAlgorithm(cipherSuite));
-    }
-
-    public static boolean isStaticKeyAgreement(int keyExchangeAlgorithm)
-    {
-        switch (keyExchangeAlgorithm)
-        {
-        case KeyExchangeAlgorithm.DH_DSS:
-        case KeyExchangeAlgorithm.DH_RSA:
-        case KeyExchangeAlgorithm.ECDH_ECDSA:
-        case KeyExchangeAlgorithm.ECDH_RSA:
-            return true;
-
-        default:
-            return false;
-        }
     }
 
     public static boolean isSupportedKeyExchange(TlsCrypto crypto, int keyExchangeAlgorithm)

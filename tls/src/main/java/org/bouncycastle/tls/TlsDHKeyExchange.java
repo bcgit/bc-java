@@ -53,6 +53,11 @@ public class TlsDHKeyExchange
         return new short[]{ ClientCertificateType.dss_fixed_dh, ClientCertificateType.rsa_fixed_dh };
     }
 
+    public void skipClientCredentials() throws IOException
+    {
+        throw new TlsFatalAlert(AlertDescription.unexpected_message);
+    }
+
     public void processClientCredentials(TlsCredentials clientCredentials) throws IOException
     {
         this.agreementCredentials = TlsUtils.requireAgreementCredentials(clientCredentials);
@@ -76,6 +81,11 @@ public class TlsDHKeyExchange
     public void processClientKeyExchange(InputStream input) throws IOException
     {
         // For dss_fixed_dh and rsa_fixed_dh, the key arrived in the client certificate
+    }
+
+    public boolean requiresCertificateVerify()
+    {
+        return false;
     }
 
     public TlsSecret generatePreMasterSecret() throws IOException

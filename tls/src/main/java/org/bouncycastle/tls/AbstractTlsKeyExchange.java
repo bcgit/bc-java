@@ -66,13 +66,8 @@ public abstract class AbstractTlsKeyExchange
         return null;
     }
 
-    public void skipClientCredentials()
-        throws IOException
+    public void skipClientCredentials() throws IOException
     {
-        if (TlsUtils.isStaticKeyAgreement(keyExchange))
-        {
-            throw new TlsFatalAlert(AlertDescription.unexpected_message);
-        }
     }
 
     public void processClientCertificate(Certificate clientCertificate)
@@ -89,6 +84,6 @@ public abstract class AbstractTlsKeyExchange
 
     public boolean requiresCertificateVerify()
     {
-        return !TlsUtils.isStaticKeyAgreement(keyExchange);
+        return true;
     }
 }

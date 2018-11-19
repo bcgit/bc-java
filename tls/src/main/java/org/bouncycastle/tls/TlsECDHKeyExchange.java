@@ -59,6 +59,11 @@ public class TlsECDHKeyExchange
         return new short[]{ ClientCertificateType.ecdsa_fixed_ecdh, ClientCertificateType.rsa_fixed_ecdh };
     }
 
+    public void skipClientCredentials() throws IOException
+    {
+        throw new TlsFatalAlert(AlertDescription.unexpected_message);
+    }
+
     public void processClientCredentials(TlsCredentials clientCredentials) throws IOException
     {
         this.agreementCredentials = TlsUtils.requireAgreementCredentials(clientCredentials);
@@ -78,6 +83,11 @@ public class TlsECDHKeyExchange
     public void processClientKeyExchange(InputStream input) throws IOException
     {
         // For ecdsa_fixed_ecdh and rsa_fixed_ecdh, the key arrived in the client certificate
+    }
+
+    public boolean requiresCertificateVerify()
+    {
+        return false;
     }
 
     public TlsSecret generatePreMasterSecret() throws IOException

@@ -90,7 +90,7 @@ public class TlsECDHEKeyExchange
 
         byte[] point = TlsUtils.readOpaque8(teeIn, 1);
 
-        TlsUtils.verifyServerKeyExchangeSignature(context, input, keyExchange, serverCertificate, digestBuffer);
+        TlsUtils.verifyServerKeyExchangeSignature(context, input, serverCertificate, digestBuffer);
 
         this.agreement = context.getCrypto().createECDomain(ecConfig).createECDH();
 
