@@ -240,7 +240,7 @@ public abstract class AbstractTlsClient
         {
             this.supportedSignatureAlgorithms = getSupportedSignatureAlgorithms();
 
-            TlsUtils.addSignatureAlgorithmsExtension(clientExtensions, supportedSignatureAlgorithms);
+            TlsExtensionsUtils.addSignatureAlgorithmsExtension(clientExtensions, supportedSignatureAlgorithms);
         }
 
         Vector namedGroupRoles = getNamedGroupRoles();

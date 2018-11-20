@@ -667,8 +667,8 @@ public class DTLSServerProtocol
              */
             if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
             {
-                securityParameters.clientSigAlgs = TlsUtils.getSignatureAlgorithmsExtension(state.clientExtensions);
-                securityParameters.clientSigAlgsCert = TlsUtils.getSignatureAlgorithmsCertExtension(state.clientExtensions);
+                securityParameters.clientSigAlgs = TlsExtensionsUtils.getSignatureAlgorithmsExtension(state.clientExtensions);
+                securityParameters.clientSigAlgsCert = TlsExtensionsUtils.getSignatureAlgorithmsCertExtension(state.clientExtensions);
             }
 
             securityParameters.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(state.clientExtensions);

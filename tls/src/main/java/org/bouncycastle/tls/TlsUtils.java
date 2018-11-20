@@ -1,7 +1,5 @@
 package org.bouncycastle.tls;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -108,8 +106,10 @@ public class TlsUtils
     public static final int[] EMPTY_INTS = new int[0];
     public static final long[] EMPTY_LONGS = new long[0];
 
-    public static final Integer EXT_signature_algorithms = Integers.valueOf(ExtensionType.signature_algorithms);
-    public static final Integer EXT_signature_algorithms_cert = Integers.valueOf(ExtensionType.signature_algorithms_cert);
+    /** @deprecated Use {@link TlsExtensionsUtils#EXT_signature_algorithms} instead. */
+    public static final Integer EXT_signature_algorithms = TlsExtensionsUtils.EXT_signature_algorithms;
+    /** @deprecated Use {@link TlsExtensionsUtils#EXT_signature_algorithms_cert} instead. */
+    public static final Integer EXT_signature_algorithms_cert = TlsExtensionsUtils.EXT_signature_algorithms_cert;
 
     protected static short MINIMUM_HASH_STRICT = HashAlgorithm.sha1;
     protected static short MINIMUM_HASH_PREFERRED = HashAlgorithm.sha256;
@@ -1039,30 +1039,32 @@ public class TlsUtils
         return ProtocolVersion.TLSv12.isEqualOrEarlierVersionOf(version.getEquivalentTLSVersion());
     }
 
-    /**
-     * Add a 'signature_algorithms' extension to existing extensions.
-     *
-     * @param extensions                   A {@link Hashtable} to add the extension to.
-     * @param supportedSignatureAlgorithms {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}.
-     * @throws IOException
-     */
+    /** @deprecated Use {@link TlsExtensionsUtils#addSignatureAlgorithmsExtension(Hashtable, Vector)} instead. */
     public static void addSignatureAlgorithmsExtension(Hashtable extensions, Vector supportedSignatureAlgorithms)
         throws IOException
     {
-        extensions.put(EXT_signature_algorithms, createSignatureAlgorithmsExtension(supportedSignatureAlgorithms));
+        TlsExtensionsUtils.addSignatureAlgorithmsExtension(extensions, supportedSignatureAlgorithms);
     }
 
-    /**
-     * Add a 'signature_algorithms_cert' extension to existing extensions.
-     *
-     * @param extensions                   A {@link Hashtable} to add the extension to.
-     * @param supportedSignatureAlgorithms {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}.
-     * @throws IOException
-     */
-    public static void addSignatureAlgorithmsCertExtension(Hashtable extensions, Vector supportedSignatureAlgorithms)
+    /** @deprecated Use {@link TlsExtensionsUtils#getSignatureAlgorithmsExtension(Hashtable)} instead. */
+    public static Vector getSignatureAlgorithmsExtension(Hashtable extensions)
         throws IOException
     {
-        extensions.put(EXT_signature_algorithms_cert, createSignatureAlgorithmsExtension(supportedSignatureAlgorithms));
+        return TlsExtensionsUtils.getSignatureAlgorithmsExtension(extensions);
+    }
+
+    /** @deprecated Use {@link TlsExtensionsUtils#createSignatureAlgorithmsExtension(Vector)} instead. */
+    public static byte[] createSignatureAlgorithmsExtension(Vector supportedSignatureAlgorithms)
+        throws IOException
+    {
+        return TlsExtensionsUtils.createSignatureAlgorithmsExtension(supportedSignatureAlgorithms);
+    }
+
+    /** @deprecated Use {@link TlsExtensionsUtils#readSignatureAlgorithmsExtension(byte[])} instead. */
+    public static Vector readSignatureAlgorithmsExtension(byte[] extensionData)
+        throws IOException
+    {
+        return TlsExtensionsUtils.readSignatureAlgorithmsExtension(extensionData);
     }
 
     public static short getLegacyClientCertType(short signatureAlgorithm)
@@ -1162,77 +1164,6 @@ public class TlsUtils
         default:
             return -1;
         }
-    }
-
-    /**
-     * Get a 'signature_algorithms' extension from extensions.
-     *
-     * @param extensions A {@link Hashtable} to get the extension from, if it is present.
-     * @return A {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}, or null.
-     * @throws IOException
-     */
-    public static Vector getSignatureAlgorithmsExtension(Hashtable extensions)
-        throws IOException
-    {
-        byte[] extensionData = getExtensionData(extensions, EXT_signature_algorithms);
-        return extensionData == null ? null : readSignatureAlgorithmsExtension(extensionData);
-    }
-
-    /**
-     * Get a 'signature_algorithms_cert' extension from extensions.
-     *
-     * @param extensions A {@link Hashtable} to get the extension from, if it is present.
-     * @return A {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}, or null.
-     * @throws IOException
-     */
-    public static Vector getSignatureAlgorithmsCertExtension(Hashtable extensions)
-        throws IOException
-    {
-        byte[] extensionData = getExtensionData(extensions, EXT_signature_algorithms_cert);
-        return extensionData == null ? null : readSignatureAlgorithmsExtension(extensionData);
-    }
-
-    /**
-     * Create a 'signature_algorithms' extension value.
-     *
-     * @param supportedSignatureAlgorithms A {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}.
-     * @return A byte array suitable for use as an extension value.
-     * @throws IOException
-     */
-    public static byte[] createSignatureAlgorithmsExtension(Vector supportedSignatureAlgorithms)
-        throws IOException
-    {
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-
-        // supported_signature_algorithms
-        encodeSupportedSignatureAlgorithms(supportedSignatureAlgorithms, buf);
-
-        return buf.toByteArray();
-    }
-
-    /**
-     * Read 'signature_algorithms' extension data.
-     *
-     * @param extensionData The extension data.
-     * @return A {@link Vector} containing at least 1 {@link SignatureAndHashAlgorithm}.
-     * @throws IOException
-     */
-    public static Vector readSignatureAlgorithmsExtension(byte[] extensionData)
-        throws IOException
-    {
-        if (extensionData == null)
-        {
-            throw new IllegalArgumentException("'extensionData' cannot be null");
-        }
-
-        ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
-
-        // supported_signature_algorithms
-        Vector supported_signature_algorithms = parseSupportedSignatureAlgorithms(buf);
-
-        TlsProtocol.assertEmpty(buf);
-
-        return supported_signature_algorithms;
     }
 
     public static void encodeSupportedSignatureAlgorithms(Vector supportedSignatureAlgorithms, OutputStream output)
