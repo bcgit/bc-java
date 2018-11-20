@@ -56,31 +56,28 @@ public class CSHAKEDigest
             return leftEncode(0);
         }
 
-        return Arrays.concatenate(leftEncode(str.length * 8), str);
+        return Arrays.concatenate(leftEncode(str.length * 8L), str);
     }
-
-    private byte[] leftEncode(int strLen)
+    
+    private static byte[] leftEncode(long strLen)
     {
-    	byte n = 0;
+    	byte n = 1;
 
-    	for (int v = strLen; v != 0; v = v >> 8)
+        long v = strLen;
+    	while ((v >>= 8) != 0)
         {
     		n++;
-    	}
-
-        if (n == 0)
-        {
-    		n = 1;
     	}
 
         byte[] b = new byte[n + 1];
 
     	b[0] = n;
+  
     	for (int i = 1; i <= n; i++)
     	{
-    		b[i] = (byte)(strLen >> (8 * (i - 1)));
+    		b[i] = (byte)(strLen >> (8 * (n - i)));
     	}
-
+ 
     	return b;
     }
     
