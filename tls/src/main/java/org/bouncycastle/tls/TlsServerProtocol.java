@@ -650,8 +650,8 @@ public class TlsServerProtocol
              */
             if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
             {
-                securityParameters.clientSigAlgs = TlsUtils.getSignatureAlgorithmsExtension(clientExtensions);
-                securityParameters.clientSigAlgsCert = TlsUtils.getSignatureAlgorithmsCertExtension(clientExtensions);
+                securityParameters.clientSigAlgs = TlsExtensionsUtils.getSignatureAlgorithmsExtension(clientExtensions);
+                securityParameters.clientSigAlgsCert = TlsExtensionsUtils.getSignatureAlgorithmsCertExtension(clientExtensions);
             }
 
             securityParameters.clientSupportedGroups = TlsExtensionsUtils.getSupportedGroupsExtension(clientExtensions);
