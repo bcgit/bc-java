@@ -23,6 +23,8 @@ public class TlsExtensionsUtils
     public static final Integer EXT_record_size_limit = Integers.valueOf(ExtensionType.record_size_limit);
     public static final Integer EXT_server_certificate_type = Integers.valueOf(ExtensionType.server_certificate_type);
     public static final Integer EXT_server_name = Integers.valueOf(ExtensionType.server_name);
+    public static final Integer EXT_signature_algorithms = Integers.valueOf(ExtensionType.signature_algorithms);
+    public static final Integer EXT_signature_algorithms_cert = Integers.valueOf(ExtensionType.signature_algorithms_cert);
     public static final Integer EXT_status_request = Integers.valueOf(ExtensionType.status_request);
     public static final Integer EXT_supported_groups = Integers.valueOf(ExtensionType.supported_groups);
     public static final Integer EXT_supported_versions = Integers.valueOf(ExtensionType.supported_versions);
@@ -114,6 +116,18 @@ public class TlsExtensionsUtils
         throws IOException
     {
         extensions.put(EXT_server_name, createServerNameExtension(serverNameList));
+    }
+
+    public static void addSignatureAlgorithmsExtension(Hashtable extensions, Vector supportedSignatureAlgorithms)
+        throws IOException
+    {
+        extensions.put(EXT_signature_algorithms, createSignatureAlgorithmsExtension(supportedSignatureAlgorithms));
+    }
+
+    public static void addSignatureAlgorithmsCertExtension(Hashtable extensions, Vector supportedSignatureAlgorithms)
+        throws IOException
+    {
+        extensions.put(EXT_signature_algorithms_cert, createSignatureAlgorithmsCertExtension(supportedSignatureAlgorithms));
     }
 
     public static void addStatusRequestExtension(Hashtable extensions, CertificateStatusRequest statusRequest)
@@ -235,6 +249,20 @@ public class TlsExtensionsUtils
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_server_name);
         return extensionData == null ? null : readServerNameExtension(extensionData);
+    }
+
+    public static Vector getSignatureAlgorithmsExtension(Hashtable extensions)
+        throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_signature_algorithms);
+        return extensionData == null ? null : readSignatureAlgorithmsExtension(extensionData);
+    }
+
+    public static Vector getSignatureAlgorithmsCertExtension(Hashtable extensions)
+        throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_signature_algorithms_cert);
+        return extensionData == null ? null : readSignatureAlgorithmsCertExtension(extensionData);
     }
 
     public static CertificateStatusRequest getStatusRequestExtension(Hashtable extensions)
@@ -429,6 +457,22 @@ public class TlsExtensionsUtils
         serverNameList.encode(buf);
 
         return buf.toByteArray();
+    }
+
+    public static byte[] createSignatureAlgorithmsExtension(Vector supportedSignatureAlgorithms)
+        throws IOException
+    {
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+        TlsUtils.encodeSupportedSignatureAlgorithms(supportedSignatureAlgorithms, buf);
+
+        return buf.toByteArray();
+    }
+
+    public static byte[] createSignatureAlgorithmsCertExtension(Vector supportedSignatureAlgorithms)
+        throws IOException
+    {
+        return createSignatureAlgorithmsExtension(supportedSignatureAlgorithms);
     }
 
     public static byte[] createStatusRequestExtension(CertificateStatusRequest statusRequest)
@@ -683,6 +727,29 @@ public class TlsExtensionsUtils
         TlsProtocol.assertEmpty(buf);
 
         return serverNameList;
+    }
+
+    public static Vector readSignatureAlgorithmsExtension(byte[] extensionData)
+        throws IOException
+    {
+        if (extensionData == null)
+        {
+            throw new IllegalArgumentException("'extensionData' cannot be null");
+        }
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
+
+        Vector supported_signature_algorithms = TlsUtils.parseSupportedSignatureAlgorithms(buf);
+
+        TlsProtocol.assertEmpty(buf);
+
+        return supported_signature_algorithms;
+    }
+
+    public static Vector readSignatureAlgorithmsCertExtension(byte[] extensionData)
+        throws IOException
+    {
+        return readSignatureAlgorithmsExtension(extensionData);
     }
 
     public static CertificateStatusRequest readStatusRequestExtension(byte[] extensionData)
