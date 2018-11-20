@@ -160,6 +160,14 @@ public class CSHAKETest
 
             cshake.doFinal(res, 0);
         }
+
+        CSHAKEDigest cshake = new CSHAKEDigest(256, new byte[0], new byte[200]);
+
+        cshake.update(Arrays.copyOfRange(data, 0, 200), 0, 200);
+
+        cshake.doFinal(res, 0);
+
+        isTrue(Arrays.areEqual(Hex.decode("4a899b5be460d85a9789215bc17f88b8f8ac049bd3b519f561e7b5d3870dafa3"), res));
     }
 
     private void checkSHAKE(int bitSize, CSHAKEDigest cshake, byte[] msg)
