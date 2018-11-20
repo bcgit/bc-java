@@ -2422,6 +2422,10 @@ class RFC3280CertPathUtilities
             {
                 throw new ExtCertPathValidatorException(e.getMessage(), e, certPath, index);
             }
+            catch (Exception e)
+            {
+                throw new CertPathValidatorException("Additional certificate path checker failed.", e, certPath, index);
+            }
         }
 
         if (!criticalExtensions.isEmpty())
