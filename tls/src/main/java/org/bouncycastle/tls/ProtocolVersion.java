@@ -141,15 +141,17 @@ public final class ProtocolVersion
 
     public ProtocolVersion getEquivalentTLSVersion()
     {
-        if (isTLS())
+        switch (getMajorVersion())
         {
-            return this;
-        }
-        switch (getMinorVersion())
-        {
-        case 0xFF: return TLSv11;
-        case 0xFD: return TLSv12;
-        default:   return null;
+        case 0x03:  return this;
+        case 0xFE:
+            switch(getMinorVersion())
+            {
+            case 0xFF:  return TLSv11;
+            case 0xFD:  return TLSv12;
+            default:    return null;
+            }
+        default:    return null;
         }
     }
 
