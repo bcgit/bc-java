@@ -15,6 +15,11 @@ public class SRPTlsClient
 
     protected TlsSRPIdentity srpIdentity;
 
+    public SRPTlsClient(TlsCrypto crypto, byte[] identity, byte[] password)
+    {
+        this(crypto, new BasicTlsSRPIdentity(identity, password));
+    }
+
     public SRPTlsClient(TlsCrypto crypto, TlsSRPIdentity srpIdentity)
     {
         super(crypto);
