@@ -153,9 +153,9 @@ class ProvTlsClient
     }
 
     @Override
-    public TlsDHGroupVerifier getDHConfigVerifier()
+    public TlsDHGroupVerifier getDHGroupVerifier()
     {
-        return new ProvDHConfigVerifier();
+        return new ProvDHGroupVerifier();
     }
 
     public TlsAuthentication getAuthentication() throws IOException
