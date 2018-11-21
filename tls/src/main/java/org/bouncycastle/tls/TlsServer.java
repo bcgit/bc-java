@@ -36,10 +36,6 @@ public interface TlsServer
     void processClientExtensions(Hashtable clientExtensions)
         throws IOException;
 
-    ProtocolVersion getMaximumVersion();
-
-    ProtocolVersion getMinimumVersion();
-
     ProtocolVersion getServerVersion()
         throws IOException;
 

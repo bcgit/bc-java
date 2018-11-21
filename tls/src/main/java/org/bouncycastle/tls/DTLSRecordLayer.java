@@ -20,6 +20,7 @@ class DTLSRecordLayer
 
     private volatile boolean closed = false;
     private volatile boolean failed = false;
+    // TODO[dtls13] Review the draft/RFC (legacy_record_version) to see if readVersion can be removed
     private volatile ProtocolVersion readVersion = null, writeVersion = null;
     private volatile boolean inHandshake;
     private volatile int plaintextLimit;

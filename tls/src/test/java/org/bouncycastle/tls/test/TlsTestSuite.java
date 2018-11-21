@@ -66,8 +66,8 @@ public class TlsTestSuite extends TestSuite
 
         {
             TlsTestConfig c = createTlsTestConfig(ProtocolVersion.TLSv12, clientCrypto, serverCrypto);
-            c.clientOfferVersion = ProtocolVersion.TLSv11;
             c.clientFallback = true;
+            c.clientSupportedVersions = ProtocolVersion.TLSv11.downTo(ProtocolVersion.TLSv10);
             c.expectServerFatalAlert(AlertDescription.inappropriate_fallback);
 
             addTestCase(testSuite, c, prefix + "FallbackBad");
@@ -75,7 +75,7 @@ public class TlsTestSuite extends TestSuite
 
         {
             TlsTestConfig c = createTlsTestConfig(ProtocolVersion.TLSv12, clientCrypto, serverCrypto);
-            c.clientOfferVersion = ProtocolVersion.TLSv11;
+            c.clientSupportedVersions = ProtocolVersion.TLSv11.downTo(ProtocolVersion.TLSv10);
 
             addTestCase(testSuite, c, prefix + "FallbackNone");
         }
@@ -236,8 +236,8 @@ public class TlsTestSuite extends TestSuite
         if (!TlsUtils.isTLSv12(version))
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
-            c.serverMaximumVersion = ProtocolVersion.TLSv12;
             c.serverNegotiateVersion = version;
+            c.serverSupportedVersions = ProtocolVersion.TLSv12.downTo(version);
             c.expectClientFatalAlert(AlertDescription.illegal_parameter);
 
             addTestCase(testSuite, c, prefix + "BadDowngrade");
@@ -249,15 +249,13 @@ public class TlsTestSuite extends TestSuite
         testSuite.addTest(new TlsTestCase(config, name));
     }
 
-    private static TlsTestConfig createTlsTestConfig(ProtocolVersion version, int clientCrypto, int serverCrypto)
+    private static TlsTestConfig createTlsTestConfig(ProtocolVersion serverMaxVersion, int clientCrypto, int serverCrypto)
     {
         TlsTestConfig c = new TlsTestConfig();
         c.clientCrypto = clientCrypto;
-        c.clientMinimumVersion = ProtocolVersion.TLSv10;
-        c.clientOfferVersion = ProtocolVersion.TLSv12;
+        c.clientSupportedVersions = ProtocolVersion.TLSv12.downTo(ProtocolVersion.TLSv10);
         c.serverCrypto = serverCrypto;
-        c.serverMaximumVersion = version;
-        c.serverMinimumVersion = ProtocolVersion.TLSv10;
+        c.serverSupportedVersions = serverMaxVersion.downTo(ProtocolVersion.TLSv10);
         return c;
     }
 

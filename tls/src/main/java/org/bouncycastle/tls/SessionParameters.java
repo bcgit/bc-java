@@ -102,7 +102,7 @@ public final class SessionParameters
 
         public Builder setServerExtensions(Hashtable serverExtensions) throws IOException
         {
-            if (serverExtensions == null)
+            if (serverExtensions == null || serverExtensions.isEmpty())
             {
                 encodedServerExtensions = null;
             }

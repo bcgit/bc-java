@@ -1,6 +1,6 @@
 package org.bouncycastle.tls;
 
-import java.io.IOException;
+import java.util.Vector;
 
 import org.bouncycastle.util.Strings;
 
@@ -13,6 +13,73 @@ public final class ProtocolVersion
     public static final ProtocolVersion DTLSv10 = new ProtocolVersion(0xFEFF, "DTLS 1.0");
     public static final ProtocolVersion DTLSv12 = new ProtocolVersion(0xFEFD, "DTLS 1.2");
 
+    public static boolean contains(ProtocolVersion[] versions, ProtocolVersion version)
+    {
+        if (versions != null && version != null)
+        {
+            for (int i = 0; i < versions.length; ++i)
+            {
+                if (version.equals(versions[i]))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static ProtocolVersion getEarliest(ProtocolVersion[] versions)
+    {
+        if (null == versions || versions.length < 1)
+        {
+            return null;
+        }
+
+        ProtocolVersion earliest = versions[0];
+        int majorVersion = earliest.getMajorVersion();
+
+        for (int i = 1; i < versions.length; ++i)
+        {
+            ProtocolVersion next = versions[i];
+            if (next.getMajorVersion() != majorVersion)
+            {
+                throw new IllegalArgumentException("'versions' entries must all have the same major version");
+            }
+            if (earliest.isLaterVersionOf(next))
+            {
+                earliest = next;
+            }
+        }
+
+        return earliest;
+    }
+
+    public static ProtocolVersion getLatest(ProtocolVersion[] versions)
+    {
+        if (null == versions || versions.length < 1)
+        {
+            return null;
+        }
+
+        ProtocolVersion latest = versions[0];
+        int majorVersion = latest.getMajorVersion();
+
+        for (int i = 1; i < versions.length; ++i)
+        {
+            ProtocolVersion next = versions[i];
+            if (next.getMajorVersion() != majorVersion)
+            {
+                throw new IllegalArgumentException("'versions' entries must all have the same major version");
+            }
+            if (next.isLaterVersionOf(latest))
+            {
+                latest = next;
+            }
+        }
+
+        return latest;
+    }
+
     private int version;
     private String name;
 
@@ -20,6 +87,31 @@ public final class ProtocolVersion
     {
         this.version = v & 0xFFFF;
         this.name = name;
+    }
+
+    public ProtocolVersion[] downTo(ProtocolVersion min)
+    {
+        if (!min.isEqualOrEarlierVersionOf(this))
+        {
+            throw new IllegalArgumentException("'min' must be an equal or earlier version of this one");
+        }
+
+        Vector result = new Vector();
+        result.addElement(this);
+
+        ProtocolVersion current = this;
+        while (!current.equals(min))
+        {
+            current = current.getPreviousVersion();
+            result.addElement(current);
+        }
+
+        ProtocolVersion[] versions = new ProtocolVersion[result.size()];
+        for (int i = 0; i < result.size(); ++i)
+        {
+            versions[i] = (ProtocolVersion)result.elementAt(i);
+        }
+        return versions;
     }
 
     public int getFullVersion()
@@ -61,7 +153,7 @@ public final class ProtocolVersion
         }
     }
 
-    public ProtocolVersion getPreviousVersion() throws IOException
+    public ProtocolVersion getPreviousVersion()
     {
         if (isDTLS())
         {
@@ -118,7 +210,6 @@ public final class ProtocolVersion
     }
 
     public static ProtocolVersion get(int major, int minor)
-        throws IOException
     {
         switch (major)
         {
@@ -144,7 +235,7 @@ public final class ProtocolVersion
             case 0xFF:
                 return DTLSv10;
             case 0xFE:
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                throw new IllegalArgumentException("{0xFE, 0xFE} is a reserved protocol version");
             case 0xFD:
                 return DTLSv12;
             }
@@ -157,16 +248,28 @@ public final class ProtocolVersion
         }
     }
 
+    public ProtocolVersion[] only()
+    {
+        return new ProtocolVersion[]{ this };
+    }
+
     public String toString()
     {
         return name;
     }
 
-    private static ProtocolVersion getUnknownVersion(int major, int minor, String prefix)
-        throws IOException
+    private static void checkUint8(int versionOctet)
     {
-        TlsUtils.checkUint8(major);
-        TlsUtils.checkUint8(minor);
+        if (!TlsUtils.isValidUint8(versionOctet))
+        {
+            throw new IllegalArgumentException("'versionOctet' is not a valid octet");
+        }
+    }
+
+    private static ProtocolVersion getUnknownVersion(int major, int minor, String prefix)
+    {
+        checkUint8(major);
+        checkUint8(minor);
 
         int v = (major << 8) | minor;
         String hex = Strings.toUpperCase(Integer.toHexString(0x10000 | v).substring(1));

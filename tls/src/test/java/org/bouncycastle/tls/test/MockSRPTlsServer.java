@@ -77,9 +77,9 @@ class MockSRPTlsServer
         }
     }
 
-    public ProtocolVersion getMinimumVersion()
+    public ProtocolVersion[] getSupportedVersions()
     {
-        return ProtocolVersion.TLSv12;
+        return ProtocolVersion.TLSv12.only();
     }
 
     public ProtocolVersion getServerVersion() throws IOException

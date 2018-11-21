@@ -7,10 +7,13 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 
 import javax.net.ssl.KeyManager;
@@ -338,46 +341,6 @@ class ProvSSLContextSpi
         return defaultProtocolsServer;
     }
 
-    ProtocolVersion getMaximumVersion(String[] protocols)
-    {
-        ProtocolVersion max = null;
-        if (protocols != null)
-        {
-            for (String protocol : protocols)
-            {
-                if (protocol != null)
-                {
-                    ProtocolVersion v = supportedProtocols.get(protocol);
-                    if (v != null && (max == null || v.isLaterVersionOf(max)))
-                    {
-                        max = v;
-                    }
-                }
-            }
-        }
-        return max;
-    }
-
-    ProtocolVersion getMinimumVersion(String[] protocols)
-    {
-        ProtocolVersion min = null;
-        if (protocols != null)
-        {
-            for (String protocol : protocols)
-            {
-                if (protocol != null)
-                {
-                    ProtocolVersion v = supportedProtocols.get(protocol);
-                    if (v != null && (min == null || min.isLaterVersionOf(v)))
-                    {
-                        min = v;
-                    }
-                }
-            }
-        }
-        return min;
-    }
-
     String getProtocolString(ProtocolVersion v)
     {
         if (v != null)
@@ -391,6 +354,35 @@ class ProvSSLContextSpi
             }
         }
         return null;
+    }
+
+    ProtocolVersion[] getSupportedVersions(String[] protocols)
+    {
+        if (protocols == null)
+        {
+            return null;
+        }
+
+        SortedSet<ProtocolVersion> versions = new TreeSet<ProtocolVersion>(new Comparator<ProtocolVersion>(){
+            public int compare(ProtocolVersion o1, ProtocolVersion o2)
+            {
+                return o1.isLaterVersionOf(o2) ? -1 : o2.isLaterVersionOf(o1) ? 1 : 0;
+            }
+        });
+
+        for (String protocol : protocols)
+        {
+            if (protocol != null)
+            {
+                ProtocolVersion version = supportedProtocols.get(protocol);
+                if (version != null)
+                {
+                    versions.add(version);
+                }
+            }
+        }
+
+        return versions.toArray(new ProtocolVersion[versions.size()]);
     }
 
     boolean isDefaultProtocols(String[] protocols)

@@ -34,8 +34,7 @@ class RecordStream
         }
     };
 
-    private ProtocolVersion readVersion = null, writeVersion = null;
-    private boolean restrictReadVersion = true;
+    private ProtocolVersion writeVersion = null;
 
     private int plaintextLimit, ciphertextLimit;
 
@@ -67,31 +66,9 @@ class RecordStream
         this.ciphertextLimit = this.plaintextLimit + 1024;
     }
 
-    ProtocolVersion getReadVersion()
-    {
-        return readVersion;
-    }
-
-    void setReadVersion(ProtocolVersion readVersion)
-    {
-        this.readVersion = readVersion;
-    }
-
     void setWriteVersion(ProtocolVersion writeVersion)
     {
         this.writeVersion = writeVersion;
-    }
-
-    /**
-     * RFC 5246 E.1. "Earlier versions of the TLS specification were not fully clear on what the
-     * record layer version number (TLSPlaintext.version) should contain when sending ClientHello
-     * (i.e., before it is known which version of the protocol will be employed). Thus, TLS servers
-     * compliant with this specification MUST accept any value {03,XX} as the record layer version
-     * number for ClientHello."
-     */
-    void setRestrictReadVersion(boolean enabled)
-    {
-        this.restrictReadVersion = enabled;
     }
 
     void setPendingConnectionState(TlsCipher tlsCipher)
@@ -147,26 +124,9 @@ class RecordStream
          */
         checkType(type, AlertDescription.unexpected_message);
 
-        if (!restrictReadVersion)
-        {
-            int version = TlsUtils.readVersionRaw(recordHeader, RecordFormat.VERSION_OFFSET);
-            if ((version & 0xffffff00) != 0x0300)
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-        }
-        else
-        {
-            ProtocolVersion version = TlsUtils.readVersion(recordHeader, RecordFormat.VERSION_OFFSET);
-            if (readVersion == null)
-            {
-                // Will be set later in 'readRecord'
-            }
-            else if (!version.equals(readVersion))
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-        }
+        /*
+         * legacy_record_version (2 octets at RecordFormat.VERSION_OFFSET) is ignored.
+         */
 
         int length = TlsUtils.readUint16(recordHeader, RecordFormat.LENGTH_OFFSET);
 
@@ -214,26 +174,9 @@ class RecordStream
          */
         checkType(type, AlertDescription.unexpected_message);
 
-        if (!restrictReadVersion)
-        {
-            int version = TlsUtils.readVersionRaw(input, inputOff + RecordFormat.VERSION_OFFSET);
-            if ((version & 0xffffff00) != 0x0300)
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-        }
-        else
-        {
-            ProtocolVersion version = TlsUtils.readVersion(input, inputOff + RecordFormat.VERSION_OFFSET);
-            if (readVersion == null)
-            {
-                readVersion = version;
-            }
-            else if (!version.equals(readVersion))
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-        }
+        /*
+         * legacy_record_version (2 octets at RecordFormat.VERSION_OFFSET) is ignored.
+         */
 
         checkLength(length, ciphertextLimit, AlertDescription.record_overflow);
 
@@ -258,26 +201,9 @@ class RecordStream
          */
         checkType(type, AlertDescription.unexpected_message);
 
-        if (!restrictReadVersion)
-        {
-            int version = TlsUtils.readVersionRaw(inputRecord.buf, RecordFormat.VERSION_OFFSET);
-            if ((version & 0xffffff00) != 0x0300)
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-        }
-        else
-        {
-            ProtocolVersion version = TlsUtils.readVersion(inputRecord.buf, RecordFormat.VERSION_OFFSET);
-            if (readVersion == null)
-            {
-                readVersion = version;
-            }
-            else if (!version.equals(readVersion))
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-        }
+        /*
+         * legacy_record_version (2 octets at RecordFormat.VERSION_OFFSET) is ignored.
+         */
 
         int length = TlsUtils.readUint16(inputRecord.buf, RecordFormat.LENGTH_OFFSET);
 

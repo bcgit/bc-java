@@ -63,14 +63,9 @@ public class MockDTLSClient
             + ", " + AlertDescription.getText(alertDescription));
     }
 
-    public ProtocolVersion getClientVersion()
+    public ProtocolVersion[] getSupportedVersions()
     {
-        return ProtocolVersion.DTLSv12;
-    }
-
-    public ProtocolVersion getMinimumVersion()
-    {
-        return ProtocolVersion.DTLSv10;
+        return ProtocolVersion.DTLSv12.downTo(ProtocolVersion.DTLSv10);
     }
 
     public Hashtable getClientExtensions() throws IOException
