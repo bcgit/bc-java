@@ -623,7 +623,7 @@ public class TlsClientProtocol
         if (securityParameters.isRenegotiating())
         {
             // Check that this matches the negotiated version from the initial handshake
-            if (!server_version.equals(getContext().getServerVersion()))
+            if (!server_version.equals(tlsClientContext.getServerVersion()))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
@@ -634,7 +634,7 @@ public class TlsClientProtocol
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
-            if (!ProtocolVersion.contains(securityParameters.getClientSupportedVersions(), server_version))
+            if (!ProtocolVersion.contains(tlsClientContext.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.protocol_version);
             }
@@ -644,7 +644,7 @@ public class TlsClientProtocol
                 : server_version;
 
             this.recordStream.setWriteVersion(legacy_record_version);
-            getContextAdmin().setServerVersion(server_version);
+            tlsClientContext.setServerVersion(server_version);
         }
 
         this.tlsClient.notifyServerVersion(server_version);
@@ -667,7 +667,7 @@ public class TlsClientProtocol
             if (!Arrays.contains(this.offeredCipherSuites, selectedCipherSuite)
                 || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
                 || CipherSuite.isSCSV(selectedCipherSuite)
-                || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, getContext().getServerVersion()))
+                || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, tlsClientContext.getServerVersion()))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
@@ -883,7 +883,7 @@ public class TlsClientProtocol
             this.tlsClient.processServerExtensions(sessionServerExtensions);
         }
 
-        securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(), securityParameters.getCipherSuite());
+        securityParameters.prfAlgorithm = getPRFAlgorithm(tlsClientContext, securityParameters.getCipherSuite());
 
         /*
          * RFC 5246 7.4.9. Any cipher suite which does not explicitly specify
@@ -911,22 +911,22 @@ public class TlsClientProtocol
         ProtocolVersion client_version;
         if (securityParameters.isRenegotiating())
         {
-            client_version = getContext().getClientVersion();
+            client_version = tlsClientContext.getClientVersion();
         }
         else
         {
             // TODO[tls13] Subsequent ClientHello messages (of a TLSv13 handshake) should use TLSv12
             this.recordStream.setWriteVersion(ProtocolVersion.TLSv10);
 
-            securityParameters.clientSupportedVersions = tlsClient.getSupportedVersions();
+            tlsClientContext.setClientSupportedVersions(tlsClient.getSupportedVersions());
 
-            client_version = ProtocolVersion.getLatest(securityParameters.getClientSupportedVersions());
+            client_version = ProtocolVersion.getLatest(tlsClientContext.getClientSupportedVersions());
             if (!ProtocolVersion.TLSv10.isEqualOrEarlierVersionOf(client_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
 
-            getContextAdmin().setClientVersion(client_version);
+            tlsClientContext.setClientVersion(client_version);
         }
 
         /*
@@ -969,7 +969,7 @@ public class TlsClientProtocol
             legacy_version = ProtocolVersion.TLSv12;
 
             TlsExtensionsUtils.addSupportedVersionsExtensionClient(clientExtensions,
-                securityParameters.getClientSupportedVersions());
+                tlsClientContext.getClientSupportedVersions());
         }
 
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))

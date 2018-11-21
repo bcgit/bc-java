@@ -384,9 +384,9 @@ public class DTLSClientProtocol
         TlsClientContextImpl context = state.clientContext;
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
-        securityParameters.clientSupportedVersions = state.client.getSupportedVersions();
+        context.setClientSupportedVersions(state.client.getSupportedVersions());
 
-        ProtocolVersion client_version = ProtocolVersion.getLatest(securityParameters.getClientSupportedVersions());
+        ProtocolVersion client_version = ProtocolVersion.getLatest(context.getClientSupportedVersions());
         if (!ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(client_version))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
@@ -431,7 +431,7 @@ public class DTLSClientProtocol
             legacy_version = ProtocolVersion.DTLSv12;
 
             TlsExtensionsUtils.addSupportedVersionsExtensionClient(state.clientExtensions,
-                securityParameters.getClientSupportedVersions());
+                context.getClientSupportedVersions());
         }
 
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
@@ -885,20 +885,20 @@ public class DTLSClientProtocol
     protected void reportServerVersion(ClientHandshakeState state, ProtocolVersion server_version)
         throws IOException
     {
-        ProtocolVersion currentServerVersion = state.clientContext.getServerVersion();
+        TlsClientContextImpl context = state.clientContext;
+        ProtocolVersion currentServerVersion = context.getServerVersion();
         if (null == currentServerVersion)
         {
             if (!ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
-            SecurityParameters securityParameters = state.clientContext.getSecurityParametersHandshake();
-            if (!ProtocolVersion.contains(securityParameters.getClientSupportedVersions(), server_version))
+            if (!ProtocolVersion.contains(context.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.protocol_version);
             }
 
-            state.clientContext.setServerVersion(server_version);
+            context.setServerVersion(server_version);
             state.client.notifyServerVersion(server_version);
         }
         else if (!currentServerVersion.equals(server_version))
