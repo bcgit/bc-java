@@ -85,7 +85,7 @@ public abstract class AbstractTlsClient
         return null;
     }
 
-    public TlsDHGroupVerifier getDHConfigVerifier()
+    public TlsDHGroupVerifier getDHGroupVerifier()
     {
         return new DefaultTlsDHGroupVerifier();
     }
