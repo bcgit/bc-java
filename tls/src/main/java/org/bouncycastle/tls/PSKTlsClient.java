@@ -20,6 +20,11 @@ public class PSKTlsClient
 
     protected TlsPSKIdentity pskIdentity;
 
+    public PSKTlsClient(TlsCrypto crypto, byte[] identity, byte[] psk)
+    {
+        this(crypto, new BasicTlsPSKIdentity(identity, psk));
+    }
+
     public PSKTlsClient(TlsCrypto crypto, TlsPSKIdentity pskIdentity)
     {
         super(crypto);
