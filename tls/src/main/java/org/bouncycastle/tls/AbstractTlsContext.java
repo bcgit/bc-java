@@ -34,6 +34,7 @@ abstract class AbstractTlsContext
     private SecurityParameters securityParametersHandshake = null;
     private SecurityParameters securityParametersConnection = null;
 
+    private ProtocolVersion[] clientSupportedVersions = null;
     private ProtocolVersion clientVersion = null;
     private ProtocolVersion serverVersion = null;
     private TlsSession session = null;
@@ -105,6 +106,16 @@ abstract class AbstractTlsContext
     public synchronized SecurityParameters getSecurityParametersHandshake()
     {
         return securityParametersHandshake;
+    }
+
+    public ProtocolVersion[] getClientSupportedVersions()
+    {
+        return clientSupportedVersions;
+    }
+
+    public void setClientSupportedVersions(ProtocolVersion[] clientSupportedVersions)
+    {
+        this.clientSupportedVersions = clientSupportedVersions;
     }
 
     public ProtocolVersion getClientVersion()

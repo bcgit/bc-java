@@ -285,7 +285,7 @@ public abstract class AbstractTlsServer
         throws IOException
     {
         ProtocolVersion[] serverVersions = getSupportedVersions();
-        ProtocolVersion[] clientVersions = context.getSecurityParametersHandshake().getClientSupportedVersions();
+        ProtocolVersion[] clientVersions = context.getClientSupportedVersions();
 
         for (int i = 0; i < clientVersions.length; ++i)
         {
