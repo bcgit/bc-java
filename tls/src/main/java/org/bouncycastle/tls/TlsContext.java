@@ -25,6 +25,8 @@ public interface TlsContext
      */
     boolean isServer();
 
+    ProtocolVersion[] getClientSupportedVersions();
+
     ProtocolVersion getClientVersion();
 
     ProtocolVersion getServerVersion();

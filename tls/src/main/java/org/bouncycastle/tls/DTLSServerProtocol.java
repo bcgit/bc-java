@@ -340,11 +340,12 @@ public class DTLSServerProtocol
     protected byte[] generateServerHello(ServerHandshakeState state, DTLSRecordLayer recordLayer)
         throws IOException
     {
-        SecurityParameters securityParameters = state.serverContext.getSecurityParametersHandshake();
+        TlsServerContextImpl context = state.serverContext;
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
         ProtocolVersion server_version = state.server.getServerVersion();
         {
-            if (!ProtocolVersion.contains(securityParameters.getClientSupportedVersions(), server_version))
+            if (!ProtocolVersion.contains(context.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
@@ -355,10 +356,10 @@ public class DTLSServerProtocol
 //                : server_version;
 //
 //            recordLayer.setWriteVersion(legacy_record_version);
-            state.serverContext.setServerVersion(server_version);
+            context.setServerVersion(server_version);
         }
 
-        securityParameters.serverRandom = TlsProtocol.createRandomBlock(state.server.shouldUseGMTUnixTime(), state.serverContext);
+        securityParameters.serverRandom = TlsProtocol.createRandomBlock(state.server.shouldUseGMTUnixTime(), context);
         if (!ProtocolVersion.getLatest(state.server.getSupportedVersions()).equals(server_version))
         {
             TlsUtils.writeDowngradeMarker(server_version, securityParameters.getServerRandom());
@@ -369,7 +370,7 @@ public class DTLSServerProtocol
             if (!Arrays.contains(state.offeredCipherSuites, selectedCipherSuite)
                 || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
                 || CipherSuite.isSCSV(selectedCipherSuite)
-                || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, state.serverContext.getServerVersion()))
+                || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, context.getServerVersion()))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
@@ -453,7 +454,7 @@ public class DTLSServerProtocol
                     AlertDescription.internal_error);
         }
 
-        securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.serverContext,
+        securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(context,
             securityParameters.getCipherSuite());
 
         /*
@@ -601,20 +602,20 @@ public class DTLSServerProtocol
         TlsServerContextImpl context = state.serverContext;
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
-        securityParameters.clientSupportedVersions = TlsExtensionsUtils.getSupportedVersionsExtensionClient(
-            state.clientExtensions);
-        if (null == securityParameters.getClientSupportedVersions())
+        context.setClientSupportedVersions(
+            TlsExtensionsUtils.getSupportedVersionsExtensionClient(state.clientExtensions));
+        if (null == context.getClientSupportedVersions())
         {
             if (client_version.isLaterVersionOf(ProtocolVersion.DTLSv12))
             {
                 client_version = ProtocolVersion.DTLSv12;
             }
 
-            securityParameters.clientSupportedVersions = client_version.downTo(ProtocolVersion.DTLSv10);
+            context.setClientSupportedVersions(client_version.downTo(ProtocolVersion.DTLSv10));
         }
         else
         {
-            client_version = ProtocolVersion.getLatest(securityParameters.getClientSupportedVersions());
+            client_version = ProtocolVersion.getLatest(context.getClientSupportedVersions());
         }
 
         if (!ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(client_version))

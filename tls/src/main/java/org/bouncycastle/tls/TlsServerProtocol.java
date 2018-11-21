@@ -510,19 +510,20 @@ public class TlsServerProtocol
  
         SecurityParameters securityParameters = tlsServerContext.getSecurityParametersHandshake();
 
-        securityParameters.clientSupportedVersions = TlsExtensionsUtils.getSupportedVersionsExtensionClient(clientExtensions);
-        if (null == securityParameters.getClientSupportedVersions())
+        tlsServerContext.setClientSupportedVersions(
+            TlsExtensionsUtils.getSupportedVersionsExtensionClient(clientExtensions));
+        if (null == tlsServerContext.getClientSupportedVersions())
         {
             if (client_version.isLaterVersionOf(ProtocolVersion.TLSv12))
             {
                 client_version = ProtocolVersion.TLSv12;
             }
 
-            securityParameters.clientSupportedVersions = client_version.downTo(ProtocolVersion.TLSv10);
+            tlsServerContext.setClientSupportedVersions(client_version.downTo(ProtocolVersion.TLSv10));
         }
         else
         {
-            client_version = ProtocolVersion.getLatest(securityParameters.getClientSupportedVersions());
+            client_version = ProtocolVersion.getLatest(tlsServerContext.getClientSupportedVersions());
         }
 
         if (!ProtocolVersion.TLSv10.isEqualOrEarlierVersionOf(client_version))
@@ -533,15 +534,15 @@ public class TlsServerProtocol
         if (securityParameters.isRenegotiating())
         {
             // Check that this is either the originally offered version or the negotiated version
-            if (!client_version.equals(getContext().getClientVersion())
-                && !client_version.equals(getContext().getServerVersion()))
+            if (!client_version.equals(tlsServerContext.getClientVersion())
+                && !client_version.equals(tlsServerContext.getServerVersion()))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
         }
         else
         {
-            getContextAdmin().setClientVersion(client_version);
+            tlsServerContext.setClientVersion(client_version);
         }
 
         tlsServer.notifyClientVersion(tlsServerContext.getClientVersion());
@@ -750,12 +751,12 @@ public class TlsServerProtocol
         if (securityParameters.isRenegotiating())
         {
             // Always select the negotiated version from the initial handshake
-            server_version = getContext().getServerVersion();
+            server_version = tlsServerContext.getServerVersion();
         }
         else
         {
             server_version = tlsServer.getServerVersion();
-            if (!ProtocolVersion.contains(securityParameters.getClientSupportedVersions(), server_version))
+            if (!ProtocolVersion.contains(tlsServerContext.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
@@ -765,7 +766,7 @@ public class TlsServerProtocol
                 : server_version;
 
             recordStream.setWriteVersion(legacy_record_version);
-            getContextAdmin().setServerVersion(server_version);
+            tlsServerContext.setServerVersion(server_version);
         }
 
         securityParameters.serverRandom = createRandomBlock(tlsServer.shouldUseGMTUnixTime(), tlsServerContext);
@@ -779,7 +780,7 @@ public class TlsServerProtocol
             if (!Arrays.contains(offeredCipherSuites, selectedCipherSuite)
                 || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
                 || CipherSuite.isSCSV(selectedCipherSuite)
-                || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, getContext().getServerVersion()))
+                || !TlsUtils.isValidCipherSuiteForVersion(selectedCipherSuite, tlsServerContext.getServerVersion()))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
@@ -881,7 +882,7 @@ public class TlsServerProtocol
                     AlertDescription.internal_error);
         }
 
-        securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(), securityParameters.getCipherSuite());
+        securityParameters.prfAlgorithm = getPRFAlgorithm(tlsServerContext, securityParameters.getCipherSuite());
 
         /*
          * RFC 5246 7.4.9. Any cipher suite which does not explicitly specify verify_data_length has
