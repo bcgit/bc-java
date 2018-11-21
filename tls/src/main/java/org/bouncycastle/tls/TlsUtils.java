@@ -3317,7 +3317,7 @@ public class TlsUtils
         switch (keyExchange)
         {
         case KeyExchangeAlgorithm.DH_anon:
-            return factory.createDHanonKeyExchangeClient(keyExchange, client.getDHConfigVerifier());
+            return factory.createDHanonKeyExchangeClient(keyExchange, client.getDHGroupVerifier());
 
         case KeyExchangeAlgorithm.DH_DSS:
         case KeyExchangeAlgorithm.DH_RSA:
@@ -3325,7 +3325,7 @@ public class TlsUtils
 
         case KeyExchangeAlgorithm.DHE_DSS:
         case KeyExchangeAlgorithm.DHE_RSA:
-            return factory.createDHEKeyExchangeClient(keyExchange, client.getDHConfigVerifier());
+            return factory.createDHEKeyExchangeClient(keyExchange, client.getDHGroupVerifier());
 
         case KeyExchangeAlgorithm.ECDH_anon:
             return factory.createECDHanonKeyExchangeClient(keyExchange);
@@ -3343,7 +3343,7 @@ public class TlsUtils
 
         case KeyExchangeAlgorithm.DHE_PSK:
             return factory.createPSKKeyExchangeClient(keyExchange, client.getPSKIdentity(),
-                client.getDHConfigVerifier());
+                client.getDHGroupVerifier());
 
         case KeyExchangeAlgorithm.ECDHE_PSK:
         case KeyExchangeAlgorithm.PSK:
