@@ -33,6 +33,7 @@ public class SecurityParameters
     Vector clientSigAlgs = null;
     Vector clientSigAlgsCert = null;
     int[] clientSupportedGroups = null;
+    ProtocolVersion[] clientSupportedVersions = null;
     int keyExchangeAlgorithm = -1;
 
     // TODO[tls-ops] Investigate whether we can handle verify data using TlsSecret
@@ -87,6 +88,11 @@ public class SecurityParameters
     public int[] getClientSupportedGroups()
     {
         return clientSupportedGroups;
+    }
+
+    public ProtocolVersion[] getClientSupportedVersions()
+    {
+        return clientSupportedVersions;
     }
 
     /**

@@ -147,7 +147,7 @@ public class TlsExtensionsUtils
         extensions.put(EXT_ec_point_formats, createSupportedPointFormatsExtension(ecPointFormats));
     }
 
-    public static void addSupportedVersionsExtensionClient(Hashtable extensions, Vector versions) throws IOException
+    public static void addSupportedVersionsExtensionClient(Hashtable extensions, ProtocolVersion[] versions) throws IOException
     {
         extensions.put(EXT_supported_versions, createSupportedVersionsExtensionClient(versions));
     }
@@ -284,7 +284,7 @@ public class TlsExtensionsUtils
         return extensionData == null ? null : readSupportedPointFormatsExtension(extensionData);
     }
 
-    public static Vector getSupportedVersionsExtensionClient(Hashtable extensions) throws IOException
+    public static ProtocolVersion[] getSupportedVersionsExtensionClient(Hashtable extensions) throws IOException
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_supported_versions);
         return extensionData == null ? null : readSupportedVersionsExtensionClient(extensionData);
@@ -523,19 +523,19 @@ public class TlsExtensionsUtils
         return TlsUtils.encodeUint8ArrayWithUint8Length(ecPointFormats);
     }
 
-    public static byte[] createSupportedVersionsExtensionClient(Vector versions) throws IOException
+    public static byte[] createSupportedVersionsExtensionClient(ProtocolVersion[] versions) throws IOException
     {
-        if (versions == null || versions.size() < 1 || versions.size() > 127)
+        if (versions == null || versions.length < 1 || versions.length > 127)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        int count = versions.size();
+        int count = versions.length;
         byte[] data = new byte[1 + count * 2];
         TlsUtils.writeUint8(count * 2, data, 0);
         for (int i = 0; i < count; ++i)
         {
-            TlsUtils.writeVersion((ProtocolVersion)versions.elementAt(i), data, 1 + i * 2);
+            TlsUtils.writeVersion((ProtocolVersion)versions[i], data, 1 + i * 2);
         }
         return data;
     }
@@ -805,7 +805,7 @@ public class TlsExtensionsUtils
         return ecPointFormats;
     }
 
-    public static Vector readSupportedVersionsExtensionClient(byte[] extensionData) throws IOException
+    public static ProtocolVersion[] readSupportedVersionsExtensionClient(byte[] extensionData) throws IOException
     {
         if (extensionData == null)
         {
@@ -823,10 +823,10 @@ public class TlsExtensionsUtils
         }
 
         int count = length / 2;
-        Vector versions = new Vector(count);
+        ProtocolVersion[] versions = new ProtocolVersion[count];
         for (int i = 0; i < count; ++i)
         {
-            versions.addElement(TlsUtils.readVersion(extensionData, 1 + i * 2));
+            versions[i] = TlsUtils.readVersion(extensionData, 1 + i * 2);
         }
         return versions;
     }

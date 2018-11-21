@@ -26,6 +26,11 @@ public abstract class AbstractTlsPeer
     {
     }
 
+    public ProtocolVersion[] getSupportedVersions()
+    {
+        return ProtocolVersion.TLSv12.downTo(ProtocolVersion.TLSv10);
+    }
+
     public boolean requiresExtendedMasterSecret()
     {
         return false;

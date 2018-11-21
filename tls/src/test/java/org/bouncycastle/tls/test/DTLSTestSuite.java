@@ -43,8 +43,8 @@ public class DTLSTestSuite extends TestSuite
 
 //        {
 //            TlsTestConfig c = createDTLSTestConfig(ProtocolVersion.DTLSv12);
-//            c.clientOfferVersion = ProtocolVersion.DTLSv10;
 //            c.clientFallback = true;
+//            c.clientSupportedVersions = ProtocolVersion.DTLSv10.only();
 //            c.expectServerFatalAlert(AlertDescription.inappropriate_fallback);
 //
 //            addTestCase(testSuite, c, "FallbackBad");
@@ -52,7 +52,7 @@ public class DTLSTestSuite extends TestSuite
 
         {
             TlsTestConfig c = createDTLSTestConfig(ProtocolVersion.DTLSv12);
-            c.clientOfferVersion = ProtocolVersion.DTLSv10;
+            c.clientSupportedVersions = ProtocolVersion.DTLSv10.only();
 
             addTestCase(testSuite, c, "FallbackNone");
         }
@@ -217,8 +217,8 @@ public class DTLSTestSuite extends TestSuite
 //        if (!TlsUtils.isTLSv12(version))
 //        {
 //            TlsTestConfig c = createDTLSTestConfig(version);
-//            c.serverMaximumVersion = ProtocolVersion.DTLSv12;
 //            c.serverNegotiateVersion = version;
+//            c.serverSupportedVersions = ProtocolVersion.DTLSv12.downTo(version);
 //            c.expectClientFatalAlert(AlertDescription.illegal_parameter);
 //
 //            addTestCase(testSuite, c, prefix + "BadDowngrade");
@@ -230,13 +230,11 @@ public class DTLSTestSuite extends TestSuite
         testSuite.addTest(new DTLSTestCase(config, name));
     }
 
-    private static TlsTestConfig createDTLSTestConfig(ProtocolVersion version)
+    private static TlsTestConfig createDTLSTestConfig(ProtocolVersion serverMaxVersion)
     {
         TlsTestConfig c = new TlsTestConfig();
-        c.clientMinimumVersion = ProtocolVersion.DTLSv10;
-        c.clientOfferVersion = ProtocolVersion.DTLSv12;
-        c.serverMaximumVersion = version;
-        c.serverMinimumVersion = ProtocolVersion.DTLSv10;
+        c.clientSupportedVersions = ProtocolVersion.DTLSv12.downTo(ProtocolVersion.DTLSv10);
+        c.serverSupportedVersions = serverMaxVersion.downTo(ProtocolVersion.DTLSv10);
         return c;
     }
 }

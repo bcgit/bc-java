@@ -1536,6 +1536,11 @@ public abstract class TlsProtocol
     protected static void writeExtensions(OutputStream output, Hashtable extensions)
         throws IOException
     {
+        if (null == extensions || extensions.isEmpty())
+        {
+            return;
+        }
+
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
         /*

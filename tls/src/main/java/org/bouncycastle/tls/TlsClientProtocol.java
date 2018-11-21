@@ -590,9 +590,35 @@ public class TlsClientProtocol
     protected void receiveServerHelloMessage(ByteArrayInputStream buf)
         throws IOException
     {
+        ProtocolVersion server_version = TlsUtils.readVersion(buf);
+
+        byte[] server_random = TlsUtils.readFully(32, buf);
+
+        this.selectedSessionID = TlsUtils.readOpaque8(buf);
+        if (this.selectedSessionID.length > 32)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        int selectedCipherSuite = TlsUtils.readUint16(buf);
+
+        short selectedCompressionMethod = TlsUtils.readUint8(buf);
+
+        /*
+         * RFC3546 2.2 The extended server hello message format MAY be sent in place of the server
+         * hello message when the client has requested extended functionality via the extended
+         * client hello message specified in Section 2.1. ... Note that the extended server hello
+         * message is only sent in response to an extended client hello message. This prevents the
+         * possibility that the extended server hello message could "break" existing TLS 1.0
+         * clients.
+         */
+        this.serverExtensions = readExtensions(buf);
+
+
+
         SecurityParameters securityParameters = tlsClientContext.getSecurityParametersHandshake();
 
-        ProtocolVersion server_version = TlsUtils.readVersion(buf);
+        // TODO[tls13] Check supported_version extension for negotiated version
 
         if (securityParameters.isRenegotiating())
         {
@@ -604,43 +630,31 @@ public class TlsClientProtocol
         }
         else
         {
-            if (!TlsUtils.isTLSv10(server_version))
+            if (!ProtocolVersion.TLSv10.isEqualOrEarlierVersionOf(server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
-
-            // Check that this matches what the server is sending in the record layer
-            if (!server_version.equals(this.recordStream.getReadVersion()))
+            if (!ProtocolVersion.contains(securityParameters.getClientSupportedVersions(), server_version))
             {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                throw new TlsFatalAlert(AlertDescription.protocol_version);
             }
 
-            ProtocolVersion client_version = getContext().getClientVersion();
-            if (!server_version.isEqualOrEarlierVersionOf(client_version))
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
+            ProtocolVersion legacy_record_version = server_version.isLaterVersionOf(ProtocolVersion.TLSv12)
+                ? ProtocolVersion.TLSv12
+                : server_version;
 
-            this.recordStream.setWriteVersion(server_version);
+            this.recordStream.setWriteVersion(legacy_record_version);
             getContextAdmin().setServerVersion(server_version);
         }
 
         this.tlsClient.notifyServerVersion(server_version);
 
-        /*
-         * Read the server random
-         */
-        securityParameters.serverRandom = TlsUtils.readFully(32, buf);
         if (!tlsClientContext.getClientVersion().equals(server_version))
         {
-            TlsUtils.checkDowngradeMarker(server_version, securityParameters.getServerRandom());
+            TlsUtils.checkDowngradeMarker(server_version, server_random);
         }
+        securityParameters.serverRandom = server_random;
 
-        this.selectedSessionID = TlsUtils.readOpaque8(buf);
-        if (this.selectedSessionID.length > 32)
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
         this.tlsClient.notifySessionID(this.selectedSessionID);
         this.resumedSession = this.selectedSessionID.length > 0 && this.tlsSession != null
             && Arrays.areEqual(this.selectedSessionID, this.tlsSession.getSessionID());
@@ -650,7 +664,6 @@ public class TlsClientProtocol
          * ones, and is a valid selection for the negotiated version.
          */
         {
-            int selectedCipherSuite = TlsUtils.readUint16(buf);
             if (!Arrays.contains(this.offeredCipherSuites, selectedCipherSuite)
                 || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
                 || CipherSuite.isSCSV(selectedCipherSuite)
@@ -662,25 +675,10 @@ public class TlsClientProtocol
             this.tlsClient.notifySelectedCipherSuite(selectedCipherSuite);
         }
 
-        /*
-         * Find out which CompressionMethod the server has chosen and check that it was one of the
-         * offered ones.
-         */
-        short selectedCompressionMethod = TlsUtils.readUint8(buf);
         if (CompressionMethod._null != selectedCompressionMethod)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
-
-        /*
-         * RFC3546 2.2 The extended server hello message format MAY be sent in place of the server
-         * hello message when the client has requested extended functionality via the extended
-         * client hello message specified in Section 2.1. ... Note that the extended server hello
-         * message is only sent in response to an extended client hello message. This prevents the
-         * possibility that the extended server hello message could "break" existing TLS 1.0
-         * clients.
-         */
-        this.serverExtensions = readExtensions(buf);
 
         /*
          * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
@@ -910,22 +908,25 @@ public class TlsClientProtocol
     {
         SecurityParameters securityParameters = tlsClientContext.getSecurityParametersHandshake();
 
-        ProtocolVersion clientHelloVersion;
+        ProtocolVersion client_version;
         if (securityParameters.isRenegotiating())
         {
-            clientHelloVersion = getContext().getClientVersion();
+            client_version = getContext().getClientVersion();
         }
         else
         {
-            this.recordStream.setWriteVersion(this.tlsClient.getClientHelloRecordLayerVersion());
+            // TODO[tls13] Subsequent ClientHello messages (of a TLSv13 handshake) should use TLSv12
+            this.recordStream.setWriteVersion(ProtocolVersion.TLSv10);
 
-            clientHelloVersion = this.tlsClient.getClientVersion();
-            if (!TlsUtils.isTLSv10(clientHelloVersion))
+            securityParameters.clientSupportedVersions = tlsClient.getSupportedVersions();
+
+            client_version = ProtocolVersion.getLatest(securityParameters.getClientSupportedVersions());
+            if (!ProtocolVersion.TLSv10.isEqualOrEarlierVersionOf(client_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
 
-            getContextAdmin().setClientVersion(clientHelloVersion);
+            getContextAdmin().setClientVersion(client_version);
         }
 
         /*
@@ -962,7 +963,16 @@ public class TlsClientProtocol
 
         this.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(this.tlsClient.getClientExtensions());
 
-        if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(clientHelloVersion))
+        ProtocolVersion legacy_version = client_version;
+        if (client_version.isLaterVersionOf(ProtocolVersion.TLSv12))
+        {
+            legacy_version = ProtocolVersion.TLSv12;
+
+            TlsExtensionsUtils.addSupportedVersionsExtensionClient(clientExtensions,
+                securityParameters.getClientSupportedVersions());
+        }
+
+        if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
         {
             securityParameters.clientSigAlgs = TlsExtensionsUtils.getSignatureAlgorithmsExtension(clientExtensions);
             securityParameters.clientSigAlgsCert = TlsExtensionsUtils.getSignatureAlgorithmsCertExtension(clientExtensions);
@@ -972,14 +982,7 @@ public class TlsClientProtocol
 
         TlsExtensionsUtils.addExtendedMasterSecretExtension(this.clientExtensions);
 
-        HandshakeMessage message = new HandshakeMessage(HandshakeType.client_hello);
-
-        TlsUtils.writeVersion(clientHelloVersion, message);
-
         securityParameters.clientRandom = createRandomBlock(tlsClient.shouldUseGMTUnixTime(), tlsClientContext);
-        message.write(securityParameters.getClientRandom());
-
-        TlsUtils.writeOpaque8(session_id, message);
 
         if (securityParameters.isRenegotiating())
         {
@@ -999,7 +1002,6 @@ public class TlsClientProtocol
              */
             SecurityParameters saved = tlsClientContext.getSecurityParametersConnection();
 
-            this.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(this.clientExtensions);
             this.clientExtensions.put(EXT_RenegotiationInfo, createRenegotiationInfo(saved.getLocalVerifyData()));
         }
         else
@@ -1022,22 +1024,30 @@ public class TlsClientProtocol
             }
         }
 
-        // Cipher Suites (and fallback SCSV)
+        /*
+         * (Fallback SCSV)
+         * RFC 7507 4. If a client sends a ClientHello.client_version containing a lower value
+         * than the latest (highest-valued) version supported by the client, it SHOULD include
+         * the TLS_FALLBACK_SCSV cipher suite value in ClientHello.cipher_suites [..]. (The
+         * client SHOULD put TLS_FALLBACK_SCSV after all cipher suites that it actually intends
+         * to negotiate.)
+         */
+        if (fallback && !Arrays.contains(offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV))
         {
-            /*
-             * RFC 7507 4. If a client sends a ClientHello.client_version containing a lower value
-             * than the latest (highest-valued) version supported by the client, it SHOULD include
-             * the TLS_FALLBACK_SCSV cipher suite value in ClientHello.cipher_suites [..]. (The
-             * client SHOULD put TLS_FALLBACK_SCSV after all cipher suites that it actually intends
-             * to negotiate.)
-             */
-            if (fallback && !Arrays.contains(offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV))
-            {
-                this.offeredCipherSuites = Arrays.append(offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV);
-            }
-
-            TlsUtils.writeUint16ArrayWithUint16Length(offeredCipherSuites, message);
+            this.offeredCipherSuites = Arrays.append(offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV);
         }
+
+
+
+        HandshakeMessage message = new HandshakeMessage(HandshakeType.client_hello);
+
+        TlsUtils.writeVersion(legacy_version, message);
+
+        message.write(securityParameters.getClientRandom());
+
+        TlsUtils.writeOpaque8(session_id, message);
+
+        TlsUtils.writeUint16ArrayWithUint16Length(offeredCipherSuites, message);
 
         TlsUtils.writeUint8ArrayWithUint8Length(new short[]{ CompressionMethod._null }, message);
 

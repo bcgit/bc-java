@@ -86,14 +86,9 @@ public class MockDTLSServer
         }
     }
 
-    public ProtocolVersion getMaximumVersion()
+    public ProtocolVersion[] getSupportedVersions()
     {
-        return ProtocolVersion.DTLSv12;
-    }
-
-    public ProtocolVersion getMinimumVersion()
-    {
-        return ProtocolVersion.DTLSv10;
+        return ProtocolVersion.DTLSv12.downTo(ProtocolVersion.DTLSv10);
     }
 
     protected TlsCredentialedDecryptor getRSAEncryptionCredentials()

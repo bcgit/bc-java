@@ -78,24 +78,14 @@ class TlsTestClientImpl
         }
     }
 
-    public ProtocolVersion getClientVersion()
+    public ProtocolVersion[] getSupportedVersions()
     {
-        if (config.clientOfferVersion != null)
+        if (null != config.clientSupportedVersions)
         {
-            return config.clientOfferVersion;
+            return config.clientSupportedVersions;
         }
 
-        return super.getClientVersion();
-    }
-
-    public ProtocolVersion getMinimumVersion()
-    {
-        if (config.clientMinimumVersion != null)
-        {
-            return config.clientMinimumVersion;
-        }
-
-        return super.getMinimumVersion();
+        return super.getSupportedVersions();
     }
 
     public Hashtable getClientExtensions() throws IOException
