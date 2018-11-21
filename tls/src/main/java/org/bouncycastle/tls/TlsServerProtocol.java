@@ -73,7 +73,6 @@ public class TlsServerProtocol
 
         this.tlsServer.init(tlsServerContext);
         this.recordStream.init(tlsServerContext);
-        this.recordStream.setRestrictReadVersion(false);
 
         beginHandshake(false);
 
@@ -459,25 +458,10 @@ public class TlsServerProtocol
     protected void receiveClientHelloMessage(ByteArrayInputStream buf)
         throws IOException
     {
-        SecurityParameters securityParameters = tlsServerContext.getSecurityParametersHandshake();
+        // TODO[tls13] For subsequent ClientHello messages (of a TLSv13 handshake) don't do this!
+        recordStream.setWriteVersion(ProtocolVersion.TLSv10);
 
         ProtocolVersion client_version = TlsUtils.readVersion(buf);
-        if (securityParameters.isRenegotiating())
-        {
-            // Check that this is either the originally offered version or the negotiated version
-            if (!client_version.equals(getContext().getClientVersion())
-                && !client_version.equals(getContext().getServerVersion()))
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-        }
-
-        recordStream.setWriteVersion(client_version);
-
-        if (client_version.isDTLS())
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
 
         byte[] client_random = TlsUtils.readFully(32, buf);
 
@@ -488,7 +472,7 @@ public class TlsServerProtocol
         byte[] sessionID = TlsUtils.readOpaque8(buf);
         if (sessionID.length > 32)
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.decode_error);
         }
 
         /*
@@ -510,14 +494,10 @@ public class TlsServerProtocol
         int compression_methods_length = TlsUtils.readUint8(buf);
         if (compression_methods_length < 1)
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.decode_error);
         }
 
         short[] offeredCompressionMethods = TlsUtils.readUint8Array(compression_methods_length, buf);
-        if (!Arrays.contains(offeredCompressionMethods, CompressionMethod._null))
-        {
-            throw new TlsFatalAlert(AlertDescription.handshake_failure);
-        }
 
         /*
          * TODO RFC 3546 2.3 If [...] the older session is resumed, then the server MUST ignore
@@ -525,6 +505,57 @@ public class TlsServerProtocol
          * extensions.
          */
         this.clientExtensions = readExtensions(buf);
+
+
+ 
+        SecurityParameters securityParameters = tlsServerContext.getSecurityParametersHandshake();
+
+        securityParameters.clientSupportedVersions = TlsExtensionsUtils.getSupportedVersionsExtensionClient(clientExtensions);
+        if (null == securityParameters.getClientSupportedVersions())
+        {
+            if (client_version.isLaterVersionOf(ProtocolVersion.TLSv12))
+            {
+                client_version = ProtocolVersion.TLSv12;
+            }
+
+            securityParameters.clientSupportedVersions = client_version.downTo(ProtocolVersion.TLSv10);
+        }
+        else
+        {
+            client_version = ProtocolVersion.getLatest(securityParameters.getClientSupportedVersions());
+        }
+
+        if (!ProtocolVersion.TLSv10.isEqualOrEarlierVersionOf(client_version))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        if (securityParameters.isRenegotiating())
+        {
+            // Check that this is either the originally offered version or the negotiated version
+            if (!client_version.equals(getContext().getClientVersion())
+                && !client_version.equals(getContext().getServerVersion()))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+        }
+        else
+        {
+            getContextAdmin().setClientVersion(client_version);
+        }
+
+        tlsServer.notifyClientVersion(tlsServerContext.getClientVersion());
+
+        securityParameters.clientRandom = client_random;
+
+        tlsServer.notifyFallback(Arrays.contains(offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV));
+
+        tlsServer.notifyOfferedCipherSuites(offeredCipherSuites);
+
+        if (!Arrays.contains(offeredCompressionMethods, CompressionMethod._null))
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
 
         /*
          * TODO[resumption] Check RFC 7627 5.4. for required behaviour 
@@ -539,15 +570,6 @@ public class TlsServerProtocol
         {
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
-
-        getContextAdmin().setClientVersion(client_version);
-
-        tlsServer.notifyClientVersion(client_version);
-        tlsServer.notifyFallback(Arrays.contains(offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV));
-
-        securityParameters.clientRandom = client_random;
-
-        tlsServer.notifyOfferedCipherSuites(offeredCipherSuites);
 
         byte[] renegExtData = TlsUtils.getExtensionData(clientExtensions, EXT_RenegotiationInfo);
 
@@ -723,42 +745,34 @@ public class TlsServerProtocol
         throws IOException
     {
         SecurityParameters securityParameters = tlsServerContext.getSecurityParametersHandshake();
-        HandshakeMessage message = new HandshakeMessage(HandshakeType.server_hello);
 
-        ProtocolVersion serverHelloVersion;
+        ProtocolVersion server_version;
         if (securityParameters.isRenegotiating())
         {
             // Always select the negotiated version from the initial handshake
-            serverHelloVersion = getContext().getServerVersion();
+            server_version = getContext().getServerVersion();
         }
         else
         {
-            serverHelloVersion = tlsServer.getServerVersion();
-            if (!serverHelloVersion.isEqualOrEarlierVersionOf(getContext().getClientVersion()))
+            server_version = tlsServer.getServerVersion();
+            if (!ProtocolVersion.contains(securityParameters.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
 
-            recordStream.setReadVersion(serverHelloVersion);
-            recordStream.setWriteVersion(serverHelloVersion);
-            recordStream.setRestrictReadVersion(true);
-            getContextAdmin().setServerVersion(serverHelloVersion);
-        }
+            ProtocolVersion legacy_record_version = server_version.isLaterVersionOf(ProtocolVersion.TLSv12)
+                ? ProtocolVersion.TLSv12
+                : server_version;
 
-        TlsUtils.writeVersion(serverHelloVersion, message);
+            recordStream.setWriteVersion(legacy_record_version);
+            getContextAdmin().setServerVersion(server_version);
+        }
 
         securityParameters.serverRandom = createRandomBlock(tlsServer.shouldUseGMTUnixTime(), tlsServerContext);
-        if (!tlsServer.getMaximumVersion().equals(serverHelloVersion))
+        if (!ProtocolVersion.getLatest(tlsServer.getSupportedVersions()).equals(server_version))
         {
-            TlsUtils.writeDowngradeMarker(serverHelloVersion, securityParameters.getServerRandom());
+            TlsUtils.writeDowngradeMarker(server_version, securityParameters.getServerRandom());
         }
-        message.write(securityParameters.getServerRandom());
-
-        /*
-         * The server may return an empty session_id to indicate that the session will not be cached
-         * and therefore cannot be resumed.
-         */
-        TlsUtils.writeOpaque8(tlsSession.getSessionID(), message);
 
         {
             int selectedCipherSuite = tlsServer.getSelectedCipherSuite();
@@ -770,12 +784,17 @@ public class TlsServerProtocol
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
             securityParameters.cipherSuite = selectedCipherSuite;
-            TlsUtils.writeUint16(selectedCipherSuite, message);
         }
 
-        TlsUtils.writeUint8(CompressionMethod._null, message);
-
         this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(tlsServer.getServerExtensions());
+
+        ProtocolVersion legacy_version = server_version;
+        if (server_version.isLaterVersionOf(ProtocolVersion.TLSv12))
+        {
+            legacy_version = ProtocolVersion.TLSv12;
+
+            TlsExtensionsUtils.addSupportedVersionsExtensionServer(serverExtensions, server_version);
+        }
 
         if (securityParameters.isRenegotiating())
         {
@@ -791,7 +810,6 @@ public class TlsServerProtocol
             SecurityParameters saved = tlsServerContext.getSecurityParametersConnection();
             byte[] reneg_conn_info = TlsUtils.concat(saved.getPeerVerifyData(), saved.getLocalVerifyData());
 
-            this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(serverExtensions);
             this.serverExtensions.put(EXT_RenegotiationInfo, createRenegotiationInfo(reneg_conn_info));
         }
         else
@@ -861,8 +879,6 @@ public class TlsServerProtocol
             this.expectSessionTicket = !resumedSession
                 && TlsUtils.hasExpectedEmptyExtensionData(serverExtensions, TlsProtocol.EXT_SessionTicket,
                     AlertDescription.internal_error);
-
-            writeExtensions(message, serverExtensions);
         }
 
         securityParameters.prfAlgorithm = getPRFAlgorithm(getContext(), securityParameters.getCipherSuite());
@@ -874,6 +890,26 @@ public class TlsServerProtocol
         securityParameters.verifyDataLength = 12;
 
         applyMaxFragmentLengthExtension();
+
+
+
+        HandshakeMessage message = new HandshakeMessage(HandshakeType.server_hello);
+
+        TlsUtils.writeVersion(legacy_version, message);
+
+        message.write(securityParameters.getServerRandom());
+
+        /*
+         * The server may return an empty session_id to indicate that the session will not be cached
+         * and therefore cannot be resumed.
+         */
+        TlsUtils.writeOpaque8(tlsSession.getSessionID(), message);
+
+        TlsUtils.writeUint16(securityParameters.getCipherSuite(), message);
+
+        TlsUtils.writeUint8(CompressionMethod._null, message);
+
+        writeExtensions(message, serverExtensions);
 
         message.writeToRecordStream();
     }

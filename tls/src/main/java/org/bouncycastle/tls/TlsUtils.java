@@ -796,7 +796,14 @@ public class TlsUtils
     public static ProtocolVersion readVersion(byte[] buf, int offset)
         throws IOException
     {
-        return ProtocolVersion.get(buf[offset] & 0xFF, buf[offset + 1] & 0xFF);
+        try
+        {
+            return ProtocolVersion.get(buf[offset] & 0xFF, buf[offset + 1] & 0xFF);
+        }
+        catch (RuntimeException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error, e);
+        }
     }
 
     public static ProtocolVersion readVersion(InputStream input)
@@ -808,25 +815,15 @@ public class TlsUtils
         {
             throw new EOFException();
         }
-        return ProtocolVersion.get(i1, i2);
-    }
 
-    public static int readVersionRaw(byte[] buf, int offset)
-        throws IOException
-    {
-        return (buf[offset] << 8) | buf[offset + 1];
-    }
-
-    public static int readVersionRaw(InputStream input)
-        throws IOException
-    {
-        int i1 = input.read();
-        int i2 = input.read();
-        if (i2 < 0)
+        try
         {
-            throw new EOFException();
+            return ProtocolVersion.get(i1, i2);
         }
-        return (i1 << 8) | i2;
+        catch (RuntimeException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error, e);
+        }
     }
 
     public static ASN1Primitive readASN1Object(byte[] encoding) throws IOException

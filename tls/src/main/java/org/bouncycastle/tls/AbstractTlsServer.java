@@ -231,7 +231,7 @@ public abstract class AbstractTlsServer
          * ClientHello.client_version, the server MUST respond with a fatal inappropriate_fallback
          * alert [..].
          */
-        if (isFallback && getMaximumVersion().isLaterVersionOf(context.getClientVersion()))
+        if (isFallback && ProtocolVersion.getLatest(getSupportedVersions()).isLaterVersionOf(context.getClientVersion()))
         {
             throw new TlsFatalAlert(AlertDescription.inappropriate_fallback);
         }
@@ -281,32 +281,21 @@ public abstract class AbstractTlsServer
         }
     }
 
-    public ProtocolVersion getMaximumVersion()
-    {
-        return ProtocolVersion.TLSv12;
-    }
-
-    public ProtocolVersion getMinimumVersion()
-    {
-        return ProtocolVersion.TLSv10;
-    }
-
     public ProtocolVersion getServerVersion()
         throws IOException
     {
-        ProtocolVersion clientVersion = context.getClientVersion();
-        if (getMinimumVersion().isEqualOrEarlierVersionOf(clientVersion))
+        ProtocolVersion[] serverVersions = getSupportedVersions();
+        ProtocolVersion[] clientVersions = context.getSecurityParametersHandshake().getClientSupportedVersions();
+
+        for (int i = 0; i < clientVersions.length; ++i)
         {
-            ProtocolVersion maximumVersion = getMaximumVersion();
-            if (clientVersion.isEqualOrEarlierVersionOf(maximumVersion))
+            ProtocolVersion clientVersion = clientVersions[i];
+            if (ProtocolVersion.contains(serverVersions, clientVersion))
             {
                 return clientVersion;
             }
-            if (clientVersion.isLaterVersionOf(maximumVersion))
-            {
-                return maximumVersion;
-            }
         }
+
         throw new TlsFatalAlert(AlertDescription.protocol_version);
     }
 

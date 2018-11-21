@@ -15,11 +15,17 @@ import org.bouncycastle.util.Arrays;
 
 public class TlsTestCase extends TestCase
 {
-    private static void checkTLSVersion(ProtocolVersion version)
+    private static void checkTLSVersions(ProtocolVersion[] versions)
     {
-        if (version != null && !version.isTLS())
+        if (versions != null)
         {
-            throw new IllegalStateException("Non-TLS version");
+            for (int i = 0; i < versions.length; ++i)
+            {
+                if (!versions[i].isTLS())
+                {
+                    throw new IllegalStateException("Non-TLS version");
+                }
+            }
         }
     }
 
@@ -36,10 +42,8 @@ public class TlsTestCase extends TestCase
     {
         super(name);
 
-        checkTLSVersion(config.clientMinimumVersion);
-        checkTLSVersion(config.clientOfferVersion);
-        checkTLSVersion(config.serverMaximumVersion);
-        checkTLSVersion(config.serverMinimumVersion);
+        checkTLSVersions(config.clientSupportedVersions);
+        checkTLSVersions(config.serverSupportedVersions);
 
         this.config = config;
     }

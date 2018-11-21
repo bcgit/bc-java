@@ -173,23 +173,6 @@ public abstract class AbstractTlsClient
         return null;
     }
 
-    public ProtocolVersion getClientHelloRecordLayerVersion()
-    {
-        // "{03,00}"
-        // return ProtocolVersion.SSLv3;
-
-        // "the lowest version number supported by the client"
-        // return getMinimumVersion();
-
-        // "the value of ClientHello.client_version"
-        return getClientVersion();
-    }
-
-    public ProtocolVersion getClientVersion()
-    {
-        return ProtocolVersion.TLSv12;
-    }
-
     public boolean isFallback()
     {
         /*
@@ -263,23 +246,13 @@ public abstract class AbstractTlsClient
         return clientExtensions;
     }
 
-    public ProtocolVersion getMinimumVersion()
-    {
-        return ProtocolVersion.TLSv10;
-    }
-
     public void notifyServerVersion(ProtocolVersion serverVersion)
         throws IOException
     {
-        if (!getMinimumVersion().isEqualOrEarlierVersionOf(serverVersion))
-        {
-            throw new TlsFatalAlert(AlertDescription.protocol_version);
-        }
     }
 
     public void notifySessionID(byte[] sessionID)
     {
-        // Currently ignored
     }
 
     public void notifySelectedCipherSuite(int selectedCipherSuite)

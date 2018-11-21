@@ -16,6 +16,8 @@ public interface TlsPeer
      */
     void notifyHandshakeBeginning() throws IOException;
 
+    ProtocolVersion[] getSupportedVersions();
+
     /**
      * This implementation supports RFC 7627 and will always negotiate the extended_master_secret
      * extension where possible. When connecting to a peer that does not offer/accept this

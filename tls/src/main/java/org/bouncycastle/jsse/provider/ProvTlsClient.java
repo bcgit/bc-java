@@ -306,15 +306,9 @@ class ProvTlsClient
     }
 
     @Override
-    public ProtocolVersion getMinimumVersion()
+    public ProtocolVersion[] getSupportedVersions()
     {
-        return manager.getContext().getMinimumVersion(sslParameters.getProtocols());
-    }
-
-    @Override
-    public ProtocolVersion getClientVersion()
-    {
-        return manager.getContext().getMaximumVersion(sslParameters.getProtocols());
+        return manager.getContext().getSupportedVersions(sslParameters.getProtocols());
     }
 
     @Override
@@ -415,40 +409,24 @@ class ProvTlsClient
     {
         manager.getContext().validateNegotiatedCipherSuite(selectedCipherSuite);
 
-        super.notifySelectedCipherSuite(selectedCipherSuite);
-
         LOG.fine("Client notified of selected cipher suite: " + manager.getContext().getCipherSuiteString(selectedCipherSuite));
+
+        super.notifySelectedCipherSuite(selectedCipherSuite);
     }
 
     @Override
     public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
     {
-        String selected = manager.getContext().getProtocolString(serverVersion);
-        if (selected == null)
-        {
-            LOG.fine("Server selected an unsupported protocol version: " + serverVersion);
-        }
-        else
-        {
-            for (String protocol : sslParameters.getProtocols())
-            {
-                if (selected.equals(protocol))
-                {
-                    LOG.fine("Client notified of selected protocol version: " + selected);
-                    return;
-                }
-            }
+        String protocolString = manager.getContext().getProtocolString(serverVersion);
 
-            LOG.fine("Server selected a protocol version not enabled in the client: " + selected);
-        }
-        throw new TlsFatalAlert(AlertDescription.protocol_version);
+        LOG.fine("Client notified of selected protocol version: " + protocolString);
+
+        super.notifyServerVersion(serverVersion);
     }
 
     @Override
     public void notifySessionID(byte[] sessionID)
     {
-        super.notifySessionID(sessionID);
-
         if (sessionID == null || sessionID.length == 0)
         {
             LOG.fine("Server did not specify a session ID");
@@ -465,5 +443,7 @@ class ProvTlsClient
         {
             LOG.fine("Server specified new session: " + Hex.toHexString(sessionID));
         }
+
+        super.notifySessionID(sessionID);
     }
 }

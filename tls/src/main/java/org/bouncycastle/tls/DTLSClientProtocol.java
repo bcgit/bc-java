@@ -381,13 +381,16 @@ public class DTLSClientProtocol
     protected byte[] generateClientHello(ClientHandshakeState state)
         throws IOException
     {
-        ProtocolVersion client_version = state.client.getClientVersion();
-        if (!client_version.isDTLS())
+        TlsClientContextImpl context = state.clientContext;
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+
+        securityParameters.clientSupportedVersions = state.client.getSupportedVersions();
+
+        ProtocolVersion client_version = ProtocolVersion.getLatest(securityParameters.getClientSupportedVersions());
+        if (!ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(client_version))
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
-
-        TlsClientContextImpl context = state.clientContext;
 
         context.setClientVersion(client_version);
 
@@ -420,9 +423,16 @@ public class DTLSClientProtocol
             }
         }
 
-        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
-
         state.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(state.client.getClientExtensions());
+
+        ProtocolVersion legacy_version = client_version;
+        if (client_version.isLaterVersionOf(ProtocolVersion.DTLSv12))
+        {
+            legacy_version = ProtocolVersion.DTLSv12;
+
+            TlsExtensionsUtils.addSupportedVersionsExtensionClient(state.clientExtensions,
+                securityParameters.getClientSupportedVersions());
+        }
 
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(client_version))
         {
@@ -434,17 +444,7 @@ public class DTLSClientProtocol
 
         TlsExtensionsUtils.addExtendedMasterSecretExtension(state.clientExtensions);
 
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-
-        TlsUtils.writeVersion(client_version, buf);
-
         securityParameters.clientRandom = TlsProtocol.createRandomBlock(state.client.shouldUseGMTUnixTime(), state.clientContext);
-        buf.write(securityParameters.getClientRandom());
-
-        TlsUtils.writeOpaque8(session_id, buf);
-
-        // Cookie
-        TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, buf);
 
         // Cipher Suites (and SCSV)
         {
@@ -453,31 +453,41 @@ public class DTLSClientProtocol
              * or the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the
              * ClientHello. Including both is NOT RECOMMENDED.
              */
-            byte[] renegExtData = TlsUtils.getExtensionData(state.clientExtensions, TlsProtocol.EXT_RenegotiationInfo);
-            boolean noRenegExt = (null == renegExtData);
-
+            boolean noRenegExt = (null == TlsUtils.getExtensionData(state.clientExtensions, TlsProtocol.EXT_RenegotiationInfo));
             boolean noRenegSCSV = !Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
 
             if (noRenegExt && noRenegSCSV)
             {
-                // TODO Consider whether to default to a client extension instead
                 state.offeredCipherSuites = Arrays.append(state.offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
             }
-
-            /*
-             * RFC 7507 4. If a client sends a ClientHello.client_version containing a lower value
-             * than the latest (highest-valued) version supported by the client, it SHOULD include
-             * the TLS_FALLBACK_SCSV cipher suite value in ClientHello.cipher_suites [..]. (The
-             * client SHOULD put TLS_FALLBACK_SCSV after all cipher suites that it actually intends
-             * to negotiate.)
-             */
-            if (fallback && !Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV))
-            {
-                state.offeredCipherSuites = Arrays.append(state.offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV);
-            }
-
-            TlsUtils.writeUint16ArrayWithUint16Length(state.offeredCipherSuites, buf);
         }
+
+        /* (Fallback SCSV)
+         * RFC 7507 4. If a client sends a ClientHello.client_version containing a lower value
+         * than the latest (highest-valued) version supported by the client, it SHOULD include
+         * the TLS_FALLBACK_SCSV cipher suite value in ClientHello.cipher_suites [..]. (The
+         * client SHOULD put TLS_FALLBACK_SCSV after all cipher suites that it actually intends
+         * to negotiate.)
+         */
+        if (fallback && !Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV))
+        {
+            state.offeredCipherSuites = Arrays.append(state.offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV);
+        }
+
+
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+        TlsUtils.writeVersion(legacy_version, buf);
+
+        buf.write(securityParameters.getClientRandom());
+
+        TlsUtils.writeOpaque8(session_id, buf);
+
+        // Cookie
+        TlsUtils.writeOpaque8(TlsUtils.EMPTY_BYTES, buf);
+
+        TlsUtils.writeUint16ArrayWithUint16Length(state.offeredCipherSuites, buf);
 
         TlsUtils.writeUint8ArrayWithUint8Length(new short[]{ CompressionMethod._null }, buf);
 
@@ -620,30 +630,43 @@ public class DTLSClientProtocol
     protected void processServerHello(ClientHandshakeState state, byte[] body)
         throws IOException
     {
-        SecurityParameters securityParameters = state.clientContext.getSecurityParametersHandshake();
-
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
         ProtocolVersion server_version = TlsUtils.readVersion(buf);
-        reportServerVersion(state, server_version);
 
-        securityParameters.serverRandom = TlsUtils.readFully(32, buf);
-        if (!state.clientContext.getClientVersion().equals(server_version))
-        {
-            TlsUtils.checkDowngradeMarker(server_version, securityParameters.getServerRandom());
-        }
+        byte[] server_random = TlsUtils.readFully(32, buf);
 
         state.selectedSessionID = TlsUtils.readOpaque8(buf);
         if (state.selectedSessionID.length > 32)
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.decode_error);
         }
+
+        int selectedCipherSuite = TlsUtils.readUint16(buf);
+
+        short selectedCompressionMethod = TlsUtils.readUint8(buf);
+
+        state.serverExtensions = TlsProtocol.readExtensions(buf);
+
+
+
+        SecurityParameters securityParameters = state.clientContext.getSecurityParametersHandshake();
+
+        // TODO[dtls13] Check supported_version extension for negotiated version
+
+        reportServerVersion(state, server_version);
+
+        if (!state.clientContext.getClientVersion().equals(server_version))
+        {
+            TlsUtils.checkDowngradeMarker(server_version, server_random);
+        }
+        securityParameters.serverRandom = server_random;
+
         state.client.notifySessionID(state.selectedSessionID);
         state.resumedSession = state.selectedSessionID.length > 0 && state.tlsSession != null
             && Arrays.areEqual(state.selectedSessionID, state.tlsSession.getSessionID());
 
         {
-            int selectedCipherSuite = TlsUtils.readUint16(buf);
             if (!Arrays.contains(state.offeredCipherSuites, selectedCipherSuite)
                 || selectedCipherSuite == CipherSuite.TLS_NULL_WITH_NULL_NULL
                 || CipherSuite.isSCSV(selectedCipherSuite)
@@ -656,7 +679,6 @@ public class DTLSClientProtocol
             state.client.notifySelectedCipherSuite(selectedCipherSuite);
         }
 
-        short selectedCompressionMethod = TlsUtils.readUint8(buf);
         if (CompressionMethod._null != selectedCompressionMethod)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
@@ -676,9 +698,6 @@ public class DTLSClientProtocol
          * extensions appearing in the client hello, and send a server hello containing no
          * extensions.
          */
-
-        // Integer -> byte[]
-        state.serverExtensions = TlsProtocol.readExtensions(buf);
 
         /*
          * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
@@ -866,11 +885,20 @@ public class DTLSClientProtocol
     protected void reportServerVersion(ClientHandshakeState state, ProtocolVersion server_version)
         throws IOException
     {
-        TlsClientContextImpl clientContext = state.clientContext;
-        ProtocolVersion currentServerVersion = clientContext.getServerVersion();
+        ProtocolVersion currentServerVersion = state.clientContext.getServerVersion();
         if (null == currentServerVersion)
         {
-            clientContext.setServerVersion(server_version);
+            if (!ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(server_version))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+            SecurityParameters securityParameters = state.clientContext.getSecurityParametersHandshake();
+            if (!ProtocolVersion.contains(securityParameters.getClientSupportedVersions(), server_version))
+            {
+                throw new TlsFatalAlert(AlertDescription.protocol_version);
+            }
+
+            state.clientContext.setServerVersion(server_version);
             state.client.notifyServerVersion(server_version);
         }
         else if (!currentServerVersion.equals(server_version))

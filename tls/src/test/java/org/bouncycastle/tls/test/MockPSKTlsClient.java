@@ -89,9 +89,9 @@ class MockPSKTlsClient
         }
     }
 
-    public ProtocolVersion getMinimumVersion()
+    public ProtocolVersion[] getSupportedVersions()
     {
-        return ProtocolVersion.TLSv12;
+        return ProtocolVersion.TLSv12.only();
     }
 
     public Hashtable getClientExtensions() throws IOException

@@ -118,13 +118,14 @@ public class DTLSServerProtocol
         }
 
         {
-            byte[] serverHelloBody = generateServerHello(state);
+            byte[] serverHelloBody = generateServerHello(state, recordLayer);
 
-            applyMaxFragmentLengthExtension(recordLayer, securityParameters.getMaxFragmentLength());
-
-            ProtocolVersion recordLayerVersion = state.serverContext.getServerVersion();
-            recordLayer.setReadVersion(recordLayerVersion);
-            recordLayer.setWriteVersion(recordLayerVersion);
+            // TODO[dtls13] Ideally, move this into generateServerHello once legacy_record_version clarified
+            {
+                ProtocolVersion recordLayerVersion = state.serverContext.getServerVersion();
+                recordLayer.setReadVersion(recordLayerVersion);
+                recordLayer.setWriteVersion(recordLayerVersion);
+            }
 
             handshake.sendMessage(HandshakeType.server_hello, serverHelloBody);
         }
@@ -336,41 +337,32 @@ public class DTLSServerProtocol
         return buf.toByteArray();
     }
 
-    protected byte[] generateServerHello(ServerHandshakeState state)
+    protected byte[] generateServerHello(ServerHandshakeState state, DTLSRecordLayer recordLayer)
         throws IOException
     {
         SecurityParameters securityParameters = state.serverContext.getSecurityParametersHandshake();
 
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-
         ProtocolVersion server_version = state.server.getServerVersion();
         {
-            if (!server_version.isEqualOrEarlierVersionOf(state.serverContext.getClientVersion()))
+            if (!ProtocolVersion.contains(securityParameters.getClientSupportedVersions(), server_version))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
-    
-            // TODO Read RFCs for guidance on the expected record layer version number
-            // recordStream.setReadVersion(server_version);
-            // recordStream.setWriteVersion(server_version);
-            // recordStream.setRestrictReadVersion(true);
+
+            // TODO[dtls13] Read draft/RFC for guidance on the legacy_record_version field
+//            ProtocolVersion legacy_record_version = server_version.isLaterVersionOf(ProtocolVersion.DTLSv12)
+//                ? ProtocolVersion.DTLSv12
+//                : server_version;
+//
+//            recordLayer.setWriteVersion(legacy_record_version);
             state.serverContext.setServerVersion(server_version);
-    
-            TlsUtils.writeVersion(state.serverContext.getServerVersion(), buf);
         }
 
         securityParameters.serverRandom = TlsProtocol.createRandomBlock(state.server.shouldUseGMTUnixTime(), state.serverContext);
-        if (!state.server.getMaximumVersion().equals(server_version))
+        if (!ProtocolVersion.getLatest(state.server.getSupportedVersions()).equals(server_version))
         {
             TlsUtils.writeDowngradeMarker(server_version, securityParameters.getServerRandom());
         }
-        buf.write(securityParameters.getServerRandom());
-
-        /*
-         * The server may return an empty session_id to indicate that the session will not be cached
-         * and therefore cannot be resumed.
-         */
-        TlsUtils.writeOpaque8(state.tlsSession.getSessionID(), buf);
 
         {
             int selectedCipherSuite = state.server.getSelectedCipherSuite();
@@ -383,12 +375,17 @@ public class DTLSServerProtocol
             }
             securityParameters.cipherSuite = validateSelectedCipherSuite(selectedCipherSuite,
                 AlertDescription.internal_error);
-            TlsUtils.writeUint16(selectedCipherSuite, buf);
         }
 
-        TlsUtils.writeUint8(CompressionMethod._null, buf);
-
         state.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(state.server.getServerExtensions());
+
+        ProtocolVersion legacy_version = server_version;
+        if (server_version.isLaterVersionOf(ProtocolVersion.DTLSv12))
+        {
+            legacy_version = ProtocolVersion.DTLSv12;
+
+            TlsExtensionsUtils.addSupportedVersionsExtensionServer(state.serverExtensions, server_version);
+        }
 
         /*
          * RFC 5746 3.6. Server Behavior: Initial Handshake 
@@ -454,8 +451,6 @@ public class DTLSServerProtocol
             state.expectSessionTicket = !state.resumedSession
                 && TlsUtils.hasExpectedEmptyExtensionData(state.serverExtensions, TlsProtocol.EXT_SessionTicket,
                     AlertDescription.internal_error);
-
-            TlsProtocol.writeExtensions(buf, state.serverExtensions);
         }
 
         securityParameters.prfAlgorithm = TlsProtocol.getPRFAlgorithm(state.serverContext,
@@ -466,6 +461,28 @@ public class DTLSServerProtocol
          * has a verify_data_length equal to 12. This includes all existing cipher suites.
          */
         securityParameters.verifyDataLength = 12;
+
+        applyMaxFragmentLengthExtension(recordLayer, securityParameters.getMaxFragmentLength());
+
+
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+        TlsUtils.writeVersion(legacy_version, buf);
+
+        buf.write(securityParameters.getServerRandom());
+
+        /*
+         * The server may return an empty session_id to indicate that the session will not be cached
+         * and therefore cannot be resumed.
+         */
+        TlsUtils.writeOpaque8(state.tlsSession.getSessionID(), buf);
+
+        TlsUtils.writeUint16(securityParameters.getCipherSuite(), buf);
+
+        TlsUtils.writeUint8(CompressionMethod._null, buf);
+
+        TlsProtocol.writeExtensions(buf, state.serverExtensions);
 
         return buf.toByteArray();
     }
@@ -537,10 +554,6 @@ public class DTLSServerProtocol
 
         // TODO Read RFCs for guidance on the expected record layer version number
         ProtocolVersion client_version = TlsUtils.readVersion(buf);
-        if (!client_version.isDTLS())
-        {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-        }
 
         /*
          * Read the client random
@@ -575,10 +588,6 @@ public class DTLSServerProtocol
         }
 
         short[] offeredCompressionMethods = TlsUtils.readUint8Array(compression_methods_length, buf);
-        if (!Arrays.contains(offeredCompressionMethods, CompressionMethod._null))
-        {
-            throw new TlsFatalAlert(AlertDescription.handshake_failure);
-        }
 
         /*
          * TODO RFC 3546 2.3 If [...] the older session is resumed, then the server MUST ignore
@@ -587,8 +596,46 @@ public class DTLSServerProtocol
          */
         state.clientExtensions = TlsProtocol.readExtensions(buf);
 
+    
+    
         TlsServerContextImpl context = state.serverContext;
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+
+        securityParameters.clientSupportedVersions = TlsExtensionsUtils.getSupportedVersionsExtensionClient(
+            state.clientExtensions);
+        if (null == securityParameters.getClientSupportedVersions())
+        {
+            if (client_version.isLaterVersionOf(ProtocolVersion.DTLSv12))
+            {
+                client_version = ProtocolVersion.DTLSv12;
+            }
+
+            securityParameters.clientSupportedVersions = client_version.downTo(ProtocolVersion.DTLSv10);
+        }
+        else
+        {
+            client_version = ProtocolVersion.getLatest(securityParameters.getClientSupportedVersions());
+        }
+
+        if (!ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(client_version))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        context.setClientVersion(client_version);
+
+        state.server.notifyClientVersion(context.getClientVersion());
+
+        securityParameters.clientRandom = client_random;
+
+        state.server.notifyFallback(Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV));
+
+        state.server.notifyOfferedCipherSuites(state.offeredCipherSuites);
+
+        if (!Arrays.contains(offeredCompressionMethods, CompressionMethod._null))
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
 
         /*
          * TODO[resumption] Check RFC 7627 5.4. for required behaviour 
@@ -603,15 +650,6 @@ public class DTLSServerProtocol
         {
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
-
-        context.setClientVersion(client_version);
-
-        state.server.notifyClientVersion(client_version);
-        state.server.notifyFallback(Arrays.contains(state.offeredCipherSuites, CipherSuite.TLS_FALLBACK_SCSV));
-
-        securityParameters.clientRandom = client_random;
-
-        state.server.notifyOfferedCipherSuites(state.offeredCipherSuites);
 
         /*
          * RFC 5746 3.6. Server Behavior: Initial Handshake

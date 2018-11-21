@@ -69,24 +69,14 @@ class TlsTestServerImpl
         }
     }
 
-    public ProtocolVersion getMaximumVersion()
+    public ProtocolVersion[] getSupportedVersions()
     {
-        if (config.serverMaximumVersion != null)
+        if (config.serverSupportedVersions != null)
         {
-            return config.serverMaximumVersion;
+            return config.serverSupportedVersions;
         }
 
-        return super.getMaximumVersion();
-    }
-
-    public ProtocolVersion getMinimumVersion()
-    {
-        if (config.serverMinimumVersion != null)
-        {
-            return config.serverMinimumVersion;
-        }
-
-        return super.getMinimumVersion();
+        return super.getSupportedVersions();
     }
 
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)

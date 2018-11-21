@@ -88,15 +88,9 @@ class ProvTlsServer
     }
 
     @Override
-    public ProtocolVersion getMaximumVersion()
+    public ProtocolVersion[] getSupportedVersions()
     {
-        return manager.getContext().getMaximumVersion(sslParameters.getProtocols());
-    }
-
-    @Override
-    public ProtocolVersion getMinimumVersion()
-    {
-        return manager.getContext().getMinimumVersion(sslParameters.getProtocols());
+        return manager.getContext().getSupportedVersions(sslParameters.getProtocols());
     }
 
     @Override
@@ -300,25 +294,13 @@ class ProvTlsServer
     @Override
     public ProtocolVersion getServerVersion() throws IOException
     {
-        /*
-         * TODO[jsse] It may be best to just require the "protocols" list to be a contiguous set
-         * (especially in light of TLS_FALLBACK_SCSV), then just determine the minimum/maximum,
-         * and keep the super class implementation of this. 
-         */
-        String[] protocols = sslParameters.getProtocols();
-        if (protocols != null && protocols.length > 0)
-        {
-            for (ProtocolVersion version = context.getClientVersion(); version != null; version = version.getPreviousVersion())
-            {
-                String versionString = manager.getContext().getProtocolString(version);
-                if (versionString != null && JsseUtils.contains(protocols, versionString))
-                {
-                    LOG.fine("Server selected protocol version: " + version);
-                    return version;
-                }
-            }
-        }
-        throw new TlsFatalAlert(AlertDescription.protocol_version);
+        ProtocolVersion serverVersion = super.getServerVersion();
+
+        String protocolString = manager.getContext().getProtocolString(serverVersion);
+
+        LOG.fine("Server selected protocol version: " + protocolString);
+
+        return serverVersion;
     }
 
     @Override
