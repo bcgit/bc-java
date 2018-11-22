@@ -107,6 +107,12 @@ class ProvTlsServer
     }
 
     @Override
+    protected boolean preferLocalCipherSuites()
+    {
+        return sslParameters.getUseCipherSuitesOrder();
+    }
+
+    @Override
     protected boolean selectCipherSuite(int cipherSuite) throws IOException
     {
         if (!selectCredentials(cipherSuite))
