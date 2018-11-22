@@ -15,7 +15,7 @@ import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.jsse.BCStandardConstants;
 
 abstract class JsseUtils_8
-    extends JsseUtils
+    extends JsseUtils_7
 {
     static class ExportSNIMatcher extends SNIMatcher
     {
@@ -159,6 +159,9 @@ abstract class JsseUtils_8
         return new ImportSNIMatcher(matcher);
     }
 
+    /*
+     * NOTE: Currently argument is Object type to isolate callers from JDK8 type
+     */
     static List<BCSNIMatcher> importSNIMatchers(Object getSNIMatchersResult)
     {
         if (getSNIMatchersResult == null)
