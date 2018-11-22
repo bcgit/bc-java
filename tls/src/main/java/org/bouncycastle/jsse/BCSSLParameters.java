@@ -37,6 +37,7 @@ public final class BCSSLParameters
     private boolean needClientAuth;
     private List<BCSNIServerName> serverNames;
     private List<BCSNIMatcher> sniMatchers;
+    private boolean useCipherSuitesOrder;
 
     public BCSSLParameters()
     {
@@ -175,5 +176,15 @@ public final class BCSSLParameters
     public Collection<BCSNIMatcher> getSNIMatchers()
     {
         return copyList(this.sniMatchers);
+    }
+
+    public void setUseCipherSuitesOrder(boolean useCipherSuitesOrder)
+    {
+        this.useCipherSuitesOrder = useCipherSuitesOrder;
+    }
+
+    public boolean getUseCipherSuitesOrder()
+    {
+        return useCipherSuitesOrder;
     }
 }

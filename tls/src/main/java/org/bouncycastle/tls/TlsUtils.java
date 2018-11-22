@@ -3197,6 +3197,35 @@ public class TlsUtils
         return v;
     }
 
+    public static int[] getCommonCipherSuites(int[] peerCipherSuites, int[] localCipherSuites, boolean useLocalOrder)
+    {
+        int[] ordered = peerCipherSuites, unordered = localCipherSuites;
+        if (useLocalOrder)
+        {
+            ordered = localCipherSuites;
+            unordered = peerCipherSuites;
+        }
+
+        int count = 0, limit = Math.min(ordered.length, unordered.length);
+        int[] candidates = new int[limit];
+        for (int i = 0; i < ordered.length; ++i)
+        {
+            int candidate = ordered[i];
+            if (!contains(candidates, 0, count, candidate)
+                && Arrays.contains(unordered, candidate))
+            {
+                candidates[count++] = candidate;
+            }
+        }
+
+        if (count < limit)
+        {
+            candidates = Arrays.copyOf(candidates, count);
+        }
+
+        return candidates;
+    }
+
     public static int[] getSupportedCipherSuites(TlsCrypto crypto, int[] suites)
     {
         int[] supported = new int[suites.length];
@@ -3697,6 +3726,18 @@ public class TlsUtils
 
         return new CertificateRequest(retained, certificateRequest.getSupportedSignatureAlgorithms(),
             certificateRequest.getCertificateAuthorities());
+    }
+
+    static boolean contains(int[] buf, int off, int len, int value)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            if (value == buf[off + i])
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     static boolean containsAll(short[] container, short[] elements)
