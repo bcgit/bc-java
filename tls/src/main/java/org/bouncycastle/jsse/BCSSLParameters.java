@@ -7,6 +7,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
+
 /**
  * A BCJSSE-specific interface providing access to extended SSL parameters in earlier JDKs.
  */
@@ -35,6 +37,8 @@ public final class BCSSLParameters
     private String[] protocols;
     private boolean wantClientAuth;
     private boolean needClientAuth;
+    private String endpointIdentificationAlgorithm;
+    private BCAlgorithmConstraints algorithmConstraints;
     private List<BCSNIServerName> serverNames;
     private List<BCSNIMatcher> sniMatchers;
     private boolean useCipherSuitesOrder;
@@ -118,6 +122,26 @@ public final class BCSSLParameters
     {
         this.needClientAuth = needClientAuth;
         this.wantClientAuth = false;
+    }
+
+    public String getEndpointIdentificationAlgorithm()
+    {
+        return endpointIdentificationAlgorithm;
+    }
+
+    public void setEndpointIdentificationAlgorithm(String endpointIdentificationAlgorithm)
+    {
+        this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
+    }
+
+    public BCAlgorithmConstraints getAlgorithmConstraints()
+    {
+        return algorithmConstraints;
+    }
+
+    public void setAlgorithmConstraints(BCAlgorithmConstraints algorithmConstraints)
+    {
+        this.algorithmConstraints = algorithmConstraints;
     }
 
     public void setServerNames(List<BCSNIServerName> serverNames)
