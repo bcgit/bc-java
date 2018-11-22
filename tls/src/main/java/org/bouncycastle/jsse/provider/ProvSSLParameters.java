@@ -8,7 +8,7 @@ import java.util.List;
 import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
 
-class ProvSSLParameters
+final class ProvSSLParameters
 {
     private static <T> List<T> copyList(Collection<T> list)
     {
@@ -147,9 +147,9 @@ class ProvSSLParameters
         return useCipherSuitesOrder;
     }
 
-    public void setUseCipherSuitesOrder(boolean honorOrder)
+    public void setUseCipherSuitesOrder(boolean useCipherSuitesOrder)
     {
-        this.useCipherSuitesOrder = honorOrder;
+        this.useCipherSuitesOrder = useCipherSuitesOrder;
     }
 
     public List<BCSNIServerName> getServerNames()
