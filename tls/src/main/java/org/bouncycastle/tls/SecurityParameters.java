@@ -41,6 +41,11 @@ public class SecurityParameters
 
     void clear()
     {
+        sessionHash = null;
+        clientSigAlgs = null;
+        clientSigAlgsCert = null;
+        clientSupportedGroups = null;
+
         if (this.masterSecret != null)
         {
             this.masterSecret.destroy();
