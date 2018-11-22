@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
+import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 
 final class ProvSSLParameters
 {
@@ -29,7 +30,7 @@ final class ProvSSLParameters
     private String[] protocols;
     private boolean needClientAuth = false;
     private boolean wantClientAuth = false;
-    private Object algorithmConstraints;      // object not introduced till 1.6
+    private BCAlgorithmConstraints algorithmConstraints;
     private String endpointIdentificationAlgorithm;
     private boolean useCipherSuitesOrder;
     private List<BCSNIMatcher> sniMatchers;
@@ -122,12 +123,12 @@ final class ProvSSLParameters
         this.wantClientAuth = wantClientAuth;
     }
 
-    public Object getAlgorithmConstraints()
+    public BCAlgorithmConstraints getAlgorithmConstraints()
     {
         return algorithmConstraints;
     }
 
-    public void setAlgorithmConstraints(Object algorithmConstraints)
+    public void setAlgorithmConstraints(BCAlgorithmConstraints algorithmConstraints)
     {
         this.algorithmConstraints = algorithmConstraints;
     }

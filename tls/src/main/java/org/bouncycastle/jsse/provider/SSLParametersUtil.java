@@ -11,6 +11,7 @@ import javax.net.ssl.SSLParameters;
 import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.jsse.BCSSLParameters;
+import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 
 abstract class SSLParametersUtil
 {
@@ -165,9 +166,11 @@ abstract class SSLParametersUtil
             ssl.setWantClientAuth(false);
         }
 
+        ssl.setAlgorithmConstraints(prov.getAlgorithmConstraints());
+        ssl.setEndpointIdentificationAlgorithm(prov.getEndpointIdentificationAlgorithm());
+        ssl.setUseCipherSuitesOrder(prov.getUseCipherSuitesOrder());
         ssl.setServerNames(prov.getServerNames());
         ssl.setSNIMatchers(prov.getSNIMatchers());
-        ssl.setUseCipherSuitesOrder(prov.getUseCipherSuitesOrder());
         ssl.setApplicationProtocols(prov.getApplicationProtocols());
 
         return ssl;
@@ -193,36 +196,37 @@ abstract class SSLParametersUtil
 
         // From JDK 1.7
 
-        if (setAlgorithmConstraints != null)
+        if (null != setAlgorithmConstraints)
         {
-            invokeSetterPrivileged(ssl, setAlgorithmConstraints, prov.getAlgorithmConstraints());
+            invokeSetterPrivileged(ssl, setAlgorithmConstraints,
+                JsseUtils_7.exportAlgorithmConstraints(prov.getAlgorithmConstraints()));
         }
 
-        if (setEndpointIdentificationAlgorithm != null)
+        if (null != setEndpointIdentificationAlgorithm)
         {
             invokeSetterPrivileged(ssl, setEndpointIdentificationAlgorithm, prov.getEndpointIdentificationAlgorithm());
         }
 
         // From JDK 1.8
 
-        if (setUseCipherSuitesOrder != null)
+        if (null != setUseCipherSuitesOrder)
         {
             invokeSetterPrivileged(ssl, setUseCipherSuitesOrder, prov.getUseCipherSuitesOrder());
         }
 
-        if (setServerNames != null)
+        if (null != setServerNames)
         {
             invokeSetterPrivileged(ssl, setServerNames, JsseUtils_8.exportSNIServerNames(prov.getServerNames()));
         }
 
-        if (setSNIMatchers != null)
+        if (null != setSNIMatchers)
         {
             invokeSetterPrivileged(ssl, setSNIMatchers, JsseUtils_8.exportSNIMatchers(prov.getSNIMatchers()));
         }
 
         // From JDK 9
 
-        if (setApplicationProtocols != null)
+        if (null != setApplicationProtocols)
         {
             invokeSetterPrivileged(ssl, setApplicationProtocols, prov.getApplicationProtocols());
         }
@@ -233,13 +237,13 @@ abstract class SSLParametersUtil
     static void setParameters(ProvSSLParameters prov, BCSSLParameters ssl)
     {
         String[] cipherSuites = ssl.getCipherSuites();
-        if (cipherSuites != null)
+        if (null != cipherSuites)
         {
             prov.setCipherSuites(cipherSuites);
         }
 
         String[] protocols = ssl.getProtocols();
-        if (protocols != null)
+        if (null != protocols)
         {
             prov.setProtocols(protocols);
         }
@@ -258,32 +262,49 @@ abstract class SSLParametersUtil
             prov.setWantClientAuth(false);
         }
 
+        BCAlgorithmConstraints algorithmConstraints = ssl.getAlgorithmConstraints();
+        if (null != algorithmConstraints)
+        {
+            prov.setAlgorithmConstraints(algorithmConstraints);
+        }
+
+        String endpointIdentificationAlgorithm = ssl.getEndpointIdentificationAlgorithm();
+        if (null != endpointIdentificationAlgorithm)
+        {
+            prov.setEndpointIdentificationAlgorithm(endpointIdentificationAlgorithm);
+        }
+
+        prov.setUseCipherSuitesOrder(ssl.getUseCipherSuitesOrder());
+
         List<BCSNIServerName> serverNames = ssl.getServerNames();
-        if (serverNames != null)
+        if (null != serverNames)
         {
             prov.setServerNames(serverNames);
         }
 
         Collection<BCSNIMatcher> sniMatchers = ssl.getSNIMatchers();
-        if (sniMatchers != null)
+        if (null != sniMatchers)
         {
             prov.setSNIMatchers(sniMatchers);
         }
 
-        prov.setUseCipherSuitesOrder(ssl.getUseCipherSuitesOrder());
-        prov.setApplicationProtocols(ssl.getApplicationProtocols());
+        String[] applicationProtocols = ssl.getApplicationProtocols();
+        if (null != applicationProtocols)
+        {
+            prov.setApplicationProtocols(applicationProtocols);
+        }
     }
 
     static void setSSLParameters(ProvSSLParameters prov, SSLParameters ssl)
     {
         String[] cipherSuites = ssl.getCipherSuites();
-        if (cipherSuites != null)
+        if (null != cipherSuites)
         {
             prov.setCipherSuites(cipherSuites);
         }
 
         String[] protocols = ssl.getProtocols();
-        if (protocols != null)
+        if (null != protocols)
         {
             prov.setProtocols(protocols);
         }
@@ -304,46 +325,58 @@ abstract class SSLParametersUtil
 
         // From JDK 1.7
 
-        if (getAlgorithmConstraints != null)
+        if (null != getAlgorithmConstraints)
         {
-            prov.setAlgorithmConstraints(invokeGetterPrivileged(ssl, getAlgorithmConstraints));
+            Object getAlgorithmConstraintsResult = invokeGetterPrivileged(ssl, getAlgorithmConstraints);
+            if (null != getAlgorithmConstraintsResult)
+            {
+                prov.setAlgorithmConstraints(JsseUtils_7.importAlgorithmConstraints(getAlgorithmConstraintsResult));
+            }
         }
 
-        if (getEndpointIdentificationAlgorithm != null)
+        if (null != getEndpointIdentificationAlgorithm)
         {
-            prov.setEndpointIdentificationAlgorithm((String)invokeGetterPrivileged(ssl, getEndpointIdentificationAlgorithm));
+            String endpointIdentificationAlgorithm = (String)invokeGetterPrivileged(ssl, getEndpointIdentificationAlgorithm);
+            if (null != endpointIdentificationAlgorithm)
+            {
+                prov.setEndpointIdentificationAlgorithm(endpointIdentificationAlgorithm);
+            }
         }
 
         // From JDK 1.8
 
-        if (getUseCipherSuitesOrder != null)
+        if (null != getUseCipherSuitesOrder)
         {
             prov.setUseCipherSuitesOrder((Boolean)invokeGetterPrivileged(ssl, getUseCipherSuitesOrder));
         }
 
-        if (getServerNames != null)
+        if (null != getServerNames)
         {
-            Object serverNames = invokeGetterPrivileged(ssl, getServerNames);
-            if (serverNames != null)
+            Object getServerNamesResult = invokeGetterPrivileged(ssl, getServerNames);
+            if (null != getServerNamesResult)
             {
-                prov.setServerNames(JsseUtils_8.importSNIServerNames(serverNames));
+                prov.setServerNames(JsseUtils_8.importSNIServerNames(getServerNamesResult));
             }
         }
 
-        if (getSNIMatchers != null)
+        if (null != getSNIMatchers)
         {
-            Object sniMatchers = invokeGetterPrivileged(ssl, getSNIMatchers);
-            if (sniMatchers != null)
+            Object getSNIMatchersResult = invokeGetterPrivileged(ssl, getSNIMatchers);
+            if (null != getSNIMatchersResult)
             {
-                prov.setSNIMatchers(JsseUtils_8.importSNIMatchers(sniMatchers));
+                prov.setSNIMatchers(JsseUtils_8.importSNIMatchers(getSNIMatchersResult));
             }
         }
 
         // From JDK 9
 
-        if (getApplicationProtocols != null)
+        if (null != getApplicationProtocols)
         {
-            prov.setApplicationProtocols((String[])invokeGetterPrivileged(ssl, getApplicationProtocols));
+            String[] getApplicationProtocolsResult = (String[])invokeGetterPrivileged(ssl, getApplicationProtocols);
+            if (null != getApplicationProtocols)
+            {
+                prov.setApplicationProtocols(getApplicationProtocolsResult);
+            }
         }
     }
 }
