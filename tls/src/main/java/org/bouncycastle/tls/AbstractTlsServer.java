@@ -7,7 +7,6 @@ import java.util.Vector;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
-import org.bouncycastle.util.Arrays;
 
 /**
  * Base class for a TLS client.
@@ -104,11 +103,15 @@ public abstract class AbstractTlsServer
 
     protected boolean isSelectableCipherSuite(int cipherSuite, int availCurveBits, int availFiniteFieldBits, Vector sigAlgs)
     {
-        return Arrays.contains(this.offeredCipherSuites, cipherSuite)
-            && TlsUtils.isValidCipherSuiteForVersion(cipherSuite, context.getServerVersion())
+        return TlsUtils.isValidCipherSuiteForVersion(cipherSuite, context.getServerVersion())
             && availCurveBits >= TlsECCUtils.getMinimumCurveBits(cipherSuite)
             && availFiniteFieldBits >= TlsDHUtils.getMinimumFiniteFieldBits(cipherSuite)
             && TlsUtils.isValidCipherSuiteForSignatureAlgorithms(cipherSuite, sigAlgs);
+    }
+
+    protected boolean preferLocalCipherSuites()
+    {
+        return false;
     }
 
     protected boolean selectCipherSuite(int cipherSuite) throws IOException
@@ -321,7 +324,9 @@ public abstract class AbstractTlsServer
         int availCurveBits = getMaximumNegotiableCurveBits();
         int availFiniteFieldBits = getMaximumNegotiableFiniteFieldBits();
 
-        int[] cipherSuites = getCipherSuites();
+        int[] cipherSuites = TlsUtils.getCommonCipherSuites(offeredCipherSuites, getCipherSuites(),
+            preferLocalCipherSuites());
+
         for (int i = 0; i < cipherSuites.length; ++i)
         {
             int cipherSuite = cipherSuites[i];

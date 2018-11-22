@@ -167,6 +167,7 @@ abstract class SSLParametersUtil
 
         ssl.setServerNames(prov.getServerNames());
         ssl.setSNIMatchers(prov.getSNIMatchers());
+        ssl.setUseCipherSuitesOrder(prov.getUseCipherSuitesOrder());
         ssl.setApplicationProtocols(prov.getApplicationProtocols());
 
         return ssl;
@@ -269,6 +270,7 @@ abstract class SSLParametersUtil
             prov.setSNIMatchers(sniMatchers);
         }
 
+        prov.setUseCipherSuitesOrder(ssl.getUseCipherSuitesOrder());
         prov.setApplicationProtocols(ssl.getApplicationProtocols());
     }
 
