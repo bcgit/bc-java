@@ -344,7 +344,7 @@ public class X509RevocationChecker
         }
 
         PKIXParameters baseParams;
-        List<X500Principal> issuerList = new ArrayList<>();
+        List<X500Principal> issuerList = new ArrayList<X500Principal>();
 
         try
         {
