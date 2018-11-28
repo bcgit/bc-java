@@ -12,6 +12,7 @@ import java.util.Date;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.CRLReason;
@@ -100,7 +101,7 @@ public class TestUtil
         return cert;
     }
 
-    public static X509Certificate makeEeCertificate(X509Certificate issuer, PrivateKey issuerKey, PublicKey subjectKey, String subject)
+    public static X509Certificate makeEeCertificate(boolean withDistPoint, X509Certificate issuer, PrivateKey issuerKey, PublicKey subjectKey, String subject)
         throws GeneralSecurityException, IOException, OperatorCreationException
     {
         X509v3CertificateBuilder v3CertGen = new JcaX509v3CertificateBuilder(
@@ -127,6 +128,14 @@ public class TestUtil
             Extension.basicConstraints,
             false,
             new BasicConstraints(false));
+
+        if (withDistPoint)
+        {
+            v3CertGen.addExtension(
+                Extension.cRLDistributionPoints,
+                false,
+                new DERSequence());
+        }
 
         JcaContentSignerBuilder contentSignerBuilder = new JcaContentSignerBuilder("SHA256WithRSA").setProvider("BC");
 

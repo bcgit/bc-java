@@ -248,6 +248,7 @@ public class RevocationTest
     static X509Certificate trustCert;
     static X509Certificate caCert;
     static X509Certificate eeCert;
+    static X509Certificate eeCertWithDistPoint;
 
     static X509CRL trustCrl;
     static X509CRL caCrl;
@@ -269,7 +270,8 @@ public class RevocationTest
             // initialise CertStore
             trustCert = TestUtil.makeTrustAnchor(trustKp, "CN=Trust Anchor");
             caCert = TestUtil.makeCaCertificate(trustCert, trustKp.getPrivate(), caKp.getPublic(), "CN=CA Cert");
-            eeCert = TestUtil.makeEeCertificate(caCert, caKp.getPrivate(), eeKp.getPublic(), "CN=End Entity");
+            eeCert = TestUtil.makeEeCertificate(false, caCert, caKp.getPrivate(), eeKp.getPublic(), "CN=End Entity");
+            eeCertWithDistPoint = TestUtil.makeEeCertificate(true, caCert, caKp.getPrivate(), eeKp.getPublic(), "CN=End Entity");
             trustCrl = TestUtil.makeCrl(trustCert, trustKp.getPrivate(), BigInteger.valueOf(100));
             caCrl = TestUtil.makeCrl(caCert, caKp.getPrivate(), BigInteger.valueOf(100));
 
@@ -420,6 +422,59 @@ public class RevocationTest
         {
             assertTrue(e.getMessage().startsWith("certificate [issuer=\"CN=CA Cert\",serialNumber=3,subject=\"CN=End Entity\"] revoked"));
             assertTrue(e.getMessage().endsWith(", reason: privilegeWithdrawn"));
+        }
+    }
+
+    public void testRevokedEndEntityWithSoftFailure()
+        throws Exception
+    {
+        List list = new ArrayList();
+
+        list.add(caCert);
+        list.add(eeCert);
+
+        CollectionCertStoreParameters ccsp = new CollectionCertStoreParameters(list);
+        CertStore store = CertStore.getInstance("Collection", ccsp, "BC");
+        Date validDate = new Date(trustCrl.getThisUpdate().getTime() + 60 * 60 * 1000);
+        //validating path
+        List certchain = new ArrayList();
+        certchain.add(eeCertWithDistPoint);
+        certchain.add(caCert);
+
+        CertPath cp = CertificateFactory.getInstance("X.509", "BC").generateCertPath(certchain);
+        Set trust = new HashSet();
+        trust.add(new TrustAnchor(trustCert, null));
+
+        List<CRL> crls = new ArrayList<CRL>();
+        crls.add(TestUtil.makeCrl(caCert, caKp.getPrivate(), eeCert.getSerialNumber()));
+
+        X509RevocationChecker revocationChecker = new X509RevocationChecker
+            .Builder(new TrustAnchor(trustCert, null))
+            .setCheckEndEntityOnly(true)
+            .setSoftFailHardLimit(true, 0)
+            .build();
+
+        CertPathValidator cpv = CertPathValidator.getInstance("PKIX", "BC");
+        PKIXParameters param = new PKIXParameters(trust);
+        param.addCertStore(store);
+        param.setDate(validDate);
+        param.setRevocationEnabled(false);
+
+        param.addCertPathChecker(revocationChecker);
+
+        PKIXCertPathValidatorResult result =
+                (PKIXCertPathValidatorResult)cpv.validate(cp, param);
+
+        // should fail on the second attempt.
+        try
+        {
+            result =
+                (PKIXCertPathValidatorResult)cpv.validate(cp, param);
+            fail("no exception");
+        }
+        catch (CertPathValidatorException e)
+        {
+            assertTrue(e.getMessage().equals("No CRLs found for issuer \"cn=CA Cert\""));
         }
     }
 
