@@ -1,6 +1,8 @@
 package org.bouncycastle.pkix.jcajce;
 
 import java.io.BufferedInputStream;
+import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -25,12 +27,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -179,7 +183,8 @@ public class X509RevocationChecker
          * it represents the acceptable downtime for any responders or distribution points we
          * are trying to connect to, with downtime measured from the first failure. Initially
          * failures will log at Level.WARNING, once maxTime is exceeded any failures will be
-         * logged as Level.SEVERE.
+         * logged as Level.SEVERE. Setting maxTime to zero will mean 1 failure will be allowed
+         * before failures are logged as severe.
          *
          * @param isTrue true soft failure should be enabled, false otherwise.
          * @param maxTime the time that can pass between the first failure and the most recent.
@@ -199,7 +204,8 @@ public class X509RevocationChecker
          * greater than zero it represents the acceptable downtime for any responders or
          * distribution points we are trying to connect to, with downtime measured from the
          * first failure. Initially failures will log at Level.WARNING, once 75% of maxTime is exceeded
-         * any failures will be logged as Level.SEVERE. At maxTime any failures will be treated as hard.
+         * any failures will be logged as Level.SEVERE. At maxTime any failures will be treated as hard,
+         * setting maxTime to zero will mean 1 failure will be allowed.
          *
          * @param isTrue true soft failure should be enabled, false otherwise.
          * @param maxTime the time that can pass between the first failure and the most recent.
@@ -253,11 +259,16 @@ public class X509RevocationChecker
 
     private static Logger LOG = Logger.getLogger(X509RevocationChecker.class.getName());
 
+    private final Map<X500Principal, Long> failures = new HashMap<X500Principal, Long>();
+    private final Map<GeneralName, WeakReference<X509CRL>> crlCache = new WeakHashMap<GeneralName, WeakReference<X509CRL>>();
     private final Set<TrustAnchor> trustAnchors;
     private final boolean isCheckEEOnly;
     private final List<Store<CRL>> crls;
     private final List<CertStore> crlCertStores;
     private final PKIXJcaJceHelper helper;
+    private final boolean canSoftFail;
+    private final long failLogMaxTime;
+    private final long failHardMaxTime;
 
     private X500Principal workingIssuerName;
     private PublicKey workingPublicKey;
@@ -269,6 +280,10 @@ public class X509RevocationChecker
         this.crlCertStores = new ArrayList<CertStore>(bldr.crlCertStores);
         this.isCheckEEOnly = bldr.isCheckEEOnly;
         this.trustAnchors = bldr.trustAnchors;
+        this.canSoftFail = bldr.canSoftFail;
+        this.failLogMaxTime = bldr.failLogMaxTime;
+        this.failHardMaxTime = bldr.failHardMaxTime;
+
         if (bldr.provider != null)
         {
             this.helper = new PKIXProviderJcaJceHelper(bldr.provider);
@@ -351,10 +366,14 @@ public class X509RevocationChecker
             baseParams = new PKIXParameters(trustAnchors);
 
             baseParams.setRevocationEnabled(false);
-
+            baseParams.setDate(new Date());
+            
             for (int i = 0; i != crlCertStores.size(); i++)
             {
-                addIssuers(issuerList, crlCertStores.get(i));
+                if (LOG.isLoggable(Level.FINE))
+                {
+                    addIssuers(issuerList, crlCertStores.get(i));
+                }
                 baseParams.addCertStore(crlCertStores.get(i));
             }
         }
@@ -367,7 +386,10 @@ public class X509RevocationChecker
 
         for (int i = 0; i != crls.size(); i++)
         {
-            addIssuers(issuerList, crls.get(i));
+            if (LOG.isLoggable(Level.FINE))
+            {
+                addIssuers(issuerList, crls.get(i));
+            }
             pkixParamsBldr.addCRLStore(new LocalCRLStore(crls.get(i)));
         }
 
@@ -377,9 +399,12 @@ public class X509RevocationChecker
         }
         else
         {
-            for (int i = 0; i != issuerList.size(); i++)
+            if (LOG.isLoggable(Level.FINE))
             {
-                LOG.log(Level.INFO, "configuring with CRL for issuer \"" + issuerList.get(i) + "\"");
+                for (int i = 0; i != issuerList.size(); i++)
+                {
+                    LOG.log(Level.INFO, "configuring with CRL for issuer \"" + issuerList.get(i) + "\"");
+                }
             }
         }
         
@@ -398,14 +423,13 @@ public class X509RevocationChecker
                 CRL crl = null;
                 try
                 {
-                    crl = downloadCRLs(cert.getIssuerX500Principal(), RevocationUtilities.getExtensionValue(cert, Extension.cRLDistributionPoints), helper);
+                    crl = downloadCRLs(cert.getIssuerX500Principal(), baseParams.getDate(), RevocationUtilities.getExtensionValue(cert, Extension.cRLDistributionPoints), helper);
                 }
                 catch(AnnotatedException e1)
                 {
                     throw new CertPathValidatorException(e.getMessage(), e.getCause());
                 }
-                
-                // TODO: we should cache these
+
                 if (crl != null)
                 {
                     try
@@ -421,8 +445,36 @@ public class X509RevocationChecker
                 }
                 else
                 {
-                    // TODO: can't find anything add soft fail check here
-                    throw e;
+                    if (canSoftFail)
+                    {
+                        X500Principal issuer = cert.getIssuerX500Principal();
+
+                        Long initial = failures.get(issuer);
+                        if (initial != null)
+                        {
+                             long period = System.currentTimeMillis() - initial.longValue();
+                             if (failHardMaxTime != -1 && failHardMaxTime < period)
+                             {
+                                 throw e;
+                             }
+                             if (period < failLogMaxTime)
+                             {
+                                 LOG.log(Level.WARNING, "soft failing for issuer: \"" + issuer + "\"");
+                             }
+                             else
+                             {
+                                 LOG.log(Level.SEVERE, "soft failing for issuer: \"" + issuer + "\"");
+                             }
+                        }
+                        else
+                        {
+                            failures.put(issuer, System.currentTimeMillis());
+                        }
+                    }
+                    else
+                    {
+                        throw e;
+                    }
                 }
             }
             else
@@ -478,7 +530,7 @@ public class X509RevocationChecker
         });
     }
 
-    private CRL downloadCRLs(X500Principal issuer, ASN1Primitive crlDpPrimitive, JcaJceHelper helper)
+    private CRL downloadCRLs(X500Principal issuer, Date currentDate, ASN1Primitive crlDpPrimitive, JcaJceHelper helper)
     {
         CRLDistPoint crlDp = CRLDistPoint.getInstance(crlDpPrimitive);
         DistributionPoint[] points = crlDp.getDistributionPoints();
@@ -497,6 +549,21 @@ public class X509RevocationChecker
                     GeneralName name = names[n];
                     if (name.getTagNo() == GeneralName.uniformResourceIdentifier)
                     {
+                        X509CRL crl;
+
+                        WeakReference<X509CRL> crlRef = crlCache.get(name);
+                        if (crlRef != null)
+                        {
+                            crl = crlRef.get();
+                            if (crl != null
+                                && !currentDate.before(crl.getThisUpdate())
+                                && !currentDate.after(crl.getNextUpdate()))
+                            {
+                                return crl;
+                            }
+                            crlCache.remove(name); // delete expired/out-of-range entry
+                        }
+
                         URL url = null;
                         try
                         {
@@ -504,9 +571,15 @@ public class X509RevocationChecker
             
                             CertificateFactory certFact = helper.createCertificateFactory("X.509");
 
-                            CRL crl = certFact.generateCRL(new BufferedInputStream(url.openStream()));
+                            InputStream urlStream = url.openStream();
+
+                            crl = (X509CRL)certFact.generateCRL(new BufferedInputStream(urlStream));
+
+                            urlStream.close();
 
                             LOG.log(Level.INFO, "downloaded CRL from CrlDP " + url + " for issuer \"" + issuer + "\"");
+
+                            crlCache.put(name, new WeakReference<X509CRL>(crl));
 
                             return crl;
                         }
@@ -543,52 +616,52 @@ public class X509RevocationChecker
         "aACompromise"};
 
     static List<PKIXCRLStore> getAdditionalStoresFromCRLDistributionPoint(CRLDistPoint crldp, Map<GeneralName, PKIXCRLStore> namedCRLStoreMap)
-            throws AnnotatedException
+        throws AnnotatedException
+    {
+        if (crldp != null)
         {
-            if (crldp != null)
+            DistributionPoint dps[] = null;
+            try
             {
-                DistributionPoint dps[] = null;
-                try
-                {
-                    dps = crldp.getDistributionPoints();
-                }
-                catch (Exception e)
-                {
-                    throw new AnnotatedException(
-                        "could not read distribution points could not be read", e);
-                }
-                List<PKIXCRLStore> stores = new ArrayList<PKIXCRLStore>();
+                dps = crldp.getDistributionPoints();
+            }
+            catch (Exception e)
+            {
+                throw new AnnotatedException(
+                    "could not read distribution points could not be read", e);
+            }
+            List<PKIXCRLStore> stores = new ArrayList<PKIXCRLStore>();
 
-                for (int i = 0; i < dps.length; i++)
+            for (int i = 0; i < dps.length; i++)
+            {
+                DistributionPointName dpn = dps[i].getDistributionPoint();
+                // look for URIs in fullName
+                if (dpn != null)
                 {
-                    DistributionPointName dpn = dps[i].getDistributionPoint();
-                    // look for URIs in fullName
-                    if (dpn != null)
+                    if (dpn.getType() == DistributionPointName.FULL_NAME)
                     {
-                        if (dpn.getType() == DistributionPointName.FULL_NAME)
-                        {
-                            GeneralName[] genNames = GeneralNames.getInstance(
-                                dpn.getName()).getNames();
+                        GeneralName[] genNames = GeneralNames.getInstance(
+                            dpn.getName()).getNames();
 
-                            for (int j = 0; j < genNames.length; j++)
+                        for (int j = 0; j < genNames.length; j++)
+                        {
+                            PKIXCRLStore store = namedCRLStoreMap.get(genNames[j]);
+                            if (store != null)
                             {
-                                PKIXCRLStore store = namedCRLStoreMap.get(genNames[j]);
-                                if (store != null)
-                                {
-                                    stores.add(store);
-                                }
+                                stores.add(store);
                             }
                         }
                     }
                 }
+            }
 
-                return stores;
-            }
-            else
-            {
-                return Collections.EMPTY_LIST;
-            }
+            return stores;
         }
+        else
+        {
+            return Collections.EMPTY_LIST;
+        }
+    }
 
 
     /**
