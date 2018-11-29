@@ -258,9 +258,10 @@ public class X509RevocationChecker
     }
 
     private static Logger LOG = Logger.getLogger(X509RevocationChecker.class.getName());
+    private static final Map<GeneralName, WeakReference<X509CRL>> crlCache = Collections.synchronizedMap(
+                                                        new WeakHashMap<GeneralName, WeakReference<X509CRL>>());
 
     private final Map<X500Principal, Long> failures = new HashMap<X500Principal, Long>();
-    private final Map<GeneralName, WeakReference<X509CRL>> crlCache = new WeakHashMap<GeneralName, WeakReference<X509CRL>>();
     private final Set<TrustAnchor> trustAnchors;
     private final boolean isCheckEEOnly;
     private final List<Store<CRL>> crls;
@@ -410,7 +411,7 @@ public class X509RevocationChecker
         
         try
         {
-            checkCRLs(pkixParamsBldr.build(), cert, new Date(), signingCert, workingPublicKey, new ArrayList(), helper);
+            checkCRLs(pkixParamsBldr.build(), cert, baseParams.getDate(), signingCert, workingPublicKey, new ArrayList(), helper);
         }
         catch (AnnotatedException e)
         {
