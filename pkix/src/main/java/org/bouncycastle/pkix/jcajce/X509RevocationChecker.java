@@ -371,7 +371,7 @@ public class X509RevocationChecker
             
             for (int i = 0; i != crlCertStores.size(); i++)
             {
-                if (LOG.isLoggable(Level.FINE))
+                if (LOG.isLoggable(Level.INFO))
                 {
                     addIssuers(issuerList, crlCertStores.get(i));
                 }
@@ -387,7 +387,7 @@ public class X509RevocationChecker
 
         for (int i = 0; i != crls.size(); i++)
         {
-            if (LOG.isLoggable(Level.FINE))
+            if (LOG.isLoggable(Level.INFO))
             {
                 addIssuers(issuerList, crls.get(i));
             }
@@ -404,8 +404,12 @@ public class X509RevocationChecker
             {
                 for (int i = 0; i != issuerList.size(); i++)
                 {
-                    LOG.log(Level.INFO, "configuring with CRL for issuer \"" + issuerList.get(i) + "\"");
+                    LOG.log(Level.FINE, "configuring with CRL for issuer \"" + issuerList.get(i) + "\"");
                 }
+            }
+            else
+            {
+                LOG.log(Level.INFO, "configured with " + issuerList.size() + " pre-loaded CRLs");
             }
         }
         
