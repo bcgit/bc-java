@@ -31,11 +31,12 @@ public class ArchiveTimeStampVerifier
     public void validate(final Object data,
                          final Date prevGenTime,
                          final Date prevExpTime,
-                         final AlgorithmIdentifier algId)
+                         AlgorithmIdentifier algId)
         throws ArchiveTimeStampValidationException, NoSuchAlgorithmException, IOException, TSPException,
                PartialHashTreeVerificationException, CertificateException, OperatorCreationException
     {
-        final MessageDigest messageDigest = MessageDigest.getInstance(algId.getAlgorithm().getId());
+        final AlgorithmIdentifier algorithmIdentifier = archiveTimeStamp.getAlgorithmIdentifier();
+        final MessageDigest messageDigest = MessageDigest.getInstance(algorithmIdentifier.getAlgorithm().getId());
         final TimeStampToken timeStampToken = new TimeStampToken(archiveTimeStamp.getTimeStamp());
 
         containsObjectHashValue(data, messageDigest);

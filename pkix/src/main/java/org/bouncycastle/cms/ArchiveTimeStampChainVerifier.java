@@ -69,7 +69,7 @@ public class ArchiveTimeStampChainVerifier
             }
             else
             {
-                archiveTimeStampVerifier.validate(data, prevGenTime, prevExpTime, algorithmIdentifier);
+                archiveTimeStampVerifier.validate(data, prevGenTime, prevExpTime, this.algorithmIdentifier);
             }
 
             data = ats.getTimeStamp().getEncoded("DER");
