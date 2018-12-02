@@ -20,9 +20,11 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.spec.ECGenParameterSpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -205,7 +207,7 @@ public class BCFKSStoreTest
         }
         catch (IOException e)
         {
-            isTrue("wrong message", "BCFKS KeyStore corrupted: MAC calculation failed.".equals(e.getMessage()));
+            isTrue("wrong message", "BCFKS KeyStore corrupted: MAC calculation failed".equals(e.getMessage()));
         }
 
         isTrue("", 0 == store.size());
@@ -219,6 +221,224 @@ public class BCFKSStoreTest
 
         checkOneCertificate(cert, null);
         checkOneCertificate(cert, testPassword);
+    }
+
+    public void shouldStoreOneCertificateWithECDSASignature()
+        throws Exception
+    {
+        KeyPairGenerator kpG = KeyPairGenerator.getInstance("EC", "BC");
+
+        kpG.initialize(new ECGenParameterSpec("P-256"));
+
+        KeyPair kp = kpG.generateKeyPair();
+
+        X509Certificate cert = (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(new ByteArrayInputStream(trustedCertData));
+
+        KeyStore store1 = KeyStore.getInstance("BCFKS", "BC");
+
+        store1.load(null, null);
+
+        store1.setCertificateEntry("cert", cert);
+
+        isTrue("", 1 == store1.size());
+        Enumeration<String> en1 = store1.aliases();
+
+        isTrue("", "cert".equals(en1.nextElement()));
+        isTrue("", !en1.hasMoreElements());
+
+        certStorageCheck(store1, "cert", cert);
+
+        Date entryDate = store1.getCreationDate("cert");
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        BCFKSLoadStoreParameter storeParameter = new BCFKSLoadStoreParameter.Builder(bOut, kp.getPrivate())
+            .withStoreSignatureAlgorithm(BCFKSLoadStoreParameter.SignatureAlgorithm.SHA512withECDSA)
+            .build();
+
+        store1.store(storeParameter);
+
+        KeyStore store2 = KeyStore.getInstance("BCFKS", "BC");
+
+        BCFKSLoadStoreParameter loadParameter = new BCFKSLoadStoreParameter.Builder(
+                new ByteArrayInputStream(bOut.toByteArray()), kp.getPublic())
+            .withStoreSignatureAlgorithm(BCFKSLoadStoreParameter.SignatureAlgorithm.SHA512withECDSA)
+            .build();
+
+        store2.load(loadParameter);
+    }
+
+    public void shouldStoreOneCertificateWithECDSASignatureAndCertificates()
+        throws Exception
+    {
+        KeyPairGenerator kpG = KeyPairGenerator.getInstance("EC", "BC");
+
+        kpG.initialize(new ECGenParameterSpec("P-256"));
+
+        KeyPair kp = kpG.generateKeyPair();
+
+        X509Certificate cert = (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(new ByteArrayInputStream(trustedCertData));
+
+        KeyStore store1 = KeyStore.getInstance("BCFKS", "BC");
+
+        store1.load(null, null);
+
+        store1.setCertificateEntry("cert", cert);
+
+        isTrue("", 1 == store1.size());
+        Enumeration<String> en1 = store1.aliases();
+
+        isTrue("", "cert".equals(en1.nextElement()));
+        isTrue("", !en1.hasMoreElements());
+
+        certStorageCheck(store1, "cert", cert);
+
+        Date entryDate = store1.getCreationDate("cert");
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        X509Certificate selfSignedCert = TestUtils.createSelfSignedCert("CN=ECDSA", "SHA256withECDSA", kp);
+        BCFKSLoadStoreParameter storeParameter = new BCFKSLoadStoreParameter.Builder(bOut, kp.getPrivate())
+            .withStoreSignatureAlgorithm(BCFKSLoadStoreParameter.SignatureAlgorithm.SHA512withECDSA)
+            .withCertificates(
+                new X509Certificate[] {selfSignedCert})
+            .build();
+
+        store1.store(storeParameter);
+
+        KeyStore store2 = KeyStore.getInstance("BCFKS", "BC");
+
+        final AtomicBoolean isCalled = new AtomicBoolean(false);
+
+        BCFKSLoadStoreParameter loadParameter = new BCFKSLoadStoreParameter.Builder(
+            new ByteArrayInputStream(bOut.toByteArray()), new BCFKSLoadStoreParameter.CertChainValidator()
+            {
+                public boolean isValid(X509Certificate[] chain)
+                {
+                    isEquals(selfSignedCert, chain[0]);
+                    isCalled.set(true);
+                    return true;
+                }
+            })
+            .withStoreSignatureAlgorithm(BCFKSLoadStoreParameter.SignatureAlgorithm.SHA512withECDSA)
+            .build();
+
+        store2.load(loadParameter);
+
+        isTrue(isCalled.get());
+        
+        loadParameter = new BCFKSLoadStoreParameter.Builder(
+            new ByteArrayInputStream(bOut.toByteArray()), new BCFKSLoadStoreParameter.CertChainValidator()
+            {
+                public boolean isValid(X509Certificate[] chain)
+                {
+                    isEquals(selfSignedCert, chain[0]);
+
+                    return false;
+                }
+            })
+            .withStoreSignatureAlgorithm(BCFKSLoadStoreParameter.SignatureAlgorithm.SHA512withECDSA)
+            .build();
+
+        try
+        {
+            store2.load(loadParameter);
+            fail("no exception");
+        }
+        catch (IOException e)
+        {
+            isEquals("certificate chain in key store signature not valid", e.getMessage());
+        }
+    }
+
+    public void shouldStoreOneCertificateWithDSASignature()
+        throws Exception
+    {
+        KeyPairGenerator kpG = KeyPairGenerator.getInstance("DSA", "BC");
+
+        kpG.initialize(2048);
+
+        KeyPair kp = kpG.generateKeyPair();
+
+        X509Certificate cert = (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(new ByteArrayInputStream(trustedCertData));
+
+        KeyStore store1 = KeyStore.getInstance("BCFKS", "BC");
+
+        store1.load(null, null);
+
+        store1.setCertificateEntry("cert", cert);
+
+        isTrue("", 1 == store1.size());
+        Enumeration<String> en1 = store1.aliases();
+
+        isTrue("", "cert".equals(en1.nextElement()));
+        isTrue("", !en1.hasMoreElements());
+
+        certStorageCheck(store1, "cert", cert);
+
+        Date entryDate = store1.getCreationDate("cert");
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        BCFKSLoadStoreParameter storeParameter = new BCFKSLoadStoreParameter.Builder(bOut, kp.getPrivate())
+            .withStoreSignatureAlgorithm(BCFKSLoadStoreParameter.SignatureAlgorithm.SHA512withDSA)
+            .build();
+
+        store1.store(storeParameter);
+
+        KeyStore store2 = KeyStore.getInstance("BCFKS", "BC");
+
+        BCFKSLoadStoreParameter loadParameter = new BCFKSLoadStoreParameter.Builder(
+                new ByteArrayInputStream(bOut.toByteArray()), kp.getPublic())
+            .withStoreSignatureAlgorithm(BCFKSLoadStoreParameter.SignatureAlgorithm.SHA512withDSA)
+            .build();
+
+        store2.load(loadParameter);
+    }
+
+    public void shouldStoreOneCertificateWithRSASignature()
+        throws Exception
+    {
+        KeyPairGenerator kpG = KeyPairGenerator.getInstance("RSA", "BC");
+
+        kpG.initialize(2048);
+
+        KeyPair kp = kpG.generateKeyPair();
+
+        X509Certificate cert = (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(new ByteArrayInputStream(trustedCertData));
+
+        KeyStore store1 = KeyStore.getInstance("BCFKS", "BC");
+
+        store1.load(null, null);
+
+        store1.setCertificateEntry("cert", cert);
+
+        isTrue("", 1 == store1.size());
+        Enumeration<String> en1 = store1.aliases();
+
+        isTrue("", "cert".equals(en1.nextElement()));
+        isTrue("", !en1.hasMoreElements());
+
+        certStorageCheck(store1, "cert", cert);
+
+        Date entryDate = store1.getCreationDate("cert");
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        BCFKSLoadStoreParameter storeParameter = new BCFKSLoadStoreParameter.Builder(bOut, kp.getPrivate())
+            .withStoreSignatureAlgorithm(BCFKSLoadStoreParameter.SignatureAlgorithm.SHA512withRSA)
+            .build();
+
+        store1.store(storeParameter);
+
+        KeyStore store2 = KeyStore.getInstance("BCFKS", "BC");
+
+        BCFKSLoadStoreParameter loadParameter = new BCFKSLoadStoreParameter.Builder(
+                new ByteArrayInputStream(bOut.toByteArray()), kp.getPublic())
+            .withStoreSignatureAlgorithm(BCFKSLoadStoreParameter.SignatureAlgorithm.SHA512withRSA)
+            .build();
+
+        store2.load(loadParameter);
     }
 
     private void checkOneCertificate(X509Certificate cert, char[] passwd)
@@ -1311,6 +1531,10 @@ public class BCFKSStoreTest
         shouldCreateEmptyBCFKSPassword();
         shouldStoreMultipleKeys();
         shouldStoreOneCertificate();
+        shouldStoreOneCertificateWithECDSASignature();
+        shouldStoreOneCertificateWithDSASignature();
+        shouldStoreOneCertificateWithRSASignature();
+        shouldStoreOneCertificateWithECDSASignatureAndCertificates();
         shouldStoreOneECKeyWithChain();
         shouldStoreOnePrivateKey();
         shouldStoreOnePrivateKeyWithChain();

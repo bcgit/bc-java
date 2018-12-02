@@ -2,7 +2,11 @@ package org.bouncycastle.jcajce;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.Key;
 import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 
 import org.bouncycastle.crypto.util.PBKDF2Config;
 import org.bouncycastle.crypto.util.PBKDFConfig;
@@ -14,7 +18,6 @@ import org.bouncycastle.crypto.util.PBKDFConfig;
 public class BCFKSLoadStoreParameter
     extends BCLoadStoreParameter
 {
-
     public enum EncryptionAlgorithm
     {
         AES256_CCM,
@@ -27,17 +30,43 @@ public class BCFKSLoadStoreParameter
         HmacSHA3_512
     }
 
+    public enum SignatureAlgorithm
+    {
+        SHA512withDSA,
+        SHA3_512withDSA,
+        SHA512withECDSA,
+        SHA3_512withECDSA,
+        SHA512withRSA,
+        SHA3_512withRSA
+    }
+
+    public interface CertChainValidator
+    {
+        /**
+         * Return true if the passed in chain is valid, false otherwise.
+         *
+         * @param chain the certChain we know about, the end-entity is at position 0.
+         * @return true if valid, false otherwise.
+         */
+         boolean isValid(X509Certificate[] chain);
+    }
+
     public static class Builder
     {
         private final OutputStream out;
         private final InputStream in;
         private final KeyStore.ProtectionParameter protectionParameter;
+        private final Key sigKey;
 
         private PBKDFConfig storeConfig = new PBKDF2Config.Builder()
                                                 .withIterationCount(16384)
                                                 .withSaltLength(64).withPRF(PBKDF2Config.PRF_SHA512).build();
         private EncryptionAlgorithm encAlg = EncryptionAlgorithm.AES256_CCM;
         private MacAlgorithm macAlg = MacAlgorithm.HmacSHA512;
+        private SignatureAlgorithm sigAlg = SignatureAlgorithm.SHA512withECDSA;
+        private X509Certificate[] certs = null;
+        private CertChainValidator validator;
+
 
         /**
          * Base constructor for creating a LoadStoreParameter for initializing a key store.
@@ -69,6 +98,51 @@ public class BCFKSLoadStoreParameter
             this.in = null;
             this.out = out;
             this.protectionParameter = protectionParameter;
+            this.sigKey = null;
+        }
+
+        /**
+         * Base constructor for storing to an OutputStream using a protection parameter.
+         *
+         * @param out OutputStream to write KeyStore to.
+         * @param sigKey the key used to protect the integrity of the key store.
+         */
+        public Builder(OutputStream out, PrivateKey sigKey)
+        {
+            this.in = null;
+            this.out = out;
+            this.protectionParameter = null;
+            this.sigKey = sigKey;
+        }
+
+        /**
+         * Base constructor for reading a KeyStore from an InputStream using a public key for validation.
+         *
+         * @param in InputStream to load KeyStore to.
+         * @param sigKey the public key parameter to used to verify the KeyStore.
+         */
+        public Builder(InputStream in, PublicKey sigKey)
+        {
+            this.in = in;
+            this.out = null;
+            this.protectionParameter = null;
+            this.sigKey = sigKey;
+        }
+
+        /**
+         * Base constructor for reading a KeyStore from an InputStream using validation based on
+         * encapsulated certificates in the KeyStore data.
+         *
+         * @param in InputStream to load KeyStore to.
+         * @param validator the certificate chain validator to check the signing certificates.
+         */
+        public Builder(InputStream in, CertChainValidator validator)
+        {
+            this.in = in;
+            this.out = null;
+            this.protectionParameter = null;
+            this.validator = validator;
+            this.sigKey = null;
         }
 
         /**
@@ -93,6 +167,7 @@ public class BCFKSLoadStoreParameter
             this.in = in;
             this.out = null;
             this.protectionParameter = protectionParameter;
+            this.sigKey = null;
         }
 
         /**
@@ -131,6 +206,36 @@ public class BCFKSLoadStoreParameter
             return this;
         }
 
+
+        /**
+         * Add a valid certificate chain where certs[0] is the end-entity matching the
+         * private key we are using to sign the key store.
+         *
+         * @param certs an array of X509 certificates.
+         * @return the current Builder instance.
+         */
+        public Builder withCertificates(X509Certificate[] certs)
+        {
+            X509Certificate[] tmp = new X509Certificate[certs.length];
+            System.arraycopy(certs, 0, tmp, 0, tmp.length);
+            this.certs = tmp;
+
+            return this;
+        }
+
+        /**
+         * Configure the signature algorithm to use for protecting the KeyStore.
+         *
+         * @param sigAlg the signature config to use for protecting the KeyStore.
+         * @return the current Builder instance.
+         */
+        public Builder withStoreSignatureAlgorithm(SignatureAlgorithm sigAlg)
+        {
+            this.sigAlg = sigAlg;
+
+            return this;
+        }
+
         /**
          * Build and return a BCFKSLoadStoreParameter.
          *
@@ -138,21 +243,29 @@ public class BCFKSLoadStoreParameter
          */
         public BCFKSLoadStoreParameter build()
         {
-            return new BCFKSLoadStoreParameter(in, out, storeConfig, protectionParameter, encAlg, macAlg);
+            return new BCFKSLoadStoreParameter(this);
         }
     }
 
     private final PBKDFConfig storeConfig;
     private final EncryptionAlgorithm encAlg;
     private final MacAlgorithm macAlg;
+    private final SignatureAlgorithm sigAlg;
+    private final Key sigKey;
+    private final X509Certificate[] certificates;
+    private final CertChainValidator validator;
 
-    private BCFKSLoadStoreParameter(InputStream in, OutputStream out, PBKDFConfig storeConfig, KeyStore.ProtectionParameter protectionParameter, EncryptionAlgorithm encAlg, MacAlgorithm macAlg)
+    private BCFKSLoadStoreParameter(Builder bldr)
     {
-        super(in, out, protectionParameter);
+        super(bldr.in, bldr.out, bldr.protectionParameter);
 
-        this.storeConfig = storeConfig;
-        this.encAlg = encAlg;
-        this.macAlg = macAlg;
+        this.storeConfig = bldr.storeConfig;
+        this.encAlg = bldr.encAlg;
+        this.macAlg = bldr.macAlg;
+        this.sigAlg = bldr.sigAlg;
+        this.sigKey = bldr.sigKey;
+        this.certificates = bldr.certs;
+        this.validator = bldr.validator;
     }
 
     /**
@@ -176,12 +289,37 @@ public class BCFKSLoadStoreParameter
     }
 
     /**
-     * Return encryption algorithm used to secure the store and its entries.
+     * Return mac algorithm used to protect the integrity of the store and its contents.
      *
-     * @return the encryption algorithm to use.
+     * @return the mac algorithm to use.
      */
     public MacAlgorithm getStoreMacAlgorithm()
     {
         return macAlg;
+    }
+
+    /**
+     * Return signature algorithm used to protect the integrity of the store and its contents.
+     *
+     * @return the signature algorithm to use.
+     */
+    public SignatureAlgorithm getStoreSignatureAlgorithm()
+    {
+        return sigAlg;
+    }
+
+    public Key getStoreSignatureKey()
+    {
+        return sigKey;
+    }
+
+    public X509Certificate[] getStoreCertificates()
+    {
+        return certificates;
+    }
+
+    public CertChainValidator getCertChainValidator()
+    {
+        return validator;
     }
 }
