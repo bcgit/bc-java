@@ -7,11 +7,14 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
  * <pre>
  * ObjectStoreIntegrityCheck ::= CHOICE {
- *     PbeMacIntegrityCheck
+ *     PbkdMacIntegrityCheck
+ *     [0] EXPLICIT SignatureCheck
  * }
  * </pre>
  */
@@ -20,6 +23,7 @@ public class ObjectStoreIntegrityCheck
     implements ASN1Choice
 {
     public static final int PBKD_MAC_CHECK = 0;
+    public static final int SIG_CHECK = 1;
 
     private final int type;
     private final ASN1Object integrityCheck;
@@ -29,12 +33,22 @@ public class ObjectStoreIntegrityCheck
         this((ASN1Encodable)macIntegrityCheck);
     }
 
+    public ObjectStoreIntegrityCheck(SignatureCheck signatureCheck)
+    {
+        this(new DERTaggedObject(0, signatureCheck));
+    }
+
     private ObjectStoreIntegrityCheck(ASN1Encodable obj)
     {
         if (obj instanceof ASN1Sequence || obj instanceof  PbkdMacIntegrityCheck)
         {
             this.type = PBKD_MAC_CHECK;
             this.integrityCheck = PbkdMacIntegrityCheck.getInstance(obj);
+        }
+        else if (obj instanceof ASN1TaggedObject)
+        {
+            this.type = SIG_CHECK;
+            this.integrityCheck = SignatureCheck.getInstance(((ASN1TaggedObject)obj).getObject());
         }
         else
         {
@@ -80,6 +94,10 @@ public class ObjectStoreIntegrityCheck
 
     public ASN1Primitive toASN1Primitive()
     {
+        if (integrityCheck instanceof SignatureCheck)
+        {
+            return new DERTaggedObject(0, integrityCheck);
+        }
         return integrityCheck.toASN1Primitive();
     }
 }

@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyFactory;
@@ -14,13 +15,17 @@ import java.security.KeyStoreException;
 import java.security.KeyStoreSpi;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Signature;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.DSAKey;
+import java.security.interfaces.RSAKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.text.ParseException;
 import java.util.Date;
@@ -44,6 +49,7 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
@@ -57,6 +63,7 @@ import org.bouncycastle.asn1.bc.ObjectStoreData;
 import org.bouncycastle.asn1.bc.ObjectStoreIntegrityCheck;
 import org.bouncycastle.asn1.bc.PbkdMacIntegrityCheck;
 import org.bouncycastle.asn1.bc.SecretKeyData;
+import org.bouncycastle.asn1.bc.SignatureCheck;
 import org.bouncycastle.asn1.cms.CCMParameters;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
@@ -88,6 +95,7 @@ import org.bouncycastle.crypto.util.ScryptConfig;
 import org.bouncycastle.jcajce.BCFKSLoadStoreParameter;
 import org.bouncycastle.jcajce.BCFKSStoreParameter;
 import org.bouncycastle.jcajce.BCLoadStoreParameter;
+import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -126,6 +134,9 @@ class BcFKSKeyStoreSpi
         publicAlgMap.put(X9ObjectIdentifiers.id_dsa, "DSA");
     }
 
+    private PublicKey verificationKey;
+    private BCFKSLoadStoreParameter.CertChainValidator validator;
+
     private static String getPublicKeyAlg(ASN1ObjectIdentifier oid)
     {
         String algName = (String)publicAlgMap.get(oid);
@@ -150,6 +161,7 @@ class BcFKSKeyStoreSpi
 
     private AlgorithmIdentifier hmacAlgorithm;
     private KeyDerivationFunc hmacPkbdAlgorithm;
+    private AlgorithmIdentifier signatureAlgorithm;
     private Date creationDate;
     private Date lastModifiedDate;
     private ASN1ObjectIdentifier storeEncryptionAlgorithm = NISTObjectIdentifiers.id_aes256_CCM;
@@ -793,6 +805,29 @@ class BcFKSKeyStoreSpi
         }
     }
 
+    private void verifySig(ASN1Encodable store, SignatureCheck integrityCheck, PublicKey key)
+        throws GeneralSecurityException, IOException
+    {
+        Signature sig;
+        if (provider != null)
+        {
+            sig = Signature.getInstance(integrityCheck.getSignatureAlgorithm().getAlgorithm().getId(), provider);
+        }
+        else
+        {
+            sig = Signature.getInstance(integrityCheck.getSignatureAlgorithm().getAlgorithm().getId());
+        }
+
+        sig.initVerify(key);
+
+        sig.update(store.toASN1Primitive().getEncoded(ASN1Encoding.DER));
+
+        if (!sig.verify(integrityCheck.getSignature().getOctets()))
+        {
+            throw new IOException("BCFKS KeyStore corrupted: signature calculation failed");
+        }
+    }
+
     private void verifyMac(byte[] content, PbkdMacIntegrityCheck integrityCheck, char[] password)
         throws NoSuchAlgorithmException, IOException
     {
@@ -800,7 +835,7 @@ class BcFKSKeyStoreSpi
 
         if (!Arrays.constantTimeAreEqual(check, integrityCheck.getMac()))
         {
-            throw new IOException("BCFKS KeyStore corrupted: MAC calculation failed.");
+            throw new IOException("BCFKS KeyStore corrupted: MAC calculation failed");
         }
     }
 
@@ -891,29 +926,103 @@ class BcFKSKeyStoreSpi
         {
             BCFKSLoadStoreParameter bcParam = (BCFKSLoadStoreParameter)parameter;
 
-            char[] password = extractPassword(bcParam);
-
-            hmacPkbdAlgorithm = generatePkbdAlgorithmIdentifier(bcParam.getStorePBKDFConfig(), 512 / 8);
-
-            if (bcParam.getStoreEncryptionAlgorithm() == BCFKSLoadStoreParameter.EncryptionAlgorithm.AES256_CCM)
+            if (bcParam.getStoreSignatureKey() != null)
             {
-                storeEncryptionAlgorithm = NISTObjectIdentifiers.id_aes256_CCM;
+                signatureAlgorithm = generateSignatureAlgId(bcParam.getStoreSignatureKey(), bcParam.getStoreSignatureAlgorithm());
+
+                hmacPkbdAlgorithm = generatePkbdAlgorithmIdentifier(bcParam.getStorePBKDFConfig(), 512 / 8);
+
+                if (bcParam.getStoreEncryptionAlgorithm() == BCFKSLoadStoreParameter.EncryptionAlgorithm.AES256_CCM)
+                {
+                    storeEncryptionAlgorithm = NISTObjectIdentifiers.id_aes256_CCM;
+                }
+                else
+                {
+                    storeEncryptionAlgorithm = NISTObjectIdentifiers.id_aes256_wrap_pad;
+                }
+
+                if (bcParam.getStoreMacAlgorithm() == BCFKSLoadStoreParameter.MacAlgorithm.HmacSHA512)
+                {
+                    hmacAlgorithm = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA512, DERNull.INSTANCE);
+                }
+                else
+                {
+                    hmacAlgorithm = new AlgorithmIdentifier(NISTObjectIdentifiers.id_hmacWithSHA3_512, DERNull.INSTANCE);
+                }
+
+                char[] password = extractPassword(bcParam);
+                
+                EncryptedObjectStoreData encStoreData = getEncryptedObjectStoreData(signatureAlgorithm, password);
+                
+                try
+                {
+                    Signature sig;
+                    if (provider != null)
+                    {
+                        sig = Signature.getInstance(signatureAlgorithm.getAlgorithm().getId(), provider);
+                    }
+                    else
+                    {
+                        sig = Signature.getInstance(signatureAlgorithm.getAlgorithm().getId());
+                    }
+
+                    sig.initSign((PrivateKey)bcParam.getStoreSignatureKey());
+
+                    sig.update(encStoreData.getEncoded());
+
+                    SignatureCheck signatureCheck;
+                    X509Certificate[] certs = bcParam.getStoreCertificates();
+
+                    if (certs != null)
+                    {
+                        org.bouncycastle.asn1.x509.Certificate[] certificates = new org.bouncycastle.asn1.x509.Certificate[certs.length];
+                        for (int i = 0; i != certificates.length; i++)
+                        {
+                            certificates[i] = org.bouncycastle.asn1.x509.Certificate.getInstance(certs[i].getEncoded());
+                        }
+                        signatureCheck = new SignatureCheck(signatureAlgorithm, certificates, sig.sign());
+                    }
+                    else
+                    {
+                        signatureCheck = new SignatureCheck(signatureAlgorithm, sig.sign());
+                    }
+                    ObjectStore store = new ObjectStore(encStoreData, new ObjectStoreIntegrityCheck(signatureCheck));
+
+                    bcParam.getOutputStream().write(store.getEncoded());
+
+                    bcParam.getOutputStream().flush();
+                }
+                catch (GeneralSecurityException e)
+                {
+                    throw new IOException("error creating signature: " + e.getMessage(), e);
+                }
             }
             else
             {
-                storeEncryptionAlgorithm = NISTObjectIdentifiers.id_aes256_wrap_pad;
-            }
+                char[] password = extractPassword(bcParam);
 
-            if (bcParam.getStoreMacAlgorithm() == BCFKSLoadStoreParameter.MacAlgorithm.HmacSHA512)
-            {
-                hmacAlgorithm = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA512, DERNull.INSTANCE);
-            }
-            else
-            {
-                hmacAlgorithm = new AlgorithmIdentifier(NISTObjectIdentifiers.id_hmacWithSHA3_512, DERNull.INSTANCE);
-            }
+                hmacPkbdAlgorithm = generatePkbdAlgorithmIdentifier(bcParam.getStorePBKDFConfig(), 512 / 8);
 
-            engineStore(bcParam.getOutputStream(), password);
+                if (bcParam.getStoreEncryptionAlgorithm() == BCFKSLoadStoreParameter.EncryptionAlgorithm.AES256_CCM)
+                {
+                    storeEncryptionAlgorithm = NISTObjectIdentifiers.id_aes256_CCM;
+                }
+                else
+                {
+                    storeEncryptionAlgorithm = NISTObjectIdentifiers.id_aes256_wrap_pad;
+                }
+
+                if (bcParam.getStoreMacAlgorithm() == BCFKSLoadStoreParameter.MacAlgorithm.HmacSHA512)
+                {
+                    hmacAlgorithm = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA512, DERNull.INSTANCE);
+                }
+                else
+                {
+                    hmacAlgorithm = new AlgorithmIdentifier(NISTObjectIdentifiers.id_hmacWithSHA3_512, DERNull.INSTANCE);
+                }
+
+                engineStore(bcParam.getOutputStream(), password);
+            }
         }
         else if (parameter instanceof BCLoadStoreParameter)
         {
@@ -937,12 +1046,39 @@ class BcFKSKeyStoreSpi
             throw new IOException("KeyStore not initialized");
         }
 
+        EncryptedObjectStoreData encStoreData = getEncryptedObjectStoreData(hmacAlgorithm, password);
+
+        // update the salt
+        if (MiscObjectIdentifiers.id_scrypt.equals(hmacPkbdAlgorithm.getAlgorithm()))
+        {
+            ScryptParams sParams = ScryptParams.getInstance(hmacPkbdAlgorithm.getParameters());
+
+            hmacPkbdAlgorithm = generatePkbdAlgorithmIdentifier(hmacPkbdAlgorithm, sParams.getKeyLength().intValue());
+        }
+        else
+        {
+            PBKDF2Params pbkdf2Params = PBKDF2Params.getInstance(hmacPkbdAlgorithm.getParameters());
+
+            hmacPkbdAlgorithm = generatePkbdAlgorithmIdentifier(hmacPkbdAlgorithm, pbkdf2Params.getKeyLength().intValue());
+        }
+        byte[] mac = calculateMac(encStoreData.getEncoded(), hmacAlgorithm, hmacPkbdAlgorithm, password);
+
+        ObjectStore store = new ObjectStore(encStoreData, new ObjectStoreIntegrityCheck(new PbkdMacIntegrityCheck(hmacAlgorithm, hmacPkbdAlgorithm, mac)));
+
+        outputStream.write(store.getEncoded());
+
+        outputStream.flush();
+    }
+
+    private EncryptedObjectStoreData getEncryptedObjectStoreData(AlgorithmIdentifier integrityAlgorithm, char[] password)
+        throws IOException, NoSuchAlgorithmException
+    {
         ObjectData[] dataArray = (ObjectData[])entries.values().toArray(new ObjectData[entries.size()]);
 
         KeyDerivationFunc pbkdAlgId = generatePkbdAlgorithmIdentifier(hmacPkbdAlgorithm, 256 / 8);
         byte[] keyBytes = generateKey(pbkdAlgId, "STORE_ENCRYPTION", ((password != null) ? password : new char[0]), 256 / 8);
 
-        ObjectStoreData storeData = new ObjectStoreData(hmacAlgorithm, creationDate, lastModifiedDate, new ObjectDataSequence(dataArray), null);
+        ObjectStoreData storeData = new ObjectStoreData(integrityAlgorithm, creationDate, lastModifiedDate, new ObjectDataSequence(dataArray), null);
         EncryptedObjectStoreData encStoreData;
 
         try
@@ -985,27 +1121,7 @@ class BcFKSKeyStoreSpi
         {
             throw new IOException(e.toString());
         }
-
-        // update the salt
-        if (MiscObjectIdentifiers.id_scrypt.equals(hmacPkbdAlgorithm.getAlgorithm()))
-        {
-            ScryptParams sParams = ScryptParams.getInstance(hmacPkbdAlgorithm.getParameters());
-
-            hmacPkbdAlgorithm = generatePkbdAlgorithmIdentifier(hmacPkbdAlgorithm, sParams.getKeyLength().intValue());
-        }
-        else
-        {
-            PBKDF2Params pbkdf2Params = PBKDF2Params.getInstance(hmacPkbdAlgorithm.getParameters());
-
-            hmacPkbdAlgorithm = generatePkbdAlgorithmIdentifier(hmacPkbdAlgorithm, pbkdf2Params.getKeyLength().intValue());
-        }
-        byte[] mac = calculateMac(encStoreData.getEncoded(), hmacAlgorithm, hmacPkbdAlgorithm, password);
-
-        ObjectStore store = new ObjectStore(encStoreData, new ObjectStoreIntegrityCheck(new PbkdMacIntegrityCheck(hmacAlgorithm, hmacPkbdAlgorithm, mac)));
-
-        outputStream.write(store.getEncoded());
-
-        outputStream.flush();
+        return encStoreData;
     }
 
     public void engineLoad(KeyStore.LoadStoreParameter parameter)
@@ -1042,16 +1158,21 @@ class BcFKSKeyStoreSpi
                 hmacAlgorithm = new AlgorithmIdentifier(NISTObjectIdentifiers.id_hmacWithSHA3_512, DERNull.INSTANCE);
             }
 
+            this.verificationKey = (PublicKey)bcParam.getStoreSignatureKey();
+            this.validator = bcParam.getCertChainValidator();
+            this.signatureAlgorithm = generateSignatureAlgId(verificationKey, bcParam.getStoreSignatureAlgorithm());
+
             AlgorithmIdentifier presetHmacAlgorithm = hmacAlgorithm;
             ASN1ObjectIdentifier presetStoreEncryptionAlgorithm = storeEncryptionAlgorithm;
 
             InputStream inputStream = bcParam.getInputStream();
+
             engineLoad(inputStream, password);
 
             if (inputStream != null)
             {
-                if (!presetHmacAlgorithm.equals(hmacAlgorithm)
-                    || !isSimilarHmacPbkd(bcParam.getStorePBKDFConfig(), hmacPkbdAlgorithm)
+                if (//!presetHmacAlgorithm.equals(hmacAlgorithm)
+                     !isSimilarHmacPbkd(bcParam.getStorePBKDFConfig(), hmacPkbdAlgorithm)
                     || !presetStoreEncryptionAlgorithm.equals(storeEncryptionAlgorithm))
                 {
                     throw new IOException("configuration parameters do not match existing store");
@@ -1130,6 +1251,8 @@ class BcFKSKeyStoreSpi
         {
             // initialise defaults
             lastModifiedDate = creationDate = new Date();
+            verificationKey = null;
+            validator = null;
 
             // basic initialisation
             hmacAlgorithm = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA512, DERNull.INSTANCE);
@@ -1152,6 +1275,8 @@ class BcFKSKeyStoreSpi
         }
 
         ObjectStoreIntegrityCheck integrityCheck = store.getIntegrityCheck();
+        AlgorithmIdentifier integrityAlg;
+
         if (integrityCheck.getType() == ObjectStoreIntegrityCheck.PBKD_MAC_CHECK)
         {
             PbkdMacIntegrityCheck pbkdMacIntegrityCheck = PbkdMacIntegrityCheck.getInstance(integrityCheck.getIntegrityCheck());
@@ -1159,7 +1284,60 @@ class BcFKSKeyStoreSpi
             hmacAlgorithm = pbkdMacIntegrityCheck.getMacAlgorithm();
             hmacPkbdAlgorithm = pbkdMacIntegrityCheck.getPbkdAlgorithm();
 
+            integrityAlg = hmacAlgorithm;
+
             verifyMac(store.getStoreData().toASN1Primitive().getEncoded(), pbkdMacIntegrityCheck, password);
+        }
+        else if (integrityCheck.getType() == ObjectStoreIntegrityCheck.SIG_CHECK)
+        {
+            SignatureCheck sigCheck = SignatureCheck.getInstance(integrityCheck.getIntegrityCheck());
+
+            integrityAlg = sigCheck.getSignatureAlgorithm();
+
+            try
+            {
+                org.bouncycastle.asn1.x509.Certificate[] certificates = sigCheck.getCertificates();
+                if (validator != null)
+                {
+                    if (certificates == null)
+                    {
+                        throw new IOException("validator specified but no certifcates in store");
+                    }
+                    CertificateFactory certFact;
+                    if (provider != null)
+                    {
+                        certFact = CertificateFactory.getInstance("X.509", provider);
+                    }
+                    else
+                    {
+                        certFact = CertificateFactory.getInstance("X.509");
+                    }
+                    X509Certificate[] certs = new X509Certificate[certificates.length];
+
+                    for (int i = 0; i != certs.length; i++)
+                    {
+                        certs[i] = (X509Certificate)certFact.generateCertificate(
+                                        new ByteArrayInputStream(certificates[i].getEncoded()));
+                    }
+
+                    if (validator.isValid(certs))
+                    {
+                        verifySig(store.getStoreData(), sigCheck, certs[0].getPublicKey());
+                    }
+                    else
+                    {
+                        throw new IOException("certificate chain in key store signature not valid");
+                    }
+                }
+                else
+                {
+                    verifySig(store.getStoreData(), sigCheck, verificationKey);
+                }
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new IOException("error verifying signature: " + e.getMessage(), e);
+            }
         }
         else
         {
@@ -1191,7 +1369,7 @@ class BcFKSKeyStoreSpi
             throw new IOException("BCFKS KeyStore unable to parse store data information.");
         }
 
-        if (!storeData.getIntegrityAlgorithm().equals(hmacAlgorithm))
+        if (!storeData.getIntegrityAlgorithm().equals(integrityAlg))
         {
             throw new IOException("BCFKS KeyStore storeData integrity algorithm does not match store integrity algorithm.");
         }
@@ -1269,6 +1447,50 @@ class BcFKSKeyStoreSpi
         {
             throw new IOException(e.toString());
         }
+    }
+
+    private AlgorithmIdentifier generateSignatureAlgId(Key key, BCFKSLoadStoreParameter.SignatureAlgorithm sigAlg)
+        throws IOException
+    {
+        if (key== null)
+        {
+            return null;
+        }
+
+        if (key instanceof ECKey)
+        {
+            if (sigAlg == BCFKSLoadStoreParameter.SignatureAlgorithm.SHA512withECDSA)
+            {
+                return new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA512);
+            }
+            else if (sigAlg == BCFKSLoadStoreParameter.SignatureAlgorithm.SHA3_512withECDSA)
+            {
+                return new AlgorithmIdentifier(NISTObjectIdentifiers.id_ecdsa_with_sha3_512);
+            }
+        }
+        if (key instanceof DSAKey)
+        {
+            if (sigAlg == BCFKSLoadStoreParameter.SignatureAlgorithm.SHA512withDSA)
+            {
+                return new AlgorithmIdentifier(NISTObjectIdentifiers.dsa_with_sha512);
+            }
+            else if (sigAlg == BCFKSLoadStoreParameter.SignatureAlgorithm.SHA3_512withDSA)
+            {
+                return new AlgorithmIdentifier(NISTObjectIdentifiers.id_dsa_with_sha3_512);
+            }
+        }
+        if (key instanceof RSAKey)
+        {
+            if (sigAlg == BCFKSLoadStoreParameter.SignatureAlgorithm.SHA512withRSA)
+            {
+                return new AlgorithmIdentifier(PKCSObjectIdentifiers.sha512WithRSAEncryption, DERNull.INSTANCE);
+            }
+            else if (sigAlg == BCFKSLoadStoreParameter.SignatureAlgorithm.SHA3_512withRSA)
+            {
+                return new AlgorithmIdentifier(NISTObjectIdentifiers.id_rsassa_pkcs1_v1_5_with_sha3_512, DERNull.INSTANCE);
+            }
+        }
+        throw new IOException("unknown signature algorithm");
     }
 
     private KeyDerivationFunc generatePkbdAlgorithmIdentifier(PBKDFConfig pbkdfConfig, int keySizeInBytes)
