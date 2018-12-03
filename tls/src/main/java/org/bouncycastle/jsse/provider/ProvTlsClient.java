@@ -23,7 +23,6 @@ import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.CertificateStatusRequest;
 import org.bouncycastle.tls.DefaultTlsClient;
-import org.bouncycastle.tls.DefaultTlsKeyExchangeFactory;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.NameType;
 import org.bouncycastle.tls.ProtocolVersion;
@@ -40,7 +39,6 @@ import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
-import org.bouncycastle.tls.crypto.impl.jcajce.JceDefaultTlsCredentialedAgreement;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.IPAddress;
 import org.bouncycastle.util.encoders.Hex;
@@ -170,13 +168,6 @@ class ProvTlsClient
                 int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(selectedCipherSuite);
                 switch (keyExchangeAlgorithm)
                 {
-                case KeyExchangeAlgorithm.DH_DSS:
-                case KeyExchangeAlgorithm.DH_RSA:
-                case KeyExchangeAlgorithm.ECDH_ECDSA:
-                case KeyExchangeAlgorithm.ECDH_RSA:
-                    // TODO[jsse] Add support for the static key exchanges
-                    return null;
-
                 case KeyExchangeAlgorithm.DHE_DSS:
                 case KeyExchangeAlgorithm.DHE_RSA:
                 case KeyExchangeAlgorithm.ECDHE_ECDSA:
@@ -252,15 +243,6 @@ class ProvTlsClient
 
                 switch (keyExchangeAlgorithm)
                 {
-                case KeyExchangeAlgorithm.DH_DSS:
-                case KeyExchangeAlgorithm.DH_RSA:
-                case KeyExchangeAlgorithm.ECDH_ECDSA:
-                case KeyExchangeAlgorithm.ECDH_RSA:
-                {
-                    // TODO[jsse] Need to have TlsCrypto construct the credentials from the certs/key
-                    return new JceDefaultTlsCredentialedAgreement((JcaTlsCrypto)crypto, certificate, privateKey);
-                }
-
                 case KeyExchangeAlgorithm.DHE_DSS:
                 case KeyExchangeAlgorithm.DHE_RSA:
                 case KeyExchangeAlgorithm.ECDHE_ECDSA:
