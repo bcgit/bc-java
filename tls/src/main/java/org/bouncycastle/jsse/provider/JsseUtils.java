@@ -18,7 +18,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
 
-import javax.crypto.interfaces.DHPrivateKey;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -119,10 +118,6 @@ abstract class JsseUtils
         {
         case KeyExchangeAlgorithm.DH_anon:
             return "DH_anon";
-        case KeyExchangeAlgorithm.DH_DSS:
-            return "DH_DSS";
-        case KeyExchangeAlgorithm.DH_RSA:
-            return "DH_RSA";
         case KeyExchangeAlgorithm.DHE_DSS:
             return "DHE_DSS";
         case KeyExchangeAlgorithm.DHE_PSK:
@@ -131,10 +126,6 @@ abstract class JsseUtils
             return "DHE_RSA";
         case KeyExchangeAlgorithm.ECDH_anon:
             return "ECDH_anon";
-        case KeyExchangeAlgorithm.ECDH_ECDSA:
-            return "ECDH_ECDSA";
-        case KeyExchangeAlgorithm.ECDH_RSA:
-            return "ECDH_RSA";
         case KeyExchangeAlgorithm.ECDHE_ECDSA:
             return "ECDHE_ECDSA";
         case KeyExchangeAlgorithm.ECDHE_PSK:
@@ -305,14 +296,6 @@ abstract class JsseUtils
         String algorithm = privateKey.getAlgorithm();
         switch (keyExchangeAlgorithm)
         {
-        case KeyExchangeAlgorithm.DH_DSS:
-        case KeyExchangeAlgorithm.DH_RSA:
-            return privateKey instanceof DHPrivateKey || "DH".equals(algorithm);
-
-        case KeyExchangeAlgorithm.ECDH_ECDSA:
-        case KeyExchangeAlgorithm.ECDH_RSA:
-            return privateKey instanceof ECPrivateKey || "ECDH".equals(algorithm);
-
         case KeyExchangeAlgorithm.ECDHE_ECDSA:
             return privateKey instanceof ECPrivateKey || "EC".equals(algorithm);
 
