@@ -297,7 +297,7 @@ public class BCFKSStoreTest
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
-        X509Certificate selfSignedCert = TestUtils.createSelfSignedCert("CN=ECDSA", "SHA256withECDSA", kp);
+        final X509Certificate selfSignedCert = TestUtils.createSelfSignedCert("CN=ECDSA", "SHA256withECDSA", kp);
         BCFKSLoadStoreParameter storeParameter = new BCFKSLoadStoreParameter.Builder(bOut, kp.getPrivate())
             .withStoreSignatureAlgorithm(BCFKSLoadStoreParameter.SignatureAlgorithm.SHA512withECDSA)
             .withCertificates(
