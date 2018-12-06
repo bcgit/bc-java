@@ -12,17 +12,17 @@ class ProvSSLConnection
     implements BCSSLConnection
 {
     protected final TlsContext tlsContext;
-    protected final ProvSSLSessionImpl sessionImpl; 
+    protected final ProvSSLSession session; 
 
-    ProvSSLConnection(TlsContext tlsContext, ProvSSLSessionImpl sessionImpl)
+    ProvSSLConnection(TlsContext tlsContext, ProvSSLSession session)
     {
         this.tlsContext = tlsContext;
-        this.sessionImpl = sessionImpl;
+        this.session = session;
     }
 
-    ProvSSLSessionImpl getSessionImpl()
+    ProvSSLSession getSessionImpl()
     {
-        return sessionImpl;
+        return session;
     }
 
     public String getApplicationProtocol()
@@ -57,6 +57,6 @@ class ProvSSLConnection
 
     public SSLSession getSession()
     {
-        return sessionImpl.getExportSession();
+        return session.getExportSession();
     }
 }
