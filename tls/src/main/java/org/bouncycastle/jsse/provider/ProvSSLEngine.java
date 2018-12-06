@@ -222,7 +222,7 @@ class ProvSSLEngine
     @Override
     public synchronized SSLSession getSession()
     {
-        return connection == null ? ProvSSLSessionImpl.NULL_SESSION.getExportSession() : connection.getSession();
+        return connection == null ? ProvSSLSession.NULL_SESSION.getExportSession() : connection.getSession();
     }
 
     @Override

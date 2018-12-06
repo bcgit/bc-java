@@ -271,7 +271,7 @@ class ProvSSLSocketWrap
     {
         BCSSLConnection connection = getConnection();
 
-        return connection == null ? ProvSSLSessionImpl.NULL_SESSION.getExportSession() : connection.getSession();
+        return connection == null ? ProvSSLSession.NULL_SESSION.getExportSession() : connection.getSession();
     }
 
     @Override
