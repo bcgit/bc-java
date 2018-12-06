@@ -52,7 +52,7 @@ class ProvTlsServer
     protected final ProvTlsManager manager;
     protected final ProvSSLParameters sslParameters;
 
-    protected ProvSSLSessionImpl sslSession = null;
+    protected ProvSSLSession sslSession = null;
     protected BCSNIServerName matchedSNIServerName = null;
     protected Set<String> keyManagerMissCache = null;
     protected TlsCredentials credentials = null;
