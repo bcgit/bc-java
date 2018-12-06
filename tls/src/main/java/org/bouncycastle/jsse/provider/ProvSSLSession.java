@@ -1,6 +1,7 @@
 package org.bouncycastle.jsse.provider;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -33,10 +34,15 @@ class ProvSSLSession
         Constructor<? extends SSLSession> cons = null;
         try
         {
-            if (null != JsseUtils.loadClass(ProvSSLSession.class, "javax.net.ssl.ExtendedSSLSession"))
+            Method[] methods = ReflectionUtil.getMethods("javax.net.ssl.ExtendedSSLSession");
+            if (null != methods)
             {
                 String className;
-                if (null != JsseUtils.loadClass(ProvSSLSession.class, "javax.net.ssl.SNIHostName"))
+                if (ReflectionUtil.hasMethod(methods, "getStatusResponses"))
+                {
+                    className = "org.bouncycastle.jsse.provider.ProvExtendedSSLSession_9";
+                }
+                else if (ReflectionUtil.hasMethod(methods, "getRequestedServerNames"))
                 {
                     className = "org.bouncycastle.jsse.provider.ProvExtendedSSLSession_8";
                 }
@@ -45,9 +51,7 @@ class ProvSSLSession
                     className = "org.bouncycastle.jsse.provider.ProvExtendedSSLSession_7";
                 }
 
-                Class<? extends SSLSession> clazz = JsseUtils.loadClass(ProvSSLSessionContext.class, className);
-
-                cons = JsseUtils.getDeclaredConstructor(clazz, ProvSSLSession.class);
+                cons = ReflectionUtil.getDeclaredConstructor(className,  ProvSSLSession.class);
             }
         }
         catch (Exception e)
