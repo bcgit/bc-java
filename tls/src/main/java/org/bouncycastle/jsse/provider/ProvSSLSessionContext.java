@@ -42,7 +42,7 @@ class ProvSSLSessionContext
         }
     };
     protected final Map<String, SessionEntry> sessionsByPeer = new HashMap<String, SessionEntry>();
-    protected final ReferenceQueue<ProvSSLSessionImpl> sessionsQueue = new ReferenceQueue<ProvSSLSessionImpl>();
+    protected final ReferenceQueue<ProvSSLSession> sessionsQueue = new ReferenceQueue<ProvSSLSession>();
 
     protected final ProvSSLContextSpi sslContext;
     protected final TlsCrypto crypto;
@@ -66,19 +66,19 @@ class ProvSSLSessionContext
         return crypto;
     }
 
-    synchronized ProvSSLSessionImpl getSessionImpl(byte[] sessionID)
+    synchronized ProvSSLSession getSessionImpl(byte[] sessionID)
     {
         processQueue();
 
         return accessSession(mapGet(sessionsByID, makeSessionID(sessionID)));
     }
 
-    synchronized ProvSSLSessionImpl getSessionImpl(String hostName, int port)
+    synchronized ProvSSLSession getSessionImpl(String hostName, int port)
     {
         processQueue();
 
         SessionEntry sessionEntry = mapGet(sessionsByPeer, makePeerKey(hostName, port));
-        ProvSSLSessionImpl session = accessSession(sessionEntry);
+        ProvSSLSession session = accessSession(sessionEntry);
         if (session != null)
         {
             // NOTE: For the current simple cache implementation, need to 'access' the sessionByIDs entry
@@ -87,17 +87,17 @@ class ProvSSLSessionContext
         return session;
     }
 
-    synchronized ProvSSLSessionImpl reportSession(TlsSession tlsSession, String peerHost, int peerPort)
+    synchronized ProvSSLSession reportSession(TlsSession tlsSession, String peerHost, int peerPort)
     {
         processQueue();
 
         SessionID sessionID = new SessionID(tlsSession.getSessionID());
         SessionEntry sessionEntry = sessionsByID.get(sessionID);
-        ProvSSLSessionImpl session = sessionEntry == null ? null : sessionEntry.get();
+        ProvSSLSession session = sessionEntry == null ? null : sessionEntry.get();
 
         if (session == null || session.getTlsSession() != tlsSession)
         {
-            session = new ProvSSLSessionImpl(this, tlsSession, peerHost, peerPort);
+            session = new ProvSSLSession(this, tlsSession, peerHost, peerPort);
             sessionEntry = new SessionEntry(sessionID, session, sessionsQueue);
             sessionsByID.put(sessionID, sessionEntry);
         }
@@ -190,11 +190,11 @@ class ProvSSLSessionContext
         removeAllExpiredSessions();
     }
 
-    private ProvSSLSessionImpl accessSession(SessionEntry sessionEntry)
+    private ProvSSLSession accessSession(SessionEntry sessionEntry)
     {
         if (sessionEntry != null)
         {
-            ProvSSLSessionImpl session = sessionEntry.get();
+            ProvSSLSession session = sessionEntry.get();
             if (session != null)
             {
                 long currentTimeMillis = System.currentTimeMillis();
@@ -217,7 +217,7 @@ class ProvSSLSessionContext
 
     private boolean invalidateIfCreatedBefore(SessionEntry sessionEntry, long creationTimeLimit)
     {
-        ProvSSLSessionImpl session = sessionEntry.get();
+        ProvSSLSession session = sessionEntry.get();
         if (session == null)
         {
             return true;
@@ -276,7 +276,7 @@ class ProvSSLSessionContext
         return mapRemove(sessionsByPeer, sessionEntry.getPeerKey(), sessionEntry);
     }
 
-    private static String makePeerKey(ProvSSLSessionImpl session)
+    private static String makePeerKey(ProvSSLSession session)
     {
         return session == null ? null : makePeerKey(session.getPeerHost(), session.getPeerPort());
     }
@@ -335,12 +335,12 @@ class ProvSSLSessionContext
     }
 
     private static final class SessionEntry
-        extends SoftReference<ProvSSLSessionImpl>
+        extends SoftReference<ProvSSLSession>
     {
         private final SessionID sessionID;
         private final String peerKey;
 
-        SessionEntry(SessionID sessionID, ProvSSLSessionImpl session, ReferenceQueue<ProvSSLSessionImpl> queue)
+        SessionEntry(SessionID sessionID, ProvSSLSession session, ReferenceQueue<ProvSSLSession> queue)
         {
             super(session, queue);
 
