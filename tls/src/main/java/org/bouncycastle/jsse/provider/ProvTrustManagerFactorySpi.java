@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
@@ -42,13 +43,12 @@ class ProvTrustManagerFactorySpi
         Constructor<? extends X509TrustManager> cons = null;
         try
         {
-            if (null != JsseUtils.loadClass(ProvTrustManagerFactorySpi.class, "javax.net.ssl.X509ExtendedTrustManager"))
+            Method[] methods = ReflectionUtil.getMethods("javax.net.ssl.X509ExtendedTrustManager");
+            if (null != methods)
             {
                 String className = "org.bouncycastle.jsse.provider.ProvX509ExtendedTrustManager_7";
 
-                Class<? extends X509TrustManager> clazz = JsseUtils.loadClass(ProvTrustManagerFactorySpi.class, className);
-
-                cons = JsseUtils.getDeclaredConstructor(clazz, ProvX509TrustManager.class);
+                cons = ReflectionUtil.getDeclaredConstructor(className,  ProvX509TrustManager.class);
             }
         }
         catch (Exception e)

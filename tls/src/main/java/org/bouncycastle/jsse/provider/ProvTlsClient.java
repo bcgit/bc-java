@@ -54,7 +54,7 @@ class ProvTlsClient
     protected final ProvTlsManager manager;
     protected final ProvSSLParameters sslParameters;
 
-    protected ProvSSLSessionImpl sslSession = null;
+    protected ProvSSLSession sslSession = null;
     protected boolean handshakeComplete = false;
 
     ProvTlsClient(ProvTlsManager manager, ProvSSLParameters sslParameters)

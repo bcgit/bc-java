@@ -1,8 +1,6 @@
 package org.bouncycastle.jsse.provider;
 
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.List;
 
@@ -28,124 +26,22 @@ abstract class SSLParametersUtil
     private static final Method getUseCipherSuitesOrder;
     private static final Method setUseCipherSuitesOrder;
 
-    private static Method findMethod(Method[] methods, String name)
-    {
-        if (methods != null)
-        {
-            for (Method m : methods)
-            {
-                if (m.getName().equals(name))
-                {
-                    return m;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static Class<?> getClassPrivileged(final String className)
-    {
-        return AccessController.doPrivileged(new PrivilegedAction<Class<?>>()
-        {
-            public Class<?> run()
-            {
-                try
-                {
-                    ClassLoader loader = SSLParametersUtil.class.getClassLoader();
-                    if (loader != null)
-                    {
-                        return loader.loadClass(className);
-                    }
-
-                    return Class.forName(className);
-                }
-                catch (Exception e)
-                {
-                    return null;
-                }
-            }
-        });
-    }
-
-    private static Method[] getMethodsPrivileged(final Class<?> clazz)
-    {
-        if (clazz == null)
-        {
-            return null;
-        }
-
-        return AccessController.doPrivileged(new PrivilegedAction<Method[]>()
-        {
-            public Method[] run()
-            {
-                try
-                {
-                    return clazz.getMethods();
-                }
-                catch (Exception e)
-                {
-                    return null;
-                }
-            }
-        });
-    }
-
-    private static Object invokeGetterPrivileged(final Object obj, final Method method)
-    {
-        return AccessController.doPrivileged(new PrivilegedAction<Object>()
-        {
-            public Object run()
-            {
-                try
-                {
-                    return method.invoke(obj);
-                }
-                catch (Exception e)
-                {
-                    // TODO: log?
-                    return null;
-                }
-            }
-        });
-    }
-
-    private static void invokeSetterPrivileged(final Object obj, final Method method, final Object arg)
-    {
-        AccessController.doPrivileged(new PrivilegedAction<Void>()
-        {
-            public Void run()
-            {
-                try
-                {
-                    method.invoke(obj, arg);
-                }
-                catch (Exception e)
-                {
-                    // TODO: log?
-                }
-                return null;
-            }
-        });
-    }
-
     static
     {
-        Class<?> sslParametersClazz = getClassPrivileged("javax.net.ssl.SSLParameters");
+        Method[] methods = ReflectionUtil.getMethods("javax.net.ssl.SSLParameters");
 
-        Method[] methods = getMethodsPrivileged(sslParametersClazz);
-
-        getAlgorithmConstraints = findMethod(methods, "getAlgorithmConstraints");
-        setAlgorithmConstraints = findMethod(methods, "setAlgorithmConstraints");
-        getApplicationProtocols = findMethod(methods, "getApplicationProtocols");
-        setApplicationProtocols = findMethod(methods, "setApplicationProtocols");
-        getEndpointIdentificationAlgorithm = findMethod(methods, "getEndpointIdentificationAlgorithm");
-        setEndpointIdentificationAlgorithm = findMethod(methods, "setEndpointIdentificationAlgorithm");
-        getServerNames = findMethod(methods, "getServerNames");
-        setServerNames = findMethod(methods, "setServerNames");
-        getSNIMatchers = findMethod(methods, "getSNIMatchers");
-        setSNIMatchers = findMethod(methods, "setSNIMatchers");
-        getUseCipherSuitesOrder = findMethod(methods, "getUseCipherSuitesOrder");
-        setUseCipherSuitesOrder = findMethod(methods, "setUseCipherSuitesOrder");
+        getAlgorithmConstraints = ReflectionUtil.findMethod(methods, "getAlgorithmConstraints");
+        setAlgorithmConstraints = ReflectionUtil.findMethod(methods, "setAlgorithmConstraints");
+        getApplicationProtocols = ReflectionUtil.findMethod(methods, "getApplicationProtocols");
+        setApplicationProtocols = ReflectionUtil.findMethod(methods, "setApplicationProtocols");
+        getEndpointIdentificationAlgorithm = ReflectionUtil.findMethod(methods, "getEndpointIdentificationAlgorithm");
+        setEndpointIdentificationAlgorithm = ReflectionUtil.findMethod(methods, "setEndpointIdentificationAlgorithm");
+        getServerNames = ReflectionUtil.findMethod(methods, "getServerNames");
+        setServerNames = ReflectionUtil.findMethod(methods, "setServerNames");
+        getSNIMatchers = ReflectionUtil.findMethod(methods, "getSNIMatchers");
+        setSNIMatchers = ReflectionUtil.findMethod(methods, "setSNIMatchers");
+        getUseCipherSuitesOrder = ReflectionUtil.findMethod(methods, "getUseCipherSuitesOrder");
+        setUseCipherSuitesOrder = ReflectionUtil.findMethod(methods, "setUseCipherSuitesOrder");
     }
 
     static BCSSLParameters getParameters(ProvSSLParameters prov)
@@ -198,37 +94,37 @@ abstract class SSLParametersUtil
 
         if (null != setAlgorithmConstraints)
         {
-            invokeSetterPrivileged(ssl, setAlgorithmConstraints,
+            set(ssl, setAlgorithmConstraints,
                 JsseUtils_7.exportAlgorithmConstraints(prov.getAlgorithmConstraints()));
         }
 
         if (null != setEndpointIdentificationAlgorithm)
         {
-            invokeSetterPrivileged(ssl, setEndpointIdentificationAlgorithm, prov.getEndpointIdentificationAlgorithm());
+            set(ssl, setEndpointIdentificationAlgorithm, prov.getEndpointIdentificationAlgorithm());
         }
 
         // From JDK 1.8
 
         if (null != setUseCipherSuitesOrder)
         {
-            invokeSetterPrivileged(ssl, setUseCipherSuitesOrder, prov.getUseCipherSuitesOrder());
+            set(ssl, setUseCipherSuitesOrder, prov.getUseCipherSuitesOrder());
         }
 
         if (null != setServerNames)
         {
-            invokeSetterPrivileged(ssl, setServerNames, JsseUtils_8.exportSNIServerNames(prov.getServerNames()));
+            set(ssl, setServerNames, JsseUtils_8.exportSNIServerNames(prov.getServerNames()));
         }
 
         if (null != setSNIMatchers)
         {
-            invokeSetterPrivileged(ssl, setSNIMatchers, JsseUtils_8.exportSNIMatchers(prov.getSNIMatchers()));
+            set(ssl, setSNIMatchers, JsseUtils_8.exportSNIMatchers(prov.getSNIMatchers()));
         }
 
         // From JDK 9
 
         if (null != setApplicationProtocols)
         {
-            invokeSetterPrivileged(ssl, setApplicationProtocols, prov.getApplicationProtocols());
+            set(ssl, setApplicationProtocols, prov.getApplicationProtocols());
         }
 
         return ssl;
@@ -327,7 +223,7 @@ abstract class SSLParametersUtil
 
         if (null != getAlgorithmConstraints)
         {
-            Object getAlgorithmConstraintsResult = invokeGetterPrivileged(ssl, getAlgorithmConstraints);
+            Object getAlgorithmConstraintsResult = get(ssl, getAlgorithmConstraints);
             if (null != getAlgorithmConstraintsResult)
             {
                 prov.setAlgorithmConstraints(JsseUtils_7.importAlgorithmConstraints(getAlgorithmConstraintsResult));
@@ -336,7 +232,7 @@ abstract class SSLParametersUtil
 
         if (null != getEndpointIdentificationAlgorithm)
         {
-            String endpointIdentificationAlgorithm = (String)invokeGetterPrivileged(ssl, getEndpointIdentificationAlgorithm);
+            String endpointIdentificationAlgorithm = (String)get(ssl, getEndpointIdentificationAlgorithm);
             if (null != endpointIdentificationAlgorithm)
             {
                 prov.setEndpointIdentificationAlgorithm(endpointIdentificationAlgorithm);
@@ -347,12 +243,12 @@ abstract class SSLParametersUtil
 
         if (null != getUseCipherSuitesOrder)
         {
-            prov.setUseCipherSuitesOrder((Boolean)invokeGetterPrivileged(ssl, getUseCipherSuitesOrder));
+            prov.setUseCipherSuitesOrder((Boolean)get(ssl, getUseCipherSuitesOrder));
         }
 
         if (null != getServerNames)
         {
-            Object getServerNamesResult = invokeGetterPrivileged(ssl, getServerNames);
+            Object getServerNamesResult = get(ssl, getServerNames);
             if (null != getServerNamesResult)
             {
                 prov.setServerNames(JsseUtils_8.importSNIServerNames(getServerNamesResult));
@@ -361,7 +257,7 @@ abstract class SSLParametersUtil
 
         if (null != getSNIMatchers)
         {
-            Object getSNIMatchersResult = invokeGetterPrivileged(ssl, getSNIMatchers);
+            Object getSNIMatchersResult = get(ssl, getSNIMatchers);
             if (null != getSNIMatchersResult)
             {
                 prov.setSNIMatchers(JsseUtils_8.importSNIMatchers(getSNIMatchersResult));
@@ -372,11 +268,21 @@ abstract class SSLParametersUtil
 
         if (null != getApplicationProtocols)
         {
-            String[] getApplicationProtocolsResult = (String[])invokeGetterPrivileged(ssl, getApplicationProtocols);
+            String[] getApplicationProtocolsResult = (String[])get(ssl, getApplicationProtocols);
             if (null != getApplicationProtocols)
             {
                 prov.setApplicationProtocols(getApplicationProtocolsResult);
             }
         }
+    }
+
+    private static Object get(Object obj, Method method)
+    {
+        return ReflectionUtil.invokeGetter(obj, method);
+    }
+
+    private static void set(Object obj, Method method, Object arg)
+    {
+        ReflectionUtil.invokeSetter(obj, method, arg);
     }
 }
