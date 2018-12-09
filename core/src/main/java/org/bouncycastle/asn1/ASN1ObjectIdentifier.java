@@ -33,9 +33,14 @@ public class ASN1ObjectIdentifier
             return (ASN1ObjectIdentifier)obj;
         }
 
-        if (obj instanceof ASN1Encodable && ((ASN1Encodable)obj).toASN1Primitive() instanceof ASN1ObjectIdentifier)
+        if (obj instanceof ASN1Encodable)
         {
-            return (ASN1ObjectIdentifier)((ASN1Encodable)obj).toASN1Primitive();
+            ASN1Primitive primitive = ((ASN1Encodable)obj).toASN1Primitive();
+
+            if (primitive instanceof ASN1ObjectIdentifier)
+            {
+                return (ASN1ObjectIdentifier)primitive;
+            }
         }
 
         if (obj instanceof byte[])

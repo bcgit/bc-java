@@ -1,11 +1,8 @@
 package org.bouncycastle.jsse.provider;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.security.AccessController;
 import java.security.Principal;
 import java.security.PrivateKey;
-import java.security.PrivilegedAction;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
@@ -372,63 +369,6 @@ abstract class JsseUtils
         }
 
         return names;
-    }
-
-    static Constructor getDeclaredConstructor(final Class clazz, final Class<?>... parameterTypes)
-    {
-        return AccessController.doPrivileged(new PrivilegedAction<Constructor>()
-        {
-            public Constructor run()
-            {
-                try
-                {
-                    return clazz.getDeclaredConstructor(parameterTypes);
-                }
-                catch (Exception e)
-                {
-                    // ignore - maybe log?
-                }
-
-                return null;
-            }
-        });
-    }
-
-    static Class loadClass(Class sourceClass, final String className)
-    {
-        try
-        {
-            ClassLoader loader = sourceClass.getClassLoader();
-            if (loader != null)
-            {
-                return loader.loadClass(className);
-            }
-            else
-            {
-                return AccessController.doPrivileged(new PrivilegedAction<Class>()
-                {
-                    public Class run()
-                    {
-                        try
-                        {
-                            return Class.forName(className);
-                        }
-                        catch (Exception e)
-                        {
-                            // ignore - maybe log?
-                        }
-
-                        return null;
-                    }
-                });
-            }
-        }
-        catch (ClassNotFoundException e)
-        {
-            // ignore - maybe log?
-        }
-
-        return null;
     }
 
     static BCSNIServerName convertSNIServerName(ServerName serverName)

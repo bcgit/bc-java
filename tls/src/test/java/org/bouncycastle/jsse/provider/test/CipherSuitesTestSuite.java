@@ -13,10 +13,11 @@ import java.util.Arrays;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+
+import junit.framework.Test;
+import junit.framework.TestSuite;
 
 public class CipherSuitesTestSuite
     extends TestSuite
@@ -25,10 +26,10 @@ public class CipherSuitesTestSuite
 
     static
     {
-        Class clazz = null;
+        Class<?> clazz;
         try
         {
-            clazz = loadClass(CipherSuitesTestSuite.class, "javax.net.ssl.SSLParameters");
+            clazz = loadClass("javax.net.ssl.SSLParameters");
         }
         catch (Exception e)
         {
@@ -38,41 +39,26 @@ public class CipherSuitesTestSuite
         hasSslParameters = (clazz != null);
     }
 
-    private static Class loadClass(Class sourceClass, final String className)
+    private static Class<?> loadClass(final String className)
     {
-        try
+        return AccessController.doPrivileged(new PrivilegedAction<Class<?>>()
         {
-            ClassLoader loader = sourceClass.getClassLoader();
-            if (loader != null)
+            public Class<?> run()
             {
-                return loader.loadClass(className);
-            }
-            else
-            {
-                return AccessController.doPrivileged(new PrivilegedAction<Class>()
+                try
                 {
-                    public Class run()
-                    {
-                        try
-                        {
-                            return Class.forName(className);
-                        }
-                        catch (Exception e)
-                        {
-                            // ignore - maybe log?
-                        }
+                    ClassLoader classLoader = CipherSuitesTestSuite.class.getClassLoader();
+                    return (null == classLoader)
+                        ?   Class.forName(className)
+                        :   classLoader.loadClass(className);
+                }
+                catch (Exception e)
+                {
+                }
 
-                        return null;
-                    }
-                });
+                return null;
             }
-        }
-        catch (ClassNotFoundException e)
-        {
-            // ignore - maybe log?
-        }
-
-        return null;
+        });
     }
 
     public CipherSuitesTestSuite()

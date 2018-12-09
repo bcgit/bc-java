@@ -12,7 +12,6 @@ class ProvExtendedSSLSession_9
 
     public List<byte[]> getStatusResponses()
     {
-        // TODO[jsse]
-        throw new UnsupportedOperationException();
+        return sslSession.getStatusResponses();
     }
 }
