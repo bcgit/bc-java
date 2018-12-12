@@ -38,7 +38,7 @@ class ProvSSLSocketDirect
 
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
-    protected BCSSLConnection connection = null;
+    protected ProvSSLConnection connection = null;
     protected SSLSession handshakeSession = null;
 
     /** This constructor is the one used (only) by ProvSSLServerSocket */
@@ -188,9 +188,11 @@ class ProvSSLSocketDirect
     @Override
     public synchronized SSLSession getSession()
     {
-        BCSSLConnection connection = getConnection();
+        getConnection();
 
-        return connection == null ? ProvSSLSession.NULL_SESSION.getExportSession() : connection.getSession();
+        ProvSSLSession sslSession = (null == connection) ? ProvSSLSession.NULL_SESSION : connection.getSession();
+
+        return sslSession.getExportSession();
     }
 
     @Override

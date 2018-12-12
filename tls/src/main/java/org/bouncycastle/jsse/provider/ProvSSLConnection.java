@@ -1,7 +1,5 @@
 package org.bouncycastle.jsse.provider;
 
-import javax.net.ssl.SSLSession;
-
 import org.bouncycastle.jsse.BCSSLConnection;
 import org.bouncycastle.tls.ChannelBinding;
 import org.bouncycastle.tls.ProtocolName;
@@ -18,11 +16,6 @@ class ProvSSLConnection
     {
         this.tlsContext = tlsContext;
         this.session = session;
-    }
-
-    ProvSSLSession getSessionImpl()
-    {
-        return session;
     }
 
     public String getApplicationProtocol()
@@ -55,8 +48,8 @@ class ProvSSLConnection
         throw new UnsupportedOperationException();
     }
 
-    public SSLSession getSession()
+    public ProvSSLSession getSession()
     {
-        return session.getExportSession();
+        return session;
     }
 }
