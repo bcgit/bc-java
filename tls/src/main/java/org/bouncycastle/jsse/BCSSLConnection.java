@@ -1,7 +1,5 @@
 package org.bouncycastle.jsse;
 
-import javax.net.ssl.SSLSession;
-
 /**
  * A BCJSSE-specific interface providing access to extended connection-specific functionality.
  */
@@ -29,8 +27,8 @@ public interface BCSSLConnection
     byte[] getChannelBinding(String channelBinding);
 
     /**
-     * Returns the SSL Session in use by this connection
-     * @return The {@link SSLSession}.
+     * Returns the SSL session in use by this connection
+     * @return The {@link BCExtendedSSLSession}.
      */
-    SSLSession getSession();
+    BCExtendedSSLSession getSession();
 }

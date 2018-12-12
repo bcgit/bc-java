@@ -46,7 +46,7 @@ class ProvSSLEngine
     protected HandshakeStatus handshakeStatus = HandshakeStatus.NOT_HANDSHAKING; 
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
-    protected BCSSLConnection connection = null;
+    protected ProvSSLConnection connection = null;
     protected SSLSession handshakeSession = null;
 
     protected SSLException deferredException = null;
@@ -222,7 +222,9 @@ class ProvSSLEngine
     @Override
     public synchronized SSLSession getSession()
     {
-        return connection == null ? ProvSSLSession.NULL_SESSION.getExportSession() : connection.getSession();
+        ProvSSLSession sslSession = (null == connection) ? ProvSSLSession.NULL_SESSION : connection.getSession();
+
+        return sslSession.getExportSession();
     }
 
     @Override
