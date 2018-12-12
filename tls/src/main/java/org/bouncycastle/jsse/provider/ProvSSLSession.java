@@ -27,7 +27,7 @@ import org.bouncycastle.util.Arrays;
 class ProvSSLSession
     extends BCExtendedSSLSession
 {
-    static final Constructor<? extends SSLSession> extendedSessionConstructor;
+    static final Constructor<? extends SSLSession> exportSSLSessionConstructor;
 
     static
     {
@@ -51,23 +51,23 @@ class ProvSSLSession
                     className = "org.bouncycastle.jsse.provider.ProvExtendedSSLSession_7";
                 }
 
-                cons = ReflectionUtil.getDeclaredConstructor(className,  ProvSSLSession.class);
+                cons = ReflectionUtil.getDeclaredConstructor(className, ProvSSLSession.class);
             }
         }
         catch (Exception e)
         {
         }
 
-        extendedSessionConstructor = cons;
+        exportSSLSessionConstructor = cons;
     }
 
-    static SSLSession makeExportSession(ProvSSLSession sslSession)
+    static SSLSession exportSSLSession(ProvSSLSession sslSession)
     {
-        if (extendedSessionConstructor != null)
+        if (exportSSLSessionConstructor != null)
         {
             try
             {
-                return extendedSessionConstructor.newInstance(sslSession);
+                return exportSSLSessionConstructor.newInstance(sslSession);
             }
             catch (Exception e)
             {
@@ -87,8 +87,8 @@ class ProvSSLSession
     protected final String peerHost;
     protected final int peerPort;
     protected final SessionParameters sessionParameters;
-    protected final SSLSession exportSession;
     protected final long creationTime;
+    protected final SSLSession exportedSSLSession;
 
     protected long lastAccessedTime;
 
@@ -99,14 +99,14 @@ class ProvSSLSession
         this.peerHost = peerHost;
         this.peerPort = peerPort;
         this.sessionParameters = tlsSession == null ? null : tlsSession.exportSessionParameters();
-        this.exportSession = makeExportSession(this);
         this.creationTime = System.currentTimeMillis();
+        this.exportedSSLSession = exportSSLSession(this);
         this.lastAccessedTime = creationTime;
     }
 
-    SSLSession getExportSession()
+    SSLSession getExportedSSLSession()
     {
-        return exportSession;
+        return exportedSSLSession;
     }
 
     TlsSession getTlsSession()
