@@ -14,6 +14,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.KeyStoreSpi;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -95,8 +96,10 @@ import org.bouncycastle.crypto.util.ScryptConfig;
 import org.bouncycastle.jcajce.BCFKSLoadStoreParameter;
 import org.bouncycastle.jcajce.BCFKSStoreParameter;
 import org.bouncycastle.jcajce.BCLoadStoreParameter;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.ECKey;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
@@ -155,7 +158,7 @@ class BcFKSKeyStoreSpi
     private final static BigInteger PROTECTED_PRIVATE_KEY = BigInteger.valueOf(3);
     private final static BigInteger PROTECTED_SECRET_KEY = BigInteger.valueOf(4);
 
-    private final BouncyCastleProvider provider;
+    private final JcaJceHelper helper;
     private final Map<String, ObjectData> entries = new HashMap<String, ObjectData>();
     private final Map<String, PrivateKey> privateKeyCache = new HashMap<String, PrivateKey>();
 
@@ -166,9 +169,9 @@ class BcFKSKeyStoreSpi
     private Date lastModifiedDate;
     private ASN1ObjectIdentifier storeEncryptionAlgorithm = NISTObjectIdentifiers.id_aes256_CCM;
 
-    BcFKSKeyStoreSpi(BouncyCastleProvider provider)
+    BcFKSKeyStoreSpi(JcaJceHelper helper)
     {
-        this.provider = provider;
+        this.helper = helper;
     }
 
     public Key engineGetKey(String alias, char[] password)
@@ -193,15 +196,7 @@ class BcFKSKeyStoreSpi
                 {
                     PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(decryptData("PRIVATE_KEY_ENCRYPTION", encInfo.getEncryptionAlgorithm(), password, encInfo.getEncryptedData()));
 
-                    KeyFactory kFact;
-                    if (provider != null)
-                    {
-                        kFact = KeyFactory.getInstance(pInfo.getPrivateKeyAlgorithm().getAlgorithm().getId(), provider);
-                    }
-                    else
-                    {
-                        kFact = KeyFactory.getInstance(getPublicKeyAlg(pInfo.getPrivateKeyAlgorithm().getAlgorithm()));
-                    }
+                    KeyFactory kFact = helper.createKeyFactory(getPublicKeyAlg(pInfo.getPrivateKeyAlgorithm().getAlgorithm()));
 
                     PrivateKey privateKey = kFact.generatePrivate(new PKCS8EncodedKeySpec(pInfo.getEncoded()));
 
@@ -224,15 +219,7 @@ class BcFKSKeyStoreSpi
                 try
                 {
                     SecretKeyData keyData = SecretKeyData.getInstance(decryptData("SECRET_KEY_ENCRYPTION", encKeyData.getKeyEncryptionAlgorithm(), password, encKeyData.getEncryptedKeyData()));
-                    SecretKeyFactory kFact;
-                    if (provider != null)
-                    {
-                        kFact = SecretKeyFactory.getInstance(keyData.getKeyAlgorithm().getId(), provider);
-                    }
-                    else
-                    {
-                        kFact = SecretKeyFactory.getInstance(keyData.getKeyAlgorithm().getId());
-                    }
+                    SecretKeyFactory kFact = helper.createSecretKeyFactory(keyData.getKeyAlgorithm().getId());
 
                     return kFact.generateSecret(new SecretKeySpec(keyData.getKeyBytes(), keyData.getKeyAlgorithm().getId()));
                 }
@@ -298,11 +285,11 @@ class BcFKSKeyStoreSpi
 
     private Certificate decodeCertificate(Object cert)
     {
-        if (provider != null)
+        if (helper != null)
         {
             try
             {
-                CertificateFactory certFact = CertificateFactory.getInstance("X.509", provider);
+                CertificateFactory certFact = helper.createCertificateFactory("X.509");
 
                 return certFact.generateCertificate(new ByteArrayInputStream(org.bouncycastle.asn1.x509.Certificate.getInstance(cert).getEncoded()));
             }
@@ -491,17 +478,9 @@ class BcFKSKeyStoreSpi
     }
 
     private Cipher createCipher(String algorithm, byte[] keyBytes)
-        throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException
+        throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, NoSuchProviderException
     {
-        Cipher c;
-        if (provider == null)
-        {
-            c = Cipher.getInstance(algorithm);
-        }
-        else
-        {
-            c = Cipher.getInstance(algorithm, provider);
-        }
+        Cipher c = helper.createCipher(algorithm);
 
         c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, "AES"));
 
@@ -808,15 +787,7 @@ class BcFKSKeyStoreSpi
     private void verifySig(ASN1Encodable store, SignatureCheck integrityCheck, PublicKey key)
         throws GeneralSecurityException, IOException
     {
-        Signature sig;
-        if (provider != null)
-        {
-            sig = Signature.getInstance(integrityCheck.getSignatureAlgorithm().getAlgorithm().getId(), provider);
-        }
-        else
-        {
-            sig = Signature.getInstance(integrityCheck.getSignatureAlgorithm().getAlgorithm().getId());
-        }
+        Signature sig = helper.createSignature(integrityCheck.getSignatureAlgorithm().getAlgorithm().getId());
 
         sig.initVerify(key);
 
@@ -829,7 +800,7 @@ class BcFKSKeyStoreSpi
     }
 
     private void verifyMac(byte[] content, PbkdMacIntegrityCheck integrityCheck, char[] password)
-        throws NoSuchAlgorithmException, IOException
+        throws NoSuchAlgorithmException, IOException, NoSuchProviderException
     {
         byte[] check = calculateMac(content, integrityCheck.getMacAlgorithm(), integrityCheck.getPbkdAlgorithm(), password);
 
@@ -840,19 +811,11 @@ class BcFKSKeyStoreSpi
     }
 
     private byte[] calculateMac(byte[] content, AlgorithmIdentifier algorithm, KeyDerivationFunc pbkdAlgorithm, char[] password)
-        throws NoSuchAlgorithmException, IOException
+        throws NoSuchAlgorithmException, IOException, NoSuchProviderException
     {
         String algorithmId = algorithm.getAlgorithm().getId();
 
-        Mac mac;
-        if (provider != null)
-        {
-            mac = Mac.getInstance(algorithmId, provider);
-        }
-        else
-        {
-            mac = Mac.getInstance(algorithmId);
-        }
+        Mac mac = helper.createMac(algorithmId);
 
         try
         {
@@ -956,15 +919,7 @@ class BcFKSKeyStoreSpi
                 
                 try
                 {
-                    Signature sig;
-                    if (provider != null)
-                    {
-                        sig = Signature.getInstance(signatureAlgorithm.getAlgorithm().getId(), provider);
-                    }
-                    else
-                    {
-                        sig = Signature.getInstance(signatureAlgorithm.getAlgorithm().getId());
-                    }
+                    Signature sig = helper.createSignature(signatureAlgorithm.getAlgorithm().getId());
 
                     sig.initSign((PrivateKey)bcParam.getStoreSignatureKey());
 
@@ -1061,7 +1016,15 @@ class BcFKSKeyStoreSpi
 
             hmacPkbdAlgorithm = generatePkbdAlgorithmIdentifier(hmacPkbdAlgorithm, pbkdf2Params.getKeyLength().intValue());
         }
-        byte[] mac = calculateMac(encStoreData.getEncoded(), hmacAlgorithm, hmacPkbdAlgorithm, password);
+        byte[] mac;
+        try
+        {
+            mac = calculateMac(encStoreData.getEncoded(), hmacAlgorithm, hmacPkbdAlgorithm, password);
+        }
+        catch (NoSuchProviderException e)
+        {
+            throw new IOException("cannot calculate mac: " + e.getMessage());
+        }
 
         ObjectStore store = new ObjectStore(encStoreData, new ObjectStoreIntegrityCheck(new PbkdMacIntegrityCheck(hmacAlgorithm, hmacPkbdAlgorithm, mac)));
 
@@ -1118,6 +1081,10 @@ class BcFKSKeyStoreSpi
             throw new IOException(e.toString());
         }
         catch (InvalidKeyException e)
+        {
+            throw new IOException(e.toString());
+        }
+        catch (NoSuchProviderException e)
         {
             throw new IOException(e.toString());
         }
@@ -1286,7 +1253,14 @@ class BcFKSKeyStoreSpi
 
             integrityAlg = hmacAlgorithm;
 
-            verifyMac(store.getStoreData().toASN1Primitive().getEncoded(), pbkdMacIntegrityCheck, password);
+            try
+            {
+                verifyMac(store.getStoreData().toASN1Primitive().getEncoded(), pbkdMacIntegrityCheck, password);
+            }
+            catch (NoSuchProviderException e)
+            {
+                throw new IOException(e.getMessage());
+            }
         }
         else if (integrityCheck.getType() == ObjectStoreIntegrityCheck.SIG_CHECK)
         {
@@ -1303,15 +1277,7 @@ class BcFKSKeyStoreSpi
                     {
                         throw new IOException("validator specified but no certifcates in store");
                     }
-                    CertificateFactory certFact;
-                    if (provider != null)
-                    {
-                        certFact = CertificateFactory.getInstance("X.509", provider);
-                    }
-                    else
-                    {
-                        certFact = CertificateFactory.getInstance("X.509");
-                    }
+                    CertificateFactory certFact = helper.createCertificateFactory("X.509");
                     X509Certificate[] certs = new X509Certificate[certificates.length];
 
                     for (int i = 0; i != certs.length; i++)
@@ -1399,16 +1365,8 @@ class BcFKSKeyStoreSpi
             AlgorithmParameters algParams;
             if (algId.getAlgorithm().equals(NISTObjectIdentifiers.id_aes256_CCM))
             {
-                if (provider == null)
-                {
-                    c = Cipher.getInstance("AES/CCM/NoPadding");
-                    algParams = AlgorithmParameters.getInstance("CCM");
-                }
-                else
-                {
-                    c = Cipher.getInstance("AES/CCM/NoPadding", provider);
-                    algParams = AlgorithmParameters.getInstance("CCM", provider);
-                }
+                c = helper.createCipher("AES/CCM/NoPadding");
+                algParams = helper.createAlgorithmParameters("CCM");
 
                 CCMParameters ccmParameters = CCMParameters.getInstance(algId.getParameters());
 
@@ -1416,16 +1374,8 @@ class BcFKSKeyStoreSpi
             }
             else if (algId.getAlgorithm().equals(NISTObjectIdentifiers.id_aes256_wrap_pad))
             {
-                if (provider == null)
-                {
-                    c = Cipher.getInstance("AESKWP");
-                    algParams = null;
-                }
-                else
-                {
-                    c = Cipher.getInstance("AESKWP", provider);
-                    algParams = null;
-                }
+                c = helper.createCipher("AESKWP");
+                algParams = null;
             }
             else
             {
@@ -1567,7 +1517,7 @@ class BcFKSKeyStoreSpi
     {
         public Std()
         {
-            super(new BouncyCastleProvider());
+            super(new BCJcaJceHelper());
         }
     }
 
@@ -1576,7 +1526,7 @@ class BcFKSKeyStoreSpi
     {
         public Def()
         {
-            super(null);
+            super(new DefaultJcaJceHelper());
         }
     }
 
@@ -1587,26 +1537,18 @@ class BcFKSKeyStoreSpi
         private final Map<String, byte[]> cache;
         private final byte[] seedKey;
 
-        public SharedKeyStoreSpi(BouncyCastleProvider provider)
+        public SharedKeyStoreSpi(JcaJceHelper provider)
         {
             super(provider);
 
             try
             {
                 this.seedKey = new byte[32];
-
-                if (provider != null)
-                {
-                    SecureRandom.getInstance("DEFAULT", provider).nextBytes(seedKey);
-                }
-                else
-                {
-                    SecureRandom.getInstance("DEFAULT").nextBytes(seedKey);
-                }
+                provider.createSecureRandom("DEFAULT").nextBytes(seedKey);
             }
-            catch (NoSuchAlgorithmException e)
+            catch (GeneralSecurityException e)
             {
-                throw new IllegalArgumentException("can't create cert factory - " + e.toString());
+                throw new IllegalArgumentException("can't create random - " + e.toString());
             }
 
             this.cache = new HashMap<String, byte[]>();
@@ -1695,7 +1637,7 @@ class BcFKSKeyStoreSpi
     {
         public StdShared()
         {
-            super(new BouncyCastleProvider());
+            super(new BCJcaJceHelper());
         }
     }
 
@@ -1704,7 +1646,7 @@ class BcFKSKeyStoreSpi
     {
         public DefShared()
         {
-            super(null);
+            super(new DefaultJcaJceHelper());
         }
     }
 

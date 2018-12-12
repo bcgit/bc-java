@@ -13,7 +13,7 @@ public class BCJcaJceHelper
 {
     private static volatile Provider bcProvider;
 
-    private static Provider getBouncyCastleProvider()
+    private static synchronized Provider getBouncyCastleProvider()
     {
         if (Security.getProvider("BC") != null)
         {
