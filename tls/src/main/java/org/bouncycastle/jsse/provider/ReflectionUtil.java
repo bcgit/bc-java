@@ -27,24 +27,24 @@ class ReflectionUtil
         return null != findMethod(methods, name);
     }
 
-    static Constructor getDeclaredConstructor(final String className, final Class<?>... parameterTypes)
+    static <T> Constructor<T> getDeclaredConstructor(final String className, final Class<?>... parameterTypes)
     {
         if (null == className)
         {
             return null;
         }
 
-        return AccessController.doPrivileged(new PrivilegedAction<Constructor>()
+        return AccessController.doPrivileged(new PrivilegedAction<Constructor<T>>()
         {
-            public Constructor run()
+            public Constructor<T> run()
             {
                 try
                 {
                     ClassLoader classLoader = ReflectionUtil.class.getClassLoader();
-                    Class<?> clazz = (null == classLoader)
+                    @SuppressWarnings("unchecked")
+                    Class<T> clazz = (Class<T>)((null == classLoader)
                         ?   Class.forName(className)
-                        :   classLoader.loadClass(className);
-
+                        :   classLoader.loadClass(className));
                     if (null != clazz)
                     {
                         return clazz.getDeclaredConstructor(parameterTypes);

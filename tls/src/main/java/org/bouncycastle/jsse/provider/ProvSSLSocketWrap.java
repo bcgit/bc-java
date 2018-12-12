@@ -59,7 +59,7 @@ class ProvSSLSocketWrap
 
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
-    protected BCSSLConnection connection = null;
+    protected ProvSSLConnection connection = null;
     protected SSLSession handshakeSession = null;
 
     protected ProvSSLSocketWrap(ProvSSLContextSpi context, ContextData contextData, Socket s, InputStream consumed, boolean autoClose)
@@ -269,9 +269,11 @@ class ProvSSLSocketWrap
     @Override
     public synchronized SSLSession getSession()
     {
-        BCSSLConnection connection = getConnection();
+        getConnection();
 
-        return connection == null ? ProvSSLSession.NULL_SESSION.getExportSession() : connection.getSession();
+        ProvSSLSession sslSession = (null == connection) ? ProvSSLSession.NULL_SESSION : connection.getSession();
+
+        return sslSession.getExportedSSLSession();
     }
 
     @Override

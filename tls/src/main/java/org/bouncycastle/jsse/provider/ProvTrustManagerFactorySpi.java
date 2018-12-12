@@ -4,8 +4,6 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
@@ -26,61 +24,25 @@ import javax.net.ssl.CertPathTrustManagerParameters;
 import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactorySpi;
-import javax.net.ssl.X509TrustManager;
 
 class ProvTrustManagerFactorySpi
     extends TrustManagerFactorySpi
 {
     private static Logger LOG = Logger.getLogger(ProvTrustManagerFactorySpi.class.getName());
 
-    static final Constructor<? extends X509TrustManager> extendedTrustManagerConstructor;
-
     static final String CACERTS_PATH;
     static final String JSSECACERTS_PATH;
 
     static
     {
-        Constructor<? extends X509TrustManager> cons = null;
-        try
-        {
-            Method[] methods = ReflectionUtil.getMethods("javax.net.ssl.X509ExtendedTrustManager");
-            if (null != methods)
-            {
-                String className = "org.bouncycastle.jsse.provider.ProvX509ExtendedTrustManager_7";
-
-                cons = ReflectionUtil.getDeclaredConstructor(className,  ProvX509TrustManager.class);
-            }
-        }
-        catch (Exception e)
-        {
-        }
-
-        extendedTrustManagerConstructor = cons;
-
         String javaHome = PropertyUtils.getSystemProperty("java.home");
         CACERTS_PATH = javaHome + "/lib/security/cacerts".replace('/', File.separatorChar);
         JSSECACERTS_PATH = javaHome + "/lib/security/jssecacerts".replace('/', File.separatorChar);
     }
 
-    static X509TrustManager makeExportTrustManager(ProvX509TrustManager trustManager)
-    {
-        if (extendedTrustManagerConstructor != null)
-        {
-            try
-            {
-                return extendedTrustManagerConstructor.newInstance(trustManager);
-            }
-            catch (Exception e)
-            {
-            }
-        }
-
-        return trustManager;
-    }
-
     protected final Provider pkixProvider;
 
-    protected X509TrustManager trustManager;
+    protected ProvX509TrustManager x509TrustManager;
 
     public ProvTrustManagerFactorySpi(Provider pkixProvider)
     {
@@ -89,7 +51,7 @@ class ProvTrustManagerFactorySpi
 
     protected TrustManager[] engineGetTrustManagers()
     {
-        return new TrustManager[]{ trustManager };
+        return new TrustManager[]{ x509TrustManager.getExportedX509TrustManager() };
     }
 
     protected void engineInit(KeyStore ks)
@@ -147,7 +109,7 @@ class ProvTrustManagerFactorySpi
 
             Set<TrustAnchor> trustAnchors = getTrustAnchors(ks);
 
-            trustManager = makeExportTrustManager(new ProvX509TrustManagerImpl(pkixProvider, trustAnchors));
+            this.x509TrustManager = new ProvX509TrustManager(pkixProvider, trustAnchors);
         }
         catch (Exception e)
         {
@@ -171,7 +133,7 @@ class ProvTrustManagerFactorySpi
 
                 PKIXParameters pkixParam = (PKIXParameters)param;
 
-                trustManager = makeExportTrustManager(new ProvX509TrustManagerImpl(pkixProvider, pkixParam));
+                this.x509TrustManager = new ProvX509TrustManager(pkixProvider, pkixParam);
             }
             catch (GeneralSecurityException e)
             {
