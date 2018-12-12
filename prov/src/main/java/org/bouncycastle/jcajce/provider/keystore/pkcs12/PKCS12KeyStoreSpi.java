@@ -19,10 +19,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Principal;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -98,6 +96,7 @@ import org.bouncycastle.jcajce.PKCS12StoreParameter;
 import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
 import org.bouncycastle.jcajce.spec.PBKDF2KeySpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
+import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.BCKeyStore;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
@@ -196,7 +195,7 @@ public class PKCS12KeyStoreSpi
     }
 
     public PKCS12KeyStoreSpi(
-        Provider provider,
+        JcaJceHelper helper,
         ASN1ObjectIdentifier keyAlgorithm,
         ASN1ObjectIdentifier certAlgorithm)
     {
@@ -205,14 +204,7 @@ public class PKCS12KeyStoreSpi
 
         try
         {
-            if (provider != null)
-            {
-                certFact = CertificateFactory.getInstance("X.509", provider);
-            }
-            else
-            {
-                certFact = CertificateFactory.getInstance("X.509");
-            }
+            certFact = helper.createCertificateFactory("X.509");
         }
         catch (Exception e)
         {
@@ -1745,7 +1737,7 @@ public class PKCS12KeyStoreSpi
     {
         public BCPKCS12KeyStore()
         {
-            super(PKCS12KeyStoreSpi.getBouncyCastleProvider(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd40BitRC2_CBC);
+            super(new BCJcaJceHelper(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd40BitRC2_CBC);
         }
     }
 
@@ -1754,7 +1746,7 @@ public class PKCS12KeyStoreSpi
     {
         public BCPKCS12KeyStore3DES()
         {
-            super(PKCS12KeyStoreSpi.getBouncyCastleProvider(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd3_KeyTripleDES_CBC);
+            super(new BCJcaJceHelper(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd3_KeyTripleDES_CBC);
         }
     }
 
@@ -1763,7 +1755,7 @@ public class PKCS12KeyStoreSpi
     {
         public DefPKCS12KeyStore()
         {
-            super(null, pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd40BitRC2_CBC);
+            super(new DefaultJcaJceHelper(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd40BitRC2_CBC);
         }
     }
 
@@ -1772,7 +1764,7 @@ public class PKCS12KeyStoreSpi
     {
         public DefPKCS12KeyStore3DES()
         {
-            super(null, pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd3_KeyTripleDES_CBC);
+            super(new DefaultJcaJceHelper(), pbeWithSHAAnd3_KeyTripleDES_CBC, pbeWithSHAAnd3_KeyTripleDES_CBC);
         }
     }
 
@@ -1864,21 +1856,5 @@ public class PKCS12KeyStoreSpi
 
             return -1;
         }
-    }
-
-    private static Provider provider = null;
-
-    private static synchronized Provider getBouncyCastleProvider()
-    {
-        if (Security.getProvider("BC") != null)
-        {
-            return Security.getProvider("BC");
-        }
-        else if (provider == null)
-        {
-            provider = new BouncyCastleProvider();
-        }
-
-        return provider;
     }
 }
