@@ -10,51 +10,51 @@ import javax.net.ssl.X509ExtendedTrustManager;
 class ProvX509ExtendedTrustManager_7
     extends X509ExtendedTrustManager
 {
-    private final ProvX509TrustManager trustManager;
+    final ProvX509TrustManager x509TrustManager;
 
-    public ProvX509ExtendedTrustManager_7(ProvX509TrustManager trustManager)
+    ProvX509ExtendedTrustManager_7(ProvX509TrustManager x509TrustManager)
     {
-        this.trustManager = trustManager;
+        this.x509TrustManager = x509TrustManager;
     }
 
     public void checkClientTrusted(X509Certificate[] x509Certificates, String authType)
         throws CertificateException
     {
-        trustManager.checkClientTrusted(x509Certificates, authType);
-    }
-
-    public void checkServerTrusted(X509Certificate[] x509Certificates, String authType)
-        throws CertificateException
-    {
-        trustManager.checkServerTrusted(x509Certificates, authType);
+        x509TrustManager.checkClientTrusted(x509Certificates, authType);
     }
 
     public void checkClientTrusted(X509Certificate[] x509Certificates, String authType, Socket socket)
         throws CertificateException
     {
-        trustManager.checkClientTrusted(x509Certificates, authType, socket);
+        x509TrustManager.checkClientTrusted(x509Certificates, authType, socket);
+    }
+
+    public void checkClientTrusted(X509Certificate[] x509Certificates, String authType, SSLEngine engine)
+        throws CertificateException
+    {
+        x509TrustManager.checkClientTrusted(x509Certificates, authType, engine);
+    }
+
+    public void checkServerTrusted(X509Certificate[] x509Certificates, String authType)
+        throws CertificateException
+    {
+        x509TrustManager.checkServerTrusted(x509Certificates, authType);
     }
 
     public void checkServerTrusted(X509Certificate[] x509Certificates, String authType, Socket socket)
         throws CertificateException
     {
-        trustManager.checkServerTrusted(x509Certificates, authType, socket);
+        x509TrustManager.checkServerTrusted(x509Certificates, authType, socket);
     }
 
-    public void checkClientTrusted(X509Certificate[] x509Certificates, String authType, SSLEngine sslEngine)
+    public void checkServerTrusted(X509Certificate[] x509Certificates, String authType, SSLEngine engine)
         throws CertificateException
     {
-        trustManager.checkClientTrusted(x509Certificates, authType, sslEngine);
-    }
-
-    public void checkServerTrusted(X509Certificate[] x509Certificates, String authType, SSLEngine sslEngine)
-        throws CertificateException
-    {
-        trustManager.checkServerTrusted(x509Certificates, authType, sslEngine);
+        x509TrustManager.checkServerTrusted(x509Certificates, authType, engine);
     }
 
     public X509Certificate[] getAcceptedIssuers()
     {
-        return trustManager.getAcceptedIssuers();
+        return x509TrustManager.getAcceptedIssuers();
     }
 }
