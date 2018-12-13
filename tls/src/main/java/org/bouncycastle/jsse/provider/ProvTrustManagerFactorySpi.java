@@ -51,7 +51,7 @@ class ProvTrustManagerFactorySpi
 
     protected TrustManager[] engineGetTrustManagers()
     {
-        return new TrustManager[]{ x509TrustManager.getExportedX509TrustManager() };
+        return new TrustManager[]{ x509TrustManager.getExportX509TrustManager() };
     }
 
     protected void engineInit(KeyStore ks)

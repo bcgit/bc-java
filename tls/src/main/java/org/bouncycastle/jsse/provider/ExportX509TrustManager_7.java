@@ -7,14 +7,19 @@ import java.security.cert.X509Certificate;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedTrustManager;
 
-class ProvX509ExtendedTrustManager_7
+class ExportX509TrustManager_7
     extends X509ExtendedTrustManager
 {
     final ProvX509TrustManager x509TrustManager;
 
-    ProvX509ExtendedTrustManager_7(ProvX509TrustManager x509TrustManager)
+    ExportX509TrustManager_7(ProvX509TrustManager x509TrustManager)
     {
         this.x509TrustManager = x509TrustManager;
+    }
+
+    ProvX509TrustManager unwrap()
+    {
+        return x509TrustManager;
     }
 
     public void checkClientTrusted(X509Certificate[] x509Certificates, String authType)
