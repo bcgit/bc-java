@@ -273,7 +273,7 @@ class ProvSSLSocketWrap
 
         ProvSSLSession sslSession = (null == connection) ? ProvSSLSession.NULL_SESSION : connection.getSession();
 
-        return sslSession.getExportedSSLSession();
+        return sslSession.getExportSSLSession();
     }
 
     @Override
