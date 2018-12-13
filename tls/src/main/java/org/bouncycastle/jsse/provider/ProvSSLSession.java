@@ -40,15 +40,15 @@ class ProvSSLSession
                 String className;
                 if (ReflectionUtil.hasMethod(methods, "getStatusResponses"))
                 {
-                    className = "org.bouncycastle.jsse.provider.ProvExtendedSSLSession_9";
+                    className = "org.bouncycastle.jsse.provider.ExportSSLSession_9";
                 }
                 else if (ReflectionUtil.hasMethod(methods, "getRequestedServerNames"))
                 {
-                    className = "org.bouncycastle.jsse.provider.ProvExtendedSSLSession_8";
+                    className = "org.bouncycastle.jsse.provider.ExportSSLSession_8";
                 }
                 else
                 {
-                    className = "org.bouncycastle.jsse.provider.ProvExtendedSSLSession_7";
+                    className = "org.bouncycastle.jsse.provider.ExportSSLSession_7";
                 }
 
                 cons = ReflectionUtil.getDeclaredConstructor(className, ProvSSLSession.class);
@@ -61,7 +61,7 @@ class ProvSSLSession
         exportSSLSessionConstructor = cons;
     }
 
-    static SSLSession exportSSLSession(ProvSSLSession sslSession)
+    private static SSLSession createExportSSLSession(ProvSSLSession sslSession)
     {
         if (exportSSLSessionConstructor != null)
         {
@@ -74,7 +74,7 @@ class ProvSSLSession
             }
         }
 
-        return sslSession;
+        return new ExportSSLSession_5(sslSession);
     }
 
     // TODO[jsse] Ensure this behaves according to the javadoc for SSLSocket.getSession and SSLEngine.getSession
@@ -88,7 +88,7 @@ class ProvSSLSession
     protected final int peerPort;
     protected final SessionParameters sessionParameters;
     protected final long creationTime;
-    protected final SSLSession exportedSSLSession;
+    protected final SSLSession exportSSLSession;
 
     protected long lastAccessedTime;
 
@@ -100,13 +100,13 @@ class ProvSSLSession
         this.peerPort = peerPort;
         this.sessionParameters = tlsSession == null ? null : tlsSession.exportSessionParameters();
         this.creationTime = System.currentTimeMillis();
-        this.exportedSSLSession = exportSSLSession(this);
+        this.exportSSLSession = createExportSSLSession(this);
         this.lastAccessedTime = creationTime;
     }
 
-    SSLSession getExportedSSLSession()
+    SSLSession getExportSSLSession()
     {
-        return exportedSSLSession;
+        return exportSSLSession;
     }
 
     TlsSession getTlsSession()
