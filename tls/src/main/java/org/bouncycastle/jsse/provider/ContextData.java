@@ -1,19 +1,19 @@
 package org.bouncycastle.jsse.provider;
 
 import javax.net.ssl.X509KeyManager;
-import javax.net.ssl.X509TrustManager;
 
+import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 
 final class ContextData
 {
     private final TlsCrypto crypto;
     private final X509KeyManager km;
-    private final X509TrustManager tm;
+    private final BCX509ExtendedTrustManager tm;
     private final ProvSSLSessionContext clientSessionContext;
     private final ProvSSLSessionContext serverSessionContext;
 
-    ContextData(TlsCrypto crypto, X509KeyManager km, X509TrustManager tm, ProvSSLSessionContext clientSessionContext,
+    ContextData(TlsCrypto crypto, X509KeyManager km, BCX509ExtendedTrustManager tm, ProvSSLSessionContext clientSessionContext,
         ProvSSLSessionContext serverSessionContext)
     {
         this.crypto = crypto;
@@ -43,7 +43,7 @@ final class ContextData
         return serverSessionContext;
     }
 
-    X509TrustManager getTrustManager()
+    BCX509ExtendedTrustManager getTrustManager()
     {
         return tm;
     }

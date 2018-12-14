@@ -29,6 +29,7 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsUtils;
@@ -269,7 +270,7 @@ class ProvSSLContextSpi
 
     private TlsCrypto crypto;
     private X509KeyManager km;
-    private X509TrustManager tm;
+    private BCX509ExtendedTrustManager tm;
     private ProvSSLSessionContext clientSessionContext;
     private ProvSSLSessionContext serverSessionContext;
 
@@ -533,36 +534,6 @@ class ProvSSLContextSpi
         return new ContextData(crypto, km, tm, clientSessionContext, serverSessionContext);
     }
 
-    protected X509KeyManager findX509KeyManager(KeyManager[] kms)
-    {
-        if (kms != null)
-        {
-            for (KeyManager km : kms)
-            {
-                if (km instanceof X509KeyManager)
-                {
-                    return (X509KeyManager)km;
-                }
-            }
-        }
-        return null;
-    }
-
-    protected X509TrustManager findX509TrustManager(TrustManager[] tms)
-    {
-        if (tms != null)
-        {
-            for (TrustManager tm : tms)
-            {
-                if (tm instanceof X509TrustManager)
-                {
-                    return (X509TrustManager)tm;
-                }
-            }
-        }
-        return null;
-    }
-
     protected X509KeyManager selectKeyManager(KeyManager[] kms) throws KeyManagementException
     {
         if (kms == null)
@@ -582,11 +553,20 @@ class ProvSSLContextSpi
                 throw new KeyManagementException(e);
             }
         }
-
-        return findX509KeyManager(kms);
+        if (kms != null)
+        {
+            for (KeyManager km : kms)
+            {
+                if (km instanceof X509KeyManager)
+                {
+                    return (X509KeyManager)km;
+                }
+            }
+        }
+        return null;
     }
 
-    protected X509TrustManager selectTrustManager(TrustManager[] tms) throws KeyManagementException
+    protected BCX509ExtendedTrustManager selectTrustManager(TrustManager[] tms) throws KeyManagementException
     {
         if (tms == null)
         {
@@ -605,7 +585,16 @@ class ProvSSLContextSpi
                 throw new KeyManagementException(e);
             }
         }
-
-        return findX509TrustManager(tms);
+        if (tms != null)
+        {
+            for (TrustManager tm : tms)
+            {
+                if (tm instanceof X509TrustManager)
+                {
+                    return X509TrustManagerUtil.importX509TrustManager((X509TrustManager)tm);
+                }
+            }
+        }
+        return null;
     }
 }
